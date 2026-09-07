@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
-import { STATE_OPACITY, vars } from '../../Theme/color.css'
-import { font, text } from '../../Theme/typography.css'
+import { STATE_OPACITY, vars } from '../Theme/color.css'
+import { font, text } from '../Theme/typography.css'
 
 const c = vars.color
 

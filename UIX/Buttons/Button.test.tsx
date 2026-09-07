@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { Button, Segmented } from './Button'
-import { segment } from '../Elements/Segment/segment.css'
+import { segment } from '../Elements/segment.css'
 import * as s from './button-base.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

@@ -1,4 +1,4 @@
-import { EmptyValue } from '@pommora/uix/Elements/EmptyValue/EmptyValue'
+import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { useContext, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'

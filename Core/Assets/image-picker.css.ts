@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { strip } from '@pommora/uix/Controls/Slider/slider.css'
+import { strip } from '@pommora/uix/Controls/slider.css'
 import { text, vars } from '@pommora/uix/Theme'
 import { stack } from '@pommora/uix/Theme/stack'
 import { accessoryButton, detail, rowBox } from '@pommora/uix/Menus/menu-base.css'

@@ -9,7 +9,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@pommora/uix/Testing/pointerHarness'
+} from '@pommora/uix/Interactions/pointerHarness'
 import type { Band } from './bandDndModel'
 import { BandDnd, useBandDrag, type BandDrop } from './BandDnd'
 import { ViewGroupBand } from './ViewGroupBand'

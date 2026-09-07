@@ -17,7 +17,7 @@ import {
   FootingItem,
 } from '@pommora/uix/Menus'
 import { footingLabel, footingSymbol } from '@pommora/uix/Menus/menu-base.css'
-import { Slider } from '@pommora/uix/Controls/Slider/Slider'
+import { Slider } from '@pommora/uix/Controls/Slider'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'

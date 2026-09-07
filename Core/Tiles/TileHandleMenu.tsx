@@ -30,7 +30,7 @@ import {
 } from '@pommora/uix/Menus/menu-base.css'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
+import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './tileZoom'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import * as s from './handle-menu.css'

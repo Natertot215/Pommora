@@ -1,6 +1,6 @@
-import { Icon } from '../../Symbols'
-import { Button } from '../../Buttons/Button'
-import { cx } from '../../Utilities/cx'
+import { Icon } from '../Symbols'
+import { Button } from '../Buttons/Button'
+import { cx } from '../Utilities/cx'
 import * as s from './eye-toggle.css'
 
 /** Hover previews the toggle. Both glyphs mount; CSS swaps them. */

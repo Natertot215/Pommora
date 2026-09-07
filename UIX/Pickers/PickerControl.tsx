@@ -1,8 +1,8 @@
 import { createContext, useContext, useRef, useState } from 'react'
-import { EditableInput } from '../../Fields/EditableInput'
-import { cx } from '../../Utilities/cx'
-import { Icon } from '../../Symbols'
-import { PickerMenu, PickerRow } from '../picker-base'
+import { EditableInput } from '../Fields/EditableInput'
+import { cx } from '../Utilities/cx'
+import { Icon } from '../Symbols'
+import { PickerMenu, PickerRow } from './picker-base'
 import * as s from './picker-control.css'
 
 export type PickerOption<T extends string> = {

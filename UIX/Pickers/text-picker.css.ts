@@ -1,8 +1,8 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '../../Theme/color.css'
-import { font } from '../../Theme/typography.css'
-import { base, field } from '../../Fields/fields.css'
-import { focusRing } from '../../Fields/fieldRing'
+import { vars } from '../Theme/color.css'
+import { font } from '../Theme/typography.css'
+import { base, field } from '../Fields/fields.css'
+import { focusRing } from '../Fields/fieldRing'
 
 const c = vars.color
 

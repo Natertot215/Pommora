@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { segment as navTrailSegment } from '@pommora/uix/Elements/NavTrail/nav-trail.css'
+import { segment as navTrailSegment } from '@pommora/uix/Elements/nav-trail.css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { text } from '@pommora/uix/Theme/typography.css'
 

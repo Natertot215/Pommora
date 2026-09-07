@@ -1,7 +1,7 @@
 import { useRef, useState, type RefObject } from 'react'
 import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
-import { ColorGrid } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
+import { ColorGrid } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'

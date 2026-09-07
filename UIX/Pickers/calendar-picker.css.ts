@@ -1,10 +1,10 @@
 import { keyframes, style, type StyleRule } from '@vanilla-extract/css'
-import { vars } from '../../Theme/color.css'
-import { duration, easing } from '../../Animations/motion'
-import { tintAt } from '../../Theme/colors'
-import { font } from '../../Theme/typography.css'
-import { base } from '../../Fields/fields.css'
-import { segment } from '../../Elements/Segment/segment.css'
+import { vars } from '../Theme/color.css'
+import { duration, easing } from '../Animations/motion'
+import { tintAt } from '../Theme/colors'
+import { font } from '../Theme/typography.css'
+import { base } from '../Fields/fields.css'
+import { segment } from '../Elements/segment.css'
 
 const c = vars.color
 const endpointFill = tintAt('var(--accent)', 'secondary')

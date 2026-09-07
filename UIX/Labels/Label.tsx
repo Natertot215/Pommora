@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cx } from '../Utilities/cx'
-import { HoverRemove, hoverRemoveHost } from './HoverRemove'
-import { overScrollUnmasked } from '../Elements/OverScroll'
+import { HoverRemove, hoverRemoveHost } from '../Interactions/HoverRemove'
+import { overScrollUnmasked } from '../Interactions/OverScroll'
 import * as s from './label-base.css'
 import type { LabelColorName, LabelShape } from './label-base.css'
 

@@ -1,8 +1,8 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '../../Theme'
-import { focusRing } from '../../Fields/fieldRing'
-import { input } from '../../Fields/fields.css'
-import { rowShell, separatorLine } from '../../Menus/menu-base.css'
+import { vars } from '../Theme'
+import { focusRing } from '../Fields/fieldRing'
+import { input } from '../Fields/fields.css'
+import { rowShell, separatorLine } from '../Menus/menu-base.css'
 
 export const CELL = 34
 export const COLS = 5

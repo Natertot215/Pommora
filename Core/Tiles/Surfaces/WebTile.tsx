@@ -1,7 +1,7 @@
 // A guest clips correctly only at full visibility, so it stays live while fully visible and hidden (not unmounted) under the retention cap otherwise.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
+import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { text } from '@pommora/uix/Theme'
 import { linkDomain } from '@pommora/core/Connections/links'
 import { DEFAULT_LINK_DISPLAY } from '@pommora/core/Properties/properties'

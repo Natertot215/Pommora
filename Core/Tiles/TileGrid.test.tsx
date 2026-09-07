@@ -2,7 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { firePointer, pressEscape, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
+import {
+  firePointer,
+  pressEscape,
+  stubPointerCapture,
+} from '@pommora/uix/Interactions/pointerHarness'
 import { getTile, tileIds } from './Layout/model'
 import { insertBand } from './Layout/ops'
 import { TileGrid } from './TileGrid'

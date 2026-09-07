@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
-import { DualSwitch } from '@pommora/uix/Controls/Switches/DualSwitch'
+import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { Menu, MenuItem, heading, headingCaps } from '@pommora/uix/Menus'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase, WINDOW_BASE_PANEL } from '@pommora/uix/Windows/window-base'
-import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/bounds'
+import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/window-bounds'
 import './panes-leaf.css'
 
 const CATEGORIES = [
