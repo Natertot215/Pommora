@@ -2,11 +2,6 @@
   "name": "@pommora/uix",
   "private": true,
   "exports": {
-    "./Animations": "./Animations/index.ts",
-    "./Buttons": "./Buttons/index.ts",
-    "./Fields": "./Fields/index.ts",
-    "./Glass": "./Glass/index.ts",
-    "./Labels": "./Labels/index.ts",
     "./Menus": "./Menus/index.ts",
     "./Symbols": "./Symbols/index.tsx",
     "./Theme": "./Theme/index.ts",
