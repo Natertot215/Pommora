@@ -92,6 +92,8 @@ export async function restoreCachedValues(
     return machine().lock(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null || !sweepAdmits(content)) return false
+      const held = reconcilePropertyValue(def, splitFrontmatter(content)[def.name], false)
+      if (!isBlankValue(held.value)) return false
       return (await updatePageProperty(root, file, def, reconciled.value)).ok
     })
   })
