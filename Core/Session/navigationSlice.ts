@@ -308,7 +308,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       tabs: s.tabs.filter((t) => !covered.includes(t)),
       tabMru: s.tabMru.filter((m) => !covered.some((c) => c.id === m)),
     })
-    for (const t of covered) dropCacheTab(t.id)
+    for (const t of covered) {
+      dropCacheTab(t.id)
+      // Pins survive the re-key (unlike the warm cache, which is dropped): a graduated tab keeps its pins under the pinned id.
+      if (t.target.kind !== 'newtab') get().retagTabPins(t.id, pinTabId(t.target))
+    }
     if (activeCovered && activeCovered.target.kind !== 'newtab') {
       const pinId = pinTabId(activeCovered.target)
       set((st) => ({ activeTabId: pinId, tabMru: pushMru(st.tabMru, pinId) }))
@@ -411,6 +415,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const pinnedIds = s.pinnedTabs.map((t) => t.id)
       const res = closeTabModel(s.tabs, s.activeTabId, s.tabMru, pinnedIds, id, makeTabId())
       dropCacheTab(id)
+      get().scrubTabPins(id)
       applyTabResult(res)
     },
     reorderTabs: (activeId, overId) => {
@@ -446,6 +451,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           ),
         }))
       dropCacheTab(pinId)
+      // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins on a dead tab).
+      get().retagTabPins(pinId, tab.id)
       persistTabs()
     },
 
@@ -682,7 +689,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         makeTabId(),
       )
       if (rec.changed) {
-        for (const t of s.tabs) if (!rec.tabs.some((n) => n.id === t.id)) dropCacheTab(t.id)
+        for (const t of s.tabs)
+          if (!rec.tabs.some((n) => n.id === t.id)) {
+            dropCacheTab(t.id)
+            get().scrubTabPins(t.id)
+          }
         applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })
       }
       ensureLiveActive()
