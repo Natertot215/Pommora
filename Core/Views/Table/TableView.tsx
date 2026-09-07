@@ -23,6 +23,7 @@ import type { ContextOption } from '../../Contexts/contextOptions'
 import { frontmatterOf, subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
+import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
 import { pushValueUndo } from '../valueUndo'
 import {
@@ -80,10 +81,9 @@ import {
   linkAlias,
   linkEditText,
   urlClickTarget,
-  urlValueFromEdit,
   urlValueFromRename,
 } from '@pommora/core/Connections/linkValue'
-import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
+import { validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { popRowMenu } from '../../Actions/nativeMenus'
 
@@ -133,7 +133,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     persistView,
     commitBand,
     setStylePatch,
-    setProperty,
     commitValue,
     contextOptionsFor,
     creation,
@@ -463,10 +462,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const shared = sharedValueClickAction(t, value)
     if (shared) {
       e.stopPropagation()
-      if (shared.kind === 'commit') setProperty(row, col.id, shared.value)
+      if (shared.kind === 'commit') commitValue(row, col, shared.value)
       else if (shared.kind === 'file') {
-        if (def)
-          pickFileInto(def, value, fileChipIndex(e.target), (n) => setProperty(row, col.id, n))
+        if (def) pickFileInto(def, value, fileChipIndex(e.target), (n) => commitValue(row, col, n))
       } else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
     } else if (t === 'number') {
       e.stopPropagation()
@@ -495,8 +493,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
     const fromCreate = editing?.fromCreate
     setEditing(null)
-    const trimmed = raw.trim()
     if (col.kind === 'title') {
+      const trimmed = raw.trim()
       if (trimmed && trimmed !== row.title)
         void mutate({
           op: 'rename',
@@ -507,23 +505,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         })
       return
     }
-    const t = declaredType(col.id, schema)
-    if (t === 'number') {
-      if (trimmed === '') {
-        setProperty(row, col.id, null)
-        return
-      }
-      const n = Number.parseFloat(trimmed)
-      if (!Number.isNaN(n)) setProperty(row, col.id, { kind: 'number', value: n })
-    } else if (t === 'url') {
-      const cur = resolveFieldValue(row, col.id, schema)
-      const next = urlValueFromEdit(
-        trimmed,
-        cur.kind === 'url' ? cur.value : undefined,
-        resolveTitle,
-      )
-      if (next !== undefined) setProperty(row, col.id, next)
-    }
+    const next = parseEditorValue(
+      declaredType(col.id, schema),
+      raw,
+      resolveFieldValue(row, col.id, schema),
+    )
+    if (next !== undefined) commitValue(row, col, next)
   }
   const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
     if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
@@ -661,12 +648,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           value={v.kind === 'number' ? String(v.value) : ''}
           trailing={divisor !== undefined ? `/ ${divisor}` : undefined}
           onCommit={(text) => {
-            const trimmed = text.trim()
-            if (trimmed === '') setProperty(row, col.id, null)
-            else {
-              const n = Number.parseFloat(trimmed)
-              if (!Number.isNaN(n)) setProperty(row, col.id, { kind: 'number', value: n })
-            }
+            const next = parseEditorValue('number', text)
+            if (next !== undefined) commitValue(row, col, next)
             setEditing(null)
           }}
           onDismiss={() => setEditing(null)}
@@ -683,7 +666,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         value={linkAlias(raw) ?? ''}
         accent={solidColorCss(linkDef?.link_color)}
         onCommit={(alias) => {
-          setProperty(row, col.id, urlValueFromRename(alias, raw))
+          commitValue(row, col, urlValueFromRename(alias, raw))
           setEditing(null)
         }}
         onDismiss={() => setEditing(null)}
@@ -705,7 +688,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (dt === 'url') {
       const v = resolveFieldValue(row, col.id, schema)
       const target = linkValueMenuTarget(v.kind === 'url' ? v.value : '', (action) => {
-        if (action === 'link:clear') return setProperty(row, col.id, null)
+        if (action === 'link:clear') return commitValue(row, col, null)
         if (action === 'editLink')
           return setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
         if (action !== 'rename') return
@@ -743,7 +726,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         schema.find((d) => d.id === col.id),
         resolveFieldValue(row, col.id, schema),
         chip,
-        (n) => setProperty(row, col.id, n),
+        (n) => commitValue(row, col, n),
       )
     )
       return
@@ -1062,15 +1045,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }
   const colTransform = (ci: number): string | undefined => gapShift(dragShift, ci)
 
-  const patchBandValue = (pageId: string, value: PropertyValue | null): PageFrontmatter | null => {
-    const def = schema.find((d) => d.id === groupPropId)
-    if (!def) return null
-    return applyValueAtRoot(
-      frontmatterOf(values, pageId) as Record<string, unknown>,
-      def,
-      value,
-    ) as PageFrontmatter
-  }
   const reassignRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
     if (!groupPropId || !path) return
@@ -1091,14 +1065,27 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           return
         if (setChanged) await mutate({ op: 'movePage', path, newParentPath: destPath })
       })()
-      const patched = bucketChanged ? patchBandValue(pageId, value) : undefined
-      if (patched) patchOverride(setValueOverride, pageId, patched, write)
+      const def = bucketChanged ? schema.find((d) => d.id === groupPropId) : undefined
+      if (def)
+        patchOverride(
+          setValueOverride,
+          pageId,
+          applyValueAtRoot(
+            frontmatterOf(values, pageId) as Record<string, unknown>,
+            def,
+            value,
+          ) as PageFrontmatter,
+          write,
+        )
       return
     }
-    const value = groupKeyToValue(destGroupKey, groupPropType)
-    const write = mutate({ op: 'setProperty', path, propertyId: groupPropId, value })
-    const patched = patchBandValue(pageId, value)
-    if (patched) patchOverride(setValueOverride, pageId, patched, write)
+    const row = rowById.get(pageId)
+    if (row)
+      commitValue(
+        row,
+        { id: groupPropId, kind: 'property' },
+        groupKeyToValue(destGroupKey, groupPropType),
+      )
   }
   const relocateRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
