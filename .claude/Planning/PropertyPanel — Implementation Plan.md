@@ -709,7 +709,7 @@ without deleting more than it grows is out of scope — report it under Sequence
 - [x] Census A returns zero unallowlisted `PickerMenu` mounts for property assignment.
 - [x] Census B returns zero orphans — three found (`panelStyle`/`PanelStyle` dead prop, `optionsOf` and `pickSemantics` dead exports); all three removed, re-swept to zero.
 - [x] Census C returns zero new divergences against the Behavior Ledger. Two caveats surfaced, both pre-existing, not fold regressions: the number/file card-menu pre-drill (recorded openAddPicker asymmetry) and the datetime add-flow null — the latter now hoisted to a shared creation-flow guard (see Deviations).
-- [ ] **NOT MET — recorded as a Deviation.** Net is **−268**, not the budgeted **−400 to −590**. The whole shortfall is the two per-file floors (`PropertyPanel.tsx` +118 over, `CardsView.tsx` +36 over); had the ceilings held, ≈ −420. No hidden build; extraction to hit the number is barred by the plan and would add moving parts. Measured with the loc.py counter over the fold's file set.
+- [ ] **NOT MET — recorded as a Deviation.** Net is **−267**, not the budgeted **−400 to −590**. The whole shortfall is the two per-file floors (`PropertyPanel.tsx` +118 over, `CardsView.tsx` +36 over); had the ceilings held, ≈ −420. No hidden build; extraction to hit the number is barred by the plan and would add moving parts. Measured with the loc.py counter over the fold's file set.
 - [x] Net source file count negative (−3); no file created beyond the three the budget names.
 - [x] All three gates green: `typecheck` 0, `test` 4106 passed, `lint` 0.
 
@@ -736,16 +736,18 @@ without deleting more than it grows is out of scope — report it under Sequence
 
 ### Progress
 
-- [ ] **Phase 1** — PropertyPicker becomes the one popup surface · base `<commit>`
-  - [x] Task 1 — target union + chooser pane · `<commit>`
-  - [x] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
-  - [x] Task 3 — Table's one mount; DatetimeCellPicker deleted · `<commit>`
-- [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
-  - [x] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
-  - [x] Task 5 — old PropertyPicker props removed · `<commit>`
+- [x] **Phase 1** — PropertyPicker becomes the one popup surface · base `8f9294408`
+  - [x] Task 1 — target union + chooser pane · `af8e6db22`
+  - [x] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `40677a2d1`
+  - [x] Task 3 — Table's one mount; DatetimeCellPicker deleted · `7377ded2a`
+  - [x] Gate 1 — review fixes `1d6cbf98c`; add-drill live-resolve `0547b1422` (stop waived)
+- [x] **Phase 2** — PropertyPanel replaces Properties/Page/
+  - [x] Task 4 — PropertyPanel ships; Page/ deleted · `f51427ef7`
+  - [x] Task 5 — old PropertyPicker props removed · `227e7c0ba`
+  - [x] Gate 2 — simplify + reviews `1fad16200`; visuals passed `b57e4e98b`
 - [x] **Phase 3** — The re-fold census
-  - [x] Task 6 — census dispatched, findings folded · `<commit>`
-  - [x] Gate
+  - [x] Task 6 — census; three orphans folded, B13 hoisted · `dba398d11`
+  - [x] Gate — attack-review fix (reveal/commit split) · `7e50be7bd`
 
 ### Rulings
 
@@ -779,15 +781,19 @@ without deleting more than it grows is out of scope — report it under Sequence
 
 - **Gate 2 — simplify + both reviews, clean.** `code-simplifier` cut `PropertyPanel` 456 → 438 (one `allFields`/`isShown` roster replacing the twin predicates + double label/icon passes; dropped the redundant `'date'` editing mode — datetime derives from `def.type`; removed a dead `entry?.id ?? editing?.id` branch since panel entries are never drillable; tidied the `contextValues` memo). Floor is ~438, still over the ≤320 ceiling by ~118 — the fold's irreducible behavior, no helper/sub-component minted (extraction barred). `feature-dev:code-reviewer` and `build-breaking-agent` both returned **zero findings** against the deleted-`Page/` oracle. The reviewers' one flag — `revealAndEdit`'s document-scoped `querySelector('[data-property-row]')` colliding across co-mounted panels — was killed: an addable property is value-less, hence hidden in every panel that hasn't revealed it, so the acting panel holds the sole match; co-mounted panels share one page and separate windows are separate documents. No fix (scoping it would add an unneeded mechanism). Fable advisor not consulted — nothing to fold.
 
-- **Task 6 — net lands at −268, under the budgeted −400 (Requirement 7 NOT met).** Measured over the fold's exact file set (verified complete against the union of the nine commits' touched files — no file missed) with loc.py's own comment/blank/test-excluding counter: deletions −1009, created +488, grown +257 (`PropertyPicker` +99, `CardsView` +166, `TableView` −5, `cards-view.css` −3). The entire shortfall is the two documented per-file floors — `PropertyPanel.tsx` at 438 (+118 over ≤320) and `CardsView.tsx` at +166 (+36 over ≤130); had the estimates held, ≈ −420. Both gates' simplify passes and a fresh read confirmed the only remaining cut is extraction into sub-components or a hook, which the plan bars harder than a shallow net ("do not clear the number by moving code into a file with headroom") and which Nathan directed against ("prioritize fewer moving parts, not an arbitrary line-count reduction"). The number is reported honestly, not laundered; line 27's stale "−250" is Nathan's text and left unedited.
+- **Task 6 — net lands at −267, under the budgeted −400 (Requirement 7 NOT met).** Measured over the fold's exact file set (verified complete against the union of the nine commits' touched files — no file missed) with loc.py's own comment/blank/test-excluding counter: deletions −1009, created +488, grown +254 (`PropertyPicker` +99, `CardsView` +163, `TableView` −5, `cards-view.css` −3). The entire shortfall is the two documented per-file floors — `PropertyPanel.tsx` at 438 (+118 over ≤320) and `CardsView.tsx` at +166 (+36 over ≤130); had the estimates held, ≈ −420. Both gates' simplify passes and a fresh read confirmed the only remaining cut is extraction into sub-components or a hook, which the plan bars harder than a shallow net ("do not clear the number by moving code into a file with headroom") and which Nathan directed against ("prioritize fewer moving parts, not an arbitrary line-count reduction"). The number is reported honestly, not laundered; line 27's stale "−250" is Nathan's text and left unedited.
 
 - **Task 6 — the mandated closeout agents were substituted.** `code-simplifier` and `build-breaking-agent` no longer exist. The census ran on `Explore` (still available); the Delivery-Claim verification and the adversarial attack ran on `general-purpose` agents under explicit verifier / attacker briefs, in separate dispatches. `feature-dev:code-reviewer` remains available. The Fable advisor was consulted at the decision point (net-target conflict + the census-B findings) and adjudicated; it did not time out this round.
 
 - **Task 6 — three census-B orphans removed (all removals, no additions).** (a) `panelStyle` / `PanelStyle` was a dead prop — declared in `PropertyPanelProps`, never read in the body (styling is driven by `pageFrame`), all four callers passed `'filled'`, the `'standard'` arm never constructed. Removed the prop, the type, and the four call-site + three test-site passes. This is a **deviation from Requirement 3** ("`PropertyPanel` takes `panelStyle`"): the prop proved inert once `groupStandard` was never needed (Rulings), and the plan's own Standard authorizes cutting a fence the code does not need. Returns when a caller passes `'standard'`. (b) `optionsOf` and (c) `pickSemantics` were exported with zero external importers (Table stopped importing them and `CardAddPicker` was deleted; `FilterFrame`/`SortFrame` import `GroupFrame`'s `optionsOf`, a different function) — `export` dropped, both now module-internal.
 
-- **Task 6 — B13 hoisted to one shared creation-flow guard (Nathan-directed).** The census found the datetime add-flow lacked the null guard that number and link had — a cleared datetime in the add-flow would reveal an empty column. Confirmed pre-existing against the deleted `CardPickerHost` oracle (its datetime `onCommit` was unguarded too), so it sat within the already-recorded "discarded null" ruling. Rather than add a fourth per-kind guard, the blank check moved into `CardsView.commitPicked` as `creating && isBlankValue(v)` (creating = a drilled `entry` or `revealOnCommit`), covering every kind at once; number's per-kind `nv != null` and link's `!revealOnCommit` clause were dropped as now-redundant. Edit-flow clearing (a link or datetime cleared outside the add-flow) is unchanged — the guard is scoped to creation. Table has no `revealOnCommit` flow and the panel reveals eagerly on Add by design (B7), so both are unaffected.
+- **Task 6 — B13 hoisted to one shared creation-flow reveal guard (Nathan-directed).** The census found the datetime add-flow lacked the null guard that number and link had — a cleared datetime in the add-flow would reveal an empty column. Confirmed pre-existing against the deleted `CardPickerHost` oracle (its datetime `onCommit` was unguarded too), so it sat within the already-recorded "discarded null" ruling. The fix separates reveal from commit inside `CardsView.commitPicked`: `if (creating && !isBlankValue(v)) revealProperty(column.id)` then `commitValue(...)` unconditionally, where `creating` = a drilled `entry` or `revealOnCommit`. Reveal is the shared guard — no kind reveals an empty column on a blank creation commit (B13, and now datetime/multi_select/context, not only the kinds that had their own guard) — while the commit stays unconditional so an in-session deselect of a drilled multi_select/context or a clear of an already-picked date still writes (the attack review caught the first draft, which returned early on every blank creation commit and swallowed those clears). The number field keeps its own `nv != null` guard: that is **B16** (an emptied number never commits), number-specific, and the shared reveal guard cannot express it without breaking the multi_select clear. Link keeps its edit-flow no-op/clear guard; its `!revealOnCommit` clause was dropped as provably dead (a non-`revealOnly` entry is blank-only per `cardValueInput.ts:71`, so `vRaw` is always falsy on a `revealOnCommit` open). `isBlankValue` is the right reveal predicate: number `0` and checkbox `false` fall to its `default: false` arm, so a real `0` still reveals. Edit-flow clearing outside the add-flow is unchanged. Table has no `revealOnCommit` flow and the panel reveals eagerly on Add by design (B7), so both are unaffected.
 
 ### Lessons
+
+- **A creation-flow flag is a session flag, not a first-commit flag.** `revealOnCommit` and a persistent drilled `entry` stay set for the whole add-session, so guarding a *reveal* on them is right but guarding the *commit* on them swallows every later in-session edit (the multi_select deselect, the date clear). Separate the two: reveal on a real value, commit unconditionally.
+- **A line budget tied to per-file ceilings is only as good as the estimates.** When a fold's floor lands above them, report the miss and name the barred extraction — do not hit the number by relocating behavior into a file with headroom.
+- **Measure a fold's net over its own file set, not the whole repo,** when another agent commits on the same branch: `loc.py`'s counter over the named files at the base commit is immune to the interleaving a repo-wide diff inherits.
 
 ### Sequenced After
 
@@ -804,6 +810,10 @@ without deleting more than it grows is out of scope — report it under Sequence
 - **Undo covers only the mass path.** Every single-cell commit on all three surfaces is un-undoable.
 
 ### Closeout
+
+- **Substituted agents (recorded under Deviations).** Census A/B/C ran on `Explore`; the Delivery-Claim verification and the adversarial attack ran on `general-purpose` under separate briefs, since `build-breaking-agent` and `code-simplifier` no longer exist.
+- **Delivery-Claim verification — clean.** The neutral verifier checked all eight requirements and six spot-checked ledger rows against HEAD: every one VERIFIED, the `panelStyle` removal read as a clean intentional deviation, the line target confirmed intentionally missed with direction and file-count net-negative.
+- **Attack review — one real finding folded, one struck.** (Real, fixed at `7e50be7bd`) the creation-flow guard returned early on every blank commit while an add-session was open, swallowing an in-session multi_select/context deselect and a datetime clear-after-pick; fixed by splitting reveal (guarded on non-blank) from commit (unconditional). (Struck — unreachable) the claimed number edit-flow data-loss on invalid input: `CardValue.tsx:92` routes a number edit to the inline `PropertyEditor` (`setMode('editor')`), and `kind: 'number'` on the picker is set only by the add-flow `onReveal`, so the edit-flow path the finding needs does not exist; the number field keeps its `nv != null` guard regardless (B16). The attacker's PropertyPanel `querySelector` note is the same one Gate 2 killed (a value-less addable property is hidden in every co-mounted panel, so the acting panel holds the sole match) — cited, not re-argued.
 
 ---
 
@@ -839,33 +849,33 @@ Everything else is the standard below.
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task.
-- [ ] The acceptance criterion observed running, clause by clause.
-- [ ] `Core/Properties/Page/` does not exist.
-- [ ] `PropertyPicker` is the only component mounting a `PickerMenu` to assign a property value, allowlist aside.
-- [ ] Every Behavior Ledger row holds, on its own surface, unchanged.
-- [ ] Net source reduction of −400 or better, every per-file ceiling respected, net file count negative.
+- [x] Every numbered requirement traces to a landed task. (Req 3's `panelStyle` traces to Task 4 then a Task-6 removal deviation.)
+- [x] The acceptance criterion observed running, clause by clause. Visuals passed by Nathan (Gates 1–2); census zero residue; net −267 (meets the acceptance clause's "under −250", not Requirement 7's −400 — see below).
+- [x] `Core/Properties/Page/` does not exist.
+- [x] `PropertyPicker` is the only component mounting a `PickerMenu` to assign a property value, allowlist aside. (Census A.)
+- [x] Every Behavior Ledger row holds, on its own surface, unchanged. (Census C, all 28.)
+- [ ] **NOT MET.** Net source **−267**, not −400; `PropertyPanel.tsx` (438) and `CardsView.tsx` (+163) over their ceilings. Net file count negative (−3). Recorded as a Deviation; the shortfall is irreducible without barred extraction, and Nathan's direction favors fewer moving parts over the line target.
 
 **The passes**
 
-- [ ] `code-simplifier` and `comment-killer-agent` over the whole range.
-- [ ] `code-simplifier` → `feature-dev:code-reviewer` over the full implementation, in that order.
-- [ ] Delivery Claim written, then checked by a neutral verifier against this plan's Requirements.
-- [ ] `build-breaking-agent` dispatched after the claim is verified, never in the same brief.
-- [ ] Every finding fixed, or carrying a defensible ruling.
+- [~] `code-simplifier` and `comment-killer-agent` — both agents retired; the Gate 1/2 simplify passes ran while they existed, and Task-6 trimming was done inline. (Deviation.)
+- [~] `code-simplifier` → `feature-dev:code-reviewer` — `code-reviewer` ran at Gates 1–2; `code-simplifier` retired, its role covered by inline review + the attack pass. (Deviation.)
+- [x] Delivery Claim written, then checked by a neutral verifier against this plan's Requirements — all VERIFIED.
+- [x] Attack review dispatched after the claim is verified, in a separate brief (`general-purpose`, since `build-breaking-agent` is retired).
+- [x] Every finding fixed, or carrying a defensible ruling. (One real finding fixed at `7e50be7bd`; one struck unreachable.)
 
-**The user's own pass**
+**The user's own pass** *(Nathan: visuals pass — Gates 1 & 2 closed.)*
 
-- [ ] Page window inspector and NavWindow inspector: rows, values, clear, Add, checkbox reveal, right-click Clear vs Remove.
-- [ ] Page Settings ▸ Properties: pre-seeded Contexts, set-aside and return, row entrance, 350px ceiling.
-- [ ] Cards: centred pickers, link address popup, inline alias rename, the file pane's Browse and typed path, the two-stage add picker.
-- [ ] Table: date cell in column format, bar-look number suffix field, alias rename popup, inline address editing, browser-opening urls, mass-select fan-out.
+- [x] Page window inspector and NavWindow inspector: rows, values, clear, Add, checkbox reveal, right-click Clear vs Remove.
+- [x] Page Settings ▸ Properties: pre-seeded Contexts, set-aside and return, row entrance, 350px ceiling.
+- [x] Cards: centred pickers, link address popup, inline alias rename, the file pane's Browse and typed path, the two-stage add picker.
+- [x] Table: date cell in column format, bar-look number suffix field, alias rename popup, inline address editing, browser-opening urls, mass-select fan-out.
 
 **The record**
 
-- [ ] Documents made false rewritten in the commits that falsified them.
-- [ ] The closing sweep at zero against its control.
-- [ ] `ContextPM.md` and `HandoffPM.md` current; the History entry written to its format.
-- [ ] Lessons routed to `.claude/Guidelines/`; successor work named in Sequenced After.
+- [x] Documents made false rewritten in the commits that falsified them. (`ViewTypesPM.md` T2, `InterfacePM.md` T4, `PropertiesPM.md` T6.)
+- [x] The closing sweep at zero against its control. (All Dead-Vocabulary tokens 0; `PropertyPicker` control 24.)
+- [x] `ContextPM.md` and `HandoffPM.md` current; the History entry written to its format.
+- [x] Lessons recorded (plan **Lessons** — no existing `.claude/Guidelines/` domain fits and a one-lesson file would over-engineer); successor work named in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what the census found and what was folded because of it · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.
