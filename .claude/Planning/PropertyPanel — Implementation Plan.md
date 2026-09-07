@@ -654,8 +654,8 @@ export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
 
 **Verify — automated**
 
-- [ ] `npm run typecheck` green — errors on both a missing `target` and an excess `def`, so a stale caller cannot compile.
-- [ ] `npm run test`, `npm run lint` green; count unmoved.
+- [x] `npm run typecheck` green — `target` required (was optional); the two `cellGestures` direct-mount tests migrated to `target`, the pane-test Host coerces `?? null`.
+- [x] `npm run test` (4082), `npm run lint` green.
 
 **Verify — user**
 
@@ -742,7 +742,7 @@ without deleting more than it grows is out of scope — report it under Sequence
   - [x] Task 3 — Table's one mount; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
   - [x] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
-  - [ ] Task 5 — old PropertyPicker props removed · `<commit>`
+  - [x] Task 5 — old PropertyPicker props removed · `<commit>`
 - [ ] **Phase 3** — The re-fold census
   - [ ] Task 6 — census dispatched, findings folded · `<commit>`
   - [ ] Gate
