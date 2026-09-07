@@ -52,7 +52,7 @@ export async function runRepairSweep(root: string): Promise<void> {
       }
       return { ...fm, ...surviving }
     }
-    await sweepGovernedRoots(root, { kind: 'files', files: [...worlds.keys()] }, { raw })
+    await sweepGovernedRoots(root, [...worlds.keys()], { raw })
     await applyAdoptions(root, adoptions)
   } catch (e) {
     console.error('repair sweep: failed; values repair on their next edit:', errText(e))

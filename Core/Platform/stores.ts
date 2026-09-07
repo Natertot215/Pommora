@@ -1,8 +1,14 @@
 import type { KeyValueStore } from './machine'
 
+export interface Membership {
+  key: string
+  title: string
+}
+
 export interface PageIndexEntry {
   mentions: string[]
   values: Record<string, unknown>
+  memberships: Membership[]
 }
 
 export interface IndexedStat {
@@ -18,6 +24,7 @@ export interface ContentIndexStore {
   renamePathPrefixIndex(oldDir: string, newDir: string): void
   queryMentions(normalizedTitle: string): string[]
   queryKeyHolders(key: string): string[]
+  queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(): Map<string, IndexedStat>
 }

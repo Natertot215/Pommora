@@ -81,7 +81,7 @@ export async function renameSweep(root: string, oldName: string, newName: string
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER)
-  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
+  const swept = await sweepGovernedRoots(root, files, { text })
   return swept.skipped.length
 }
 

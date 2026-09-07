@@ -1,6 +1,7 @@
 import type { KeyValueStore } from '@pommora/core/Platform/machine'
 import type { ContentIndexStore, IndexedStat, SnapshotStore } from '@pommora/core/Platform/stores'
 import type { Db } from './driver'
+import { INDEX_TABLES } from './ddl'
 import {
   addSnapshot,
   clearSnapshots,
@@ -37,13 +38,14 @@ export const keyValueStore = (db: Db): KeyValueStore => ({
   },
 })
 
-const INDEX_TABLES = ['mentions', 'page_values', 'indexed_files'] as const
+const clearPath = (db: Db, path: string): void => {
+  for (const table of INDEX_TABLES) db.prepare(`DELETE FROM ${table} WHERE path = ?`).run(path)
+}
 
 // The prefix pair `path >= dir||'/' AND path < dir||'0'` selects `dir`'s descendants by range — exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder name over-match.
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
   upsertPageIndex(path, entry, stat) {
-    db.prepare('DELETE FROM mentions WHERE path = ?').run(path)
-    db.prepare('DELETE FROM page_values WHERE path = ?').run(path)
+    clearPath(db, path)
     const insMention = db.prepare('INSERT OR REPLACE INTO mentions (path, title) VALUES (?, ?)')
     for (const title of entry.mentions) insMention.run(path, title)
     const insValue = db.prepare(
@@ -52,7 +54,11 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     for (const [key, value] of Object.entries(entry.values)) {
       insValue.run(path, key, JSON.stringify(value) ?? 'null')
     }
-    // The gate row lands LAST, so a write that dies part-way leaves a stale stat and the next seed re-reads the file.
+    const insMember = db.prepare(
+      'INSERT OR REPLACE INTO memberships (path, key, title) VALUES (?, ?, ?)',
+    )
+    for (const { key, title } of entry.memberships) insMember.run(path, key, title)
+    // The gate row lands LAST, so a write that dies part-way leaves no stat and the next seed re-reads the file.
     db.prepare('INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)').run(
       path,
       stat.mtimeMs,
@@ -60,7 +66,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     )
   },
   removePathIndex(path) {
-    for (const table of INDEX_TABLES) db.prepare(`DELETE FROM ${table} WHERE path = ?`).run(path)
+    clearPath(db, path)
   },
   renamePathIndex(oldPath, newPath) {
     for (const table of INDEX_TABLES) {
@@ -86,6 +92,14 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   queryKeyHolders(key) {
     return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)
   },
+  queryMembers(key, title) {
+    return paths(
+      db,
+      'SELECT path FROM memberships WHERE key = ? AND title = ? ORDER BY path',
+      key,
+      title,
+    )
+  },
   readIndexedStat(path) {
     const row = db.prepare('SELECT mtime_ms, size FROM indexed_files WHERE path = ?').get(path) as
       | { mtime_ms: number; size: number }
@@ -104,8 +118,8 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   },
 })
 
-const paths = (db: Db, sql: string, param: string): string[] =>
-  (db.prepare(sql).all(param) as { path: string }[]).map((r) => r.path)
+const paths = (db: Db, sql: string, ...params: string[]): string[] =>
+  (db.prepare(sql).all(...params) as { path: string }[]).map((r) => r.path)
 
 export const snapshotStore = (db: Db): SnapshotStore => ({
   addSnapshot: (pageId, ts, source, text) => addSnapshot(db, pageId, ts, source, text),
