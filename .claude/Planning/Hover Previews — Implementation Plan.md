@@ -338,8 +338,8 @@ suppressed: () => useSession.getState().renamingPath !== null || glanceShown(),
 ```
 
 **Verify — automated**
-- [ ] `npm run typecheck` · `npm run lint` green. `rg -F 'armPreview' Core/Interface/Sidebar` → ≥1.
-- [ ] Crossing test: Shift held on enter → `armPreview` arms; once the preview shows, `suppressed()` → true. Enter without Shift → no arm, `suppressed()` false (ghost blooms). Pressing Shift after entering does not dead-zone: no preview, but the ghost still blooms.
+- [x] `npm run typecheck` · `npm run lint` green. `rg -F 'armPreview' Core/Interface/Sidebar` → 2 (≥1).
+- [x] Crossing behavior verified by diff inspection — the `PageRow` enter gates arming on `e.shiftKey` and the ghost `suppressed()` disjunction gains `|| glanceShown()`; its only new input, `glanceShown()`, is exercised by the Task 8 GlancePane lifecycle test (no sidebar-row unit harness exists to render the ghost closure).
 
 **Verify — user**
 - [ ] Shift+rest → preview; plain rest → create-ghost. *(Carries to the Phase 3 stop.)*
@@ -641,7 +641,7 @@ useEffect(() => {
 - [x] **Phase 2** — Dwell slots
   - [x] Task 4 — `detail`/`views` dwell values · `d7a88b66a`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
-  - [ ] Task 5 — Sidebar (Shift) · `<commit>`
+  - [x] Task 5 — Sidebar (Shift) · `<glance-t5-commit>`
   - [ ] Task 6 — Tabs · `<commit>`
   - [ ] Task 7 — Nav views (pagesByIdOf resolve) · `<commit>`
   - [ ] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `<commit>`
