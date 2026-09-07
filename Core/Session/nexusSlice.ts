@@ -48,6 +48,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetChrome()
     s.resetLayout()
     s.resetCaches()
+    s.resetGlance()
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
@@ -146,6 +147,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
       get().reconcileWindow(index)
+      get().reconcileGlance(index)
       // From the module cache: an awaited round-trip here would gate the whole reconcile.
       if (systemAccentCache === undefined)
         systemAccentCache = await host().ask('theme:systemAccent')
