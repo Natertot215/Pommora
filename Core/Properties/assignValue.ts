@@ -2,8 +2,14 @@ import type { RefObject } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { applyValueAtRoot, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import {
+  applyValueAtRoot,
+  isBlankValue,
+  type PropertyValue,
+} from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import { resolveFieldValue } from './value'
+import { pushValueUndo } from './valueUndo'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
@@ -61,5 +67,13 @@ export function assignValue(
 ): void {
   const w = writer.current
   if (!w) return
-  write(w, row, column, value)
+  const resolved = resolveFieldValue(row, column.id, w.schema)
+  const prior = isBlankValue(resolved) ? null : resolved
+  if (!write(w, row, column, value)) return
+  // The revert writes directly, so undoing never pushes an entry of its own; re-resolving through `rowOf` keeps it O(1) and drops it once the surface is gone.
+  pushValueUndo(() => {
+    const live = writer.current
+    const target = live?.rowOf(row.id)
+    return !!live && !!target && write(live, target, column, prior)
+  })
 }
