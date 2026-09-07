@@ -106,7 +106,7 @@ import { cardMenuModel } from '@pommora/core/Actions/cardMenu'
 import './cards-view.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-export type ValuePickerRequest = {
+type ValuePickerRequest = {
   rowId: string
   column: ResolvedColumn
   kind: 'picker' | 'datetime' | 'link' | 'number' | 'file'
@@ -115,17 +115,11 @@ export type ValuePickerRequest = {
   revealOnCommit?: boolean
 }
 
-export type AddPickerRequest = {
+type AddPickerRequest = {
   rowId: string
   anchor: HTMLElement
   initialEntry: AddEntry | null
 }
-
-// datetime | number | file open their own popup unchanged; every other dependent kind edits as a link (B26).
-const dependentKind = (entry: AddEntry): ValuePickerRequest['kind'] =>
-  entry.type === 'datetime' || entry.type === 'number' || entry.type === 'file'
-    ? entry.type
-    : 'link'
 
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
@@ -314,7 +308,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const pickerAnchorRef = useRef<HTMLElement | null>(null)
   pickerAnchorRef.current = (valuePicker ?? addPicker)?.anchor ?? null
 
-  // A row that vanished, or a value Compact just dropped, dismisses the picker through the same animated exit as a click-out (B14).
   useEffect(() => {
     if (!valuePicker || !ctx) return
     const row = rowById.get(valuePicker.rowId)
@@ -349,7 +342,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
   }
 
-  // One resolve feeds every value popup; the link and number kinds read its def/current for their own TextPicker (B10, and Table's bar-look number sibling), PropertyPicker takes the target itself.
   const valuePopup =
     valuePicker && valuePicker.kind !== 'link' && valuePicker.kind !== 'number' ? valuePicker : null
   const vTarget = valuePicker
@@ -364,15 +356,16 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       )
     : null
   const vRaw = vTarget?.current?.kind === 'url' ? vTarget.current.value : undefined
-  const commitValuePicker = (nv: PropertyValue | null): void => {
-    const row = valuePicker && rowById.get(valuePicker.rowId)
-    if (!valuePicker || !row) return
-    if (valuePicker.revealOnCommit) revealProperty(valuePicker.column.id)
-    commitValue(row, valuePicker.column, nv)
+  const commitPicked = (v: PropertyValue | null, entry?: PickEntry): void => {
+    const req = valuePicker ?? addPicker
+    const row = req && rowById.get(req.rowId)
+    if (!row) return
+    const column = valuePicker ? valuePicker.column : addColumn(entry?.id ?? '', tree)
+    if (entry || valuePicker?.revealOnCommit) revealProperty(column.id)
+    commitValue(row, column, v)
   }
 
   const addRow = addPicker && ctx ? rowById.get(addPicker.rowId) : undefined
-  // Kept as AddEntry[] rather than mapped away, so onReveal can read a dependent entry's type for dependentKind.
   const addEntries =
     addRow && ctx
       ? orderAddableEntries(addEntriesFor(addRow, liveView, ctx, columns, tree, capitalize))
@@ -704,10 +697,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               value={vRaw ? linkEditText(vRaw) : ''}
               accent={solidColorCss(vTarget?.def.link_color)}
               onCommit={(raw) => {
-                // undefined = invalid (no write), null = cleared — and a clear only applies to an EXISTING value.
                 const nv = urlValueFromEdit(raw, vRaw, resolveTitle)
                 if (nv !== undefined && (nv !== null || (!valuePicker?.revealOnCommit && vRaw)))
-                  commitValuePicker(nv)
+                  commitPicked(nv)
                 setValuePicker(null)
               }}
             />
@@ -719,7 +711,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               leading={vTarget ? numberFormatGlyph(vTarget.def) : undefined}
               onCommit={(raw) => {
                 const nv = parseEditorValue('number', raw)
-                if (nv != null) commitValuePicker(nv)
+                if (nv != null) commitPicked(nv)
                 setValuePicker(null)
               }}
             />
@@ -735,7 +727,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                           ? propertyIcon(e.def)
                           : (propertyTypeIconName(e.type) ?? 'square-dashed'),
                         revealOnly: e.revealOnly,
-                        // Only the in-pane kinds get a target; the other four hand back through onReveal (B26).
                         target:
                           e.revealOnly ||
                           (e.type !== 'select' &&
@@ -752,24 +743,19 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               open={valuePopup !== null || addPicker !== null}
               triggerRef={pickerAnchorRef}
               anchorX={valuePicker?.kind === 'picker' ? valuePicker.clickX : undefined}
-              onCommit={(v, entry) => {
-                const req = valuePicker ?? addPicker
-                const row = req && rowById.get(req.rowId)
-                if (!row) return
-                const column = valuePicker ? valuePicker.column : addColumn(entry?.id ?? '', tree)
-                if (entry || valuePicker?.revealOnCommit) revealProperty(column.id)
-                commitValue(row, column, v)
-              }}
+              onCommit={commitPicked}
               onReveal={(entry) => {
                 if (!addPicker) return
                 if (entry.revealOnly) return revealProperty(entry.id)
-                // B26 — a dependent kind leaves the chooser for its own anchored popup.
                 const src = addEntries.find((e) => e.id === entry.id)
                 setAddPicker(null)
                 setValuePicker({
                   rowId: addPicker.rowId,
                   column: addColumn(entry.id, tree),
-                  kind: src ? dependentKind(src) : 'link',
+                  kind:
+                    src && (src.type === 'datetime' || src.type === 'number' || src.type === 'file')
+                      ? src.type
+                      : 'link',
                   anchor: addPicker.anchor,
                   revealOnCommit: true,
                 })

@@ -587,18 +587,21 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           contextOptions: picked.contextOptions ?? undefined,
         }
   }
-  const cellPicker = (): React.ReactNode => (
-    <PropertyPicker
-      target={cellTarget()}
-      open={editing?.mode === 'picker'}
-      triggerRef={triggerElRef}
-      onCommit={(v) => {
-        const c = pickerCell()
-        if (c) commitValue(c.row, c.col, v)
-      }}
-      onDismiss={() => setEditing(null)}
-    />
-  )
+  const cellPicker = (): React.ReactNode => {
+    const c = pickerCell()
+    return (
+      <PropertyPicker
+        key={c ? `${c.row.id}:${c.col.id}` : 'none'}
+        target={cellTarget()}
+        open={editing?.mode === 'picker'}
+        triggerRef={triggerElRef}
+        onCommit={(v) => {
+          if (c) commitValue(c.row, c.col, v)
+        }}
+        onDismiss={() => setEditing(null)}
+      />
+    )
+  }
   const massPicker = (): React.ReactNode => {
     if (!mass) return null
     const col = columns.find((c) => c.id === mass.colId)
