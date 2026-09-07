@@ -15,7 +15,7 @@ import { windowTargetOf, useSession } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
-import { PagePropertyRows } from '../../Properties/Page/PagePropertyRows'
+import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
@@ -171,7 +171,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         className: 'navwindow-inspector',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && pageTarget && <PagePropertyRows variant="panel" page={pageTarget} />}
+            {inspectorOpen && pageTarget && <PropertyPanel page={pageTarget} panelStyle="filled" />}
           </div>
         ),
       }}
