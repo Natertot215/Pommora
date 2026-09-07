@@ -1,6 +1,6 @@
 ## State Placement — Implementation Plan
 
-> **Status:** written, pending review · Spec: the D-1 ruling, 09-07-2026, restated under **The Rule** below · Execute tasks in order.
+> **Status:** reviewed, pending approval · Spec: the D-1 ruling, 09-07-2026, restated under **The Rule** below · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -27,27 +27,33 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 
 **Requirements**
 
-1. `active_view` is a container-sidecar field, reaching the container node through one hoisted mapper, and written through `mutate` with an optimistic tree patch.
-2. `manual_order` is a field of the view record, resolved and folded through the one `structuralOrder` predicate, and written by every drop site through `persistView`.
-3. Pane widths, sidebar disclosure, and window size all live in the `devicePrefs` singleton, seeded before the tree paints and written through `setDevicePref`.
-4. UIX holds no window-size module map and takes no `id`; it receives a size and reports a change.
-5. A first open after the sidecar moves imports what `local_state` held for `activeView` and `viewOrder`, so nothing a person authored is lost.
-6. Once that import is confirmed against the real Nexus, it and the two scopes it reads are deleted; `localStorage` holds no Pommora key.
+1. `active_view` is a container-sidecar field, reaching the container node through one hoisted mapper, and written through `mutate` with an optimistic tree patch. A sentinel id is never written.
+2. `manual_order` is a field of the view record, resolved and folded through the one `structuralOrder` predicate, written by every drop site through `persistView`, and dropped from a reminted copy whose page ids changed.
+3. Pane widths, sidebar disclosure, and window size all live in the `devicePrefs` singleton, seeded into the store before the tree paints and written through `setDevicePref`.
+4. UIX holds no window-size module map and takes no `id`; it receives a size and reports a change, keeping the centering and the on-screen clamp it performs today.
+5. Each retiring scope is imported in the same phase as the reader that consumes it, so no gesture ever writes to a home nothing reads.
+6. Once both imports are confirmed against the real Nexus, they and the two scopes they read are deleted; `localStorage` holds no Pommora key.
 
 **Acceptance — the whole thing working:** On the real Nexus, choose a non-first view in a collection and drag a row under a sort; quit; reopen — both hold. Inspect that collection's sidecar and read `active_view` and the view's `manual_order` as plain JSON. Resize the sidebar and a Page window, collapse a sidebar group, quit, reopen — all three hold. `localStorage` is empty of `pommora.*`, and `local_state` holds no `activeView` or `viewOrder` row.
 
 **Forced By** *(what each grounded fact makes mandatory or impossible)*
 
-- `readNexus.ts:196-206,235-249` and `watchPatch.ts:317-333` build near-identical container nodes from the same eight `meta` keys, and `makeSetNode` / `makeCollectionNode` (`treePatch.ts:52-107`) name each field twice more → a new container field is ten sites today. Hoisting the three `meta` mappers first makes it two. → Task 1.
+- `serializeOnFile` rejects a re-taken key rather than queuing (`Desktop/Platform/fileLock.ts:11-19`), and `rmwJsonStrict` takes `machine().lock(absPath)` itself (`Core/Files/atomicWrite.ts:82`) on the same key `withSidecarLock` uses (`Core/Files/sidecar.ts:12`) → a sidecar write uses `rmwJsonStrict` alone, or `withSidecarLock` with `readJsonStrict`/`writeJson` inside — never both. → Tasks 1, 2, 4.
+- `liveView`'s `useMemo` is at `useViewHost.ts:109`; `sortKeys`, `groupPropId`, and `structuralOrder` are derived from it at `:120-136` → folding `manual_order` into `liveView` under `structuralOrder` requires that predicate to be hoisted above the memo, which is sound because `bandPatch` (`Bands/useBandOrdering.ts:9-35`) touches only `group.order` and `group_order`, moving neither `resolvedSortCount` nor `group.kind`. → Task 3.
+- `resolveOrder(sets, asStringArray(meta.set_order))` needs the freshly-read children, and `readNexus` and `watchPatch` pass different ones (`readNexus.ts:201,241` vs `watchPatch.ts:318-319`) → a hoisted mapper takes the children as arguments; a `meta`-only signature cannot cover the two order keys. → Task 1.
+- `nodesOf` returns `{ kind, id, title, icon, ownIcon, path, parents }` and carries no views (`Core/Nexus/treeIndex.ts:100-145`), while `viewOrder` rows are keyed by view id → `nodesOf` answers the container-id lookup only; the view-id map comes from the live tree's own container nodes. → Task 4.
 - `container:configure` is a plain `host().ask` with no optimistic tree patch; `setDisclosureLock` is a `mutate` op with one at `nexusSlice.ts:217` → `active_view` rides the mutate rail, so a view switch stays instant. → Task 1.
-- `pickView` (`Core/Views/Pipeline/pickView.ts:25`) already resolves `active ?? views[0]`, and a sentinel adoption is precisely the case where the adopted view *is* `views[0]` → the adoption writes nothing; the fallback answers. → Task 1.
-- `nexus:state` (`Core/Nexus/handlers.ts:102-111`) is a pure read, and the hard rule is that the read path is read-only by construction → the import belongs in `openNexusSequence`, beside `if (await replaySchemaCascade(root)) await refreshAfterWrite(root)` (`handlers.ts:70`). → Task 2.
-- `useResizeFrame`'s `onChange` is `(next, phase)` and fires per pointer move → any persist gates on `phase === 'drop'`, the gate `App.tsx:59,66` already uses. → Task 7.
+- `pickView` (`Core/Views/Pipeline/pickView.ts:25`) resolves `active ?? views[0]`, and after a sentinel adoption the adopted view *is* `views[0]` — while before the confirming push `source.views` is still `[]`, so the old slice write helped nobody either → the adoption writes nothing. → Task 1.
+- `ViewFrame`'s `rows` falls back to `[mintDefaultView(schema)]` when a container has no views (`Settings/ViewFrame.tsx:77`), and `switchTo` writes whatever row is clicked → the sentinel `view_default` would land in a user-legible sidecar; the write is refused at that call site. → Task 1.
+- `nexus:state` (`Core/Nexus/handlers.ts:102-111`) is a pure read, and the hard rule is that the read path is read-only by construction → the imports belong in `openNexusSequence`, beside `if (await replaySchemaCascade(root)) await refreshAfterWrite(root)` (`handlers.ts:70`), which swallows every error internally and returns a boolean (`Properties/replaySchemaCascade.ts:17-27`) — a throw there reaches `Desktop/main.ts:303-308` as "Restore skipped" or aborts `ctx.adopted` so the watcher never arms. → Tasks 2, 4.
+- The watcher is armed *after* `openNexusSequence` on both paths (`Desktop/main.ts:319`, `handlers.ts:251`), and `runOpenLedger` calls `seedLiveTree` before returning → an import inside the sequence races nothing and always has a live tree. → Tasks 2, 4.
+- `useResizeFrame`'s `onChange` is `(next, phase)` and fires per pointer move, and `onDrop` fires whenever any rect key moved — which a `move` grip always does (`ResizeFrame.tsx:119-133`) → a drop is not proof the size changed; the write compares against what is stored. → Task 7.
+- `opening` (`window-base.tsx:29-37`) performs the map lookup, the centering, *and* the `onScreen` viewport clamp → only the lookup goes; a stored size from a larger display must still land on screen. → Task 7.
 - `packDevicePrefs` (`devicePrefs.ts:10`) drops a top-level `false` but never a truthy object, and `devicePrefs:load`/`save` already carry an arbitrary object → panes, disclosure, and window sizes are nested keys on the existing rail, not a new scope or channel. → Tasks 5, 6, 7.
-- `devicePrefs:load` returns `NO_NEXUS` without a session root, and `local_state` is a table in the Nexus's own `nexus.db` → every device-local item here is per machine *per Nexus*. Ratified. → Tasks 5, 6, 7.
+- `devicePrefs:load` returns `NO_NEXUS` without a session root, and `local_state` is a table in the Nexus's own `nexus.db` → every device-local item here is per machine *per Nexus*, so `resetLayout` must return the pane widths to their defaults on a Nexus switch, which it does not do today (`layoutSlice.ts:47-51,103`). → Tasks 5, 6.
 - `resetNexusSession` clears `devicePrefsLoaded` (`nexusSlice.ts:44`) and runs at `applyTree:144`, ahead of the flag check → the foreign-tree re-fetch already works; only the block's position relative to `set({ status: 'ready' })` needs to change. → Task 5.
-- `ddl.ts:1` — a `nexus.db` version mismatch drops the file rather than migrating → the import needs no version flag; an empty scope is what "already imported" means. → Task 2.
-- `remintSidecar` (`remint.ts:102-115`) already rewrites `views[].id` inside the sidecar lock → `manual_order` rides the view spread for free, and `active_view` is re-pointed in the same write. → Tasks 2, 4.
+- `ddl.ts:1` — a `nexus.db` version mismatch drops the file rather than migrating → the imports need no version flag; an empty scope is what "already imported" means. → Tasks 2, 4.
+- `remintSidecar` (`remint.ts:102-115`) rewrites `views[].id` inside the sidecar lock while the pages inside the copy are separately reminted to new ids → `active_view` is re-pointed there, and `manual_order` is *dropped* there: its page ids are known to be changing in the same pass. → Tasks 2, 4.
 
 **Inherited Reasoning**
 
@@ -56,19 +62,22 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 - One remembered size per window kind, not per entity: the `id` values are already per-kind constants, so the change is where the value lives rather than what it covers. The iteration window is a development scratchpad and keeps no size.
 - A cold start now paints the sidebar at its default width during `status === 'loading'` and settles when the tree lands. Ratified over holding the first paint blank.
 - Pane widths and the disclosure map are not imported across. `disclosureState.ts:1` calls them "regeneratable, not portable content," and the whole loss is one drag of each pane and one pass of re-collapsing — an import module and its test to rescue two numbers and a boolean map is more code than the thing it saves.
+- One accepted loss, small and named: `useViewOrders`' local echo is keyed on `containerPath` and survives a tree push; its replacement, `manualOverride`, is cleared on every `source` identity change (`useViewHost.ts:99-101`). So a rename or move inside the same container, landing between a drag and the view save's confirming push, shows the stale order for one push. The echo is not worth a second holder of the same array.
+- The two imports are not bundled into one pass. Bundling saves one sidecar write per container, but the watcher is not armed during the open (`Desktop/main.ts:319`), so the saved event was never real — and it would land `manual_order` a whole phase before anything reads it.
 
 **Grounding** *(re-open these; don't cite them)*
 
 - `Core/Platform/localState.ts` — the `Scope` union, and `writeKey(scope, key, null)` as the delete.
-- `Core/Nexus/schemas.ts:36-55` · `Core/Nexus/readNexus.ts:196-250` · `Core/Nexus/watchPatch.ts:315-335` · `Core/Nexus/treePatch.ts:52-107` · `Core/Nexus/tree.ts:45-62` — the ten places a container sidecar field is named today.
-- `Core/Pages/setDisclosureLock.ts` · `Core/Nexus/mutatePatch.ts:128` · `Core/Session/nexusSlice.ts:217` · `Core/Nexus/treePatch.ts:477-485` — the mutate rail Task 1 rides.
-- `Core/Views/Pipeline/pickView.ts:17-26` · `Core/Views/Host/useActiveView.ts` · `Core/Views/Host/viewMint.ts` · `Core/Session/store.ts:46-47` — the active-view readers and the sentinel adoption.
-- `Core/Views/views.ts:80-114,139-144` · `Core/Views/Host/useViewHost.ts:75,103-144,226-239` · `Core/Views/Pipeline/sort.ts:180-188` — the view record, the fold, the resolver.
-- `Core/Views/Host/useViewOrders.ts` · `Core/Views/Host/useViewCreation.ts:37-38,47,114-126` · `Core/Views/Table/TableView.tsx:1038-1069` · `Core/Views/Cards/CardsView.tsx:490-532` — the write sites.
+- `Desktop/Platform/fileLock.ts` · `Core/Files/atomicWrite.ts:74-95` · `Core/Files/sidecar.ts:7-13` — what may and may not nest.
+- `Core/Nexus/schemas.ts:36-55` · `Core/Nexus/readNexus.ts:186-250` · `Core/Nexus/watchPatch.ts:310-340` · `Core/Nexus/treePatch.ts:52-110,477-485` · `Core/Nexus/tree.ts:45-62` — every place a container sidecar field is named today.
+- `Core/Pages/setDisclosureLock.ts` · `Core/Nexus/mutatePatch.ts:128` · `Core/Session/nexusSlice.ts:217` — the mutate rail Task 1 rides.
+- `Core/Views/Pipeline/pickView.ts:17-26` · `Core/Views/Host/useActiveView.ts` · `Core/Views/Host/viewMint.ts` · `Core/Views/Settings/ViewFrame.tsx:60-85` · `Core/Session/store.ts:46-47` — the active-view readers, the sentinel adoption, and the one `setActiveView` call site.
+- `Core/Views/views.ts:80-114,139-144,200-239` · `Core/Views/Host/useViewHost.ts:99-144,226-239` · `Core/Views/Bands/useBandOrdering.ts:9-35` · `Core/Views/Pipeline/sort.ts:180-188` — the view record, the fold, the resolver.
+- `Core/Views/Host/useViewOrders.ts` · `Core/Views/Host/useViewCreation.ts:37-38,47,114-126` · `Core/Views/Table/TableView.tsx:1038-1069` · `Core/Views/Cards/CardsView.tsx:490-532` — the write sites and their existing conditions.
 - `Core/Session/layoutSlice.ts` · `Core/Interface/Sidebar/disclosureState.ts` · `Core/Interface/Sidebar/Sidebar.tsx:234-240` · `Core/Interface/App.tsx:36-67` — the browser-storage holdouts.
 - `Core/Session/configSlice.ts:54-58` · `Core/Settings/devicePrefs.ts` · `Core/Session/nexusSlice.ts:38-52,141-171` — the device-preference rail.
-- `UIX/Windows/window-base.tsx:24-37,98-111` · `UIX/Interactions/ResizeFrame.tsx:24-34,119-133` — the module map and the phase-carrying callback.
-- `Core/Nexus/handlers.ts:43-111` · `Core/Nexus/treeIndex.ts:145` · `Core/Nexus/remint.ts:50-164` — the open sequence, the id→node lookup, and remint.
+- `UIX/Windows/window-base.tsx:24-37,98-111` · `UIX/Interactions/ResizeFrame.tsx:24-34,119-133` — the module map, the centering, and the phase-carrying callback.
+- `Core/Nexus/handlers.ts:43-111` · `Desktop/main.ts:249-264,303-320` · `Core/Properties/replaySchemaCascade.ts:17-27` · `Core/Nexus/treeIndex.ts:100-145` · `Core/Nexus/remint.ts:50-164` — the open sequence, its two callers, the failure contract, the lookup, and remint.
 - `.claude/Guidelines/` — read before planning in this domain.
 
 **Environment**
@@ -86,8 +95,10 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 **Global Constraints (every task inherits these):**
 
 - Gates from the repo root, exit codes read directly, never through a pipe: `npm run typecheck` · `npm run test` · `npm run lint`.
+- **Every count in this plan is a line count from `rg -n`, re-derived at execution.** `-F` is a fixed-string flag: a pattern containing `|` under `-F` matches the literal pipe and silently returns nothing. Never pair them.
 - Formatting is Biome's — single-quote, no semicolons, a PostToolUse hook formats every TS/CSS/JSON write. Never hand-align; an Edit failing on whitespace means Biome reformatted, so re-read and retry.
 - Comments are `//` line comments and reserved for a why the code can't carry. A comment that goes false is rewritten in the commit that falsifies it, never amended.
+- Never nest two takes of one file lock. `rmwJsonStrict` and `withSidecarLock` both take `machine().lock` on the sidecar path; use one.
 - Search before writing. A second resolver, cache, or validator means the plan is wrong — log it before proceeding.
 - Out of scope everywhere: `Showcase/`; the six page-level `nexus.db` scopes the ruling holds; `UIX/Windows/window-panel.tsx`'s width map; `Mobile/` and `Sync/`.
 
@@ -101,18 +112,19 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 | `Core/Views/Pipeline/pickView.ts:17` | "The per-machine active view if still present…" | The active view is sidecar-borne. | 1 |
 | `Core/Views/Pipeline/sort.ts:180` | "the persisted per-machine order applies only when the view is sorted or grouped" | The order is no longer per-machine. | 3 |
 | `Core/Views/Host/viewMint.ts:11` | "a sentinel adoption must land in the activeViews slice, and this module stays store-free" | The slice and the adoption's write are both deleted. | 1 |
-| `UIX/Windows/window-base.tsx:28` | "A window's size outlives its exit-presence unmount, per window id; it reopens centered." | The map is deleted; the size comes in as a prop. | 7 |
+| `Core/Views/Host/useViewOrders.ts:1` | "`viewOrders` is the per-machine tiebreaker…" | The file is deleted. | 3 |
+| `UIX/Windows/window-base.tsx:28` | "A window's size outlives its exit-presence unmount, per window id; it reopens centered." | The map is deleted; the size comes in as a prop, and the centering stays. | 7 |
 | `.claude/Features/*` | Every sentence describing `activeView`, `viewOrder`, or a `localStorage` home for pane width or disclosure. | The homes change. Enumerated by Task 8's sweep across `.claude/Features/`. | 8 |
 
-**Dead Vocabulary** *(the closing sweep, run at Task 8)*
+**Dead Vocabulary** *(the closing sweep, run at Task 8 — all `rg -n` line counts)*
 
-- `rg -F "activeViews" Core` → expect 0. Legitimate hits: none.
-- `rg -F "viewOrders" Core` → expect 0. Legitimate hits: none.
-- `rg -F "localStorage" Core UIX` → expect 0. Legitimate hits: none — no other Core or UIX file touches it today; re-derive at Task 8 and treat any survivor as a finding.
-- `rg -F "pommora." Core` → expect 0.
-- Control: `rg -F "devicePrefs" Core` → 12 today. Zero here means the sweep never ran.
+- `rg -nF activeViews Core` → expect 0. Today: 28. Legitimate hits: none.
+- `rg -nF viewOrders Core` → expect 0. Today: 26. Legitimate hits: none.
+- `rg -nF localStorage Core UIX` → expect 0. Today: 8. Legitimate hits: none.
+- `rg -n "pommora\." Core` → expect 0.
+- Control: `rg -nF devicePrefs Core` → 25 today, and higher after Phase 3. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 2 opens it — from the moment the import lands until Task 8 deletes it, the `'activeView'` and `'viewOrder'` names must stay in the `Scope` union and their `local_state` rows must not be cleared by hand, or the import has nothing to read on a machine that hasn't run it yet. Task 8 closes it.
+**Hazard Window:** Task 2 opens it — from the moment the first import lands until Task 8 deletes both, the `'activeView'` and `'viewOrder'` names must stay in the `Scope` union and their `local_state` rows must not be cleared by hand, or an import has nothing to read on a machine that has not run it yet. Task 8 closes it.
 
 ---
 
@@ -122,36 +134,39 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 
 **Requirement:** 1
 
-**Why:** A chosen view is a decision about how a container presents itself, so it belongs in that container's sidecar. Adding the tenth copy of a field that is already spelled out ten times would make the next container field cost ten edits too; hoisting first makes this one cost two, and the two mappers can no longer disagree. With the field on the node, the `activeViews` store slice is a second definition of the same fact and goes.
+**Why:** A chosen view is a decision about how a container presents itself, so it belongs in that container's sidecar. Adding another copy of a field that is already spelled out across two mappers and two factories would make the next container field cost the same again; hoisting the mappers first means this one is added once, and the two paths can no longer disagree. With the field on the node, the `activeViews` store slice is a second definition of the same fact and goes.
 
-**Now** — `rg -F "disclosure_locked|disclosureLocked" Core --glob '!*test*'` → 10, three `meta` mappers building the same object and two factories naming each field twice:
+**Now** — `rg -n 'disclosure_locked|disclosureLocked' Core --glob '!*test*'` → 23. Two mappers building near-identical objects, two factories naming each field twice, and a patch union:
 
 ```ts
-// Core/Nexus/readNexus.ts:196-206 (set) and :235-249 (collection), Core/Nexus/watchPatch.ts:317-333
-// — the same eight meta keys read three times: icon, banner, heading_icon_hidden, set_order,
-// page_order, views, view_button, disclosure_locked.
+// Core/Nexus/readNexus.ts:186-206 (set) · :220-249 (collection) · Core/Nexus/watchPatch.ts:310-340
+// — the same eight meta keys read three times. Two of them need the freshly-read children,
+// and the two paths pass DIFFERENT children, so a meta-only mapper cannot cover them:
+sets: resolveOrder(sets, asStringArray(meta.set_order)),      // watchPatch passes node.sets ?? []
+pages: resolveOrder(pages, asStringArray(meta.page_order)),   // watchPatch passes node.pages
 viewButton: coerceViewButton(meta.view_button),
 disclosureLocked: meta.disclosure_locked === true,
 // Core/Nexus/treePatch.ts:52-77 makeSetNode · :81-107 makeCollectionNode — arg type and body
-disclosureLocked?: boolean
-disclosureLocked: f.disclosureLocked ?? false,
+// Core/Nexus/treePatch.ts:477-485 patchNodeInTree — the patch union and its body
 
-// The active view, per-machine today: rg -F "activeViews" Core --glob '!*test*' → 11
+// The active view, per-machine today: rg -nF activeViews Core --glob '!*test*' → 18
 // Core/Contract/bridge.ts:63-64 · Core/Interface/handlers.ts:94-95 — the channel pair
-// Core/Session/cacheSlice.ts:54-58 — the slice and its only writer
+// Core/Session/cacheSlice.ts:54-58 — the slice and its writer · :91 resetCaches · store.ts:47
 // Core/Session/nexusSlice.ts:110-112 — seeded in the startup Promise.all
-// Readers: Views/Host/useActiveView.ts:14 · Settings/ViewFrame.tsx:67 ·
-//   Settings/SettingsFrame.tsx:91 · Session/store.ts:47 · Views/Host/viewMint.ts:48
+// Readers: Views/Host/useActiveView.ts:14 · Views/Settings/ViewFrame.tsx:67 ·
+//   Views/Settings/SettingsFrame.tsx:91 · Views/Host/viewMint.ts:48
 ```
 
-**Becomes** — one mapper, one new field, one mutate op, no slice:
+**Becomes** — one mapper taking its children, one new field, one mutate op, no slice:
 
 ```ts
 // Core/Nexus/containerFields.ts (new) — the one reader of a container sidecar's meta.
 // treePatch.ts:273-291 constructs from a CREATE REQUEST, not from meta, and is left alone.
-export function containerFieldsFrom(meta: Record<string, unknown>): ContainerFields
-// Spread into makeSetNode / makeCollectionNode at all three call sites; the factories keep
-// their explicit arg types, so activeView is named twice there and once here — 3, not 10.
+export function containerFieldsFrom(
+  meta: Record<string, unknown>, sets: SetNode[], pages: PageNode[],
+): ContainerFields
+// Spread into makeSetNode / makeCollectionNode at all three call sites. The factories and the
+// patch union still name activeView in their own types — the mapper is where the READ lives.
 
 // Core/Nexus/schemas.ts — on BOTH pageCollectionSidecar and pageSetSidecar
 active_view: z.string().optional(),
@@ -161,16 +176,20 @@ activeView?: string
 
 // Core/Pages/mutateRequest.ts — beside setDisclosureLock
 | { op: 'setActiveView'; path: string; kind: MutableContainerKind; viewId: string }
-// Core/Pages/setActiveView.ts (new) — the shape of setDisclosureLock.ts:
-// rmwJsonStrict + setOrDrop(cur, 'active_view', req.viewId) under the sidecar lock
+// Core/Pages/setActiveView.ts (new) — setDisclosureLock.ts's shape EXACTLY: rmwJsonStrict takes
+// machine().lock itself, so there is NO withSidecarLock around it.
+rmwJsonStrict(sidecarPath(resolved.value, req.kind), (cur) => setOrDrop(cur, 'active_view', req.viewId))
 // Core/Nexus/mutatePatch.ts and Core/Session/nexusSlice.ts — beside case 'setDisclosureLock'
 case 'setActiveView':
   patched = patchNodeInTree(cur, req.path, { activeView: req.viewId })
-// Core/Nexus/treePatch.ts:477-485 — activeView joins the patch union, container kinds only
+
 // Core/Views/Host/useActiveView.ts — passes source.activeView to pickView; the slice goes.
-// Core/Views/Host/viewMint.ts — the sentinel adoption writes NOTHING: after the mint the
-// adopted view IS views[0], which pickView already returns. wireViewAdopted, onViewAdopted,
-// the wasSentinel branch, and Core/Session/store.ts:46-47 all go with it.
+// Core/Views/Settings/ViewFrame.tsx:82 — switchTo refuses DEFAULT_VIEW_ID: the sentinel is a
+// placeholder row for a container with no views, and it must not reach a legible sidecar.
+// Core/Views/Host/viewMint.ts — the sentinel adoption writes NOTHING: after the mint the adopted
+// view IS views[0], which pickView returns, and before the push source.views is [] so the old
+// write reached no reader either. wireViewAdopted, onViewAdopted, the wasSentinel branch, and
+// Core/Session/store.ts:46-47 all go with it.
 ```
 
 **Assumed by:** Task 2 (the import writes `active_view`; remint re-points it).
@@ -178,45 +197,48 @@ case 'setActiveView':
 **Verify — Automated**
 
 - [ ] Red first: a `Core/Nexus` round-trip case that a sidecar carrying `active_view` decodes onto the node identically through `readNexus` and through `watchPatch`. Expect 2 failures on an undefined property.
-- [ ] **The crossing test:** the two mappers agree — the same case asserts every one of the nine container fields matches between the two paths, so a future field added to one alone goes red.
-- [ ] A `useActiveView` case that an unknown `active_view` falls back to `views[0]`, an absent one does the same, and a container with no views mints the sentinel.
+- [ ] **The crossing test:** the two mappers agree — the same case asserts all nine container fields match between the paths, `set_order` and `page_order` included, so a future field added to one alone goes red.
+- [ ] A `useActiveView` case that an unknown `active_view` falls back to `views[0]`, an absent one does the same, and a container with no views yields the sentinel.
+- [ ] A `ViewFrame` case that clicking the placeholder row on a container with no views issues no mutate. Red with the `DEFAULT_VIEW_ID` refusal removed.
 - [ ] A `nexusSlice` case that `setActiveView` patches the node before the confirming push. Red with the `patchNodeInTree` case removed.
-- [ ] A `viewMint` case that a sentinel adoption issues exactly one channel call — `views:save` — and no active-view write.
-- [ ] The eight test files mocking `activeViews:get`/`activeViews:set` are updated, not deleted: `rg -l "activeViews:" Core` → 0.
-- [ ] `rg -F "activeViews" Core` → 0, and `rg -F "activeView" Core/Nexus` → 3. Control: `rg -F "setDisclosureLock" Core` → 6.
+- [ ] A `setActiveView` op case that the write lands and does not reject — the negative control for the lock: wrapping it in `withSidecarLock` makes it throw `Re-entrant file lock`.
+- [ ] A `viewMint` case that a sentinel adoption issues exactly one channel call, `views:save`.
+- [ ] Every test mocking `activeViews:get`/`activeViews:set` is updated, not deleted: `rg -lF 'activeViews' Core` → 0.
+- [ ] `rg -nF activeViews Core` → 0. Control: `rg -nF setDisclosureLock Core` → 10.
 - [ ] Full gate green. `Scope`'s `'activeView'` name still stands — Task 2 needs it.
 
-#### Task 2: Import the two retiring scopes during the open
+#### Task 2: Import the `activeView` scope during the open
 
-**Requirements:** 1, 2, 5
+**Requirements:** 1, 5
 
-**Why:** The rows already in `local_state` are choices a person made; the move is only complete if they arrive in the new home. Both scopes are imported in one pass because both land in the same sidecar, and one write per container is the difference between one watcher event and two. Remint's device-row copies for the same two facts become redundant with the sidecar copy it already performs.
+**Why:** The rows already in `local_state` are choices a person made; the move is only complete if they arrive in the new home. It lands in this phase, beside the reader Task 1 just built, so no window exists in which a chosen view is written to a home nothing reads. Remint's device-row copy for the same fact becomes redundant with the sidecar write it already performs.
 
-**Now** — one union name per scope, remint's two copy blocks, and the open sequence's existing one-time-write idiom:
+**Now** — the union name, remint's copy block, and the open sequence's existing one-time-write idiom:
 
 ```ts
-// Core/Platform/localState.ts:6-7 — the Scope names, held open by the Hazard Window
-// Core/Nexus/remint.ts:147-153 — inside copyDeviceRows, keyed by minted view id
-for (const [old, minted] of viewIds) {
-  const order = readKey<string[]>('viewOrder', old)
-  if (order !== null) writeKey('viewOrder', minted, order)
-}
+// Core/Platform/localState.ts:6 — the Scope name, held open by the Hazard Window
+// Core/Nexus/remint.ts:151-153 — inside copyDeviceRows
 const active = readKey<string>('activeView', target.id)
 const moved = active === null ? undefined : viewIds.get(active)
 if (moved) writeKey('activeView', fresh, moved)
-// Core/Nexus/handlers.ts:70 — the idiom, inside openNexusSequence's root-changed branch
+// Core/Nexus/handlers.ts:70 — the idiom, inside openNexusSequence's root-changed branch.
+// replaySchemaCascade swallows every error and returns a boolean; a throw here reaches
+// Desktop/main.ts:303-308 as "Restore skipped" on launch, or aborts ctx.adopted on an adopt
+// so the watcher never arms.
 if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
 ```
 
-**Becomes** — one import beside that idiom, and remint carrying both for free:
+**Becomes** — one import beside that idiom, and remint re-pointing inside the write it already makes:
 
 ```ts
-// Core/Nexus/importPlacedState.ts (new) — id→node through nodesOf (Core/Nexus/treeIndex.ts:145),
-// never its own walk. One locked sidecar write per affected container, carrying both scopes:
-// active_view from the activeView row keyed by CONTAINER id, and manual_order onto each view
-// record whose id matches a viewOrder row. Each imported row is then deleted with
-// writeKey(scope, key, null). An id no container claims keeps its row — it may be excluded,
-// not gone. Idempotent: an emptied scope is a no-op. Returns whether anything was written.
+// Core/Nexus/importPlacedState.ts (new). Container id → path through nodesOf
+// (Core/Nexus/treeIndex.ts:145), never its own walk. Per container:
+//   withSidecarLock(folder, kind, async () => { readJsonStrict; writeJson })
+// — remint's shape, NOT rmwJsonStrict, which would re-take the same key.
+// Each imported row is then deleted with writeKey('activeView', id, null). An id no container
+// claims keeps its row: the container may be excluded, not gone. A container whose write refuses
+// keeps its row and is logged; the pass continues. Idempotent — an empty scope is a no-op.
+// Returns whether anything landed. It never throws, exactly as replaySchemaCascade does not.
 export async function importPlacedState(root: string): Promise<boolean>
 // Core/Nexus/handlers.ts — beside the cascade, inside the same root-changed branch:
 if (await importPlacedState(root)) await refreshAfterWrite(root)
@@ -224,18 +246,18 @@ if (await importPlacedState(root)) await refreshAfterWrite(root)
 // Core/Nexus/remint.ts — inside remintSidecar's locked write, after the views[].id rewrite:
 if (typeof next.active_view === 'string')
   next.active_view = viewIds.get(next.active_view) ?? undefined
-// manual_order rides remintSidecar's existing { ...v, id: minted } spread. Both copy blocks in
-// copyDeviceRows go; it no longer needs viewIds, so writeFreshId's Map|null collapses to boolean.
+// The copyDeviceRows activeView block goes.
 ```
 
-**Assumed by:** Task 8 (deletes the import and both `Scope` names).
+**Assumed by:** Task 4 (extends the same import), Task 8 (deletes it and the `Scope` name).
 
 **Verify — Automated**
 
-- [ ] Red first: an import case over a two-container tree, each container holding an `activeView` row and two views with `viewOrder` rows — every value lands in its sidecar, every row is gone after, each container's sidecar is written once, and a second run writes nothing. Expect 4 failures, module not found.
-- [ ] The degenerate cases: an empty scope writes nothing and triggers no `refreshAfterWrite`; a container id and a view id absent from the tree each keep their row untouched; a container whose sidecar refuses the write keeps its rows.
-- [ ] `remint.test.ts:217-300` rewritten to assert `active_view` and `manual_order` on the copy's sidecar rather than on device rows, and that the pointer names the minted id. Red with the re-point line removed.
-- [ ] `rg -F "readKey('activeView'" Core` → 0 and `rg -F "readKey<string[]>('viewOrder'" Core` → 0. Control: `rg -F "readKey(" Core` → re-derive.
+- [ ] Red first: an import case over a two-container tree, each holding an `activeView` row — both values land, both rows are gone after, and a second run writes nothing and returns false. Expect 3 failures, module not found.
+- [ ] **Both halves of the failure contract:** a container whose sidecar write refuses keeps its row and the pass still returns true for the others; and the import resolves rather than throwing when every container refuses. Red with the per-container catch removed.
+- [ ] The degenerate cases: an empty scope writes nothing and triggers no `refreshAfterWrite`; a container id absent from the tree keeps its row; a nexus opened for the first time, with no `local_state` rows at all, is a no-op.
+- [ ] The `remint.test.ts` `activeView` cases rewritten to assert `active_view` on the copy's sidecar, naming the minted view id. Red with the re-point line removed.
+- [ ] `rg -nF "readKey<string>('activeView'" Core` → 0. Control: `rg -nF 'readKey(' Core` → 13.
 - [ ] Full gate green.
 
 **Verify — User**
@@ -246,7 +268,7 @@ if (typeof next.active_view === 'string')
 
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
+- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan. No count command pairs `-F` with `|`.
 - [ ] Every task that diverged had its dependents re-derived and rewritten.
 - [ ] Simplification, then code review, dispatched against `<base>..HEAD` scoped to this phase's paths; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
@@ -263,28 +285,31 @@ if (typeof next.active_view === 'string')
 
 **Requirement:** 2
 
-**Why:** A drag under a sort is a preference about that view, so it belongs in that view's record. The field, the fold, and the write sites land together because a repointed resolver with the old writers still in place would persist an order nothing reads.
+**Why:** A drag under a sort is a preference about that view, so it belongs in that view's record. The field, the fold, and the write sites land in one task because a repointed resolver with the old writers still in place would persist an order nothing reads.
 
-**Now** — the field set, the state list, the resolver, and `rg -F "persistViewOrder" Core --glob '!*test*'` → 9 across five files:
+**Now** — the field set, the state list, the resolver, and `rg -nF persistViewOrder Core --glob '!*test*'` → 13 across five files:
 
 ```ts
-// Core/Views/views.ts:91,139-144 — collapsed_groups is the only view-state key today
+// Core/Views/views.ts:139-144 — collapsed_groups is the only view-state key today
 const VIEW_STATE_KEYS = ['collapsed_groups'] as const
-export function pickViewState(view: SavedView): ViewState {
-  return { collapsed_groups: view.collapsed_groups }
-}
-// Core/Views/Host/useViewHost.ts:103-118 — three overrides fold into liveView and self-clear
-// Core/Views/Host/useViewHost.ts:136-144 — the resolver's third argument
-const structuralOrder = groupPropId === undefined && sortKeys === 0
-const manualOrder = locationFsOrder ? undefined
-  : resolveManualOrder(sortedOrGrouped, manualOverride, structuralOrder ? undefined : viewOrders[view.id])
-// Core/Views/Host/useViewOrders.ts — the whole file: a per-mount fetch of every view's order
-// Core/Views/Host/useViewHost.ts:75,316-317,365-366 — created, passed on, returned
-// Core/Views/Host/useViewCreation.ts:37-38,124-125 — two config fields, one splice
-// Core/Views/Table/TableView.tsx:1048,1067 · Core/Views/Cards/CardsView.tsx:504,529
+// Core/Views/Host/useViewHost.ts:109-118 — liveView's memo, and its early return
+if (!orderOverride && !hiddenOverride && !stylePatch && !bandPatch) return view
+// :120-136 — everything the fold's guard needs is derived BELOW the memo
+const sortKeys = useMemo(() => resolvedSortCount(liveView.sort, schema), …)   // :120
+const structuralOrder = groupPropId === undefined && sortKeys === 0           // :136
+// :138-144 — the resolver's third argument
+? undefined : resolveManualOrder(sortedOrGrouped, manualOverride, structuralOrder ? undefined : viewOrders[view.id])
+// Core/Views/Host/useViewOrders.ts — the whole file, plus bridge.ts:65-66 / handlers.ts:96-97
+// THREE write sites carry a condition — update an existing order, never mint one:
+//   TableView.tsx:1048  if (viewOrders[view.id]) persistViewOrder(spliceLive(…))
+//   CardsView.tsx:529   if (viewOrders[view.id]) persistViewOrder(spliceLive(…))
+//   useViewCreation.ts:124  if (!latest.structuralOrder || latest.viewOrders[latest.view.id])
+// TWO are unconditional: TableView.tsx:1067 (reorderTo, past its structural branch) and
+//   CardsView.tsx:504 (reorderInBandByIndex, past its parent branch).
+// And settleOrders no-ops on a null override: setManualOverride((m) => (m ? splice(m) : m))
 ```
 
-**Becomes** — a fourth field, a fourth override under the resolver's own predicate, and one writer:
+**Becomes** — a fourth field, a hoisted predicate, a fourth override, and one writer:
 
 ```ts
 // Core/Views/views.ts — beside collapsed_groups, with element-filtering in the codec
@@ -292,61 +317,86 @@ manual_order?: string[]
 const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
 // pickViewState carries both — a locked tile still holds a manual order, as collapse already does.
 
-// Core/Views/Host/useViewHost.ts — liveView folds manual_order under the SAME structuralOrder
-// guard the resolver uses, so a structural reorder's manualOverride can never be written into
-// manual_order by an unrelated persist.
+// Core/Views/Host/useViewHost.ts — sortKeys, groupPropId and structuralOrder are computed from
+// `view` and HOISTED above the liveView memo. Sound because bandPatch touches only group.order
+// and group_order, moving neither resolvedSortCount nor group.kind — a `view`-derived predicate
+// and a `liveView`-derived one cannot disagree. Reading them below the memo is a TDZ crash the
+// type gate does not catch.
+// The memo's early return gains manualOverride, or a lone drag never folds:
+if (!orderOverride && !hiddenOverride && !stylePatch && !bandPatch && !manualOverride) return view
 ...(!structuralOrder && manualOverride ? { manual_order: manualOverride } : {}),
 // the catch-up effect gains its fourth clause:
 if (manualOverride && sameIds(manualOverride, view.manual_order ?? [])) setManualOverride(null)
 // the resolver's third argument becomes structuralOrder ? undefined : view.manual_order
 
-// Every drop site: persistView({ manual_order: <ids> }, { viewState: true }). The base for a
-// splice is liveView.manual_order, which the fold keeps current across successive gestures
-// without waiting for the confirming push.
-// useViewCreation's config drops viewOrders and persistViewOrder for persistView itself —
-// the config already carries toggleCollapse, the same closure by another name.
-// Core/Views/Host/useViewOrders.ts, and the bridge/handler pair at bridge.ts:65-66 and
-// handlers.ts:96-97 — deleted.
+// Every drop site: persistView({ manual_order: <ids> }, { viewState: true }), each KEEPING its
+// existing condition against liveView.manual_order rather than viewOrders[view.id] — a relocate
+// on an unsorted view must not mint an order that lies dormant until a sort is added later.
+// settleOrders splices unconditionally from liveView.manual_order and SETS the override, so two
+// creates in a row compose; the (m ? … : m) no-op goes.
+// useViewCreation's config drops viewOrders and persistViewOrder for persistView itself — the
+// config already carries toggleCollapse, the same closure by another name.
+// Core/Views/Host/useViewOrders.ts, bridge.ts:65-66 and handlers.ts:96-97 — deleted.
 ```
 
-**Assumed by:** Task 4 (remint's copy loop; the import writes the same field).
+**Assumed by:** Task 4 (imports into the field this defines).
 
 **Verify — Automated**
 
-- [ ] Red first: a `useViewHost` case that a reorder under a sort puts the ids in `manual_order` on the saved view, and that a structural reorder leaves `manual_order` untouched while writing `page_order`. Expect 2 failures.
-- [ ] **The crossing test:** the fold and `resolveManualOrder` agree — a case that toggles a group collapse while a structural `manualOverride` is live and asserts the saved view carries no `manual_order`. Red with the `!structuralOrder` guard removed from the fold.
-- [ ] A `useViewCreation` case that two creates in succession, before any tree push, produce a `manual_order` containing both new ids in gesture order — the case the deleted local echo used to cover.
+- [ ] Red first: a `useViewHost` case that a reorder under a sort puts the ids in `manual_order` on the saved view, and that a structural reorder leaves `manual_order` at its stored value while writing `page_order`. Expect 2 failures.
+- [ ] **The crossing test:** the fold and `resolveManualOrder` agree — a case that toggles a group collapse while a *structural* `manualOverride` is live, on a view that already has a stored `manual_order`, and asserts the saved `manual_order` is unchanged from the stored value. Red with the `!structuralOrder` guard removed from the fold.
+- [ ] The third consumer agrees too: a `settleOrders` case on an unsorted, ungrouped view asserts no `manual_order` is minted where none existed.
+- [ ] A `useViewHost` case that a drag with no other live override folds — the early-return guard's negative control: remove `!manualOverride` and it goes red.
+- [ ] A `useViewCreation` case that two creates in succession, before any tree push, produce a `manual_order` containing both new ids in gesture order.
 - [ ] A `CardsView` and a `TableView` case each: a cross-band drop under a sort writes `manual_order`; the same drop on a structural view does not.
-- [ ] The degenerate cases: `manual_order` absent → the resolver returns undefined; present but empty → the same; a non-string element is dropped, not the whole array. A locked tile's state-only write still carries `manual_order`.
-- [ ] `rg -F "persistViewOrder" Core` → 0, `rg -F "useViewOrders" Core` → 0, `rg -F "viewOrders" Core` → 0. Control: `rg -F "persistView(" Core` → re-derive.
-- [ ] Full gate green. `Scope`'s `'viewOrder'` name still stands — the import reads it.
+- [ ] The degenerate cases: `manual_order` absent → the resolver returns undefined; present but empty → the same; a non-string element is dropped, not the whole array. A locked tile's state-only write carries `manual_order`.
+- [ ] `rg -nF persistViewOrder Core` → 0, `rg -nF useViewOrders Core` → 0, `rg -nF viewOrders Core` → 0. Control: `rg -nF collapsed_groups Core` → 23.
+- [ ] Full gate green. `Scope`'s `'viewOrder'` name still stands — Task 4 reads it.
 
-#### Task 4: Remint carries the order without copying it
+#### Task 4: Import the `viewOrder` scope, and remint stops carrying it
 
-**Requirement:** 2
+**Requirements:** 2, 5
 
-**Why:** Task 2's import already reads the `viewOrder` scope into view records, and Task 3 gave remint's sidecar copy a field that rides its existing spread. What remains is the device-row loop, which now writes to a home nothing reads.
+**Why:** With a reader in place from Task 3, the rows can land. Remint's per-view copy loop goes — and `manual_order` is dropped from a reminted copy outright, because the copy's pages are being given new ids in the same pass, so the array would name pages that do not exist there.
 
-**Now** — whatever Task 2 left of `copyDeviceRows`, re-derived at execution:
-
-```ts
-// Core/Nexus/remint.ts — re-run `rg -F "viewIds" Core/Nexus/remint.ts` before editing.
-// Task 2 removed both copy blocks; this task confirms the residue and collapses the signature.
-```
-
-**Becomes** — the parameter and the return type follow the deletions:
+**Now** — the union name, the copy loop, and Task 2's import awaiting a second pass:
 
 ```ts
-// copyDeviceRows(target, fresh) — viewIds is no longer a parameter
-// writeFreshId returns boolean; remintSidecar's Map|null collapses, since viewIds is now
-// internal to the locked write that uses it.
+// Core/Platform/localState.ts:7 — the Scope name
+// Core/Nexus/remint.ts:147-150 — inside copyDeviceRows, keyed by minted view id
+for (const [old, minted] of viewIds) {
+  const order = readKey<string[]>('viewOrder', old)
+  if (order !== null) writeKey('viewOrder', minted, order)
+}
+// rg -nF COPY_SCOPES Core/Nexus/remint.ts → 2 (the declaration and its loop); it stays 2.
 ```
+
+**Becomes** — a second pass in the same import, and remint dropping the field:
+
+```ts
+// Core/Nexus/importPlacedState.ts — a viewOrder pass beside the activeView one. The rows are
+// keyed by VIEW id, and nodesOf carries no views, so this pass reads the live tree's own
+// CollectionNode / SetNode for the view-id → container map; nodesOf answers only the
+// container-id lookup activeView needs. Same per-container withSidecarLock write, same
+// per-container swallow, same row delete. A view id no container claims keeps its row.
+
+// Core/Nexus/remint.ts — inside remintSidecar's locked write, in the views[].id rewrite:
+return { ...v, id: minted, manual_order: undefined }
+// The copy's pages are reminted to new ids in the same pass, so a carried manual_order would
+// name pages that are not in the copy — and on disk it would sync everywhere with no sweep.
+// The copyDeviceRows viewOrder loop goes; it no longer needs viewIds, so writeFreshId's
+// Map|null return collapses to boolean.
+```
+
+**Assumed by:** Task 8 (deletes the import and both `Scope` names).
 
 **Verify — Automated**
 
-- [ ] A `remint` case that a copied container's `manual_order` names the same page ids as the original's, on the minted view record. Red with the `views[].id` spread narrowed to drop unknown keys.
-- [ ] `rg -F "COPY_SCOPES" Core/Nexus/remint.ts` → 1, and the array holds only the seven page-level scopes the ruling keeps.
-- [ ] `rg -F "viewIds" Core` → re-derive; every survivor is inside `remintSidecar`. Control: `rg -F "copyDeviceRows" Core` → 2.
+- [ ] Red first: an import case over a container with two views, each holding an order — both land on their own view record, both rows are gone after, the container's sidecar is written once for both passes, and a second run is a no-op. Expect 3 failures.
+- [ ] The degenerate cases: a view id matching no container keeps its row; a container holding an `activeView` row but no `viewOrder` row is written once, not twice.
+- [ ] A `remint` case that a copied container's minted view records carry **no** `manual_order`, while the original's is untouched. Red with the `manual_order: undefined` removed.
+- [ ] `rg -nF COPY_SCOPES Core/Nexus/remint.ts` → 2, and the array holds only the seven page-level scopes the ruling keeps.
+- [ ] `rg -nF "readKey<string[]>('viewOrder'" Core` → 0. Control: `rg -nF copyDeviceRows Core` → 2.
 - [ ] Full gate green.
 
 **Verify — User**
@@ -376,7 +426,7 @@ if (manualOverride && sameIds(manualOverride, view.manual_order ?? [])) setManua
 
 **Why:** All three values are true of the machine, and the store already has a rail for exactly that. Seeding must precede `status: 'ready'`, or the sidebar paints at its default and jumps a second time when the tree lands.
 
-**Now** — one optional boolean, loaded behind a flag at the tail of `applyTree`:
+**Now** — one optional boolean, loaded behind a flag at the tail of `applyTree`, and read into nothing:
 
 ```ts
 // Core/Settings/devicePrefs.ts:3-12 — packDevicePrefs drops top-level undefined, null and false
@@ -386,10 +436,15 @@ if (prevRoot !== undefined && prevRoot !== incoming.nexus.rootPath) resetNexusSe
 const tree = stabilize(incoming, get().tree)                                             // :146
 set({ status: 'ready', tree })                                                           // :147
 // … 18 lines of reconcile and theme work …
-if (!devicePrefsLoaded) { devicePrefsLoaded = true; … }                                  // :166-170
+if (!devicePrefsLoaded) { devicePrefsLoaded = true
+  const prefs = await host().ask('devicePrefs:load')
+  if (prefs.ok) set({ devicePrefs: prefs.value ?? {} }) }                                // :166-170
+// Core/Session/layoutSlice.ts:36,47-51 — the clamp, and what a Nexus switch resets
+const clampWidth = (pane: PaneWidth, w: number): number => clamp(Math.round(w), pane.min, pane.max)
+const PER_NEXUS = { subfieldExpanded: true, navWindowMode: 'list', navViewMode: 'list' }
 ```
 
-**Becomes** — three nested keys, and the same block five lines earlier:
+**Becomes** — three nested keys, the block five lines earlier, and the widths actually seeded:
 
 ```ts
 // Core/Settings/devicePrefs.ts — nested BECAUSE packDevicePrefs drops a top-level false and a
@@ -400,10 +455,16 @@ export interface DevicePrefs {
   disclosure?: Record<string, boolean>
   windows?: Record<string, { w: number; h: number }>
 }
-// Core/Session/nexusSlice.ts — the existing devicePrefsLoaded block moves from :166 to between
-// :146 and :147, so the first ready paint carries the stored values. The flag stays: it is what
-// keeps a push-driven applyTree from round-tripping, and resetNexusSession:44 already clears it
-// on the foreign-tree branch at :144, which runs first.
+// Core/Session/nexusSlice.ts — the devicePrefsLoaded block moves from :166 to between :146 and
+// :147, and seeds the widths in the same set(), clamped: nothing else copies them out.
+set({ devicePrefs: prefs.value ?? {},
+      sidebarWidth: clampWidth(SIDEBAR_WIDTH, prefs.value?.panes?.sidebar ?? SIDEBAR_WIDTH.def),
+      inspectorWidth: clampWidth(INSPECTOR_WIDTH, prefs.value?.panes?.inspector ?? INSPECTOR_WIDTH.def) })
+// The flag stays: it is what keeps a push-driven applyTree from round-tripping, and
+// resetNexusSession:44 clears it on the foreign-tree branch at :144, which runs first.
+// Core/Session/layoutSlice.ts — the widths join PER_NEXUS, so resetLayout returns them to def.
+// Without that, Nexus A's widths stay in the slice across a switch and are written into B's
+// devicePrefs on B's next pane drag.
 ```
 
 **Assumed by:** Task 6 (`panes`, `disclosure`), Task 7 (`windows`).
@@ -411,10 +472,11 @@ export interface DevicePrefs {
 **Verify — Automated**
 
 - [ ] Red first: a `devicePrefs` case that a nested `false` survives `packDevicePrefs` and a top-level one does not. Expect 1 failure.
-- [ ] A `nexusSlice` case that `devicePrefs` is populated before `status` becomes `'ready'`. Red with the block moved back below the `set`.
-- [ ] A `nexusSlice` case that a foreign tree arriving by push re-fetches, and that a same-root push does not — the flag's both halves.
-- [ ] The degenerate cases: `devicePrefs:load` returning `null`, and returning a `NO_NEXUS` failure, both leave the defaults standing rather than throwing.
-- [ ] `rg -F "devicePrefsLoaded" Core` → 3. Control: `rg -F "devicePrefs" Core` → re-derive.
+- [ ] A `nexusSlice` case that both widths carry their stored values, clamped, before `status` becomes `'ready'`. Red with the block moved back below the `set`.
+- [ ] A `resetLayout` case that both widths return to `def`. Red with them removed from `PER_NEXUS`.
+- [ ] **Both halves of the flag:** a foreign tree arriving by push re-fetches; a same-root push does not.
+- [ ] The degenerate cases: `devicePrefs:load` returning `null`, a `NO_NEXUS` failure, and a `panes` value outside `min`/`max` — the first two leave the defaults standing, the third clamps.
+- [ ] `rg -nF devicePrefsLoaded Core` → 3. Control: `rg -nF devicePrefs Core` → re-derive; 25 today.
 - [ ] Full gate green.
 
 #### Task 6: The panes and the sidebar read the store, and `localStorage` goes
@@ -423,7 +485,7 @@ export interface DevicePrefs {
 
 **Why:** With the values in the store before first paint, the two browser-storage readers are the last thing holding Pommora state in the browser. Neither value is imported: both regenerate in a gesture, and a rescue module would be more code than the thing it saves.
 
-**Now** — `rg -F "localStorage" Core UIX` → 6 across three files:
+**Now** — `rg -nF localStorage Core UIX` → 8 across three files:
 
 ```ts
 // Core/Session/layoutSlice.ts:31-45,70-79 — storedWidth at construction, setItem on drop
@@ -436,26 +498,27 @@ export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300, key: 'pommora.ins
 **Becomes** — the store on both sides, written through the existing `setDevicePref`:
 
 ```ts
-// Core/Session/layoutSlice.ts — the bounds keep min/max/def and lose `key`; the slice starts at
-// def and Task 5's seed sets it. persistPaneWidths writes one pref:
+// Core/Session/layoutSlice.ts — the bounds keep min/max/def and lose `key`; storedWidth goes,
+// and the slice starts at def (Task 5 seeds it). persistPaneWidths writes one pref:
 setDevicePref('panes', { sidebar: get().sidebarWidth, inspector: get().inspectorWidth })
 // Core/Interface/Sidebar/Sidebar.tsx — open comes from the store, written the same way:
 const stored = useSession((s) => (persistKey ? s.devicePrefs.disclosure?.[persistKey] : undefined))
 // setAndSave merges one key into the disclosure map through setDevicePref.
-// Core/Interface/Sidebar/disclosureState.ts and disclosureState.test.ts — deleted.
+// Core/Interface/Sidebar/disclosureState.ts and disclosureState.test.ts — deleted. The parse
+// cache they held is replaced by a property read off a map the store already holds parsed.
 // The three pommora.* keys are left behind, cleared by hand; nothing reads them.
 ```
 
 **Verify — Automated**
 
 - [ ] Red first: a `layoutSlice` case that a drop writes one `devicePrefs` pref carrying both widths, and a `Sidebar` case that a toggle merges one key without clobbering its siblings. Expect 2 failures.
-- [ ] The degenerate cases: a stored width outside `min`/`max` is clamped on read; an absent `panes` or `disclosure` leaves the defaults standing; a `disclosure` entry for a key no group claims is ignored, not rendered.
-- [ ] `rg -F "localStorage" Core UIX` → 0. Control: `rg -F "useSession" Core/Interface` → re-derive.
+- [ ] The degenerate cases: an absent `panes` or `disclosure` leaves the defaults standing; a `disclosure` entry for a key no group claims is ignored, not rendered; a group with no `persistKey` neither reads nor writes.
+- [ ] `rg -nF localStorage Core UIX` → 0. Control: `rg -nF useSession Core/Interface` → re-derive.
 - [ ] Full gate green.
 
 **Verify — User**
 
-- [ ] Sidebar and inspector widths, and the sidebar's collapsed groups, come back after a restart — with a single settle as the Nexus paints, not a jump afterward. On the first launch only, both open at their defaults.
+- [ ] Sidebar and inspector widths, and the sidebar's collapsed groups, come back after a restart — with a single settle as the Nexus paints, not a jump afterward. On the first launch only, both open at their defaults. Switching to a second Nexus opens it at *its* widths, not the first one's.
 
 #### Gate 3 — nothing of Pommora's is in the browser
 
@@ -479,54 +542,62 @@ const stored = useSession((s) => (persistKey ? s.devicePrefs.disclosure?.[persis
 
 **Why:** UIX reaches nothing outside itself, so it can hold a size but never persist one. Handing the value in and the change back leaves the decision to Core, where the store is. Both halves land together: the map's deletion without its replacement is a commit in which no window remembers anything.
 
-**Now** — a module map and the `id` prop that exists only to key it:
+**Now** — a module map, the `id` prop that exists only to key it, and two behaviors that must survive:
 
 ```ts
-// UIX/Windows/window-base.tsx:28-37,74,98,108
+// UIX/Windows/window-base.tsx:28-37,74,98,108 — opening does THREE things
 const sizes = new Map<string, Size>()
-const opening = (id: string, bounds: WindowBounds): Rect => { … sizes.get(id) ?? bounds.def … }
-const [geo, setGeo] = useState(() => opening(id, bounds))
+const opening = (id: string, bounds: WindowBounds): Rect => {
+  const s = sizes.get(id) ?? bounds.def                    // the lookup — this is what goes
+  return onScreen({ ...s,                                  // the viewport clamp — stays
+    x: Math.round((window.innerWidth - s.w) / 2),           // the centering — stays
+    y: Math.round((window.innerHeight - s.h) / 3) })
+}
 onChange: (next) => { sizes.set(id, { w: next.w, h: next.h }); setGeo(next) }
-// `id` has no other reader. The six call sites, ids already per-kind constants:
+// UIX/Interactions/ResizeFrame.tsx:129-132 — onDrop fires when ANY rect key moved, which a
+// 'move' grip always does; a drop is not proof the size changed.
+// The six call sites, ids already per-kind constants:
 // SettingsWindow.tsx:722 'settings' · WebWindow.tsx:86 'web-browser' ·
 // PageWindow.tsx:143 'page-window' · NavWindow.tsx:128 'navwindow' ·
 // PageHistoryWindow.tsx:214 'page-history' · IterationWindow.tsx:13 'iteration'
 ```
 
-**Becomes** — two optional props, the persist gated on the drop, and one Core hook:
+**Becomes** — two optional props, the persist gated on the drop, and one Core hook that dedupes:
 
 ```ts
-// UIX/Windows/window-base.tsx — id, sizes and opening all deleted
+// UIX/Windows/window-base.tsx — the map and the id go; opening keeps the centering and the clamp
+const opening = (size: Size | undefined, bounds: WindowBounds): Rect => { … size ?? bounds.def … }
 initialSize?: Size          // absent → bounds.def
 onSizeChange?: (s: Size) => void
-// The frame's callback keeps its phase argument, which is what stops one write per pointer move:
 onChange: (next, phase) => {
   setGeo(next)
   if (phase === 'drop') onSizeChange?.({ w: next.w, h: next.h })
 }
 
-// Core/Interface/Windows/useWindowGeometry.ts (new) — UIX cannot reach Core, and five sites
-// need identical wiring. Reads s.devicePrefs.windows?.[id]; writes through setDevicePref, the
-// same rail as panes and disclosure — no new scope, channel, or handler.
+// Core/Interface/Windows/useWindowGeometry.ts (new) — UIX cannot reach Core, and five sites need
+// identical wiring. Reads s.devicePrefs.windows?.[id]; writes through setDevicePref, the same
+// rail as panes and disclosure — no new scope, channel, or handler. It skips a write matching
+// the stored size, which is what keeps a window MOVE from writing a pref on every drag.
 export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChange: (s: Size) => void }
-// Spread at the five ruled windows. IterationWindow passes neither prop: a development
-// scratchpad opens at its default every time.
 // A stored entry whose w or h is not a finite number is ignored — isGlanceSize
 // (Core/Contract/validators) already answers that shape; do not write a second one.
+// Spread at the five ruled windows. IterationWindow passes neither prop: a development
+// scratchpad opens at its default every time.
 ```
 
 **Verify — Automated**
 
 - [ ] Red first: a UIX case that an absent `initialSize` opens at `bounds.def`, that a given one opens at that size, and that a drag calls `onSizeChange` exactly once — on drop, not per move. Expect 3 failures.
 - [ ] **The negative control:** with the `phase === 'drop'` guard removed, the once-per-drag case goes red.
-- [ ] A hook case that a stored size is returned as `initialSize` and that a change writes one entry under that id, leaving sibling ids intact.
+- [ ] A UIX case that a stored size wider or taller than the viewport is clamped by `onScreen`, and that the opening rect is centered. Red with `opening` reduced to a bare `initialSize ?? bounds.def`.
+- [ ] A hook case that a window *move* writes nothing, and that a resize writes one entry under that id leaving sibling ids intact.
 - [ ] The degenerate cases: a press that moves nothing calls back not at all; no stored entry → `initialSize` undefined; a malformed entry is ignored rather than passed through.
-- [ ] `rg -F "sizes.set" UIX` → 0 and `rg -F "id=" UIX/Windows/window-base.tsx` → 0. Control: `rg -F "WindowBase" Core` → 6.
+- [ ] `rg -nF 'sizes.set' UIX` → 0 and `rg -n '\bid\b' UIX/Windows/window-base.tsx` → 0. Control: `rg -nF WindowBase Core` → 18.
 - [ ] Full gate green.
 
 **Verify — User**
 
-- [ ] Resize the Settings window and a Page window, quit, reopen — each returns at its size. Two Page windows in a row open at the same remembered size. The iteration window (⌘⇧T) opens at its default every time.
+- [ ] Resize the Settings window and a Page window, quit, reopen — each returns at its size, centered and fully on screen. Two Page windows in a row open at the same remembered size. Dragging a window by its chrome changes nothing. The iteration window (⌘⇧T) opens at its default every time.
 
 #### Gate 4 — windows hold their size
 
@@ -572,13 +643,14 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 // Core/Nexus/handlers.ts — the importPlacedState call in openNexusSequence goes
 // .claude/Features/* — every sentence naming activeView, viewOrder, or a localStorage home for
 // pane width or disclosure, rewritten to the placement that now holds. Enumerate with
-// `rg -l "activeView|viewOrder|localStorage|per-machine" .claude/Features` before editing.
+// `rg -ln 'activeView|viewOrder|localStorage|per-machine' .claude/Features` before editing —
+// eight files hit that pattern today. NOT `-F`: the alternation needs a regex.
 ```
 
 **Verify — Automated**
 
 - [ ] The whole Dead Vocabulary sweep at zero against its control.
-- [ ] `rg -F "'activeView'" Core` → 0 and `rg -F "'viewOrder'" Core` → 0. Control: `rg -F "'folds'" Core` → re-derive.
+- [ ] `rg -nF "'activeView'" Core` → 0 and `rg -nF "'viewOrder'" Core` → 0. Control: `rg -nF "'folds'" Core` → 15.
 - [ ] Full gate green, and one smoke launch on a Nexus whose scopes are already empty.
 
 **Verify — User**
@@ -602,10 +674,10 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 - [ ] **Phase 1** — Active View on the container sidecar · base `<commit>`
   - [ ] Task 1 — One container-node mapper, and `active_view` on the mutate rail · `<commit>`
-  - [ ] Task 2 — Import the two retiring scopes during the open · `<commit>`
+  - [ ] Task 2 — Import the `activeView` scope during the open · `<commit>`
 - [ ] **Phase 2** — Manual order in the view record
   - [ ] Task 3 — `manual_order` on the view, written by every drop site
-  - [ ] Task 4 — Remint carries the order without copying it
+  - [ ] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
 - [ ] **Phase 3** — Browser storage into the device store
   - [ ] Task 5 — `DevicePrefs` gains its three machine-local shapes, seeded before the paint
   - [ ] Task 6 — The panes and the sidebar read the store, and `localStorage` goes
@@ -622,7 +694,9 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **09-07-2026, Claude:** `WindowKind` does not exist in the codebase; the D-1 ruling asserted it. No union is introduced — the five window ids are already literals at their call sites, and `useWindowGeometry` keys on them directly.
 - **09-07-2026, Claude:** No new `windowGeometry` scope or channel pair. Window size is a nested key on `devicePrefs`, the rail panes and disclosure are already joining — one place to look for a machine-local preference rather than two.
 - **09-07-2026, Claude:** Pane widths and the disclosure map are not imported from `localStorage`. Both regenerate in a gesture; the cost of the move is one drag of each pane and one pass of re-collapsing, on the first launch after Task 6 only.
-- **09-07-2026, Claude:** The `'activeView'` and `'viewOrder'` Scope names survive through Phase 4 and are deleted in Task 8, because the import that reads them is the only thing that recovers a pre-move value on a machine that has not opened yet.
+- **09-07-2026, Claude:** The two imports are split across Phase 1 and Phase 2 rather than bundled. Bundling would land `manual_order` a phase before any reader consumed it, and the write it saved was never real — the watcher is not armed during the open.
+- **09-07-2026, Claude:** A reminted container's copied view records drop `manual_order` outright. Its page ids are reassigned in the same pass, and on disk a stale array would sync to every device with no owner and no sweep.
+- **09-07-2026, Claude:** The `'activeView'` and `'viewOrder'` Scope names survive through Phase 4 and are deleted in Task 8, because the imports that read them are the only thing that recovers a pre-move value on a machine that has not opened yet.
 
 ### Open Against Later Tasks
 
@@ -630,9 +704,13 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 ### Lessons
 
+- Every count in the plan's first draft was wrong. Two causes: `rg -F` was paired with a `|` alternation, which matches the literal pipe and returns nothing; and file counts from an earlier grep were carried forward as if they were line counts. Both are recorded in the Global Constraints and route to `.claude/Guidelines` at closeout.
+
 ### Sequenced After
 
 - `UIX/Windows/window-panel.tsx:14` keeps the module-map-keyed-by-window-id pattern Task 7 deletes from `window-base.tsx`. The ruling places panel width nowhere, so it stays session-only and out of scope here — but after Phase 4 it is the last one of its kind in UIX.
+- `manual_order` on disk is an array of page ids with no validator and no sweep. Task 4 closes the one producer of stale entries that exists today (remint), but every future mechanism that copies, restores, or imports a container — `Sync/`, the mobile companion — inherits the same exposure. A reader-side reconciliation, or a sweep at open, belongs to whichever of those lands first.
+- `setDevicePref` re-sends the whole singleton on every key, and `disclosure` now grows with the size of the Nexus. That is fine at present scale and worth revisiting if the blob gets large.
 
 ### Closeout
 
@@ -668,10 +746,12 @@ Everything else is the standard below.
 
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause.
-- [ ] One mapper reads a container sidecar's meta; the crossing test proves the two paths agree.
-- [ ] The fold and `resolveManualOrder` agree on one `structuralOrder` predicate, proven by its crossing test.
-- [ ] No persist fires per pointer move; every geometry write is gated on `phase === 'drop'`.
+- [ ] One mapper reads a container sidecar's meta; the crossing test proves the two paths agree on all nine fields.
+- [ ] The fold, `resolveManualOrder`, and `settleOrders` agree on one `structuralOrder` predicate, proven by its crossing test.
+- [ ] No persist fires per pointer move, and no window *move* writes a size.
+- [ ] No file lock is taken twice on one key.
 - [ ] One rail for machine-local preferences — no second scope, channel, or handler was added.
+- [ ] No sentinel id and no stale page-id array reached a sidecar.
 - [ ] Net line count reported, comments and tests excluded.
 
 **The passes**
@@ -684,8 +764,8 @@ Everything else is the standard below.
 
 - [ ] A collection whose non-first view was chosen opens on it, and its sidecar reads `active_view`.
 - [ ] A hand-ordered view under a sort holds its order, and the view record reads `manual_order`.
-- [ ] Pane widths and sidebar disclosure survive a restart, settling once as the Nexus paints.
-- [ ] Settings and Page windows reopen at their remembered size; the iteration window does not.
+- [ ] Pane widths and sidebar disclosure survive a restart, settling once as the Nexus paints; a second Nexus opens at its own.
+- [ ] Settings and Page windows reopen at their remembered size, centered and on screen; the iteration window does not.
 - [ ] Everything above still holds after Phase 5's deletions.
 
 **The record**
