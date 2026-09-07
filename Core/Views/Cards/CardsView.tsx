@@ -62,7 +62,6 @@ import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useStyleFor } from '../Host/useColumnStyles'
-import { groupKeyToValue } from '../reassign'
 import { ViewGroupBand } from '../Bands/ViewGroupBand'
 import { BandDnd, type BandDrop } from '../Bands/BandDnd'
 import { flattenBands } from '../Bands/bandDndModel'
@@ -87,8 +86,7 @@ import {
   propertyTypeIconName,
 } from '../../Properties/Cells/PropertyTypes'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
-import { linkEditText, urlValueFromEdit } from '@pommora/core/Connections/linkValue'
-import { resolveTitle } from '../../Properties/Cells/linkResolve'
+import { linkEditText } from '@pommora/core/Connections/linkValue'
 import { CardValue } from './CardValue'
 import { reorderIds } from './cardsOrder'
 import {
@@ -166,6 +164,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     revealProperty,
     commitBand,
     commitValue,
+    commitGroupValue,
     contextOptionsFor,
     creation,
     mutate,
@@ -533,13 +532,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       return
     }
     if (!canReassign || !groupPropId) return
-    const row = rowById.get(activeId)
-    if (row)
-      commitValue(
-        row,
-        { id: groupPropId, kind: 'property' },
-        groupKeyToValue(toZone, groupPropType),
-      )
+    commitGroupValue(activeId, groupPropId, groupPropType, toZone)
   }
 
   const [effectiveZoom, setEffectiveZoom] = useState(1)
@@ -710,7 +703,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               value={vRaw ? linkEditText(vRaw) : ''}
               accent={solidColorCss(vTarget?.def.link_color)}
               onCommit={(raw) => {
-                const nv = urlValueFromEdit(raw, vRaw, resolveTitle)
+                const nv = parseEditorValue('url', raw, vTarget?.current)
                 if (nv !== undefined && (nv !== null || vRaw)) commitPicked(nv)
                 setValuePicker(null)
               }}

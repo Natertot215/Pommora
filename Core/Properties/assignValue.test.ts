@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { RefObject } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
@@ -38,23 +38,18 @@ const cmdZ = (): boolean => {
   return e.defaultPrevented
 }
 
-let apply: ReturnType<typeof vi.fn>
-let mutate: ReturnType<typeof vi.fn>
+let apply: Mock<ValueWriter['apply']>
+let mutate: Mock<ValueWriter['mutate']>
 let row: ViewRow
+let live: ValueWriter
 let writer: RefObject<ValueWriter | null>
 
 beforeEach(() => {
   apply = vi.fn()
-  mutate = vi.fn(() => Promise.resolve(true))
+  mutate = vi.fn(async () => true)
   row = rowOf({ id: 'page1', Tag: ['red'] })
-  writer = {
-    current: {
-      schema,
-      mutate: mutate as unknown as ValueWriter['mutate'],
-      rowOf: (id) => (id === row.id ? row : undefined),
-      apply: apply as unknown as ValueWriter['apply'],
-    },
-  }
+  live = { schema, mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
+  writer = { current: live }
   while (cmdZ()) {}
 })
 
@@ -117,6 +112,22 @@ describe('assignValue', () => {
     expect(cmdZ()).toBe(false)
   })
 
+  it('patches the live row, not the one the caller captured', () => {
+    const captured = row
+    row = rowOf({ id: 'page1', Tag: ['red'], Note: 'landed' })
+    assignValue(
+      writer,
+      captured,
+      { id: 'prop_tag', kind: 'property' },
+      { kind: 'select', value: 'blue' },
+    )
+    expect(apply).toHaveBeenCalledWith(
+      'page1',
+      { id: 'page1', Tag: ['blue'], Note: 'landed' },
+      expect.anything(),
+    )
+  })
+
   it('patches the contextValues rider and mutates the context', () => {
     assignValue(
       writer,
@@ -143,12 +154,7 @@ describe('assignValue', () => {
   it('writes nothing without a live writer, and nothing for an unknown property', () => {
     writer.current = null
     assignValue(writer, row, { id: 'prop_tag', kind: 'property' }, null)
-    writer.current = {
-      schema: [],
-      mutate: mutate as unknown as ValueWriter['mutate'],
-      rowOf: () => row,
-      apply: apply as unknown as ValueWriter['apply'],
-    }
+    writer.current = { ...live, schema: [] }
     assignValue(writer, row, { id: 'prop_tag', kind: 'property' }, null)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
@@ -164,7 +170,6 @@ describe('assignValue', () => {
     )
     apply.mockClear()
     mutate.mockClear()
-    const live = writer.current as ValueWriter
     live.rowOf = () => undefined
     expect(cmdZ()).toBe(false)
     expect(apply).not.toHaveBeenCalled()

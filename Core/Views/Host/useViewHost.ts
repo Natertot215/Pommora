@@ -273,8 +273,22 @@ export function useViewHost(
       writer.current = null
     }
   })
-  const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void =>
-    assignValue(writer, row, column, value)
+  const commitValue = (
+    row: ViewRow,
+    column: ResolvedColumn,
+    value: PropertyValue | null,
+  ): Promise<boolean> | undefined => assignValue(writer, row, column, value)
+  const commitGroupValue = (
+    pageId: string,
+    propertyId: string,
+    type: string | undefined,
+    groupKey: string,
+  ): Promise<boolean> | undefined => {
+    const row = rowById.get(pageId)
+    return (
+      row && commitValue(row, { id: propertyId, kind: 'property' }, groupKeyToValue(groupKey, type))
+    )
+  }
   const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
     if (!sortReassign) return
     const keyOf = (id: string): string => {
@@ -284,13 +298,7 @@ export function useViewHost(
     const band = orderIds.filter((id) => rowBand.get(id) === bandKey)
     const target = reassignTarget(band, activeId, keyOf)
     if (target === undefined) return
-    const row = rowById.get(activeId)
-    if (row)
-      commitValue(
-        row,
-        { id: sortReassign.propertyId, kind: 'property' },
-        groupKeyToValue(target, sortReassign.type),
-      )
+    commitGroupValue(activeId, sortReassign.propertyId, sortReassign.type, target)
   }
   const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
     if (column.kind !== 'context' || !tree) return null
@@ -365,6 +373,7 @@ export function useViewHost(
     persistView,
     commitBand,
     commitValue,
+    commitGroupValue,
     contextOptionsFor,
     creation,
     mutate,
