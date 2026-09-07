@@ -31,7 +31,7 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 - `PropertyPicker`'s pure exports are imported by `MassPropertyPicker` (`pickShape`, `PropertyOptionRows`, `selectedValues`), `TableView` and `CardAddPicker` (`syntheticContextDef`, `pickSemantics`, `PropertyOptionRows`), and `FilterFrame` (`toggleValue` only — its `optionsOf` comes from `GroupFrame.tsx:356`, a **second** `optionsOf` with inverted precedence; recorded in Sequenced After, not fixed here) → the component grows props; no export changes signature or leaves the module. *(Task 1)*
 - `PickerMenu` latches `origin` and `direction` once per open (`picker-base.tsx:182-191`, `:207`) → a picker that swaps content kind while open cannot renegotiate placement. `FrameSlide` grows the pane in place instead, which is what `CardAddPicker` already does. The chooser pane is therefore the mechanism, not a convenience. *(Task 1)*
 - `PickerMenu` already holds its own `children` through exit via `useHeld` (`picker-base.tsx:128`), but not props derived from the same state → `PropertyPicker` holds its own `target` internally with `useHeld`, so no caller re-grows the `lastValue` ref pattern. *(Task 1)*
-- `TextPicker` (`UIX/Pickers/TextPicker/TextPicker.tsx:7`) is already one component with five callers across all three surfaces → it is not duplication, it is the end state. `PropertyPicker` does not absorb text kinds, `UIX/Pickers/` is untouched, and every text call site keeps its own mount and parse tail exactly as today. *(Tasks 1, 2, 3, 4)*
+- `TextPicker` (`UIX/Pickers/TextPicker.tsx:7`) is already one component with five callers across all three surfaces → it is not duplication, it is the end state. `PropertyPicker` does not absorb text kinds, `UIX/Pickers/` is untouched, and every text call site keeps its own mount and parse tail exactly as today. *(Tasks 1, 2, 3, 4)*
 - `PickerRow` is a real `<button>` (`picker-base.tsx:411`) → the chooser's entry rows use `MenuItem`, as `CardAddPicker.tsx:105` already does. *(Task 1)*
 - `addEntriesFor` reads `SavedView`, `hiddenListIds`, `isCompact` → `cardValueInput.ts` stays in `Views/Cards/`; the chooser takes caller-built entries so `Core/Properties` never sees a view type. *(Tasks 1, 2)*
 - The panel currently passes neither `look` nor `dateFormat` to its pickers (`PropertyValueEditors.tsx:51-58`, `:70-73`) → it keeps passing neither. A panel row has no per-view column style to read, and adding one would change what the panel renders. *(Task 4)*
@@ -48,7 +48,7 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 - `Core/Views/Cards/CardPickerHost.tsx` 230, `CardAddPicker.tsx` 157, `CardsView.tsx:181-195, 268-269, 590`, `cardValueInput.ts`.
 - `Core/Views/Table/TableView.tsx:88-108` (`DatetimeCellPicker`), `:173-189` (editing state + last refs), `:457-506` (dispatch), `:547-709` (hosts), `:843-875` (mass).
 - `Core/Properties/Pickers/PropertyPicker.tsx` 156 — what grows. Note which exports are public.
-- `UIX/Pickers/picker-base.tsx:60` (`PickerMenu`), `UIX/Pickers/TextPicker/TextPicker.tsx:7`, `UIX/Menus/frame-slide.tsx:10`, `UIX/Menus/menu-row.tsx:73`, `UIX/Animations/useHeld.ts:4`.
+- `UIX/Pickers/picker-base.tsx:60` (`PickerMenu`), `UIX/Pickers/TextPicker.tsx:7`, `UIX/Menus/frame-slide.tsx:10`, `UIX/Menus/menu-row.tsx:73`, `UIX/Animations/useExitPresence.ts:4`.
 - `.claude/Features/InterfacePM.md:55`, `ViewTypesPM.md:119`, `PropertiesPM.md:105`.
 
 **Environment**
@@ -60,16 +60,16 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 
 **Line Budget** *(measured comments- and blanks-excluded; the deletion column is real, taken at `9c6b51130`)*
 
-| Deleted | LOC | Added, ceiling | LOC |
-| --- | ---: | --- | ---: |
-| `PagePropertyRows.tsx` | 341 | `PropertyPanel.tsx` | **≤ 320** |
-| `usePropertyRows.ts` | 177 | `property-panel.css.ts` | **≤ 45** |
-| `PropertyValueEditors.tsx` | 77 | `PropertyPicker.tsx` growth (144 today) | **≤ +130** |
-| `page-properties.css.ts` | 42 | `property-picker.css.ts` (open question) | **≤ 5** |
-| `CardPickerHost.tsx` | 217 | `CardsView.tsx` net growth | **≤ +130** |
-| `CardAddPicker.tsx` | 155 | `TableView.tsx` net growth | **≤ +35** |
-| `TableView` datetime shell + folded branches | ~50 | | |
-| **Total** | **~1059** | **Total ceiling** | **~665** |
+| Deleted                                      |       LOC | Added, ceiling                           |        LOC |
+| -------------------------------------------- | --------: | ---------------------------------------- | ---------: |
+| `PagePropertyRows.tsx`                       |       341 | `PropertyPanel.tsx`                      |  **≤ 320** |
+| `usePropertyRows.ts`                         |       177 | `property-panel.css.ts`                  |   **≤ 45** |
+| `PropertyValueEditors.tsx`                   |        77 | `PropertyPicker.tsx` growth (144 today)  | **≤ +130** |
+| `page-properties.css.ts`                     |        42 | `property-picker.css.ts` (open question) |    **≤ 5** |
+| `CardPickerHost.tsx`                         |       217 | `CardsView.tsx` net growth               | **≤ +130** |
+| `CardAddPicker.tsx`                          |       155 | `TableView.tsx` net growth               |  **≤ +35** |
+| `TableView` datetime shell + folded branches |       ~50 |                                          |            |
+| **Total**                                    | **~1059** | **Total ceiling**                        |   **~665** |
 
 **Expected net: −400 to −590, central ≈ −490.** This is a guardrail against over-engineering, not a target to hit by deleting behavior. A net shallower than **−400**, or any single file over its ceiling, means something was built that did not need building — **stop, find it, and cut it before continuing**. Do not clear the number by weakening a test, dropping a Behavior Ledger row, or moving code into a file with headroom.
 
