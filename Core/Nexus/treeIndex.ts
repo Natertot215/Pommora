@@ -6,7 +6,7 @@ import { type NavRef, type SelectTarget, toNavRef } from '@pommora/core/Navigati
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
-import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import {
   buildPageIndex,
   type ConnectionsApi,

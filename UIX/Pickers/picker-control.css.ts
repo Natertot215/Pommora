@@ -1,8 +1,8 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../Theme/color.css'
-import { font, text } from '../../Theme/typography.css'
-import { footingBar } from '../../Menus/menu-base.css'
-import { base } from '../../Fields/fields.css'
+import { vars as colorVars } from '../Theme/color.css'
+import { font, text } from '../Theme/typography.css'
+import { footingBar } from '../Menus/menu-base.css'
+import { base } from '../Fields/fields.css'
 
 const c = colorVars.color
 

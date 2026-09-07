@@ -1,4 +1,4 @@
-import { clamp } from '../../Utilities/clamp'
+import { clamp } from '../Utilities/clamp'
 import * as s from './progress-bar.css'
 
 export function ProgressBar({ fill }: { fill: number }): React.JSX.Element {

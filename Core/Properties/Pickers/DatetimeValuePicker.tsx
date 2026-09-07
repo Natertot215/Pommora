@@ -1,6 +1,6 @@
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker/CalendarPicker'
+import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { useSession } from '../../Session/store'
 import { formatDate } from '../formatValue'
 

@@ -1,6 +1,6 @@
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
-import { overScrollHost, overScrollUnmasked } from '../Elements/OverScroll'
+import { overScrollHost, overScrollUnmasked } from './OverScroll'
 import * as s from './hover-remove.css'
 
 export const hoverRemoveHost = cx(s.host, overScrollHost)

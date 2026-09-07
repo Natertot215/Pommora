@@ -6,7 +6,7 @@ import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { numberDivisor } from '../formatValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { MenuRowView, type MenuRow, type Trailing } from '@pommora/uix/Menus'
-import { pickerValue } from '@pommora/uix/Pickers/PickerControl'
+import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
 import * as s from './number-editor.css'
 
 type NumberLook = 'number' | 'bar'

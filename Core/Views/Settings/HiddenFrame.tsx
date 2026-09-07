@@ -15,7 +15,7 @@ import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/f
 import type { PaneDrop, FrameRow } from '@pommora/uix/Interactions/frameDndModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from '../hiddenFrameModel'
-import { EyeToggle } from '@pommora/uix/Elements/EyeToggle/EyeToggle'
+import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'

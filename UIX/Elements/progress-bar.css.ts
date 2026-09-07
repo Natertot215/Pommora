@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '../../Theme/color.css'
+import { vars } from '../Theme/color.css'
 
 export const track = style({
   width: '100%',

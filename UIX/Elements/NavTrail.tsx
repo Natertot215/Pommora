@@ -1,8 +1,8 @@
 import { Fragment } from 'react'
-import { OverScroll } from '../OverScroll'
-import { Icon } from '../../Symbols'
-import type { IconSize } from '../../Theme/theme-vars.css'
-import { cx } from '../../Utilities/cx'
+import { OverScroll } from '../Interactions/OverScroll'
+import { Icon } from '../Symbols'
+import type { IconSize } from '../Theme/theme-vars.css'
+import { cx } from '../Utilities/cx'
 import * as s from './nav-trail.css'
 
 /** `ghost` dims a stop past the current one — backed out of, still there to re-descend into. */

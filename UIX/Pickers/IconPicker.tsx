@@ -7,12 +7,12 @@ import {
   useState,
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { PickerMenu } from '../picker-base'
-import { SearchField } from '../../Fields/SearchField'
-import { Icon } from '../../Symbols'
-import { lucideGlyph, searchIcons, type IconEntry } from '../../Symbols/allSymbols'
-import { reorder, SortableZone, useDragItem } from '../../Interactions/drag'
-import { cx } from '../../Utilities/cx'
+import { PickerMenu } from './picker-base'
+import { SearchField } from '../Fields/SearchField'
+import { Icon } from '../Symbols'
+import { lucideGlyph, searchIcons, type IconEntry } from '../Symbols/allSymbols'
+import { reorder, SortableZone, useDragItem } from '../Interactions/drag'
+import { cx } from '../Utilities/cx'
 import * as s from './icon-picker.css'
 
 const { CELL, COLS } = s

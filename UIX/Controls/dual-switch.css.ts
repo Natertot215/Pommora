@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../Theme/color.css'
-import { tintAt } from '../../Theme/colors'
-import { duration, easing } from '../../Animations/motion'
+import { vars as colorVars } from '../Theme/color.css'
+import { tintAt } from '../Theme/colors'
+import { duration, easing } from '../Animations/motion'
 
 const c = colorVars.color
 const ease = `${duration.fast} ${easing.baseEase}`

@@ -1,6 +1,6 @@
 import { linkAt, normalizeTitle, pageEmbedText } from '@pommora/core/Connections/connections'
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/Connections/links'
-import type { TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt, lineIndexAt } from '../Engine/docScan'
 import type { ConnPage, PageIndex } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
