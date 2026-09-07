@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
-import { resolveFavorites, resolvePins, resolveRecents, resolveWith } from './navResolve'
-import { resolveIndexOf } from '../Nexus/treeIndex'
+import {
+  pageTargetFromNav,
+  type ResolvedNav,
+  resolveFavorites,
+  resolvePins,
+  resolveRecents,
+  resolveWith,
+} from './navResolve'
+import { pagesByIdOf, resolveIndexOf } from '../Nexus/treeIndex'
 import { makeTree } from '../Testing/testTree'
 
 describe('resolveWith — single entry', () => {
@@ -134,5 +141,41 @@ describe('resolvePins', () => {
     const out = resolvePins(resolveIndexOf(makeTree()), pins)
     expect(out.map((r) => r.key)).toEqual(['collection:c1'])
     expect(out.every((r) => r.pinned === true)).toBe(true)
+  })
+})
+
+describe('pageTargetFromNav', () => {
+  const navFor = (ref: NavRef, tree = makeTree()) =>
+    resolveWith(resolveIndexOf(tree), ref) as ResolvedNav
+
+  it('resolves a page row to the same file path the id→path map gives', () => {
+    const tree = makeTree()
+    const it = navFor({ kind: 'page', id: 'p1' }, tree)
+    expect(pageTargetFromNav(it, tree)).toEqual({
+      kind: 'page',
+      id: 'p1',
+      path: pagesByIdOf(tree).get('p1')?.path,
+    })
+  })
+
+  it('returns null for a non-page nav ref', () => {
+    const tree = makeTree()
+    expect(pageTargetFromNav(navFor({ kind: 'collection', id: 'c1' }, tree), tree)).toBeNull()
+  })
+
+  it('returns null when the page id is absent from the tree', () => {
+    const orphan: ResolvedNav = {
+      key: 'page:ghost',
+      target: { kind: 'page', id: 'ghost' },
+      kind: 'page',
+      title: 'Ghost',
+      icon: 'file',
+      path: [],
+    }
+    expect(pageTargetFromNav(orphan, makeTree())).toBeNull()
+  })
+
+  it('returns null when the tree is null', () => {
+    expect(pageTargetFromNav(navFor({ kind: 'page', id: 'p1' }), null)).toBeNull()
   })
 })

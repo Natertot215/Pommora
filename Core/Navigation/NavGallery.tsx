@@ -14,9 +14,11 @@ import {
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { navKey } from './navRecents'
-import type { ResolvedNav } from './navResolve'
+import { pageTargetFromNav, type ResolvedNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
+import { armPreview } from '../Interface/Glance/glanceLink'
+import { cancelGlance } from '../Interface/Glance/glanceAction'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
 import { assetUrl } from '../Platform/assetScheme'
@@ -129,6 +131,11 @@ function GalleryCard({
       locked
       {...(drag ? {} : { onKeyDown: onActivateKey(() => onSelect(it.target)) })}
       onClick={open}
+      onPointerEnter={(e) => {
+        const t = pageTargetFromNav(it, useSession.getState().tree)
+        if (t) armPreview(t, e.currentTarget, 'detail')
+      }}
+      onPointerLeave={() => cancelGlance()}
       onContextMenu={(e) => onMenu(it, e)}
     >
       <CardBody>
