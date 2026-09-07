@@ -28,7 +28,6 @@ export type PickEntry = {
   id: string
   name: string
   icon: string
-  // `target` null with `revealOnly` false is a dependent kind: the caller takes it back through `onReveal` and opens its own popup (a TextPicker, or the file dialog), which is why the chevron keys off `revealOnly` rather than off `target`.
   revealOnly: boolean
   target: PickTarget | null
 }
@@ -97,7 +96,6 @@ export function PropertyPicker({
     setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
   }, [open, chooser, chooserInitial])
 
-  // The flat props are the hazard bridge for callers not yet migrated; Task 5 removes them, and every one is an options popup.
   const t =
     picked?.target ??
     held ??
@@ -176,7 +174,7 @@ export function PropertyPicker({
                     onClick={() => {
                       if (e.target) return setPicked(e)
                       onReveal?.(e)
-                      onDismiss()
+                      if (e.revealOnly) onDismiss()
                     }}
                   >
                     {e.name}

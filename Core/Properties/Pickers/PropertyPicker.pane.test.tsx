@@ -38,6 +38,7 @@ function Host(props: {
   anchorX?: number
   onCommit?: (value: unknown, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
+  onDismiss?: () => void
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   return (
@@ -54,11 +55,17 @@ function Host(props: {
         anchorX={props.anchorX}
         onCommit={props.onCommit ?? (() => {})}
         onReveal={props.onReveal}
-        onDismiss={() => {}}
+        onDismiss={props.onDismiss ?? (() => {})}
       />
     </>
   )
 }
+
+const rowButton = (name: string): HTMLElement | undefined =>
+  [
+    ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'),
+    ...buttons(),
+  ].find((e) => e.textContent?.includes(name))
 
 let host: HTMLDivElement
 let root: Root
@@ -128,7 +135,6 @@ describe('PropertyPicker panes', () => {
     ]
     await render({ chooser, onReveal, onCommit })
     const row = buttons().find((b) => b.textContent?.includes('Rank'))
-    // MenuItem is a div with role=button, not a <button>; fall back to the row div.
     const el =
       row ??
       [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find(
@@ -139,6 +145,30 @@ describe('PropertyPicker panes', () => {
     })
     expect(onReveal).toHaveBeenCalledTimes(1)
     expect(onCommit).not.toHaveBeenCalled()
+  })
+
+  it('a revealOnly entry dismisses here; a dependent entry hands back without dismissing (its caller reopens on this mount)', async () => {
+    const chooser: PickEntry[] = [
+      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, target: null },
+      { id: 'prop_d', name: 'Due', icon: 'square-dashed', revealOnly: false, target: null },
+    ]
+    const revealOnlyDismiss = vi.fn()
+    await render({ chooser, onReveal: vi.fn(), onDismiss: revealOnlyDismiss })
+    await act(async () => {
+      rowButton('Rank')?.click()
+    })
+    expect(revealOnlyDismiss).toHaveBeenCalledTimes(1)
+
+    const dependentDismiss = vi.fn()
+    await act(() => root.unmount())
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await render({ chooser, onReveal: vi.fn(), onDismiss: dependentDismiss })
+    await act(async () => {
+      rowButton('Due')?.click()
+    })
+    expect(dependentDismiss).not.toHaveBeenCalled()
   })
 
   it('a targeted chooser entry slides to its value pane, chooserInitial pre-drills, and onCommit carries the entry', async () => {
@@ -152,7 +182,6 @@ describe('PropertyPicker panes', () => {
         target: optionsTarget(),
       },
     ]
-    // Pre-drilled by chooserInitial (B25): the value pane's chips are visible without a click.
     await render({ chooser, chooserInitial: 'prop_sel', onCommit })
     expect(portalText()).toContain('Alpha')
     const alpha = [
