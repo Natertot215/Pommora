@@ -11,6 +11,8 @@ import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { suppressNextClick } from '@pommora/uix/Interactions/shared'
 import type { Tab, TabTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
+import { armPreview } from '../Interface/Glance/glanceLink'
+import { cancelGlance } from '../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
@@ -251,6 +253,12 @@ function PinnedTab({
       style={drag.style}
       {...drag.handle}
       data-tab-id={entry.tab.id}
+      onPointerEnter={(e) => {
+        const t = entry.tab.target
+        if (t.kind === 'page')
+          armPreview({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'detail')
+      }}
+      onPointerLeave={() => cancelGlance()}
       className={cx('tab-pinned', active && 'is-active', drag.isDragging && 'is-dragging')}
       title={entry.res.title}
       role="tab"
@@ -312,6 +320,12 @@ function UnpinnedTab({
       style={drag?.style}
       {...drag?.handle}
       data-tab-id={entry.tab.id}
+      onPointerEnter={(e) => {
+        const t = entry.tab.target
+        if (t.kind === 'page')
+          armPreview({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'detail')
+      }}
+      onPointerLeave={() => cancelGlance()}
       className={cx(
         'tab',
         hoverRemoveHost,
