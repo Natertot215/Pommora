@@ -36,7 +36,7 @@ import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSaveView } from '../ViewTileScope'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { optionsOf } from './GroupFrame'
+import { optionsOf } from '@pommora/core/Properties/properties'
 import {
   type Connector,
   type DecodedFilter,

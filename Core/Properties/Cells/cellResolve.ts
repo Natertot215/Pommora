@@ -1,4 +1,4 @@
-import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
+import { optionsOf, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -10,10 +10,7 @@ export function findOption(
   schema: PropertyDefinition[],
 ): { value: string; label: string; color?: string; icon?: string } | undefined {
   const def = schema.find((d) => d.id === columnId)
-  return (
-    def?.select_options?.find((o) => o.value === value) ??
-    statusOptions(def).find((o) => o.value === value)
-  )
+  return optionsOf(def).find((o) => o.value === value)
 }
 
 export function optionLabel(

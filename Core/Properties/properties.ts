@@ -187,14 +187,19 @@ export function statusOptions(
 export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multi_select' =>
   type === 'select' || type === 'multi_select'
 
+export const isOptionsKind = (type: string | undefined): boolean =>
+  type === 'select' || type === 'status' || type === 'multi_select' || type === 'context'
+
+export type PickOption = { value: string; label: string; color?: string; icon?: string }
+
 /** Keyed on the DECLARED type, never on which array happens to be present — a type change retains the array it moved away from, so a Status property can still carry a stale select_options. */
-export function optionValues(
+export const optionsOf = (
+  def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'> | undefined,
+): PickOption[] => (def?.type === 'status' ? statusOptions(def) : (def?.select_options ?? []))
+
+export const optionValues = (
   def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
-): string[] {
-  return def.type === 'status'
-    ? (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
-    : (def.select_options ?? []).map((o) => o.value)
-}
+): string[] => optionsOf(def).map((o) => o.value)
 
 export function defaultStatusSeed(): StatusGroup[] {
   return [
