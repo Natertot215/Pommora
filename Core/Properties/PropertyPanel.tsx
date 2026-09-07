@@ -58,7 +58,7 @@ import * as s from './property-panel.css'
 
 export type PanelStyle = 'standard' | 'filled'
 
-type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
+type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
 export type PropertyPanelProps = { panelStyle: PanelStyle } & (
@@ -135,10 +135,8 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     [tree],
   )
   const contextValues = useMemo(() => {
-    const registry: ContextsRegistry | null = tree?.contexts
-      ? { contexts: tree.contexts.map((g) => g.def) }
-      : null
-    if (!fm || !registry || !tree?.contexts) return undefined
+    if (!fm || !tree?.contexts) return undefined
+    const registry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
     const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
     const links = resolveContextKeys(fm as Record<string, unknown>, registry, spacesByContext)
     return links.size ? Object.fromEntries(links) : undefined
@@ -188,28 +186,27 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   const commitFor = (id: string, v: PropertyValue | null): void =>
     isContextRow(id) ? commitContext(id, v?.kind === 'context' ? v.value : []) : commitValue(id, v)
 
-  const isShownProp = (def: PropertyDefinition): boolean =>
-    revealed.has(def.id) || (fm as Record<string, unknown> | null)?.[def.name] !== undefined
-  const isShownContext = (id: string): boolean =>
-    pageFrame ? !setAside.has(id) : revealed.has(id) || (contextValues?.[id]?.length ?? 0) > 0
-
-  const groups: [string, Field[]][] = [
-    ['contexts', contextRows.filter((t) => isShownContext(t.id)).map((t) => ({ ...t, def: null }))],
-    [
-      'properties',
-      schema.filter(isShownProp).map((d) => ({
-        id: d.id,
-        label: displayPropertyName(d.name, capitalize),
-        icon: propertyIcon(d),
-        def: d,
-      })),
-    ],
+  const allFields: Field[] = [
+    ...contextRows.map((t) => ({ ...t, def: null })),
+    ...schema.map((d) => ({
+      id: d.id,
+      label: displayPropertyName(d.name, capitalize),
+      icon: propertyIcon(d),
+      def: d,
+    })),
   ]
-  const entering = useEntrance(
-    groups.flatMap(([, group]) => group),
-    (f) => f.id,
-    fm !== null,
-  )
+  const isShown = (f: Field): boolean =>
+    f.def
+      ? revealed.has(f.id) || (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined
+      : pageFrame
+        ? !setAside.has(f.id)
+        : revealed.has(f.id) || (contextValues?.[f.id]?.length ?? 0) > 0
+  const shown = allFields.filter(isShown)
+  const groups: [string, Field[]][] = [
+    ['contexts', shown.filter((f) => !f.def)],
+    ['properties', shown.filter((f) => f.def)],
+  ]
+  const entering = useEntrance(shown, (f) => f.id, fm !== null)
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const editRow = (
@@ -226,7 +223,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
         if (def.type === 'checkbox' && shared.value === null) reveal(def.id)
       } else if (shared.kind === 'file') {
         pickFileInto(def, current, fileChipIndex(from), (next) => commitValue(def.id, next))
-      } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
+      } else setEditing({ id: def.id, mode: 'picker' })
       return
     }
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
@@ -286,12 +283,12 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   }
   const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined
   const panelTarget = ((): PickTarget | null => {
-    if (!editing || !row || (editing.mode !== 'picker' && editing.mode !== 'date')) return null
+    if (!editing || !row || editing.mode !== 'picker') return null
     const def =
       editingDef ?? (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined)
     if (!def) return null
     const current = resolveFieldValue(row, editing.id, schema)
-    if (editing.mode === 'date') return { kind: 'datetime', def, current }
+    if (def.type === 'datetime') return { kind: 'datetime', def, current }
     return {
       kind: 'options',
       def,
@@ -301,24 +298,9 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     }
   })()
 
-  const hiddenProps = schema.filter((d) => !isShownProp(d))
-  const hiddenContexts = contextRows.filter((t) => !isShownContext(t.id))
-  const hiddenEntries: PickEntry[] = [
-    ...hiddenContexts.map((t) => ({
-      id: t.id,
-      name: t.label,
-      icon: t.icon,
-      revealOnly: true,
-      drillable: false,
-    })),
-    ...hiddenProps.map((def) => ({
-      id: def.id,
-      name: displayPropertyName(def.name, capitalize),
-      icon: propertyIcon(def),
-      revealOnly: true,
-      drillable: false,
-    })),
-  ]
+  const hiddenEntries: PickEntry[] = allFields
+    .filter((f) => !isShown(f))
+    .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
 
   const body = (): React.ReactNode => {
     if (!ctx || !row || !fm) return null
@@ -407,7 +389,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
               </div>
             ),
           )}
-          {(hiddenProps.length > 0 || hiddenContexts.length > 0) && (
+          {hiddenEntries.length > 0 && (
             <Button
               ref={addRef}
               size="button-inline"
@@ -437,9 +419,8 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
           chooser={addOpen ? hiddenEntries : undefined}
           open={panelTarget !== null || addOpen}
           triggerRef={addOpen ? addRef : triggerRef}
-          onCommit={(v, entry) => {
-            const id = entry?.id ?? editing?.id
-            if (id) commitFor(id, v)
+          onCommit={(v) => {
+            if (editing) commitFor(editing.id, v)
           }}
           onReveal={(entry) => {
             if (pageFrame && isContextRow(entry.id)) {
