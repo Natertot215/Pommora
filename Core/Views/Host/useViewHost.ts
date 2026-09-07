@@ -7,10 +7,10 @@ import type {
   ResolvedGroup,
   ViewRow,
 } from '@pommora/core/Views/viewRow'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
-import { applyValueAtRoot, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import {
@@ -32,7 +32,6 @@ import { type Overrides, patchOverride, useContainerValues } from './useValuesEp
 import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
-import { writeContextValue } from './contextCellWrite'
 import { mergeStyleRecords } from '../viewMerge'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
 import { sameIds } from '../creationOrder'
@@ -262,24 +261,21 @@ export function useViewHost(
     persistView(patch)
   }
 
-  const liveFrontmatter = (row: ViewRow): PageFrontmatter =>
-    effectiveValues[row.id]?.frontmatter ?? row.frontmatter
-
-  const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
-    const def = schema.find((d) => d.id === propertyId)
-    if (!def) return
-    const patched = applyValueAtRoot(
-      liveFrontmatter(row) as Record<string, unknown>,
-      def,
-      value,
-    ) as PageFrontmatter
-    patchOverride(
-      setValueOverride,
-      row.id,
-      patched,
-      mutate({ op: 'setProperty', path: row.path, propertyId, value }),
-    )
-  }
+  const writer = useRef<ValueWriter | null>(null)
+  useEffect(() => {
+    writer.current = {
+      schema,
+      mutate,
+      // `rows` is the pre-filter set: a value change that filters the row out of the pipeline must still be undoable.
+      rowOf: (id) => rows.find((r) => r.id === id),
+      apply: (id, fm, write) => patchOverride(setValueOverride, id, fm, write),
+    }
+    return () => {
+      writer.current = null
+    }
+  })
+  const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void =>
+    assignValue(writer, row, column, value)
   const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
     if (!sortReassign) return
     const keyOf = (id: string): string => {
@@ -290,15 +286,12 @@ export function useViewHost(
     const target = reassignTarget(band, activeId, keyOf)
     if (target === undefined) return
     const row = rowById.get(activeId)
-    if (row) setProperty(row, sortReassign.propertyId, groupKeyToValue(target, sortReassign.type))
-  }
-  const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
-    if (column.kind === 'context') {
-      const ids = value?.kind === 'context' ? value.value : []
-      writeContextValue(row, column.id, ids, liveFrontmatter(row), setValueOverride, mutate)
-      return
-    }
-    setProperty(row, column.id, value)
+    if (row)
+      commitValue(
+        row,
+        { id: sortReassign.propertyId, kind: 'property' },
+        groupKeyToValue(target, sortReassign.type),
+      )
   }
   const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
     if (column.kind !== 'context' || !tree) return null
@@ -372,7 +365,6 @@ export function useViewHost(
     revealProperty,
     persistView,
     commitBand,
-    setProperty,
     commitValue,
     contextOptionsFor,
     creation,

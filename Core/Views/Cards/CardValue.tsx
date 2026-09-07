@@ -11,13 +11,8 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { isOptionsKind } from '../../Properties/properties'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
-import {
-  linkAlias,
-  linkEditText,
-  urlValueFromEdit,
-  urlValueFromRename,
-} from '@pommora/core/Connections/linkValue'
-import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
+import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
+import { validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -147,9 +142,7 @@ export function CardValue({
     const parsed =
       mode === 'rename'
         ? urlValueFromRename(raw, v.kind === 'url' ? v.value : '')
-        : t === 'url'
-          ? urlValueFromEdit(raw, v.kind === 'url' ? v.value : undefined, resolveTitle)
-          : parseEditorValue(t, raw)
+        : parseEditorValue(t, raw, v)
     if (parsed !== undefined) commit(parsed)
   }
 

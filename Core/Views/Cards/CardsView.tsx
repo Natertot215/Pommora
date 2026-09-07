@@ -165,7 +165,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     hideProperty,
     revealProperty,
     commitBand,
-    setProperty,
     commitValue,
     contextOptionsFor,
     creation,
@@ -535,7 +534,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
     if (!canReassign || !groupPropId) return
     const row = rowById.get(activeId)
-    if (row) setProperty(row, groupPropId, groupKeyToValue(toZone, groupPropType))
+    if (row)
+      commitValue(
+        row,
+        { id: groupPropId, kind: 'property' },
+        groupKeyToValue(toZone, groupPropType),
+      )
   }
 
   const [effectiveZoom, setEffectiveZoom] = useState(1)
