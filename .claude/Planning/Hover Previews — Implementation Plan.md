@@ -687,6 +687,24 @@ useEffect(() => {
 ### Lessons
 - **Phase 3's gate ran attack before simplify — the wrong order.** The Standard is simplify → review, always; the supervisor dispatched the build-breaking-agent first and did the simplification read after (catching the TabBar dup the attacker had already noted as an aside). No harm here (the diff was small, the one cut was independent of the findings), but attacking an un-simplified diff risks findings against complexity you were about to cut. Simplify first, then attack — every phase.
 
+### Folded Eyeball Re-dos
+
+Directed by Nathan during the live eyeball pass, after the four phases shipped — each folded and committed:
+
+1. **Current-view guard** — a preview never resolves for the location already in the active view; because it's checked at the presenter (fire time) against the live selection, it also voids a dwell that lands after a click navigates onto that page ("2 solves 1"). `ffffd3d17`.
+2. **Lock matches the sidebar `.row-lock`** — the corner control became a raw button styled like the disclosure lock: hidden at rest, revealed on card hover, always visible once locked. `e69bf31fe`.
+3. **Shift arms anytime while hovering** — a hovered-target slot + a `!e.repeat` Shift keydown, so pressing Shift while resting on a ghost surface raises the preview without a leave-and-re-enter (fixes the sidebar and ghost-popped friction; the earlier behavior required Shift held *before* entering). `84e4f07d9`.
+4. **Unlock keeps the pane open** — `PinnedGlance.locked` + `setPinLocked`; unlocking flips it in place instead of removing, and unlocked pins close on Esc / click-away / navigate while locked pins survive those. `84e4f07d9`.
+5. **No jitter on lock** — the freshly-mounted pin skips the enter-bloom (`PickerMenu bloom`→`enter`, pins pass `enter={false}`) so it appears in place while the live pane blooms out behind it. `84e4f07d9`.
+6. **Glance/pin exit via `useExitPresence`** — pins bloom *out* through `PickerMenu`'s `onExited` + a `wasClosing` latch and a local `exiting` set, rather than instant-splicing. `84e4f07d9`.
+7. **Right-click never clobbers a preview** — one global capture-phase `contextmenu` listener cancels the pending dwell and clears the hovered surface. `84e4f07d9`.
+8. **Esc closes a pin locked-or-not (R9)** — restored after the rework had scoped Esc to unlocked pins; click-away and navigate still spare locked pins. `f8a80d218`.
+9. **Aborted ghost collapses via `Reveal` on cards** — Cards instant-dropped its create-ghost while sidebar and table collapsed theirs; Cards now routes through `Reveal`/`onCollapsed` too. `07f06c091`.
+
+*(Also folded earlier, attack-driven rather than eyeball-driven: the L1 `shiftDown`→`e.shiftKey` removal `313cc9f85`, the pin-orphan `setPinned` scrub `fdb57567d`, and the TabBar tab-hover dedup `ab8a70e66`.)*
+
+**Reversed-decision closeout audit — clean.** No trial-and-error residue from the decisions that were reversed or renamed: `shiftDown`, `LEAVE_GRACE_MS`, `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX`, `dropUnlockedPins`, and `unlockBtn` all resolve to zero references; `bloom` was fully renamed to `enter` with no residue; GlancePane carries no dead `Button` import; the `picker-base` DEV guard exemption (`anchorX === undefined`) was deliberately kept — two paths still unmount a pin while `open` (a tab-switch filter and a reconcile-drop), so it remains justified rather than reversed.
+
 ### Closeout
 
 ---

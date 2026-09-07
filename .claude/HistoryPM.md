@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-06-2026 → 09-07      | PM-131 | Cross-Surface Glances, Persistence & Pinning         |
 | 09-06-2026              | PM-130 | The One Value Picker & Panel                         |
 | 09-05-2026 → 09-06      | PM-129 | The Repo Restructure                                 |
 | 09-05-2026              | PM-128 | Tiles Framework                                      |
@@ -133,6 +134,20 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-131 || Cross-Surface Glances, Persistence & Pinning
+**DATE:** 09-06-2026 → 09-07
+
+The Glance hover-preview pane reached every page-nav surface, its whole persistence story collapsed onto one setting, and a preview became pinnable. `Core/Interface/Glance/glanceLink.ts` grew into the app-side facade: `armPreview` gates every surface on one Off rung, `hoverGlance`/`leaveGlance` track the row under the pointer, and `GlancePane`'s presenter refuses to raise a preview for the location already in the active view.
+
+**Persistence:** `Core/Settings/personalization.ts` replaced the `hoverPreviewLinger` slider and a never-built enable toggle with one `previewPersistence` setting (`off` · `1s` · `5s` · `10s` · `always`) resolved through `previewLingerMs`; `off` is the enable switch, `always` schedules no dismiss. `GLANCE_DWELL` gained `detail` and `views` beside `link`.
+
+**Surfaces:** sidebar rows, page tabs, nav-view rows, card rows, and table rows all arm through the facade — the three ghostCreate surfaces read `e.shiftKey` so Shift arbitrates with the create-ghost (and a Shift pressed at rest raises the hovered row, no re-enter), while tabs and nav rows preview on plain hover; a nav row's file path comes from `pagesByIdOf`, not its breadcrumb. Trash and history raise nothing. An open preview stands the create-ghost down through `glanceShown`, and a right-click cancels a pending dwell so a preview never clobbers a context menu.
+
+**Lock & pins:** `Core/Session/glanceSlice.ts` — the seventh Session slice — holds `pinnedGlances`, explicit artifacts keyed by a minted `pinId` and tagged by tab, never LRU-evicted; a corner lock styled like the sidebar's `.row-lock` freezes a page preview into a pin. Pins survive navigation, scroll, and tab-switching, re-tag when their tab is pinned/unpinned, and scrub on tab-close or a reconcile that drops a deleted page; unlocking leaves the pane standing (closed then by Esc, a click away, or navigation), and every close blooms out through `PickerMenu`'s exit presence (`enter`/`onExited`) rather than vanishing. The aborted create-ghost now collapses through `Reveal` on cards too, matching the sidebar and table.
+
+- **Commits:** `c80e39af1^..07f06c091` (interleaved on `main` with the parallel PropertyPanel arc)
+- **Diff:** Net ≈ +450 (source, comments and tests excluded) across the Glance file set — approximate, since the arc interleaves with the PropertyPanel commits and shares `CardsView`/`TableView`
 
 #### PM-130 || The One Value Picker & Panel
 **DATE:** 09-06-2026
