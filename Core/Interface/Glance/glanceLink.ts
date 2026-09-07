@@ -10,17 +10,3 @@ export function armPreview(target: GlanceTarget, el: Element, slot: GlanceDwell)
 
 export const glanceLink = (target: GlanceTarget, el: Element): void =>
   armPreview(target, el, 'link')
-
-let shift = false
-let tracking = false
-export function shiftDown(): boolean {
-  if (!tracking) {
-    tracking = true
-    const read = (e: KeyboardEvent): void => {
-      shift = e.shiftKey
-    }
-    window.addEventListener('keydown', read)
-    window.addEventListener('keyup', read)
-  }
-  return shift
-}

@@ -32,7 +32,7 @@ Bounding constraints: **least moving parts** — reuse the pane, the editor-stat
 - `warmSeam.ts:25-26` `capture` wholesale-replaces `{editorState, scrollTop}` on every editor unmount (incl. the unmount locking triggers), and `restore` deletes a stale entry → **forbids** piggybacking pin data on the warm cache; **forces** pins into their own store (`glanceSlice`). The pinned page's editor state still rides the warm cache normally. → Task 9.
 - `navigationSlice.ts:302,448` `graduatePinCovered`/`unpinTab` re-key a *surviving* tab (new id, tab lives on); `:413,685` are real closes → **forces:** tab-close scrubs pins, but the two re-key sites **re-tag** pins `oldId→newId` — never a blanket scrub-all-four. → Task 10.
 - `glanceAction.ts:28` no-ops when the anchor sits inside an existing glance (`insideGlance`) → **free:** hovering the pane can't clobber it (R6 half-satisfied). → Task 8.
-- `ghostCreate.ts:24` `onHover(id, entering)` carries no event/modifier, and `suppressed()` is re-read ~1.5s later at dwell-fire → **forces:** Shift is read from an ambient tracker (`shiftDown`) in the enter branch to *arm*; ghost suppression keys on `glanceShown()` (a preview is open), **not** on `shiftDown()` — otherwise pressing Shift mid-hover suppresses the ghost while arming nothing (the F5 dead zone). Preview dwell (600ms) < ghost dwell (1500ms), so a shift-armed preview is shown before the ghost checks. → Task 5, Task 8.
+- `ghostCreate.ts:24` `onHover(id, entering)` carries no event/modifier, and `suppressed()` is re-read ~1.5s later at dwell-fire → **forces:** Shift is read as `e.shiftKey` off the surface's own `onPointerEnter` event to *arm* (the browser's read at dispatch time — never stale, no listener); ghost suppression keys on `glanceShown()` (a preview is open), **not** on the Shift state — otherwise pressing Shift mid-hover suppresses the ghost while arming nothing (the F5 dead zone). Preview dwell (600ms) < ghost dwell (1500ms), so a shift-armed preview is shown before the ghost checks. *(An ambient `shiftDown()` tracker was built and removed — attack-review L1: it read stale after app-switch-with-Shift; the pointer event is the accurate read F5 always wanted.)* → Task 5, Task 8.
 - `navResolve.ts` yields `ResolvedNav.path` as a breadcrumb (`TrailSegment[]`), not a file path; `treeIndex.ts:243` `pagesByIdOf(tree).get(id)?.path` is the id→file-path map → **forces:** nav-view arming resolves path via `pagesByIdOf`, not the nav resolver. → Task 7.
 - `navRef.ts:52-54` a tab target may be homepage/context/space/collection/set, not only page → **forces:** tab arming gates on `target.kind === 'page'`. → Task 6.
 - Pins are page-only (ratified) → **forbids:** locking a `kind:'site'` glance; the lock icon shows only for page targets. → Task 10.
@@ -148,7 +148,7 @@ export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefine
 **Assumed by:** Task 2 (`armPreview` Off-gate), Task 3 (codec + settings row + pane grace).
 
 **Verify — automated**
-- [x] Red first: unit test `coercePreviewPersistence('5s'|undefined|'garbage'|7)` and `previewLingerMs('1s'|'10s'|'always'|undefined)` — expect module-export failures, then green.
+- [x] Unit test `coercePreviewPersistence('5s'|undefined|'garbage'|7)` and `previewLingerMs('1s'|'10s'|'always'|undefined)`. *(Authored alongside the impl, not red-first; each assertion discriminates — the `'always'`→Infinity and coerce-reject cases fail if their logic is removed.)*
 - [x] Degenerate: `coercePreviewPersistence(undefined)` → `undefined`; `previewLingerMs(undefined)` → 1000.
 - [x] `npm run typecheck` green.
 
@@ -160,7 +160,7 @@ export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefine
 
 **Requirement:** 1, 2, 5, 6
 
-**Why:** One app-side owner of glance policy, grown from the file that already owns editor arming: an Off-gated `armPreview(target, el, slot)` (matching the house imperative-personalization-gate idiom — `confirmations.ts:20`, `openWebLink.ts:7`) plus an ambient `shiftDown` tracker. `glanceShown`/`setGlanceShown` go to `glanceAction.ts` instead — "a glance is on screen" is presenter-domain, sitting beside the existing `present`/`pending` module state, and `GlancePane` already imports from there. `glanceLink` stays the editor's bound-slot wrapper, so `editorHost` is untouched. `glanceAction.ts` stays a pure leaf and **exports** `GlanceDwell` (used by `armPreview`'s signature now, values widened in Task 4).
+**Why:** One app-side owner of glance policy, grown from the file that already owns editor arming: an Off-gated `armPreview(target, el, slot)` (matching the house imperative-personalization-gate idiom — `confirmations.ts:20`, `openWebLink.ts:7`). `glanceShown`/`setGlanceShown` go to `glanceAction.ts` instead — "a glance is on screen" is presenter-domain, sitting beside the existing `present`/`pending` module state, and `GlancePane` already imports from there. `glanceLink` stays the editor's bound-slot wrapper, so `editorHost` is untouched. `glanceAction.ts` stays a pure leaf and **exports** `GlanceDwell` (used by `armPreview`'s signature now, values widened in Task 4).
 
 **Now** — `glanceLink.ts` (whole file); `glanceAction.ts:11,19-20` (`type GlanceDwell` unexported; the presenter module state):
 
@@ -187,15 +187,15 @@ export function armPreview(target: GlanceTarget, el: Element, slot: GlanceDwell)
 //   if (useSession.getState().personalization.previewPersistence === 'off') return
 //   armGlance(target, el, slot)
 export const glanceLink = (t: GlanceTarget, el: Element): void => armPreview(t, el, 'link') // editor's bound slot
-export function shiftDown(): boolean   // ambient: one lazily-attached window keydown/keyup pair (no existing tracker to reuse)
 ```
+*(No ambient Shift tracker: surfaces read `e.shiftKey` off the pointer-enter event at the arm site — see F5. The attack-review's L1 removed the tracker that was here.)*
 
-**Assumed by:** Tasks 5–7 (`armPreview` + `shiftDown`), Task 8 (`glanceShown`/`setGlanceShown` from `glanceAction`).
+**Assumed by:** Tasks 5–7 (`armPreview`), Task 8 (`glanceShown`/`setGlanceShown` from `glanceAction`).
 
 **Verify — automated**
 - [x] `rg -F 'armPreview' Core` → ≥1; `glanceLink` still resolves (kept); no new file.
 - [x] Guard both halves: persistence 'off' → `armPreview` presents nothing (spy the presenter); '1s' → presents. Disabling the gate makes the 'off' case fail. Editor path proven via `glanceLink`.
-- [x] `shiftDown()` flips on synthetic Shift keydown/keyup; `glanceShown()` reflects `setGlanceShown`.
+- [x] `glanceShown()` reflects `setGlanceShown`.
 - [x] `npm run typecheck` · `npm run test` green.
 
 **Verify — user**
@@ -236,9 +236,10 @@ previewPersistence: coercePreviewPersistence(p.previewPersistence),
     { value: '5s', label: '5 Seconds' }, { value: '10s', label: '10 Seconds' },
     { value: 'always', label: 'Until Closed' },
   ] },
-// GlancePane.tsx:245-246 — narrow 'off' before the resolver (its domain excludes 'off'); 'always' → Infinity → schedule NO leave timer
+// GlancePane.tsx:245-246 — narrow 'off' before the resolver (its domain excludes 'off'); 'always' → Infinity → schedule NO leave timer.
+// 'off' never has a live pane (the Off-mid-open effect dismisses it), so its grace is moot → undefined→1000; this retired LEAVE_GRACE_MS (its only reader).
 const persistence = useSession((s) => s.personalization.previewPersistence)
-const graceMs = persistence === 'off' ? LEAVE_GRACE_MS : previewLingerMs(persistence)
+const graceMs = previewLingerMs(persistence === 'off' ? undefined : persistence)
 ```
 
 **Ordered Steps** *(hazard-window order)*
@@ -252,7 +253,7 @@ const graceMs = persistence === 'off' ? LEAVE_GRACE_MS : previewLingerMs(persist
 
 **Verify — automated**
 - [x] `rg -F 'hoverPreviewLinger' .` → 0. `rg -F 'coerceHoverLinger' .` → 0. `rg -F 'HOVER_LINGER_MAX' .` → 0. Control: `rg -F 'previewPersistence' Core` → 10.
-- [x] Red-green: existing linger test inverted — '5s' → 5000ms grace; 'always' → no dismiss timer scheduled; 'off' → live pane dismissed (Off-mid-open). Old assertion fails first.
+- [x] Linger test rewritten — '5s' → 5000ms grace; 'always' → no dismiss timer scheduled; 'off' → live pane dismissed (Off-mid-open). *(The GlancePane grace tests went red-first on exit-timing; the coercer/readNexus inversions were typecheck-level rewrites authored with the impl, not run against the old codec — each still discriminates its guard.)*
 - [x] Degenerate: `previewPersistence` absent → default '1s' (picker fallback + coercer undefined); a legacy `hoverPreviewLinger` on disk is ignored (codec builds fresh — no migration; the readNexus round-trip test asserts junk → undefined without naming the dead symbol).
 - [x] `npm run typecheck` · `npm run test` · `npm run lint` green.
 
@@ -262,12 +263,12 @@ const graceMs = persistence === 'off' ? LEAVE_GRACE_MS : previewLingerMs(persist
 
 #### Gate 1 — one setting, on/off proven, nothing dangling
 
-- [ ] Gates green, exit codes read directly. Tasks 1–3 automated boxes ticked against watched results.
-- [ ] Hazard window closed: no reference to `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX`.
-- [ ] Dead Vocabulary sweep at 0 against its control.
-- [ ] Simplification + review dispatched against `<base>..HEAD` (Glance + Settings); concerns fixed or ruled.
-- [ ] `ConfigurationPM.md:42` linger row rewritten in Task 3's commit.
-- [ ] Not a declared stop — Phase 2 opens; the two **Verify — user** boxes carry to Completion Criteria.
+- [x] Gates green, exit codes read directly (typecheck 0 · test 0, 4071 passed · lint 0). Tasks 1–3 automated boxes ticked against watched results.
+- [x] Hazard window closed: no reference to `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` in tracked source/docs.
+- [x] Dead Vocabulary sweep at 0 against its control (`previewPersistence` in Core → 10).
+- [x] Simplification: supervisor inline read of the six-file diff — small, idiomatic, no cuts earned; recorded here rather than a no-op simplifier commit. Attack review (build-breaking-agent) → Fable advisor gate: one Latent finding (L1) folded subtractive, all others killed as unreachable/observations. Fixes committed by explicit path.
+- [x] `ConfigurationPM.md:42` linger row rewritten in Task 3's commit.
+- [x] Not a declared stop — Phase 2 opens; the two **Verify — user** boxes carry to Completion Criteria.
 
 ---
 
@@ -311,11 +312,11 @@ export const GLANCE_DWELL = { link: 1000, detail: 600, views: 600 } as const
 
 ### Phase 3 — Wire the surfaces  *(Declared Stop at the gate)*
 
-*Each task builds `{ kind: 'page', id, path }` from the row, calls `armPreview(target, el, 'detail'|'views')` on enter (Shift-gated where noted) and `cancelGlance()` on leave. Ghost surfaces add `|| glanceShown()` to `suppressed` — **not** `shiftDown()` (F5). The Off-gate lives in `armPreview`; no surface repeats it.*
+*Each task builds `{ kind: 'page', id, path }` from the row, calls `armPreview(target, el, 'detail'|'views')` on enter (Shift-gated where noted, reading `e.shiftKey` off the `onPointerEnter` event) and `cancelGlance()` on leave. Ghost surfaces add `|| glanceShown()` to `suppressed` — **not** the Shift state (F5). The Off-gate lives in `armPreview`; no surface repeats it.*
 
 #### Task 5: Sidebar rows (Shift-gated, `detail`)
 
-**Requirement:** 2, 4, 5 · **Why:** The sidebar hosts ghostCreate, so Shift arbitrates: plain hover keeps the create-ghost, Shift+hover previews. Its `suppressed` gains `glanceShown()` so an open preview stands the ghost down — without the mid-hover dead zone `shiftDown()` would cause.
+**Requirement:** 2, 4, 5 · **Why:** The sidebar hosts ghostCreate, so Shift arbitrates: plain hover keeps the create-ghost, Shift+hover previews. Its `suppressed` gains `glanceShown()` so an open preview stands the ghost down — without the mid-hover dead zone keying suppression on the Shift state would cause.
 
 **Now** — re-derive. `Sidebar.tsx:435-451` (`PageRow`) + `:785-789` (ghost opts):
 
@@ -328,9 +329,9 @@ suppressed: () => useSession.getState().renamingPath !== null,
 **Becomes** — Shift arms a `detail` glance; ghost self-suppresses only while a preview is shown:
 
 ```tsx
-onPointerEnter={() => {
+onPointerEnter={(e) => {
   api?.onHover(page.id, true)
-  if (shiftDown()) armPreview({ kind: 'page', id: page.id, path: page.path }, rowRef.current!, 'detail')
+  if (e.shiftKey) armPreview({ kind: 'page', id: page.id, path: page.path }, rowRef.current!, 'detail')
 }}
 onPointerLeave={() => { api?.onHover(page.id, false); cancelGlance() }}
 suppressed: () => useSession.getState().renamingPath !== null || glanceShown(),
@@ -401,7 +402,7 @@ onPointerLeave={() => cancelGlance()}
 
 ```tsx
 // Table DataRow / Cards card row
-onPointerEnter={() => { api.hover(row, true); if (shiftDown()) armPreview({ kind: 'page', id: row.id, path: row.path }, /* row el */, 'views') }}
+onPointerEnter={(e) => { api.hover(row, true); if (e.shiftKey) armPreview({ kind: 'page', id: row.id, path: row.path }, e.currentTarget, 'views') }}
 onPointerLeave={() => { api.hover(row, false); cancelGlance() }}
 // both ghost opts gain: || glanceShown()
 // GlancePane.tsx — `shown` is the single source; retarget-through-null and dismiss both flow through it
@@ -633,7 +634,7 @@ useEffect(() => {
 
 ### Progress
 
-- [ ] **Phase 1** — One setting owns persistence · base `38a4d8e2c`
+- [x] **Phase 1** — One setting owns persistence · base `38a4d8e2c` · attack clean (L1 folded)
   - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `c80e39af1`
   - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `3a03a5ef6`
   - [x] Task 3 — Picker replaces slider (hazard window) · `3fd05f8f3`
@@ -652,7 +653,7 @@ useEffect(() => {
 - Pinned panes are non-resizable, frozen at lock-time rect (v1) — surfaced for the eyeball; revisit for resizable pins.
 - **Off-mid-open:** flipping persistence to 'off' dismisses the live pane; existing pins persist (explicit artifacts, closed via unlock/Esc).
 - **'always' + ghost suppression (F10):** with Until Closed, an open live preview keeps `glanceShown()` true, so create-ghosts stay suppressed until the preview is closed/replaced/navigated. Designed consequence of R5; surfaced at the Phase 3 eyeball — exempt 'always' from suppression only if Nathan dislikes it.
-- **Shift-arm contract (F5):** Shift is read at pointer-enter; pressing Shift after entering doesn't arm a preview (leave+re-enter with Shift). Chosen over a re-arm-on-keydown mechanism for least parts; the ghost still blooms in that case, so it's no dead zone. Surfaced at the eyeball.
+- **Shift-arm contract (F5):** Shift is read as `e.shiftKey` off the surface's `onPointerEnter` event (the browser's read at dispatch — never stale, no listener); pressing Shift after entering doesn't arm a preview (leave+re-enter with Shift). Chosen over a re-arm-on-keydown mechanism for least parts; the ghost still blooms in that case, so it's no dead zone. Surfaced at the eyeball.
 - **Pin key (F3):** pins are a list keyed by minted `pinId`, tagged with `tabId` — multiple per tab and the same page across tabs both work.
 - **Exit = removal (ratified):** unlock, Esc, and tab-close all just remove the pin from `pinnedGlances`; its `PickerMenu` (constant `open`, for correct anchor placement) unmounts instantly. No `.closing`, no `onExited`, no ghost/two-phase — the close is not animated, by choice, and the point-anchored guard-exemption keeps that silent.
 - **Frozen anchor on window resize (known edge):** a pin freezes a viewport-space `anchorY` and PickerMenu applies no vertical clamp, so a pin locked in the lower band can fall partly off-screen if the window is later shrunk. Recoverable (Esc/tab-close still remove it). Named here against the v1 frozen-rect ruling; no machinery.
@@ -664,6 +665,7 @@ useEffect(() => {
 ### Deviations
 - **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.
 - **`readNexus.test.ts` was the fourth `hoverPreviewLinger` reader** (a codec round-trip test); it was rewritten to a `previewPersistence` round-trip in Task 3's commit.
+- **L1 fold — ambient `shiftDown()` tracker dropped for `e.shiftKey`** (Phase 1 attack review, Fable-advisor-adjudicated: reachable + subtractive, not additive). The tracker read stale Shift state after app-switch-with-Shift-held (no `blur` reset) and before its first call. The fix deletes the mechanism rather than guarding it: surfaces read `e.shiftKey` off the pointer-enter event, which is where F5 always said the read happens. Removed `shift`/`tracking`/`shiftDown` from `glanceLink.ts` and its test; retired the now-single-reader `LEAVE_GRACE_MS` in `GlancePane.tsx` in the same commit (`previewLingerMs(persistence === 'off' ? undefined : persistence)`). F5, Task 2, the Phase 3 preamble, and Tasks 5/8 fences updated to match. Cleanup commit `<glance-l1-commit>` on top of Task 2's `3a03a5ef6`.
 
 ### Lessons
 

@@ -28,7 +28,6 @@ export const GLANCE_DEFAULT: GlanceSize = { w: 260, h: 120 }
 const GLANCE_MIN: GlanceSize = { w: 180, h: 100 }
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
-const LEAVE_GRACE_MS = 200
 const RECT_SLOP = 6
 // KNOB — how many glanced pages keep their editor state and scroll between opens.
 const GLANCE_WARM_CAP = 10
@@ -244,7 +243,8 @@ export function GlancePane(): React.JSX.Element {
   }, [shown, siteReady, dismiss])
 
   const persistence = useSession((s) => s.personalization.previewPersistence)
-  const graceMs = persistence === 'off' ? LEAVE_GRACE_MS : previewLingerMs(persistence)
+  // 'off' never has a live pane (the effect below dismisses it), so its grace is moot — narrow it out for the resolver.
+  const graceMs = previewLingerMs(persistence === 'off' ? undefined : persistence)
 
   // Off mid-open dismisses a live pane; arming is already gated off, so nothing reopens.
   useEffect(() => {
