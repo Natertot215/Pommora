@@ -34,6 +34,8 @@ import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { useSession } from '../../Session/store'
+import { armPreview } from '../../Interface/Glance/glanceLink'
+import { cancelGlance, glanceShown } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -889,7 +891,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const ghostApi = useGhostAnchor({
     dwellMs: GHOST_DWELL_MS,
     graceMs: GHOST_GRACE_MS,
-    suppressed: () => editingRef.current !== null,
+    suppressed: () => editingRef.current !== null || glanceShown(),
   })
   const ghost = ghostApi.ghost
   const holdGhost = ghostApi.suppressWrap
@@ -1417,8 +1419,15 @@ const DataRow = memo(function DataRow({
         isDragging && 'row-dragging',
         lead && 'row-lead',
       )}
-      onPointerEnter={() => api.hover(row, true)}
-      onPointerLeave={() => api.hover(row, false)}
+      onPointerEnter={(e) => {
+        api.hover(row, true)
+        if (e.shiftKey)
+          armPreview({ kind: 'page', id: row.id, path: row.path }, e.currentTarget, 'views')
+      }}
+      onPointerLeave={() => {
+        api.hover(row, false)
+        cancelGlance()
+      }}
       {...(dragDisabled ? {} : handle)}
     >
       {columns.map((c, i) => {
