@@ -6,8 +6,9 @@ export interface GlanceRequest {
   el: Element
 }
 
-/** KNOB — one dwell per glance surface; further surfaces add their own rows. */
-export const GLANCE_DWELL = { link: 1000 } as const
+// KNOB — one dwell per glance surface. link: editor. detail: sidebar/tabs/nav. views: cards/tables.
+// detail/views seeded at 600 — tune on sight (shift-summon feels snappier than the 1s link rest).
+export const GLANCE_DWELL = { link: 1000, detail: 600, views: 600 } as const
 export type GlanceDwell = keyof typeof GLANCE_DWELL
 
 export const GLANCE_BODY_ATTR = 'data-glance'
