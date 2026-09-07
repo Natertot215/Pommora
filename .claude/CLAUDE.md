@@ -18,12 +18,10 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### Codebase Information
 
-Pommora is 
-organized as workspaces: `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile`, `Sync`, and `Showcase` alongside. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5 · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `UIX/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
+**Pommora —**  `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile`, `Sync`, and `Showcase` alongside. **Stack —** electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5 · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `UIX/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor.
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design iteration happens beforehand; codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Showcase/` (`npm run build:showcase`) via `vercel.json`; it's the origin-synced showcase of the design system. The showcase is **never** a priority during development.
-- **TS-native on-disk format:** bare, natively typed values under bare property-name keys and `<Context>` keys, zod-validated.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design iteration happens beforehand; codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Showcase/` ( via `vercel.json`; it's the origin-synced showcase of the design system. The showcase is **never** a priority during development.
 
 ### Hard Rules
 
@@ -40,14 +38,14 @@ organized as workspaces: `Core` (the app), `UIX` (the design kit), and `Desktop`
 
 #### Testing Conventions
 
-- **The visual iteration scratchpad** — `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T — is for rapid iteration of an otherwise-scoped asset.
+- **The visual iteration scratchpad** — `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Live instances are yours to drive.** Kill and manipulate Nathan's running instances freely — scratch pages and data manipulation are accepted; the one requirement is that any change made is reverted when done. Kill test instances when you're done.
-- **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` plus the comment-style scan (`.claude // hooks // no-wrapped-comments.mjs`, which fails on a block comment spanning lines) — the linter, the formatter, and comment shape — and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs one.
+- **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs one.
 - **Launch the GUI** — copy-paste, from the repo root :
   ```
   env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev
   ```
-  `POMMORA_DEBUG_PORT` arms CDP; a `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. After `npm run build`, `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333` runs the built binary instead; `POMMORA_USERDATA=$HOME/…` points it at a scratch app-support folder (`~` does not expand inside the assignment).
+  `POMMORA_DEBUG_PORT` arms CDP; a `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. 
 - **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first launch dies with `Error: Electron uninstall`; run `./node_modules/.bin/electron --version` once to download it. 
 
 ### Locked Decisions
@@ -59,7 +57,7 @@ organized as workspaces: `Core` (the app), `UIX` (the design kit), and `Desktop`
 
 #### Important Information
 
-- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
+- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. It’s commits are archived on its own branch; `git log` reaches them directly.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime — subordinate to the daily Pommora grind — it brings similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
 - **NexusOS** is both an Obsidian vault *and* a Pommora Nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian fixtures until Pommora is completed.
 - **Mobile Companion:** A mobile companion app is a near-term focus; it’s been discussed yet hasn’t been formally planned.
