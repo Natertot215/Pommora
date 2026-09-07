@@ -456,13 +456,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       } else void select({ kind: 'page', id: row.id, path: row.path })
       return
     }
-    if (col.kind === 'context') {
-      e.stopPropagation()
-      setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
-      return
-    }
-    if (col.kind !== 'property') return
-    const t = declaredType(col.id, schema)
+    if (col.kind !== 'property' && col.kind !== 'context') return
+    const t = col.kind === 'context' ? 'context' : declaredType(col.id, schema)
     const value = resolveFieldValue(row, col.id, schema)
     const def = schema.find((d) => d.id === col.id)
     const shared = sharedValueClickAction(t, value)

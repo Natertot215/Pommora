@@ -328,11 +328,9 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
                             e.preventDefault()
                             e.stopPropagation()
                           }}
-                          onClick={(e) => {
-                            if (def) return editRow(def, e.currentTarget, e.target)
-                            triggerRef.current = e.currentTarget
-                            setEditing({ id, mode: 'picker' })
-                          }}
+                          onClick={(e) =>
+                            editRow(def ?? syntheticContextDef(id), e.currentTarget, e.target)
+                          }
                         >
                           {editing?.id === id && editing.mode === 'editor' && def ? (
                             <PropertyEditor
