@@ -43,6 +43,8 @@ let devicePrefsLoaded = false
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const resetNexusSession = (): void => {
     devicePrefsLoaded = false
+    // Every key here is per machine PER NEXUS, so a refused re-fetch must leave nothing of the old one behind for the next setDevicePref to write into this Nexus's own store.
+    set({ devicePrefs: {} })
     const s = get()
     s.resetNavigation()
     s.resetWindow()
