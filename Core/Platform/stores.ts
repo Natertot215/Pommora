@@ -52,7 +52,9 @@ export interface Stores {
   snapshots: SnapshotStore | null
 }
 
-let installed: Stores = { keyValue: null, contentIndex: null, snapshots: null }
+export const NO_STORES: Stores = { keyValue: null, contentIndex: null, snapshots: null }
+
+let installed: Stores = NO_STORES
 
 export function installStores(stores: Stores): void {
   installed = stores

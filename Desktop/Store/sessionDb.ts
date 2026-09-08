@@ -1,5 +1,5 @@
 import { errText } from '@pommora/core/Contract/result'
-import { installStores } from '@pommora/core/Platform/stores'
+import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { openNexusDb } from './open'
 import { openVersionsDb } from './versionsDb'
 import type { Db } from './driver'
@@ -54,5 +54,5 @@ export function closeSessionDb(): void {
   closeQuietly(versionsDb)
   db = null
   versionsDb = null
-  installStores({ keyValue: null, contentIndex: null, snapshots: null })
+  installStores(NO_STORES)
 }
