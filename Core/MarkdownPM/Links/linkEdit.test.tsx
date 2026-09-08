@@ -17,7 +17,7 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
-stubEditorBridge({ 'row-menu': async (req: unknown) => ok(await connMenu(req)) })
+stubEditorBridge({ menu: async (req: unknown) => ok(await connMenu(req)) })
 
 beforeEach(() => {
   connMenu.mockReset()

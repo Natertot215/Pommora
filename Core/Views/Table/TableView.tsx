@@ -78,7 +78,7 @@ import {
 } from '@pommora/core/Connections/linkValue'
 import { validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 
 // TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25
@@ -410,7 +410,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       t !== undefined && t !== 'title' && t !== 'context'
         ? { type: t, current: colStyle(id), ...(barCapable ? { barCapable: true } : {}) }
         : undefined
-    const action = await popRowMenu(
+    const action = await popMenu(
       columnMenuItems({
         align: colAlign(id),
         alignable: !isTitle,
@@ -695,7 +695,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             ...pageMoveContext(tree, row.path),
           }
         : base
-    const action = await holdGhost(() => popRowMenu(cellMenuModel(ctx)))
+    const action = await holdGhost(() => popMenu(cellMenuModel(ctx)))
     if (!action) return
     if (runPageSendAction(action, row)) return
     if (

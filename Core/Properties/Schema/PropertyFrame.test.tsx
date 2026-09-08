@@ -51,7 +51,7 @@ beforeEach(() => {
     'schema:delete': schemaDeleteSpy,
     'schema:assign': assignSpy,
     'property:delete': destroySpy,
-    'row-menu': async (req: unknown) =>
+    menu: async (req: unknown) =>
       ok(await (propertyMenuSpy as (r: unknown) => Promise<unknown>)(req)),
     'error:show': vi.fn(async () => {}),
   })

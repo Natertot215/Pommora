@@ -23,7 +23,7 @@ import { useSession } from '../../Session/store'
 import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
 const PANE_SQUARE = 225
@@ -106,7 +106,7 @@ export function ViewFrame({
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await popRowMenu(viewRowMenuItems({ deletable: views.length > 1 }))
+    const action = await popMenu(viewRowMenuItems({ deletable: views.length > 1 }))
     switch (action) {
       case 'rename':
         return setRenamingId(v.id)

@@ -124,7 +124,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
     'views:save': saveSpy,
-    'row-menu': async () => ({ ok: true, value: null }),
+    menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
     tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,

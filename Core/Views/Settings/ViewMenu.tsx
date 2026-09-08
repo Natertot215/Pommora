@@ -7,7 +7,7 @@ import { useActiveView } from '../Host/useActiveView'
 import { ViewFrame } from './ViewFrame'
 import * as s from '../../Interface/Toolbar/toolbar-menu.css'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'
 
 /** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). */
@@ -36,7 +36,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    const action = await popRowMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
+    const action = await popMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
     if (action !== 'toggle-title') return
     await host().ask('container:configure', node.path, node.kind, {
       view_button: labeled ? 'icon' : 'labeled',

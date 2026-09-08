@@ -18,7 +18,7 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { findSpace } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import * as s from '../Interface/Toolbar/toolbar-menu.css'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 const PANE_MIN_W = 225
@@ -51,7 +51,7 @@ export function SpaceMenu(): React.JSX.Element | null {
     if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
     e.preventDefault()
     e.stopPropagation()
-    const action = await popRowMenu(titleMenuItems({ toggleIcon: true, iconHidden }))
+    const action = await popMenu(titleMenuItems({ toggleIcon: true, iconHidden }))
     if (action === 'rename') setRenaming(true)
     else if (action === 'editIcon') setPickerOpen(true)
     else if (action === 'toggleIcon')

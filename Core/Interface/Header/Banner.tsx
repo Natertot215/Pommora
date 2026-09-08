@@ -15,7 +15,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
@@ -42,9 +42,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     e.preventDefault()
     e.stopPropagation()
     // No Edit Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
-    const action = await popRowMenu(
-      titleMenuItems({ toggleIcon: true, iconHidden, noEditIcon: true }),
-    )
+    const action = await popMenu(titleMenuItems({ toggleIcon: true, iconHidden, noEditIcon: true }))
     if (action === 'rename') setEditingHome(true)
     else if (action === 'toggleIcon') await toggleHeadingIcon()
   }
@@ -90,7 +88,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       iconHidden={iconHidden}
       iconRef={iconRef}
       onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}
-      requestMenu={() => popRowMenu(titleMenuItems({ toggleIcon: true, iconHidden }))}
+      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: true, iconHidden }))}
       onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={() => void toggleHeadingIcon()}
     />

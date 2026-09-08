@@ -20,7 +20,7 @@ import { iconNameOr } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
-import { popRowMenu, useNativeMenus } from '../Actions/nativeMenus'
+import { popMenu, useNativeMenus } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyRemovedTile } from '../Interface/Notifications/notifications'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
@@ -324,7 +324,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
       pageInfo: page && { title: page.title },
       containerLocked: hostLocked,
     })
-    void popRowMenu(items, el).then((action) => {
+    void popMenu(items, el).then((action) => {
       if (action === null) return
       const arg = (prefix: string): string | undefined =>
         action.startsWith(prefix) ? action.slice(prefix.length) : undefined

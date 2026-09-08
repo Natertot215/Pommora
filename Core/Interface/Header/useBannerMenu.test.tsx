@@ -60,7 +60,7 @@ describe('useBannerMenu', () => {
   it("opens the editor on 'edit' and pops through the ghost wrap", async () => {
     const ghost = vi.fn((fn: () => Promise<unknown>) => fn())
     ;(window as { nexus?: unknown }).nexus = stubDialer({
-      'row-menu': () => Promise.resolve(ok('edit')),
+      menu: () => Promise.resolve(ok('edit')),
     })
     await mount(<Probe ghost={ghost} />)
     expect(api.editing).toBe(false)
@@ -73,7 +73,7 @@ describe('useBannerMenu', () => {
 
   it('onSave writes setCrop keyed by the seat’s stored value and closes the editor', async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({
-      'row-menu': () => Promise.resolve(ok('edit')),
+      menu: () => Promise.resolve(ok('edit')),
     })
     await mount(<Probe />)
     await act(async () => {
@@ -93,7 +93,7 @@ describe('useBannerMenu', () => {
 
   it('autoEdit pops the crop editor after a fresh pick', async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({
-      'row-menu': () => Promise.resolve(ok('change')),
+      menu: () => Promise.resolve(ok('change')),
       'nexus:pickFile': () => Promise.resolve(ok('/abs/Picked.png')),
     })
     await mount(<Probe autoEdit />)
@@ -110,7 +110,7 @@ describe('useBannerMenu', () => {
 
   it('without autoEdit a fresh pick sets the image and leaves the editor closed', async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({
-      'row-menu': () => Promise.resolve(ok('change')),
+      menu: () => Promise.resolve(ok('change')),
       'nexus:pickFile': () => Promise.resolve(ok('/abs/Picked.png')),
     })
     await mount(<Probe />)

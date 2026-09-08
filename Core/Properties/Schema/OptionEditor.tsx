@@ -26,7 +26,7 @@ import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '@pommora/core/Actions/optionMenu'
 
 const LIST_ANCHOR = 'options'
@@ -92,7 +92,7 @@ export function OptionEditor({
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
   const openMenu = async (o: Option): Promise<void> => {
-    const action = await popRowMenu(optionMenuModel(true))
+    const action = await popMenu(optionMenuModel(true))
     if (action === 'option:rename') setRenaming(o.value)
     else if (action === 'option:edit-icon') setIconEditing(o.value)
     else if (action === 'option:remove') {

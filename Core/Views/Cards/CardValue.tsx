@@ -20,7 +20,7 @@ import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 
 export function CardValue({
   row,
@@ -115,7 +115,7 @@ export function CardValue({
       onChip: chip !== null,
     })
     if (!menuCtx) return
-    const action = await holdGhost(() => popRowMenu(cellMenuModel(menuCtx)))
+    const action = await holdGhost(() => popMenu(cellMenuModel(menuCtx)))
     if (!action) return
     if (runFileMenuAction(action, schemaDef, v, chip, commit)) return
     if (action === 'cell:clear') commit(null)
