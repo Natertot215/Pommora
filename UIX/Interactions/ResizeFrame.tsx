@@ -30,7 +30,7 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
   /** Holds its origin and grows equally from either side; otherwise a north or west pull carries the origin. */
   equilateral?: boolean
   outlined?: boolean
-  onChange: (next: R, phase: ResizePhase) => void
+  onChange: (next: R, phase: ResizePhase, grip: ResizeGrip) => void
 }
 
 interface ResizeFrameHandle {
@@ -122,15 +122,15 @@ export function useResizeFrame<R extends Partial<Rect>>(
           const next = dx === 0 && dy === 0 ? from : pull(spec, from, grip, dx, dy)
           if (next === last) return
           last = next
-          spec.onChange(last, 'move')
+          spec.onChange(last, 'move', grip)
         },
         teardown: () => setActive(null),
         // A release that moved nothing is a click, not a size the host should remember.
         onDrop: () => {
           if (Object.keys(from).some((k) => last[k as keyof R] !== from[k as keyof R]))
-            spec.onChange(last, 'drop')
+            spec.onChange(last, 'drop', grip)
         },
-        onAbort: () => spec.onChange(from, 'abort'),
+        onAbort: () => spec.onChange(from, 'abort', grip),
       })
       // A press that took the gesture is not a selection, focus change, or native drag.
       if (started) e.preventDefault()

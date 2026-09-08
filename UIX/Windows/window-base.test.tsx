@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
-import type { Size } from '../Interactions/ResizeFrame'
+import type { ResizeGrip, Size } from '../Interactions/ResizeFrame'
 import { WindowBase } from './window-base'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -23,7 +23,10 @@ afterEach(() => {
   host.remove()
 })
 
-const mount = (props: { initialSize?: Size; onSizeChange?: (s: Size) => void }): HTMLElement => {
+const mount = (props: {
+  initialSize?: Size
+  onSizeChange?: (s: Size, grip: ResizeGrip) => void
+}): HTMLElement => {
   act(() =>
     root.render(
       <WindowBase closing={false} onClose={() => undefined} ariaLabel="Test" {...props}>
@@ -79,14 +82,14 @@ describe('a floating window reports its size once per drag', () => {
       [20, 10],
       [50, 40],
     ])
-    expect(onSizeChange.mock.calls).toEqual([[{ w: 450, h: 340 }]])
+    expect(onSizeChange.mock.calls).toEqual([[{ w: 450, h: 340 }, 'se']])
   })
 
-  it('a move reports the size it started at — the dedupe is the caller’s', () => {
+  it('a move reports the size it started at, named as a move — the caller decides', () => {
     const onSizeChange = vi.fn()
     const el = mount({ initialSize: { w: 400, h: 300 }, onSizeChange })
     grab(el.querySelector('.window-drag') as HTMLElement, [[60, 30]])
-    expect(onSizeChange.mock.calls).toEqual([[{ w: 400, h: 300 }]])
+    expect(onSizeChange.mock.calls).toEqual([[{ w: 400, h: 300 }, 'move']])
     expect(geo(el).left).toBe('360px')
   })
 

@@ -51,15 +51,15 @@ describe('a window reads and writes its size on the device rail', () => {
     expect(seen.initialSize).toBeUndefined()
   })
 
-  it('a size matching the stored one writes nothing — which is what a window move reports', () => {
-    mount({ 'page-window': { w: 700, h: 500 }, settings: { w: 900, h: 640 } })
-    act(() => seen.onSizeChange({ w: 700, h: 500 }))
+  it('a move writes nothing — the size it reports may have been clamped at the open', () => {
+    mount({ 'page-window': { w: 2000, h: 1500 }, settings: { w: 900, h: 640 } })
+    act(() => seen.onSizeChange({ w: 1000, h: 800 }, 'move'))
     expect(setDevicePref).not.toHaveBeenCalled()
   })
 
   it('a resize writes one entry under its own id and leaves its siblings standing', () => {
     mount({ 'page-window': { w: 700, h: 500 }, settings: { w: 900, h: 640 } })
-    act(() => seen.onSizeChange({ w: 720, h: 500 }))
+    act(() => seen.onSizeChange({ w: 720, h: 500 }, 'se'))
     expect(setDevicePref.mock.calls).toEqual([
       ['windows', { 'page-window': { w: 720, h: 500 }, settings: { w: 900, h: 640 } }],
     ])
@@ -67,7 +67,7 @@ describe('a window reads and writes its size on the device rail', () => {
 
   it('a first size lands beside nothing when the map is absent', () => {
     mount(undefined)
-    act(() => seen.onSizeChange({ w: 720, h: 500 }))
+    act(() => seen.onSizeChange({ w: 720, h: 500 }, 'se'))
     expect(setDevicePref.mock.calls).toEqual([['windows', { 'page-window': { w: 720, h: 500 } }]])
   })
 })

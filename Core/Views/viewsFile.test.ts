@@ -89,6 +89,22 @@ describe('view persistence CRUD', () => {
     if (!last.ok) expect(last.error.code).toBe('operation-failed')
   })
 
+  it('drops active_view when it named the deleted view, and keeps it otherwise', async () => {
+    await writeCollectionSidecar({
+      views: [view({ id: 'a' }), view({ id: 'b' })],
+      active_view: 'a',
+    })
+    expect((await deleteView(folder, 'collection', 'a')).ok).toBe(true)
+    expect('active_view' in (await readRaw('_pagecollection.json'))).toBe(false)
+
+    await writeCollectionSidecar({
+      views: [view({ id: 'a' }), view({ id: 'b' })],
+      active_view: 'b',
+    })
+    expect((await deleteView(folder, 'collection', 'a')).ok).toBe(true)
+    expect((await readRaw('_pagecollection.json')).active_view).toBe('b')
+  })
+
   it('writes no modified_at through save, reorder, or delete', async () => {
     await writeCollectionSidecar({ views: [view({ id: 'a' })] })
     expect((await saveView(folder, 'collection', view({ id: 'b' }))).ok).toBe(true)

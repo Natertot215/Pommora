@@ -135,6 +135,20 @@ describe('a pane drop writes back to the device store', () => {
   })
 })
 
+describe('a nexus switch keeps none of the old nexus', () => {
+  // Every key is per machine PER NEXUS, so a refused re-fetch must not leave the first one's values for the next write to carry into the second one's store.
+  it('clears the prefs even when the re-fetch refuses', async () => {
+    let call = 0
+    const { useSession } = await freshStore(async () =>
+      ++call === 1 ? ok({ disclosure: { 'context:areas': true } }) : NO_NEXUS,
+    )
+    await useSession.getState().applyTree(treeAt('/a'))
+    expect(useSession.getState().devicePrefs).toEqual({ disclosure: { 'context:areas': true } })
+    await useSession.getState().applyTree(treeAt('/b'))
+    expect(useSession.getState().devicePrefs).toEqual({})
+  })
+})
+
 describe('a nexus switch returns the panes to their defaults', () => {
   it('resetLayout drops both widths back to def', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, inspector: 400 } }))
