@@ -695,8 +695,8 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
   - [x] Task 3 — `manual_order` on the view, written by every drop site
   - [ ] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
 - [ ] **Phase 3** — Browser storage into the device store
-  - [x] Task 5 — `DevicePrefs` gains its three machine-local shapes, seeded before the paint
-  - [ ] Task 6 — The panes and the sidebar read the store, and `localStorage` goes
+  - [x] Task 5 — `DevicePrefs` gains its three machine-local shapes, seeded before the paint · `4d6f206a9`
+  - [x] Task 6 — The panes and the sidebar read the store, and `localStorage` goes
 - [ ] **Phase 4** — Window size into the device store
   - [ ] Task 7 — UIX takes the size as a prop; Core remembers it
 - [ ] **Phase 5** — Residue
@@ -762,6 +762,14 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **Task 5's `packDevicePrefs` case is green-first by construction.** The filter has always been top-level only, so a nested `false` survives today; the interface change is types-only and Vitest does not typecheck. The case is kept because it records why the three shapes are nested, and it is named here rather than forced red.
 - **Between the two Phase 3 commits a Nexus switch lands the panes at `def`.** The widths join `PER_NEXUS` in Task 5 while nothing writes `panes` until Task 6, so `resetLayout` has nothing to restore from. Both commits land in one session with no launch between them; no guard was added for a window that never opens.
 - **`rg -nF devicePrefsLoaded Core` reads 5 after Task 5, not the corrected 4.** The four source hits are unchanged — the fifth is the new test file's own comment naming the module singleton it works around. Source count 4, as corrected.
+
+- **A sidebar group's `persistKey` is required, and its keyless branch is gone.** Both call sites always passed one — a container's id and `context:<id>` — so the optional prop carried a branch nothing reached, and keeping it would have meant a second state holder beside the store read. The verify box's "a group with no `persistKey` neither reads nor writes" describes a group that does not exist; making the prop required is the honest reading, and the case is dropped rather than tested against a branch added to host it.
+- **The fold is read reactively, not seeded once.** A `useState` initialized from the store would go stale for a group whose id exists in both Nexuses — `context:areas` is seeded in every registry and does not remount across a switch. The subscription is a scalar selector per group, so a toggle re-renders only the group whose value moved.
+- **Task 6's `localStorage` count is 3 in source, not 4.** All three are in `importBrowserState.ts` — the header comment, the `getItem` map, and the `removeItem` loop — and nothing outside that file reaches browser storage. The plan's 4 counted a sketch; the raw `rg -nF localStorage Core UIX` reads 19 because the import's own suite drives the keys sixteen times. `rg -n 'pommora\.' Core` is 4 by the same split: one source line holding all three key names, three test constants. Controls: `devicePrefs` in Core 25 → 41, `useSession` in `Core/Interface` 396 → 400.
+- **The import erases only after the write is confirmed.** `devicePrefs:save` returning a refusal leaves all three keys in place, so the next open retries rather than having spent its source on a write that never landed. Proven by a negative control that dropped the `saved.ok` guard and watched the refusal case go red.
+- **One Sidebar case is green-first by construction.** A group whose key the map does not name falls back to its `defaultOpen` both before and after the change; the browser read had the same fallback. Carried by the two cases either side of it — a stored fold overriding the default, and a toggle merging one key — both of which were watched red.
+
+- **`--only` does not survive the ledger hook's amend, and that is what carried the stray documents at `e5bccd57e`.** `.claude/hooks/post-commit` stages the ledger and runs `git commit --amend --no-edit`, which takes the whole staged index — so a path the parallel session staged between the `--only` commit and the amend lands in it regardless. Task 5's commit picked up three of that arc's one-line documentation edits this way. The hook was cleared of suspicion earlier by reading only its `git add`; the amend on the next line is the mechanism. Nothing is lost — the content is committed and correct — but a State Placement commit cannot be assumed to hold only its own paths while another session shares the index.
 
 ### Lessons
 
