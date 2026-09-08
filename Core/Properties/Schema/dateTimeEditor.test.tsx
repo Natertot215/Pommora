@@ -4,6 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
+import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -28,7 +29,11 @@ afterEach(() => {
 
 const mount = async (style: ColumnStyle, onChange = vi.fn()): Promise<typeof onChange> => {
   await act(async () => {
-    root.render(<DateTimeEditor style={style} onChange={onChange} />)
+    root.render(
+      <MenuDoorHost>
+        <DateTimeEditor style={style} onChange={onChange} />
+      </MenuDoorHost>,
+    )
   })
   return onChange
 }
@@ -46,7 +51,11 @@ describe('DateTimeEditor', () => {
     await mount({ date_format: 'monthDayYear' })
     expect(host.textContent).not.toContain('Day')
     await act(async () => {
-      root.render(<DateTimeEditor style={{ date_format: 'full' }} onChange={() => {}} />)
+      root.render(
+        <MenuDoorHost>
+          <DateTimeEditor style={{ date_format: 'full' }} onChange={() => {}} />
+        </MenuDoorHost>,
+      )
     })
     expect(host.textContent).toContain('Day')
   })

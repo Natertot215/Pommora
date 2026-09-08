@@ -23,8 +23,8 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
-import { popMenu, useNativeMenus } from '../Actions/menuActions'
-import { NativePickerContext } from '@pommora/uix/Pickers/PickerControl'
+import { popMenu } from '../Actions/menuActions'
+import { MenuDoorContext } from '@pommora/uix/Pickers/PickerControl'
 import { MenuPresenter } from './Menus/MenuPresenter'
 
 export function App(): React.JSX.Element {
@@ -72,7 +72,6 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useBridgeSubscriptions()
-  const nativePicker = useNativeMenus() ? popMenu : null
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -95,7 +94,7 @@ export function App(): React.JSX.Element {
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
   return (
-    <NativePickerContext.Provider value={nativePicker}>
+    <MenuDoorContext.Provider value={popMenu}>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control */}
       <div
         className={
@@ -192,6 +191,6 @@ export function App(): React.JSX.Element {
           />
         )}
       </div>
-    </NativePickerContext.Provider>
+    </MenuDoorContext.Provider>
   )
 }
