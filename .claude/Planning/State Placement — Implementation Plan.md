@@ -31,8 +31,8 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 2. `manual_order` is a field of the view record, resolved and folded through the one `structuralOrder` predicate, written by every drop site through `persistView`, and dropped from a reminted copy whose page ids changed.
 3. Pane widths, sidebar disclosure, and window size all live in the `devicePrefs` singleton, seeded into the store before the tree paints and written through `setDevicePref`.
 4. UIX holds no window-size module map and takes no `id`; it receives a size and reports a change, keeping the centering and the on-screen clamp it performs today.
-5. Each retiring scope is imported in the same phase as the reader that consumes it, so no gesture ever writes to a home nothing reads.
-6. Once both imports are confirmed against the real Nexus, they and the two scopes they read are deleted; `localStorage` holds no Pommora key.
+5. Every retiring home is imported in the same phase as the reader that consumes it, so nothing a person set is lost and no gesture writes to a home nothing reads.
+6. Once the imports are confirmed against the real Nexus, they and the two scopes they read are deleted; `localStorage` holds no Pommora key.
 
 **Acceptance — the whole thing working:** On the real Nexus, choose a non-first view in a collection and drag a row under a sort; quit; reopen — both hold. Inspect that collection's sidecar and read `active_view` and the view's `manual_order` as plain JSON. Resize the sidebar and a Page window, collapse a sidebar group, quit, reopen — all three hold. `localStorage` is empty of `pommora.*`, and `local_state` holds no `activeView` or `viewOrder` row.
 
@@ -61,7 +61,7 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 - `page_order` and `manual_order` stay two fields on purpose. `page_order` is the container's canonical child order, shared with the sidebar and every other view; `manual_order` is one view's tiebreaker under a sort or a group, where a drag expresses a preference about that view alone and must not reorder the container for everyone. What retires is the fork in *placement*, not the fork in meaning.
 - One remembered size per window kind, not per entity: the `id` values are already per-kind constants, so the change is where the value lives rather than what it covers. The iteration window is a development scratchpad and keeps no size.
 - A cold start now paints the sidebar at its default width during `status === 'loading'` and settles when the tree lands. Ratified over holding the first paint blank.
-- Pane widths and the disclosure map are not imported across. `disclosureState.ts:1` calls them "regeneratable, not portable content," and the whole loss is one drag of each pane and one pass of re-collapsing — an import module and its test to rescue two numbers and a boolean map is more code than the thing it saves.
+- Pane widths and the sidebar's folds are imported across like everything else. `disclosureState.ts:1` calls them "regeneratable," which is a statement about where they may live, not a licence to discard them: a fold map is a shape the user built over every group in the Nexus, and rebuilding it by hand is not a cost the move gets to impose.
 - One accepted loss, small and named: `useViewOrders`' local echo is keyed on `containerPath` and survives a tree push; its replacement, `manualOverride`, is cleared on every `source` identity change (`useViewHost.ts:99-101`). So a rename or move inside the same container, landing between a drag and the view save's confirming push, shows the stale order for one push. The echo is not worth a second holder of the same array.
 - The two imports are not bundled into one pass. Bundling saves one sidecar write per container, but the watcher is not armed during the open (`Desktop/main.ts:319`), so the saved event was never real — and it would land `manual_order` a whole phase before anything reads it.
 
@@ -90,7 +90,7 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 
 **Declared Stops**
 
-- **Phase 5** — the residue deletions destroy the only path that recovers a pre-move `active_view` or `manual_order`. They cannot run until the user has opened the real Nexus and confirmed a chosen view and a dragged order came across.
+- **Phase 5** — the residue deletions destroy the only path that recovers a pre-move value. They cannot run until the user has opened the real Nexus and confirmed all four came across: a chosen view, a dragged order, the pane widths, and the sidebar's folds.
 
 **Global Constraints (every task inherits these):**
 
@@ -124,7 +124,7 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 - `rg -n "pommora\." Core` → expect 0.
 - Control: `rg -nF devicePrefs Core` → 25 today, and higher after Phase 3. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 2 opens it — from the moment the first import lands until Task 8 deletes both, the `'activeView'` and `'viewOrder'` names must stay in the `Scope` union and their `local_state` rows must not be cleared by hand, or an import has nothing to read on a machine that has not run it yet. Task 8 closes it.
+**Hazard Window:** Task 2 opens it — from the moment the first import lands until Task 8 deletes them all, the `'activeView'` and `'viewOrder'` names must stay in the `Scope` union, their `local_state` rows must not be cleared by hand, and the three `pommora.*` `localStorage` keys must not be cleared either. An import that has nothing to read is an import that silently succeeds at losing the value. Task 8 closes it.
 
 ---
 
@@ -456,10 +456,13 @@ export interface DevicePrefs {
   windows?: Record<string, { w: number; h: number }>
 }
 // Core/Session/nexusSlice.ts — the devicePrefsLoaded block moves from :166 to between :146 and
-// :147, and seeds the widths in the same set(), clamped: nothing else copies them out.
+// :147, and seeds each width in the same set(), clamped: nothing else copies them out. A width
+// is seeded only when `panes` HOLDS it — an absent key leaves the slice as it stands, which is
+// what keeps this task from resetting the still-live storedWidth value before Task 6 lands.
+const panes = prefs.value?.panes
 set({ devicePrefs: prefs.value ?? {},
-      sidebarWidth: clampWidth(SIDEBAR_WIDTH, prefs.value?.panes?.sidebar ?? SIDEBAR_WIDTH.def),
-      inspectorWidth: clampWidth(INSPECTOR_WIDTH, prefs.value?.panes?.inspector ?? INSPECTOR_WIDTH.def) })
+      ...(panes?.sidebar !== undefined && { sidebarWidth: clampWidth(SIDEBAR_WIDTH, panes.sidebar) }),
+      ...(panes?.inspector !== undefined && { inspectorWidth: clampWidth(INSPECTOR_WIDTH, panes.inspector) }) })
 // The flag stays: it is what keeps a push-driven applyTree from round-tripping, and
 // resetNexusSession:44 clears it on the foreign-tree branch at :144, which runs first.
 // Core/Session/layoutSlice.ts — the widths join PER_NEXUS, so resetLayout returns them to def.
@@ -473,6 +476,7 @@ set({ devicePrefs: prefs.value ?? {},
 
 - [ ] Red first: a `devicePrefs` case that a nested `false` survives `packDevicePrefs` and a top-level one does not. Expect 1 failure.
 - [ ] A `nexusSlice` case that both widths carry their stored values, clamped, before `status` becomes `'ready'`. Red with the block moved back below the `set`.
+- [ ] **Both halves of the absent-key rule:** a `panes` holding a width seeds it, and a `panes` missing one leaves the slice untouched rather than resetting it to `def` — the case that keeps this task from regressing the pane width before Task 6 lands.
 - [ ] A `resetLayout` case that both widths return to `def`. Red with them removed from `PER_NEXUS`.
 - [ ] **Both halves of the flag:** a foreign tree arriving by push re-fetches; a same-root push does not.
 - [ ] The degenerate cases: `devicePrefs:load` returning `null`, a `NO_NEXUS` failure, and a `panes` value outside `min`/`max` — the first two leave the defaults standing, the third clamps.
@@ -481,9 +485,9 @@ set({ devicePrefs: prefs.value ?? {},
 
 #### Task 6: The panes and the sidebar read the store, and `localStorage` goes
 
-**Requirements:** 3, 6
+**Requirements:** 3, 5, 6
 
-**Why:** With the values in the store before first paint, the two browser-storage readers are the last thing holding Pommora state in the browser. Neither value is imported: both regenerate in a gesture, and a rescue module would be more code than the thing it saves.
+**Why:** With the values in the store before first paint, the two browser-storage readers are the last thing holding Pommora state in the browser. Both come across: a pane width and a fold map are shapes the user built, and the move does not get to charge them for it.
 
 **Now** — `rg -nF localStorage Core UIX` → 8 across three files:
 
@@ -506,19 +510,29 @@ const stored = useSession((s) => (persistKey ? s.devicePrefs.disclosure?.[persis
 // setAndSave merges one key into the disclosure map through setDevicePref.
 // Core/Interface/Sidebar/disclosureState.ts and disclosureState.test.ts — deleted. The parse
 // cache they held is replaced by a property read off a map the store already holds parsed.
-// The three pommora.* keys are left behind, cleared by hand; nothing reads them.
+
+// Core/Session/importBrowserState.ts (new) — renderer-side, since localStorage is the browser's.
+// Called from load(), after nexus:state answers 'open' (a root must be bound: devicePrefs:save
+// refuses without one) and BEFORE applyTree, so Task 5's seed reads the merged value.
+// Returns immediately when none of the three keys is present, which is every open after the
+// first. Otherwise: devicePrefs:load, merge the localStorage values under `panes` and
+// `disclosure` WITHOUT overwriting a key the store already holds, devicePrefs:save, then
+// removeItem all three. Self-erasing; a second run finds nothing.
+export async function importBrowserState(): Promise<void>
 ```
 
 **Verify — Automated**
 
 - [ ] Red first: a `layoutSlice` case that a drop writes one `devicePrefs` pref carrying both widths, and a `Sidebar` case that a toggle merges one key without clobbering its siblings. Expect 2 failures.
-- [ ] The degenerate cases: an absent `panes` or `disclosure` leaves the defaults standing; a `disclosure` entry for a key no group claims is ignored, not rendered; a group with no `persistKey` neither reads nor writes.
-- [ ] `rg -nF localStorage Core UIX` → 0. Control: `rg -nF useSession Core/Interface` → re-derive.
+- [ ] Red first: an import case that the three `localStorage` keys land as `panes` and `disclosure`, that all three are removed, and that a second run neither loads nor saves. Expect 3 failures, module not found.
+- [ ] **Both halves of the precedence rule:** a `panes` value already in the store survives the import, and one absent from the store is filled from `localStorage`. Red with the merge inverted.
+- [ ] The degenerate cases: absent keys write nothing and skip the round trip entirely; a corrupt `pommora.sidebar.disclosure` value is skipped rather than throwing; a `localStorage` that throws on read leaves the stored prefs standing; an absent `panes` or `disclosure` leaves the defaults standing; a `disclosure` entry for a key no group claims is ignored, not rendered; a group with no `persistKey` neither reads nor writes.
+- [ ] `rg -nF localStorage Core UIX` → 4, all inside `importBrowserState.ts`. Control: `rg -nF useSession Core/Interface` → re-derive.
 - [ ] Full gate green.
 
 **Verify — User**
 
-- [ ] Sidebar and inspector widths, and the sidebar's collapsed groups, come back after a restart — with a single settle as the Nexus paints, not a jump afterward. On the first launch only, both open at their defaults. Switching to a second Nexus opens it at *its* widths, not the first one's.
+- [ ] Sidebar and inspector widths, and every sidebar fold, come across from before this change and survive a restart — with a single settle as the Nexus paints, not a jump afterward. Switching to a second Nexus opens it at *its* widths and folds, not the first one's.
 
 #### Gate 3 — nothing of Pommora's is in the browser
 
@@ -614,22 +628,20 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 ### Phase 5 — Residue
 
-#### Task 8: Delete the import and the scopes it emptied
+#### Task 8: Delete the imports and the homes they emptied
 
 **Requirement:** 6
 
-**Why:** The import exists to carry one machine's rows across once. Once the user has confirmed they arrived, it and the two `Scope` names are code with nothing left to vary.
+**Why:** The imports exist to carry one machine's values across once. Once the user has confirmed they arrived, they and the two `Scope` names are code with nothing left to vary.
 
 **Now** — the inventory, bucketed:
 
 ```ts
-// DEAD REGARDLESS — nothing reads them once the rows are gone:
+// DEAD REGARDLESS — nothing reads them once the rows and keys are gone:
 //   Core/Nexus/importPlacedState.ts + test, and its call site in openNexusSequence
+//   Core/Session/importBrowserState.ts + test, and its call site in load()
 //   Core/Platform/localState.ts — the 'activeView' and 'viewOrder' names
 //   Core/Platform/localState.test.ts — the cases keyed on those two names
-// DEAD BY STANDING RULE — the ruling places nothing there:
-//   the pommora.sidebarWidth / pommora.inspectorWidth / pommora.sidebar.disclosure keys,
-//   cleared by hand from the running instance; no code references them after Task 6.
 // NEVER DELETE — outside this plan by the ruling:
 //   folds · headingCols · headingIcon · citations · embedHeights · embedZooms · aliases ·
 //   linkTitle · tabs · windows · recents · record · glancePane · devicePrefs
@@ -641,6 +653,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 ```ts
 // Core/Nexus/handlers.ts — the importPlacedState call in openNexusSequence goes
+// Core/Session/nexusSlice.ts — the importBrowserState call in load() goes
 // .claude/Features/* — every sentence naming activeView, viewOrder, or a localStorage home for
 // pane width or disclosure, rewritten to the placement that now holds. Enumerate with
 // `rg -ln 'activeView|viewOrder|localStorage|per-machine' .claude/Features` before editing —
@@ -659,7 +672,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 #### Gate 5 — nothing left with nothing to vary
 
-- [ ] **Declared stop.** This phase opens only once the user has confirmed, against the real Nexus, that a chosen view and a dragged order came across.
+- [ ] **Declared stop.** This phase opens only once the user has confirmed, against the real Nexus, that a chosen view, a dragged order, the pane widths, and the sidebar's folds all came across.
 - [ ] Gate commands green, exit codes read directly.
 - [ ] The hazard window Task 2 opened is closed here.
 - [ ] Simplification, then code review, dispatched against `<base>..HEAD`.
@@ -684,7 +697,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - [ ] **Phase 4** — Window size into the device store
   - [ ] Task 7 — UIX takes the size as a prop; Core remembers it
 - [ ] **Phase 5** — Residue
-  - [ ] Task 8 — Delete the import and the scopes it emptied
+  - [ ] Task 8 — Delete the imports and the homes they emptied
 
 ### Rulings
 
@@ -693,7 +706,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **09-07-2026, Claude:** `active_view` rides the `mutate` rail (`setDisclosureLock`'s precedent) rather than `container:configure`, which has no optimistic tree patch and would make a view switch wait on disk. This retires the `activeViews` store slice outright rather than replacing it with a catch-up override layer.
 - **09-07-2026, Claude:** `WindowKind` does not exist in the codebase; the D-1 ruling asserted it. No union is introduced — the five window ids are already literals at their call sites, and `useWindowGeometry` keys on them directly.
 - **09-07-2026, Claude:** No new `windowGeometry` scope or channel pair. Window size is a nested key on `devicePrefs`, the rail panes and disclosure are already joining — one place to look for a machine-local preference rather than two.
-- **09-07-2026, Claude:** Pane widths and the disclosure map are not imported from `localStorage`. Both regenerate in a gesture; the cost of the move is one drag of each pane and one pass of re-collapsing, on the first launch after Task 6 only.
+- **09-07-2026, Nathan:** Pane widths and the sidebar's folds are imported from `localStorage`, overturning Claude's call that they were cheap enough to discard. A fold map is state the user built across the whole Nexus, and no placement change may charge them for rebuilding it. The simplification pass had proposed dropping the import on the strength of `disclosureState.ts:1`'s "regeneratable"; that word describes where the value may live, not whether it may be thrown away.
 - **09-07-2026, Claude:** The two imports are split across Phase 1 and Phase 2 rather than bundled. Bundling would land `manual_order` a phase before any reader consumed it, and the write it saved was never real — the watcher is not armed during the open.
 - **09-07-2026, Claude:** A reminted container's copied view records drop `manual_order` outright. Its page ids are reassigned in the same pass, and on disk a stale array would sync to every device with no owner and no sweep.
 - **09-07-2026, Claude:** The `'activeView'` and `'viewOrder'` Scope names survive through Phase 4 and are deleted in Task 8, because the imports that read them are the only thing that recovers a pre-move value on a machine that has not opened yet.
@@ -722,8 +735,9 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 ```
 Execute .claude/Planning/State Placement — Implementation Plan.md.
-Live-verify: the Phase 5 declared stop — a chosen view and a dragged order under a sort
-  surviving a restart on the real Nexus, plus pane widths, disclosure, and a window size.
+Live-verify: the Phase 5 declared stop — a chosen view, a dragged order under a sort, the
+  pane widths, and the sidebar's folds all carried across and surviving a restart on the real
+  Nexus, plus a window size.
 Screenshots: none — every surface here is one Nathan sees on his own.
 Pings: at each phase gate, and at the Phase 5 stop.
 Record: History arc "State Placement".
@@ -752,6 +766,7 @@ Everything else is the standard below.
 - [ ] No file lock is taken twice on one key.
 - [ ] One rail for machine-local preferences — no second scope, channel, or handler was added.
 - [ ] No sentinel id and no stale page-id array reached a sidecar.
+- [ ] Nothing a person had set was lost: every retiring home was imported before it was emptied.
 - [ ] Net line count reported, comments and tests excluded.
 
 **The passes**
@@ -764,7 +779,7 @@ Everything else is the standard below.
 
 - [ ] A collection whose non-first view was chosen opens on it, and its sidecar reads `active_view`.
 - [ ] A hand-ordered view under a sort holds its order, and the view record reads `manual_order`.
-- [ ] Pane widths and sidebar disclosure survive a restart, settling once as the Nexus paints; a second Nexus opens at its own.
+- [ ] Pane widths and every sidebar fold carried across from before the change and survive a restart, settling once as the Nexus paints; a second Nexus opens at its own.
 - [ ] Settings and Page windows reopen at their remembered size, centered and on screen; the iteration window does not.
 - [ ] Everything above still holds after Phase 5's deletions.
 
