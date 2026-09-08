@@ -6,12 +6,12 @@ import { withSidecarLock } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { readScope, writeKey } from '../Platform/localState'
-import { getLiveTree } from './liveTree'
+import { getLiveTree, refreshTree } from './liveTree'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 
 type Container = CollectionNode | SetNode
 
-// The live tree the open already holds, never a walk of its own. `nodesOf` is the renderer's lookup — it resolves icons through UIX — so the visit is the one `collectionFolders` makes on this side of the boundary.
+// The visit is hand-rolled rather than reaching for `nodesOf`: that lookup resolves icons through `@pommora/uix`, which this side of the engine boundary cannot import.
 function containersIn(tree: NexusTree): Container[] {
   const out: Container[] = []
   const visit = (node: Container): void => {
@@ -24,19 +24,26 @@ function containersIn(tree: NexusTree): Container[] {
 
 /** Whether anything landed, so the caller can re-walk. An id no container claims keeps its row — the container may be excluded, not gone — and so does one whose write refused. */
 export async function importPlacedState(root: string): Promise<boolean> {
-  const chosen = readScope<string>('activeView')
-  if (Object.keys(chosen).length === 0) return false
-  const tree = getLiveTree()
-  if (!tree) return false
-  let landed = false
-  for (const node of containersIn(tree)) {
-    const viewId = chosen[node.id]
-    if (viewId === undefined) continue
-    if (!(await placeActiveView(root, node.path, node.kind, viewId))) continue
-    writeKey('activeView', node.id, null)
-    landed = true
+  try {
+    const chosen = readScope<string>('activeView')
+    if (Object.keys(chosen).length === 0) return false
+    const held = getLiveTree()
+    // Rows are keyed by container id alone, so a tree belonging to another nexus would resolve them against the wrong sidecars and then delete the rows it read.
+    const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
+    let landed = false
+    for (const node of containersIn(tree)) {
+      const viewId = chosen[node.id]
+      if (viewId === undefined) continue
+      if (!(await placeActiveView(root, node.path, node.kind, viewId))) continue
+      writeKey('activeView', node.id, null)
+      landed = true
+    }
+    return landed
+  } catch (err) {
+    // refreshTree rethrows a failed walk, so the contract above is only kept if the whole pass is wrapped, not just each container's write.
+    console.error('Placed-state import skipped:', errText(err))
+    return false
   }
-  return landed
 }
 
 async function placeActiveView(
