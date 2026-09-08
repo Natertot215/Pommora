@@ -3,7 +3,13 @@ import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InputField } from '../Fields/InputField'
-import { type DismissalHandle, pushDismissal, SHIELD_ATTR, useDismissal } from './dismissalStack'
+import {
+  type DismissalHandle,
+  pushDismissal,
+  pushEscape,
+  SHIELD_ATTR,
+  useDismissal,
+} from './dismissalStack'
 
 let host: HTMLDivElement
 let root: Root
@@ -209,8 +215,7 @@ describe('the stack', () => {
 
   it('peels window-level sites newest first and leaves them standing under an outside press', () => {
     const log: string[] = []
-    const site = (n: string): DismissalHandle =>
-      pushDismissal({ layer: () => null, dismiss: () => log.push(n), outsidePress: false })
+    const site = (n: string): DismissalHandle => pushEscape(() => log.push(n))
     const first = site('first')
     const second = site('second')
     handles.push(first, second)

@@ -13,7 +13,7 @@ import {
   type ResizeGrip,
   type Size,
 } from '../Interactions/ResizeFrame'
-import { useDismissal } from '../Interactions/dismissalStack'
+import { useEscape } from '../Interactions/dismissalStack'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
 import '../Animations/toolbar-slide.css'
@@ -139,11 +139,7 @@ export function WindowBase({
     remeasure()
   }, [remeasure, geo, leftOpen, rightOpen, leftW, rightW])
 
-  useDismissal(!closing, false, {
-    layer: () => null,
-    dismiss: onEscape ?? onClose,
-    outsidePress: false,
-  })
+  useEscape(!closing, onEscape ?? onClose)
 
   const panel = (side: WindowBasePanel, which: 'left' | 'right'): React.JSX.Element => (
     <WindowPanel
