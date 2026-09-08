@@ -108,9 +108,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 .ask('linkTitles:get')
                 .then((titles) => set({ linkTitles: titles })),
               host()
-                .ask('activeViews:get')
-                .then((views) => set({ activeViews: views })),
-              host()
                 .ask('aliases:get')
                 .then((aliases) => set({ pageAliases: aliases })),
             ])
@@ -216,6 +213,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             break
           case 'setDisclosureLock':
             patched = patchNodeInTree(cur, req.path, { disclosureLocked: req.locked })
+            break
+          case 'setActiveView':
+            patched = patchNodeInTree(cur, req.path, { activeView: req.viewId })
             break
           case 'setHeadingIconHidden':
             patched =

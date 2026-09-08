@@ -120,8 +120,6 @@ beforeEach(() => {
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   channels = {
     'view:loadValues': async () => ({ ok: true, value: VALUES }),
-    'activeViews:get': async () => ({}),
-    'activeViews:set': async () => undefined,
     'viewOrders:get': async () => ({}),
     'views:save': saveSpy,
   }

@@ -14,7 +14,7 @@ export function resolveContainerSchema(
   return collections.find((c) => owns(c.sets))?.properties ?? []
 }
 
-/** The per-machine active view if still present, else the first saved view, else a freshly-minted default (sentinel id until first saved). */
+/** The container's chosen view if still present, else the first saved view, else a freshly-minted default (sentinel id until first saved). */
 export function pickView(
   source: CollectionNode | SetNode,
   activeId: string | undefined,

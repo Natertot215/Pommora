@@ -71,7 +71,7 @@ export function useViewHost(
   const values = useContainerValues(source.path, setValueOverride)
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
-  const { view } = useActiveView(source, schema)
+  const view = useActiveView(source, schema)
   const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
 
   const [orderOverride, setOrderOverride] = useState<string[] | null>(null)

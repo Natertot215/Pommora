@@ -15,7 +15,7 @@ const NO_SCHEMA: PropertyDefinition[] = []
 
 export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   // Only the type and scale are needed to seat a renderer, and a minted default is a table whatever the schema — so the seat skips the schema walk the host performs.
-  const view = useActiveView(source, NO_SCHEMA).view
+  const view = useActiveView(source, NO_SCHEMA)
   const isCards = view.type === 'cards'
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
   const scale = useViewTileScope() ? 1 : coerceScale(view.view_scale, 1)

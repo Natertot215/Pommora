@@ -196,16 +196,16 @@ case 'setActiveView':
 
 **Verify — Automated**
 
-- [ ] Red first: a `Core/Nexus` round-trip case that a sidecar carrying `active_view` decodes onto the node identically through `readNexus` and through `watchPatch`. Expect 2 failures on an undefined property.
-- [ ] **The crossing test:** the two mappers agree — the same case asserts all nine container fields match between the paths, `set_order` and `page_order` included, so a future field added to one alone goes red.
-- [ ] A `useActiveView` case that an unknown `active_view` falls back to `views[0]`, an absent one does the same, and a container with no views yields the sentinel.
-- [ ] A `ViewFrame` case that clicking the placeholder row on a container with no views issues no mutate. Red with the `DEFAULT_VIEW_ID` refusal removed.
-- [ ] A `nexusSlice` case that `setActiveView` patches the node before the confirming push. Red with the `patchNodeInTree` case removed.
-- [ ] A `setActiveView` op case that the write lands and does not reject — the negative control for the lock: wrapping it in `withSidecarLock` makes it throw `Re-entrant file lock`.
-- [ ] A `viewMint` case that a sentinel adoption issues exactly one channel call, `views:save`.
-- [ ] Every test mocking `activeViews:get`/`activeViews:set` is updated, not deleted: `rg -lF 'activeViews' Core` → 0.
-- [ ] `rg -nF activeViews Core` → 0. Control: `rg -nF setDisclosureLock Core` → 10.
-- [ ] Full gate green. `Scope`'s `'activeView'` name still stands — Task 2 needs it.
+- [x] Red first: a `Core/Nexus` round-trip case that a sidecar carrying `active_view` decodes onto the node identically through `readNexus` and through `watchPatch`. Expect 2 failures on an undefined property.
+- [x] **The crossing test:** the two mappers agree — the same case asserts all nine container fields match between the paths, `set_order` and `page_order` included, so a future field added to one alone goes red.
+- [x] A `useActiveView` case that an unknown `active_view` falls back to `views[0]`, an absent one does the same, and a container with no views yields the sentinel.
+- [x] A `ViewFrame` case that clicking the placeholder row on a container with no views issues no mutate. Red with the `DEFAULT_VIEW_ID` refusal removed.
+- [x] A `nexusSlice` case that `setActiveView` patches the node before the confirming push. Red with the `patchNodeInTree` case removed.
+- [x] A `setActiveView` op case that the write lands and does not reject — the negative control for the lock: wrapping it in `withSidecarLock` makes it throw `Re-entrant file lock`.
+- [x] A `viewMint` case that a sentinel adoption issues exactly one channel call, `views:save`.
+- [x] Every test mocking `activeViews:get`/`activeViews:set` is updated, not deleted: `rg -lF 'activeViews' Core` → 0.
+- [x] `rg -nF activeViews Core` → 0. Control: `rg -nF setDisclosureLock Core` → 10.
+- [x] Full gate green. `Scope`'s `'activeView'` name still stands — Task 2 needs it.
 
 #### Task 2: Import the `activeView` scope during the open
 
@@ -685,8 +685,8 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 ### Progress
 
-- [ ] **Phase 1** — Active View on the container sidecar · base `<commit>`
-  - [ ] Task 1 — One container-node mapper, and `active_view` on the mutate rail · `<commit>`
+- [ ] **Phase 1** — Active View on the container sidecar · base `7096dcb2c`
+  - [x] Task 1 — One container-node mapper, and `active_view` on the mutate rail · `<commit>`
   - [ ] Task 2 — Import the `activeView` scope during the open · `<commit>`
 - [ ] **Phase 2** — Manual order in the view record
   - [ ] Task 3 — `manual_order` on the view, written by every drop site
@@ -714,6 +714,14 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 ### Open Against Later Tasks
 
 ### Deviations
+
+- **Base commit is `7096dcb2c`.** The tree carries unstaged Engine Boundary work (`Core/Platform/machine.ts`, `Desktop/Platform/nodeMachine.ts`, `Core/package.json`, `Desktop/tsconfig.node.json`, and four untracked test files) belonging to a different arc. It is left unstaged and untouched: every State Placement commit stages explicit paths, never `-A`. `machine().lock` is confirmed untouched by that diff, so the Forced By lock reasoning stands. Baseline gates green before any change: typecheck 0, 4152 tests passed, lint clean.
+- **The Environment's "no per-role agent" line is false.** `.claude/agents/` holds `code-simplifier`, `build-breaking-agent`, and `comment-killer-agent` (untracked, authored 09-06/09-07). They are not registered as dispatchable types in this session, so each phase's simplification, comment, and attack passes are dispatched as background Opus agents briefed to load the same skills those agents load as their own first action — `code-simplification` and `build-breaking`.
+- **The retiring homes are snapshotted before any import fires.** Task 2 and Task 6 delete each row and key as they land it, so on this machine the pre-move values are gone at the first smoke launch that restores the real Nexus. `~/NexusOS` is that Nexus and holds 4 `activeView` rows and 6 `viewOrder` rows. Copies of `nexus.db`, a JSON dump of both scopes, and Electron's `Local Storage` directory are held in the session scratchpad at `state-placement-snapshot/`.
+- **`viewOrder` rows are keyed by more than container-held view ids.** The real Nexus holds three `view_…` ids, two bare ULIDs of a legacy shape, and one `embed:01KXC5QQ9YGM36H0SAH58MFPTE:1`. Embedded views are minted by `Tiles/Surfaces/ViewTile.tsx:261` into a tile entry's config rather than a container sidecar, so Task 4's container-keyed import claims none of these three and, by its own rule, keeps their rows — which Task 8 then orphans. Task 3 is unaffected: `manual_order` joins `VIEW_STATE_KEYS`, and view state already reaches a tile entry through `ViewTile`'s `persistState`, so embedded views keep manual ordering going forward. What is lost is only the pre-move value on those three rows. Task 4 carries the question of whether the import can also reach tile entries; the Acceptance clause "`local_state` holds no `activeView` or `viewOrder` row" is read against the rows the import claims, not the ones it is ruled to keep.
+
+- **`useActiveView` returns the view itself.** Its `activeViewId` half had one writer and no reader once the slice was gone, so the hook returns `SavedView` and its four call sites read it directly. Task 1's shape is otherwise as written.
+- **A sidecar lock key is the realpath.** `resolveUnderRoot` canonicalizes through `machine().realpath`, so a `withSidecarLock` taken on an unresolved folder is a *different* key from the one `rmwJsonStrict` takes inside the op — on macOS, where `/var` is a symlink, the nesting then serializes nothing and rejects nothing. Task 1's lock control locks the resolved folder. Tasks 2 and 4 build their per-container `withSidecarLock` on a resolved path for the same reason.
 
 ### Lessons
 

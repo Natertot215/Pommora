@@ -9,7 +9,7 @@ import { loadValues } from './loadValues'
 import { savedView } from './views'
 import { deleteView, reorderViews, saveView } from './viewsFile'
 
-// View SELECTION is the per-machine activeViews pointer; this is the view DEFINITION.
+// View SELECTION is the container sidecar's `active_view`; this is the view DEFINITION.
 async function resolveViewContainer(
   containerPath: unknown,
   kind: unknown,

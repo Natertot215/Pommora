@@ -660,3 +660,18 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
     expect(tags()).toEqual(['t1'])
   })
 })
+
+describe('store — the mutate rail patches the tree before main confirms', () => {
+  beforeEach(async () => {
+    await useSession.getState().applyTree(treeWith([]))
+  })
+
+  it('setActiveView lands on the node optimistically', async () => {
+    expect(useSession.getState().tree?.collections[0]?.activeView).toBeUndefined()
+    const done = await useSession
+      .getState()
+      .mutate({ op: 'setActiveView', path: 'Notes', kind: 'collection', viewId: 'view_b' })
+    expect(done).toBe(true)
+    expect(useSession.getState().tree?.collections[0]?.activeView).toBe('view_b')
+  })
+})

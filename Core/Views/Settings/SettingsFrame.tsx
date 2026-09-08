@@ -88,12 +88,11 @@ export function SettingsFrame(): React.JSX.Element | null {
         ? findSet(tree, selection.id)
         : undefined
   const node = scope?.source ?? selectionNode
-  const activeViewId = useSession((st) => st.activeViews[node?.id ?? ''])
   if (!node) return null
 
   const schemaCollection = node.kind === 'collection' ? node : findCollectionForSet(tree, node.id)
   const schema = schemaCollection?.properties ?? []
-  const view = scope?.view ?? pickView(node, activeViewId, schema)
+  const view = scope?.view ?? pickView(node, node.activeView, schema)
   const entries = scope
     ? ENTRIES.filter((e) => e.id !== 'configuration' && e.id !== 'filter')
     : ENTRIES

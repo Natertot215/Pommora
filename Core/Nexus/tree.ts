@@ -49,6 +49,7 @@ export interface SetNode extends PathNode {
   views?: SavedView[]
   viewButton?: ViewButton
   disclosureLocked?: boolean
+  activeView?: string
 }
 
 export interface CollectionNode extends PathNode {
@@ -60,6 +61,7 @@ export interface CollectionNode extends PathNode {
   openIn?: OpenIn
   viewButton?: ViewButton
   disclosureLocked?: boolean
+  activeView?: string
 }
 
 /** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. `version` moves on every change, so a re-save under an unchanged name is re-requested. */

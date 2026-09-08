@@ -102,7 +102,6 @@ beforeEach(() => {
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'views:save': saveSpy,
-    'activeViews:set': vi.fn(async () => {}),
   })
   useSession.setState({ load: vi.fn(async () => {}) as never })
 })

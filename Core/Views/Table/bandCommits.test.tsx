@@ -145,7 +145,6 @@ beforeEach(() => {
   contextMenuSpy = vi.fn(async () => null)
   channels = {
     'view:loadValues': async () => VALUES,
-    'activeViews:get': async () => ({}),
     'viewOrders:get': async () => ({}),
     'views:save': saveSpy,
     'row-menu': contextMenuSpy,

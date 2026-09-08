@@ -29,7 +29,6 @@ import {
 } from '../Paths/paths'
 import type { TileHostRef } from '../Tiles/tiles'
 import {
-  parseViews,
   readCropLeaves,
   readHomepageLeaves,
   readPageRecord,
@@ -38,7 +37,8 @@ import {
   resolveEntityContexts,
 } from './readNexus'
 import { readSettingsLeaves, scopeOf, type SettingsLeaves } from '../Settings/codec'
-import { coerceOpenIn, coerceViewButton } from './schemas'
+import { coerceOpenIn } from './schemas'
+import { containerFieldsFrom } from './containerFields'
 import {
   makeCollectionNode,
   makeSetNode,
@@ -311,15 +311,8 @@ export async function patchContainerFromDisk(
   const shared = {
     id,
     title: node.title,
-    icon: asString(meta.icon),
     path: dirRel,
-    banner: asString(meta.banner),
-    headingIconHidden: meta.heading_icon_hidden === true,
-    sets: resolveOrder(node.sets ?? [], asStringArray(meta.set_order)),
-    pages: resolveOrder(node.pages, asStringArray(meta.page_order)),
-    views: parseViews(meta.views),
-    viewButton: coerceViewButton(meta.view_button),
-    disclosureLocked: meta.disclosure_locked === true,
+    ...containerFieldsFrom(meta, node.sets ?? [], node.pages),
   }
   const next =
     node.kind === 'collection'
