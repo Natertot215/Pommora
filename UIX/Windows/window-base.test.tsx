@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
 import type { ResizeGrip, Size } from '../Interactions/ResizeFrame'
@@ -71,6 +71,46 @@ describe('a floating window opens at the size it is given', () => {
       width: '1000px',
       height: '800px',
     })
+  })
+})
+
+describe('a floating window takes Escape by open order', () => {
+  const pressEscape = (): void =>
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
+
+  it('closes the newest window only, then the one beneath it', () => {
+    const log: string[] = []
+    function Two(): React.JSX.Element {
+      const [closed, setClosed] = useState<readonly string[]>([])
+      const win = (name: string): React.JSX.Element => (
+        <WindowBase
+          key={name}
+          closing={closed.includes(name)}
+          onClose={() => {
+            log.push(name)
+            setClosed((c) => [...c, name])
+          }}
+          ariaLabel={name}
+        >
+          <div />
+        </WindowBase>
+      )
+      return (
+        <>
+          {win('first')}
+          {win('second')}
+        </>
+      )
+    }
+    act(() => root.render(<Two />))
+    pressEscape()
+    expect(log).toEqual(['second'])
+    pressEscape()
+    expect(log).toEqual(['second', 'first'])
   })
 })
 

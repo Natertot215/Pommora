@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { Button } from '../Buttons/Button'
 import { GlassWindow } from '../Glass/glass-window'
 import { Icon } from '../Symbols'
@@ -13,6 +13,7 @@ import {
   type ResizeGrip,
   type Size,
 } from '../Interactions/ResizeFrame'
+import { useDismissal } from '../Interactions/dismissalStack'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
 import '../Animations/toolbar-slide.css'
@@ -138,17 +139,11 @@ export function WindowBase({
     remeasure()
   }, [remeasure, geo, leftOpen, rightOpen, leftW, rightW])
 
-  const dismiss = onEscape ?? onClose
-  const escapeRef = useRef(dismiss)
-  escapeRef.current = dismiss
-  useEffect(() => {
-    if (closing) return
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && !e.defaultPrevented) escapeRef.current()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [closing])
+  useDismissal(!closing, false, {
+    layer: () => null,
+    dismiss: onEscape ?? onClose,
+    outsidePress: false,
+  })
 
   const panel = (side: WindowBasePanel, which: 'left' | 'right'): React.JSX.Element => (
     <WindowPanel

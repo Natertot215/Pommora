@@ -17,6 +17,7 @@ import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { iconNameOr } from '@pommora/uix/Symbols'
+import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
@@ -139,17 +140,15 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     const onDown = (e: PointerEvent): void => {
       if (!(e.target as Element | null)?.closest?.('.tile.is-editing-tile')) setEditingId(null)
     }
-    const onKey = (e: KeyboardEvent): void => {
-      // CM6 consumes Esc first when its autocomplete is open — that press closes the popup only.
-      if (e.key === 'Escape' && !e.defaultPrevented) setEditingId(null)
-    }
     document.addEventListener('pointerdown', onDown, true)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onDown, true)
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('pointerdown', onDown, true)
   }, [editingId])
+
+  useDismissal(editingId !== null, false, {
+    layer: () => null,
+    dismiss: () => setEditingId(null),
+    outsidePress: false,
+  })
 
   const suppressFlush = useCallback((id: string) => removing.current.has(id), [])
 

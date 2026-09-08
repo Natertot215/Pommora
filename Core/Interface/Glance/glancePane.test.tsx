@@ -268,7 +268,7 @@ describe('focus on close', () => {
     vi.useFakeTimers()
     try {
       act(() => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
       })
       act(() => vi.advanceTimersByTime(500))
     } finally {
@@ -328,7 +328,7 @@ describe('pinned panes (Task 10)', () => {
   const pinCount = (): number => useSession.getState().pinnedGlances.length
   const pressEscape = (): void =>
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
     })
   // A close begins a bloom-out; the store entry leaves only once that exit plays through, so these settle fake time.
   const underFakeTime = (fire: () => void): void => {
@@ -342,7 +342,7 @@ describe('pinned panes (Task 10)', () => {
   }
   const escapeAndSettle = (): void =>
     underFakeTime(() =>
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
     )
   const clickAwayAndSettle = (): void =>
     underFakeTime(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })))
@@ -444,7 +444,7 @@ describe('pinned panes (Task 10)', () => {
     vi.useFakeTimers()
     try {
       act(() =>
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
       )
       // Mid-exit: the pane is still mounted and the pin still in the store, blooming out.
       expect(bodies()).toBe(1)
