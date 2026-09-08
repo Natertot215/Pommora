@@ -56,7 +56,7 @@ Deliberately not solved here: touch reachability of content right-click menus (a
 - `Desktop/Actions/rowMenu.ts`, `returningMenu.ts` — the native renderer and its returning promise; `anchorPoint` is the CSS-px to DIP conversion and reads `left`, `top`, `height`.
 - `Core/Tiles/TileHandleMenu.tsx` (413 lines), `handle-menu.css.ts`, `TileHost.tsx:187-201, 306-343, 358-379` — the twice-defined menu and its host wiring; the pane opens `origin="center"` at `:388` with no `maxHeight`, each `DrillLevel` wrapping its own `MenuScrollFrame` with the back row as its header (`:147-186`).
 - `Core/Tiles/TileGrid.tsx:143-152` — `onHandleMenu` fires on click and on contextmenu with the same `currentTarget`.
-- `UIX/Pickers/PickerControl.tsx` — `NativePickerContext`, its own `PickerMenu` list at lines 124-149 opening `origin="center"`; no consumer passes `solid`; the `<span ref>` wraps both branches and is never unmounted while the button exists.
+- `UIX/Pickers/PickerControl.tsx` — `NativePickerContext`, its own `PickerMenu` list at lines 124-149 opening `origin="center"`; three consumers pass `solid`; the `<span ref>` wraps both branches and is never unmounted while the button exists.
 - `UIX/Pickers/picker-base.tsx` — `PickerMenu` centers from `triggerRef` width (`:195`), holds `children` through exit (`:145`), DEV-guards an unmount mid-exit (`:126`); `PickerRow` has no `disabled` prop (`:411-425`).
 - `UIX/Menus/frame-slide.tsx:9` — a slot never caps or scrolls; it wraps its own `MenuScrollFrame`.
 - `UIX/Symbols/index.tsx:171, 181` — `IconName`, `iconNameOr(value, fallback)`.
@@ -96,6 +96,7 @@ Deliberately not solved here: touch reachability of content right-click menus (a
 | `SurfacePM.md:36` | "while the footer stays live to unlock" | no footer | 4 |
 | `SurfacePM.md:24` | "both menu presenters, the menu model" | one presenter | 4 |
 | `ConfigurationPM.md:23` | "Draws plain-list menus as system menus" | true for click-triggered lists; the row says so | 3 |
+| `DesktopPM.md:26` | "`rowMenu.ts` is the one popper" and "A host without a popper answers the same channel with the in-app presenter" | the popper is `menu.ts`; the channel is native-only and the door reaches the presenter inside the renderer | 2 |
 | `MarkdownPM.md:86` | the paragraph's implication that main must be told to stand down | the chain is gone | 6 |
 | `Codebase Audit — Report.md` topic 5, R-21 to R-24, Appendix C's Use Native Menus line | the whole topic | delivered, removed rather than amended | 9 |
 | Audit artifact `a9f3a52c` | its topic 5 section | same | 9 |
@@ -131,7 +132,7 @@ export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>
 export interface MenuAnchor { left: number; top: number; width: number; height: number }
 export interface RowMenuRequest { items: readonly ActionItem<string>[]; anchor?: MenuAnchor }
 // confirm set only at Core/Actions/optionMenu.ts:11-12, read only by optionMenu.test.ts:22
-// width populated at nativeMenus.ts:18, read nowhere
+// width populated at nativeMenus.ts:18 and by two test fixtures (RowMenuHost.test.tsx:24, rowMenu.test.ts:10,17), read nowhere
 ```
 
 **Becomes**
@@ -159,9 +160,9 @@ export interface MenuRequest { items: readonly ActionItem<string>[]; anchor?: Me
 
 **Verify — Automated**
 
-- [ ] `rg -F "confirm?:" Core/Actions` → 0 and `rg -F ".confirm" Core/Actions Desktop/Actions Core/Interface/Menus` → 0 after; the `optionMenu.test.ts:22` assertion removed in the same commit. Control: `rg -F "checked" Core/Actions` → 10+.
-- [ ] `rg -F "width" Core/Actions/menuModel.ts` → 0.
-- [ ] Gates green, `engineGraph.test.ts` included.
+- [x] `rg -F "confirm?:" Core/Actions` → 0 and `rg -F ".confirm" Core/Actions Desktop/Actions Core/Interface/Menus` → 0 after; the `optionMenu.test.ts:22` assertion removed in the same commit. Control: `rg -F "checked" Core/Actions` → 10+.
+- [x] `rg -F "width" Core/Actions/menuModel.ts` → 0.
+- [x] Gates green, `engineGraph.test.ts` included.
 
 **Verify — User**
 
@@ -244,11 +245,11 @@ Every one of the 36 callers becomes `popMenu(...)` with the same arguments. `App
 
 **Verify — Automated**
 
-- [ ] Red first: `menu.test.ts` fails on module not found; `MenuPresenter.test.tsx` (moved from `RowMenuHost.test.tsx`) fails on the `presentMenu` name; then green.
-- [ ] `MenuPresenter.test.tsx` asserts a checked row renders `PickerRow` beside an unchecked `MenuItem` in the same level; asserts an icon reaches the row's leading slot; asserts a dismissal keeps the rows drawn through the exit.
-- [ ] `menuActions.test.ts` asserts a tree whose first row carries `separatorBefore` reaches the presenter without it, and that a trigger with the preference off reaches `presentMenu` while no trigger reaches the host.
-- [ ] `rg -F "popRowMenu" Core Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "row-menu" Core Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "menuTemplate" Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "popMenu(" Core --glob '!*.test.*'` → 36.
-- [ ] Gates green.
+- [x] Red first: `menu.test.ts` fails on module not found; `MenuPresenter.test.tsx` (moved from `RowMenuHost.test.tsx`) fails on the `presentMenu` name; then green.
+- [x] `MenuPresenter.test.tsx` asserts a checked row renders `PickerRow` beside an unchecked `MenuItem` in the same level; asserts an icon reaches the row's leading slot; asserts a dismissal keeps the rows drawn through the exit.
+- [x] `menuActions.test.ts` asserts a tree whose first row carries `separatorBefore` reaches the presenter without it, and that a trigger with the preference off reaches `presentMenu` while no trigger reaches the host.
+- [x] `rg -F "popRowMenu" Core Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "row-menu" Core Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "menuTemplate" Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "popMenu(" Core --glob '!*.test.*'` → 36.
+- [x] Gates green.
 
 **Verify — User**
 
@@ -268,7 +269,7 @@ export const NativePickerContext = createContext<NativePicker | null>(null)
 // lines 56-67 popNative; 71-73 onTrigger branches native/setOpen; 124-149 its own PickerMenu origin="center" + PickerRow list
 // Core/Interface/App.tsx:75  const nativePicker = useNativeMenus() ? popRowMenu : null
 // Core/Interface/App.tsx:98  <NativePickerContext.Provider value={nativePicker}>
-// solid: declared at :40/:48, forwarded at :132, passed by no consumer
+// solid: declared at :40/:48, forwarded at :132, passed by PropertyFrame.tsx:422, LayoutFrame.tsx:171, SettingsFrame.tsx:194 to draw those three lists on WINDOW_FROST
 // Core/Views/Settings/SortFrame.test.tsx:78-84 and GroupFrame.test.tsx drive the rendered list by row text (pickOption)
 ```
 
@@ -293,10 +294,10 @@ The row shape stays structural inside UIX, as `NativePicker` already is; `popMen
 
 **Verify — Automated**
 
-- [ ] `PickerControl.typeable.test.tsx`, `SortFrame.test.tsx`, `GroupFrame.test.tsx`, and any other test rendering `PickerControl` green through the shared helper; one asserts the door receives `checked` on the current value and the trigger element.
-- [ ] `rg -F "NativePickerContext" Core UIX` → 0. `rg -F "useNativeMenus" Core` → 0. Control: `rg -F "MenuDoorContext" Core UIX` → 3+.
-- [ ] `ConfigurationPM.md:23` rewritten in this commit.
-- [ ] Gates green.
+- [x] `PickerControl.typeable.test.tsx`, `SortFrame.test.tsx`, `GroupFrame.test.tsx`, and any other test rendering `PickerControl` green through the shared helper; one asserts the door receives `checked` on the current value and the trigger element.
+- [x] `rg -F "NativePickerContext" Core UIX` → 0. `rg -F "useNativeMenus" Core` → 0. Control: `rg -F "MenuDoorContext" Core UIX` → 3+.
+- [x] `ConfigurationPM.md:23` rewritten in this commit.
+- [x] Gates green.
 
 **Verify — User**
 
@@ -356,10 +357,10 @@ The handle is a control, so its menu takes the trigger path on click and right-c
 
 **Verify — Automated**
 
-- [ ] `tileHandleMenu.test.ts`: red first on the title row now enabled with an icon and on a footer node becoming a separated last row; then green.
-- [ ] `rg -F "TileHandleMenu" Core` → 0. `rg -F "handle-menu.css" Core` → 0. `rg -F "useHeld" Core/Tiles/TileHost.tsx` → 0. Control: `rg -F "tileMenuItems" Core` → 3+.
-- [ ] `SurfacePM.md:24, 34, 36` rewritten in this commit.
-- [ ] Gates green.
+- [x] `tileHandleMenu.test.ts`: red first on the title row now enabled with an icon and on a footer node becoming a separated last row; then green.
+- [x] `rg -F "TileHandleMenu" Core` → 0. `rg -F "handle-menu.css" Core` → 0. `rg -F "useHeld" Core/Tiles/TileHost.tsx` → 0. Control: `rg -F "tileMenuItems" Core` → 3+.
+- [x] `SurfacePM.md:24, 34, 36` rewritten in this commit.
+- [x] Gates green.
 
 **Verify — User**
 
@@ -368,13 +369,13 @@ The handle is a control, so its menu takes the trigger path on click and right-c
 
 #### Gate 1 — one door, two renderers, first consumers
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
-- [ ] Every task that diverged had its dependents re-derived and rewritten.
-- [ ] Simplification and review dispatched against `<base>..HEAD`; the reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in; lessons written into the later tasks they change.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [x] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
+- [x] Every task that diverged had its dependents re-derived and rewritten.
+- [x] Simplification and review dispatched against `<base>..HEAD`; the reports cite files inside it.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in; lessons written into the later tasks they change.
 - [ ] **Declared stop.** Execution halts here until Nathan closes Task 3's and Task 4's user boxes.
 
 ---
@@ -657,11 +658,11 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 ### Progress
 
-- [ ] **Phase 1** — One Door, One Presenter · base `<commit>`
-  - [ ] Task 1 — The model · `<commit>`
-  - [ ] Task 2 — The door, the channel, the presenter · `<commit>`
-  - [ ] Task 3 — PickerControl through the door · `<commit>`
-  - [ ] Task 4 — The tile handle menu is one definition · `<commit>`
+- [x] **Phase 1** — One Door, One Presenter · base `c530d1ca3` · simplified `8ecf6ba00` · reviewed and fixed `2f47bfff3` · awaiting the declared stop
+  - [x] Task 1 — The model · `39e8d9439`
+  - [x] Task 2 — The door, the channel, the presenter · `5cc3bcf07`
+  - [x] Task 3 — PickerControl through the door · `56a4621ed`
+  - [x] Task 4 — The tile handle menu is one definition · `13020bac1`
 - [ ] **Phase 2** — Native Residue
   - [ ] Task 5 — Connection model relocation · `<commit>`
   - [ ] Task 6 — The grip-hot chain goes · `<commit>`
@@ -682,12 +683,20 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 6. 09-08-2026, Nathan: native accelerators read the session's commands at `refreshMenu()` (startup and adopt); a rebind reaches the native menu at the next adopt or launch. Every renderer reader, the format keymap included, is live.
 7. 09-08-2026, Nathan: "most recently activated" is the stack's push order, which is open order. One Escape closes only the newest floating window; today it closes all of them. Focusing an older window does not re-order the stack.
 8. 09-08-2026, Nathan: the tile handle is a control, so its menu takes the trigger path on click and right-click alike, exactly as today. Ruling 1 is about a right-click on content.
-9. 09-08-2026, Nathan: a right-click outside an in-app menu stays parked; the preferred shape when it lands is an Interface setting, "Close in-app menus on external right-click", off by default.
+9. 09-08-2026, Nathan: a right-click outside an in-app surface does not close it. An outside left-click closes the whole stack, as the stack does today; Escape closes only the newest layer. No setting.
 10. 09-08-2026, Nathan: raising a floating window on click, with Escape following the raise, stays parked; it is window management, not a menu fix.
 
 ### Open Against Later Tasks
 
+- Task 4 gives the title row an icon and no other root row one; the deleted pane drew glyphs on Link, Style, Scale, Duplicate, Delete. Five `icon:` fields in `tileMenuItems` if Nathan wants them back, at Gate 1.
+- Task 3 dropped `solid` at its three call sites (Chip Style, Card Banner, View Scale pickers); those lists now draw on `SURFACE_FROST` like every other presenter menu. Whether the door carries a glass hint is Nathan's call at Gate 1.
+
 ### Deviations
+
+- Task 2: the presenter passes `icon` straight to `Icon`, whose own lookup already falls back to `square-dashed`; `iconNameOr` would have been a pass-through.
+- Task 2: `Core/Testing/MenuDoorHost.tsx` is the shared render helper for picker tests; no React helper existed in `Core/Testing`.
+- Task 4: a drill level's footer rows take the separator only when body rows precede them; a level holding only "+ Custom" would otherwise open with a divider above its one row.
+- Gate 1: the door resolves `null` on an empty row list, matching the native popper's own guard; a branch wins over `checked` in both projections; `PickerRow` gained `disabled`.
 
 ### Lessons
 
@@ -696,7 +705,6 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 - A Shortcuts settings pane over the one table; a `refreshMenu()` on a commands change if a live native rebind is wanted.
 - A MarkdownPM slash-command menu as the third consumer of the door; it will need the door to accept a caret rect, which was cut from this plan as having no writer.
 - Touch reachability of content right-click menus on the mobile host.
-- The dismissal stack's outside press is button 0 only; a right-click outside an in-app menu dismisses it only behind a future Interface setting, "Close in-app menus on external right-click", off by default (Ruling 9).
 - Raise on click for floating windows: a press inside a window lifts it above the others and to the top of the dismissal stack, so Escape follows focus rather than open order (Ruling 10). Needs a window z-order and a stack reorder, neither of which exists.
 
 ### Closeout
