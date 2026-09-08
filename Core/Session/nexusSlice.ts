@@ -15,6 +15,7 @@ import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
+import { clampWidth, INSPECTOR_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { flushAllPageSaves, flushAllSessionSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
@@ -144,6 +145,23 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (prevRoot !== undefined && prevRoot !== incoming.nexus.rootPath) resetNexusSession()
       // IPC strips identity, so without stabilize() every push would re-render every consumer.
       const tree = stabilize(incoming, get().tree)
+      // Ahead of the ready paint so the panes land at their stored widths rather than settling after it. A width is seeded only when `panes` holds it; an absent key leaves the slice as it stands.
+      if (!devicePrefsLoaded) {
+        devicePrefsLoaded = true
+        const prefs = await host().ask('devicePrefs:load')
+        if (prefs.ok) {
+          const panes = prefs.value?.panes
+          set({
+            devicePrefs: prefs.value ?? {},
+            ...(panes?.sidebar !== undefined && {
+              sidebarWidth: clampWidth(SIDEBAR_WIDTH, panes.sidebar),
+            }),
+            ...(panes?.inspector !== undefined && {
+              inspectorWidth: clampWidth(INSPECTOR_WIDTH, panes.inspector),
+            }),
+          })
+        }
+      }
       set({ status: 'ready', tree })
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
@@ -163,11 +181,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       applySystemAccent(systemColor)
       set({ personalization: tree.personalization, commands: tree.commands })
       applyPersonalization(tree.personalization)
-      if (!devicePrefsLoaded) {
-        devicePrefsLoaded = true
-        const prefs = await host().ask('devicePrefs:load')
-        if (prefs.ok) set({ devicePrefs: prefs.value ?? {} })
-      }
     },
 
     choose: () => openVia(() => host().ask('nexus:choose')),

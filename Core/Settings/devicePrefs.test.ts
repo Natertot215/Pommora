@@ -12,6 +12,13 @@ describe('what a machine actually stores', () => {
     expect(packDevicePrefs({})).toEqual({})
   })
 
+  // Why panes, disclosure and window sizes are nested: a fold map is mostly false, and only the top level is filtered.
+  it('keeps a nested false, where a top-level one would be dropped', () => {
+    expect(packDevicePrefs({ disclosure: { areas: false } })).toEqual({
+      disclosure: { areas: false },
+    })
+  })
+
   it('refuses anything that is not a record', () => {
     expect(packDevicePrefs(null)).toEqual({})
     expect(packDevicePrefs('nativeMenus')).toEqual({})

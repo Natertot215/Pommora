@@ -177,7 +177,7 @@ Deliberately never kept: the window opens at one size every launch, and floating
 
 ### The Host Boundary
 
-The app reaches the machine — the filesystem, the database handles, native menus, the system's web links — through the interfaces in `Core/Platform`, which the host implements. Every channel between the interface and the host is declared once in `Core/Contract/bridge.ts`, both sides derive from that declaration, and every channel answers with the `Result` envelope rather than throwing across the boundary.
+The app reaches the machine — the filesystem, the database handles, native menus, the system's web links — through the interfaces in `Core/Platform`, which the host implements. Every channel between the interface and the host is declared once in `Core/Contract/bridge.ts`, both sides derive from that declaration, and every channel answers with the `Result` envelope rather than throwing across the boundary. A host's implementation of the `Machine` and store interfaces is held to the contract suites in `Core/Testing`, which Core runs over its own test implementations and any host runs over its real ones.
 
 ### What the Data Layer Leaves to the OS
 

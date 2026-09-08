@@ -33,7 +33,8 @@ export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240, key: 'pommora.sideb
 export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300, key: 'pommora.inspectorWidth' }
 type PaneWidth = typeof SIDEBAR_WIDTH
 
-const clampWidth = (pane: PaneWidth, w: number): number => clamp(Math.round(w), pane.min, pane.max)
+export const clampWidth = (pane: PaneWidth, w: number): number =>
+  clamp(Math.round(w), pane.min, pane.max)
 
 function storedWidth(pane: PaneWidth): number {
   try {
@@ -44,7 +45,10 @@ function storedWidth(pane: PaneWidth): number {
   }
 }
 
+// devicePrefs is bound to a session root, so a pane width belongs to this Nexus and returns to its default when another one opens.
 const PER_NEXUS = {
+  sidebarWidth: SIDEBAR_WIDTH.def,
+  inspectorWidth: INSPECTOR_WIDTH.def,
   subfieldExpanded: true,
   navWindowMode: 'list',
   navViewMode: 'list',
@@ -62,6 +66,7 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
   }
 
   return {
+    ...PER_NEXUS,
     sidebarVisible: true,
     toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
     ribbonVisible: true,
@@ -78,7 +83,6 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
       } catch {}
     },
 
-    ...PER_NEXUS,
     setSubfieldExpanded: (expanded) => {
       set({ subfieldExpanded: expanded })
       persistSubfield()

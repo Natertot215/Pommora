@@ -7,7 +7,7 @@ What is true only because Pommora is running as a desktop app: the process that 
 
 Two programs share one window. The **host** (`Desktop/main.ts`) is the one that touches the computer: it creates the window, registers the `nexus-asset://` protocol, holds the single-instance lock, pops native menus, and implements the machine seam Core reads and writes files through. The **window** is the React app, drawing everything and holding the working state, unable to touch a file directly. Between them sits a deliberately narrow **bridge** (`Desktop/Bridge`, typed by `Core/Contract/bridge.ts`): the window asks, the host answers, and every ask is declared in one shared contract both sides compile against.
 
-**Platform.** `Desktop/Platform` implements Core's machine seam — `nodeMachine.ts` for the filesystem over `node:fs`, `fileLock.ts` for the cross-process advisory lock.
+**Platform.** `Desktop/Platform` implements Core's machine seam — `nodeMachine.ts` for the filesystem over `node:fs`, `fileLock.ts` for the cross-process advisory lock. `nodeMachine.test.ts` runs it against the `Machine` contract suite in `Core/Testing`, the same proof a second host applies to its own implementation.
 
 **Bridge.** Every channel is declared once, in a types-only map (`Core/Contract/bridge.ts`): its direction, what it carries, and what it answers with. `Desktop/Bridge/preload.ts` derives the whole `window.nexus` dialer from that map with one dialer per declared name, and `ipc.ts` registers every handler through one loop that demands a handler per channel, so a channel on only one side or a drifted signature is a build error. Every channel answers with the `Result` envelope — the value, or a structured refusal naming what went wrong — and never throws across the boundary.
 
@@ -15,7 +15,7 @@ Two programs share one window. The **host** (`Desktop/main.ts`) is the one that 
 
 ### The Store
 
-`Desktop/Store` is the SQLite seam. `driver.ts` wraps `node:sqlite` — Electron's own runtime, so there is no native module to rebuild — and `ddl.ts` holds the schema. `sessionDb.ts` opens `nexus.db` beside the Nexus for this machine's chrome and the content index; `versionsDb.ts` opens `versions.db` for page file history. Both sit inside the Nexus and travel with a moved one, and neither ever syncs.
+`Desktop/Store` is the SQLite seam. `driver.ts` wraps `node:sqlite` — Electron's own runtime, so there is no native module to rebuild — and `ddl.ts` holds the schema. `sessionDb.ts` opens `nexus.db` beside the Nexus for this machine's chrome and the content index; `versionsDb.ts` opens `versions.db` for page file history. Both sit inside the Nexus and travel with a moved one, and neither ever syncs. `stores.test.ts` runs the key-value, content-index, and snapshot stores against the store contract suites in `Core/Testing`, holding the SQL to the behavior any host's implementation must meet.
 
 ### The File Watcher
 
