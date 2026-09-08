@@ -8,13 +8,14 @@ import { popMenu } from './menuActions'
 
 let asked = vi.fn((_req: MenuRequest) => ok('native'))
 let presented = vi.fn(
-  async (_items: readonly ActionItem<string>[], _trigger: HTMLElement) => 'in-app' as string | null,
+  async (_items: readonly ActionItem<string>[], _trigger: HTMLElement, _solid?: boolean) =>
+    'in-app' as string | null,
 )
 
 beforeEach(() => {
   asked = vi.fn((_req: MenuRequest) => ok('native'))
   presented = vi.fn(
-    async (_items: readonly ActionItem<string>[], _trigger: HTMLElement) =>
+    async (_items: readonly ActionItem<string>[], _trigger: HTMLElement, _solid?: boolean) =>
       'in-app' as string | null,
   )
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ menu: asked })
@@ -49,6 +50,11 @@ describe('the one door every menu opens through', () => {
     await expect(popMenu([{ label: 'Rename', action: 'rename' }], el)).resolves.toBe('in-app')
     expect(presented.mock.calls[0][1]).toBe(el)
     expect(asked).not.toHaveBeenCalled()
+  })
+
+  it('carries a solid list through the door to the presenter', async () => {
+    await popMenu([{ label: 'Rename', action: 'rename' }], trigger(), { solid: true })
+    expect(presented.mock.calls[0][2]).toBe(true)
   })
 
   it('asks the host when the preference is on, anchored to the trigger', async () => {

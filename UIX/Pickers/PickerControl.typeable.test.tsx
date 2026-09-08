@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MenuDoorContext, PickerControl } from './PickerControl'
+import { type MenuDoor, MenuDoorContext, PickerControl } from './PickerControl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -21,9 +21,9 @@ const OPTIONS = [
 let host: HTMLDivElement
 let root: Root
 const onCommit = vi.fn()
-const door = vi.fn(async () => null)
+const door = vi.fn<MenuDoor>(async () => null)
 
-function mount(): void {
+function mount(solid?: boolean): void {
   act(() => {
     root.render(
       <MenuDoorContext.Provider value={door}>
@@ -32,6 +32,7 @@ function mount(): void {
           value="1"
           options={OPTIONS}
           onPick={() => {}}
+          solid={solid}
           typeable={{ text: '100', suffix: '%', onCommit }}
         />
       </MenuDoorContext.Provider>,
@@ -96,7 +97,14 @@ describe('a typeable picker', () => {
         { label: '150%', action: '1.5', checked: false, icon: undefined },
       ],
       host.querySelector('span'),
+      { solid: false },
     )
+  })
+
+  it('asks for a solid list when the control is drawn on a window', () => {
+    mount(true)
+    press(trigger(), 'click', { detail: 1 })
+    expect(door.mock.calls[0][2]).toEqual({ solid: true })
   })
 
   it('hands what was written to the caller', () => {
