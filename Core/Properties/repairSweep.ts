@@ -6,7 +6,7 @@ import {
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
-import { errText } from '../Contract/result'
+import { errText, valueOr } from '../Contract/result'
 import { collectionFolderOf } from './assignment'
 import { assignedDefs, loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/contextWrite'
 import { type Rewrite, sweepGovernedRoots } from './governedSweep'
@@ -25,7 +25,7 @@ export async function runRepairSweep(root: string): Promise<void> {
   const live = (): boolean => contentIndexStore() === db0
   try {
     const context = await loadContextWorld(root)
-    const base = context.ok ? context.value : NO_CONTEXT_WORLD
+    const base = valueOr(context, NO_CONTEXT_WORLD)
     const defsByFolder = new Map<string | null, ReadonlyMap<string, PropertyDefinition>>()
     const worlds = new Map<string, GovernedWorld>()
     for (const rel of files) {

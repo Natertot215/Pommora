@@ -32,6 +32,8 @@ export function ok<T>(value: T): Result<T, never> {
   return { ok: true, value }
 }
 
+export const valueOr = <T>(r: Result<T>, fallback: T): T => (r.ok ? r.value : fallback)
+
 export function fail(code: ErrorCode, message: string): Result<never> {
   return { ok: false, error: { code, message } }
 }

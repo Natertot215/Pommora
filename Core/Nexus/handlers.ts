@@ -1,5 +1,5 @@
 import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
-import { caught, errText, fail, ok } from '../Contract/result'
+import { errText, fail, ok, type Result } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -101,15 +101,11 @@ async function mutateDeps(ctx: HostContext): Promise<MutateDeps> {
 }
 
 export const nexusHandlers = {
-  'nexus:state': async (): Promise<NexusState> => {
+  'nexus:state': async (): Promise<Result<NexusState>> => {
     const root = sessionRoot()
-    if (root === null) return { status: 'empty' }
-    try {
-      const tree = getLiveTree() ?? (await refreshTree(root))
-      return { status: 'open', tree }
-    } catch (e) {
-      return { status: 'error', error: caught(e) }
-    }
+    if (root === null) return ok({ status: 'empty' })
+    const tree = getLiveTree() ?? (await refreshTree(root))
+    return ok({ status: 'open', tree })
   },
 
   'nexus:choose': async (ctx) => {
@@ -151,9 +147,10 @@ export const nexusHandlers = {
 
   'path:reveal': async (ctx, p: unknown) => {
     const root = sessionRoot()
-    if (root === null || typeof p !== 'string') return
+    if (root === null || typeof p !== 'string') return ok(null)
     const r = await resolveUnderRoot(root, p)
     if (r.ok) ctx.reveal(r.value)
+    return ok(null)
   },
 
   mutate: async (ctx, req: MutateRequest) => {

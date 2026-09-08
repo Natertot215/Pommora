@@ -15,14 +15,8 @@ const isEmptyValue = (v: unknown): boolean =>
   (Array.isArray(v) && v.length === 0) ||
   (isPlainObject(v) && Object.keys(v).length === 0)
 
-export function scopeGet<T>(scope: Scope): () => Record<string, T> {
-  return () => {
-    try {
-      return readScope<T>(scope)
-    } catch {
-      return {}
-    }
-  }
+export function scopeGet<T>(scope: Scope): () => Result<Record<string, T>> {
+  return () => ok(readScope<T>(scope))
 }
 
 export function scopeSet<T>(
@@ -108,9 +102,11 @@ export const interfaceHandlers = {
   'error:show': async (ctx, message: unknown) => {
     if (typeof message === 'string')
       await ctx.message('error', 'Couldn’t complete that action.', message)
+    return ok(null)
   },
   'clipboard:write': async (ctx, text: unknown) => {
     if (typeof text === 'string') await ctx.clipboard.write(text)
+    return ok(null)
   },
-  'clipboard:read': (ctx) => ctx.clipboard.read(),
+  'clipboard:read': async (ctx) => ok(await ctx.clipboard.read()),
 } satisfies Partial<Handlers>

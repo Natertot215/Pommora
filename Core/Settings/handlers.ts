@@ -1,5 +1,5 @@
 import { type Handlers, withRoot } from '../Contract/handlers'
-import { fail, ok } from '../Contract/result'
+import { fail, ok, type Result } from '../Contract/result'
 import { seedContentIndex } from '../Index/indexSeed'
 import type { NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import { rootSegs } from '../Paths/exclusion'
@@ -72,9 +72,9 @@ export const settingsHandlers = {
     return ok(null)
   }),
 
-  'subfield:get': async (): Promise<SubfieldConfig | null> => {
+  'subfield:get': async (): Promise<Result<SubfieldConfig | null>> => {
     const root = sessionRoot()
-    return root === null ? null : readSubfield(root)
+    return ok(root === null ? null : await readSubfield(root))
   },
 
   'subfield:set': withRoot(async (root, _ctx, config: unknown) => {
@@ -84,9 +84,9 @@ export const settingsHandlers = {
     return ok(null)
   }),
 
-  'navViewModes:get': async (): Promise<NavViewModes | null> => {
+  'navViewModes:get': async (): Promise<Result<NavViewModes | null>> => {
     const root = sessionRoot()
-    return root === null ? null : readNavViewModes(root)
+    return ok(root === null ? null : await readNavViewModes(root))
   },
 
   'navViewModes:set': withRoot(async (root, _ctx, modes: unknown) => {
@@ -96,5 +96,5 @@ export const settingsHandlers = {
     return ok(null)
   }),
 
-  'theme:systemAccent': (ctx) => ctx.systemAccent(),
+  'theme:systemAccent': async (ctx) => ok(await ctx.systemAccent()),
 } satisfies Partial<Handlers>

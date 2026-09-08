@@ -3,7 +3,7 @@ import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { pathExists } from '../Files/atomicWrite'
 import { recordWrite } from '../Files/writeEcho'
 import { deindexPath } from '../Index/indexSeed'
-import { fail, fault, ok } from '../Contract/result'
+import { fail, fault, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
@@ -37,7 +37,7 @@ export async function deleteOp(
     const registry = write ? await readRegistryStrict(root) : null
     if (write) await write(await gatherSpaceRecord(abs, registry, null))
     const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
-    if (write) await write(await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null))
+    if (write) await write(await gatherSpaceRecord(abs, registry, valueOr(swept, null)))
   } else if (req.kind === 'context') {
     const title = basename(abs)
     const evidence = write
@@ -50,7 +50,7 @@ export async function deleteOp(
       const id = evidence?.entry.id ?? cur.contexts.find((c) => c.title === title)?.id
       return id ? { contexts: cur.contexts.filter((c) => c.id !== id) } : cur
     })
-    if (write && evidence) await write(buildContextRecord(evidence, swept.ok ? swept.value : null))
+    if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
   } else if (write) {
     await write(await gatherContentRecord(root, req.kind, abs))
   }

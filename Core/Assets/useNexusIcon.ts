@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { valueOr } from '@pommora/core/Contract/result'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
@@ -21,7 +22,7 @@ export function useNexusIcon() {
     )
     if (action === 'changeIcon') setPickerOpen(true)
     else if (action === 'addPhoto') {
-      const source = await host().ask('nexus:pickFile')
+      const source = valueOr(await host().ask('nexus:pickFile'), null)
       if (source && (await mutate({ op: 'setProfileImage', source }))) openEditor()
     } else if (action === 'editPhoto') openEditor()
     else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', source: null })

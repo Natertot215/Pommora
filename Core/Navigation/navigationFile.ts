@@ -1,4 +1,5 @@
 import { isNavRef, toNavRef } from './navRef'
+import { valueOr } from '../Contract/result'
 import type { NavRef, NavigationState } from './navRef'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Paths/paths'
 import { readValue, writeValue } from '../Platform/localState'
@@ -63,7 +64,7 @@ export async function writeNavigationState(
     const read = await readJsonStrict(path)
     if (!read.ok && read.error.code !== 'not-found')
       throw new Error(`navigation.json is unreadable: ${read.error.message}`)
-    const base = read.ok ? read.value : {}
+    const base = valueOr(read, {})
     const out: Record<string, unknown> = { ...base }
     for (const key of FILE_KEYS) {
       const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
