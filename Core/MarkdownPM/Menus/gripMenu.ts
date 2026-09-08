@@ -13,8 +13,9 @@ import { focusRange } from '../caretPlacement'
 import { webpageEmbedUrlSpan } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { type EditorHost, editorHost } from '../api'
 
-const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-blockquote-first']
-const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
+const GRIP_SELECTOR = ['md-block-handle', 'md-callout-first', 'md-blockquote-first']
+  .map((c) => `.cm-line.${c}`)
+  .join(', ')
 
 /** Null on the line's own text — a press past the content column's left edge is never a gutter press. */
 function gutterLineAt(e: MouseEvent, selector: string): HTMLElement | null {
