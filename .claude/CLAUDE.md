@@ -39,13 +39,9 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 #### Testing Conventions
 
 - **The visual iteration scratchpad** — `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
-- **Live instances are yours to drive.** Kill and manipulate Nathan's running instances freely — scratch pages and data manipulation are accepted; the one requirement is that any change made is reverted when done. Kill test instances when you're done.
 - **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs one.
-- **Launch the GUI** — copy-paste, from the repo root :
-  ```
-  env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev
-  ```
-  `POMMORA_DEBUG_PORT` arms CDP; a `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. 
+- **Launch the GUI** by copy-pasting from the repo’s root:  `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`
+-  `POMMORA_DEBUG_PORT` arms CDP; the `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. 
 - **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first launch dies with `Error: Electron uninstall`; run `./node_modules/.bin/electron --version` once to download it. 
 
 ### Locked Decisions
