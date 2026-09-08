@@ -40,7 +40,6 @@ import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { AgendaMode } from './AgendaMode'
-import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../Glance/glanceLink'
 import { glanceShown } from '../Glance/glanceAction'
@@ -218,7 +217,7 @@ function Disclosure({
   title: string
   depth: number
   defaultOpen?: boolean
-  persistKey?: string
+  persistKey: string
   selected?: boolean
   onSelect?: () => void
   onContextMenu?: () => void
@@ -231,12 +230,12 @@ function Disclosure({
   directChildren?: { id: string; path: string }[]
   children: React.ReactNode
 }): React.JSX.Element {
-  const [open, setOpen] = useState(() =>
-    persistKey ? loadOpen(window.localStorage, persistKey, defaultOpen) : defaultOpen,
-  )
+  // Read reactively rather than seeded once: a group whose id exists in both Nexuses does not remount across a switch, and its fold must follow the store.
+  const stored = useSession((s) => s.devicePrefs.disclosure?.[persistKey])
+  const open = stored ?? defaultOpen
   const setAndSave = (next: boolean): void => {
-    setOpen(next)
-    if (persistKey) saveOpen(window.localStorage, persistKey, next)
+    const s = useSession.getState()
+    s.setDevicePref('disclosure', { ...s.devicePrefs.disclosure, [persistKey]: next })
   }
   const settleClick = useRef(false)
   const onHeaderPointerDown = rename
