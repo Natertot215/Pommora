@@ -1,5 +1,6 @@
-// A runtime leaf on purpose — the pane reaches into MarkdownPM and the editor's host reaches this, so it imports only a type and the pane claims the presenter slot at mount.
+// The pane reaches into MarkdownPM and the editor's host reaches this, so the pane claims the presenter slot at mount rather than being imported.
 import type { GlanceTarget } from '../../MarkdownPM/api'
+import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 export interface GlanceRequest {
   target: GlanceTarget
@@ -73,21 +74,19 @@ export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
       }),
     )
   }
-  const onKey = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      watch.onEscape()
-      return
-    }
-    onShift()
-  }
+  const dismissal = pushDismissal({
+    layer: () => null,
+    dismiss: watch.onEscape,
+    outsidePress: false,
+  })
   window.addEventListener('scroll', onShift, true)
-  window.addEventListener('keydown', onKey)
+  window.addEventListener('keydown', onShift)
   window.addEventListener('resize', watch.onMoved)
   return () => {
     if (raf) cancelAnimationFrame(raf)
+    dismissal.release()
     window.removeEventListener('scroll', onShift, true)
-    window.removeEventListener('keydown', onKey)
+    window.removeEventListener('keydown', onShift)
     window.removeEventListener('resize', watch.onMoved)
   }
 }

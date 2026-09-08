@@ -21,6 +21,7 @@ import {
 import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
+import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@pommora/core/Connections/connections'
 import '../../Tiles/tile-base.css'
@@ -538,7 +539,7 @@ const embedAtomic = EditorView.atomicRanges.of((view) => {
 const editingExit = ViewPlugin.fromClass(
   class {
     private readonly onDown: (e: PointerEvent) => void
-    private readonly onKey: (e: KeyboardEvent) => void
+    private dismissal: DismissalHandle | null = null
 
     constructor(view: EditorView) {
       this.onDown = (e) => {
@@ -552,18 +553,27 @@ const editingExit = ViewPlugin.fromClass(
         if (t?.closest?.('.mdpm-embed-tile.is-editing-tile')) return
         view.dispatch({ effects: setEmbedEditing.of(null) })
       }
-      this.onKey = (e) => {
-        if (e.key !== 'Escape' || e.defaultPrevented) return
-        if (view.state.field(embedField).editing)
-          view.dispatch({ effects: setEmbedEditing.of(null) })
-      }
       document.addEventListener('pointerdown', this.onDown, true)
-      window.addEventListener('keydown', this.onKey)
+    }
+
+    update(u: ViewUpdate): void {
+      const editing = u.state.field(embedField).editing
+      if (editing === u.startState.field(embedField).editing) return
+      if (!editing) {
+        this.dismissal?.release()
+        this.dismissal = null
+        return
+      }
+      this.dismissal ??= pushDismissal({
+        layer: () => null,
+        dismiss: () => u.view.dispatch({ effects: setEmbedEditing.of(null) }),
+        outsidePress: false,
+      })
     }
 
     destroy(): void {
       document.removeEventListener('pointerdown', this.onDown, true)
-      window.removeEventListener('keydown', this.onKey)
+      this.dismissal?.release()
     }
   },
 )

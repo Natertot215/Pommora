@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useResizeFrame, type ResizeEdge } from '@pommora/uix/Interactions/ResizeFrame'
+import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
 import type { PinnedGlance } from '../../Session/glanceSlice'
@@ -447,21 +448,15 @@ export function GlancePane(): React.JSX.Element {
     </button>
   )
 
-  // Esc blooms out the newest still-open active-tab pin, locked or not (R9 — Esc is the universal escape hatch); bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape' || e.defaultPrevented || shown) return
-      const newest = pinnedGlances
-        .filter((p) => p.tabId === activeTabId && !exiting.has(p.pinId))
-        .at(-1)
-      if (newest) {
-        e.preventDefault()
-        beginExit([newest.pinId])
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [shown, pinnedGlances, activeTabId, exiting, beginExit])
+  // Esc blooms out the newest still-open active-tab pin, locked or not (R9 — Esc is the universal escape hatch).
+  const newestPin = pinnedGlances
+    .filter((p) => p.tabId === activeTabId && !exiting.has(p.pinId))
+    .at(-1)
+  useDismissal(newestPin !== undefined, false, {
+    layer: () => null,
+    dismiss: newestPin && (() => beginExit([newestPin.pinId])),
+    outsidePress: false,
+  })
 
   return (
     <>
