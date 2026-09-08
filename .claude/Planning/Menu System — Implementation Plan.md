@@ -97,6 +97,7 @@ Deliberately not solved here: touch reachability of content right-click menus (a
 | `SurfacePM.md:24` | "both menu presenters, the menu model" | one presenter | 4 |
 | `ConfigurationPM.md:23` | "Draws plain-list menus as system menus" | true for click-triggered lists; the row says so | 3 |
 | `DesktopPM.md:26` | "`rowMenu.ts` is the one popper" and "A host without a popper answers the same channel with the in-app presenter" | the popper is `menu.ts`; the channel is native-only and the door reaches the presenter inside the renderer | 2 |
+| `ConnectionsPM.md:34` | "`Core/MarkdownPM/Links/connMenu.ts`" | the model moved | 5 |
 | `MarkdownPM.md:86` | the paragraph's implication that main must be told to stand down | the chain is gone | 6 |
 | `Codebase Audit — Report.md` topic 5, R-21 to R-24, Appendix C's Use Native Menus line | the whole topic | delivered, removed rather than amended | 9 |
 | Audit artifact `a9f3a52c` | its topic 5 section | same | 9 |
@@ -301,7 +302,7 @@ The row shape stays structural inside UIX, as `NativePicker` already is; `popMen
 
 **Verify — User**
 
-- [ ] A Settings picker (Interface Scale) opens centered under its trigger with the ring on the current value, preference off; opens as a system menu, preference on.
+- [x] A Settings picker (Interface Scale) opens centered under its trigger with the ring on the current value, preference off; opens as a system menu, preference on.
 
 #### Task 4: The tile handle menu is one definition
 
@@ -364,8 +365,8 @@ The handle is a control, so its menu takes the trigger path on click and right-c
 
 **Verify — User**
 
-- [ ] Preference off: clicking a tile handle opens the presenter centered under the handle; the page's link rows drill with a back row and scroll within the cap; Style and Scale show the ring on the current value; Lock is the last row; "+ Custom" sits separated at the bottom of its level; the grip stays visible while the menu is open.
-- [ ] Preference on: the same click opens a system menu with the same rows.
+- [x] Preference off: clicking a tile handle opens the presenter centered under the handle; the page's link rows drill with a back row and scroll within the cap; Style and Scale show the ring on the current value; Lock is the last row; "+ Custom" sits separated at the bottom of its level; the grip stays visible while the menu is open.
+- [x] Preference on: the same click opens a system menu with the same rows.
 
 #### Gate 1 — one door, two renderers, first consumers
 
@@ -376,7 +377,7 @@ The handle is a control, so its menu takes the trigger path on click and right-c
 - [x] Simplification and review dispatched against `<base>..HEAD`; the reports cite files inside it.
 - [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [x] Progress hashes filled in; lessons written into the later tasks they change.
-- [ ] **Declared stop.** Execution halts here until Nathan closes Task 3's and Task 4's user boxes.
+- [x] **Declared stop.** Execution halts here until Nathan closes Task 3's and Task 4's user boxes.
 
 ---
 
@@ -408,8 +409,8 @@ export function connectionMenuModel(ctx: …): ActionItem<…>[]
 
 **Verify — Automated**
 
-- [ ] `rg -F "connMenuModel" Core` → 0. `rg -F "Menus/connectionMenu'" Core` → 0. Control: `rg -F "connectionMenuActions" Core` → 3+.
-- [ ] Gates green.
+- [x] `rg -F "connMenuModel" Core` → 0. `rg -F "Menus/connectionMenu'" Core` → 0. Control: `rg -F "connectionMenuActions" Core` → 3+.
+- [x] Gates green.
 
 **Verify — User**
 
@@ -439,9 +440,9 @@ export function connectionMenuModel(ctx: …): ActionItem<…>[]
 
 **Verify — Automated**
 
-- [ ] `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out'` → 0; `rg -F "editor:grip-hot"` → 0; `rg -F "HOT_MENU_LINES"` → 0. Control: `rg -F "format-state" Core Desktop --glob '!node_modules' --glob '!out'` → 3+.
+- [x] `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out'` → 0; `rg -F "editor:grip-hot"` → 0; `rg -F "HOT_MENU_LINES"` → 0. Control: `rg -F "format-state" Core Desktop --glob '!node_modules' --glob '!out'` → 3+.
 - [ ] One smoke launch by an Opus agent: right-click a block grip on a page, the grip's menu appears and the editor menu does not; right-click a gutter on a read-only surface (Page History), the editor menu appears.
-- [ ] Gates green.
+- [x] Gates green.
 
 **Verify — User**
 
@@ -449,12 +450,12 @@ export function connectionMenuModel(ctx: …): ActionItem<…>[]
 
 #### Gate 2 — residue settled
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Every Now count re-run against its control.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in. The next phase opens automatically.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked.
+- [x] Every Now count re-run against its control.
+- [x] Simplification and review dispatched against `<base>..HEAD`.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in. The next phase opens automatically.
 
 ---
 
@@ -658,15 +659,15 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 ### Progress
 
-- [x] **Phase 1** — One Door, One Presenter · base `c530d1ca3` · simplified `8ecf6ba00` · reviewed and fixed `2f47bfff3` · awaiting the declared stop
+- [x] **Phase 1** — One Door, One Presenter · base `c530d1ca3` · simplified `8ecf6ba00` · reviewed and fixed `2f47bfff3` · stop closed `5ba96f6ef`
   - [x] Task 1 — The model · `39e8d9439`
   - [x] Task 2 — The door, the channel, the presenter · `5cc3bcf07`
   - [x] Task 3 — PickerControl through the door · `56a4621ed`
   - [x] Task 4 — The tile handle menu is one definition · `13020bac1`
-- [ ] **Phase 2** — Native Residue
-  - [ ] Task 5 — Connection model relocation · `<commit>`
-  - [ ] Task 6 — The grip-hot chain goes · `<commit>`
-- [ ] **Phase 3** — One Arbiter For Escape
+- [ ] **Phase 2** — Native Residue · base `5ba96f6ef` · simplified `907ed733f` · reviewed and fixed `fb4751d71` · smoke launch pending with Task 7's
+  - [x] Task 5 — Connection model relocation · `7d11e05c8`
+  - [x] Task 6 — The grip-hot chain goes · `1b6c552e7`
+- [ ] **Phase 3** — One Arbiter For Escape · base `fb4751d71`
   - [ ] Task 7 — Six listeners join the stack · `<commit>`
 - [ ] **Phase 4** — One Chord Table
   - [ ] Task 8 — Every chord is a row, live everywhere · `<commit>`
@@ -685,7 +686,7 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 8. 09-08-2026, Nathan: the tile handle is a control, so its menu takes the trigger path on click and right-click alike, exactly as today. Ruling 1 is about a right-click on content.
 9. 09-08-2026, Nathan: a right-click outside an in-app surface does not close it. An outside left-click closes the whole stack, as the stack does today; Escape closes only the newest layer. No setting.
 10. 09-08-2026, Nathan: raising a floating window on click, with Escape following the raise, stays parked; it is window management, not a menu fix.
-11. 09-08-2026, Nathan, at the Gate 1 stop: the three `solid` pickers keep `solid`, carried through the door as `popMenu(items, trigger, { solid })`; the tile handle menu's root rows carry the glyphs the deleted pane drew; the presenter's levels take the pane width floor the deleted pane had.
+11. 09-08-2026, Nathan, at the Gate 1 stop: the three `solid` pickers keep `solid`, carried through the door as `popMenu(items, trigger, { solid })`; the tile handle menu's root rows carry the glyphs the deleted pane drew; the presenter's levels take the pane width floor the deleted pane had, and its 180 cap with an ellipsized label.
 
 ### Open Against Later Tasks
 
@@ -695,9 +696,13 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 - Task 2: the presenter passes `icon` straight to `Icon`, whose own lookup already falls back to `square-dashed`; `iconNameOr` would have been a pass-through.
 - Task 2: `Core/Testing/MenuDoorHost.tsx` is the shared render helper for picker tests; no React helper existed in `Core/Testing`.
 - Task 4: a drill level's footer rows take the separator only when body rows precede them; a level holding only "+ Custom" would otherwise open with a divider above its one row.
+- Gate 2: `MenuTopRow`'s current label ellipsizes and its side may shrink, so a drill title fits the presenter's cap.
 - Gate 1: the door resolves `null` on an empty row list, matching the native popper's own guard; a branch wins over `checked` in both projections; `PickerRow` gained `disabled`.
 
 ### Lessons
+
+- Commit hygiene under a shared index: Task 6's commit carried Nathan's in-flight `md-bq` → `md-blockquote` hunks in two files while the rest of that rename stayed in the tree, so `1b6c552e7` alone draws no blockquote grip. The tree is consistent; the history isn't bisectable there. Nathan's class-rename sweep is his to commit.
+- Task 6's "a state the platform never produces" was overstated by one band: the rail strip beside a grip but off its glyph used to show nothing (the flag stood main down) and now shows the editor's own menu, as any editor does on whitespace.
 
 ### Sequenced After
 
