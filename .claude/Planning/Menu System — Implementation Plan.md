@@ -102,7 +102,7 @@ Deliberately not solved here: touch reachability of content right-click menus (a
 
 **Dead Vocabulary**
 
-- `popRowMenu` → 0. `nativeMenus'` (the import path) → 0. `RowMenuHost` → 0. `rowMenuRows` → 0. `presentRowMenu` → 0. `pendingRowMenu` → 0. `row-menu` → 0, tests included. `NativePickerContext` → 0. `TileHandleMenu` → 0. `handle-menu.css` → 0. `acceleratorFor` → 0. `useNativeMenus` → 0. `connMenuModel` → 0. `FORMAT_CHORDS` → 0. `menuTemplate` → 0. `gripHot` → 0. `grip-hot` → 0. `HOT_MENU_LINES` → 0.
+- `popRowMenu` → 0. `Actions/nativeMenus` → 0. `RowMenuHost` → 0. `rowMenuRows` → 0. `presentRowMenu` → 0. `pendingRowMenu` → 0. `row-menu` → 0, tests included. `NativePickerContext` → 0. `TileHandleMenu` → 0. `handle-menu.css` → 0. `acceleratorFor` → 0. `useNativeMenus` → 0. `connMenuModel` → 0. `FORMAT_CHORDS` → 0. `menuTemplate` → 0. `gripHot` → 0. `editor:grip-hot` → 0. `HOT_MENU_LINES` → 0. `md-grip-hot`, the class `setHot` paints, survives.
 - Control: `ActionItem` → 100+. Zero here means the sweep never ran.
 
 ---
@@ -438,7 +438,7 @@ export function connectionMenuModel(ctx: …): ActionItem<…>[]
 
 **Verify — Automated**
 
-- [ ] `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out'` → 0; `rg -F "grip-hot"` → 0; `rg -F "HOT_MENU_LINES"` → 0. Control: `rg -F "format-state" Core Desktop --glob '!node_modules' --glob '!out'` → 3+.
+- [ ] `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out'` → 0; `rg -F "editor:grip-hot"` → 0; `rg -F "HOT_MENU_LINES"` → 0. Control: `rg -F "format-state" Core Desktop --glob '!node_modules' --glob '!out'` → 3+.
 - [ ] One smoke launch by an Opus agent: right-click a block grip on a page, the grip's menu appears and the editor menu does not; right-click a gutter on a read-only surface (Page History), the editor menu appears.
 - [ ] Gates green.
 
@@ -494,6 +494,7 @@ Two behaviors change and are named here: one Escape closes only the most recentl
 **Verify — Automated**
 
 - [ ] For each of the six, an existing test that presses Escape stays green, or a new one is added where none exists (TileHost editing, MarkdownTable selection, window-base).
+- [ ] The table's Escape moves from a capture listener to the stack's bubble listener, so CM6's `simplifySelection` now runs first: the smoke launch sweeps a cell rect and presses Escape. If the rect survives, the table keeps Escape in its capture handler and the plan records it under Deviations.
 - [ ] A crossing test in `dismissalStack.test.ts`: two entries pushed in order, Escape dismisses the second only, a second Escape dismisses the first; an entry with a null layer survives an outside press.
 - [ ] `rg -F "'keydown'" Core/Tiles/TileHost.tsx Core/Interface/Glance/GlancePane.tsx Core/MarkdownPM/Embeds/embedWidget.tsx UIX/Windows/window-base.tsx` → 0. Control: `rg -F "useDismissal(" Core UIX` → 8+.
 - [ ] Gates green.
@@ -579,12 +580,12 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 // Core/Contract/engineGraph.test.ts — UIX allowlist gains 'UIX/Interactions/chords.ts' in sorted position
 // Core/Settings/codec.ts readCommands(raw): Commands — keeps only CommandId keys; an unknown id is ignored
-// Core/Settings/settings.ts readCommands(root): Promise<Commands> beside readInterfaceScale, for the host
+// Core/Settings/settings.ts readLiveCommands(root): Promise<Commands> beside readLivePersonalization, for the host
 // the five test seeds of commands: {} → DEFAULT_COMMANDS
 // Core/Actions/editorMenu.ts — FORMAT_CHORDS deleted; FormatChordAction = Extract<CommandId, `format:${string}`>; keyBindingFor(commands, action) = toKeyBinding(commands[action])
 // Core/MarkdownPM/Input/formatKeymap.ts — formatKeymap(commands: Commands): Extension; MarkdownEditor holds it in a Compartment beside readOnlyGate and reconfigures it when the store's commands change
 // Desktop/Actions/accelerators.ts deleted; editorMenu.ts:135 uses toAccelerator(commands[action]) with commands captured by the same refresh the application menu uses
-// Desktop/Actions/appMenu.ts — installAppMenu reads readCommands(sessionRoot()) (defaults when no session) and writes accelerator: toAccelerator(commands['new-tab']) etc.; no literal remains
+// Desktop/Actions/appMenu.ts — installAppMenu reads readLiveCommands(sessionRoot()) (defaults when no session) and writes accelerator: toAccelerator(commands['new-tab']) etc.; no literal remains
 // Core/Interface/App.tsx:86 matchesCommand(commands['toggle-iteration'], e)
 // Core/Navigation/TabBar.tsx: matchesCommand(commands['next-tab'], e) / commands['previous-tab'], commands from the store
 // Core/Properties/valueUndo.ts: matchesCommand(commands['undo-value'], e), commands read from the store at press time since the module installs once
