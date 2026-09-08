@@ -69,6 +69,7 @@ function Level({
   return (
     <FrameSlide
       open={branch !== null}
+      minWidth={120}
       root={
         <MenuScrollFrame
           maxHeight={PICKER_MAX_HEIGHT}
@@ -104,6 +105,7 @@ export function MenuPresenter(): React.JSX.Element {
       onDismiss={() => pending?.settle(null)}
       triggerRef={triggerRef}
       origin="center"
+      solid={shown?.solid}
     >
       {shown && (
         <Level key={shown.id} items={shown.items} title="Menu" onPick={(a) => shown.settle(a)} />

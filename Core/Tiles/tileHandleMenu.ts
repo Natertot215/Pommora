@@ -70,10 +70,17 @@ export function tileMenuItems({
           ? drill(pageItems, (value) => ({ kind: 'page', value }))
           : drill(viewItems, (value) => ({ kind: 'view', value }))
       const off = locked || rows.length === 0
-      return { label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) }
+      return {
+        label,
+        icon: 'link',
+        action: 'tile:open',
+        disabled: off,
+        ...(off ? {} : { submenu: rows }),
+      }
     }),
     {
       label: 'Style',
+      icon: 'palette',
       action: 'tile:open',
       disabled: locked,
       submenu: [
@@ -83,6 +90,7 @@ export function tileMenuItems({
     },
     {
       label: 'Scale',
+      icon: 'scaling',
       action: 'tile:open',
       disabled: locked,
       submenu: ZOOM_STEPS.map((st) => ({
@@ -91,8 +99,14 @@ export function tileMenuItems({
         checked: st.factor === currentFactor,
       })),
     },
-    { label: 'Duplicate', action: 'tile:duplicate', separatorBefore: true, disabled: locked },
-    { label: 'Delete', action: 'tile:delete', disabled: locked },
+    {
+      label: 'Duplicate',
+      icon: 'copy',
+      action: 'tile:duplicate',
+      separatorBefore: true,
+      disabled: locked,
+    },
+    { label: 'Delete', icon: 'x', action: 'tile:delete', disabled: locked },
     {
       label: containerLocked ? 'Locked' : lockLabel(locked),
       action: 'tile:lock',

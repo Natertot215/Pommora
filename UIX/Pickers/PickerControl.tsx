@@ -13,6 +13,7 @@ export type PickerOption<T extends string> = {
 export type MenuDoor = (
   rows: { label: string; action: string; checked: boolean; icon?: string }[],
   trigger: HTMLElement,
+  options?: { solid?: boolean },
 ) => Promise<string | null>
 
 export const MenuDoorContext = createContext<MenuDoor | null>(null)
@@ -34,12 +35,14 @@ export function PickerControl<T extends string>({
   value,
   options,
   onPick,
+  solid = false,
   typeable,
 }: {
   ariaLabel: string
   value: T
   options: readonly PickerOption<T>[]
   onPick: (v: T) => void
+  solid?: boolean
   /** A right press turns the trigger into a field instead of opening the list. */
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
 }): React.JSX.Element {
@@ -61,7 +64,7 @@ export function PickerControl<T extends string>({
       checked: o.value === value,
       icon: o.icon,
     }))
-    void door(rows, el).then((picked) => {
+    void door(rows, el, { solid }).then((picked) => {
       // Resolved through the options rather than cast: the reply crosses as a bare string.
       const chosen = options.find((o) => o.value === picked)
       if (chosen) onPick(chosen.value)
