@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-07-2026              | PM-133 | Engine boundary guarded, bridge on one envelope      |
 | 09-07-2026              | PM-132 | State Placement                                      |
 | 09-06-206               | PM-131 | Cross-Surface Glances                                |
 | 09-06-2026              | PM-130 | The One Value Picker & Panel                         |
@@ -136,6 +137,14 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+#### PM-133 || Engine boundary guarded, bridge on one envelope
+**DATE:** 09-07-2026
+
+A Vitest walker over the import graph from `Core/Contract/serve.ts` (`Core/Testing/engineGraph.ts`) fails on any `.tsx`, DOM global, or package outside `ulidx`/`yaml`/`zod`, and `Desktop/tsconfig.node.json` gained `"lib": ["ES2022"]` so a DOM reference in an engine file is a type error; a companion guard holds `Core/package.json` to what Core imports, dropping `write-file-atomic` and declaring the four editor packages it had been borrowing transitively. Every channel in `Core/Contract/bridge.ts` moved onto the `Result` envelope — twenty-four bare replies retyped, `NexusState` collapsed to `empty`/`open`, and the `scopeGet`, `nexus:state`, and `delete:facts` self-catches replaced by one `valueOr` reader — with `Desktop/Bridge/ipc.test.ts` proving a throw arrives as a failed envelope. Under Decision A1, `Core/Testing/machines.ts` and the `describeMachine`/`describeStores` contract suites replaced Core's dependency on `@pommora/desktop`: Core's setup installs a disk-backed test machine, Desktop proves `nodeMachine` and its SQLite stores against the same suites, and the nineteen Core tests that opened SQLite now open in-memory stores, so Core passes `vitest` with `Desktop/` renamed away. The dead `writeRaw` machine method came out in the same arc.
+
+- **Commits:** `1721d8b80`, `72fee60ab`, `588b37bcf`, `a11daf6ad` — listed rather than ranged, since the State Placement commits interleave them on `main`
+- **Diff:** Net ≈ +30 source | the graph walker, contract suites, and memory machine/stores are test infrastructure, outside the figure
+
 #### PM-132 || State Placement
 **DATE:** 09-07-2026
 
@@ -146,8 +155,6 @@ Five values moved to the home their content belongs to. A chosen view and a hand
 **The device half:** `DevicePrefs` gained `panes`, `disclosure`, and `windows` as nested keys — nested because `packDevicePrefs` drops a top-level `false` and a fold map is mostly false. The seed moved above `status: 'ready'` so the sidebar settles once as the Nexus paints rather than jumping afterward, and the pane widths joined `PER_NEXUS` so a Nexus switch returns them to their defaults. `UIX/Windows/window-base.tsx` gave up its module map and its `id`: it takes a size and reports a change, keeping the centering and the on-screen clamp. `ResizeFrame` now carries the grip through `onChange`, which is what lets Core tell a move from a resize — the earlier equality check could not, and a window opened clamped from a larger display then merely dragged would have had the larger size overwritten.
 
 **What went:** `useViewOrders.ts`, `disclosureState.ts`, the `activeViews` store slice, both `viewOrders` channels and their handlers, two `local_state` scopes, and the two one-shot importers that carried the old values across.
-
-**Sequencing:** each retiring home was imported in the same phase as the reader that consumes it, so no gesture ever wrote to a home nothing read. The `viewOrder` import was the exception and it cost: built in Task 4, deleted in Task 8, with no launch in between, so it never ran and three hand-ordered views were left stranded in a scope nothing reads. They were recovered by hand from rows still present — 8 and 10 ids onto `Ideas`, 192 onto `Studio` — along with two homepage-tile orders. The precondition that was missing is now a guideline: retire a migration only after a run has been watched consuming the rows it reads.
 
 - **Commits:** `e88c2cc96^..9f64776e0` (interleaved on `main` with the parallel Engine Boundary arc)
 - **Diff:** Net −41 (source, comments and tests excluded) — Views & Properties −46, Nexus & Data +41, App Chrome −32, Shared Contract −6, UIX +2
