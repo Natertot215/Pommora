@@ -511,6 +511,9 @@ Two of them pass with no store installed at all (`contextWrite`, `tilesFile`; me
 
 **Deviations**
 
+- 09-07-2026 — State Placement Phase One was landing concurrently and uncommitted in the shared tree during this run (a ~30-file changeset touching `bridge.ts`, `Nexus/tree.ts`, `Interface/handlers.ts`, `Session/nexusSlice.ts`, `Views/handlers.ts` — Task 6's exact surface). Phase One committed disjointly (its 11 paths, verified against the foreign set). Phase Two is paused until State Placement commits: two writers on `bridge.ts` is the collision the "never two writers" rule forbids, and Task 6 re-derives the channel list against whatever `bridge.ts` becomes once it settles.
+- 09-07-2026 — Scope clarification for the two graph roots. Task 3's `hostCoreImports()` and Task 4's manifest scanner take production host/source code only: `*.test.ts`, `vitest.setup.ts`, and `vitest.config.ts` are excluded as roots and from the manifest scan. Task 4's scan follows `tsconfig.src.json`'s include/exclude (which already excludes `Testing/**`) minus `*.test.ts`. Without this, the new test files' own `node:*` imports (`Testing/engineGraph.ts`, and in Phase Three `Testing/machines.ts`/`machineContract.ts`) would fail the externals and manifest guards for the wrong reason.
+
 **Sequenced After**
 
 - Refiling the 26 engine files that sit inside interface folders (`Interface/Windows/windowState.ts`, `Navigation/tabsState.ts`, `Tiles/tilesFile.ts`, and the rest), so the folder tree states the split the guard now enforces. The audit priced it at L; the guard makes it safe to defer.
