@@ -1,4 +1,4 @@
-// Preferences that belong to the MACHINE rather than the Nexus: how its menus are drawn is a property of the operating system in front of the user, so it stays with the device and travels nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, pane widths, sidebar folds and window sizes are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
 
 // Nested rather than flat: packDevicePrefs drops a top-level `false` and a disclosure map is mostly false, while a truthy object survives whole.
 export interface DevicePrefs {
