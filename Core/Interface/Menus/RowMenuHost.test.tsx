@@ -21,7 +21,7 @@ afterEach(() => {
   host.remove()
 })
 
-const AT = { left: 10, top: 10, width: 40, height: 20 }
+const AT = { left: 10, top: 10, height: 20 }
 const rows = (): HTMLElement[] =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'))
 

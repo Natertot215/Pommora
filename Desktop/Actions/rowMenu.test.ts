@@ -7,14 +7,14 @@ const winAt = (zoom: number): BrowserWindow =>
 
 describe('the anchor a row menu opens at', () => {
   it('hangs the menu from the trigger’s bottom-left', () => {
-    expect(anchorPoint(winAt(1), { left: 40, top: 100, width: 80, height: 20 })).toEqual({
+    expect(anchorPoint(winAt(1), { left: 40, top: 100, height: 20 })).toEqual({
       x: 40,
       y: 120,
     })
   })
 
   it('converts CSS pixels to window DIPs, so a zoomed window still lands on its trigger', () => {
-    expect(anchorPoint(winAt(1.5), { left: 40, top: 100, width: 80, height: 20 })).toEqual({
+    expect(anchorPoint(winAt(1.5), { left: 40, top: 100, height: 20 })).toEqual({
       x: 60,
       y: 180,
     })
