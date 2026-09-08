@@ -9,7 +9,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { tileDocPath } from '../Paths/paths'
 import { readKey, writeKey } from '../Platform/localState'
 import { newContentId, newId } from './ids'
-import { readJsonStrict, rewritePageSerialized, writeJson } from '../Files/atomicWrite'
+import { readJsonStrict, rewritePageSerialized, setOrDrop, writeJson } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { readWindowsState, writeWindowsState } from '../Interface/Windows/windowState'
 import { sidecarPath } from '../Paths/paths'
@@ -102,7 +102,7 @@ async function remintSidecar(
   const landed = await withSidecarLock(absFolder, kind, async () => {
     const current = await readJsonStrict(file)
     if (!current.ok || current.value.id !== oldId) return false
-    const next: Record<string, unknown> = { ...current.value, id: fresh }
+    let next: Record<string, unknown> = { ...current.value, id: fresh }
     if (Array.isArray(next.views))
       next.views = next.views.map((v) => {
         if (!isPlainObject(v)) return v
@@ -110,6 +110,9 @@ async function remintSidecar(
         if (typeof v.id === 'string') viewIds.set(v.id, minted)
         return { ...v, id: minted }
       })
+    // The copy must not inherit a selection it cannot resolve: a view id naming nothing in the copy's own namespace is dropped rather than carried.
+    if (typeof next.active_view === 'string')
+      next = setOrDrop(next, 'active_view', viewIds.get(next.active_view))
     await writeJson(file, next)
     return true
   })
@@ -148,9 +151,6 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
       const order = readKey<string[]>('viewOrder', old)
       if (order !== null) writeKey('viewOrder', minted, order)
     }
-    const active = readKey<string>('activeView', target.id)
-    const moved = active === null ? undefined : viewIds.get(active)
-    if (moved) writeKey('activeView', fresh, moved)
     const windows = readWindowsState()
     const origin = windows.origins[target.id]
     if (origin)
