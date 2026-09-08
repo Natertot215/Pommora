@@ -1,10 +1,8 @@
 import { useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { shownDetail, useSession } from '../Session/store'
 import { confirmDelete } from '../Interface/Confirm/confirmations'
-import { footerLockAction, lockIcon } from '@pommora/uix/Menus/menu-base.css'
 import {
   FooterIconButton,
   MenuFooting,
@@ -20,6 +18,8 @@ import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
+import { EDITOR_SCALE_DEFAULT, SCALE_STEPS, coerceScale } from '../Settings/personalization'
+import { factorChoice, PickerControl, stepsWith } from '@pommora/uix/Pickers/PickerControl'
 
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
@@ -33,6 +33,15 @@ export function PageMenu(): React.JSX.Element | null {
   const [pane, setPane] = useState<'root' | 'properties'>('root')
   const iconRef = useRef<HTMLButtonElement>(null)
   const [renaming, setRenaming] = useState(false)
+  const setPersonalization = useSession((st) => st.setPersonalization)
+  const editorScale = coerceScale(
+    useSession((st) => st.personalization.editorScale),
+    EDITOR_SCALE_DEFAULT,
+  )
+  const setEditorScale = (f: number): void => {
+    const next = coerceScale(f, EDITOR_SCALE_DEFAULT)
+    setPersonalization('editorScale', next === EDITOR_SCALE_DEFAULT ? undefined : next)
+  }
 
   if (!pageDetail) return null
 
@@ -83,11 +92,21 @@ export function PageMenu(): React.JSX.Element | null {
         footer={
           <MenuFooting
             leading={
-              // PLACEHOLDER
-              <Button size="button-inline" aria-label="Lock" className={footerLockAction} disabled>
-                <Icon name="lock-open" size="control" className={lockIcon} />
-                Lock
-              </Button>
+              <PickerControl
+                ariaLabel="Page Scale"
+                solid
+                value={String(editorScale)}
+                options={stepsWith(SCALE_STEPS, editorScale).map(factorChoice)}
+                onPick={(v) => setEditorScale(Number(v))}
+                typeable={{
+                  text: editorScale.toFixed(2),
+                  suffix: 'x',
+                  onCommit: (written) => {
+                    const factor = Number.parseFloat(written.replace(/x/i, '').trim())
+                    if (Number.isFinite(factor)) setEditorScale(factor)
+                  },
+                }}
+              />
             }
             trailing={
               <FooterIconButton
