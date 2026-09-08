@@ -14,6 +14,7 @@ export function ScalePicker({
     <PickerControl
       ariaLabel={ariaLabel}
       solid
+      chevronLead
       value={String(value)}
       options={stepsWith(SCALE_STEPS, value).map(factorChoice)}
       onPick={(v) => onPick(Number(v))}
