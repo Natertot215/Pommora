@@ -17,10 +17,9 @@ export function resolveContainerSchema(
 /** The container's chosen view if still present, else the first saved view, else a freshly-minted default (sentinel id until first saved). */
 export function pickView(
   source: CollectionNode | SetNode,
-  activeId: string | undefined,
   schema: PropertyDefinition[],
 ): SavedView {
   const views = source.views ?? []
-  const active = activeId ? views.find((v) => v.id === activeId) : undefined
+  const active = source.activeView ? views.find((v) => v.id === source.activeView) : undefined
   return active ?? views[0] ?? mintDefaultView(schema)
 }

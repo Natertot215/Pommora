@@ -1,12 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import {
-  DEFAULT_VIEW_ID,
-  mintDefaultView,
-  mintNewView,
-  type SavedView,
-} from '@pommora/core/Views/views'
+import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
 import { restoreView } from '../restoreView'
@@ -19,6 +14,7 @@ import { LayoutFrame } from './LayoutFrame'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import type { PaneDrop, FrameRow, frameSlot } from '@pommora/uix/Interactions/frameDndModel'
 import { useSaveView, useViewTileScope } from '../ViewTileScope'
+import { pickView } from '../Pipeline/pickView'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
@@ -78,8 +74,8 @@ export function ViewFrame({
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
   const views = node.views ?? []
-  const rows = views.length ? views : [mintDefaultView(schema)]
-  const activeId = rows.some((v) => v.id === node.activeView) ? node.activeView : rows[0]?.id
+  const active = pickView(node, schema)
+  const rows = views.length ? views : [active]
   const editing = editingId ? rows.find((v) => v.id === editingId) : undefined
 
   // The placeholder row a viewless container shows carries the sentinel id, which must never reach a legible sidecar.
@@ -165,7 +161,7 @@ export function ViewFrame({
             {rows.map((v) => (
               <RowShell key={v.id} id={v.id}>
                 <MenuItem
-                  className={activeId === v.id ? optionRing : undefined}
+                  className={active.id === v.id ? optionRing : undefined}
                   leading={<Icon name={iconNameOr(v.icon, 'table')} size="headline" />}
                   trailing={
                     <Button
