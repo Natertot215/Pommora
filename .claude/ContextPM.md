@@ -79,7 +79,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **`page:open` does not raise the window.** A path opened from outside selects in place — opening is not focusing.
 - [ ] **Native separators reach the host on Windows.** `nexus:openPath`'s `getPathForFile` and `nodeMachine.realpath` emit them, and `posixPath` covers only what `Desktop/main.ts` hands over. On the same platform the five ex-radio menu groups — column Align and Style, grip Size and Scale, trash Format — draw a check rather than a bullet; macOS draws both states identically.
 - [ ] **`NativePickerContext` does not cross `reactWidget`'s detached roots.** Latent rather than live: nothing rendered under an editor widget mounts a `PickerControl` today.
-- [ ] **`linkTitles:get` answers with a bare reply.** Its handler's `ensureCache` can throw, and a main-side throw then arrives at the renderer as an `{ok:false}` object that the cache slice stores as data; the other bare-reply `:get` channels (`activeViews`, `citations`, `aliases`) catch their own reads.
 - [ ] **`LayoutFrame.tsx` and `SettingsFrame.tsx` each declare the same four frame rows and three labels.** `SettingsFrame` imports `LayoutFrame`, so one shared table needs a third file; until then an icon changed in one drifts from the other.
 
 ### Recent Work
