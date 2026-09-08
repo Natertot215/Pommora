@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
+import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
@@ -43,7 +44,7 @@ function Level({
             disabled={row.disabled}
             onClick={() => onPick(row.action)}
           >
-            {row.label}
+            <span className={overScrollEllipsis}>{row.label}</span>
           </PickerRow>
         )
       case 'item': {
@@ -70,6 +71,7 @@ function Level({
     <FrameSlide
       open={branch !== null}
       minWidth={120}
+      maxWidth={180}
       root={
         <MenuScrollFrame
           maxHeight={PICKER_MAX_HEIGHT}
