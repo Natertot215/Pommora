@@ -1,6 +1,6 @@
 ## Menu System — Implementation Plan
 
-> **Status:** written, pending review · Spec: audit topic 5 (`Codebase Audit — Report.md`) plus the rulings of 09-08-2026 recorded under Rulings · Execute tasks in order.
+> **Status:** Ratified — in execution · Spec: audit topic 5 (`Codebase Audit — Report.md`) plus the rulings of 09-08-2026 recorded under Rulings · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -679,9 +679,11 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 3. 09-08-2026, Nathan: the editor's own right-click menu stays Electron-built.
 4. 09-08-2026, Nathan: names — file `menuActions.ts`, function `popMenu`, presenter `MenuPresenter` (Nathan wrote `menuPresenter`; the component file is PascalCase by the casing canon), slice `presentMenu`/`pendingMenu`, channel `menu`, Desktop `menu.ts`.
 5. 09-08-2026, Nathan: the tile pane's lock, Scale value, and title fold into rows; rows carrying `checked` draw as PickerRows with the ring; Escape dismisses the most recently activated layer first; the shortcut table is in scope; no History entry for this plan.
-6. 09-08-2026, Claude, pending Nathan's eye: native accelerators read the session's commands at `refreshMenu()` (startup and adopt); a rebind reaches the native menu at the next adopt or launch. Every renderer reader, the format keymap included, is live.
-7. 09-08-2026, Claude, pending Nathan's eye: "most recently activated" is the stack's push order, which is open order. One Escape closes only the newest floating window; today it closes all of them. Focusing an older window does not re-order the stack.
-8. 09-08-2026, Claude, pending Nathan's eye: the tile handle is a control, so its menu takes the trigger path on click and right-click alike, exactly as today. Ruling 1 is about a right-click on content.
+6. 09-08-2026, Nathan: native accelerators read the session's commands at `refreshMenu()` (startup and adopt); a rebind reaches the native menu at the next adopt or launch. Every renderer reader, the format keymap included, is live.
+7. 09-08-2026, Nathan: "most recently activated" is the stack's push order, which is open order. One Escape closes only the newest floating window; today it closes all of them. Focusing an older window does not re-order the stack.
+8. 09-08-2026, Nathan: the tile handle is a control, so its menu takes the trigger path on click and right-click alike, exactly as today. Ruling 1 is about a right-click on content.
+9. 09-08-2026, Nathan: a right-click outside an in-app menu stays parked; the preferred shape when it lands is an Interface setting, "Close in-app menus on external right-click", off by default.
+10. 09-08-2026, Nathan: raising a floating window on click, with Escape following the raise, stays parked; it is window management, not a menu fix.
 
 ### Open Against Later Tasks
 
@@ -694,7 +696,8 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 - A Shortcuts settings pane over the one table; a `refreshMenu()` on a commands change if a live native rebind is wanted.
 - A MarkdownPM slash-command menu as the third consumer of the door; it will need the door to accept a caret rect, which was cut from this plan as having no writer.
 - Touch reachability of content right-click menus on the mobile host.
-- The dismissal stack's outside press is button 0 only; whether a right-click outside an in-app popup should dismiss it is an open interaction question.
+- The dismissal stack's outside press is button 0 only; a right-click outside an in-app menu dismisses it only behind a future Interface setting, "Close in-app menus on external right-click", off by default (Ruling 9).
+- Raise on click for floating windows: a press inside a window lifts it above the others and to the top of the dismissal stack, so Escape follows focus rather than open order (Ruling 10). Needs a window z-order and a stack reorder, neither of which exists.
 
 ### Closeout
 
