@@ -26,7 +26,7 @@ export function MenuTopRow({
   const right = trailing ? (
     <span className={s.topBarTrailingSymbol}>{trailing}</span>
   ) : current ? (
-    <span className={s.topBarTrailingLabel}>{current}</span>
+    <span className={cx(s.topBarTrailingLabel, overScrollEllipsis)}>{current}</span>
   ) : undefined
   return (
     <>

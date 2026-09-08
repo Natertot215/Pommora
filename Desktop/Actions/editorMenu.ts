@@ -194,7 +194,7 @@ function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
 
 export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
-    if (!params.isEditable) return // sidebar + read-only surfaces keep their own menus
+    if (!params.isEditable) return // the sidebar keeps its own menus
     const items = systemItems(win.webContents, params, lastState?.focused === true)
     if (lastState?.focused)
       items.push(...pommoraItems(win.webContents, lastState, params.selectionText))

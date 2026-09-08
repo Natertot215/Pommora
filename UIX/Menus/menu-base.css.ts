@@ -142,6 +142,9 @@ export const side = style({
   gap: '4px',
   flex: '0 0 auto',
   color: 'var(--label-secondary)',
+  selectors: {
+    [`${topRow} &:has(> ${topBarTrailingLabel})`]: { flex: '0 1 auto', minWidth: 0 },
+  },
 })
 
 export const titleWrap = style({
