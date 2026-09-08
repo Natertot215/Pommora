@@ -253,23 +253,22 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
       const entry = entries.get(id)
       if (!entry || !pickers) return
       const page = tileSourceInfo(entry, pagesById)
-      const { items, picks } = tileMenuItems({
-        entry,
-        ...pickers,
-        pageInfo: page && {
-          title: page.title,
-          icon: entityIcon('page', page.icon, defaultIcons),
-        },
-        containerLocked: hostLocked,
-      })
-      setMenuOpenId(id)
-      void popMenu(items, e.currentTarget as HTMLElement).then((action) => {
-        setMenuOpenId((cur) => (cur === id ? null : cur))
-        if (action === null) return
-        const arg = (prefix: string): string | undefined =>
-          action.startsWith(prefix) ? action.slice(prefix.length) : undefined
-        const picked = arg('tile:pick:')
-        const zoom = arg('tile:zoom:')
+      const build = (on: TileEntry): ReturnType<typeof tileMenuItems> =>
+        tileMenuItems({
+          entry: on,
+          ...pickers,
+          pageInfo: page && {
+            title: page.title,
+            icon: entityIcon('page', page.icon, defaultIcons),
+          },
+          containerLocked: hostLocked,
+        })
+      const { items, picks } = build(entry)
+      const arg = (action: string, prefix: string): string | undefined =>
+        action.startsWith(prefix) ? action.slice(prefix.length) : undefined
+      const run = (action: string): void => {
+        const picked = arg(action, 'tile:pick:')
+        const zoom = arg(action, 'tile:zoom:')
         const chosen = picked === undefined ? undefined : picks[Number(picked)]
         if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
         else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
@@ -281,6 +280,25 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         else if (action === 'tile:lock') toggleLock(id)
         else if (action === 'tile:open' && page)
           select({ kind: 'page', id: page.id, path: page.path })
+      }
+      let current = entry
+      const project = (action: string): TileEntry => {
+        const zoom = arg(action, 'tile:zoom:')
+        if (zoom !== undefined) return { ...current, zoom: Number(zoom) }
+        if (action === 'tile:style:bordered') return { ...current, style: 'bordered' }
+        if (action === 'tile:style:borderless') return { ...current, style: 'borderless' }
+        return { ...current, locked: !(current.locked ?? false) }
+      }
+      setMenuOpenId(id)
+      void popMenu(items, e.currentTarget as HTMLElement, {
+        stay: (action) => {
+          run(action)
+          current = project(action)
+          return build(current).items
+        },
+      }).then((action) => {
+        setMenuOpenId((cur) => (cur === id ? null : cur))
+        if (action !== null) run(action)
       })
     },
     [

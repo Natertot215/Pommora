@@ -48,6 +48,17 @@ describe('the tile menu model both renderers draw', () => {
     expect(row(m, 'Style')?.submenu?.find((r) => r.checked)?.label).toBe('Bordered')
   })
 
+  it('holds the pane open on the rows that change the tile in place', () => {
+    const m = tileMenuItems(ctx())
+    expect(row(m, 'Lock')).toMatchObject({ icon: 'lock-open', stay: true })
+    expect(row(m, 'Style')?.submenu?.every((r) => r.stay)).toBe(true)
+    expect(row(m, 'Scale')?.submenu?.every((r) => r.stay)).toBe(true)
+    const locked = tileMenuItems(
+      ctx({ entry: { type: 'markdown', id: 'b1', locked: true } as TileEntry }),
+    )
+    expect(row(locked, 'Unlock')?.icon).toBe('locked')
+  })
+
   it('indexes drill picks so a view pick survives a menu row that can only carry a string', () => {
     const views: ViewPickerItem[] = [
       {

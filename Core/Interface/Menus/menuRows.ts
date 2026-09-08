@@ -8,6 +8,7 @@ export type PresenterRow<A> =
       checked: boolean
       disabled?: boolean
       icon?: string
+      stay?: boolean
       action: A
     }
   | {
@@ -15,6 +16,7 @@ export type PresenterRow<A> =
       label: string
       disabled?: boolean
       icon?: string
+      stay?: boolean
       action: A
       submenu?: ActionItem<A>[]
     }
@@ -25,6 +27,7 @@ export function menuRows<A extends string>(items: readonly ActionItem<A>[]): Pre
       label: item.label,
       disabled: item.disabled,
       icon: item.icon,
+      stay: item.stay,
       action: item.action,
     }
     return [
