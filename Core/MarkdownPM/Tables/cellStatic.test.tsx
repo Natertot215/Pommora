@@ -58,7 +58,7 @@ afterEach(async () => {
 })
 
 const glyphs = (): (string | null)[] =>
-  [...container.querySelectorAll('.md-cite-ref')].map((el) => el.textContent)
+  [...container.querySelectorAll('.md-citation-reference')].map((el) => el.textContent)
 
 describe('a resting cell draws a marker as the number the document gives it', () => {
   it('draws the ordinal, not the label', async () => {
@@ -114,13 +114,15 @@ describe('an entered cell draws what the resting cell drew', () => {
     })
     const editor = container.querySelector('.cm-editor')
     expect(editor).not.toBeNull()
-    expect([...editor!.querySelectorAll('.md-cite-ref')].map((el) => el.textContent)).toEqual(['2'])
+    expect(
+      [...editor!.querySelectorAll('.md-citation-reference')].map((el) => el.textContent),
+    ).toEqual(['2'])
   })
 })
 
 describe('a marker in a resting cell leads to its citation', () => {
   const pressGlyph = async (): Promise<void> => {
-    const glyph = container.querySelector('.md-cite-ref') as HTMLElement
+    const glyph = container.querySelector('.md-citation-reference') as HTMLElement
     await act(async () => {
       glyph.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
       glyph.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
@@ -164,7 +166,9 @@ describe('an entered cell follows the numbering too', () => {
       cell.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     })
     const inEditor = (): (string | null)[] =>
-      [...container.querySelectorAll('.cm-editor .md-cite-ref')].map((el) => el.textContent)
+      [...container.querySelectorAll('.cm-editor .md-citation-reference')].map(
+        (el) => el.textContent,
+      )
     expect(inEditor()).toEqual(['2'])
     await act(async () =>
       root.render(

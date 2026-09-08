@@ -173,6 +173,8 @@ export function outdentListOnShiftTab(doc: string, selStart: number, selEnd: num
 
 export function smartBackspace(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   if (selStart !== selEnd) return null
+  // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
+  if (inCodeAt(scan, selStart)) return null
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
@@ -222,6 +224,7 @@ export function canonicalizeCheckbox(
   const m = shorthandCheckboxRe.exec(before.slice(pfx.length))
   if (m === null) return null
   const [, ws, marker, inner] = m
+  // The trailing space is the task-list grammar's own requirement, not decoration: without it the line parses as plain text.
   const gfm = `${ws}${marker} [${inner.toLowerCase() === 'x' ? 'x' : ' '}] `
   return {
     from: ls + pfx.length,

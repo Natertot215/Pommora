@@ -85,21 +85,27 @@ describe('decoration intents', () => {
   it('a literal > inside an unquoted fence keeps its bytes — no quote chrome, no prefix hide', () => {
     const t = '```\n> quoted\n```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq'))).toBe(false)
+    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-blockquote'))).toBe(
+      false,
+    )
     expect(intents.some((d) => d.kind === 'hide' && d.from === 4)).toBe(false)
   })
 
   it('an UNCLOSED fence keeps box chrome below it — typing ``` must not flatten the document', () => {
     const t = '```\n> a quote'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq'))).toBe(true)
+    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-blockquote'))).toBe(
+      true,
+    )
   })
 
   it('a fence nested in a blockquote keeps the box chrome and hides the quote prefix', () => {
     const t = '> ```\n> code\n> ```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
     expect(
-      intents.some((d) => d.kind === 'line' && d.from === 6 && d.className.startsWith('md-bq')),
+      intents.some(
+        (d) => d.kind === 'line' && d.from === 6 && d.className.startsWith('md-blockquote'),
+      ),
     ).toBe(true)
     expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
   })
@@ -120,7 +126,9 @@ describe('decoration intents', () => {
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
     expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
     expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 10)).toBe(false)
-    expect(intents.some((d) => d.kind === 'line' && d.className.includes('md-bq-in'))).toBe(false)
+    expect(
+      intents.some((d) => d.kind === 'line' && d.className.includes('md-blockquote-nested')),
+    ).toBe(false)
   })
 
   it('leaves wikilinks untouched — they are rendered in decorations.ts by resolution status', () => {
@@ -137,7 +145,9 @@ describe('decoration intents', () => {
         (d) => d.kind === 'class' && d.className === 'md-h2' && d.from === 0 && d.to === t.length,
       ),
     ).toBe(true)
-    expect(intents.some((d) => d.kind === 'class' && d.className === 'md-hmarker')).toBe(true)
+    expect(intents.some((d) => d.kind === 'class' && d.className === 'md-heading-marker')).toBe(
+      true,
+    )
   })
 
   it('strikethrough → md-strike on content', () => {
@@ -153,7 +163,9 @@ describe('decoration intents', () => {
   it('a marker-lookalike inside display math renders as formula source — no bullet, no glyph', () => {
     const t = '$$\nE = mc^2\n- b\n\ny = 2\n$$'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
-    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-li'))).toBe(false)
+    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-list-item'))).toBe(
+      false,
+    )
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
     const out = decorationsFor('- b', tokenize('- b'), new Set(), 99)
     expect(out.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
@@ -162,9 +174,9 @@ describe('decoration intents', () => {
   it('dash bullet, caret off the line → • widget takes the whole marker slot through the gap', () => {
     const t = '- item'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
-    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li' && d.level === 0)).toBe(
-      true,
-    )
+    expect(
+      intents.some((d) => d.kind === 'line' && d.className === 'md-list-item' && d.level === 0),
+    ).toBe(true)
     expect(
       intents.some(
         (d) => d.kind === 'widget' && d.spec.type === 'bullet' && d.from === 0 && d.to === 2,
@@ -181,12 +193,12 @@ describe('decoration intents', () => {
       '- [ ] item text',
     ]) {
       const intents = decorationsFor(t, tokenize(t), new Set(), 99)
-      const mark = intents.find((d) => d.kind === 'class' && d.className === 'md-li-text')
+      const mark = intents.find((d) => d.kind === 'class' && d.className === 'md-list-text')
       expect(mark, t).toBeDefined()
       expect(mark?.kind === 'class' && t.slice(mark.from, mark.to)).toBe('item text')
     }
     const empty = decorationsFor('- ', tokenize('- '), new Set(), 99)
-    expect(empty.some((d) => d.kind === 'class' && d.className === 'md-li-text')).toBe(false)
+    expect(empty.some((d) => d.kind === 'class' && d.className === 'md-list-text')).toBe(false)
   })
 
   it('dash bullet, caret in the CONTENT (just in the line) → still • widget, never raw', () => {
@@ -198,7 +210,7 @@ describe('decoration intents', () => {
   it('dash bullet, caret ON the marker (the dash) → raw `-`, no widget', () => {
     const t = '- item'
     const intents = decorationsFor(t, tokenize(t), new Set(), 1)
-    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li')).toBe(true)
+    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-list-item')).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
@@ -209,14 +221,14 @@ describe('decoration intents', () => {
       intents.some(
         (d) =>
           d.kind === 'class' &&
-          d.className === 'md-ol-marker md-control md-li-glyph' &&
+          d.className === 'md-list-number md-control md-list-glyph' &&
           d.from === 0 &&
           d.to === 2,
       ),
     ).toBe(true)
-    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li md-li-ordered')).toBe(
-      true,
-    )
+    expect(
+      intents.some((d) => d.kind === 'line' && d.className === 'md-list-item md-list-ordered'),
+    ).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
@@ -229,13 +241,13 @@ describe('decoration intents', () => {
       intents.some(
         (d) =>
           d.kind === 'class' &&
-          d.className === 'md-li-mark md-control md-li-glyph' &&
+          d.className === 'md-list-arrow md-control md-list-glyph' &&
           d.from === 0 &&
           d.to === 1,
       ),
     ).toBe(true)
     expect(intents.some((d) => d.kind === 'hide' && d.from === 1 && d.to === 2)).toBe(true)
-    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li')).toBe(true)
+    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-list-item')).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
@@ -258,15 +270,19 @@ describe('decoration intents', () => {
   it('task checkbox, caret ON the marker → raw `- [ ] `, no widget (parity with bullets)', () => {
     const t = '- [ ] todo'
     const intents = decorationsFor(t, tokenize(t), new Set(), 2)
-    expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li md-li-task')).toBe(true)
+    expect(
+      intents.some((d) => d.kind === 'line' && d.className === 'md-list-item md-list-task'),
+    ).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
-  it('blockquote → md-bq line + permanently hidden marker; a lone line is first AND last', () => {
+  it('blockquote → md-blockquote line + permanently hidden marker; a lone line is first AND last', () => {
     const t = '> quote'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
     const line = intents.find((d) => d.kind === 'line')
-    expect(line?.kind === 'line' && line.className).toBe('md-bq md-bq-first md-bq-last')
+    expect(line?.kind === 'line' && line.className).toBe(
+      'md-blockquote md-blockquote-first md-blockquote-last',
+    )
     expect(intents.some((d) => d.kind === 'hide' && d.from === 0 && d.to === 2)).toBe(true)
   })
 
@@ -276,17 +292,17 @@ describe('decoration intents', () => {
       (d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line',
     )
     expect(lines).toHaveLength(2)
-    expect(lines[0].className).toBe('md-bq md-bq-first')
-    expect(lines[1].className).toBe('md-bq md-bq-last')
+    expect(lines[0].className).toBe('md-blockquote md-blockquote-first')
+    expect(lines[1].className).toBe('md-blockquote md-blockquote-last')
   })
 
-  it('fenced code block → md-cb lines; backticks always show, only the info word hides', () => {
+  it('fenced code block → codeblock lines; backticks always show, only the info word hides', () => {
     const t = 'p\n```js\ncode\n```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
     const classes = intents
       .filter((d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line')
       .map((d) => d.className)
-    expect(classes).toEqual(['md-cb md-cb-first', 'md-cb', 'md-cb md-cb-last'])
+    expect(classes).toEqual(['codeblock codeblock-first', 'codeblock', 'codeblock codeblock-last'])
     const hides = intents.filter((d): d is Extract<typeof d, { kind: 'hide' }> => d.kind === 'hide')
     expect(hides).toHaveLength(1)
     expect(t.slice(hides[0].from, hides[0].to)).toBe('js')
@@ -354,7 +370,7 @@ describe('decoration intents', () => {
     const t = '```js\na\nb\n```'
     const nums = decorationsFor(t, tokenize(t), new Set(), 0)
       .filter((d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget')
-      .filter((d) => d.className === 'md-cb-ln')
+      .filter((d) => d.className === 'codeblock-line-number')
     expect(nums.map((n) => n.text)).toEqual(['1', '2'])
   })
 })
@@ -363,13 +379,13 @@ describe('citation rows', () => {
   const rows = (t: string) => decorationsFor(t, tokenize(t), new Set(), NO_CARET)
   const nums = (t: string): (string | undefined)[] =>
     rows(t)
-      .filter((d) => d.kind === 'lineWidget' && d.className === 'md-cite-num')
+      .filter((d) => d.kind === 'lineWidget' && d.className === 'md-citation-number')
       .map((d) => (d.kind === 'lineWidget' ? d.text : undefined))
 
   it('draws a positional glyph over hidden source, whatever the label says', () => {
     const t = 'x[^7] y[^1] z[^3]\n\n[^1]: one\n[^7]: seven\n[^3]: three'
     expect(nums(t)).toEqual(['2.', '1.', '3.'])
-    const line = rows(t).filter((d) => d.kind === 'line' && d.className.startsWith('md-cite'))
+    const line = rows(t).filter((d) => d.kind === 'line' && d.className.startsWith('md-citation'))
     expect(line).toHaveLength(3)
   })
 
@@ -390,26 +406,32 @@ describe('citation rows', () => {
     const t = 'a[^1]\n\n[^1]: one'
     const at = t.indexOf('[^1]: one') + '[^1]: '.length
     expect(
-      rows(t).some((d) => d.kind === 'class' && d.className === 'md-cite-text' && d.from === at),
+      rows(t).some(
+        (d) => d.kind === 'class' && d.className === 'md-citation-text' && d.from === at,
+      ),
     ).toBe(true)
   })
 
   it('dims an orphan and a duplicate-loser, and draws them a numberless seat', () => {
     const t = 'a[^1]\n\n[^1]: one\n[^1]: dup\n[^9]: orphan'
     expect(nums(t)).toEqual(['1.', '–', '–'])
-    const dim = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-dim'))
+    const dim = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-citation-dim'))
     expect(dim).toHaveLength(2)
   })
 
   it('draws a seat for a citation whose text is empty', () => {
     const t = 'a[^1]\n\n[^1]:'
     expect(nums(t)).toEqual(['1.'])
-    expect(rows(t).some((d) => d.kind === 'class' && d.className === 'md-cite-text')).toBe(false)
+    expect(rows(t).some((d) => d.kind === 'class' && d.className === 'md-citation-text')).toBe(
+      false,
+    )
   })
 
   it('carries a continuation line into the row it belongs to', () => {
     const t = 'a[^1]\n\n[^1]: one\ncontinued'
-    const cont = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-cont'))
+    const cont = rows(t).filter(
+      (d) => d.kind === 'line' && d.className.includes('md-citation-continued'),
+    )
     expect(cont).toHaveLength(1)
     expect(nums(t)).toEqual(['1.'])
   })
@@ -424,7 +446,9 @@ describe('citation rows', () => {
   it('leaves the section out of the list and rail machinery', () => {
     const t = 'a[^1]\n\n[^1]: one'
     expect(rows(t).some((d) => d.kind === 'rail')).toBe(false)
-    expect(rows(t).some((d) => d.kind === 'line' && d.className.includes('md-li'))).toBe(false)
+    expect(rows(t).some((d) => d.kind === 'line' && d.className.includes('md-list-item'))).toBe(
+      false,
+    )
   })
 })
 
@@ -439,8 +463,8 @@ describe('callout box chrome + nested constructs', () => {
     expect(lineClasses.some((c) => c.includes('md-callout-first'))).toBe(true)
     expect(lineClasses.some((c) => c.includes('md-callout-last'))).toBe(true)
   })
-  it('a bullet inside the box still composes md-li with the box', () => {
-    expect(lineClasses).toContain('md-li')
+  it('a bullet inside the box still composes md-list-item with the box', () => {
+    expect(lineClasses).toContain('md-list-item')
   })
   it('the bullet widget absorbs the prefix (starts at line start, not touching a separate hide)', () => {
     const lineStart = doc.indexOf('> - item')
@@ -456,10 +480,10 @@ describe('callout box chrome + nested constructs', () => {
     const ints = decorationsFor(t, tokenize(t), new Set(), 99)
     const cbLines = ints.filter(
       (d): d is Extract<typeof d, { kind: 'line' }> =>
-        d.kind === 'line' && d.className.includes('md-cb'),
+        d.kind === 'line' && d.className.includes('codeblock'),
     )
-    expect(cbLines.filter((d) => d.className.includes('md-cb-first'))).toHaveLength(1)
-    expect(cbLines.filter((d) => d.className.includes('md-cb-last'))).toHaveLength(1)
+    expect(cbLines.filter((d) => d.className.includes('codeblock-first'))).toHaveLength(1)
+    expect(cbLines.filter((d) => d.className.includes('codeblock-last'))).toHaveLength(1)
     expect(cbLines).toHaveLength(4)
   })
   it('an unclosed fence inside a callout does not leak code styling onto the non-quote lines below', () => {
@@ -467,19 +491,19 @@ describe('callout box chrome + nested constructs', () => {
     const ints = decorationsFor(t, tokenize(t), new Set(), 99)
     const cbLines = ints.filter(
       (d): d is Extract<typeof d, { kind: 'line' }> =>
-        d.kind === 'line' && d.className.includes('md-cb'),
+        d.kind === 'line' && d.className.includes('codeblock'),
     )
     expect(cbLines).toHaveLength(1)
   })
-  it('a blockquote nested inside a callout renders as an inset quote (md-bq-in), not flat body', () => {
+  it('a blockquote nested inside a callout renders as an inset quote (md-blockquote-nested), not flat body', () => {
     const t = '> [!callout] head\n> > quoted one\n> > quoted two\n> body'
     const ints = decorationsFor(t, tokenize(t), new Set(), 99)
     const classes = ints
       .filter((d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line')
       .map((d) => d.className)
-    expect(classes.some((c) => c.includes('md-bq-in-first'))).toBe(true)
-    expect(classes.some((c) => c.includes('md-bq-in-last'))).toBe(true)
-    expect(classes.filter((c) => c.includes('md-bq-in')).length).toBe(2)
+    expect(classes.some((c) => c.includes('md-blockquote-nested-first'))).toBe(true)
+    expect(classes.some((c) => c.includes('md-blockquote-nested-last'))).toBe(true)
+    expect(classes.filter((c) => c.includes('md-blockquote-nested')).length).toBe(2)
     expect(ints.some((d) => d.kind === 'hide' && d.to - d.from === 4)).toBe(true)
   })
   it('a multi-DEPTH nested-quote run is ONE block — exactly one first + one last, no notch mid-block', () => {
@@ -488,9 +512,9 @@ describe('callout box chrome + nested constructs', () => {
     const classes = ints
       .filter((d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line')
       .map((d) => d.className)
-    expect(classes.filter((c) => c.includes('md-bq-in-first'))).toHaveLength(1)
-    expect(classes.filter((c) => c.includes('md-bq-in-last'))).toHaveLength(1)
-    expect(classes.filter((c) => c.includes('md-bq-in')).length).toBe(3)
+    expect(classes.filter((c) => c.includes('md-blockquote-nested-first'))).toHaveLength(1)
+    expect(classes.filter((c) => c.includes('md-blockquote-nested-last'))).toHaveLength(1)
+    expect(classes.filter((c) => c.includes('md-blockquote-nested')).length).toBe(3)
   })
   it('a fenced code block inside a callout composes the box chrome with the code class', () => {
     const t = '> [!callout] head\n> ```js\n> code\n> ```'
@@ -498,8 +522,8 @@ describe('callout box chrome + nested constructs', () => {
     const classes = ints
       .filter((d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line')
       .map((d) => d.className)
-    expect(classes).toContain('md-cb md-cb-first')
-    expect(classes.some((c) => c.startsWith('md-callout') && !c.includes('md-cb'))).toBe(true)
+    expect(classes).toContain('codeblock codeblock-first')
+    expect(classes.some((c) => c.startsWith('md-callout') && !c.includes('codeblock'))).toBe(true)
     expect(classes.filter((c) => c.includes('md-callout')).length).toBe(4)
   })
 })
@@ -529,11 +553,11 @@ describe('outliner rails', () => {
   it('a rail takes its ANCESTOR’s marker type, not the descendant’s (the checkbox-center fix)', () => {
     const bulletParent = rails('- parent\n\t- [ ] child')
     expect(bulletParent).toHaveLength(1)
-    expect(bulletParent[0].typeClass).toBe('md-outliner-bullet')
+    expect(bulletParent[0].typeClass).toBe('md-outline-bullet')
 
     const taskParent = rails('- [ ] parent\n\t- child')
     expect(taskParent).toHaveLength(1)
-    expect(taskParent[0].typeClass).toBe('md-outliner-task')
+    expect(taskParent[0].typeClass).toBe('md-outline-task')
   })
 
   it('rails are scoped to bullets + checkboxes — ordered / arrow / + ancestors get none (deferred)', () => {

@@ -12,7 +12,7 @@ export function forEachLine(doc: Text, from: number, to: number, fn: (line: Line
 
 // A StateField, since CM rebuilds line DOM on every change (a raw class would be wiped, but line decorations survive).
 export const setShade = StateEffect.define<{ from: number; to: number } | null>()
-const shadeLine = Decoration.line({ class: 'md-li-drag-source' })
+const shadeLine = Decoration.line({ class: 'md-list-drag-source' })
 
 export const shadeField = StateField.define<DecorationSet>({
   create: () => Decoration.none,

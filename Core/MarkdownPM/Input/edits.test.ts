@@ -88,6 +88,10 @@ describe('checkbox canonicalization', () => {
     const doc = '-[x]'
     expect(apply(doc, canonicalizeCheckbox(doc, 4, 4, ' ')!)).toBe('- [x] ')
   })
+  it('a fence line keeps its marker on backspace', () => {
+    const doc = '```\n- [ ] '
+    expect(smartBackspace(scanDoc(doc), doc.length, doc.length)).toBeNull()
+  })
 })
 
 describe('auto-pair + auto-delete', () => {

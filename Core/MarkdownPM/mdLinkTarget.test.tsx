@@ -250,57 +250,57 @@ describe('an alias reveals what it hides', () => {
 
   it('marks the target and introduces it with the link glyph', async () => {
     const view = await openAt('see [[Work Notes|the plan]] end', 20)
-    expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('Work Notes')
-    expect(view.dom.querySelector('.md-conn-glyph')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-target')?.textContent).toBe('Work Notes')
+    expect(view.dom.querySelector('.md-connection-glyph')).not.toBeNull()
   })
 
   it('the glyph reports that the target resolves', async () => {
     const view = await openAt('see [[Work Notes|the plan]] end', 20)
-    expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-glyph-resolved')).not.toBeNull()
   })
 
   // Following the PIPE, not the resolution: an alias for a page that doesn't exist yet is still a link.
   it('and appears for a target that resolves to nothing, unresolved', async () => {
     const view = await openAt('see [[No Such Page|the plan]] end', 22)
-    expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('No Such Page')
-    expect(view.dom.querySelector('.md-conn-glyph')).not.toBeNull()
-    expect(view.dom.querySelector('.md-conn-glyph-resolved')).toBeNull()
+    expect(view.dom.querySelector('.md-connection-target')?.textContent).toBe('No Such Page')
+    expect(view.dom.querySelector('.md-connection-glyph')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-glyph-resolved')).toBeNull()
   })
 
   it('and marks nothing while the link is closed', async () => {
     const view = await openAt('see [[Work Notes|the plan]] end', 0)
-    expect(view.dom.querySelector('.md-conn-target')).toBeNull()
-    expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
+    expect(view.dom.querySelector('.md-connection-target')).toBeNull()
+    expect(view.dom.querySelector('.md-connection-glyph')).toBeNull()
   })
 
   it('a link wearing no pipe keeps its title tinted, and still wears the glyph', async () => {
     const view = await openAt('see [[Work Notes]] end', 10)
-    expect(view.dom.querySelector('.md-conn-target')).toBeNull()
-    expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-target')).toBeNull()
+    expect(view.dom.querySelector('.md-connection-glyph-resolved')).not.toBeNull()
     expect(view.dom.querySelector('.md-connection-resolved')?.textContent).toBe('Work Notes')
   })
 
   it('and one that names nothing gets neither', async () => {
     const view = await openAt('see [[No Such Page]] end', 10)
-    expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
+    expect(view.dom.querySelector('.md-connection-glyph')).toBeNull()
   })
 
   it('an internal markdown link’s target wears the glyph, an external one the URL treatment', async () => {
     const internal = await openAt(`see [x](${encodeLinkTarget('Work Notes')}) end`, 12)
-    expect(internal.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
-    expect(internal.dom.querySelector('.md-conn-target')).not.toBeNull()
+    expect(internal.dom.querySelector('.md-connection-glyph-resolved')).not.toBeNull()
+    expect(internal.dom.querySelector('.md-connection-target')).not.toBeNull()
     expect(internal.dom.querySelector('.md-link-url')).toBeNull()
     await cleanupEditor()
 
     const external = await openAt('see [x](https://example.com) end', 12)
     expect(external.dom.querySelector('.md-link-url')).not.toBeNull()
-    expect(external.dom.querySelector('.md-conn-glyph')).toBeNull()
+    expect(external.dom.querySelector('.md-connection-glyph')).toBeNull()
   })
 
   it('but a pipe opened and not yet written already shows both', async () => {
     const view = await openAt('see [[Work Notes|]] end', 17)
-    expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('Work Notes')
-    expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-target')?.textContent).toBe('Work Notes')
+    expect(view.dom.querySelector('.md-connection-glyph-resolved')).not.toBeNull()
   })
 })
 
