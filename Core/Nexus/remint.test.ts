@@ -147,7 +147,14 @@ describe('the re-mint writes', () => {
         id: SET,
         views: [
           { id: 'view-1', name: 'Table', type: 'table', property_order: [], hidden_properties: [] },
-          { id: 'view-2', name: 'Board', type: 'table', property_order: [], hidden_properties: [] },
+          {
+            id: 'view-2',
+            name: 'Board',
+            type: 'table',
+            property_order: [],
+            hidden_properties: [],
+            manual_order: ['page-b', 'page-a'],
+          },
         ],
       }),
     )
@@ -222,7 +229,6 @@ describe('the re-mint writes', () => {
 
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
     await chooseSetView('view-2')
-    writeKey('viewOrder', 'view-2', ['page-b', 'page-a'])
     await writeTileDocAt(join(root, '.nexus', 'contexts', 'Areas', 'Work'), (cur) => ({
       ...cur,
       tiles: [
@@ -273,9 +279,9 @@ describe('the re-mint writes', () => {
     expect(copySet.active_view).toBe(copySet.views[1].id)
     expect(copySet.active_view).not.toBe('view-2')
 
-    // The manual order keys ON the view, so it crosses under the copy's own view id — the original's row is left exactly where it was.
-    expect(readKey('viewOrder', 'view-2')).toEqual(['page-b', 'page-a'])
-    expect(readKey('viewOrder', copySet.views[1].id)).toEqual(['page-b', 'page-a'])
+    // The manual order names pages the copy no longer holds, so it does not travel — and the original's own order is left exactly where it was.
+    expect(originalSet.views[1].manual_order).toEqual(['page-b', 'page-a'])
+    expect(copySet.views[1].manual_order).toBeUndefined()
 
     type Doc = { tiles: { views: { config: { id: string } }[] }[] }
     const originalDoc = (await readTileDocAt(

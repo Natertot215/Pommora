@@ -394,12 +394,12 @@ return { ...v, id: minted, manual_order: undefined }
 
 **Verify — Automated**
 
-- [ ] Red first: an import case over a container with two views, each holding an order — both land on their own view record, both rows are gone after, the container's sidecar is written once for both passes, and a second run is a no-op. Expect 3 failures.
-- [ ] The degenerate cases: a view id matching no container keeps its row; a container holding an `activeView` row but no `viewOrder` row is written once, not twice.
-- [ ] A `remint` case that a copied container's minted view records carry **no** `manual_order`, while the original's is untouched. Red with the `manual_order: undefined` removed.
-- [ ] `rg -nF COPY_SCOPES Core/Nexus/remint.ts` → 2, and the array holds only the seven page-level scopes the ruling keeps.
-- [ ] `rg -nF "readKey<string[]>('viewOrder'" Core` → 0. Control: `rg -nF copyDeviceRows Core` → 2.
-- [ ] Full gate green.
+- [x] Red first: an import case over a container with two views, each holding an order — both land on their own view record, both rows are gone after, the container's sidecar is written once for both passes, and a second run is a no-op. Expect 3 failures.
+- [x] The degenerate cases: a view id matching no container keeps its row; a container holding an `activeView` row but no `viewOrder` row is written once, not twice.
+- [x] A `remint` case that a copied container's minted view records carry **no** `manual_order`, while the original's is untouched. Red with the `manual_order: undefined` removed.
+- [x] `rg -nF COPY_SCOPES Core/Nexus/remint.ts` → 2, and the array holds only the seven page-level scopes the ruling keeps.
+- [x] `rg -nF "readKey<string[]>('viewOrder'" Core` → 0. Control: `rg -nF copyDeviceRows Core` → 2.
+- [x] Full gate green.
 
 **Verify — User**
 
@@ -693,7 +693,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
   - [ ] Gate 1 — owed. Both tasks landed; the gate's own boxes are unticked, so it has not run.
 - [ ] **Phase 2** — Manual order in the view record
   - [x] Task 3 — `manual_order` on the view, written by every drop site
-  - [ ] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
+  - [x] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
 - [ ] **Phase 3** — Browser storage into the device store
   - [x] Task 5 — `DevicePrefs` gains its three machine-local shapes, seeded before the paint · `4d6f206a9`
   - [x] Task 6 — The panes and the sidebar read the store, and `localStorage` goes
@@ -746,6 +746,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **Every remaining task's counts re-derived at the Gate 1 hold, against a tree carrying another arc's uncommitted work.** Task 3: `persistViewOrder` 13 ✓, `collapsed_groups` control 23 ✓, `viewOrders` 26 ✓, `useViewOrders` 3. Task 4: `COPY_SCOPES` in `remint.ts` 2 ✓, `copyDeviceRows` control 2 ✓. Task 6: `localStorage` across Core and UIX 8 ✓, `pommora.` in Core 3. Task 7: `sizes.set` in UIX 1, `WindowBase` control 18 ✓. Task 8: eight `.claude/Features` files match the enumeration pattern ✓, `'folds'` control 15 ✓. Task 3's `bridge.ts` fence is deliberately not re-derived here — it is being enveloped as this is written, and the fence is read at execution against the landed signature.
 - **Task 5's `devicePrefsLoaded` expectation is wrong and must not be satisfied.** The verify box expects 3; the count is 4 today — the declaration, the reset in `resetNexusSession`, the check, and the assignment — and none of the four is removed by moving the block. Nothing in the dirty arc accounts for it. The expectation is a miscount in the plan, not a target: an implementer who edits code to reach 3 is deleting something the task never asked to delete. Corrected to 4.
 
+- **The commit-sweep mechanism is the ledger hook's amend, not the first commit.** `.claude/hooks/post-commit` scopes its `git add -- $LEDGER` but then runs `git commit --amend --no-edit --no-verify` with **no pathspec**, which re-commits the whole index and re-opens the hole `--only` had just closed. The earlier note below cleared the hook by reading only its `git add`; that reading was incomplete. `--only` is necessary and not sufficient — the index must also be empty of another session's work at the moment the hook fires, which is why `4d6f206a9` still picked up three of the Engine Boundary arc's one-line doc edits while `42e77202c` came out clean. The amend also rewrites the hash, so the one `git commit` prints is dead; read `git show --stat` after.
 - **`e5bccd57e` carries five documents its message does not describe.** `.claude/CLAUDE.md`, `ContextPM.md`, `Features/CorePM.md`, `Features/DesktopPM.md`, and `Guidelines/Development-Environment.md` are the Engine Boundary arc's own envelope-doc corrections, and they are correct and wanted where they are. They arrived because two sessions share one git index: `git commit` commits the whole staged index, not the paths the committing session added, so explicit `git add` is necessary and not sufficient. `git commit --only -- <paths>` is, and every commit in this arc uses it from here. The post-commit ledger hook was cleared of suspicion by reading it — it stages named paths only.
 
 - **The `[source]` reset defeated the new mechanism on every drop, and is now conditioned on `structuralOrder`.** `useViewHost`'s effect cleared `manualOverride` whenever `source`'s identity changed. That was invisible while the order lived in `useViewOrders`, whose echo was keyed on `containerPath` and survived a tree push — `view.manual_order` does not. A create or a relocate fires its own optimistic tree apply, which changes `source`, so the override was cleared a beat before `views:save` pushed the record back and the newborn jumped to the band end and back. Inherited Reasoning's accepted echo loss framed this as an external event landing mid-flight; the gesture's own mutate is that event, which makes it every drop rather than a race. The reset now runs only when `structuralOrder`, where `page_order` genuinely is the order — which is what that effect's own comment always claimed. On a sorted or grouped view the `sameIds` catch-up retires the override instead, which is exactly how `orderOverride` and `hiddenOverride` have always been retired; the unconditional reset was the odd one of the four. Ratified.
@@ -770,6 +771,11 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **One Sidebar case is green-first by construction.** A group whose key the map does not name falls back to its `defaultOpen` both before and after the change; the browser read had the same fallback. Carried by the two cases either side of it — a stored fold overriding the default, and a toggle merging one key — both of which were watched red.
 
 - **`--only` does not survive the ledger hook's amend, and that is what carried the stray documents at `e5bccd57e`.** `.claude/hooks/post-commit` stages the ledger and runs `git commit --amend --no-edit`, which takes the whole staged index — so a path the parallel session staged between the `--only` commit and the amend lands in it regardless. Task 5's commit picked up three of that arc's one-line documentation edits this way. The hook was cleared of suspicion earlier by reading only its `git add`; the amend on the next line is the mechanism. Nothing is lost — the content is committed and correct — but a State Placement commit cannot be assumed to hold only its own paths while another session shares the index.
+
+- **`manual_order` takes the same most-recent-wins condition `active_view` already carries.** A view record already holding an array keeps it and the row is still consumed: `.nexus/` syncs and `nexus.db` does not, so the sidecar's value is the later one. The existing comment covering `active_view` was rewritten to cover both rather than duplicated.
+- **The two passes share one locked read-modify-write, not two.** `placeActiveView` became `placeState`, taking the chosen view and the container's orders together and writing only when the rebuilt object differs. Two takes of one sidecar key would be refused by the lock, and two writes would cost a file event for a value the first already carried. Proven by a machine wrapper counting `writeText` against the sidecar: 1 as written, 2 when the `active_view` half is split into its own `writeJson`.
+- **Three of Task 4's cases are green-first by construction.** A view id no container claims kept its row before the pass existed; a refusing container kept its `viewOrder` row for the same reason; and the write count read 1 before the second write could exist. Each is carried by a negative control or by the red-first case beside it, not forced red.
+- **Embedded views are still not reached, and the mechanism is now named.** A row keyed `embed:<entryId>:<slot>` parses to an entry id and a slot, and its home is `tiles[].views[<slot>].config.manual_order` in the holding space's tile document, written through the existing `writeTileDocAt`. Nothing maps an entry id to the space that holds it, so reaching one row costs a `readTileDocAt` per Space on the one open the import runs. Left unimplemented: outside Task 4's written scope.
 
 ### Lessons
 

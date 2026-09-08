@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { withSidecarLock } from '../Files/sidecar'
-import { machine } from '../Platform/machine'
+import { installMachine, machine } from '../Platform/machine'
 import { readKey, writeKey } from '../Platform/localState'
 import { DEFAULT_VIEW_ID } from '../Views/views'
 import { importPlacedState } from './importPlacedState'
@@ -133,6 +133,91 @@ describe('importPlacedState', () => {
     expect(await importPlacedState(root)).toBe(false)
     expect((await collectionJson()).active_view).toBeUndefined()
     expect(readKey('activeView', COL)).toBeNull()
+  })
+
+  const orderOf = async (
+    read: () => Promise<Record<string, unknown>>,
+    index: number,
+  ): Promise<unknown> => ((await read()).views as { manual_order?: unknown }[])[index].manual_order
+
+  it('every manual order lands on its own view record, and its row goes', async () => {
+    writeKey('viewOrder', 'view-c1', ['page-b', 'page-a'])
+    writeKey('viewOrder', 'view-s2', ['page-c'])
+
+    expect(await importPlacedState(root)).toBe(true)
+
+    expect(await orderOf(collectionJson, 0)).toEqual(['page-b', 'page-a'])
+    expect(await orderOf(collectionJson, 1)).toBeUndefined()
+    expect(await orderOf(setJson, 1)).toEqual(['page-c'])
+    expect(readKey('viewOrder', 'view-c1')).toBeNull()
+    expect(readKey('viewOrder', 'view-s2')).toBeNull()
+
+    expect(await importPlacedState(root)).toBe(false)
+  })
+
+  it('a container holding both a chosen view and a manual order is written once, not twice', async () => {
+    writeKey('activeView', COL, 'view-c2')
+    writeKey('viewOrder', 'view-c1', ['page-b', 'page-a'])
+    const base = machine()
+    let writes = 0
+    installMachine({
+      ...base,
+      writeText: (p, text) => {
+        if (p.endsWith('_pagecollection.json')) writes++
+        return base.writeText(p, text)
+      },
+    })
+
+    try {
+      expect(await importPlacedState(root)).toBe(true)
+    } finally {
+      installMachine(base)
+    }
+
+    expect(writes).toBe(1)
+    expect((await collectionJson()).active_view).toBe('view-c2')
+    expect(await orderOf(collectionJson, 0)).toEqual(['page-b', 'page-a'])
+  })
+
+  it('a view id no container claims keeps its row', async () => {
+    writeKey('viewOrder', 'view-nowhere', ['page-a'])
+
+    expect(await importPlacedState(root)).toBe(false)
+    expect(readKey('viewOrder', 'view-nowhere')).toEqual(['page-a'])
+  })
+
+  it('a view record that already carries an order keeps it, and the row is consumed', async () => {
+    await writeFile(
+      join(real, 'Library', '_pagecollection.json'),
+      JSON.stringify({
+        id: COL,
+        views: [
+          { ...(views('view-c1', 'view-c2')[0] as object), manual_order: ['page-a'] },
+          views('view-c1', 'view-c2')[1],
+        ],
+      }),
+    )
+    writeKey('viewOrder', 'view-c1', ['page-b'])
+
+    expect(await importPlacedState(root)).toBe(true)
+    expect(await orderOf(collectionJson, 0)).toEqual(['page-a'])
+    expect(readKey('viewOrder', 'view-c1')).toBeNull()
+  })
+
+  it('a container whose write refuses keeps both of its rows', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    writeKey('activeView', SET, 'view-s2')
+    writeKey('viewOrder', 'view-s1', ['page-a'])
+
+    const landed = await withSidecarLock(await heldFolder(join('Library', 'Fiction')), 'set', () =>
+      importPlacedState(root),
+    )
+
+    expect(landed).toBe(false)
+    expect(readKey('activeView', SET)).toBe('view-s2')
+    expect(readKey('viewOrder', 'view-s1')).toEqual(['page-a'])
+    expect(logged).toHaveBeenCalled()
+    logged.mockRestore()
   })
 
   it('a sidecar that already names a view keeps it, and the row is consumed', async () => {

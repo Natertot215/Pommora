@@ -57,28 +57,22 @@ export async function runRemintPass(
   const done: RemintedEntity[] = []
   for (const target of remint) {
     const fresh = target.kind === 'page' ? newContentId('page') : newId()
-    const viewIds = await writeFreshId(root, target, fresh)
-    if (!viewIds) continue
-    copyDeviceRows(target, fresh, viewIds)
+    if (!(await writeFreshId(root, target, fresh))) continue
+    copyDeviceRows(target, fresh)
     done.push({ target, newId: fresh })
   }
   return done
 }
 
-async function writeFreshId(
-  root: string,
-  target: RemintTarget,
-  fresh: string,
-): Promise<Map<string, string> | null> {
+async function writeFreshId(root: string, target: RemintTarget, fresh: string): Promise<boolean> {
   try {
-    // A page carries no views, so a landed page write returns an empty map, not null — null must keep its single meaning, a refused write.
     if (target.kind === 'page')
-      return (await remintPageFile(join(root, target.path), target.id, fresh)) ? new Map() : null
-    if (target.kind === 'context') return null
+      return await remintPageFile(join(root, target.path), target.id, fresh)
+    if (target.kind === 'context') return false
     return await remintSidecar(join(root, target.path), target.kind, target.id, fresh)
   } catch (e) {
     console.error(`remint: the write for ${target.path} refused; the defer stands:`, errText(e))
-    return null
+    return false
   }
 }
 
@@ -95,7 +89,7 @@ async function remintSidecar(
   kind: 'space' | 'collection' | 'set',
   oldId: string,
   fresh: string,
-): Promise<Map<string, string> | null> {
+): Promise<boolean> {
   const file = sidecarPath(absFolder, kind)
   const viewIds = new Map<string, string>()
   // Read fresh inside the lock: a container write that landed since the walk holds facts the stamp must carry forward, and a blind write would drop them.
@@ -108,7 +102,8 @@ async function remintSidecar(
         if (!isPlainObject(v)) return v
         const minted = newId()
         if (typeof v.id === 'string') viewIds.set(v.id, minted)
-        return { ...v, id: minted }
+        // The copy's pages are reminted to fresh ids in this same pass, so a carried manual order would name pages the copy does not hold — and on disk it syncs everywhere with nothing to sweep it.
+        return { ...v, id: minted, manual_order: undefined }
       })
     // The copy must not inherit a selection it cannot resolve: a view id naming nothing in the copy's own namespace is dropped rather than carried.
     if (typeof next.active_view === 'string')
@@ -116,7 +111,7 @@ async function remintSidecar(
     await writeJson(file, next)
     return true
   })
-  if (!landed) return null
+  if (!landed) return false
   if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
     const doc = await writeTileDocAt(absFolder, (cur) => ({
       ...cur,
@@ -128,7 +123,7 @@ async function remintSidecar(
         doc.error.message,
       )
   }
-  return viewIds
+  return true
 }
 
 const COPY_SCOPES = [
@@ -141,15 +136,11 @@ const COPY_SCOPES = [
   'aliases',
 ] as const
 
-function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string, string>): void {
+function copyDeviceRows(target: RemintTarget, fresh: string): void {
   try {
     for (const scope of COPY_SCOPES) {
       const value = readKey(scope, target.id)
       if (value !== null) writeKey(scope, fresh, value)
-    }
-    for (const [old, minted] of viewIds) {
-      const order = readKey<string[]>('viewOrder', old)
-      if (order !== null) writeKey('viewOrder', minted, order)
     }
     const windows = readWindowsState()
     const origin = windows.origins[target.id]
