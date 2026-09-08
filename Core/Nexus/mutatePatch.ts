@@ -126,6 +126,7 @@ async function routeMutation(
     // Field writes land through the writer's own normalization, so confirm by re-reading the one file that changed (a Context's icon lives in its registry, a structural walk input).
     case 'setIcon':
     case 'setDisclosureLock':
+    case 'setActiveView':
       return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
     // A banner replace drops the old crop through dropReplacedAsset, a crops.json write the watcher never sees, so the writer re-reads that leaf itself.
     case 'setBanner':

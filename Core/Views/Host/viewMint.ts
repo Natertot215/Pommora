@@ -8,12 +8,6 @@ import { host } from '../../Platform/dialer'
 
 const inFlight = new Map<string, Promise<string>>()
 
-// Wired by the store at creation — a sentinel adoption must land in the activeViews slice, and this module stays store-free.
-let onViewAdopted: (containerId: string, viewId: string) => void = () => {}
-export function wireViewAdopted(fn: (containerId: string, viewId: string) => void): void {
-  onViewAdopted = fn
-}
-
 const pendingViewMint = (containerId: string): Promise<string> | undefined =>
   inFlight.get(containerId)
 
@@ -42,12 +36,6 @@ export async function saveViewAdopting(
     const minted = await pendingViewMint(source.id)?.catch(() => undefined)
     if (minted) toSave = { ...view, id: minted }
   }
-  const res = await host().ask('views:save', source.path, source.kind, toSave)
-  if (res.ok) {
-    if (wasSentinel) {
-      await host().ask('activeViews:set', source.id, res.value.id)
-      onViewAdopted(source.id, res.value.id)
-    }
-  }
-  return res
+  // Nothing records the adoption: the adopted view IS views[0] once the push lands, which pickView returns.
+  return host().ask('views:save', source.path, source.kind, toSave)
 }

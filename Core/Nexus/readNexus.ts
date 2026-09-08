@@ -9,8 +9,8 @@ import {
   type ContextsRegistry,
 } from '../Contexts/contexts'
 import { resolveContextKeys } from '../Contexts/contextResolve'
-import { savedView, type SavedView } from '../Views/views'
-import { type Crop, coerceOpenIn, coerceViewButton, cropsFile } from './schemas'
+import { type Crop, coerceOpenIn, cropsFile } from './schemas'
+import { containerFieldsFrom } from './containerFields'
 import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
 import { adoptedId } from './ids'
@@ -147,16 +147,6 @@ async function readDirectPages(
   return out.filter((n): n is PageNode => n !== null)
 }
 
-export function parseViews(raw: unknown): SavedView[] | undefined {
-  if (!Array.isArray(raw)) return undefined
-  const out: SavedView[] = []
-  for (const v of raw) {
-    const r = savedView.safeParse(v)
-    if (r.success) out.push(r.data)
-  }
-  return out.length > 0 ? out : undefined
-}
-
 async function readChildSets(
   absDir: string,
   relDir: string,
@@ -194,15 +184,8 @@ async function readSet(
   return makeSetNode({
     id: asString(meta.id) ?? adoptedId(relDir),
     title: name,
-    icon: asString(meta.icon),
     path: relDir,
-    banner: asString(meta.banner),
-    headingIconHidden: meta.heading_icon_hidden === true,
-    sets: resolveOrder(sets, asStringArray(meta.set_order)),
-    pages: resolveOrder(pages, asStringArray(meta.page_order)),
-    views: parseViews(meta.views),
-    viewButton: coerceViewButton(meta.view_button),
-    disclosureLocked: meta.disclosure_locked === true,
+    ...containerFieldsFrom(meta, sets, pages),
   })
 }
 
@@ -235,17 +218,10 @@ async function readPageCollection(
   return makeCollectionNode({
     id: asString(meta.id) ?? adoptedId(relDir),
     title: name,
-    icon: asString(meta.icon),
     path: relDir,
-    banner: asString(meta.banner),
-    headingIconHidden: meta.heading_icon_hidden === true,
     properties: resolveAssignedSchema(meta.properties, registry),
-    sets: resolveOrder(sets, asStringArray(meta.set_order)),
-    pages: resolveOrder(pages, asStringArray(meta.page_order)),
-    views: parseViews(meta.views),
     openIn: coerceOpenIn(meta.open_in),
-    viewButton: coerceViewButton(meta.view_button),
-    disclosureLocked: meta.disclosure_locked === true,
+    ...containerFieldsFrom(meta, sets, pages),
   })
 }
 
