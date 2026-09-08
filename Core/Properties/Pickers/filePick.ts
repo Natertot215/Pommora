@@ -1,5 +1,6 @@
 // `sharedValueClickAction` can only NAME an action — it is pure and synchronous — while filling a file value is a three-step async effect, which would otherwise drift one way per surface tail.
 
+import { valueOr } from '@pommora/core/Contract/result'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
@@ -33,7 +34,10 @@ export async function runFilePick(
   const files = filesOf(current)
   const named = chip === null ? undefined : files[chip]
   const dir = (named && folderOf(named)) || propertyFolder(def)
-  const picked = await host().ask('nexus:pickFile', { any: true, ...(dir ? { dir } : {}) })
+  const picked = valueOr(
+    await host().ask('nexus:pickFile', { any: true, ...(dir ? { dir } : {}) }),
+    null,
+  )
   if (picked === null) return undefined
   return adoptInto(def, files, chip, picked)
 }

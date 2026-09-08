@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
@@ -30,7 +31,7 @@ beforeEach(() => {
     'nav:write': vi.fn(async () => ({ ok: true, value: null })),
     'tabs:save': vi.fn(async () => ({ ok: true, value: null })),
     'tabs:load': vi.fn(async () => ({ ok: true, value: null })),
-    'theme:systemAccent': vi.fn(async () => '#000000'),
+    'theme:systemAccent': vi.fn(async () => ok('#000000')),
     'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
     mutate: vi.fn(async () => ({ ok: true, value: {} })),
   }

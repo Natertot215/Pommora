@@ -1,4 +1,5 @@
 import { basename, dirname, join } from '../Paths/posix'
+import { valueOr } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { admitContentFile, ID_KEY, type ContentKind } from './identityMark'
@@ -78,7 +79,7 @@ async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean
   if (read.ok && asString(read.value.id)) return false
   if (!read.ok && (await migrateContainerSidecar(absDir, kind))) return true
 
-  await writeSidecar(absDir, kind, { ...(read.ok ? read.value : {}), id: newId() })
+  await writeSidecar(absDir, kind, { ...valueOr(read, {}), id: newId() })
   return true
 }
 

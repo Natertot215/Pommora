@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { type ConnMenuAction, connMenuModel } from '@pommora/core/MarkdownPM/Links/connMenu'
@@ -25,7 +26,10 @@ class ResizeObserverStub {
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
-stubEditorBridge({ 'row-menu': connMenu, 'clipboard:write': writeClipboard })
+stubEditorBridge({
+  'row-menu': async (req: unknown) => ok(await connMenu(req)),
+  'clipboard:write': writeClipboard,
+})
 
 const URL = 'https://www.example.com/a/b'
 const BODY = `a [Home](${URL}) b`

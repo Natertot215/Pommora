@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -139,9 +140,9 @@ beforeEach(() => {
   openExternalSpy = vi.fn(async () => {})
   channels = {
     'view:loadValues': async () => VALUES,
-    'viewOrders:get': async () => ({}),
+    'viewOrders:get': async () => ok({}),
     'views:save': vi.fn(async () => ({ ok: true, value: { id: 'v1' } })),
-    'row-menu': vi.fn(async () => null),
+    'row-menu': vi.fn(async () => ok(null)),
     'link:open': openExternalSpy,
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
@@ -398,7 +399,7 @@ describe('number cell inline editing', () => {
 describe('menu-entered editing', () => {
   it('url Edit normalizes a schemeless link on commit', async () => {
     await mountTable(sourceWith())
-    channels['row-menu'] = vi.fn(async () => 'editLink')
+    channels['row-menu'] = vi.fn(async () => ok('editLink'))
     const urlCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
     await act(async () => {
       urlCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -419,7 +420,7 @@ describe('menu-entered editing', () => {
 
   it('title Rename commits a rename op', async () => {
     await mountTable(sourceWith())
-    channels['row-menu'] = vi.fn(async () => 'title:rename')
+    channels['row-menu'] = vi.fn(async () => ok('title:rename'))
     const titleCell = host.querySelectorAll<HTMLElement>('.data-cell')[0]
     await act(async () => {
       titleCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -666,7 +667,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
   const fileCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[5]
 
   beforeEach(() => {
-    channels['nexus:pickFile'] = vi.fn(async () => '/outside/New.pdf')
+    channels['nexus:pickFile'] = vi.fn(async () => ok('/outside/New.pdf'))
     channels['assets:adopt'] = vi.fn(async () => ({
       ok: true,
       value: '[[New.pdf]]',

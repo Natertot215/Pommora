@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Crop } from '@pommora/core/Nexus/schemas'
+import { valueOr } from '@pommora/core/Contract/result'
 import {
   clampZoom,
   coverRect,
@@ -121,7 +122,8 @@ export function ImagePicker({
       }
       void host()
         .ask('nexus:pasteImage')
-        .then((p) => {
+        .then((r) => {
+          const p = valueOr(r, null)
           if (p) settleRepick(p)
         })
     }
@@ -185,7 +187,8 @@ export function ImagePicker({
     if (!onRepick) return
     void host()
       .ask('nexus:pickFile')
-      .then((p) => {
+      .then((r) => {
+        const p = valueOr(r, null)
         if (p) settleRepick(p)
       })
   }

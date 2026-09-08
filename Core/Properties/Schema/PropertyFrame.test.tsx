@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { defaultStatusSeed, type PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -50,7 +51,8 @@ beforeEach(() => {
     'schema:delete': schemaDeleteSpy,
     'schema:assign': assignSpy,
     'property:delete': destroySpy,
-    'row-menu': propertyMenuSpy,
+    'row-menu': async (req: unknown) =>
+      ok(await (propertyMenuSpy as (r: unknown) => Promise<unknown>)(req)),
     'error:show': vi.fn(async () => {}),
   })
   useSession.setState({

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { AssetMap, NexusTree } from '@pommora/core/Nexus/tree'
@@ -236,7 +237,7 @@ describe('ImagePicker', () => {
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
     ;(window as { nexus?: unknown }).nexus = stubDialer({
-      'nexus:pickFile': () => Promise.resolve('/abs/New.png'),
+      'nexus:pickFile': () => Promise.resolve(ok('/abs/New.png')),
     })
     let settle: (landed: string | undefined) => void = () => {}
     const onRepick = vi.fn(() => new Promise<string | undefined>((resolve) => (settle = resolve)))
@@ -267,7 +268,7 @@ describe('ImagePicker', () => {
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
     ;(window as { nexus?: unknown }).nexus = stubDialer({
-      'nexus:pickFile': () => Promise.resolve('/abs/New.png'),
+      'nexus:pickFile': () => Promise.resolve(ok('/abs/New.png')),
     })
     let settle: (landed: string | undefined) => void = () => {}
     const onRepick = vi.fn(() => new Promise<string | undefined>((resolve) => (settle = resolve)))

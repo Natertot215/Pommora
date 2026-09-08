@@ -1,6 +1,6 @@
 import { isValidLink, normalizeLinkUrl } from '../Connections/links'
 import type { Handlers } from '../Contract/handlers'
-import { fail, NO_NEXUS, ok } from '../Contract/result'
+import { fail, NO_NEXUS, ok, type Result } from '../Contract/result'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, writeKey } from '../Platform/localState'
 
@@ -17,11 +17,11 @@ function ensureCache(root: string): void {
 }
 
 export const webHandlers = {
-  'linkTitles:get': async (): Promise<LinkTitleCache> => {
+  'linkTitles:get': async (): Promise<Result<LinkTitleCache>> => {
     const root = sessionRoot()
-    if (!root) return {}
+    if (!root) return ok({})
     ensureCache(root)
-    return { ...cache }
+    return ok({ ...cache })
   },
 
   'linkTitles:fetch': async (ctx, url: unknown) => {
@@ -40,8 +40,9 @@ export const webHandlers = {
   },
 
   'link:open': async (ctx, url: unknown) => {
-    if (typeof url !== 'string' || !isValidLink(url)) return
+    if (typeof url !== 'string' || !isValidLink(url)) return ok(null)
     await ctx.openExternal(normalizeLinkUrl(url))
+    return ok(null)
   },
 
   'webGuestZoom:set': (ctx, guestId: number, factor: number) => {

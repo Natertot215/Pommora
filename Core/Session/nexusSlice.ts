@@ -1,5 +1,5 @@
 import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
-import { caught, type PommoraError, type Result } from '@pommora/core/Contract/result'
+import { caught, type PommoraError, type Result, valueOr } from '@pommora/core/Contract/result'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import {
   insertCreatedInTree,
@@ -82,34 +82,40 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!get().tree) set({ status: 'loading', error: undefined })
       void host()
         .ask('theme:systemAccent')
-        .then((c) => {
-          systemAccentCache = c
+        .then((r) => {
+          systemAccentCache = valueOr(r, null)
         })
       try {
         const res = await host().ask('nexus:state')
-        switch (res.status) {
+        if (!res.ok) {
+          set({ status: 'error', error: res.error })
+          return
+        }
+        switch (res.value.status) {
           case 'open':
-            await get().applyTree(res.tree)
+            await get().applyTree(res.value.tree)
             await Promise.all([
               host()
                 .ask('subfield:get')
-                .then((cfg) => {
+                .then((r) => {
+                  const cfg = valueOr(r, null)
                   if (cfg) set({ subfieldExpanded: cfg.expanded })
                 }),
               host()
                 .ask('navViewModes:get')
-                .then((modes) => {
+                .then((r) => {
+                  const modes = valueOr(r, null)
                   if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
                 }),
               host()
                 .ask('citations:get')
-                .then((all) => set({ citationsShown: all })),
+                .then((r) => set({ citationsShown: valueOr(r, {}) })),
               host()
                 .ask('linkTitles:get')
-                .then((titles) => set({ linkTitles: titles })),
+                .then((r) => set({ linkTitles: valueOr(r, {}) })),
               host()
                 .ask('aliases:get')
-                .then((aliases) => set({ pageAliases: aliases })),
+                .then((r) => set({ pageAliases: valueOr(r, {}) })),
             ])
             // A refetch must not re-read the sidecar: its debounced write trails the live tab set.
             if (get().activeTabId === '') {
@@ -120,14 +126,11 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 host().ask('tabs:load'),
               ])
               if (windows.ok) set({ windowsFile: windows.value })
-              get().restoreNavigation(read.ok ? read.value : null, stored.ok ? stored.value : null)
+              get().restoreNavigation(valueOr(read, null), valueOr(stored, null))
             }
             break
           case 'empty':
             set({ status: 'empty', tree: null })
-            break
-          case 'error':
-            set({ status: 'error', error: res.error })
             break
         }
       } catch (e) {
@@ -148,12 +151,12 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       get().reconcileGlance(index)
       // From the module cache: an awaited round-trip here would gate the whole reconcile.
       if (systemAccentCache === undefined)
-        systemAccentCache = await host().ask('theme:systemAccent')
+        systemAccentCache = valueOr(await host().ask('theme:systemAccent'), null)
       else
         void host()
           .ask('theme:systemAccent')
-          .then((c) => {
-            systemAccentCache = c
+          .then((r) => {
+            systemAccentCache = valueOr(r, null)
           })
       const systemColor = systemAccentCache
       applyAccent(tree.accent, systemColor)

@@ -1,4 +1,5 @@
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { valueOr } from '../Contract/result'
 import { readJsonObject, readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { isPlainObject } from './propertyValue'
@@ -60,7 +61,7 @@ export function mutateRegistry<T>(
   return machine().lock(registryPath(root), async () => {
     const read = await readJsonStrict(registryPath(root))
     if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
-    const { registry, unparsed } = normalizeRegistry(read.ok ? read.value : {})
+    const { registry, unparsed } = normalizeRegistry(valueOr(read, {}))
     const { next, result } = fn(registry)
     if (next) {
       const defs: Record<string, unknown> = { ...next.defs }

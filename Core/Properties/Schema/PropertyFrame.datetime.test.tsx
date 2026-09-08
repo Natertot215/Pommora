@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
@@ -38,7 +39,7 @@ beforeEach(() => {
     'schema:assign': vi.fn(async () => ({ ok: true, value: null })),
     'property:delete': vi.fn(async () => ({ ok: true, value: null })),
     'views:save': saveSpy,
-    'row-menu': vi.fn(async () => null),
+    'row-menu': vi.fn(async () => ok(null)),
     'error:show': vi.fn(async () => {}),
   })
   useSession.setState({

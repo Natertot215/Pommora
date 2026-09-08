@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { NavRowMenu } from './NavList'
@@ -28,7 +29,7 @@ beforeEach(() => {
       }),
   )
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'row-menu': popup,
+    'row-menu': async (req: unknown) => ok(await (popup as (r: unknown) => Promise<unknown>)(req)),
   })
   host = document.createElement('div')
   document.body.appendChild(host)

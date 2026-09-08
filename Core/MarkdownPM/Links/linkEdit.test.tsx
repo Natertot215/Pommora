@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { type ConnMenuAction, connMenuModel } from '@pommora/core/MarkdownPM/Links/connMenu'
@@ -16,7 +17,7 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
-stubEditorBridge({ 'row-menu': connMenu })
+stubEditorBridge({ 'row-menu': async (req: unknown) => ok(await connMenu(req)) })
 
 beforeEach(() => {
   connMenu.mockReset()

@@ -1,4 +1,5 @@
 import { machine } from '../Platform/machine'
+import { valueOr } from '../Contract/result'
 import { newId } from './ids'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { asString } from './coerce'
@@ -11,7 +12,7 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
   const read = await readJsonStrict(path)
   // A nexus.json that exists but can't be read must not be re-minted over — the id it holds keys the asset folders. The session runs on a throwaway id, nothing is written, and the next open reads the real one.
   if (!read.ok && read.error.code !== 'not-found') return { id: newId(), created: false }
-  const existing = read.ok ? read.value : null
+  const existing = valueOr(read, null)
   const existingId = existing && asString(existing.id)
   if (existing && existingId) return { id: existingId, created: false }
 

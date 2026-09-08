@@ -1,5 +1,7 @@
 // Every push the host bridge makes into the running session. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
 import { useEffect } from 'react'
+import { valueOr } from '@pommora/core/Contract/result'
+import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
@@ -23,7 +25,9 @@ export function useBridgeSubscriptions(): void {
   useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
 
   useEffect(() => {
-    void dialer().ask('assets:map').then(applyAssetMap)
+    void dialer()
+      .ask('assets:map')
+      .then((r) => applyAssetMap(valueOr(r, EMPTY_ASSET_MAP)))
     return dialer().on('assets:changed', (map) => applyAssetMap(map))
   }, [applyAssetMap, nexusRoot])
 

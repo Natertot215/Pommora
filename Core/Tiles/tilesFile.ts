@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { knownTile, mintSeed, TILE_KINDS, type TileHostRef } from './tiles'
-import { errText, fail, ok, type Result } from '../Contract/result'
+import { errText, fail, ok, type Result, valueOr } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '../Properties/propertyValue'
 import { normalizeTitle } from '../Connections/connections'
@@ -112,7 +112,7 @@ export async function duplicateTile(dir: string, tileId: string): Promise<string
   if (TILE_KINDS[entry.type].fileBacked) {
     const body = await readMarkdownTile(dir, tileId)
     if (!body.ok && body.error.code !== 'not-found') throw new Error(body.error.message)
-    await atomicWriteFile(tileFilePath(dir, id), body.ok ? body.value : '')
+    await atomicWriteFile(tileFilePath(dir, id), valueOr(body, ''))
   }
   const copy = copyEntry({ ...(src as Record<string, unknown>), id })
   await setTiles(dir, (tiles) => [...tiles, copy])

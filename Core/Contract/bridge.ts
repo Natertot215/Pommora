@@ -29,15 +29,15 @@ interface PickFileOptions {
 
 /** `args` labels become the derived dialer's parameter names. */
 export interface Asks {
-  'nexus:state': { args: []; reply: NexusState }
+  'nexus:state': { args: []; reply: Result<NexusState> }
   'nexus:choose': { args: []; reply: Result<boolean> }
   'nexus:openPath': { args: [path: string]; reply: Result<boolean> }
   'nexus:rename': { args: [newName: string]; reply: Result<null> }
-  'clipboard:write': { args: [text: string]; reply: undefined }
+  'clipboard:write': { args: [text: string]; reply: Result<null> }
   // A chord matched on keydown has no `clipboardData` of its own; read is its door to a paste.
-  'clipboard:read': { args: []; reply: string }
-  'path:reveal': { args: [nexusRelativePath: string]; reply: undefined }
-  'assets:map': { args: []; reply: AssetMap }
+  'clipboard:read': { args: []; reply: Result<string> }
+  'path:reveal': { args: [nexusRelativePath: string]; reply: Result<null> }
+  'assets:map': { args: []; reply: Result<AssetMap> }
   // `null` is a cancelled dialog, not a failure.
   'assets:chooseDir': {
     args: [scope?: 'nexus' | 'property', at?: string]
@@ -58,27 +58,27 @@ export interface Asks {
   'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
   'history:clear': { args: []; reply: Result<number> }
 
-  'folds:get': { args: []; reply: Record<string, string[]> }
+  'folds:get': { args: []; reply: Result<Record<string, string[]>> }
   'folds:set': { args: [pageId: string, keys: string[]]; reply: Result<null> }
-  'viewOrders:get': { args: []; reply: Record<string, string[]> }
+  'viewOrders:get': { args: []; reply: Result<Record<string, string[]>> }
   'viewOrders:set': { args: [viewId: string, order: string[]]; reply: Result<null> }
-  'embedHeights:get': { args: []; reply: Record<string, Record<string, number>> }
+  'embedHeights:get': { args: []; reply: Result<Record<string, Record<string, number>>> }
   'embedHeights:set': {
     args: [pageId: string, heights: Record<string, number>]
     reply: Result<null>
   }
-  'embedZooms:get': { args: []; reply: Record<string, Record<string, number>> }
+  'embedZooms:get': { args: []; reply: Result<Record<string, Record<string, number>>> }
   'embedZooms:set': {
     args: [pageId: string, zooms: Record<string, number>]
     reply: Result<null>
   }
-  'tableHeadingCols:get': { args: []; reply: Record<string, number[]> }
+  'tableHeadingCols:get': { args: []; reply: Result<Record<string, number[]>> }
   'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
-  'headingIcon:get': { args: []; reply: Record<string, boolean> }
+  'headingIcon:get': { args: []; reply: Result<Record<string, boolean>> }
   'headingIcon:set': { args: [pageId: string, hidden: boolean]; reply: Result<null> }
-  'citations:get': { args: []; reply: Record<string, boolean> }
+  'citations:get': { args: []; reply: Result<Record<string, boolean>> }
   'citations:set': { args: [pageId: string, shown: boolean | null]; reply: Result<null> }
-  'aliases:get': { args: []; reply: Record<string, string[]> }
+  'aliases:get': { args: []; reply: Result<Record<string, string[]>> }
   'aliases:set': { args: [pageId: string, aliases: string[]]; reply: Result<null> }
 
   'views:save': {
@@ -188,15 +188,15 @@ export interface Asks {
     reply: Result<{ id: string }>
   }
 
-  'subfield:get': { args: []; reply: SubfieldConfig | null }
+  'subfield:get': { args: []; reply: Result<SubfieldConfig | null> }
   'subfield:set': { args: [config: SubfieldConfig]; reply: Result<null> }
-  'navViewModes:get': { args: []; reply: NavViewModes | null }
+  'navViewModes:get': { args: []; reply: Result<NavViewModes | null> }
   'navViewModes:set': { args: [modes: NavViewModes]; reply: Result<null> }
   'personalization:set': {
     args: [key: keyof Personalization, value: Personalization[keyof Personalization]]
     reply: Result<null>
   }
-  'theme:systemAccent': { args: []; reply: string | null }
+  'theme:systemAccent': { args: []; reply: Result<string | null> }
 
   'nav:read': { args: []; reply: Result<NavigationState> }
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
@@ -218,24 +218,21 @@ export interface Asks {
   // `.trash` is outside the watcher, so the browser asks again after every action it takes.
   'trash:list': { args: []; reply: Result<TrashRow[]> }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
-  'delete:facts': { args: []; reply: { trashMode: TrashMode; permanentDelete: boolean } }
-  // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
-  'trash:report': { args: [message: string, detail: string]; reply: void }
+  'delete:facts': { args: []; reply: Result<{ trashMode: TrashMode; permanentDelete: boolean }> }
+  'trash:report': { args: [message: string, detail: string]; reply: Result<null> }
 
   mutate: { args: [req: MutateRequest]; reply: MutateReply }
-  // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
-  'error:show': { args: [message: string]; reply: void }
-  // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
-  'link:open': { args: [url: string]; reply: void }
+  'error:show': { args: [message: string]; reply: Result<null> }
+  'link:open': { args: [url: string]; reply: Result<null> }
   'webGuestZoom:set': { args: [guestId: number, factor: number]; reply: Result<null> }
   'webGuestMedia:pause': { args: [guestId: number]; reply: Result<null> }
-  'linkTitles:get': { args: []; reply: Record<string, string> }
+  'linkTitles:get': { args: []; reply: Result<Record<string, string>> }
   'linkTitles:fetch': { args: [url: string]; reply: Result<{ title: string | null }> }
 
-  'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: string | null }
+  'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: Result<string | null> }
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
-  'nexus:pasteImage': { args: []; reply: string | null }
-  'row-menu': { args: [req: RowMenuRequest]; reply: string | null }
+  'nexus:pasteImage': { args: []; reply: Result<string | null> }
+  'row-menu': { args: [req: RowMenuRequest]; reply: Result<string | null> }
 }
 
 export interface Tells {

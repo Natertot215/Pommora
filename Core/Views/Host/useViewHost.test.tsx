@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -120,7 +121,7 @@ beforeEach(() => {
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   channels = {
     'view:loadValues': async () => ({ ok: true, value: VALUES }),
-    'viewOrders:get': async () => ({}),
+    'viewOrders:get': async () => ok({}),
     'views:save': saveSpy,
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
