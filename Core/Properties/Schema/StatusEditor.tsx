@@ -26,7 +26,7 @@ import * as s from '@pommora/uix/Menus/frames.css'
 import { heading } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '@pommora/core/Actions/optionMenu'
 
 export function StatusEditor({
@@ -82,7 +82,7 @@ export function StatusEditor({
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
   const openMenu = async (value: string, name: string): Promise<void> => {
-    const action = await popRowMenu(optionMenuModel())
+    const action = await popMenu(optionMenuModel())
     if (action === 'option:rename') setRenaming(value)
     else if (action === 'option:remove') {
       if (await askRemoveOption(name)) onRemoveOption(value)

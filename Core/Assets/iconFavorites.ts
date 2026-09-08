@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useSession } from '../Session/store'
 import type { IconFavorites } from '@pommora/uix/Pickers/IconPicker'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { iconFavoriteMenuItems } from '@pommora/core/Actions/identityMenus'
 
 const NONE: string[] = []
@@ -13,5 +13,5 @@ export function useIconFavorites(): IconFavorites {
     (next: string[]) => setPersonalization('favoriteIcons', next.length ? next : undefined),
     [setPersonalization],
   )
-  return { ids, onChange, onMenu: (isFavorite) => popRowMenu(iconFavoriteMenuItems(isFavorite)) }
+  return { ids, onChange, onMenu: (isFavorite) => popMenu(iconFavoriteMenuItems(isFavorite)) }
 }

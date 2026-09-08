@@ -3,7 +3,7 @@ import { valueOr } from '@pommora/core/Contract/result'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function useNexusIcon() {
@@ -17,7 +17,7 @@ export function useNexusIcon() {
   const closeEditor = (): void => setEditing(false)
 
   const openMenu = async (): Promise<void> => {
-    const action = await popRowMenu(
+    const action = await popMenu(
       nexusIconMenuItems({ hasPhoto: !!profileImage, hasGlyph: !!profileIcon }),
     )
     if (action === 'changeIcon') setPickerOpen(true)

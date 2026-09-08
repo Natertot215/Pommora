@@ -10,7 +10,7 @@ import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { SEGMENT_INDEX_ATTR } from '@pommora/uix/Fields/SegmentRun'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 
 export function fileChipIndex(target: EventTarget | null): number | null {
   const el = target instanceof Element ? target.closest(`[${SEGMENT_INDEX_ATTR}]`) : null
@@ -118,6 +118,6 @@ export async function fileValueMenu(
   commit: (next: PropertyValue | null) => void,
 ): Promise<void> {
   const chip = fileChipIndex(target)
-  const action = await popRowMenu(cellMenuModel({ kind: 'file', onChip: chip !== null }))
+  const action = await popMenu(cellMenuModel({ kind: 'file', onChip: chip !== null }))
   if (action) runFileMenuAction(action, def, current, chip, commit)
 }

@@ -42,7 +42,7 @@ import {
   settingsBtnActive,
 } from '@pommora/uix/Elements/action-band.css'
 import * as s from './view-tile.css'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
@@ -348,7 +348,7 @@ export function ViewTile({
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await popRowMenu(embedTitleMenuItems(iconShown, titleLevel))
+    const action = await popMenu(embedTitleMenuItems(iconShown, titleLevel))
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
     else if (action === 'change-icon') {
       menuAnchorRef.current = titleIconRef.current
@@ -362,7 +362,7 @@ export function ViewTile({
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await popRowMenu(
+    const action = await popMenu(
       embedAreaMenuItems({ viewStyle: dropdown ? 'dropdown' : 'toolbar', titleShown }),
     )
     if (action === 'show-title') patchEntry({ title: undefined })
@@ -375,7 +375,7 @@ export function ViewTile({
     e.stopPropagation()
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await popRowMenu(
+    const action = await popMenu(
       viewRowMenuItems({ titlesShown: labeled, deletable: entry.views.length > 1 }),
     )
     switch (action) {

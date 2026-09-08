@@ -23,9 +23,9 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
-import { popRowMenu, useNativeMenus } from '../Actions/nativeMenus'
+import { popMenu, useNativeMenus } from '../Actions/menuActions'
 import { NativePickerContext } from '@pommora/uix/Pickers/PickerControl'
-import { RowMenuHost } from './Menus/RowMenuHost'
+import { MenuPresenter } from './Menus/MenuPresenter'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -72,7 +72,7 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useBridgeSubscriptions()
-  const nativePicker = useNativeMenus() ? popRowMenu : null
+  const nativePicker = useNativeMenus() ? popMenu : null
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -181,7 +181,7 @@ export function App(): React.JSX.Element {
         {status === 'ready' && <SettingsWindow />}
         {status === 'ready' && <IterationWindow />}
         <ConfirmationWindow />
-        <RowMenuHost />
+        <MenuPresenter />
         <NotificationLabel />
         {status === 'ready' && <GlancePane />}
         {status === 'ready' && inspectorOpen && (

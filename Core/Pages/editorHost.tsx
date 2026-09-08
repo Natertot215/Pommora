@@ -10,7 +10,7 @@ import { mapWarmSeam, type WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, useSession } from '../Session/store'
 import { readPageDetail } from '../Session/pageDetailCache'
 import { host } from '../Platform/dialer'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { cancelGlance, closeGlance, insideGlance } from '../Interface/Glance/glanceAction'
 import { glanceLink } from '../Interface/Glance/glanceLink'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
@@ -86,9 +86,9 @@ function buildEditorHost(
       },
     },
     menus: {
-      grip: (ctx) => popRowMenu(gripMenuItems(ctx)),
-      table: (ctx) => popRowMenu(tableMenuItems(ctx)),
-      citation: (ctx) => popRowMenu(citationMenuModel(ctx)),
+      grip: (ctx) => popMenu(gripMenuItems(ctx)),
+      table: (ctx) => popMenu(tableMenuItems(ctx)),
+      citation: (ctx) => popMenu(citationMenuModel(ctx)),
       format: inert ? undefined : nativeEditorMenu,
       gripHot: (hot) => host().tell('editor:grip-hot', hot),
     },

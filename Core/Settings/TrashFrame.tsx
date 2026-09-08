@@ -20,7 +20,7 @@ import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
 import type { DateFormat } from '@pommora/core/Properties/columnStyles'
 import '../Navigation/nav-list.css'
@@ -154,7 +154,7 @@ export function TrashFrame(): React.JSX.Element {
   }
 
   const openColumnMenu = async (): Promise<void> => {
-    const action = await popRowMenu(trashColumnMenuItems({ format: dateFormat, timeShown }))
+    const action = await popMenu(trashColumnMenuItems({ format: dateFormat, timeShown }))
     if (!action) return
     if (action === 'toggleTime') setPersonalization('trashHideTime', timeShown ? true : undefined)
     else {
@@ -170,7 +170,7 @@ export function TrashFrame(): React.JSX.Element {
     const targets = batch ? inSet : [row]
     const homeless = !batch && !row.homeResolves
     const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
-    const action = await popRowMenu(
+    const action = await popMenu(
       trashMenuItems({
         batch,
         ...(homeless
