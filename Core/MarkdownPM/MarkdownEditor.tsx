@@ -20,7 +20,7 @@ import {
   blockquoteDragExtension,
   calloutDragExtension,
 } from './Gestures/blockDrag'
-import { HOT_MENU_LINES, gripMenu } from './Menus/gripMenu'
+import { gripMenu } from './Menus/gripMenu'
 import {
   type EmbedHeightsApi,
   embedExclusions,
@@ -235,11 +235,7 @@ export function MarkdownEditor({
       listDragExtension,
       listRenumberOnDelete,
       blockHandles,
-      blockGripHover((line) =>
-        hostRef.current.menus.gripHot(
-          !!line && HOT_MENU_LINES.some((c) => line.classList.contains(c)),
-        ),
-      ),
+      blockGripHover(),
       blockDragExtension,
       calloutDragExtension,
       blockquoteDragExtension,

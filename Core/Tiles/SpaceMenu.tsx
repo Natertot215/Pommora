@@ -47,7 +47,6 @@ export function SpaceMenu(): React.JSX.Element | null {
   const solid = resolved === 'default' ? null : cellColor(resolved)
 
   const openHeaderMenu = async (e: React.MouseEvent): Promise<void> => {
-    // Main pops its own editor menu for ANY editable target and a renderer preventDefault can't suppress it, so the gesture stays yielded mid-rename — two menus over one field would lose both picks.
     if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
     e.preventDefault()
     e.stopPropagation()

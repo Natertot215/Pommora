@@ -16,7 +16,7 @@ class GripWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = 'md-bq-grip'
+    el.className = 'md-blockquote-grip'
     el.setAttribute('aria-hidden', 'true')
     return el
   }
@@ -37,20 +37,14 @@ export const blockHandles = EditorView.decorations.compute(['doc'], (state) => {
   return Decoration.set(ranges, true)
 })
 
-// Grips can't self-hover, so `md-grip-hot` is toggled here whenever the pointer sits in the gutter strip of any line in a grippable block. `onHotChange` reports the HOVERED line, which is what the host's hot-grip flag needs.
-export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void): Extension {
+// Grips can't self-hover, so `md-grip-hot` is toggled here whenever the pointer sits in the gutter strip of any line in a grippable block.
+export function blockGripHover(): Extension {
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
     if (next === hotLine) return
     hotLine?.classList.remove('md-grip-hot')
     next?.classList.add('md-grip-hot')
     hotLine = next
-  }
-  let reported: HTMLElement | null = null
-  const report = (line: HTMLElement | null): void => {
-    if (line === reported) return
-    reported = line
-    onHotChange?.(line)
   }
   // blockAt parses the doc, so resolve the block only when the hovered doc-line changes.
   let cachedFrom = -1
@@ -73,7 +67,6 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
       mousemove(e, view) {
         if (e.clientX >= columnLeft(view)) {
           setHot(null)
-          report(null)
           return
         }
         const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
@@ -81,7 +74,6 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
         const hovered = lineFrom == null ? null : lineElementAt(view, lineFrom)
         if (pos == null || lineFrom == null || !hovered) {
           setHot(null)
-          report(null)
           return
         }
         if (lineFrom !== cachedFrom) {
@@ -91,11 +83,9 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
             block && GRIP_BLOCKS.has(block.kind) ? view.state.doc.lineAt(block.from).from : -1
         }
         setHot(cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom))
-        report(hovered)
       },
       mouseleave() {
         setHot(null)
-        report(null)
       },
     }),
   ]

@@ -237,7 +237,6 @@ export interface Tells {
   'editor:format-state': [state: FormatState]
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
-  'editor:grip-hot': [on: boolean]
   // Handed to the guest a host-owned pointer covers — the only way it can still scroll beneath it.
   'web:wheel': [guestId: number, x: number, y: number, deltaX: number, deltaY: number]
 }
