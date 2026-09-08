@@ -3,8 +3,6 @@ import { keyValueStore } from './stores'
 
 export type Scope =
   | 'folds'
-  | 'activeView'
-  | 'viewOrder'
   | 'headingCols'
   | 'headingIcon'
   | 'citations'

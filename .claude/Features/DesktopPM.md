@@ -35,7 +35,7 @@ Right-click menus are native and pop from the host. `rowMenu.ts` is the one popp
 
 ### Config
 
-`Desktop/Config/appConfig.ts` reads and writes `pommora.json` in the app's own support folder — the last Nexus opened, the recent list, the trash mode, the shell's pane widths, and Use Native Menus. It belongs to the app rather than to any Nexus, so it holds no matter which one is open. `interfaceScale.ts` maps the Interface Scale setting onto Electron's zoom factor.
+`Desktop/Config/appConfig.ts` reads and writes `pommora.json` in the app's own support folder — the last Nexus opened, the recent list, and the trash mode. It belongs to the app rather than to any Nexus, so it holds no matter which one is open. `interfaceScale.ts` maps the Interface Scale setting onto Electron's zoom factor.
 
 ### Packaging
 

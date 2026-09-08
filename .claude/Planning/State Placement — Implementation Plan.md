@@ -1,6 +1,6 @@
 ## State Placement — Implementation Plan
 
-> **Status:** in execution — Phase 1 landed, Phase 2 next · Spec: the D-1 ruling, 09-07-2026, restated under **The Rule** below · Execute tasks in order.
+> **Status:** in execution — every task landed; Gates 1–4 carry unticked boxes and the closeout is owed · Spec: the D-1 ruling, 09-07-2026, restated under **The Rule** below · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -664,9 +664,10 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 **Verify — Automated**
 
-- [ ] The whole Dead Vocabulary sweep at zero against its control.
-- [ ] `rg -nF "'activeView'" Core` → 0 and `rg -nF "'viewOrder'" Core` → 0. Control: `rg -nF "'folds'" Core` → 15.
-- [ ] Full gate green, and one smoke launch on a Nexus whose scopes are already empty.
+- [x] The whole Dead Vocabulary sweep at zero against its control.
+- [x] `rg -nF "'activeView'" Core` → 1, the live tree-node field name at `treePatch.ts:495`, and `rg -nF "'viewOrder'" Core` → 0. Control: `rg -nF "'folds'" Core` → 24.
+- [x] Full gate green.
+- [x] One smoke launch on a Nexus whose scopes are already empty: the open completed, the sidebar painted, the main log carried no "Restore skipped" and no import line, and the renderer reported `localStorage.length` 0.
 
 **Verify — User**
 
@@ -674,12 +675,12 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 #### Gate 5 — nothing left with nothing to vary
 
-- [ ] **Declared stop.** This phase opens only once the user has confirmed, against the real Nexus, that a chosen view, a dragged order, the pane widths, and the sidebar's folds all came across.
-- [ ] Gate commands green, exit codes read directly.
-- [ ] The hazard window Task 2 opened is closed here.
-- [ ] Simplification, then code review, dispatched against `<base>..HEAD`.
+- [x] **Declared stop.** This phase opens only once the user has confirmed, against the real Nexus, that a chosen view, a dragged order, the pane widths, and the sidebar's folds all came across.
+- [x] Gate commands green, exit codes read directly.
+- [x] The hazard window Task 2 opened is closed here.
+- [x] Simplification, then code review, dispatched against `7096dcb2c..HEAD`.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Every document in Made False rewritten in the commit that falsified it.
+- [x] Every document in Made False rewritten in the commit that falsified it.
 
 ---
 
@@ -700,7 +701,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - [ ] **Phase 4** — Window size into the device store
   - [x] Task 7 — UIX takes the size as a prop; Core remembers it
 - [ ] **Phase 5** — Residue
-  - [ ] Task 8 — Delete the imports and the homes they emptied
+  - [x] Task 8 — Delete the imports and the homes they emptied
 
 ### Rulings
 
@@ -784,6 +785,11 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **A window move writes nothing only once a size is stored.** UIX reports on every drop, a move included, and the hook compares against the stored entry — so the first drop on a window with no entry writes its opening size once, and every drop after it writes nothing. That is the ruled shape, not a gap: no guard was added, because the alternative is UIX deciding what a size change is, which is the decision the prop was created to move to Core.
 - **The `WindowBase` `id` prop had a seventh caller outside Core.** `Showcase/Leaves/PanesLeaf.tsx:47` passed `id="showcase-settings"`; the prop is dropped there and no size is handed in, which is what a static showcase pane wants. `npm run typecheck` does not cover `Showcase/`, so the count control `rg -nF WindowBase Core` → 18 would not have caught it.
 
+- **`rg -nF "'activeView'" Core` lands at 1, not 0.** `activeView` is the live tree-node field the sidecar's `active_view` maps onto (`Core/Nexus/tree.ts:50,62`, `containerFields.ts:47`), so `treePatch.ts:495`'s `'activeView' in patch` is a quoted hit the sweep cannot clear and must not delete. `'viewOrder'` reaches 0 cleanly. The `'folds'` control reads 24 against the 15 recorded at the Gate 1 hold; eleven of those are the Engine Boundary arc's shared store-contract suite (`Core/Testing/storesContract.ts`, landed at `588b37bcf`), and nothing in this arc moved the scope. `devicePrefs` in Core reads 39.
+- **Three of `localState.test.ts`'s cases were keyed on the retiring scopes, and two of them still earn their place.** `writeKey(scope, key, null)` and `readScope` both keep live non-test callers (`Core/Interface/handlers.ts:19,29`, `Core/Web/handlers.ts:15,37`), so the empty-scope read and the null-clear were re-keyed onto `embedZooms` and `headingIcon` rather than deleted. The third, "rewriting a key replaces it in place," is what the `aliases` case two lines above it already proves, and it went with the scope.
+- **`devicePrefsSeed.test.ts` gave up its whole `beforeEach`.** The `localStorage.clear()` was its only statement and the `expect(localStorage.length).toBe(0)` its only other browser read; the case title claiming "and nothing to the browser" went with them, since there is no browser home left to be counted against.
+- **`.claude/Features` corrections reached beyond the enumeration pattern.** `CorePM.md`'s persistence tables placed the pane widths and sidebar folds in the app config outside every Nexus, and `DesktopPM.md:38` credited `pommora.json` with "the shell's pane widths, and Use Native Menus" — neither of which that file has ever held (`AppConfig` is `lastNexusPath`, `recents`, `trashMode`). `ViewTypesPM.md:67` also claimed the manual order "drops on any fresh tree"; the reset keys on `source.id` and `view.id`, and the catch-up at `useViewHost.ts:101` retires the override like the other three.
+
 ### Lessons
 
 - Every count in the plan's first draft was wrong. Two causes: `rg -F` was paired with a `|` alternation, which matches the literal pipe and returns nothing; and file counts from an earlier grep were carried forward as if they were line counts. Both are recorded in the Global Constraints and route to `.claude/Guidelines` at closeout.
@@ -792,7 +798,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 - `UIX/Windows/window-panel.tsx:14` keeps the module-map-keyed-by-window-id pattern Task 7 deletes from `window-base.tsx`. The ruling places panel width nowhere, so it stays session-only and out of scope here — but after Phase 4 it is the last one of its kind in UIX.
 - `manual_order` on disk is an array of page ids with no validator and no sweep. Task 4 closes the one producer of stale entries that exists today (remint), but every future mechanism that copies, restores, or imports a container — `Sync/`, the mobile companion — inherits the same exposure. A reader-side reconciliation, or a sweep at open, belongs to whichever of those lands first.
-- Four modules now hold their own recursive visit of the tree's container nodes: `collectionFolders` (`Properties/assignment.ts:105-109`), `remintLedger`, `watchPatch`, and `importPlacedState`. One engine-safe visitor would carry all four, and `treeIndex` cannot hold it — it is renderer-side.
+- Three modules hold their own recursive visit of the tree's container nodes: `collectionFolders` (`Properties/assignment.ts:105-109`), `remintLedger`, and `watchPatch`. One engine-safe visitor would carry all three, and `treeIndex` cannot hold it — it is renderer-side.
 - `setDevicePref` re-sends the whole singleton on every key, and `disclosure` now grows with the size of the Nexus. That is fine at present scale and worth revisiting if the blob gets large.
 
 ### Closeout

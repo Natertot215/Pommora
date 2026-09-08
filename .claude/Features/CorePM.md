@@ -102,7 +102,7 @@ Autosave belongs to one path-keyed flush registry shared by every editor host: e
 
 **SOURCE:** `Core/Properties/schema.ts` · `Core/Platform/localState.ts` · `Core/Index/indexSeed.ts`
 
-`nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it never syncs: it holds what is true of this computer's session, and what this computer has indexed of the content, rather than the content itself. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, the active view and manual order per container, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the window tab sets, the recents stream, the record baseline, the glance pane size, and device preferences — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `memberships`, `indexed_files`) records which pages mention which titles, which governed keys and values each page carries, and which Spaces each page tags under which Context key, the Space titles normalized as resolution matches them. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
+`nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it never syncs: it holds what is true of this computer's session, and what this computer has indexed of the content, rather than the content itself. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the window tab sets, the recents stream, the record baseline, the glance pane size, and device preferences — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `memberships`, `indexed_files`) records which pages mention which titles, which governed keys and values each page carries, and which Spaces each page tags under which Context key, the Space titles normalized as resolution matches them. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
 
 The schema grows without migrations — additive tables reach existing files on open — and a version mismatch on an existing table's shape deletes the file and starts clean, costing a machine its chrome once while the index reseeds from the corpus; the index carries its own generation, so a change to what it records drops the index alone. On the file side, nothing on disk carries a schema version: sidecars decode loosely, a version key an outside tool adds survives as a foreign key, and `settings.json` is written into existence by the first write that needs it, every read tolerating its absence.
 
@@ -135,6 +135,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Property definitions and their order | `properties.json` | Editing the registry |
 | Top-level Collection order | `state.json` | Reordering |
 | Saved views and what a container is | Each container's own sidecar | Editing the view; deleting the container |
+| Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering |
 | Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page |
 
 **Stays on this machine, inside the Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs; it holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history.
@@ -144,7 +145,6 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Tabs | The open set, which was active, and each tab's Back/Forward history as bare refs | Closing a tab; a schema-version change |
 | Folds | Which headings and lists are collapsed, per page | Unfolding; emptying the list deletes the row |
 | Embed heights · heading columns · header glyph · footnotes | Per-page editor chrome — a tile's dragged height and Scale, a table's heading column, whether the page shows its icon or its footnotes | Changing it back |
-| Active view and manual page order | Which saved view a container opens on, and the hand order inside it | Picking another view; reordering |
 | Preview and NavWindow tab sets | The floating window's tabs per origin page, and which preview was open | Closing the last tab of a set |
 | Recents | The navigation trail, most recent first, capped by roll-off | Roll-off |
 | Content index | Which titles each page mentions, the governed values each page carries, the Spaces it tags, and the mtime and size it was read at | The next open re-indexes any file whose mtime or size moved; an index-generation change drops it whole |
@@ -153,14 +153,13 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Aliases | The names each page has been given, for the picker | Forgetting one from the picker |
 | Page snapshots (`versions.db`) | The text each page held before an edit, after a burst settled, or before a restore | The History Timeframe sweep at open; deleting a row from the History window; Clear History, which also gives the file's bytes back |
 | The record baseline | What the last open saw, for the deletion record | The next open |
-| Use Native Menus | The one machine-level preference | Toggling it |
+| Device preferences | Use Native Menus, the Sidebar and Inspector widths, which sidebar sections are open, and the size each floating window was left at | Toggling or dragging them; an out-of-range width self-corrects on read |
 
 **Stays on this computer, outside every Nexus.** Belongs to the app rather than to any Nexus, so it holds no matter which one is open.
 
 | State | What it remembers | What clears it |
 | --- | --- | --- |
 | The last Nexus opened, the recent Nexus list, and the trash mode | Where to reopen, and what deleting means | Opening another Nexus; the list rolls off at ten |
-| Sidebar and Inspector widths, and which sidebar sections are open | The shell's own proportions | Dragging them; an out-of-range value self-corrects on read |
 | Web sessions | Cookies, logins, and site storage for every embedded page, browser tab, and glance — one shared session | Nothing in the app clears it today |
 
 **Lasts the run.** Held in memory, gone when Pommora closes — the difference between returning to a page and rebuilding it.
