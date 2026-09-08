@@ -95,7 +95,7 @@ const fixture: ActionItem<string>[] = [
     action: 'style',
     separatorBefore: true,
     submenu: [
-      { label: 'Bordered', action: 'style:bordered', checked: true },
+      { label: 'Bordered', action: 'style:bordered', checked: true, stay: true },
       { label: 'Plain', action: 'style:plain', checked: false },
     ],
   },

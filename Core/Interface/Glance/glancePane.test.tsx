@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { bloomOpen } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menu-anchor'
+import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
 import { armGlance, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
 import type { GlanceTarget } from '../../MarkdownPM/api'
@@ -465,6 +466,18 @@ describe('pinned panes (Task 10)', () => {
     escapeAndSettle()
     expect(pinCount()).toBe(1)
     expect(useSession.getState().pinnedGlances[0].pinId).toBe(older)
+  })
+
+  it('Esc closes the newer pin first, over a layer opened between the two', () => {
+    const older = addPin()
+    const between = vi.fn()
+    const layer = pushDismissal({ layer: () => null, dismiss: between, outsidePress: false })
+    addPin({ anchorX: 300 })
+    escapeAndSettle()
+    expect(between).not.toHaveBeenCalled()
+    expect(pinCount()).toBe(1)
+    expect(useSession.getState().pinnedGlances[0].pinId).toBe(older)
+    layer.release()
   })
 
   it('Esc closes a lone locked pin too — R9, Esc is the universal escape hatch', () => {

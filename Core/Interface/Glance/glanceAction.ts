@@ -78,6 +78,7 @@ export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
   }
   // A live pane closes on Shift the same way it closes on Esc — the summon key is the dismiss key.
   const onKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape') return
     if (e.key === 'Shift' && !e.repeat) watch.onEscape()
     else onShift()
   }

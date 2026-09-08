@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
 import { PickerMenu, type PickerDirection } from '@pommora/uix/Pickers/picker-base'
 import { Icon } from '@pommora/uix/Symbols'
@@ -104,6 +104,20 @@ function scrollGuest(
     const id = el?.getWebContentsId?.()
     if (id !== undefined) host().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
   } catch {}
+}
+
+// Esc blooms out the newest still-open active-tab pin, locked or not (R9 — Esc is the universal escape hatch).
+function PinEscape({
+  pinId,
+  active,
+  beginExit,
+}: {
+  pinId: string
+  active: boolean
+  beginExit: (ids: string[]) => void
+}): null {
+  useEscape(active, () => beginExit([pinId]))
+  return null
 }
 
 export function GlancePane(): React.JSX.Element {
@@ -455,12 +469,6 @@ export function GlancePane(): React.JSX.Element {
     </button>
   )
 
-  // Esc blooms out the newest still-open active-tab pin, locked or not (R9 — Esc is the universal escape hatch).
-  const newestPin = pinnedGlances
-    .filter((p) => p.tabId === activeTabId && !exiting.has(p.pinId))
-    .at(-1)
-  useEscape(newestPin !== undefined, newestPin && (() => beginExit([newestPin.pinId])))
-
   return (
     <>
       <PickerMenu
@@ -523,32 +531,34 @@ export function GlancePane(): React.JSX.Element {
       {pinnedGlances
         .filter((p) => p.tabId === activeTabId)
         .map((p) => (
-          <PickerMenu
-            key={p.pinId}
-            glass="window"
-            open={!exiting.has(p.pinId)}
-            enter={false}
-            onExited={() => removePin(p.pinId)}
-            anchorX={p.anchorX}
-            anchorY={p.anchorY}
-            anchorHeight={p.anchorHeight}
-            manageFocus={false}
-            modal={false}
-            origin="center"
-          >
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
-            <div
-              {...{ [GLANCE_BODY_ATTR]: '' }}
-              data-reveal-host
-              className="glance-body"
-              style={{ width: p.size.w, height: p.size.h }}
-              onClick={onFoldClick}
+          <Fragment key={p.pinId}>
+            <PinEscape pinId={p.pinId} active={!exiting.has(p.pinId)} beginExit={beginExit} />
+            <PickerMenu
+              glass="window"
+              open={!exiting.has(p.pinId)}
+              enter={false}
+              onExited={() => removePin(p.pinId)}
+              anchorX={p.anchorX}
+              anchorY={p.anchorY}
+              anchorHeight={p.anchorHeight}
+              manageFocus={false}
+              modal={false}
+              origin="center"
             >
-              {renderPageTile(p.target, glanceWarmSeam(p.target.id, p.target.path))}
-              {pinBtn(p)}
-            </div>
-          </PickerMenu>
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
+              <div
+                {...{ [GLANCE_BODY_ATTR]: '' }}
+                data-reveal-host
+                className="glance-body"
+                style={{ width: p.size.w, height: p.size.h }}
+                onClick={onFoldClick}
+              >
+                {renderPageTile(p.target, glanceWarmSeam(p.target.id, p.target.path))}
+                {pinBtn(p)}
+              </div>
+            </PickerMenu>
+          </Fragment>
         ))}
     </>
   )
