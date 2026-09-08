@@ -685,11 +685,10 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 8. 09-08-2026, Nathan: the tile handle is a control, so its menu takes the trigger path on click and right-click alike, exactly as today. Ruling 1 is about a right-click on content.
 9. 09-08-2026, Nathan: a right-click outside an in-app surface does not close it. An outside left-click closes the whole stack, as the stack does today; Escape closes only the newest layer. No setting.
 10. 09-08-2026, Nathan: raising a floating window on click, with Escape following the raise, stays parked; it is window management, not a menu fix.
+11. 09-08-2026, Nathan, at the Gate 1 stop: the three `solid` pickers keep `solid`, carried through the door as `popMenu(items, trigger, { solid })`; the tile handle menu's root rows carry the glyphs the deleted pane drew; the presenter's levels take the pane width floor the deleted pane had.
 
 ### Open Against Later Tasks
 
-- Task 4 gives the title row an icon and no other root row one; the deleted pane drew glyphs on Link, Style, Scale, Duplicate, Delete. Five `icon:` fields in `tileMenuItems` if Nathan wants them back, at Gate 1.
-- Task 3 dropped `solid` at its three call sites (Chip Style, Card Banner, View Scale pickers); those lists now draw on `SURFACE_FROST` like every other presenter menu. Whether the door carries a glass hint is Nathan's call at Gate 1.
 
 ### Deviations
 
