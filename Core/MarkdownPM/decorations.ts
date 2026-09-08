@@ -38,7 +38,7 @@ class ConnGlyphWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = `md-conn-glyph md-conn-glyph-${this.status}`
+    el.className = `md-connection-glyph md-connection-glyph-${this.status}`
     return el
   }
   ignoreEvent(): boolean {
@@ -67,7 +67,7 @@ class BulletWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = `md-bullet ${GLYPH_CLASS}`
+    el.className = `md-list-bullet ${GLYPH_CLASS}`
     el.textContent = '•'
     return el
   }
@@ -89,7 +89,7 @@ class CheckboxWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const zone = document.createElement('span')
-    zone.className = `md-li-marker ${GLYPH_CLASS}`
+    zone.className = `md-list-checkbox-seat ${GLYPH_CLASS}`
     const box = document.createElement('span')
     box.className = `checkbox${this.checked ? ' checkbox-checked' : ''}`
     if (this.checked) {
@@ -150,20 +150,20 @@ class CodeTagWidget extends WidgetType {
   }
   toDOM(view: EditorView): HTMLElement {
     const el = document.createElement('span')
-    el.className = 'md-cb-lang'
+    el.className = 'codeblock-language'
     const tag = this.name === undefined ? undefined : CODE_TAGS[this.name]
     const label = tag?.label === undefined ? this.name : tag.label
     const resting = label ?? ''
 
     const reach = el.appendChild(document.createElement('span'))
-    reach.className = 'md-cb-reach'
+    reach.className = 'codeblock-reach'
     const slot = el.appendChild(document.createElement('span'))
-    slot.className = 'md-cb-slot'
-    if (tag) slot.appendChild(mark(tag.glyph, 'md-cb-mark'))
-    slot.appendChild(mark(COPY_GLYPH, 'md-cb-copy'))
-    slot.appendChild(mark(CHECK_GLYPH, 'md-cb-done'))
+    slot.className = 'codeblock-mark-slot'
+    if (tag) slot.appendChild(mark(tag.glyph, 'codeblock-mark'))
+    slot.appendChild(mark(COPY_GLYPH, 'codeblock-copy'))
+    slot.appendChild(mark(CHECK_GLYPH, 'codeblock-copied'))
     const name = el.appendChild(document.createElement('span'))
-    name.className = 'md-cb-name'
+    name.className = 'codeblock-name'
     name.textContent = resting
 
     // A press inside the arc is a press on the code it is drawn over; falling through would land on the fence line.
@@ -220,7 +220,7 @@ class OutlinerRailWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = `md-outliner-rail ${this.typeClass}${this.first ? ' md-outliner-first' : ''}${this.last ? ' md-outliner-last' : ''}`
+    el.className = `md-outline-rail ${this.typeClass}${this.first ? ' md-outline-first' : ''}${this.last ? ' md-outline-last' : ''}`
     el.style.setProperty('--rail-level', String(this.level))
     el.setAttribute('aria-hidden', 'true')
     return el
@@ -236,7 +236,7 @@ export class CiteRefWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = 'md-cite-ref'
+    el.className = 'md-citation-reference'
     el.textContent = String(this.ordinal)
     return el
   }
@@ -359,7 +359,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       const spec =
         it.level === undefined
           ? { class: it.className }
-          : { class: it.className, attributes: { style: `--li-level:${it.level}` } }
+          : { class: it.className, attributes: { style: `--list-level:${it.level}` } }
       ranges.push(Decoration.line(spec).range(it.from))
       continue
     }
@@ -421,7 +421,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     if (isActive) {
       ranges.push(
         Decoration.mark({
-          class: internal ? 'md-conn-target' : valid ? 'md-link-url' : 'md-unresolved-syntax',
+          class: internal ? 'md-connection-target' : valid ? 'md-link-url' : 'md-unresolved-syntax',
         }).range(bracketEnd, close[1]),
       )
       if (internal) ranges.push(connGlyph('resolved', bracketEnd + 1))
@@ -440,7 +440,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       // Follows the PIPE, not a title that happens to match: an alias for a page that doesn't exist yet still reads as a link.
       if (open && (pipe || status === 'resolved')) {
         ranges.push(connGlyph(status, tk.range[0] + 2))
-        if (pipe) ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
+        if (pipe)
+          ranges.push(Decoration.mark({ class: 'md-connection-target' }).range(pipe[0], pipe[1]))
       }
       if (status === 'phantom') {
         // Typing is what earns the connection color, not the caret's position, so the field tracks the gesture.

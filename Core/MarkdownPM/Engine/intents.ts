@@ -24,7 +24,7 @@ function calloutNestedQuote(
   return blockquotePrefixRe.test(inner) && isBlockquoteLine(inner)
 }
 
-export const GLYPH_CLASS = 'md-li-glyph'
+export const GLYPH_CLASS = 'md-list-glyph'
 
 const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
 
@@ -56,8 +56,8 @@ export type DecoIntent =
 
 // The rail's x sits on its ANCESTOR's glyph center; ordered / arrow / `+` return null, so no rail is drawn under one.
 function railTypeClass(m: ListMarker): string | null {
-  if (m.kind === 'checkbox') return 'md-outliner-task'
-  if (m.kind === 'bullet' && m.bullet === '-') return 'md-outliner-bullet'
+  if (m.kind === 'checkbox') return 'md-outline-task'
+  if (m.kind === 'bullet' && m.bullet === '-') return 'md-outline-bullet'
   return null
 }
 
@@ -129,10 +129,10 @@ function lineIntentsInto(
       intents.push({
         kind: 'line',
         from: ls,
-        className: `md-bq-in${first ? ' md-bq-in-first' : ''}${last ? ' md-bq-in-last' : ''}`,
+        className: `md-blockquote-nested${first ? ' md-blockquote-nested-first' : ''}${last ? ' md-blockquote-nested-last' : ''}`,
       })
       // The bar is a real element so it sits OVER the fill with its own caps; a fill `::after` would clip one.
-      intents.push({ kind: 'lineWidget', from: ls, className: 'md-bq-in-bar' })
+      intents.push({ kind: 'lineWidget', from: ls, className: 'md-blockquote-nested-bar' })
       base += qm[0].length
     }
   } else if (quoteChromeAt(i)) {
@@ -143,7 +143,7 @@ function lineIntentsInto(
       intents.push({
         kind: 'line',
         from: ls,
-        className: `md-bq${first ? ' md-bq-first' : ''}${last ? ' md-bq-last' : ''}`,
+        className: `md-blockquote${first ? ' md-blockquote-first' : ''}${last ? ' md-blockquote-last' : ''}`,
       })
       base = bm[0].length
     }
@@ -156,7 +156,7 @@ function lineIntentsInto(
     intents.push({
       kind: 'line',
       from: ls,
-      className: `md-cb${fence.role === 'open' ? ' md-cb-first' : ''}${fence.role === 'close' ? ' md-cb-last' : ''}`,
+      className: `codeblock${fence.role === 'open' ? ' codeblock-first' : ''}${fence.role === 'close' ? ' codeblock-last' : ''}`,
     })
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
@@ -170,7 +170,7 @@ function lineIntentsInto(
       intents.push({
         kind: 'lineWidget',
         from: ls,
-        className: 'md-cb-ln',
+        className: 'codeblock-line-number',
         text: String(fence.ordinal),
       })
     return null
@@ -185,21 +185,26 @@ function lineIntentsInto(
   if (scan.citations.mask[i]) {
     const entry = scan.citations.entryAt.get(i)
     if (!entry) return null
-    const dim = entry.ordinal === null ? ' md-cite-dim' : ''
+    const dim = entry.ordinal === null ? ' md-citation-dim' : ''
     const head = i === entry.line
     const contentStart = head ? entry.contentStart : ls
     intents.push({
       kind: 'line',
       from: ls,
-      className: `${head ? 'md-cite' : 'md-cite-cont'}${dim}`,
+      className: `${head ? 'md-citation' : 'md-citation-continued'}${dim}`,
     })
     if (head) {
-      intents.push({ kind: 'lineWidget', from: ls, className: 'md-cite-num', text: glyphOf(entry) })
+      intents.push({
+        kind: 'lineWidget',
+        from: ls,
+        className: 'md-citation-number',
+        text: glyphOf(entry),
+      })
       intents.push({ kind: 'hide', from: ls, to: contentStart })
       intents.push({ kind: 'atomic', from: ls, to: contentStart })
     }
     if (contentStart < le)
-      intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-cite-text' })
+      intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-citation-text' })
     return null
   }
 
@@ -218,7 +223,7 @@ function lineIntentsInto(
   if (li) {
     const contentFrom = ls + base + li.contentStart
     if (contentFrom < le)
-      intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-li-text' })
+      intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-list-text' })
   }
   return li
 }
@@ -358,7 +363,7 @@ function pushConstruct(
           kind: 'class',
           from: innerStart,
           to: contentStart,
-          className: 'md-hmarker',
+          className: 'md-heading-marker',
         })
       if (!caretOnLine) intents.push({ kind: 'hide', from: innerStart, to: contentStart })
     }
@@ -366,7 +371,7 @@ function pushConstruct(
     intents.push({
       kind: 'line',
       from: ls,
-      className: `md-li md-li-task${lm.checked ? ' md-li-done' : ''}`,
+      className: `md-list-item md-list-task${lm.checked ? ' md-list-done' : ''}`,
       level: lm.level,
     })
     if (lm.markerStart > 0)
@@ -401,7 +406,7 @@ function pushConstruct(
     return lm
   } else if (lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box) {
     // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
-    intents.push({ kind: 'line', from: ls, className: 'md-li', level: lm.level })
+    intents.push({ kind: 'line', from: ls, className: 'md-list-item', level: lm.level })
     if (onMarker) {
       if (lm.markerStart > 0)
         intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
@@ -420,14 +425,14 @@ function pushConstruct(
     }
     return lm
   } else if (lm?.kind === 'arrow' || (lm?.kind === 'bullet' && lm.bullet === '+' && !lm.box)) {
-    intents.push({ kind: 'line', from: ls, className: 'md-li', level: lm.level })
+    intents.push({ kind: 'line', from: ls, className: 'md-list-item', level: lm.level })
     if (lm.markerStart > 0)
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
     intents.push({
       kind: 'class',
       from: innerStart + lm.markerStart,
       to: innerStart + lm.markerEnd,
-      className: `md-li-mark md-control ${GLYPH_CLASS}`,
+      className: `md-list-arrow md-control ${GLYPH_CLASS}`,
     })
     intents.push({
       kind: 'hide',
@@ -437,14 +442,19 @@ function pushConstruct(
     return lm
   } else if (lm?.kind === 'ordered') {
     // Literal recolored source, no widget, so typing after the number can't hit an atomic range.
-    intents.push({ kind: 'line', from: ls, className: 'md-li md-li-ordered', level: lm.level })
+    intents.push({
+      kind: 'line',
+      from: ls,
+      className: 'md-list-item md-list-ordered',
+      level: lm.level,
+    })
     if (lm.markerStart > 0)
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
     intents.push({
       kind: 'class',
       from: innerStart + lm.markerStart,
       to: innerStart + lm.markerEnd,
-      className: `md-ol-marker md-control ${GLYPH_CLASS}`,
+      className: `md-list-number md-control ${GLYPH_CLASS}`,
     })
     intents.push({
       kind: 'hide',

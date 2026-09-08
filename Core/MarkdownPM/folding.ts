@@ -34,7 +34,7 @@ const CITATIONS_KEY = '\u0000citations'
 export const HEADING_FOLD_LINE = 'md-heading-fold'
 
 /** Rides the rendered anchor line only when blank — a table's last row is a block widget, and a fence there reads as body. */
-const CITE_DIVIDER_LINE = 'md-cite-divider'
+const CITE_DIVIDER_LINE = 'md-citation-divider'
 
 const persisted = (kind: FoldKind): boolean => kind === 'heading'
 
@@ -328,7 +328,7 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
     } else if (state.doc.lineAt(r.anchorLine).text.trim() === '') {
       ranges.push(
         Decoration.line({
-          class: closed ? `${CITE_DIVIDER_LINE} md-cite-divider-off` : CITE_DIVIDER_LINE,
+          class: closed ? `${CITE_DIVIDER_LINE} md-citation-divider-off` : CITE_DIVIDER_LINE,
         }).range(r.anchorLine),
       )
     }
@@ -363,7 +363,7 @@ export function editAcrossCitations(view: EditorView, shown: boolean, dispatch: 
 
 /** A footnoted document ends AT its footnotes, so it closes on the seam's own gap rather than the editor's typing tail. */
 const citationsTail = EditorView.contentAttributes.compute(['doc'], (state) => ({
-  class: citationsRegion(state.doc) ? 'mdpm-cite-tail' : '',
+  class: citationsRegion(state.doc) ? 'mdpm-citation-tail' : '',
 }))
 
 export function applySavedFolds(view: EditorView, keys: string[]): void {

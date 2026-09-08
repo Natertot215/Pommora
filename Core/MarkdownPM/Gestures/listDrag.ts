@@ -35,7 +35,8 @@ interface Cand {
 // The page wrap boundary, except inside a box, where it is that line's own content-box right — read from the rendered element so the callout's CSS padding owns the width.
 function lineRightEdge(view: EditorView, from: number, fallback: number): number {
   const n = lineElementAt(view, from)
-  if (!n || (!n.classList.contains('md-callout') && !n.classList.contains('md-bq'))) return fallback
+  if (!n || (!n.classList.contains('md-callout') && !n.classList.contains('md-blockquote')))
+    return fallback
   const cs = getComputedStyle(n)
   return (
     n.getBoundingClientRect().right -
@@ -117,7 +118,7 @@ export const listDragExtension: Extension = [
   EditorView.domEventHandlers({
     // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't cancel the compatibility mousedown.
     mousedown(e) {
-      if (e.button === 0 && (e.target as HTMLElement).closest?.('.md-li-glyph')) {
+      if (e.button === 0 && (e.target as HTMLElement).closest?.('.md-list-glyph')) {
         e.preventDefault()
         return true
       }
@@ -125,7 +126,7 @@ export const listDragExtension: Extension = [
     },
     pointerdown(e, view) {
       if (e.button !== 0) return false
-      const glyph = (e.target as HTMLElement).closest?.('.md-li-glyph')
+      const glyph = (e.target as HTMLElement).closest?.('.md-list-glyph')
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
       const doc = docString(view.state.doc)

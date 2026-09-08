@@ -10,10 +10,10 @@ import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { editorHost } from '../api'
 
-export const CITE_GLYPH = '.md-cite-ref'
+export const CITE_GLYPH = '.md-citation-reference'
 
 /** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
-const CITE_ROW_GLYPH = '.md-cite-num'
+const CITE_ROW_GLYPH = '.md-citation-number'
 
 export function loneTarget(
   content: string,
@@ -154,7 +154,7 @@ export function citationRowMenu(): Extension {
     contextmenu(event, view) {
       if (view.state.readOnly) return false
       const line = (event.target as HTMLElement).closest?.(
-        '.cm-line.md-cite, .cm-line.md-cite-cont',
+        '.cm-line.md-citation, .cm-line.md-citation-continued',
       )
       if (!line) return false
       const scan = docScan(view.state.doc)

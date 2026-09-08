@@ -92,7 +92,7 @@ export function renderCellContent(
         n === null ? (
           text.slice(s, e)
         ) : (
-          <span key={key++} className="md-cite-ref" data-cite-label={content}>
+          <span key={key++} className="md-citation-reference" data-cite-label={content}>
             {n}
           </span>
         ),

@@ -68,14 +68,15 @@ globalStyle(':root', {
     '--border-base': c.border.base,
     '--border-light': c.border.light,
     '--border-faint': c.border.faint,
+    '--solid-red': c.solid.red,
     '--solid-orange': c.solid.orange,
     '--solid-yellow': c.solid.yellow,
     '--solid-green': c.solid.green,
     '--solid-light-blue': c.solid.lightBlue,
     '--solid-cyan': c.solid.cyan,
     '--solid-purple': c.solid.purple,
-    '--error': c.solid.red,
-    '--code': `color-mix(in srgb, ${c.solid.red} 85%, transparent)`,
+    '--error': 'var(--solid-red)',
+    '--code': 'color-mix(in srgb, var(--solid-red) 85%, transparent)',
 
     ...Object.fromEntries(
       Object.entries(TINT_STEPS).map(([step, pct]) => [`--tint-${step}`, `${pct}%`]),
