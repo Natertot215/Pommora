@@ -21,7 +21,7 @@ import {
 import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
-import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { type DismissalHandle, pushEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@pommora/core/Connections/connections'
 import '../../Tiles/tile-base.css'
@@ -564,11 +564,8 @@ const editingExit = ViewPlugin.fromClass(
         this.dismissal = null
         return
       }
-      this.dismissal ??= pushDismissal({
-        layer: () => null,
-        dismiss: () => u.view.dispatch({ effects: setEmbedEditing.of(null) }),
-        outsidePress: false,
-      })
+      const { view } = u
+      this.dismissal ??= pushEscape(() => view.dispatch({ effects: setEmbedEditing.of(null) }))
     }
 
     destroy(): void {

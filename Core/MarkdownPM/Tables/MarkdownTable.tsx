@@ -15,7 +15,7 @@ import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
@@ -232,11 +232,7 @@ export function MarkdownTable({
 
   const rect = useMemo(() => (sel ? normRect(sel.a, sel.h) : null), [sel])
 
-  useDismissal(rect !== null, false, {
-    layer: () => null,
-    dismiss: () => setSel(null),
-    outsidePress: false,
-  })
+  useEscape(rect !== null, () => setSel(null))
 
   useEffect(() => {
     if (!rect) return
