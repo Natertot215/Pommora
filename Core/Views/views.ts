@@ -147,7 +147,7 @@ const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
 export type ViewState = Pick<SavedView, (typeof VIEW_STATE_KEYS)[number]>
 
 export function pickViewState(view: SavedView): ViewState {
-  return { collapsed_groups: view.collapsed_groups, manual_order: view.manual_order }
+  return Object.fromEntries(VIEW_STATE_KEYS.map((k) => [k, view[k]])) as ViewState
 }
 
 function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {
