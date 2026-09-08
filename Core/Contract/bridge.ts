@@ -18,7 +18,7 @@ import type {
   PropertyDefinition,
   StatusGroup,
 } from '../Properties/properties'
-import type { RowMenuRequest } from '../Actions/menuModel'
+import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
 
 /** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
@@ -230,7 +230,7 @@ export interface Asks {
   'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: Result<string | null> }
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:pasteImage': { args: []; reply: Result<string | null> }
-  'row-menu': { args: [req: RowMenuRequest]; reply: Result<string | null> }
+  'row-menu': { args: [req: MenuRequest]; reply: Result<string | null> }
 }
 
 export interface Tells {

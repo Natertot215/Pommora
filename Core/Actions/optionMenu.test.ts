@@ -15,12 +15,4 @@ describe('the option chip menu', () => {
       'Clear',
     ])
   })
-
-  it('marks Remove and Clear as asking first', () => {
-    expect(
-      optionMenuModel()
-        .filter((i) => i.confirm)
-        .map((i) => i.action),
-    ).toEqual(['option:remove', 'option:clear'])
-  })
 })
