@@ -25,10 +25,9 @@ const BOUNDS: WindowBounds = { min: { w: 360, h: 280 }, def: { w: 850, h: 600 } 
 
 export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, def: 260, max: 420 }
 
-// A window's size outlives its exit-presence unmount, per window id; it reopens centered.
-const sizes = new Map<string, Size>()
-const opening = (id: string, bounds: WindowBounds): Rect => {
-  const s = sizes.get(id) ?? bounds.def
+// A remembered size may come from a larger display, so the opening rect is centered and then clamped to this viewport.
+const opening = (size: Size | undefined, bounds: WindowBounds): Rect => {
+  const s = size ?? bounds.def
   return onScreen({
     ...s,
     x: Math.round((window.innerWidth - s.w) / 2),
@@ -46,11 +45,13 @@ interface WindowBasePanel {
 }
 
 interface WindowBaseProps {
-  id: string
   closing: boolean
   onClose: () => void
   onEscape?: () => void
   bounds?: WindowBounds
+  /** Absent opens at `bounds.def`. Read once, at open. */
+  initialSize?: Size
+  onSizeChange?: (size: Size) => void
   dragSurfaces?: string
   ariaLabel: string
   className?: string
@@ -72,11 +73,12 @@ interface WindowBaseProps {
 const DRAG_SURFACES = '.window, .window-drag, .window-row, .window-panel'
 
 export function WindowBase({
-  id,
   closing,
   onClose,
   onEscape,
   bounds = BOUNDS,
+  initialSize,
+  onSizeChange,
   dragSurfaces,
   ariaLabel,
   className,
@@ -95,7 +97,7 @@ export function WindowBase({
   children,
 }: WindowBaseProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
-  const [geo, setGeo] = useState(() => opening(id, bounds))
+  const [geo, setGeo] = useState(() => opening(initialSize, bounds))
   useEffect(() => {
     const onResize = (): void => setGeo(onScreen)
     window.addEventListener('resize', onResize)
@@ -104,9 +106,9 @@ export function WindowBase({
   const frame = useResizeFrame({
     rect: geo,
     min: bounds.min,
-    onChange: (next) => {
-      sizes.set(id, { w: next.w, h: next.h })
+    onChange: (next, phase) => {
       setGeo(next)
+      if (phase === 'drop') onSizeChange?.({ w: next.w, h: next.h })
     },
   })
   // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.

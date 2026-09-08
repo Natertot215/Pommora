@@ -603,13 +603,13 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 **Verify — Automated**
 
-- [ ] Red first: a UIX case that an absent `initialSize` opens at `bounds.def`, that a given one opens at that size, and that a drag calls `onSizeChange` exactly once — on drop, not per move. Expect 3 failures.
-- [ ] **The negative control:** with the `phase === 'drop'` guard removed, the once-per-drag case goes red.
-- [ ] A UIX case that a stored size wider or taller than the viewport is clamped by `onScreen`, and that the opening rect is centered. Red with `opening` reduced to a bare `initialSize ?? bounds.def`.
-- [ ] A hook case that a window *move* writes nothing, and that a resize writes one entry under that id leaving sibling ids intact.
-- [ ] The degenerate cases: a press that moves nothing calls back not at all; no stored entry → `initialSize` undefined; a malformed entry is ignored rather than passed through.
-- [ ] `rg -nF 'sizes.set' UIX` → 0 and `rg -n '\bid\b' UIX/Windows/window-base.tsx` → 0. Control: `rg -nF WindowBase Core` → 18.
-- [ ] Full gate green.
+- [x] Red first: a UIX case that an absent `initialSize` opens at `bounds.def`, that a given one opens at that size, and that a drag calls `onSizeChange` exactly once — on drop, not per move. Expect 3 failures.
+- [x] **The negative control:** with the `phase === 'drop'` guard removed, the once-per-drag case goes red.
+- [x] A UIX case that a stored size wider or taller than the viewport is clamped by `onScreen`, and that the opening rect is centered. Red with `opening` reduced to a bare `initialSize ?? bounds.def`.
+- [x] A hook case that a window *move* writes nothing, and that a resize writes one entry under that id leaving sibling ids intact.
+- [x] The degenerate cases: a press that moves nothing calls back not at all; no stored entry → `initialSize` undefined; a malformed entry is ignored rather than passed through.
+- [x] `rg -nF 'sizes.set' UIX` → 0 and `rg -n '\bid\b' UIX/Windows/window-base.tsx` → 0. Control: `rg -nF WindowBase Core` → 18.
+- [x] Full gate green.
 
 **Verify — User**
 
@@ -698,7 +698,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
   - [x] Task 5 — `DevicePrefs` gains its three machine-local shapes, seeded before the paint · `4d6f206a9`
   - [x] Task 6 — The panes and the sidebar read the store, and `localStorage` goes
 - [ ] **Phase 4** — Window size into the device store
-  - [ ] Task 7 — UIX takes the size as a prop; Core remembers it
+  - [x] Task 7 — UIX takes the size as a prop; Core remembers it
 - [ ] **Phase 5** — Residue
   - [ ] Task 8 — Delete the imports and the homes they emptied
 
@@ -776,6 +776,13 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **The two passes share one locked read-modify-write, not two.** `placeActiveView` became `placeState`, taking the chosen view and the container's orders together and writing only when the rebuilt object differs. Nothing forces the single write — two sequential lock takes would both be granted, and the watcher is unarmed during the open, so a second write costs no event; the shape is the task's mandate and the simpler one. Proven by a machine wrapper counting `writeText` against the sidecar: 1 as written, 2 when the `active_view` half is split into its own `writeJson`.
 - **Two of Task 4's cases and one assertion are green-first by construction.** A view id no container claims kept its row before the pass existed, and a refusing container kept its `viewOrder` row for the same reason. The write count inside the both-rows case read 1 before a second write could exist — that case went red on its `manual_order` assertion instead, and the count is carried by its own negative control. The verify box's "expect 3 failures" for one case matched the three that went red across three cases by coincidence, not by its description.
 - **Embedded views are still not reached, and the mechanism is now named.** A row keyed `embed:<entryId>:<slot>` parses to an entry id and a slot, and its home is `tiles[].views[<slot>].config.manual_order` in the holding space's tile document, written through the existing `writeTileDocAt`. Nothing maps an entry id to the space that holds it, so reaching one row costs a `readTileDocAt` per Space on the one open the import runs. Left unimplemented: outside Task 4's written scope.
+
+- **The two tile orders were carried across by hand, and no code was written to do it.** `01KXPEVF3CP9RAEKCJZZBDXXHC` (19 page ids) and `embed:01KXC5QQ9YGM36H0SAH58MFPTE:1` (31) name the two view configs of one homepage tile, so the value had a home and only the importer could not reach it. Both now sit as `manual_order` in `.nexus/homepage/_tiles.json`, where they travel with the Nexus like every other view's. Extending the import to tile documents would have added a per-Space read and about fifteen lines that Task 8 deletes in the same arc; a one-off data move leaves nothing behind. `01KX9GR0GZY1DSVAZN1VQT74JG` names nothing on disk and ends with the scope.
+- **The finding that prompted it.** Checked against the real Nexus: `embed:01KXC5QQ9YGM36H0SAH58MFPTE:1` and the bare-ULID `01KXPEVF3CP9RAEKCJZZBDXXHC` both resolve to entries in `.nexus/homepage/_tiles.json`; `01KX9GR0GZY1DSVAZN1VQT74JG` matches nothing on disk and is dead. Task 4's import is container-keyed, so all three keep their rows, and Task 8 deletes the `Scope` name that makes them readable. The mechanism to reach them is known and small — a row keyed `embed:<entryId>:<slot>` parses to an entry and a slot whose home is `tiles[].views[<slot>].config.manual_order`, written through the existing `writeTileDocAt`; nothing maps an entry id to its holding document, so it costs one `readTileDocAt` per Space on the single open the import runs. It is outside Task 4's ratified scope and is not implemented. Since Task 8 is a declared stop, the choice — carry two tile orders across, or accept their loss — is put to the user there rather than settled here.
+
+- **Task 7's red-first count is 4, not 3, and two of its cases are green-first by construction.** Against the pre-change shape — `initialSize` ignored and `onSizeChange` fired on every phase — the size-handed-in case, the viewport-clamp case, the once-per-drag case, and the move case all went red; the absent-`initialSize` case and the moved-nothing case could not, because a missing map key already resolved to `bounds.def` and `ResizeFrame`'s `onDrop` already refuses a press that moved nothing. Both are kept as the record of behavior that must survive and are carried by the `opening` negative control, which reddens the default case too.
+- **A window move writes nothing only once a size is stored.** UIX reports on every drop, a move included, and the hook compares against the stored entry — so the first drop on a window with no entry writes its opening size once, and every drop after it writes nothing. That is the ruled shape, not a gap: no guard was added, because the alternative is UIX deciding what a size change is, which is the decision the prop was created to move to Core.
+- **The `WindowBase` `id` prop had a seventh caller outside Core.** `Showcase/Leaves/PanesLeaf.tsx:47` passed `id="showcase-settings"`; the prop is dropped there and no size is handed in, which is what a static showcase pane wants. `npm run typecheck` does not cover `Showcase/`, so the count control `rg -nF WindowBase Core` → 18 would not have caught it.
 
 ### Lessons
 
