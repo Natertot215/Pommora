@@ -179,7 +179,6 @@ const syntaxTokens = HighlightStyle.define([
   { tag: t.quote, class: 'syntax-md-quote' },
   { tag: t.special(t.atom), class: 'syntax-md-task' },
   { tag: t.contentSeparator, class: 'syntax-md-rule' },
-  { tag: t.processingInstruction, class: 'syntax-md-mark' },
   { tag: t.labelName, class: 'syntax-md-info' },
 ])
 
