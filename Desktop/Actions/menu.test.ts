@@ -106,6 +106,7 @@ const fixture: ActionItem<string>[] = [
     submenu: [{ label: 'Grid', action: 'layout:grid' }],
   },
   { label: 'Pin', action: 'pin', checked: false, disabled: true },
+  { label: 'Lock', action: 'lock', icon: 'lock-open', stay: true },
   { label: 'Delete', action: 'delete', disabled: true },
 ]
 

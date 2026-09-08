@@ -6,7 +6,7 @@ import { host } from '../Platform/dialer'
 export async function popMenu<A extends string>(
   items: readonly ActionItem<A>[],
   trigger?: HTMLElement | null,
-  options?: { solid?: boolean },
+  options?: { solid?: boolean; stay?: (action: A) => readonly ActionItem<A>[] },
 ): Promise<A | null> {
   const rows = items[0]?.separatorBefore
     ? [{ ...items[0], separatorBefore: false }, ...items.slice(1)]
@@ -20,5 +20,6 @@ export async function popMenu<A extends string>(
     })
     return valueOr(res, null) as A | null
   }
-  return (await useSession.getState().presentMenu(rows, trigger, options?.solid)) as A | null
+  const stay = options?.stay as ((action: string) => readonly ActionItem<string>[]) | undefined
+  return (await useSession.getState().presentMenu(rows, trigger, options?.solid, stay)) as A | null
 }

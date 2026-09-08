@@ -2,6 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { optionSelected } from '@pommora/uix/Pickers/picker-base.css'
 import { useSession } from '../../Session/store'
 import { MenuPresenter } from './MenuPresenter'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -110,6 +112,70 @@ describe('the in-app menu presenter', () => {
     await act(async () => {
       useSession.getState().pendingMenu?.settle(null)
     })
+  })
+
+  it('keeps a stay row’s pane open and redraws it with the rows the handler returns', async () => {
+    let promise!: Promise<string | null>
+    const styleItems = (borderless: boolean): ActionItem<string>[] => [
+      {
+        label: 'Bordered',
+        action: 'style:bordered',
+        checked: !borderless,
+        stay: true,
+      },
+      { label: 'Borderless', action: 'style:borderless', checked: borderless, stay: true },
+    ]
+    const items = (borderless: boolean): ActionItem<string>[] => [
+      { label: 'Style', action: 'style', submenu: styleItems(borderless) },
+      { label: 'Delete', action: 'delete' },
+    ]
+    const stay = vi.fn((action: string) => items(action === 'style:borderless'))
+    await act(async () => {
+      promise = useSession.getState().presentMenu(items(false), trigger, undefined, stay)
+    })
+    await act(async () => {
+      labelled('Style')?.click()
+    })
+    expect(labelled('Bordered')?.className).toContain(optionSelected)
+    await act(async () => {
+      labelled('Borderless')?.click()
+    })
+    expect(stay).toHaveBeenCalledWith('style:borderless')
+    expect(useSession.getState().pendingMenu).not.toBeNull()
+    expect(labelled('Borderless')?.className).toContain(optionSelected)
+    expect(labelled('Bordered')?.className).not.toContain(optionSelected)
+    await act(async () => {
+      useSession.getState().pendingMenu?.settle(null)
+    })
+    await expect(promise).resolves.toBeNull()
+  })
+
+  it('resolves on the first pick that is not a stay row', async () => {
+    let promise!: Promise<string | null>
+    const stay = vi.fn(() => [
+      { label: 'Lock', action: 'lock', stay: true },
+      { label: 'Delete', action: 'delete' },
+    ])
+    await act(async () => {
+      promise = useSession.getState().presentMenu(
+        [
+          { label: 'Lock', action: 'lock', stay: true },
+          { label: 'Delete', action: 'delete' },
+        ],
+        trigger,
+        undefined,
+        stay,
+      )
+    })
+    await act(async () => {
+      labelled('Lock')?.click()
+    })
+    expect(stay).toHaveBeenCalledTimes(1)
+    expect(useSession.getState().pendingMenu).not.toBeNull()
+    await act(async () => {
+      labelled('Delete')?.click()
+    })
+    await expect(promise).resolves.toBe('delete')
   })
 
   it('draws a row’s icon in its leading slot', async () => {

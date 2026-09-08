@@ -5,6 +5,7 @@ export interface ActionItem<A> {
   disabled?: boolean
   checked?: boolean
   icon?: string
+  stay?: boolean
   /** A branch's own `action` is never resolved — the leaf a person lands on is. */
   submenu?: ActionItem<A>[]
 }
