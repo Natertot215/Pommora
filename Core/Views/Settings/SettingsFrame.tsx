@@ -19,9 +19,9 @@ import { LayoutFrame } from './LayoutFrame'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import {
   AccessoryButton,
+  FooterIconButton,
   MenuFooting,
   MenuIndex,
-  FootingItem,
   MenuRowView,
   MenuScrollFrame,
   MenuSeparator,
@@ -185,29 +185,28 @@ export function SettingsFrame(): React.JSX.Element | null {
   )
 
   const footing = (
-    <MenuFooting>
-      <FootingItem
-        icon="scaling"
-        label="Scale"
-        trailing={
-          <PickerControl
-            ariaLabel="View Scale"
-            solid
-            value={String(viewScale)}
-            options={scaleChoices}
-            onPick={(v) => setViewScale(Number(v))}
-            typeable={{
-              text: viewScale.toFixed(2),
-              suffix: 'x',
-              onCommit: (written) => {
-                const factor = Number.parseFloat(written.replace(/x/i, '').trim())
-                if (Number.isFinite(factor)) setViewScale(factor)
-              },
-            }}
-          />
-        }
-      />
-    </MenuFooting>
+    <MenuFooting
+      leading={
+        <PickerControl
+          ariaLabel="View Scale"
+          solid
+          value={String(viewScale)}
+          options={scaleChoices}
+          onPick={(v) => setViewScale(Number(v))}
+          typeable={{
+            text: viewScale.toFixed(2),
+            suffix: 'x',
+            onCommit: (written) => {
+              const factor = Number.parseFloat(written.replace(/x/i, '').trim())
+              if (Number.isFinite(factor)) setViewScale(factor)
+            },
+          }}
+        />
+      }
+      trailing={
+        <FooterIconButton icon="ellipsis" ariaLabel="More actions" onClick={() => {}} disabled />
+      }
+    />
   )
   const plainRoot = <MenuScrollFrame footer={footing}>{root}</MenuScrollFrame>
 

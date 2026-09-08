@@ -29,6 +29,8 @@ export const written = style({ display: 'inline-flex', alignItems: 'center' })
 
 export const caretShape = style([base, { width: 'auto', minWidth: '12px' }])
 
+globalStyle(`${footingBar} ${trigger}`, { flexDirection: 'row-reverse' })
+
 globalStyle(`${footingBar} ${value}`, {
   fontSize: font.scale.footnote.size,
   lineHeight: font.scale.footnote.line,
