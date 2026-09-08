@@ -1,19 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { installStores, NO_STORES } from './stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { readScope, writeKey, readValue, writeValue } from './localState'
 
-let root: string
-beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-local-state-'))
+beforeEach(() => {
   installStores(memoryStores().stores)
 })
-afterEach(async () => {
+afterEach(() => {
   installStores(NO_STORES)
-  await rm(root, { recursive: true, force: true })
 })
 
 describe('keyed scopes', () => {

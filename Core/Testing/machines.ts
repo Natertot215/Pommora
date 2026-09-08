@@ -14,6 +14,8 @@ import {
 import { dirname } from '../Paths/posix'
 import type { DirEntry, FileStat, Machine } from '../Platform/machine'
 
+const sha256Hex = (text: string): string => createHash('sha256').update(text).digest('hex')
+
 export function chainLock(): Machine['lock'] {
   const chains = new Map<string, Promise<unknown>>()
   const heldKeys = new AsyncLocalStorage<ReadonlySet<string>>()
@@ -91,7 +93,7 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
     },
     realpath: async (p) => p,
     lock: chainLock(),
-    sha256Hex: (text) => createHash('sha256').update(text).digest('hex'),
+    sha256Hex,
   }
   return { machine, fs: { files, dirs } }
 }
@@ -153,6 +155,6 @@ export function diskMachine(): Machine {
     utimes: (p, mtimeMs) => utimes(p, mtimeMs / 1000, mtimeMs / 1000),
     realpath,
     lock: chainLock(),
-    sha256Hex: (text) => createHash('sha256').update(text).digest('hex'),
+    sha256Hex,
   }
 }
