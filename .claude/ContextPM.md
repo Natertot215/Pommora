@@ -6,11 +6,14 @@
 
 **Glances went cross-surface.** The hover-preview pane now reaches sidebar rows, tabs, nav-view rows, cards, and table rows — not just editor links — through one Off-gated `armPreview` facade, with a single `previewPersistence` setting (Off / 1s / 5s / 10s / Until Closed) standing in for the old linger slider and enable toggle. Shift arbitrates with the create-ghost on the surfaces that host one (and raises the resting row when pressed at rest), a preview never covers the page already in view, and a right-click can't be clobbered by one. A corner lock pins a page preview into the new `Core/Session/glanceSlice`; pins survive navigation, scroll, and tab-switching, unlock leaves the pane standing, and every close blooms out through `PickerMenu`'s exit presence. 
 
+**State is placed by what it belongs to.** A chosen view and a hand-dragged row order are fields of the container's own sidecar (`active_view`, and `manual_order` on the view record), so both travel with the Nexus to every device. Pane widths, sidebar folds, and floating-window size are nested keys on the `devicePrefs` singleton in `nexus.db` — per machine, per Nexus, and discardable on a schema bump without losing anything authored. `localStorage` holds nothing. Interface Scale and Webpage Zoom remain the deliberate exception in the other direction, staying in the synced settings file because the Nexus defines how it is meant to be read.
+
 The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
 
 - [ ] **Nathan's own pass over the restructured app.** A day on the real Nexus — pages, properties, views, tiles, menus, windows, settings, history, trash — and a flip through `Core`, `UIX`, and `Desktop` to say whether the filing reads the way it was meant to.
+- [ ] **Confirm the recovered view orders hold.** Five hand-dragged orders were moved onto disk by hand after the `viewOrder` import was deleted before it had run: `Ideas` (two views), `Studio` (192 rows), and two homepage tiles. Their `local_state` rows are still present as a safety net and nothing reads them; once the orders are seen to hold, `delete from local_state where scope='viewOrder'` clears the residue.
 
 ### Pending Focuses
 

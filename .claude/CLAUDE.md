@@ -26,7 +26,8 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 ### Hard Rules
 
 - **The host owns the machine.** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place Node and Electron are called; UIX reaches nothing outside itself.
-- **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts` and both sides derive from it; every channel answers with the `Result` envelope (`{ ok: true, value } | { ok: false, error }`, the error structured with a code) and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
+- **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts` and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
+- **The engine never depends on the renderer.** The host-run half of Core must never import React or depend on an interface — three gates go red the moment it does.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
