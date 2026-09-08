@@ -28,22 +28,12 @@ export interface LayoutSlice {
   resetLayout: () => void
 }
 
-// Pane widths live in localStorage rather than nexus.db: an IPC round trip per drag frame is what storing them main-side would cost (Nathan's call).
-export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240, key: 'pommora.sidebarWidth' }
-export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300, key: 'pommora.inspectorWidth' }
+export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240 }
+export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300 }
 type PaneWidth = typeof SIDEBAR_WIDTH
 
 export const clampWidth = (pane: PaneWidth, w: number): number =>
   clamp(Math.round(w), pane.min, pane.max)
-
-function storedWidth(pane: PaneWidth): number {
-  try {
-    const n = Number(localStorage.getItem(pane.key))
-    return Number.isFinite(n) && n > 0 ? clampWidth(pane, n) : pane.def
-  } catch {
-    return pane.def
-  }
-}
 
 // devicePrefs is bound to a session root, so a pane width belongs to this Nexus and returns to its default when another one opens.
 const PER_NEXUS = {
@@ -72,15 +62,11 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     ribbonVisible: true,
     toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
 
-    sidebarWidth: storedWidth(SIDEBAR_WIDTH),
     setSidebarWidth: (w) => set({ sidebarWidth: clampWidth(SIDEBAR_WIDTH, w) }),
-    inspectorWidth: storedWidth(INSPECTOR_WIDTH),
     setInspectorWidth: (w) => set({ inspectorWidth: clampWidth(INSPECTOR_WIDTH, w) }),
     persistPaneWidths: () => {
-      try {
-        localStorage.setItem(SIDEBAR_WIDTH.key, String(get().sidebarWidth))
-        localStorage.setItem(INSPECTOR_WIDTH.key, String(get().inspectorWidth))
-      } catch {}
+      const s = get()
+      s.setDevicePref('panes', { sidebar: s.sidebarWidth, inspector: s.inspectorWidth })
     },
 
     setSubfieldExpanded: (expanded) => {

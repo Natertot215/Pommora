@@ -15,6 +15,7 @@ import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
+import { importBrowserState } from './importBrowserState'
 import { clampWidth, INSPECTOR_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { flushAllPageSaves, flushAllSessionSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
@@ -94,6 +95,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         }
         switch (res.value.status) {
           case 'open':
+            // Ahead of applyTree so its seed reads the merged prefs, and only here: devicePrefs:save refuses without a bound root.
+            await importBrowserState()
             await get().applyTree(res.value.tree)
             await Promise.all([
               host()

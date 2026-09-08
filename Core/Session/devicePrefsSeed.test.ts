@@ -23,20 +23,24 @@ const treeAt = (rootPath: string): NexusTree => ({
 type Session = typeof import('./store')['useSession']
 
 // devicePrefsLoaded is a module singleton and the pane widths are read at slice construction, so every case needs its own module registry rather than a shared store reset.
-async function freshStore(
-  answer: () => Promise<unknown>,
-): Promise<{ useSession: Session; prefsLoad: ReturnType<typeof vi.fn> }> {
+async function freshStore(answer: () => Promise<unknown>): Promise<{
+  useSession: Session
+  prefsLoad: ReturnType<typeof vi.fn>
+  prefsSave: ReturnType<typeof vi.fn>
+}> {
   vi.resetModules()
   const prefsLoad = vi.fn(answer)
+  const prefsSave = vi.fn(async () => ok(null))
   const channels: Record<string, unknown> = {
     'theme:systemAccent': vi.fn(async () => ok('#000000')),
     'devicePrefs:load': prefsLoad,
+    'devicePrefs:save': prefsSave,
     'nav:write': vi.fn(async () => ok(null)),
     'tabs:save': vi.fn(async () => ok(null)),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   const { useSession } = await import('./store')
-  return { useSession, prefsLoad }
+  return { useSession, prefsLoad, prefsSave }
 }
 
 const withPrefs = (prefs: DevicePrefs | null) => async (): Promise<unknown> => ok(prefs)
@@ -81,11 +85,10 @@ describe('the panes open at the widths this machine last left them', () => {
     expect(s.inspectorWidth).toBe(300)
   })
 
-  // The other half of the same rule: an absent key must leave whatever the slice already holds, which is the still-live browser-storage value until the panes read the store.
+  // The other half of the same rule: an absent key leaves whatever the slice already holds rather than driving it back to its default.
   it('leaves a width the prefs do not name exactly as it stands', async () => {
-    localStorage.setItem('pommora.sidebarWidth', '320')
     const { useSession } = await freshStore(withPrefs({ panes: {} }))
-    expect(useSession.getState().sidebarWidth).toBe(320)
+    useSession.setState({ sidebarWidth: 320 })
     await useSession.getState().applyTree(treeAt('/a'))
     expect(useSession.getState().sidebarWidth).toBe(320)
   })
@@ -120,6 +123,20 @@ describe('the prefs are read once per nexus', () => {
     await useSession.getState().applyTree(treeAt('/a'))
     await useSession.getState().applyTree(treeAt('/b'))
     expect(prefsLoad).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('a pane drop writes back to the device store', () => {
+  it('carries both widths in one panes preference, and nothing to the browser', async () => {
+    const { useSession, prefsSave } = await freshStore(withPrefs({}))
+    await useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().setSidebarWidth(300)
+    useSession.getState().setInspectorWidth(400)
+    prefsSave.mockClear()
+    useSession.getState().persistPaneWidths()
+    expect(prefsSave).toHaveBeenCalledTimes(1)
+    expect(prefsSave).toHaveBeenCalledWith({ panes: { sidebar: 300, inspector: 400 } })
+    expect(localStorage.length).toBe(0)
   })
 })
 
