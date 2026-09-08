@@ -70,9 +70,12 @@ export function blockGripHover(): Extension {
           return
         }
         const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
-        const lineFrom = pos == null ? null : view.state.doc.lineAt(pos).from
-        const hovered = lineFrom == null ? null : lineElementAt(view, lineFrom)
-        if (pos == null || lineFrom == null || !hovered) {
+        if (pos == null) {
+          setHot(null)
+          return
+        }
+        const lineFrom = view.state.doc.lineAt(pos).from
+        if (!lineElementAt(view, lineFrom)) {
           setHot(null)
           return
         }

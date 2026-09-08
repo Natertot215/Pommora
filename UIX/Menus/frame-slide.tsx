@@ -79,6 +79,7 @@ export function FrameSlide({
   const height = active === 'a' ? size.ah : size.bh
   const shift = active === 'b' ? size.aw : 0
   const idle = (slot: 'a' | 'b'): boolean => !navigating && active !== slot
+  const slotBox = { minWidth, maxWidth, minHeight }
   return (
     <div
       className={cx(s.viewport, enabled && s.viewportAnimated, navigating && s.viewportNav)}
@@ -89,12 +90,12 @@ export function FrameSlide({
         style={{ transform: `translateX(-${shift}px)` }}
       >
         <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={active === 'b'}>
-          <div ref={aRef} className={s.slotContent} style={{ minWidth, maxWidth, minHeight }}>
+          <div ref={aRef} className={s.slotContent} style={slotBox}>
             {root}
           </div>
         </div>
         <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={active === 'a'}>
-          <div ref={bRef} className={s.slotContent} style={{ minWidth, maxWidth, minHeight }}>
+          <div ref={bRef} className={s.slotContent} style={slotBox}>
             {shownDetail}
           </div>
         </div>
