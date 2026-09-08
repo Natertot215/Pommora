@@ -1,4 +1,4 @@
-// The one reader of a container sidecar's meta. The walk and the watch patch pass DIFFERENT children — the walk its freshly-read ones, the watch the live node's — so the children arrive as arguments rather than being derived here.
+// The walk and the watch patch pass DIFFERENT children — the walk its freshly-read ones, the watch the live node's — so the children arrive as arguments rather than being derived here.
 
 import type { PageNode, SetNode } from './tree'
 import type { ViewButton } from '../Views/viewRow'
@@ -19,7 +19,7 @@ export interface ContainerFields {
   activeView?: string
 }
 
-export function parseViews(raw: unknown): SavedView[] | undefined {
+function parseViews(raw: unknown): SavedView[] | undefined {
   if (!Array.isArray(raw)) return undefined
   const out: SavedView[] = []
   for (const v of raw) {
