@@ -838,7 +838,6 @@
     .syntax-md-list,
     .syntax-md-quote,
     .syntax-md-task,
-    .syntax-md-mark,
     .syntax-md-check,
     .syntax-md-info,
     .syntax-meta
@@ -870,9 +869,7 @@
 .mdpm-editor .codeblock .syntax-key {
   --syntax-solid: var(--solid-green);
 }
-.mdpm-editor
-  .codeblock
-  :is(.syntax-md-heading, .syntax-md-raw, .syntax-md-mark, .syntax-md-check, .syntax-meta) {
+.mdpm-editor .codeblock :is(.syntax-md-heading, .syntax-md-raw, .syntax-md-check, .syntax-meta) {
   --syntax-solid: var(--solid-light-blue);
 }
 .mdpm-editor .codeblock .syntax-md-heading {
