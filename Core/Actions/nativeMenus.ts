@@ -15,7 +15,7 @@ export async function popRowMenu<A extends string>(
   const box = trigger?.getBoundingClientRect()
   const res = await host().ask('row-menu', {
     items,
-    anchor: box && { left: box.left, top: box.top, width: box.width, height: box.height },
+    anchor: box && { left: box.left, top: box.top, height: box.height },
   })
   return valueOr(res, null) as A | null
 }

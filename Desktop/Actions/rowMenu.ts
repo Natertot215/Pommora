@@ -1,5 +1,5 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { ActionItem, MenuAnchor, RowMenuRequest } from '@pommora/core/Actions/menuModel'
+import type { ActionItem, MenuAnchor, MenuRequest } from '@pommora/core/Actions/menuModel'
 import { popReturningMenu } from './returningMenu'
 
 /** The renderer measures in CSS pixels and `popup` places in window DIPs, differing by the window's zoom. */
@@ -49,7 +49,7 @@ export function menuTemplate<A extends string>(
   return template[0]?.type === 'separator' ? template.slice(1) : template
 }
 
-export function popRowMenu(win: BrowserWindow, req: RowMenuRequest): Promise<string | null> {
+export function popRowMenu(win: BrowserWindow, req: MenuRequest): Promise<string | null> {
   return popReturningMenu<string>(
     win,
     (pick) => menuTemplate(req.items, pick),
