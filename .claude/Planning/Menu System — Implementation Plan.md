@@ -1,0 +1,710 @@
+## Menu System — Implementation Plan
+
+> **Status:** written, pending review · Spec: audit topic 5 (`Codebase Audit — Report.md`) plus the rulings of 09-08-2026 recorded under Rulings · Execute tasks in order.
+> Citations name files and symbols; re-derive before editing.
+
+**Goal**
+
+One menu system with one door, one model, and two renderers that cannot drift. Afterward every menu in Pommora opens through `popMenu`; a right-click menu is the operating system's, and a menu hanging from a control draws natively or in-app by the Use Native Menus preference, from the same `ActionItem` tree. The tile handle menu is an ordinary consumer of that door instead of a second hand-built pane; `PickerControl` is another. Escape has one arbiter for dismissal, and every keyboard chord has one table.
+
+The shape was settled against the alternative the audit's own ruling implied, in-app by default with native optional. Nathan ruled the inverse: right-click stays native always because Pommora never paints its own menu for a right-click action, and the preference is about click-triggered lists (pickers, the tile handle, a future slash-command menu), whose correctness for future consumers matters more than the two that exist today. The presence of a trigger is what distinguishes the two, and that rule is the door's contract. The editor's own right-click menu (spelling, Speech, Share) stays Electron-built for the same reason.
+
+Deliberately not solved here: touch reachability of right-click menus (a mobile host answers the `menu` channel with its own native menu), and the Mobile package itself.
+
+**Requirements**
+
+1. One door, `popMenu`, in `Core/Actions/menuActions.ts`; no trigger means native at the cursor, a trigger means the preference decides. Every current `popRowMenu` caller goes through it unchanged in behavior.
+2. One in-app presenter, `MenuPresenter`, drawing any `ActionItem` tree: drill-in submenus, a scroll frame with the picker height cap, leading icons, and choice sets (rows carrying `checked`) drawn as `PickerRow`s with the ring.
+3. One test proving both renderers draw the same rows from one model.
+4. The tile handle menu has one definition, `tileMenuItems`, and opens through the door. Lock is a row, Scale is a checked submenu, the title is an icon row whose action opens the page, "+ Custom" is a separated last row. The grip stays pinned until the door's promise settles, on both paths.
+5. `PickerControl` opens its list through the door; its own `PickerMenu` list is gone.
+6. The connection menu model lives in `Core/Actions` beside the other models; its presenter stays in `Core/Interface/Menus`.
+7. The six window-level Escape listeners join the dismissal stack; most recently activated dismisses first; the gesture engine's capture-phase swallow stays as drag-cancel.
+8. One chord table in `Core/Actions/commands.ts` that the native application menu, the editor's keymap, and every renderer key handler derive from; no chord literal outside it.
+9. Dead fields and dead code deleted: `ActionItem.confirm`, `MenuAnchor.width`, `useNativeMenus`, `NativePickerContext`, the tile pane and its stylesheet, `Desktop/Actions/accelerators.ts`.
+10. The grip-hot stand-down chain deleted if one launch proves the renderer's `preventDefault` already suppresses main's `context-menu` event; otherwise kept and its reason written into DesktopPM.
+
+**Acceptance — the whole thing working:** with Use Native Menus off, clicking a tile handle and a Settings picker each open an in-app pane drawn by `MenuPresenter` whose rows match `tileMenuItems` and the picker's options; with it on, the same two clicks open anchored system menus with the same rows; a right-click on a sidebar row opens a system menu either way; pressing Escape with a tile in edit under an open glance closes the glance first and the edit second; and ⌘N still opens a tab after `appMenu.ts` contains no chord literal.
+
+**Forced By**
+
+- UIX reaches nothing outside itself → `PickerControl` receives the door through a React context App provides, never by import (Task 3).
+- `Core/Actions` is host-portable and imports no React → the door reads the preference through `useSession.getState()`, and the presenter's React lives in `Core/Interface` (Tasks 2, 5).
+- The bridge declares every channel once and answers with `Result` → renaming `row-menu` to `menu` is one entry in `bridge.ts`, one in `handlers.ts`, one in `main.ts` (Task 2).
+- The in-app presenter needs a position and 35 of 36 callers pop at the cursor → the cursor case is native-only by contract, and no event is threaded (Task 2).
+- `installAppMenu` runs once per window at `Desktop/main.ts:142` → native accelerators read the chord table plus the session's settings overrides at install; a rebind takes effect at the next launch (Task 8, Ruling 6).
+
+**Inherited Reasoning**
+
+- The audit's item 4 claimed the connection menu model was mixed into its presenter. It isn't: the model is `Core/MarkdownPM/Links/connMenu.ts`, the presenter is `Core/Interface/Menus/connectionMenu.ts`. Item 4 is a relocation.
+- The audit's ruling that `popRowMenu` honors the preference was read as "the preference governs right-click." Nathan corrected it: the preference governs click-triggered lists, right-click is native always.
+- In-app by default with native optional was weighed and rejected; it would have made every right-click menu a Pommora-painted pane.
+- `presentRowMenu` has zero production callers and `RowMenuHost` has rendered `null` since it was written. The in-app half was built and never wired; this plan wires it rather than deleting it.
+
+**Grounding**
+
+- `Core/Actions/nativeMenus.ts` — the door today; 21 lines; `popRowMenu` never reads the preference.
+- `Core/Actions/menuModel.ts` — `ActionItem`, `MenuAnchor`, `RowMenuRequest`; `confirm` and `width` have no reader.
+- `Core/Session/chromeSlice.ts` — `presentRowMenu` and `pendingRowMenu`, the pending-promise pattern the confirm dialog also uses.
+- `Core/Interface/Menus/RowMenuHost.tsx`, `rowMenuRows.ts` — the dead in-app renderer; mounted at `Core/Interface/App.tsx:184`.
+- `Desktop/Actions/rowMenu.ts`, `returningMenu.ts` — the native renderer and its returning promise; `anchorPoint` is the CSS-px to DIP conversion.
+- `Core/Tiles/TileHandleMenu.tsx` (413 lines), `handle-menu.css.ts`, `TileHost.tsx:187-201, 306-343, 358-379` — the twice-defined menu and its host wiring.
+- `UIX/Pickers/PickerControl.tsx` — `NativePickerContext`, its own `PickerMenu` list at lines 124-149; no consumer passes `solid`.
+- `UIX/Pickers/picker-base.tsx` — `PickerMenu` props (`origin`, `footer`, `maxHeight`, `anchorX/Y/Height`), `PickerRow`.
+- `UIX/Interactions/dismissalStack.ts` — `pushDismissal`, `useDismissal`, LIFO Escape, capture-phase outside press.
+- `UIX/Interactions/chords.ts` — `matchesCommand`, the `cmd+shift+k` grammar.
+- `Core/Actions/commands.ts`, `Core/Actions/editorMenu.ts:27-42`, `Desktop/Actions/accelerators.ts`, `Desktop/Actions/appMenu.ts:57-141`, `Core/Interface/App.tsx:76-92`, `Core/Navigation/TabBar.tsx:94-100`, `Core/Properties/valueUndo.ts:11` — every chord spelling.
+- The six Escape listeners: `Core/Tiles/TileHost.tsx:145-154`, `Core/Interface/Glance/GlancePane.tsx:452-463`, `Core/Interface/Glance/glanceAction.ts:76-82`, `Core/MarkdownPM/Embeds/embedWidget.tsx:556-560`, `Core/MarkdownPM/Tables/MarkdownTable.tsx:234-268`, `UIX/Windows/window-base.tsx:145-152`.
+- `.claude/Features/SurfacePM.md:24, 34, 36`, `ConfigurationPM.md:23`, `DesktopPM.md`, `MarkdownPM.md:86` — the claims this plan touches.
+
+**Environment:** Plan directory `.claude/Planning/`. Explorer: general-purpose Opus. Simplification: `.claude/agents/code-simplifier.md`. Attack: `.claude/agents/build-breaking-agent.md`. Code reviewer: general-purpose Opus scoped to correctness. Neutral verifier: general-purpose Opus. Gates from `package.json`: `npm run typecheck`, `npm run test`, `npm run lint`. Rules: `.claude/Guidelines/`.
+
+**Shapes:** removal · refactor · fix · user-visible
+
+**Declared Stops**
+
+- Gate 1 — the tile handle menu and the Settings pickers are the two surfaces whose look changes; Nathan sees them before the residue phases build on the presenter.
+
+**Global Constraints (every task inherits these)**
+
+- Gates: `npm run typecheck`, `npm run test`, `npm run lint`, each read directly, never piped. Biome formats every write through the hook; a shell edit is followed by `npm run format`.
+- `Core/Actions` imports no React and nothing from `Core/Interface`. UIX imports nothing outside UIX. Desktop is the only caller of Electron.
+- Comments are `//` full lines, only where the why can't be inferred. Nothing labels a state as pending or describes what used to be there.
+- Naming: component `.tsx` PascalCase, `.ts` camelCase.
+- Commit per task with `git commit --only -- <paths>`; new files `git add`ed first.
+- Out of scope everywhere: `Showcase/`, `Mobile/`, the editor's Electron-built context menu beyond what Task 8 decides, touch gestures.
+
+**Made False**
+
+| Doc | The specific claim | What makes it false | Task |
+| --- | --- | --- | --- |
+| `SurfacePM.md:34` | "whose rows are the tile's linking, style, and Scale entries over a pinned **Lock** footer" | Lock becomes a row | 4 |
+| `SurfacePM.md:36` | "while the footer stays live to unlock" | no footer | 4 |
+| `SurfacePM.md:24` | "both menu presenters, the menu model" | one presenter | 4 |
+| `ConfigurationPM.md:23` | "Draws plain-list menus as system menus" | true for click-triggered lists; the row says so | 3 |
+| `Codebase Audit — Report.md` topic 5, R-21 to R-24, Appendix C's Use Native Menus line | the whole topic | delivered, removed rather than amended | 9 |
+| Audit artifact `a9f3a52c` | its topic 5 section | same | 9 |
+| `DesktopPM.md` | nothing names the grip-hot exception | Task 6's outcome, if kept | 6 |
+
+**Dead Vocabulary**
+
+- `popRowMenu` → 0. `nativeMenus` (the file) → 0; legitimate hits: `devicePrefs.nativeMenus` the preference key and its test. `RowMenuHost` → 0. `rowMenuRows` → 0. `presentRowMenu` → 0. `pendingRowMenu` → 0. `row-menu` → 0. `NativePickerContext` → 0. `TileHandleMenu` → 0 outside `tileMenuItems`'s own file name. `handle-menu.css` → 0. `acceleratorFor` → 0. `useNativeMenus` → 0. `connMenu` → 0.
+- Control: `ActionItem` → 40+. Zero here means the sweep never ran.
+
+---
+
+### Phase 1 — One Door, One Presenter
+
+#### Task 1: The model carries what both renderers read
+
+**Requirement:** 2, 9
+
+**Why:** The presenter draws icons and the native renderer ignores them; `confirm` and `width` are read by nobody. The model has to say exactly what a renderer may draw before Task 2 builds two of them from it.
+
+**Now** — `Core/Actions/menuModel.ts`, 28 lines:
+
+```ts
+export interface ActionItem<A> {
+  label: string
+  action: A
+  separatorBefore?: boolean
+  disabled?: boolean
+  confirm?: boolean
+  checked?: boolean
+  submenu?: ActionItem<A>[]
+}
+export interface MenuAnchor { left: number; top: number; width: number; height: number }
+export interface RowMenuRequest { items: readonly ActionItem<string>[]; anchor?: MenuAnchor }
+// confirm set only at Core/Actions/optionMenu.ts:11-12, read only by optionMenu.test.ts:22
+// width populated at nativeMenus.ts:18, read nowhere
+```
+
+**Becomes**
+
+```ts
+// Core/Actions/menuModel.ts
+import type { IconName } from '@pommora/uix/Symbols'
+
+export interface ActionItem<A> {
+  label: string
+  action: A
+  separatorBefore?: boolean
+  disabled?: boolean
+  checked?: boolean
+  // Drawn by the in-app presenter; an OS menu draws its own marks.
+  icon?: IconName
+  submenu?: ActionItem<A>[]
+}
+
+// Viewport-relative CSS pixels; the presenter and the host both place from it.
+export interface MenuAnchor { left: number; top: number; height: number }
+export type MenuOrigin = 'left' | 'center'
+export interface MenuTrigger { at: HTMLElement | MenuAnchor; origin?: MenuOrigin }
+export interface MenuRequest { items: readonly ActionItem<string>[]; anchor?: MenuAnchor }
+```
+
+`IconName` is whatever `UIX/Symbols` exports as the icon-name type today; a type import from UIX is already what `Core/Interface/Menus/rowMenuRows.ts:2` does.
+
+**Assumed by:** Tasks 2, 3, 4.
+
+**Verify — Automated**
+
+- [ ] `rg -F "confirm" Core/Actions Desktop/Actions Core/Interface/Menus` → 0 after; the `optionMenu.test.ts:22` assertion removed in the same commit. Control: `rg -F "checked" Core/Actions` → 10+.
+- [ ] `rg -F "width" Core/Actions/menuModel.ts` → 0.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] *(none — nothing draws yet)*
+
+#### Task 2: The door, the channel, and the presenter
+
+**Requirement:** 1, 2, 3, 9
+
+**Why:** This is the single source of truth the whole plan exists for. After it, a menu is one `popMenu` call, and which renderer draws it is the door's business alone.
+
+**Now** — `rg -F "popRowMenu(" Core --glob '!*.test.*'` → 38 sites; `rg -F "'row-menu'" Core Desktop --glob '!node_modules' --glob '!out'` → 3:
+
+```ts
+// Core/Actions/nativeMenus.ts — 21 lines
+export function useNativeMenus(): boolean
+export async function popRowMenu<A extends string>(items, trigger?: HTMLElement | null): Promise<A | null>
+// Core/Contract/bridge.ts:233
+'row-menu': { args: [req: RowMenuRequest]; reply: Result<string | null> }
+// Core/Actions/handlers.ts:5 · Desktop/main.ts:237 (ctx.menu → popRowMenu(win, req))
+// Core/Session/chromeSlice.ts:6-11, 16-18, 26, 41-50, 59-60 — RowMenuPending, presentRowMenu, pendingRowMenu
+// Core/Interface/Menus/RowMenuHost.tsx (63) + rowMenuRows.ts (21) + both tests; mounted App.tsx:184
+// Desktop/Actions/rowMenu.ts (58): anchorPoint, rowTemplate, menuTemplate, popRowMenu(win, req)
+```
+
+**Becomes**
+
+```ts
+// Core/Actions/menuActions.ts (replaces nativeMenus.ts)
+// No trigger: a context menu at the cursor, native always. A trigger: a list hanging from a control, native or in-app by the Use Native Menus preference.
+export async function popMenu<A extends string>(
+  items: readonly ActionItem<A>[],
+  trigger?: MenuTrigger,
+): Promise<A | null>
+// trigger absent, or devicePrefs.nativeMenus → host().ask('menu', { items, anchor })
+// otherwise → useSession.getState().presentMenu(items, anchor, trigger.origin ?? 'left')
+// anchor from an element is its getBoundingClientRect(); a MenuAnchor passes through
+
+// Core/Contract/bridge.ts
+'menu': { args: [req: MenuRequest]; reply: Result<string | null> }
+// Core/Actions/handlers.ts: 'menu' · Desktop/main.ts: menu: (req) => win ? popNativeMenu(win, req) : ...
+
+// Core/Session/chromeSlice.ts
+pendingMenu: MenuPending | null
+presentMenu: (items, at: MenuAnchor, origin: MenuOrigin) => Promise<string | null>
+// resetChrome settles pendingMenu with null
+
+// Core/Interface/Menus/MenuPresenter.tsx (replaces RowMenuHost.tsx) — mounted where RowMenuHost was
+export function MenuPresenter(): React.JSX.Element
+// Level: MenuScrollFrame with PICKER_MAX_HEIGHT; a MenuTopRow back when nested;
+// a level whose rows all carry `checked` draws PickerRow with ring; otherwise MenuItem via menuRows
+// PickerMenu origin from pending.origin
+
+// Core/Interface/Menus/menuRows.ts (replaces rowMenuRows.ts)
+export function menuRows<A extends string>(items, onPick, onDrill): MenuRow[]
+// icon → MenuRow leading; separatorBefore dropped at index 0; submenu → chevron + onDrill
+
+// Desktop/Actions/menu.ts (replaces rowMenu.ts)
+export function popNativeMenu(win: BrowserWindow, req: MenuRequest): Promise<string | null>
+// rowTemplate/menuTemplate/anchorPoint keep their names and bodies
+
+// Desktop/Actions/menu.test.ts — the one test for requirement 3:
+// for a fixture tree with a separator, a submenu, a checked row, a disabled row, and an icon,
+// rowTemplate(items).map(label/type/enabled/checked/submenu depth) deep-equals
+// menuRows(items).map(label/kind/disabled/selected/trailing) under one shared projection
+```
+
+Every one of the 38 callers becomes `popMenu(...)` with the same arguments; `TileHost.tsx:327` passes `{ at: el }` (Task 4 rewrites that site anyway). `App.tsx:75` and the `NativePickerContext` provider change in Task 3.
+
+**Assumed by:** Tasks 3, 4, 5, 6.
+
+**Verify — Automated**
+
+- [ ] Red first: `menu.test.ts` fails on module not found; `MenuPresenter.test.tsx` (moved from `RowMenuHost.test.tsx`) fails on the `presentMenu` name; then green.
+- [ ] `MenuPresenter.test.tsx` asserts a checked level renders `PickerRow` and an unchecked level renders `MenuItem`; asserts an icon reaches the row's leading slot.
+- [ ] `rg -F "popRowMenu" Core Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "row-menu" Core Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "popMenu(" Core` → 38.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] *(none — no call site changes renderer until Task 3)*
+
+#### Task 3: PickerControl opens through the door
+
+**Requirement:** 5, 9
+
+**Why:** A picker's list is a plain-list menu and the preference already claims it. Drawing it through the presenter deletes the second in-app list renderer and makes the preference true for pickers by construction.
+
+**Now** — `UIX/Pickers/PickerControl.tsx`, 149 lines; `rg -F "NativePickerContext" Core UIX` → 3:
+
+```tsx
+export type NativePicker = (rows: { label; action; checked }[], trigger: HTMLElement | null) => Promise<string | null>
+export const NativePickerContext = createContext<NativePicker | null>(null)
+// lines 56-67 popNative; 71-73 onTrigger branches native/setOpen; 124-149 its own PickerMenu + PickerRow list
+// Core/Interface/App.tsx:75  const nativePicker = useNativeMenus() ? popRowMenu : null
+// Core/Interface/App.tsx:98  <NativePickerContext.Provider value={nativePicker}>
+// solid: declared at :40/:48, forwarded at :132, passed by no consumer
+```
+
+**Becomes**
+
+```tsx
+// UIX/Pickers/PickerControl.tsx
+export type MenuDoor = (items: readonly ActionItem<string>[], trigger: MenuTrigger) => Promise<string | null>
+export const MenuDoorContext = createContext<MenuDoor | null>(null)
+// onTrigger: a toggle flips; otherwise door(options as { label, action: value, checked, icon }, { at: ref.current, origin: 'center' })
+// no own PickerMenu; `open`, `solid`, and the PickerRow list are gone
+// ActionItem and MenuTrigger are type imports from '@pommora/core/Actions/menuModel'? No — UIX imports nothing outside itself.
+```
+
+UIX cannot import `Core/Actions/menuModel`, so the row and trigger shapes `MenuDoor` names are declared structurally in `PickerControl.tsx` (`{ label; action; checked; icon? }[]` and `{ at: HTMLElement; origin: 'center' }`), and `popMenu` satisfies them by assignment at the provider. `App.tsx` provides `popMenu` unconditionally: `<MenuDoorContext.Provider value={popMenu}>`.
+
+**Assumed by:** Task 9 (ConfigurationPM row).
+
+**Verify — Automated**
+
+- [ ] `PickerControl.typeable.test.tsx` and any test rendering `PickerControl` provide a fake door; a test asserts the door receives `checked` on the current value and `origin: 'center'`.
+- [ ] `rg -F "NativePickerContext" Core UIX` → 0. `rg -F "useNativeMenus" Core` → 0. Control: `rg -F "MenuDoorContext" Core UIX` → 3.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] A Settings picker (Interface Scale) opens centered under its trigger with the ring on the current value, preference off; opens as a system menu, preference on.
+
+#### Task 4: The tile handle menu is one definition
+
+**Requirement:** 4
+
+**Why:** The one menu the app defined twice becomes the first ordinary consumer of the door, which is the whole point of having one.
+
+**Now** — `Core/Tiles/TileHandleMenu.tsx` 413 lines, `handle-menu.css.ts` 59 lines, `TileHost.tsx`:
+
+```tsx
+// TileHandleMenu.tsx:51-124 tileMenuItems({ entry, pageItems, viewItems, pageInfo?: { title }, containerLocked })
+//   title → { label, action: 'tile:open', disabled: true }
+//   drill() ignores DrillPickItem.footer (tiles.ts:181); the pane renders footer nodes as footing buttons
+//   lock → last row, separatorBefore
+// TileHandleMenu.tsx:126-413 GLYPH, LOC_GLYPH, CHEVRON, DrillLevel, TileHandleMenu — the pane
+// TileHost.tsx:187-201 handleMenu state, useNativeMenus, popNativeMenu ref, onHandleMenu, two useHeld
+// TileHost.tsx:254 'handle-pinned' while handleMenu?.id === id
+// TileHost.tsx:306-315 menuPageInfo (title, icon), menuLocInfo
+// TileHost.tsx:316-343 popNativeMenu.current = … popRowMenu(items, el).then(dispatch)
+// TileHost.tsx:358-379 <TileHandleMenu … />
+```
+
+**Becomes**
+
+```tsx
+// Core/Tiles/tileHandleMenu.ts (renamed from TileHandleMenu.tsx; no JSX remains)
+export function tileMenuItems({ entry, pageItems, viewItems, pageInfo, containerLocked }: {
+  …
+  pageInfo?: { title: string; icon: IconName }
+  …
+}): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] }
+// title row: { label: pageInfo.title, icon: pageInfo.icon, action: 'tile:open' } — enabled
+// drill(): a node with footer: true becomes its level's last row with separatorBefore: true
+// Style, Scale: unchanged checked submenus · Lock: unchanged last row
+
+// Core/Tiles/TileHost.tsx
+const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+const onHandleMenu = useCallback((id, e) => {
+  const entry = entries.get(id); if (!entry || !pickers) return
+  const page = tileSourceInfo(entry, pagesById)
+  const { items, picks } = tileMenuItems({ entry, ...pickers, pageInfo: page && { title: page.title, icon: entityIcon('page', page.icon, defaultIcons) }, containerLocked: hostLocked })
+  setMenuOpenId(id)
+  void popMenu(items, { at: e.currentTarget }).then((action) => { setMenuOpenId(null); …dispatch as today, plus 'tile:open' → select(page) })
+}, [entries, pickers, pagesById, defaultIcons, hostLocked, …])
+// 'handle-pinned' while menuOpenId === id
+// handle-menu.css.ts deleted; TileHandleMenu JSX deleted; useHeld import gone
+```
+
+The audit's `location` line under the title (the containers the page sits in) does not survive as a row; SurfacePM's rewrite in this task says the title row opens the page.
+
+**Assumed by:** Task 9 (the audit removal); SurfacePM is rewritten in this commit.
+
+**Verify — Automated**
+
+- [ ] `tileHandleMenu.test.ts`: red first on the title row now enabled with an icon and on a footer node becoming a separated last row; then green.
+- [ ] `rg -F "TileHandleMenu" Core` → 0. `rg -F "handle-menu.css" Core` → 0. `rg -F "useHeld" Core/Tiles/TileHost.tsx` → 0. Control: `rg -F "tileMenuItems" Core` → 3+.
+- [ ] `SurfacePM.md:24, 34, 36` rewritten in this commit.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] Preference off: clicking a tile handle opens the presenter anchored to the handle; the page's link rows drill with a back row; Style and Scale show the ring on the current value; Lock is the last row; "+ Custom" sits separated at the bottom of its level; the grip stays visible while the menu is open.
+- [ ] Preference on: the same click opens a system menu with the same rows.
+
+#### Gate 1 — one door, two renderers, first consumers
+
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
+- [ ] Every task that diverged had its dependents re-derived and rewritten.
+- [ ] Simplification and review dispatched against `<base>..HEAD`; the reports cite files inside it.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Progress hashes filled in; lessons written into the later tasks they change.
+- [ ] **Declared stop.** Execution halts here until Nathan closes Task 3's and Task 4's user boxes.
+
+---
+
+### Phase 2 — Native Residue
+
+#### Task 5: The connection menu model lives with the models
+
+**Requirement:** 6
+
+**Why:** Every other menu model sits in `Core/Actions`; the one that doesn't is the one a second host would miss.
+
+**Now** — `rg -F "connMenu" Core --glob '!*.test.*'` → count at execution:
+
+```ts
+// Core/MarkdownPM/Links/connMenu.ts — imports only ../../Actions/menuModel, ../../Actions/pageMenu, ../../Properties/properties
+export function connMenuModel(ctx: …): ActionItem<…>[]
+// Core/Interface/Menus/connectionMenu.ts — the presenter: showConnectionMenu, popMenu at :35 and :61
+// Core/Interface/Menus/connectionMenu.test.ts
+```
+
+**Becomes**
+
+```ts
+// Core/Actions/connectionMenu.ts (moved; contents unchanged)
+// Core/Interface/Menus/connectionMenuActions.ts (renamed presenter, beside entityMenuActions.ts and pageMenuActions.ts)
+// Core/Interface/Menus/connectionMenuActions.test.ts
+```
+
+**Verify — Automated**
+
+- [ ] `rg -F "connMenu" Core` → 0. `rg -F "Menus/connectionMenu'" Core` → 0. Control: `rg -F "connectionMenuActions" Core` → 3+.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] *(none — a move)*
+
+#### Task 6: Does the renderer's preventDefault reach main?
+
+**Requirement:** 10
+
+**Why:** Nine files exist to tell main that a grip is hot so its editor menu stands down. If Chromium already withholds the `context-menu` event when the renderer prevents the default, those nine files are guarding a state the application can't produce.
+
+**Now** — `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out' --glob '!*.test.*'` plus `grip-hot` and `blockGripHover` → 19 lines across `blockHandles.ts`, `MarkdownEditor.tsx`, `api.ts`, `editorHost.tsx`, `editorHarness.ts`, `bridge.ts`, `main.ts`, `Desktop/Actions/editorMenu.ts`, `Core/MarkdownPM/Menus/gripMenu.ts`:
+
+```ts
+// Desktop/Actions/editorMenu.ts:202-203
+win.webContents.on('context-menu', (_e, params) => {
+  if (gripHot) return
+```
+
+**Becomes** — one delegated launch (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`), over CDP: install `document.addEventListener('contextmenu', e => e.preventDefault(), true)` in the renderer, right-click inside the page editor's text, and observe whether the Electron editor menu appears. Record the outcome under Rulings, then:
+
+```ts
+// Outcome A (no native menu appeared): delete the chain end to end.
+//   bridge.ts 'editor:grip-hot' · main.ts tells entry · editorMenu.ts gripHot/setGripHot and the :203 gate
+//   api.ts menus.gripHot · editorHost.tsx:93 · editorHarness.ts:89 · MarkdownEditor.tsx:239 · blockHandles.ts:40-46 report
+//   gripMenu.ts:107 and :180 clears and the file-head comment at :1
+//   SpaceMenu.tsx:50-51's yielded gesture re-examined: if its premise was the same, the yield goes too
+// Outcome B (native menu appeared): nothing deleted; DesktopPM gains one sentence naming why the grip-hot channel exists.
+```
+
+**Verify — Automated**
+
+- [ ] Outcome A: `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out'` → 0; `rg -F "grip-hot" Core Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "format-state" Core Desktop --glob '!node_modules' --glob '!out'` → 3+.
+- [ ] Outcome A: one smoke launch, right-click a block grip: the grip's own menu appears and the editor menu does not.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] *(none — behavior is unchanged in both outcomes)*
+
+#### Gate 2 — residue settled
+
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Every task's **Verify — automated** list ticked.
+- [ ] Every Now count re-run against its control.
+- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Progress hashes filled in. The next phase opens automatically.
+
+---
+
+### Phase 3 — One Arbiter For Escape
+
+#### Task 7: Six listeners join the dismissal stack
+
+**Requirement:** 7
+
+**Why:** Escape today is resolved by whichever window listener registered first and by `defaultPrevented` handshakes between layers that don't know each other. The kit already holds an ordered stack; joining it makes "most recently activated dismisses first" the rule instead of the accident.
+
+**Now** — six sites, each its own `keydown` listener:
+
+```ts
+// Core/Tiles/TileHost.tsx:145-154 — editingId; own capture pointerdown (outside .tile.is-editing-tile) + window keydown
+// Core/Interface/Glance/GlancePane.tsx:452-463 — newest pinned glance on the active tab; keydown only; bails when a live pane is shown
+// Core/Interface/Glance/glanceAction.ts:76-82 watchAnchor — live glance; preventDefault unconditionally
+// Core/MarkdownPM/Embeds/embedWidget.tsx:543-563 — a ViewPlugin; own capture pointerdown (outside .mdpm-embed-tile.is-editing-tile) + window keydown
+// Core/MarkdownPM/Tables/MarkdownTable.tsx:223-268 — cell rect selection; own capture pointerdown (outside wrapRef) + capture keydown claiming Escape/Backspace/Delete/⌘C/⌘X/⌘V
+// UIX/Windows/window-base.tsx:145-152 — escapeRef.current(); keydown only
+```
+
+**Becomes**
+
+```ts
+// Each site registers while active and releases when not, on the kit's stack:
+// TileHost.tsx      useDismissal(editingId !== null, false, { layer: () => tile element of editingId, dismiss: () => setEditingId(null) })
+//                   its own pointerdown listener deleted; the stack's capture-phase outside press replaces it
+// GlancePane.tsx    useDismissal(newestPin !== undefined && shown === null, false, { layer: () => that pin's element, dismiss: () => beginExit([newest.pinId]), outsidePress: false })
+// glanceAction.ts   watchAnchor pushes pushDismissal({ layer: () => el, dismiss: watch.onEscape, outsidePress: false }) and releases in its cleanup; the keydown listener keeps only onShift
+// embedWidget.tsx   the ViewPlugin pushes pushDismissal({ layer: () => editing tile element, dismiss: () => view.dispatch(setEmbedEditing.of(null)) }) when editing becomes set, releases when cleared or destroyed; its pointerdown listener deleted
+// MarkdownTable.tsx useDismissal(rect !== null, false, { layer: () => wrapRef.current, dismiss: () => setSel(null) }); Escape leaves the capture keydown; Backspace/Delete/copy/cut/paste stay; its pointerdown listener deleted
+// window-base.tsx   useDismissal(!closing, false, { layer: () => the window element, dismiss: () => escapeRef.current(), outsidePress: false })
+```
+
+The gesture engine's capture-phase swallow (`UIX/Interactions/gesture.ts:134-135, :161`) is untouched: a drag in progress cancels on Escape before the stack sees it. CM6's own keymap handlers run at the editor element before the document listener and prevent the default, so an open autocomplete still takes Escape first.
+
+**Verify — Automated**
+
+- [ ] For each of the six, an existing test that presses Escape stays green, or a new one is added where none exists (TileHost editing, MarkdownTable selection, window-base).
+- [ ] A crossing test in `dismissalStack.test.ts`: two entries pushed in order, Escape dismisses the second only, a second Escape dismisses the first.
+- [ ] `rg -F "'keydown'" Core/Tiles/TileHost.tsx Core/Interface/Glance/GlancePane.tsx Core/MarkdownPM/Embeds/embedWidget.tsx UIX/Windows/window-base.tsx` → 0. Control: `rg -F "useDismissal(" Core UIX` → 8+.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] Tile in edit, glance pinned over it: Escape closes the glance, a second Escape leaves the edit.
+- [ ] A floating window over a page with a table selection: Escape clears the selection first, then closes the window.
+
+#### Gate 3 — Escape has one arbiter
+
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Every task's **Verify — automated** list ticked.
+- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Progress hashes filled in. The next phase opens automatically.
+
+---
+
+### Phase 4 — One Chord Table
+
+#### Task 8: Every chord is a row in one table
+
+**Requirement:** 8, 9
+
+**Why:** A chord spelled in the native menu and a chord spelled in a renderer handler can't see each other, so a rebind silently loses. One table both derive from is the prerequisite for the Shortcuts settings pane the docs already promise.
+
+**Now** — the spellings:
+
+```ts
+// Core/Actions/commands.ts DEFAULT_COMMANDS: 'toggle-ribbon': 'cmd+t', 'toggle-nav': 'cmd+o', 'paste-inverse': 'cmd+shift+v'
+// Core/Actions/editorMenu.ts:27-35 FORMAT_CHORDS as { shift, key } objects; keyBindingFor → 'Mod-Shift-x'
+// Desktop/Actions/accelerators.ts acceleratorFor(FormatChordAction) → 'CmdOrCtrl+Shift+X' (display-only, editorMenu.ts:135)
+// Desktop/Actions/appMenu.ts:57 'CmdOrCtrl+N' · :63 'CmdOrCtrl+Shift+N' · :78 'CmdOrCtrl+R' · :117 'CmdOrCtrl+\\' · :124 'CmdOrCtrl+0' · :133 'CmdOrCtrl+Plus' · :137 'CmdOrCtrl+=' hidden alias · :141 'CmdOrCtrl+-'
+// Core/Interface/App.tsx:86 matchesCommand('cmd+shift+t', e)
+// Core/Navigation/TabBar.tsx:96 e.key !== 'Tab' || !e.ctrlKey || e.metaKey || e.altKey; shiftKey reverses
+// Core/Properties/valueUndo.ts:11 matchesCommand('cmd+z', e)
+// Core/Settings/codec.ts:116 readCommands(raw) overlays settings.json onto DEFAULT_COMMANDS
+```
+
+**Becomes**
+
+```ts
+// Core/Actions/commands.ts — the one table, chord grammar as chords.ts parses it
+export const DEFAULT_COMMANDS = {
+  'new-tab': 'cmd+n',
+  'new-page': 'cmd+shift+n',
+  'reload': 'cmd+r',
+  'toggle-sidebar': 'cmd+\\',
+  'actual-size': 'cmd+0',
+  'zoom-in': 'cmd+plus',
+  'zoom-in-alias': 'cmd+=',
+  'zoom-out': 'cmd+-',
+  'toggle-ribbon': 'cmd+t',
+  'toggle-nav': 'cmd+o',
+  'toggle-iteration': 'cmd+shift+t',
+  'next-tab': 'ctrl+tab',
+  'previous-tab': 'ctrl+shift+tab',
+  'undo-value': 'cmd+z',
+  'paste-inverse': 'cmd+shift+v',
+  'format:bold': 'cmd+b',
+  'format:italic': 'cmd+i',
+  'format:strikethrough': 'cmd+shift+x',
+  'format:highlight': 'cmd+l',
+  'format:inlineCode': 'cmd+e',
+  'format:link': 'cmd+k',
+  'format:connection': 'cmd+shift+k',
+} satisfies Record<string, string>
+export type CommandId = keyof typeof DEFAULT_COMMANDS
+// One parser, three spellings:
+export function toAccelerator(chord: string): string   // 'cmd+shift+n' → 'CmdOrCtrl+Shift+N'; 'cmd+plus' → 'CmdOrCtrl+Plus'; 'cmd+\\' → 'CmdOrCtrl+\\'
+export function toKeyBinding(chord: string): string    // 'cmd+shift+x' → 'Mod-Shift-x'
+
+// Core/Actions/editorMenu.ts — FORMAT_CHORDS deleted; FormatChordAction = Extract<CommandId, `format:${string}`>; keyBindingFor(action) = toKeyBinding(DEFAULT_COMMANDS[action])
+// Desktop/Actions/accelerators.ts deleted; editorMenu.ts:135 uses toAccelerator(commands[action])
+// Desktop/Actions/appMenu.ts — installAppMenu reads the session's commands (readCommands over the settings file the host already reads for interfaceScale) and writes accelerator: toAccelerator(commands['new-tab']) etc.; no literal remains
+// Core/Interface/App.tsx:86 matchesCommand(commands['toggle-iteration'], e)
+// Core/Navigation/TabBar.tsx: matchesCommand(commands['next-tab'], e) / commands['previous-tab']
+// Core/Properties/valueUndo.ts: matchesCommand(commands['undo-value'], e) — commands read from the store, since the module installs once
+// Core/Settings/codec.ts readCommands unchanged in shape; its result type is Record<CommandId, string>
+```
+
+`chords.ts` parses `'cmd+plus'` to key `plus`, which `matchesCommand` will never match against `e.key === '+'`; that is fine because zoom is main-side only. `toAccelerator` maps `plus` to Electron's `Plus`.
+
+**Verify — Automated**
+
+- [ ] Red first: `commands.test.ts` asserts `toAccelerator` and `toKeyBinding` on the four shapes (plain, shift, symbol, `plus`); module not found; then green. `accelerators.test.ts` moves into it.
+- [ ] `rg -F "CmdOrCtrl+" Desktop --glob '!node_modules' --glob '!out'` → 1, the `toAccelerator` template in Core is where the prefix lives; Desktop itself → 0. `rg -F "matchesCommand('" Core` → 0. `rg -F "FORMAT_CHORDS" Core Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "DEFAULT_COMMANDS" Core Desktop --glob '!node_modules' --glob '!out'` → 5+.
+- [ ] `formatKeymap.test` or its nearest existing suite still binds ⌘B to bold.
+- [ ] Gates green.
+
+**Verify — User**
+
+- [ ] ⌘N opens a tab, ⌘⇧N a page, ⌘\ toggles the sidebar, ⌃Tab cycles tabs, ⌘⇧T opens the iteration window, ⌘B bolds, after a full dev-process restart.
+
+#### Gate 4 — one chord table
+
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Every task's **Verify — automated** list ticked.
+- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Progress hashes filled in. The next phase opens automatically.
+
+---
+
+### Phase 5 — The Record
+
+#### Task 9: What went false is rewritten, what was delivered is removed
+
+**Requirement:** all
+
+**Why:** The audit topic this plan delivers is removed rather than amended, per Nathan's standing rule, and the Features docs describe the menu system as it now is.
+
+**Now**
+
+```
+// .claude/Planning/Codebase Audit — Report.md — topic 5 (lines ~122-139), R-21..R-24 rows, Appendix C's Use Native Menus line, the topic 5 mentions in the share table (:40) and the decisions paragraph (:252)
+// Audit artifact https://claude.ai/code/artifact/a9f3a52c-cb0f-45dc-900d-03275fd87e9c — the same topic
+// .claude/Features/ConfigurationPM.md:23 — the Use Native Menus row
+// .claude/Features/DesktopPM.md — one paragraph on the menu channel; Task 6's outcome if B
+// .claude/HistoryPM.md, .claude/ContextPM.md
+```
+
+**Becomes** — the audit doc and artifact carry no topic 5 and no R-21..R-24; the share table and decisions paragraph read as if the topic never existed. ConfigurationPM's row says "Click-triggered list menus (pickers, the tile handle) open as system menus; right-click menus are always the system's." DesktopPM names the `menu` channel and the door's contract in one paragraph. History gets its entry to `History-Format.md`; Context is current.
+
+**Verify — Automated**
+
+- [ ] `rg -F "R-21" .claude/Planning` → 0. `rg -F "Menus And Shortcuts" .claude/Planning` → 0. Control: `rg -F "R-17" .claude/Planning` → 1+.
+- [ ] Artifact read, edited, republished to the same URL; `rg -F "Menus And Shortcuts"` over the fetched HTML → 0.
+- [ ] Dead Vocabulary sweep at zero against its control.
+
+**Verify — User**
+
+- [ ] *(none)*
+
+#### Gate 5 — closeout
+
+- [ ] Delivery Claim written; neutral verifier dispatched against the spec and the full range; then the attack.
+- [ ] Every finding fixed or ruled.
+- [ ] Completion Criteria ticked where true.
+
+---
+
+## Implementation Log
+
+### Progress
+
+- [ ] **Phase 1** — One Door, One Presenter · base `<commit>`
+  - [ ] Task 1 — The model · `<commit>`
+  - [ ] Task 2 — The door, the channel, the presenter · `<commit>`
+  - [ ] Task 3 — PickerControl through the door · `<commit>`
+  - [ ] Task 4 — The tile handle menu is one definition · `<commit>`
+- [ ] **Phase 2** — Native Residue
+  - [ ] Task 5 — Connection model relocation · `<commit>`
+  - [ ] Task 6 — The preventDefault check · `<commit>`
+- [ ] **Phase 3** — One Arbiter For Escape
+  - [ ] Task 7 — Six listeners join the stack · `<commit>`
+- [ ] **Phase 4** — One Chord Table
+  - [ ] Task 8 — Every chord is a row · `<commit>`
+- [ ] **Phase 5** — The Record
+  - [ ] Task 9 — Docs, audit, artifact, History · `<commit>`
+
+### Rulings
+
+1. 09-08-2026, Nathan: right-click menus are native always; Pommora never paints its own menu for a right-click action.
+2. 09-08-2026, Nathan: the preference governs click-triggered list menus (PickerControl, tile handle, future slash-command menu); correctness for future consumers is the concern, not today's two.
+3. 09-08-2026, Nathan: the editor's own right-click menu stays Electron-built.
+4. 09-08-2026, Nathan: names — file `menuActions.ts`, function `popMenu`, presenter `MenuPresenter` (Nathan wrote `menuPresenter`; the component file is PascalCase by the casing canon), slice `presentMenu`/`pendingMenu`, channel `menu`, Desktop `menu.ts`.
+5. 09-08-2026, Nathan: the tile pane's lock, Scale value, and title fold into rows; rows carrying `checked` draw as PickerRows with the ring; Escape dismisses the most recently activated layer first; the shortcut table is in scope.
+6. 09-08-2026, Claude, pending Nathan's eye: native accelerators read the chord table plus settings overrides at menu install; a rebind takes effect at the next launch, since `installAppMenu` runs once per window.
+
+### Open Against Later Tasks
+
+### Deviations
+
+### Lessons
+
+### Sequenced After
+
+- A Shortcuts settings pane over the one table.
+- A MarkdownPM slash-command menu as the third consumer of the door.
+- Touch reachability of right-click menus on the mobile host.
+
+### Closeout
+
+---
+
+## Completion Criteria
+
+**The directive**
+
+```
+Execute Menu System — Implementation Plan. Live.
+Live-verify: Task 3 and Task 4 user boxes at Gate 1 (declared stop); Task 7 and Task 8 user boxes at the end.
+Screenshots: none unless a gate fails.
+Pings: at Gate 1, at completion.
+Record: History arc "The menu system", to History-Format.md.
+Also: Task 6's launch is delegated to an Opus agent; the supervisor never drives CDP.
+Everything else is the standard below.
+```
+
+**The Standard**
+
+- **The bar.** Not doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. A future review of this arc finds nothing to correct.
+- **Only the live confirmation may be pending.** No concerns carried, no "for a later session," no deferrals when the fix is known and could be done now.
+- **Reusability first.** Search before writing. A second resolver, cache, or validator means the plan is wrong, or you are — log it before proceeding.
+- **Fix at the source**, never down-river.
+- **Ambiguity:** take the simplest reading, record it under Rulings or Deviations, continue.
+- **Per phase:** implement → simplify → comment pass → gates, exit codes read directly → code review → attack review → every finding fixed or ruled → commit → ping. Simplification before review, never inverted.
+- **Comments** only where the why can't be inferred. **Docs** stay clean; what went false gets rewritten, not amended. Unattributed doc or style edits mid-run belong to the user — fold them in, never revert them.
+
+**The deliverable**
+
+- [ ] Every numbered requirement traces to a landed task.
+- [ ] The acceptance criterion observed running, clause by clause.
+- [ ] `presentMenu` has production callers; `MenuPresenter` reaches the DOM.
+
+**The passes**
+
+- [ ] Simplification and the comment pass over the whole range.
+- [ ] Simplification then code review over the full implementation.
+- [ ] Delivery Claim written, then checked by a neutral verifier against topic 5 and the Rulings.
+- [ ] Every finding from every pass fixed, or carrying a defensible ruling.
+
+**The user's own pass**
+
+- [ ] Tile handle menu, preference off and on.
+- [ ] A Settings picker, preference off and on.
+- [ ] Escape ordering: glance over tile edit; window over table selection.
+- [ ] Every chord in the table, after a full dev-process restart.
+
+**The record**
+
+- [ ] Documents made false rewritten in the commits that falsified them.
+- [ ] The closing sweep at zero against its control.
+- [ ] Context and Handoff current; the History entry written to its format.
+- [ ] Lessons routed; successor work named in Sequenced After.
+
+**The report**, in plain English — what shipped and why it matters · what happened along the way worth knowing · every gate's real output · in-flight decisions, a sentence or two each · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.
