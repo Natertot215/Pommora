@@ -20,24 +20,18 @@ export type PresenterRow<A> =
     }
 
 export function menuRows<A extends string>(items: readonly ActionItem<A>[]): PresenterRow<A>[] {
-  return items.flatMap((item): PresenterRow<A>[] => [
-    ...(item.separatorBefore ? [{ kind: 'separator' as const }] : []),
-    item.checked !== undefined
-      ? {
-          kind: 'choice',
-          label: item.label,
-          checked: item.checked,
-          disabled: item.disabled,
-          icon: item.icon,
-          action: item.action,
-        }
-      : {
-          kind: 'item',
-          label: item.label,
-          disabled: item.disabled,
-          icon: item.icon,
-          action: item.action,
-          submenu: item.submenu,
-        },
-  ])
+  return items.flatMap((item): PresenterRow<A>[] => {
+    const base = {
+      label: item.label,
+      disabled: item.disabled,
+      icon: item.icon,
+      action: item.action,
+    }
+    return [
+      ...(item.separatorBefore ? [{ kind: 'separator' as const }] : []),
+      item.checked !== undefined
+        ? { kind: 'choice', ...base, checked: item.checked }
+        : { kind: 'item', ...base, submenu: item.submenu },
+    ]
+  })
 }

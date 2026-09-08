@@ -7,7 +7,7 @@ import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
-import { menuRows } from './menuRows'
+import { menuRows, type PresenterRow } from './menuRows'
 
 const GLYPH = 12
 const CHEVRON = <Icon name="chevron-right" size={GLYPH} />
@@ -28,6 +28,43 @@ function Level({
   onPick: (action: string) => void
 }): React.JSX.Element {
   const [branch, setBranch] = useState<Branch | null>(null)
+  const renderRow = (row: PresenterRow<string>, i: number): React.JSX.Element => {
+    switch (row.kind) {
+      case 'separator':
+        return <MenuSeparator key={`separator-${String(i)}`} />
+      case 'choice':
+        return (
+          <PickerRow
+            key={`${row.label}-${String(i)}`}
+            ring
+            align="start"
+            selected={row.checked}
+            leading={leadingGlyph(row.icon)}
+            onClick={row.disabled ? undefined : () => onPick(row.action)}
+          >
+            {row.label}
+          </PickerRow>
+        )
+      case 'item': {
+        const { submenu } = row
+        return (
+          <MenuItem
+            key={`${row.label}-${String(i)}`}
+            disabled={row.disabled}
+            leading={leadingGlyph(row.icon)}
+            trailing={submenu ? CHEVRON : undefined}
+            onClick={
+              submenu
+                ? () => setBranch({ title: row.label, items: submenu })
+                : () => onPick(row.action)
+            }
+          >
+            {row.label}
+          </MenuItem>
+        )
+      }
+    }
+  }
   return (
     <FrameSlide
       open={branch !== null}
@@ -38,36 +75,7 @@ function Level({
             onBack && <MenuTopRow label={onBack.label} current={title} onBack={onBack.back} />
           }
         >
-          {menuRows(items).map((row, i) =>
-            row.kind === 'separator' ? (
-              <MenuSeparator key={`separator-${String(i)}`} />
-            ) : row.kind === 'choice' ? (
-              <PickerRow
-                key={`${row.label}-${String(i)}`}
-                ring
-                align="start"
-                selected={row.checked}
-                leading={leadingGlyph(row.icon)}
-                onClick={row.disabled ? undefined : () => onPick(row.action)}
-              >
-                {row.label}
-              </PickerRow>
-            ) : (
-              <MenuItem
-                key={`${row.label}-${String(i)}`}
-                disabled={row.disabled}
-                leading={leadingGlyph(row.icon)}
-                trailing={row.submenu ? CHEVRON : undefined}
-                onClick={
-                  row.submenu
-                    ? () => setBranch({ title: row.label, items: row.submenu ?? [] })
-                    : () => onPick(row.action)
-                }
-              >
-                {row.label}
-              </MenuItem>
-            ),
-          )}
+          {menuRows(items).map(renderRow)}
         </MenuScrollFrame>
       }
       detail={
