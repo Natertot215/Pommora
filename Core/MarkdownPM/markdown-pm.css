@@ -53,8 +53,8 @@
 .mdpm-editor .cm-content {
   color: var(--label-primary);
   --number-zone: 1.3em;
-  --cite-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
-  --cite-divider-gap: 14px; /* KNOB: the seam's breathing room */
+  --citation-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
+  --citation-divider-gap: 14px; /* KNOB: the seam's breathing room */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
   font-size: calc(var(--editor-font-size, 15px) * var(--tile-zoom, 1) * var(--editor-scale, 1));
 }
@@ -93,7 +93,7 @@
   padding: 6px 0 14px calc(var(--sidebar-clearance) + var(--content-inset));
 }
 .mdpm-divider,
-.mdpm-editor .cm-line.md-cite-divider::after {
+.mdpm-editor .cm-line.md-citation-divider::after {
   border-bottom: var(--width-200) solid var(--border-base);
   border-radius: var(--radius-full);
 }
@@ -101,31 +101,31 @@
   height: 0;
   margin: 0 var(--content-inset) 0 calc(var(--sidebar-clearance) + var(--content-inset));
 }
-.mdpm-editor .cm-line.md-cite-divider {
+.mdpm-editor .cm-line.md-citation-divider {
   position: relative;
-  padding: var(--cite-divider-gap) 0;
+  padding: var(--citation-divider-gap) 0;
   cursor: pointer;
   transition:
     opacity var(--duration-fast) var(--ease-base),
     filter var(--duration-fast) var(--ease-base);
 }
-.mdpm-editor .cm-content.mdpm-cite-tail {
-  padding-bottom: var(--cite-divider-gap);
+.mdpm-editor .cm-content.mdpm-citation-tail {
+  padding-bottom: var(--citation-divider-gap);
 }
-.mdpm-editor .cm-line.md-cite-divider-off:hover {
+.mdpm-editor .cm-line.md-citation-divider-off:hover {
   opacity: var(--state-ghost);
   filter: none;
 }
-.mdpm-editor .cm-line.md-cite-divider::after {
+.mdpm-editor .cm-line.md-citation-divider::after {
   content: "";
   position: absolute;
   top: 50%;
   left: 0;
   right: 0;
 }
-.mdpm-editor .cm-line.md-cite-divider-off {
+.mdpm-editor .cm-line.md-citation-divider-off {
   opacity: 0;
-  filter: blur(var(--cite-divider-blur));
+  filter: blur(var(--citation-divider-blur));
 }
 
 .mdpm-banner {
@@ -176,7 +176,7 @@
 
 /* KNOBS: --rail-inset (rail x), --grip-top (first-line offset — box blocks override it for their padded first row). */
 .mdpm-editor .cm-line.md-block-handle::before,
-.mdpm-editor .cm-line.md-bq-first .md-bq-grip,
+.mdpm-editor .cm-line.md-blockquote-first .md-blockquote-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
   width: calc(var(--icon-body) * var(--glyph-scale));
   height: calc(var(--icon-body) * var(--glyph-scale));
@@ -191,7 +191,7 @@
   position: relative;
 }
 .mdpm-editor .cm-line.md-block-handle::before,
-.mdpm-editor .cm-line.md-bq-first .md-bq-grip {
+.mdpm-editor .cm-line.md-blockquote-first .md-blockquote-grip {
   content: "";
   position: absolute;
   left: calc(
@@ -209,7 +209,7 @@
 .mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
   opacity: 1;
 }
-.mdpm-editor .cm-line.md-bq-first.md-grip-hot .md-bq-grip {
+.mdpm-editor .cm-line.md-blockquote-first.md-grip-hot .md-blockquote-grip {
   opacity: 1;
 }
 
@@ -316,7 +316,7 @@
 .md-connection-ambiguous {
   color: var(--label-tertiary);
 }
-.md-conn-glyph {
+.md-connection-glyph {
   display: inline-block;
   width: 1em;
   height: 1em;
@@ -326,10 +326,10 @@
   -webkit-mask: var(--conn-link-mask) center / contain no-repeat;
   mask: var(--conn-link-mask) center / contain no-repeat;
 }
-.md-conn-glyph-resolved {
+.md-connection-glyph-resolved {
   background-color: var(--connection);
 }
-.md-conn-target {
+.md-connection-target {
   color: var(--label-control);
 }
 
@@ -394,121 +394,121 @@
   text-indent: 0;
 }
 
-/* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. --number-zone lives on .cm-content rather than .md-li so a citation row, which hangs in the same column but isn't a list line, still gets one. */
-.mdpm-editor .cm-line.md-li {
+/* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. --number-zone lives on .cm-content rather than .md-list-item so a citation row, which hangs in the same column but isn't a list line, still gets one. */
+.mdpm-editor .cm-line.md-list-item {
   --list-indent: 20px;
   --bullet-zone: 16px;
   --task-zone: 1.8em;
   --bullet-size: 1.25em;
   white-space: pre;
-  --li-origin: 0px;
+  --list-origin: 0px;
 
-  --li-col: calc((var(--li-level, 0) + 1) * var(--list-indent));
-  padding-left: calc(var(--li-origin) + var(--li-col) + var(--bullet-zone));
+  --list-column: calc((var(--list-level, 0) + 1) * var(--list-indent));
+  padding-left: calc(var(--list-origin) + var(--list-column) + var(--bullet-zone));
   text-indent: calc(-1 * var(--bullet-zone));
 }
 
-.md-outliner-rail {
+.md-outline-rail {
   display: none;
 }
-.outliner-lines .mdpm-editor .cm-line.md-li {
+.outline-lines .mdpm-editor .cm-line.md-list-item {
   position: relative;
 }
-.outliner-lines .md-outliner-rail {
-  --outliner-width: var(--list-outline-width);
-  --outliner-gap: var(--list-outline-gap);
-  --outliner-gap-top: var(--outliner-gap);
-  --outliner-gap-bottom: var(--outliner-gap);
-  --outliner-radius: var(--list-outline-radius);
+.outline-lines .md-outline-rail {
+  --outline-width: var(--list-outline-width);
+  --outline-gap: var(--list-outline-gap);
+  --outline-gap-top: var(--outline-gap);
+  --outline-gap-bottom: var(--outline-gap);
+  --outline-radius: var(--list-outline-radius);
   display: block;
   position: absolute;
   top: 0;
   bottom: 0;
   left: round(
     calc(
-      var(--li-origin, 0px) +
+      var(--list-origin, 0px) +
       (var(--rail-level, 0) + 1) *
       var(--list-indent) +
       var(--rail-x, 0px) -
-      var(--outliner-width) /
+      var(--outline-width) /
       2
     ),
     1px
   );
-  width: var(--outliner-width);
+  width: var(--outline-width);
   background: var(--list-outline-color);
   pointer-events: none;
 }
-.outliner-lines .md-outliner-bullet {
+.outline-lines .md-outline-bullet {
   --rail-x: calc(var(--bullet-size) / 4);
-  --outliner-gap-top: -2px;
-  --outliner-gap-bottom: -2px;
+  --outline-gap-top: -2px;
+  --outline-gap-bottom: -2px;
 }
-.outliner-lines .md-outliner-task {
+.outline-lines .md-outline-task {
   --rail-x: calc(8.5px * var(--glyph-scale));
-  --outliner-gap-bottom: 8px;
+  --outline-gap-bottom: 8px;
 }
-.outliner-lines .md-outliner-first {
-  top: var(--outliner-gap-top);
-  border-top-left-radius: var(--outliner-radius);
-  border-top-right-radius: var(--outliner-radius);
+.outline-lines .md-outline-first {
+  top: var(--outline-gap-top);
+  border-top-left-radius: var(--outline-radius);
+  border-top-right-radius: var(--outline-radius);
 }
-.outliner-lines .md-outliner-last {
-  bottom: var(--outliner-gap-bottom);
-  border-bottom-left-radius: var(--outliner-radius);
-  border-bottom-right-radius: var(--outliner-radius);
+.outline-lines .md-outline-last {
+  bottom: var(--outline-gap-bottom);
+  border-bottom-left-radius: var(--outline-radius);
+  border-bottom-right-radius: var(--outline-radius);
 }
 
-.md-bullet {
+.md-list-bullet {
   color: var(--label-control);
   font-size: var(--bullet-size);
   line-height: 1;
   margin-right: var(--list-gap);
 }
 
-.md-li-mark {
+.md-list-arrow {
   margin-right: var(--list-gap);
 }
 
-.mdpm-editor .cm-line.md-li .md-li-text,
-.mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) .md-cite-text {
+.mdpm-editor .cm-line.md-list-item .md-list-text,
+.mdpm-editor .cm-line:is(.md-citation, .md-citation-continued) .md-citation-text {
   white-space: break-spaces;
   overflow-wrap: anywhere;
   word-break: normal;
 }
 
-.md-li-glyph {
+.md-list-glyph {
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.mdpm-editor .cm-line.md-li-drag-source {
+.mdpm-editor .cm-line.md-list-drag-source {
   opacity: var(--state-ghost);
 }
 
-.mdpm-editor .cm-line.md-li-ordered {
-  padding-left: calc(var(--li-origin) + var(--li-col) + var(--number-zone));
+.mdpm-editor .cm-line.md-list-ordered {
+  padding-left: calc(var(--list-origin) + var(--list-column) + var(--number-zone));
   text-indent: calc(-1 * var(--number-zone));
 }
-.md-ol-marker,
-.md-cb-ln,
-.md-cite-num {
+.md-list-number,
+.codeblock-line-number,
+.md-citation-number {
   display: inline-block;
   box-sizing: border-box;
   padding-right: var(--list-gap);
   font-variant-numeric: tabular-nums;
 }
-.md-ol-marker,
-.md-cite-num {
+.md-list-number,
+.md-citation-number {
   min-width: var(--number-zone);
   text-align: right;
 }
-.md-cite-num {
+.md-citation-number {
   text-indent: 0;
 }
 
-.md-cite-ref {
+.md-citation-reference {
   color: var(--label-control); /* KNOB: marker ink */
   font-variant-numeric: tabular-nums;
   font-size: 0.65em; /* KNOB: marker size relative to its line */
@@ -516,27 +516,27 @@
   cursor: pointer;
 }
 
-.mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) {
+.mdpm-editor .cm-line:is(.md-citation, .md-citation-continued) {
   white-space: pre;
   color: var(--label-secondary);
   font-size: 0.75em; /* KNOB: citation size relative to the body it cites */
   padding-left: var(--number-zone);
 }
-.mdpm-editor .cm-line.md-cite {
+.mdpm-editor .cm-line.md-citation {
   text-indent: calc(-1 * var(--number-zone));
 }
-.mdpm-editor .cm-line.md-cite-dim {
+.mdpm-editor .cm-line.md-citation-dim {
   opacity: var(--state-inactive);
 }
-.mdpm-editor .cm-line.md-cite .md-cite-num {
+.mdpm-editor .cm-line.md-citation .md-citation-number {
   cursor: pointer;
 }
 
-.mdpm-editor .cm-line.md-li-task {
-  padding-left: calc(var(--li-origin) + var(--li-col) + var(--task-zone));
+.mdpm-editor .cm-line.md-list-task {
+  padding-left: calc(var(--list-origin) + var(--list-column) + var(--task-zone));
   text-indent: calc(-1 * var(--task-zone));
 }
-:root.mute-checked .mdpm-editor .cm-line.md-li-done .md-li-text {
+:root.mute-checked .mdpm-editor .cm-line.md-list-done .md-list-text {
   opacity: var(--state-inactive);
   text-decoration: line-through;
   text-decoration-color: var(--label-secondary);
@@ -547,7 +547,7 @@
   vertical-align: -0.18em;
 }
 
-.md-li-marker {
+.md-list-checkbox-seat {
   display: inline-block;
   box-sizing: border-box;
   min-width: var(--task-zone);
@@ -582,7 +582,7 @@
 .md-h6 {
   font-size: 1em;
 }
-.md-hmarker {
+.md-heading-marker {
   color: var(--label-secondary);
   font-weight: var(--weight-semibold);
 }
@@ -596,11 +596,11 @@
   border-radius: var(--radius-full);
 }
 
-.mdpm-editor .cm-line:is(.md-bq, .md-callout, .md-cb) {
+.mdpm-editor .cm-line:is(.md-blockquote, .md-callout, .codeblock) {
   position: relative;
   isolation: isolate;
 }
-.mdpm-editor .cm-line:is(.md-bq, .md-cb, .md-bq-in)::after {
+.mdpm-editor .cm-line:is(.md-blockquote, .codeblock, .md-blockquote-nested)::after {
   content: "";
   position: absolute;
   inset: 0 var(--box-inset);
@@ -608,26 +608,27 @@
   z-index: var(--box-z);
   pointer-events: none;
 }
-.mdpm-editor .cm-line:is(.md-bq-first, .md-callout-first, .md-cb-first) {
+.mdpm-editor .cm-line:is(.md-blockquote-first, .md-callout-first, .codeblock-first) {
   --box-head-pad: calc(var(--box-gap) + var(--box-pad));
   padding-top: var(--box-head-pad);
 }
-.mdpm-editor .cm-line:is(.md-bq-last, .md-callout-last, .md-cb-last) {
+.mdpm-editor .cm-line:is(.md-blockquote-last, .md-callout-last, .codeblock-last) {
   padding-bottom: calc(var(--box-gap) + var(--box-pad));
 }
-.mdpm-editor .cm-line:is(.md-bq-first, .md-cb-first, .md-bq-in-first)::after {
+.mdpm-editor
+  .cm-line:is(.md-blockquote-first, .codeblock-first, .md-blockquote-nested-first)::after {
   top: var(--box-gap);
   border-top-left-radius: var(--box-radius-l);
   border-top-right-radius: var(--box-radius-r);
 }
-.mdpm-editor .cm-line:is(.md-bq-last, .md-cb-last, .md-bq-in-last)::after {
+.mdpm-editor .cm-line:is(.md-blockquote-last, .codeblock-last, .md-blockquote-nested-last)::after {
   bottom: var(--box-gap);
   border-bottom-left-radius: var(--box-radius-l);
   border-bottom-right-radius: var(--box-radius-r);
 }
 
 /* KNOBS: --bar-width / --bar-color / --bar-radius, --box-fill / --box-radius-r, --box-gap. */
-.mdpm-editor .cm-line.md-bq {
+.mdpm-editor .cm-line.md-blockquote {
   --bar-width: 4px;
   --bar-color: var(--label-tertiary);
   --bar-radius: 2px;
@@ -636,17 +637,17 @@
   --box-z: -2;
   --box-radius-l: 0px;
   --box-radius-r: var(--md-box-radius);
-  --bq-gap: var(--md-box-gap);
-  --box-gap: var(--bq-gap);
+  --blockquote-gap: var(--md-box-gap);
+  --box-gap: var(--blockquote-gap);
   --box-pad: 4px;
-  --li-origin: 16px;
+  --list-origin: 16px;
   padding-right: 14px;
   color: var(--label-control);
 }
-.mdpm-editor .cm-line.md-bq:not(.md-li) {
+.mdpm-editor .cm-line.md-blockquote:not(.md-list-item) {
   padding-left: 16px;
 }
-.mdpm-editor .cm-line.md-bq::before {
+.mdpm-editor .cm-line.md-blockquote::before {
   content: "";
   position: absolute;
   left: 0;
@@ -656,17 +657,17 @@
   background: var(--bar-color);
   z-index: -1;
 }
-.mdpm-editor .cm-line.md-bq-first::before {
-  top: var(--bq-gap);
+.mdpm-editor .cm-line.md-blockquote-first::before {
+  top: var(--blockquote-gap);
   border-top-left-radius: var(--bar-radius);
   border-top-right-radius: var(--bar-radius);
 }
-.mdpm-editor .cm-line.md-bq-last::before {
-  bottom: var(--bq-gap);
+.mdpm-editor .cm-line.md-blockquote-last::before {
+  bottom: var(--blockquote-gap);
   border-bottom-left-radius: var(--bar-radius);
   border-bottom-right-radius: var(--bar-radius);
 }
-.mdpm-editor .cm-line.md-bq .md-code {
+.mdpm-editor .cm-line.md-blockquote .md-code {
   background: transparent;
 }
 
@@ -680,7 +681,7 @@
   --callout-inner-pad: 8px;
   --box-gap: var(--callout-gap);
   --box-pad: var(--callout-inner-pad);
-  --li-origin: var(--callout-pad);
+  --list-origin: var(--callout-pad);
   padding-right: var(--callout-pad);
 }
 .mdpm-editor .cm-line.md-callout::before {
@@ -692,8 +693,8 @@
   pointer-events: none;
   z-index: -1;
 }
-.mdpm-editor .cm-line.md-callout:not(.md-li) {
-  padding-left: var(--li-origin);
+.mdpm-editor .cm-line.md-callout:not(.md-list-item) {
+  padding-left: var(--list-origin);
 }
 .mdpm-editor .cm-line.md-callout-first::before {
   top: var(--callout-gap);
@@ -722,54 +723,53 @@
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::before {
   top: 0;
 }
-.mdpm-editor .cm-line.md-callout.md-bq-in {
-  --nq-bar: 3px;
-  --nq-bar-radius: 2px;
-  --nq-gap: 8px;
+.mdpm-editor .cm-line.md-callout.md-blockquote-nested {
+  --nested-quote-bar: 3px;
+  --nested-quote-bar-radius: 2px;
+  --nested-quote-gap: 8px;
   --box-fill: var(--fill-tertiary);
   --box-inset: var(--callout-pad);
   --box-z: -1;
   --box-radius-l: 0px;
   --box-radius-r: 5px;
-  --nq-inset: 2px;
-  --box-gap: var(--nq-inset);
-  padding-left: calc(var(--callout-pad) + var(--nq-bar) + var(--nq-gap));
+  --nested-quote-inset: 2px;
+  --box-gap: var(--nested-quote-inset);
+  padding-left: calc(var(--callout-pad) + var(--nested-quote-bar) + var(--nested-quote-gap));
 }
-.mdpm-editor .cm-line.md-bq-in .md-bq-in-bar {
+.mdpm-editor .cm-line.md-blockquote-nested .md-blockquote-nested-bar {
   position: absolute;
   left: var(--callout-pad);
   top: 0;
   bottom: 0;
-  width: var(--nq-bar);
+  width: var(--nested-quote-bar);
   background: var(--label-tertiary);
   pointer-events: none;
 }
-.mdpm-editor .cm-line.md-bq-in-first .md-bq-in-bar {
-  top: var(--nq-inset);
-  border-top-left-radius: var(--nq-bar-radius);
-  border-top-right-radius: var(--nq-bar-radius);
+.mdpm-editor .cm-line.md-blockquote-nested-first .md-blockquote-nested-bar {
+  top: var(--nested-quote-inset);
+  border-top-left-radius: var(--nested-quote-bar-radius);
+  border-top-right-radius: var(--nested-quote-bar-radius);
 }
-.mdpm-editor .cm-line.md-bq-in-last .md-bq-in-bar {
-  bottom: var(--nq-inset);
-  border-bottom-left-radius: var(--nq-bar-radius);
-  border-bottom-right-radius: var(--nq-bar-radius);
+.mdpm-editor .cm-line.md-blockquote-nested-last .md-blockquote-nested-bar {
+  bottom: var(--nested-quote-inset);
+  border-bottom-left-radius: var(--nested-quote-bar-radius);
+  border-bottom-right-radius: var(--nested-quote-bar-radius);
 }
-.mdpm-editor .cm-line.md-callout-last.md-bq-in-last::after,
-.mdpm-editor .cm-line.md-callout-last.md-cb::after,
-.mdpm-editor .cm-line.md-callout-last.md-bq-in-last .md-bq-in-bar {
+.mdpm-editor .cm-line.md-callout-last.md-blockquote-nested-last::after,
+.mdpm-editor .cm-line.md-callout-last.codeblock::after,
+.mdpm-editor .cm-line.md-callout-last.md-blockquote-nested-last .md-blockquote-nested-bar {
   bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
-.mdpm-editor .cm-line.md-callout.md-cb,
-.mdpm-editor .cm-line.md-bq-in.md-cb,
-.mdpm-editor .cm-line.md-bq.md-cb {
-  --cb-gap: 0px;
-  --cb-inset: var(--li-origin);
-  --cb-pad: 10px;
-  --box-gap: var(--cb-gap);
-  --box-radius-l: var(--cb-radius);
-  --box-radius-r: var(--cb-radius);
-  padding-left: calc(var(--cb-inset) + var(--cb-pad));
-  padding-right: calc(var(--cb-inset) + var(--cb-pad));
+.mdpm-editor .cm-line.md-callout.codeblock,
+.mdpm-editor .cm-line.md-blockquote-nested.codeblock,
+.mdpm-editor .cm-line.md-blockquote.codeblock {
+  --codeblock-inset: var(--list-origin);
+  --codeblock-pad: 10px;
+  --box-gap: 0px;
+  --box-radius-l: var(--codeblock-radius);
+  --box-radius-r: var(--codeblock-radius);
+  padding-left: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  padding-right: calc(var(--codeblock-inset) + var(--codeblock-pad));
 }
 
 /* KNOBS: --grip-x (gutter offset), --grip-y (top offset past the gap). */
@@ -789,57 +789,114 @@
   top: var(--grip-y);
 }
 
-.mdpm-editor .cm-line.md-cb {
-  --cb-radius: var(--md-box-radius);
-  --cb-size: 0.85em;
-  --cb-inset: 0px;
-  --cb-pad: 12px;
-  --cb-copy-reach: 24em; /* KNOB — how far left and down the copy mark arms from */
-  --cb-mark-pad: 4px; /* KNOB — the chip the hover veil paints behind the mark */
-  --cb-bg: var(--fill-secondary);
-  --box-fill: var(--cb-bg);
-  --box-inset: var(--cb-inset);
+.mdpm-editor .cm-line.codeblock {
+  --codeblock-radius: var(--md-box-radius);
+  --codeblock-inset: 0px;
+  --codeblock-pad: 12px;
+  --codeblock-copy-reach: 24em; /* KNOB — how far left and down the copy mark arms from */
+  --codeblock-mark-pad: 4px; /* KNOB — the chip the hover veil paints behind the mark */
+  --codeblock-border: var(--width-200) solid var(--border-base);
+  --box-fill: var(--fill-quaternary);
+  --box-inset: var(--codeblock-inset);
   --box-z: -1;
-  --box-radius-l: var(--cb-radius);
-  --box-radius-r: var(--cb-radius);
-  --cb-gap: var(--md-box-gap);
-  --box-gap: var(--cb-gap);
+  --box-radius-l: var(--codeblock-radius);
+  --box-radius-r: var(--codeblock-radius);
+  --box-gap: var(--md-box-gap);
   --box-pad: 6px;
   font-family: var(--font-mono);
-  font-size: var(--cb-size);
-  padding-left: calc(var(--cb-inset) + var(--cb-pad));
-  padding-right: calc(var(--cb-inset) + var(--cb-pad));
+  font-size: 0.85em;
+  padding-left: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  padding-right: calc(var(--codeblock-inset) + var(--codeblock-pad));
   word-break: break-all;
 }
 
-.mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
-  color: color-mix(in srgb, var(--tok-solid) var(--tint-primary), var(--label-primary));
+/* The block is a run of separate lines, so its outline is drawn the way a callout draws one: sides on every line, the cap on the line that ends the run. */
+.mdpm-editor .cm-line.codeblock::after {
+  box-sizing: border-box;
+  border-left: var(--codeblock-border);
+  border-right: var(--codeblock-border);
 }
-.mdpm-editor .md-cb .tok-kw {
-  --tok-solid: var(--solid-purple);
+.mdpm-editor .cm-line.codeblock-first::after {
+  border-top: var(--codeblock-border);
 }
-.mdpm-editor .md-cb .tok-str {
-  --tok-solid: var(--solid-green);
+.mdpm-editor .cm-line.codeblock-last::after {
+  border-bottom: var(--codeblock-border);
 }
-.mdpm-editor .md-cb .tok-num {
-  --tok-solid: var(--solid-orange);
+
+.mdpm-editor
+  .codeblock
+  :is(
+    .syntax-keyword,
+    .syntax-string,
+    .syntax-number,
+    .syntax-property,
+    .syntax-key,
+    .syntax-function,
+    .syntax-type,
+    .syntax-md-heading,
+    .syntax-md-raw,
+    .syntax-md-list,
+    .syntax-md-quote,
+    .syntax-md-task,
+    .syntax-md-mark,
+    .syntax-md-check,
+    .syntax-md-info,
+    .syntax-meta
+  ) {
+  color: color-mix(in srgb, var(--syntax-solid) var(--tint-primary), var(--label-primary));
 }
-.mdpm-editor .md-cb .tok-prop {
-  --tok-solid: var(--solid-light-blue);
+.mdpm-editor .codeblock .syntax-keyword {
+  --syntax-solid: var(--solid-purple);
 }
-.mdpm-editor .md-cb .tok-fn {
-  --tok-solid: var(--solid-yellow);
+.mdpm-editor .codeblock .syntax-string {
+  --syntax-solid: var(--solid-green);
 }
-.mdpm-editor .md-cb .tok-type {
-  --tok-solid: var(--solid-cyan);
+.mdpm-editor .codeblock .syntax-number {
+  --syntax-solid: var(--solid-orange);
 }
-.mdpm-editor .md-cb .tok-com {
+.mdpm-editor .codeblock .syntax-property {
+  --syntax-solid: var(--solid-light-blue);
+}
+.mdpm-editor .codeblock .syntax-function {
+  --syntax-solid: var(--solid-yellow);
+}
+.mdpm-editor .codeblock .syntax-type {
+  --syntax-solid: var(--solid-cyan);
+}
+.mdpm-editor .codeblock .syntax-comment {
+  color: var(--label-tertiary);
+}
+/* Markdown read as source, seated the way GitHub reads it: headings and raw share one blue, list markers take orange, quotes green, and a key its own green. */
+.mdpm-editor .codeblock .syntax-key {
+  --syntax-solid: var(--solid-green);
+}
+.mdpm-editor
+  .codeblock
+  :is(.syntax-md-heading, .syntax-md-raw, .syntax-md-mark, .syntax-md-check, .syntax-meta) {
+  --syntax-solid: var(--solid-light-blue);
+}
+.mdpm-editor .codeblock .syntax-md-heading {
+  font-weight: var(--weight-bold);
+}
+.mdpm-editor .codeblock .syntax-md-list {
+  --syntax-solid: var(--solid-orange);
+}
+.mdpm-editor .codeblock .syntax-md-quote {
+  --syntax-solid: var(--solid-green);
+}
+.mdpm-editor .codeblock .syntax-md-task {
+  --syntax-solid: var(--solid-red);
+}
+.mdpm-editor .codeblock .syntax-md-info {
+  --syntax-solid: var(--solid-cyan);
+}
+.mdpm-editor .codeblock .syntax-md-rule {
   color: var(--label-tertiary);
 }
 
-.mdpm-editor .md-cb .md-cb-lang {
+.mdpm-editor .codeblock .codeblock-language {
   position: absolute;
-  right: calc(var(--cb-inset) + var(--cb-pad));
+  right: calc(var(--codeblock-inset) + var(--codeblock-pad));
   display: inline-flex;
   align-items: center;
   line-height: 1;
@@ -849,25 +906,25 @@
   user-select: none;
   cursor: default;
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-slot {
+.mdpm-editor .codeblock .codeblock-language .codeblock-mark-slot {
   position: relative;
   flex: none;
   width: 1.15em; /* KNOB — the mark's size against its name */
   height: 1.15em;
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-slot::before {
+.mdpm-editor .codeblock .codeblock-language .codeblock-mark-slot::before {
   content: "";
   position: absolute;
-  inset: calc(-1 * var(--cb-mark-pad));
+  inset: calc(-1 * var(--codeblock-mark-pad));
   border-radius: var(--md-box-radius);
   background: var(--state-hover);
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-base);
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-slot:hover::before {
+.mdpm-editor .codeblock .codeblock-language .codeblock-mark-slot:hover::before {
   opacity: 1;
 }
-.mdpm-editor .md-cb .md-cb-lang svg {
+.mdpm-editor .codeblock .codeblock-language svg {
   display: block;
   position: absolute;
   inset: 0;
@@ -877,64 +934,64 @@
   opacity: 0;
   transition: opacity var(--duration-slow) var(--ease-base);
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-mark,
-.mdpm-editor .md-cb .md-cb-lang:hover .md-cb-copy {
+.mdpm-editor .codeblock .codeblock-language .codeblock-mark,
+.mdpm-editor .codeblock .codeblock-language:hover .codeblock-copy {
   opacity: 1;
 }
-.mdpm-editor .md-cb .md-cb-lang:hover .md-cb-mark {
+.mdpm-editor .codeblock .codeblock-language:hover .codeblock-mark {
   opacity: 0;
 }
-.mdpm-editor .md-cb .md-cb-lang.is-copied .md-cb-mark,
-.mdpm-editor .md-cb .md-cb-lang.is-copied .md-cb-copy {
+.mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-mark,
+.mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-copy {
   opacity: 0;
 }
-.mdpm-editor .md-cb .md-cb-lang.is-copied .md-cb-done {
+.mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-copied {
   opacity: 1;
   color: var(--accent);
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-name:empty {
+.mdpm-editor .codeblock .codeblock-language .codeblock-name:empty {
   display: none;
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-copy {
+.mdpm-editor .codeblock .codeblock-language .codeblock-copy {
   color: var(--label-tertiary);
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-slot,
-.mdpm-editor .md-cb .md-cb-lang .md-cb-name {
+.mdpm-editor .codeblock .codeblock-language .codeblock-mark-slot,
+.mdpm-editor .codeblock .codeblock-language .codeblock-name {
   cursor: pointer;
 }
 
-.mdpm-editor .cm-line.md-cb-first:has(.md-cb-lang) {
+.mdpm-editor .cm-line.codeblock-first:has(.codeblock-language) {
   z-index: 1;
 }
-.mdpm-editor .md-cb .md-cb-lang .md-cb-reach {
+.mdpm-editor .codeblock .codeblock-language .codeblock-reach {
   position: absolute;
-  top: calc(-1 * var(--cb-pad));
-  right: calc(-1 * var(--cb-pad));
-  left: calc(-1 * var(--cb-copy-reach));
-  bottom: calc(-1 * var(--cb-copy-reach));
-  border-bottom-left-radius: var(--cb-copy-reach);
+  top: calc(-1 * var(--codeblock-pad));
+  right: calc(-1 * var(--codeblock-pad));
+  left: calc(-1 * var(--codeblock-copy-reach));
+  bottom: calc(-1 * var(--codeblock-copy-reach));
+  border-bottom-left-radius: var(--codeblock-copy-reach);
   cursor: text;
 }
-.md-cb-ln {
+.codeblock-line-number {
   display: none;
 }
-:root.cb-line-count .mdpm-editor .cm-line.md-cb {
-  --cb-ln-zone: calc(3ch + var(--list-gap));
-  padding-left: calc(var(--cb-inset) + var(--cb-pad) + var(--cb-ln-zone));
-  text-indent: calc(-1 * var(--cb-ln-zone));
+:root.codeblock-line-count .mdpm-editor .cm-line.codeblock {
+  --codeblock-line-zone: calc(3ch + var(--list-gap));
+  padding-left: calc(var(--codeblock-inset) + var(--codeblock-pad) + var(--codeblock-line-zone));
+  text-indent: calc(-1 * var(--codeblock-line-zone));
 }
-:root.cb-line-count .md-cb-ln {
+:root.codeblock-line-count .codeblock-line-number {
   display: inline-block;
-  min-width: var(--cb-ln-zone);
+  min-width: var(--codeblock-line-zone);
   text-indent: 0;
   color: var(--label-tertiary);
   user-select: none;
 }
 
-.mdpm-ac-slot {
+.mdpm-autocomplete-slot {
   min-width: 180px; /* KNOB */
   max-width: 320px; /* KNOB */
 }
-.mdpm-ac-match {
+.mdpm-autocomplete-match {
   font-weight: var(--weight-emphasized);
 }

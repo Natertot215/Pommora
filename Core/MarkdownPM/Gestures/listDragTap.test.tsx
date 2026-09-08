@@ -24,7 +24,7 @@ afterEach(async () => {
 })
 
 const glyphOf = (view: EditorView): HTMLElement => {
-  const el = view.dom.querySelector('.md-li-glyph')
+  const el = view.dom.querySelector('.md-list-glyph')
   if (!el) throw new Error('no list glyph rendered')
   return el as HTMLElement
 }

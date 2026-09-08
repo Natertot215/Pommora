@@ -81,7 +81,7 @@ describe('a footnote marker holds no seats the reader cannot see', () => {
 
   it('draws the positional number, not the label beneath it', async () => {
     const view = await mount('x[^7] y[^1]\n\n[^1]: one\n[^7]: seven')
-    const glyphs = [...editorContainer().querySelectorAll('.md-cite-ref')].map(
+    const glyphs = [...editorContainer().querySelectorAll('.md-citation-reference')].map(
       (el) => el.textContent,
     )
     expect(glyphs).toEqual(['1', '2'])
@@ -91,6 +91,6 @@ describe('a footnote marker holds no seats the reader cannot see', () => {
   it('draws nothing in a fence, in inline code, or on citation syntax that is prose', async () => {
     // The mid-document `[^1]:` line is live prose per the model, and the trailing run's own text holds a `[^1]` that stays literal — markers draw in the body and in cells, never in a row.
     await mount('```\n[^1]\n```\n\n`[^1]`\n\n[^1]: mid-doc\n\nprose\n\n[^1]: text [^1]')
-    expect(editorContainer().querySelectorAll('.md-cite-ref')).toHaveLength(0)
+    expect(editorContainer().querySelectorAll('.md-citation-reference')).toHaveLength(0)
   })
 })

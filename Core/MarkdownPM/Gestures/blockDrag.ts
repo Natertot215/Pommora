@@ -127,4 +127,6 @@ export const blockDragExtension: Extension = createBlockDragGesture({ gate: 'md-
 export const calloutDragExtension: Extension = createBlockDragGesture({ gate: 'md-callout-first' })
 
 // Blockquote's grip is a widget (its pseudos are taken by the bar and fill), but the gesture is the same.
-export const blockquoteDragExtension: Extension = createBlockDragGesture({ gate: 'md-bq-first' })
+export const blockquoteDragExtension: Extension = createBlockDragGesture({
+  gate: 'md-blockquote-first',
+})

@@ -54,8 +54,8 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
 
 const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
   hideChevrons: 'hide-chevrons',
-  outlinerLines: 'outliner-lines',
-  codeblockLineCount: 'cb-line-count',
+  outlinerLines: 'outline-lines',
+  codeblockLineCount: 'codeblock-line-count',
   plainUnresolvedLinks: 'plain-unresolved',
   nativeHighlight: 'native-highlight',
   muteCheckedItems: 'mute-checked',

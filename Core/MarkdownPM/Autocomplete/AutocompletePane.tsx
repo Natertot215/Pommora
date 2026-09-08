@@ -48,7 +48,7 @@ export function AutocompletePane({ ac, candidates, index, onPick }: Props): Reac
   const sliding = v.ac.form === 'alias' && cameFrom.current.length > 0
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
-    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-ac-slot">
+    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
       {rows.map((row, i) => (
         <MenuItem
           key={row.value}
@@ -86,7 +86,7 @@ export function AutocompletePane({ ac, candidates, index, onPick }: Props): Reac
             onPick(row)
           }}
         >
-          <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>
+          <span className="mdpm-autocomplete-match">{row.label.slice(0, matchLen)}</span>
           {row.label.slice(matchLen)}
         </MenuItem>
       ))}
