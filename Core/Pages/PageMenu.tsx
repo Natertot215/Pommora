@@ -18,8 +18,8 @@ import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { EDITOR_SCALE_DEFAULT, SCALE_STEPS, coerceScale } from '../Settings/personalization'
-import { factorChoice, PickerControl, stepsWith } from '@pommora/uix/Pickers/PickerControl'
+import { EDITOR_SCALE_DEFAULT, coerceScale } from '../Settings/personalization'
+import { ScalePicker } from '../Settings/ScalePicker'
 
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
@@ -92,21 +92,7 @@ export function PageMenu(): React.JSX.Element | null {
         footer={
           <MenuFooting
             leading={
-              <PickerControl
-                ariaLabel="Page Scale"
-                solid
-                value={String(editorScale)}
-                options={stepsWith(SCALE_STEPS, editorScale).map(factorChoice)}
-                onPick={(v) => setEditorScale(Number(v))}
-                typeable={{
-                  text: editorScale.toFixed(2),
-                  suffix: 'x',
-                  onCommit: (written) => {
-                    const factor = Number.parseFloat(written.replace(/x/i, '').trim())
-                    if (Number.isFinite(factor)) setEditorScale(factor)
-                  },
-                }}
-              />
+              <ScalePicker ariaLabel="Page Scale" value={editorScale} onPick={setEditorScale} />
             }
             trailing={
               <FooterIconButton
