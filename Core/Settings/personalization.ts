@@ -98,6 +98,7 @@ export interface Personalization {
   ribbonOrder?: string[]
   interfaceScale?: number
   previewPersistence?: PreviewPersistence
+  dismissPreviewOnPointer?: boolean
   fileHistory?: boolean
   historyDays?: number
   historyInterval?: number
