@@ -40,7 +40,8 @@ function Level({
             align="start"
             selected={row.checked}
             leading={leadingGlyph(row.icon)}
-            onClick={row.disabled ? undefined : () => onPick(row.action)}
+            disabled={row.disabled}
+            onClick={() => onPick(row.action)}
           >
             {row.label}
           </PickerRow>

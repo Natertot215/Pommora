@@ -29,7 +29,7 @@ export function menuRows<A extends string>(items: readonly ActionItem<A>[]): Pre
     }
     return [
       ...(item.separatorBefore ? [{ kind: 'separator' as const }] : []),
-      item.checked !== undefined
+      item.checked !== undefined && !item.submenu
         ? { kind: 'choice', ...base, checked: item.checked }
         : { kind: 'item', ...base, submenu: item.submenu },
     ]

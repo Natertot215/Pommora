@@ -38,6 +38,12 @@ describe('the one door every menu opens through', () => {
     ])
   })
 
+  it('resolves null on an empty menu without asking either renderer', async () => {
+    await expect(popMenu([], trigger())).resolves.toBeNull()
+    expect(presented).not.toHaveBeenCalled()
+    expect(asked).not.toHaveBeenCalled()
+  })
+
   it('presents in-app when a trigger hangs the menu and the preference is off', async () => {
     const el = trigger()
     await expect(popMenu([{ label: 'Rename', action: 'rename' }], el)).resolves.toBe('in-app')
