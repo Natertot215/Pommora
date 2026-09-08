@@ -1,4 +1,3 @@
-import { useCallback } from 'react'
 import type { Size } from '@pommora/uix/Interactions/ResizeFrame'
 import { isGlanceSize } from '../../Contract/validators'
 import { useSession } from '../../Session/store'
@@ -10,15 +9,12 @@ export function useWindowGeometry(id: string): {
 } {
   const stored = useSession((s) => s.devicePrefs.windows?.[id])
   // A drop reports whenever any rect key moved, which a window move always does; only a size that differs is worth a write.
-  const onSizeChange = useCallback(
-    (size: Size): void => {
-      const s = useSession.getState()
-      const windows = s.devicePrefs.windows
-      const prev = windows?.[id]
-      if (prev?.w === size.w && prev.h === size.h) return
-      s.setDevicePref('windows', { ...windows, [id]: size })
-    },
-    [id],
-  )
+  const onSizeChange = (size: Size): void => {
+    const s = useSession.getState()
+    const windows = s.devicePrefs.windows
+    const prev = windows?.[id]
+    if (prev?.w === size.w && prev.h === size.h) return
+    s.setDevicePref('windows', { ...windows, [id]: size })
+  }
   return { initialSize: isGlanceSize(stored) ? stored : undefined, onSizeChange }
 }
