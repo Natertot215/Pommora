@@ -419,7 +419,6 @@ export function PropertyFrame({
                 value={optionLook}
                 options={OPTION_STYLE_OPTIONS}
                 onPick={(look) => void saveColumnStyle(def.id, { look })}
-                solid
               />
             }
           />
