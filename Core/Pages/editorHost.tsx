@@ -90,7 +90,6 @@ function buildEditorHost(
       table: (ctx) => popMenu(tableMenuItems(ctx)),
       citation: (ctx) => popMenu(citationMenuModel(ctx)),
       format: inert ? undefined : nativeEditorMenu,
-      gripHot: (hot) => host().tell('editor:grip-hot', hot),
     },
     glance: inert
       ? undefined
