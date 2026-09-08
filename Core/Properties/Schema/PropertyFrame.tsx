@@ -416,6 +416,7 @@ export function PropertyFrame({
             trailing={
               <PickerControl
                 ariaLabel="Chip style"
+                solid
                 value={optionLook}
                 options={OPTION_STYLE_OPTIONS}
                 onPick={(look) => void saveColumnStyle(def.id, { look })}

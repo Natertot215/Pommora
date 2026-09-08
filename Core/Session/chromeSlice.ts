@@ -7,6 +7,7 @@ interface MenuPending {
   id: number
   items: readonly ActionItem<string>[]
   trigger: HTMLElement
+  solid?: boolean
   settle: (action: string | null) => void
 }
 
@@ -17,6 +18,7 @@ export interface ChromeSlice {
   presentMenu: (
     items: readonly ActionItem<string>[],
     trigger: HTMLElement,
+    solid?: boolean,
   ) => Promise<string | null>
   notification: (Notification & { id: number }) | null
   notify: (n: Notification) => void
@@ -41,14 +43,14 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
     }),
 
   pendingMenu: null,
-  presentMenu: (items, trigger) =>
+  presentMenu: (items, trigger, solid) =>
     new Promise((resolve) => {
       get().pendingMenu?.settle(null)
       const settle = (action: string | null): void => {
         set((s) => (s.pendingMenu?.settle === settle ? { pendingMenu: null } : {}))
         resolve(action)
       }
-      set({ pendingMenu: { id: ++menuSeq, items, trigger, settle } })
+      set({ pendingMenu: { id: ++menuSeq, items, trigger, solid, settle } })
     }),
 
   notification: null,
