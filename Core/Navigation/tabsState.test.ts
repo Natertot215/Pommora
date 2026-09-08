@@ -1,21 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import type { StoredTabSet } from '../Interface/Windows/windowRecord'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { writeValue } from '../Platform/localState'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
 
-let root: string
-beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-tabsstate-'))
+beforeEach(() => {
   installStores(memoryStores().stores)
 })
-afterEach(async () => {
+afterEach(() => {
   installStores(NO_STORES)
-  await rm(root, { recursive: true, force: true })
 })
 
 const set = (id: string): StoredTabSet => ({

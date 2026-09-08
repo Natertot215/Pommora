@@ -1,20 +1,14 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
 import { installStores, NO_STORES } from '../../Platform/stores'
 import { memoryStores } from '../../Testing/memoryStores'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowState'
 
-let root: string
-beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'windows-'))
+beforeEach(() => {
   installStores(memoryStores().stores)
 })
-afterEach(async () => {
+afterEach(() => {
   installStores(NO_STORES)
-  await rm(root, { recursive: true, force: true })
 })
 
 const file: WindowsFile = {

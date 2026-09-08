@@ -1,7 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
@@ -16,15 +13,12 @@ import {
   upsertPageIndex,
 } from './contentIndex'
 
-let root: string
-beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-cindex-'))
+beforeEach(() => {
   installStores(memoryStores().stores)
   markIndexReady()
 })
-afterEach(async () => {
+afterEach(() => {
   installStores(NO_STORES)
-  await rm(root, { recursive: true, force: true })
 })
 
 const STAT = { mtimeMs: 1000, size: 10 }
