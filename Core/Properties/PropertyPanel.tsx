@@ -40,7 +40,7 @@ import { contextIdentityOf, contextIdsOf, isContextColumnId } from '../Contexts/
 import { useSession, type WindowTarget } from '../Session/store'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
-import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenu'
+import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import * as s from './property-panel.css'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null

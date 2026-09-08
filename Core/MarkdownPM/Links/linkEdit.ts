@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
-import type { ConnEditAction } from '@pommora/core/MarkdownPM/Links/connMenu'
+import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { tokenize, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'

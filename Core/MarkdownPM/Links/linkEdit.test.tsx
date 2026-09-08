@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { type ConnMenuAction, connMenuModel } from '@pommora/core/MarkdownPM/Links/connMenu'
+import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/connectionMenu'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
-import { showConnectionMenu } from '../../Interface/Menus/connectionMenu'
+import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 import { commitAliasOnEnter } from './linkEdit'
 
@@ -47,7 +47,7 @@ describe('the connection menu knows its span and its surface', () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
     expect(connMenu).toHaveBeenCalledWith({
-      items: connMenuModel({
+      items: connectionMenuModel({
         surface: 'editor',
         editable: true,
         hasAlias: false,
@@ -62,7 +62,7 @@ describe('the connection menu knows its span and its surface', () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await rightClick(view, 12)
     expect(connMenu).toHaveBeenCalledWith({
-      items: connMenuModel({
+      items: connectionMenuModel({
         surface: 'editor',
         editable: true,
         hasAlias: true,
@@ -77,7 +77,7 @@ describe('the connection menu knows its span and its surface', () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
     await rightClick(view, 6)
     expect(connMenu).toHaveBeenCalledWith({
-      items: connMenuModel({
+      items: connectionMenuModel({
         surface: 'editor',
         editable: true,
         hasAlias: false,
@@ -106,7 +106,7 @@ describe('the connection menu knows its span and its surface', () => {
     })
     await rightClick(view, 6)
     expect(connMenu).toHaveBeenCalledWith({
-      items: connMenuModel({
+      items: connectionMenuModel({
         surface: 'editor',
         editable: false,
         hasAlias: false,

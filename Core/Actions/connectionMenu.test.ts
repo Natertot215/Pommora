@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { connMenuModel, type ConnMenuContext } from './connMenu'
+import { connectionMenuModel, type ConnMenuContext } from './connectionMenu'
 
 const rows = (ctx: Partial<ConnMenuContext> = {}): [string, string][] =>
-  connMenuModel({ surface: 'editor', editable: true, hasAlias: false, ...ctx }).map((i) => [
+  connectionMenuModel({ surface: 'editor', editable: true, hasAlias: false, ...ctx }).map((i) => [
     i.label,
     i.action,
   ])
@@ -98,7 +98,7 @@ describe('a link naming an address', () => {
   })
 
   it('Format lists the three link forms as its branch', () => {
-    const format = connMenuModel({
+    const format = connectionMenuModel({
       surface: 'editor',
       editable: true,
       hasAlias: false,
@@ -112,7 +112,7 @@ describe('a link naming an address', () => {
   })
 
   it("never offers a page's history — the link menu points, it does not keep", () => {
-    const model = connMenuModel({
+    const model = connectionMenuModel({
       surface: 'editor',
       editable: true,
       hasAlias: false,

@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '@pommora/core/MarkdownPM/Links/connMenu'
+import type { ConnUrlAction } from '@pommora/core/Actions/connectionMenu'
 import { unescapeAlias } from '@pommora/core/Connections/links'
 import { linkPaste } from '@pommora/core/MarkdownPM/Links/pasteDecision'
 import type { LinkDisplay } from '@pommora/core/Properties/properties'

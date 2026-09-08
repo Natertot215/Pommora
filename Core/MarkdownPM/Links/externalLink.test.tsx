@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { type ConnMenuAction, connMenuModel } from '@pommora/core/MarkdownPM/Links/connMenu'
+import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/connectionMenu'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
-import { showConnectionMenu } from '../../Interface/Menus/connectionMenu'
+import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 
 class ResizeObserverStub {
@@ -119,7 +119,7 @@ describe('a markdown link’s menu follows what its target names', () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view, 5, '.md-link')
     expect(connMenu).toHaveBeenCalledWith({
-      items: connMenuModel({
+      items: connectionMenuModel({
         surface: 'editor',
         editable: true,
         hasAlias: false,
@@ -135,7 +135,7 @@ describe('a markdown link’s menu follows what its target names', () => {
     const view = await mountEditor({ initialBody: 'a [Alpha](Alpha) b', connections: conn })
     await rightClick(view, 5, '.md-connection-resolved')
     expect(connMenu).toHaveBeenCalledWith({
-      items: connMenuModel({
+      items: connectionMenuModel({
         surface: 'editor',
         editable: false,
         hasAlias: false,
