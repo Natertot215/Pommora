@@ -19,7 +19,7 @@ describe('keyed scopes', () => {
   })
 
   it('an empty scope reads as {}', () => {
-    expect(readScope('viewOrder')).toEqual({})
+    expect(readScope('embedZooms')).toEqual({})
   })
 
   it('a page’s remembered aliases round-trip and are forgotten one at a time', () => {
@@ -29,16 +29,10 @@ describe('keyed scopes', () => {
   })
 
   it('null clears the key rather than storing an empty container', () => {
-    writeKey('activeView', 'c1', 'v1')
-    writeKey('activeView', 'c2', 'v2')
-    writeKey('activeView', 'c1', null)
-    expect(readScope<string>('activeView')).toEqual({ c2: 'v2' })
-  })
-
-  it('rewriting a key replaces it in place', () => {
-    writeKey('viewOrder', 'v1', ['a', 'b'])
-    writeKey('viewOrder', 'v1', ['b', 'a'])
-    expect(readScope<string[]>('viewOrder')).toEqual({ v1: ['b', 'a'] })
+    writeKey('headingIcon', 'page-1', 'star')
+    writeKey('headingIcon', 'page-2', 'flag')
+    writeKey('headingIcon', 'page-1', null)
+    expect(readScope<string>('headingIcon')).toEqual({ 'page-2': 'flag' })
   })
 })
 

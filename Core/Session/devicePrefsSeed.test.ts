@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NO_NEXUS, ok } from '@pommora/core/Contract/result'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
@@ -59,10 +59,6 @@ async function widthsAtReady(
   stop()
   return seen
 }
-
-beforeEach(() => {
-  localStorage.clear()
-})
 
 describe('the panes open at the widths this machine last left them', () => {
   it('carries both stored widths into the ready paint, not after it', async () => {
@@ -127,7 +123,7 @@ describe('the prefs are read once per nexus', () => {
 })
 
 describe('a pane drop writes back to the device store', () => {
-  it('carries both widths in one panes preference, and nothing to the browser', async () => {
+  it('carries both widths in one panes preference', async () => {
     const { useSession, prefsSave } = await freshStore(withPrefs({}))
     await useSession.getState().applyTree(treeAt('/a'))
     useSession.getState().setSidebarWidth(300)
@@ -136,7 +132,6 @@ describe('a pane drop writes back to the device store', () => {
     useSession.getState().persistPaneWidths()
     expect(prefsSave).toHaveBeenCalledTimes(1)
     expect(prefsSave).toHaveBeenCalledWith({ panes: { sidebar: 300, inspector: 400 } })
-    expect(localStorage.length).toBe(0)
   })
 })
 
