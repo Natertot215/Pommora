@@ -69,25 +69,18 @@ Ten lines of effort, ranked by foundation risk first, then debt that compounds, 
 
 ##### 1. Where Persisted State Lives
 
-**Lenses and state:** Gates Mobile/Sync, Foundation risk, Ruled 09-07-2026, Filing, Asymmetry. **Effort:** Medium. **Deletes:** `useViewOrders.ts`, `disclosureState.ts`, the two-homes fork, two storage scopes, two UIX module maps.
+**Lenses and state:** Foundation risk, Ruled 09-07-2026, Filing. **Effort:** Small. **Deletes:** Nothing further.
 
-**Found.** Pommora writes state to five different places: the user's Markdown and JSON files under `.nexus/` (which travel with the nexus), the `nexus.db` database (which by design never travels and is deleted outright on a schema bump), the app-level `pommora.json`, the browser's own storage, and, for floating-window geometry, plain in-memory maps that die on reload. Which place a thing goes to was decided one piece at a time.
+**Found.** State is placed by what it belongs to. Anything a person decided about a piece of content, or about how a container presents itself, goes to that entity's Markdown frontmatter or its container's JSON sidecar under `.nexus/`, and travels with the nexus to every device. Anything true only of the machine in front of the user goes to `nexus.db` through the Platform layer, which never syncs and may be discarded on a schema bump without losing anything authored. Interface Scale and Webpage Zoom are the deliberate exception in the other direction: they stay in the synced settings file, because the nexus defines how it is meant to be read.
 
-Dragging a row writes to two different homes depending on whether the view happens to be sorted, so the same gesture sometimes syncs and sometimes doesn't, and which saved view a container opens on never leaves the machine. Pane widths and sidebar disclosure bypass the host entirely into browser storage. Floating-window size lives in a module map keyed by window id and is lost on reload. The table heading-column toggle is keyed by table position rather than by anything the table carries, so inserting a table above moves it.
-
-**The rule, ruled 09-07-2026:** content and user intent go to `.nexus/` files; per-machine chrome goes to `nexus.db` through the Platform layer; nothing goes to browser storage. Applied row by row: manual row order and the active view move to the container sidecar; pane widths, sidebar disclosure, and floating-window size move to the device store, window size keyed per window type (Settings, Pages, Nav, History, Web) rather than per entity, the iteration window keeping none; the window panel width is not persisted at all. Aliases, heading icon, citations, heading columns, and embed heights and zooms stay in `nexus.db` as they are. Interface Scale and Webpage Zoom stay in the synced settings file. The plan is `Planning/State Placement — Implementation Plan.md`.
+Two things still sit outside that shape. Six page-level authoring decisions — aliases, heading icon, citations, heading columns, and embed heights and zooms — stay in `nexus.db` by the ruling, so they remain per-machine and are lost on a schema bump. And the table heading-column toggle is keyed by table position rather than by anything the table carries, so inserting a table above moves it.
 
 **Change.**
 
-1. Write the rule into `CorePM.md`'s persistence section and retire the four-tier / two-layer / three-scope descriptions that disagree with it. *(S; Ruled)*
-2. Add `manual_order` to the view record beside `collapsed_groups`; every drop site persists through the view, so the sorted and grouped path stops forking away from the unsorted one. Delete `useViewOrders.ts` and the `viewOrder` scope after a one-shot import on first open. *(M; ~31 lines + the fork; Ruled)*
-3. Add `active_view` to the container sidecar, written by a mutate op and read onto the container node; delete the `activeView` scope and its startup load after a one-shot import. *(S; Ruled)*
-4. Route pane widths and sidebar disclosure through the device-preferences scope, seeded before first paint; delete `disclosureState.ts` and the browser-storage block. *(S; ~75 lines; Ruled)*
-5. Persist floating-window size per window type through the device store; UIX's module map becomes a callback prop pair supplied by Core keyed by type. The window panel width stays in memory. *(S; Ruled)*
-6. Key the heading-column toggle to the table's header row instead of its position, and make the state field remap on document change. *(S; ~10 lines)*
-7. Whether File History stays per-device is the one open question; it is the only record of an overwritten external edit and lives in a store that never leaves the machine. *(—; Needs a ruling)*
+1. Key the heading-column toggle to the table's header row instead of its position, and make the state field remap on document change. *(S; ~10 lines)*
+2. Whether File History stays per-device is the one open question; it is the only record of an overwritten external edit and lives in a store that never leaves the machine. *(—; Needs a ruling)*
 
-**Findings:** R-01, R-02, R-04, R-05, R-06.
+**Findings:** R-01, R-05, R-06.
 
 ##### 2. The Concurrency Model Is Single-Process
 
@@ -242,13 +235,13 @@ Keyboard shortcuts live in four unrelated places: eight hard-coded in the native
 
 **Lenses and state:** Debt, Performance, Scoped, awaiting rulings. **Effort:** Small to medium. **Deletes:** Nothing; work replaced.
 
-**Found.** Three places still answer a narrow question with a wide walk, and they share one root. The connection title map is rebuilt wholesale on every real tree change, because the projection keyed off the tree isn't incremental even though the tree patches are; that "one walk per tree" contract in the tree index is also what the watcher's id resolution and the editor's per-scroll-frame cost run into. On the scroll path the expensive part is not resolution, which is a cheap map lookup, but re-tokenizing the viewport and sorting every decoration; a resolution cache would not help. Two further narrowings were attempted and correctly stopped because they turned out to be correctness calls: the folder classifier's existence check is true for a malformed sidecar where the parse returns nothing, and the three watch-batch consumers classify different tree states, which is the same mechanism as the watcher's three-way classification. All of this is scoped in `Planning/Corpus Walk Deferrals — Scope.md`, each item as what it is, the wide walk, and the decision it needs.
+**Found.** Three places still answer a narrow question with a wide walk. The connection title map is rebuilt wholesale on every real tree change, because the projection keyed off the tree isn't incremental even though the tree patches are; that "one walk per tree" contract in the tree index is also what the editor's per-scroll-frame cost runs into. The watcher's id resolution is a separate problem despite the same symptom: it runs on the engine side of the host boundary, and the tree index resolves icons and trails through UIX, so an engine module cannot reach it at all. On the scroll path the expensive part is not resolution, which is a cheap map lookup, but re-tokenizing the viewport and sorting every decoration; a resolution cache would not help. Two further narrowings were attempted and correctly stopped because they turned out to be correctness calls: the folder classifier's existence check is true for a malformed sidecar where the parse returns nothing, and the three watch-batch consumers classify different tree states, which is the same mechanism as the watcher's three-way classification. All of this is scoped in `Planning/Corpus Walk Deferrals — Scope.md`, each item as what it is, the wide walk, and the decision it needs.
 
 **Change.**
 
-1. Rule the tree-index model: rebuild on identity change (today) or carry forward with deltas. This is the keystone; the watcher id resolution and the scroll-path cost both fold into whichever model is picked. *(—; Needs a ruling)*
+1. Rule the tree-index model: rebuild on identity change (today) or carry forward with deltas. This is the keystone the scroll-path cost folds into. *(—; Needs a ruling)*
 2. Carry the tree index forward across patches and re-index only the changed node, or accept the rebuild and bound it; per the ruling above. *(M; Deferred)*
-3. Resolve watcher page ids through the index's by-id map, in the shape the ruling above produces. *(S; Deferred)*
+3. Carry the touched page ids out of the watch patch's own result, where they are already in hand at write time. Independent of the ruling above, and the cheapest item here. *(S; Ready)*
 4. On the scroll path, avoid re-tokenizing and re-sorting when only the viewport moved; a resolution cache is off the table. *(M; Deferred)*
 5. Rule whether a folder's agenda classification may carry existence separately from parse success, and whether the watch-batch consumers may share one classification; decide once, since the two are one mechanism. *(—; Needs a ruling)*
 
@@ -310,9 +303,7 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 
 | ID | Topic | Kind | Finding | Where |
 | --- | --- | --- | --- | --- |
-| R-01 | 1 | D | Page- and container-level authoring decisions live in the database that never syncs and is deleted on a schema bump | `Core/Platform/localState.ts, Desktop/Store/open.ts, Core/Views/Host/useViewHost.ts` |
-| R-02 | 1 | Dt | `localStorage` is a fifth persistence backend with no host boundary, and the stated reason for it does not hold | `Core/Session/layoutSlice.ts, Core/Interface/Sidebar/disclosureState.ts, Core/Interface/App.tsx` |
-| R-04 | 1 | D | Floating-window and side-pane geometry lives in module-scope maps that nothing persists | `UIX/Windows/window-base.tsx, UIX/Windows/window-panel.tsx` |
+| R-01 | 1 | D | Six page-level authoring decisions live in the database that never syncs and is deleted on a schema bump | `Core/Platform/localState.ts, Desktop/Store/open.ts` |
 | R-05 | 1 | D | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts` |
 | R-06 | 1 | FR | The heading-column toggle is keyed by table ordinal, so inserting a table above moves it | `Core/MarkdownPM/Tables/widget.tsx, Core/Pages/PageView.tsx` |
 | R-07 | 2 | FR | An external edit never reaches an open page, and the next keystroke writes over it | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts` |
@@ -384,7 +375,7 @@ Thirty-eight documentation corrections remain, of which the ones that hide a rea
 
 - **DesktopPM** describes the file lock as cross-process; it's in-process. This makes the single-writer problem look solved.
 - **DesktopPM** and **CorePM** attribute the atomic write to a Core file that only forwards to the host. This makes the atomicity contract look declared.
-- **DesktopPM** and **ConfigurationPM** disagree on where Use Native Menus and pane widths live. ConfigurationPM is right.
+- **DesktopPM** and **ConfigurationPM** disagree on where Use Native Menus lives. ConfigurationPM is right.
 - **CorePM** and **ConfigurationPM** count persistence tiers as four, two, or three. There are five, and browser storage appears in none of them. The placement rule replaces all three descriptions.
 - **SymbolsPM** says nothing arrives by wildcard. One static import does.
 - **MarkdownPM** says links come from one intent stream. They don't, and the doc describes the design the code should reach.
@@ -395,4 +386,4 @@ Thirty-eight documentation corrections remain, of which the ones that hide a rea
 
 #### Appendix D: Method
 
-Nine Opus auditors, dispatched in parallel with one shared brief. Six owned a directory slice and applied all eleven lenses: Foundations, Content Model, Views, Shell, MarkdownPM, UIX. Three were cross-cutting: Duplication and Asymmetry, Filing and Taxonomy, and Mechanical Sweeps. A tenth Opus agent merged the nine into 72 findings, re-opened every ranked claim against the code, and produced a corrections section so nothing disappeared silently. The eight findings most likely to land above the fold were independently traced before the first consolidation. The fixes that followed were each dispatched to one agent with the finding's file pointers and the full gate, and each diff was read before its finding was removed. Remaining process documents: `State Placement — Implementation Plan.md` (topic 1, ruled) and `Corpus Walk Deferrals — Scope.md` (topic 11).
+Nine Opus auditors, dispatched in parallel with one shared brief. Six owned a directory slice and applied all eleven lenses: Foundations, Content Model, Views, Shell, MarkdownPM, UIX. Three were cross-cutting: Duplication and Asymmetry, Filing and Taxonomy, and Mechanical Sweeps. A tenth Opus agent merged the nine into 72 findings, re-opened every ranked claim against the code, and produced a corrections section so nothing disappeared silently. The eight findings most likely to land above the fold were independently traced before the first consolidation. The fixes that followed were each dispatched to one agent with the finding's file pointers and the full gate, and each diff was read before its finding was removed. Remaining process document: `Corpus Walk Deferrals — Scope.md` (topic 11).

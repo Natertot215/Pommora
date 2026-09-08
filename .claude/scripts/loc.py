@@ -79,6 +79,7 @@ RENAMED_FROM = {"Nexus & Data": "Main Process", "Pommora UIX": "Design System"}
 
 # Stack order and swatch, bottom of the chart first.
 ORDER = [
+    "Desktop Shell",
     "Views & Properties",
     "Nexus & Data",
     "Editor — MarkdownPM",
@@ -86,9 +87,9 @@ ORDER = [
     "App Chrome",
     "Surfaces & Embeds",
     "Shared Contract",
-    "Desktop Shell",
 ]
 COLORS = [
+    "#0E7C86",
     "#1C7629",
     "#075CB2",
     "#8C7606",
@@ -96,7 +97,6 @@ COLORS = [
     "#B26F07",
     "#A24CCE",
     "#D93B31",
-    "#0E7C86",
 ]
 
 SKIP_DIR = {"node_modules", "dist", "out", ".git"}

@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-07-2026              | PM-132 | State Placement                                      |
 | 09-06-206               | PM-131 | Cross-Surface Glances                                |
 | 09-06-2026              | PM-130 | The One Value Picker & Panel                         |
 | 09-05-2026 → 09-06      | PM-129 | The Repo Restructure                                 |
@@ -134,6 +135,22 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-132 || State Placement
+**DATE:** 09-07-2026
+
+Five values moved to the home their content belongs to. A chosen view and a hand-dragged row order became fields of the container's own sidecar, so both travel with the Nexus; pane widths, sidebar folds, and a floating window's size became nested keys on the `devicePrefs` singleton in `nexus.db`, which is per machine and per Nexus by construction. `localStorage` holds nothing of Pommora's.
+
+**The sidecar half:** `active_view` is a container-sidecar field written through the `mutate` rail beside `setDisclosureLock`, so a view switch stays instant and never waits on disk; a sentinel id is refused at the one call site that could mint one. `manual_order` joined `collapsed_groups` in `VIEW_STATE_KEYS`, which carries it to tile-embedded views for free through `ViewTile`'s `persistState`. Three duplicated readings of a container's meta collapsed into `containerFieldsFrom`, and the crossing test that proves the walk path and the watch path agree now compares whole nodes rather than a hand-written projection that a tenth field would have passed straight through.
+
+**The device half:** `DevicePrefs` gained `panes`, `disclosure`, and `windows` as nested keys — nested because `packDevicePrefs` drops a top-level `false` and a fold map is mostly false. The seed moved above `status: 'ready'` so the sidebar settles once as the Nexus paints rather than jumping afterward, and the pane widths joined `PER_NEXUS` so a Nexus switch returns them to their defaults. `UIX/Windows/window-base.tsx` gave up its module map and its `id`: it takes a size and reports a change, keeping the centering and the on-screen clamp. `ResizeFrame` now carries the grip through `onChange`, which is what lets Core tell a move from a resize — the earlier equality check could not, and a window opened clamped from a larger display then merely dragged would have had the larger size overwritten.
+
+**What went:** `useViewOrders.ts`, `disclosureState.ts`, the `activeViews` store slice, both `viewOrders` channels and their handlers, two `local_state` scopes, and the two one-shot importers that carried the old values across.
+
+**Sequencing:** each retiring home was imported in the same phase as the reader that consumes it, so no gesture ever wrote to a home nothing read. The `viewOrder` import was the exception and it cost: built in Task 4, deleted in Task 8, with no launch in between, so it never ran and three hand-ordered views were left stranded in a scope nothing reads. They were recovered by hand from rows still present — 8 and 10 ids onto `Ideas`, 192 onto `Studio` — along with two homepage-tile orders. The precondition that was missing is now a guideline: retire a migration only after a run has been watched consuming the rows it reads.
+
+- **Commits:** `e88c2cc96^..9f64776e0` (interleaved on `main` with the parallel Engine Boundary arc)
+- **Diff:** Net −41 (source, comments and tests excluded) — Views & Properties −46, Nexus & Data +41, App Chrome −32, Shared Contract −6, UIX +2
 
 #### PM-131 || Cross-Surface Glances
 **DATE:** 09-06-2026

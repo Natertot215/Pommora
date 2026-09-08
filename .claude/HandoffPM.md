@@ -1,50 +1,55 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Execute `.claude/Planning/PropertyPanel — Implementation Plan.md` unattended — fold nine hand-rolled value-assign popups onto one `PropertyPicker`, replace `Core/Properties/Page/` with a `MenuItem`-row `PropertyPanel`, no behavior change on any surface. Then, through the run: commit explicit paths (a parallel agent shares the tree); "prioritize fewer moving parts, not an arbitrary line-count reduction"; "B13 should be hoisted to the shared guard — don't enumerate these — share this across all properties from that creation flow"; one-paragraph History entry; surgical doc edits, replace not amend.
+> **User Prompt:** Execute `.claude/Planning/State Placement — Implementation Plan.md` from the repo root — eight tasks, five phases, one writer on the tree, per-phase gate of implement → simplify → comment pass → gates → code review → attack review → commit. Then, through the run: "stop stopping"; "coordinate and continue" with the parallel session rather than blocking on it; remove any code that exists only to satisfy a test-validation criterion; a live-DOM test for the writes-to-disk that Nathan cannot see himself; prune stale doc claims by deletion rather than amendment; reconcile the Corpus Walk deferrals precisely; commit all documentation and push to origin.
 
 #### Current Focus
 
-**Dates:** 09-06-2026
+**Dates:** 09-07-2026 → 09-08
 **Model:** Opus 4.8
 
-**The fold is in and closed out.** Nine popup compositions that assigned a property value became one `Core/Properties/Pickers/PropertyPicker.tsx` — a `PickTarget` union (options, datetime, file) plus an optional chooser pane that adds a property and drills into its value — so `CardPickerHost`, `CardAddPicker`, and Table's inline `DatetimeCellPicker` were deleted and Cards, Table, and the panel each drive the one picker by the `kind` they pass. `Core/Properties/Page/` (four files) became `Core/Properties/PropertyPanel.tsx`, `MenuItem` rows with the value in a trailing slot, one visibility roster and a live predicate, and one picker for both the value popup and the Add chooser. `TextPicker` stayed the shared text field, untouched. Phase 1 landed over Tasks 1–3 with Gate 1 (its stop waived), Phase 2 over Tasks 4–5 with Gate 2 (visuals passed), and Phase 3 was the re-fold census.
+**State placement is complete and closed out.** Five values moved to the home their content belongs to. `active_view` and `manual_order` became container-sidecar fields, so a chosen view and a hand-dragged order travel with the Nexus; pane widths, sidebar folds, and floating-window size became nested keys on the `devicePrefs` singleton in `nexus.db`, per machine and per Nexus. `localStorage` holds nothing of Pommora's, verified live in the running renderer at zero keys. Deleted: `useViewOrders.ts`, `disclosureState.ts`, the `activeViews` slice, both `viewOrders` channels and their handlers, two `local_state` scopes, and the two one-shot importers.
 
-**What the census and closeout found.** Three read-only `Explore` sweeps returned no residue: the picker is the only non-allowlisted `PickerMenu` assigning a value, no second wrapper regrew, and all 28 Behavior Ledger rows held. They surfaced three orphans — a dead `panelStyle` prop (never read; a deviation from Requirement 3) and `optionsOf`/`pickSemantics` exported with no importers — all removed. The `feature-dev:code-reviewer` role and the neutral Delivery-Claim verification passed; the adversarial attack (`general-purpose`, since `build-breaking-agent` and `code-simplifier` are retired) caught one real bug in the just-added B13 guard — it returned early on every blank commit while an add-session was open, swallowing an in-session multi_select/context deselect and a date clear-after-pick — fixed by splitting reveal (guarded on a real value) from commit (unconditional). A second claimed finding (number edit-flow data loss) was struck: `CardValue` routes number edits to the inline editor, so the picker path it needs does not exist.
+**What the reviews were worth.** Three passes ran; their real finds were all *removals*. Gate 1's code review killed a wrong-Nexus guard added mid-phase that protected a state the product cannot reach — and which had itself introduced the throw that then needed a never-throw wrap. Both Gate 1 reviews independently found the one real breach: a set nested deep enough to be minted no view of its own shows a placeholder row, and clicking it wrote `view_default` into the scope the import read, so a sentinel would have landed in a file the Locked Decisions require a human to read. The crossing test that proves the walk and watch paths agree was comparing a hand-written nine-key projection, which a tenth field would have passed straight through; it compares whole nodes now, proven by injecting a one-sided divergence.
 
-**What did not land.** Net source came to **−267**, under the plan's **−400** budget (Requirement 7 not met, recorded as a Deviation). The whole shortfall is two files over their optimistic per-file ceilings — `PropertyPanel.tsx` at 438 (≤320) and `CardsView.tsx` at +163 (≤130) — behavior the estimates underestimated, and the only remaining cut is an extraction the plan bars and Nathan's "fewer moving parts" direction argues against. The number is reported, not laundered.
+**What went wrong.** The `viewOrder` import was built in Task 4 and deleted in Task 8 with no launch in between, so it never ran against the real Nexus and three hand-ordered views were stranded in a scope nothing reads — 8 and 10 ids in `Ideas`, 192 in `Studio`. Two homepage-tile orders (19 and 31) were separately unreachable by the container-keyed import. All five were recovered by hand from rows still present and now sit on disk as `manual_order`. The Hazard Window was written to prevent exactly this and did not: it guards a home being *emptied* early and says nothing about the importer being *removed* before it has run.
 
 #### Completion Criteria
 
-- [x] `Core/Properties/Page/` gone; `PropertyPicker` the only non-allowlisted value-assign `PickerMenu`; `TextPicker` untouched.
-- [x] All 28 Behavior Ledger rows hold (Census C); every Made-False doc rewritten in the commit that falsified it.
-- [x] Census A/B/C clean; three orphans folded; Dead-Vocabulary tokens zero, `PropertyPicker` control 24.
-- [x] Delivery Claim verified; attack review's one real finding fixed (`7e50be7bd`), one struck.
-- [ ] **Net −400 not met** — −267, the fold's floor; recorded as a Deviation.
-- [ ] Nathan's own live pass over the four surfaces (visuals passed at the gates; a full daily-use pass still open).
+- [x] Every numbered requirement traces to a landed task; the acceptance criterion observed on the real Nexus, not a fixture.
+- [x] One mapper reads a container sidecar's meta; the crossing test compares whole nodes and goes red on a one-sided field.
+- [x] No file lock taken twice on one key; every lock take on the `realpath`-canonicalized path.
+- [x] One rail for machine-local preferences — no second scope, channel, or handler added.
+- [x] No sentinel id and no stale page-id array reached a sidecar; `deleteView` clears `active_view` in the same locked write.
+- [x] Dead Vocabulary sweep at zero against its controls; `localStorage` verified at 0 keys in the live renderer.
+- [x] Gates green at every phase and at close: typecheck 0, lint 0 with no warnings, 356 files / 4283 tests.
+- [ ] **Nothing a person set was lost — recovered, not prevented.** Five orders were rescued by hand after the import that should have carried them was deleted before it ran.
+- [ ] Nathan's live pass: the recovered orders holding, and a window reopening at its remembered size.
 
 #### Next Session
 
-- The inspector arc on `.claude/Planning/TilesV2-Spec.md` — the tab strip mounting `TileHost` per tab, and the properties/backlinks/list panel kinds.
-- The picker fold's Sequenced-After successors: the options-kind predicate written three times, the `openAddPicker` partition asymmetry (number/file initial entries), the three value-write paths and four number parsers, the two `optionsOf`, and `FilterFrame`'s `ChipsField` re-implementing `PropertyOptionRows`.
-- `property-panel.css.ts` carries Nathan's in-flight `label`/`titleText` styling edit (the malformed padding was repaired); the label export awaits its wiring.
-- The 09-07-2026 codebase audit (`.claude/Planning/Codebase Audit — Report.md`, with its rulings log) is the standing work list; the open decisions are D-1, D-2, D-6, D-7, D-8, and the D-9 rulings.
-- Deferred from the audit's topic 8, each a design call rather than a narrowing: R-38 (d), the folder classifier's existence check is true for a malformed sidecar where the parse returns nothing, so carrying the parsed sidecar map alone would misclassify a broken config; R-38 (e), the three watch-batch consumers classify different tree states, so one shared classification changes the refresh outcome; 8.3 (watcher id resolution through the index's by-id map); 8.6 (carrying the tree index forward across patches); 8.8 (per-version connection resolution on the scroll path). 8.2 waits on D-1.
+- **Clear the `viewOrder` residue** once the recovered orders are seen to hold: `delete from local_state where scope='viewOrder'` on the real Nexus. Six rows, inert, kept only as a safety net.
+- The audit's Topic 1 is down to two items, both needing Nathan rather than code: **R-06**, the heading-column toggle keyed by table ordinal so inserting a table above moves it; and **R-05**, whether File History stays per-device when it is the sole record of an overwritten external edit.
+- **Topic 11's cheapest item came unblocked.** The engine/renderer split means `valuesChanged`'s indices can never fold into the tree index — so carrying the touched page ids out of the watch patch's own result is now independent of the tree-index model ruling, and is the one item there that needs no decision from Nathan. `Corpus Walk Deferrals — Scope.md` is reconciled to that.
+- The inspector arc on `.claude/Planning/TilesV2-Spec.md`.
 
 #### Feedback
 
-- "Prioritize fewer moving parts and the totality of those that are, not an arbitrary line-count reduction."
-- "Don't enumerate these — hoist the guard to the shared path and share it across all properties from that creation flow."
-- "Commit explicit paths — you're working with a parallel agent." / "Remove the comments, stop adding more."
+- "Stop stopping" / "coordinate and continue" — a blocked task is a prompt to find the unblocked half, not to ask. Task 3's additive work ran on its six clean files while three were held by another session.
+- "Remove any and all code made because of test-validation criteria that are no longer actually necessary." Cost a guard, an unreachable branch, an optional prop, and a whole verify-box case across the run.
+- "Emphasize not taking false positives. The code is likely sound, but reduction is the main leverage."
+- "Writing to real data is not a concern if you undo it when you're done — it never is."
+- "Don't attempt to amend things that can be removed, whereas silence on the subject reflects the current state."
 
 #### Session Pointers
 
-- The plan and its evidence: `.claude/Planning/PropertyPanel — Implementation Plan.md` — the Behavior Ledger (B1–B28), the Line Budget, and the Log's Rulings, Deviations, Closeout, and Sequenced After.
-- Deleted-code oracles for verifying the fold preserved behavior: `git show f51427ef7~1:Core/Properties/Page/…` and `git show af8e6db22:Core/Views/Cards/CardPickerHost.tsx`.
-- Net measured with `.claude/scripts/loc.py`'s own counter over the fold's file set (base `8f9294408`), not a whole-repo diff — the parallel Glance arc interleaves commits on `main`.
+- The plan is deleted; its record lives in this Handoff, `HistoryPM.md` PM-132, and the commits `e88c2cc96^..9f64776e0`.
+- Two arcs interleave on `main` — State Placement and Engine Boundary — so a whole-repo diff over the range credits this arc with the other's work. Net measured per-commit against each commit's own parent with `loc.py`'s counter: **−41** source lines.
+- Pre-run snapshot of the retiring homes (`nexus.db`, both scopes as JSON, Electron's Local Storage) is what made the `viewOrder` recovery possible. It was nearly skipped as defensive padding.
 
 #### Working Notes
 
-- The line budget was tied to per-file ceilings that proved optimistic; when a fold's floor lands above them, the honest move is to report the miss and name the barred extraction, not to hit the number by relocating behavior into a file with headroom.
-- A creation-flow flag (`revealOnCommit`, or a persistent drilled `entry`) is a session flag, not a first-commit flag — guarding a *reveal* on it is right, guarding the *commit* on it swallows every later in-session edit. Separate the two.
-- `isBlankValue` is the correct reveal predicate: number `0` and checkbox `false` fall to its `default: false` arm, so a real zero still reveals its column.
-- A whole-repo `loc.py` diff is contaminated when another agent commits on the same branch; measure the named file set at the base commit instead.
+- **A migration is retired only after a run has been watched consuming the rows it reads.** A user confirming that some *other* import's values arrived is not that evidence — two importers reading two scopes need two observations. Now in `Development-Environment.md`.
+- **`--only` is necessary and not sufficient on a shared index.** The post-commit hook's `git commit --amend` carries no pathspec, so it re-commits the whole index after yours and rewrites the hash. The printed hash is dead; `git show --stat HEAD` is the only truth. `--only` also passes over untracked files in silence — a 290-line test landed in no commit for that reason.
+- **`rg -F` with an alternation searches for a literal pipe**, returns nothing, and reads exactly like a clean tree. Pair every expected-zero count with a control that must stay non-zero.
+- A lock taken on an unresolved path keys differently from `realpath` and serializes against nothing while the test passes. That vacuous pass happened once here before the symlinked test root caught it.
+- An `activeView` hit in `treePatch.ts` survives the sweep legitimately — it is the live tree-node field the sidecar maps onto, not the retired scope name. A sweep expectation of zero was wrong, and deleting to satisfy it would have broken the optimistic tree patch.
