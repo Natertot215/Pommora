@@ -36,7 +36,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. With the 
 | Share | Category | What it actually is |
 | --- | --- | --- |
 | **The next sitting** | Decisions | D-2 (external-edit reload policy) gates the concurrency topic; D-6 through D-9 are smaller. |
-| **~25%** | Behind-the-wall fixes | The engine-boundary guards (three approved), the four registry and locale policy fixes, the heading-column key, the write-echo tests. Small, mechanical, unblocked. |
+| **~25%** | Behind-the-wall fixes | The four registry and locale policy fixes, the heading-column key, the write-echo tests. Small, mechanical, unblocked. |
 | **~45%** | Ruled foundation work | The state-placement plan, the menu-system rework, the reconcile fix for Context tags, and the Table/Cards engine before a third view kind exists. |
 | **~30%** | Building | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel; Agenda's surface after its vocabulary is settled. |
 
@@ -46,7 +46,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. With the 
 
 **Matters for cross-device reliability.** A second host or a sync layer runs into these on day one:
 
-- `Core/Platform` and `Core/Contract`: the whole second-host contract. Solid, with one envelope hole.
+- `Core/Platform` and `Core/Contract`: the whole second-host contract. Solid.
 - `Core/Files`, `Core/Nexus`, `Core/Paths`, `Core/Index`: atomicity, the walk, identity re-minting, the rename cascade, one locale-sensitive string fold. The index now carries Context membership.
 - `Core/Contexts` and `Core/Properties`: title-keyed Context membership is the model's largest structural commitment, now ruled to stay. The value model beside it is excellent.
 - `Core/Session` and `Core/Navigation`: identity-first references are exactly what sync needs. Session is where the external-edit reload has to land, and it appears in no Features doc.
@@ -65,7 +65,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. With the 
 
 #### Topics, In Priority Order
 
-Eleven lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
+Ten lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
 
 ##### 1. Where Persisted State Lives
 
@@ -110,23 +110,6 @@ Context membership is keyed by Space *title*, and a governed write silently drop
 5. Add tests for the write-echo filter's four behaviors and replace its per-event prefix scan. *(S; ~60 test lines)*
 
 **Findings:** R-07, R-08, R-09, R-11, R-12.
-
-##### 3. The Engine/Renderer Boundary Inside Core
-
-**Lenses and state:** Gates Mobile/Sync · the guards, Foundation risk, Three actions approved, Separation, Filing, Tests. **Effort:** Small. **Deletes:** A dead interface method, two manifest lines, ~20 lines of handler self-catching, and 18 Desktop imports out of Core's tests.
-
-**Found.** Core is really two programs sharing one folder tree: a host-side engine of about 156 files and a renderer of about 536, overlapping in about 52. The split is real and clean. Nothing declares it, nothing checks it, the main-process typecheck would accept a DOM-touching engine file, and Core's own test suite inverts the layering by installing Desktop's machine implementation. So the portability that makes a second host a bounded project is accidental, and it will erode silently. Core's manifest also declares a Node filesystem package it never imports and omits four editor packages it does, and about a fifth of the bridge answers off the Result envelope while the host wraps every throw in one anyway.
-
-**Change.**
-
-1. Add one Vitest file that walks imports from `Contract/serve.ts` and fails on React, `.tsx`, or DOM globals. *(S; ~40 lines)*
-2. Add `"lib": ["ES2022"]` to the main-process tsconfig so a DOM-touching engine file is a type error. *(S; 1 line)*
-3. Build an in-memory machine and key-value store in `Core/Testing`; remove the Desktop devDependency and the 18 Desktop imports from Core's tests. *(M; Approved)*
-4. Fix Core's manifest: drop the Node filesystem package it never imports; declare the four editor packages and the styling package it does. *(S; 2 out, 5 in)*
-5. Put the nine unguarded channels on the Result envelope, delete the ad-hoc self-catching that compensates, name the five fire-and-forget channels as the declared exception, and add a test for the IPC serve loop. *(M; ~20 lines; Approved)*
-6. Delete the dead `writeRaw` machine method. *(S; 5 lines; Approved)*
-
-**Findings:** R-13, R-14, R-15, R-16.
 
 ##### 4. Registry Read Policy And Locale-Dependent Keys
 
@@ -337,10 +320,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-09 | 2 | FR | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts` |
 | R-11 | 2 | D | A governed write silently deletes a Context key whose Space it cannot find, and the on-open sweep refuses to do the same thing | `Core/Contexts/contextResolve.ts, Core/Properties/governedWrite.ts, Core/Properties/repairSweep.ts` |
 | R-12 | 2 | Dt | One 26-line file decides which filesystem events are real, and nothing tests it | `Core/Files/writeEcho.ts, Desktop/FileWatch/watcher.ts` |
-| R-13 | 3 | FR | The engine/renderer split is real, unnamed, and unguarded | `Core/Contract/serve.ts, Desktop/tsconfig.node.json, Desktop/main.ts` |
-| R-14 | 3 | FR | The layering inverts under test — Core depends on Desktop | `Core/vitest.setup.ts, Core/package.json` |
-| R-15 | 3 | Dt | Core's manifest declares a Node package it never imports and omits four it does | `Core/package.json, Core/MarkdownPM/codeHighlight.ts, Core/MarkdownPM/Engine/parser.ts` |
-| R-16 | 3 | Dt | A fifth of the bridge answers off-envelope, and the host wraps every throw in an envelope anyway | `Core/Contract/bridge.ts, Desktop/Bridge/ipc.ts, Core/Interface/handlers.ts` |
 | R-17 | 4 | FR | Two nexus-wide registries, opposite corruption policies — and the lenient one gates a rename cascade that half-lands | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts, Core/Files/atomicWrite.ts` |
 | R-18 | 4 | D | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts` |
 | R-19 | 4 | FR | Case folding and title collation read the host's language setting | `Core/Paths/exclusion.ts, Core/Connections/connections.ts, Core/Properties/properties.ts` |

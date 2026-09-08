@@ -483,16 +483,16 @@ Two of them pass with no store installed at all (`contextWrite`, `tilesFile`; me
 
 #### Completion Criteria
 
-- [ ] Requirement 1: the two graph guards exist and go red under the named probes.
-- [ ] Requirement 2: `"lib": ["ES2022"]` is in the main-process tsconfig and the `document.title` probe goes red.
-- [ ] Requirement 3: the manifest guard reports zero undeclared and zero unused, and goes red when a declared line is removed.
-- [ ] Requirement 4: the enumeration prints nothing; no handler self-catches; `NexusState` has two arms.
-- [ ] Requirement 5: `ipc.test.ts` proves a throw arrives as a failed envelope.
-- [ ] Requirement 6: `grep -rl '@pommora/desktop' Core` is empty and Core's project passes with `Desktop/` renamed away.
-- [ ] Requirement 7: five implementations pass the contract suites.
-- [ ] Requirement 8: `writeRaw` has no definition.
-- [ ] Every document under Grounding's last line reads true, and `ContextPM.md` no longer lists the `linkTitles:get` issue.
-- [ ] Three closeouts, each with its regret test answered and its commit named under Progress.
+- [x] Requirement 1: the two graph guards exist and go red under the named probes.
+- [x] Requirement 2: `"lib": ["ES2022"]` is in the main-process tsconfig and the `document.title` probe goes red.
+- [x] Requirement 3: the manifest guard reports zero undeclared and zero unused, and goes red when a declared line is removed.
+- [x] Requirement 4: the enumeration prints nothing; no handler self-catches; `NexusState` has two arms.
+- [x] Requirement 5: `ipc.test.ts` proves a throw arrives as a failed envelope.
+- [x] Requirement 6: `grep -rl '@pommora/desktop' Core` is empty and Core's project passes with `Desktop/` renamed away.
+- [x] Requirement 7: five implementations pass the contract suites.
+- [x] Requirement 8: `writeRaw` has no definition.
+- [x] Every document under Grounding's last line reads true, and `ContextPM.md` no longer lists the `linkTitles:get` issue.
+- [x] Three closeouts, each with its regret test answered and its commit named under Progress.
 
 #### Log
 
@@ -505,13 +505,15 @@ Two of them pass with no store installed at all (`contextWrite`, `tilesFile`; me
 
 **Progress**
 
-- [ ] Phase One — Tasks 1–5 · commit —
-- [ ] Phase Two — Tasks 6–8 · commit —
-- [ ] Phase Three — Tasks 9–12 · commit —
+- [x] Phase One — Tasks 1–5 · commit `1721d8b80` · gates green, 344 files. Regret test: removing it leaves the engine/renderer boundary unguarded and `writeRaw` dead — keep.
+- [x] Phase Two — Tasks 6–8 · commit `72fee60ab` · gates green, 350 files. Regret test: removing it restores the bridge type-lie, three self-catches, and the `NexusState` error arm — keep.
+- [x] Phase Three — Tasks 9–12 · commit `588b37bcf`, cleanup `a11daf6ad` · gates green, 356 files; Core passes with `Desktop/` renamed away (313 files). Regret test: removing it re-inverts the layering and drops the second-host contract proof — keep.
 
 **Deviations**
 
-- 09-07-2026 — State Placement Phase One was landing concurrently and uncommitted in the shared tree during this run (a ~30-file changeset touching `bridge.ts`, `Nexus/tree.ts`, `Interface/handlers.ts`, `Session/nexusSlice.ts`, `Views/handlers.ts` — Task 6's exact surface). Phase One committed disjointly (its 11 paths, verified against the foreign set). Phase Two is paused until State Placement commits: two writers on `bridge.ts` is the collision the "never two writers" rule forbids, and Task 6 re-derives the channel list against whatever `bridge.ts` becomes once it settles.
+- 09-07-2026 — Executed concurrently with the State Placement plan in the same shared working tree. Coordination held throughout by committing each phase with `git commit --only -- <explicit paths>` so neither arc swept the other's files. Phase One committed disjointly before State Placement's first commit; Phases Two and Three were sequenced with the State Placement session (it held the `viewOrders` channels and the `remint`/`importPlacedState` tests while this plan landed, then rebased onto the commits). The five Features-doc/CLAUDE.md corrections were nonetheless swept into State Placement commits (`e5bccd57e`, `4d6f206a9`) via the shared git index — the content is exactly this plan's, so the edits are correct though attributed to another commit.
+- 09-07-2026 — Task 6 enumerated 24 off-envelope channels at execution, not the plan's 25: State Placement had already removed `activeViews:get` but not `viewOrders:get`, which this plan enveloped (State Placement deletes the enveloped version later). The five reply-less channels cost one caller edit, not zero: `editorHost.tsx`'s `clipboard:write` slot was typed `Promise<void>` and needed a one-line discard wrapper. `valueOr` folded 36 read sites, not the plan's 14.
+- 09-07-2026 — Task 9 `diskMachine` writes atomically (temp+rename), not the plan's "plain writes": two tests force a write failure through a read-only directory, which only an in-directory temp file trips, so plain writes broke them. Atomic mirrors `nodeMachine`'s observable behavior. Task 11 moved two SQLite-specific cases to Desktop (the planned missing-tables case plus a read-only-media case with no memory analog). The engine-graph walker is AST-based (`ts.createSourceFile`), not the regex the plan's Inherited Reasoning named, because a regex mis-read JSX text as an import specifier.
 - 09-07-2026 — Scope clarification for the two graph roots. Task 3's `hostCoreImports()` and Task 4's manifest scanner take production host/source code only: `*.test.ts`, `vitest.setup.ts`, and `vitest.config.ts` are excluded as roots and from the manifest scan. Task 4's scan follows `tsconfig.src.json`'s include/exclude (which already excludes `Testing/**`) minus `*.test.ts`. Without this, the new test files' own `node:*` imports (`Testing/engineGraph.ts`, and in Phase Three `Testing/machines.ts`/`machineContract.ts`) would fail the externals and manifest guards for the wrong reason.
 
 **Sequenced After**
