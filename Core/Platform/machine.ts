@@ -16,7 +16,6 @@ export interface Machine {
   readBytes(p: string): Promise<Uint8Array | null>
   writeText(p: string, text: string): Promise<void>
   writeBytes(p: string, bytes: Uint8Array): Promise<void>
-  writeRaw(p: string, text: string, mtimeMs: number): Promise<void>
   stat(p: string): Promise<FileStat | null>
   /** Absent → []. */
   readDir(p: string): Promise<DirEntry[]>
