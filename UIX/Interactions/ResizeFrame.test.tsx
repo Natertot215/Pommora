@@ -57,11 +57,11 @@ describe('the resize frame', () => {
     const onChange = vi.fn()
     const spec = { rect: { w: 200, h: 100 }, min: { w: 50 }, equilateral: true, onChange }
     drag(mount({ ...spec, grip: 'e' }), 30, 0)
-    expect(onChange).toHaveBeenLastCalledWith({ w: 230, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 230, h: 100 }, 'move', 'e')
     release()
     onChange.mockClear()
     drag(mount({ ...spec, grip: 'w' }), -30, 0)
-    expect(onChange).toHaveBeenLastCalledWith({ w: 230, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 230, h: 100 }, 'move', 'w')
     release()
   })
 
@@ -69,10 +69,10 @@ describe('the resize frame', () => {
     const onChange = vi.fn()
     const rect = { x: 100, y: 50, w: 200, h: 100 }
     drag(mount({ rect, min: { w: 50, h: 50 }, onChange, grip: 'w' }), -150, 0)
-    expect(onChange).toHaveBeenLastCalledWith({ x: 0, y: 50, w: 300, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ x: 0, y: 50, w: 300, h: 100 }, 'move', 'w')
     release()
     drag(mount({ rect, min: { w: 50, h: 50 }, onChange, grip: 'n' }), 0, 80)
-    expect(onChange).toHaveBeenLastCalledWith({ x: 100, y: 100, w: 200, h: 50 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ x: 100, y: 100, w: 200, h: 50 }, 'move', 'n')
     release()
   })
 
@@ -87,10 +87,10 @@ describe('the resize frame', () => {
       grip: 'e',
     })
     drag(el, 100, 0)
-    expect(onChange).toHaveBeenLastCalledWith({ w: 260, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 260, h: 100 }, 'move', 'e')
     cap = 240
     act(() => firePointer(window, 'pointermove', { x: 110, y: 0 }))
-    expect(onChange).toHaveBeenLastCalledWith({ w: 240, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 240, h: 100 }, 'move', 'e')
     release()
   })
 
@@ -100,10 +100,10 @@ describe('the resize frame', () => {
     const el = mount({ ...spec, grip: 'e' })
     drag(el, 30, 0)
     release()
-    expect(onChange).toHaveBeenLastCalledWith({ w: 230, h: 100 }, 'drop')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 230, h: 100 }, 'drop', 'e')
     drag(el, 40, 0)
     act(() => pressEscape())
-    expect(onChange).toHaveBeenLastCalledWith({ w: 200, h: 100 }, 'abort')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 200, h: 100 }, 'abort', 'e')
   })
 
   it('a rect given as a function is measured at each press', () => {
@@ -111,11 +111,11 @@ describe('the resize frame', () => {
     let measured = 100
     const el = mount({ rect: () => ({ h: measured }), equilateral: true, onChange, grip: 's' })
     drag(el, 0, 30)
-    expect(onChange).toHaveBeenLastCalledWith({ h: 130 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ h: 130 }, 'move', 's')
     release()
     measured = 300
     drag(el, 0, 30)
-    expect(onChange).toHaveBeenLastCalledWith({ h: 330 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ h: 330 }, 'move', 's')
     release()
   })
 
@@ -132,9 +132,9 @@ describe('the resize frame', () => {
     const el = mount({ rect: { w: 200, h: 100 }, equilateral: true, onChange, grip: 'e' })
     drag(el, 30, 0)
     act(() => firePointer(window, 'pointermove', { x: 0, y: 0 }))
-    expect(onChange).toHaveBeenLastCalledWith({ w: 200, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ w: 200, h: 100 }, 'move', 'e')
     release()
-    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop')
+    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop', 'e')
   })
 
   it('a release at the same size as the start does not drop', () => {
@@ -142,13 +142,13 @@ describe('the resize frame', () => {
     const el = mount({ rect: { h: 64 }, min: { h: 64 }, equilateral: true, onChange, grip: 's' })
     drag(el, 0, -40)
     release()
-    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop')
+    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop', 's')
   })
 
   it('a move keeps a grab of the frame on screen', () => {
     const onChange = vi.fn()
     drag(mount({ rect: { x: 100, y: 50, w: 200, h: 100 }, onChange, grip: 'move' }), 5000, -500)
-    expect(onChange).toHaveBeenLastCalledWith({ x: 920, y: 0, w: 200, h: 100 }, 'move')
+    expect(onChange).toHaveBeenLastCalledWith({ x: 920, y: 0, w: 200, h: 100 }, 'move', 'move')
     release()
     expect(onScreen({ x: -10, y: 900, w: 1200, h: 100 })).toEqual({ x: 0, y: 760, w: 1000, h: 100 })
   })

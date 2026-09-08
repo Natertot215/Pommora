@@ -59,7 +59,9 @@ export function deleteView(
     if (views.length <= 1) return fail('operation-failed', 'Cannot delete the last view.')
     const next = views.filter((v) => v.id !== viewId)
     if (next.length === views.length) return fail('not-found', 'View not found.')
-    await writeSidecar(folder, kind, { ...sidecar, views: next })
+    // A sidecar naming a view that is gone is legible nonsense; the absent key is the container's "no choice made", which pickView already reads.
+    const active = sidecar.active_view === viewId ? undefined : sidecar.active_view
+    await writeSidecar(folder, kind, { ...sidecar, views: next, active_view: active })
     return ok(null)
   })
 }

@@ -10,6 +10,7 @@ import {
   onScreen,
   useResizeFrame,
   type Rect,
+  type ResizeGrip,
   type Size,
 } from '../Interactions/ResizeFrame'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
@@ -51,7 +52,8 @@ interface WindowBaseProps {
   bounds?: WindowBounds
   /** Absent opens at `bounds.def`. Read once, at open. */
   initialSize?: Size
-  onSizeChange?: (size: Size) => void
+  /** Carries the grip so the caller can tell a resize from a move — every drop reports, a move included. */
+  onSizeChange?: (size: Size, grip: ResizeGrip) => void
   dragSurfaces?: string
   ariaLabel: string
   className?: string
@@ -106,9 +108,9 @@ export function WindowBase({
   const frame = useResizeFrame({
     rect: geo,
     min: bounds.min,
-    onChange: (next, phase) => {
+    onChange: (next, phase, grip) => {
       setGeo(next)
-      if (phase === 'drop') onSizeChange?.({ w: next.w, h: next.h })
+      if (phase === 'drop') onSizeChange?.({ w: next.w, h: next.h }, grip)
     },
   })
   // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.
