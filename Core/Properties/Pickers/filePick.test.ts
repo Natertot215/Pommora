@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { useSession } from '../../Session/store'
 import {
@@ -27,9 +28,11 @@ beforeEach(() => {
   cellMenu = vi.fn(async () => null)
   ;(globalThis as { window?: unknown }).window = {
     nexus: stubDialer({
-      'nexus:pickFile': pickFile,
+      'nexus:pickFile': async (req: unknown) =>
+        ok(await (pickFile as (r: unknown) => Promise<unknown>)(req)),
       'assets:adopt': adoptFile,
-      'row-menu': cellMenu,
+      'row-menu': async (req: unknown) =>
+        ok(await (cellMenu as (r: unknown) => Promise<unknown>)(req)),
     }),
   }
   useSession.setState({

@@ -23,7 +23,7 @@ const pickedPaths = new Set<string>()
 export const assetsHandlers = {
   'assets:map': async () => {
     const root = sessionRoot()
-    return root === null ? EMPTY_ASSET_MAP : liveAssetMap(root)
+    return ok(root === null ? EMPTY_ASSET_MAP : await liveAssetMap(root))
   },
 
   'assets:chooseDir': withRoot(async (root, ctx, scope?: 'nexus' | 'property', at?: unknown) => {
@@ -79,13 +79,13 @@ export const assetsHandlers = {
       defaultPath: at?.ok ? at.value : (root ?? undefined),
     })
     if (picked) pickedPaths.add(picked)
-    return picked
+    return ok(picked)
   },
 
   'nexus:pasteImage': async (ctx) => {
     const path = await ctx.pasteImage()
     if (path) pickedPaths.add(path)
-    return path
+    return ok(path)
   },
 
   'assets:adopt': withRoot(async (root, ctx, source: string, subfolder?: string) => {

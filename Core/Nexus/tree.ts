@@ -1,4 +1,3 @@
-import type { PommoraError } from '../Contract/result'
 import type { ContextDef } from '../Contexts/contexts'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { Personalization } from '../Settings/personalization'
@@ -16,7 +15,7 @@ interface BaseNode {
   icon?: string
 }
 
-/** Carries its nexus-relative POSIX path so a mutation can address it: the renderer sends `path` back and main resolves it under the session root — the renderer must never reconstruct the on-disk path itself. */
+/** Carries its nexus-relative POSIX path so a mutation can address it: the renderer sends `path` back and main resolves it under the session root. */
 interface PathNode extends BaseNode {
   path: string
   /** From the sidecar; a page's banner rides its own frontmatter key instead. */
@@ -26,7 +25,6 @@ interface PathNode extends BaseNode {
 
 export interface PageNode extends PathNode {
   kind: 'page'
-  /** contextId → Space ids, attached at walk assembly from the raw keys the parse retains. */
   contextValues?: Record<string, string[]>
 }
 
@@ -109,8 +107,4 @@ export interface NexusTree {
   unreadable?: { path: string }[]
 }
 
-/** `empty` = no nexus open (show the empty state, not an error); `open` = open + read OK; `error` = a nexus is open but its tree couldn't be read. */
-export type NexusState =
-  | { status: 'empty' }
-  | { status: 'open'; tree: NexusTree }
-  | { status: 'error'; error: PommoraError }
+export type NexusState = { status: 'empty' } | { status: 'open'; tree: NexusTree }

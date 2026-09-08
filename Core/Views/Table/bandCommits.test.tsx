@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -145,9 +146,10 @@ beforeEach(() => {
   contextMenuSpy = vi.fn(async () => null)
   channels = {
     'view:loadValues': async () => VALUES,
-    'viewOrders:get': async () => ({}),
+    'viewOrders:get': async () => ok({}),
     'views:save': saveSpy,
-    'row-menu': contextMenuSpy,
+    'row-menu': async (req: unknown) =>
+      ok(await (contextMenuSpy as (r: unknown) => Promise<unknown>)(req)),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({

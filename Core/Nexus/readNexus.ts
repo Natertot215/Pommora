@@ -1,4 +1,5 @@
 import { basename, basenameNoMd, join } from '../Paths/posix'
+import { valueOr } from '../Contract/result'
 import { splitFrontmatter } from '../Files/pageFile'
 import { admitContentFile } from './identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
@@ -296,7 +297,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   if (!identityRead.ok && identityRead.error.code !== 'not-found') {
     throw new Error(`The nexus identity file could not be read: ${identityRead.error.message}`)
   }
-  const identity = identityRead.ok ? identityRead.value : null
+  const identity = valueOr(identityRead, null)
   const id = asString(identity?.id) ?? adoptedId(root)
   const kindCtx = await agendaContext(root, identity)
 

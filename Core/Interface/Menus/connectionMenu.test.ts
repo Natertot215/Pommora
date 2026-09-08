@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import type { ConnMenuAction } from '@pommora/core/MarkdownPM/Links/connMenu'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { showConnectionMenu } from './connectionMenu'
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
-;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'row-menu': connMenu })
+;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+  'row-menu': async (req: unknown) => ok(await connMenu(req)),
+})
 
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const target = { kind: 'page', page, editable: false, hasAlias: false } as const

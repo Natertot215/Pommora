@@ -1,4 +1,5 @@
 import { type RefObject, useContext, useState } from 'react'
+import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../../Session/store'
 import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
@@ -45,7 +46,7 @@ export function useBannerMenu(
     return ok ? adopted : undefined
   }
   const addOrChange = async (): Promise<void> => {
-    const picked = await host().ask('nexus:pickFile')
+    const picked = valueOr(await host().ask('nexus:pickFile'), null)
     if (picked && (await setBanner(picked)) && autoEdit) openEditor()
   }
   const openEditor = (): void => {

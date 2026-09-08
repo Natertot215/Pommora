@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { valueOr } from '@pommora/core/Contract/result'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { PageValues } from '@pommora/core/Views/viewRow'
 import { useSession } from '../../Session/store'
@@ -15,7 +16,7 @@ const fetchValues = (
 ): Promise<Record<string, PageValues> | null> =>
   host()
     .ask('view:loadValues', path, pageIds)
-    .then((r) => (r.ok ? r.value : null))
+    .then((r) => valueOr(r, null))
 
 export const patchOverride = (
   set: SetOverrides,

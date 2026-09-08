@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
+import { valueOr } from '@pommora/core/Contract/result'
 import { tableMenuItems } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { citationMenuModel } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
@@ -79,8 +80,10 @@ function buildEditorHost(
       },
     },
     clipboard: {
-      read: () => host().ask('clipboard:read'),
-      write: (text) => host().ask('clipboard:write', text),
+      read: async () => valueOr(await host().ask('clipboard:read'), ''),
+      write: async (text) => {
+        await host().ask('clipboard:write', text)
+      },
     },
     menus: {
       grip: (ctx) => popRowMenu(gripMenuItems(ctx)),

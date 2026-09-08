@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ok } from '@pommora/core/Contract/result'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from '../Session/store'
@@ -19,7 +20,7 @@ beforeEach(() => {
     disconnect(): void {}
   }
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= RO
-  const empty = { get: vi.fn(async () => ({})), set: vi.fn(async () => undefined) }
+  const empty = { get: vi.fn(async () => ok({})), set: vi.fn(async () => undefined) }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'headingIcon:get': empty.get,
     'headingIcon:set': empty.set,
@@ -33,7 +34,7 @@ beforeEach(() => {
     'tableHeadingCols:set': empty.set,
     'editor:format-state': vi.fn(),
     'menu:action': vi.fn(() => () => undefined),
-    'row-menu': vi.fn(),
+    'row-menu': vi.fn(async () => ok(null)),
   })
   container = document.createElement('div')
   document.body.appendChild(container)

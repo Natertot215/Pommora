@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -93,7 +94,7 @@ function PageHistoryBody({
         ? fetchPageDetail(livePath).then((d) => d?.body ?? null)
         : host()
             .ask('history:read', target.id, shown)
-            .then((r) => (r.ok ? r.value : null))
+            .then((r) => valueOr(r, null))
     void read.then((b) => {
       if (live) setBody(b)
     })

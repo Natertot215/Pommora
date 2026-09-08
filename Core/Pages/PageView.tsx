@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
+import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { usePreviewConnections } from '../Session/pageConnections'
@@ -63,8 +64,8 @@ export function PageView({
     let alive = true
     void host()
       .ask('headingIcon:get')
-      .then((all) => {
-        if (alive) setIconHidden(all[pageId] ?? true)
+      .then((r) => {
+        if (alive) setIconHidden(valueOr(r, {})[pageId] ?? true)
       })
     return () => {
       alive = false
@@ -142,19 +143,20 @@ export function PageView({
         connections={connections}
         embedAncestors={[pageDetail.path]}
         folds={{
-          load: async () => (await host().ask('folds:get'))[pageDetail.id] ?? [],
+          load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],
           save: (keys) => void host().ask('folds:set', pageDetail.id, keys),
         }}
         embedHeights={{
-          load: async () => (await host().ask('embedHeights:get'))[pageDetail.id] ?? {},
+          load: async () => valueOr(await host().ask('embedHeights:get'), {})[pageDetail.id] ?? {},
           save: (heights) => void host().ask('embedHeights:set', pageDetail.id, heights),
         }}
         embedZooms={{
-          load: async () => (await host().ask('embedZooms:get'))[pageDetail.id] ?? {},
+          load: async () => valueOr(await host().ask('embedZooms:get'), {})[pageDetail.id] ?? {},
           save: (zooms) => void host().ask('embedZooms:set', pageDetail.id, zooms),
         }}
         tableHeadingColumns={{
-          load: async () => (await host().ask('tableHeadingCols:get'))[pageDetail.id] ?? [],
+          load: async () =>
+            valueOr(await host().ask('tableHeadingCols:get'), {})[pageDetail.id] ?? [],
           save: (indices) => void host().ask('tableHeadingCols:set', pageDetail.id, indices),
         }}
         register={(view) => {
