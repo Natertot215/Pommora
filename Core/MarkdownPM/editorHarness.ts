@@ -86,7 +86,6 @@ function harnessHost(
       grip: async () => null,
       table: async () => null,
       citation: async () => null,
-      gripHot: () => {},
       ...spec.menus,
     },
     glance: spec.glance === false ? undefined : (spec.glance ?? NO_GLANCE),

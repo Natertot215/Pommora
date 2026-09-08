@@ -67,8 +67,6 @@ export interface EditorHost {
     table(ctx: TableMenuContext): Promise<TableMenuAction | null>
     citation(ctx: CitationMenuContext): Promise<CitationMenuAction | null>
     format?: EditorMenuApi
-    /** A hot grip stands the host's whole context menu down so the grip's own menu can answer the press. */
-    gripHot(hot: boolean): void
   }
   /** Absent on a surface that never glances (a read-only snapshot); `contains` answers whether an element sits inside an open glance. */
   glance?: {

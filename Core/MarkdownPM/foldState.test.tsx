@@ -21,7 +21,6 @@ import { commitCitation } from './Citations/citationActions'
 import type { ChangeSet } from '@codemirror/state'
 import { citationGesture, deleteMarkerChanges } from './Citations/citationEdits'
 import { docScan } from './docCache'
-import { HOT_MENU_LINES } from './Menus/gripMenu'
 import { headingSections, headingSrc } from './Engine/headingScan'
 import { citationScan, splitWithOffsets } from './Engine/detect'
 
@@ -275,7 +274,6 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     expect(head.classList.contains('md-foldable')).toBe(true)
     expect(head.classList.contains('md-fold-open')).toBe(true)
     expect(head.classList.contains(HEADING_FOLD_LINE)).toBe(true)
-    expect(HOT_MENU_LINES).toContain(HEADING_FOLD_LINE)
   })
 
   it('the section anchor draws no chevron and answers no heading gesture', async () => {
@@ -283,7 +281,6 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     const divider = lineEls(view)[2]
     for (const c of ['md-foldable', 'md-fold-open', 'md-fold-closed', HEADING_FOLD_LINE])
       expect(divider.classList.contains(c), c).toBe(false)
-    expect(HOT_MENU_LINES.some((c) => divider.classList.contains(c))).toBe(false)
   })
 
   it('a heading right-press still reaches the heading menu', async () => {
@@ -307,13 +304,13 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
 })
 
 const divider = (view: EditorView): HTMLElement | null =>
-  view.dom.querySelector<HTMLElement>('.cm-line.md-cite-divider')
+  view.dom.querySelector<HTMLElement>('.cm-line.md-citation-divider')
 
 describe('the citations divider draws where it can and folds nothing itself', () => {
   it('draws on the blank line above the section', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     expect(divider(view)).not.toBeNull()
-    expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(false)
+    expect(divider(view)?.classList.contains('md-citation-divider-off')).toBe(false)
   })
 
   it('draws nothing when the line above the section is prose', async () => {
@@ -331,7 +328,7 @@ describe('the citations divider draws where it can and folds nothing itself', ()
 
   it('stays stamped while the section is hidden, carrying the faded state', async () => {
     const view = await mountEditor({ initialBody: CITED })
-    expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(true)
+    expect(divider(view)?.classList.contains('md-citation-divider-off')).toBe(true)
   })
 
   const shownFor = (): boolean => harnessState().citationsShown
@@ -390,7 +387,7 @@ describe('a gesture leaves the section in the visible state it found it', () => 
   const ONE = 'x[^1] y\n\n[^1]: one'
   const PAIR = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
   const showing = (view: EditorView): number =>
-    [...view.contentDOM.querySelectorAll('.cm-line.md-cite')].filter(
+    [...view.contentDOM.querySelectorAll('.cm-line.md-citation')].filter(
       (el) => el.closest('.mdpm-fold-clone') === null,
     ).length
 

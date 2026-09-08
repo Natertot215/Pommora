@@ -30,7 +30,7 @@ import {
 import { readLivePersonalization, readWatchScope } from '@pommora/core/Settings/settings'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { installAppMenu } from './Actions/appMenu'
-import { installEditorContextMenu, setFormatState, setGripHot } from './Actions/editorMenu'
+import { installEditorContextMenu, setFormatState } from './Actions/editorMenu'
 import { popNativeMenu } from './Actions/menu'
 import { push, serveIpc, type TellHandlers } from './Bridge/ipc'
 import { captureThumbnail, evictThumbnails } from './Capture/thumbnails'
@@ -268,7 +268,6 @@ function hostContext(win: BrowserWindow | null): HostContext {
 
 const tells: TellHandlers = {
   'editor:format-state': (_win, state) => setFormatState(state),
-  'editor:grip-hot': (_win, on) => setGripHot(on),
   'win:dragBy': (win, dx, dy) => {
     if (!win || typeof dx !== 'number' || typeof dy !== 'number') return
     const [x, y] = win.getPosition()

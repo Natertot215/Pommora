@@ -21,12 +21,6 @@ export function setFormatState(s: FormatState): void {
   lastState = s
 }
 
-// Grips are editable content, so the generic editor menu would fire over them; the renderer flags the hover first.
-let gripHot = false
-export function setGripHot(on: boolean): void {
-  gripHot = on
-}
-
 // The event hands over a bare WebContents, so the typed push (which takes a window) can't be used.
 const dispatch = (wc: WebContents, action: string) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
@@ -200,7 +194,6 @@ function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
 
 export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
-    if (gripHot) return // a grip right-click → the renderer pops that grip's own menu
     if (!params.isEditable) return // sidebar + read-only surfaces keep their own menus
     const items = systemItems(win.webContents, params, lastState?.focused === true)
     if (lastState?.focused)
