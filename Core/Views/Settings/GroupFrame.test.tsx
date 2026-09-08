@@ -8,6 +8,7 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { GroupFrame } from './GroupFrame'
 import { stubDialer } from '../../vitest.setup'
+import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -59,13 +60,15 @@ let saveSpy: ReturnType<typeof vi.fn>
 const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
-      <GroupFrame
-        source={source}
-        view={v}
-        schema={[statusDef, dateDef]}
-        label="Settings"
-        onBack={() => {}}
-      />,
+      <MenuDoorHost>
+        <GroupFrame
+          source={source}
+          view={v}
+          schema={[statusDef, dateDef]}
+          label="Settings"
+          onBack={() => {}}
+        />
+      </MenuDoorHost>,
     )
   })
 }
@@ -177,13 +180,15 @@ describe('GroupFrame rows', () => {
     } as unknown as CollectionNode
     await act(async () => {
       root.render(
-        <GroupFrame
-          source={nested}
-          view={view()}
-          schema={[statusDef, dateDef]}
-          label="Settings"
-          onBack={() => {}}
-        />,
+        <MenuDoorHost>
+          <GroupFrame
+            source={nested}
+            view={view()}
+            schema={[statusDef, dateDef]}
+            label="Settings"
+            onBack={() => {}}
+          />
+        </MenuDoorHost>,
       )
     })
     expect(texts()).toContain('Alpha')
@@ -198,13 +203,15 @@ describe('GroupFrame rows', () => {
     expect(texts()).toContain('Nested')
     await act(async () => {
       root.render(
-        <GroupFrame
-          source={nested}
-          view={view({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } })}
-          schema={[statusDef, dateDef]}
-          label="Settings"
-          onBack={() => {}}
-        />,
+        <MenuDoorHost>
+          <GroupFrame
+            source={nested}
+            view={view({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } })}
+            schema={[statusDef, dateDef]}
+            label="Settings"
+            onBack={() => {}}
+          />
+        </MenuDoorHost>,
       )
     })
     expect(texts()).toContain('Alpha')

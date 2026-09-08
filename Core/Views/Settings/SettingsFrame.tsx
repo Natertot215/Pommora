@@ -191,7 +191,6 @@ export function SettingsFrame(): React.JSX.Element | null {
         label="Scale"
         trailing={
           <PickerControl
-            solid
             ariaLabel="View Scale"
             value={String(viewScale)}
             options={scaleChoices}

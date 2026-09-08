@@ -8,6 +8,7 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { SortFrame } from './SortFrame'
 import { stubDialer } from '../../vitest.setup'
+import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -64,7 +65,9 @@ let saveSpy: ReturnType<typeof vi.fn>
 const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
-      <SortFrame source={source} view={v} schema={schema} label="Settings" onBack={() => {}} />,
+      <MenuDoorHost>
+        <SortFrame source={source} view={v} schema={schema} label="Settings" onBack={() => {}} />
+      </MenuDoorHost>,
     )
   })
 }

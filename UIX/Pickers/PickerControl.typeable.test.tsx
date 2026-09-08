@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { PickerControl } from './PickerControl'
+import { MenuDoorContext, PickerControl } from './PickerControl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -21,17 +21,20 @@ const OPTIONS = [
 let host: HTMLDivElement
 let root: Root
 const onCommit = vi.fn()
+const door = vi.fn(async () => null)
 
 function mount(): void {
   act(() => {
     root.render(
-      <PickerControl
-        ariaLabel="Editor Scale"
-        value="1"
-        options={OPTIONS}
-        onPick={() => {}}
-        typeable={{ text: '100', suffix: '%', onCommit }}
-      />,
+      <MenuDoorContext.Provider value={door}>
+        <PickerControl
+          ariaLabel="Editor Scale"
+          value="1"
+          options={OPTIONS}
+          onPick={() => {}}
+          typeable={{ text: '100', suffix: '%', onCommit }}
+        />
+      </MenuDoorContext.Provider>,
     )
   })
 }
@@ -39,7 +42,6 @@ function mount(): void {
 const trigger = (): HTMLButtonElement =>
   host.querySelector('button[aria-label="Editor Scale"]') as HTMLButtonElement
 const field = (): HTMLInputElement | null => host.querySelector('input')
-const menuOpen = (): boolean => document.querySelectorAll('[data-picker-portal]').length > 0
 
 function press(el: Element, type: string, init: MouseEventInit = {}): void {
   act(() => {
@@ -49,6 +51,7 @@ function press(el: Element, type: string, init: MouseEventInit = {}): void {
 
 beforeEach(() => {
   onCommit.mockClear()
+  door.mockClear()
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -80,13 +83,20 @@ describe('a typeable picker', () => {
 
   it('leaves the list closed', () => {
     press(trigger(), 'contextmenu', { button: 2 })
-    expect(menuOpen()).toBe(false)
+    expect(door).not.toHaveBeenCalled()
   })
 
-  it('leaves a left press stepping the value as it always did', () => {
+  it('a left press opens the list through the door, marked on the current value', () => {
     press(trigger(), 'click', { detail: 1 })
     expect(field()).toBeNull()
-    expect(menuOpen()).toBe(true)
+    expect(door).toHaveBeenCalledWith(
+      [
+        { label: '50%', action: '0.5', checked: false, icon: undefined },
+        { label: '100%', action: '1', checked: true, icon: undefined },
+        { label: '150%', action: '1.5', checked: false, icon: undefined },
+      ],
+      host.querySelector('span'),
+    )
   })
 
   it('hands what was written to the caller', () => {

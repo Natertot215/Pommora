@@ -8,6 +8,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
 import { stubDialer } from '../../vitest.setup'
+import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -66,7 +67,14 @@ describe('the datetime Format editor writes the ACTIVE view (A-3)', () => {
   it('picking Short Date saves column_styles on the source node, not the schema', async () => {
     await act(async () => {
       root.render(
-        <PropertyFrame collectionPath="Col" schema={[dateDef]} onBack={() => {}} source={source} />,
+        <MenuDoorHost>
+          <PropertyFrame
+            collectionPath="Col"
+            schema={[dateDef]}
+            onBack={() => {}}
+            source={source}
+          />
+        </MenuDoorHost>,
       )
     })
     const dueRow = [...host.querySelectorAll<HTMLElement>('span')].find(

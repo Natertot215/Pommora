@@ -168,7 +168,6 @@ export function LayoutFrame({
               value={view.card_banner ?? 'image'}
               options={BANNERS}
               onPick={(v) => write({ card_banner: v })}
-              solid
             />
           }
         />
