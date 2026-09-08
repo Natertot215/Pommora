@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { NexusTree } from '../Nexus/tree'
-import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
+import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import { useSession } from './store'
 import { connectionsFor } from '../Nexus/treeIndex'
 

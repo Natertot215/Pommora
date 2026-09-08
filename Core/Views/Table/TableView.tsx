@@ -77,7 +77,10 @@ import {
   urlValueFromRename,
 } from '@pommora/core/Connections/linkValue'
 import { validateLink } from '../../Properties/Cells/linkResolve'
-import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
+import {
+  linkValueMenuTarget,
+  showConnectionMenu,
+} from '../../Interface/Menus/connectionMenuActions'
 import { popMenu } from '../../Actions/menuActions'
 
 // TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
