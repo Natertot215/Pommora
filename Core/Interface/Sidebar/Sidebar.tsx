@@ -34,7 +34,7 @@ import {
   DEFAULT_NEW_NAME,
   type MutableKind,
   type MutateRequest,
-} from '@pommora/core/Pages/mutateRequest'
+} from '@pommora/core/Nexus/mutateRequest'
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
@@ -440,7 +440,7 @@ function PageRow({
           hoverGlance(
             { kind: 'page', id: page.id, path: page.path },
             e.currentTarget,
-            'detail',
+            'location',
             e.shiftKey,
           )
         }}

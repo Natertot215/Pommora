@@ -130,6 +130,16 @@ describe('the anchor watch', () => {
     expect(watch.onMoved).toHaveBeenCalledTimes(2)
   })
 
+  it('Shift closes the pane, the summon key doubling as the dismiss, and ignores auto-repeat', () => {
+    const watch = { onGone: vi.fn(), onEscape: vi.fn(), onMoved: vi.fn() }
+    const stop = watchAnchor(el, watch)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }))
+    expect(watch.onEscape).toHaveBeenCalledTimes(1)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', repeat: true }))
+    expect(watch.onEscape).toHaveBeenCalledTimes(1)
+    stop()
+  })
+
   it('Escape closes and is consumed; any other key re-checks the anchor', () => {
     const watch = { onGone: vi.fn(), onEscape: vi.fn(), onMoved: vi.fn() }
     const stop = watchAnchor(el, watch)

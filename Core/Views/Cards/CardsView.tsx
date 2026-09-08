@@ -1291,7 +1291,7 @@ const PageCard = memo(function PageCard({
         hoverGlance(
           { kind: 'page', id: row.id, path: row.path },
           e.currentTarget,
-          'views',
+          'location',
           e.shiftKey,
         )
       }}
