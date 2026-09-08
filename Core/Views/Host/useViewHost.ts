@@ -29,7 +29,6 @@ import { resolveView } from '../Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride, useContainerValues } from './useValuesEpoch'
-import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { mergeStyleRecords } from '../viewMerge'
@@ -72,7 +71,6 @@ export function useViewHost(
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const view = useActiveView(source, schema)
-  const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
 
   const [orderOverride, setOrderOverride] = useState<string[] | null>(null)
   const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
@@ -95,52 +93,57 @@ export function useViewHost(
     resetBand()
     setCollapsed(new Set(view.collapsed_groups ?? []))
   }, [source.id, view.id])
-  // A fresh tree carries canonical page_order, so drop the manual-order override it masked — VALUES deliberately do NOT reset, since clearing them on this identity change would revert a just-assigned value on a watcher echo (the assign-vanish).
-  useEffect(() => {
-    setManualOverride(null)
-  }, [source])
   // Drop an override once the canonical view catches it up — a pinned override would otherwise mask a later external write on the next persist.
   useEffect(() => {
     if (orderOverride && sameIds(orderOverride, view.property_order)) setOrderOverride(null)
     if (hiddenOverride && sameIds(hiddenOverride, view.hidden_properties)) setHiddenOverride(null)
     if (stylePatch && stylesCaughtUp(stylePatch, view.column_styles)) setStylePatchState(null)
-  }, [view, orderOverride, hiddenOverride, stylePatch])
+    if (manualOverride && sameIds(manualOverride, view.manual_order ?? [])) setManualOverride(null)
+  }, [view, orderOverride, hiddenOverride, stylePatch, manualOverride])
+
+  // Derived from `view` and ABOVE the memo, because the fold reads `structuralOrder` — reading it below would be a TDZ crash the type gate misses. Sound because no override moves a sort criterion or a group kind: `bandPatch` touches only `group.order` and `group_order`.
+  const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
+  const sortedOrGrouped = sortKeys > 0 || view.group != null
+  const structuralGrouping = groupsStructurally(view.group, schema)
+  // A flattened paint never sub-groups, so a view still carrying `sub_group` from a type switch must not reassign against it.
+  const subGrouped = structuralGrouping && view.sub_group !== undefined && !flattenStructural
+  const groupPropId =
+    view.group?.kind === 'property'
+      ? view.group.property_id
+      : subGrouped
+        ? view.sub_group?.property_id
+        : undefined
+  const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
+  const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
+  const locationFsOrder = flattenStructural && isLocationFsOrder(view)
+  const canReorderWithin = sortKeys < 2 && !locationFsOrder
+  const canRelocate = structuralGrouping && !subGrouped
+  const structuralOrder = groupPropId === undefined && sortKeys === 0
+  // A fresh tree carries canonical page_order, so drop the override it masked — but only where page_order IS the order: on a sorted or grouped view the drop's own optimistic push would otherwise revert the drag that fired it, and the catch-up above retires the override instead. VALUES deliberately do NOT reset, since clearing them on this identity change would revert a just-assigned value on a watcher echo (the assign-vanish).
+  useEffect(() => {
+    if (structuralOrder) setManualOverride(null)
+  }, [source, structuralOrder])
 
   const liveView = useMemo(() => {
-    if (!orderOverride && !hiddenOverride && !stylePatch && !bandPatch) return view
+    if (!orderOverride && !hiddenOverride && !stylePatch && !bandPatch && !manualOverride)
+      return view
     return {
       ...view,
       property_order: orderOverride ?? view.property_order,
       hidden_properties: hiddenOverride ?? view.hidden_properties,
       ...(stylePatch ? { column_styles: mergeStyleRecords(view.column_styles, stylePatch) } : {}),
+      ...(!structuralOrder && manualOverride ? { manual_order: manualOverride } : {}),
       ...bandPatch,
     }
-  }, [view, orderOverride, hiddenOverride, stylePatch, bandPatch])
+  }, [view, orderOverride, hiddenOverride, stylePatch, bandPatch, manualOverride, structuralOrder])
 
-  const sortKeys = useMemo(() => resolvedSortCount(liveView.sort, schema), [liveView.sort, schema])
-  const sortedOrGrouped = sortKeys > 0 || liveView.group != null
-  const structuralGrouping = groupsStructurally(liveView.group, schema)
-  // A flattened paint never sub-groups, so a view still carrying `sub_group` from a type switch must not reassign against it.
-  const subGrouped = structuralGrouping && liveView.sub_group !== undefined && !flattenStructural
-  const groupPropId =
-    liveView.group?.kind === 'property'
-      ? liveView.group.property_id
-      : subGrouped
-        ? liveView.sub_group?.property_id
-        : undefined
-  const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
-  const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
-  const locationFsOrder = flattenStructural && isLocationFsOrder(liveView)
-  const canReorderWithin = sortKeys < 2 && !locationFsOrder
-  const canRelocate = structuralGrouping && !subGrouped
-  const structuralOrder = groupPropId === undefined && sortKeys === 0
-  // A held viewOrder mask never feeds a structural paint — the rows draw in tree order, and the mask stays the sorted/grouped tiebreaker.
+  // A stored manual order never feeds a structural paint — the rows draw in tree order, and the array stays the sorted/grouped tiebreaker.
   const manualOrder = locationFsOrder
     ? undefined
     : resolveManualOrder(
         sortedOrGrouped,
         manualOverride,
-        structuralOrder ? undefined : viewOrders[view.id],
+        structuralOrder ? undefined : view.manual_order,
       )
   const dragDisabled = !(canReorderWithin || canReassign || canRelocate)
 
@@ -313,8 +316,7 @@ export function useViewHost(
     setValueOverride,
     effectiveValues,
     structuralOrder,
-    viewOrders,
-    persistViewOrder,
+    persistView,
     setManualOverride,
     rowBand,
     bandBucket: (key) => upward.bandBucket.current(key),
@@ -362,8 +364,6 @@ export function useViewHost(
     structuralOrder,
     dragDisabled,
     manualOrder,
-    viewOrders,
-    persistViewOrder,
     setManualOverride,
     setOrderOverride,
     setHiddenOverride,
