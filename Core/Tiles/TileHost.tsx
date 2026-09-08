@@ -17,7 +17,7 @@ import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { iconNameOr } from '@pommora/uix/Symbols'
-import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
@@ -144,11 +144,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [editingId])
 
-  useDismissal(editingId !== null, false, {
-    layer: () => null,
-    dismiss: () => setEditingId(null),
-    outsidePress: false,
-  })
+  useEscape(editingId !== null, () => setEditingId(null))
 
   const suppressFlush = useCallback((id: string) => removing.current.has(id), [])
 
@@ -263,13 +259,13 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
           },
           containerLocked: hostLocked,
         })
-      const { items, picks } = build(entry)
+      let built = build(entry)
       const arg = (action: string, prefix: string): string | undefined =>
         action.startsWith(prefix) ? action.slice(prefix.length) : undefined
       const run = (action: string): void => {
         const picked = arg(action, 'tile:pick:')
         const zoom = arg(action, 'tile:zoom:')
-        const chosen = picked === undefined ? undefined : picks[Number(picked)]
+        const chosen = picked === undefined ? undefined : built.picks[Number(picked)]
         if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
         else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
         else if (zoom !== undefined) setTileZoom(id, Number(zoom))
@@ -287,14 +283,16 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         if (zoom !== undefined) return { ...current, zoom: Number(zoom) }
         if (action === 'tile:style:bordered') return { ...current, style: 'bordered' }
         if (action === 'tile:style:borderless') return { ...current, style: 'borderless' }
-        return { ...current, locked: !(current.locked ?? false) }
+        if (action === 'tile:lock') return { ...current, locked: !(current.locked ?? false) }
+        return current
       }
       setMenuOpenId(id)
-      void popMenu(items, e.currentTarget as HTMLElement, {
+      void popMenu(built.items, e.currentTarget as HTMLElement, {
         stay: (action) => {
           run(action)
           current = project(action)
-          return build(current).items
+          built = build(current)
+          return built.items
         },
       }).then((action) => {
         setMenuOpenId((cur) => (cur === id ? null : cur))

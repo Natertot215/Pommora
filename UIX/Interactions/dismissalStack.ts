@@ -94,6 +94,9 @@ export function pushDismissal(entry: DismissalEntry): DismissalHandle {
   }
 }
 
+export const pushEscape = (dismiss: () => void): DismissalHandle =>
+  pushDismissal({ layer: () => null, dismiss, outsidePress: false })
+
 const subscribe = (fn: () => void): (() => void) => {
   subscribers.add(fn)
   return () => subscribers.delete(fn)
@@ -127,4 +130,8 @@ export function useDismissal(active: boolean, closing: boolean, entry: Dismissal
     handle.current?.setClosing(closing)
   }, [closing])
   return useSyncExternalStore(subscribe, () => handle.current?.shields() === true)
+}
+
+export function useEscape(active: boolean, dismiss: (() => void) | undefined): void {
+  useDismissal(active, false, { layer: () => null, dismiss, outsidePress: false })
 }
