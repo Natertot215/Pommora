@@ -41,7 +41,7 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 - `serializeOnFile` rejects a re-taken key rather than queuing (`Desktop/Platform/fileLock.ts:11-19`), and `rmwJsonStrict` takes `machine().lock(absPath)` itself (`Core/Files/atomicWrite.ts:82`) on the same key `withSidecarLock` uses (`Core/Files/sidecar.ts:12`) → a sidecar write uses `rmwJsonStrict` alone, or `withSidecarLock` with `readJsonStrict`/`writeJson` inside — never both. → Tasks 1, 2, 4.
 - `liveView`'s `useMemo` is at `useViewHost.ts:109`; `sortKeys`, `groupPropId`, and `structuralOrder` are derived from it at `:120-136` → folding `manual_order` into `liveView` under `structuralOrder` requires that predicate to be hoisted above the memo, which is sound because `bandPatch` (`Bands/useBandOrdering.ts:9-35`) touches only `group.order` and `group_order`, moving neither `resolvedSortCount` nor `group.kind`. → Task 3.
 - `resolveOrder(sets, asStringArray(meta.set_order))` needs the freshly-read children, and `readNexus` and `watchPatch` pass different ones (`readNexus.ts:201,241` vs `watchPatch.ts:318-319`) → a hoisted mapper takes the children as arguments; a `meta`-only signature cannot cover the two order keys. → Task 1.
-- `nodesOf` returns `{ kind, id, title, icon, ownIcon, path, parents }` and carries no views (`Core/Nexus/treeIndex.ts:100-145`), while `viewOrder` rows are keyed by view id → `nodesOf` answers the container-id lookup only; the view-id map comes from the live tree's own container nodes. → Task 4.
+- `treeIndex.ts` resolves icons through `@pommora/uix/Symbols` and `NavTrail`, both `.tsx`, so `nodesOf` is renderer-side: an engine-side import of it fails `tsc -p Desktop/tsconfig.node.json` → the container-id lookup and the view-id map both come from the live tree's own container nodes, visited as `collectionFolders` visits them (`Core/Properties/assignment.ts:101-111`). → Tasks 2, 4.
 - `container:configure` is a plain `host().ask` with no optimistic tree patch; `setDisclosureLock` is a `mutate` op with one at `nexusSlice.ts:217` → `active_view` rides the mutate rail, so a view switch stays instant. → Task 1.
 - `pickView` (`Core/Views/Pipeline/pickView.ts:25`) resolves `active ?? views[0]`, and after a sentinel adoption the adopted view *is* `views[0]` — while before the confirming push `source.views` is still `[]`, so the old slice write helped nobody either → the adoption writes nothing. → Task 1.
 - `ViewFrame`'s `rows` falls back to `[mintDefaultView(schema)]` when a container has no views (`Settings/ViewFrame.tsx:77`), and `switchTo` writes whatever row is clicked → the sentinel `view_default` would land in a user-legible sidecar; the write is refused at that call site. → Task 1.
@@ -231,8 +231,8 @@ if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
 **Becomes** — one import beside that idiom, and remint re-pointing inside the write it already makes:
 
 ```ts
-// Core/Nexus/importPlacedState.ts (new). Container id → path through nodesOf
-// (Core/Nexus/treeIndex.ts:145), never its own walk. Per container:
+// Core/Nexus/importPlacedState.ts (new). Container id → path off the live tree's own
+// container nodes, never its own walk. Per container:
 //   withSidecarLock(folder, kind, async () => { readJsonStrict; writeJson })
 // — remint's shape, NOT rmwJsonStrict, which would re-take the same key.
 // Each imported row is then deleted with writeKey('activeView', id, null). An id no container
@@ -253,12 +253,13 @@ if (typeof next.active_view === 'string')
 
 **Verify — Automated**
 
-- [ ] Red first: an import case over a two-container tree, each holding an `activeView` row — both values land, both rows are gone after, and a second run writes nothing and returns false. Expect 3 failures, module not found.
-- [ ] **Both halves of the failure contract:** a container whose sidecar write refuses keeps its row and the pass still returns true for the others; and the import resolves rather than throwing when every container refuses. Red with the per-container catch removed.
-- [ ] The degenerate cases: an empty scope writes nothing and triggers no `refreshAfterWrite`; a container id absent from the tree keeps its row; a nexus opened for the first time, with no `local_state` rows at all, is a no-op.
-- [ ] The `remint.test.ts` `activeView` cases rewritten to assert `active_view` on the copy's sidecar, naming the minted view id. Red with the re-point line removed.
-- [ ] `rg -nF "readKey<string>('activeView'" Core` → 0. Control: `rg -nF 'readKey(' Core` → 13.
-- [ ] Full gate green.
+- [x] Red first: an import case over a two-container tree, each holding an `activeView` row — both values land, both rows are gone after, and a second run writes nothing and returns false. The suite fails to load, module not found.
+- [x] **Both halves of the failure contract:** a container whose sidecar write refuses keeps its row and the pass still returns true for the others; and the import resolves rather than throwing when every container refuses. Red with the per-container catch removed.
+- [x] The degenerate cases: an empty scope writes nothing and triggers no `refreshAfterWrite`; a container id absent from the tree keeps its row; a nexus opened for the first time, with no `local_state` rows at all, is a no-op.
+- [x] The lock key is the canonicalized one: the test root reaches the import through a symlink, and holding the resolved folder's sidecar lock across the pass makes the write refuse. Red without `resolveUnderRoot` — the write lands straight through the held lock.
+- [x] The `remint.test.ts` `activeView` cases rewritten to assert `active_view` on the copy's sidecar, naming the minted view id. Red with the re-point line removed.
+- [x] `rg -nF "readKey<string>('activeView'" Core` → 0. Control: `rg -nF 'readKey(' Core` → 16.
+- [x] Full gate green.
 
 **Verify — User**
 
@@ -686,8 +687,8 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 ### Progress
 
 - [ ] **Phase 1** — Active View on the container sidecar · base `7096dcb2c`
-  - [x] Task 1 — One container-node mapper, and `active_view` on the mutate rail · `<commit>`
-  - [ ] Task 2 — Import the `activeView` scope during the open · `<commit>`
+  - [x] Task 1 — One container-node mapper, and `active_view` on the mutate rail · `e88c2cc96`
+  - [x] Task 2 — Import the `activeView` scope during the open · `<commit>`
 - [ ] **Phase 2** — Manual order in the view record
   - [ ] Task 3 — `manual_order` on the view, written by every drop site
   - [ ] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
@@ -721,6 +722,9 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **`viewOrder` rows are keyed by more than container-held view ids.** The real Nexus holds three `view_…` ids, two bare ULIDs of a legacy shape, and one `embed:01KXC5QQ9YGM36H0SAH58MFPTE:1`. Embedded views are minted by `Tiles/Surfaces/ViewTile.tsx:261` into a tile entry's config rather than a container sidecar, so Task 4's container-keyed import claims none of these three and, by its own rule, keeps their rows — which Task 8 then orphans. Task 3 is unaffected: `manual_order` joins `VIEW_STATE_KEYS`, and view state already reaches a tile entry through `ViewTile`'s `persistState`, so embedded views keep manual ordering going forward. What is lost is only the pre-move value on those three rows. Task 4 carries the question of whether the import can also reach tile entries; the Acceptance clause "`local_state` holds no `activeView` or `viewOrder` row" is read against the rows the import claims, not the ones it is ruled to keep.
 
 - **`useActiveView` returns the view itself.** Its `activeViewId` half had one writer and no reader once the slice was gone, so the hook returns `SavedView` and its four call sites read it directly. Task 1's shape is otherwise as written.
+- **`nodesOf` does not cross the engine boundary.** `Core/Nexus/treeIndex.ts` imports `@pommora/uix/Symbols` and `NavTrail` to resolve icons, so importing it from `openNexusSequence` pulls `.tsx` into `Desktop/tsconfig.node.json`, which sets no `jsx` — five `TS6142` errors, the first red the Engine Boundary guard caught for this arc. The import visits the live tree's container nodes directly instead, in the shape `collectionFolders` already uses on this side (`Core/Properties/assignment.ts:101-111`). Task 4's view-id map was already specified to read those same nodes, so the two agree. A shared container visitor is now the fourth of its kind — `collectionFolders`, `remintLedger`, `watchPatch`, and this — and is named under Sequenced After.
+- **A sidecar already naming a view keeps it, and the row is still consumed.** `.nexus/` syncs and `nexus.db` does not, so a second machine can meet a sidecar carrying a choice made after its own row was written. Most recent wins: nothing is overwritten, and the row is deleted because the value has a home. The pass still reports that something landed, which costs one re-walk on one open rather than a tri-state return.
+- **Task 2's `readKey(` control moved, 13 → 16.** The task's own two mandated edits move it: the `remint.test.ts` rewrite drops five `readKey('activeView'…)` assertions and the new import suite adds eight. The written figure was a pre-edit count; it is corrected in place.
 - **A sidecar lock key is the realpath.** `resolveUnderRoot` canonicalizes through `machine().realpath`, so a `withSidecarLock` taken on an unresolved folder is a *different* key from the one `rmwJsonStrict` takes inside the op — on macOS, where `/var` is a symlink, the nesting then serializes nothing and rejects nothing. Task 1's lock control locks the resolved folder. Tasks 2 and 4 build their per-container `withSidecarLock` on a resolved path for the same reason.
 
 ### Lessons
@@ -731,6 +735,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 - `UIX/Windows/window-panel.tsx:14` keeps the module-map-keyed-by-window-id pattern Task 7 deletes from `window-base.tsx`. The ruling places panel width nowhere, so it stays session-only and out of scope here — but after Phase 4 it is the last one of its kind in UIX.
 - `manual_order` on disk is an array of page ids with no validator and no sweep. Task 4 closes the one producer of stale entries that exists today (remint), but every future mechanism that copies, restores, or imports a container — `Sync/`, the mobile companion — inherits the same exposure. A reader-side reconciliation, or a sweep at open, belongs to whichever of those lands first.
+- Four modules now hold their own recursive visit of the tree's container nodes: `collectionFolders` (`Properties/assignment.ts:105-109`), `remintLedger`, `watchPatch`, and `importPlacedState`. One engine-safe visitor would carry all four, and `treeIndex` cannot hold it — it is renderer-side.
 - `setDevicePref` re-sends the whole singleton on every key, and `disclosure` now grows with the size of the Nexus. That is fine at present scale and worth revisiting if the blob gets large.
 
 ### Closeout

@@ -213,8 +213,14 @@ describe('the re-mint writes', () => {
     expect(rewalked[PAGE].path).toBe('Library/Notes.md')
   })
 
+  const chooseSetView = async (viewId: string): Promise<void> => {
+    const file = join(root, 'Library', 'Fiction', '_pageset.json')
+    const sidecar = JSON.parse(await readFile(file, 'utf8'))
+    await writeFile(file, JSON.stringify({ ...sidecar, active_view: viewId }))
+  }
+
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
-    writeKey('activeView', SET, 'view-2')
+    await chooseSetView('view-2')
     writeKey('viewOrder', 'view-2', ['page-b', 'page-a'])
     await writeTileDocAt(join(root, '.nexus', 'contexts', 'Areas', 'Work'), (cur) => ({
       ...cur,
@@ -262,9 +268,9 @@ describe('the re-mint writes', () => {
     expect(copySpace.keep_me).toBe('foreign')
 
     // The selection follows the view it names into the copy's own id namespace — asserting the SECOND view is what makes this a proof of the map rather than a coincidence.
-    expect(readKey('activeView', SET)).toBe('view-2')
-    expect(readKey('activeView', copySet.id)).toBe(copySet.views[1].id)
-    expect(readKey('activeView', copySet.id)).not.toBe('view-2')
+    expect(originalSet.active_view).toBe('view-2')
+    expect(copySet.active_view).toBe(copySet.views[1].id)
+    expect(copySet.active_view).not.toBe('view-2')
 
     // The manual order keys ON the view, so it crosses under the copy's own view id — the original's row is left exactly where it was.
     expect(readKey('viewOrder', 'view-2')).toEqual(['page-b', 'page-a'])
@@ -283,8 +289,8 @@ describe('the re-mint writes', () => {
   })
 
   it('a selection naming a view the container no longer has does not travel at all', async () => {
-    // The copy must not inherit a reference it cannot resolve — copying it anyway is precisely the dangling row this join exists to prevent.
-    writeKey('activeView', SET, 'view-ghost')
+    // The copy must not inherit a reference it cannot resolve — carrying it anyway is precisely the dangling selection this join exists to prevent.
+    await chooseSetView('view-ghost')
     const bytes = await readFile(join(root, 'Library', 'Fiction', '_pageset.json'), 'utf8')
     await mkdir(join(root, 'Library', 'Fiction copy'), { recursive: true })
     await writeFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), bytes)
@@ -296,8 +302,11 @@ describe('the re-mint writes', () => {
       await readFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), 'utf8'),
     )
     expect(copySet.id).not.toBe(SET)
-    expect(readKey('activeView', SET)).toBe('view-ghost')
-    expect(readKey('activeView', copySet.id)).toBeNull()
+    const originalSet = JSON.parse(
+      await readFile(join(root, 'Library', 'Fiction', '_pageset.json'), 'utf8'),
+    )
+    expect(originalSet.active_view).toBe('view-ghost')
+    expect(copySet.active_view).toBeUndefined()
   })
 
   it('duplicates present at the very first open converge: record one, adjudicate next open', async () => {
