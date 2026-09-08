@@ -84,8 +84,8 @@ export function tileMenuItems({
       action: 'tile:open',
       disabled: locked,
       submenu: [
-        { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless },
-        { label: 'Borderless', action: 'tile:style:borderless', checked: borderless },
+        { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless, stay: true },
+        { label: 'Borderless', action: 'tile:style:borderless', checked: borderless, stay: true },
       ],
     },
     {
@@ -97,6 +97,7 @@ export function tileMenuItems({
         label: st.label,
         action: `tile:zoom:${st.factor}` as const,
         checked: st.factor === currentFactor,
+        stay: true,
       })),
     },
     {
@@ -109,9 +110,11 @@ export function tileMenuItems({
     { label: 'Delete', icon: 'x', action: 'tile:delete', disabled: locked },
     {
       label: containerLocked ? 'Locked' : lockLabel(locked),
+      icon: locked ? 'locked' : 'lock-open',
       action: 'tile:lock',
       separatorBefore: true,
       disabled: containerLocked,
+      stay: true,
     },
   ]
   return { items, picks }

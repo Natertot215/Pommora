@@ -15,8 +15,6 @@ const CHEVRON = <Icon name="chevron-right" size={GLYPH} />
 const leadingGlyph = (icon?: string): React.JSX.Element | undefined =>
   icon ? <Icon name={icon} size={GLYPH} /> : undefined
 
-type Branch = { title: string; items: readonly ActionItem<string>[] }
-
 function Level({
   items,
   title,
@@ -26,9 +24,12 @@ function Level({
   items: readonly ActionItem<string>[]
   title: string
   onBack?: { label: string; back: () => void }
-  onPick: (action: string) => void
+  onPick: (action: string, stay?: boolean) => void
 }): React.JSX.Element {
-  const [branch, setBranch] = useState<Branch | null>(null)
+  const [branchAt, setBranchAt] = useState<number | null>(null)
+  const rows = menuRows(items)
+  const at = branchAt === null ? undefined : rows[branchAt]
+  const branch = at?.kind === 'item' && at.submenu ? at : undefined
   const renderRow = (row: PresenterRow<string>, i: number): React.JSX.Element => {
     switch (row.kind) {
       case 'separator':
@@ -42,7 +43,7 @@ function Level({
             selected={row.checked}
             leading={leadingGlyph(row.icon)}
             disabled={row.disabled}
-            onClick={() => onPick(row.action)}
+            onClick={() => onPick(row.action, row.stay)}
           >
             <span className={overScrollEllipsis}>{row.label}</span>
           </PickerRow>
@@ -55,11 +56,7 @@ function Level({
             disabled={row.disabled}
             leading={leadingGlyph(row.icon)}
             trailing={submenu ? CHEVRON : undefined}
-            onClick={
-              submenu
-                ? () => setBranch({ title: row.label, items: submenu })
-                : () => onPick(row.action)
-            }
+            onClick={submenu ? () => setBranchAt(i) : () => onPick(row.action, row.stay)}
           >
             {row.label}
           </MenuItem>
@@ -69,7 +66,7 @@ function Level({
   }
   return (
     <FrameSlide
-      open={branch !== null}
+      open={branch !== undefined}
       minWidth={120}
       maxWidth={180}
       root={
@@ -79,15 +76,15 @@ function Level({
             onBack && <MenuTopRow label={onBack.label} current={title} onBack={onBack.back} />
           }
         >
-          {menuRows(items).map(renderRow)}
+          {rows.map(renderRow)}
         </MenuScrollFrame>
       }
       detail={
-        branch && (
+        branch?.submenu && (
           <Level
-            items={branch.items}
-            title={branch.title}
-            onBack={{ label: title, back: () => setBranch(null) }}
+            items={branch.submenu}
+            title={branch.label}
+            onBack={{ label: title, back: () => setBranchAt(null) }}
             onPick={onPick}
           />
         )
@@ -101,6 +98,15 @@ export function MenuPresenter(): React.JSX.Element {
   const shown = useHeld(pending, pending !== null)
   const triggerRef = useRef<HTMLElement | null>(null)
   triggerRef.current = shown?.trigger ?? null
+  const [live, setLive] = useState<{ id: number; items: readonly ActionItem<string>[] } | null>(
+    null,
+  )
+  const items = live && shown && live.id === shown.id ? live.items : shown?.items
+  const pick = (action: string, stay?: boolean): void => {
+    if (!shown) return
+    if (stay && shown.stay) setLive({ id: shown.id, items: shown.stay(action) })
+    else shown.settle(action)
+  }
   return (
     <PickerMenu
       open={pending !== null}
@@ -109,9 +115,7 @@ export function MenuPresenter(): React.JSX.Element {
       origin="center"
       solid={shown?.solid}
     >
-      {shown && (
-        <Level key={shown.id} items={shown.items} title="Menu" onPick={(a) => shown.settle(a)} />
-      )}
+      {shown && items && <Level key={shown.id} items={items} title="Menu" onPick={pick} />}
     </PickerMenu>
   )
 }
