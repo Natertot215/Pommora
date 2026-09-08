@@ -29,7 +29,8 @@ function Level({
   const [branchAt, setBranchAt] = useState<number | null>(null)
   const rows = menuRows(items)
   const at = branchAt === null ? undefined : rows[branchAt]
-  const branch = at?.kind === 'item' && at.submenu ? at : undefined
+  const branch =
+    at?.kind === 'item' && at.submenu ? { label: at.label, items: at.submenu } : undefined
   const renderRow = (row: PresenterRow<string>, i: number): React.JSX.Element => {
     switch (row.kind) {
       case 'separator':
@@ -80,9 +81,9 @@ function Level({
         </MenuScrollFrame>
       }
       detail={
-        branch?.submenu && (
+        branch && (
           <Level
-            items={branch.submenu}
+            items={branch.items}
             title={branch.label}
             onBack={{ label: title, back: () => setBranchAt(null) }}
             onPick={onPick}
@@ -101,7 +102,6 @@ export function MenuPresenter(): React.JSX.Element {
   const [live, setLive] = useState<{ id: number; items: readonly ActionItem<string>[] } | null>(
     null,
   )
-  const items = live && shown && live.id === shown.id ? live.items : shown?.items
   const pick = (action: string, stay?: boolean): void => {
     if (!shown) return
     if (stay && shown.stay) setLive({ id: shown.id, items: shown.stay(action) })
@@ -115,7 +115,14 @@ export function MenuPresenter(): React.JSX.Element {
       origin="center"
       solid={shown?.solid}
     >
-      {shown && items && <Level key={shown.id} items={items} title="Menu" onPick={pick} />}
+      {shown && (
+        <Level
+          key={shown.id}
+          items={live && live.id === shown.id ? live.items : shown.items}
+          title="Menu"
+          onPick={pick}
+        />
+      )}
     </PickerMenu>
   )
 }
