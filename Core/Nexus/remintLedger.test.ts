@@ -13,7 +13,8 @@ import {
   runOpenLedger,
   writeBaseline,
 } from './remintLedger'
-import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree, getLiveTree } from './liveTree'
 
 const page = (id: string, title: string, dir: string): PageNode => ({
@@ -243,10 +244,10 @@ describe('the record rows', () => {
   let root: string
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'pom-record-'))
-    openSessionDb(root)
+    installStores(memoryStores().stores)
   })
   afterEach(async () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     await rm(root, { recursive: true, force: true })
   })
 
@@ -273,7 +274,7 @@ describe('the record rows', () => {
   })
 
   it('with no database open, reads are null and writes report failure', () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(readBaseline()).toBeNull()
     expect(writeBaseline({})).toBe(false)
   })
@@ -295,10 +296,10 @@ describe('runOpenLedger — the open sequence', () => {
       JSON.stringify({ id: 'col-lib' }),
     )
     await writeFile(join(root, 'Library', 'Notes.md'), `---\nID: ${NOTES}\n---\nbody`)
-    openSessionDb(root)
+    installStores(memoryStores().stores)
   })
   afterEach(async () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     await rm(root, { recursive: true, force: true })
   })
 

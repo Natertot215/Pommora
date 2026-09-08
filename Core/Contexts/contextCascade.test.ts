@@ -11,7 +11,8 @@ import {
   unlinkSpaceValue,
 } from './contextCascade'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
@@ -55,7 +56,7 @@ beforeEach(async () => {
   await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n  - pommora\n---\nbody')
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
   closeSession()
 })
@@ -65,7 +66,7 @@ describe('the cascades open only the members the index names', () => {
   beforeEach(async () => {
     await writeFile(other(), '---\nid: p2\n---\nuntagged')
     await writeFile(classes(), '---\nid: p3\n<Classes>:\n  - CS 161\n---\nbody')
-    openSessionDb(root)
+    installStores(memoryStores().stores)
     await seedContentIndex(root)
     sweepSpy.mockClear()
   })
@@ -93,7 +94,7 @@ describe('the cascades open only the members the index names', () => {
   })
 
   it('without an index every page is a candidate', async () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
     expect(sweepSpy.mock.calls[0]?.[1]).toHaveLength(3)
   })

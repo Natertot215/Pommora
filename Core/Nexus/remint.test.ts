@@ -11,7 +11,8 @@ import type { Baseline } from './remintLedger'
 import { adjudicate } from './remint'
 import { withSidecarLock } from '../Files/sidecar'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
-import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { readTileDocAt, writeTileDocAt } from '../Tiles/tileDoc'
 
 const claim = (path: string, over: Partial<EntityRecord> = {}): EntityRecord => ({
@@ -154,11 +155,11 @@ describe('the re-mint writes', () => {
       join(root, 'Library', 'Notes.md'),
       `---\nID: ${PAGE}\nkeep: foreign\n---\nthe body\n`,
     )
-    openSessionDb(root)
+    installStores(memoryStores().stores)
   })
 
   afterEach(async () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     await rm(root, { recursive: true, force: true })
   })
 
@@ -375,8 +376,7 @@ describe('the whole-Collection copy — the acceptance shape', () => {
         join(root2, 'Library', 'Notes.md'),
         '---\nID: 01KVGMT8BFP350FZZXAMG1QDWC\n---\nbody',
       )
-      closeSessionDb()
-      openSessionDb(root2)
+      installStores(memoryStores().stores)
 
       await runOpenLedger(root2)
       await cp(join(root2, 'Library'), join(root2, 'Library copy'), { recursive: true })
@@ -411,7 +411,7 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       expect(baseline['01KVGMT8BFP350FZZXAMG1QDWA'].path).toBe('Library')
       expect(baseline[copy.col.id].path).toBe('Library copy')
     } finally {
-      closeSessionDb()
+      installStores(NO_STORES)
       await rm(root2, { recursive: true, force: true })
     }
   })

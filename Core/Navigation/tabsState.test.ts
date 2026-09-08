@@ -3,17 +3,18 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { StoredTabSet } from '../Interface/Windows/windowRecord'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { writeValue } from '../Platform/localState'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-tabsstate-'))
-  openSessionDb(root)
+  installStores(memoryStores().stores)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -106,7 +107,7 @@ describe('readTabsState', () => {
 
   it('reads null with no database open', () => {
     writeTabsState(set('t1'))
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(readTabsState()).toBeNull()
   })
 })

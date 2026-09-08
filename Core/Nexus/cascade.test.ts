@@ -10,7 +10,8 @@ import { createProperty } from '../Properties/registryProperty'
 
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { rewritePageSerialized } from '../Files/atomicWrite'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
@@ -92,12 +93,12 @@ describe('the cascade queries the index', () => {
   }
 
   afterEach(() => {
-    closeSessionDb()
+    installStores(NO_STORES)
   })
 
   it('opens exactly the files whose rows name the title — the un-adopted note included', async () => {
     await seedFixture()
-    openSessionDb(root)
+    installStores(memoryStores().stores)
     await seedContentIndex(root)
     sweepSpy.mockClear()
     const r = await renameCascade(root, 'Target', 'New Target')
@@ -152,11 +153,11 @@ describe('renameCascade over frontmatter', () => {
     const a = await createPage(dir, 'Only Frontmatter', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SOURCE, '[[Target]]')
-    openSessionDb(root)
+    installStores(memoryStores().stores)
     await seedContentIndex(root)
 
     const r = await renameCascade(root, 'Target', 'New Target')
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.touched).toEqual([a.value.path])

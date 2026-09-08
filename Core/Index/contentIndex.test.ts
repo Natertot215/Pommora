@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import {
   markIndexReady,
   queryKeyHolders,
@@ -18,11 +19,11 @@ import {
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-cindex-'))
-  openSessionDb(root)
+  installStores(memoryStores().stores)
   markIndexReady()
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -90,31 +91,16 @@ describe('the content index', () => {
   it('no mentions is an empty array; NO INDEX is null — the two never conflate', () => {
     upsertPageIndex('Notes/A.md', { mentions: [], values: {}, memberships: [] }, STAT)
     expect(queryMentions('beta')).toEqual([])
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(queryMentions('beta')).toBeNull()
     expect(queryKeyHolders('Status')).toBeNull()
     expect(queryMembers('<Projects>', 'pommora')).toBeNull()
     expect(readIndexedStats()).toBeNull()
-  })
-
-  it('missing tables answer exactly like a null Db, and writers never throw', () => {
-    sessionDb()?.exec(
-      'DROP TABLE mentions; DROP TABLE page_values; DROP TABLE memberships; DROP TABLE indexed_files',
-    )
-    expect(queryMentions('beta')).toBeNull()
-    expect(queryKeyHolders('Status')).toBeNull()
-    expect(queryMembers('<Projects>', 'pommora')).toBeNull()
-    expect(readIndexedStats()).toBeNull()
-    expect(() =>
-      upsertPageIndex('Notes/A.md', { mentions: ['x'], values: {}, memberships: [] }, STAT),
-    ).not.toThrow()
-    expect(() => removePathIndex('Notes/A.md')).not.toThrow()
   })
 
   it('queries answer null until a seed stamps the handle ready — empty tables never masquerade', async () => {
-    closeSessionDb()
-    await rm(join(root, '.nexus'), { recursive: true, force: true })
-    openSessionDb(root)
+    installStores(NO_STORES)
+    installStores(memoryStores().stores)
     upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {}, memberships: [] }, STAT)
     expect(queryMentions('beta')).toBeNull()
     markIndexReady()

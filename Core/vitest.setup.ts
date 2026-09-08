@@ -1,9 +1,9 @@
 import '../UIX/vitest.setup'
-import { nodeMachine } from '@pommora/desktop/Platform/nodeMachine'
 import { installMachine } from './Platform/machine'
 import type { Dialer } from './Platform/dialer'
+import { diskMachine } from './Testing/machines'
 
-installMachine(nodeMachine)
+installMachine(diskMachine())
 
 /** The dialer a suite installs on the window: its own channel table, dispatched the way the preload dispatches the real one. An unstubbed channel answers undefined rather than throwing. */
 export function stubDialer(channels: Record<string, unknown>): Dialer {

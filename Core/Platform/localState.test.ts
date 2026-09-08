@@ -1,17 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { chmod, mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from './stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { readScope, writeKey, readValue, writeValue } from './localState'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-local-state-'))
-  openSessionDb(root)
+  installStores(memoryStores().stores)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -66,7 +67,7 @@ describe('singleton scopes', () => {
 
 describe('no database open', () => {
   it('reads degrade to empty and writes no-op instead of throwing', () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(readScope('folds')).toEqual({})
     expect(readValue('tabs')).toBeNull()
     expect(() => writeKey('folds', 'p1', ['x'])).not.toThrow()
@@ -76,24 +77,8 @@ describe('no database open', () => {
   it('writes report failure so a caller never acknowledges a lost write', () => {
     expect(writeKey('folds', 'p1', ['x'])).toBe(true)
     expect(writeValue('tabs', {})).toBe(true)
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(writeKey('folds', 'p1', ['x'])).toBe(false)
     expect(writeValue('tabs', {})).toBe(false)
-  })
-})
-
-describe('openSessionDb', () => {
-  it('never throws — an unwritable nexus opens without persistence, not with a failure', async () => {
-    closeSessionDb()
-    const ro = await mkdtemp(join(tmpdir(), 'pom-readonly-'))
-    await chmod(ro, 0o555)
-    try {
-      expect(() => openSessionDb(ro)).not.toThrow()
-      expect(readScope('folds')).toEqual({})
-      expect(writeKey('folds', 'p1', ['x'])).toBe(false)
-    } finally {
-      await chmod(ro, 0o755)
-      await rm(ro, { recursive: true, force: true })
-    }
   })
 })

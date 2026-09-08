@@ -2,7 +2,8 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { withSidecarLock } from '../Files/sidecar'
 import { machine } from '../Platform/machine'
 import { readKey, writeKey } from '../Platform/localState'
@@ -48,13 +49,13 @@ describe('importPlacedState', () => {
       join(real, 'Library', 'Fiction', '_pageset.json'),
       JSON.stringify({ id: SET, views: views('view-s1', 'view-s2') }),
     )
-    openSessionDb(root)
+    installStores(memoryStores().stores)
     await refreshTree(root)
   })
 
   afterEach(async () => {
     dropLiveTree()
-    closeSessionDb()
+    installStores(NO_STORES)
     await rm(root, { force: true })
     await rm(real, { recursive: true, force: true })
   })
