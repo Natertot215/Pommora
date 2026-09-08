@@ -65,7 +65,7 @@ describe('the Off gate', () => {
 describe('the hovered-Shift arm', () => {
   it('arms the hovered surface when Shift is pressed at rest, no re-enter needed', () => {
     setPersistence('1s')
-    hoverGlance(page, el, 'detail', false)
+    hoverGlance(page, el, 'location', false)
     expect(present).not.toHaveBeenCalled()
     pressShift()
     vi.runAllTimers()
@@ -74,7 +74,7 @@ describe('the hovered-Shift arm', () => {
 
   it('ignores an auto-repeat keydown so the dwell is never reset out from under itself', () => {
     setPersistence('1s')
-    hoverGlance(page, el, 'detail', false)
+    hoverGlance(page, el, 'location', false)
     pressShift(true)
     vi.runAllTimers()
     expect(present).not.toHaveBeenCalled()
@@ -82,14 +82,14 @@ describe('the hovered-Shift arm', () => {
 
   it('armNow raises the preview immediately, without a keypress', () => {
     setPersistence('1s')
-    hoverGlance(page, el, 'detail', true)
+    hoverGlance(page, el, 'location', true)
     vi.runAllTimers()
     expect(present).toHaveBeenCalledWith({ target: page, el })
   })
 
   it('leaveGlance clears the hovered surface, so a later Shift arms nothing', () => {
     setPersistence('1s')
-    hoverGlance(page, el, 'detail', false)
+    hoverGlance(page, el, 'location', false)
     leaveGlance()
     pressShift()
     vi.runAllTimers()
@@ -98,7 +98,7 @@ describe('the hovered-Shift arm', () => {
 
   it('honors the Off gate on the Shift arm', () => {
     setPersistence('off')
-    hoverGlance(page, el, 'detail', false)
+    hoverGlance(page, el, 'location', false)
     pressShift()
     vi.runAllTimers()
     expect(present).not.toHaveBeenCalled()
@@ -106,7 +106,7 @@ describe('the hovered-Shift arm', () => {
 
   it('a right-click cancels the pending dwell and clears the hovered surface', () => {
     setPersistence('1s')
-    hoverGlance(page, el, 'detail', true)
+    hoverGlance(page, el, 'location', true)
     window.dispatchEvent(new Event('contextmenu'))
     vi.runAllTimers()
     expect(present).not.toHaveBeenCalled()

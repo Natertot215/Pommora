@@ -11,8 +11,7 @@ import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { suppressNextClick } from '@pommora/uix/Interactions/shared'
 import type { Tab, TabTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
-import { armPreview } from '../Interface/Glance/glanceLink'
-import { cancelGlance } from '../Interface/Glance/glanceAction'
+import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
@@ -233,14 +232,14 @@ function TabBarBody({
   )
 }
 
-// Plain hover on a page tab arms a detail preview; non-page tabs carry no id/path, so they raise nothing.
+// A page tab is a location: it raises its preview on Shift, never on plain hover. Non-page tabs carry no id/path, so they raise nothing.
 const tabHoverProps = (entry: TabEntry) => ({
   onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
     const t = entry.tab.target
     if (t.kind === 'page')
-      armPreview({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'detail')
+      hoverGlance({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'location', e.shiftKey)
   },
-  onPointerLeave: () => cancelGlance(),
+  onPointerLeave: () => leaveGlance(),
 })
 
 function PinnedTab({

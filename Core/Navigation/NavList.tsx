@@ -12,8 +12,7 @@ import { isOpenInTabs, liveTarget } from './tabsModel'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { navKey } from './navRecents'
 import { pageTargetFromNav, type ResolvedNav } from './navResolve'
-import { armPreview } from '../Interface/Glance/glanceLink'
-import { cancelGlance } from '../Interface/Glance/glanceAction'
+import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
 import { pinLabel } from '@pommora/core/Actions/toggleLabels'
@@ -148,9 +147,9 @@ function NavRow({
       onClick={() => onSelect(it.target)}
       onMouseEnter={(e) => {
         const t = pageTargetFromNav(it, useSession.getState().tree)
-        if (t) armPreview(t, e.currentTarget, 'detail')
+        if (t) hoverGlance(t, e.currentTarget, 'location', e.shiftKey)
       }}
-      onMouseLeave={() => cancelGlance()}
+      onMouseLeave={() => leaveGlance()}
       onContextMenu={(e) => {
         e.preventDefault()
         onMenu(it)

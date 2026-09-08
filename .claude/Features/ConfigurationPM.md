@@ -39,7 +39,7 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 | --- | --- | --- | --- |
 | Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
 | Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. | On · **Off** |
-| Hover Previews | `previewPersistence` | Whether resting on a page raises a preview, and how long it lingers after hovering off. | Off · **1 Second** · 5 Seconds · 10 Seconds · Until Closed |
+| Hover Previews | `previewPersistence` | Whether a preview raises at all, and how long it lingers after hovering off. | Off · **1 Second** · 5 Seconds · 10 Seconds · Until Closed |
 | Default Opening Behavior | `tabOpenBehavior` | What opening an entity does: overtake the active tab, or open a new one. | **Overtake** · New Tab |
 | Focus New Tabs | `tabTakeFocus` | A newly opened tab activates; off opens it in the background — including Open New Tab. | **On** · Off |
 | Minimum Tab Width | `tabMinWidth` | The narrowest a tab shrinks before the strip scrolls. | 50–100px · **70px** |

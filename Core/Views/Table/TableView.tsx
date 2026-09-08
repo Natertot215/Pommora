@@ -1359,7 +1359,7 @@ const DataRow = memo(function DataRow({
         hoverGlance(
           { kind: 'page', id: row.id, path: row.path },
           e.currentTarget,
-          'views',
+          'location',
           e.shiftKey,
         )
       }}

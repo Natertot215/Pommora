@@ -7,9 +7,9 @@ export interface GlanceRequest {
   el: Element
 }
 
-// KNOB — one dwell per glance surface. link: editor. detail: sidebar/tabs/nav. views: cards/tables.
-// detail/views seeded at 600 — tune on sight (shift-summon feels snappier than the 1s link rest).
-export const GLANCE_DWELL = { link: 1000, detail: 600, views: 600 } as const
+// KNOB — one dwell per glance kind. link: editor connections, raised on hover. location: every interface surface, raised on Shift.
+// location seeded at 600 — tune on sight (shift-summon feels snappier than the 1s link rest).
+export const GLANCE_DWELL = { link: 1000, location: 600 } as const
 export type GlanceDwell = keyof typeof GLANCE_DWELL
 
 export const GLANCE_BODY_ATTR = 'data-glance'
@@ -74,19 +74,24 @@ export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
       }),
     )
   }
+  // A live pane closes on Shift the same way it closes on Esc — the summon key is the dismiss key.
+  const onKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Shift' && !e.repeat) watch.onEscape()
+    else onShift()
+  }
   const dismissal = pushDismissal({
     layer: () => null,
     dismiss: watch.onEscape,
     outsidePress: false,
   })
   window.addEventListener('scroll', onShift, true)
-  window.addEventListener('keydown', onShift)
+  window.addEventListener('keydown', onKey)
   window.addEventListener('resize', watch.onMoved)
   return () => {
     if (raf) cancelAnimationFrame(raf)
     dismissal.release()
     window.removeEventListener('scroll', onShift, true)
-    window.removeEventListener('keydown', onShift)
+    window.removeEventListener('keydown', onKey)
     window.removeEventListener('resize', watch.onMoved)
   }
 }
