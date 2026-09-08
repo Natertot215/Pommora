@@ -7,7 +7,7 @@ import { coerceViewButton } from './schemas'
 import { asString, asStringArray } from './coerce'
 import { resolveOrder } from './order'
 
-export interface ContainerFields {
+interface ContainerFields {
   icon?: string
   banner?: string
   headingIconHidden: boolean

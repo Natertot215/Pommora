@@ -523,11 +523,12 @@ describe('the two container mappers agree', () => {
     })
   })
 
+  // Whole nodes rather than a projection: a field added to one mapper alone is only caught by comparing everything the node carries.
   it('the watch patch decodes to exactly what the walk produced, field for field', async () => {
     await refreshTree(root)
-    const walked = nine(notes())
+    const walked = structuredClone(notes())
     expect(await patchContainerFromDisk(root, 'Notes')).toBe('ok')
-    const patched = nine(notes())
+    const patched = notes()
     expect(patched?.activeView).toBe('view_y')
     expect(patched).toEqual(walked)
   })
