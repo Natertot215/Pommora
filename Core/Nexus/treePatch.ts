@@ -61,6 +61,7 @@ export function makeSetNode(f: {
   views?: SavedView[]
   viewButton?: ViewButton
   disclosureLocked?: boolean
+  activeView?: string
 }): SetNode {
   return {
     kind: 'set',
@@ -75,6 +76,7 @@ export function makeSetNode(f: {
     views: f.views,
     viewButton: f.viewButton,
     disclosureLocked: f.disclosureLocked ?? false,
+    activeView: f.activeView,
   }
 }
 
@@ -92,6 +94,7 @@ export function makeCollectionNode(f: {
   openIn?: OpenIn
   viewButton?: ViewButton
   disclosureLocked?: boolean
+  activeView?: string
 }): CollectionNode {
   return {
     kind: 'collection',
@@ -108,6 +111,7 @@ export function makeCollectionNode(f: {
     openIn: f.openIn,
     viewButton: f.viewButton,
     disclosureLocked: f.disclosureLocked ?? false,
+    activeView: f.activeView,
   }
 }
 
@@ -474,7 +478,12 @@ export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | nul
 export function patchNodeInTree(
   tree: NexusTree,
   path: string,
-  patch: { icon?: string | null; headingIconHidden?: boolean; disclosureLocked?: boolean },
+  patch: {
+    icon?: string | null
+    headingIconHidden?: boolean
+    disclosureLocked?: boolean
+    activeView?: string
+  },
 ): NexusTree | null {
   return updateNodeInTree(tree, path, (node) => {
     const next = { ...node }
@@ -483,6 +492,8 @@ export function patchNodeInTree(
     if (patch.headingIconHidden !== undefined) next.headingIconHidden = patch.headingIconHidden
     if ('disclosureLocked' in patch && (next.kind === 'collection' || next.kind === 'set'))
       next.disclosureLocked = patch.disclosureLocked
+    if ('activeView' in patch && (next.kind === 'collection' || next.kind === 'set'))
+      next.activeView = patch.activeView
     return next
   })
 }

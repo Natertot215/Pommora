@@ -139,7 +139,6 @@ beforeEach(() => {
   openExternalSpy = vi.fn(async () => {})
   channels = {
     'view:loadValues': async () => VALUES,
-    'activeViews:get': async () => ({}),
     'viewOrders:get': async () => ({}),
     'views:save': vi.fn(async () => ({ ok: true, value: { id: 'v1' } })),
     'row-menu': vi.fn(async () => null),

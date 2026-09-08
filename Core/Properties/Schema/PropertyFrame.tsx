@@ -195,7 +195,7 @@ export function PropertyFrame({
   const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
   const saveView = useSaveView(source)
-  const { view: activeView } = useActiveView(source, schema)
+  const activeView = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.registry) ?? []
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const renamingProperty = useSession((st) => st.renamingProperty)

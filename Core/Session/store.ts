@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { EMBED_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
-import { wireViewAdopted } from '../Views/Host/viewMint'
 import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
 import { createLayoutSlice } from './layoutSlice'
@@ -41,8 +40,3 @@ export const useSession = create<SessionState>()((...a) => ({
 /** Every surface that mounts an embed reads the nexus-wide scale HERE, so what an absent or out-of-range value means is settled once. */
 export const useEmbedScale = (): number =>
   useSession((s) => coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT))
-
-// A sentinel view adoption happens inside store-free viewMint; the pointer it persisted lands in the slice here, or the slice serves a stale fallback until the next reload.
-wireViewAdopted((containerId, viewId) =>
-  useSession.setState((s) => ({ activeViews: { ...s.activeViews, [containerId]: viewId } })),
-)

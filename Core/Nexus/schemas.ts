@@ -42,6 +42,7 @@ export const pageCollectionSidecar = baseSidecar.extend({
   open_in: openInField,
   view_button: viewButtonField,
   disclosure_locked: z.boolean().optional(),
+  active_view: z.string().optional(),
 })
 
 // Parentage is the folder nesting itself, never a stored field.
@@ -52,6 +53,7 @@ export const pageSetSidecar = baseSidecar.extend({
   views: z.array(savedView).optional(),
   view_button: viewButtonField,
   disclosure_locked: z.boolean().optional(),
+  active_view: z.string().optional(),
 })
 
 export const pageFrontmatter = z.looseObject({

@@ -6,6 +6,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate, type MutateDeps } from './mutate'
+import { setActiveViewOp } from '../Pages/setActiveView'
+import { withSidecarLock } from '../Files/sidecar'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { NEW_PAGE_SLOT } from '../Pages/mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor } from '../Paths/nexusPaths'
@@ -1368,5 +1371,32 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
       value: '[[Same.pdf]]',
     })
     expect(await readdir(join(root, 'file-assets', 'Reports'))).toEqual(['Same.pdf'])
+  })
+})
+
+describe('handleMutate — setActiveView', () => {
+  it('writes active_view onto the container sidecar', async () => {
+    const r = await handleMutate(
+      { op: 'setActiveView', path: 'Notes/Daily', kind: 'set', viewId: 'view_x' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await read('Notes/Daily/_pageset.json')).active_view).toBe('view_x')
+  })
+
+  it('takes the sidecar lock itself — nesting it inside one is refused', async () => {
+    const ctx = { root, deps: nexusDeps }
+    const folder = await resolveUnderRoot(root, 'Notes/Daily')
+    if (!folder.ok) throw new Error('unresolvable')
+    await expect(
+      withSidecarLock(folder.value, 'set', () =>
+        setActiveViewOp(ctx, {
+          op: 'setActiveView',
+          path: 'Notes/Daily',
+          kind: 'set',
+          viewId: 'view_x',
+        }),
+      ),
+    ).rejects.toThrow(/Re-entrant file lock/)
   })
 })

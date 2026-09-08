@@ -58,6 +58,7 @@ export type MutateRequest =
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }
   | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
   | { op: 'setDisclosureLock'; path: string; kind: MutableContainerKind; locked: boolean }
+  | { op: 'setActiveView'; path: string; kind: MutableContainerKind; viewId: string }
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
   // Absent order = legacy append. Stale ids in a source container self-drop on the next read.
   | { op: 'movePage'; path: string; newParentPath: string; order?: string[] }

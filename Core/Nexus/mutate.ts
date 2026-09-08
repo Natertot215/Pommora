@@ -14,6 +14,7 @@ import { setBannerOp } from '../Pages/setBanner'
 import { setIconOp } from '../Pages/setIcon'
 import { setHeadingIconHiddenOp } from '../Pages/setHeadingIconHidden'
 import { setDisclosureLockOp } from '../Pages/setDisclosureLock'
+import { setActiveViewOp } from '../Pages/setActiveView'
 import { setPropertyOp } from '../Properties/setProperty'
 import {
   createContextGroup,
@@ -106,6 +107,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'setDisclosureLock':
       return setDisclosureLockOp(ctx, req)
+
+    case 'setActiveView':
+      return setActiveViewOp(ctx, req)
 
     case 'setProperty':
       return setPropertyOp(ctx, req)

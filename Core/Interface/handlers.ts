@@ -1,12 +1,6 @@
 import type { Handlers } from '../Contract/handlers'
 import { BUSY, fail, NO_NEXUS, ok, type Result } from '../Contract/result'
-import {
-  isGlanceSize,
-  isHeightMap,
-  isIndexArray,
-  isString,
-  isStringArray,
-} from '../Contract/validators'
+import { isGlanceSize, isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
 import { adopting } from '../Nexus/handlers'
 import { isPlainObject } from '../Properties/propertyValue'
 import { sessionRoot } from '../Nexus/session'
@@ -91,8 +85,6 @@ export const interfaceHandlers = {
     isHeightMap,
     'Embed scales must map ids to positive numbers.',
   ),
-  'activeViews:get': scopeGet<string>('activeView'),
-  'activeViews:set': scopeSet('activeView', isString, 'A view id is required.'),
   'viewOrders:get': scopeGet<string[]>('viewOrder'),
   'viewOrders:set': scopeSet('viewOrder', isStringArray, 'An order of page ids is required.'),
   'tableHeadingCols:get': scopeGet<number[]>('headingCols'),

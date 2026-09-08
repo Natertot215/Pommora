@@ -32,7 +32,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
     node.kind === 'collection'
       ? (node.properties ?? [])
       : (findCollectionForSet(tree, node.id)?.properties ?? [])
-  const { view } = useActiveView(node, schema)
+  const view = useActiveView(node, schema)
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()

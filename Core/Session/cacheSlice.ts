@@ -7,8 +7,6 @@ import { host } from '../Platform/dialer'
 export interface CacheSlice {
   linkTitles: Record<string, string>
   resolveLinkTitle: (url: string) => void
-  activeViews: Record<string, string>
-  setActiveView: (containerId: string, viewId: string) => Promise<void>
   pageAliases: Record<string, string[]>
   rememberAlias: (pageId: string, alias: string) => void
   forgetAlias: (pageId: string, alias: string) => void
@@ -51,12 +49,6 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
         .finally(() => inFlightTitles.delete(url))
     },
 
-    activeViews: {},
-    setActiveView: async (containerId, viewId) => {
-      await host().ask('activeViews:set', containerId, viewId)
-      set((s) => ({ activeViews: { ...s.activeViews, [containerId]: viewId } }))
-    },
-
     pageAliases: {},
     rememberAlias: (pageId, alias) => {
       const words = alias.trim()
@@ -87,7 +79,6 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
     applyAssetMap: (map) => {
       set({ assetMap: stabilize(map, get().assetMap) })
     },
-    resetCaches: () =>
-      set({ pageAliases: {}, activeViews: {}, linkTitles: {}, assetMap: EMPTY_ASSET_MAP }),
+    resetCaches: () => set({ pageAliases: {}, linkTitles: {}, assetMap: EMPTY_ASSET_MAP }),
   }
 }

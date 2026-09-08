@@ -1,7 +1,12 @@
 import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { mintDefaultView, mintNewView, type SavedView } from '@pommora/core/Views/views'
+import {
+  DEFAULT_VIEW_ID,
+  mintDefaultView,
+  mintNewView,
+  type SavedView,
+} from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
 import { restoreView } from '../restoreView'
@@ -62,9 +67,8 @@ export function ViewFrame({
   schema: PropertyDefinition[]
   onClose: () => void
 }): React.JSX.Element | null {
-  const setActiveView = useSession((s) => s.setActiveView)
+  const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(node)
-  const storedActive = useSession((s) => s.activeViews[node.id])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [iconFor, setIconFor] = useState<SavedView | null>(null)
@@ -75,10 +79,14 @@ export function ViewFrame({
   if (scope) return null
   const views = node.views ?? []
   const rows = views.length ? views : [mintDefaultView(schema)]
-  const activeId = rows.some((v) => v.id === storedActive) ? storedActive : rows[0]?.id
+  const activeId = rows.some((v) => v.id === node.activeView) ? node.activeView : rows[0]?.id
   const editing = editingId ? rows.find((v) => v.id === editingId) : undefined
 
-  const switchTo = (id: string): void => void setActiveView(node.id, id)
+  // The placeholder row a viewless container shows carries the sentinel id, which must never reach a legible sidecar.
+  const switchTo = (id: string): void => {
+    if (id === DEFAULT_VIEW_ID) return
+    void mutate({ op: 'setActiveView', path: node.path, kind: node.kind, viewId: id })
+  }
   const createView = async (): Promise<void> => {
     await host().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema))
   }
