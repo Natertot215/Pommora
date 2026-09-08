@@ -59,6 +59,8 @@ interface AnchorWatch {
   onGone: () => void
   onEscape: () => void
   onMoved: () => void
+  body?: () => Element | null
+  dismissOnPress?: boolean
 }
 
 /** CM6 prunes decoration nodes in its own scheduled update AFTER the triggering event, so the connected check lands behind that update on a double frame rather than synchronously. */
@@ -80,9 +82,9 @@ export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
     else onShift()
   }
   const dismissal = pushDismissal({
-    layer: () => null,
+    layer: watch.body ?? (() => null),
     dismiss: watch.onEscape,
-    outsidePress: false,
+    outsidePress: watch.dismissOnPress ?? false,
   })
   window.addEventListener('scroll', onShift, true)
   window.addEventListener('keydown', onKey)
