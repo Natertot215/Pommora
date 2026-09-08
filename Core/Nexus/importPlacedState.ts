@@ -56,7 +56,6 @@ export async function importPlacedState(root: string): Promise<boolean> {
   }
 }
 
-// Both scopes reach one container, so they share one locked read-modify-write: a second take of the same key would be refused, and a second write would cost a file event for a value the first already carried.
 async function placeState(
   root: string,
   relPath: string,
