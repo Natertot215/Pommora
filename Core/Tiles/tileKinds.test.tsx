@@ -7,7 +7,7 @@ import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
 import { renderTile, TILE_SURFACES, tileSourceInfo, type TileRenderContext } from './tileKinds'
-import { tileMenuItems } from './TileHandleMenu'
+import { tileMenuItems } from './tileHandleMenu'
 
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const ctx = (entry: TileEntry, pages = new Map([[page.id, page]])): TileRenderContext => ({
