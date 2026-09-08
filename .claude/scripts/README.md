@@ -64,8 +64,10 @@ git config core.hooksPath .claude/hooks
 https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401. The post-commit hook keeps the
 local file current on every commit; re-publishing it to that URL is a separate step, because no
 shell hook can reach the publish API. `../hooks/republish-ledger.mjs` — a `PostToolUse` hook on the
-Bash tool, declared in `../settings.json` — bridges the gap during a Claude session: when a commit
-moves the page, it asks Claude to republish it, so the hosted URL tracks the local one while work is
-underway. Commits made outside a session leave the URL to the next republish.
+Bash tool, declared in `../settings.json` — bridges the gap during a Claude session: after a commit,
+it compares the page against the hash recorded at the last republish and asks Claude to republish
+when the two differ, so the hosted URL tracks the local one while work is underway. The record sits
+at `ledger-published` inside the git dir. Commits made outside a session leave the URL to the next
+republish.
 
 `loc-history.json` is the data the page currently holds.
