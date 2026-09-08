@@ -1,12 +1,12 @@
 import type { ConnMenuTarget } from '../../MarkdownPM/Links/connectionsApi'
 import {
-  connMenuModel,
+  connectionMenuModel,
   isConnCellAction,
   isConnUrlAction,
   type ConnCellAction,
   type ConnEditAction,
   type ConnMenuContext,
-} from '@pommora/core/MarkdownPM/Links/connMenu'
+} from '@pommora/core/Actions/connectionMenu'
 import { isValidLink } from '@pommora/core/Connections/links'
 import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
@@ -32,7 +32,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
       hasAlias: target.hasAlias ?? false,
       external: true,
     }
-    void popMenu(connMenuModel(ctx)).then((action) => {
+    void popMenu(connectionMenuModel(ctx)).then((action) => {
       if (action === null) return
       if (action === 'link:window') openInAppBrowser(target.url)
       else if (action === 'link:browser') void host().ask('link:open', target.url)
@@ -58,7 +58,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
           : 'closed',
     windowed: deriveTarget(pageWindow)?.id === page.id,
   }
-  void popMenu(connMenuModel(ctx)).then((action) => {
+  void popMenu(connectionMenuModel(ctx)).then((action) => {
     switch (action) {
       case null:
         return

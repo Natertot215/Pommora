@@ -13,7 +13,10 @@ import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
 import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
 import { validateLink } from '../../Properties/Cells/linkResolve'
-import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
+import {
+  linkValueMenuTarget,
+  showConnectionMenu,
+} from '../../Interface/Menus/connectionMenuActions'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import type { ValueContext } from '../../Properties/valueContext'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
