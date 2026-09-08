@@ -60,6 +60,7 @@ import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { host } from '../Platform/dialer'
+import { useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
 import './settings-window.css'
 
 const DRAG_SURFACES =
@@ -716,10 +717,11 @@ export function SettingsWindow(): React.JSX.Element | null {
 function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element {
   const closeSettings = useSession((s) => s.closeSettings)
   const [category, setCategory] = useState<CategoryKey>('general')
+  const geometry = useWindowGeometry('settings')
 
   return (
     <WindowBase
-      id="settings"
+      {...geometry}
       closing={closing}
       onClose={closeSettings}
       bounds={SETTINGS_WIN}

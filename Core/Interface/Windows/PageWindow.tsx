@@ -17,6 +17,7 @@ import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
+import { useWindowGeometry } from './useWindowGeometry'
 import './page-window.css'
 
 const DRAG_SURFACES = '.page-window-body, .window-tabwrap, .tab-scroll, .tab-strip'
@@ -43,6 +44,7 @@ function PageWindowBody({
   closing: boolean
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)
+  const geometry = useWindowGeometry('page-window')
   const embedScale = useEmbedScale()
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
@@ -140,7 +142,7 @@ function PageWindowBody({
 
   return (
     <WindowBase
-      id="page-window"
+      {...geometry}
       rootRef={rootRef}
       className={cx('page-window', closing && EXIT_CLASS[exitReason])}
       closing={closing}

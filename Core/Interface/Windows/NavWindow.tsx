@@ -20,6 +20,7 @@ import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../../Navigation/NavGallery'
+import { useWindowGeometry } from './useWindowGeometry'
 import './nav-window.css'
 
 const RAIL = { min: 120, def: 200, max: 320 }
@@ -38,6 +39,7 @@ export function NavWindow(): React.JSX.Element | null {
 function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const { resolvedRecents, resolvedFavorites, resolvedPins, search, go } = useNavData()
   const closeNav = useSession((s) => s.closeNav)
+  const geometry = useWindowGeometry('navwindow')
   const tree = useSession((s) => s.tree)
 
   // Placement freezes at open — new recents activity must not reshuffle the list under the cursor.
@@ -125,7 +127,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
 
   return (
     <WindowBase
-      id="navwindow"
+      {...geometry}
       rootRef={rootRef}
       closing={closing}
       onClose={closeNav}

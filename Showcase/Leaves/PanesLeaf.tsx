@@ -44,7 +44,6 @@ export function PanesLeaf(): React.JSX.Element {
 
       <div className="panes-stage">
         <WindowBase
-          id="showcase-settings"
           closing={false}
           onClose={() => undefined}
           bounds={SETTINGS_WIN}

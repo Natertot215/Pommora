@@ -10,6 +10,7 @@ import { WEB_PARTITION } from '../../Web/partition'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
+import { useWindowGeometry } from './useWindowGeometry'
 import './web-window.css'
 
 const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, def: { w: 1000, h: 700 } }
@@ -43,6 +44,7 @@ function WebWindowBody({
 }): React.JSX.Element {
   const { url, seq } = summon
   const closeBrowser = useSession((s) => s.closeBrowser)
+  const geometry = useWindowGeometry('web-browser')
   const ref = useRef<BrowserGuest | null>(null)
   const [title, setTitle] = useState('')
   const [current, setCurrent] = useState(url)
@@ -83,7 +85,7 @@ function WebWindowBody({
 
   return (
     <WindowBase
-      id="web-browser"
+      {...geometry}
       className="wbrowser"
       closing={closing}
       onClose={closeBrowser}

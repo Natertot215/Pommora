@@ -21,6 +21,7 @@ import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
 import { host } from '../../Platform/dialer'
 import { popRowMenu } from '../../Actions/nativeMenus'
 import { fileHistoryMenuItems } from '@pommora/core/Actions/fileHistoryMenu'
+import { useWindowGeometry } from './useWindowGeometry'
 import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
 import './page-window.css'
@@ -43,6 +44,7 @@ function PageHistoryBody({
   closing: boolean
 }): React.JSX.Element {
   const closeHistory = useSession((s) => s.closeHistory)
+  const geometry = useWindowGeometry('page-history')
   const tree = useSession((s) => s.tree)
   const embedScale = useEmbedScale()
   const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
@@ -212,7 +214,7 @@ function PageHistoryBody({
 
   return (
     <WindowBase
-      id="page-history"
+      {...geometry}
       closing={closing}
       onClose={closeHistory}
       onEscape={closeHistory}

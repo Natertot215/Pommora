@@ -9,13 +9,7 @@ export function IterationWindow(): React.JSX.Element | null {
   const { mounted, closing } = useExitPresence(open)
   if (!mounted) return null
   return (
-    <WindowBase
-      id="iteration"
-      closing={closing}
-      onClose={closeIteration}
-      ariaLabel="Iteration"
-      title="Iteration"
-    >
+    <WindowBase closing={closing} onClose={closeIteration} ariaLabel="Iteration" title="Iteration">
       <div
         style={{
           flex: '1',
