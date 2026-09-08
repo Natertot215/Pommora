@@ -11,7 +11,7 @@ import {
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import type { ConnPage } from '../MarkdownPM/Links/connectionsApi'
-import { containersByPathOf, pagesByIdOf, type ContainerCore } from '../Nexus/treeIndex'
+import { pagesByIdOf } from '../Nexus/treeIndex'
 import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
@@ -20,10 +20,9 @@ import { iconNameOr } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
-import { popMenu, useNativeMenus } from '../Actions/menuActions'
+import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyRemovedTile } from '../Interface/Notifications/notifications'
-import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { findCollection, findCollectionForSet, findSet } from '../Nexus/treeIndex'
 import { mintDefaultView } from '@pommora/core/Views/views'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
@@ -34,7 +33,7 @@ import {
   renderTile as renderSurface,
   tileSourceInfo,
 } from './tileKinds'
-import { TileHandleMenu, tileMenuItems } from './TileHandleMenu'
+import { tileMenuItems } from './tileHandleMenu'
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
 import './tile-base.css'
@@ -101,7 +100,6 @@ const withKey = (
 }
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
-const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 
 export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | null {
   const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles, setBusy } =
@@ -132,7 +130,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   }, [tiles])
 
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
-  const containersByPath = tree ? containersByPathOf(tree) : NO_CONTAINERS
 
   const connections = usePreviewConnections(tree)
 
@@ -184,21 +181,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     [tree, refreshEntries, host],
   )
 
-  const [handleMenu, setHandleMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
-  const nativeMenus = useNativeMenus()
-  const popNativeMenu = useRef<(id: string, el: HTMLElement) => void>(() => undefined)
-  const onHandleMenu = useCallback(
-    (id: string, e: React.MouseEvent) => {
-      const el = e.currentTarget as HTMLElement
-      if (nativeMenus) popNativeMenu.current(id, el)
-      else setHandleMenu({ id, el })
-    },
-    [nativeMenus],
-  )
-  // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the dismissal that cleared it.
-  const menu = useHeld(handleMenu, handleMenu !== null)
-  // Held with the anchor: a delete with confirmation waived drops the entry inside the retract.
-  const menuTile = useHeld(handleMenu ? entries.get(handleMenu.id) : undefined, handleMenu !== null)
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const mutateEntry = useCallback<MutateEntry>(
     (id, fn) => {
       saveTiles((cur) =>
@@ -251,11 +234,11 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         entry?.style === 'borderless' ? 'is-borderless' : null,
         editingId === id ? 'is-editing-tile' : null,
         entry?.locked ? 'is-locked' : null,
-        handleMenu?.id === id ? 'handle-pinned' : null,
+        menuOpenId === id ? 'handle-pinned' : null,
       ].filter(Boolean)
       return classes.length ? classes.join(' ') : undefined
     },
-    [entries, editingId, handleMenu],
+    [entries, editingId, menuOpenId],
   )
 
   const tileStyle = useCallback((id: string) => zoomStyle(entries.get(id)?.zoom), [entries])
@@ -264,6 +247,58 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     (id: string, factor: number) =>
       mutateEntry(id, (raw) => withKey(raw, 'zoom', factor === 1 ? undefined : factor)),
     [mutateEntry],
+  )
+
+  const onHandleMenu = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      const entry = entries.get(id)
+      if (!entry || !pickers) return
+      const page = tileSourceInfo(entry, pagesById)
+      const { items, picks } = tileMenuItems({
+        entry,
+        ...pickers,
+        pageInfo: page && {
+          title: page.title,
+          icon: entityIcon('page', page.icon, defaultIcons),
+        },
+        containerLocked: hostLocked,
+      })
+      setMenuOpenId(id)
+      void popMenu(items, e.currentTarget as HTMLElement).then((action) => {
+        setMenuOpenId((cur) => (cur === id ? null : cur))
+        if (action === null) return
+        const arg = (prefix: string): string | undefined =>
+          action.startsWith(prefix) ? action.slice(prefix.length) : undefined
+        const picked = arg('tile:pick:')
+        const zoom = arg('tile:zoom:')
+        const chosen = picked === undefined ? undefined : picks[Number(picked)]
+        if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
+        else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
+        else if (zoom !== undefined) setTileZoom(id, Number(zoom))
+        else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
+        else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
+        else if (action === 'tile:duplicate') duplicateTile(id)
+        else if (action === 'tile:delete') confirmRemove(id)
+        else if (action === 'tile:lock') toggleLock(id)
+        else if (action === 'tile:open' && page)
+          select({ kind: 'page', id: page.id, path: page.path })
+      })
+    },
+    [
+      entries,
+      pickers,
+      pagesById,
+      defaultIcons,
+      hostLocked,
+      applyPagePick,
+      applyViewPick,
+      setTileZoom,
+      setStyle,
+      duplicateTile,
+      confirmRemove,
+      toggleLock,
+      select,
+    ],
   )
 
   const renderTile = useCallback(
@@ -303,44 +338,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   )
 
   if (!ready) return null
-  const menuPage = menuTile && tileSourceInfo(menuTile, pagesById)
-  const menuPageInfo = menuPage && {
-    title: menuPage.title,
-    icon: entityIcon('page', menuPage.icon, defaultIcons),
-  }
-  const menuLoc = menuPage && containersByPath.get(menuPage.path.split('/').slice(0, -1).join('/'))
-  const menuLocInfo = menuLoc && {
-    title: menuLoc.title,
-    icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
-  }
-  // Assigned rather than called: the gesture handler is memoized against the preference alone, so it must reach the current build through a ref.
-  popNativeMenu.current = (id, el) => {
-    const entry = entries.get(id)
-    if (!entry || !pickers) return
-    const page = tileSourceInfo(entry, pagesById)
-    const { items, picks } = tileMenuItems({
-      entry,
-      ...pickers,
-      pageInfo: page && { title: page.title },
-      containerLocked: hostLocked,
-    })
-    void popMenu(items, el).then((action) => {
-      if (action === null) return
-      const arg = (prefix: string): string | undefined =>
-        action.startsWith(prefix) ? action.slice(prefix.length) : undefined
-      const picked = arg('tile:pick:')
-      const zoom = arg('tile:zoom:')
-      const chosen = picked === undefined ? undefined : picks[Number(picked)]
-      if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
-      else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
-      else if (zoom !== undefined) setTileZoom(id, Number(zoom))
-      else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
-      else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
-      else if (action === 'tile:duplicate') duplicateTile(id)
-      else if (action === 'tile:delete') confirmRemove(id)
-      else if (action === 'tile:lock') toggleLock(id)
-    })
-  }
 
   return (
     <div className={`tile-host${hostLocked ? ' is-host-locked' : ''}`}>
@@ -355,28 +352,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
       />
-      {menu && menuTile && pickers && (
-        <TileHandleMenu
-          open={handleMenu !== null}
-          entry={menuTile}
-          anchor={menu.el}
-          {...pickers}
-          pageInfo={menuPageInfo}
-          location={menuLocInfo}
-          onClose={() => setHandleMenu(null)}
-          onPickPage={(pageId) => applyPagePick(menu.id, pageId)}
-          onPickView={(pick) => applyViewPick(menu.id, pick)}
-          onStyle={(style) => setStyle(menu.id, style)}
-          onDuplicate={() => duplicateTile(menu.id)}
-          onRemove={() => confirmRemove(menu.id)}
-          onToggleLock={() => toggleLock(menu.id)}
-          onOpenPage={() =>
-            menuPage && select({ kind: 'page', id: menuPage.id, path: menuPage.path })
-          }
-          onSetZoom={(factor) => setTileZoom(menu.id, factor)}
-          containerLocked={hostLocked}
-        />
-      )}
     </div>
   )
 }

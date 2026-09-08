@@ -3,10 +3,6 @@ import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 
-export function useNativeMenus(): boolean {
-  return useSession((st) => st.devicePrefs.nativeMenus ?? false)
-}
-
 export async function popMenu<A extends string>(
   items: readonly ActionItem<A>[],
   trigger?: HTMLElement | null,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TileEntry, PagePickerItem, ViewPickerItem } from '../Tiles/tiles'
-import { tileMenuItems } from './TileHandleMenu'
+import { tileMenuItems } from './tileHandleMenu'
 
 type Ctx = Parameters<typeof tileMenuItems>[0]
 
@@ -16,28 +16,29 @@ const labels = (m: ReturnType<typeof tileMenuItems>): string[] => m.items.map((i
 const row = (m: ReturnType<typeof tileMenuItems>, label: string) =>
   m.items.find((i) => i.label === label)
 
-describe('the tile menu as native rows', () => {
+describe('the tile menu model both renderers draw', () => {
   it('offers the two link drills for a markdown tile, and Source for a page tile', () => {
     expect(labels(tileMenuItems(ctx()))).toContain('Link View')
     expect(labels(tileMenuItems(ctx()))).toContain('Link Page')
     const page = tileMenuItems(
       ctx({
         entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry,
-        pageInfo: { title: 'Roadmap' },
+        pageInfo: { title: 'Roadmap', icon: 'file' },
       }),
     )
     expect(labels(page)).toContain('Source')
     expect(labels(page)).not.toContain('Link Page')
   })
 
-  it('heads a page tile with its own name, inert — the title field has no native twin', () => {
+  it('heads a page tile with its own name and icon, live, so the row opens the page', () => {
     const m = tileMenuItems(
       ctx({
         entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry,
-        pageInfo: { title: 'Roadmap' },
+        pageInfo: { title: 'Roadmap', icon: 'file' },
       }),
     )
-    expect(m.items[0]).toMatchObject({ label: 'Roadmap', disabled: true })
+    expect(m.items[0]).toMatchObject({ label: 'Roadmap', icon: 'file', action: 'tile:open' })
+    expect(m.items[0].disabled).toBeFalsy()
   })
 
   it('marks the scale and style in force', () => {
@@ -99,5 +100,32 @@ describe('the tile menu as native rows', () => {
     const branch = row(m, 'Link Page')?.submenu?.[0]
     expect(branch).toMatchObject({ label: 'Empty Collection', disabled: true })
     expect(branch?.submenu).toBeUndefined()
+  })
+  it('sinks a footer node to a separated last row of its level', () => {
+    const views: ViewPickerItem[] = [
+      {
+        label: 'Roadmap',
+        submenu: [
+          { label: '+ Custom', pick: { source_id: 's1', custom: true }, footer: true },
+          { label: 'Board', pick: { source_id: 's1', view_id: 'v1' } },
+        ],
+      },
+    ]
+    const level = row(tileMenuItems(ctx({ viewItems: views })), 'Link View')?.submenu?.[0].submenu
+    expect(level?.map((r) => r.label)).toEqual(['Board', '+ Custom'])
+    expect(level?.[1].separatorBefore).toBe(true)
+    expect(level?.[0].separatorBefore).toBeFalsy()
+  })
+
+  it('leaves a level of footers alone with nothing to separate it from', () => {
+    const views: ViewPickerItem[] = [
+      {
+        label: 'Roadmap',
+        submenu: [{ label: '+ Custom', pick: { source_id: 's1', custom: true }, footer: true }],
+      },
+    ]
+    const level = row(tileMenuItems(ctx({ viewItems: views })), 'Link View')?.submenu?.[0].submenu
+    expect(level?.map((r) => r.label)).toEqual(['+ Custom'])
+    expect(level?.[0].separatorBefore).toBeFalsy()
   })
 })
