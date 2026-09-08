@@ -65,9 +65,9 @@ import './settings-window.css'
 const DRAG_SURFACES =
   '.settings-body, .settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
 
-type KeyOf<V> = {
-  [K in keyof Personalization]-?: NonNullable<Personalization[K]> extends V ? K : never
-}[keyof Personalization]
+type KeyOf<V, R = Personalization> = {
+  [K in keyof R]-?: NonNullable<R[K]> extends V ? K : never
+}[keyof R]
 
 interface RowText {
   label: string
@@ -97,7 +97,7 @@ type Row =
     })
   | (RowText & {
       kind: 'device'
-      key: keyof DevicePrefs
+      key: KeyOf<boolean, DevicePrefs>
     })
   | (RowText & {
       kind: 'path'

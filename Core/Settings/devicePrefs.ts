@@ -1,7 +1,11 @@
 // Preferences that belong to the MACHINE rather than the Nexus: how its menus are drawn is a property of the operating system in front of the user, so it stays with the device and travels nowhere.
 
+// Nested rather than flat: packDevicePrefs drops a top-level `false` and a disclosure map is mostly false, while a truthy object survives whole.
 export interface DevicePrefs {
   nativeMenus?: boolean
+  panes?: { sidebar?: number; inspector?: number }
+  disclosure?: Record<string, boolean>
+  windows?: Record<string, { w: number; h: number }>
 }
 
 /** Keyed on the VALUE rather than a list of names, which would fall behind when a preference is added. */
