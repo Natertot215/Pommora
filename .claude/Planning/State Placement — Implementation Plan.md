@@ -1,6 +1,6 @@
 ## State Placement — Implementation Plan
 
-> **Status:** reviewed, pending approval · Spec: the D-1 ruling, 09-07-2026, restated under **The Rule** below · Execute tasks in order.
+> **Status:** in execution — Phase 1 landed, Phase 2 next · Spec: the D-1 ruling, 09-07-2026, restated under **The Rule** below · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -688,7 +688,8 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 - [ ] **Phase 1** — Active View on the container sidecar · base `7096dcb2c`
   - [x] Task 1 — One container-node mapper, and `active_view` on the mutate rail · `e88c2cc96`
-  - [x] Task 2 — Import the `activeView` scope during the open · `<commit>`
+  - [x] Task 2 — Import the `activeView` scope during the open · `2edcecdc9`
+  - [ ] Gate 1 — owed. Both tasks landed; the gate's own boxes are unticked, so it has not run.
 - [ ] **Phase 2** — Manual order in the view record
   - [ ] Task 3 — `manual_order` on the view, written by every drop site
   - [ ] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
@@ -714,7 +715,13 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 
 ### Open Against Later Tasks
 
+- **Task 3 — `viewOrders:get` is being enveloped before this plan deletes it.** The Engine Boundary plan requires every bridge channel to answer `Result`, so `viewOrders:get` becomes `Result<Record<string, string[]>>` via the existing `scopeGet` conversion; `viewOrders:set` is untouched. Two consequences for Task 3, neither blocking: its Now fence for `Core/Contract/bridge.ts:63-64` will read the enveloped signature rather than the bare one — re-derive, do not correct the plan to match the old shape — and `Core/Views/Host/useViewOrders.ts:16-19` will unwrap a `Result` by then. Task 3 deletes the file and both channel entries outright, so the enveloped version deletes exactly as cleanly.
+
 ### Deviations
+
+- **Phase 1 was executed by a different session**, concurrently with this one's review round, and its Progress rows were filled in by that session rather than by the planning session. Both tasks landed after `7096dcb2c`, so they carry the reviewed plan rather than an earlier draft. Spot-checked against the three review findings most likely to have been missed, all three clean: `Core/Pages/setActiveView.ts` uses `rmwJsonStrict` alone with no `withSidecarLock` around it (no re-entrant lock); `Core/Views/Settings/ViewFrame.tsx:86-87` refuses `DEFAULT_VIEW_ID`; `Core/Nexus/importPlacedState.ts` uses `withSidecarLock` with the reads inside and carries a per-container catch. `importPlacedState` is wired at `Core/Nexus/handlers.ts:72`, beside `replaySchemaCascade`, as specified.
+- **Gate 1 is owed.** Its boxes are unticked and no gate commit exists, so the phase's simplification and code-review dispatches, the count re-derivations, and the smoke launch have not happened. Phase 2 does not open until they do.
+- **A concurrent plan is editing the same files.** The Engine Boundary session is collapsing `NexusState` to two arms, removing the `nexus:state` self-catch, and putting every bridge channel on the `Result` envelope. It was told: State Placement changes neither `NexusState` nor the `nexus:state` handler; `viewOrders:get` and `viewOrders:set` are deleted by Task 3, so its envelope migration should skip them; and the `'activeView'` / `'viewOrder'` names in `Core/Platform/localState.ts:6-7` are held alive by this plan's hazard window and must not be swept as dead code.
 
 - **Base commit is `7096dcb2c`.** The tree carries unstaged Engine Boundary work (`Core/Platform/machine.ts`, `Desktop/Platform/nodeMachine.ts`, `Core/package.json`, `Desktop/tsconfig.node.json`, and four untracked test files) belonging to a different arc. It is left unstaged and untouched: every State Placement commit stages explicit paths, never `-A`. `machine().lock` is confirmed untouched by that diff, so the Forced By lock reasoning stands. Baseline gates green before any change: typecheck 0, 4152 tests passed, lint clean.
 - **The Environment's "no per-role agent" line is false.** `.claude/agents/` holds `code-simplifier`, `build-breaking-agent`, and `comment-killer-agent` (untracked, authored 09-06/09-07). They are not registered as dispatchable types in this session, so each phase's simplification, comment, and attack passes are dispatched as background Opus agents briefed to load the same skills those agents load as their own first action — `code-simplification` and `build-breaking`.
