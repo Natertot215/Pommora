@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -121,7 +120,6 @@ beforeEach(() => {
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   channels = {
     'view:loadValues': async () => ({ ok: true, value: VALUES }),
-    'viewOrders:get': async () => ok({}),
     'views:save': saveSpy,
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
@@ -417,6 +415,92 @@ describe('the cards seam (flattenStructural)', () => {
     expect(api?.liveView).not.toBe(api?.view)
     await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), true)
     expect(api?.liveView).toBe(api?.view)
+  })
+})
+
+const SORTED: Partial<SavedView> = {
+  sort: [{ property_id: 'prop_status', direction: 'ascending' }],
+}
+
+describe('the manual order fold', () => {
+  it('a reorder under a sort folds its ids into manual_order on the saved view', async () => {
+    await mount(collection(SORTED))
+    act(() => api?.setManualOverride(['p2', 'p1']))
+    await act(async () => api?.persistView({}))
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+  })
+
+  it('a structural reorder leaves the stored manual_order at its value', async () => {
+    await mount(collection({ manual_order: ['p2', 'p1'] }))
+    expect(api?.structuralOrder).toBe(true)
+    act(() => api?.setManualOverride(['p1', 'p2']))
+    await act(async () => api?.persistView({}))
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+  })
+
+  it('a drag with no other live override still folds — the early-return guard', async () => {
+    await mount(collection(SORTED))
+    act(() => api?.setManualOverride(['p2', 'p1']))
+    expect(api?.liveView.manual_order).toEqual(['p2', 'p1'])
+  })
+
+  it('the crossing: a collapse under a structural drag saves the stored order untouched', async () => {
+    await mount(collection({ manual_order: ['p2', 'p1'] }))
+    act(() => api?.setManualOverride(['p1', 'p2']))
+    act(() => api?.toggleCollapse('g1'))
+    expect(lastSavedView().collapsed_groups).toEqual(['g1'])
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+  })
+
+  it('the resolver reads the view record, and the override drops once the record catches it up', async () => {
+    await mount(collection({ ...SORTED, manual_order: ['p2', 'p1'] }))
+    expect(api?.manualOrder).toEqual(['p2', 'p1'])
+    act(() => api?.setManualOverride(['p1', 'p2']))
+    expect(api?.manualOrder).toEqual(['p1', 'p2'])
+    await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
+    expect(api?.liveView).toBe(api?.view)
+  })
+})
+
+describe('settleOrders — a create composes with the live order', () => {
+  const createBelowFirst = async (): Promise<void> => {
+    const row = api?.rows[0]
+    if (row) await act(async () => void api?.creation.createAdjacent(row, 'below'))
+  }
+
+  beforeEach(() => {
+    let n = 2
+    useSession.setState({
+      mutate: vi.fn(async (_req: unknown, then?: (c: { id: string; path: string }) => void) => {
+        n += 1
+        then?.({ id: `p${n}`, path: `Col/New ${n}.md` })
+        return true
+      }) as never,
+    })
+  })
+
+  it('two creates in a row compose into one manual_order carrying both new ids', async () => {
+    await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
+    await createBelowFirst()
+    expect(lastSavedView().manual_order).toEqual(['p1', 'p3', 'p2'])
+    await createBelowFirst()
+    expect(lastSavedView().manual_order).toEqual(['p1', 'p4', 'p3', 'p2'])
+  })
+
+  it("the override survives the create's own optimistic push — only a page_order-backed view resets on it", async () => {
+    await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
+    await createBelowFirst()
+    expect(api?.manualOrder).toEqual(['p1', 'p3', 'p2'])
+    // The create's own mutate pushes an optimistic tree: same content, new source identity.
+    await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
+    expect(api?.manualOrder).toEqual(['p1', 'p3', 'p2'])
+  })
+
+  it('an unsorted, ungrouped view mints no manual_order where none existed', async () => {
+    await mount(collection())
+    saveSpy.mockClear()
+    await createBelowFirst()
+    expect(saveSpy).not.toHaveBeenCalled()
   })
 })
 

@@ -156,9 +156,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     reassignBySortRun,
     structuralOrder,
     dragDisabled,
-    viewOrders,
-    persistViewOrder,
     setManualOverride,
+    persistView,
     setStylePatch,
     hideProperty,
     revealProperty,
@@ -501,7 +500,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       return
     }
     setManualOverride(full)
-    persistViewOrder(full)
+    persistView({ manual_order: full }, { viewState: true })
     reassignBySortRun(full, bandKey, activeId)
   }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
@@ -526,7 +525,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         const spliceLive = (existing: string[] | undefined): string[] =>
           tieOrderWith(existing, allIds, activeId, beforeId, 'above')
         setManualOverride((m) => (m ? spliceLive(m) : m))
-        if (viewOrders[view.id]) persistViewOrder(spliceLive(viewOrders[view.id]))
+        if (liveView.manual_order)
+          persistView({ manual_order: spliceLive(liveView.manual_order) }, { viewState: true })
         void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
       }
       return

@@ -6,8 +6,10 @@ import {
   decodeSubGroup,
   mintDefaultView,
   mintNewView,
+  pickViewState,
   type FilterGroup,
   type FilterRule,
+  type SavedView,
 } from './views'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { RESERVED_PROPERTY_ID } from '../Properties/properties'
@@ -99,6 +101,42 @@ describe('SavedView decode', () => {
       group_order: 'nonsense',
     })
     expect(v.group_order).toEqual([])
+  })
+
+  it('round-trips manual_order and drops non-string entries alone', () => {
+    const base = {
+      id: 'view_m',
+      name: 'M',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+    }
+    expect(savedView.parse({ ...base, manual_order: ['p1', 'p2'] }).manual_order).toEqual([
+      'p1',
+      'p2',
+    ])
+    expect(savedView.parse({ ...base, manual_order: ['p1', 42, 'p2'] }).manual_order).toEqual([
+      'p1',
+      'p2',
+    ])
+    expect(savedView.parse({ ...base, manual_order: 'nonsense' }).manual_order).toEqual([])
+    expect(savedView.parse(base).manual_order).toBeUndefined()
+  })
+
+  it('pickViewState carries manual_order beside collapsed_groups', () => {
+    const view: SavedView = {
+      id: 'view_m',
+      name: 'M',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+      collapsed_groups: ['g1'],
+      manual_order: ['p2', 'p1'],
+    }
+    expect(pickViewState(view)).toEqual({
+      collapsed_groups: ['g1'],
+      manual_order: ['p2', 'p1'],
+    })
   })
 
   it('wires a typed views[] into the collection sidecar schema', () => {

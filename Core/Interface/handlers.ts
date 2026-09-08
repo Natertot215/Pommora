@@ -79,8 +79,6 @@ export const interfaceHandlers = {
     isHeightMap,
     'Embed scales must map ids to positive numbers.',
   ),
-  'viewOrders:get': scopeGet<string[]>('viewOrder'),
-  'viewOrders:set': scopeSet('viewOrder', isStringArray, 'An order of page ids is required.'),
   'tableHeadingCols:get': scopeGet<number[]>('headingCols'),
   'tableHeadingCols:set': scopeSet(
     'headingCols',

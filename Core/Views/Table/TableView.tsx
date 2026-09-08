@@ -116,8 +116,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     reassignBySortRun,
     structuralOrder,
     dragDisabled,
-    viewOrders,
-    persistViewOrder,
     setManualOverride,
     setOrderOverride,
     setHiddenOverride,
@@ -1045,7 +1043,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       pageId,
     ]
     setManualOverride((m) => (m ? spliceLive(m) : m))
-    if (viewOrders[view.id]) persistViewOrder(spliceLive(viewOrders[view.id]))
+    if (liveView.manual_order)
+      persistView({ manual_order: spliceLive(liveView.manual_order) }, { viewState: true })
     void mutate({ op: 'movePage', path, newParentPath: destPath, order })
   }
   const reorderTo = (orderIds: string[], groupKey: string, activeId: string): void => {
@@ -1064,7 +1063,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }
       return
     }
-    persistViewOrder(orderIds)
+    persistView({ manual_order: orderIds }, { viewState: true })
     reassignBySortRun(orderIds, groupKey, activeId)
   }
 
