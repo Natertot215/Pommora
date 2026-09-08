@@ -62,7 +62,7 @@ describe('the in-app menu presenter', () => {
       promise = useSession.getState().presentMenu([{ label: 'Rename', action: 'rename' }], trigger)
     })
     await act(async () => {
-      useSession.getState().pendingMenu?.settle(null)
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     })
     await expect(promise).resolves.toBeNull()
     expect(useSession.getState().pendingMenu).toBeNull()

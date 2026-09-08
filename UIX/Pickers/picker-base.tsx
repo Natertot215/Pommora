@@ -14,6 +14,7 @@ import { useHeld } from '../Animations/useExitPresence'
 import { GlassPane } from '../Glass/glass-pane'
 import { GlassSurface } from '../Glass/glass-surface'
 import { GlassWindow } from '../Glass/glass-window'
+import { rowDisabled } from '../Menus/menu-base.css'
 import { MenuScrollFrame } from '../Menus/menu-row'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 import { Icon } from '../Symbols'
@@ -415,6 +416,7 @@ export function PickerRow({
   ring = false,
   leading,
   align,
+  disabled = false,
 }: {
   children: ReactNode
   onClick?: () => void
@@ -422,12 +424,19 @@ export function PickerRow({
   ring?: boolean
   leading?: ReactNode
   align?: 'start' | 'center'
+  disabled?: boolean
 }): React.JSX.Element {
   const readsLeft = align === 'start' || (align !== 'center' && leading != null)
   return (
     <button
       type="button"
-      className={cx(s.option, selected && s.optionSelected, selected && ring && s.optionRing)}
+      className={cx(
+        s.option,
+        selected && s.optionSelected,
+        selected && ring && s.optionRing,
+        disabled && rowDisabled,
+      )}
+      disabled={disabled}
       onClick={onClick}
     >
       <span className={readsLeft ? s.leadingRow : s.centeredRow}>
