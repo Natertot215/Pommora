@@ -6,18 +6,20 @@ import * as s from './frame-slide.css'
 
 const SLIDE_MS = ms(duration.base)
 
-/** Never caps or scrolls a slot: a slot needing a ceiling wraps its content in a `MenuScrollFrame`, since two scrolling containers break the slide. */
+/** Never caps or scrolls a slot's height: a slot needing a ceiling wraps its content in a `MenuScrollFrame`, since two scrolling containers break the slide. */
 export function FrameSlide({
   open,
   root,
   detail,
   minWidth,
+  maxWidth,
   minHeight,
 }: {
   open: boolean
   root: ReactNode
   detail: ReactNode
   minWidth?: number
+  maxWidth?: number
   /** Height floor (px) per slot, so a sparse pane's footer pins to the bottom. */
   minHeight?: number
 }): React.JSX.Element {
@@ -87,12 +89,12 @@ export function FrameSlide({
         style={{ transform: `translateX(-${shift}px)` }}
       >
         <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={active === 'b'}>
-          <div ref={aRef} className={s.slotContent} style={{ minWidth, minHeight }}>
+          <div ref={aRef} className={s.slotContent} style={{ minWidth, maxWidth, minHeight }}>
             {root}
           </div>
         </div>
         <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={active === 'a'}>
-          <div ref={bRef} className={s.slotContent} style={{ minWidth, minHeight }}>
+          <div ref={bRef} className={s.slotContent} style={{ minWidth, maxWidth, minHeight }}>
             {shownDetail}
           </div>
         </div>
