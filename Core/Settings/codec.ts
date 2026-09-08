@@ -92,6 +92,7 @@ export function readPersonalization(raw: unknown): Personalization {
     interfaceScale:
       typeof p.interfaceScale === 'number' ? coerceInterfaceScale(p.interfaceScale) : undefined,
     previewPersistence: coercePreviewPersistence(p.previewPersistence),
+    dismissPreviewOnPointer: bool(p.dismissPreviewOnPointer),
     fileHistory: p.fileHistory === false ? false : undefined,
     historyDays: clampInt(p.historyDays, HISTORY_DAYS.min, HISTORY_DAYS.max),
     historyInterval: clampInt(p.historyInterval, HISTORY_INTERVAL.min, HISTORY_INTERVAL.max),

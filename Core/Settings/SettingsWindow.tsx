@@ -336,6 +336,12 @@ const FRAMES = roster([
               { value: 'always', label: 'Until Closed' },
             ],
           },
+          {
+            kind: 'toggle',
+            key: 'dismissPreviewOnPointer',
+            label: 'Dismiss Preview On Pointer Actions',
+            hint: 'A click outside the preview dismisses it; a locked preview stays.',
+          },
         ],
       },
       {

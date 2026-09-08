@@ -308,6 +308,7 @@ export function GlancePane(): React.JSX.Element {
   }, [shown, siteReady, dismiss])
 
   const persistence = useSession((s) => s.personalization.previewPersistence)
+  const dismissOnPointer = useSession((s) => s.personalization.dismissPreviewOnPointer ?? false)
   // 'off' never has a live pane (the effect below dismisses it), so its grace is moot — narrow it out for the resolver.
   const graceMs = previewLingerMs(persistence === 'off' ? undefined : persistence)
 
@@ -367,13 +368,19 @@ export function GlancePane(): React.JSX.Element {
       else if (!grace && Number.isFinite(graceMs)) grace = setTimeout(close, graceMs)
     }
     window.addEventListener('mousemove', onMove)
-    const unwatch = watchAnchor(shown.el, { onGone: close, onEscape: close, onMoved: dropBoxes })
+    const unwatch = watchAnchor(shown.el, {
+      onGone: close,
+      onEscape: close,
+      onMoved: dropBoxes,
+      body: () => cardRef.current,
+      dismissOnPress: dismissOnPointer,
+    })
     return () => {
       clearGrace()
       unwatch()
       window.removeEventListener('mousemove', onMove)
     }
-  }, [shown, graceMs, dismiss, resizing])
+  }, [shown, graceMs, dismiss, resizing, dismissOnPointer])
 
   const page = held?.target.kind === 'page' ? held.target : null
   const warmSeam = useMemo(

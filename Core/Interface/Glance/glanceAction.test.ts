@@ -140,6 +140,35 @@ describe('the anchor watch', () => {
     stop()
   })
 
+  it('dismisses on an outside press only when dismissOnPress is set, and never on a press inside the body', () => {
+    const body = document.createElement('div')
+    const outside = document.createElement('div')
+    document.body.append(body, outside)
+    const press = (t: Element): void => {
+      t.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }))
+    }
+
+    const ignored = { onGone: vi.fn(), onEscape: vi.fn(), onMoved: vi.fn() }
+    const stopIgnored = watchAnchor(el, ignored)
+    press(outside)
+    expect(ignored.onEscape).not.toHaveBeenCalled()
+    stopIgnored()
+
+    const armed = {
+      onGone: vi.fn(),
+      onEscape: vi.fn(),
+      onMoved: vi.fn(),
+      body: () => body,
+      dismissOnPress: true,
+    }
+    const stopArmed = watchAnchor(el, armed)
+    press(body)
+    expect(armed.onEscape).not.toHaveBeenCalled()
+    press(outside)
+    expect(armed.onEscape).toHaveBeenCalledTimes(1)
+    stopArmed()
+  })
+
   it('Escape closes and is consumed; any other key re-checks the anchor', () => {
     const watch = { onGone: vi.fn(), onEscape: vi.fn(), onMoved: vi.fn() }
     const stop = watchAnchor(el, watch)
