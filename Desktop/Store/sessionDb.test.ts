@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest'
-import { mkdtempSync, rmSync, existsSync } from 'node:fs'
+import { chmodSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { keyValueStore } from '@pommora/core/Platform/stores'
 import { closeSessionDb, openSessionDb, sessionDb, sessionVersionsDb } from './sessionDb'
 import { VERSIONS_FILENAME } from './versionsDb'
 import { DB_FILENAME } from './open'
@@ -25,5 +26,18 @@ describe('sessionDb', () => {
     closeSessionDb()
     expect(sessionDb()).toBeNull()
     expect(sessionVersionsDb()).toBeNull()
+  })
+
+  it('never throws on read-only media, opening without persistence', () => {
+    const ro = mkdtempSync(join(tmpdir(), 'pom-readonly-'))
+    chmodSync(ro, 0o555)
+    try {
+      expect(() => openSessionDb(ro)).not.toThrow()
+      expect(sessionDb()).toBeNull()
+      expect(keyValueStore()).toBeNull()
+    } finally {
+      chmodSync(ro, 0o755)
+      rmSync(ro, { recursive: true, force: true })
+    }
   })
 })

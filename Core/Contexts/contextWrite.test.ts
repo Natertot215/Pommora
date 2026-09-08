@@ -13,14 +13,12 @@ import {
 } from './contextWrite'
 import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-ctxwrite-'))
   await mkdir(nexusDir(root), { recursive: true })
-  openSessionDb(root)
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({
@@ -42,7 +40,6 @@ beforeEach(async () => {
   )
 })
 afterEach(async () => {
-  closeSessionDb()
   await rm(root, { recursive: true, force: true })
 })
 

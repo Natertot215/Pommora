@@ -7,7 +7,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
 import { openSession, closeSession } from '../Nexus/session'
-import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { createProperty } from '../Properties/registryProperty'
 import { listBundles } from '../Trash/spend'
 import { seedContentIndex } from './indexSeed'
@@ -19,27 +20,30 @@ const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 
 let root: string
+let mem: ReturnType<typeof memoryStores>
 const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
-const dump = (): unknown => {
-  const db = sessionDb()
-  if (!db) throw new Error('no session db')
-  return {
-    mentions: db.prepare('SELECT path, title FROM mentions ORDER BY path, title').all(),
-    values: db.prepare('SELECT path, key, value FROM page_values ORDER BY path, key').all(),
-    memberships: db
-      .prepare('SELECT path, key, title FROM memberships ORDER BY path, key, title')
-      .all(),
-  }
-}
+const byPath = <T extends { path: string }>(rows: T[], ...keys: (keyof T)[]): T[] =>
+  rows.sort((a, b) => {
+    for (const key of ['path', ...keys] as (keyof T)[]) {
+      const d = String(a[key]).localeCompare(String(b[key]))
+      if (d) return d
+    }
+    return 0
+  })
+
+const dump = (): unknown => ({
+  mentions: byPath([...mem.index.mentions.values()], 'title'),
+  values: byPath([...mem.index.values.values()], 'key'),
+  memberships: byPath([...mem.index.memberships.values()], 'key', 'title'),
+})
 
 async function expectMaintained(): Promise<void> {
   const maintained = dump()
-  const db = sessionDb()
-  if (!db) throw new Error('no session db')
-  db.exec(
-    'DELETE FROM mentions; DELETE FROM page_values; DELETE FROM memberships; DELETE FROM indexed_files',
-  )
+  mem.index.mentions.clear()
+  mem.index.values.clear()
+  mem.index.memberships.clear()
+  mem.index.stats.clear()
   await seedContentIndex(root)
   expect(maintained).toEqual(dump())
 }
@@ -67,12 +71,13 @@ beforeEach(async () => {
   )
   await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\nbody`)
   await openSession(root)
-  openSessionDb(root)
+  mem = memoryStores()
+  installStores(mem.stores)
   await seedContentIndex(root)
 })
 afterEach(async () => {
   dropLiveTree()
-  closeSessionDb()
+  installStores(NO_STORES)
   closeSession()
   await rm(root, { recursive: true, force: true })
 })

@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
-import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { seedContentIndex } from '../Index/indexSeed'
 import { writePropertyBundle } from '../Trash/record'
@@ -25,7 +26,7 @@ import { replaySchemaCascade } from './replaySchemaCascade'
 const roots: string[] = []
 afterEach(async () => {
   dropLiveTree()
-  closeSessionDb()
+  installStores(NO_STORES)
   closeSession()
   for (const r of roots.splice(0)) await rm(r, { recursive: true, force: true })
 })
@@ -291,7 +292,7 @@ describe('the index seam', () => {
   it('a warm index answers the replay — an unindexed holder is outside its sweep', async () => {
     const root = await seedNexus()
     await openSession(root)
-    openSessionDb(root)
+    installStores(memoryStores().stores)
     await seedContentIndex(root)
     // C landed after the seed with no index row — the queried holder set cannot name it.
     await writeFile(

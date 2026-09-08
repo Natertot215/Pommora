@@ -5,9 +5,9 @@ import { join } from 'node:path'
 import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { splitEnvelope } from '../Files/pageFile'
-import { type SnapshotStore, snapshotStore } from '../Platform/stores'
+import { installStores, NO_STORES, type SnapshotStore, snapshotStore } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import {
   SNAPSHOT_MAX_BYTES,
   captureIfDue,
@@ -30,6 +30,7 @@ const INTERVAL = HISTORY_INTERVAL.default * MINUTE
 const DAY = 86_400_000
 
 let root: string
+let mem: ReturnType<typeof memoryStores>
 let file: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 const page = (id: string, body: string): string => `---\nID: ${id}\n---\n${body}`
@@ -70,11 +71,12 @@ beforeEach(async () => {
   file = abs('Notes', 'A.md')
   await writeFile(file, page(PAGE, 'one\n'))
   await settle()
-  openSessionDb(root)
+  mem = memoryStores()
+  installStores(mem.stores)
 })
 afterEach(async () => {
   resetFileHistory()
-  closeSessionDb()
+  installStores(NO_STORES)
   dropLiveTree()
   vi.useRealTimers()
   await rm(root, { recursive: true, force: true })
@@ -288,14 +290,10 @@ describe('a switch of roots', () => {
     await flushFileHistory(root)
     resetFileHistory()
     expect(rows()).toHaveLength(2)
-    const next = await mkdtemp(join(tmpdir(), 'pom-history-next-'))
-    closeSessionDb()
-    openSessionDb(next)
+    installStores(memoryStores().stores)
     expect(rows()).toEqual([])
-    closeSessionDb()
-    openSessionDb(root)
+    installStores(mem.stores)
     expect(rows()).toHaveLength(2)
-    await rm(next, { recursive: true, force: true })
   })
 })
 

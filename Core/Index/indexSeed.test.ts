@@ -3,7 +3,8 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { mkdir, mkdtemp, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { queryKeyHolders, queryMembers, queryMentions, readIndexedStats } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
 import { sweepAdmitsBody } from '../Nexus/util'
@@ -12,6 +13,7 @@ import { seedContentIndex } from './indexSeed'
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
 let root: string
+let mem: ReturnType<typeof memoryStores>
 const abs = (...segs: string[]): string => join(root, ...segs)
 
 beforeEach(async () => {
@@ -28,10 +30,11 @@ beforeEach(async () => {
   await writeFile(abs('Loose', 'Note.md'), 'an un-adopted note linking [[Target]]\n')
   await mkdir(abs('Hidden'), { recursive: true })
   await writeFile(abs('Hidden', 'Secret.md'), 'an excluded note linking [[Target]]\n')
-  openSessionDb(root)
+  mem = memoryStores()
+  installStores(mem.stores)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -61,7 +64,8 @@ describe('seedContentIndex', () => {
   it('the stat gate skips unmoved files and re-reads moved ones', async () => {
     await seedContentIndex(root)
     // Sabotage a row directly: an unmoved file must NOT be re-read, so the sabotage survives.
-    sessionDb()?.prepare('DELETE FROM mentions WHERE path = ?').run('Notes/A.md')
+    for (const [key, row] of mem.index.mentions)
+      if (row.path === 'Notes/A.md') mem.index.mentions.delete(key)
     await seedContentIndex(root)
     expect(queryMentions('target')).toEqual(['Loose/Note.md'])
     await utimes(abs('Notes', 'A.md'), new Date(), new Date(Date.now() + 5000))
@@ -103,7 +107,7 @@ describe('seedContentIndex', () => {
   })
 
   it('with no database the seed stands down and queries stay null', async () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     await expect(seedContentIndex(root)).resolves.toBeUndefined()
     expect(queryMentions('target')).toBeNull()
   })

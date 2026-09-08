@@ -3,16 +3,17 @@ import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { NavRef } from './navRef'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { readNavigationFile, readNavigationState, writeNavigationState } from './navigationFile'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-navigation-'))
-  openSessionDb(root)
+  installStores(memoryStores().stores)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 

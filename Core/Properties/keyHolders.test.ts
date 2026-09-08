@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { nexusCorpus, seedContentIndex } from '../Index/indexSeed'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createProperty, editProperty } from './registryProperty'
@@ -43,13 +44,13 @@ beforeEach(async () => {
   await page('HolderB', 'Stage: Draft\n')
   await mkdir(abs('Loose'), { recursive: true })
   await writeFile(abs('Loose', 'Note.md'), '---\nStage: Draft\n---\n\nun-governed\n')
-  openSessionDb(root)
+  installStores(memoryStores().stores)
   await seedContentIndex(root)
   sweepSpy.mockClear()
 })
 afterEach(async () => {
   dropLiveTree()
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -76,7 +77,7 @@ describe('keyHolderFiles', () => {
   })
 
   it('with no index it answers the corpus intersected the same way', async () => {
-    closeSessionDb()
+    installStores(NO_STORES)
     const files = await keyHolderFiles(root, 'Stage', [abs('Notes')])
     expect(files).toHaveLength(30)
     expect(files.some((f) => f.includes('Loose'))).toBe(false)

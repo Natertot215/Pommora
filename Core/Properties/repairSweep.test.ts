@@ -12,7 +12,8 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 
 let root: string
 let page: string
@@ -57,12 +58,12 @@ beforeEach(async () => {
   const p = await createPage(col.value.path, 'One', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
   page = p.value.path
-  openSessionDb(root)
+  installStores(memoryStores().stores)
   await refreshAfterWrite(root)
   await seedContentIndex(root)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -102,7 +103,7 @@ describe('runRepairSweep', () => {
   it('a sweep whose session database moved writes nothing', async () => {
     await frontmatter('Status: Open')
     await seedContentIndex(root)
-    closeSessionDb()
+    installStores(NO_STORES)
     await runRepairSweep(root)
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
@@ -129,10 +130,9 @@ describe('runRepairSweep', () => {
   })
 
   it('a cold index — the first open of a database — sweeps nothing', async () => {
-    closeSessionDb()
-    await rm(join(root, '.nexus', 'nexus.db'), { force: true })
+    installStores(NO_STORES)
     await frontmatter('Status: Open')
-    openSessionDb(root)
+    installStores(memoryStores().stores)
     await seedContentIndex(root)
     await runRepairSweep(root)
     expect(await readFile(page, 'utf8')).toContain('Status: Open')

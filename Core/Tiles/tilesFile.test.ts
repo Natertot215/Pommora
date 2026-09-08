@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import {
   convertTileToView,
   copyEntry,
@@ -35,12 +34,9 @@ beforeEach(async () => {
     JSON.stringify({ contexts: [{ id: 'g1', title: 'Realms', singular: 'Realm' }] }),
   )
   await writeFile(spaceSidecar(), JSON.stringify({ id: 'sp1', color: 'mint' }))
-  openSessionDb(root)
 })
 
-afterEach(() => {
-  closeSessionDb()
-})
+afterEach(() => {})
 
 describe('the document', () => {
   it('opens empty when the host has none, and the read creates nothing', async () => {

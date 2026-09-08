@@ -3,16 +3,17 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../../Platform/stores'
+import { memoryStores } from '../../Testing/memoryStores'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowState'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'windows-'))
-  openSessionDb(root)
+  installStores(memoryStores().stores)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -42,7 +43,7 @@ describe('readWindowsState', () => {
 
   it('reads the empty shape with no database open', () => {
     writeWindowsState(file)
-    closeSessionDb()
+    installStores(NO_STORES)
     expect(readWindowsState()).toEqual(EMPTY_WINDOWS)
   })
 })

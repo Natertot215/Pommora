@@ -4,16 +4,17 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 import { scopeGet, scopeSet } from './handlers'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-scope-boundary-'))
-  openSessionDb(root)
+  installStores(memoryStores().stores)
 })
 afterEach(async () => {
-  closeSessionDb()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
