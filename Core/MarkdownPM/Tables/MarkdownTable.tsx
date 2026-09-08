@@ -15,6 +15,7 @@ import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
@@ -231,6 +232,12 @@ export function MarkdownTable({
 
   const rect = useMemo(() => (sel ? normRect(sel.a, sel.h) : null), [sel])
 
+  useDismissal(rect !== null, false, {
+    layer: () => null,
+    dismiss: () => setSel(null),
+    outsidePress: false,
+  })
+
   useEffect(() => {
     if (!rect) return
     const claim = (e: KeyboardEvent): void => {
@@ -240,10 +247,7 @@ export function MarkdownTable({
     const clear = (): void => onClearCells?.(rect.r0, rect.c0, rect.r1, rect.c1)
     const onKey = (e: KeyboardEvent): void => {
       const mod = e.metaKey || e.ctrlKey
-      if (e.key === 'Escape') {
-        claim(e)
-        setSel(null)
-      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
         claim(e)
         clear()
       } else if (mod && (e.key === 'c' || e.key === 'x')) {

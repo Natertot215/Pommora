@@ -134,7 +134,7 @@ describe('the anchor watch', () => {
     const watch = { onGone: vi.fn(), onEscape: vi.fn(), onMoved: vi.fn() }
     const stop = watchAnchor(el, watch)
     const esc = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
-    window.dispatchEvent(esc)
+    document.dispatchEvent(esc)
     expect(watch.onEscape).toHaveBeenCalledTimes(1)
     expect(esc.defaultPrevented).toBe(true)
     el.remove()

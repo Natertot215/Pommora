@@ -59,4 +59,19 @@ describe('the host over the renderer table', () => {
     expect(await until(() => host.querySelector('.cm-editor') !== null)).toBe(true)
     expect(host.querySelectorAll('.tile-inert')).toHaveLength(3)
   })
+
+  it('Escape leaves the tile that is being edited', async () => {
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelector('.markdown-tile') !== null)).toBe(true)
+    await act(async () => {
+      ;(host.querySelector('.markdown-tile') as HTMLElement).click()
+    })
+    expect(host.querySelector('.tile.is-editing-tile')).not.toBeNull()
+    await act(async () => {
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(host.querySelector('.tile.is-editing-tile')).toBeNull()
+  })
 })

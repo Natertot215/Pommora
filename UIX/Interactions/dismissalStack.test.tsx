@@ -207,6 +207,22 @@ describe('the stack', () => {
     expect(prevented).toBe(true)
   })
 
+  it('peels window-level sites newest first and leaves them standing under an outside press', () => {
+    const log: string[] = []
+    const site = (n: string): DismissalHandle =>
+      pushDismissal({ layer: () => null, dismiss: () => log.push(n), outsidePress: false })
+    const first = site('first')
+    const second = site('second')
+    handles.push(first, second)
+    press(document.body)
+    expect(log).toEqual([])
+    pressEscape(document)
+    expect(log).toEqual(['second'])
+    second.release()
+    pressEscape(document)
+    expect(log).toEqual(['second', 'first'])
+  })
+
   it('hands the shield to the next popup when the base leaves', () => {
     const layers = { a: layer(), b: layer() }
     stack(['a', 'b'], [], layers)
