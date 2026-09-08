@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { coerceScale, SCALE_STEPS } from '@pommora/core/Settings/personalization'
+import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
 import { Icon, iconNameOr, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -16,6 +16,7 @@ import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 import { LayoutFrame } from './LayoutFrame'
+import { ScalePicker } from '@pommora/core/Settings/ScalePicker'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import {
   AccessoryButton,
@@ -28,7 +29,6 @@ import {
   MenuCaption,
   MenuTopRow,
 } from '@pommora/uix/Menus'
-import { factorChoice, PickerControl, stepsWith } from '@pommora/uix/Pickers/PickerControl'
 import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from '../ViewTileScope'
@@ -120,7 +120,6 @@ export function SettingsFrame(): React.JSX.Element | null {
     const next = coerceScale(f, 1)
     void saveViewAdopting(node, { ...view, view_scale: next === 1 ? undefined : next })
   }
-  const scaleChoices = stepsWith(SCALE_STEPS, viewScale).map(factorChoice)
 
   const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
   const schemaUnavailable = (
@@ -186,23 +185,7 @@ export function SettingsFrame(): React.JSX.Element | null {
 
   const footing = (
     <MenuFooting
-      leading={
-        <PickerControl
-          ariaLabel="View Scale"
-          solid
-          value={String(viewScale)}
-          options={scaleChoices}
-          onPick={(v) => setViewScale(Number(v))}
-          typeable={{
-            text: viewScale.toFixed(2),
-            suffix: 'x',
-            onCommit: (written) => {
-              const factor = Number.parseFloat(written.replace(/x/i, '').trim())
-              if (Number.isFinite(factor)) setViewScale(factor)
-            },
-          }}
-        />
-      }
+      leading={<ScalePicker ariaLabel="View Scale" value={viewScale} onPick={setViewScale} />}
       trailing={
         <FooterIconButton icon="ellipsis" ariaLabel="More actions" onClick={() => {}} disabled />
       }
