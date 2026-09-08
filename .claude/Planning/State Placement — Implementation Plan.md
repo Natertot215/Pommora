@@ -100,6 +100,7 @@ State is placed by what it belongs to, not by what is convenient to write. Anyth
 - Comments are `//` line comments and reserved for a why the code can't carry. A comment that goes false is rewritten in the commit that falsifies it, never amended.
 - Never nest two takes of one file lock. `rmwJsonStrict` and `withSidecarLock` both take `machine().lock` on the sidecar path; use one.
 - Search before writing. A second resolver, cache, or validator means the plan is wrong — log it before proceeding.
+- **No code survives that exists only to satisfy a test.** A guard, hook, export, parameter, or branch added to make a criterion checkable, and which nothing in the shipped product reaches, is removed in the final reviews. A test proves what the code does; it does not earn the code a reason to exist.
 - Out of scope everywhere: `Showcase/`; the six page-level `nexus.db` scopes the ruling holds; `UIX/Windows/window-panel.tsx`'s width map; `Mobile/` and `Sync/`.
 
 **Made False**

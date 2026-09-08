@@ -71,7 +71,7 @@ describe('importPlacedState', () => {
     expect(readKey('activeView', COL)).toBeNull()
     expect(readKey('activeView', SET)).toBeNull()
 
-    // The second run is the idempotency proof: the scope it reads is empty, so it writes nothing and the caller's re-walk never fires.
+    // The second run is the idempotency proof: `false` is what keeps the caller from re-walking.
     expect(await importPlacedState(root)).toBe(false)
   })
 
@@ -123,6 +123,36 @@ describe('importPlacedState', () => {
 
     expect(await importPlacedState(root)).toBe(false)
     expect(readKey('activeView', '01KVGMT8BFP350FZZXAMG1QDS9')).toBe('view-c2')
+  })
+
+  it('a tree held for another nexus is refreshed, not read', async () => {
+    const other = await mkdtemp(join(tmpdir(), 'pom-other-'))
+    await mkdir(join(other, '.nexus'), { recursive: true })
+    await writeFile(
+      join(other, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx-other', createdAt: '2026' }),
+    )
+    await writeFile(join(other, '.nexus', 'contexts.json'), JSON.stringify({ contexts: [] }))
+    await refreshTree(other)
+
+    writeKey('activeView', COL, 'view-c2')
+
+    expect(await importPlacedState(root)).toBe(true)
+    expect((await collectionJson()).active_view).toBe('view-c2')
+    expect(readKey('activeView', COL)).toBeNull()
+
+    await rm(other, { recursive: true, force: true })
+  })
+
+  it('a failed walk is swallowed, not thrown into the open sequence', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    writeKey('activeView', COL, 'view-c2')
+    dropLiveTree()
+    await rm(real, { recursive: true, force: true })
+
+    expect(await importPlacedState(root)).toBe(false)
+    expect(readKey('activeView', COL)).toBe('view-c2')
+    logged.mockRestore()
   })
 
   it('a sidecar that already names a view keeps it, and the row is consumed', async () => {
