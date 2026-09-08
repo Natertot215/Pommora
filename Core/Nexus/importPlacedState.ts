@@ -6,7 +6,8 @@ import { withSidecarLock } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { readScope, writeKey } from '../Platform/localState'
-import { getLiveTree, refreshTree } from './liveTree'
+import { DEFAULT_VIEW_ID } from '../Views/views'
+import { getLiveTree } from './liveTree'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 
 type Container = CollectionNode | SetNode
@@ -27,20 +28,24 @@ export async function importPlacedState(root: string): Promise<boolean> {
   try {
     const chosen = readScope<string>('activeView')
     if (Object.keys(chosen).length === 0) return false
-    const held = getLiveTree()
-    // Rows are keyed by container id alone, so a tree belonging to another nexus would resolve them against the wrong sidecars and then delete the rows it read.
-    const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
+    const tree = getLiveTree()
+    if (!tree) return false
     let landed = false
     for (const node of containersIn(tree)) {
       const viewId = chosen[node.id]
       if (viewId === undefined) continue
+      // A set deep enough to be minted no view of its own shows the placeholder row, and clicking it wrote the sentinel here. It names nothing to carry across, so the row is spent rather than written into a file a person reads.
+      if (viewId === DEFAULT_VIEW_ID) {
+        writeKey('activeView', node.id, null)
+        continue
+      }
       if (!(await placeActiveView(root, node.path, node.kind, viewId))) continue
       writeKey('activeView', node.id, null)
       landed = true
     }
     return landed
   } catch (err) {
-    // refreshTree rethrows a failed walk, so the contract above is only kept if the whole pass is wrapped, not just each container's write.
+    // The scope reads and the row deletes reach SQLite outside any container's own catch, so the contract above is only kept by wrapping the whole pass.
     console.error('Placed-state import skipped:', errText(err))
     return false
   }

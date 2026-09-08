@@ -6,6 +6,7 @@ import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { withSidecarLock } from '../Files/sidecar'
 import { machine } from '../Platform/machine'
 import { readKey, writeKey } from '../Platform/localState'
+import { DEFAULT_VIEW_ID } from '../Views/views'
 import { importPlacedState } from './importPlacedState'
 import { dropLiveTree, refreshTree } from './liveTree'
 
@@ -125,34 +126,12 @@ describe('importPlacedState', () => {
     expect(readKey('activeView', '01KVGMT8BFP350FZZXAMG1QDS9')).toBe('view-c2')
   })
 
-  it('a tree held for another nexus is refreshed, not read', async () => {
-    const other = await mkdtemp(join(tmpdir(), 'pom-other-'))
-    await mkdir(join(other, '.nexus'), { recursive: true })
-    await writeFile(
-      join(other, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nx-other', createdAt: '2026' }),
-    )
-    await writeFile(join(other, '.nexus', 'contexts.json'), JSON.stringify({ contexts: [] }))
-    await refreshTree(other)
-
-    writeKey('activeView', COL, 'view-c2')
-
-    expect(await importPlacedState(root)).toBe(true)
-    expect((await collectionJson()).active_view).toBe('view-c2')
-    expect(readKey('activeView', COL)).toBeNull()
-
-    await rm(other, { recursive: true, force: true })
-  })
-
-  it('a failed walk is swallowed, not thrown into the open sequence', async () => {
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    writeKey('activeView', COL, 'view-c2')
-    dropLiveTree()
-    await rm(real, { recursive: true, force: true })
+  it('the sentinel never reaches a sidecar, and its row is spent rather than kept', async () => {
+    writeKey('activeView', COL, DEFAULT_VIEW_ID)
 
     expect(await importPlacedState(root)).toBe(false)
-    expect(readKey('activeView', COL)).toBe('view-c2')
-    logged.mockRestore()
+    expect((await collectionJson()).active_view).toBeUndefined()
+    expect(readKey('activeView', COL)).toBeNull()
   })
 
   it('a sidecar that already names a view keeps it, and the row is consumed', async () => {
