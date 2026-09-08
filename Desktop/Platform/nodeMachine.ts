@@ -29,10 +29,6 @@ export const nodeMachine: Machine = {
   readBytes: (p) => absentToNull(readFile(p)),
   writeText: (p, text) => writeFileAtomic(p, text, { encoding: 'utf8' }),
   writeBytes: (p, bytes) => writeFileAtomic(p, asBuffer(bytes)),
-  async writeRaw(p, text, mtimeMs) {
-    await writeFileAtomic(p, text, { encoding: 'utf8' })
-    await utimes(p, mtimeMs / 1000, mtimeMs / 1000)
-  },
   async stat(p) {
     const s = await absentToNull(stat(p))
     return (

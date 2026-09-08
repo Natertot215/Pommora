@@ -37,9 +37,6 @@ const memoryMachine = (): Machine => {
     },
     writeText: async (p, text) => put(p, text),
     writeBytes: async (p, bytes) => put(p, decoder.decode(bytes)),
-    writeRaw: async (p, text, mtimeMs) => {
-      files.set(p, { text, mtimeMs })
-    },
     stat: async (p): Promise<FileStat | null> => {
       const e = files.get(p)
       if (e)
