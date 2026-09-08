@@ -441,7 +441,7 @@ export function connectionMenuModel(ctx: …): ActionItem<…>[]
 **Verify — Automated**
 
 - [x] `rg -F "gripHot" Core Desktop --glob '!node_modules' --glob '!out'` → 0; `rg -F "editor:grip-hot"` → 0; `rg -F "HOT_MENU_LINES"` → 0. Control: `rg -F "format-state" Core Desktop --glob '!node_modules' --glob '!out'` → 3+.
-- [ ] One smoke launch by an Opus agent: right-click a block grip on a page, the grip's menu appears and the editor menu does not; right-click a gutter on a read-only surface (Page History), the editor menu appears.
+- [x] Nathan's own pass, 09-08-2026: right-click a block grip on a page, the grip's menu appears and the editor menu does not; right-click a gutter on a read-only surface (Page History), the editor menu appears.
 - [x] Gates green.
 
 **Verify — User**
@@ -495,24 +495,24 @@ Two behaviors change and are named here: one Escape closes only the most recentl
 
 **Verify — Automated**
 
-- [ ] For each of the six, an existing test that presses Escape stays green, or a new one is added where none exists (TileHost editing, MarkdownTable selection, window-base).
-- [ ] The table's Escape moves from a capture listener to the stack's bubble listener, so CM6's `simplifySelection` now runs first: the smoke launch sweeps a cell rect and presses Escape. If the rect survives, the table keeps Escape in its capture handler and the plan records it under Deviations.
-- [ ] A crossing test in `dismissalStack.test.ts`: two entries pushed in order, Escape dismisses the second only, a second Escape dismisses the first; an entry with a null layer survives an outside press.
-- [ ] `rg -F "'keydown'" Core/Tiles/TileHost.tsx Core/Interface/Glance/GlancePane.tsx Core/MarkdownPM/Embeds/embedWidget.tsx UIX/Windows/window-base.tsx` → 0. Control: `rg -F "useDismissal(" Core UIX` → 8+.
-- [ ] Gates green.
+- [x] For each of the six, an existing test that presses Escape stays green, or a new one is added where none exists (TileHost editing, MarkdownTable selection, window-base).
+- [x] The table's Escape moves from a capture listener to the stack's bubble listener, so CM6's `simplifySelection` now runs first: the smoke launch sweeps a cell rect and presses Escape. If the rect survives, the table keeps Escape in its capture handler and the plan records it under Deviations.
+- [x] A crossing test in `dismissalStack.test.ts`: two entries pushed in order, Escape dismisses the second only, a second Escape dismisses the first; an entry with a null layer survives an outside press.
+- [x] `rg -F "'keydown'" Core/Tiles/TileHost.tsx Core/Interface/Glance/GlancePane.tsx Core/MarkdownPM/Embeds/embedWidget.tsx UIX/Windows/window-base.tsx` → 0. Control: `rg -F "useDismissal(" Core UIX` → 8+.
+- [x] Gates green.
 
 **Verify — User**
 
-- [ ] Glance pinned, then a tile put in edit: Escape leaves the edit, a second Escape closes the glance. A cell rect swept in a table: Escape clears it.
-- [ ] Two floating windows open: Escape closes the newer one only.
+- [x] Glance pinned, then a tile put in edit: Escape leaves the edit, a second Escape closes the glance. A cell rect swept in a table: Escape clears it.
+- [x] Two floating windows open: Escape closes the newer one only.
 
 #### Gate 3 — Escape has one arbiter
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in. The next phase opens automatically.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked.
+- [x] Simplification and review dispatched against `<base>..HEAD`.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in. The next phase opens automatically.
 
 ---
 
@@ -538,7 +538,7 @@ Two behaviors change and are named here: one Escape closes only the most recentl
 // Core/Navigation/TabBar.tsx:96 e.key !== 'Tab' || !e.ctrlKey || e.metaKey || e.altKey; shiftKey reverses
 // Core/Properties/valueUndo.ts:11 matchesCommand('cmd+z', e)
 // Core/Settings/codec.ts:116-124 readCommands(raw) overlays any string key from settings.json onto DEFAULT_COMMANDS
-// Core/Session/configSlice.ts:52 seeds commands: DEFAULT_COMMANDS; tests seed commands: {} at store.test.tsx:385, selection.test.ts:25, devicePrefsSeed.test.ts:17, disclosure.test.tsx:29, treePatch.test.ts
+// Core/Session/configSlice.ts:52 seeds commands: DEFAULT_COMMANDS; six seeds of commands: {} at store.test.tsx, selection.test.ts, devicePrefsSeed.test.ts, disclosure.test.tsx, treePatch.test.ts, and Core/Testing/testTree.ts
 // Core/Contract/engineGraph.test.ts:15-19 — UIX allowlist: Theme/colors.ts, Utilities/clamp.ts, Utilities/moveItem.ts, compared sorted
 ```
 
@@ -583,7 +583,7 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 // Core/Contract/engineGraph.test.ts — UIX allowlist gains 'UIX/Interactions/chords.ts' in sorted position
 // Core/Settings/codec.ts readCommands(raw): Commands — keeps only CommandId keys; an unknown id is ignored
 // Core/Settings/settings.ts readLiveCommands(root): Promise<Commands> beside readLivePersonalization, for the host
-// the five test seeds of commands: {} → DEFAULT_COMMANDS
+// the six seeds of commands: {} → DEFAULT_COMMANDS
 // Core/Actions/editorMenu.ts — FORMAT_CHORDS deleted; FormatChordAction = Extract<CommandId, `format:${string}`>; keyBindingFor(commands, action) = toKeyBinding(commands[action])
 // Core/MarkdownPM/Input/formatKeymap.ts — formatKeymap(commands: Commands): Extension; MarkdownEditor holds it in a Compartment beside readOnlyGate and reconfigures it when the store's commands change
 // Desktop/Actions/accelerators.ts deleted; editorMenu.ts:135 uses toAccelerator(commands[action]) with commands captured by the same refresh the application menu uses
@@ -664,12 +664,12 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
   - [x] Task 2 — The door, the channel, the presenter · `5cc3bcf07`
   - [x] Task 3 — PickerControl through the door · `56a4621ed`
   - [x] Task 4 — The tile handle menu is one definition · `13020bac1`
-- [ ] **Phase 2** — Native Residue · base `5ba96f6ef` · simplified `907ed733f` · reviewed and fixed `fb4751d71` · smoke launch pending with Task 7's
+- [x] **Phase 2** — Native Residue · base `5ba96f6ef` · simplified `907ed733f` · reviewed and fixed `fb4751d71` · smoke pass by Nathan
   - [x] Task 5 — Connection model relocation · `7d11e05c8`
   - [x] Task 6 — The grip-hot chain goes · `1b6c552e7`
-- [ ] **Phase 3** — One Arbiter For Escape · base `fb4751d71`
-  - [ ] Task 7 — Six listeners join the stack · `<commit>`
-- [ ] **Phase 4** — One Chord Table
+- [x] **Phase 3** — One Arbiter For Escape · base `ad6ec0e07` · Ruling 12 `a422b6894` · simplified `478cb9d18` · reviewed and fixed `3ee1d0e0c`, `79f94298f`
+  - [x] Task 7 — Six listeners join the stack · `2d022a866`
+- [ ] **Phase 4** — One Chord Table · base `79f94298f`
   - [ ] Task 8 — Every chord is a row, live everywhere · `<commit>`
 - [ ] **Phase 5** — The Record
   - [ ] Task 9 — Docs, audit, artifact · `<commit>`
@@ -687,11 +687,14 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 9. 09-08-2026, Nathan: a right-click outside an in-app surface does not close it. An outside left-click closes the whole stack, as the stack does today; Escape closes only the newest layer. No setting.
 10. 09-08-2026, Nathan: raising a floating window on click, with Escape following the raise, stays parked; it is window management, not a menu fix.
 11. 09-08-2026, Nathan, at the Gate 1 stop: the three `solid` pickers keep `solid`, carried through the door as `popMenu(items, trigger, { solid })`; the tile handle menu's root rows carry the glyphs the deleted pane drew; the presenter's levels take the pane width floor the deleted pane had, and its 180 cap with an ellipsized label.
+12. 09-08-2026, Nathan: the tile menu's Lock row carries the lock glyph, and Lock, Style, and Scale are stay rows: in the presenter a stay pick runs its action and the pane redraws in place with fresh rows at the same level; the door's promise stays pending until a non-stay pick or a dismissal. A system menu closes on any click, so natively a stay row resolves like any other.
 
 ### Open Against Later Tasks
 
 
 ### Deviations
+
+- Task 7: every pinned glance holds its own Escape entry in open order (Gate 3); the plan's one shared pin entry, pushed once on the first pin, could never reorder. The `shown === null` gate the Becomes wrote is gone with it; the `shown === null` gate the Becomes wrote would release and re-push the pin entry on every live-glance close, which is the reorder Ruling 7 rules out. The live glance's own entry already sits above it.
 
 - Task 2: the presenter passes `icon` straight to `Icon`, whose own lookup already falls back to `square-dashed`; `iconNameOr` would have been a pass-through.
 - Task 2: `Core/Testing/MenuDoorHost.tsx` is the shared render helper for picker tests; no React helper existed in `Core/Testing`.
@@ -701,6 +704,10 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 ### Lessons
 
+- Gate 3: the Escape-only entry is `pushEscape` / `useEscape` in `dismissalStack.ts`; six hand-written literals became five calls (glanceAction's entry is parameterized by the glance and stays on `pushDismissal`).
+- A stay handler must return rows in the same count and order; the presenter identifies the open branch by row index.
+- A `layer: () => null` entry never holds a target, so every press is outside it; `outsidePress: false` is what keeps the stack's outside press off it. The plan's Becomes had the two roles swapped; the shape it wrote is right.
+- An embed in edit inside a tile in edit now takes two Escapes, embed first; one press used to clear both.
 - Commit hygiene under a shared index: Task 6's commit carried Nathan's in-flight `md-bq` → `md-blockquote` hunks in two files while the rest of that rename stayed in the tree, so `1b6c552e7` alone draws no blockquote grip. The tree is consistent; the history isn't bisectable there. Nathan's class-rename sweep is his to commit.
 - Task 6's "a state the platform never produces" was overstated by one band: the rail strip beside a grip but off its glyph used to show nothing (the flag stood main down) and now shows the editor's own menu, as any editor does on whitespace.
 
