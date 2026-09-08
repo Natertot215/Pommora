@@ -89,6 +89,7 @@ export interface SavedView {
   column_alignments?: Record<string, ColumnAlign>
   column_styles?: Record<string, ColumnStyle>
   collapsed_groups?: string[]
+  manual_order?: string[]
   hidden_groups?: string[]
   hide_empty_groups?: boolean
   card_size?: number
@@ -133,14 +134,20 @@ const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
   }),
 )
 
+// Element-filtering, not whole-array catch: one bad entry drops alone, good ids survive.
+const idArray = z
+  .array(z.unknown())
+  .catch([])
+  .transform((a) => a.filter((x): x is string => typeof x === 'string'))
+
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 
-const VIEW_STATE_KEYS = ['collapsed_groups'] as const
+const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
 export type ViewState = Pick<SavedView, (typeof VIEW_STATE_KEYS)[number]>
 
 export function pickViewState(view: SavedView): ViewState {
-  return { collapsed_groups: view.collapsed_groups }
+  return { collapsed_groups: view.collapsed_groups, manual_order: view.manual_order }
 }
 
 function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {
@@ -209,6 +216,7 @@ export const savedView = z.looseObject({
   column_alignments: z.record(z.string(), z.enum(COLUMN_ALIGNS)).optional(),
   column_styles: z.record(z.string(), columnStyle).catch({}).optional(),
   collapsed_groups: z.array(z.string()).optional(),
+  manual_order: idArray.optional(),
   hidden_groups: z.array(z.string()).optional(),
   hide_empty_groups: z.boolean().optional(),
   card_size: z.number().optional().catch(undefined),
@@ -225,12 +233,7 @@ export const savedView = z.looseObject({
   filter_enabled: z.boolean().optional(),
   group: z.unknown().transform(decodeGroupConfig).optional(),
   format: z.enum(VIEW_FORMATS).optional().catch(undefined),
-  // Element-filtering, not whole-array catch: one bad entry drops alone, good ids survive.
-  group_order: z
-    .array(z.unknown())
-    .catch([])
-    .transform((a) => a.filter((x): x is string => typeof x === 'string'))
-    .optional(),
+  group_order: idArray.optional(),
   structural_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
   location_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
   sub_group: z.unknown().transform(decodeSubGroup).optional(),

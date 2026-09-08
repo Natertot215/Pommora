@@ -226,4 +226,13 @@ describe('resolveViewWrite — the one lock-write gate', () => {
       expect(write.state.collapsed_groups).toEqual(['Done'])
     }
   })
+  it('a locked tile still carries a manual order through the state-only write', () => {
+    const edited: SavedView = { ...view, name: 'Renamed', manual_order: ['p2', 'p1'] }
+    const write = resolveViewWrite(true, edited, { viewState: true })
+    expect(write.kind).toBe('state')
+    if (write.kind === 'state') {
+      expect('name' in write.state).toBe(false)
+      expect(write.state.manual_order).toEqual(['p2', 'p1'])
+    }
+  })
 })

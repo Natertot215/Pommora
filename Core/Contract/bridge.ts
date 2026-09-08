@@ -60,8 +60,6 @@ export interface Asks {
 
   'folds:get': { args: []; reply: Result<Record<string, string[]>> }
   'folds:set': { args: [pageId: string, keys: string[]]; reply: Result<null> }
-  'viewOrders:get': { args: []; reply: Result<Record<string, string[]>> }
-  'viewOrders:set': { args: [viewId: string, order: string[]]; reply: Result<null> }
   'embedHeights:get': { args: []; reply: Result<Record<string, Record<string, number>>> }
   'embedHeights:set': {
     args: [pageId: string, heights: Record<string, number>]

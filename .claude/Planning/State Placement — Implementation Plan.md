@@ -692,7 +692,7 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
   - [x] Task 2 — Import the `activeView` scope during the open · `2edcecdc9`
   - [ ] Gate 1 — owed. Both tasks landed; the gate's own boxes are unticked, so it has not run.
 - [ ] **Phase 2** — Manual order in the view record
-  - [ ] Task 3 — `manual_order` on the view, written by every drop site
+  - [x] Task 3 — `manual_order` on the view, written by every drop site
   - [ ] Task 4 — Import the `viewOrder` scope, and remint stops carrying it
 - [ ] **Phase 3** — Browser storage into the device store
   - [ ] Task 5 — `DevicePrefs` gains its three machine-local shapes, seeded before the paint
@@ -747,6 +747,11 @@ export function useWindowGeometry(id: string): { initialSize?: Size; onSizeChang
 - **Task 5's `devicePrefsLoaded` expectation is wrong and must not be satisfied.** The verify box expects 3; the count is 4 today — the declaration, the reset in `resetNexusSession`, the check, and the assignment — and none of the four is removed by moving the block. Nothing in the dirty arc accounts for it. The expectation is a miscount in the plan, not a target: an implementer who edits code to reach 3 is deleting something the task never asked to delete. Corrected to 4.
 
 - **`e5bccd57e` carries five documents its message does not describe.** `.claude/CLAUDE.md`, `ContextPM.md`, `Features/CorePM.md`, `Features/DesktopPM.md`, and `Guidelines/Development-Environment.md` are the Engine Boundary arc's own envelope-doc corrections, and they are correct and wanted where they are. They arrived because two sessions share one git index: `git commit` commits the whole staged index, not the paths the committing session added, so explicit `git add` is necessary and not sufficient. `git commit --only -- <paths>` is, and every commit in this arc uses it from here. The post-commit ledger hook was cleared of suspicion by reading it — it stages named paths only.
+
+- **The `[source]` reset defeated the new mechanism on every drop, and is now conditioned on `structuralOrder`.** `useViewHost`'s effect cleared `manualOverride` whenever `source`'s identity changed. That was invisible while the order lived in `useViewOrders`, whose echo was keyed on `containerPath` and survived a tree push — `view.manual_order` does not. A create or a relocate fires its own optimistic tree apply, which changes `source`, so the override was cleared a beat before `views:save` pushed the record back and the newborn jumped to the band end and back. Inherited Reasoning's accepted echo loss framed this as an external event landing mid-flight; the gesture's own mutate is that event, which makes it every drop rather than a race. The reset now runs only when `structuralOrder`, where `page_order` genuinely is the order — which is what that effect's own comment always claimed. On a sorted or grouped view the `sameIds` catch-up retires the override instead, which is exactly how `orderOverride` and `hiddenOverride` have always been retired; the unconditional reset was the odd one of the four. Ratified.
+- **Task 3's red-first count is 7, not 2.** Two of the fold cases are green-first by construction: a case asserting a stored order is *preserved* cannot fail before the fold exists. Both are carried by negative control instead. A correction to the verify box, not a shortfall.
+- **`manual_order` present-but-empty returns `[]`, not `undefined`.** `null ?? []` is `[]`, and no guard was added to make the verify box's literal wording pass — `makeSorter` gates on `manualOrder?.length`, so an empty array and an absent one paint identically. The degenerate case is tested at the sorter, where the equivalence actually lives. Adding a guard to satisfy the sentence would have been code existing only for a test.
+- **CardsView's relocate site carries a negative control by inspection, not by test.** Its condition is textually identical to TableView's, which is tested with one; a two-zone `DragGroup` rig was judged disproportionate. Within-band card reorder is driven end to end under both a sorted and a structural view. Named rather than hidden.
 
 ### Lessons
 

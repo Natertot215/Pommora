@@ -34,8 +34,7 @@ interface ViewCreationConfig {
   setValueOverride: SetOverrides
   effectiveValues: Record<string, PageValues>
   structuralOrder: boolean
-  viewOrders: Record<string, string[]>
-  persistViewOrder: (ids: string[]) => void
+  persistView: (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => void
   setManualOverride: React.Dispatch<React.SetStateAction<string[] | null>>
   rowBand: Map<string, string>
   bandBucket: (key: string) => string | null
@@ -118,11 +117,11 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     where: 'above' | 'below',
   ): void => {
     const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
-    const splice = (existing: string[] | undefined): string[] =>
-      tieOrderWith(existing, allIds, createdId, anchorId, where)
-    latest.setManualOverride((m) => (m ? splice(m) : m))
-    if (!latest.structuralOrder || latest.viewOrders[latest.view.id])
-      latest.persistViewOrder(splice(latest.viewOrders[latest.view.id]))
+    // The live view already folds a held override, so the next create composes on this one.
+    const next = tieOrderWith(latest.view.manual_order, allIds, createdId, anchorId, where)
+    latest.setManualOverride(next)
+    if (!latest.structuralOrder || latest.view.manual_order)
+      latest.persistView({ manual_order: next }, { viewState: true })
   }
   const createPageIn = (
     parentPath: string,

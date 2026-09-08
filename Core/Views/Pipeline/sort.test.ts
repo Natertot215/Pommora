@@ -313,7 +313,7 @@ describe('makeSorter — multi-key + null cases', () => {
   })
 })
 
-describe('makeSorter — manual order tiebreaker (viewOrders)', () => {
+describe('makeSorter — manual order tiebreaker (manual_order)', () => {
   it('orders by the manual array when there is no sort (grouped-but-unsorted)', () => {
     const rows = [makeRow('a'), makeRow('b'), makeRow('c')]
     expect(ids(makeSorter(undefined, schema, ['c', 'a', 'b'])!(rows))).toEqual(['c', 'a', 'b'])
@@ -418,5 +418,10 @@ describe('resolveManualOrder', () => {
 
   it('the override still wins over the persisted order when sorted', () => {
     expect(resolveManualOrder(true, ['x'], ['a', 'b'])).toEqual(['x'])
+  })
+
+  it('a stored empty order ranks nothing — the same paint as none at all', () => {
+    expect(makeSorter(undefined, schema, resolveManualOrder(true, null, []))).toBeNull()
+    expect(makeSorter(undefined, schema, resolveManualOrder(true, null, undefined))).toBeNull()
   })
 })

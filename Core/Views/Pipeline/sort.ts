@@ -144,7 +144,7 @@ export function makeSorter(
   const resolved = (sort ?? [])
     .map((c) => buildCriterion(c, schema))
     .filter((rc): rc is ResolvedCriterion => rc !== null)
-  // The per-machine manual order is the LOWEST-priority tiebreaker: it reorders only rows already equal on every real sort key, and is the sole comparator when a view is grouped but unsorted.
+  // The manual order is the LOWEST-priority tiebreaker: it reorders only rows already equal on every real sort key, and is the sole comparator when a view is grouped but unsorted.
   const manualIndex = manualOrder?.length
     ? new Map(manualOrder.map((id, i) => [id, i] as const))
     : null
@@ -177,12 +177,12 @@ export function makeSorter(
   }
 }
 
-/** An active drag override always wins; the persisted per-machine order applies only when the view is sorted or grouped — on a plain view viewOrders is not a primary order. */
+/** An active drag override always wins; the view's stored order applies only when the view is sorted or grouped — on a plain view `manual_order` is not a primary order. */
 export function resolveManualOrder(
   sortedOrGrouped: boolean,
   manualOverride: string[] | null,
-  viewOrder: string[] | undefined,
+  stored: string[] | undefined,
 ): string[] | undefined {
   if (!sortedOrGrouped && !manualOverride) return undefined
-  return manualOverride ?? viewOrder
+  return manualOverride ?? stored
 }
