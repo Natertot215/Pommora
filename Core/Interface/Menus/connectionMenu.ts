@@ -16,7 +16,7 @@ import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 
 export function showConnectionMenu(target: ConnMenuTarget): void {
   // An editable surface with no way back into it can't perform the edit either, so the authoring pair needs both.
@@ -32,7 +32,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
       hasAlias: target.hasAlias ?? false,
       external: true,
     }
-    void popRowMenu(connMenuModel(ctx)).then((action) => {
+    void popMenu(connMenuModel(ctx)).then((action) => {
       if (action === null) return
       if (action === 'link:window') openInAppBrowser(target.url)
       else if (action === 'link:browser') void host().ask('link:open', target.url)
@@ -58,7 +58,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
           : 'closed',
     windowed: deriveTarget(pageWindow)?.id === page.id,
   }
-  void popRowMenu(connMenuModel(ctx)).then((action) => {
+  void popMenu(connMenuModel(ctx)).then((action) => {
     switch (action) {
       case null:
         return

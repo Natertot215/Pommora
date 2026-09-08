@@ -20,7 +20,7 @@ const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
 stubEditorBridge({
   'link:open': openExternal,
-  'row-menu': async (req: unknown) => ok(await connMenu(req)),
+  menu: async (req: unknown) => ok(await connMenu(req)),
   'clipboard:write': writeClipboard,
 })
 

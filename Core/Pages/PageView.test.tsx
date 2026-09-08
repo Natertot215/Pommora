@@ -34,7 +34,7 @@ beforeEach(() => {
     'tableHeadingCols:set': empty.set,
     'editor:format-state': vi.fn(),
     'menu:action': vi.fn(() => () => undefined),
-    'row-menu': vi.fn(async () => ok(null)),
+    menu: vi.fn(async () => ok(null)),
   })
   container = document.createElement('div')
   document.body.appendChild(container)

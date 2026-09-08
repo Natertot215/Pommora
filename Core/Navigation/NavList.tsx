@@ -17,7 +17,7 @@ import { cancelGlance } from '../Interface/Glance/glanceAction'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
 import { pinLabel } from '@pommora/core/Actions/toggleLabels'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { navRowMenuItems } from '@pommora/core/Actions/navRowMenu'
 
 export function NavRowMenu({
@@ -45,7 +45,7 @@ export function NavRowMenu({
     const livePage =
       target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
     const livePath = livePage?.kind === 'page' ? livePage.path : undefined
-    void popRowMenu(
+    void popMenu(
       navRowMenuItems({
         canOpenNewTab: onOpenNewTab !== undefined,
         alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),

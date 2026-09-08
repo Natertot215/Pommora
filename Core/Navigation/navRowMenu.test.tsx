@@ -29,7 +29,7 @@ beforeEach(() => {
       }),
   )
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'row-menu': async (req: unknown) => ok(await (popup as (r: unknown) => Promise<unknown>)(req)),
+    menu: async (req: unknown) => ok(await (popup as (r: unknown) => Promise<unknown>)(req)),
   })
   host = document.createElement('div')
   document.body.appendChild(host)

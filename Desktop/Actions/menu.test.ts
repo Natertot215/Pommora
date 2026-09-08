@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import type { BrowserWindow } from 'electron'
-import { anchorPoint, menuTemplate, rowTemplate } from './rowMenu'
+import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { menuRows } from '@pommora/core/Interface/Menus/menuRows'
+import { anchorPoint, rowTemplate } from './menu'
 
 const winAt = (zoom: number): BrowserWindow =>
   ({ webContents: { getZoomFactor: () => zoom } }) as unknown as BrowserWindow
 
-describe('the anchor a row menu opens at', () => {
+describe('the anchor a menu opens at', () => {
   it('hangs the menu from the trigger’s bottom-left', () => {
     expect(anchorPoint(winAt(1), { left: 40, top: 100, height: 20 })).toEqual({
       x: 40,
@@ -37,11 +39,6 @@ describe('a row model as a native template', () => {
       pick,
     )
     expect(t.map((i) => i.type ?? i.label)).toEqual(['Rename', 'separator', 'Delete'])
-  })
-
-  it('drops a separator leading the whole menu, which would separate nothing', () => {
-    const t = menuTemplate([{ label: 'Delete', action: 'b', separatorBefore: true }], pick)
-    expect(t).toHaveLength(1)
   })
 
   it('marks the row in force as a checkbox, and leaves a command menu unmarked', () => {
@@ -78,41 +75,72 @@ describe('a row model as a native template', () => {
     const t = rowTemplate([{ label: 'Delete', action: 'b', disabled: true }], pick)
     expect(t[0]).toMatchObject({ label: 'Delete', enabled: false })
   })
-})
 
-describe('one model with every shape', () => {
-  it('lays out a branch, a divider, a checked row, and a refused row as one template', () => {
-    const t = menuTemplate(
-      [
-        {
-          label: 'Style',
-          action: 'open',
-          submenu: [{ label: 'Bordered', action: 'b', checked: true }],
-        },
-        { label: 'Duplicate', action: 'dup', separatorBefore: true },
-        { label: 'Delete', action: 'del', disabled: true },
-      ],
-      pick,
-    )
-    expect(t.map((i) => i.type ?? i.label)).toEqual(['Style', 'separator', 'Duplicate', 'Delete'])
-    expect((t[0].submenu as { type?: string; checked?: boolean }[])[0]).toMatchObject({
-      type: 'checkbox',
-      checked: true,
-    })
-    expect(t[3].enabled).toBe(false)
-  })
-})
-
-describe('a fragment spliced beneath rows a menu already holds', () => {
-  // A fragment can't tell whether its leading divider leads the whole menu.
-  it('keeps the divider that separates it from the rows above', () => {
+  it('keeps a divider a spliced fragment leads with, which separates it from the rows above', () => {
     const rows = rowTemplate(
       [
         { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
         { label: 'Delete', action: 'link:delete' },
       ],
-      () => () => {},
+      pick,
     )
     expect(rows.map((r) => r.type ?? r.label)).toEqual(['separator', 'Remove Link', 'Delete'])
+  })
+})
+
+const fixture: ActionItem<string>[] = [
+  { label: 'Open', action: 'open', icon: 'link' },
+  {
+    label: 'Style',
+    action: 'style',
+    separatorBefore: true,
+    submenu: [
+      { label: 'Bordered', action: 'style:bordered', checked: true },
+      { label: 'Plain', action: 'style:plain', checked: false },
+    ],
+  },
+  { label: 'Delete', action: 'delete', disabled: true },
+]
+
+interface Flat {
+  label: string
+  disabled: boolean
+  checked: boolean | null
+  depth: number
+}
+
+const nativeFlat = (template: MenuItemConstructorOptions[], depth = 0): Flat[] =>
+  template.flatMap((i): Flat[] =>
+    i.type === 'separator'
+      ? [{ label: 'separator', disabled: false, checked: null, depth }]
+      : [
+          {
+            label: String(i.label),
+            disabled: i.enabled === false,
+            checked: i.checked ?? null,
+            depth,
+          },
+          ...nativeFlat((i.submenu as MenuItemConstructorOptions[] | undefined) ?? [], depth + 1),
+        ],
+  )
+
+const presenterFlat = (items: readonly ActionItem<string>[], depth = 0): Flat[] =>
+  menuRows(items).flatMap((r): Flat[] =>
+    r.kind === 'separator'
+      ? [{ label: 'separator', disabled: false, checked: null, depth }]
+      : [
+          {
+            label: r.label,
+            disabled: r.disabled === true,
+            checked: r.kind === 'choice' ? r.checked : null,
+            depth,
+          },
+          ...(r.kind === 'item' && r.submenu ? presenterFlat(r.submenu, depth + 1) : []),
+        ],
+  )
+
+describe('one model, two renderers', () => {
+  it('draws the same rows natively and in-app, down to the checkmarks and the depth', () => {
+    expect(presenterFlat(fixture)).toEqual(nativeFlat(rowTemplate(fixture, pick)))
   })
 })

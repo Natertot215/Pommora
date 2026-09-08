@@ -1,21 +1,23 @@
-import type { ActionItem, MenuAnchor } from '@pommora/core/Actions/menuModel'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { Notification } from '../Interface/Notifications/notifications'
 import type { Slice } from './sessionState'
 
-interface RowMenuPending {
+interface MenuPending {
   id: number
   items: readonly ActionItem<string>[]
-  at: MenuAnchor
+  trigger: HTMLElement
   settle: (action: string | null) => void
 }
 
 export interface ChromeSlice {
   pendingConfirm: { req: ConfirmRequest; settle: (confirmed: boolean) => void } | null
   askConfirm: (req: ConfirmRequest) => Promise<boolean>
-  pendingRowMenu: RowMenuPending | null
-  /** The in-app presenter: resolves the picked action, or null once the pane is dismissed. */
-  presentRowMenu: (items: readonly ActionItem<string>[], at: MenuAnchor) => Promise<string | null>
+  pendingMenu: MenuPending | null
+  presentMenu: (
+    items: readonly ActionItem<string>[],
+    trigger: HTMLElement,
+  ) => Promise<string | null>
   notification: (Notification & { id: number }) | null
   notify: (n: Notification) => void
   dismissNotification: (id: number) => void
@@ -23,7 +25,7 @@ export interface ChromeSlice {
 }
 
 let notificationSeq = 0
-let rowMenuSeq = 0
+let menuSeq = 0
 
 export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   pendingConfirm: null,
@@ -38,15 +40,15 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
       set({ pendingConfirm: { req, settle } })
     }),
 
-  pendingRowMenu: null,
-  presentRowMenu: (items, at) =>
+  pendingMenu: null,
+  presentMenu: (items, trigger) =>
     new Promise((resolve) => {
-      get().pendingRowMenu?.settle(null)
+      get().pendingMenu?.settle(null)
       const settle = (action: string | null): void => {
-        set((s) => (s.pendingRowMenu?.settle === settle ? { pendingRowMenu: null } : {}))
+        set((s) => (s.pendingMenu?.settle === settle ? { pendingMenu: null } : {}))
         resolve(action)
       }
-      set({ pendingRowMenu: { id: ++rowMenuSeq, items, at, settle } })
+      set({ pendingMenu: { id: ++menuSeq, items, trigger, settle } })
     }),
 
   notification: null,
@@ -56,7 +58,7 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
 
   resetChrome: () => {
     get().pendingConfirm?.settle(false)
-    get().pendingRowMenu?.settle(null)
-    set({ pendingConfirm: null, pendingRowMenu: null, notification: null })
+    get().pendingMenu?.settle(null)
+    set({ pendingConfirm: null, pendingMenu: null, notification: null })
   },
 })

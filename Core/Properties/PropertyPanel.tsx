@@ -39,7 +39,7 @@ import { contextOptionsFor } from '../Contexts/contextOptions'
 import { contextIdentityOf, contextIdsOf, isContextColumnId } from '../Contexts/contextIdentity'
 import { useSession, type WindowTarget } from '../Session/store'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenu'
 import * as s from './property-panel.css'
 
@@ -214,7 +214,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
-    const action = await popRowMenu(
+    const action = await popMenu(
       propertyMenuModel({ kind: 'page-value', name, filled: !isBlankValue(value) }),
     )
     if (action === 'value:clear' || action === 'value:remove')

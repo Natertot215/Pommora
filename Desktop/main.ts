@@ -31,7 +31,7 @@ import { readLivePersonalization, readWatchScope } from '@pommora/core/Settings/
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { installAppMenu } from './Actions/appMenu'
 import { installEditorContextMenu, setFormatState, setGripHot } from './Actions/editorMenu'
-import { popRowMenu } from './Actions/rowMenu'
+import { popNativeMenu } from './Actions/menu'
 import { push, serveIpc, type TellHandlers } from './Bridge/ipc'
 import { captureThumbnail, evictThumbnails } from './Capture/thumbnails'
 import {
@@ -234,7 +234,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
         return null
       }
     },
-    menu: (req) => (win ? popRowMenu(win, req) : Promise.resolve(null)),
+    menu: (req) => (win ? popNativeMenu(win, req) : Promise.resolve(null)),
     thumbnails: {
       capture: (root, navKey, rect, scaleFactor) =>
         win ? captureThumbnail(win, root, navKey, rect, scaleFactor) : Promise.resolve(null),

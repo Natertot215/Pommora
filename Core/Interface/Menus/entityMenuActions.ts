@@ -8,7 +8,7 @@ import {
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { contextTargetToSelect } from '../../Navigation/tabsModel'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Actions/nativeMenus'
+import { popMenu } from '../../Actions/menuActions'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageSendAction } from './pageMenuActions'
@@ -32,7 +32,7 @@ function creatorsFor(target: ContextTarget): Creator[] {
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
 export async function showEntityMenu(target: ContextTarget): Promise<void> {
   const creators = creatorsFor(target)
-  const action = await popRowMenu(entityMenuItems(target, creators))
+  const action = await popMenu(entityMenuItems(target, creators))
   if (action !== null) runEntityAction(target, creators, action)
 }
 

@@ -39,7 +39,7 @@ beforeEach(() => {
     'schema:assign': vi.fn(async () => ({ ok: true, value: null })),
     'property:delete': vi.fn(async () => ({ ok: true, value: null })),
     'views:save': saveSpy,
-    'row-menu': vi.fn(async () => ok(null)),
+    menu: vi.fn(async () => ok(null)),
     'error:show': vi.fn(async () => {}),
   })
   useSession.setState({

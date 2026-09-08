@@ -29,7 +29,6 @@ function nativeRow<A extends string>(
   }
 }
 
-/** A FRAGMENT, so `separatorBefore` expands verbatim; dropping one that leads a whole menu is `menuTemplate`'s job. */
 export function rowTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,
@@ -40,19 +39,10 @@ export function rowTemplate<A extends string>(
   ])
 }
 
-/** The fragment above, minus a leading divider, which would separate nothing. */
-export function menuTemplate<A extends string>(
-  items: readonly ActionItem<A>[],
-  pick: (action: A) => () => void,
-): MenuItemConstructorOptions[] {
-  const template = rowTemplate(items, pick)
-  return template[0]?.type === 'separator' ? template.slice(1) : template
-}
-
-export function popRowMenu(win: BrowserWindow, req: MenuRequest): Promise<string | null> {
+export function popNativeMenu(win: BrowserWindow, req: MenuRequest): Promise<string | null> {
   return popReturningMenu<string>(
     win,
-    (pick) => menuTemplate(req.items, pick),
+    (pick) => rowTemplate(req.items, pick),
     anchorPoint(win, req.anchor),
   )
 }

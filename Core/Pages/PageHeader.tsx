@@ -6,7 +6,7 @@ import { ImagePicker } from '../Assets/ImagePicker'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 interface HeaderPage {
@@ -50,7 +50,7 @@ export function PageHeader({ page, onToggleIcon, onRename, onEditIcon }: Props):
       icon={icon}
       iconHidden={iconHidden}
       onRename={onRename}
-      requestMenu={() => popRowMenu(titleMenuItems({ toggleIcon: icon !== undefined, iconHidden }))}
+      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: icon !== undefined, iconHidden }))}
       onEditIcon={onEditIcon}
       onToggleIcon={onToggleIcon}
     />

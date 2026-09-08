@@ -8,7 +8,7 @@ import { showConnectionMenu } from './connectionMenu'
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-  'row-menu': async (req: unknown) => ok(await connMenu(req)),
+  menu: async (req: unknown) => ok(await connMenu(req)),
 })
 
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }

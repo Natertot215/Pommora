@@ -230,7 +230,7 @@ export interface Asks {
   'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: Result<string | null> }
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:pasteImage': { args: []; reply: Result<string | null> }
-  'row-menu': { args: [req: MenuRequest]; reply: Result<string | null> }
+  menu: { args: [req: MenuRequest]; reply: Result<string | null> }
 }
 
 export interface Tells {

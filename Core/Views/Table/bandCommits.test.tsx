@@ -147,7 +147,7 @@ beforeEach(() => {
   channels = {
     'view:loadValues': async () => VALUES,
     'views:save': saveSpy,
-    'row-menu': async (req: unknown) =>
+    menu: async (req: unknown) =>
       ok(await (contextMenuSpy as (r: unknown) => Promise<unknown>)(req)),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)

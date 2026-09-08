@@ -20,7 +20,7 @@ import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
 import { useTabClose } from './tabClose'
 import { host } from '../Platform/dialer'
-import { popRowMenu } from '../Actions/nativeMenus'
+import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
 import './tab-base.css'
 
@@ -115,7 +115,7 @@ function TabBarBody({
       e.preventDefault()
       e.stopPropagation()
       const isPage = target.kind === 'page'
-      const action = await popRowMenu(
+      const action = await popMenu(
         tabMenuItems({
           pinned,
           isNewTab: target.kind === 'newtab',

@@ -31,8 +31,7 @@ beforeEach(() => {
       'nexus:pickFile': async (req: unknown) =>
         ok(await (pickFile as (r: unknown) => Promise<unknown>)(req)),
       'assets:adopt': adoptFile,
-      'row-menu': async (req: unknown) =>
-        ok(await (cellMenu as (r: unknown) => Promise<unknown>)(req)),
+      menu: async (req: unknown) => ok(await (cellMenu as (r: unknown) => Promise<unknown>)(req)),
     }),
   }
   useSession.setState({
