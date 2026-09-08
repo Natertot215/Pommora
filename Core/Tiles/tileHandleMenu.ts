@@ -43,15 +43,13 @@ export function tileMenuItems({
     wrap: (value: T) => TilePick,
   ): ActionItem<TileMenuAction>[] => {
     const row = (n: DrillPickItem<T>): ActionItem<TileMenuAction> => {
+      const base = { label: n.label, icon: n.icon, action: 'tile:open' as const }
       if (n.submenu) {
         const rows = drill(n.submenu, wrap)
         // An empty submenu opens onto blank space instead of saying there is nothing to pick.
-        return rows.length > 0
-          ? { label: n.label, icon: n.icon, action: 'tile:open' as const, submenu: rows }
-          : { label: n.label, icon: n.icon, action: 'tile:open' as const, disabled: true }
+        return rows.length > 0 ? { ...base, submenu: rows } : { ...base, disabled: true }
       }
-      if (n.pick === undefined)
-        return { label: n.label, icon: n.icon, action: 'tile:open', disabled: true }
+      if (n.pick === undefined) return { ...base, disabled: true }
       picks.push(wrap(n.pick))
       return { label: n.label, icon: n.icon, action: `tile:pick:${picks.length - 1}` as const }
     }
