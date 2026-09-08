@@ -23,7 +23,8 @@ function nativeRow<A extends string>(
   return {
     label: item.label,
     enabled: !item.disabled,
-    ...(item.checked !== undefined && { type: 'checkbox' as const, checked: item.checked }),
+    ...(item.checked !== undefined &&
+      !item.submenu && { type: 'checkbox' as const, checked: item.checked }),
     // Giving a submenu row a click too would resolve the parent the moment the pointer rested.
     ...(item.submenu ? { submenu: rowTemplate(item.submenu, pick) } : { click: pick(item.action) }),
   }

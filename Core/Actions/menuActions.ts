@@ -10,6 +10,7 @@ export async function popMenu<A extends string>(
   const rows = items[0]?.separatorBefore
     ? [{ ...items[0], separatorBefore: false }, ...items.slice(1)]
     : items
+  if (rows.length === 0) return null
   if (!trigger || useSession.getState().devicePrefs.nativeMenus) {
     const box = trigger?.getBoundingClientRect()
     const res = await host().ask('menu', {
