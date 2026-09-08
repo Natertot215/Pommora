@@ -15,7 +15,6 @@ import { readPermanentDelete } from '../Settings/settings'
 import { stampAdopted } from './adopt'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
-import { importPlacedState } from './importPlacedState'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
 import { handleMutate, type MutateDeps } from './mutate'
 import { confirmMutation } from './mutatePatch'
@@ -69,7 +68,6 @@ export async function openNexusSequence(
     }
     await seedContentIndex(root)
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
-    if (await importPlacedState(root)) await refreshAfterWrite(root)
     void runRepairSweep(root).then(() => pushValueChanges(ctx, root))
   }
   return root
