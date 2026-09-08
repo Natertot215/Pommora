@@ -25,7 +25,9 @@ export const value = style([
   { selectors: { '&&': { color: c.label.control } } },
 ])
 
-export const chevronLead = style({ flexDirection: 'row-reverse' })
+export const chevronLead = style({})
+
+globalStyle(`${footingBar} ${chevronLead}`, { flexDirection: 'row-reverse' })
 
 export const written = style({ display: 'inline-flex', alignItems: 'center' })
 
