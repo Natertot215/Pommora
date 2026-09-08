@@ -36,6 +36,7 @@ export function PickerControl<T extends string>({
   options,
   onPick,
   solid = false,
+  chevronLead = false,
   typeable,
 }: {
   ariaLabel: string
@@ -43,6 +44,7 @@ export function PickerControl<T extends string>({
   options: readonly PickerOption<T>[]
   onPick: (v: T) => void
   solid?: boolean
+  chevronLead?: boolean
   /** A right press turns the trigger into a field instead of opening the list. */
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
 }): React.JSX.Element {
@@ -75,7 +77,7 @@ export function PickerControl<T extends string>({
   return (
     <span ref={ref} className={s.host}>
       {typing && typeable ? (
-        <span className={cx(s.trigger, s.value)}>
+        <span className={cx(s.trigger, s.value, chevronLead && s.chevronLead)}>
           <span className={s.written}>
             <EditableInput
               value={typeable.text}
@@ -99,7 +101,7 @@ export function PickerControl<T extends string>({
       ) : (
         <button
           type="button"
-          className={s.trigger}
+          className={cx(s.trigger, chevronLead && s.chevronLead)}
           aria-label={ariaLabel}
           onClick={onTrigger}
           // Reaches the trigger even when the menu took the left press.
