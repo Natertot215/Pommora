@@ -223,9 +223,9 @@ describe('PickerMenu focus contract', () => {
     await press(find('last'))
     expect(log).toEqual(['inner', 'press:last'])
     await press(find('first'))
-    expect(log).toEqual(['inner', 'press:last'])
+    expect(log).toEqual(['inner', 'press:last', 'inner'])
     await press(document.body)
-    expect(log).toEqual(['inner', 'press:last', 'inner', 'outer'])
+    expect(log).toEqual(['inner', 'press:last', 'inner', 'inner', 'outer'])
   })
 
   it('a pane nothing dismisses draws no shield', async () => {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { suppressReleaseClick } from './shared'
 
 type DismissalEntry = {
   layer: () => Element | null
@@ -17,8 +18,13 @@ const notify = (): void => {
 }
 
 const dismissable = (e: Live): boolean => !e.closing && e.entry.dismiss !== undefined
-const holds = (e: Live, target: Node): boolean =>
-  e.entry.layer()?.contains(target) === true || e.entry.trigger?.()?.contains(target) === true
+const holds = (e: Live, target: Node): 'layer' | 'trigger' | null =>
+  e.entry.layer()?.contains(target) === true
+    ? 'layer'
+    : e.entry.trigger?.()?.contains(target) === true
+      ? 'trigger'
+      : null
+const closes = (e: Live): boolean => dismissable(e) && e.entry.outsidePress !== false
 const exiting = (): boolean => entries.some((e) => e.closing)
 
 export const SHIELD_ATTR = 'data-dismissal-shield'
@@ -37,16 +43,17 @@ const onPointerDown = (e: PointerEvent): void => {
   if (e.button !== 0 || exiting()) return
   const target = beneathShield(e)
   let keep = -1
+  let onTrigger = false
   for (let i = entries.length - 1; i >= 0; i--) {
-    if (holds(entries[i], target)) {
-      keep = i
-      break
-    }
+    const held = holds(entries[i], target)
+    if (held === null) continue
+    onTrigger = held === 'trigger' && closes(entries[i])
+    keep = onTrigger ? i - 1 : i
+    break
   }
-  for (let i = entries.length - 1; i > keep; i--) {
-    if (dismissable(entries[i]) && entries[i].entry.outsidePress !== false)
-      entries[i].entry.dismiss?.()
-  }
+  for (let i = entries.length - 1; i > keep; i--)
+    if (closes(entries[i])) entries[i].entry.dismiss?.()
+  if (onTrigger) suppressReleaseClick()
 }
 
 const onKeyDown = (e: KeyboardEvent): void => {
