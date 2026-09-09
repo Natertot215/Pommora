@@ -31,26 +31,21 @@ export type CommandId = keyof typeof DEFAULT_COMMANDS
 
 export type Commands = Record<CommandId, string>
 
-export function toAccelerator(chord: string): string {
+export const COMMAND_IDS = Object.keys(DEFAULT_COMMANDS) as CommandId[]
+
+function spell(chord: string, mod: string, join: string, key: (k: string) => string): string {
   const c = chordOf(chord)
   if (!c) return chord
   const parts: string[] = []
-  if (c.cmd) parts.push('CmdOrCtrl')
+  if (c.cmd) parts.push(mod)
   if (c.ctrl) parts.push('Ctrl')
   if (c.alt) parts.push('Alt')
   if (c.shift) parts.push('Shift')
-  parts.push(c.key.charAt(0).toUpperCase() + c.key.slice(1))
-  return parts.join('+')
+  parts.push(key(c.key))
+  return parts.join(join)
 }
 
-export function toKeyBinding(chord: string): string {
-  const c = chordOf(chord)
-  if (!c) return chord
-  const parts: string[] = []
-  if (c.cmd) parts.push('Mod')
-  if (c.ctrl) parts.push('Ctrl')
-  if (c.alt) parts.push('Alt')
-  if (c.shift) parts.push('Shift')
-  parts.push(c.key)
-  return parts.join('-')
-}
+export const toAccelerator = (chord: string): string =>
+  spell(chord, 'CmdOrCtrl', '+', (k) => k.charAt(0).toUpperCase() + k.slice(1))
+
+export const toKeyBinding = (chord: string): string => spell(chord, 'Mod', '-', (k) => k)

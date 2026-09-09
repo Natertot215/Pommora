@@ -142,15 +142,13 @@ const userData = (): string => app.getPath('userData')
 const posixPath = (p: string): string => p.split(sep).join('/')
 
 let mainWindow: BrowserWindow | null = null
-function refreshMenu(): void {
+async function refreshMenu(): Promise<void> {
   const win = mainWindow
   if (!win) return
-  void (async () => {
-    const root = sessionRoot()
-    const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
-    setEditorCommands(commands)
-    await installAppMenu(win, (p) => adoptNexus(hostContext(null), posixPath(p)), commands)
-  })()
+  const root = sessionRoot()
+  const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
+  setEditorCommands(commands)
+  await installAppMenu(win, (p) => adoptNexus(hostContext(null), posixPath(p)), commands)
 }
 
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
@@ -270,7 +268,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
       } catch (e) {
         console.error('Could not persist recents / last-opened:', e)
       }
-      refreshMenu()
+      void refreshMenu()
     },
     watch: (root) => (mainWindow ? startWatcher(root, mainWindow) : Promise.resolve()),
     applyZoom: () => (mainWindow ? applyDefaultZoom(mainWindow) : Promise.resolve()),
@@ -322,7 +320,7 @@ app
     registerRendererProtocol()
     registerAssetProtocol()
     createWindow()
-    refreshMenu()
+    void refreshMenu()
     const restored = sessionRoot()
     if (restored && mainWindow) void startWatcher(restored, mainWindow)
     app.on('activate', () => {
