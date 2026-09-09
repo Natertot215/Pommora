@@ -1,5 +1,5 @@
 import type { ListKind } from './gripMenu'
-import { type CommandId, type Commands, toKeyBinding } from './commands'
+import type { CommandId } from './commands'
 
 /** Pushed renderer→main on selection/focus change: main cannot see CM6 state. */
 export interface FormatState {
@@ -25,7 +25,3 @@ export const EDITOR_ACTION_PREFIX = 'mdpm:'
 export const INSERT_LINK_ACTION = 'link:insert'
 
 export type FormatChordAction = Extract<CommandId, `format:${string}`>
-
-export function keyBindingFor(commands: Commands, action: FormatChordAction): string {
-  return toKeyBinding(commands[action])
-}
