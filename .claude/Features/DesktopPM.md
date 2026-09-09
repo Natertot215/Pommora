@@ -23,7 +23,7 @@ Out-of-band changes — Obsidian, vim, Finder, cloud sync — reach the app with
 
 ### Actions
 
-Right-click menus are native and pop from the host. `menu.ts` is the one popper: it takes the row model any Core menu emits, converts it to an Electron template, pops it, and resolves to the action chosen or to nothing. `appMenu.ts` builds the application menu, `accelerators.ts` maps Pommora's chords to Electron accelerators, `editorMenu.ts` builds the editor's context menu from a snapshot of editor state, and `returningMenu.ts` is the pop-and-resolve primitive under them. The labels and gating live in Core's tested models, so the window and the host cannot disagree about what a menu says.
+Right-click menus are native and pop from the host. `menu.ts` is the one popper: it takes the row model any Core menu emits, converts it to an Electron template, pops it, and resolves to the action chosen or to nothing. `appMenu.ts` builds the application menu, `editorMenu.ts` builds the editor's context menu from a snapshot of editor state, and `returningMenu.ts` is the pop-and-resolve primitive under them. Both menus spell their accelerators from Core's one chord table, read once per menu refresh, so the window and the host cannot disagree about a shortcut. The labels and gating live in Core's tested models, so the window and the host cannot disagree about what a menu says.
 
 ### Web
 

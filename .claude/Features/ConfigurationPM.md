@@ -131,13 +131,32 @@ Seated and empty.
 
 #### Shortcuts
 
-Keyboard shortcuts are data: the `commands` object in `settings.json` maps command ids to shortcut specs, with defaults in code (`DEFAULT_COMMANDS`) overlaid by the on-disk block on read, so a malformed or absent entry falls back to its built-in binding. Specs are `+`-joined modifier chains ending in a key. The leaf lists its bindings and offers no control over them yet; rebinding is hand-edited.
+Keyboard shortcuts are data: the `commands` object in `settings.json` maps command ids to shortcut specs, with defaults in code (`DEFAULT_COMMANDS`) overlaid by the on-disk block on read, so a malformed, absent, or unrecognized entry falls back to its built-in binding. Specs are `+`-joined modifier chains ending in a key, and one parser reads them for every consumer: the application menu and the editor's context menu spell Electron accelerators from the table, the editor's formatting keymap binds CodeMirror keys from it, and the window's own key handlers match presses against it. A renderer picks a rebinding up as soon as it is read from disk; the native menus take theirs at the next adopt or launch. The leaf lists its bindings and offers no control over them yet; rebinding is hand-edited.
 
 | Command | Key | Description | Binding |
 | --- | --- | --- | --- |
+| New Tab | `new-tab` | Opens a tab. | ⌘N |
+| New Page | `new-page` | Creates a page. | ⌘⇧N |
+| Reload | `reload` | Reloads the window. | ⌘R |
+| Toggle Sidebar | `toggle-sidebar` | Shows and hides the sidebar. | ⌘\ |
+| Actual Size | `actual-size` | Returns the window to its configured interface scale. | ⌘0 |
+| Zoom In | `zoom-in` | Steps the host zoom up. | ⌘+ |
+| Zoom In (Alias) | `zoom-in-alias` | The unshifted zoom-in a US layout reaches. | ⌘= |
+| Zoom Out | `zoom-out` | Steps the host zoom down. | ⌘- |
 | Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
 | Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
+| Toggle Iteration | `toggle-iteration` | Summons the iteration window. | ⌘⇧T |
+| Next Tab | `next-tab` | Moves to the next tab in visual order. | ⌃Tab |
+| Previous Tab | `previous-tab` | Moves to the previous tab in visual order. | ⌃⇧Tab |
+| Undo Value | `undo-value` | Reverts the last property value written outside a text field. | ⌘Z |
 | Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves. | ⌘⇧V |
+| Bold | `format:bold` | Bolds the selection. | ⌘B |
+| Italic | `format:italic` | Italicizes the selection. | ⌘I |
+| Strikethrough | `format:strikethrough` | Strikes the selection through. | ⌘⇧X |
+| Highlight | `format:highlight` | Highlights the selection. | ⌘L |
+| Inline Code | `format:inlineCode` | Marks the selection as inline code. | ⌘E |
+| Link | `format:link` | Wraps the selection in a link. | ⌘K |
+| Connection | `format:connection` | Wraps the selection in a connection. | ⌘⇧K |
 
 #### Trash
 
