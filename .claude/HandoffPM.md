@@ -1,55 +1,56 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Execute `.claude/Planning/State Placement — Implementation Plan.md` from the repo root — eight tasks, five phases, one writer on the tree, per-phase gate of implement → simplify → comment pass → gates → code review → attack review → commit. Then, through the run: "stop stopping"; "coordinate and continue" with the parallel session rather than blocking on it; remove any code that exists only to satisfy a test-validation criterion; a live-DOM test for the writes-to-disk that Nathan cannot see himself; prune stale doc claims by deletion rather than amendment; reconcile the Corpus Walk deferrals precisely; commit all documentation and push to origin.
+> **User Prompt:** Execute `.claude/Planning/Menu System — Implementation Plan.md` once ratified: orchestrate only, Opus agents implement and run gates, one writer on the tree, every gate simplify → review → fix, Gate 1 a declared stop. Through the run: no comments from any agent; MarkdownPM never imports the store; attended sessions get a manual check list instead of a CDP smoke launch; when done, delete the plan from disk, scrub audit topic 5 from the report and the published artifact as if it never existed, write a grounding document for a MarkdownPM slash-command menu on the door, and close out in the codemap format.
 
 #### Current Focus
 
-**Dates:** 09-07-2026 → 09-08
-**Model:** Opus 4.8
+**Dates:** 09-08-2026
+**Model:** Fable 5.1 supervising, Opus 4.8 implementing
 
-**State placement is complete and closed out.** Five values moved to the home their content belongs to. `active_view` and `manual_order` became container-sidecar fields, so a chosen view and a hand-dragged order travel with the Nexus; pane widths, sidebar folds, and floating-window size became nested keys on the `devicePrefs` singleton in `nexus.db`, per machine and per Nexus. `localStorage` holds nothing of Pommora's, verified live in the running renderer at zero keys. Deleted: `useViewOrders.ts`, `disclosureState.ts`, the `activeViews` slice, both `viewOrders` channels and their handlers, two `local_state` scopes, and the two one-shot importers.
+**The menu system has one door.** `popMenu(items, trigger?, { solid, stay, compact })` in `Core/Actions/menuActions.ts` is the only way a menu opens: no trigger means the operating system's menu at the cursor, a trigger means the Use Native Menus preference decides between a system menu anchored under the control and `MenuPresenter`, the one in-app renderer. Both renderers draw from one `ActionItem` tree, and `Desktop/Actions/menu.test.ts` deep-equals their projections from one fixture. The tile handle menu is one model, `tileHandleMenu.ts`, with its 413-line hand-built pane gone; `PickerControl` opens through `MenuDoorContext`; the connection menu model sits in `Core/Actions` with its siblings. Every keyboard chord is a row in `Core/Actions/commands.ts`, read by the native menu at `refreshMenu`, by the editor through its host's `settings().commands` behind a Compartment, and by every renderer handler; `readCommands` keeps only known ids and drops chords it cannot spell. Escape has one arbiter: six window listeners joined the dismissal stack through `pushEscape` and `useEscape`, each pinned glance holds its own entry, and a press on an open menu's own trigger closes it. The grip-hot stand-down chain is gone; the renderer's `preventDefault` on `contextmenu` was always what withheld main's menu.
 
-**What the reviews were worth.** Three passes ran; their real finds were all *removals*. Gate 1's code review killed a wrong-Nexus guard added mid-phase that protected a state the product cannot reach — and which had itself introduced the throw that then needed a never-throw wrap. Both Gate 1 reviews independently found the one real breach: a set nested deep enough to be minted no view of its own shows a placeholder row, and clicking it wrote `view_default` into the scope the import read, so a sentinel would have landed in a file the Locked Decisions require a human to read. The crossing test that proves the walk and watch paths agree was comparing a hand-written nine-key projection, which a tenth field would have passed straight through; it compares whole nodes now, proven by injecting a one-sided divergence.
+**Fourteen rulings landed during the run.** Nathan's stop at Gate 1 restored `solid` for the three window-set pickers, gave the tile menu its five root glyphs and the deleted pane's 120 floor and 180 cap, then in later passes made Lock, Style, and Scale stay rows that redraw the pane in place, put the lock glyph on Lock, returned picker lists to their natural width through `compact`, made a press on an open menu's trigger close it while keeping an outside click's click-through, kept the three untriggered click menus native, made the cell editor's format chords live, and had a right-click on a resting table cell activate it. Escape order is open order; focus never reorders it.
 
-**What went wrong.** The `viewOrder` import was built in Task 4 and deleted in Task 8 with no launch in between, so it never ran against the real Nexus and three hand-ordered views were stranded in a scope nothing reads — 8 and 10 ids in `Ideas`, 192 in `Studio`. Two homepage-tile orders (19 and 31) were separately unreachable by the container-keyed import. All five were recovered by hand from rows still present and now sit on disk as `manual_order`. The Hazard Window was written to prevent exactly this and did not: it guards a home being *emptied* early and says nothing about the importer being *removed* before it has run.
+**What the reviews were worth.** Four gates and a closeout pass ran simplify → review → fix; the finds were mostly real. Gate 1: the door resolved nothing on an empty list where the native popper returned null, both projections disagreed on a checked row with a submenu, and `PickerRow` had no disabled state. Gate 3: every pinned glance shared one Escape entry pushed on the first pin, so a pin opened after a window was never the layer Escape closed. Gate 4: a modifier-only chord in settings killed its shortcut silently. The closeout attack found the settings row claiming a wider reach than the code has, which Nathan settled by narrowing the row, and three pre-plan chord literals in the cell editor, now derived from CodeMirror's own history keymap.
 
 #### Completion Criteria
 
-- [x] Every numbered requirement traces to a landed task; the acceptance criterion observed on the real Nexus, not a fixture.
-- [x] One mapper reads a container sidecar's meta; the crossing test compares whole nodes and goes red on a one-sided field.
-- [x] No file lock taken twice on one key; every lock take on the `realpath`-canonicalized path.
-- [x] One rail for machine-local preferences — no second scope, channel, or handler added.
-- [x] No sentinel id and no stale page-id array reached a sidecar; `deleteView` clears `active_view` in the same locked write.
-- [x] Dead Vocabulary sweep at zero against its controls; `localStorage` verified at 0 keys in the live renderer.
-- [x] Gates green at every phase and at close: typecheck 0, lint 0 with no warnings, 356 files / 4283 tests.
-- [ ] **Nothing a person set was lost — recovered, not prevented.** Five orders were rescued by hand after the import that should have carried them was deleted before it ran.
-- [ ] Nathan's live pass: the recovered orders holding, and a window reopening at its remembered size.
+- [x] Every menu opens through `popMenu`; `popRowMenu`, `RowMenuHost`, `rowMenuRows`, `NativePickerContext`, `useNativeMenus`, the tile pane and its stylesheet, `accelerators.ts`, `FORMAT_CHORDS`, and the grip-hot chain sweep to zero against a control of 107 `ActionItem` hits.
+- [x] One parity test proves the native template and the presenter rows agree, including checked with submenu, checked with disabled, and stay.
+- [x] Every chord is a table row; no chord literal outside `commands.ts`; `chords.ts` is the engine graph's fourth UIX file.
+- [x] MarkdownPM imports nothing from `Core/Session/store`; the editor's chords ride `EditorHost.settings().commands`.
+- [x] Gates green at every commit: typecheck 0, lint 0, 358 files / 4317 tests at close.
+- [x] Nathan's own pass at Gate 1 and after Phases 2 and 3: the tile menu, the pickers, the grip right-clicks, and the Escape order behave as described.
+- [x] Audit topic 5 and R-21 to R-24 removed from the report and the published artifact; Context and the Features docs describe the door.
+- [ ] Nathan's live pass on the closeout fold: a right-click on a resting table cell activates it, a rebind reaches an open cell editor on the table's next render, and ⌘N / ⌘B still fire after a full dev-process restart.
 
 #### Next Session
 
-- **Clear the `viewOrder` residue** once the recovered orders are seen to hold: `delete from local_state where scope='viewOrder'` on the real Nexus. Six rows, inert, kept only as a safety net.
-- The audit's Topic 1 is down to two items, both needing Nathan rather than code: **R-06**, the heading-column toggle keyed by table ordinal so inserting a table above moves it; and **R-05**, whether File History stays per-device when it is the sole record of an overwritten external edit.
-- **Topic 11's cheapest item came unblocked.** The engine/renderer split means `valuesChanged`'s indices can never fold into the tree index — so carrying the touched page ids out of the watch patch's own result is now independent of the tree-index model ruling, and is the one item there that needs no decision from Nathan. `Corpus Walk Deferrals — Scope.md` is reconciled to that.
-- The inspector arc on `.claude/Planning/TilesV2-Spec.md`.
+- **The system menu's Format rows still act on the page editor, not a focused cell.** `host.menus.format.onAction` has one reader, `MarkdownEditor`; routing the action to whichever view holds focus, with a `pushState` from the cell so the menu's checkmarks follow it, is the piece that finishes "a right-click into a cell targets it." Recorded under Known Issues.
+- **A press on a second picker while one list is open reopens inside the first's bloom-out.** Closing it costs the click-through Ruling 14 keeps. Recorded under Known Issues.
+- **Escape follows open order and the stack cannot re-insert.** Raise-on-click for floating windows and a pinned glance's entry surviving a tab round-trip both need an open-sequence number on stack entries. Recorded under Open Calls.
+- **The slash-command menu** has its grounding in `// Planning`'s `Slash Command Menu — Grounding.md`: the door needs to accept a `MenuAnchor` rect where it accepts an element, the editor reaches it through a new `EditorHost.menus.slash`, and the model sits in `Core/Actions`.
+- **A Shortcuts settings pane** over the one table, with the named-key map and the duplicate-chord rule it needs. Recorded under Next-Feature Candidates.
 
 #### Feedback
 
-- "Stop stopping" / "coordinate and continue" — a blocked task is a prompt to find the unblocked half, not to ask. Task 3's additive work ran on its six clean files while three were held by another session.
-- "Remove any and all code made because of test-validation criteria that are no longer actually necessary." Cost a guard, an unreachable branch, an optional prop, and a whole verify-box case across the run.
-- "Emphasize not taking false positives. The code is likely sound, but reduction is the main leverage."
-- "Writing to real data is not a concern if you undo it when you're done — it never is."
-- "Don't attempt to amend things that can be removed, whereas silence on the subject reflects the current state."
+- "Tell the Opus agents not to add comments." Every implementer brief carries it; the plan's `//` lines are notes to the agent, not code to write.
+- "The store import thing shouldn't happen." MarkdownPM reaches app state only through `EditorHost`; saved to memory.
+- "Why is the agent smoke testing? Is this something I can do manually?" The agent smoke launch is the unattended default; an attended session gets a numbered check list. Saved to memory.
+- "Keep the click-through, and make sure this also removes any of the grip menu's ad-hoc reconciliation of that exact behavior, if it exists." None existed; the stack's `suppressReleaseClick` was already the one writer.
+- "YAGNI" on a setting for right-click dismissal: a right-click outside an in-app surface closes nothing, an outside left-click closes the whole stack, no preference.
 
 #### Session Pointers
 
-- The plan is deleted; its record lives in this Handoff, `HistoryPM.md` PM-132, and the commits `e88c2cc96^..9f64776e0`.
-- Two arcs interleave on `main` — State Placement and Engine Boundary — so a whole-repo diff over the range credits this arc with the other's work. Net measured per-commit against each commit's own parent with `loc.py`'s counter: **−41** source lines.
-- Pre-run snapshot of the retiring homes (`nexus.db`, both scopes as JSON, Electron's Local Storage) is what made the `viewOrder` recovery possible. It was nearly skipped as defensive padding.
+- The plan is deleted; its rulings, deviations, and lessons live in this Handoff, in Context, and in the commits `39e8d9439..c1fcce94b` filtered by the Fable trailer. No History entry by ruling.
+- Two arcs interleave on `main`: this one and Nathan's own MarkdownPM class-vocabulary, glance, and audit-ledger work. A whole-range diff credits this arc with the other's; the codemap in the closeout report was built per commit from this session's 31 commits alone.
+- Task 6's commit `1b6c552e7` carried two of Nathan's `md-bq` → `md-blockquote` hunks because they sat in the same files; that one commit alone draws no blockquote grip. The tree is consistent.
+- The audit artifact was republished by the parallel session twice between this session's reads and its publish; the final scrub was reapplied onto the newest version and published from a merged copy.
 
 #### Working Notes
 
-- **A migration is retired only after a run has been watched consuming the rows it reads.** A user confirming that some *other* import's values arrived is not that evidence — two importers reading two scopes need two observations. Now in `Development-Environment.md`.
-- **`--only` is necessary and not sufficient on a shared index.** The post-commit hook's `git commit --amend` carries no pathspec, so it re-commits the whole index after yours and rewrites the hash. The printed hash is dead; `git show --stat HEAD` is the only truth. `--only` also passes over untracked files in silence — a 290-line test landed in no commit for that reason.
-- **`rg -F` with an alternation searches for a literal pipe**, returns nothing, and reads exactly like a clean tree. Pair every expected-zero count with a control that must stay non-zero.
-- A lock taken on an unresolved path keys differently from `realpath` and serializes against nothing while the test passes. That vacuous pass happened once here before the symlinked test root caught it.
-- An `activeView` hit in `treePatch.ts` survives the sweep legitimately — it is the live tree-node field the sidecar maps onto, not the retired scope name. A sweep expectation of zero was wrong, and deleting to satisfy it would have broken the optimistic tree patch.
+- **A press on a menu's own trigger never closed it before this plan either.** The shield sits above every trigger and the stack held the trigger's entry to avoid flicker; the toggle is new behavior, not a restoration. Three reviewers assumed the opposite before one tested it at the base commit.
+- **The stack's `layer: () => null` never holds a target.** Every press is outside it; `outsidePress: false` is the whole protection. Two briefs had the two roles swapped.
+- **`--only` on a shared index carries the other session's hunks in a shared file.** The rule is to bundle them; the cost is one commit whose own tree is inconsistent. Say so in the commit's Lesson and move on.
+- **A stay handler must return rows in the same count and order.** The presenter identifies the open branch by row index; `tileHandleMenu.ts` satisfies it only because `drill()` runs before the `off` check.
+- **`historyKeymap`'s third binding has no `key`** (it is `linux: 'Ctrl-Shift-z'`), and mac redo lives on the second's `mac` field; derive bindings by spreading the whole entry, never by reading `key`.
