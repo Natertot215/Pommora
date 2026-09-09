@@ -3,12 +3,16 @@ import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { Notification } from '../Interface/Notifications/notifications'
 import type { Slice } from './sessionState'
 
-interface MenuPending {
+interface MenuOptions {
+  solid?: boolean
+  stay?: (action: string) => readonly ActionItem<string>[]
+  compact?: boolean
+}
+
+interface MenuPending extends MenuOptions {
   id: number
   items: readonly ActionItem<string>[]
   trigger: HTMLElement
-  solid?: boolean
-  stay?: (action: string) => readonly ActionItem<string>[]
   settle: (action: string | null) => void
 }
 
@@ -19,8 +23,7 @@ export interface ChromeSlice {
   presentMenu: (
     items: readonly ActionItem<string>[],
     trigger: HTMLElement,
-    solid?: boolean,
-    stay?: (action: string) => readonly ActionItem<string>[],
+    options?: MenuOptions,
   ) => Promise<string | null>
   notification: (Notification & { id: number }) | null
   notify: (n: Notification) => void
@@ -45,14 +48,14 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
     }),
 
   pendingMenu: null,
-  presentMenu: (items, trigger, solid, stay) =>
+  presentMenu: (items, trigger, options) =>
     new Promise((resolve) => {
       get().pendingMenu?.settle(null)
       const settle = (action: string | null): void => {
         set((s) => (s.pendingMenu?.settle === settle ? { pendingMenu: null } : {}))
         resolve(action)
       }
-      set({ pendingMenu: { id: ++menuSeq, items, trigger, solid, stay, settle } })
+      set({ pendingMenu: { id: ++menuSeq, items, trigger, ...options, settle } })
     }),
 
   notification: null,

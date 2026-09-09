@@ -20,11 +20,13 @@ function Level({
   title,
   onBack,
   onPick,
+  compact,
 }: {
   items: readonly ActionItem<string>[]
   title: string
   onBack?: { label: string; back: () => void }
   onPick: (action: string, stay?: boolean) => void
+  compact?: boolean
 }): React.JSX.Element {
   const [branchAt, setBranchAt] = useState<number | null>(null)
   const rows = menuRows(items)
@@ -68,8 +70,8 @@ function Level({
   return (
     <FrameSlide
       open={branch !== undefined}
-      minWidth={120}
-      maxWidth={180}
+      minWidth={compact ? undefined : 120}
+      maxWidth={compact ? undefined : 180}
       root={
         <MenuScrollFrame
           maxHeight={PICKER_MAX_HEIGHT}
@@ -87,6 +89,7 @@ function Level({
             title={branch.label}
             onBack={{ label: title, back: () => setBranchAt(null) }}
             onPick={onPick}
+            compact={compact}
           />
         )
       }
@@ -121,6 +124,7 @@ export function MenuPresenter(): React.JSX.Element {
           items={live && live.id === shown.id ? live.items : shown.items}
           title="Menu"
           onPick={pick}
+          compact={shown.compact}
         />
       )}
     </PickerMenu>
