@@ -33,12 +33,12 @@ All on 09-07-2026, all gated green, committed on `main` as `f67ba25e4` (index), 
 
 Nathan's scarce resource is decisions; the implementation is Claude's. Two passes have landed since the audit. This cycle's cleanup cleared the cheap behind-the-wall half — the locale fold and the read-modify-write consolidation in Topic 4, the MarkdownPM link-token and engine-filing debt, the import and test-scaffolding hygiene in Topic 10, the property-panel resolver, and the widget-unmount discipline. The menu-and-shortcut rework (Topic 5) is committing in a parallel session — treat it as done. What that leaves, ordered by what to reach for first:
 
-| Priority                          | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
-| --------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The one decision that matters** | Decision              | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
-| **Cheap and unblocked**           | Behind-the-wall fixes | The two registry readers (R-17, R-18), the heading-column key rebound to the header row (R-06), the write-echo tests (R-12), the Lucide dynamic import that lifts the whole icon set out of the `<Icon>` critical path (R-53, a foundation-risk win in one edit), and the ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
-| **Ruled, larger**                 | Foundation work       | The state-placement plan (ruled, still unbuilt), the Context-tag reconcile fix (R-11), and folding the Table and Cards renderers onto one engine (Topic 6) before a third view kind is written a third time.                                                                                                                  |
-| **On earned plumbing**            | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface once its three-vocabulary question (R-70) is settled.                                                                                                                    |
+| Share                | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
+| -------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The next sitting** | Decisions             | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
+| **~15%**             | Behind-the-wall fixes | The two registry readers (R-17, R-18), the heading-column key rebound to the header row (R-06), the write-echo tests (R-12), the Lucide dynamic import that lifts the whole icon set out of the `<Icon>` critical path (R-53, a foundation-risk win in one edit), and the ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
+| **~50%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt), the Context-tag reconcile fix (R-11), and folding the Table and Cards renderers onto one engine (Topic 6) before a third view kind is written a third time.                                                                                                                  |
+| **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface once its three-vocabulary question (R-70) is settled.                                                                                                                    |
 
 **Focus next:** rule **D-2** — the cheapest decision with the widest unlock — and run the cheap unblocked fixes alongside it, R-53 first. Ruled foundation work second; building last, on the openings whose plumbing is done.
 
@@ -136,7 +136,7 @@ Context membership is keyed by Space *title*, and a governed write silently drop
 
 ##### 7. MarkdownPM Filing And The Widget Layer
 
-**Lenses and state:** Gates partly, Debt, Decision, Filing, Separation, Duplication, Performance. **Effort:** Small to large. **Deletes:** About 300 lines, plus 300 relocated.
+**Lenses and state:** Gates partly, Debt, Decision, Filing, Separation, Duplication, Performance. **Effort:** Small to large. **Deletes:** About 300 lines, plus 105 relocated.
 
 **Found.** The most carefully built directory in the codebase. The pure engine is settled and would survive a second host intact. Two things are unfinished. First, filing: the app's page-resolution contract, what a page *is* when something links to it, is written inside the editor's folder and imported by the nexus index. Second, the React widget layer (tables, page tiles, webpage tiles) grew three independent answers to sizing, dismissal, and selection. Links and connections also never enter the intent stream, so the resting table cell had to re-implement their rendering by hand.
 
@@ -145,11 +145,10 @@ Context membership is keyed by Space *title*, and a governed write silently drop
 1. Move the page-resolution types and `buildPageIndex` to `Core/Connections/pageIndex.ts`; repoint eight imports. *(M; ~105 lines relocated)*
 2. Add `linkIntents` to the intent layer; the CodeMirror decorator and the resting table cell become thin renderers of it. *(M; ~125 lines)*
 3. One widget chassis for sizing, dismissal, and selection across page tiles, webpage tiles, and tables; outside-press goes through the dismissal stack. *(L; ~120 lines)*
-4. Move the citation scanner and the math heuristic out of `detect.ts` into their own engine file. *(S; ~165 lines relocated)*
-5. One `EditorPref` type and one load loop for the four per-machine editor prefs. *(S; ~15 lines)*
-6. Fold the two range movers into one with a reindent option; measure the whole-document derivation at 1k, 5k, and 20k lines before adding any new whole-document consumer. *(M / L; after D-8; ~50 lines)*
+4. One `EditorPref` type and one load loop for the four per-machine editor prefs. *(S; ~15 lines)*
+5. Fold the two range movers into one with a reindent option; measure the whole-document derivation at 1k, 5k, and 20k lines before adding any new whole-document consumer. *(M / L; after D-8; ~50 lines)*
 
-**Findings:** R-43, R-46, R-47, R-49, R-50, R-51.
+**Findings:** R-43, R-46, R-47, R-50, R-51.
 
 ##### 8. UIX: Engines, Bundle, Touch, Filing
 
@@ -239,7 +238,6 @@ Ordered by how much later work each gates. D-1 (state placement) and D-4 (Contex
 **D-9: Smaller rulings, each one edit once decided** 
 
 - Which slot a page lands in when moved across bands (Table appends, Cards lands at the drop slot, neither documented as intentional).
-- Whether the two property-pane drop resolvers' differing refusals are a rule or a coincidence.
 - Whether the two tab models' three differences become parameters.
 - Whether Showcase keeps a public surface in the design kit.
 - Whether a folder's agenda classification may carry existence separately from parse success, and whether the three watch-batch consumers may share one classification.
@@ -290,7 +288,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-43 | 7     | Dt   | The app's page-resolution contract lives inside the editor                                                                         | `Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/treeIndex.ts, Core/Tiles/tileKinds.tsx`                          |
 | R-46 | 7     | Dt   | Links and connections never enter the intent stream, so a second renderer had to re-implement them                                 | `Core/MarkdownPM/Engine/intents.ts, Core/MarkdownPM/decorations.ts, Core/MarkdownPM/Tables/cellStatic.tsx`            |
 | R-47 | 7     | Dt   | The three widget kinds re-implement sizing, dismissal and selection independently                                                  | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx, Core/MarkdownPM/Tables/MarkdownTable.tsx` |
-| R-49 | 7     | P    | `detect.ts` carries a whole citation subsystem and a scoring heuristic                                                             | `Core/MarkdownPM/Engine/detect.ts, Core/MarkdownPM/Engine/subfieldStats.ts`                                           |
 | R-50 | 7     | Dt   | One persistence contract under three names for the four per-machine editor prefs                                                   | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx`                                           |
 | R-51 | 7     | D    | Two implementations of "move this range to that slot," and no incremental path for the whole-document derivation                   | `Core/MarkdownPM/Engine/listDragModel.ts, Core/MarkdownPM/Engine/docScan.ts, Core/MarkdownPM/Engine/intents.ts`       |
 | R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |

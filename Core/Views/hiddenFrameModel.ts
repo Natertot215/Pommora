@@ -66,7 +66,7 @@ export function unhide(view: SavedView, id: string): VisibilityPatch {
   }
 }
 
-/** The shown zone takes positional drops (reorder or unhide-at-slot); the hidden zone takes a membership drop from a shown row. Title can reorder shown but never hides. */
+/** The shown zone takes positional drops (reorder or unhide-at-slot); the hidden zone takes a membership drop from a shown row. */
 export function hiddenPaneSlot(
   rows: MeasuredRow[],
   byId: Map<string, FrameRow>,
