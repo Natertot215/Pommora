@@ -15,6 +15,7 @@ import { cancelGlance, closeGlance, insideGlance } from '../Interface/Glance/gla
 import { glanceLink } from '../Interface/Glance/glanceLink'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
+import { openWebLink } from '../Web/openWebLink'
 
 interface EditorHostOptions {
   pageId?: string
@@ -60,7 +61,7 @@ function buildEditorHost(
         jumpToCitation: p.jumpToCitation,
         pasteLinkIntoText: p.pasteLinkIntoText,
         defaultLinkFormat: p.defaultLinkFormat,
-        pasteInverse: commands['paste-inverse'],
+        commands,
       }
     },
     aliases: {
@@ -117,6 +118,7 @@ function buildEditorHost(
         />
       ),
     pickTree: () => state().tree?.collections.map(pickNode) ?? [],
+    openLink: openWebLink,
   }
 }
 
@@ -127,8 +129,9 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
   const shown = useSession((s) => citationsVisible(s, pageId))
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
   const aliases = useSession((s) => s.pageAliases)
+  const commands = useSession((s) => s.commands)
   return useMemo(
     () => buildEditorHost({ pageId, inert }, connRef),
-    [pageId, connections, inert, shown, cbLineCount, aliases],
+    [pageId, connections, inert, shown, cbLineCount, aliases, commands],
   )
 }

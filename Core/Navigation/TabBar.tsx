@@ -8,6 +8,7 @@ import { text } from '@pommora/uix/Theme'
 import { segment } from '@pommora/uix/Elements/segment.css'
 import { SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
+import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { suppressNextClick } from '@pommora/uix/Interactions/shared'
 import type { Tab, TabTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
@@ -68,6 +69,7 @@ function TabBarBody({
   unpinnedEntries: TabEntry[]
 }): React.JSX.Element {
   const activeTabId = useSession((s) => s.activeTabId)
+  const commands = useSession((s) => s.commands)
   const revealOnHover = useSession((s) => s.personalization.revealTabBarOnHover ?? false)
   const activateTab = useSession((s) => s.activateTab)
   const openNewTab = useSession((s) => s.openNewTab)
@@ -83,19 +85,20 @@ function TabBarBody({
     closeTab,
   )
 
-  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order — the one signed-off keybinding, intercepted only while the bar shows.
+  // The cycle runs over the full visual order, intercepted only while the bar shows.
   const orderedIds = useMemo(
     () => [...pinnedEntries.map((e) => e.tab.id), ...unpinnedEntries.map((e) => e.tab.id)],
     [pinnedEntries, unpinnedEntries],
   )
-  const cycleRef = useRef({ orderedIds, activeTabId })
-  cycleRef.current = { orderedIds, activeTabId }
+  const cycleRef = useRef({ orderedIds, activeTabId, commands })
+  cycleRef.current = { orderedIds, activeTabId, commands }
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Tab' || !e.ctrlKey || e.metaKey || e.altKey) return
+      const { orderedIds: ids, activeTabId: active, commands: cmds } = cycleRef.current
+      const back = matchesCommand(cmds['previous-tab'], e)
+      if (!back && !matchesCommand(cmds['next-tab'], e)) return
       e.preventDefault()
-      const { orderedIds: ids, activeTabId: active } = cycleRef.current
-      activateTab(cycle(ids, active, e.shiftKey ? -1 : 1))
+      activateTab(cycle(ids, active, back ? -1 : 1))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

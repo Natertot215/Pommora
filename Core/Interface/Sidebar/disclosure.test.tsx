@@ -7,6 +7,7 @@ import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { Sidebar } from './Sidebar'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
+import { DEFAULT_COMMANDS } from '../../Actions/commands'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const tree = {
@@ -26,7 +27,7 @@ const tree = {
   ],
   accent: 'lavender',
   personalization: { defaultIcons: {} },
-  commands: {},
+  commands: DEFAULT_COMMANDS,
   assetDirectory: ASSETS_DIR_REL,
   excluded: [],
   registry: [],

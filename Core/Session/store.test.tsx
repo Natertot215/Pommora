@@ -19,6 +19,7 @@ import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
 import { clearCache } from './pageDetailCache'
 import { stubDialer } from '../vitest.setup'
+import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 // Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist, the mutation gateway, the applyTree accent read) so it runs in isolation.
 let channels: Record<string, ReturnType<typeof vi.fn>>
@@ -382,7 +383,7 @@ function treeWith(pages: { id: string; path: string }[]): NexusTree {
     ],
     accent: 'lavender',
     personalization: {},
-    commands: {},
+    commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,
     excluded: [],
     registry: [],

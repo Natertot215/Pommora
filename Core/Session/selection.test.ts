@@ -3,6 +3,7 @@ import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { reconcileSelection } from './reconcileSelection'
+import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 function tree(pages: { id: string; path: string }[]): NexusTree {
   return {
@@ -22,7 +23,7 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
     ],
     accent: 'lavender',
     personalization: {},
-    commands: {},
+    commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,
     excluded: [],
     registry: [],

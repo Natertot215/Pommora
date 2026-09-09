@@ -82,7 +82,7 @@ export function App(): React.JSX.Element {
       } else if (matchesCommand(commands['toggle-nav'], e)) {
         e.preventDefault()
         toggleNav()
-      } else if (matchesCommand('cmd+shift+t', e)) {
+      } else if (matchesCommand(commands['toggle-iteration'], e)) {
         e.preventDefault()
         toggleIteration()
       }

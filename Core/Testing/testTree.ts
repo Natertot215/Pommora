@@ -1,5 +1,6 @@
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
+import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 export function makeTree(): NexusTree {
   return {
@@ -55,7 +56,7 @@ export function makeTree(): NexusTree {
     ],
     accent: 'lavender',
     personalization: {},
-    commands: {},
+    commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,
     excluded: [],
     registry: [],

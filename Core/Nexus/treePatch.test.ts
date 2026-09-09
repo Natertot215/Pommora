@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree } from './tree'
-import { NEW_PAGE_SLOT } from '../Pages/mutateRequest'
+import { NEW_PAGE_SLOT } from './mutateRequest'
 import {
   insertCreatedInTree,
   patchContextGroupsInTree,
@@ -12,6 +12,7 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
 } from './treePatch'
+import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 function tree(): NexusTree {
   const notes: CollectionNode = {
@@ -47,7 +48,7 @@ function tree(): NexusTree {
     collections: [notes, work],
     accent: 'lavender',
     personalization: {},
-    commands: {},
+    commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,
     excluded: [],
     registry: [],
