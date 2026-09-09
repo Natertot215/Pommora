@@ -136,7 +136,7 @@ Actions are bare; each caller prepends `EDITOR_ACTION_PREFIX`. Icons are plain s
 
 **Verify — automated**
 
-- [ ] Red first: the test file asserts section titles `['Headings', 'Lists', 'Insert', 'Embed']`, the label list of each, sixteen rows with `true` and fifteen with `false`, every `icon` a member of `ICON_NAMES` from `@pommora/uix/Symbols/iconNames`, `matchAt('Code Block', 'bl')` → 5, `matchAt('Code Block', 'od')` → null, `filterBlockMenu(s, 'hea')` yielding one section of five, `filterBlockMenu(s, 'bl')` yielding Insert with Blockquote and Code Block, `filterBlockMenu(s, 'zz')` yielding `[]`, and `filterBlockMenu(s, '')` identical to the input. Expect module-not-found; then green.
+- [ ] Red first: the test file asserts section titles `['Headings', 'Lists', 'Insert', 'Embed']`, the label list of each, sixteen rows with `true` and fifteen with `false`, every `icon` a member of `ICON_NAMES` from `@pommora/uix/Symbols/iconNames`, `matchAt('Code Block', 'bl')` → 5, `matchAt('Code Block', 'od')` → null, `filterBlockMenu(s, 'hea')` yielding one section of five, `filterBlockMenu(s, 'bl')` yielding Insert with Blockquote and Code Block, `filterBlockMenu(s, 'zz')` yielding `[]`, and `filterBlockMenu(s, '')` deep-equal (`toEqual`) to the input. Expect module-not-found; then green.
 - [ ] `rg -F "@pommora/uix" Core/Actions/blockMenu.ts` → 0. Control: `rg -F "@pommora/uix" Core/Actions/blockMenu.test.ts` → 1.
 - [ ] Full gate green, exit codes read directly.
 
@@ -150,7 +150,7 @@ Actions are bare; each caller prepends `EDITOR_ACTION_PREFIX`. Icons are plain s
 
 **Why:** The native context menu's Insert, Embed, and Lists submenus are the same sixteen labels and actions the model now owns. One roster is what keeps the two surfaces from drifting, and it is the invariant `MarkdownPM.md` already states for the other three shared models.
 
-**Now** — `rg -F "'Horizontal Rule'" Desktop Core --glob '!node_modules'` → 1 file (`Desktop/Actions/editorMenu.ts`):
+**Now** — `rg -F "'Horizontal Rule'" Desktop Core --glob '!node_modules'` → 2 files after Task 1 (`Desktop/Actions/editorMenu.ts`, `Core/Actions/blockMenu.ts`):
 
 ```ts
 // Desktop/Actions/editorMenu.ts:106-178 — pommoraItems builds Insert, Embed, and Lists from literal label/action pairs
@@ -277,7 +277,7 @@ Refactor baseline: `Core/MarkdownPM/Autocomplete/*.test.*` and `Core/MarkdownPM/
 
 - [ ] `npx vitest run Core/MarkdownPM/Autocomplete Core/MarkdownPM/Tables` green with the same test count as at the phase base.
 - [ ] `rg -F "coordsAtPos" Core/MarkdownPM --glob '!*.test.*'` → the same 4 files as before the edit (`useConnectionAutocomplete.ts`, `Gestures/blockDrag.ts`, `Gestures/listDrag.ts`, `lineDom.ts`). Control: `rg -F "caretGeometry" Core/MarkdownPM` → 1 file.
-- [ ] `rg -F "whenAcOpen(acCtl" Core` → 0. Control: `rg -F "whenAcOpen([acCtl]" Core` → 7.
+- [ ] `rg -F "whenAcOpen(acCtl" Core` → 0. Control: `rg -F "whenAcOpen([acCtl]" Core/MarkdownPM/Tables/CellEditor.tsx` → 3 (the editor's four become `[acCtl, block.ctl]` in Task 6).
 - [ ] Full gate green, exit codes read directly.
 
 **Verify — user**
