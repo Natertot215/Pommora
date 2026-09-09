@@ -1,7 +1,7 @@
 // Pure, so the same decision serves both editors (page body and table cell) and is testable without fabricating clipboard events.
 
 import { isValidLink } from '../../Connections/links'
-import { WEB_ADDRESS } from '../../Paths/url'
+import { WEB_ADDRESS } from '../../Paths/urlPath'
 import { linkDisplayText, serializeLink } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 

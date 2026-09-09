@@ -8,8 +8,7 @@ import {
   survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
-import { readJsonObject, writeJson } from '../Files/atomicWrite'
-import { machine } from '../Platform/machine'
+import { rmwJsonStrict } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../Files/walk'
 
@@ -58,11 +57,6 @@ export async function scrubReturning(
   }
   await sweepGovernedRoots(root, pages, { text })
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
-    await machine().lock(file, async () => {
-      const raw = await readJsonObject(file)
-      if (!raw) return
-      const next = reconciledSidecar(raw, world, inTransitKey)
-      if (next) await writeJson(file, next)
-    })
+    await rmwJsonStrict(file, (raw) => reconciledSidecar(raw, world, inTransitKey))
   }
 }

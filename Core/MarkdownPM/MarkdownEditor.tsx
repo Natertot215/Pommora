@@ -14,7 +14,7 @@ import {
 } from './Tables/widget'
 import { listDragExtension } from './Gestures/listDrag'
 import { listRenumberOnDelete } from './Input/listRenumber'
-import { blockHandles, blockGripHover } from './blockHandles'
+import { blockHandles, blockGripHover } from './Menus/blockHandles'
 import {
   blockDragExtension,
   blockquoteDragExtension,

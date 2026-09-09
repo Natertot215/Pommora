@@ -1,5 +1,5 @@
 import { Fragment, memo, useRef } from 'react'
-import { linkTarget, tokenize, type Token } from '../Engine/tokens'
+import { linkTarget, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import { CONTENT_CLASS } from '../Engine/intents'
 import {
@@ -157,8 +157,7 @@ function StaticCellImpl({
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
     const go =
-      found &&
-      followTarget(found.target, found.url, connections?.(), e.metaKey, found.el, host.glance)
+      found && followTarget(found.target, found.url, connections?.(), e.metaKey, found.el, host)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -274,13 +273,6 @@ function cellLinkTarget(
   const url = linkTarget(text, tk)
   if (!url) return null
   return { el, target: resolveMdTarget(api, url), url }
-}
-
-function linkTokenAt(text: string, at: number): Token | null {
-  return (
-    tokenize(text).find((t) => t.range[0] === at && (t.kind === 'link' || t.kind === 'wikiLink')) ??
-    null
-  )
 }
 
 /** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */

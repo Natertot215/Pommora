@@ -7,7 +7,7 @@ import { normalizeTitle } from '../Connections/connections'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections } from '../Connections/rewrite'
 import { newId } from '../Nexus/ids'
-import { atomicWriteFile, pathExists, readTextOrNull } from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { trashFileFlat } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
@@ -166,12 +166,11 @@ export async function rewriteTileConnections(
 ): Promise<void> {
   const oldKey = normalizeTitle(oldTitle)
   for (const { file } of await markdownTileFiles(root)) {
-    await machine().lock(file, async () => {
-      const body = await readTextOrNull(file)
-      if (body === null) return
-      if (!mentionsTitle(body, oldKey)) return
+    // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
+    await rewritePageSerialized(file, (body) => {
+      if (!mentionsTitle(body, oldKey)) return null
       const next = rewriteConnections(body, oldTitle, newTitle)
-      if (next !== body) await atomicWriteFile(file, next)
+      return next !== body ? next : null
     })
   }
 }

@@ -1,9 +1,9 @@
 // Content-anchored like the fold chevron so a grip can't drift below callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
-import { docScan } from './docCache'
+import { docScan } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
-import { blockAt, blockStarts } from './Engine/blockModel'
-import { lineElementAt } from './lineDom'
+import { blockAt, blockStarts } from '../Engine/blockModel'
+import { lineElementAt } from '../lineDom'
 
 const GRIP_KINDS = new Set(['paragraph', 'code', 'list', 'hr', 'math', 'embed', 'webpage'])
 
