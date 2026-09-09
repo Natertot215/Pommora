@@ -1,11 +1,6 @@
 // After a successful write the matching change lands on the live tree, by pure transform or a one-file re-read. A write with no patch degrades to a walk, never a silently stale tree.
 
-import type {
-  BannerOwnerKind,
-  MutableKind,
-  MutateOutcome,
-  MutateRequest,
-} from '../Pages/mutateRequest'
+import type { BannerOwnerKind, MutableKind, MutateOutcome, MutateRequest } from './mutateRequest'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
   insertCreatedInTree,

@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { Sidebar } from './Sidebar'
+import { Disclosure } from './Disclosure'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { DEFAULT_COMMANDS } from '../../Actions/commands'
@@ -89,5 +90,31 @@ describe('a sidebar group opens from the device store', () => {
       'context:areas': false,
       c1: true,
     })
+  })
+})
+
+describe('a locked disclosure', () => {
+  it('routes a header click on a closed group to its selection instead of a fold', () => {
+    const onSelect = vi.fn()
+    setDevicePref = vi.fn()
+    useSession.setState({ devicePrefs: {}, setDevicePref: setDevicePref as never })
+    act(() =>
+      root.render(
+        <Disclosure
+          icon="folder-closed"
+          title="Locked"
+          depth={0}
+          defaultOpen={false}
+          persistKey="k"
+          locked
+          onSelect={onSelect}
+        >
+          <span>child</span>
+        </Disclosure>,
+      ),
+    )
+    act(() => rowNamed('Locked').click())
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(setDevicePref).not.toHaveBeenCalled()
   })
 })

@@ -10,7 +10,7 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
-import type { ConnPage } from '../MarkdownPM/Links/connectionsApi'
+import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'

@@ -5,7 +5,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../editorHarness'
-import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import type { TableModel } from '../Engine/Tables/model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

@@ -1,4 +1,4 @@
-import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
+import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '@pommora/core/Contract/result'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import {

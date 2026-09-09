@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorSelection } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 
 stubEditorBridge()

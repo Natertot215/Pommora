@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
+import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import {
   firePointer,

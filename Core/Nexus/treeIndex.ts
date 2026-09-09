@@ -1,18 +1,14 @@
 // One walk per tree; every table below is a lazy projection of its records, cached on the tree object. A new lookup belongs here, never as its own walk. The record LIST is the source: duplicate ids stay listed so title resolution can still answer "ambiguous"; the keyed projections collapse them last-wins.
 
 import type { EntityRecord } from '@pommora/core/Nexus/record'
-import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
+import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
 import { type NavRef, type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
-import {
-  buildPageIndex,
-  type ConnectionsApi,
-  type ConnPage,
-  type PageIndex,
-} from '../MarkdownPM/Links/connectionsApi'
+import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
+import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { navKey } from '../Navigation/navRecents'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'

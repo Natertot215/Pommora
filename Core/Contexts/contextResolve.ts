@@ -116,3 +116,17 @@ export function reconcileGovernedRoot(
 export function survivingChanges({ root, changed }: Reconciled): Record<string, unknown> {
   return Object.fromEntries(changed.filter((k) => k in root).map((k) => [k, root[k]]))
 }
+
+const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
+
+// A reconcile that can't resolve a Space must never shrink the value it writes: an unresolvable tag is kept as written for the user to settle, never dropped. `original` is the pre-reconcile root; a change that drops members against it is withheld.
+export function preservedChanges(
+  reconciled: Reconciled,
+  original: Record<string, unknown>,
+): Record<string, unknown> {
+  const surviving = survivingChanges(reconciled)
+  for (const key of Object.keys(surviving)) {
+    if (memberCount(surviving[key]) < memberCount(original[key])) delete surviving[key]
+  }
+  return surviving
+}

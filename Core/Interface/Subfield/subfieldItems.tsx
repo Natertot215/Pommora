@@ -1,6 +1,6 @@
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { containerCreators } from '@pommora/core/Pages/mutateRequest'
+import { containerCreators } from '@pommora/core/Nexus/mutateRequest'
 import { type PageTarget, useSession } from '../../Session/store'
 import { findCollection } from '../../Nexus/treeIndex'
 import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'

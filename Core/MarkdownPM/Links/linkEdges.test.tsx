@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi, type ConnPage } from './connectionsApi'
+import type { ConnectionsApi } from './connectionsApi'
+import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 
 class ResizeObserverStub {

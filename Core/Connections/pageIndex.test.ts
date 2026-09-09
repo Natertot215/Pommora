@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildPageIndex, type ConnPage } from './connectionsApi'
+import { buildPageIndex, type ConnPage } from './pageIndex'
 
 const pages: ConnPage[] = [
   { id: '1', title: 'Project Atlas', path: 'v/Project Atlas.md' },

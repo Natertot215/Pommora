@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { NEW_PAGE_SLOT } from '@pommora/core/Pages/mutateRequest'
+import { NEW_PAGE_SLOT } from '@pommora/core/Nexus/mutateRequest'
 import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeSorter, resolveManualOrder } from './Pipeline/sort'
 import type { ViewRow } from '@pommora/core/Views/viewRow'

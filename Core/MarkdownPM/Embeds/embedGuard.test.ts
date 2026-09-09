@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState, type TransactionSpec } from '@codemirror/state'
 import { embedExclusions, embedField, embedTiles } from './embedWidget'
-import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),

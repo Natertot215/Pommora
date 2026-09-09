@@ -1,6 +1,6 @@
 import { ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { mutateRegistryFile } from './contextsRegistry'
 
 export async function reorderContextsOp(

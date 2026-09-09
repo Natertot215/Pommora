@@ -4,9 +4,10 @@ import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/connectionMenu'
-import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
+import type { ConnectionsApi } from './connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -19,10 +20,10 @@ const openExternal = vi.fn()
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
 stubEditorBridge({
-  'link:open': openExternal,
   menu: async (req: unknown) => ok(await connMenu(req)),
   'clipboard:write': writeClipboard,
 })
+seedHost({ openLink: openExternal })
 
 beforeEach(() => {
   openExternal.mockReset()

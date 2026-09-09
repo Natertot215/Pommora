@@ -1,7 +1,7 @@
 import { join } from '../Paths/posix'
 import {
+  preservedChanges,
   reconcileGovernedRoot,
-  survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
@@ -14,8 +14,6 @@ import { applyAdoptions } from './optionOps'
 import { rereadSinceSeed } from '../Index/indexSeed'
 import { contentIndexStore } from '../Platform/stores'
 import { readLivePersonalization } from '../Settings/settings'
-
-const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
 
 export async function runRepairSweep(root: string): Promise<void> {
   const files = rereadSinceSeed()
@@ -46,11 +44,7 @@ export async function runRepairSweep(root: string): Promise<void> {
       if (!world || !live()) return null
       const r = reconcileGovernedRoot(fm, world)
       adoptions.push(...r.adoptions)
-      const surviving = survivingChanges(r)
-      for (const key of Object.keys(surviving)) {
-        if (memberCount(surviving[key]) < memberCount(fm[key])) delete surviving[key]
-      }
-      return { ...fm, ...surviving }
+      return { ...fm, ...preservedChanges(r, fm) }
     }
     await sweepGovernedRoots(root, [...worlds.keys()], { raw })
     await applyAdoptions(root, adoptions)

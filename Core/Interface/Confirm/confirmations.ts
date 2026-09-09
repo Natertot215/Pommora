@@ -1,4 +1,4 @@
-import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
+import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'

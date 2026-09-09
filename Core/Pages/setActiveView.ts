@@ -3,7 +3,7 @@ import { rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import { ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setActiveViewOp(
   { root }: MutateContext,

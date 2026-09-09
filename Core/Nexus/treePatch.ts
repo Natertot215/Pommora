@@ -1,6 +1,6 @@
 // The one set of tree transforms both processes apply — the renderer optimistically, main as canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
 
-import { NEW_PAGE_SLOT, type MutateRequest } from '../Pages/mutateRequest'
+import { NEW_PAGE_SLOT, type MutateRequest } from './mutateRequest'
 import { titleFromPath } from '../Connections/connections'
 import { stabilize } from './treeStabilize'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'

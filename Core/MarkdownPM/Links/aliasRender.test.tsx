@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
-import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
+import type { ConnectionsApi } from './connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 
 class ResizeObserverStub {

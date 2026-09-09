@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ALL_ICONS, lucideGlyph, searchIcons, toKebabIconId } from './allSymbols'
+import { ICON_NAMES } from './iconNames'
 import { icons } from './index'
 
 describe('toKebabIconId', () => {
@@ -33,6 +34,12 @@ describe('ALL_ICONS', () => {
   it('resolves a known id to a component and misses unknown ones', () => {
     expect(lucideGlyph('clock-plus')).toBeTypeOf('object')
     expect(lucideGlyph('not-a-real-icon')).toBeUndefined()
+  })
+})
+
+describe('ICON_NAMES', () => {
+  it('matches the resolvable set exactly, so eager validation agrees with lazy resolution', () => {
+    expect([...ICON_NAMES].sort((a, b) => a.localeCompare(b))).toEqual(ALL_ICONS.map((e) => e.id))
   })
 })
 

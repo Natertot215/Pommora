@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { embedField, setEmbedHeights } from './embedWidget'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'

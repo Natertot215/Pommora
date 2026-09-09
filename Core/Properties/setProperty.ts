@@ -7,7 +7,7 @@ import { loadGovernedWorld } from '../Contexts/contextWrite'
 import { updatePageProperty } from '../Nexus/page'
 import { fail, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { applyAdoptions } from './optionOps'
 import { readRegistry } from './propertiesRegistry'
 

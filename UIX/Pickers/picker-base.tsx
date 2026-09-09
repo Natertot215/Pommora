@@ -87,6 +87,7 @@ export function PickerMenu({
   open?: boolean
   onDismiss?: () => void
   triggerRef?: RefObject<Element | null>
+  /** The Solid variation is a deliberate stacked-picker opt-in style; it's explicitly not part of the nearly identical GlassWindow. */
   solid?: boolean
   glass?: 'surface' | 'pane' | 'window'
   /** A frozen replica (a pinned glance) passes false so it appears in place rather than blooming in over the pane it replaced; it still blooms out on close. */

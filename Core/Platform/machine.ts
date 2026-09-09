@@ -14,7 +14,9 @@ export interface Machine {
   /** Absent → null; any other failure throws. */
   readText(p: string): Promise<string | null>
   readBytes(p: string): Promise<Uint8Array | null>
+  /** Atomic: all-or-nothing. A failed write leaves no partial file, and a concurrent reader sees the old or the new bytes, never a torn mix. */
   writeText(p: string, text: string): Promise<void>
+  /** Atomic: all-or-nothing. A failed write leaves no partial file, and a concurrent reader sees the old or the new bytes, never a torn mix. */
   writeBytes(p: string, bytes: Uint8Array): Promise<void>
   stat(p: string): Promise<FileStat | null>
   /** Absent → []. */

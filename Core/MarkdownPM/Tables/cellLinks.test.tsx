@@ -7,13 +7,8 @@ import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@pommora/core/Actions/connectionMenu'
-import {
-  buildPageIndex,
-  type ConnectionsApi,
-  type ConnMenuTarget,
-  type ConnPage,
-} from '../Links/connectionsApi'
-import { stubDialer } from '../../vitest.setup'
+import type { ConnectionsApi, ConnMenuTarget } from '../Links/connectionsApi'
+import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -123,13 +118,18 @@ describe('an external link in a resting cell behaves like one in the body', () =
   }
 
   async function mountWeb(): Promise<void> {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'link:open': opener,
-    })
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
-    await act(async () => root.render(createElement(MarkdownTable, { ...props, model: web })))
+    await act(async () =>
+      root.render(
+        createElement(MarkdownTable, {
+          ...props,
+          model: web,
+          host: testHost({ openLink: opener }),
+        }),
+      ),
+    )
   }
 
   it('follows to the system browser on a click', async () => {
