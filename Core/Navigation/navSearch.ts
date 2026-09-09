@@ -1,4 +1,5 @@
 import type { NavRef } from '@pommora/core/Navigation/navRef'
+import { compareTitles } from '@pommora/core/Paths/caseFold'
 
 export interface SearchEntry {
   key: string
@@ -36,6 +37,6 @@ export function filterNav(index: SearchEntry[], query: string, limit = 50): Sear
     const s = fuzzyScore(e.lower, q)
     if (s !== null) scored.push({ e, s })
   }
-  scored.sort((a, b) => b.s - a.s || a.e.title.localeCompare(b.e.title))
+  scored.sort((a, b) => b.s - a.s || compareTitles(a.e.title, b.e.title))
   return scored.slice(0, limit).map((x) => x.e)
 }

@@ -3,18 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@pommora/core/Connections/links'
-import { autocompleteQuery, commitEdit } from './Autocomplete/autocomplete'
-import { activeTokenIndices, tokenize } from './Engine/tokens'
-import { MD_LINK_CLASS } from './decorations'
+import { autocompleteQuery, commitEdit } from '../Autocomplete/autocomplete'
+import { activeTokenIndices, tokenize } from '../Engine/tokens'
+import { MD_LINK_CLASS } from '../decorations'
 import {
   buildPageIndex,
   resolveMdTarget,
   type ConnectionsApi,
   type ConnPage,
-} from './Links/connectionsApi'
-import { renderCellContent } from './Tables/cellStatic'
-import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
-import { scanOf } from './Engine/docScan'
+} from './connectionsApi'
+import { renderCellContent } from '../Tables/cellStatic'
+import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
+import { scanOf } from '../Engine/docScan'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -25,7 +25,8 @@ class ResizeObserverStub {
 
 const opened = vi.fn()
 const openExternal = vi.fn()
-stubEditorBridge({ 'link:open': openExternal })
+stubEditorBridge()
+seedHost({ openLink: openExternal })
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([

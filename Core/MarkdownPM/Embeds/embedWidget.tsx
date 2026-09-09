@@ -18,7 +18,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
+import { ReactWidget, type ReactDom } from '../reactWidget'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
 import { type DismissalHandle, pushEscape } from '@pommora/uix/Interactions/dismissalStack'
@@ -189,7 +189,7 @@ class EmbedTileWidget extends ReactWidget {
   }
 
   destroy(dom: HTMLElement): void {
-    this.unmountIfDetached(dom as ReactDom)
+    this.unmount(dom as ReactDom, 'if-detached')
   }
 
   ignoreEvent(): boolean {
@@ -320,7 +320,7 @@ class WebpageTileWidget extends ReactWidget {
     const d = dom as WebTileDom
     d._obs?.io.unobserve(d)
     d._obs?.tiles.delete(d)
-    this.unmountIfDetached(d)
+    this.unmount(d, 'if-detached')
   }
 
   ignoreEvent(): boolean {

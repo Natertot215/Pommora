@@ -33,12 +33,12 @@ All on 09-07-2026, all gated green, committed on `main` as `f67ba25e4` (index), 
 
 Nathan's scarce resource is decisions; the implementation is Claude's. With the state-placement rule, the Context-tag ruling, and the menu ruling made, the split for the next cycle:
 
-| Share | Category | What it actually is |
-| --- | --- | --- |
-| **The next sitting** | Decisions | D-2 (external-edit reload policy) gates the concurrency topic; D-6 through D-9 are smaller. |
-| **~25%** | Behind-the-wall fixes | The four registry and locale policy fixes, the heading-column key, the write-echo tests. Small, mechanical, unblocked. |
-| **~45%** | Ruled foundation work | The state-placement plan, the menu-system rework, the reconcile fix for Context tags, and the Table/Cards engine before a third view kind exists. |
-| **~30%** | Building | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel; Agenda's surface after its vocabulary is settled. |
+| Share                | Category              | What it actually is                                                                                                                                         |
+| -------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The next sitting** | Decisions             | D-2 (external-edit reload policy) gates the concurrency topic; D-6 through D-9 are smaller.                                                                 |
+| **~25%**             | Behind-the-wall fixes | The two registry read-policy fixes, the heading-column key, the write-echo tests. Small, mechanical, unblocked.                                            |
+| **~45%**             | Ruled foundation work | The state-placement plan, the menu-system rework, the reconcile fix for Context tags, and the Table/Cards engine before a third view kind exists.           |
+| **~30%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel; Agenda's surface after its vocabulary is settled. |
 
 **Sequenced, not interleaved.** Fixes first because they're cheap and independently verifiable. Ruled work second. Building third, on the openings whose plumbing is done.
 
@@ -47,7 +47,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. With the 
 **Matters for cross-device reliability.** A second host or a sync layer runs into these on day one:
 
 - `Core/Platform` and `Core/Contract`: the whole second-host contract. Solid.
-- `Core/Files`, `Core/Nexus`, `Core/Paths`, `Core/Index`: atomicity, the walk, identity re-minting, the rename cascade, one locale-sensitive string fold. The index now carries Context membership.
+- `Core/Files`, `Core/Nexus`, `Core/Paths`, `Core/Index`: atomicity, the walk, identity re-minting, the rename cascade. The index now carries Context membership.
 - `Core/Contexts` and `Core/Properties`: title-keyed Context membership is the model's largest structural commitment, now ruled to stay. The value model beside it is excellent.
 - `Core/Session` and `Core/Navigation`: identity-first references are exactly what sync needs. Session is where the external-edit reload has to land, and it appears in no Features doc.
 - `Core/Actions`: portable menu models, the half of the menu system that already works for a second host.
@@ -104,20 +104,18 @@ Context membership is keyed by Space *title*, and a governed write silently drop
 
 **Findings:** R-07, R-08, R-09, R-11, R-12.
 
-##### 4. Registry Read Policy And Locale-Dependent Keys
+##### 4. Registry Read Policy
 
-**Lenses and state:** Gates Mobile/Sync · cheap, Foundation risk, Decision, Asymmetry, Duplication. **Effort:** Small to medium. **Deletes:** About 60 lines.
+**Lenses and state:** Gates Mobile/Sync · cheap, Foundation risk, Decision, Asymmetry, Duplication. **Effort:** Small to medium. **Deletes:** About 30 lines.
 
-**Found.** Four small policy inconsistencies in the write path. Two functions with the same name read the two nexus-wide registry files with opposite ideas of what an unreadable file means, and the lenient one hands back "no properties" for a file that's momentarily mid-sync, after which a rename half-lands and page creation skips the collection's schema. Three functions fold a user-visible name into a comparison key three different ways, one of them using the machine's language setting, so the same nexus matches different folders on a Turkish laptop. Seven sorts read the host locale, including the one that decides a folder's order when nothing explicit is saved. And one read-modify-write helper exists with four longhand copies that each re-decide what a failed read means. The codebase already handles this hazard class correctly for dates; the discipline just wasn't carried to strings.
+**Found.** One policy inconsistency in the write path. Two functions with the same name read the two nexus-wide registry files with opposite ideas of what an unreadable file means, and the lenient one hands back "no properties" for a file that's momentarily mid-sync, after which a rename half-lands and page creation skips the collection's schema.
 
 **Change.**
 
 1. One shared registry reader for both nexus-wide JSON files with the strict policy; make the on-open journal replay bail instead of sweep when the registry is unreadable. *(S–M; ~30 lines)*
 2. Fold the Contexts `readRegistry` into its ensure wrapper so a read never writes; pick one foreign-field preservation strategy for both files. *(S; after D-9)*
-3. Change `toLocaleLowerCase` to `toLowerCase` in the exclusion folder (one word), then add one `foldKey` and one `compareTitles` in `Core/Paths` backed by a pinned collator and replace the ten expressions. *(S; ~10 expressions)*
-4. Fold the four longhand read-modify-write sites onto the existing helper after ruling whether an unreadable sidecar in a sweep is a skip or a stop; route the tile connection rewrite through the timestamp-preserving path. *(M; after D-9; ~20 lines)*
 
-**Findings:** R-17, R-18, R-19, R-20.
+**Findings:** R-17, R-18.
 
 ##### 5. Menus And Shortcuts Have Two Homes
 
@@ -157,23 +155,20 @@ Keyboard shortcuts live in four unrelated places: eight hard-coded in the native
 
 ##### 7. MarkdownPM Filing And The Widget Layer
 
-**Lenses and state:** Gates partly, Foundation risk, Debt, Decision, Filing, Separation, Duplication, Performance. **Effort:** Small to large. **Deletes:** About 300 lines, plus 300 relocated.
+**Lenses and state:** Gates partly, Debt, Decision, Filing, Separation, Duplication, Performance. **Effort:** Small to large. **Deletes:** About 300 lines, plus 300 relocated.
 
-**Found.** The most carefully built directory in the codebase. The pure engine is settled and would survive a second host intact. Two things are unfinished. First, filing: the app's page-resolution contract, what a page *is* when something links to it, is written inside the editor's folder and imported by the nexus index; the engine imports upward into the widget layer in two files; and the editor reaches past its own host object to open a web link, the single exception to an otherwise complete injection boundary. Second, the React widget layer (tables, page tiles, webpage tiles) grew three independent answers to sizing, dismissal, and selection, and the link surfaces grew six independent answers to "what link is at this offset," two of which tokenize the entire document on ⌘B. Links and connections also never enter the intent stream, so the resting table cell had to re-implement their rendering by hand.
+**Found.** The most carefully built directory in the codebase. The pure engine is settled and would survive a second host intact. Two things are unfinished. First, filing: the app's page-resolution contract, what a page *is* when something links to it, is written inside the editor's folder and imported by the nexus index. Second, the React widget layer (tables, page tiles, webpage tiles) grew three independent answers to sizing, dismissal, and selection. Links and connections also never enter the intent stream, so the resting table cell had to re-implement their rendering by hand.
 
 **Change.**
 
 1. Move the page-resolution types and `buildPageIndex` to `Core/Connections/pageIndex.ts`; repoint eight imports. *(M; ~105 lines relocated)*
-2. Add `openLink` to the editor host object; delete the editor's direct store and dialer imports. *(S; ~6 lines)*
-3. Move the webpage-embed grammar into `Engine/` and the code-mask helper into `Core/Connections` so three import edges point downward. *(S; ~35 lines relocated)*
-4. Add `linkIntents` to the intent layer; the CodeMirror decorator and the resting table cell become thin renderers of it. *(M; ~125 lines)*
-5. One widget chassis for sizing, dismissal, and selection across page tiles, webpage tiles, and tables; outside-press goes through the dismissal stack. *(L; ~120 lines)*
-6. One `linkTokenAt` in the token engine; the Format menu tokenizes the caret's line, not the document. *(S; ~35 lines)*
-7. Move the citation scanner and the math heuristic out of `detect.ts` into their own engine file. *(S; ~165 lines relocated)*
-8. Settle which widget unmount path is correct and delete the other; one `EditorPref` type and one load loop for the four per-machine editor prefs. *(S; after D-9; ~29 lines)*
-9. Fold the two range movers into one with a reindent option; measure the whole-document derivation at 1k, 5k, and 20k lines before adding any new whole-document consumer. *(M / L; after D-8; ~50 lines)*
+2. Add `linkIntents` to the intent layer; the CodeMirror decorator and the resting table cell become thin renderers of it. *(M; ~125 lines)*
+3. One widget chassis for sizing, dismissal, and selection across page tiles, webpage tiles, and tables; outside-press goes through the dismissal stack. *(L; ~120 lines)*
+4. Move the citation scanner and the math heuristic out of `detect.ts` into their own engine file. *(S; ~165 lines relocated)*
+5. One `EditorPref` type and one load loop for the four per-machine editor prefs. *(S; ~15 lines)*
+6. Fold the two range movers into one with a reindent option; measure the whole-document derivation at 1k, 5k, and 20k lines before adding any new whole-document consumer. *(M / L; after D-8; ~50 lines)*
 
-**Findings:** R-43, R-44, R-45, R-46, R-47, R-48, R-49, R-50, R-51.
+**Findings:** R-43, R-46, R-47, R-49, R-50, R-51.
 
 ##### 8. UIX: Engines, Bundle, Touch, Filing
 
@@ -195,9 +190,9 @@ Keyboard shortcuts live in four unrelated places: eight hard-coded in the native
 
 ##### 9. Shell Debt
 
-**Lenses and state:** Debt, Decision, Duplication, Separation, Filing, Under-adoption, Tests. **Effort:** Small to medium. **Deletes:** About 180 lines of a second tab model, 80 of a hand-written decoder, 50 of a fourth warm cache, 75 of a hand-rolled rename, 65 in the property frame.
+**Lenses and state:** Debt, Decision, Duplication, Separation, Filing, Under-adoption, Tests. **Effort:** Small to medium. **Deletes:** About 180 lines of a second tab model, 80 of a hand-written decoder, 50 of a fourth warm cache, and 65 in the property frame.
 
-**Found.** The navigation and session core is better than its size suggests and shouldn't be touched. On top of it sits ordinary accumulation: "a tab" is defined twice in two folders with types crossing both ways; four "remember this editor's state" caches where one helper exists and two use it; a new user-facing setting needs three edits and only two are compiler-checked; `Sidebar.tsx` and `SettingsWindow.tsx` are both ~930 lines, one of which is a data table and the other of which buries a genuinely intricate 218-line component that can't be tested from anywhere; five places find interface parts by searching the whole document for a CSS class; the view tile hand-rolls an inline rename 250 lines above the shared component it also uses; and the property frame holds fourteen near-identical IPC wrappers and a seven-arm ternary router.
+**Found.** The navigation and session core is better than its size suggests and shouldn't be touched. On top of it sits ordinary accumulation: "a tab" is defined twice in two folders with types crossing both ways; four "remember this editor's state" caches where one helper exists and two use it; a new user-facing setting needs three edits and only two are compiler-checked; `Sidebar.tsx` and `SettingsWindow.tsx` are both ~930 lines, one of which is a data table and the other of which buries a genuinely intricate 218-line component that can't be tested from anywhere; five places find interface parts by searching the whole document for a CSS class; and the property frame holds fourteen near-identical IPC wrappers and a seven-arm ternary router.
 
 **Change.**
 
@@ -206,30 +201,25 @@ Keyboard shortcuts live in four unrelated places: eight hard-coded in the native
 3. Make Personalization a zod schema whose inferred type replaces the interface; fold the window and tab decoders onto it. *(M; ~80 lines)*
 4. Move the settings roster into its own data file; extract the sidebar's Disclosure component so it can be tested. *(S; ~1,000 lines relocated)*
 5. Replace the five document-wide class queries with published rect getters on the pattern the content view already uses. *(S)*
-6. The view tile heading uses the shared renamable label. *(S; ~75 lines)*
-7. One generic save wrapper and a per-type map in the property frame, so an unhandled type is a compile error rather than a blank spacer. *(S; ~65 lines)*
+6. One generic save wrapper and a per-type map in the property frame, so an unhandled type is a compile error rather than a blank spacer. *(S; ~65 lines)*
 
-**Findings:** R-59, R-60, R-61, R-62, R-63, R-64.
+**Findings:** R-59, R-60, R-61, R-62, R-63.
 
 ##### 10. Filing, Naming, Taxonomy, And Coverage Hygiene
 
 **Lenses and state:** Polish, Filing, Duplication, Separation, Tests. **Effort:** Small each. **Deletes:** About 110 lines plus 20 renames.
 
-**Found.** The declared taxonomy is accurate and the recent restructure was carried through, not abandoned. What's left: "parent path" implemented three times; the nexus-wide mutation contract filed under Pages while thirteen folders import it; test scaffolding in four homes, two of them production folders that ship fixtures in the renderer bundle; seven imports reaching out of Core by counting `../` instead of the package alias; naming canon broken four ways, one of which the restructure itself created; three parallel vocabularies for the entity taxonomy; two hand-rolled modal scrims with no shared primitive; the property panel restating a three-line context resolver; and the coverage numbers, recorded so nobody spends a week on them.
+**Found.** The declared taxonomy is accurate and the recent restructure was carried through, not abandoned. What's left: "parent path" implemented three times; naming canon broken four ways, one of which the restructure itself created; three parallel vocabularies for the entity taxonomy; two hand-rolled modal scrims with no shared primitive; and the coverage numbers, recorded so nobody spends a week on them.
 
 **Change.**
 
 1. Add a rootless-safe `relDirname` to the paths module; retire the three parent-path copies; rename the three container finders to say what they match. *(S; ~8 lines)*
-2. Move the mutation request contract from Pages to Nexus beside its handler. *(S)*
-3. Consolidate test scaffolding in `Core/Testing`; move the two fixture builders out of the Views production tree. *(S; 27 lines out of production)*
-4. Repoint seven relative cross-package imports to the package alias. *(S; 7 lines)*
-5. One naming pass: ~20 renames and the duplicate test stem merge. *(S)*
-6. Derive the three entity-kind unions from one, after settling the Agenda vocabulary. *(M; after D-9)*
-7. One `ModalScrim` in UIX owning the portal, event swallowing, and dismissal; both modals adopt it. *(S; ~30 lines)*
-8. The property panel imports the context resolver instead of restating it. *(S; ~6 lines)*
-9. Add the Sync tsconfig to `npm run typecheck`; fold the Tiles README into SurfacePM; drop the 33 dead exports. *(S; ~40 lines)*
+2. One naming pass: ~20 renames and the duplicate test stem merge. *(S)*
+3. Derive the three entity-kind unions from one, after settling the Agenda vocabulary. *(M; after D-9)*
+4. One `ModalScrim` in UIX owning the portal, event swallowing, and dismissal; both modals adopt it. *(S; ~30 lines)*
+5. Add the Sync tsconfig to `npm run typecheck`; fold the Tiles README into SurfacePM; drop the 33 dead exports. *(S; ~40 lines)*
 
-**Findings:** R-65, R-66, R-67, R-68, R-69, R-70, R-71, R-72.
+**Findings:** R-65, R-69, R-70, R-71, R-72.
 
 ##### 11. Remaining Wide Walks
 
@@ -268,9 +258,7 @@ Ordered by how much later work each gates. D-1 (state placement), D-4 (Context t
 **D-9: Smaller rulings, each one edit once decided** 
 
 - Which slot a page lands in when moved across bands (Table appends, Cards lands at the drop slot, neither documented as intentional).
-- Whether an unreadable sidecar inside a bulk sweep is a skip or a stop.
 - Whether the two property-pane drop resolvers' differing refusals are a rule or a coincidence.
-- Which of the two widget unmount disciplines is correct.
 - Whether the two tab models' three differences become parameters.
 - Whether Showcase keeps a public surface in the design kit.
 - Whether a folder's agenda classification may carry existence separately from parse success, and whether the three watch-batch consumers may share one classification.
@@ -301,62 +289,53 @@ Ordered by how much later work each gates. D-1 (state placement), D-4 (Context t
 
 Every open finding and where it lands. Kind: **FR** foundation risk, **D** decision, **Dt** debt, **P** polish. Every entry was confirmed against the code by the reconciler; downgrades are carried in the finding text.
 
-| ID | Topic | Kind | Finding | Where |
-| --- | --- | --- | --- | --- |
-| R-01 | 1 | D | Six page-level authoring decisions live in the database that never syncs and is deleted on a schema bump | `Core/Platform/localState.ts, Desktop/Store/open.ts` |
-| R-05 | 1 | D | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts` |
-| R-06 | 1 | FR | The heading-column toggle is keyed by table ordinal, so inserting a table above moves it | `Core/MarkdownPM/Tables/widget.tsx, Core/Pages/PageView.tsx` |
-| R-07 | 2 | FR | An external edit never reaches an open page, and the next keystroke writes over it | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts` |
-| R-08 | 2 | FR | Atomicity and single-writer are host obligations that the interface neither declares nor enforces | `Core/Files/atomicWrite.ts, Core/Platform/machine.ts, Desktop/Platform/nodeMachine.ts` |
-| R-09 | 2 | FR | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts` |
-| R-11 | 2 | D | A governed write silently deletes a Context key whose Space it cannot find, and the on-open sweep refuses to do the same thing | `Core/Contexts/contextResolve.ts, Core/Properties/governedWrite.ts, Core/Properties/repairSweep.ts` |
-| R-12 | 2 | Dt | One 26-line file decides which filesystem events are real, and nothing tests it | `Core/Files/writeEcho.ts, Desktop/FileWatch/watcher.ts` |
-| R-17 | 4 | FR | Two nexus-wide registries, opposite corruption policies — and the lenient one gates a rename cascade that half-lands | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts, Core/Files/atomicWrite.ts` |
-| R-18 | 4 | D | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts` |
-| R-19 | 4 | FR | Case folding and title collation read the host's language setting | `Core/Paths/exclusion.ts, Core/Connections/connections.ts, Core/Properties/properties.ts` |
-| R-20 | 4 | Dt | One read-modify-write helper, four longhand copies, and one bypass that bumps every tile's timestamp | `Core/Files/atomicWrite.ts, Core/Trash/spend.ts, Core/Trash/restoreScrub.ts` |
-| R-21 | 5 | FR | Every menu goes native; the in-renderer presenter is mounted, tested, and unreachable | `Core/Actions/nativeMenus.ts, Core/Session/chromeSlice.ts, Core/Interface/Menus/RowMenuHost.tsx` |
-| R-22 | 5 | Dt | The tile handle menu is the one menu in the app defined twice | `Core/Tiles/TileHandleMenu.tsx, Core/Tiles/TileHost.tsx` |
-| R-23 | 5 | D | A keyboard shortcut can live in any of four places, and two of them cannot see each other | `Desktop/Actions/appMenu.ts, Core/Actions/commands.ts, Core/Interface/App.tsx` |
-| R-24 | 5 | Dt | Two dismissal disciplines: an ordered stack, and six layers coordinating by `defaultPrevented` | `UIX/Interactions/dismissalStack.ts, Core/Interface/Glance/GlancePane.tsx, UIX/Windows/window-base.tsx` |
-| R-32 | 6 | Dt | Table and Cards write the same interaction layer twice | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx` |
-| R-33 | 6 | Dt | Neither renderer virtualizes, and every card carries six store subscriptions and two mounted pickers | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx` |
-| R-34 | 6 | D | Six view kinds are registered, two render, and adding a third touches twelve places | `Core/Views/views.ts, Core/Views/Host/ViewHost.tsx, Core/Views/Settings/LayoutFrame.tsx` |
-| R-35 | 6 | Dt | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
-| R-36 | 6 | Dt | The Cards ghost reads every card's rect twice on every hover dwell, and re-flattens the group tree it was handed | `Core/Views/Cards/CardsView.tsx, Core/Views/Host/useViewHost.ts` |
-| R-43 | 7 | Dt | The app's page-resolution contract lives inside the editor | `Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/treeIndex.ts, Core/Tiles/tileKinds.tsx` |
-| R-44 | 7 | FR | The editor reaches past its own host to open a web link | `Core/MarkdownPM/Links/linkClicks.ts, Core/Web/openWebLink.ts, Core/MarkdownPM/api.ts` |
-| R-45 | 7 | Dt | The engine layer imports upward into the widget layer, and the rename cascade imports an editor internal | `Core/MarkdownPM/Engine/detect.ts, Core/MarkdownPM/Engine/subfieldStats.ts, Core/MarkdownPM/Embeds/webpageEmbed.ts` |
-| R-46 | 7 | Dt | Links and connections never enter the intent stream, so a second renderer had to re-implement them | `Core/MarkdownPM/Engine/intents.ts, Core/MarkdownPM/decorations.ts, Core/MarkdownPM/Tables/cellStatic.tsx` |
-| R-47 | 7 | Dt | The three widget kinds re-implement sizing, dismissal and selection independently | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx, Core/MarkdownPM/Tables/MarkdownTable.tsx` |
-| R-48 | 7 | Dt | Six hand-rolled "which link token is at this offset" queries, two of which parse the whole document | `Core/MarkdownPM/Tables/cellStatic.tsx, Core/MarkdownPM/Input/format.ts` |
-| R-49 | 7 | P | `detect.ts` carries a whole citation subsystem and a scoring heuristic | `Core/MarkdownPM/Engine/detect.ts, Core/MarkdownPM/Engine/subfieldStats.ts` |
-| R-50 | 7 | D | Two unmount disciplines on one widget chassis, and one persistence contract under three names | `Core/MarkdownPM/Widgets/reactWidget.ts, Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx` |
-| R-51 | 7 | D | Two implementations of "move this range to that slot," and no incremental path for the whole-document derivation | `Core/MarkdownPM/Engine/listDragModel.ts, Core/MarkdownPM/Engine/docScan.ts, Core/MarkdownPM/Engine/intents.ts` |
-| R-52 | 8 | Dt | Two reorder engines behind one façade, the larger serving one screen | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx` |
-| R-53 | 8 | FR | The entire Lucide library ships in the `<Icon>` critical path, defeating the curated registry | `UIX/Symbols/index.tsx, UIX/Symbols/allSymbols.ts, UIX/Pickers/IconPicker.tsx` |
-| R-54 | 8 | FR | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx` |
-| R-55 | 8 | Dt | The drawn caret is split across three packages, and the design kit styles CodeMirror | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css` |
-| R-56 | 8 | Dt | Pommora's application vocabulary sits inside the design kit | `UIX/Interactions/frameDndModel.ts, Core/Views/hiddenFrameModel.ts, UIX/Interactions/revealBar.ts` |
-| R-57 | 8 | P | Small UIX duplications: two spellings for one glass state, a hand-maintained token republish, a documented API that does not exist | `UIX/Pickers/picker-base.tsx, UIX/Glass/glass-window.tsx, UIX/Glass/glass-surface.tsx` |
-| R-58 | 8 |  | The tile grid is a third drop treatment, and the tab bar hand-rolls the harness | `Core/Tiles/TileGrid.tsx, Core/Navigation/TabBar.tsx` |
-| R-59 | 9 | D | Two tab models in two folders, with types crossing both ways | `Core/Navigation/tabsModel.ts, Core/Interface/Windows/windowTabs.ts, Core/Navigation/TabBar.tsx` |
-| R-60 | 9 | Dt | Four warm caches, one shared helper, two adopters | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx` |
-| R-61 | 9 | Dt | A new user-facing setting needs three edits, and only two are checked by the compiler | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx` |
-| R-62 | 9 | Dt | `Sidebar.tsx` and `SettingsWindow.tsx`: one is long, one is complex | `Core/Settings/SettingsWindow.tsx, Core/Interface/Sidebar/Sidebar.tsx` |
-| R-63 | 9 | Dt | The shell reaches into the interface by global CSS-class selector | `Core/Navigation/useNavThumbnails.ts, Core/Interface/Windows/windowMorph.ts, Core/Interface/ContentView.tsx` |
-| R-64 | 9 | Dt | `ViewTile` hand-rolls an inline rename 250 lines above the shared one it also uses | `Core/Tiles/Surfaces/ViewTile.tsx` |
-| R-65 | 10 | P | Two definitions of "parent path," four helpers for two questions, three unrelated `findContainer`s | `Core/Nexus/treePatch.ts, Core/Nexus/treeIndex.ts, Core/Paths/posix.ts` |
-| R-66 | 10 | Dt | The nexus-wide mutation contract is filed under Pages | `Core/Pages/mutateRequest.ts, Core/Nexus/mutate.ts` |
-| R-67 | 10 | P | Test scaffolding lives in four homes, two of them production folders | `Core/Testing/testTree.ts, Core/MarkdownPM/editorHarness.ts, UIX/Interactions/pointerHarness.ts` |
-| R-68 | 10 | P | Seven imports reach out of the Core package by relative path | `Core/MarkdownPM/Engine/docScan.ts, Core/MarkdownPM/warmSeam.ts, Core/Session/pageDetailCache.ts` |
-| R-69 | 10 | P | Naming canon is broken four ways, one of them created by the filing pass itself | `listed in evidence` |
-| R-70 | 10 | D | Three parallel vocabularies for one entity taxonomy | `Core/Nexus/identityMark.ts, Core/Paths/paths.ts, Core/Nexus/folderKind.ts` |
-| R-71 | 10 | P | Two hand-rolled modal scrims with no shared primitive | `Core/Interface/Confirm/ConfirmationWindow.tsx, Core/Assets/ImagePicker.tsx` |
-| R-72 | 10 | P | Coverage and dead-code measurements, recorded so they are not re-litigated | `` |
-| R-38 | 11 | Dt | Three narrow questions still answered with wide reads | `Core/Views/loadValues.ts, Core/Nexus/folderKind.ts, Desktop/FileWatch/watcher.ts` |
-| R-39 | 11 | Dt | The connection title map is rebuilt wholesale on every real tree change | `Core/Nexus/treeIndex.ts, Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/liveTree.ts` |
-| R-41 | 11 | Dt | Every scroll frame re-resolves every visible connection and re-sorts every decoration | `Core/MarkdownPM/decorations.ts` |
+| ID   | Topic | Kind | Finding                                                                                                                            | Where                                                                                                                 |
+| ---- | ----- | ---- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| R-01 | 1     | D    | Six page-level authoring decisions live in the database that never syncs and is deleted on a schema bump                           | `Core/Platform/localState.ts, Desktop/Store/open.ts`                                                                  |
+| R-05 | 1     | D    | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change            | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts`                                                              |
+| R-06 | 1     | FR   | The heading-column toggle is keyed by table ordinal, so inserting a table above moves it                                           | `Core/MarkdownPM/Tables/widget.tsx, Core/Pages/PageView.tsx`                                                          |
+| R-07 | 2     | FR   | An external edit never reaches an open page, and the next keystroke writes over it                                                 | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts`                                 |
+| R-08 | 2     | FR   | Atomicity and single-writer are host obligations that the interface neither declares nor enforces                                  | `Core/Files/atomicWrite.ts, Core/Platform/machine.ts, Desktop/Platform/nodeMachine.ts`                                |
+| R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync       | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                             |
+| R-11 | 2     | D    | A governed write silently deletes a Context key whose Space it cannot find, and the on-open sweep refuses to do the same thing     | `Core/Contexts/contextResolve.ts, Core/Properties/governedWrite.ts, Core/Properties/repairSweep.ts`                   |
+| R-12 | 2     | Dt   | One 26-line file decides which filesystem events are real, and nothing tests it                                                    | `Core/Files/writeEcho.ts, Desktop/FileWatch/watcher.ts`                                                               |
+| R-17 | 4     | FR   | Two nexus-wide registries, opposite corruption policies — and the lenient one gates a rename cascade that half-lands               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts, Core/Files/atomicWrite.ts`                 |
+| R-18 | 4     | D    | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes                               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts`                                            |
+| R-21 | 5     | FR   | Every menu goes native; the in-renderer presenter is mounted, tested, and unreachable                                              | `Core/Actions/nativeMenus.ts, Core/Session/chromeSlice.ts, Core/Interface/Menus/RowMenuHost.tsx`                      |
+| R-22 | 5     | Dt   | The tile handle menu is the one menu in the app defined twice                                                                      | `Core/Tiles/TileHandleMenu.tsx, Core/Tiles/TileHost.tsx`                                                              |
+| R-23 | 5     | D    | A keyboard shortcut can live in any of four places, and two of them cannot see each other                                          | `Desktop/Actions/appMenu.ts, Core/Actions/commands.ts, Core/Interface/App.tsx`                                        |
+| R-24 | 5     | Dt   | Two dismissal disciplines: an ordered stack, and six layers coordinating by `defaultPrevented`                                     | `UIX/Interactions/dismissalStack.ts, Core/Interface/Glance/GlancePane.tsx, UIX/Windows/window-base.tsx`               |
+| R-32 | 6     | Dt   | Table and Cards write the same interaction layer twice                                                                             | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx`                                                      |
+| R-33 | 6     | Dt   | Neither renderer virtualizes, and every card carries six store subscriptions and two mounted pickers                               | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
+| R-34 | 6     | D    | Six view kinds are registered, two render, and adding a third touches twelve places                                                | `Core/Views/views.ts, Core/Views/Host/ViewHost.tsx, Core/Views/Settings/LayoutFrame.tsx`                              |
+| R-35 | 6     | Dt   | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests                                                | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
+| R-36 | 6     | Dt   | The Cards ghost reads every card's rect twice on every hover dwell, and re-flattens the group tree it was handed                   | `Core/Views/Cards/CardsView.tsx, Core/Views/Host/useViewHost.ts`                                                      |
+| R-43 | 7     | Dt   | The app's page-resolution contract lives inside the editor                                                                         | `Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/treeIndex.ts, Core/Tiles/tileKinds.tsx`                          |
+| R-46 | 7     | Dt   | Links and connections never enter the intent stream, so a second renderer had to re-implement them                                 | `Core/MarkdownPM/Engine/intents.ts, Core/MarkdownPM/decorations.ts, Core/MarkdownPM/Tables/cellStatic.tsx`            |
+| R-47 | 7     | Dt   | The three widget kinds re-implement sizing, dismissal and selection independently                                                  | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx, Core/MarkdownPM/Tables/MarkdownTable.tsx` |
+| R-49 | 7     | P    | `detect.ts` carries a whole citation subsystem and a scoring heuristic                                                             | `Core/MarkdownPM/Engine/detect.ts, Core/MarkdownPM/Engine/subfieldStats.ts`                                           |
+| R-50 | 7     | Dt   | One persistence contract under three names for the four per-machine editor prefs                                                   | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx`                                           |
+| R-51 | 7     | D    | Two implementations of "move this range to that slot," and no incremental path for the whole-document derivation                   | `Core/MarkdownPM/Engine/listDragModel.ts, Core/MarkdownPM/Engine/docScan.ts, Core/MarkdownPM/Engine/intents.ts`       |
+| R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |
+| R-53 | 8     | FR   | The entire Lucide library ships in the `<Icon>` critical path, defeating the curated registry                                      | `UIX/Symbols/index.tsx, UIX/Symbols/allSymbols.ts, UIX/Pickers/IconPicker.tsx`                                        |
+| R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                                | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`                    |
+| R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                               | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                         |
+| R-56 | 8     | Dt   | Pommora's application vocabulary sits inside the design kit                                                                        | `UIX/Interactions/frameDndModel.ts, Core/Views/hiddenFrameModel.ts, UIX/Interactions/revealBar.ts`                    |
+| R-57 | 8     | P    | Small UIX duplications: two spellings for one glass state, a hand-maintained token republish, a documented API that does not exist | `UIX/Pickers/picker-base.tsx, UIX/Glass/glass-window.tsx, UIX/Glass/glass-surface.tsx`                                |
+| R-58 | 8     |      | The tile grid is a third drop treatment, and the tab bar hand-rolls the harness                                                    | `Core/Tiles/TileGrid.tsx, Core/Navigation/TabBar.tsx`                                                                 |
+| R-59 | 9     | D    | Two tab models in two folders, with types crossing both ways                                                                       | `Core/Navigation/tabsModel.ts, Core/Interface/Windows/windowTabs.ts, Core/Navigation/TabBar.tsx`                      |
+| R-60 | 9     | Dt   | Four warm caches, one shared helper, two adopters                                                                                  | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx`            |
+| R-61 | 9     | Dt   | A new user-facing setting needs three edits, and only two are checked by the compiler                                              | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx`                          |
+| R-62 | 9     | Dt   | `Sidebar.tsx` and `SettingsWindow.tsx`: one is long, one is complex                                                                | `Core/Settings/SettingsWindow.tsx, Core/Interface/Sidebar/Sidebar.tsx`                                                |
+| R-63 | 9     | Dt   | The shell reaches into the interface by global CSS-class selector                                                                  | `Core/Navigation/useNavThumbnails.ts, Core/Interface/Windows/windowMorph.ts, Core/Interface/ContentView.tsx`          |
+| R-65 | 10    | P    | Two definitions of "parent path," four helpers for two questions, three unrelated `findContainer`s                                 | `Core/Nexus/treePatch.ts, Core/Nexus/treeIndex.ts, Core/Paths/posix.ts`                                               |
+| R-69 | 10    | P    | Naming canon is broken four ways, one of them created by the filing pass itself                                                    | `listed in evidence`                                                                                                  |
+| R-70 | 10    | D    | Three parallel vocabularies for one entity taxonomy                                                                                | `Core/Nexus/identityMark.ts, Core/Paths/paths.ts, Core/Nexus/folderKind.ts`                                           |
+| R-71 | 10    | P    | Two hand-rolled modal scrims with no shared primitive                                                                              | `Core/Interface/Confirm/ConfirmationWindow.tsx, Core/Assets/ImagePicker.tsx`                                          |
+| R-72 | 10    | P    | Coverage and dead-code measurements, recorded so they are not re-litigated                                                         | ``                                                                                                                    |
+| R-38 | 11    | Dt   | Three narrow questions still answered with wide reads                                                                              | `Core/Views/loadValues.ts, Core/Nexus/folderKind.ts, Desktop/FileWatch/watcher.ts`                                    |
+| R-39 | 11    | Dt   | The connection title map is rebuilt wholesale on every real tree change                                                            | `Core/Nexus/treeIndex.ts, Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/liveTree.ts`                            |
+| R-41 | 11    | Dt   | Every scroll frame re-resolves every visible connection and re-sorts every decoration                                              | `Core/MarkdownPM/decorations.ts`                                                                                      |
 
 #### Appendix B: Corrections Made During Reconciliation
 

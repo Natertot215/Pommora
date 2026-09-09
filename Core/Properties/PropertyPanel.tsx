@@ -13,8 +13,7 @@ import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/prope
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import type { ContextsRegistry } from '@pommora/core/Contexts/contexts'
-import { resolveContextKeys } from '@pommora/core/Contexts/contextResolve'
+import { resolveTreeContextKeys } from '@pommora/core/Contexts/contextResolve'
 import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
@@ -120,9 +119,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   )
   const contextValues = useMemo(() => {
     if (!fm || !tree?.contexts) return undefined
-    const registry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
-    const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
-    const links = resolveContextKeys(fm as Record<string, unknown>, registry, spacesByContext)
+    const links = resolveTreeContextKeys(tree, fm as Record<string, unknown>)
     const rider = fm.contextValues as Record<string, string[]> | undefined
     return links.size || rider ? { ...Object.fromEntries(links), ...rider } : undefined
   }, [fm, tree])

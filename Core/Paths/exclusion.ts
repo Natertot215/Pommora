@@ -1,3 +1,4 @@
+import { foldKey } from './caseFold'
 import { NEXUS_DIR, TRASH_DIR } from './nexusPaths'
 
 /** None is content, and a journal's churn must never cost a walk. */
@@ -14,7 +15,7 @@ export function neverWatched(seg: string): boolean {
 }
 
 export function normalizeSeg(s: string): string {
-  return s.normalize('NFC').toLocaleLowerCase()
+  return foldKey(s)
 }
 
 /** Empties dropped, so `'a'`, `'/a/'` and `'a//'` all count the same — and that count is also the depth a path's own segments start at. */

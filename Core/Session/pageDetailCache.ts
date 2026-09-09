@@ -1,6 +1,6 @@
 // The path-keyed page-detail slot for embed rehydration — module state, written through by the shared save scheduler so a returning tile always seeds on the newest body.
 import { useSyncExternalStore } from 'react'
-import { capSet } from '../../UIX/Utilities/capMap'
+import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { clearWarm, dropWarmDetail } from '../Navigation/warmTabs'
 import { host } from '../Platform/dialer'

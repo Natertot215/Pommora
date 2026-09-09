@@ -1,7 +1,7 @@
 import { basename, dirname, isAbsolute, join, relative } from '../Paths/posix'
 import { contextKey } from '../Contexts/contexts'
 import { TRASH_DIR } from '../Paths/nexusPaths'
-import type { RestoreDestination } from '../Pages/mutateRequest'
+import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { errText, fail, ok, type Result } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
@@ -10,7 +10,7 @@ import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
-import { pathExists, readJsonObject, writeJson } from '../Files/atomicWrite'
+import { pathExists, readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { isMarkdownFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
@@ -86,12 +86,8 @@ async function addContextValues(
     return swept.touched.length > 0
   }
   const file = join(root, entry.path, SPACE_SIDECAR)
-  return machine().lock(file, async () => {
-    const raw = await readJsonObject(file)
-    if (!raw) return false
-    await writeJson(file, { ...raw, [key]: merge(raw) })
-    return true
-  })
+  const written = await rmwJsonStrict(file, (raw) => ({ ...raw, [key]: merge(raw) }))
+  return written.ok
 }
 
 async function rekeyPassengers(
@@ -106,15 +102,14 @@ async function rekeyPassengers(
   for (const d of await listEntries(absContextDir)) {
     if (d.kind !== 'dir') continue
     const file = join(absContextDir, d.name, SPACE_SIDECAR)
-    await machine().lock(file, async () => {
-      const raw = await readJsonObject(file)
-      if (!raw || !(oldKey in raw)) return
+    await rmwJsonStrict(file, (raw) => {
+      if (!(oldKey in raw)) return null
       const existing = strings(raw[newKey])
       const merged = [...existing, ...strings(raw[oldKey]).filter((v) => !existing.includes(v))]
       const next = { ...raw }
       delete next[oldKey]
       if (merged.length) next[newKey] = merged
-      await writeJson(file, next)
+      return next
     })
   }
 }

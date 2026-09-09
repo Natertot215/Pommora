@@ -1,3 +1,5 @@
+import { foldKey } from '../Paths/caseFold'
+
 export const titleFromPath = (path: string): string =>
   (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
@@ -5,7 +7,7 @@ export const pageEmbedPattern = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 
 // NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a YAML scalar `- 2024` off disk must still match "2024".
 export function normalizeTitle(raw: unknown): string {
-  return String(raw).trim().toLowerCase().normalize('NFC')
+  return foldKey(String(raw).trim())
 }
 
 // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run.

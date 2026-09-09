@@ -247,6 +247,22 @@ export function tokenize(text: string, maths: readonly [number, number][] = []):
   return tokens
 }
 
+/** The link or wikiLink token an offset sits in, markers included — the one read every click, hover, and resting cell shares. At a boundary two abutting tokens both contain the offset; the later-starting one wins, so a span captured at a token's own start resolves to that token and not its neighbor. */
+export function linkTokenAt(
+  text: string,
+  offset: number,
+  kind?: 'link' | 'wikiLink',
+): Token | undefined {
+  return tokenize(text)
+    .filter(
+      (t) =>
+        (kind ? t.kind === kind : t.kind === 'link' || t.kind === 'wikiLink') &&
+        offset >= t.range[0] &&
+        offset <= t.range[1],
+    )
+    .at(-1)
+}
+
 /** `restingAt` is where a link was just FINISHED — the one caret position that leaves a link rendered. */
 export function activeTokenIndices(
   tokens: Token[],

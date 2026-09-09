@@ -1,7 +1,7 @@
 import { assetUrl } from '../Platform/assetScheme'
 import { parseConnectionText } from '@pommora/core/Connections/connections'
 import { resolveAssetName } from './assetMap'
-import { HAS_SCHEME } from '@pommora/core/Paths/url'
+import { HAS_SCHEME } from '@pommora/core/Paths/urlPath'
 import type { AssetMap } from '@pommora/core/Nexus/tree'
 
 type AssetValue =

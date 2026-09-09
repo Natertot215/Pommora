@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorSelection } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from './editorHarness'
+import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

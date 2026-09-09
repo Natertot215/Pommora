@@ -8,7 +8,7 @@ import {
   isBlankValue,
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
-import type { SpaceNode } from '../Nexus/tree'
+import type { NexusTree, SpaceNode } from '../Nexus/tree'
 
 type ResolvedLinks = Map<string, string[]>
 
@@ -56,6 +56,15 @@ export function resolveContextKeys(
     if (ids.length) links.set(contextId, ids)
   }
   return links
+}
+
+export function resolveTreeContextKeys(
+  tree: NexusTree,
+  root: Record<string, unknown>,
+): ResolvedLinks {
+  const registry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
+  const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
+  return resolveContextKeys(root, registry, spacesByContext)
 }
 
 interface Reconciled {

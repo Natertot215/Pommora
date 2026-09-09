@@ -1,6 +1,6 @@
 import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { tokenize } from '../Engine/tokens'
+import { linkTokenAt } from '../Engine/tokens'
 import type { ConnectionsApi, ConnPage } from './connectionsApi'
 import { followTarget } from './linkClicks'
 import { applyLinkAction } from './linkEdit'
@@ -19,9 +19,7 @@ interface WikiHit {
 function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
-  const tk = tokenize(line.text).find(
-    (t) => t.kind === 'wikiLink' && rel >= t.range[0] && rel <= t.range[1],
-  )
+  const tk = linkTokenAt(line.text, rel, 'wikiLink')
   if (!tk) return null
   const [rs, re] = tk.resolveRange ?? tk.contentRange
   const abs = ([s, e]: [number, number]): [number, number] => [line.from + s, line.from + e]
@@ -75,7 +73,7 @@ export function connectionClicks(getApi: GetApi): Extension {
             getApi(),
             event.metaKey,
             event.target as Element,
-            view.state.facet(editorHost).glance,
+            view.state.facet(editorHost),
           )
         : null,
     dwell: ({ page }, el, glance) =>
