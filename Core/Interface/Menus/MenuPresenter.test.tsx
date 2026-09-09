@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { slotContent } from '@pommora/uix/Menus/frame-slide.css'
 import { optionSelected } from '@pommora/uix/Pickers/picker-base.css'
 import { useSession } from '../../Session/store'
 import { MenuPresenter } from './MenuPresenter'
@@ -131,7 +132,7 @@ describe('the in-app menu presenter', () => {
     ]
     const stay = vi.fn((action: string) => items(action === 'style:borderless'))
     await act(async () => {
-      promise = useSession.getState().presentMenu(items(false), trigger, undefined, stay)
+      promise = useSession.getState().presentMenu(items(false), trigger, { stay })
     })
     await act(async () => {
       labelled('Style')?.click()
@@ -163,8 +164,7 @@ describe('the in-app menu presenter', () => {
           { label: 'Delete', action: 'delete' },
         ],
         trigger,
-        undefined,
-        stay,
+        { stay },
       )
     })
     await act(async () => {
@@ -176,6 +176,20 @@ describe('the in-app menu presenter', () => {
       labelled('Delete')?.click()
     })
     await expect(promise).resolves.toBe('delete')
+  })
+
+  it('draws a compact list at its natural width, without the pane floor and cap', async () => {
+    await act(async () => {
+      void useSession
+        .getState()
+        .presentMenu([{ label: '100%', action: '1', checked: true }], trigger, { compact: true })
+    })
+    const slot = document.querySelector<HTMLElement>(`[data-picker-portal] .${slotContent}`)
+    expect(slot?.style.minWidth).toBe('')
+    expect(slot?.style.maxWidth).toBe('')
+    await act(async () => {
+      useSession.getState().pendingMenu?.settle(null)
+    })
   })
 
   it('draws a row’s icon in its leading slot', async () => {

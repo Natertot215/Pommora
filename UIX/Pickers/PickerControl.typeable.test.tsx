@@ -97,14 +97,14 @@ describe('a typeable picker', () => {
         { label: '150%', action: '1.5', checked: false, icon: undefined },
       ],
       host.querySelector('span'),
-      { solid: false },
+      { solid: false, compact: true },
     )
   })
 
   it('asks for a solid list when the control is drawn on a window', () => {
     mount(true)
     press(trigger(), 'click', { detail: 1 })
-    expect(door.mock.calls[0][2]).toEqual({ solid: true })
+    expect(door.mock.calls[0][2]).toEqual({ solid: true, compact: true })
   })
 
   it('hands what was written to the caller', () => {
