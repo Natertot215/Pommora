@@ -168,11 +168,11 @@ describe('the move backstop', () => {
       JSON.stringify({
         id: '01KVGMT8BFP350FZZXAMG1QDNX',
         createdAt: '2026',
-        agenda_singletons: { tasks: TASKS },
+        agenda_folders: { tasks: TASKS },
       }),
     )
     await mkdir(join(root, 'Tasks'), { recursive: true })
-    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), JSON.stringify({ id: TASKS }))
+    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
     await openSession(root)
 
     const r = await handleMutate(
@@ -210,11 +210,11 @@ describe('agenda singleton adoption', () => {
       JSON.stringify({
         id: '01KVGMT8BFP350FZZXAMG1QDNX',
         createdAt: '2026',
-        agenda_singletons: { tasks: TASKS },
+        agenda_folders: { tasks: TASKS },
       }),
     )
     await mkdir(join(root, 'Tasks', 'Nested'), { recursive: true })
-    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), JSON.stringify({ id: TASKS }))
+    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
     await writeFile(join(root, 'Tasks', 'Buy milk.md'), 'no frontmatter\n')
     await writeFile(join(root, 'Tasks', 'Nested', 'Deep.md'), 'no frontmatter\n')
   }
@@ -242,17 +242,15 @@ describe('agenda singleton adoption', () => {
     await withRegisteredTasks()
     await mkdir(join(root, 'Notes', 'Tasks'), { recursive: true })
     await writeFile(
-      join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.taskConfig),
+      join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.tasks),
       JSON.stringify({ id: TASKS }),
     )
     await rm(join(root, 'Tasks'), { recursive: true, force: true })
 
     await stampAdopted(root)
-    expect(await readFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), 'utf8')).toContain(
-      TASKS,
-    )
+    expect(await readFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), 'utf8')).toContain(TASKS)
     await expect(
-      readFile(join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.taskConfig), 'utf8'),
+      readFile(join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.tasks), 'utf8'),
     ).rejects.toThrow()
   })
 
@@ -260,24 +258,21 @@ describe('agenda singleton adoption', () => {
     await withRegisteredTasks()
     await mkdir(join(root, 'Notes', 'Tasks'), { recursive: true })
     await writeFile(
-      join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.taskConfig),
+      join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.tasks),
       JSON.stringify({ id: TASKS }),
     )
     // `Tasks/` still exists at the root — two folders claiming one place is the user's to resolve.
     await stampAdopted(root)
-    expect(
-      await readFile(join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.taskConfig), 'utf8'),
-    ).toContain(TASKS)
+    expect(await readFile(join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.tasks), 'utf8')).toContain(
+      TASKS,
+    )
   })
 
   // Every duplication mechanism copies the id the registration keys on, so two folders answer to one record — the same ambiguity a single folder claiming two kinds already gets: no arm picks. Nothing is written, so deleting the stray config restores the nexus completely.
   it('drops a contested slot — a duplicated config makes BOTH folders inert', async () => {
     await withRegisteredTasks()
     await mkdir(join(root, 'Tasks copy'), { recursive: true })
-    await writeFile(
-      join(root, 'Tasks copy', SIDECAR_FILENAME.taskConfig),
-      JSON.stringify({ id: TASKS }),
-    )
+    await writeFile(join(root, 'Tasks copy', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
     await writeFile(join(root, 'Tasks copy', 'Copied.md'), 'no frontmatter\n')
 
     await stampAdopted(root)
@@ -290,7 +285,7 @@ describe('agenda singleton adoption', () => {
     await withRegisteredTasks()
     await mkdir(join(root, 'Notes', 'Tasks copy'), { recursive: true })
     await writeFile(
-      join(root, 'Notes', 'Tasks copy', SIDECAR_FILENAME.taskConfig),
+      join(root, 'Notes', 'Tasks copy', SIDECAR_FILENAME.tasks),
       JSON.stringify({ id: TASKS }),
     )
 
@@ -299,7 +294,7 @@ describe('agenda singleton adoption', () => {
     expect(await pathExists(join(root, 'Tasks copy'))).toBe(false)
     const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
     const ctx = await agendaContext(root, identity, true)
-    expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks-singleton')
+    expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks')
   })
 
   // A folder that crossed depth outside the app carries the wrong sidecar. Its identity is renamed, not replaced — a second sidecar would leave one folder with two competing ids.
@@ -323,7 +318,7 @@ describe('agenda singleton adoption', () => {
 
   it('leaves an UNREGISTERED agenda folder entirely alone', async () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
-    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), JSON.stringify({ id: TASKS }))
+    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
     await writeFile(join(root, 'Tasks', 'Buy milk.md'), 'no frontmatter\n')
     await stampAdopted(root)
     expect(await readFile(join(root, 'Tasks', 'Buy milk.md'), 'utf8')).toBe('no frontmatter\n')

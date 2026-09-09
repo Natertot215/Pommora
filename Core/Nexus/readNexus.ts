@@ -16,7 +16,8 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
 import { adoptedId } from './ids'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
-import { pathExists, readJsonObject, readJsonStrict } from '../Files/atomicWrite'
+import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { readIdentity } from './identity'
 import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
@@ -285,7 +286,7 @@ export async function readNexus(root: string): Promise<NexusTree> {
 async function walkNexus(root: string): Promise<NexusTree> {
   const [identityRead, settings, state, homepageConfig, cropsConfig, registry, ctxRegistryRaw] =
     await Promise.all([
-      readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
+      readIdentity(root),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),

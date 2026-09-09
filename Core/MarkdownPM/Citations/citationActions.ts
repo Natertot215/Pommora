@@ -122,7 +122,7 @@ export const citationOrder: Extension = EditorState.transactionFilter.of((tr) =>
 })
 
 /** Identified by the label it carried — an offset alone would name whatever moved into that seat while the menu stood open. */
-export type CitationSubject =
+type CitationSubject =
   | { kind: 'marker'; marker: { from: number; to: number; label: string } }
   | { kind: 'citation'; label: string }
 

@@ -17,7 +17,7 @@ Pommora's canonical menu open, the `menu-bloom` / `menu-bloom-out` keyframe pair
 
 #### II. Menu
 
-The same keyframes and curve on the `menu` token through `bloomOpen` and `bloomClose` — snappier, also symmetric, reading the same origin and retracting through the same `useExitPresence`. Pickers, the autocomplete, and the glance pane take this variant. The overtake sweep the sidebar plays when its mode switches is its own pair, `sidebar-mode-*` in `Core/Interface/Sidebar/Sidebar.css`: the incoming mode slides in from the ribbon edge over the sitting content.
+The same keyframes and curve on the `menu` token through `bloomOpen` and `bloomClose` — snappier, also symmetric, reading the same origin and retracting through the same `useExitPresence`. Pickers, the autocomplete, and the glance pane take this variant. The overtake sweep the sidebar plays when its mode switches is its own pair, `sidebar-mode-*` in `Core/Interface/Sidebar/sidebar.css`: the incoming mode slides in from the ribbon edge over the sitting content.
 
 #### II. Header Scroll-Park
 

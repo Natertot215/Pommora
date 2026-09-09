@@ -11,11 +11,11 @@ import '@pommora/core/Interface/styles.css'
 import './drag-region.css'
 import '@pommora/uix/Theme/caret.css'
 import '@pommora/uix/Theme/text-selection.css'
-import '@pommora/core/Interface/Sidebar/Sidebar.css'
-import '@pommora/core/Interface/Interface.css'
+import '@pommora/core/Interface/Sidebar/sidebar.css'
+import '@pommora/core/Interface/interface.css'
 import '@pommora/core/Interface/Header/content-banner.css'
 import '@pommora/uix/Table/table-tokens.css'
-import '@pommora/uix/Table/Table.css'
+import '@pommora/uix/Table/table.css'
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

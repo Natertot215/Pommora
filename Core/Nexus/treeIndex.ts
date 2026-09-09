@@ -4,6 +4,7 @@ import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
 import { type NavRef, type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import { findContainerWhere } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -28,7 +29,7 @@ export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   icon: string
 }
 
-export interface ContainerCore {
+interface ContainerCore {
   title: string
   icon?: string
   kind: 'collection' | 'set'
@@ -295,7 +296,7 @@ export function findCollection(tree: NexusTree | null, id: string): CollectionNo
 }
 
 export function findSet(tree: NexusTree | null, id: string): SetNode | undefined {
-  const hit = tree && findContainer(tree, (n) => n.kind === 'set' && n.id === id)
+  const hit = tree && findContainerWhere(tree, (n) => n.kind === 'set' && n.id === id)
   return hit && hit.kind === 'set' ? hit : undefined
 }
 
@@ -351,26 +352,4 @@ export function containerOwner(node: CollectionNode | SetNode): BannerOwner {
     icon: node.icon,
     headingIconHidden: node.headingIconHidden,
   }
-}
-
-export const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
-
-export function findContainer(
-  tree: NexusTree,
-  match: (node: CollectionNode | SetNode) => boolean,
-): CollectionNode | SetNode | null {
-  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
-    for (const s of sets ?? []) {
-      if (match(s)) return s
-      const deep = inSets(s.sets)
-      if (deep) return deep
-    }
-    return null
-  }
-  for (const c of tree.collections) {
-    if (match(c)) return c
-    const hit = inSets(c.sets)
-    if (hit) return hit
-  }
-  return null
 }

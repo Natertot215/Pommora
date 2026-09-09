@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
 import { stack } from '../Theme/stack'
-import { menuAnchor } from '../Menus/menu-anchor'
+import { menuAnchor } from '../Menus/menuAnchor'
 import { FIELD_RING_VAR, fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { item, menuCompact } from '../Menus/menu-base.css'
 

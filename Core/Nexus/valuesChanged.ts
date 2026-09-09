@@ -2,7 +2,7 @@
 
 import { getLiveTree } from './liveTree'
 import { escapes } from '../Paths/pathSafety'
-import { parentOf } from './treePatch'
+import { relDirname } from '../Paths/posix'
 import { relPosix } from '../Paths/paths'
 import type { NexusTree, ValueChange } from './tree'
 
@@ -14,7 +14,7 @@ export function noteValueWrite(root: string | null, absFile: string): void {
   const rel = relPosix(root, absFile)
   if (!rel || escapes(rel)) return
   if (ledger?.root !== root) ledger = { root, byRel: new Map() }
-  const container = parentOf(rel)
+  const container = relDirname(rel)
   const files = ledger.byRel.get(container) ?? new Set<string>()
   ledger.byRel.set(container, files)
   files.add(rel)

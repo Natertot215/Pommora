@@ -10,7 +10,7 @@ Nine read-only auditors each covered a slice of the tree or a cross-cutting lens
 
 - **The host boundary is real and machine-verified.** Core contains zero Node or Electron imports outside tests. The module graph the main process loads is 156 files, zero of them React, with three external dependencies. A second host is a bounded job, not a rewrite.
 - **The read path is read-only.** No read channel writes.
-- **Mechanical debt is near zero.** Dead exports are about 33 in 2,710. Zero raw colors across 44 Core style files. One dead CSS selector out of 631, now gone. Zero assertion-free tests. Textual duplication is 0.41% of tokens. Every declared folder exists under exactly its declared name, and there are zero orphan files.
+- **Mechanical debt is near zero.** No export is fully dead. Zero raw colors across 44 Core style files. One dead CSS selector out of 631, now gone. Zero assertion-free tests. Textual duplication is 0.41% of tokens. Every declared folder exists under exactly its declared name, and there are zero orphan files.
 - **The best code is in the places that matter most.** The view pipeline, the tile layout model, the navigation reference model, the pure editor engine, the pointer harness, the property value model, and the connections grammar were each independently called the strongest code in their slice. They should not be touched.
 
 **What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. Two of them were ruled on 09-07-2026 and are now work rather than questions: where each piece of state lives (a rule, applied row by row) and how Context tags are keyed (titles stay). The one that remains open and gates the most is what "most recent wins" means for a reader: an open page never learns its file changed, and the next keystroke writes the stale copy back.
@@ -40,16 +40,24 @@ A second pass on 09-08-2026, gated green (typecheck, lint, 4,333 tests, producti
 - **The settings roster and the sidebar's Disclosure were split out (R-62).** Two ~930-line files shed a data table and a component that can now be tested on its own.
 - **Two UIX cleanups (R-57, partial).** The dead `pending` drop state is gone; the picker's Solid variation is ruled a deliberate stacked-picker style and documented, not a duplicate to collapse.
 
+A third pass on 09-09-2026, gated green (typecheck, lint, 4,336 tests), closed Topic 10 — filing, naming, taxonomy, and coverage hygiene:
+
+- **One parent-path helper and named container finders (R-65).** A rootless-safe `relDirname` in the paths module carries the two former parent-path copies and the duplicate basename; the three container finders now say what they match, and the watch-patch by-path walk reads through the shared predicate finder.
+- **The Agenda vocabulary has one source (R-70).** `task`/`event` and their plural folder forms derive from one list that lives in the paths module, so nothing reaches upward for it; the on-disk `agenda_singletons` key is `agenda_folders`, normalized once when identity is read with a best-effort cleanup write behind it.
+- **The naming canon holds (R-69).** Sixteen renames align test stems, kebab `.ts`, and lowercase `.css` with the canon, and a duplicate test stem merges.
+- **One modal scrim (R-71).** A single UIX `ModalScrim` owns the portal, event swallowing, dismissal, and the floating-window entrance and exit; the confirmation window and the image picker both adopt it.
+- **The coverage numbers are settled (R-72).** No export is fully dead; thirty-six over-exported symbols lost their bare `export`. The Sync tsconfig joins `npm run typecheck` once Sync carries source — an empty project has nothing to check.
+
 #### Where Brainwaves Go
 
-Nathan's scarce resource is decisions; the implementation is Claude's. Two passes have landed since the audit. This cycle's cleanup cleared the cheap behind-the-wall half — the locale fold and the read-modify-write consolidation in Topic 4, the MarkdownPM link-token and engine-filing debt, the import and test-scaffolding hygiene in Topic 10, the property-panel resolver, and the widget-unmount discipline. What that leaves, ordered by what to reach for first:
+Nathan's scarce resource is decisions; the implementation is Claude's. Two passes have landed since the audit. This cycle's cleanup cleared the cheap behind-the-wall half — the locale fold and the read-modify-write consolidation in Topic 4, the MarkdownPM link-token and engine-filing debt, the import and test-scaffolding hygiene, the property-panel resolver, and the widget-unmount discipline. What that leaves, ordered by what to reach for first:
 
 | Share                | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
 | -------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **The next sitting** | Decisions             | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
 | **~5%**              | Behind-the-wall fixes | The two registry readers (R-17, R-18) and the ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
 | **~55%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt) and folding the Table and Cards renderers onto one engine (Topic 6) before a third view kind is written a third time.                                                                                                                  |
-| **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface once its three-vocabulary question (R-70) is settled.                                                                                                                    |
+| **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface.                                                                                                                    |
 
 **Focus next:** rule **D-2** — the cheapest decision with the widest unlock — and run the cheap unblocked fixes alongside it. Ruled foundation work second; building last, on the openings whose plumbing is done.
 
@@ -189,22 +197,6 @@ Context membership is keyed by Space *title*, which is the model's structural co
 
 **Findings:** R-59, R-60, R-61, R-63.
 
-##### 10. Filing, Naming, Taxonomy, And Coverage Hygiene
-
-**Lenses and state:** Polish, Filing, Duplication, Separation, Tests. **Effort:** Small each. **Deletes:** About 110 lines plus 20 renames.
-
-**Found.** The declared taxonomy is accurate and the recent restructure was carried through, not abandoned. What's left: "parent path" implemented three times; naming canon broken four ways, one of which the restructure itself created; three parallel vocabularies for the entity taxonomy; two hand-rolled modal scrims with no shared primitive; and the coverage numbers, recorded so nobody spends a week on them.
-
-**Change.**
-
-1. Add a rootless-safe `relDirname` to the paths module; retire the three parent-path copies; rename the three container finders to say what they match. *(S; ~8 lines)*
-2. One naming pass: ~20 renames and the duplicate test stem merge. *(S)*
-3. Derive the three entity-kind unions from one, after settling the Agenda vocabulary. *(M; after D-9)*
-4. One `ModalScrim` in UIX owning the portal, event swallowing, and dismissal; both modals adopt it. *(S; ~30 lines)*
-5. Add the Sync tsconfig to `npm run typecheck`; fold the Tiles README into SurfacePM; drop the 33 dead exports. *(S; ~40 lines)*
-
-**Findings:** R-65, R-69, R-70, R-71, R-72.
-
 ##### 11. Remaining Wide Walks
 
 **Lenses and state:** Debt, Performance, Scoped, awaiting rulings. **Effort:** Small to medium. **Deletes:** Nothing; work replaced.
@@ -251,7 +243,7 @@ Ordered by how much later work each gates. D-1 (state placement) and D-4 (Contex
 
 - **Backlinks, a Context view, and Linked-From now have their query.** The content index carries Context membership as of 09-07-2026 and `queryMembers` answers "which pages hold Space X or Context C." All three pending features were waiting on exactly that; each is now a surface over an existing read.
 - **The main window's inspector is a live empty pane, and the panel built for it already works.** The inspector opens, slides, resizes, remembers its width, and shows nothing, while the property panel is already mounted in the Page Window and the NavWindow. Wiring it behind a page selection is a handful of lines against machinery that exists.
-- **Agenda is threaded through the whole navigation layer with no surface at the end of it.** Tasks and Events are first-class in the data model, admitted into navigation references, and refused at every use. The plumbing is ahead of the surface, which makes the surface the cheap part. The three-vocabulary question in topic 10 should be settled first.
+- **Agenda is threaded through the whole navigation layer with no surface at the end of it.** Tasks and Events are first-class in the data model, admitted into navigation references, and refused at every use. The plumbing is ahead of the surface, and the entity vocabulary now resolves to one source, which makes the surface the cheap part.
 - **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 17 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan, D-2, and touch.
 
 #### Solid, Leave Alone
@@ -298,11 +290,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-60 | 9     | Dt   | Four warm caches, one shared helper, two adopters                                                                                  | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx`            |
 | R-61 | 9     | Dt   | A new user-facing setting needs three edits, and only two are checked by the compiler                                              | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx`                          |
 | R-63 | 9     | Dt   | The shell reaches into the interface by global CSS-class selector                                                                  | `Core/Navigation/useNavThumbnails.ts, Core/Interface/Windows/windowMorph.ts, Core/Interface/ContentView.tsx`          |
-| R-65 | 10    | P    | Two definitions of "parent path," four helpers for two questions, three unrelated `findContainer`s                                 | `Core/Nexus/treePatch.ts, Core/Nexus/treeIndex.ts, Core/Paths/posix.ts`                                               |
-| R-69 | 10    | P    | Naming canon is broken four ways, one of them created by the filing pass itself                                                    | `listed in evidence`                                                                                                  |
-| R-70 | 10    | D    | Three parallel vocabularies for one entity taxonomy                                                                                | `Core/Nexus/identityMark.ts, Core/Paths/paths.ts, Core/Nexus/folderKind.ts`                                           |
-| R-71 | 10    | P    | Two hand-rolled modal scrims with no shared primitive                                                                              | `Core/Interface/Confirm/ConfirmationWindow.tsx, Core/Assets/ImagePicker.tsx`                                          |
-| R-72 | 10    | P    | Coverage and dead-code measurements, recorded so they are not re-litigated                                                         | ``                                                                                                                    |
 | R-38 | 11    | Dt   | Three narrow questions still answered with wide reads                                                                              | `Core/Views/loadValues.ts, Core/Nexus/folderKind.ts, Desktop/FileWatch/watcher.ts`                                    |
 | R-39 | 11    | Dt   | The connection title map is rebuilt wholesale on every real tree change                                                            | `Core/Nexus/treeIndex.ts, Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/liveTree.ts`                            |
 | R-41 | 11    | Dt   | Every scroll frame re-resolves every visible connection and re-sorts every decoration                                              | `Core/MarkdownPM/decorations.ts`                                                                                      |

@@ -4,14 +4,26 @@ import { rootSegs } from './exclusion'
 
 export const relPosix = (root: string, abs: string): string => relative(root, abs)
 
-export type SidecarKind = 'space' | 'collection' | 'set' | 'taskConfig' | 'eventConfig'
+const AGENDA_KINDS = ['task', 'event'] as const
+
+export type AgendaKind = (typeof AGENDA_KINDS)[number]
+
+export type AgendaFolder = `${AgendaKind}s`
+
+export const AGENDA_FOLDERS: readonly AgendaFolder[] = AGENDA_KINDS.map(
+  (k): AgendaFolder => `${k}s`,
+)
+
+export const agendaKind = (folder: AgendaFolder): AgendaKind => folder.slice(0, -1) as AgendaKind
+
+export type SidecarKind = 'space' | 'collection' | 'set' | AgendaFolder
 
 export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
   space: '_space.json',
   collection: '_pagecollection.json',
   set: '_pageset.json',
-  taskConfig: '_taskconfig.json',
-  eventConfig: '_eventconfig.json',
+  tasks: '_taskconfig.json',
+  events: '_eventconfig.json',
 }
 
 /** Every read-modify-write serializes on this exact string, so it is built here rather than spelled out at a call site. */

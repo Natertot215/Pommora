@@ -19,7 +19,7 @@ import { MenuScrollFrame } from '../Menus/menu-row'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
-import { MENU_GAP as GAP } from '../Menus/menu-anchor'
+import { MENU_GAP as GAP } from '../Menus/menuAnchor'
 import * as s from './picker-base.css'
 
 const VIEWPORT_MARGIN = 8

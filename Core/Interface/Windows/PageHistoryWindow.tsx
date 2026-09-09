@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
-import { parentOf } from '@pommora/core/Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -77,7 +77,7 @@ function PageHistoryBody({
   useEffect(() => {
     let live = true
     void host()
-      .ask('view:loadValues', parentOf(livePath), [target.id])
+      .ask('view:loadValues', relDirname(livePath), [target.id])
       .then((values) => {
         const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
         if (live) setModifiedAt(stamp ? new Date(stamp).getTime() : null)

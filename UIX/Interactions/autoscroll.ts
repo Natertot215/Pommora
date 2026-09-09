@@ -1,7 +1,7 @@
 import { duration, ms } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 
-export type Axis = 'x' | 'y' | 'xy'
+type Axis = 'x' | 'y' | 'xy'
 
 export interface Params {
   edge: number // px band from a container edge where scroll engages
@@ -146,8 +146,6 @@ function readParams(el: HTMLElement): Params {
     accelDist: read('accelDist'),
   }
 }
-
-export type { StartCfg }
 
 export function armAutoScroll(
   dragEl: HTMLElement | null,

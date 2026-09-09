@@ -16,7 +16,7 @@ import {
   touchesCorpus,
   type WatchEvent,
 } from './watchPatch'
-import { findContainer } from './treeIndex'
+import { findContainerWhere } from './treePatch'
 import type { CollectionNode, SetNode } from './tree'
 import { noteExternalEdit } from '../Pages/fileHistory'
 
@@ -482,7 +482,7 @@ describe('the two container mappers agree', () => {
     }
   const notes = (): CollectionNode | SetNode | null => {
     const tree = getLiveTree()
-    return tree ? findContainer(tree, (n) => n.path === 'Notes') : null
+    return tree ? findContainerWhere(tree, (n) => n.path === 'Notes') : null
   }
 
   beforeEach(async () => {

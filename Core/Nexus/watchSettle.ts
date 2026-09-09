@@ -1,4 +1,4 @@
-import { relative } from '../Paths/posix'
+import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Paths/nexusPaths'
 import {
@@ -15,7 +15,6 @@ import type { NexusTree, ValueChange } from './tree'
 import { getLiveTree } from './liveTree'
 import { classifyEvent, type WatchEvent } from './watchPatch'
 import { pageIdIndex } from './valuesChanged'
-import { parentOf } from './treePatch'
 
 export function isNavPath(root: string, path: string): boolean {
   const segs = relative(root, path).split('/')
@@ -62,7 +61,7 @@ export function valueChangesOf(
   for (const ev of events) {
     const c = classifyEvent(held, root, ev, scope)
     if (c.kind !== 'page-upsert') continue
-    const container = parentOf(c.rel)
+    const container = relDirname(c.rel)
     const ids = byContainer.get(container) ?? new Set<string>()
     byContainer.set(container, ids)
     const id = byPath.get(c.rel)

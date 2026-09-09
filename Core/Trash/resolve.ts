@@ -6,7 +6,7 @@ import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { RecordFile } from './record'
 
-export interface Placement {
+interface Placement {
   dir: string
   finalName: string
   /** For a Space or Context: the final title restore writes everywhere (folder, registry, re-applied membership keys). Recorded titles are labels; this is the decision. */
@@ -50,7 +50,7 @@ export function containerChain(tree: NexusTree, id: string): Container[] | null 
   return null
 }
 
-export const findContainer = (tree: NexusTree, id: string): Container | null =>
+export const findContainerById = (tree: NexusTree, id: string): Container | null =>
   containerChain(tree, id)?.at(-1) ?? null
 
 /** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. The acting code branches on nothing: every name and title choice is made here. A live id refusal outranks every other answer — nothing may write over a living identity. */
@@ -101,7 +101,7 @@ export function resolveRecord(
     }
     case 'container': {
       if (record.entity === 'collection') return { refuse: 'cannot-hold' }
-      const parent = findContainer(tree, record.parent.id)
+      const parent = findContainerById(tree, record.parent.id)
       if (!parent)
         return live[record.parent.id] ? { refuse: 'cannot-hold' } : { refuse: 'parent-gone' }
       // A page and a Set share one folder namespace — both sibling sets block both kinds.

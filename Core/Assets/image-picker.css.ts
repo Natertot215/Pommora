@@ -1,22 +1,11 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { strip } from '@pommora/uix/Controls/slider.css'
 import { text, vars } from '@pommora/uix/Theme'
-import { stack } from '@pommora/uix/Theme/stack'
 import { accessoryButton, detail, rowBox } from '@pommora/uix/Menus/menu-base.css'
 
 const c = vars.color
 
 const CORNER_INSET = '8px'
-
-export const backdrop = style({
-  position: 'fixed',
-  inset: 0,
-  zIndex: stack.top.floating,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: c.state.muted,
-})
 
 export const panel = style({
   display: 'flex',

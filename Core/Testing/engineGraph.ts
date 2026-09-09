@@ -5,7 +5,7 @@ import ts from 'typescript'
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
-export interface EngineGraph {
+interface EngineGraph {
   files: string[]
   externals: string[]
 }

@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { menuAnchor } from '@pommora/uix/Menus/menu-anchor'
+import { menuAnchor } from '@pommora/uix/Menus/menuAnchor'
 import { stack } from '@pommora/uix/Theme/stack'
 
 // ── KNOBS — the toolbar menu button geometry (tune here) ──
@@ -7,7 +7,7 @@ const BUTTON = {
   padX: '8px',
 }
 
-export const wrapper = style({
+const wrapper = style({
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
@@ -17,12 +17,12 @@ export const wrapper = style({
   transform: 'translateX(calc(-1 * var(--toolbar-slide)))',
 } as Parameters<typeof style>[0])
 
-export const anchor = style(menuAnchor('center', stack.local.lifted))
+const anchor = style(menuAnchor('center', stack.local.lifted))
 
 export const anchorRight = style(menuAnchor('right', stack.local.lifted))
 
 /** The segment's own gap is zeroed so the collapsing label slot (button.css) is the sole icon↔title spacing. */
-export const button = style({ paddingInline: BUTTON.padX })
+const button = style({ paddingInline: BUTTON.padX })
 globalStyle(`${button} button`, { gap: 0 })
 
 /** A layout-neutral slot around only the button, so its context menu fires on the button chrome alone — the open menu is a sibling outside this subtree. */

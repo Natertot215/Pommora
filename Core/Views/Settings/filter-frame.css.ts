@@ -2,7 +2,7 @@ import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { field as fieldBase, borderedField } from '@pommora/uix/Fields/fields.css'
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
-import { growToContent } from '@pommora/uix/Menus/frame-growth'
+import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 import { rowBox, side } from '@pommora/uix/Menus/menu-base.css'
 
 const c = colorVars.color

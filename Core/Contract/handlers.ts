@@ -41,7 +41,7 @@ export interface HostContext {
   applyZoom(): Promise<void>
 }
 
-export type Handler<K extends keyof Asks> = (
+type Handler<K extends keyof Asks> = (
   ctx: HostContext,
   ...args: Asks[K]['args']
 ) => Asks[K]['reply'] | Promise<Asks[K]['reply']>

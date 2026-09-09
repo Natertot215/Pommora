@@ -21,7 +21,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 **Pommora —**  `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42• React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react`  as a secondary source to pull from per-icon. **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor.
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design iteration happens beforehand; codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Showcase/` ( via `vercel.json`; it's the origin-synced showcase of the design system. The showcase is **never** a priority during development.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Showcase/`  via `vercel.json`; it's the origin-synced showcase of the design system. The showcase is **never** a priority during development.
 
 ### Hard Rules
 
@@ -29,7 +29,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 - **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts`, and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
 - **The engine never depends on the renderer.** The host-run half of Core must never import React or depend on an interface — three gates go red the moment it does.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
-- **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
+- **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch, and hoist shared logic; duplication = debt, and repetition = regression.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first. Any in-flight decisions must be disclosed as they’re being made.

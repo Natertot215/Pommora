@@ -1,6 +1,6 @@
 import type { ActionItem } from '../../Actions/menuModel'
 
-export type CitationSubject = 'marker' | 'citation'
+type CitationSubject = 'marker' | 'citation'
 
 export interface CitationMenuContext {
   subject: CitationSubject

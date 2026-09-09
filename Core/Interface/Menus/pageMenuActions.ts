@@ -1,7 +1,7 @@
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import { pageLinkText, pagePathText, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { parentOf } from '@pommora/core/Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
@@ -9,7 +9,7 @@ import { host } from '../../Platform/dialer'
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveContext {
   return {
     moveTargets: containerTargets(tree),
-    currentParentPath: parentOf(path),
+    currentParentPath: relDirname(path),
   }
 }
 

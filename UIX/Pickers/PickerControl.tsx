@@ -18,7 +18,7 @@ export type MenuDoor = (
 
 export const MenuDoorContext = createContext<MenuDoor | null>(null)
 
-export const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
+const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
 export const factorChoice = (f: number): PickerOption<string> => ({

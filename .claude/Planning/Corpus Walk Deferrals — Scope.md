@@ -34,7 +34,7 @@ So **8.6 is the keystone** for 8.8. Its decision — stay rebuild-on-identity, o
 
 ##### 8.3 — Watcher Id Resolution Walks The Tree · Independent
 
-**Where.** Two walks on the settle path (`watcher.ts:87` `settle`): (a) `valuesChanged.ts:31-49` `indicesOf` recursively walks every collection, set, and page to build `byPath`+`byId`, reached through `watchSettle.ts:60`; (b) `watchPatch.ts` `findContainer`/`findSpace` inside `classifyEvent`, a recursive walk per event.
+**Where.** Two walks on the settle path (`watcher.ts:87` `settle`): (a) `valuesChanged.ts:31-49` `indicesOf` recursively walks every collection, set, and page to build `byPath`+`byId`, reached through `watchSettle.ts:60`; (b) `watchPatch.ts` `containerAt`/`findSpace` inside `classifyEvent`, a recursive walk per event.
 
 **Now.** `indicesOf` is WeakMap-cached on tree identity, but `valueChangesOf` is handed the tree taken *after* `applyWatchEvents`, and every patched batch installs a new tree object — so the cache misses cold every batch and walks O(pages) to resolve what is typically one id. Separately, `classifyEvent` runs at three sites per batch (`watchPatch.ts:194`, `watchSettle.ts:63`, `watchSettle.ts:83`); `applyWatchEvents` computes the classification but returns only `'patched' | 'refresh'`, so two of the three passes recompute a discarded result.
 

@@ -46,7 +46,7 @@ export const TINT_STEPS = {
   solid: 100,
 } as const
 
-export type TintStep = keyof typeof TINT_STEPS
+type TintStep = keyof typeof TINT_STEPS
 
 /** `base` at `amount` over `into`; a named step routes through its var so the ladder stays live at runtime. */
 export const mixAt = (

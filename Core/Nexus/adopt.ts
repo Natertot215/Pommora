@@ -12,34 +12,40 @@ import {
 } from '../Files/atomicWrite'
 import { readSidecar, writeSidecar } from '../Files/sidecar'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
+import { readIdentity } from './identity'
 import { asString } from './coerce'
 import { baseSidecar } from './schemas'
 import { recordWrite } from '../Files/writeEcho'
 import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
 import {
-  AGENDA_SLOTS,
   agendaContext,
   resolveFolderKind,
   type FolderKind,
   type FolderKindContext,
 } from './folderKind'
-import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from '../Paths/paths'
+import {
+  AGENDA_FOLDERS,
+  agendaKind,
+  NEXUS_CONFIG_FILES,
+  SIDECAR_FILENAME,
+  nexusConfig,
+} from '../Paths/paths'
 
 async function reHomeRegistered(
   absDir: string,
   root: string,
   kindCtx: FolderKindContext,
 ): Promise<boolean> {
-  for (const { slot, sidecar: sidecarKind, kind } of AGENDA_SLOTS) {
+  for (const slot of AGENDA_FOLDERS) {
     const registered = kindCtx.agenda[slot]
     if (!registered) continue
     if (kindCtx.homed.has(slot)) continue
-    const sidecar = await readSidecar(absDir, sidecarKind, baseSidecar)
+    const sidecar = await readSidecar(absDir, slot, baseSidecar)
     if (sidecar?.id !== registered) continue
     const target = join(root, basename(absDir))
     if (await pathExists(target)) return false
-    if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== kind) return false
+    if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== slot) return false
     recordWrite(absDir)
     recordWrite(target)
     await machine().rename(absDir, target)
@@ -65,13 +71,6 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 type ContainerKind = 'collection' | 'set'
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
-
-const MEMBER_KIND = {
-  collection: 'page',
-  set: 'page',
-  'tasks-singleton': 'task',
-  'events-singleton': 'event',
-} as const satisfies Record<AdoptableKind, ContentKind>
 
 async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean> {
   const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
@@ -104,15 +103,15 @@ async function stampTree(
   kindCtx: FolderKindContext,
   root: string,
 ): Promise<number> {
-  const singleton = kind === 'tasks-singleton' || kind === 'events-singleton'
-  const memberKind = MEMBER_KIND[kind]
+  const container = kind === 'collection' || kind === 'set'
+  const memberKind: ContentKind = container ? 'page' : agendaKind(kind)
   // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud placeholder) costs only itself — letting it throw would silently abandon every folder after it in readdir order.
-  let count = !singleton && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
+  let count = container && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) {
       if (await stampPage(join(absDir, e.name), memberKind).catch(() => false)) count++
-    } else if (e.kind === 'dir' && !singleton) {
+    } else if (e.kind === 'dir' && container) {
       const childRel = `${relDir}/${e.name}`
       if (shouldSkipDir(e.name, childRel, scope)) continue
       const abs = join(absDir, e.name)
@@ -129,7 +128,7 @@ async function stampTree(
 }
 
 export async function ensureFolderId(root: string, absDir: string): Promise<void> {
-  const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  const identity = valueOr(await readIdentity(root), null)
   const kindCtx = await agendaContext(root, identity, false)
   const depth = dirname(absDir) === root ? 'root' : 'nested'
   const kind = await resolveFolderKind(absDir, depth, kindCtx)
@@ -139,7 +138,7 @@ export async function ensureFolderId(root: string, absDir: string): Promise<void
 export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
   const scope = scopeOf(readSettingsLeaves(settings))
-  const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  const identity = valueOr(await readIdentity(root), null)
   const kindCtx = await agendaContext(root, identity, true)
 
   let stamped = 0
