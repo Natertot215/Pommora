@@ -577,6 +577,7 @@ export const DEFAULT_COMMANDS = {
 } satisfies Record<string, string>
 export type CommandId = keyof typeof DEFAULT_COMMANDS
 export type Commands = Record<CommandId, string>
+export const COMMAND_IDS: CommandId[]   // the table's keys, for the codec and the format roster
 export function toAccelerator(chord: string): string   // from chordOf: 'cmd+shift+n' → 'CmdOrCtrl+Shift+N'; 'cmd+plus' → 'CmdOrCtrl+Plus'; 'cmd+\\' → 'CmdOrCtrl+\\'
 export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shift+x' → 'Mod-Shift-x'
 
@@ -584,7 +585,7 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 // Core/Settings/codec.ts readCommands(raw): Commands — keeps only CommandId keys; an unknown id is ignored
 // Core/Settings/settings.ts readLiveCommands(root): Promise<Commands> beside readLivePersonalization, for the host
 // the six seeds of commands: {} → DEFAULT_COMMANDS
-// Core/Actions/editorMenu.ts — FORMAT_CHORDS deleted; FormatChordAction = Extract<CommandId, `format:${string}`>; keyBindingFor(commands, action) = toKeyBinding(commands[action])
+// Core/Actions/editorMenu.ts — FORMAT_CHORDS deleted; FormatChordAction = Extract<CommandId, `format:${string}`>; readers call toKeyBinding(commands[action]) directly
 // Core/MarkdownPM/Input/formatKeymap.ts — formatKeymap(commands: Commands): Extension; MarkdownEditor holds it in a Compartment beside readOnlyGate and reconfigures it when the store's commands change
 // Desktop/Actions/accelerators.ts deleted; editorMenu.ts:135 uses toAccelerator(commands[action]) with commands captured by the same refresh the application menu uses
 // Desktop/Actions/appMenu.ts — installAppMenu reads readLiveCommands(sessionRoot()) (defaults when no session) and writes accelerator: toAccelerator(commands['new-tab']) etc.; no literal remains
@@ -597,12 +598,12 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 **Verify — Automated**
 
-- [ ] Red first: `commands.test.ts` asserts `toAccelerator` and `toKeyBinding` on the four shapes (plain, shift, symbol, `plus`); module not found; then green. `accelerators.test.ts` moves into it.
-- [ ] A crossing test: for every `format:*` id, `toKeyBinding` of the table's chord is the key the editor's keymap binds, and the format keymap rebinds after a Compartment reconfigure with `format:bold` set to `cmd+shift+b`.
-- [ ] `rg -F "CmdOrCtrl+" Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "matchesCommand('" Core` → 0. `rg -F "FORMAT_CHORDS" Core Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "DEFAULT_COMMANDS" Core Desktop --glob '!node_modules' --glob '!out'` → 5+.
-- [ ] `codec.test` (or its nearest) asserts an unknown command id in settings is ignored.
-- [ ] `engineGraph.test.ts` green with `chords.ts` in the allowlist and nothing else added.
-- [ ] Gates green.
+- [x] Red first: `commands.test.ts` asserts `toAccelerator` and `toKeyBinding` on the four shapes (plain, shift, symbol, `plus`); module not found; then green. `accelerators.test.ts` moves into it.
+- [x] A crossing test: for every `format:*` id, `toKeyBinding` of the table's chord is the key the editor's keymap binds, and the format keymap rebinds after a Compartment reconfigure with `format:bold` set to `cmd+shift+b`.
+- [x] `rg -F "CmdOrCtrl+" Desktop --glob '!node_modules' --glob '!out'` → 0. `rg -F "matchesCommand('" Core` → 0. `rg -F "FORMAT_CHORDS" Core Desktop --glob '!node_modules' --glob '!out'` → 0. Control: `rg -F "DEFAULT_COMMANDS" Core Desktop --glob '!node_modules' --glob '!out'` → 5+.
+- [x] `codec.test` (or its nearest) asserts an unknown command id in settings is ignored.
+- [x] `engineGraph.test.ts` green with `chords.ts` in the allowlist and nothing else added.
+- [x] Gates green.
 
 **Verify — User**
 
@@ -610,11 +611,11 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 #### Gate 4 — one chord table
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in. The next phase opens automatically.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked.
+- [x] Simplification and review dispatched against `<base>..HEAD`.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in. The next phase opens automatically.
 
 ---
 
@@ -669,9 +670,9 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
   - [x] Task 6 — The grip-hot chain goes · `1b6c552e7`
 - [x] **Phase 3** — One Arbiter For Escape · base `ad6ec0e07` · Ruling 12 `a422b6894` · simplified `478cb9d18` · reviewed and fixed `3ee1d0e0c`, `79f94298f`
   - [x] Task 7 — Six listeners join the stack · `2d022a866`
-- [ ] **Phase 4** — One Chord Table · base `79f94298f`
-  - [ ] Task 8 — Every chord is a row, live everywhere · `<commit>`
-- [ ] **Phase 5** — The Record
+- [x] **Phase 4** — One Chord Table · base `bee666881` · Ruling 13 `a751696b2` · simplified `8b46d888d` · reviewed and fixed `4fc9a520a`
+  - [x] Task 8 — Every chord is a row, live everywhere · `c074b1d31`
+- [ ] **Phase 5** — The Record · base `4fc9a520a`
   - [ ] Task 9 — Docs, audit, artifact · `<commit>`
 
 ### Rulings
@@ -688,11 +689,16 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 10. 09-08-2026, Nathan: raising a floating window on click, with Escape following the raise, stays parked; it is window management, not a menu fix.
 11. 09-08-2026, Nathan, at the Gate 1 stop: the three `solid` pickers keep `solid`, carried through the door as `popMenu(items, trigger, { solid })`; the tile handle menu's root rows carry the glyphs the deleted pane drew; the presenter's levels take the pane width floor the deleted pane had, and its 180 cap with an ellipsized label.
 12. 09-08-2026, Nathan: the tile menu's Lock row carries the lock glyph, and Lock, Style, and Scale are stay rows: in the presenter a stay pick runs its action and the pane redraws in place with fresh rows at the same level; the door's promise stays pending until a non-stay pick or a dismissal. A system menu closes on any click, so natively a stay row resolves like any other.
+13. 09-08-2026, Nathan: the presenter's 120 floor and 180 cap stay on every menu it draws; a PickerControl list is the exception and draws no wider than it did before this plan, at its natural width. Carried as a `compact` option through the door, beside `solid` and `stay`.
 
 ### Open Against Later Tasks
 
 
 ### Deviations
+
+- Gate 4: `readCommands` keeps the default when a user chord parses to a modifier-only key; `COMMAND_IDS` is the table's exported key list; `keyBindingFor` was inlined.
+
+- Task 8: `refreshMenu()` does the one `readLiveCommands` read and hands the table to both `installAppMenu` and the editor context menu, since the menu can't read per right-click. The editor receives chords through `EditorSettings.commands` on its host, never from the store; `pasteInverse` folded into it. `matchesCommand` takes a structural key press so `chords.ts` typechecks in the engine project. `CellEditor` reads chords at mount.
 
 - Task 7: every pinned glance holds its own Escape entry in open order (Gate 3); the plan's one shared pin entry, pushed once on the first pin, could never reorder. The `shown === null` gate the Becomes wrote is gone with it; the `shown === null` gate the Becomes wrote would release and re-push the pin entry on every live-glance close, which is the reorder Ruling 7 rules out. The live glance's own entry already sits above it.
 
@@ -713,7 +719,7 @@ export function toKeyBinding(chord: string): string    // from chordOf: 'cmd+shi
 
 ### Sequenced After
 
-- A Shortcuts settings pane over the one table; a `refreshMenu()` on a commands change if a live native rebind is wanted.
+- A Shortcuts settings pane over the one table; a `refreshMenu()` on a commands change if a live native rebind is wanted. The pane needs a named-key map: `toAccelerator` and `toKeyBinding` capitalize the first character only, so a multi-word key such as `arrowup` would reach Electron as `Arrowup`; no default row spells one.
 - A MarkdownPM slash-command menu as the third consumer of the door; it will need the door to accept a caret rect, which was cut from this plan as having no writer.
 - Touch reachability of content right-click menus on the mobile host.
 - Raise on click for floating windows: a press inside a window lifts it above the others and to the top of the dismissal stack, so Escape follows focus rather than open order (Ruling 10). Needs a window z-order and a stack reorder, neither of which exists.
