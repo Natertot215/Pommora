@@ -1,5 +1,6 @@
 import type { AccentSetting, ColorSetting } from '@pommora/uix/Theme/colors'
 import { isColorKey } from '@pommora/uix/Theme/colors'
+import { chordOf } from '@pommora/uix/Interactions/chords'
 import { COMMAND_IDS, type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
 import { DATE_FORMATS } from '../Properties/columnStyles'
 import { LINK_DISPLAYS } from '../Properties/properties'
@@ -113,13 +114,17 @@ export function readPersonalization(raw: unknown): Personalization {
   }
 }
 
+const MODIFIER_KEYS = new Set(['cmd', 'ctrl', 'alt', 'shift'])
+
 // String values only under a known id, so a malformed entry or a stale id falls back to the built-in binding instead of poisoning the map.
 export function readCommands(raw: unknown): Commands {
   const commands: Commands = { ...DEFAULT_COMMANDS }
   const c = isPlainObject(raw) ? raw : {}
   for (const key of COMMAND_IDS) {
     const value = c[key]
-    if (typeof value === 'string' && value.length > 0) commands[key] = value
+    if (typeof value !== 'string') continue
+    const chord = chordOf(value)
+    if (chord && !MODIFIER_KEYS.has(chord.key)) commands[key] = value
   }
   return commands
 }

@@ -55,7 +55,7 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
         set((s) => (s.pendingMenu?.settle === settle ? { pendingMenu: null } : {}))
         resolve(action)
       }
-      set({ pendingMenu: { id: ++menuSeq, items, trigger, ...options, settle } })
+      set({ pendingMenu: { ...options, id: ++menuSeq, items, trigger, settle } })
     }),
 
   notification: null,
