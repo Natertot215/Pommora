@@ -2,7 +2,7 @@ import { linkAt, normalizeTitle, pageEmbedText } from '@pommora/core/Connections
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt, lineIndexAt } from '../Engine/docScan'
-import type { ConnPage, PageIndex } from '../Links/connectionsApi'
+import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 import type { EditorHost } from '../api'
 
 type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'

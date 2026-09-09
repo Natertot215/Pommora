@@ -9,7 +9,7 @@ import type {
   TabTarget,
 } from '@pommora/core/Navigation/navRef'
 import type { StoredTab } from '@pommora/core/Interface/Windows/windowRecord'
-import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
+import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { navKey } from './navRecents'
 import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'

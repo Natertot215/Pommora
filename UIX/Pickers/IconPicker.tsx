@@ -2,15 +2,17 @@ import {
   type MouseEvent,
   type RefObject,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { PickerMenu } from './picker-base'
 import { SearchField } from '../Fields/SearchField'
-import { Icon } from '../Symbols'
-import { lucideGlyph, searchIcons, type IconEntry } from '../Symbols/allSymbols'
+import { fullIconSet, Icon, loadFullIconSet, subscribeFullIconSet } from '../Symbols'
+import type { IconEntry } from '../Symbols/allSymbols'
 import { reorder, SortableZone, useDragItem } from '../Interactions/drag'
 import { cx } from '../Utilities/cx'
 import * as s from './icon-picker.css'
@@ -46,7 +48,11 @@ export function IconPicker({
   const favs = favorites.ids
 
   const [query, setQuery] = useState('')
-  const filtered = useMemo(() => searchIcons(query), [query])
+  const set = useSyncExternalStore(subscribeFullIconSet, fullIconSet, fullIconSet)
+  useEffect(() => {
+    if (open) void loadFullIconSet()
+  }, [open])
+  const filtered = useMemo(() => set?.searchIcons(query) ?? [], [set, query])
 
   const pick = useCallback(
     (id: string) => {
@@ -197,7 +203,6 @@ function FavCell({
   onContext: (e: MouseEvent, id: string) => void
 }): React.JSX.Element {
   const { setNodeRef, style, handle } = useDragItem(id)
-  const Glyph = lucideGlyph(id)
   return (
     <button
       type="button"
@@ -209,7 +214,7 @@ function FavCell({
       onClick={() => onPick(id)}
       onContextMenu={(e) => onContext(e, id)}
     >
-      {Glyph ? <Glyph size="1em" /> : <Icon name="square-dashed" size="1em" />}
+      <Icon name={id} size="1em" />
     </button>
   )
 }

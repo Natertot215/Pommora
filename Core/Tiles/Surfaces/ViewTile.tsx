@@ -103,80 +103,6 @@ const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   return { '--segment-stroke': stroke } as React.CSSProperties
 }
 
-function EmbedTitle({
-  title,
-  level,
-  editable,
-  onCommit,
-}: {
-  title: string
-  level: number
-  editable: boolean
-  onCommit: (next: string) => void
-}): React.JSX.Element {
-  const [editing, setEditing] = useState(false)
-  const ref = useRef<HTMLSpanElement>(null)
-  const reverting = useRef(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!editing || !el) return
-    el.focus()
-    const range = document.createRange()
-    range.selectNodeContents(el)
-    const sel = window.getSelection()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
-  }, [editing])
-
-  const commit = (): void => {
-    setEditing(false)
-    const next = (ref.current?.textContent ?? '').trim()
-    if (next !== title) onCommit(next)
-  }
-
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: a rich tile surface, not a form control
-    <span
-      ref={ref}
-      className={`${s.titleText} md-h${level}`}
-      contentEditable={editing}
-      suppressContentEditableWarning
-      spellCheck={false}
-      role="textbox"
-      tabIndex={editing ? 0 : undefined}
-      onClick={editing || !editable ? undefined : () => setEditing(true)}
-      onKeyDown={
-        editing
-          ? (e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                commit()
-              } else if (e.key === 'Escape') {
-                reverting.current = true
-                if (ref.current) ref.current.textContent = title
-                setEditing(false)
-              }
-            }
-          : undefined
-      }
-      onBlur={
-        editing
-          ? () => {
-              if (reverting.current) {
-                reverting.current = false
-                return
-              }
-              commit()
-            }
-          : undefined
-      }
-    >
-      {title}
-    </span>
-  )
-}
-
 function ViewPill({
   view,
   active,
@@ -236,6 +162,7 @@ export function ViewTile({
   const [cfgOpen, setCfgOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [renaming, setRenaming] = useState<number | null>(null)
+  const [titleEditing, setTitleEditing] = useState(false)
   const [iconFor, setIconFor] = useState<number | null>(null)
   const [colorFor, setColorFor] = useState<number | null>(null)
   const menuAnchorRef = useRef<Element | null>(null)
@@ -341,8 +268,7 @@ export function ViewTile({
     })
   }
   const commitTitle = (next: string): void => {
-    const t = next.trim()
-    patchEntry({ display_title: !t || t === source.title ? undefined : t })
+    patchEntry({ display_title: !next || next === source.title ? undefined : next })
   }
 
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -501,12 +427,27 @@ export function ViewTile({
                     !iconShown && 'is-hidden',
                   )}
                 />
-                <EmbedTitle
-                  title={entry.display_title ?? source.title}
-                  level={titleLevel}
-                  editable={!locked}
-                  onCommit={commitTitle}
-                />
+                <RenamableLabel
+                  renames="title"
+                  editing={titleEditing}
+                  emptyCommits
+                  value={entry.display_title ?? source.title}
+                  className={`${s.titleText} md-h${titleLevel}`}
+                  onCommit={(next) => {
+                    setTitleEditing(false)
+                    commitTitle(next)
+                  }}
+                  onCancel={() => setTitleEditing(false)}
+                >
+                  {/* biome-ignore lint/a11y/noStaticElementInteractions: click-to-rename on the title text; the row carries its own context menu */}
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: the title's keyboard route is its edit field, entered by clicking the resting text */}
+                  <span
+                    className={`${s.titleText} md-h${titleLevel}`}
+                    onClick={locked ? undefined : () => setTitleEditing(true)}
+                  >
+                    {entry.display_title ?? source.title}
+                  </span>
+                </RenamableLabel>
               </span>
               {titleShown && configButton}
             </div>

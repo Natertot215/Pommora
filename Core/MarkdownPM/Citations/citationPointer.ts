@@ -88,7 +88,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
                 api,
                 event.metaKey,
                 el,
-                view.state.facet(editorHost).glance,
+                view.state.facet(editorHost),
               )
             : null
         if (go) return go()
@@ -100,7 +100,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
           api,
           event.metaKey,
           el,
-          view.state.facet(editorHost).glance,
+          view.state.facet(editorHost),
         )
         if (go) return go()
       }

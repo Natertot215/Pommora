@@ -1,8 +1,8 @@
 // `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a key in `govern` absent from `next` is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
 import {
+  preservedChanges,
   reconcileGovernedRoot,
-  survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
@@ -27,11 +27,12 @@ export async function setGovernedRootKeys(
   const reconciled = world
     ? reconcileGovernedRoot(own, world)
     : { root: own, changed: [], adoptions: [] }
-  const { changed, adoptions } = reconciled
+  const { adoptions } = reconciled
+  const preserved = preservedChanges(reconciled, own)
   const content = mergeFrontmatter(
     existing,
-    { ...survivingChanges(reconciled), ...next },
-    [...changed, ...govern],
+    { ...preserved, ...next },
+    [...Object.keys(preserved), ...govern],
     splitEnvelope(existing).body,
   )
   if (content === existing) return adoptions

@@ -12,7 +12,7 @@ import {
 import { updateFolderSidecar } from './folderEntity'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { ok, type Result } from '../Contract/result'
-import type { StateOrderKey, ChildOrderKey } from '../Pages/mutateRequest'
+import type { StateOrderKey, ChildOrderKey } from './mutateRequest'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 

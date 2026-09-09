@@ -3,7 +3,7 @@ import {
   DEFAULT_NEW_NAME,
   type MutateRequest,
   type RenameHost,
-} from '@pommora/core/Pages/mutateRequest'
+} from '@pommora/core/Nexus/mutateRequest'
 import { errText, fail, type PommoraError } from '@pommora/core/Contract/result'
 import {
   type NavigationState,

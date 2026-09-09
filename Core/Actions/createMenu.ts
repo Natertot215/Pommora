@@ -1,5 +1,5 @@
 import type { ActionItem } from './menuModel'
-import type { Creator } from '../Pages/mutateRequest'
+import type { Creator } from '../Nexus/mutateRequest'
 
 export type CreateMenuAction = `create:${number}`
 

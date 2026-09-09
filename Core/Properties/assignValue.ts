@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
+import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   applyValueAtRoot,

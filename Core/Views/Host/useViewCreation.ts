@@ -13,7 +13,7 @@ import {
 } from '@pommora/core/Properties/propertyValue'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import { DEFAULT_NEW_NAME } from '@pommora/core/Pages/mutateRequest'
+import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'

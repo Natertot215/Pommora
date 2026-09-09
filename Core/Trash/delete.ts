@@ -7,7 +7,7 @@ import { fail, fault, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { mintBundle, settleBundle } from './bundle'
 import {
   buildContextRecord,

@@ -25,7 +25,7 @@ import {
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { TrashMode } from '../Trash/trashRow'
 import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'

@@ -10,7 +10,7 @@ import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import type { FolderPlacement } from '@pommora/core/Settings/personalization'
-import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
+import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { setContainerOf, isSelfOrDescendant, type Entry, type Index } from './sidebarDndModel'
 import { nextOrder, slotInGroup, type MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 

@@ -3,7 +3,7 @@ import { cropKeyFor } from '../Paths/nexusPaths'
 import { updateCrops } from '../Settings/settings'
 import { fault, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { assetFilePath } from './assetRoots'
 import { clampZoom } from './cropGeometry'
 

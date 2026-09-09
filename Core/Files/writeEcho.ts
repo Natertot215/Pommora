@@ -18,9 +18,14 @@ export function isRecentWrite(absPath: string): boolean {
     if (now - t <= WINDOW_MS) return true
     recent.delete(absPath)
   }
-  for (const [p, tp] of recent) {
-    if (now - tp > PREFIX_WINDOW_MS) continue
-    if (absPath.startsWith(`${p}/`)) return true
+  // Only an exact ancestor can prefix-match, so walk absPath's parent directories instead of scanning every record: O(depth) lookups replace the O(N) scan.
+  for (
+    let slash = absPath.lastIndexOf('/');
+    slash > 0;
+    slash = absPath.lastIndexOf('/', slash - 1)
+  ) {
+    const tp = recent.get(absPath.slice(0, slash))
+    if (tp !== undefined && now - tp <= PREFIX_WINDOW_MS) return true
   }
   return false
 }
