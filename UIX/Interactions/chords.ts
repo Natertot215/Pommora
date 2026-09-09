@@ -1,6 +1,6 @@
 // Modifiers are exact — a spec without shift rejects a shifted press — so overlapping bindings can't double-fire.
 
-interface Chord {
+export interface Chord {
   key: string
   cmd: boolean
   ctrl: boolean
@@ -11,7 +11,7 @@ interface Chord {
 // Parsing per press allocated on every keystroke the editor takes.
 const chords = new Map<string, Chord | null>()
 
-function chordOf(spec: string): Chord | null {
+export function chordOf(spec: string): Chord | null {
   const known = chords.get(spec)
   if (known !== undefined) return known
   const parts = spec
@@ -33,7 +33,15 @@ function chordOf(spec: string): Chord | null {
   return chord
 }
 
-export function matchesCommand(spec: string | undefined, e: KeyboardEvent): boolean {
+interface KeyPress {
+  key: string
+  metaKey: boolean
+  ctrlKey: boolean
+  altKey: boolean
+  shiftKey: boolean
+}
+
+export function matchesCommand(spec: string | undefined, e: KeyPress): boolean {
   const chord = spec ? chordOf(spec) : null
   if (!chord) return false
   return (

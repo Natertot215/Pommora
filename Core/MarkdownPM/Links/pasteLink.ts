@@ -118,7 +118,7 @@ export const pasteLink = EditorView.domEventHandlers({
 
   keydown(event, view) {
     const host = view.state.facet(editorHost)
-    if (!matchesCommand(host.settings().pasteInverse, event)) return false
+    if (!matchesCommand(host.settings().commands['paste-inverse'], event)) return false
     if (view.state.readOnly) return false
     event.preventDefault()
     void host.clipboard.read().then((text) => {

@@ -178,7 +178,7 @@ export function CellEditor({
               { key: 'Mod-y', run: consume(() => onRedoRef.current()) },
             ]),
           ),
-          formatKeymap,
+          formatKeymap(host.settings().commands),
           keymap.of(defaultKeymap),
           // Character-pair auto-pairing only, so the `[[…]]` query closes and autocomplete can fire.
           EditorView.inputHandler.of((view, from, to, text) => {

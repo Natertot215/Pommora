@@ -11,7 +11,7 @@ import {
   type FormatState,
   INSERT_LINK_ACTION,
 } from '@pommora/core/Actions/editorMenu'
-import { acceleratorFor } from './accelerators'
+import { type Commands, DEFAULT_COMMANDS, toAccelerator } from '@pommora/core/Actions/commands'
 import { HEADING_LEVELS } from '@pommora/core/Actions/gripMenu'
 import { isValidLink } from '@pommora/core/Connections/links'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
@@ -19,6 +19,11 @@ import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
 let lastState: FormatState | null = null
 export function setFormatState(s: FormatState): void {
   lastState = s
+}
+
+let commands: Commands = DEFAULT_COMMANDS
+export function setEditorCommands(c: Commands): void {
+  commands = c
 }
 
 // The event hands over a bare WebContents, so the typed push (which takes a window) can't be used.
@@ -121,12 +126,12 @@ function pommoraItems(
     },
     {
       label: 'Format',
-      // Display-only; the keys are bound in formatKeymap.ts from the same FORMAT_CHORDS.
+      // Display-only; formatKeymap binds the keys from the same table.
       submenu: FORMAT_ROWS.map(({ label, action, state }) => ({
         label,
         type: 'checkbox' as const,
         checked: s[state],
-        accelerator: acceleratorFor(action),
+        accelerator: toAccelerator(commands[action]),
         registerAccelerator: false,
         click: act(action),
       })),

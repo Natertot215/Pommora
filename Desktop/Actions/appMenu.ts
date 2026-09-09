@@ -6,6 +6,7 @@ import { push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readInterfaceScale } from '@pommora/core/Settings/settings'
+import { type Commands, toAccelerator } from '@pommora/core/Actions/commands'
 import { setHostZoom, stepHostZoom } from '../Web/webGuests'
 import { INTERFACE_SCALE_DEFAULT } from '@pommora/core/Settings/personalization'
 import { interfaceScaleZoom } from '../Config/interfaceScale'
@@ -23,7 +24,11 @@ const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
   if (w) stepHostZoom(w.webContents, dir)
 }
 
-export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promise<void> {
+export async function installAppMenu(
+  win: BrowserWindow,
+  adopt: AdoptFn,
+  commands: Commands,
+): Promise<void> {
   const userData = app.getPath('userData')
   const stored = (await readAppConfig(userData)).recents ?? []
   // Drop trashed nexuses so Open Recent never lists a dead path.
@@ -54,13 +59,13 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         { type: 'separator' },
         {
           label: 'New Tab',
-          accelerator: 'CmdOrCtrl+N',
+          accelerator: toAccelerator(commands['new-tab']),
           enabled: hasSession,
           click: () => send('new-tab'),
         },
         {
           label: 'New Page',
-          accelerator: 'CmdOrCtrl+Shift+N',
+          accelerator: toAccelerator(commands['new-page']),
           enabled: hasSession,
           click: () => send('new-page'),
         },
@@ -75,7 +80,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         },
         {
           label: 'Reload',
-          accelerator: 'CmdOrCtrl+R',
+          accelerator: toAccelerator(commands.reload),
           click: () => {
             const w = menuTarget(win)
             // Forget the held tree so the booting renderer's read walks disk fresh.
@@ -114,14 +119,14 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
       submenu: [
         {
           label: 'Toggle Sidebar',
-          accelerator: 'CmdOrCtrl+\\',
+          accelerator: toAccelerator(commands['toggle-sidebar']),
           click: () => send('toggle-sidebar'),
         },
         { type: 'separator' },
         // Read fresh, so a settings.json edit to interfaceScale takes effect without a relaunch.
         {
           label: 'Actual Size',
-          accelerator: 'CmdOrCtrl+0',
+          accelerator: toAccelerator(commands['actual-size']),
           click: async () => {
             const root = sessionRoot()
             const scale = root ? await readInterfaceScale(root) : INTERFACE_SCALE_DEFAULT
@@ -130,15 +135,23 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           },
         },
         // De-roled: a zoom role acts on the focused WebContents, so a guest would bypass the guest-zoom sync. The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
-        { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: zoomStep(win, 1) },
         {
           label: 'Zoom In',
-          accelerator: 'CmdOrCtrl+=',
+          accelerator: toAccelerator(commands['zoom-in']),
+          click: zoomStep(win, 1),
+        },
+        {
+          label: 'Zoom In',
+          accelerator: toAccelerator(commands['zoom-in-alias']),
           click: zoomStep(win, 1),
           visible: false,
           acceleratorWorksWhenHidden: true,
         },
-        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: zoomStep(win, -1) },
+        {
+          label: 'Zoom Out',
+          accelerator: toAccelerator(commands['zoom-out']),
+          click: zoomStep(win, -1),
+        },
         { type: 'separator' },
         { role: 'togglefullscreen' },
         { role: 'toggleDevTools' },

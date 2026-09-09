@@ -5,6 +5,7 @@ import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { stubDialer } from '../vitest.setup'
+import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 const treeAt = (rootPath: string): NexusTree => ({
   nexus: { id: rootPath, rootPath, name: 'x', profileImage: null, profileSubtitle: '' },
@@ -14,7 +15,7 @@ const treeAt = (rootPath: string): NexusTree => ({
   collections: [],
   accent: 'lavender',
   personalization: {},
-  commands: {},
+  commands: DEFAULT_COMMANDS,
   assetDirectory: ASSETS_DIR_REL,
   excluded: [],
   registry: [],

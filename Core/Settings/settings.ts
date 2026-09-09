@@ -1,3 +1,4 @@
+import type { Commands } from '../Actions/commands'
 import {
   coerceInterfaceScale,
   HISTORY_DAYS,
@@ -45,7 +46,7 @@ export async function updateCrops(
 /** Served from the tree main already holds; the disk read covers the moments before a walk has installed one — launch-restore and adoption. */
 async function liveLeaves(
   root: string,
-): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory'>> {
+): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory' | 'commands'>> {
   const tree = getLiveTree()
   if (tree?.nexus.rootPath === root) return tree
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
@@ -54,6 +55,9 @@ async function liveLeaves(
 
 export const readLivePersonalization = async (root: string): Promise<Personalization> =>
   (await liveLeaves(root)).personalization
+
+export const readLiveCommands = async (root: string): Promise<Commands> =>
+  (await liveLeaves(root)).commands
 
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))

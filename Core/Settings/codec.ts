@@ -1,6 +1,6 @@
 import type { AccentSetting, ColorSetting } from '@pommora/uix/Theme/colors'
 import { isColorKey } from '@pommora/uix/Theme/colors'
-import { DEFAULT_COMMANDS } from '../Actions/commands'
+import { type CommandId, type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
 import { DATE_FORMATS } from '../Properties/columnStyles'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import { isPlainObject } from '../Properties/propertyValue'
@@ -113,11 +113,12 @@ export function readPersonalization(raw: unknown): Personalization {
   }
 }
 
-// String values only, so a malformed entry falls back to the built-in binding instead of poisoning the map.
-export function readCommands(raw: unknown): Record<string, string> {
-  const commands = { ...DEFAULT_COMMANDS }
+// String values only under a known id, so a malformed entry or a stale id falls back to the built-in binding instead of poisoning the map.
+export function readCommands(raw: unknown): Commands {
+  const commands: Commands = { ...DEFAULT_COMMANDS }
   const c = isPlainObject(raw) ? raw : {}
-  for (const [key, value] of Object.entries(c)) {
+  for (const key of Object.keys(DEFAULT_COMMANDS) as CommandId[]) {
+    const value = c[key]
     if (typeof value === 'string' && value.length > 0) commands[key] = value
   }
   return commands
@@ -129,7 +130,7 @@ export interface SettingsLeaves {
   assetDirectory: string
   accent: AccentSetting
   personalization: Personalization
-  commands: Record<string, string>
+  commands: Commands
   profileImage: string | null
   profileIcon: string | undefined
   profileSubtitle: string

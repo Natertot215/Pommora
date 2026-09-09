@@ -1,4 +1,5 @@
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
+import { useSession } from '../Session/store'
 
 type Revert = () => boolean
 
@@ -8,7 +9,7 @@ let group: Revert[] | null = null
 let installed = false
 
 const onKey = (e: KeyboardEvent): void => {
-  if (e.defaultPrevented || !matchesCommand('cmd+z', e)) return
+  if (e.defaultPrevented || !matchesCommand(useSession.getState().commands['undo-value'], e)) return
   if (
     e.target instanceof Element &&
     e.target.closest('input,textarea,[contenteditable],.cm-editor')

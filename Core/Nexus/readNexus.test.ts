@@ -25,15 +25,15 @@ describe('readCommands', () => {
     expect(readCommands('nope')).toEqual(DEFAULT_COMMANDS)
     expect(readCommands([])).toEqual(DEFAULT_COMMANDS)
   })
-  it('overlays user bindings and keeps unknown-but-valid ids', () => {
+  it('overlays user bindings and ignores an id the table does not carry', () => {
     const c = readCommands({ 'toggle-ribbon': 'cmd+shift+e', 'future-thing': 'ctrl+k' })
     expect(c['toggle-ribbon']).toBe('cmd+shift+e')
-    expect(c['future-thing']).toBe('ctrl+k')
+    expect(Object.keys(c)).toEqual(Object.keys(DEFAULT_COMMANDS))
   })
   it('a non-string or empty value falls back to the default binding', () => {
-    const c = readCommands({ 'toggle-ribbon': 42, other: '' })
+    const c = readCommands({ 'toggle-ribbon': 42, 'toggle-nav': '' })
     expect(c['toggle-ribbon']).toBe(DEFAULT_COMMANDS['toggle-ribbon'])
-    expect(c.other).toBeUndefined()
+    expect(c['toggle-nav']).toBe(DEFAULT_COMMANDS['toggle-nav'])
   })
 })
 
