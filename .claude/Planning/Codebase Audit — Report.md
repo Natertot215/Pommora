@@ -13,7 +13,7 @@ Nine read-only auditors each covered a slice of the tree or a cross-cutting lens
 - **Mechanical debt is near zero.** Dead exports are about 33 in 2,710. Zero raw colors across 44 Core style files. One dead CSS selector out of 631, now gone. Zero assertion-free tests. Textual duplication is 0.41% of tokens. Every declared folder exists under exactly its declared name, and there are zero orphan files.
 - **The best code is in the places that matter most.** The view pipeline, the tile layout model, the navigation reference model, the pure editor engine, the pointer harness, the property value model, and the connections grammar were each independently called the strongest code in their slice. They should not be touched.
 
-**What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. Three of them were ruled on 09-07-2026 and are now work rather than questions: where each piece of state lives (a rule, applied row by row), how Context tags are keyed (titles stay), and whether a menu needs the operating system (one coherent menu system replaces the dead second renderer). The one that remains open and gates the most is what "most recent wins" means for a reader: an open page never learns its file changed, and the next keystroke writes the stale copy back.
+**What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. Two of them were ruled on 09-07-2026 and are now work rather than questions: where each piece of state lives (a rule, applied row by row) and how Context tags are keyed (titles stay). The one that remains open and gates the most is what "most recent wins" means for a reader: an open page never learns its file changed, and the next keystroke writes the stale copy back.
 
 **Is what already exists flawless?** Eight one-machine defects were confirmed at audit time. Seven are fixed; the heading-column toggle keyed by table position remains, filed under topic 1. The audit's own ninth item was denied by manual test.
 
@@ -31,16 +31,16 @@ All on 09-07-2026, all gated green, committed on `main` as `f67ba25e4` (index), 
 
 #### Where Brainwaves Go
 
-Nathan's scarce resource is decisions; the implementation is Claude's. With the state-placement rule, the Context-tag ruling, and the menu ruling made, the split for the next cycle:
+Nathan's scarce resource is decisions; the implementation is Claude's. Two passes have landed since the audit. This cycle's cleanup cleared the cheap behind-the-wall half — the locale fold and the read-modify-write consolidation in Topic 4, the MarkdownPM link-token and engine-filing debt, the import and test-scaffolding hygiene in Topic 10, the property-panel resolver, and the widget-unmount discipline. The menu-and-shortcut rework (Topic 5) is committing in a parallel session — treat it as done. What that leaves, ordered by what to reach for first:
 
-| Share                | Category              | What it actually is                                                                                                                                         |
-| -------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The next sitting** | Decisions             | D-2 (external-edit reload policy) gates the concurrency topic; D-6 through D-9 are smaller.                                                                 |
-| **~25%**             | Behind-the-wall fixes | The two registry read-policy fixes, the heading-column key, the write-echo tests. Small, mechanical, unblocked.                                            |
-| **~45%**             | Ruled foundation work | The state-placement plan, the menu-system rework, the reconcile fix for Context tags, and the Table/Cards engine before a third view kind exists.           |
-| **~30%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel; Agenda's surface after its vocabulary is settled. |
+| Priority                          | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
+| --------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The one decision that matters** | Decision              | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
+| **Cheap and unblocked**           | Behind-the-wall fixes | The two registry readers (R-17, R-18), the heading-column key rebound to the header row (R-06), the write-echo tests (R-12), the Lucide dynamic import that lifts the whole icon set out of the `<Icon>` critical path (R-53, a foundation-risk win in one edit), and the ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
+| **Ruled, larger**                 | Foundation work       | The state-placement plan (ruled, still unbuilt), the Context-tag reconcile fix (R-11), and folding the Table and Cards renderers onto one engine (Topic 6) before a third view kind is written a third time.                                                                                                                  |
+| **On earned plumbing**            | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface once its three-vocabulary question (R-70) is settled.                                                                                                                    |
 
-**Sequenced, not interleaved.** Fixes first because they're cheap and independently verifiable. Ruled work second. Building third, on the openings whose plumbing is done.
+**Focus next:** rule **D-2** — the cheapest decision with the widest unlock — and run the cheap unblocked fixes alongside it, R-53 first. Ruled foundation work second; building last, on the openings whose plumbing is done.
 
 #### Grounding: What Actually Matters
 
@@ -50,7 +50,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. With the 
 - `Core/Files`, `Core/Nexus`, `Core/Paths`, `Core/Index`: atomicity, the walk, identity re-minting, the rename cascade. The index now carries Context membership.
 - `Core/Contexts` and `Core/Properties`: title-keyed Context membership is the model's largest structural commitment, now ruled to stay. The value model beside it is excellent.
 - `Core/Session` and `Core/Navigation`: identity-first references are exactly what sync needs. Session is where the external-edit reload has to land, and it appears in no Features doc.
-- `Core/Actions`: portable menu models, the half of the menu system that already works for a second host.
+- `Core/Actions`: portable menu models and the one door every menu opens through; a second host owes it only the native `menu` channel.
 - `Desktop/Platform`, `Desktop/Store`, `Desktop/Bridge`, `Desktop/FileWatch`: where every safety guarantee actually lives. Desktop is 2,027 lines, readable end to end in an afternoon.
 - `UIX/Interactions`, `UIX/Symbols`, `UIX/Theme`: one harness to keep, two engines to fold, no touch awareness, an icon barrel in the critical path.
 - `Core/MarkdownPM/Engine` and `Core/MarkdownPM/Links`: the pure engine is the asset that ports. Links holds a contract that belongs in Connections.
@@ -65,7 +65,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. With the 
 
 #### Topics, In Priority Order
 
-Ten lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
+Nine lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
 
 ##### 1. Where Persisted State Lives
 
@@ -116,25 +116,6 @@ Context membership is keyed by Space *title*, and a governed write silently drop
 2. Fold the Contexts `readRegistry` into its ensure wrapper so a read never writes; pick one foreign-field preservation strategy for both files. *(S; after D-9)*
 
 **Findings:** R-17, R-18.
-
-##### 5. Menus And Shortcuts Have Two Homes
-
-**Lenses and state:** Gates Mobile, Foundation risk, Ruled 09-07-2026, Duplication, Under-adoption, Asymmetry. **Effort:** Medium to large. **Deletes:** About 200 lines of a hand-built menu pane, ~15 shortcut literals, ~40 lines of listener plumbing.
-
-**Found.** Every right-click menu is drawn by the operating system. The models behind them are portable and well-factored: one action tree per menu, built in Core, with the Electron template derived from it. But there's exactly one renderer. An in-app renderer for the same models was built, is still mounted in the running app, still has tests, and nothing can reach it. The preference switch that sounds like it governs this doesn't. The one menu that needed the in-app path (the tile handle menu) is written twice in one file because it had nowhere else to go.
-
-Keyboard shortcuts live in four unrelated places: eight hard-coded in the native Electron menu, three as user-editable data in `settings.json` matched in the renderer, one literal typed into the handler that reads that data, and one hard-coded in the tab bar. The native menu and the renderer can't see each other, so a user who rebinds a command onto a chord the native menu already owns silently loses. Six layers also handle Escape by their own window listener and coordinate by `defaultPrevented`, instead of joining the ordered dismissal stack the design kit provides.
-
-**Ruled 09-07-2026:** the right-click menu system is reworked as one coherent system, not a revive-or-delete choice. `popRowMenu` is the single door every menu goes through; it honors the native-menus preference; both renderers draw from one action-tree model; the tile handle menu becomes the first ordinary consumer, with more to follow. The dismissal-stack fold is approved.
-
-**Change.**
-
-1. Rework the row-menu path: `popRowMenu` consults the preference and renders natively or through the in-app presenter from the same model; the hand-built tile menu pane is deleted in favor of the generic renderer; one test proves both renderers draw the same rows from one model. *(M–L; ~200 lines; Ruled)*
-2. One shortcut table that native accelerators and renderer commands both derive from, on the pattern formatting chords already use (`FORMAT_CHORDS` feeds both CodeMirror and the Electron display string); remove the inline literal in the app handler and the hard-coded chord in the tab bar. Prerequisite for the Shortcuts settings pane the docs already promise. *(M; ~15 literals)*
-3. Move the six Escape listeners that coordinate by `defaultPrevented` onto the dismissal stack after ruling on the ordering they currently get by accident. *(M; after D-9; ~40 lines; Approved)*
-4. Move the connection menu model into `Core/Actions` and the native-menu presenter out of it. *(S)*
-
-**Findings:** R-21, R-22, R-23, R-24.
 
 ##### 6. The Table/Cards View Engine
 
@@ -239,7 +220,7 @@ Keyboard shortcuts live in four unrelated places: eight hard-coded in the native
 
 #### Decisions Only Nathan Can Make
 
-Ordered by how much later work each gates. D-1 (state placement), D-4 (Context tags), and D-5 (menus) were ruled on 09-07-2026 and are written into their topics above.
+Ordered by how much later work each gates. D-1 (state placement) and D-4 (Context tags) were ruled on 09-07-2026 and are written into their topics above.
 
 **D-2: What does "most recent wins" mean for a reader?** Options: **(i)** reload the page body silently when the tab is clean and prompt when it's dirty; **(ii)** always reload and rely on file history for recovery; **(iii)** leave it and accept that Pommora quietly overwrites external edits.
 
@@ -269,7 +250,7 @@ Ordered by how much later work each gates. D-1 (state placement), D-4 (Context t
 - **Backlinks, a Context view, and Linked-From now have their query.** The content index carries Context membership as of 09-07-2026 and `queryMembers` answers "which pages hold Space X or Context C." All three pending features were waiting on exactly that; each is now a surface over an existing read.
 - **The main window's inspector is a live empty pane, and the panel built for it already works.** The inspector opens, slides, resizes, remembers its width, and shows nothing, while the property panel is already mounted in the Page Window and the NavWindow. Wiring it behind a page selection is a handful of lines against machinery that exists.
 - **Agenda is threaded through the whole navigation layer with no surface at the end of it.** Tasks and Events are first-class in the data model, admitted into navigation references, and refused at every use. The plumbing is ahead of the surface, which makes the surface the cheap part. The three-vocabulary question in topic 10 should be settled first.
-- **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 17 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan, D-2, the menu rework, and touch.
+- **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 17 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan, D-2, and touch.
 - **Async drop rejection.** The drag doc describes it, a `pending` state exists in the union, nothing sets it, and the Cards view's refusal path already resolves in the place it would go.
 
 #### Solid, Leave Alone
@@ -301,10 +282,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-12 | 2     | Dt   | One 26-line file decides which filesystem events are real, and nothing tests it                                                    | `Core/Files/writeEcho.ts, Desktop/FileWatch/watcher.ts`                                                               |
 | R-17 | 4     | FR   | Two nexus-wide registries, opposite corruption policies — and the lenient one gates a rename cascade that half-lands               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts, Core/Files/atomicWrite.ts`                 |
 | R-18 | 4     | D    | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes                               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts`                                            |
-| R-21 | 5     | FR   | Every menu goes native; the in-renderer presenter is mounted, tested, and unreachable                                              | `Core/Actions/nativeMenus.ts, Core/Session/chromeSlice.ts, Core/Interface/Menus/RowMenuHost.tsx`                      |
-| R-22 | 5     | Dt   | The tile handle menu is the one menu in the app defined twice                                                                      | `Core/Tiles/TileHandleMenu.tsx, Core/Tiles/TileHost.tsx`                                                              |
-| R-23 | 5     | D    | A keyboard shortcut can live in any of four places, and two of them cannot see each other                                          | `Desktop/Actions/appMenu.ts, Core/Actions/commands.ts, Core/Interface/App.tsx`                                        |
-| R-24 | 5     | Dt   | Two dismissal disciplines: an ordered stack, and six layers coordinating by `defaultPrevented`                                     | `UIX/Interactions/dismissalStack.ts, Core/Interface/Glance/GlancePane.tsx, UIX/Windows/window-base.tsx`               |
 | R-32 | 6     | Dt   | Table and Cards write the same interaction layer twice                                                                             | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx`                                                      |
 | R-33 | 6     | Dt   | Neither renderer virtualizes, and every card carries six store subscriptions and two mounted pickers                               | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
 | R-34 | 6     | D    | Six view kinds are registered, two render, and adding a third touches twelve places                                                | `Core/Views/views.ts, Core/Views/Host/ViewHost.tsx, Core/Views/Settings/LayoutFrame.tsx`                              |
@@ -350,11 +327,10 @@ Nothing was denied outright by the reconciler. Four findings had a sub-claim den
 
 #### Appendix C: Doc Drift Summary
 
-Thirty-eight documentation corrections remain, of which the ones that hide a real finding are:
+Thirty-seven documentation corrections remain, of which the ones that hide a real finding are:
 
 - **DesktopPM** describes the file lock as cross-process; it's in-process. This makes the single-writer problem look solved.
 - **DesktopPM** and **CorePM** attribute the atomic write to a Core file that only forwards to the host. This makes the atomicity contract look declared.
-- **DesktopPM** and **ConfigurationPM** disagree on where Use Native Menus lives. ConfigurationPM is right.
 - **CorePM** and **ConfigurationPM** count persistence tiers as four, two, or three. There are five, and browser storage appears in none of them. The placement rule replaces all three descriptions.
 - **SymbolsPM** says nothing arrives by wildcard. One static import does.
 - **MarkdownPM** says links come from one intent stream. They don't, and the doc describes the design the code should reach.
