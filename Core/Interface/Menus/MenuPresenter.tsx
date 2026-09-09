@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { type ActionItem, withoutLeadingSeparator } from '@pommora/core/Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
@@ -107,7 +107,8 @@ export function MenuPresenter(): React.JSX.Element {
   )
   const pick = (action: string, stay?: boolean): void => {
     if (!shown) return
-    if (stay && shown.stay) setLive({ id: shown.id, items: shown.stay(action) })
+    if (stay && shown.stay)
+      setLive({ id: shown.id, items: withoutLeadingSeparator(shown.stay(action)) })
     else shown.settle(action)
   }
   return (
