@@ -174,12 +174,12 @@ function StaticCellImpl({
     return () => onCite(label)
   }
 
-  const openMenu = (e: React.MouseEvent): void => {
+  const openMenu = (e: React.MouseEvent): boolean => {
     const span = linkSpanAt(e.target)
     const api = connections?.()
-    if (!span || !api?.menu) return
+    if (!span || !api?.menu) return false
     const found = linkTokenAt(text, span[0])
-    if (!found) return
+    if (!found) return false
     const target = menuTarget(
       () => {
         const now = linkTokenAt(live.current, span[0])
@@ -194,10 +194,11 @@ function StaticCellImpl({
       onCommit,
       onSelect,
     )
-    if (!target) return
+    if (!target) return false
     e.preventDefault()
     e.stopPropagation()
     api.menu(target)
+    return true
   }
 
   return (
@@ -208,7 +209,8 @@ function StaticCellImpl({
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
         if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
-        openMenu(e)
+        if (openMenu(e) || readOnly?.()) return
+        onActivate({ x: e.clientX, y: e.clientY })
       }}
       onMouseOver={(e) => {
         const glance = host.glance

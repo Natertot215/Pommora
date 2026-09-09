@@ -1,4 +1,8 @@
-import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
+import {
+  type ActionItem,
+  type MenuOptions,
+  withoutLeadingSeparator,
+} from '@pommora/core/Actions/menuModel'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
@@ -8,9 +12,7 @@ export async function popMenu<A extends string>(
   trigger?: HTMLElement | null,
   options?: MenuOptions<A>,
 ): Promise<A | null> {
-  const rows = items[0]?.separatorBefore
-    ? [{ ...items[0], separatorBefore: false }, ...items.slice(1)]
-    : items
+  const rows = withoutLeadingSeparator(items)
   if (rows.length === 0) return null
   if (!trigger || useSession.getState().devicePrefs.nativeMenus) {
     const box = trigger?.getBoundingClientRect()
@@ -20,6 +22,8 @@ export async function popMenu<A extends string>(
     })
     return valueOr(res, null) as A | null
   }
-  const stay = options?.stay as MenuOptions['stay']
-  return (await useSession.getState().presentMenu(rows, trigger, { ...options, stay })) as A | null
+  return (await useSession.getState().presentMenu(rows, trigger, {
+    ...options,
+    stay: options?.stay as MenuOptions['stay'],
+  })) as A | null
 }
