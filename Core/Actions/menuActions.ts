@@ -1,4 +1,4 @@
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
@@ -6,7 +6,7 @@ import { host } from '../Platform/dialer'
 export async function popMenu<A extends string>(
   items: readonly ActionItem<A>[],
   trigger?: HTMLElement | null,
-  options?: { solid?: boolean; stay?: (action: A) => readonly ActionItem<A>[]; compact?: boolean },
+  options?: MenuOptions<A>,
 ): Promise<A | null> {
   const rows = items[0]?.separatorBefore
     ? [{ ...items[0], separatorBefore: false }, ...items.slice(1)]
@@ -20,6 +20,6 @@ export async function popMenu<A extends string>(
     })
     return valueOr(res, null) as A | null
   }
-  const stay = options?.stay as ((action: string) => readonly ActionItem<string>[]) | undefined
+  const stay = options?.stay as MenuOptions['stay']
   return (await useSession.getState().presentMenu(rows, trigger, { ...options, stay })) as A | null
 }
