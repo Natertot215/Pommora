@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { slotContent } from '@pommora/uix/Menus/frame-slide.css'
 import { optionSelected } from '@pommora/uix/Pickers/picker-base.css'
+import { SHIELD_ATTR } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession } from '../../Session/store'
 import { MenuPresenter } from './MenuPresenter'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -70,6 +71,33 @@ describe('the in-app menu presenter', () => {
     await expect(promise).resolves.toBeNull()
     expect(useSession.getState().pendingMenu).toBeNull()
     expect(labelled('Rename')).toBeDefined()
+    act(() => vi.advanceTimersByTime(1000))
+    expect(labelled('Rename')).toBeUndefined()
+  })
+
+  it('closes on a second press of its trigger, and the release cannot open it again', async () => {
+    const open = (): void => {
+      void useSession.getState().presentMenu([{ label: 'Rename', action: 'rename' }], trigger)
+    }
+    trigger.addEventListener('click', open)
+    await act(async () => open())
+    const shield = document.querySelector(`[${SHIELD_ATTR}]`)
+    expect(shield).not.toBeNull()
+    Object.defineProperty(document, 'elementsFromPoint', {
+      value: () => [shield, trigger, document.body],
+      configurable: true,
+    })
+    await act(async () => {
+      shield?.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
+    })
+    Reflect.deleteProperty(document, 'elementsFromPoint')
+    expect(useSession.getState().pendingMenu).toBeNull()
+    expect(labelled('Rename')).toBeDefined()
+    await act(async () => {
+      trigger.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+      trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    })
+    expect(useSession.getState().pendingMenu).toBeNull()
     act(() => vi.advanceTimersByTime(1000))
     expect(labelled('Rename')).toBeUndefined()
   })

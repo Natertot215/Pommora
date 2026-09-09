@@ -47,6 +47,12 @@ const press = (target: EventTarget): void => {
     target.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
   })
 }
+const release = (target: EventTarget): void => {
+  act(() => {
+    target.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  })
+}
 const openCaret = (): HTMLInputElement => {
   act(() => host.querySelector<HTMLElement>('[role="button"]')?.click())
   const input = host.querySelector('input')
@@ -140,14 +146,54 @@ describe('the stack', () => {
     expect(log).toEqual(['c'])
   })
 
-  it('leaves a press on a popup’s own trigger to that trigger', () => {
+  it('closes a popup on a press of its own trigger, and leaves what stands beneath it', () => {
     const log: string[] = []
     const layers = { a: layer(), b: layer() }
     const trigger = document.createElement('button')
     layers.a.appendChild(trigger)
     stack(['a', 'b'], log, layers, { b: trigger })
     press(trigger)
-    expect(log).toEqual([])
+    expect(log).toEqual(['b'])
+  })
+
+  it('swallows the release that completes a trigger press, so the trigger cannot reopen', () => {
+    const log: string[] = []
+    const trigger = document.createElement('button')
+    document.body.appendChild(trigger)
+    const clicked = vi.fn()
+    trigger.addEventListener('click', clicked)
+    stack(['a'], log, { a: layer() }, { a: trigger })
+    press(trigger)
+    release(trigger)
+    expect(log).toEqual(['a'])
+    expect(clicked).not.toHaveBeenCalled()
+  })
+
+  it('leaves a press on the trigger of a popup that cannot be dismissed to that trigger', () => {
+    const log: string[] = []
+    const trigger = document.createElement('button')
+    document.body.appendChild(trigger)
+    const clicked = vi.fn()
+    trigger.addEventListener('click', clicked)
+    handles.push(pushDismissal({ layer: () => null, trigger: () => trigger }))
+    stack(['b'], log, { b: layer() })
+    press(trigger)
+    release(trigger)
+    expect(log).toEqual(['b'])
+    expect(clicked).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the release alone when the press closed a popup from outside it', () => {
+    const log: string[] = []
+    const outside = document.createElement('button')
+    document.body.appendChild(outside)
+    const clicked = vi.fn()
+    outside.addEventListener('click', clicked)
+    stack(['a'], log, { a: layer() })
+    press(outside)
+    release(outside)
+    expect(log).toEqual(['a'])
+    expect(clicked).toHaveBeenCalledTimes(1)
   })
 
   it('peels one popup per Escape, topmost first', () => {
