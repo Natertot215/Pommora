@@ -130,11 +130,16 @@ TEST_DIRS = {"Testing", "fixtures", "__tests__"}
 TEST_SUFFIX = "Harness.ts"
 CONFIG_NAMES = {"package.json", "biome.json", "vercel.json"}
 CONFIG_EXT = (".yml", ".yaml")
+# A manifest generated wholesale from a dependency's icon roster, not authored source; excluded from
+# the ledger entirely so its bulk never reads as hand-written code.
+GENERATED = {"UIX/Symbols/iconNames.ts"}
 
 
 def classify(rel: str) -> str | None:
     base = os.path.basename(rel)
     if any(p in SKIP_DIR for p in rel.split("/")):
+        return None
+    if rel in GENERATED:
         return None
     if (
         any(p in TEST_DIRS for p in rel.split("/"))
