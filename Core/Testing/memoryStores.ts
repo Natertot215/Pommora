@@ -8,7 +8,7 @@ import type {
   Stores,
 } from '../Platform/stores'
 
-export interface MemoryIndex {
+interface MemoryIndex {
   mentions: Map<string, { path: string; title: string }>
   values: Map<string, { path: string; key: string; value: string }>
   memberships: Map<string, { path: string; key: string; title: string }>

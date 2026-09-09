@@ -12,7 +12,7 @@ import {
 } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
-import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/window-bounds'
+import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { stepsWith } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'

@@ -13,7 +13,7 @@ export {
   MenuScrollFrame,
 } from './menu-row'
 export { MenuIndex, MenuRowView, type MenuRow, type MenuSection, type Trailing } from './menu-index'
-export { DisclosureRow, useDisclosureSet, type DropOutlineKind } from './menu-disclosure'
+export { DisclosureRow, useDisclosureSet } from './menu-disclosure'
 export {
   MENU_MAX_HEIGHT,
   heading,

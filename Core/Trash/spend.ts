@@ -21,7 +21,7 @@ import { refreshTree } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
-import { findContainer, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
+import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 
 export interface ListedBundle {
   bundlePath: string
@@ -170,7 +170,7 @@ function withDestination(
     case 'set':
       if (destination.kind !== 'container')
         return fail('invalid-path', 'Pages and Sets live in Collections and Sets.')
-      if (!findContainer(tree, destination.id))
+      if (!findContainerById(tree, destination.id))
         return fail('not-found', 'That place no longer exists.')
       return ok({ ...record, parent: { kind: 'container', id: destination.id } })
     default:

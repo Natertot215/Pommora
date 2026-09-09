@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { valueOr } from '@pommora/core/Contract/result'
 import {
@@ -22,7 +21,7 @@ import { InputField } from '@pommora/uix/Fields/InputField'
 import { BrowseButton } from '@pommora/uix/Fields/PathField'
 import { Icon } from '@pommora/uix/Symbols'
 import { GlassWindow } from '@pommora/uix/Glass/glass-window'
-import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { ModalScrim } from '@pommora/uix/Windows/ModalScrim'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import * as s from './image-picker.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -96,9 +95,6 @@ export function ImagePicker({
     }
   }, [value, pendingValue])
 
-  const panelRef = useRef<HTMLDivElement>(null)
-  useDismissal(open, false, { layer: () => panelRef.current, dismiss: onCancel })
-
   // React registers wheel passively at the root, so the zoom wheel is a native non-passive listener.
   useEffect(() => {
     const el = frameRef.current
@@ -131,7 +127,7 @@ export function ImagePicker({
     return () => document.removeEventListener('paste', onPaste)
   }, [open, onRepick, settleRepick])
 
-  if (!open) return null
+  if (!open) return <ModalScrim open={false} dismiss={onCancel} />
 
   const failed = aspect === null
   const isCircle = shape === 'circle'
@@ -224,15 +220,9 @@ export function ImagePicker({
     </>
   )
 
-  return createPortal(
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events (which bubble the React tree into whatever opened the picker: a card's click-to-open, right-click menu, or drag handle); the dismissal stack owns the outside press and Escape.
-    <div
-      className={s.backdrop}
-      onPointerDown={(e) => e.stopPropagation()}
-      onContextMenu={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <GlassWindow ref={panelRef} className={s.panel}>
+  return (
+    <ModalScrim open={open} dismiss={onCancel}>
+      <GlassWindow className={s.panel}>
         <div
           ref={frameRef}
           className={viewportClass}
@@ -312,7 +302,6 @@ export function ImagePicker({
           />
         </div>
       </GlassWindow>
-    </div>,
-    document.body,
+    </ModalScrim>
   )
 }

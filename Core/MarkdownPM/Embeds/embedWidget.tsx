@@ -35,7 +35,7 @@ import type { ConnectionsApi } from '../Links/connectionsApi'
 import { editorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-export interface EmbedHost {
+interface EmbedHost {
   getConn: () => ConnectionsApi | undefined
   ancestors: readonly string[]
   saveHeights?: (heights: Record<string, number>) => void

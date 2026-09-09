@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ensureIdentity } from './identity'
+import { ensureIdentity, readIdentity } from './identity'
+import { agendaContext, resolveFolderKind } from './folderKind'
 import { isUlid } from './ids'
 import { pathExists } from '../Files/atomicWrite'
+import { valueOr } from '../Contract/result'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
 
 let root: string
@@ -28,7 +30,7 @@ describe('ensureIdentity', () => {
     const r = await ensureIdentity(root)
     expect(r.created).toBe(true)
     const j = await readId()
-    expect(Object.keys(j).sort()).toEqual(['agenda_singletons', 'createdAt', 'id'])
+    expect(Object.keys(j).sort()).toEqual(['agenda_folders', 'createdAt', 'id'])
     expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
     expect(Number.isNaN(Date.parse(j.createdAt as string))).toBe(false)
   })
@@ -67,7 +69,54 @@ describe('ensureIdentity', () => {
     const j = await readId()
     expect(j.note).toBe('keep me')
     expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
+    expect(j.agenda_folders).toBeUndefined()
+    expect(await pathExists(join(root, 'Tasks'))).toBe(false)
+  })
+
+  it('rewrites a retired agenda_singletons key to agenda_folders once, keeping the rest', async () => {
+    const reg = { tasks: '01KVGMT8BFP350FZZXAMG1QDT1' }
+    await writeId({ id: 'nx', createdAt: '2026', agenda_singletons: reg, note: 'keep me' })
+    const r = await ensureIdentity(root)
+    expect(r).toEqual({ id: 'nx', created: false })
+    const j = await readId()
     expect(j.agenda_singletons).toBeUndefined()
+    expect(j.agenda_folders).toEqual(reg)
+    expect(j.note).toBe('keep me')
+    const after = await readFile(idPath(), 'utf8')
+    await ensureIdentity(root)
+    expect(await readFile(idPath(), 'utf8')).toBe(after)
+  })
+
+  it('classifies through the retired key when the cleanup write is refused', async () => {
+    const { chmod } = await import('node:fs/promises')
+    const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
+    await writeId({ id: 'nx', createdAt: '2026', agenda_singletons: { tasks: TASKS } })
+    await mkdir(join(root, 'Tasks'), { recursive: true })
+    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
+    const before = await readFile(idPath(), 'utf8')
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await chmod(nexusDir(root), 0o555)
+    try {
+      await expect(ensureIdentity(root)).resolves.toEqual({ id: 'nx', created: false })
+      expect(logged).toHaveBeenCalledTimes(1)
+      expect(await readFile(idPath(), 'utf8')).toBe(before)
+      const identity = valueOr(await readIdentity(root), null)
+      expect(identity?.agenda_singletons).toBeUndefined()
+      const ctx = await agendaContext(root, identity)
+      expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks')
+    } finally {
+      await chmod(nexusDir(root), 0o755)
+      logged.mockRestore()
+    }
+  })
+
+  it('drops the retired key while repairing an id-less file', async () => {
+    const reg = { tasks: '01KVGMT8BFP350FZZXAMG1QDT1' }
+    await writeId({ agenda_singletons: reg })
+    await ensureIdentity(root)
+    const j = await readId()
+    expect(j.agenda_singletons).toBeUndefined()
+    expect(j.agenda_folders).toEqual(reg)
     expect(await pathExists(join(root, 'Tasks'))).toBe(false)
   })
 
@@ -87,9 +136,9 @@ describe('the agenda singleton seed', () => {
   it('seeds both singletons at creation and registers them by sidecar id', async () => {
     await ensureIdentity(root)
     const j = await readId()
-    const reg = j.agenda_singletons as { tasks: string; events: string }
-    const task = await cfg('Tasks', SIDECAR_FILENAME.taskConfig)
-    const event = await cfg('Events', SIDECAR_FILENAME.eventConfig)
+    const reg = j.agenda_folders as { tasks: string; events: string }
+    const task = await cfg('Tasks', SIDECAR_FILENAME.tasks)
+    const event = await cfg('Events', SIDECAR_FILENAME.events)
     // The registration IS the record — a config whose id it doesn't name is inert.
     expect(reg.tasks).toBe(task.id)
     expect(reg.events).toBe(event.id)
@@ -103,11 +152,11 @@ describe('the agenda singleton seed', () => {
   it('is a creation event, not a repair — a second open re-seeds nothing', async () => {
     await ensureIdentity(root)
     const before = await readFile(idPath(), 'utf8')
-    const firstTaskId = (await cfg('Tasks', SIDECAR_FILENAME.taskConfig)).id
+    const firstTaskId = (await cfg('Tasks', SIDECAR_FILENAME.tasks)).id
     const r = await ensureIdentity(root)
     expect(r.created).toBe(false)
     expect(await readFile(idPath(), 'utf8')).toBe(before)
-    expect((await cfg('Tasks', SIDECAR_FILENAME.taskConfig)).id).toBe(firstTaskId)
+    expect((await cfg('Tasks', SIDECAR_FILENAME.tasks)).id).toBe(firstTaskId)
   })
 
   // Existing nexuses gain their pair when Agenda is actually built — seeding one here would silently recreate folders a user deliberately removed.
@@ -116,7 +165,7 @@ describe('the agenda singleton seed', () => {
     await ensureIdentity(root)
     expect(await pathExists(join(root, 'Tasks'))).toBe(false)
     expect(await pathExists(join(root, 'Events'))).toBe(false)
-    expect((await readId()).agenda_singletons).toBeUndefined()
+    expect((await readId()).agenda_folders).toBeUndefined()
   })
 
   // Opening a plain folder as a nexus takes the create branch, so a user's own `Tasks/` of notes is reachable here; claiming it would stamp an agenda config into their content and drop the whole folder out of Collections.
@@ -124,8 +173,8 @@ describe('the agenda singleton seed', () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
     await writeFile(join(root, 'Tasks', 'Note.md'), '# mine')
     await ensureIdentity(root)
-    const reg = (await readId()).agenda_singletons as Record<string, unknown> | undefined
-    expect(await pathExists(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig))).toBe(false)
+    const reg = (await readId()).agenda_folders as Record<string, unknown> | undefined
+    expect(await pathExists(join(root, 'Tasks', SIDECAR_FILENAME.tasks))).toBe(false)
     expect(reg?.tasks).toBeUndefined()
     expect(typeof reg?.events).toBe('string')
   })

@@ -1,4 +1,4 @@
-import { join } from '../Paths/posix'
+import { join, relDirname } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
 import { asString, asStringArray } from './coerce'
@@ -40,10 +40,10 @@ import { readSettingsLeaves, scopeOf, type SettingsLeaves } from '../Settings/co
 import { coerceOpenIn } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import {
+  findContainerWhere,
   makeCollectionNode,
   makeSetNode,
   makeSpaceNode,
-  parentOf,
   removeNodeInTree,
   type TreeEntity,
   updateNodeInTree,
@@ -76,25 +76,11 @@ const toPosixRel = (root: string, absPath: string): string | null => {
   return !rel || escapes(rel) ? null : rel
 }
 
-function findContainer(tree: NexusTree, dirRel: string): CollectionNode | SetNode | null {
-  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
-    for (const s of sets ?? []) {
-      if (s.path === dirRel) return s
-      const hit = inSets(s.sets)
-      if (hit) return hit
-    }
-    return null
-  }
-  for (const c of tree.collections) {
-    if (c.path === dirRel) return c
-    const hit = inSets(c.sets)
-    if (hit) return hit
-  }
-  return null
-}
+const containerAt = (tree: NexusTree, dirRel: string): CollectionNode | SetNode | null =>
+  findContainerWhere(tree, (n) => n.path === dirRel)
 
 function findPage(tree: NexusTree, rel: string): PageNode | null {
-  const container = findContainer(tree, parentOf(rel))
+  const container = containerAt(tree, relDirname(rel))
   return container?.pages.find((p) => p.path === rel) ?? null
 }
 
@@ -122,7 +108,7 @@ export function classifyEvent(
   if (assetMatcher(scope.assetDir)(segs)) return { kind: 'asset', rel, event: ev.event }
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
   // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or transition) — only the walk may adjudicate it. Container and Space sidecars record their OWNER directory there, so the parent is checked too.
-  const dirRel = parentOf(rel)
+  const dirRel = relDirname(rel)
   if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
   if (segs[0] === NEXUS_DIR) {
@@ -155,7 +141,7 @@ export function classifyEvent(
     return hiddenName(name) ? { kind: 'ignored' } : { kind: 'full-refresh' }
   if (ev.event === 'unlinkDir') return { kind: 'full-refresh' }
   if (isContentName(name)) {
-    if (dirRel !== '' && findContainer(tree, dirRel)) {
+    if (dirRel !== '' && containerAt(tree, dirRel)) {
       return ev.event === 'unlink' ? { kind: 'page-remove', rel } : { kind: 'page-upsert', rel }
     }
     return { kind: 'index-only', rel }
@@ -164,7 +150,7 @@ export function classifyEvent(
     (name === SIDECAR_FILENAME.collection || name === SIDECAR_FILENAME.set) &&
     (ev.event === 'add' || ev.event === 'change')
   ) {
-    const container = dirRel !== '' ? findContainer(tree, dirRel) : null
+    const container = dirRel !== '' ? containerAt(tree, dirRel) : null
     if (container && name === SIDECAR_FILENAME[container.kind]) {
       return { kind: 'container-meta', dirRel }
     }
@@ -271,8 +257,8 @@ export async function patchPageFromDisk(root: string, rel: string): Promise<'ok'
   else delete node.contextValues
   const existing = findPage(tree, rel)
   if (existing && existing.id === node.id) return replaceNode(root, rel, node)
-  const dirRel = parentOf(rel)
-  const container = findContainer(tree, dirRel)
+  const dirRel = relDirname(rel)
+  const container = containerAt(tree, dirRel)
   if (!container) return 'refresh'
   const meta = (await readJsonObject(join(root, dirRel, SIDECAR_FILENAME[container.kind]))) ?? {}
   return applyPatch(
@@ -298,13 +284,13 @@ export async function patchContainerFromDisk(
 ): Promise<'ok' | 'refresh'> {
   // This read only picks WHICH sidecar to open; the post-await read below is the authoritative one.
   const held = getLiveTree()
-  const kind = held && findContainer(held, dirRel)?.kind
+  const kind = held && containerAt(held, dirRel)?.kind
   if (!kind) return 'refresh'
   const meta = await readJsonObject(join(root, dirRel, SIDECAR_FILENAME[kind]))
   if (meta === null) return 'refresh'
   const tree = getLiveTree()
   if (!tree) return 'refresh'
-  const node = findContainer(tree, dirRel)
+  const node = containerAt(tree, dirRel)
   if (!node) return 'refresh'
   const id = asString(meta.id) ?? adoptedId(dirRel)
   if (id !== node.id) return 'refresh'

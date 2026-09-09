@@ -1,6 +1,6 @@
 // GENERATED — the eager kebab-id roster of the full Lucide set, strings only, no glyph components.
 // It carries no glyph imports, so it stays in the main bundle while the glyph set (allSymbols) loads on demand.
-// Regenerate on a lucide-react bump; AllSymbols.test.ts guards it against drifting from the resolvable set.
+// Regenerate on a lucide-react bump; allSymbols.test.ts guards it against drifting from the resolvable set.
 export const ICON_NAMES: ReadonlySet<string> = new Set([
   'a-arrow-down',
   'a-arrow-up',

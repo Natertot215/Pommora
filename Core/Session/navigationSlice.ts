@@ -51,14 +51,9 @@ import {
   fetchPageDetail,
 } from './pageDetailCache'
 import { dropCacheTab, readCache } from '../Navigation/warmTabs'
-import {
-  findCollection,
-  findCollectionForSet,
-  findContainer,
-  findSet,
-  isDepth1Set,
-  parentPathOf,
-} from '../Nexus/treeIndex'
+import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
+import { findContainerWhere } from '../Nexus/treePatch'
+import { relDirname } from '../Paths/posix'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
@@ -644,8 +639,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (!tree) return
       let parentPath: string | null = null
       if (selection.kind === 'collection' || selection.kind === 'set')
-        parentPath = findContainer(tree, (n) => n.id === selection.id)?.path ?? null
-      else if (selection.kind === 'page') parentPath = parentPathOf(selection.path)
+        parentPath = findContainerWhere(tree, (n) => n.id === selection.id)?.path ?? null
+      else if (selection.kind === 'page') parentPath = relDirname(selection.path)
       if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
       if (parentPath === null) return
       await get().mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, (created) =>

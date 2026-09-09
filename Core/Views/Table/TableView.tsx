@@ -11,7 +11,7 @@ import {
 import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import type { ColumnAlign, SavedView } from '@pommora/core/Views/views'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { parentOf } from '@pommora/core/Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import { type PropertyDefinition, isOptionsKind } from '@pommora/core/Properties/properties'
 import type { ContextOption } from '../../Contexts/contextOptions'
 import { subtreeIds } from '../Pipeline/group'
@@ -1039,7 +1039,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const relocateRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
     const destPath = destGroupKey === UNGROUPED ? source.path : setPaths.get(destGroupKey)
-    if (!path || !destPath || destPath === parentOf(path)) return
+    if (!path || !destPath || destPath === relDirname(path)) return
     const order = [...containerPages(destPath), pageId]
     const spliceLive = (existing: string[]): string[] => [
       ...existing.filter((id) => id !== pageId),
@@ -1056,7 +1056,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       const groupPages = orderIds.filter((id) => rowBand.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
       if (firstPath) {
-        const containerPath = parentOf(firstPath)
+        const containerPath = relDirname(firstPath)
         void mutate({
           op: 'movePage',
           path: firstPath,
@@ -1223,7 +1223,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
                 />
               ))}
-              {/* Empty but load-bearing: the :last-child anchor that keeps the last real column's right divider (Table.css). */}
+              {/* Empty but load-bearing: the :last-child anchor that keeps the last real column's right divider (table.css). */}
               <div className="cell-filler" aria-hidden="true" />
             </div>
             {groups.flatMap((g) => renderRows(g, 0, true))}

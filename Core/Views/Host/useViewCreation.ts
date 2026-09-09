@@ -14,7 +14,7 @@ import {
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
-import { parentOf } from '@pommora/core/Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
@@ -165,7 +165,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
   const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<boolean> => {
     const c = cfg()
-    const parentPath = parentOf(row.path)
+    const parentPath = relDirname(row.path)
     const seeds = impliedSeeds()
     const gestureViewId = c.view.id
     const gKey = c.rowBand.get(row.id)

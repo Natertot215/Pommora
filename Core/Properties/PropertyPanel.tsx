@@ -45,7 +45,7 @@ import * as s from './property-panel.css'
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
-export type PropertyPanelProps =
+type PropertyPanelProps =
   | { page: PageDetail; onBack: () => void }
   | { page: WindowTarget; onBack?: never }
 

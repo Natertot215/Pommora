@@ -1,4 +1,6 @@
-export type ContentKind = 'page' | 'task' | 'event'
+import type { AgendaKind } from '../Paths/paths'
+
+export type ContentKind = 'page' | AgendaKind
 
 export const ID_KEY = 'ID'
 

@@ -1,35 +1,26 @@
-import { useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSession } from '../../Session/store'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { GlassWindow } from '@pommora/uix/Glass/glass-window'
-import { windowIn, windowOut } from '@pommora/uix/Animations/animations.css'
-import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
-import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
-import { cx } from '@pommora/uix/Utilities/cx'
+import { ModalScrim } from '@pommora/uix/Windows/ModalScrim'
 import * as s from './confirmation-window.css'
 
 export function ConfirmationWindow(): React.JSX.Element | null {
   const pending = useSession((st) => st.pendingConfirm)
-  const shown = useHeldPresence(pending)
-  // Keyed on the panel actually being in the DOM — the presence hook mounts a render late, so keying on `pending` would focus a panel that does not exist yet.
-  const active = shown && !shown.closing ? shown.held : null
+  const open = pending !== null
   const panelRef = useRef<HTMLDivElement>(null)
   const settleRef = useRef(pending?.settle)
   settleRef.current = pending?.settle
   const defaultRef = useRef(false)
   defaultRef.current = pending?.req.defaultsToCancel === true
 
-  useDismissal(active !== null, false, {
-    layer: () => panelRef.current,
-    dismiss: () => settleRef.current?.(false),
-  })
-  useEffect(() => {
-    if (active) panelRef.current?.focus()
-  }, [active])
+  const focusPanel = useCallback((el: HTMLDivElement | null) => {
+    panelRef.current = el
+    el?.focus()
+  }, [])
 
   useEffect(() => {
-    if (!active) return
+    if (!open) return
     const onKey = (e: KeyboardEvent): void => {
       if (e.defaultPrevented) return
       // A focused button answers through its own activation; taking Enter here too would answer twice.
@@ -44,43 +35,33 @@ export function ConfirmationWindow(): React.JSX.Element | null {
     // Capture, so the question answers before the surface underneath consumes the key — the editor behind the scrim would otherwise take Return for a newline.
     document.addEventListener('keydown', onKey, true)
     return () => document.removeEventListener('keydown', onKey, true)
-  }, [active])
+  }, [open])
 
-  if (!shown) return null
-  const { req, settle } = shown.held
-  const closing = shown.closing
-
-  return createPortal(
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events; the dismissal stack owns the outside press and Escape.
-    <div
-      className={cx(s.backdrop, closing && s.backdropClosing)}
-      inert={closing}
-      onPointerDown={(e) => e.stopPropagation()}
-      onContextMenu={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <GlassWindow
-        ref={panelRef}
-        className={cx(s.panel, closing ? windowOut : windowIn)}
-        role="alertdialog"
-        aria-modal="true"
-        aria-label={req.message}
-        tabIndex={-1}
-      >
-        <div className={s.body}>
-          <span className={s.message}>{req.message}</span>
-          <span className={s.detail}>{req.detail}</span>
-        </div>
-        <div className={s.actions}>
-          <Button type="filled" label="Cancel" onClick={() => settle(false)} />
-          <Button
-            type={req.tone === 'positive' ? 'tinted' : 'destructive'}
-            label={req.action}
-            onClick={() => settle(true)}
-          />
-        </div>
-      </GlassWindow>
-    </div>,
-    document.body,
+  return (
+    <ModalScrim open={open} dismiss={() => settleRef.current?.(false)}>
+      {pending && (
+        <GlassWindow
+          ref={focusPanel}
+          className={s.panel}
+          role="alertdialog"
+          aria-modal="true"
+          aria-label={pending.req.message}
+          tabIndex={-1}
+        >
+          <div className={s.body}>
+            <span className={s.message}>{pending.req.message}</span>
+            <span className={s.detail}>{pending.req.detail}</span>
+          </div>
+          <div className={s.actions}>
+            <Button type="filled" label="Cancel" onClick={() => pending.settle(false)} />
+            <Button
+              type={pending.req.tone === 'positive' ? 'tinted' : 'destructive'}
+              label={pending.req.action}
+              onClick={() => pending.settle(true)}
+            />
+          </div>
+        </GlassWindow>
+      )}
+    </ModalScrim>
   )
 }

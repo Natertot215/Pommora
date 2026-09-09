@@ -102,7 +102,7 @@ export function tileIds(layout: TileLayout): string[] {
   return out
 }
 
-export function cloneNode(node: LayoutNode): LayoutNode {
+function cloneNode(node: LayoutNode): LayoutNode {
   if (node.kind === 'tile') return { kind: 'tile', id: node.id, h: node.h }
   if (node.kind === 'column') return { kind: 'column', children: node.children.map(cloneNode) }
   return { kind: 'row', ratios: [...node.ratios], children: node.children.map(cloneNode) }

@@ -3,7 +3,7 @@ import { shadowLiftVar, shadowStandardVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { clamp } from '../Utilities/clamp'
 
-export interface FrostParams {
+interface FrostParams {
   blur: number
   brightness: number
   saturate: number

@@ -16,7 +16,7 @@ import type { DirEntry, FileStat, Machine } from '../Platform/machine'
 
 const sha256Hex = (text: string): string => createHash('sha256').update(text).digest('hex')
 
-export function chainLock(): Machine['lock'] {
+function chainLock(): Machine['lock'] {
   const chains = new Map<string, Promise<unknown>>()
   const heldKeys = new AsyncLocalStorage<ReadonlySet<string>>()
   return <T>(key: string, fn: () => Promise<T>): Promise<T> => {

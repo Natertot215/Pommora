@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { Zone, useDropSlot, useZoneItem } from './engine'
 import './drop-chrome.css'
-import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
+import { DragGroup, GroupZone, useGroupedDragItem } from './group'
 import type { DragItem } from './shared'
 import { moveItem } from '../Utilities/moveItem'
 
-export type { DragItem, DragGroupProps }
+export type { DragItem }
 export { DragGroup, useGroupedDragItem, useDropSlot }
 
 export function reorder<T extends { id: string }>(
