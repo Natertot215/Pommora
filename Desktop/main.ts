@@ -27,10 +27,15 @@ import {
   coerceScale,
   WEB_ZOOM_DEFAULT,
 } from '@pommora/core/Settings/personalization'
-import { readLivePersonalization, readWatchScope } from '@pommora/core/Settings/settings'
+import {
+  readLiveCommands,
+  readLivePersonalization,
+  readWatchScope,
+} from '@pommora/core/Settings/settings'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { installAppMenu } from './Actions/appMenu'
-import { installEditorContextMenu, setFormatState } from './Actions/editorMenu'
+import { installEditorContextMenu, setFormatState, setEditorCommands } from './Actions/editorMenu'
+import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { popNativeMenu } from './Actions/menu'
 import { push, serveIpc, type TellHandlers } from './Bridge/ipc'
 import { captureThumbnail, evictThumbnails } from './Capture/thumbnails'
@@ -138,8 +143,14 @@ const posixPath = (p: string): string => p.split(sep).join('/')
 
 let mainWindow: BrowserWindow | null = null
 function refreshMenu(): void {
-  if (mainWindow)
-    void installAppMenu(mainWindow, (p) => adoptNexus(hostContext(null), posixPath(p)))
+  const win = mainWindow
+  if (!win) return
+  void (async () => {
+    const root = sessionRoot()
+    const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
+    setEditorCommands(commands)
+    await installAppMenu(win, (p) => adoptNexus(hostContext(null), posixPath(p)), commands)
+  })()
 }
 
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {

@@ -118,6 +118,8 @@ export function MarkdownEditor({
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   const lastReadOnly = useRef(readOnly)
+  const formatGate = useRef(new Compartment())
+  const lastCommands = useRef(host.settings().commands)
   const editorRef = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -208,7 +210,7 @@ export function MarkdownEditor({
         ]),
       ),
       markdownInput,
-      formatKeymap,
+      formatGate.current.of(formatKeymap(lastCommands.current)),
       keymap.of([...defaultKeymap, ...historyKeymap]),
       markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
       codeHighlight,
@@ -382,6 +384,17 @@ export function MarkdownEditor({
     }
     // Mount once per page — the host keys on path; initialBody is the seed, not a live binding.
   }, [])
+
+  const commands = host.settings().commands
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || commands === lastCommands.current) {
+      lastCommands.current = commands
+      return
+    }
+    lastCommands.current = commands
+    view.dispatch({ effects: formatGate.current.reconfigure(formatKeymap(commands)) })
+  }, [commands])
 
   useEffect(() => {
     const view = viewRef.current

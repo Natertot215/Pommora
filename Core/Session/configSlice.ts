@@ -1,6 +1,6 @@
 import type { Result } from '@pommora/core/Contract/result'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
-import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
+import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
@@ -9,7 +9,7 @@ import { host } from '../Platform/dialer'
 export interface ConfigSlice {
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
-  commands: Record<string, string>
+  commands: Commands
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
   devicePrefs: DevicePrefs
   setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void

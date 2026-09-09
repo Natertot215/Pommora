@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Facet } from '@codemirror/state'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
+import type { Commands } from '@pommora/core/Actions/commands'
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
 import type { GripMenuAction, GripMenuContext, PickNode } from '@pommora/core/Actions/gripMenu'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
@@ -27,7 +28,7 @@ export type EditorSettings = Pick<
   | 'jumpToCitation'
   | 'pasteLinkIntoText'
   | 'defaultLinkFormat'
-> & { pasteInverse: string | undefined }
+> & { commands: Commands }
 
 type TileMount =
   | {
@@ -77,6 +78,7 @@ export interface EditorHost {
   }
   renderTile(tile: TileMount): ReactNode
   pickTree(): PickNode[]
+  openLink(url: string): void
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })

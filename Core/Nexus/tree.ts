@@ -1,3 +1,4 @@
+import type { Commands } from '../Actions/commands'
 import type { ContextDef } from '../Contexts/contexts'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { Personalization } from '../Settings/personalization'
@@ -98,7 +99,7 @@ export interface NexusTree {
   contexts: ContextGroup[]
   accent: AccentSetting
   personalization: Personalization
-  commands: Record<string, string>
+  commands: Commands
   excluded: string[]
   /** Outside the content corpus and the tree, and watched regardless of `excluded`. */
   assetDirectory: string

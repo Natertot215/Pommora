@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import type { PickNode } from '@pommora/core/Actions/gripMenu'
 import { MarkdownEditor } from './MarkdownEditor'
+import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import type { EditorHost, EditorSettings } from './api'
 import { stubDialer } from '../vitest.setup'
 
@@ -17,6 +18,7 @@ interface HarnessHost {
   menus?: Partial<EditorHost['menus']>
   glance?: EditorHost['glance'] | false
   pickTree?: PickNode[]
+  openLink?: EditorHost['openLink']
 }
 
 type HarnessProps = Partial<Omit<EditorProps, 'host'>> & {
@@ -47,7 +49,7 @@ function harnessHost(
   bump: () => void,
 ): HarnessState {
   const state = {
-    settings: { pasteInverse: 'cmd+shift+v', ...spec.settings },
+    settings: { commands: DEFAULT_COMMANDS, ...spec.settings },
     aliases: { ...spec.aliases },
     linkTitles: { ...spec.linkTitles },
     titleWatchers: new Set<() => void>(),
@@ -91,6 +93,7 @@ function harnessHost(
     glance: spec.glance === false ? undefined : (spec.glance ?? NO_GLANCE),
     renderTile: () => null,
     pickTree: () => spec.pickTree ?? [],
+    openLink: spec.openLink ?? (() => {}),
   }
   return state
 }
