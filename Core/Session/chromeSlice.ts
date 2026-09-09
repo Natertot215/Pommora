@@ -1,13 +1,7 @@
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { Notification } from '../Interface/Notifications/notifications'
 import type { Slice } from './sessionState'
-
-interface MenuOptions {
-  solid?: boolean
-  stay?: (action: string) => readonly ActionItem<string>[]
-  compact?: boolean
-}
 
 interface MenuPending extends MenuOptions {
   id: number

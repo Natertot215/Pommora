@@ -24,3 +24,9 @@ export interface MenuRequest {
   items: readonly ActionItem<string>[]
   anchor?: MenuAnchor
 }
+
+export interface MenuOptions<A extends string = string> {
+  solid?: boolean
+  stay?: (action: A) => readonly ActionItem<A>[]
+  compact?: boolean
+}
