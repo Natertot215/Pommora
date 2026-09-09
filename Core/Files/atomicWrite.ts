@@ -75,7 +75,7 @@ export async function readJsonStrict(absPath: string): Promise<Result<Record<str
 // Absent is a fact the seed may replace; unreadable (an evicted cloud placeholder, a corrupt file) is ignorance, so it fails with NO write — never a fallback-to-empty clobber.
 export function rmwJsonStrict(
   absPath: string,
-  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
   seedOnAbsent?: () => Record<string, unknown>,
   onCorrupt?: (absPath: string) => Promise<void>,
 ): Promise<Result<Record<string, unknown>>> {
@@ -88,7 +88,9 @@ export function rmwJsonStrict(
       await onCorrupt(absPath)
       base = seedOnAbsent()
     } else return strictResult(read, absPath)
+    // A mutate that finds nothing to change returns null, so a sweep touching a file it doesn't alter neither rewrites nor re-dates it.
     const next = mutate(base)
+    if (next === null) return ok(base)
     await writeJson(absPath, next)
     return ok(next)
   })

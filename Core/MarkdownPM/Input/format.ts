@@ -1,4 +1,4 @@
-import { tokenize, type TokenKind } from '../Engine/tokens'
+import { shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
 import {
   blockquotePrefixRe,
   headingParts,
@@ -42,9 +42,12 @@ export function toggleInline(doc: string, from: number, to: number, fmt: InlineF
   if (fmt === 'connection')
     return toggleWrap(doc, from, to, 'wikiLink', '[[', ']]', (f, t) => (f === t ? f + 2 : t + 2))
   const kind = fmt as keyof typeof WRAP & TokenKind
-  const existing = tokenize(doc).find(
-    (tk) => tk.kind === kind && tk.contentRange[0] <= from && to <= tk.contentRange[1],
+  // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
+  const ls = lineStartAt(doc, from)
+  const found = tokenize(doc.slice(ls, lineEndAt(doc, from))).find(
+    (tk) => tk.kind === kind && tk.contentRange[0] <= from - ls && to - ls <= tk.contentRange[1],
   )
+  const existing = found ? shiftToken(found, ls) : undefined
   if (existing) {
     const [m0, m1] = existing.markerRanges
     return {
@@ -74,9 +77,11 @@ function toggleWrap(
   close: string,
   caret: (from: number, to: number) => number,
 ): FormatEdit {
-  const existing = tokenize(doc).find(
-    (tk) => tk.kind === kind && tk.range[0] <= from && to <= tk.range[1],
+  const ls = lineStartAt(doc, from)
+  const found = tokenize(doc.slice(ls, lineEndAt(doc, from))).find(
+    (tk) => tk.kind === kind && tk.range[0] <= from - ls && to - ls <= tk.range[1],
   )
+  const existing = found ? shiftToken(found, ls) : undefined
   if (existing) {
     return {
       changes: [

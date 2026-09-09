@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tokenize, activeTokenIndices, shiftToken, type Token } from './tokens'
+import { tokenize, activeTokenIndices, linkTokenAt, shiftToken, type Token } from './tokens'
 import { scanOf } from './docScan'
 
 const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
@@ -175,5 +175,19 @@ describe('activeTokenIndices', () => {
     const tokens = tokenize('**b**')
     const idx = tokens.findIndex((tk) => tk.kind === 'bold')
     expect(activeTokenIndices(tokens, 5, 5, 5).has(idx)).toBe(true)
+  })
+})
+
+describe('linkTokenAt — the token an offset sits in', () => {
+  it('at the boundary between two abutting links, the later-starting one wins', () => {
+    // `[[a]][[b]]`: the second link starts at 5, which is also the first link's exclusive end.
+    expect(linkTokenAt('[[a]][[b]]', 5)?.range).toEqual([5, 10])
+    expect(linkTokenAt('[a](x)[b](y)', 6, 'link')?.range).toEqual([6, 12])
+  })
+
+  it('resolves an interior offset and its kind filter', () => {
+    expect(linkTokenAt('[[a]] [b](y)', 2)?.kind).toBe('wikiLink')
+    expect(linkTokenAt('[[a]] [b](y)', 7, 'link')?.range).toEqual([6, 12])
+    expect(linkTokenAt('[[a]] [b](y)', 2, 'link')).toBeUndefined()
   })
 })

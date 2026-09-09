@@ -1,4 +1,4 @@
-import { HAS_SCHEME } from './url'
+import { HAS_SCHEME } from './urlPath'
 
 export const NEXUS_DIR = '.nexus'
 

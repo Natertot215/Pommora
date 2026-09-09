@@ -6,6 +6,7 @@ import type {
   ConnUrlAction,
 } from '@pommora/core/Actions/connectionMenu'
 import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
+import { compareTitles } from '@pommora/core/Paths/caseFold'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
 export type ConnMenuTarget = {
@@ -87,7 +88,7 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
       if (!q)
         return entries
           .map((x) => x.p)
-          .sort((a, b) => a.title.localeCompare(b.title))
+          .sort((a, b) => compareTitles(a.title, b.title))
           .slice(0, limit)
       return entries
         .filter((x) => x.norm.startsWith(q))
@@ -95,7 +96,7 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
           const exact = (a.norm === q ? 0 : 1) - (b.norm === q ? 0 : 1)
           if (exact !== 0) return exact
           if (a.p.title.length !== b.p.title.length) return a.p.title.length - b.p.title.length
-          return a.p.title.localeCompare(b.p.title)
+          return compareTitles(a.p.title, b.p.title)
         })
         .slice(0, limit)
         .map((x) => x.p)

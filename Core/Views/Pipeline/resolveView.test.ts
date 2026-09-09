@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
-import fixture from '@pommora/core/Views/fixtures/collection-with-status.json'
-import registry from '@pommora/core/Views/fixtures/registry.json'
+import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
+import registry from '@pommora/core/Testing/fixtures/registry.json'
 import type { CollectionNode, PageNode } from '@pommora/core/Nexus/tree'
 import {
   savedView,

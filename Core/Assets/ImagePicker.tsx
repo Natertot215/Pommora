@@ -10,7 +10,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
 } from '@pommora/core/Assets/cropGeometry'
-import { WEB_ADDRESS } from '@pommora/core/Paths/url'
+import { WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { resolveAssetUrl, resolveAssetValue } from './assetUrl'
 import { useSession } from '../Session/store'
 import { cropFor } from './AssetImage'

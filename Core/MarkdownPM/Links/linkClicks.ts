@@ -1,9 +1,8 @@
 import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { hasWebScheme, normalizeLinkUrl } from '@pommora/core/Connections/links'
-import { linkTarget, tokenize } from '../Engine/tokens'
+import { linkTarget, linkTokenAt } from '../Engine/tokens'
 import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from './connectionsApi'
-import { openWebLink } from '../../Web/openWebLink'
 import { MD_LINK_CLASS } from '../decorations'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
@@ -22,9 +21,7 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   if (pos == null) return null
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
-  const tk = tokenize(line.text).find(
-    (t) => t.kind === 'link' && rel >= t.range[0] && rel <= t.range[1],
-  )
+  const tk = linkTokenAt(line.text, rel, 'link')
   if (!tk) return null
   const url = linkTarget(line.text, tk)
   if (!url) return null
@@ -49,15 +46,15 @@ export function followTarget(
   api: ConnectionsApi | undefined,
   bypass: boolean,
   el: Element,
-  glance: EditorHost['glance'],
+  host: EditorHost,
 ): (() => void) | null {
-  if (target.kind === 'invalid' || glance?.contains(el)) return null
+  if (target.kind === 'invalid' || host.glance?.contains(el)) return null
   if (target.kind === 'page') {
     if (!api) return null
     const page = target.page
     return () => openPage(api, page, bypass)
   }
-  return () => openWebLink(url)
+  return () => host.openLink(url)
 }
 
 /** The attach gate refuses anything but http(s), so a mailto: arms nothing rather than a blank pane. */
@@ -90,7 +87,7 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
             getApi(),
             event.metaKey,
             event.target as Element,
-            view.state.facet(editorHost).glance,
+            view.state.facet(editorHost),
           )
         : null,
     dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, hit.url, glance, el) : null),

@@ -1,5 +1,5 @@
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
-import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
+import { ReactWidget, type ReactDom } from '../reactWidget'
 import { docScan } from '../docCache'
 import { foldLabel } from '../Engine/detect'
 import type { DocScan } from '../Engine/docScan'
@@ -329,7 +329,7 @@ class TableWidget extends ReactWidget {
     this.destroyed = true
     // Only a node that is genuinely being dropped reaches here — a widget replaced over a reused DOM is never destroyed — so the observer measuring it goes with it rather than outliving the table.
     ;(dom as TableDom)._ro?.disconnect()
-    this.unmountSoon(dom as TableDom)
+    this.unmount(dom as TableDom, 'eager')
   }
 
   ignoreEvent(): boolean {

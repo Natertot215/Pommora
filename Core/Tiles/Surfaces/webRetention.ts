@@ -1,6 +1,6 @@
 // Every retained hidden guest is a live renderer process, so the hidden set is capped.
 
-import { capSet } from '../../../UIX/Utilities/capMap'
+import { capSet } from '@pommora/uix/Utilities/capMap'
 
 // KNOB — how many hidden guests stay alive beyond the visible ones.
 export const WEB_RETAINED_MAX = 5

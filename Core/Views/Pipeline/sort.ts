@@ -2,6 +2,7 @@
 
 import type { SortCriterion } from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
+import { compareTitles } from '@pommora/core/Paths/caseFold'
 import {
   optionValues,
   type PropertyDefinition,
@@ -20,8 +21,7 @@ interface ResolvedCriterion {
 }
 
 const numericLess: Less = (a, b) => (a as number) < (b as number)
-const ciLess: Less = (a, b) =>
-  (a as string).localeCompare(b as string, undefined, { sensitivity: 'accent' }) < 0
+const ciLess: Less = (a, b) => compareTitles(a as string, b as string) < 0
 
 /** Select/status sort by the author's option order, not alphabetically; unknown or absent values rank last. */
 function optionOrderIndex(def: PropertyDefinition): Record<string, number> {

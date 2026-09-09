@@ -21,19 +21,13 @@ export abstract class ReactWidget extends WidgetType {
     return (dom as ReactDom)._root !== undefined
   }
 
-  /** Connectivity is only decidable after the update settles: CM hands a widget's DOM to its successor on a rebuild. */
-  protected unmountIfDetached(dom: ReactDom): void {
+  /** One teardown for both lifecycles, decided after the update settles since CM hands a widget's DOM to its successor on a rebuild. `'if-detached'` spares a node that got reused, so a re-rendered tile never flashes (the embeds); `'eager'` always releases (the table widget, whose destroy is terminal). */
+  protected unmount(dom: ReactDom, when: 'if-detached' | 'eager'): void {
     queueMicrotask(() => {
       const root = dom._root
-      if (dom.isConnected || !root) return
+      if (!root || (when === 'if-detached' && dom.isConnected)) return
       dom._root = undefined
       root.unmount()
     })
-  }
-
-  protected unmountSoon(dom: ReactDom): void {
-    const root = dom._root
-    dom._root = undefined
-    if (root) queueMicrotask(() => root.unmount())
   }
 }
