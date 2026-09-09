@@ -26,7 +26,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 ### Hard Rules
 
 - **The host owns the machine.** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place Node and Electron are called; UIX reaches nothing outside itself.
-- **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts` and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
+- **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts`, and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
 - **The engine never depends on the renderer.** The host-run half of Core must never import React or depend on an interface — three gates go red the moment it does.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
@@ -34,8 +34,8 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first. Any in-flight decisions must be disclosed as they’re being made.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
-- **Don’t** waste time on screenshots, CDP driving or DOM inspection to test something Nathan can see on his own — unless I’m asleep or specifically ask, don’t waste your efforts.
-- **Don’t** assume comments are authoritative — a constraint a comment claims isn’t a law, and change-scoping shouldn’t treat them as fact.
+- **Don’t** waste time on screenshots, CDP driving, or DOM inspection to test something Nathan can see on his own — unless I’m asleep or specifically ask, don’t waste your efforts.
+- **Don’t** treat comments as authoritative — a constraint a comment claims isn’t a law, and change-scoping shouldn’t treat them as fact.
 
 #### Testing Conventions
 
@@ -43,18 +43,19 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 - **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single quotes, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs it.
 - **Launch the GUI** by copy-pasting from the repo’s root:  `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`
 -  `POMMORA_DEBUG_PORT` arms CDP; the `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. 
-- **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first launch dies with `Error: Electron uninstall`; run `./node_modules/.bin/electron --version` once to download it. 
+- **Native context menus over CDP:** send a real right-click with Input.dispatchMouseEvent (button 'right', mousePressed then mouseReleased, at the target's box); a JS-dispatched contextmenu event never reaches main's context-menu listener. Dismiss with osascript 'tell application "System Events" to key code 53'.
+
 
 ### Locked Decisions
 
 **Nothing is set in stone but these:** Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it. These decisions need explicit sign-offs to change; everything else needs only a good reason.
 
 - **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
-- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, file metadata, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
+- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision, but legibility concerns context, not every byte the app stores: per-machine operational info, accelerators, file metadata, or similar information may be better stored in the `nexus.db` rather than hand-editable data.
 
 #### Important Information
 
-- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. It’s commits are archived on its own branch; `git log` reaches them directly.
+- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. Its commits are archived on its own branch; `git log` reaches them directly.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime — subordinate to the daily Pommora grind — it brings similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
 - **NexusOS** is both an Obsidian vault *and* a Pommora Nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian fixtures until Pommora is completed.
 - **Mobile Companion:** A mobile companion app is a near-term focus; it’s been discussed yet hasn’t been formally planned.

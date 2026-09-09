@@ -1,7 +1,7 @@
 import { type RefObject, useContext, useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../../Session/store'
-import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
+import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'

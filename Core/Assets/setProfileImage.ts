@@ -3,7 +3,7 @@ import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { updateSettings } from '../Settings/settings'
 import { ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { adoptImageSource, dropReplacedAsset } from './adoptFile'
 import { assetFileToDelete } from './assetRoots'
 

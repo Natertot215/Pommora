@@ -33,6 +33,17 @@ export function describeMachine(
       expect(bytes && new TextDecoder().decode(bytes)).toBe('hello')
     })
 
+    it('writes atomically — a concurrent reader sees the old or the new bytes, never a torn mix', async () => {
+      const p = at('atomic.md')
+      const a = 'a'.repeat(64 * 1024)
+      const b = 'b'.repeat(64 * 1024)
+      await machine.writeText(p, a)
+      const writes = Array.from({ length: 20 }, (_, i) => machine.writeText(p, i % 2 ? a : b))
+      const reads = await Promise.all(Array.from({ length: 200 }, () => machine.readText(p)))
+      await Promise.all(writes)
+      for (const seen of reads) expect(seen === a || seen === b).toBe(true)
+    })
+
     it('stats a file and a directory, and an absent path as null', async () => {
       await machine.writeText(at('a.txt'), 'hello')
       const s = await machine.stat(at('a.txt'))

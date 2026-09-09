@@ -19,7 +19,7 @@ import { valuesReply } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { entityMenuItems } from '@pommora/core/Actions/entityMenu'
-import { containerCreators } from '@pommora/core/Pages/mutateRequest'
+import { containerCreators } from '@pommora/core/Nexus/mutateRequest'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

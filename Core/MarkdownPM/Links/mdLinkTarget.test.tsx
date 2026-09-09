@@ -6,12 +6,8 @@ import { encodeLinkTarget } from '@pommora/core/Connections/links'
 import { autocompleteQuery, commitEdit } from '../Autocomplete/autocomplete'
 import { activeTokenIndices, tokenize } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
-import {
-  buildPageIndex,
-  resolveMdTarget,
-  type ConnectionsApi,
-  type ConnPage,
-} from './connectionsApi'
+import { resolveMdTarget, type ConnectionsApi } from './connectionsApi'
+import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { renderCellContent } from '../Tables/cellStatic'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
 import { scanOf } from '../Engine/docScan'

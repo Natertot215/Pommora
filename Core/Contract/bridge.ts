@@ -1,5 +1,5 @@
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
-import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { FormatState } from '../Actions/editorMenu'
 import type { SavedView } from '../Views/views'

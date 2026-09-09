@@ -12,7 +12,7 @@ import { adoptImageSource, dropReplacedAsset } from '../Assets/adoptFile'
 import { assetFileToDelete } from '../Assets/assetRoots'
 import { fault, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setBannerOp(
   { root, deps }: MutateContext,

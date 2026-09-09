@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
+import type { ConnectionsApi } from './connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import type { EditorHost } from '../api'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 

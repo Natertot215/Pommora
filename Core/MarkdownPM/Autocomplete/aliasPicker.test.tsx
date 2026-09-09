@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
 import { aliasRows } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
-import { buildPageIndex } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import type { EditorHost } from '../api'
 
 class ResizeObserverStub {

@@ -1,7 +1,7 @@
 import type { Result } from '../Contract/result'
 import type { PageMoveContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
-import type { Crop } from '../Nexus/schemas'
+import type { Crop } from './schemas'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {

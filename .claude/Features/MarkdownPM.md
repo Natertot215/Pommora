@@ -90,7 +90,9 @@ Right-clicking text in the editor opens the operating system's own menu rather t
 - **Format ▸** — the inline marks, plus Connection and Link.
 - **Embed ▸** — Webpage or Internal Page.
 - **Heading ▸** — Paragraph and H1–H5. **Lists ▸** — Bullet, Numbered, Task.
-- **Paste As ▸** — what the clipboard could become rather than what a plain paste would make of it. An address offers the three link forms, Plain Text, and Embedded Link on a blank line; a copied connection or markdown link offers Connection, Markdown Link, and Embedded Page; any text offers Footnote wherever a marker can bind.
+- **Paste As ▸** — what the clipboard could become rather than what a plain paste would make of it.
+
+An address offers the three link forms, Plain Text, and Embedded Link on a blank line; a copied connection or markdown link offers Connection, Markdown Link, and Embedded Page; any text offers Footnote wherever a marker can bind.
 
 Keyboard shortcuts are the Format marks' ⌘ chords and **Inverse Paste** on ⌘⇧V, bound from the one command table every reader derives from, so a rebinding in `settings.json` reaches them.
 

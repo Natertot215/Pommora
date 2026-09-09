@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { GovernedWorld } from '../Contexts/contextResolve'
+import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from './properties'
 import { setGovernedRootKeys } from './governedWrite'
 
@@ -123,6 +124,47 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Priority')
     expect(out).toContain('Status:\n  - Open')
+  })
+
+  it('keeps a mixed Context list — an unresolvable Space is never dropped by a sibling write', async () => {
+    await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\n  - Ghost\n---\nbody\n')
+    await setGovernedRootKeys(dir, page, { Status: 'Open' }, ['Status'], world)
+    const out = await readFile(page, 'utf8')
+    expect(out).toContain('- Health')
+    expect(out).toContain('- Ghost')
+    expect(out).toContain('Status: Open')
+  })
+
+  it('keeps a wholly unresolvable Context value rather than deleting the key', async () => {
+    await writeFile(page, '---\nid: p1\n<Areas>:\n  - Ghost\n---\nbody\n')
+    await setGovernedRootKeys(dir, page, { Status: 'Open' }, ['Status'], world)
+    const out = await readFile(page, 'utf8')
+    expect(out).toContain('<Areas>')
+    expect(out).toContain('- Ghost')
+  })
+
+  it('keeps an own property that reconciles to blank rather than deleting it during a sibling write', async () => {
+    await writeFile(page, '---\nid: p1\nPriority: Bogus\n---\nbody\n')
+    await setGovernedRootKeys(dir, page, { Status: 'Done' }, ['Status'], world)
+    const fm = splitFrontmatter(await readFile(page, 'utf8'))
+    expect(fm.Priority).toBe('Bogus')
+    expect(fm.Status).toBe('Done')
+  })
+
+  it('withholds an own multi-select that reconciles smaller, keeping the original list', async () => {
+    const tags: PropertyDefinition = {
+      id: 'prop_tags',
+      name: 'Tags',
+      type: 'multi_select',
+      select_options: [{ value: 'alpha', label: 'alpha' }],
+    }
+    await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
+    await setGovernedRootKeys(dir, page, { Status: 'Done' }, ['Status'], {
+      ...world,
+      defs: new Map([['Tags', tags]]),
+    })
+    const fm = splitFrontmatter(await readFile(page, 'utf8'))
+    expect(fm.Tags).toEqual(['', 'alpha'])
   })
 
   it('reports the adoptions the reconcile found', async () => {

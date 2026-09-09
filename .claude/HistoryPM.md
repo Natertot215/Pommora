@@ -2,7 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 09-07-2026              | PM-133 | Engine boundary guarded, bridge on one envelope      |
+| 09-07-2026              | PM-133 | The Engine Boundary                                  |
 | 09-07-2026              | PM-132 | State Placement                                      |
 | 09-06-206               | PM-131 | Cross-Surface Glances                                |
 | 09-06-2026              | PM-130 | The One Value Picker & Panel                         |
@@ -137,7 +137,7 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
-#### PM-133 || Engine boundary guarded, bridge on one envelope
+#### PM-133 || The Engine Boundary
 **DATE:** 09-07-2026
 
 A Vitest walker over the import graph from `Core/Contract/serve.ts` (`Core/Testing/engineGraph.ts`) fails on any `.tsx`, DOM global, or package outside `ulidx`/`yaml`/`zod`, and `Desktop/tsconfig.node.json` gained `"lib": ["ES2022"]` so a DOM reference in an engine file is a type error; a companion guard holds `Core/package.json` to what Core imports, dropping `write-file-atomic` and declaring the four editor packages it had been borrowing transitively. Every channel in `Core/Contract/bridge.ts` moved onto the `Result` envelope — twenty-four bare replies retyped, `NexusState` collapsed to `empty`/`open`, and the `scopeGet`, `nexus:state`, and `delete:facts` self-catches replaced by one `valueOr` reader — with `Desktop/Bridge/ipc.test.ts` proving a throw arrives as a failed envelope. Under Decision A1, `Core/Testing/machines.ts` and the `describeMachine`/`describeStores` contract suites replaced Core's dependency on `@pommora/desktop`: Core's setup installs a disk-backed test machine, Desktop proves `nodeMachine` and its SQLite stores against the same suites, and the nineteen Core tests that opened SQLite now open in-memory stores, so Core passes `vitest` with `Desktop/` renamed away. The dead `writeRaw` machine method came out in the same arc.

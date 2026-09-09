@@ -9,7 +9,7 @@ import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { fault, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setIconOp(
   { root }: MutateContext,

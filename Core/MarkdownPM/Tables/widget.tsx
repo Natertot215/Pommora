@@ -12,10 +12,11 @@ import {
   type EditorState,
   type Extension,
   type Range,
+  type Text,
   type Transaction,
 } from '@codemirror/state'
 import { undo, redo } from '@codemirror/commands'
-import { modelFromRegion } from '../Engine/Tables/regions'
+import { modelFromRegion, type TableRegion } from '../Engine/Tables/regions'
 import { parseDelimiter } from '../Engine/Tables/codec'
 import { cellCommitChange, structuralEditChange, tableSelfEdit } from './sync'
 import { startBlockDrag } from '../Gestures/blockDrag'
@@ -61,6 +62,36 @@ export interface TableHeadingColsApi {
 const setHeadingColsEffect = StateEffect.define<number[]>()
 const toggleHeadingColEffect = StateEffect.define<number>()
 
+// The header row's cell texts joined — a table's stable identity, unchanged when OTHER tables are inserted, removed, or reordered around it.
+function headerKeyOf(region: TableRegion): string {
+  return region.rows[0].cells.map((c) => c.text).join(' ')
+}
+
+// Re-point each toggled ordinal at the table it still names after a doc change: match old header key to new ordinal, consuming matches in order so duplicate headers stay one-to-one. A key with no match keeps its ordinal when the table count is unchanged (an in-place edit never moves tables) and is dropped when the count fell (the table was removed). Returns the same reference when membership holds, so an ordinary edit costs nothing downstream.
+function remapHeadingCols(set: Set<number>, oldDoc: Text, newDoc: Text): Set<number> {
+  if (set.size === 0) return set
+  const oldTables = docScan(oldDoc).tables
+  const newKeys = docScan(newDoc).tables.map(headerKeyOf)
+  const next = new Set<number>()
+  const consumed = new Set<number>()
+  for (const oldIdx of [...set].sort((a, b) => a - b)) {
+    const region = oldTables[oldIdx]
+    if (!region) continue
+    const key = headerKeyOf(region)
+    let matched = -1
+    for (let j = 0; j < newKeys.length; j++) {
+      if (consumed.has(j) || newKeys[j] !== key) continue
+      matched = j
+      break
+    }
+    if (matched === -1 && newKeys.length === oldTables.length) matched = oldIdx
+    if (matched === -1) continue
+    consumed.add(matched)
+    next.add(matched)
+  }
+  return next.size === set.size && [...next].every((i) => set.has(i)) ? set : next
+}
+
 const headingColField = StateField.define<Set<number>>({
   create: () => new Set(),
   update(set, tr) {
@@ -73,6 +104,9 @@ const headingColField = StateField.define<Set<number>>({
         else next.add(e.value)
       }
     }
+    // A cell commit never reorders tables, so its self-edit is left to keep the toggle put.
+    if (tr.docChanged && !tr.annotation(tableSelfEdit))
+      next = remapHeadingCols(next, tr.startState.doc, tr.state.doc)
     return next
   },
 })
@@ -475,7 +509,9 @@ export function tableWidgetExtension(
   onHeadingColsChange?: (indices: number[]) => void,
 ): Extension {
   const persist = EditorView.updateListener.of((u) => {
-    if (!u.transactions.some((tr) => tr.effects.some((e) => e.is(toggleHeadingColEffect)))) return
+    // Any change to the set is written back — a toggle, or a remap correcting stale ordinals so a reload can't re-apply them — but not a load, which is where the set came from.
+    if (u.startState.field(headingColField) === u.state.field(headingColField)) return
+    if (u.transactions.some((tr) => tr.effects.some((e) => e.is(setHeadingColsEffect)))) return
     onHeadingColsChange?.([...u.state.field(headingColField)])
   })
   // headingColField precedes widgetField so the widget reads the up-to-date set; atomicRanges makes the caret skip a table as one unit.

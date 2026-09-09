@@ -4,7 +4,7 @@ import { sidecarPath } from '../Paths/paths'
 import { updateNexusConfig } from '../Settings/settings'
 import { fault, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setHeadingIconHiddenOp(
   { root }: MutateContext,

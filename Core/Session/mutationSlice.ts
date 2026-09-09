@@ -2,7 +2,7 @@ import {
   DEFAULT_NEW_NAME,
   type MutableKind,
   type RenameHost,
-} from '@pommora/core/Pages/mutateRequest'
+} from '@pommora/core/Nexus/mutateRequest'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { orderWithSlot } from '../Views/creationOrder'

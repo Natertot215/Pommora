@@ -8,7 +8,7 @@ export type Box = {
   cx: number
   cy: number
 }
-export type DropState = 'idle' | 'dragging' | 'dropping' | 'pending'
+export type DropState = 'idle' | 'dragging' | 'dropping'
 export type DragItem = {
   setNodeRef: (el: HTMLElement | null) => void
   style: CSSProperties
