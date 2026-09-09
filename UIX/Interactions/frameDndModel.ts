@@ -4,6 +4,8 @@ import type { MeasuredRow } from './reorderModel'
 
 export type FrameRow = { id: string; group: 'assigned' | 'all' }
 
+// The schema pane and the view-visibility pane derive from this vocabulary and refuse drops differently by design: the schema pane's bottom zone is the ordered nexus registry and reorders, the view pane's is a derived hidden list with no order and can't.
+// Title and every reserved property is never removable: the schema pane filters reserved ids out of both zones, the view pane refuses to hide Title.
 export type PaneDrop =
   | { kind: 'reorder-assigned'; propId: string; toIndex: number } // → schema.reorder
   | { kind: 'reorder-nexus'; propId: string; toIndex: number } // → registry.reorder
