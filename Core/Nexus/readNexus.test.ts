@@ -30,10 +30,11 @@ describe('readCommands', () => {
     expect(c['toggle-ribbon']).toBe('cmd+shift+e')
     expect(Object.keys(c)).toEqual(Object.keys(DEFAULT_COMMANDS))
   })
-  it('a non-string or empty value falls back to the default binding', () => {
-    const c = readCommands({ 'toggle-ribbon': 42, 'toggle-nav': '' })
+  it('a non-string, empty, or modifier-only value falls back to the default binding', () => {
+    const c = readCommands({ 'toggle-ribbon': 42, 'toggle-nav': '', 'new-tab': 'cmd+' })
     expect(c['toggle-ribbon']).toBe(DEFAULT_COMMANDS['toggle-ribbon'])
     expect(c['toggle-nav']).toBe(DEFAULT_COMMANDS['toggle-nav'])
+    expect(c['new-tab']).toBe(DEFAULT_COMMANDS['new-tab'])
   })
 })
 
