@@ -4,7 +4,7 @@ import { valueOr } from '@pommora/core/Contract/result'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
-import { parentOf } from '@pommora/core/Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import { assetSubRoot } from '@pommora/core/Paths/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
@@ -83,7 +83,7 @@ function propertyFolder(def: PropertyDefinition): string {
 
 function folderOf(reference: string): string {
   const resolved = resolveFileValue(reference, useSession.getState().assetMap)
-  return resolved.kind === 'asset' ? parentOf(resolved.rel) : ''
+  return resolved.kind === 'asset' ? relDirname(resolved.rel) : ''
 }
 
 export function pickFileInto(

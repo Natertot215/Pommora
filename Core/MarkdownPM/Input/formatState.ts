@@ -4,8 +4,6 @@ import { isQuoteToggleable, splitPrefix } from './format'
 import { lineStartAt, lineEndAt } from './edits'
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
 
-export type { FormatState }
-
 export function readFormatState(
   doc: string,
   from: number,

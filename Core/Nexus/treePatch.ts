@@ -7,12 +7,8 @@ import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceN
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SavedView } from '../Views/views'
+import { basename, relDirname } from '../Paths/posix'
 
-const basename = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
-export const parentOf = (path: string): string => {
-  const i = path.lastIndexOf('/')
-  return i === -1 ? '' : path.slice(0, i)
-}
 const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
 
 // The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
@@ -215,7 +211,7 @@ export function relocateNodeInTree(
   path: string,
   newParentPath: string,
 ): NexusTree | null {
-  if (parentOf(path) === newParentPath) return null
+  if (relDirname(path) === newParentPath) return null
   const newPath = joinPath(newParentPath, basename(path))
   const pulled = extract(tree.collections, path)
   if (!pulled.node) return null
@@ -224,6 +220,26 @@ export function relocateNodeInTree(
   if (!placed.done) return null
   const next = { ...tree, collections: placed.containers as CollectionNode[] }
   return repointUnreadable(next, path, newPath)
+}
+
+export function findContainerWhere(
+  tree: NexusTree,
+  match: (node: CollectionNode | SetNode) => boolean,
+): CollectionNode | SetNode | null {
+  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
+    for (const s of sets ?? []) {
+      if (match(s)) return s
+      const deep = inSets(s.sets)
+      if (deep) return deep
+    }
+    return null
+  }
+  for (const c of tree.collections) {
+    if (match(c)) return c
+    const hit = inSets(c.sets)
+    if (hit) return hit
+  }
+  return null
 }
 
 function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
@@ -335,8 +351,8 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
                 ...g,
                 def: { ...g.def, title: req.newName },
                 spaces: g.spaces.map((s) => {
-                  const groupDir = parentOf(s.path)
-                  const newDir = joinPath(parentOf(groupDir), req.newName)
+                  const groupDir = relDirname(s.path)
+                  const newDir = joinPath(relDirname(groupDir), req.newName)
                   return { ...s, path: joinPath(newDir, basename(s.path)) }
                 }),
               }
@@ -349,7 +365,7 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
           ...g,
           spaces: g.spaces.map((s) =>
             s.id === req.spaceId
-              ? { ...s, title: req.newName, path: joinPath(parentOf(s.path), req.newName) }
+              ? { ...s, title: req.newName, path: joinPath(relDirname(s.path), req.newName) }
               : s,
           ),
         })),
@@ -452,7 +468,7 @@ function updateInContainers(
 
 /** Only valid after the write succeeded — a collision fails main-side and never patches. */
 export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
-  const parent = parentOf(path)
+  const parent = relDirname(path)
   // Case-insensitive to match the walk's admit: a `.MD` page takes the canonical extension.
   const newPath = /\.md$/i.test(path)
     ? joinPath(parent, `${newName}.md`)

@@ -1,6 +1,6 @@
 // Modifiers are exact — a spec without shift rejects a shifted press — so overlapping bindings can't double-fire.
 
-export interface Chord {
+interface Chord {
   key: string
   cmd: boolean
   ctrl: boolean

@@ -22,7 +22,7 @@ export const OPTION_STYLE_OPTIONS = [
   { value: 'compact', label: 'Compact' },
 ] as const satisfies readonly { value: OptionStyle; label: string }[]
 
-export function OptionRow({
+function OptionRow({
   type,
   look,
   value,
@@ -126,7 +126,7 @@ export function OptionRow({
   )
 }
 
-export interface RowDrag {
+interface RowDrag {
   registerRow: (value: string, el: HTMLElement | null) => void
   onRowPointerDown: (value: string, e: ReactPointerEvent) => void
   dragging: string | null

@@ -13,10 +13,7 @@ import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/page
 import { SIDECAR_FILENAME } from '../Paths/paths'
 
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
-const AGENDA_CONFIGS: readonly string[] = [
-  SIDECAR_FILENAME.taskConfig,
-  SIDECAR_FILENAME.eventConfig,
-]
+const AGENDA_CONFIGS: readonly string[] = [SIDECAR_FILENAME.tasks, SIDECAR_FILENAME.events]
 const BOOKKEEPING_KEYS: readonly string[] = [ID_KEY]
 
 export async function excludedArtifacts(

@@ -15,7 +15,7 @@ import {
 import { vars as colorVars } from './color.css'
 import type { LabelColorName } from '../Labels/label-base.css'
 
-export { RAMP_FAMILIES, RAMP_STEPS, type CellKey, type RampFamily, type RampStep }
+export { RAMP_FAMILIES, RAMP_STEPS, type CellKey }
 
 const c = colorVars.color
 const WHITE = c.system.white

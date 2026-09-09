@@ -29,7 +29,7 @@ export function useDisclosureSet(defaultOpen = false): {
 }
 
 /** 'spacer' keeps a leaf's glyph in the chevron's column; 'none' renders nothing. */
-export type DropOutlineKind = 'chevron' | 'spacer' | 'none'
+type DropOutlineKind = 'chevron' | 'spacer' | 'none'
 
 function dropOutlineGlyph(kind: DropOutlineKind, open: boolean, onToggle: () => void): ReactNode {
   switch (kind) {

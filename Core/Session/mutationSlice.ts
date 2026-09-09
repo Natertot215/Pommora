@@ -6,7 +6,8 @@ import {
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { orderWithSlot } from '../Views/creationOrder'
-import { findContainer, parentPathOf } from '../Nexus/treeIndex'
+import { findContainerWhere } from '../Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import type { Slice } from './sessionState'
 import type { ValueChange, ValuesEpoch } from '@pommora/core/Nexus/tree'
 import { host } from '../Platform/dialer'
@@ -154,8 +155,8 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   newPageAdjacent: async (path, where, host) => {
     const tree = get().tree
     if (!tree) return
-    const parentPath = parentPathOf(path)
-    const container = findContainer(tree, (n) => n.path === parentPath)
+    const parentPath = relDirname(path)
+    const container = findContainerWhere(tree, (n) => n.path === parentPath)
     if (!container) return
     const anchor = container.pages.find((p) => p.path === path)
     if (!anchor) return

@@ -7,7 +7,7 @@ import { propertyDefinition, type PropertyDefinition } from './properties'
 
 export type PropertyRegistry = Record<string, PropertyDefinition>
 
-export type RegistryFile = { order: string[]; defs: PropertyRegistry }
+type RegistryFile = { order: string[]; defs: PropertyRegistry }
 
 const registryPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 

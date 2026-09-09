@@ -29,7 +29,7 @@ const NULL: PropertyValue = { kind: 'null' }
 export type Adoption = { propertyId: string; value: string }
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
-export const optionList = (raw: unknown): string[] =>
+const optionList = (raw: unknown): string[] =>
   (Array.isArray(raw) ? raw : [raw])
     .filter((x) => typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean')
     .map(String)

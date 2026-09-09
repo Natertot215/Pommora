@@ -1,35 +1,12 @@
-import { keyframes, style } from '@vanilla-extract/css'
-import { duration, easing } from '@pommora/uix/Animations/motion'
+import { style } from '@vanilla-extract/css'
 import { text, vars } from '@pommora/uix/Theme'
-import { stack } from '@pommora/uix/Theme/stack'
 
 const c = vars.color
 
-export const MIN_W = 320
-export const MAX_W = 460
-export const MIN_H = 132
-export const MAX_H = 260
-
-const scrimIn = keyframes({ from: { opacity: 0 } })
-const scrimOut = keyframes({ to: { opacity: 0 } })
-
-// The scrim rides the panel's own window motion so the two arrive and leave together.
-const scrim = `${duration.fast} ${easing.baseEase}`
-
-export const backdrop = style({
-  position: 'fixed',
-  inset: 0,
-  zIndex: stack.top.floating,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: c.state.muted,
-  animation: `${scrimIn} ${scrim}`,
-})
-
-export const backdropClosing = style({
-  animation: `${scrimOut} ${scrim} forwards`,
-})
+const MIN_W = 320
+const MAX_W = 460
+const MIN_H = 132
+const MAX_H = 260
 
 export const panel = style({
   display: 'flex',

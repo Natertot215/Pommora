@@ -2,28 +2,16 @@ import { join } from '../Paths/posix'
 import { baseSidecar } from './schemas'
 import { pathExists } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
-import { SIDECAR_FILENAME, type SidecarKind } from '../Paths/paths'
+import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/paths'
 import { readSidecar } from '../Files/sidecar'
 
-export type FolderKind = 'collection' | 'set' | 'tasks-singleton' | 'events-singleton' | 'unknown'
+export type FolderKind = 'collection' | 'set' | AgendaFolder | 'unknown'
 
-export const AGENDA_SLOTS = [
-  { slot: 'tasks', sidecar: 'taskConfig', kind: 'tasks-singleton', seedName: 'Tasks' },
-  { slot: 'events', sidecar: 'eventConfig', kind: 'events-singleton', seedName: 'Events' },
-] as const satisfies readonly {
-  slot: string
-  sidecar: SidecarKind
-  kind: FolderKind
-  seedName: string
-}[]
-
-type AgendaSlot = (typeof AGENDA_SLOTS)[number]['slot']
-
-export type AgendaRegistration = Partial<Record<AgendaSlot, string>>
+export type AgendaRegistration = Partial<Record<AgendaFolder, string>>
 
 export interface FolderKindContext {
   agenda: AgendaRegistration
-  homed: ReadonlySet<AgendaSlot>
+  homed: ReadonlySet<AgendaFolder>
   root: string
   adopting?: boolean
 }
@@ -31,11 +19,11 @@ export interface FolderKindContext {
 export function readAgendaRegistration(
   identity: Record<string, unknown> | null,
 ): AgendaRegistration {
-  const raw = identity?.agenda_singletons
+  const raw = identity?.agenda_folders
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const rec = raw as Record<string, unknown>
   const out: AgendaRegistration = {}
-  for (const { slot } of AGENDA_SLOTS) {
+  for (const slot of AGENDA_FOLDERS) {
     const id = rec[slot]
     if (typeof id === 'string' && id) out[slot] = id
   }
@@ -49,18 +37,18 @@ export async function resolveFolderKind(
 ): Promise<FolderKind> {
   if (absDir === ctx.root) return 'unknown'
   const present = await Promise.all(
-    AGENDA_SLOTS.map((s) => pathExists(join(absDir, SIDECAR_FILENAME[s.sidecar]))),
+    AGENDA_FOLDERS.map((slot) => pathExists(join(absDir, SIDECAR_FILENAME[slot]))),
   )
-  const claimed = AGENDA_SLOTS.filter((_, i) => present[i])
+  const claimed = AGENDA_FOLDERS.filter((_, i) => present[i])
 
   if (claimed.length > 0) {
     if (claimed.length > 1) return 'unknown'
     const [slot] = claimed
     if (await hasContainerSidecar(absDir)) return 'unknown'
     if (depth !== 'root') return 'unknown'
-    const sidecar = await readSidecar(absDir, slot.sidecar, baseSidecar)
-    const registered = ctx.agenda[slot.slot]
-    return sidecar && registered && sidecar.id === registered ? slot.kind : 'unknown'
+    const sidecar = await readSidecar(absDir, slot, baseSidecar)
+    const registered = ctx.agenda[slot]
+    return sidecar && registered && sidecar.id === registered ? slot : 'unknown'
   }
 
   if (depth === 'nested') return 'set'
@@ -91,7 +79,7 @@ export async function agendaContext(
   // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial pass costs one round trip per root folder per slot before anything can render.
   const found = await Promise.all(
     entries.flatMap((e) =>
-      AGENDA_SLOTS.map((s) => readSidecar(join(root, e.name), s.sidecar, baseSidecar)),
+      AGENDA_FOLDERS.map((slot) => readSidecar(join(root, e.name), slot, baseSidecar)),
     ),
   )
   const claims = new Map<string, number>()
@@ -99,8 +87,8 @@ export async function agendaContext(
     if (sidecar?.id) claims.set(sidecar.id, (claims.get(sidecar.id) ?? 0) + 1)
   }
   const agenda: AgendaRegistration = {}
-  const homed = new Set<AgendaSlot>()
-  for (const { slot } of AGENDA_SLOTS) {
+  const homed = new Set<AgendaFolder>()
+  for (const slot of AGENDA_FOLDERS) {
     const id = registered[slot]
     if (!id) continue
     const claimants = claims.get(id) ?? 0

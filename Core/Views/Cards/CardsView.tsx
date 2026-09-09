@@ -44,7 +44,8 @@ import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
-import { byOrder, parentOf } from '@pommora/core/Nexus/treePatch'
+import { byOrder } from '@pommora/core/Nexus/treePatch'
+import { relDirname } from '@pommora/core/Paths/posix'
 import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
 import { navKey } from '../../Navigation/navRecents'
 import { findCollectionForSet } from '../../Nexus/treeIndex'
@@ -458,12 +459,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (rowBand.get(activeId) !== zoneId) return index
     const row = rowById.get(activeId)
     if (!row) return null
-    const parent = parentOf(row.path)
+    const parent = relDirname(row.path)
     const without = bandRowsWithout(zoneId, activeId)
     let first = -1
     let count = 0
     without.forEach((r, i) => {
-      if (parentOf(r.path) !== parent) return
+      if (relDirname(r.path) !== parent) return
       if (first < 0) first = i
       count++
     })
@@ -487,11 +488,11 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       if (sameIds(full, painted)) return
       const row = rowById.get(activeId)
       if (!row) return
-      const parent = parentOf(row.path)
+      const parent = relDirname(row.path)
       const sibAfter = bandRowsWithout(bandKey, activeId)
         .slice(toIndex)
-        .find((r) => parentOf(r.path) === parent)
-      const current = rows.filter((r) => parentOf(r.path) === parent).map((r) => r.id)
+        .find((r) => relDirname(r.path) === parent)
+      const current = rows.filter((r) => relDirname(r.path) === parent).map((r) => r.id)
       const sibIds = current.filter((id) => id !== activeId)
       const order = spliceBeside(sibIds, sibAfter?.id ?? null, activeId, 'above')
       setManualOverride(full)
@@ -513,9 +514,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (canRelocate) {
       const row = rowById.get(activeId)
       const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
-      if (row && destPath && destPath !== parentOf(row.path)) {
+      if (row && destPath && destPath !== relDirname(row.path)) {
         const isDestSibling = (r: ViewRow): boolean =>
-          parentOf(r.path) === destPath && r.id !== activeId
+          relDirname(r.path) === destPath && r.id !== activeId
         const destIds = rows.filter(isDestSibling).map((r) => r.id)
         const bandRows = flattenGroups(groups.filter((g) => g.key === toZone))
         const beforeId = bandRows[toIndex]?.id ?? null

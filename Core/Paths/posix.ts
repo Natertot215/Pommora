@@ -25,6 +25,11 @@ export function dirname(p: string): string {
   return i === 0 ? '/' : trimmed.slice(0, i)
 }
 
+export function relDirname(p: string): string {
+  const i = p.lastIndexOf('/')
+  return i < 0 ? '' : p.slice(0, i)
+}
+
 export function basename(p: string, ext?: string): string {
   const trimmed = p.replace(/\/+$/, '')
   const base = trimmed.slice(trimmed.lastIndexOf('/') + 1)

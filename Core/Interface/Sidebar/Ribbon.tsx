@@ -4,7 +4,7 @@ import { entityIcon } from '../../Assets/entityIconPolicy'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useSession } from '../../Session/store'
 import { NexusPhoto } from './NexusPhoto'
-import './Sidebar.css'
+import './sidebar.css'
 
 // The icon that summoned a window dismisses it, matching the keyboard command that shares the state — neither switches sidebarMode.
 type RibbonKey = 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'

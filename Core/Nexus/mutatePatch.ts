@@ -4,7 +4,6 @@ import type { BannerOwnerKind, MutableKind, MutateOutcome, MutateRequest } from 
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
   insertCreatedInTree,
-  parentOf,
   patchContextGroupsInTree,
   relocateNodeInTree,
   removeNodeInTree,
@@ -13,6 +12,7 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
 } from './treePatch'
+import { relDirname } from '../Paths/posix'
 import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
@@ -47,14 +47,14 @@ function patchForMutation(
     case 'movePage': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
       // A null relocate reads as "already there" only when it IS that parent; otherwise walk.
-      if (!moved && parentOf(req.path) !== req.newParentPath) return null
+      if (!moved && relDirname(req.path) !== req.newParentPath) return null
       return req.order
         ? (reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved)
         : moved
     }
     case 'moveSet': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
-      if (!moved && parentOf(req.path) !== req.newParentPath) return null
+      if (!moved && relDirname(req.path) !== req.newParentPath) return null
       return reorderChildrenInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
     }
     case 'rename':
