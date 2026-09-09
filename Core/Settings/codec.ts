@@ -124,7 +124,8 @@ export function readCommands(raw: unknown): Commands {
     const value = c[key]
     if (typeof value !== 'string') continue
     const chord = chordOf(value)
-    if (chord && !MODIFIER_KEYS.has(chord.key)) commands[key] = value
+    if (!chord || MODIFIER_KEYS.has(chord.key)) continue
+    if (chord.cmd || chord.ctrl || chord.alt || chord.shift) commands[key] = value
   }
   return commands
 }

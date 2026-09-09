@@ -20,7 +20,7 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 | --- | --- | --- | --- |
 | Hide Disclosure Chevrons | `hideChevrons` | Collapses the sidebar's chevron gutter. | On · **Off** |
 | Reveal Tab Bar On Hover | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it. | On · **Off** |
-| Use Native Menus | `nativeMenus` | Draws click-triggered list menus, such as pickers and the tile handle, as system menus; right-click menus on content are always native. A machine-level preference, stored in the device database rather than the Nexus. | On · **Off** |
+| Use Native Menus | `nativeMenus` | Draws the click-triggered lists that hang from a control, pickers and the tile handle, as system menus; every other menu, click or right-click, is the system's either way. A machine-level preference, stored in the device database rather than the Nexus. | On · **Off** |
 | Use Native Highlighting | `nativeHighlight` | Selected text uses the system's own highlight instead of Pommora's drawn one. | On · **Off** |
 | Show Selection In Pickers As | `pickerSelection` | How every picker marks the row you are on. | **Outlined** · Checked |
 | Interface Scale | `interfaceScale` | The scaling factor applied to the entire interface; additional scaling preferences compound this value. Also what ⌘0 resets to. | 50%–150% in ten-point steps (**100%**) |

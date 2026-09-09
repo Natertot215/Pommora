@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
-import { Annotation, EditorState, Prec } from '@codemirror/state'
-import { defaultKeymap } from '@codemirror/commands'
+import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state'
+import { defaultKeymap, historyKeymap, redo, undo } from '@codemirror/commands'
 import { customCaret } from '../caret'
 import { customSelection } from '../selection'
 import { markdownDecorations } from '../decorations'
@@ -28,6 +28,8 @@ import type { NavDir } from '../Engine/Tables/navigate'
 import { type EditorHost, editorHost } from '../api'
 
 const noConn = (): undefined => undefined
+
+const HISTORY_BINDINGS = historyKeymap.filter((b) => b.run === undo || b.run === redo)
 
 /** The cell sits inside the widget's `ignoreEvent` host, so every key it claims must stop here rather than fall through. */
 const consume =
@@ -92,6 +94,8 @@ export function CellEditor({
   ordinalOfRef.current = ordinalOf
   const onTablePasteRef = useRef(onTablePaste)
   onTablePasteRef.current = onTablePaste
+  const formatGate = useRef(new Compartment())
+  const lastCommands = useRef(host.settings().commands)
 
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
@@ -173,12 +177,13 @@ export function CellEditor({
                 },
               },
               // The main editor can't catch these itself (the widget's ignoreEvent), so the cell forwards them to the page history.
-              { key: 'Mod-z', run: consume(() => onUndoRef.current()) },
-              { key: 'Mod-Shift-z', run: consume(() => onRedoRef.current()) },
-              { key: 'Mod-y', run: consume(() => onRedoRef.current()) },
+              ...HISTORY_BINDINGS.map((b) => ({
+                ...b,
+                run: consume(() => (b.run === undo ? onUndoRef : onRedoRef).current()),
+              })),
             ]),
           ),
-          formatKeymap(host.settings().commands),
+          formatGate.current.of(formatKeymap(lastCommands.current)),
           keymap.of(defaultKeymap),
           // Character-pair auto-pairing only, so the `[[…]]` query closes and autocomplete can fire.
           EditorView.inputHandler.of((view, from, to, text) => {
@@ -227,6 +232,17 @@ export function CellEditor({
     }
     // Mount once — the cell IS the live editor.
   }, [])
+
+  const commands = host.settings().commands
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || commands === lastCommands.current) {
+      lastCommands.current = commands
+      return
+    }
+    lastCommands.current = commands
+    view.dispatch({ effects: formatGate.current.reconfigure(formatKeymap(commands)) })
+  }, [commands])
 
   // A renumber above the table never touches this cell's document, so the host announces it on the same beat it re-keys the resting cells.
   useEffect(() => {

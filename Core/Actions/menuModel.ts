@@ -14,6 +14,14 @@ export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>
   return rows.length === 0 ? [] : [{ ...rows[0], separatorBefore: true }, ...rows.slice(1)]
 }
 
+export function withoutLeadingSeparator<A>(
+  rows: readonly ActionItem<A>[],
+): readonly ActionItem<A>[] {
+  return rows[0]?.separatorBefore
+    ? [{ ...rows[0], separatorBefore: false }, ...rows.slice(1)]
+    : rows
+}
+
 export interface MenuAnchor {
   left: number
   top: number
