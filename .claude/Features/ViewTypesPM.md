@@ -86,7 +86,7 @@ A cell's content is type-aware — a page icon and title, chips, a checkbox or s
 
 The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[PommoraUIX]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding — and states `is-clear` for a heading with no fill and no seam; the body hairline stays one width. TableView adds its own layer over it. Atlas convention per [[PommoraUIX]].
 
-**SOURCE:** `UIX/Table/table-tokens.css` · `UIX/Table/Table.css` · `Core/Views/Table/table-view.css`
+**SOURCE:** `UIX/Table/table-tokens.css` · `UIX/Table/table.css` · `Core/Views/Table/table-view.css`
 
 | Title | Token | Value |
 | --- | --- | --- |

@@ -345,7 +345,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Menus
 
-`UIX/Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
+`UIX/Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menuAnchor.ts` the placement, `frameGrowth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
 
 | Title          | Export                                                                                                                                                                                                                         | What it is                                                                                                                                                                                                                                               |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -378,7 +378,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Table
 
-`UIX/Table/` — `Table.css` · `table-tokens.css`. The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
+`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
 
 ### Utilities
 
@@ -386,7 +386,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Windows
 
-`UIX/Windows/` — the floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. `WindowActions.tsx` is the trailing control cluster, `window-panel.tsx` the side-panel slot, and `window-bounds.ts` the geometry.
+`UIX/Windows/` — the floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. `WindowActions.tsx` is the trailing control cluster, `window-panel.tsx` the side-panel slot, and `windowBounds.ts` the geometry.
 
 #### Known Issues
 
