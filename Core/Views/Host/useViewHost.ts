@@ -197,20 +197,22 @@ export function useViewHost(
   const setNames = useMemo(() => buildSetNames(source), [source])
   const setIcons = useMemo(() => buildSetIcons(source), [source])
   const setPaths = useMemo(() => buildSetPaths(source), [source])
-  const { rowById, rowBand } = useMemo(() => {
+  const { rowById, rowBand, paintOrder } = useMemo(() => {
     const byId = new Map<string, ViewRow>()
     const band = new Map<string, string>()
+    const ordered: { id: string; groupKey: string }[] = []
     const walk = (gs: ResolvedGroup[]): void => {
       for (const g of gs) {
         for (const r of g.items) {
           byId.set(r.id, r)
           band.set(r.id, g.key)
+          ordered.push({ id: r.id, groupKey: g.key })
         }
         if (g.children) walk(g.children)
       }
     }
     walk(groups)
-    return { rowById: byId, rowBand: band }
+    return { rowById: byId, rowBand: band, paintOrder: ordered }
   }, [groups])
   const bandLabel = (id: string): string => {
     const find = (gs: ResolvedGroup[]): ResolvedGroup | undefined => {
@@ -350,6 +352,7 @@ export function useViewHost(
     setPaths,
     rowById,
     rowBand,
+    paintOrder,
     bandLabel,
     collapsed,
     toggleCollapse,

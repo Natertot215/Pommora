@@ -47,9 +47,9 @@ The app knows six kinds of view (Table, Cards, List, Gallery, Calendar, Timeline
   - [x] Task 1.4 — The picker and the flatness reads
   - [ ] Review Checkpoint
 - [ ] **Phase 2** — The Host Row List
-  - [ ] Task 2.1 — `paintOrder` on the host
-  - [ ] Task 2.2 — Cards reads the host
-  - [ ] Task 2.3 — Table reads the host
+  - [x] Task 2.1 — `paintOrder` on the host
+  - [x] Task 2.2 — Cards reads the host
+  - [x] Task 2.3 — Table reads the host
 - [ ] **Phase 3** — The Record
   - [ ] Task 3.1 — Features
   - [ ] Task 3.2 — The audit ledger, Context, and History
@@ -674,4 +674,7 @@ Per Writing-Plans-V3 §5.5: the plain-language report with Phase by Phase, Verif
 - None.
 
 ### Deviations
+
+- **Phase 1's own shortstat is net positive.** The Review Checkpoint asks for deletions exceeding insertions within the phase, but the registry (`views.ts`, +17) is the plan's one net addition and Phase 1 holds none of the Phase 2 deletions that offset it. Core-only for the phase: 150 insertions, 135 deletions, of which about 45 lines are Biome reindenting `LayoutFrame.tsx`'s footing block. Carried as written; the plan's net figure is measured on the full range.
+- **`LayoutFrame.tsx`'s Layout leaf reads `switches` in its Cards branch too.** Task 1.4 named only the `VisibilityList` footer and the flat door as `switches` readers; the leaf's Cards branch sits inside the same `cards` test, so it reads `switches` as well and `CARD_SWITCHES` and `TABLE_SWITCHES` have one reader each.
 

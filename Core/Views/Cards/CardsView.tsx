@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
+import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { SetNode } from '@pommora/core/Nexus/tree'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
@@ -145,6 +145,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setPaths,
     rowById,
     rowBand,
+    paintOrder,
     bandLabel,
     collapsed,
     toggleCollapse,
@@ -291,7 +292,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const locByRow = useMemo(() => {
     const m = new Map<string, TrailSegment[]>()
     if (hideLocation || !tree) return m
-    for (const r of flattenGroups(groups)) {
+    for (const r of rowById.values()) {
       if (!r.parentSetId) continue
       const chain = ancestryOf(tree, { kind: 'set', id: r.parentSetId })
       if (chain) m.set(r.id, chain.slice(structural ? 2 : 1))
@@ -453,7 +454,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (patch) commitBand(patch)
   }
   const bandRowsWithout = (bandKey: string, activeId: string): ViewRow[] =>
-    flattenGroups(groups.filter((g) => g.key === bandKey)).filter((r) => r.id !== activeId)
+    (groups.find((g) => g.key === bandKey)?.items ?? []).filter((r) => r.id !== activeId)
   const structuralSlotFor = (zoneId: string, index: number, activeId: string): number | null => {
     if (!structuralOrder) return index
     if (rowBand.get(activeId) !== zoneId) return index
@@ -474,7 +475,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const reorderInBandByIndex = (bandKey: string, activeId: string, toIndex: number): void => {
     const full: string[] = []
     for (const g of groups) {
-      const ids = flattenGroups([g]).map((r) => r.id)
+      const ids = g.items.map((r) => r.id)
       if (g.key !== bandKey) {
         full.push(...ids)
         continue
@@ -484,7 +485,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       full.push(...without.slice(0, at), activeId, ...without.slice(at))
     }
     if (structuralOrder) {
-      const painted = flattenGroups(groups).map((r) => r.id)
+      const painted = paintOrder.map((r) => r.id)
       if (sameIds(full, painted)) return
       const row = rowById.get(activeId)
       if (!row) return
@@ -505,7 +506,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     reassignBySortRun(full, bandKey, activeId)
   }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
-    const from = groups.find((g) => flattenGroups([g]).some((r) => r.id === activeId))?.key
+    const from = rowBand.get(activeId)
     if (from == null) return
     if (toZone === from) {
       if (canReorderWithin) reorderInBandByIndex(toZone, activeId, toIndex)
@@ -518,7 +519,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         const isDestSibling = (r: ViewRow): boolean =>
           relDirname(r.path) === destPath && r.id !== activeId
         const destIds = rows.filter(isDestSibling).map((r) => r.id)
-        const bandRows = flattenGroups(groups.filter((g) => g.key === toZone))
+        const bandRows = groups.find((g) => g.key === toZone)?.items ?? []
         const beforeId = bandRows[toIndex]?.id ?? null
         const sibBefore = bandRows.slice(toIndex).find(isDestSibling)?.id ?? null
         const order = spliceBeside(destIds, sibBefore, activeId, 'above')
@@ -618,7 +619,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         >
           <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
             {groups.map((g) => {
-              const rows = flattenGroups([g])
+              const rows = g.items
               const isCollapsed = !flatMode && collapsed.has(g.key)
               return (
                 <ViewGroupBand
@@ -831,18 +832,6 @@ function GhostCard({
       </CardBody>
     </CardRoot>
   )
-}
-
-function flattenGroups(groups: ResolvedGroup[]): ViewRow[] {
-  const out: ViewRow[] = []
-  const walk = (gs: ResolvedGroup[]): void => {
-    for (const g of gs) {
-      out.push(...g.items)
-      if (g.children) walk(g.children)
-    }
-  }
-  walk(groups)
-  return out
 }
 
 function DraggableSetCard({ set }: { set: SetNode }): React.JSX.Element {
