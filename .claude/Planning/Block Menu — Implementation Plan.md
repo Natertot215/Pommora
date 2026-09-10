@@ -452,7 +452,11 @@ export function BlockMenu(props: {
 
 ### Deviations
 
+- Task 1: `BlockMenuSection.rows` and `BlockMenuMatch.rows` are `readonly`, with the heading rows hoisted to a module constant beside the other three, so `blockMenuSections` allocates only the Insert list; the Becomes block wrote them mutable. Gate 1 simplification.
+
 ### Lessons
+
+- Gate 1: `MarkdownEditor.tsx`'s four `whenAcOpen([acCtl], …)` literals hoist to one `const acCtls` when Task 5 adds the second ctl, so the list is written once.
 
 ### Sequenced After
 

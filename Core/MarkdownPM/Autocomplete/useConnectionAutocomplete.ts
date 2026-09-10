@@ -153,8 +153,10 @@ export function detectConnectionQuery(
   let next: AcState | null = null
   if (sel.empty) {
     const q = autocompleteQuery(docScan(view.state.doc), sel.head, allowEmbeds)
-    const g = q && caretGeometry(view, sel.head)
-    if (q && g) next = { ...q, ...g }
+    if (q) {
+      const g = caretGeometry(view, sel.head)
+      if (g) next = { ...q, ...g }
+    }
   }
   setAc(next)
 }
