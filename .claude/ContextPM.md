@@ -12,8 +12,9 @@ The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspe
 
 ### Immediate Work
 
-- [ ] **Nathan's own pass over the restructured app.** A day on the real Nexus — pages, properties, views, tiles, menus, windows, settings, history, trash — and a flip through `Core`, `UIX`, and `Desktop` to say whether the filing reads the way it was meant to.
-- [ ] **Confirm the recovered view orders hold.** Five hand-dragged orders were moved onto disk by hand after the `viewOrder` import was deleted before it had run: `Ideas` (two views), `Studio` (192 rows), and two homepage tiles. Their `local_state` rows are still present as a safety net and nothing reads them; once the orders are seen to hold, `delete from local_state where scope='viewOrder'` clears the residue.
+- [ ] 
+- [ ] 
+- [ ] 
 
 ### Pending Focuses
 
@@ -42,7 +43,6 @@ Findings where the correct answer isn't established in the codebase — design a
 
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for tile embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
-- [ ] **Slash Commands** for MarkdownPM — PickerMenu for formatting actions, triggered via `//` so it doesn't conflict with the backslash syntax omitting behavior of CommonMark. `// Planning`'s `Slash Command Menu — Grounding.md` records what the menu door provides, the one gap (the door takes an element and a caret has none), and the wire-up points.
 - [ ] **A Shortcuts settings pane** over the one chord table in `Core/Actions/commands.ts`. It needs a named-key map (`toAccelerator` and `toKeyBinding` capitalize a key's first character only, so `arrowup` would reach Electron as `Arrowup`), a rule for two ids bound to one chord, and a `refreshMenu()` on a commands change if the menu bar is to pick up a rebind before the next adopt or launch.
 - [ ] **TokenField — a typed value becomes a Label:** an InputField holding a run of labels beside a bare caret, where Enter turns the draft into a segment resolved against the field's picker (a Set title into an EntityIcon segment, a free string into a FileLabel) and Backspace on an empty caret removes the last. The pieces exist apart — `EditableInput` names an option chip in place, `SegmentRun` holds a field's values, the Filter pane's Location run is pick-only — and the showcase's capped field already sketches the shape. Its consumers are every location-shaped input: the Location filter, file properties, Context assignment.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
