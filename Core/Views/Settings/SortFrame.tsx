@@ -1,7 +1,12 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { RESERVED_PROPERTY_ID, optionsOf } from '@pommora/core/Properties/properties'
-import { LOCATION_SORT, type SavedView, type SortCriterion } from '@pommora/core/Views/views'
+import {
+  LOCATION_SORT,
+  type SavedView,
+  type SortCriterion,
+  VIEW_KINDS,
+} from '@pommora/core/Views/views'
 import { MenuRowView, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus'
 import { useSaveView } from '../ViewTileScope'
 import { declaredType } from '../../Properties/value'
@@ -149,7 +154,7 @@ export function SortFrame({
 
   const sortByOptions: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
-    ...(view.type === 'cards'
+    ...(VIEW_KINDS[view.type].flat
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
       : []),
     ...targets

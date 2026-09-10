@@ -16,7 +16,6 @@ import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
-import { iconNameOr } from '@pommora/uix/Symbols'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
@@ -26,6 +25,7 @@ import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyRemovedTile } from '../Interface/Notifications/notifications'
 import { findCollection, findCollectionForSet, findSet } from '../Nexus/treeIndex'
 import { mintDefaultView } from '@pommora/core/Views/views'
+import { viewGlyph } from '../Views/viewIcon'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { zoomStyle } from './tileZoom'
 import {
@@ -68,7 +68,7 @@ function viewPickerItems(
   const containerViews = (node: CollectionNode | SetNode): ViewPickerItem[] => [
     ...(node.views ?? []).map((v) => ({
       label: v.name,
-      icon: iconNameOr(v.icon, 'table'),
+      icon: viewGlyph(v),
       pick: { source_id: node.id, view_id: v.id },
     })),
     { label: '+ Custom', pick: { source_id: node.id, custom: true }, footer: true },

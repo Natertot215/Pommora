@@ -3,7 +3,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useViewTileScope } from '../ViewTileScope'
-import type { SavedView } from '@pommora/core/Views/views'
+import { type SavedView, VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
 import { useActiveView } from './useActiveView'
 import { TableView } from '../Table/TableView'
 import { CardsView } from '../Cards/CardsView'
@@ -13,10 +13,14 @@ import './view-host.css'
 const identity = (v: SavedView): SavedView => v
 const NO_SCHEMA: PropertyDefinition[] = []
 
+export const VIEW_RENDERERS: Partial<
+  Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>
+> = { table: TableView, cards: CardsView }
+
 export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   // Only the type and scale are needed to seat a renderer, and a minted default is a table whatever the schema — so the seat skips the schema walk the host performs.
   const view = useActiveView(source, NO_SCHEMA)
-  const isCards = view.type === 'cards'
+  const Renderer = VIEW_RENDERERS[view.type] ?? TableView
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
   const scale = useViewTileScope() ? 1 : coerceScale(view.view_scale, 1)
   const upward = useRef<ViewHostApi['seam']>({
@@ -25,14 +29,14 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     viewRootRef: { current: null },
     onCreated: { current: () => {} },
   }).current
-  const host = useViewHost(source, isCards, upward)
+  const host = useViewHost(source, VIEW_KINDS[view.type].flat, upward)
   // Cards' set cards render independently of the pipeline, so a cards view with Sets present always mounts.
-  const setChrome = isCards && (source.sets?.length ?? 0) > 0
+  const setChrome = view.type === 'cards' && (source.sets?.length ?? 0) > 0
   if (!host) return <div className="view-empty">Loading…</div>
   if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
   return (
     <div style={scale === 1 ? undefined : { zoom: scale }}>
-      {isCards ? <CardsView host={host} /> : <TableView host={host} />}
+      <Renderer host={host} />
     </div>
   )
 }

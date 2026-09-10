@@ -41,10 +41,10 @@ The app knows six kinds of view (Table, Cards, List, Gallery, Calendar, Timeline
 #### Implementation Process
 
 - [ ] **Phase 1** — The Registry
-  - [ ] Task 1.1 — The registry in `views.ts`
-  - [ ] Task 1.2 — The seat reads the registry
-  - [ ] Task 1.3 — One glyph resolver
-  - [ ] Task 1.4 — The picker and the flatness reads
+  - [x] Task 1.1 — The registry in `views.ts`
+  - [x] Task 1.2 — The seat reads the registry
+  - [x] Task 1.3 — One glyph resolver
+  - [x] Task 1.4 — The picker and the flatness reads
   - [ ] Review Checkpoint
 - [ ] **Phase 2** — The Host Row List
   - [ ] Task 2.1 — `paintOrder` on the host

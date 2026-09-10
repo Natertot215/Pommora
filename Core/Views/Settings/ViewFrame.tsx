@@ -5,8 +5,9 @@ import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/View
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
 import { restoreView } from '../restoreView'
+import { viewGlyph } from '../viewIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { Icon, iconNameOr } from '@pommora/uix/Symbols'
+import { Icon } from '@pommora/uix/Symbols'
 import { Menu, MenuItem, MenuFooting, MenuScrollFrame, AccessoryButton } from '@pommora/uix/Menus'
 import { titleInput } from '@pommora/uix/Menus/menu-base.css'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
@@ -162,7 +163,7 @@ export function ViewFrame({
               <RowShell key={v.id} id={v.id}>
                 <MenuItem
                   className={active.id === v.id ? optionRing : undefined}
-                  leading={<Icon name={iconNameOr(v.icon, 'table')} size="headline" />}
+                  leading={<Icon name={viewGlyph(v)} size="headline" />}
                   trailing={
                     <Button
                       paddingX="0"
