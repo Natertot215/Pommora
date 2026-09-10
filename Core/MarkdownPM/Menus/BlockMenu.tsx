@@ -5,6 +5,7 @@ import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
 import type { BlockMenuAction, BlockMenuMatch } from '@pommora/core/Actions/blockMenu'
 import { useKeepInView } from '../Autocomplete/useKeepInView'
+import { CLOSED_GEOMETRY } from '../Autocomplete/useConnectionAutocomplete'
 import type { BlockMenuState } from './useBlockMenu'
 
 interface Props {
@@ -15,16 +16,7 @@ interface Props {
   onPick: (action: BlockMenuAction) => void
 }
 
-const CLOSED: BlockMenuState = {
-  query: '',
-  from: 0,
-  to: 0,
-  citeSeat: false,
-  caretX: 0,
-  caretTop: 0,
-  caretBottom: 0,
-  bounds: { left: 0, right: 0 },
-}
+const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, citeSeat: false, ...CLOSED_GEOMETRY }
 
 export function BlockMenu({ open, state, matches, selected, onPick }: Props): React.JSX.Element {
   const last = useRef({ state: CLOSED, matches, selected })

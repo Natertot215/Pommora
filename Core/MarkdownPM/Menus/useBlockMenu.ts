@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useMemo, useState, type RefObject } from 'react'
 import { Transaction } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { clamp } from '@pommora/uix/Utilities/clamp'
 import { EDITOR_ACTION_PREFIX } from '@pommora/core/Actions/editorMenu'
 import {
   blockMenuSections,
@@ -11,6 +10,7 @@ import {
 } from '@pommora/core/Actions/blockMenu'
 import {
   caretGeometry,
+  useMenuCtl,
   type AcCtl,
   type CaretGeometry,
 } from '../Autocomplete/useConnectionAutocomplete'
@@ -48,7 +48,6 @@ interface BlockMenu {
 
 export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
   const [state, setState] = useState<BlockMenuState | null>(null)
-  const [index, setIndex] = useState(0)
   const query = state?.query ?? null
   const citeSeat = state?.citeSeat ?? false
   const matches = useMemo(
@@ -56,7 +55,6 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
     [query, citeSeat],
   )
   const rows = matches.flatMap((m) => m.rows)
-  const selected = rows[Math.min(index, Math.max(rows.length - 1, 0))]?.action ?? null
   const open = state !== null && rows.length > 0
 
   const pick = (action: BlockMenuAction): void => {
@@ -70,17 +68,15 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
     applyEditorAction(view, EDITOR_ACTION_PREFIX + action)
   }
 
-  const ctl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
-  ctl.current = {
+  const { index, ctl } = useMenuCtl(rows.length, state?.query, {
     open,
-    pick: () => {
-      if (selected) pick(selected)
+    pick: (i) => {
+      const r = rows[i]
+      if (r) pick(r.action)
     },
-    move: (d) => setIndex((i) => clamp(i + d, 0, rows.length - 1)),
     close: () => setState(null),
-  }
-
-  useEffect(() => setIndex(0), [state?.query])
+  })
+  const selected = rows[index]?.action ?? null
 
   return { state, setState, matches, selected, open, pick, ctl }
 }

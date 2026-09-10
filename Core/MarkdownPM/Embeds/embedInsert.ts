@@ -1,6 +1,7 @@
 import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
+import { inSealedBlockAt } from '../Engine/docScan'
 import { docScan, docString } from '../docCache'
 
 export function embedInsertAfter(
@@ -31,10 +32,7 @@ export function embedInsertAfter(
 export function embedSeatAt(state: EditorState): boolean {
   const line = state.doc.lineAt(state.selection.main.from)
   if (line.text.trim() !== '') return false
-  const scan = docScan(state.doc)
-  if (scan.fences[line.number - 1]) return false
-  const holds = (from: number, to: number): boolean => line.from >= from && line.from <= to
-  return !scan.maths.some(([f, t]) => holds(f, t)) && !scan.tables.some((r) => holds(r.from, r.to))
+  return !inSealedBlockAt(docScan(state.doc), line.number - 1)
 }
 
 function insertEmbedToken(view: EditorView, token: string, caretBack: number): boolean {

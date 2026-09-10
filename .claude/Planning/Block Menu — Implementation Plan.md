@@ -430,9 +430,9 @@ export function BlockMenu(props: {
   - [x] Task 1 — The block menu model · `0b0783569`
   - [x] Task 2 — A caret on a blank line counts · `913ed48f9`
   - [x] Task 3 — One caret geometry and one key guard for both panes · `75db3a248`
-- [ ] **Phase 2** — The pane · base `bfdb7b126`
-  - [ ] Task 4 — The trigger · `<commit>`
-  - [ ] Task 5 — The pane, its hook, and the mount · `<commit>`
+- [x] **Phase 2** — The pane · base `bfdb7b126`
+  - [x] Task 4 — The trigger · `f7209dc59`
+  - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
 - [ ] **Phase 3** — The record · base `<commit>`
   - [ ] Task 6 — Context, History, and the grounding · `<commit>`
 
@@ -455,6 +455,8 @@ export function BlockMenu(props: {
 - Task 1: `BlockMenuSection.rows` and `BlockMenuMatch.rows` are `readonly`, with the heading rows hoisted to a module constant beside the other three, so `blockMenuSections` allocates only the Insert list; the Becomes block wrote them mutable. Gate 1 simplification.
 - Task 2: a blank body behind a bare `>` prefix took the marker glued to the `>` (`>## `), and a whitespace-only body became list indent; `selectedLines` now carries a `pad` and clears the indent on a blank body. Gate 1 attack, commits `81e192714` and `bfdb7b126`.
 - Task 5: the flow test's red run was five behavioral failures and two trivially green negative cases, not module-not-found; the test drives `mountEditor` and imports none of the new modules, so it cannot fail to resolve them.
+- Task 4: the fence, math, and table refusal that `blockQueryAt` and `embedSeatAt` each spelled out is one `inSealedBlockAt` in `Engine/docScan.ts`, read by both; `Embeds/embedInsert.ts` changed for it. Gate 2 simplification.
+- Task 5: the selection cursor and its `AcCtl` were written once more in `useBlockMenu`; both panes now share `useMenuCtl` and `CLOSED_GEOMETRY` from `useConnectionAutocomplete.ts`. Gate 2 simplification.
 
 ### Lessons
 
