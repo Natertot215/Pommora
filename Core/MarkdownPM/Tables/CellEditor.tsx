@@ -157,9 +157,9 @@ export function CellEditor({
                   acCtl.current.open ? acCtl.current.pick() : onNavigateRef.current('down'),
                 ),
               },
-              { key: 'ArrowDown', run: whenAcOpen(acCtl, (c) => c.move(1)) },
-              { key: 'ArrowUp', run: whenAcOpen(acCtl, (c) => c.move(-1)) },
-              { key: 'Escape', run: whenAcOpen(acCtl, (c) => c.close()) },
+              { key: 'ArrowDown', run: whenAcOpen([acCtl], (c) => c.move(1)) },
+              { key: 'ArrowUp', run: whenAcOpen([acCtl], (c) => c.move(-1)) },
+              { key: 'Escape', run: whenAcOpen([acCtl], (c) => c.close()) },
               // A real newline; the row does NOT split, because cellToSource serializes it as <br> on disk.
               {
                 key: 'Shift-Enter',
