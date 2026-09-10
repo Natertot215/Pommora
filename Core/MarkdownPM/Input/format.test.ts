@@ -237,8 +237,18 @@ describe('setBlock', () => {
   })
   it('inserts a 3×3 GFM table, blank-line separated as its own block', () => {
     const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
-    expect(apply('', setBlock('', 0, 0, 'table'))).toBe(t)
-    expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}`)
+    expect(apply('', setBlock('', 0, 0, 'table'))).toBe(`${t}\n`)
+    expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}\n`)
+  })
+
+  it('seats the caret below the table on an empty document and on one ending in a newline', () => {
+    const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
+    const empty = setBlock('', 0, 0, 'table')
+    expect(apply('', empty)).toBe(`${t}\n`)
+    expect(empty.selection).toBe(t.length + 1)
+    const trailing = setBlock('a\n\n', 2, 2, 'table')
+    expect(apply('a\n\n', trailing)).toBe(`a\n\n${t}\n\n`)
+    expect(trailing.selection).toBe(t.length + 4)
   })
 
   it('blank-line-fences the inserted table below too, so it never merges with an adjacent table', () => {

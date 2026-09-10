@@ -66,7 +66,7 @@ export function codeBlockTextAt(scan: DocScan, pos: number): string {
   return out.join('\n')
 }
 
-export function lineIndexAt(scan: DocScan, pos: number): number {
+export function lineIndexAt(scan: DocLines, pos: number): number {
   const { lines, lineStarts } = scan
   let lo = 0
   let hi = lines.length - 1

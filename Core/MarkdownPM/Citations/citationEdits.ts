@@ -12,7 +12,7 @@ import {
   lineEndOf,
   markersFor,
 } from '../Engine/detect'
-import { scanDoc } from '../Engine/docScan'
+import { lineIndexAt, scanDoc } from '../Engine/docScan'
 import { diffAsSingleReplace } from '../Engine/listDragModel'
 
 export type CitationSlice = DocLines & { citations: CitationScan }
@@ -170,7 +170,11 @@ export function citationRowChanges(
   at: number,
 ): ChangeSpec {
   const seat = citationSeat(scan, at)
-  return { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` }
+  const row = { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` }
+  const { anchorLine } = scan.citations
+  if (lineIndexAt(scan, at) !== anchorLine) return row
+  const gap = lineEndOf(scan, anchorLine)
+  return [{ from: gap, to: gap, insert: '\n' }, row]
 }
 
 export const citationText = (clipboard: string): string => clipboard.trim().replace(/\s+/g, ' ')
