@@ -95,7 +95,7 @@ export function useConnectionAutocomplete(
 
   const commit = (row: AcRow): void => {
     const view = viewRef.current
-    if (!view || !ac) return
+    if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless deliberately re-emitted.
     const worn =
