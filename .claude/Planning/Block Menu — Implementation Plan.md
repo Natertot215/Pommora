@@ -238,13 +238,13 @@ Refactor baseline: `Core/MarkdownPM/Autocomplete/*.test.*` and `Core/MarkdownPM/
 
 #### Gate 1 — the catalog stands, the blank line answers, the seams are shared
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/Actions/blockMenu*`, `Core/MarkdownPM/Input/format*`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts`, `Core/MarkdownPM/MarkdownEditor.tsx`, `Core/MarkdownPM/Tables/CellEditor.tsx`; the reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in; lessons written into the later tasks they change.
-- [ ] Not a declared stop: Phase 2 opens; Task 2's user box carries to Completion Criteria.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [x] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
+- [x] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/Actions/blockMenu*`, `Core/MarkdownPM/Input/format*`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts`, `Core/MarkdownPM/MarkdownEditor.tsx`, `Core/MarkdownPM/Tables/CellEditor.tsx`; the reports cite files inside it.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in; lessons written into the later tasks they change.
+- [x] Not a declared stop: Phase 2 opens; Task 2's user box carries to Completion Criteria.
 
 ---
 
@@ -426,10 +426,10 @@ export function BlockMenu(props: {
 
 ### Progress
 
-- [ ] **Phase 1** — The catalog, the blank line, and the shared seams · base `03fd99873`
-  - [ ] Task 1 — The block menu model · `<commit>`
-  - [ ] Task 2 — A caret on a blank line counts · `<commit>`
-  - [ ] Task 3 — One caret geometry and one key guard for both panes · `<commit>`
+- [x] **Phase 1** — The catalog, the blank line, and the shared seams · base `03fd99873`
+  - [x] Task 1 — The block menu model · `0b0783569`
+  - [x] Task 2 — A caret on a blank line counts · `913ed48f9`
+  - [x] Task 3 — One caret geometry and one key guard for both panes · `75db3a248`
 - [ ] **Phase 2** — The pane · base `<commit>`
   - [ ] Task 4 — The trigger · `<commit>`
   - [ ] Task 5 — The pane, its hook, and the mount · `<commit>`
@@ -453,6 +453,7 @@ export function BlockMenu(props: {
 ### Deviations
 
 - Task 1: `BlockMenuSection.rows` and `BlockMenuMatch.rows` are `readonly`, with the heading rows hoisted to a module constant beside the other three, so `blockMenuSections` allocates only the Insert list; the Becomes block wrote them mutable. Gate 1 simplification.
+- Task 2: a blank body behind a bare `>` prefix took the marker glued to the `>` (`>## `), and a whitespace-only body became list indent; `selectedLines` now carries a `pad` and clears the indent on a blank body. Gate 1 attack, commits `81e192714` and this commit.
 
 ### Lessons
 

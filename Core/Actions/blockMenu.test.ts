@@ -50,6 +50,7 @@ describe('the block menu filter', () => {
     expect(hea.map((s) => s.title)).toEqual(['Headings'])
     expect(hea[0].rows).toHaveLength(5)
     expect(hea[0].rows.every((r) => r.at === 0)).toBe(true)
+    expect(filterBlockMenu(seated, 'HEA')).toEqual(hea)
   })
 
   it('matches a word anywhere in the label and reports where it begins', () => {

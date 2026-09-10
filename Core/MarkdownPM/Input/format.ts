@@ -133,7 +133,7 @@ export function setHeading(doc: string, from: number, to: number, level: Heading
   const changes: FormatEdit['changes'] = []
   let lastEnd = 0
   for (const l of lines) {
-    const next = level === 0 ? l.inner : `${'#'.repeat(level)} ${l.inner}`
+    const next = `${l.pad}${level === 0 ? l.inner : `${'#'.repeat(level)} ${l.inner}`}`
     changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
     lastEnd = l.ls + l.prefix.length + next.length
   }
@@ -145,6 +145,7 @@ interface SelectedLine {
   ls: number
   le: number
   prefix: string
+  pad: string
   indent: string
   inner: string
   kind: ListKind | null
@@ -161,11 +162,17 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
       const lm = parseListMarker(body)
       const stripped = stripInnerMarkers(body)
       // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
-      const indent = lm ? body.slice(0, lm.markerStart) : stripped.slice(0, stripped.search(/\S|$/))
+      const indent =
+        body.trim() === ''
+          ? ''
+          : lm
+            ? body.slice(0, lm.markerStart)
+            : stripped.slice(0, stripped.search(/\S|$/))
       out.push({
         ls,
         le,
         prefix,
+        pad: prefix !== '' && !/[ \t]$/.test(prefix) ? ' ' : '',
         indent,
         inner: lm ? stripped : stripped.trimStart(),
         kind: lm?.kind ?? null,
@@ -189,7 +196,7 @@ export function setList(doc: string, from: number, to: number, kind: ListKind): 
     counters.length = l.level + 1
     counters[l.level] = (counters[l.level] ?? 0) + 1
     const marker = strip ? '' : listMarkerText(kind, counters[l.level])
-    const next = `${l.indent}${marker}${l.inner}`
+    const next = `${l.pad}${l.indent}${marker}${l.inner}`
     changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
     lastEnd = l.ls + l.prefix.length + next.length
   }

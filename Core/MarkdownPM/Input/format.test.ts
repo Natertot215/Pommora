@@ -62,6 +62,9 @@ describe('setHeading', () => {
     const edit = setHeading('', 0, 0, 2)
     expect(apply('', edit)).toBe('## ')
     expect(edit.selection).toBe(3)
+    expect(apply('> one\n>\n> two', setHeading('> one\n>\n> two', 7, 7, 2))).toBe(
+      '> one\n> ## \n> two',
+    )
   })
   it('returns every selected line to plain body at 0', () => {
     const heads = '# one\n## two'
@@ -100,8 +103,14 @@ describe('setList', () => {
     expect(apply(gapped, setList(gapped, 0, gapped.length, 'bullet'))).toBe('- one\n\n- two')
   })
   it('marks a blank line the caret sits on', () => {
-    expect(apply('', setList('', 0, 0, 'bullet'))).toBe('- ')
+    const edit = setList('', 0, 0, 'bullet')
+    expect(apply('', edit)).toBe('- ')
+    expect(edit.selection).toBe(2)
     expect(apply('> ', setList('> ', 2, 2, 'ordered'))).toBe('> 1. ')
+    expect(apply('> one\n>\n> two', setList('> one\n>\n> two', 7, 7, 'bullet'))).toBe(
+      '> one\n> - \n> two',
+    )
+    expect(apply('one\n  \ntwo', setList('one\n  \ntwo', 5, 5, 'bullet'))).toBe('one\n- \ntwo')
   })
   it('keeps a nested item at its level, and restarts its numbering', () => {
     const nested = '- one\n  - two\n- three'
