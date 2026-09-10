@@ -69,9 +69,9 @@ Whether the citations section is visible follows **Show Footnotes By Default**, 
 
 ### Block Structure
 
-The editor treats the document as a sequence of blocks — paragraphs, headings, lists, quotes, callouts, code blocks, tables, tiles — resolved from the document model by `Core/MarkdownPM/Engine/blockModel.ts`, and every block has a handle in the gutter to its left (`Core/MarkdownPM/blockHandles.ts`) that is both how you move it (`Core/MarkdownPM/Gestures/blockDrag.ts`) and where its menu lives. Blocks that already carry chrome of their own use it as the handle: the heading's fold chevron, the quote and callout grips, the table's heading-row grip. Dragging the handle relocates the block to the nearest block boundary as one move of its source lines, kept blank-separated at both seams so it never fuses with a neighbor; the gesture itself is the shared insertion-line drag. A folded heading unfolds when its drag begins.
+The editor treats the document as a sequence of blocks — paragraphs, headings, lists, quotes, callouts, code blocks, tables, tiles — resolved from the document model by `Core/MarkdownPM/Engine/blockModel.ts`, and every block has a handle in the gutter to its left (`Core/MarkdownPM/Menus/blockHandles.ts`) that is both how you move it (`Core/MarkdownPM/Gestures/blockDrag.ts`) and where the grip menu lives. Blocks that already carry chrome of their own use it as the handle: the heading's fold chevron, the quote and callout grips, the table's heading-row grip. Dragging the handle relocates the block to the nearest block boundary as one move of its source lines, kept blank-separated at both seams so it never fuses with a neighbor; the gesture itself is the shared insertion-line drag. A folded heading unfolds when its drag begins.
 
-The handle is also where the block's menu lives. One menu model serves every kind of block, with rows keyed to what that block is:
+The handle is also where the grip menu lives. One menu model serves every kind of block, with rows keyed to what that block is:
 
 | Block | Rows |
 | -------------------------------------- | -------------------------------------------------------------- |
@@ -80,6 +80,8 @@ The handle is also where the block's menu lives. One menu model serves every kin
 | List | Type ▸ (Numbered, Bulleted, Checklist, Arrowed) · Delete |
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
+
+**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. Return or a click removes the typed query and writes the block through the same action the context menu runs; one undo reverts it. The pane is the editor's own, drawn in-app whatever Use Native Menus says, and never opens inside code, math, or the footnotes, behind a quote or list marker, or in a table cell.
 
 ### Context Menu + Shortcuts
 

@@ -355,10 +355,10 @@ export function BlockMenu(props: {
 
 **Verify — automated**
 
-- [ ] Red first in `Core/MarkdownPM/Menus/blockMenuFlow.test.tsx` (mount through `editorHarness`, `coordsAtPos` spied as `connectionCommit.test.tsx` does, keys sent to `contentDOM`, rows counted as `.mdpm-block-menu .mdpm-block-row`, sections asserted by the pane's text): typing `/` on the empty line mounts `.mdpm-block-menu` whose text holds the four titles and sixteen rows; typing `hea` leaves the Headings title only and five rows; ArrowDown then Enter leaves the document `## ` and no `.mdpm-block-menu`; one `undo(view)` leaves `''`; typing `/` then a space unmounts the pane; Escape unmounts it and a further character reopens it; `/` typed inside a fence never mounts it; a pick of Table leaves the serialized 3×3 table with no `/`. Expect module-not-found; then green.
-- [ ] `rg -F "Session/store" Core/MarkdownPM --glob '!*.test.*'` → 0. Control: `rg -F "editorHost" Core/MarkdownPM --glob '!*.test.*'` → 16 files.
-- [ ] `rg -F "grip menu lives" .claude/Features/MarkdownPM.md` → 2; `rg -F "Block Menu:" .claude/Features/MarkdownPM.md` → 1; `rg -F "Menus/blockHandles.ts" .claude/Features/MarkdownPM.md` → 1. Control: `rg -F "Block Structure" .claude/Features/MarkdownPM.md` → 1.
-- [ ] Full gate green, exit codes read directly; `npm run lint` clean including the wrapped-comment scan.
+- [x] Red first in `Core/MarkdownPM/Menus/blockMenuFlow.test.tsx` (mount through `editorHarness`, `coordsAtPos` spied as `connectionCommit.test.tsx` does, keys sent to `contentDOM`, rows counted as `.mdpm-block-menu .mdpm-block-row`, sections asserted by the pane's text): typing `/` on the empty line mounts `.mdpm-block-menu` whose text holds the four titles and sixteen rows; typing `hea` leaves the Headings title only and five rows; ArrowDown then Enter leaves the document `## ` and no `.mdpm-block-menu`; one `undo(view)` leaves `''`; typing `/` then a space unmounts the pane; Escape unmounts it and a further character reopens it; `/` typed inside a fence never mounts it; a pick of Table leaves the serialized 3×3 table with no `/`. Expect module-not-found; then green.
+- [x] `rg -F "Session/store" Core/MarkdownPM --glob '!*.test.*'` → 0. Control: `rg -F "editorHost" Core/MarkdownPM --glob '!*.test.*'` → 16 files.
+- [x] `rg -F "grip menu lives" .claude/Features/MarkdownPM.md` → 2; `rg -F "Block Menu:" .claude/Features/MarkdownPM.md` → 1; `rg -F "Menus/blockHandles.ts" .claude/Features/MarkdownPM.md` → 1. Control: `rg -F "Block Structure" .claude/Features/MarkdownPM.md` → 1.
+- [x] Full gate green, exit codes read directly; `npm run lint` clean including the wrapped-comment scan.
 
 **Verify — user**
 

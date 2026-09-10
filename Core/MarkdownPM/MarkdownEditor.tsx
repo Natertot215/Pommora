@@ -66,6 +66,8 @@ import {
   whenAcOpen,
 } from './Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
+import { BlockMenu } from './Menus/BlockMenu'
+import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, editorHost } from './api'
@@ -189,6 +191,8 @@ export function MarkdownEditor({
       return pool.slice(0, AC_MAX).map(pageRow)
     },
   )
+  const block = useBlockMenu(viewRef)
+  const acCtls = [acCtl, block.ctl]
 
   useEffect(() => {
     const parent = editorRef.current
@@ -203,10 +207,10 @@ export function MarkdownEditor({
       history(),
       Prec.highest(
         keymap.of([
-          { key: 'ArrowDown', run: whenAcOpen([acCtl], (c) => c.move(1)) },
-          { key: 'ArrowUp', run: whenAcOpen([acCtl], (c) => c.move(-1)) },
-          { key: 'Enter', run: whenAcOpen([acCtl], (c) => c.pick()) },
-          { key: 'Escape', run: whenAcOpen([acCtl], (c) => c.close()) },
+          { key: 'ArrowDown', run: whenAcOpen(acCtls, (c) => c.move(1)) },
+          { key: 'ArrowUp', run: whenAcOpen(acCtls, (c) => c.move(-1)) },
+          { key: 'Enter', run: whenAcOpen(acCtls, (c) => c.pick()) },
+          { key: 'Escape', run: whenAcOpen(acCtls, (c) => c.close()) },
         ]),
       ),
       markdownInput,
@@ -265,6 +269,7 @@ export function MarkdownEditor({
       EditorView.domEventHandlers({
         blur: () => {
           setAc(null)
+          block.setState(null)
           return false
         },
       }),
@@ -301,8 +306,10 @@ export function MarkdownEditor({
         }
 
         // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
-        if ((u.docChanged || u.selectionSet) && !u.state.readOnly)
+        if ((u.docChanged || u.selectionSet) && !u.state.readOnly) {
           detectConnectionQuery(u.view, setAc, true)
+          detectBlockQuery(u.view, block.setState)
+        }
       }),
     ]
     const saved = warm?.restore()
@@ -431,6 +438,13 @@ export function MarkdownEditor({
       {header}
       <div ref={editorRef} className="mdpm-editor" />
       <AutocompletePane ac={ac} candidates={candidates} index={acIndex} onPick={commit} />
+      <BlockMenu
+        open={block.open}
+        state={block.state}
+        matches={block.matches}
+        selected={block.selected}
+        onPick={block.pick}
+      />
     </div>
   )
 }
