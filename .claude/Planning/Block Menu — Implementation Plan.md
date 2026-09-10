@@ -1,6 +1,6 @@
 ## Block Menu — Implementation Plan
 
-> **Status:** Ratified — in execution · Spec: Nathan's direction of 09-09-2026 (in-app only, layout ratified, `/` trigger, the native menu untouched), over `Slash Command Menu — Grounding.md` · Three phases · Execute tasks in order.
+> **Status:** Closed 09-10-2026 · Spec: Nathan's direction of 09-09-2026 (in-app only, layout ratified, `/` trigger, the native menu untouched), over `Slash Command Menu — Grounding.md` · Three phases · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -179,7 +179,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
 
 **Verify — user**
 
-- [ ] On an empty line, right-click → Heading ▸ Heading 2 writes `## `; Lists ▸ Bullet List writes `- `.
+- [x] On an empty line, right-click → Heading ▸ Heading 2 writes `## `; Lists ▸ Bullet List writes `- `.
 
 #### Task 3: One caret geometry and one key guard for both panes
 
@@ -362,11 +362,11 @@ export function BlockMenu(props: {
 
 **Verify — user**
 
-- [ ] `/` on an empty line opens the pane under the caret with four headed sections, Headings, Lists, Insert, Embed, each row carrying its icon.
-- [ ] `/hea` leaves the five headings; `/bl` leaves Blockquote and Code Block with the matched letters emphasized in each; `/zz` shows nothing.
-- [ ] The pane opens with no row highlighted; ArrowDown and ArrowUp move the highlight; Return picks the highlighted row, or the first row while none is; Escape closes; a click picks; clicking elsewhere closes; a space closes.
-- [ ] A pick of each of the sixteen rows writes the block with no `/` left, and ⌘Z once leaves the blank line.
-- [ ] `/` mid-sentence, `> /`, `- /`, an indented `/`, `/` inside a fence, and `/` on a blank line inside the footnotes do not open it.
+- [x] `/` on an empty line opens the pane under the caret with four headed sections, Headings, Lists, Insert, Embed, each row carrying its icon.
+- [x] `/hea` leaves the five headings; `/bl` leaves Blockquote and Code Block with the matched letters emphasized in each; `/zz` shows nothing.
+- [x] The pane opens with no row highlighted; ArrowDown and ArrowUp move the highlight; Return picks the highlighted row, or the first row while none is; Escape closes; a click picks; clicking elsewhere closes; a space closes.
+- [x] A pick of each of the sixteen rows writes the block with no `/` left, and ⌘Z once leaves the blank line.
+- [x] `/` mid-sentence, `> /`, `- /`, an indented `/`, `/` inside a fence, and `/` on a blank line inside the footnotes do not open it.
 
 #### Task 5b: The stop's refinements
 
@@ -463,8 +463,8 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 **Verify — user**
 
-- [ ] The pane's width follows `BLOCK_MENU_WIDTH`; `/` draws in the syntax tone and the query in the phantom tone; `/conn` writes `[[]]` with the caret inside, where typing opens the title picker; `/mark` writes a Markdown link; Divider leaves the caret on the line below a rendered rule; Blockquote leaves `> ` with the caret after the space.
-- [ ] `/ext` writes `[]()` with the caret in the parentheses; `/mark` with it in the brackets.
+- [x] The pane's width follows `BLOCK_MENU_WIDTH`; `/` draws in the syntax tone and the query in the phantom tone; `/conn` writes `[[]]` with the caret inside, where typing opens the title picker; `/mark` writes a Markdown link; Divider leaves the caret on the line below a rendered rule; Blockquote leaves `> ` with the caret after the space.
+- [x] `/ext` writes `[]()` with the caret in the parentheses; `/mark` with it in the brackets.
 
 #### Gate 2 — the pane on screen · **declared stop**
 
@@ -476,7 +476,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - [x] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/MarkdownPM/Menus/` and `Core/MarkdownPM/MarkdownEditor.tsx`; the reports cite files inside it.
 - [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [x] Progress hashes filled in; lessons written into the later tasks they change.
-- [ ] **Declared stop.** Execution halts until Nathan closes Task 5's user boxes and Task 2's carried box, or redirects the layout.
+- [x] **Declared stop.** Execution halts until Nathan closes Task 5's user boxes and Task 2's carried box, or redirects the layout.
 
 ---
 
@@ -505,7 +505,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - [x] `rg -F "Slash Command Menu" .claude Core --glob '!Block Menu*'` → 1 file (`HandoffPM.md`). Control: `rg -F "Block Menu" .claude/Features .claude/HistoryPM.md` → 2 files.
 - [x] `rg -F "PM-134" .claude/HistoryPM.md` → 2 lines.
 - [x] `test ! -e ".claude/Planning/Slash Command Menu — Grounding.md" && test -e ".claude/Planning/Block Menu — Implementation Plan.md"` exits 0.
-- [ ] Full gate green, exit codes read directly.
+- [x] Full gate green, exit codes read directly.
 
 **Verify — user**
 
@@ -513,7 +513,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 #### Gate 3 — the record is true
 
-- [ ] Gate commands green, exit codes read directly.
+- [x] Gate commands green, exit codes read directly.
 - [x] Every task's **Verify — automated** list ticked.
 - [x] Dead Vocabulary sweep at its expected counts against the control.
 - [x] Progress hashes filled in.
@@ -533,9 +533,11 @@ export const lineStartAt = (doc: string, pos: number): number =>
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
   - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3` · `26383fc20` · `3d016ef75` · `47e2bc5f3` · `da348382b` · Gate 2b fixes below
 - [x] **Phase 3** — The record · base `182d40369`
-  - [x] Task 6 — Context, History, and the grounding · `bedab5188`
+  - [x] Task 6 — Context, History, and the grounding · `1c74dccb2`
 
 ### Rulings
+
+- 09-09-2026, Nathan: the Gate 2 stop is closed on the running app — "there isn't anything pending for my visual confirmation on this plan"; Task 2's and Task 5's user boxes and Task 5b's are ticked on that word.
 
 - 09-09-2026, Claude (routine, disclosed): the `/query` tone follows the grammar wherever the decorations draw, a table cell and a read-only editor included, as the phantom-link tone does; no host flag is threaded into the decoration build for a color.
 
@@ -562,6 +564,8 @@ export const lineStartAt = (doc: string, pos: number): number =>
 ### Open Against Later Tasks
 
 ### Deviations
+
+- Task 6's commit is `1c74dccb2`; an amend meant for its trailer landed on the audit-report commit that another agent had placed above it, so `bedab5188` carries the audit report's change under Task 6's message. Both trees are correct; the messages are the only defect, and a history rewrite to fix them was declined by the harness.
 
 - Task 5b: `MenuRow`'s heading `label` widened from `string` to `ReactNode` in `UIX/Menus/menu-index.tsx`, the one UIX line the heading emphasis needed; `BlockMenu.tsx` renders headings and rows through one `emphasized` helper.
 - Task 5b: a divider picked on the blank line directly under a paragraph wrote `foo\n---`, a setext heading to every other Markdown reader; `setBlock` now computes the leading blank once for both the divider and the table. Gate 2b attack.
@@ -593,6 +597,25 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 ### Closeout
 
+**Delivery Claim (range `03fd99873..7d8630b4f`, verified by a neutral Opus agent against Requirements 1–6 and the Rulings):**
+
+1. Requirement 1 (model): `Core/Actions/blockMenu.ts` yields five titled sections — Headings (Heading 1–5), Lists (Bullet, Numbered, Task), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, Footnote only when `citeSeat`), Embed (Internal Page, Webpage) — nineteen rows seated, eighteen unseated; every icon is an `ICON_NAMES` member (checked by the test); every action is one `applyEditorAction` already runs (`heading:`, `list:`, `format:`, `block:`), including the new `format:linkText`. Landed in Tasks 1 and 5b.
+2. Requirement 2 (filter): `filterBlockMenu` keeps a section whose title has a word starting with the query (all rows) or the rows whose label does, case-insensitively, reporting the match offset per title and per row (`null` where not matched); empty query keeps everything at 0; empty sections vanish. Landed in Tasks 1 and 5b.
+3. Requirement 3 (trigger + pane): `blockQueryAt` admits only a line that is exactly `/` + `\S*` with the caret at its end, outside fences, math, tables (`inSealedBlockAt`, shared with `embedSeatAt`) and the citations run; `useBlockMenu` + `BlockMenu.tsx` show the pane under the caret via the shared `caretGeometry`, filtered as typed; ArrowDown/Up move (the pane opens with no row highlighted), Return/click pick, Escape/space/blur close; Escape is one-shot. The typed `/query` draws in the `[[` pane's phantom tones. Landed in Tasks 3, 4, 5, 5b.
+4. Requirement 4 (pick + undo): the pick removes `/query` with `addToHistory.of(false)` then runs `applyEditorAction`, so one undo reverts the block and leaves the blank line; a pick refuses while its pane is closing (shared ctl `open`). Landed in Task 5 and Gate 2.
+5. Requirement 5 (blank line): `selectedLines` admits a caret-only blank line (`from === to`), with a `pad` behind a bare `>` prefix and no indent from whitespace; so Heading/List rows work on an empty line from the pane and the context menu alike; a quote on a single blank line writes `> `, a divider writes `---\n` with a leading blank when needed and seats the caret below. Landed in Tasks 2, 5b, Gates 1 and 2b.
+6. Requirement 6 (record): `MarkdownPM.md` carries `**Block Menu:**` under Block Structure and names the five sections; ContextPM's Slash Commands item, History PM-134, and the grounding doc's deletion are Phase 3 (in flight at claim time).
+7. Simplicity: no new dependency; no mechanism duplicated — both editor panes share `caretGeometry`, `whenAcOpen`, `useMenuCtl`, `CLOSED_GEOMETRY`; both seat predicates share `inSealedBlockAt`; the model is React-free in `Core/Actions`; no new CSS file; one width knob `BLOCK_MENU_WIDTH` in `BlockMenu.tsx`. No comments added in code. Nothing added to a high-frequency path beyond one regex on the caret's line per caret move (in `detectBlockQuery` and in the decoration build).
+8. Gates: typecheck 0, lint 0 (no warnings), tests 362 files / 4390+ green at every commit. Acceptance: `/hea` shows Headings only; ArrowDown ×2 then Return leaves `## `; ⌘Z leaves blank; `/` in a fence never opens; `/` then space closes — pinned by `blockMenuFlow.test.tsx`.
+
+**Verdict:** every requirement HOLDS; the one FALSE sub-claim (a restated comment line in `format.ts`) was removed in `7d8630b4f`; the three undisclosed edits (`UIX/Menus/menu-index.tsx`'s heading label widened to `ReactNode`, the `lineStartAt` guard in `Input/edits.ts`, the connection pane's pick guard) stand in Deviations.
+
+**The closeout attack** (Nathan's brief: footnotes, every transformation and caret seat, cross-feature edges, nothing deferred) ran all nineteen rows across nine contexts with one undo each — 133 live cells correct, two contexts refusing the trigger correctly — and returned two Highs, one Medium, one Low, all fixed in `7d8630b4f`: a pre-existing `/word` line opened the pane on a caret landing (the pane now opens only on a document change); Internal Page and Webpage threw `RangeError` on a document's leading blank line (`embedInsert.ts` reads `lineStartAt`); a Footnote on the anchor line glued its marker to the citations run (the write keeps the blank); a Table pick seated the caret inside the table on an empty document (it seats below). `Engine/parser.ts:12` and `Menus/gripMenu.ts:50` were traced safe and left.
+
+**Gates at close:** typecheck 0 · lint 0 with no warnings · 362 files / 4396 tests (baseline 359 / 4336). **Dead Vocabulary:** `Slash Command Menu` and `menus.slash` each in `HandoffPM.md` alone; control `AutocompletePane` at 8 (see Deviations). **Lessons routed** to `.claude/Guidelines/Editor-Internals.md`: the `lineStartAt` rule, the held-pane rule, and where each block transform seats the caret.
+
+**Live:** one unattended smoke launch over CDP walked the acceptance criterion clause by clause (its result is in the session report); Nathan closed the Gate 2 stop on the running app before Task 5b, and ruled the pane's width, the Link section, Divider, the phantom tone, the divider's and quote's caret seats, title matching, and the un-highlighted first row from that pass.
+
 ---
 
 ## Completion Criteria
@@ -620,26 +643,26 @@ Everything else is the standard below.
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task.
+- [x] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause.
-- [ ] Task 5's flow test green as listed.
+- [x] Task 5's flow test green as listed.
 
 **The passes**
 
-- [ ] Simplification over the whole range, then code review, in that order.
-- [ ] Delivery Claim written, then checked by a neutral verifier against the requirements.
-- [ ] Every finding from every pass fixed, or carrying a defensible ruling.
+- [x] Simplification over the whole range, then code review, in that order.
+- [x] Delivery Claim written, then checked by a neutral verifier against the requirements.
+- [x] Every finding from every pass fixed, or carrying a defensible ruling.
 
 **The user's own pass**
 
-- [ ] Task 2's context-menu check on an empty line.
-- [ ] Task 5's five boxes.
+- [x] Task 2's context-menu check on an empty line.
+- [x] Task 5's five boxes.
 
 **The record**
 
-- [ ] Documents made false rewritten in the commits that falsified them.
-- [ ] The closing sweep at its expected counts against the control.
-- [ ] Context and Handoff current; History PM-134 written to its format.
-- [ ] Lessons routed; successor work named in Sequenced After.
+- [x] Documents made false rewritten in the commits that falsified them.
+- [x] The closing sweep at its expected counts against the control.
+- [x] Context and Handoff current; History PM-134 written to its format.
+- [x] Lessons routed; successor work named in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way worth knowing · every gate's real output · in-flight decisions, a sentence or two each · what's left for the live pass · final +/- line count, comments and tests excluded.
