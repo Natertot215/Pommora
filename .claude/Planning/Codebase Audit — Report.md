@@ -107,7 +107,7 @@ Context membership is keyed by Space *title*, which is the model's structural co
 
 **Lenses and state:** Debt, Decision, Duplication, Asymmetry, Performance, Tests. **Effort:** Large. **Deletes:** About 230 lines of duplicated interaction layer, two mounted pickers per card.
 
-**Found.** The data half of views is finished, excellent, and shouldn't be touched: one filter, one sorter, one grouper, one pure pipeline, one real host that owns every writer. The renderer half is two prototypes that both grew past 1,300 lines and write the same interaction layer twice: band drops, relocation, reorder, page opening, hover glance, menu dispatch, the ghost lifecycle. They aren't copy-paste duplicates, which is exactly why they drift; each pair is the same idea with one policy detail changed. Neither renderer virtualizes. Cards mounts two closed picker components and six store subscriptions per card, where Table already does it correctly with one picker at the root. Cards has one smoke assertion against Table's 1,330 lines of interaction tests. Six view kinds are registered and two render. Adding a third view kind means writing the interaction layer a third time.
+**Found.** The data half of views is finished, excellent, and shouldn't be touched: one filter, one sorter, one grouper, one pure pipeline, one real host that owns every writer. The renderer half is two prototypes that both grew past 1,300 lines and write the same interaction layer twice: band drops, relocation, reorder, page opening, hover glance, menu dispatch, the ghost lifecycle. They aren't copy-paste duplicates, which is exactly why they drift; each pair is the same idea with one policy detail changed. Cards mounts two closed picker components and six store subscriptions per card, where Table already does it correctly with one picker at the root. Cards has one smoke assertion against Table's 1,330 lines of interaction tests. Six view kinds are registered and two render. Adding a third view kind means writing the interaction layer a third time.
 
 **Change.**
 
@@ -115,7 +115,6 @@ Context membership is keyed by Space *title*, which is the model's structural co
 2. Hoist Cards' icon and image pickers to the grid level the way Table already does. *(S; 2 mounted pickers per card)*
 3. Scope the ghost's rect reads to the anchor's own zone. *(S; ~15 lines)*
 4. Add a Cards drop suite, a Cards value and menu suite, and a creation suite, on the harness the Table suites already use. *(M)*
-5. Virtualize both renderers with the already-declared virtualizer. Separate, larger work; Mobile hits this wall first. *(L)*
 
 **Findings:** R-32, R-33, R-35, R-36.
 
@@ -221,7 +220,7 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-17 | 4     | FR   | Two nexus-wide registries, opposite corruption policies — and the lenient one gates a rename cascade that half-lands               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts, Core/Files/atomicWrite.ts`                 |
 | R-18 | 4     | D    | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes                               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts`                                            |
 | R-32 | 6     | Dt   | Table and Cards write the same interaction layer twice                                                                             | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx`                                                      |
-| R-33 | 6     | Dt   | Neither renderer virtualizes, and every card carries six store subscriptions and two mounted pickers                               | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
+| R-33 | 6     | Dt   | Every card carries six store subscriptions and two mounted pickers                                                                 | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
 | R-35 | 6     | Dt   | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests                                                | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
 | R-36 | 6     | Dt   | The Cards ghost reads every card's rect twice on every hover dwell                                                                 | `Core/Views/Cards/CardsView.tsx`                                                                                      |
 | R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |

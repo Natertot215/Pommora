@@ -109,6 +109,7 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table`, th
 
 - **Row grips scroll with their row on horizontal scroll.** Freezing them cleanly means freezing the whole title column, which is an open decision.
 - **A mid-drag column hide or watcher view-push is reverted by the column drop's persist**, since the drop reads grab-time state. Reachable only by changing columns while holding a drag.
+- **Neither renderer virtualizes.** Every row or card in a container is painted; a very large Collection feels it. The gap is known and waits its turn.
 
 ### Cards
 
