@@ -1,4 +1,4 @@
-import { Fragment, useRef } from 'react'
+import { Fragment, useRef, type ReactNode } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -9,6 +9,17 @@ import { CLOSED_GEOMETRY } from '../Autocomplete/useConnectionAutocomplete'
 import type { BlockMenuState } from './useBlockMenu'
 
 const BLOCK_MENU_WIDTH = 140
+
+function emphasized(label: string, at: number | null, len: number): ReactNode {
+  if (at === null) return label
+  return (
+    <>
+      {label.slice(0, at)}
+      <span className="mdpm-autocomplete-match">{label.slice(at, at + len)}</span>
+      {label.slice(at + len)}
+    </>
+  )
+}
 
 interface Props {
   open: boolean
@@ -44,7 +55,9 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
       <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
         {v.matches.map((m) => (
           <Fragment key={m.title}>
-            <MenuRowView row={{ kind: 'heading', label: m.title, caps: true }} />
+            <MenuRowView
+              row={{ kind: 'heading', label: emphasized(m.title, m.at, matchLen), caps: true }}
+            />
             {m.rows.map((row) => (
               <MenuItem
                 key={row.action}
@@ -57,17 +70,7 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
                   onPick(row.action)
                 }}
               >
-                {row.at === null ? (
-                  row.label
-                ) : (
-                  <>
-                    {row.label.slice(0, row.at)}
-                    <span className="mdpm-autocomplete-match">
-                      {row.label.slice(row.at, row.at + matchLen)}
-                    </span>
-                    {row.label.slice(row.at + matchLen)}
-                  </>
-                )}
+                {emphasized(row.label, row.at, matchLen)}
               </MenuItem>
             ))}
           </Fragment>
