@@ -57,11 +57,17 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
                   onPick(row.action)
                 }}
               >
-                {row.label.slice(0, row.at)}
-                <span className="mdpm-autocomplete-match">
-                  {row.label.slice(row.at, row.at + matchLen)}
-                </span>
-                {row.label.slice(row.at + matchLen)}
+                {row.at === null ? (
+                  row.label
+                ) : (
+                  <>
+                    {row.label.slice(0, row.at)}
+                    <span className="mdpm-autocomplete-match">
+                      {row.label.slice(row.at, row.at + matchLen)}
+                    </span>
+                    {row.label.slice(row.at + matchLen)}
+                  </>
+                )}
               </MenuItem>
             ))}
           </Fragment>

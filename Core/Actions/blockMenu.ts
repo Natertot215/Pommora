@@ -18,7 +18,8 @@ export interface BlockMenuSection {
 
 export interface BlockMenuMatch {
   title: string
-  rows: readonly (ActionItem<BlockMenuAction> & { at: number })[]
+  at: number | null
+  rows: readonly (ActionItem<BlockMenuAction> & { at: number | null })[]
 }
 
 const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.slice(1).map((h) => ({
@@ -79,12 +80,13 @@ export function filterBlockMenu(sections: BlockMenuSection[], query: string): Bl
   const q = query.toLowerCase()
   const out: BlockMenuMatch[] = []
   for (const s of sections) {
+    const titleAt = wordStart(s.title, q)
     const rows: BlockMenuMatch['rows'][number][] = []
     for (const row of s.rows) {
       const at = wordStart(row.label, q)
-      if (at !== null) rows.push({ ...row, at })
+      if (titleAt !== null || at !== null) rows.push({ ...row, at })
     }
-    if (rows.length > 0) out.push({ title: s.title, rows })
+    if (rows.length > 0) out.push({ title: s.title, at: titleAt, rows })
   }
   return out
 }

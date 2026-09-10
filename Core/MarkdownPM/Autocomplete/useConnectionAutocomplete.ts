@@ -40,19 +40,21 @@ export function useMenuCtl(
   count: number,
   resetKey: unknown,
   drive: { open: boolean; pick: (index: number) => void; close: () => void },
-): { index: number; ctl: RefObject<AcCtl> } {
-  const [index, setIndex] = useState(0)
-  const selected = Math.min(index, Math.max(count - 1, 0))
+  initial: number | null = 0,
+): { index: number | null; ctl: RefObject<AcCtl> } {
+  const [index, setIndex] = useState<number | null>(initial)
+  const selected = index === null ? null : Math.min(index, Math.max(count - 1, 0))
 
   const ctl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
   ctl.current = {
     open: drive.open,
-    pick: () => drive.pick(selected),
-    move: (d) => setIndex((i) => clamp(i + d, 0, count - 1)),
+    pick: () => drive.pick(selected ?? 0),
+    move: (d) =>
+      setIndex((i) => (i === null ? (d > 0 ? 0 : count - 1) : clamp(i + d, 0, count - 1))),
     close: drive.close,
   }
 
-  useEffect(() => setIndex(0), [resetKey])
+  useEffect(() => setIndex(initial), [resetKey, initial])
 
   return { index: selected, ctl }
 }
@@ -130,7 +132,7 @@ export function useConnectionAutocomplete(
     close: () => setAc(null),
   })
 
-  return { ac, setAc, candidates, acIndex: index, commit, acCtl: ctl }
+  return { ac, setAc, candidates, acIndex: index ?? 0, commit, acCtl: ctl }
 }
 
 /** The editor's nearest SCROLLING ancestor — the editor itself never scrolls, so `scrollDOM` is the wrong answer. */
