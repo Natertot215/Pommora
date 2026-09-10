@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-10-2026              | PM-135 | MarkdownPM Consolidation                             |
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
 | 09-07-2026              | PM-132 | State Placement                                      |
@@ -138,10 +139,18 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+#### PM-135 || MarkdownPM Consolidation
+**DATE:** 09-10-2026
+
+MarkdownPM's editor-preference handles, widget dismissal, and range-movers each collapsed onto a single form. The four per-machine preferences — folds, embed heights, embed zooms, and table heading columns — had been declared as three identical `load`/`save` interfaces under separate names, and became one generic `EditorPref<T>` in `api.ts`; the heading-columns load, which had run on its own promise, joined the settled group so it applies before the scroll restore rather than racing it. The table's rectangle selection, its active cell, and embed-tile editing had each dismissed on an outside press through their own capture-phase document listener, and all three moved onto the shared `UIX/Interactions` dismissal stack; the hand-written autocomplete-portal exception fell away because the connection pane already publishes its own stack layer above the cell. Escape now closes an active cell as it closes every other layer, and outside dismissal follows the stack's primary-button rule. The list-item drag and the block drag, two spellings of one cut-and-reinsert, folded into a single `rebuildMove` core parameterized by whether its edges are copied exactly or fenced with a blank line — the list gesture stays tight and renumbers, the block gesture normalizes — and `renumberOrderedRun`'s backward run-start walk was made symmetric with its forward scan, so a numbered item carrying a child line renumbers correctly when dragged up.
+
+- **Commits:** `389d5cb64`
+- **Diff:** Net −17 | +173 / −190
+
 #### PM-134 || MarkdownPM Block Menu
 **DATE:** 09-09-2026
 
-The catalog was written into `Core/Actions/blockMenu.ts` as five sections of nineteen rows, with `filterBlockMenu` matching a query against section titles as well as row labels and reporting where each match begins. The trigger landed in `Core/MarkdownPM/Menus/blockQuery.ts` as a pure read of the cached scan, admitting a line that holds nothing but the slash and its query and refusing code, math, tables, and the citations run through `inSealedBlockAt` in `Engine/docScan.ts`, which `embedSeatAt` was rewritten to read in place of its own spelling of the same refusal. `useBlockMenu.ts` and `BlockMenu.tsx`, mounted in `MarkdownEditor.tsx`, shared `caretGeometry`, `whenAcOpen`, `useMenuCtl`, and `CLOSED_GEOMETRY` with the `[[` pane in `useConnectionAutocomplete.ts`; the pane opened with no row highlighted, and both panes refused a pick while closing. A pick removed the typed `/query` outside history and then ran `applyEditorAction`, leaving the action's own dispatch as the single history entry, so one undo returned the blank line. `selectedLines` in `Input/format.ts` admitted a caret-only blank line and carried a `pad` behind a bare `>`, `setBlock` wrote `> ` on a lone blank line and `---\n` with its leading blank, `toggleInline` gained `linkText`, and `lineStartAt` was guarded at 0. `decorations.ts` drew the typed query in the phantom tones.
+MarkdownPM gained a block-based slash-command menu. Typing `/` alone on a line opens a pane under the caret listing what the editor can make — Headings, Lists, Link, Insert, and Embed, nineteen rows — filtered by what follows the slash against section titles and row labels alike, with the typed query drawn in the phantom tones the `[[` pane uses. Return or a click removes the query outside history and runs the same action dispatch the context menu's items run, so one ⌘Z leaves the blank line; the pane opens only on a document change, never on a caret landing at the end of a line that already reads `/word`. The catalog is a React-free model in `Core/Actions/blockMenu.ts`; the trigger, hook, and pane live in `Core/MarkdownPM/Menus/`, sharing the caret geometry, key guard, cursor, and closed geometry with the connection pane. On the way, `selectedLines` began admitting a caret-only blank line, so Heading and List rows work on an empty line from the context menu too, and the divider, table, quote, footnote, and embed transforms each seat the caret where a writer expects it.
 
 - **Commits:** `0b0783569^..182d40369`
 - **Diff:** Net +337 | +401 / -64
