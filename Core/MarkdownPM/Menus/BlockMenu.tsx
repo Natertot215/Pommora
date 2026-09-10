@@ -3,12 +3,12 @@ import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
-import { type BlockMenuAction, type BlockMenuMatch } from '@pommora/core/Actions/blockMenu'
+import type { BlockMenuAction, BlockMenuMatch } from '@pommora/core/Actions/blockMenu'
 import { useKeepInView } from '../Autocomplete/useKeepInView'
 import { CLOSED_GEOMETRY } from '../Autocomplete/useConnectionAutocomplete'
 import type { BlockMenuState } from './useBlockMenu'
 
-const BLOCK_MENU_WIDTH = 260
+const BLOCK_MENU_WIDTH = 140
 
 interface Props {
   open: boolean
