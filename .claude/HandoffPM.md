@@ -14,7 +14,7 @@
 
 **The closeout found two more Highs, both fixed.** A neutral verifier held every requirement; Nathan's targeted attack ran all nineteen rows across nine contexts with one undo each (133 live cells correct) and found that a pre-existing `/word` line became a live menu when the caret landed at its end — its pick unrecoverable — and that Internal Page and Webpage threw `RangeError` on a document's leading blank line through a hand-rolled twin of the `lineStartAt` guard the plan had already added once. The pane now opens only on a document change, `embedInsert.ts` reads `lineStartAt`, a Footnote written on the anchor line keeps a blank between marker and run, and a Table pick always seats the caret below the table. The final gate stands at typecheck 0, lint 0 with no warnings, 362 files / 4396 tests.
 
-**Verified against assumed.** The flow tests pin every clause of the acceptance criterion and every redirect; the closeout smoke launch over CDP observed every acceptance clause on the real Nexus after Task 5b and caught one layout defect — a section heading's emphasis fragment splitting across its flex row — fixed by keeping headings plain (Nathan saw the pane before the redirect). That launch killed a Pommora instance that had been running since 09-08 with four tabs open and relaunched it with the same tabs; no data loss was found. The one thing this session could not do is rewrite history: an amend meant for Task 6's trailer landed on the audit-report commit an agent had placed above it, so `bedab5188` carries the audit change under Task 6's message and `1c74dccb2` is Task 6; both trees are right, the harness declined the rewrite, and the plan's Deviations record it.
+**Verified against assumed.** The flow tests pin every clause of the acceptance criterion and every redirect; the closeout smoke launch over CDP observed every acceptance clause on the real Nexus after Task 5b and caught one layout defect — a section heading's emphasis fragment splitting across its flex row — fixed by keeping headings plain (Nathan saw the pane before the redirect). That launch killed a Pommora instance that had been running since 09-08 with four tabs open and relaunched it with the same tabs; no data loss was found. An amend meant for Task 6's trailer first landed on the audit-report commit an agent had placed above it; on Nathan's word the eight commits above `182d40369` were rebuilt with their own trees and corrected messages and force-pushed, so the history reads as intended.
 
 #### Completion Criteria
 
@@ -52,11 +52,11 @@
 
 - **A pane's `open` must be read live, never captured.** `PickerMenu` holds children ~380 ms through its exit; a row's `onMouseDown` from the last open render is still clickable with that render's state. Both editor panes guard on `ctl.current.open`.
 - **`useMenuCtl(count, resetKey, drive, initial)`:** `initial = null` is what gives the block menu no highlight on open; the `[[` pane passes 0. `move` from `null` goes to the first or last row by direction; `pick` reads `index ?? 0`.
-- **The filter matches titles.** `filterBlockMenu` keeps a whole section when its title has a word starting with the query, so `/link` shows Connection although "Connection" never matches; a row's `at` is `null` when only the title matched, and `emphasized` renders the plain label then.
+- **The filter matches titles, anywhere.** `filterBlockMenu` keeps a whole section when its title contains the query, so `/link` shows Connection although "Connection" never matches, and `/quo` reaches Blockquote; a row's `at` is `null` when only the title matched, and `emphasized` renders the plain label then.
 - **`format:linkText` exists only for the block menu.** No chord and no context-menu row dispatch it; `toggleInline` seats its caret inside the brackets where `format:link` seats it inside the parentheses.
 - **The phantom tone follows the grammar, not the pane**, by ruling: a `/word` line draws in the phantom tones wherever the decorations run, a table cell and a read-only editor included, even though the pane opens only on typing.
 - **Biome's `useImportType` warning exits 0.** A type-only import written as `import { type A }` passes `npm run lint`'s exit code and still prints a warning; read the output.
-- **`git commit --amend --only` amends whatever HEAD is.** With agents committing on the shared branch, confirm HEAD's hash before an amend; this session mislabeled one commit that way.
+- **`git commit --amend --only` amends whatever HEAD is.** With agents committing on the shared branch, confirm HEAD's hash before an amend.
 
 **FILES ADDED**
 
@@ -100,13 +100,15 @@
 
 **COMMITS**
 
-- `077b5f222` — fix(markdownpm): a section heading stays one plain label
-- `862143a0b` — fix(markdownpm): a divider and a table share one trailing blank and seat the caret below what they wrote
-- `534c3cf3f` — docs(plan): the Block Menu plan closes — claim, verdict, rulings, and the lessons routed
-- `7d8630b4f` — fix(markdownpm): the block menu opens on typing alone; embeds, footnotes, and tables seat the caret where they should
-- `8c30eebc6` — docs(markdownpm): the feature doc reads as the code stands
-- `bedab5188` — docs(pommora): the block menu's record — Context, History PM-134, the grounding retired
-- `1c74dccb2` — docs(pommora): the block menu's record — Context, History PM-134, the grounding retired
+- `f50baa8e9` — feat(actions): the block menu filter matches anywhere in a title or label
+- `e25f34a9d` — docs(pommora): handoff and context for the block menu session
+- `923735426` — fix(markdownpm): a section heading stays one plain label
+- `51fbbcfe1` — fix(markdownpm): a divider and a table share one trailing blank and seat the caret below what they wrote
+- `86a278db9` — docs(plan): the Block Menu plan closes — claim, verdict, rulings, and the lessons routed
+- `08f0d749b` — fix(markdownpm): the block menu opens on typing alone; embeds, footnotes, and tables seat the caret where they should
+- `59caded49` — docs(markdownpm): the feature doc reads as the code stands
+- `203e47813` — docs(audit): the report drops its changelog and reads as current state
+- `b54225118` — docs(pommora): the block menu's record — Context, History PM-134, the grounding retired
 - `182d40369` — fix(markdownpm): a divider keeps a blank line above it; the matched section heading is emphasized
 - `da348382b` — feat(markdownpm): the block menu filter matches a section's title and opens with no row highlighted
 - `47e2bc5f3` — fix(markdownpm): the block menu's rows follow its width knob

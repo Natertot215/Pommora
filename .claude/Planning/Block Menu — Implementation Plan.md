@@ -14,7 +14,7 @@ Bounded to the five sections Nathan ratified and to a line that holds nothing bu
 **Requirements**
 
 1. A model in `Core/Actions/blockMenu.ts` yields five titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
-2. A filter over the model matches the query, case-insensitively, against a section's title as well as its rows' labels, by the same word-start rule, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in each row label that matched on its own; a section heading stays plain.
+2. A filter over the model matches the query, case-insensitively, anywhere in a section's title as well as anywhere in its rows' labels, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in each row label that matched on its own; a section heading stays plain.
 3. A `/` typed as the entire text of a line, with the caret at line end, outside code, math, and the citations run, opens the pane under the caret; each further non-space character narrows it; a space, a caret move off the line, or blur closes it; Escape closes it until the next edit, as the `[[` pane does; the pane shows only while a row matches.
 4. Return or a click on a row removes the typed `/query` and applies the row's action; one undo reverts the block and leaves the blank line.
 5. `setHeading` and `setList` act on a blank line when the caret alone selects it, so Heading 2 on an empty line writes `## ` from the pane and from the context menu alike.
@@ -533,9 +533,11 @@ export const lineStartAt = (doc: string, pos: number): number =>
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
   - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3` · `26383fc20` · `3d016ef75` · `47e2bc5f3` · `da348382b` · Gate 2b fixes below
 - [x] **Phase 3** — The record · base `182d40369`
-  - [x] Task 6 — Context, History, and the grounding · `1c74dccb2`
+  - [x] Task 6 — Context, History, and the grounding · `b54225118`
 
 ### Rulings
+
+- 09-10-2026, Nathan: the filter matches a substring, not a word start, so `/quo` reaches Blockquote; landed in `f50baa8e9`.
 
 - 09-09-2026, Nathan: the Gate 2 stop is closed on the running app — "there isn't anything pending for my visual confirmation on this plan"; Task 2's and Task 5's user boxes and Task 5b's are ticked on that word.
 
@@ -569,7 +571,6 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 - Task 5b: the divider doubled the blank line below itself where a blank already followed, and a table seated the caret inside its last row in the same case; `setBlock` computes one `trail` beside `lead` for both and seats the caret one line past what it wrote. Closeout simplification.
 
-- Task 6's commit is `1c74dccb2`; an amend meant for its trailer landed on the audit-report commit that another agent had placed above it, so `bedab5188` carries the audit report's change under Task 6's message. Both trees are correct; the messages are the only defect, and a history rewrite to fix them was declined by the harness.
 
 - Task 5b: `MenuRow`'s heading `label` widened from `string` to `ReactNode` in `UIX/Menus/menu-index.tsx`, the one UIX line the heading emphasis needed; `BlockMenu.tsx` renders headings and rows through one `emphasized` helper.
 - Task 5b: a divider picked on the blank line directly under a paragraph wrote `foo\n---`, a setext heading to every other Markdown reader; `setBlock` now computes the leading blank once for both the divider and the table. Gate 2b attack.
@@ -601,7 +602,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 ### Closeout
 
-**Delivery Claim (range `03fd99873..7d8630b4f`, verified by a neutral Opus agent against Requirements 1–6 and the Rulings):**
+**Delivery Claim (range `03fd99873..08f0d749b`, verified by a neutral Opus agent against Requirements 1–6 and the Rulings):**
 
 1. Requirement 1 (model): `Core/Actions/blockMenu.ts` yields five titled sections — Headings (Heading 1–5), Lists (Bullet, Numbered, Task), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, Footnote only when `citeSeat`), Embed (Internal Page, Webpage) — nineteen rows seated, eighteen unseated; every icon is an `ICON_NAMES` member (checked by the test); every action is one `applyEditorAction` already runs (`heading:`, `list:`, `format:`, `block:`), including the new `format:linkText`. Landed in Tasks 1 and 5b.
 2. Requirement 2 (filter): `filterBlockMenu` keeps a section whose title has a word starting with the query (all rows) or the rows whose label does, case-insensitively, reporting the match offset per title and per row (`null` where not matched); empty query keeps everything at 0; empty sections vanish. Landed in Tasks 1 and 5b.
@@ -612,13 +613,13 @@ export const lineStartAt = (doc: string, pos: number): number =>
 7. Simplicity: no new dependency; no mechanism duplicated — both editor panes share `caretGeometry`, `whenAcOpen`, `useMenuCtl`, `CLOSED_GEOMETRY`; both seat predicates share `inSealedBlockAt`; the model is React-free in `Core/Actions`; no new CSS file; one width knob `BLOCK_MENU_WIDTH` in `BlockMenu.tsx`. No comments added in code. Nothing added to a high-frequency path beyond one regex on the caret's line per caret move (in `detectBlockQuery` and in the decoration build).
 8. Gates: typecheck 0, lint 0 (no warnings), tests 362 files / 4390+ green at every commit. Acceptance: `/hea` shows Headings only; ArrowDown ×2 then Return leaves `## `; ⌘Z leaves blank; `/` in a fence never opens; `/` then space closes — pinned by `blockMenuFlow.test.tsx`.
 
-**Verdict:** every requirement HOLDS; the one FALSE sub-claim (a restated comment line in `format.ts`) was removed in `7d8630b4f`; the three undisclosed edits (`UIX/Menus/menu-index.tsx`'s heading label widened to `ReactNode`, the `lineStartAt` guard in `Input/edits.ts`, the connection pane's pick guard) stand in Deviations.
+**Verdict:** every requirement HOLDS; the one FALSE sub-claim (a restated comment line in `format.ts`) was removed in `08f0d749b`; the three undisclosed edits (`UIX/Menus/menu-index.tsx`'s heading label widened to `ReactNode`, the `lineStartAt` guard in `Input/edits.ts`, the connection pane's pick guard) stand in Deviations.
 
-**The closeout attack** (Nathan's brief: footnotes, every transformation and caret seat, cross-feature edges, nothing deferred) ran all nineteen rows across nine contexts with one undo each — 133 live cells correct, two contexts refusing the trigger correctly — and returned two Highs, one Medium, one Low, all fixed in `7d8630b4f`: a pre-existing `/word` line opened the pane on a caret landing (the pane now opens only on a document change); Internal Page and Webpage threw `RangeError` on a document's leading blank line (`embedInsert.ts` reads `lineStartAt`); a Footnote on the anchor line glued its marker to the citations run (the write keeps the blank); a Table pick seated the caret inside the table on an empty document (it seats below). `Engine/parser.ts:12` and `Menus/gripMenu.ts:50` were traced safe and left.
+**The closeout attack** (Nathan's brief: footnotes, every transformation and caret seat, cross-feature edges, nothing deferred) ran all nineteen rows across nine contexts with one undo each — 133 live cells correct, two contexts refusing the trigger correctly — and returned two Highs, one Medium, one Low, all fixed in `08f0d749b`: a pre-existing `/word` line opened the pane on a caret landing (the pane now opens only on a document change); Internal Page and Webpage threw `RangeError` on a document's leading blank line (`embedInsert.ts` reads `lineStartAt`); a Footnote on the anchor line glued its marker to the citations run (the write keeps the blank); a Table pick seated the caret inside the table on an empty document (it seats below). `Engine/parser.ts:12` and `Menus/gripMenu.ts:50` were traced safe and left.
 
 **Gates at close:** typecheck 0 · lint 0 with no warnings · 362 files / 4396 tests (baseline 359 / 4336). **Dead Vocabulary:** `Slash Command Menu` and `menus.slash` each in `HandoffPM.md` alone; control `AutocompletePane` at 8 (see Deviations). **Lessons routed** to `.claude/Guidelines/Editor-Internals.md`: the `lineStartAt` rule, the held-pane rule, and where each block transform seats the caret.
 
-**Live:** one unattended smoke launch over CDP walked the acceptance criterion clause by clause on the real Nexus — every clause observed, the pane 140px wide with nineteen rows, the caret below a picked table and divider, the phantom tones present — and caught the heading-emphasis layout defect fixed in `077b5f222`; Nathan closed the Gate 2 stop on the running app before Task 5b, and ruled the pane's width, the Link section, Divider, the phantom tone, the divider's and quote's caret seats, title matching, and the un-highlighted first row from that pass.
+**Live:** one unattended smoke launch over CDP walked the acceptance criterion clause by clause on the real Nexus — every clause observed, the pane 140px wide with nineteen rows, the caret below a picked table and divider, the phantom tones present — and caught the heading-emphasis layout defect fixed in `923735426`; Nathan closed the Gate 2 stop on the running app before Task 5b, and ruled the pane's width, the Link section, Divider, the phantom tone, the divider's and quote's caret seats, title matching, and the un-highlighted first row from that pass.
 
 ---
 
