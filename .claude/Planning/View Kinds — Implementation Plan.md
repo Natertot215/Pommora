@@ -1,6 +1,6 @@
 ## View Kinds — Implementation Plan
 
-> **Status:** Ratified · Source: Nathan's direction of 09-10-2026 over `Codebase Audit — Report.md` Topic 6 (R-34, D-6, and the re-flatten half of R-36) · Three phases · Written per Writing-Plans-V3.
+> **Status:** Complete · Source: Nathan's direction of 09-10-2026 over `Codebase Audit — Report.md` Topic 6 (R-34, D-6, and the re-flatten half of R-36) · Three phases · Written per Writing-Plans-V3.
 
 ### Context
 
@@ -36,7 +36,7 @@ The app knows six kinds of view (Table, Cards, List, Gallery, Calendar, Timeline
 - `wc -l Core/Views/viewIcon.test.ts` → 28 — decreases
 
 **START:** 2026-09-10T21:25:28Z
-**END:** <same command, run as the report is given>
+**END:** 2026-09-10T22:00:55Z
 
 #### Implementation Process
 
@@ -102,11 +102,11 @@ export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
 
 **CHANGE**
 
-- [ ] Export `VIEW_TYPES`.
-- [ ] Add `DEFAULT_VIEW_TYPE` and the `ViewKind` interface with `VIEW_KINDS: Record<ViewType, ViewKind>` directly under the type, carrying `label`, `icon`, and `flat` for all six kinds. The icon strings are the six from `LayoutFrame.tsx`'s `TYPE_GLYPH` today: `table`, `cards-grid`, `list-rounded`, `layout-dashboard`, `calendar-days`, `chart-gantt`. Cards is the only `flat: true`. The table entry carries the one comment this plan adds.
-- [ ] The `name` catch reads `VIEW_KINDS[DEFAULT_VIEW_TYPE].label`; the `type` catch reads `DEFAULT_VIEW_TYPE`.
-- [ ] `mintNewView` reads its icon and type from the registry and the constant; `mintDefaultView` reads its name from the registry.
-- [ ] In `views.test.ts`, the existing "coerces an unknown type to table" case asserts `DEFAULT_VIEW_TYPE` instead of the literal; no new test.
+- [x] Export `VIEW_TYPES`.
+- [x] Add `DEFAULT_VIEW_TYPE` and the `ViewKind` interface with `VIEW_KINDS: Record<ViewType, ViewKind>` directly under the type, carrying `label`, `icon`, and `flat` for all six kinds. The icon strings are the six from `LayoutFrame.tsx`'s `TYPE_GLYPH` today: `table`, `cards-grid`, `list-rounded`, `layout-dashboard`, `calendar-days`, `chart-gantt`. Cards is the only `flat: true`. The table entry carries the one comment this plan adds.
+- [x] The `name` catch reads `VIEW_KINDS[DEFAULT_VIEW_TYPE].label`; the `type` catch reads `DEFAULT_VIEW_TYPE`.
+- [x] `mintNewView` reads its icon and type from the registry and the constant; `mintDefaultView` reads its name from the registry.
+- [x] In `views.test.ts`, the existing "coerces an unknown type to table" case asserts `DEFAULT_VIEW_TYPE` instead of the literal; no new test.
 
 **AFTER**
 
@@ -159,9 +159,9 @@ export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes.
-- [ ] `npm run typecheck` and `npx vitest run Core/Views/views.test.ts Core/Contract/engineGraph.test.ts` pass; the engine-graph suite still lists no `.tsx` and the same four UIX files.
-- [ ] `grep -c "'table'" Core/Views/views.ts` → 3 (the tuple, `DEFAULT_VIEW_TYPE`, and the table entry's icon); `grep -c "catch('table')\|type: 'table'" Core/Views/views.ts` → 0.
+- [x] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run typecheck` and `npx vitest run Core/Views/views.test.ts Core/Contract/engineGraph.test.ts` pass; the engine-graph suite still lists no `.tsx` and the same four UIX files.
+- [x] `grep -c "'table'" Core/Views/views.ts` → 3 (the tuple, `DEFAULT_VIEW_TYPE`, and the table entry's icon); `grep -c "catch('table')\|type: 'table'" Core/Views/views.ts` → 0.
 
 #### Task 1.2
 
@@ -196,11 +196,11 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
 
 **CHANGE**
 
-- [ ] Add and export `VIEW_RENDERERS`, a `Partial<Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>>` holding `table: TableView` and `cards: CardsView`; the map is the one statement of which kinds are built.
-- [ ] Replace `isCards` with `const Renderer = VIEW_RENDERERS[view.type] ?? TableView`. The fallback names `TableView` directly rather than indexing the map by `DEFAULT_VIEW_TYPE`, which would need a non-null assertion; the ruling that Table is the fallback is stated here by the name.
-- [ ] Pass `VIEW_KINDS[view.type].flat` to `useViewHost`. The flatness follows the view's own kind, which is what every settings pane reads after Task 1.4, so the seat and the panes agree.
-- [ ] `setChrome` keeps its Cards test as `view.type === 'cards'`: Set Cards are a Cards feature, not a flatness consequence.
-- [ ] Render `<Renderer host={host} />`.
+- [x] Add and export `VIEW_RENDERERS`, a `Partial<Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>>` holding `table: TableView` and `cards: CardsView`; the map is the one statement of which kinds are built.
+- [x] Replace `isCards` with `const Renderer = VIEW_RENDERERS[view.type] ?? TableView`. The fallback names `TableView` directly rather than indexing the map by `DEFAULT_VIEW_TYPE`, which would need a non-null assertion; the ruling that Table is the fallback is stated here by the name.
+- [x] Pass `VIEW_KINDS[view.type].flat` to `useViewHost`. The flatness follows the view's own kind, which is what every settings pane reads after Task 1.4, so the seat and the panes agree.
+- [x] `setChrome` keeps its Cards test as `view.type === 'cards'`: Set Cards are a Cards feature, not a flatness consequence.
+- [x] Render `<Renderer host={host} />`.
 
 **AFTER**
 
@@ -231,9 +231,9 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes.
-- [ ] `grep -c "isCards" Core/Views/Host/ViewHost.tsx` → 0.
-- [ ] `npx vitest run Core/Views/Host Core/Views/manualOrderDrops.test.tsx Core/Views/Table` passes untouched, including "a cards view with Sets present mounts the renderer".
+- [x] Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -c "isCards" Core/Views/Host/ViewHost.tsx` → 0.
+- [x] `npx vitest run Core/Views/Host Core/Views/manualOrderDrops.test.tsx Core/Views/Table` passes untouched, including "a cards view with Sets present mounts the renderer".
 
 #### Task 1.3
 
@@ -261,10 +261,10 @@ The five fallback sites each read `iconNameOr(v.icon, 'table')` (or `view.icon`)
 
 **CHANGE**
 
-- [ ] Add `viewGlyph(view: Pick<SavedView, 'icon' | 'type'>): string` returning `asRenderableIcon(view.icon) ?? VIEW_KINDS[view.type].icon` (import `asRenderableIcon` from `@pommora/uix/Symbols`).
-- [ ] `iconForTypeSwitch(view: Pick<SavedView, 'icon' | 'type'>, newType: ViewType): string | undefined` reads the registry for both the old and new glyph; the `glyphOf` parameter and the `IconName` import go. The two stay separate functions: `viewGlyph` treats a non-renderable icon string as absent, while a kind switch must treat it as custom and leave it alone.
-- [ ] Each of the five sites calls `viewGlyph(v)` (or `viewGlyph(view)`) in place of the `iconNameOr(…, 'table')` expression; `ViewTile.tsx`'s local `viewIcon` const is deleted and its four call sites read `viewGlyph`. Drop the `iconNameOr` import from any file where it has no other reader.
-- [ ] Rewrite `viewIcon.test.ts` without the fixture: the three existing `iconForTypeSwitch` cases on the new signature, plus one `viewGlyph` case: an icon-less `cards` view resolves to `cards-grid`, a view carrying `'star'` resolves to `'star'`.
+- [x] Add `viewGlyph(view: Pick<SavedView, 'icon' | 'type'>): string` returning `asRenderableIcon(view.icon) ?? VIEW_KINDS[view.type].icon` (import `asRenderableIcon` from `@pommora/uix/Symbols`).
+- [x] `iconForTypeSwitch(view: Pick<SavedView, 'icon' | 'type'>, newType: ViewType): string | undefined` reads the registry for both the old and new glyph; the `glyphOf` parameter and the `IconName` import go. The two stay separate functions: `viewGlyph` treats a non-renderable icon string as absent, while a kind switch must treat it as custom and leave it alone.
+- [x] Each of the five sites calls `viewGlyph(v)` (or `viewGlyph(view)`) in place of the `iconNameOr(…, 'table')` expression; `ViewTile.tsx`'s local `viewIcon` const is deleted and its four call sites read `viewGlyph`. Drop the `iconNameOr` import from any file where it has no other reader.
+- [x] Rewrite `viewIcon.test.ts` without the fixture: the three existing `iconForTypeSwitch` cases on the new signature, plus one `viewGlyph` case: an icon-less `cards` view resolves to `cards-grid`, a view carrying `'star'` resolves to `'star'`.
 
 **AFTER**
 
@@ -285,10 +285,10 @@ export function iconForTypeSwitch(view: Glyphed, newType: ViewType): string | un
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes; no file still imports `iconNameOr` without using it.
-- [ ] `grep -rn "iconNameOr(v.icon, 'table')\|iconNameOr(view.icon, 'table')" Core --include='*.ts' --include='*.tsx'` → 0.
-- [ ] `grep -rn "viewGlyph(" Core --include='*.tsx' | wc -l` → 8 (ViewFrame, ViewMenu, SettingsFrame, TileHost, ViewTile ×4).
-- [ ] `npx vitest run Core/Views/viewIcon.test.ts Core/Views/Settings Core/Tiles` passes.
+- [x] Check the work for unnecessary code or obvious mistakes; no file still imports `iconNameOr` without using it.
+- [x] `grep -rn "iconNameOr(v.icon, 'table')\|iconNameOr(view.icon, 'table')" Core --include='*.ts' --include='*.tsx'` → 0.
+- [x] `grep -rn "viewGlyph(" Core --include='*.tsx' | wc -l` → 8 (ViewFrame, ViewMenu, SettingsFrame, TileHost, ViewTile ×4).
+- [x] `npx vitest run Core/Views/viewIcon.test.ts Core/Views/Settings Core/Tiles` passes.
 - [ ] User confirms: a view whose sidecar has no `icon` key draws its kind's glyph in the View menu and the view list, not the table glyph.
 
 #### Task 1.4
@@ -340,12 +340,12 @@ In `LayoutFrame.tsx` the Layout leaf tests `view.type === 'cards'` to choose `CA
 
 **CHANGE**
 
-- [ ] `LayoutFrame.tsx`: delete `TYPE_ORDER`, `TYPE_GLYPH`, and `IMPLEMENTED`; drop the `IconName` type import if nothing else in the file reads it.
-- [ ] `setType` calls `iconForTypeSwitch(view, type)`.
-- [ ] The grid maps `VIEW_TYPES`; `aria-label={VIEW_KINDS[t].label}`; `onClick={() => t in VIEW_RENDERERS && setType(t)}`; the glyph is `VIEW_KINDS[t].icon`.
-- [ ] Declare `const cards = view.type === 'cards'` and `const switches = cards ? CARD_SWITCHES : TABLE_SWITCHES` once after `saveView`; the footing and the Layout leaf read `cards`; the Layout leaf's `VisibilityList` footer and the flat door both read `switches`, which fixes the flat door's inverted test.
-- [ ] `subGrouping={!VIEW_KINDS[view.type].flat}` on the `GroupFrame` in `LayoutFrame.tsx` and in `SettingsFrame.tsx`.
-- [ ] `GroupFrame.tsx`: the None row is offered when `VIEW_KINDS[view.type].flat`; `SortFrame.tsx`: the Location sort is offered when `VIEW_KINDS[view.type].flat`.
+- [x] `LayoutFrame.tsx`: delete `TYPE_ORDER`, `TYPE_GLYPH`, and `IMPLEMENTED`; drop the `IconName` type import if nothing else in the file reads it.
+- [x] `setType` calls `iconForTypeSwitch(view, type)`.
+- [x] The grid maps `VIEW_TYPES`; `aria-label={VIEW_KINDS[t].label}`; `onClick={() => t in VIEW_RENDERERS && setType(t)}`; the glyph is `VIEW_KINDS[t].icon`.
+- [x] Declare `const cards = view.type === 'cards'` and `const switches = cards ? CARD_SWITCHES : TABLE_SWITCHES` once after `saveView`; the footing and the Layout leaf read `cards`; the Layout leaf's `VisibilityList` footer and the flat door both read `switches`, which fixes the flat door's inverted test.
+- [x] `subGrouping={!VIEW_KINDS[view.type].flat}` on the `GroupFrame` in `LayoutFrame.tsx` and in `SettingsFrame.tsx`.
+- [x] `GroupFrame.tsx`: the None row is offered when `VIEW_KINDS[view.type].flat`; `SortFrame.tsx`: the Location sort is offered when `VIEW_KINDS[view.type].flat`.
 
 **AFTER**
 
@@ -398,18 +398,18 @@ In `LayoutFrame.tsx` the Layout leaf tests `view.type === 'cards'` to choose `CA
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes.
-- [ ] `grep -rn "TYPE_ORDER\|TYPE_GLYPH\|IMPLEMENTED" Core/Views --include='*.ts' --include='*.tsx'` → 0.
-- [ ] `grep -rn "view.type ===\|view.type !==" Core/Views Core/Tiles --include='*.tsx' | grep -v '\.test\.' | wc -l` → 2.
-- [ ] `npx vitest run Core/Views/Settings` passes.
+- [x] Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -rn "TYPE_ORDER\|TYPE_GLYPH\|IMPLEMENTED" Core/Views --include='*.ts' --include='*.tsx'` → 0.
+- [x] `grep -rn "view.type ===\|view.type !==" Core/Views Core/Tiles --include='*.tsx' | grep -v '\.test\.' | wc -l` → 2.
+- [x] `npx vitest run Core/Views/Settings` passes.
 - [ ] User confirms: the six tiles look as they did; clicking List, Gallery, Calendar, or Timeline does nothing; switching Table ↔ Cards re-icons a view still on its default glyph and leaves a custom one alone.
 
 #### Review Checkpoint
 
-- [ ] Every Baseline grep under Phase 1's files reads its target count.
-- [ ] `npm run typecheck`, `npm run test`, `npm run lint` green; `Core/Contract/engineGraph.test.ts` unchanged in its three assertions.
+- [x] Every Baseline grep under Phase 1's files reads its target count.
+- [x] `npm run typecheck`, `npm run test`, `npm run lint` green; `Core/Contract/engineGraph.test.ts` unchanged in its three assertions.
 - [ ] User's three hand-checks from Tasks 1.3 and 1.4 confirmed.
-- [ ] `git diff --shortstat` for the phase shows deletions exceeding insertions.
+- [ ] `git diff --shortstat` for the phase shows deletions exceeding insertions. Carried as Deviations' first entry.
 
 ### Phase 2 — The Host Row List
 
@@ -445,8 +445,8 @@ In `LayoutFrame.tsx` the Layout leaf tests `view.type === 'cards'` to choose `CA
 
 **CHANGE**
 
-- [ ] Collect `ordered: { id: string; groupKey: string }[]` in the same loop, pushing `{ id: r.id, groupKey: g.key }` as each row is mapped, and return it as `paintOrder`. The pair shape is what `TableRowDnd`'s `rows` prop takes, so Table passes it through untouched.
-- [ ] Add `paintOrder` to the hook's returned object beside `rowById` and `rowBand`.
+- [x] Collect `ordered: { id: string; groupKey: string }[]` in the same loop, pushing `{ id: r.id, groupKey: g.key }` as each row is mapped, and return it as `paintOrder`. The pair shape is what `TableRowDnd`'s `rows` prop takes, so Table passes it through untouched.
+- [x] Add `paintOrder` to the hook's returned object beside `rowById` and `rowBand`.
 
 **AFTER**
 
@@ -472,8 +472,8 @@ In `LayoutFrame.tsx` the Layout leaf tests `view.type === 'cards'` to choose `CA
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes; the walk is still one walk.
-- [ ] `npx vitest run Core/Views/Host` passes.
+- [x] Check the work for unnecessary code or obvious mistakes; the walk is still one walk.
+- [x] `npx vitest run Core/Views/Host` passes.
 
 #### Task 2.2
 
@@ -489,13 +489,13 @@ The file declares `flattenGroups(groups: ResolvedGroup[]): ViewRow[]` at its foo
 
 **CHANGE**
 
-- [ ] Destructure `paintOrder` from `host` beside `rowById` and `rowBand`.
-- [ ] `locByRow` iterates `rowById.values()` (order is irrelevant to a map); its dependency array keeps `groups`, since `rowById` is memoized on `groups` and nothing else in the memo changed.
-- [ ] `bandRowsWithout` reads `(groups.find((g) => g.key === bandKey)?.items ?? []).filter(…)`.
-- [ ] `reorderInBandByIndex`: `flattenGroups([g])` → `g.items`; `painted` → `paintOrder.map((r) => r.id)`.
-- [ ] `onCardDrop`: `from` → `rowBand.get(activeId)`; `bandRows` → `groups.find((g) => g.key === toZone)?.items ?? []`.
-- [ ] The band render reads `g.items` in place of `flattenGroups([g])`.
-- [ ] Delete `flattenGroups`. Drop the `ResolvedGroup` type import if nothing else in the file reads it.
+- [x] Destructure `paintOrder` from `host` beside `rowById` and `rowBand`.
+- [x] `locByRow` iterates `rowById.values()` (order is irrelevant to a map); its dependency array keeps `groups`, since `rowById` is memoized on `groups` and nothing else in the memo changed.
+- [x] `bandRowsWithout` reads `(groups.find((g) => g.key === bandKey)?.items ?? []).filter(…)`.
+- [x] `reorderInBandByIndex`: `flattenGroups([g])` → `g.items`; `painted` → `paintOrder.map((r) => r.id)`.
+- [x] `onCardDrop`: `from` → `rowBand.get(activeId)`; `bandRows` → `groups.find((g) => g.key === toZone)?.items ?? []`.
+- [x] The band render reads `g.items` in place of `flattenGroups([g])`.
+- [x] Delete `flattenGroups`. Drop the `ResolvedGroup` type import if nothing else in the file reads it.
 
 **AFTER**
 
@@ -503,10 +503,10 @@ The file declares `flattenGroups(groups: ResolvedGroup[]): ViewRow[]` at its foo
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes.
-- [ ] `grep -c "flattenGroups" Core/Views/Cards/CardsView.tsx` → 0.
-- [ ] `npx vitest run Core/Views/manualOrderDrops.test.tsx Core/Views/Host` passes untouched, including both Cards drop cases.
-- [ ] `wc -l Core/Views/Cards/CardsView.tsx` reads below 1359.
+- [x] Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -c "flattenGroups" Core/Views/Cards/CardsView.tsx` → 0.
+- [x] `npx vitest run Core/Views/manualOrderDrops.test.tsx Core/Views/Host` passes untouched, including both Cards drop cases.
+- [x] `wc -l Core/Views/Cards/CardsView.tsx` reads below 1359.
 
 #### Task 2.3
 
@@ -537,10 +537,10 @@ The file declares `flattenGroups(groups: ResolvedGroup[]): ViewRow[]` at its foo
 
 **CHANGE**
 
-- [ ] Destructure `paintOrder` from `host` beside `rowById` and `rowBand`.
-- [ ] Delete the memo; `TableRowDnd` takes `rows={paintOrder}`.
-- [ ] The three `rowPath.get(x)` reads become `rowById.get(x)?.path`.
-- [ ] Drop the `ResolvedGroup` type import if nothing else in the file reads it.
+- [x] Destructure `paintOrder` from `host` beside `rowById` and `rowBand`.
+- [x] Delete the memo; `TableRowDnd` takes `rows={paintOrder}`.
+- [x] The three `rowPath.get(x)` reads become `rowById.get(x)?.path`.
+- [x] Drop the `ResolvedGroup` type import if nothing else in the file reads it.
 
 **AFTER**
 
@@ -551,10 +551,10 @@ The file declares `flattenGroups(groups: ResolvedGroup[]): ViewRow[]` at its foo
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes.
-- [ ] `grep -c "rowPath\|dataRows" Core/Views/Table/TableView.tsx` → 0.
-- [ ] `npx vitest run Core/Views/Table Core/Views/manualOrderDrops.test.tsx` passes untouched.
-- [ ] `wc -l Core/Views/Table/TableView.tsx` reads below 1438.
+- [x] Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -c "rowPath\|dataRows" Core/Views/Table/TableView.tsx` → 0.
+- [x] `npx vitest run Core/Views/Table Core/Views/manualOrderDrops.test.tsx` passes untouched.
+- [x] `wc -l Core/Views/Table/TableView.tsx` reads below 1438.
 
 ### Phase 3 — The Record
 
@@ -572,12 +572,12 @@ The opening says six types "are registered in `Core/Views/views.ts`"; The View H
 
 **CHANGE**
 
-- [ ] Opening paragraph: the six kinds are one registry, `VIEW_KINDS` in `views.ts`, each carrying its label, icon, and whether it lays structural groups flat; Table and Cards have renderers in `ViewHost`'s `VIEW_RENDERERS`.
-- [ ] The View Host paragraph: the seat reads the kind's flatness from the registry and hands it to the host; a renderer never switches on a view's type. Rewrite the sentence in place; don't append.
-- [ ] Grouping and Sorting: "a flat kind" in place of "a cards view" for the None row and the Location sort, keeping the Sub-Group drop with it.
-- [ ] The unbuilt section: registered with no renderer; their tiles are inert; a view carrying one seats the default kind's renderer, Table.
-- [ ] In The Saved-View Model, where `icon` is named: a view without an icon of its own draws its kind's glyph.
-- [ ] `FrameworkPM.md`'s v0.6 sentence ("registered types with none, and their picker tiles are inert") stays true and is not touched.
+- [x] Opening paragraph: the six kinds are one registry, `VIEW_KINDS` in `views.ts`, each carrying its label, icon, and whether it lays structural groups flat; Table and Cards have renderers in `ViewHost`'s `VIEW_RENDERERS`.
+- [x] The View Host paragraph: the seat reads the kind's flatness from the registry and hands it to the host; a renderer never switches on a view's type. Rewrite the sentence in place; don't append.
+- [x] Grouping and Sorting: "a flat kind" in place of "a cards view" for the None row and the Location sort, keeping the Sub-Group drop with it.
+- [x] The unbuilt section: registered with no renderer; their tiles are inert; a view carrying one seats the default kind's renderer, Table.
+- [x] In The Saved-View Model, where `icon` is named: a view without an icon of its own draws its kind's glyph.
+- [x] `FrameworkPM.md`'s v0.6 sentence ("registered types with none, and their picker tiles are inert") stays true and is not touched.
 
 **AFTER**
 
@@ -585,8 +585,8 @@ Each named claim reads as its CHANGE bullet states, in the paragraph it already 
 
 **VERIFY**
 
-- [ ] `grep -n "falls through\|without the host ever switching\|A cards view drops\|A cards view adds" .claude/Features/ViewTypesPM.md` → 0.
-- [ ] Read each rewritten paragraph once whole; nothing beside the rewrite contradicts it.
+- [x] `grep -n "falls through\|without the host ever switching\|A cards view drops\|A cards view adds" .claude/Features/ViewTypesPM.md` → 0.
+- [x] Read each rewritten paragraph once whole; nothing beside the rewrite contradicts it.
 
 #### Task 3.2
 
@@ -600,9 +600,9 @@ The audit's Topic 6 Change list item 3 reads "Scope the ghost's rect reads to th
 
 **CHANGE**
 
-- [ ] Audit Topic 6: trim item 3 to its ghost-rect half; delete item 4 and renumber; drop "40 lines of view-kind lists" from Deletes; rewrite the Found sentence so it no longer claims twelve places or a missing registry, keeping the two-renderer and interaction-layer claims; drop R-34 from the Findings line; delete R-34's table row; delete D-6 and its Recommendation; R-36 keeps its ghost-rect half and drops "and re-flattens the group tree it was handed", with the CardsView citation kept and `useViewHost.ts` dropped from its citation.
-- [ ] `ContextPM.md`: Current Focus's audit paragraph stays as written (the renderer fold is still what follows). Recent Work gains PM-136 at the top under the History heading and date with a three-to-four-sentence summary, and the oldest of the five drops off.
-- [ ] `HistoryPM.md`: index row and entry PM-136 per `History-Format.md` (`~/The Studio/.claude/references/`), titled for what changed (the view-kind registry and the host paint order), dated 09-10-2026 or the range the commits span, with the commit range and the diff from the report.
+- [x] Audit Topic 6: trim item 3 to its ghost-rect half; delete item 4 and renumber; drop "40 lines of view-kind lists" from Deletes; rewrite the Found sentence so it no longer claims twelve places or a missing registry, keeping the two-renderer and interaction-layer claims; drop R-34 from the Findings line; delete R-34's table row; delete D-6 and its Recommendation; R-36 keeps its ghost-rect half and drops "and re-flattens the group tree it was handed", with the CardsView citation kept and `useViewHost.ts` dropped from its citation.
+- [x] `ContextPM.md`: Current Focus's audit paragraph stays as written (the renderer fold is still what follows). Recent Work gains PM-136 at the top under the History heading and date with a three-to-four-sentence summary, and the oldest of the five drops off.
+- [x] `HistoryPM.md`: index row and entry PM-136 per `History-Format.md` (`~/The Studio/.claude/references/`), titled for what changed (the view-kind registry and the host paint order), dated 09-10-2026 or the range the commits span, with the commit range and the diff from the report.
 
 **AFTER**
 
@@ -610,47 +610,47 @@ The audit no longer lists R-34 or D-6; R-36 and Change item 3 are each one claim
 
 **VERIFY**
 
-- [ ] `grep -n "R-34\|D-6\|twelve places\|re-flattens\|per-drop group flattening" ".claude/Planning/Codebase Audit — Report.md"` → 0.
-- [ ] `grep -c "PM-136" .claude/HistoryPM.md` → 2 (index row and heading); `grep -c "PM-136" .claude/ContextPM.md` → 1.
+- [x] `grep -n "R-34\|D-6\|twelve places\|re-flattens\|per-drop group flattening" ".claude/Planning/Codebase Audit — Report.md"` → 0.
+- [x] `grep -c "PM-136" .claude/HistoryPM.md` → 2 (index row and heading); `grep -c "PM-136" .claude/ContextPM.md` → 1.
 
 ### Completion Criteria
 
 **Conformance**
-- [ ] One statement of the kind set: `grep -rn "'gallery'" Core/Views Core/Tiles --include='*.ts' --include='*.tsx' | grep -v '\.test\.'` → `views.ts` only.
-- [ ] One statement of which kinds are built: `VIEW_RENDERERS` in `ViewHost.tsx`; `grep -rn "IMPLEMENTED" Core/Views` → 0.
-- [ ] Nothing changed outside what the plan named: `git diff --name-only a5232d67b..HEAD` matches the FILES lists and the Phase 3 documents.
-- [ ] `views.ts` imports nothing new; `engineGraph.test.ts` passes with its three assertions unchanged.
+- [x] One statement of the kind set: `grep -rn "'gallery'" Core/Views Core/Tiles --include='*.ts' --include='*.tsx' | grep -v '\.test\.'` → `views.ts` only.
+- [x] One statement of which kinds are built: `VIEW_RENDERERS` in `ViewHost.tsx`; `grep -rn "IMPLEMENTED" Core/Views` → 0.
+- [x] Nothing changed outside what the plan named: `git diff --name-only a5232d67b..HEAD` matches the FILES lists and the Phase 3 documents.
+- [x] `views.ts` imports nothing new; `engineGraph.test.ts` passes with its three assertions unchanged.
 
 **Correctness**
 - [ ] A view with no `icon` draws its kind's glyph in the View menu, the view list, the Settings header, the tile picker, and the view tile (user's check, Task 1.3).
 - [ ] The four unbuilt tiles look unchanged and do nothing on click (user's check, Task 1.4).
-- [ ] A sidecar hand-edited to `type: 'list'` opens as a Table with the Table switches in the flat Settings door.
-- [ ] Both renderers drag, drop, reorder, relocate, create, and open exactly as before: every existing view suite passes without an edit.
+- [x] A sidecar hand-edited to `type: 'list'` opens as a Table with the Table switches in the flat Settings door.
+- [x] Both renderers drag, drop, reorder, relocate, create, and open exactly as before: every existing view suite passes without an edit.
 
 **Completeness**
-- [ ] Every task ticked; no scaffolding, debug output, or TODO in `a5232d67b..HEAD`.
+- [x] Every task ticked; no scaffolding, debug output, or TODO in `a5232d67b..HEAD`.
 
 **Confirmation**
-- [ ] Every VERIFY result read; `viewIcon.test.ts`'s `viewGlyph` case goes red with the resolver's fallback removed.
+- [x] Every VERIFY result read; `viewIcon.test.ts`'s `viewGlyph` case goes red with the resolver's fallback removed.
 - [ ] User: icon-less view glyph · inert tiles unchanged · Table ↔ Cards re-icon.
 
 **Continuity**
-- [ ] Reconciliation complete; `ViewTypesPM.md`, the audit report, `ContextPM.md`, and `HistoryPM.md` read true; Deviations each fixed or ruled on.
+- [x] Reconciliation complete; `ViewTypesPM.md`, the audit report, `ContextPM.md`, and `HistoryPM.md` read true; Deviations each fixed or ruled on.
 
 **Confidence**
-- [ ] Gates green from clean on `a5232d67b..HEAD`; every Baseline count moved as stated.
-- [ ] Diff size as the plan implied: a net decrease, comments and tests excluded, reported as +/- in the closing report.
+- [x] Gates green from clean on `a5232d67b..HEAD`; every Baseline count moved as stated.
+- [x] Diff size as the plan implied: a net decrease, comments and tests excluded, reported as +/- in the closing report.
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to the user — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `a5232d67b..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched: Phase 1 · Phase 2 · Phase 3
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `a5232d67b..HEAD`
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -675,9 +675,10 @@ Per Writing-Plans-V3 §5.5: the plain-language report with Phase by Phase, Verif
 
 ### Deviations
 
-- **Phase 1's own shortstat is net positive.** The Review Checkpoint asks for deletions exceeding insertions within the phase, but the registry (`views.ts`, +17) is the plan's one net addition and Phase 1 holds none of the Phase 2 deletions that offset it. Core-only for the phase: 150 insertions, 135 deletions, of which about 45 lines are Biome reindenting `LayoutFrame.tsx`'s footing block. Carried as written; the plan's net figure is measured on the full range.
+- **Phase 1's own shortstat is net positive.** The Review Checkpoint asks for deletions exceeding insertions within the phase, but the registry (`views.ts`, +17) is the plan's one net addition and Phase 1 holds none of the Phase 2 deletions that offset it. Core-only for the phase: 151 insertions, 136 deletions, of which about 45 lines are Biome reindenting `LayoutFrame.tsx`'s footing block. Carried as written; the plan's net figure is measured on the full range.
 - **`GroupFrame.tsx` derives its sub-grouping from its own `flat` read.** Task 1.4 had `LayoutFrame.tsx` and `SettingsFrame.tsx` pass `subGrouping={!VIEW_KINDS[view.type].flat}` into a pane that already reads `VIEW_KINDS[view.type].flat` for its None row; the closeout's simplification pass folded the prop, so the fact is read once and the two callers pass nothing. `ViewTileScope.test.tsx` dropped the prop from its one `GroupFrame` mount; the fixture is a table, so the default it exercised is unchanged.
 - **`ContextPM.md`'s Recent Work gained PM-135 alongside PM-136.** Task 3.2 assumed the five entries there were the five latest History entries; PM-135 had never been added, so both went in and PM-131 and PM-130 dropped off.
 - **The published audit page was republished.** The plan's Reconciliation named only the Markdown report; `ContextPM.md` states the published page mirrors it, so the same R-34, D-6, Change-list, Deletes, Found, and R-36 edits were mirrored there, with the open and closed counts moved to 23 and 49.
+- **`ViewKind` is not exported.** Task 1.1's AFTER block exports the interface; nothing outside `views.ts` reads it, so it stays file-local.
 - **`LayoutFrame.tsx`'s Layout leaf reads `switches` in its Cards branch too.** Task 1.4 named only the `VisibilityList` footer and the flat door as `switches` readers; the leaf's Cards branch sits inside the same `cards` test, so it reads `switches` as well and `CARD_SWITCHES` and `TABLE_SWITCHES` have one reader each.
 
