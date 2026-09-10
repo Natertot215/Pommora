@@ -370,14 +370,14 @@ export function BlockMenu(props: {
 
 #### Gate 2 — the pane on screen · **declared stop**
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
-- [ ] Every task that diverged had its dependents re-derived and rewritten.
-- [ ] `rg -F "BlockMenu" Core/MarkdownPM/Tables` → 0. Control: `rg -F "AutocompletePane" Core/MarkdownPM/Tables` → 1.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/MarkdownPM/Menus/` and `Core/MarkdownPM/MarkdownEditor.tsx`; the reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in; lessons written into the later tasks they change.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [x] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
+- [x] Every task that diverged had its dependents re-derived and rewritten.
+- [x] `rg -F "BlockMenu" Core/MarkdownPM/Tables` → 0. Control: `rg -F "AutocompletePane" Core/MarkdownPM/Tables` → 1.
+- [x] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/MarkdownPM/Menus/` and `Core/MarkdownPM/MarkdownEditor.tsx`; the reports cite files inside it.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in; lessons written into the later tasks they change.
 - [ ] **Declared stop.** Execution halts until Nathan closes Task 5's user boxes and Task 2's carried box, or redirects the layout.
 
 ---
@@ -447,6 +447,7 @@ export function BlockMenu(props: {
 - 09-09-2026, Claude (routine, disclosed): the blank-line no-op is fixed in `selectedLines` for the caret-only case, repairing the context menu's Heading and Lists rows on an empty line as well.
 - 09-09-2026, Claude (routine, disclosed): Escape is a one-shot dismissal; the next edit on the line re-detects and reopens, as the `[[` pane does. No dismissed-offset latch.
 - 09-09-2026, Claude (routine, disclosed): the trigger refuses a math block and the citations run as well as code, mirroring the two seat predicates beside it; the context menu still offers its rows there, which is its own exposure and not this plan's.
+- 09-09-2026, Claude (routine, disclosed): an unclosed `$$` line does not seal the lines below it — the document model pairs display math like fences but records only closed pairs — so the trigger opens there, exactly as `embedSeatAt` admits it. The two predicates stay identical.
 
 ### Open Against Later Tasks
 
@@ -457,6 +458,7 @@ export function BlockMenu(props: {
 - Task 5: the flow test's red run was five behavioral failures and two trivially green negative cases, not module-not-found; the test drives `mountEditor` and imports none of the new modules, so it cannot fail to resolve them.
 - Task 4: the fence, math, and table refusal that `blockQueryAt` and `embedSeatAt` each spelled out is one `inSealedBlockAt` in `Engine/docScan.ts`, read by both; `Embeds/embedInsert.ts` changed for it. Gate 2 simplification.
 - Task 5: the selection cursor and its `AcCtl` were written once more in `useBlockMenu`; both panes now share `useMenuCtl` and `CLOSED_GEOMETRY` from `useConnectionAutocomplete.ts`. Gate 2 simplification.
+- Task 5: a mousedown on a pane held through its exit animation applied a block against the closed render's range; both panes' picks now refuse unless the shared ctl reads open. The connection pane carried the same hole and took the same line. Gate 2 attack.
 
 ### Lessons
 

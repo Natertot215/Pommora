@@ -64,6 +64,25 @@ describe('the picker stands down when it has nothing to add', () => {
     expect(document.querySelector('.mdpm-ac')).toBeNull()
   })
 
+  it('refuses a click on a row held through the closing animation', async () => {
+    const view = await mountEditor({ initialBody: '[[Alp]]', connections: conn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    await act(async () => {
+      view.dispatch({ changes: { from: 5, insert: 'ha' }, selection: { anchor: 7 } })
+    })
+    const held = document.querySelector('.mdpm-ac .mdpm-autocomplete-match')
+    expect(held).toBeTruthy()
+    await act(async () => {
+      held?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+    })
+    expect(view.state.doc.toString()).toBe('[[Alpha]]')
+  })
+
   it('but a partial query still opens it', async () => {
     const view = await mountEditor({ initialBody: '[[Alp]]', connections: conn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)

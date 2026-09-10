@@ -49,6 +49,17 @@ async function press(view: EditorView, key: string): Promise<void> {
   })
 }
 
+const marks = (): string[] =>
+  [...document.querySelectorAll('.mdpm-block-menu .mdpm-autocomplete-match')].map(
+    (m) => m.textContent ?? '',
+  )
+
+async function click(row: Element | undefined): Promise<void> {
+  await act(async () => {
+    row?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+  })
+}
+
 async function gone(): Promise<void> {
   const deadline = Date.now() + 2000
   while (pane() !== null && Date.now() < deadline)
@@ -123,5 +134,53 @@ describe('picking a row writes the block and leaves one undo step', () => {
     const doc = view.state.doc.toString()
     expect(doc).toBe(serialize(emptyTable(3, 3)))
     expect(doc).not.toContain('/')
+  })
+
+  it('writes the table from a click on its row', async () => {
+    const view = await open('')
+    await type(view, '/tab')
+    expect(rows()).toHaveLength(1)
+    await click(rows()[0])
+    const doc = view.state.doc.toString()
+    expect(doc).toBe(serialize(emptyTable(3, 3)))
+    expect(doc).not.toContain('/')
+    await act(async () => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe('')
+  })
+})
+
+describe('a row held through the closing animation picks nothing', () => {
+  it('refuses the click that lands after Escape', async () => {
+    const view = await open('')
+    await type(view, '/')
+    await press(view, 'Escape')
+    expect(rows().length).toBeGreaterThan(0)
+    await click(rows()[0])
+    expect(view.state.doc.toString()).toBe('/')
+  })
+
+  it('refuses the click that lands after the query matched nothing', async () => {
+    const view = await open('')
+    await type(view, '/quo')
+    expect(rows().length).toBeGreaterThan(0)
+    await click(rows()[0])
+    expect(view.state.doc.toString()).toBe('/quo')
+  })
+})
+
+describe('the query is emphasized where each row matched it', () => {
+  it('marks the matched word, not the start of the label', async () => {
+    const view = await open('')
+    await type(view, '/bl')
+    expect(marks()).toEqual(['Bl', 'Bl'])
+    expect(rows()[1]?.textContent).toBe('Code Block')
+  })
+
+  it('marks the leading letters when that is where the word starts', async () => {
+    const view = await open('')
+    await type(view, '/hea')
+    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
   })
 })

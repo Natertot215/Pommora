@@ -59,7 +59,7 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
 
   const pick = (action: BlockMenuAction): void => {
     const view = viewRef.current
-    if (!view || !state) return
+    if (!view || !state || !ctl.current.open) return
     view.dispatch({
       changes: { from: state.from, to: state.to, insert: '' },
       annotations: Transaction.addToHistory.of(false),
