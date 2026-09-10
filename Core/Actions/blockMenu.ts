@@ -12,13 +12,19 @@ export type BlockMenuAction =
 
 export interface BlockMenuSection {
   title: string
-  rows: ActionItem<BlockMenuAction>[]
+  rows: readonly ActionItem<BlockMenuAction>[]
 }
 
 export interface BlockMenuMatch {
   title: string
-  rows: (ActionItem<BlockMenuAction> & { at: number })[]
+  rows: readonly (ActionItem<BlockMenuAction> & { at: number })[]
 }
+
+const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.slice(1).map((h) => ({
+  label: h.label,
+  action: `heading:${h.level}` as BlockMenuAction,
+  icon: `heading-${h.level}`,
+}))
 
 const LIST_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Bullet List', action: 'list:bullet', icon: 'list' },
@@ -47,22 +53,14 @@ const EMBED_ROWS: readonly ActionItem<BlockMenuAction>[] = [
 
 export function blockMenuSections(citeSeat: boolean): BlockMenuSection[] {
   return [
-    {
-      title: 'Headings',
-      rows: HEADING_LEVELS.slice(1).map((h) => ({
-        label: h.label,
-        action: `heading:${h.level}` as BlockMenuAction,
-        icon: `heading-${h.level}`,
-      })),
-    },
-    { title: 'Lists', rows: [...LIST_ROWS] },
-    { title: 'Insert', rows: [...INSERT_ROWS, ...(citeSeat ? [FOOTNOTE_ROW] : [])] },
-    { title: 'Embed', rows: [...EMBED_ROWS] },
+    { title: 'Headings', rows: HEADING_ROWS },
+    { title: 'Lists', rows: LIST_ROWS },
+    { title: 'Insert', rows: citeSeat ? [...INSERT_ROWS, FOOTNOTE_ROW] : INSERT_ROWS },
+    { title: 'Embed', rows: EMBED_ROWS },
   ]
 }
 
 function wordStart(label: string, query: string): number | null {
-  if (query === '') return 0
   for (const m of label.matchAll(/\S+/g)) {
     if (m[0].toLowerCase().startsWith(query)) return m.index
   }
@@ -73,7 +71,7 @@ export function filterBlockMenu(sections: BlockMenuSection[], query: string): Bl
   const q = query.toLowerCase()
   const out: BlockMenuMatch[] = []
   for (const s of sections) {
-    const rows: BlockMenuMatch['rows'] = []
+    const rows: (ActionItem<BlockMenuAction> & { at: number })[] = []
     for (const row of s.rows) {
       const at = wordStart(row.label, q)
       if (at !== null) rows.push({ ...row, at })
