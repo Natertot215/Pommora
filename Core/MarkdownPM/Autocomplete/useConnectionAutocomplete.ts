@@ -13,25 +13,29 @@ import { normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/conne
 import { restedOnLink } from '../Gestures/linkGestures'
 import type { EditorHost } from '../api'
 
-export interface AcState extends AutocompleteQuery {
+export interface CaretGeometry {
   caretX: number
   caretTop: number
   caretBottom: number
   bounds: { left: number; right: number }
 }
 
-interface AcCtl {
+export interface AcState extends AutocompleteQuery, CaretGeometry {}
+
+export interface AcCtl {
   open: boolean
   pick: () => void
   move: (d: number) => void
   close: () => void
 }
 
-export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => (): boolean => {
-  if (!ctl.current.open) return false
-  drive(ctl.current)
-  return true
-}
+export const whenAcOpen =
+  (ctls: readonly RefObject<AcCtl>[], drive: (c: AcCtl) => void) => (): boolean => {
+    const open = ctls.find((r) => r.current.open)?.current
+    if (!open) return false
+    drive(open)
+    return true
+  }
 
 interface ConnectionAutocomplete {
   ac: AcState | null
@@ -128,6 +132,18 @@ function surfaceOf(view: EditorView): HTMLElement {
   return found
 }
 
+export function caretGeometry(view: EditorView, pos: number): CaretGeometry | null {
+  const c = view.coordsAtPos(pos)
+  if (!c) return null
+  const b = surfaceOf(view).getBoundingClientRect()
+  return {
+    caretX: Math.round(c.left),
+    caretTop: Math.round(c.top),
+    caretBottom: Math.round(c.bottom),
+    bounds: { left: Math.round(b.left), right: Math.round(b.right) },
+  }
+}
+
 export function detectConnectionQuery(
   view: EditorView,
   setAc: (s: AcState | null) => void,
@@ -137,17 +153,8 @@ export function detectConnectionQuery(
   let next: AcState | null = null
   if (sel.empty) {
     const q = autocompleteQuery(docScan(view.state.doc), sel.head, allowEmbeds)
-    const c = q && view.coordsAtPos(sel.head)
-    if (q && c) {
-      const b = surfaceOf(view).getBoundingClientRect()
-      next = {
-        ...q,
-        caretX: Math.round(c.left),
-        caretTop: Math.round(c.top),
-        caretBottom: Math.round(c.bottom),
-        bounds: { left: Math.round(b.left), right: Math.round(b.right) },
-      }
-    }
+    const g = q && caretGeometry(view, sel.head)
+    if (q && g) next = { ...q, ...g }
   }
   setAc(next)
 }
