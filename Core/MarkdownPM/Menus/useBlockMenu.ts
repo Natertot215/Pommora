@@ -68,15 +68,20 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
     applyEditorAction(view, EDITOR_ACTION_PREFIX + action)
   }
 
-  const { index, ctl } = useMenuCtl(rows.length, state?.query, {
-    open,
-    pick: (i) => {
-      const r = rows[i]
-      if (r) pick(r.action)
+  const { index, ctl } = useMenuCtl(
+    rows.length,
+    state?.query,
+    {
+      open,
+      pick: (i) => {
+        const r = rows[i]
+        if (r) pick(r.action)
+      },
+      close: () => setState(null),
     },
-    close: () => setState(null),
-  })
-  const selected = rows[index]?.action ?? null
+    null,
+  )
+  const selected = index === null ? null : (rows[index]?.action ?? null)
 
   return { state, setState, matches, selected, open, pick, ctl }
 }

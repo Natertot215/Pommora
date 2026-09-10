@@ -14,13 +14,13 @@ Bounded to the five sections Nathan ratified and to a line that holds nothing bu
 **Requirements**
 
 1. A model in `Core/Actions/blockMenu.ts` yields five titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
-2. A filter over the model keeps a row whose label has a word starting with the query, case-insensitively, and returns where that match begins; an empty query keeps everything; a section with no surviving rows disappears with its heading.
+2. A filter over the model matches the query, case-insensitively, against a section's title as well as its rows' labels, by the same word-start rule, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in each row label that matched on its own, and the heading label stays plain because `MenuRow`'s heading `label` is a `string`.
 3. A `/` typed as the entire text of a line, with the caret at line end, outside code, math, and the citations run, opens the pane under the caret; each further non-space character narrows it; a space, a caret move off the line, or blur closes it; Escape closes it until the next edit, as the `[[` pane does; the pane shows only while a row matches.
 4. Return or a click on a row removes the typed `/query` and applies the row's action; one undo reverts the block and leaves the blank line.
 5. `setHeading` and `setList` act on a blank line when the caret alone selects it, so Heading 2 on an empty line writes `## ` from the pane and from the context menu alike.
 6. The record: `MarkdownPM.md` carries a `Block Menu:` sub-label under Block Structure; `ContextPM.md`'s Slash Commands item closes; the grounding document leaves the tree; History gains PM-134.
 
-**Acceptance — the whole thing working:** In a Page with the dev build, on an empty line type `/hea`: a pane under the caret shows a Headings section with five rows and nothing else. Press ArrowDown once and Return: the line reads `## ` with the caret after the space and no `/hea` anywhere. Press ⌘Z once: the line is blank. Type `/` inside a code fence: nothing opens. Type `/` then a space: the pane closes. `npm run test` runs `Core/MarkdownPM/Menus/blockMenuFlow.test.tsx`, whose list under Task 5 covers each of these.
+**Acceptance — the whole thing working:** In a Page with the dev build, on an empty line type `/hea`: a pane under the caret shows a Headings section with five rows and nothing else. Press ArrowDown twice and Return: the line reads `## ` with the caret after the space and no `/hea` anywhere. Press ⌘Z once: the line is blank. Type `/` inside a code fence: nothing opens. Type `/` then a space: the pane closes. `npm run test` runs `Core/MarkdownPM/Menus/blockMenuFlow.test.tsx`, whose list under Task 5 covers each of these.
 
 **Forced By** *(what each grounded fact makes mandatory or impossible)*
 
@@ -364,7 +364,7 @@ export function BlockMenu(props: {
 
 - [ ] `/` on an empty line opens the pane under the caret with four headed sections, Headings, Lists, Insert, Embed, each row carrying its icon.
 - [ ] `/hea` leaves the five headings; `/bl` leaves Blockquote and Code Block with the matched letters emphasized in each; `/zz` shows nothing.
-- [ ] ArrowDown and ArrowUp move the highlight; Return picks the highlighted row; Escape closes; a click picks; clicking elsewhere closes; a space closes.
+- [ ] The pane opens with no row highlighted; ArrowDown and ArrowUp move the highlight; Return picks the highlighted row, or the first row while none is; Escape closes; a click picks; clicking elsewhere closes; a space closes.
 - [ ] A pick of each of the sixteen rows writes the block with no `/` left, and ⌘Z once leaves the blank line.
 - [ ] `/` mid-sentence, `> /`, `- /`, an indented `/`, `/` inside a fence, and `/` on a blank line inside the footnotes do not open it.
 
@@ -399,6 +399,24 @@ const LINK_ROWS: readonly ActionItem<BlockMenuAction>[] = [
 ]
 // Insert's rule row is { label: 'Divider', action: 'block:hr', icon: 'separator-horizontal' }
 // blockMenuSections: Headings · Lists · Link · Insert · Embed — nineteen rows seated, eighteen unseated
+
+export interface BlockMenuMatch {
+  title: string
+  at: number | null
+  rows: readonly (ActionItem<BlockMenuAction> & { at: number | null })[]
+}
+```
+
+```ts
+// Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
+export function useMenuCtl(
+  count: number,
+  resetKey: unknown,
+  drive: { open: boolean; pick: (index: number) => void; close: () => void },
+  initial: number | null = 0,
+): { index: number | null; ctl: RefObject<AcCtl> }
+// useConnectionAutocomplete keeps initial at 0 and returns acIndex: index ?? 0;
+// useBlockMenu passes null, so the pane opens with no row highlighted.
 ```
 
 ```ts
@@ -534,6 +552,8 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - 09-09-2026, Nathan: a divider written on a blank line leaves the caret on the line below the rendered rule.
 - 09-09-2026, Nathan: a quote picked on a blank line of its own takes `> `, with the caret after the space; a blank line inside a longer quote keeps the bare `>`.
 - 09-09-2026, Claude (routine, disclosed): an unclosed `$$` line does not seal the lines below it — the document model pairs display math like fences but records only closed pairs — so the trigger opens there, exactly as `embedSeatAt` admits it. The two predicates stay identical.
+- 09-09-2026, Nathan: the filter matches section titles as well as row labels, so `/link`, `/embed`, and `/list` each keep a whole section; a title match emphasizes the heading, a label match the row.
+- 09-09-2026, Nathan: the block menu opens with no row highlighted; the first row is first in line for Return, and the highlight appears only once an arrow key moves it or the pointer hovers. The `[[` pane keeps its immediate highlight.
 
 ### Open Against Later Tasks
 

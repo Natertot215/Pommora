@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
+import { itemSelected } from '@pommora/uix/Menus/menu-base.css'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
@@ -17,6 +18,8 @@ const coords = { left: 10, right: 10, top: 10, bottom: 20 }
 const pane = (): Element | null => document.querySelector('.mdpm-block-menu')
 const rows = (): NodeListOf<Element> =>
   document.querySelectorAll('.mdpm-block-menu .mdpm-block-row')
+
+const highlighted = (): Element[] => [...rows()].filter((r) => r.classList.contains(itemSelected))
 
 async function open(initialBody: string, caret = initialBody.length): Promise<EditorView> {
   const view = await mountEditor({ initialBody })
@@ -89,6 +92,22 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     expect(rows()).toHaveLength(5)
   })
 
+  it('keeps every row of a section whose title answers the query', async () => {
+    const view = await open('')
+    await type(view, '/embed')
+    const text = pane()?.textContent ?? ''
+    expect(text).toContain('Embed')
+    for (const title of ['Headings', 'Lists', 'Link', 'Insert']) expect(text).not.toContain(title)
+    expect(rows()).toHaveLength(2)
+  })
+
+  it('keeps all three link rows where only the title carries the query', async () => {
+    const view = await open('')
+    await type(view, '/link')
+    expect(pane()?.textContent ?? '').toContain('Link')
+    expect(rows()).toHaveLength(3)
+  })
+
   it('closes on a space, which no query may hold', async () => {
     const view = await open('')
     await type(view, '/ ')
@@ -117,6 +136,7 @@ describe('picking a row writes the block and leaves one undo step', () => {
   it('writes the highlighted heading and takes the query with it', async () => {
     const view = await open('')
     await type(view, '/')
+    await press(view, 'ArrowDown')
     await press(view, 'ArrowDown')
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('## ')
@@ -233,5 +253,43 @@ describe('the typed query reads as unresolved syntax', () => {
     await type(view, 'hea')
     expect(spans(view, 'md-phantom-syntax')).toEqual([])
     expect(spans(view, 'md-connection-phantom')).toEqual([])
+  })
+})
+
+describe('the block menu opens with no row highlighted', () => {
+  it('draws nothing as selected until an arrow moves the cursor', async () => {
+    const view = await open('')
+    await type(view, '/')
+    expect(rows()).toHaveLength(19)
+    expect(highlighted()).toHaveLength(0)
+  })
+
+  it('picks the first row on Return although nothing is highlighted', async () => {
+    const view = await open('')
+    await type(view, '/')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('# ')
+  })
+
+  it('highlights the first row on the first ArrowDown', async () => {
+    const view = await open('')
+    await type(view, '/')
+    await press(view, 'ArrowDown')
+    expect(highlighted().map((r) => r.textContent)).toEqual(['Heading 1'])
+  })
+
+  it('holds the first row when ArrowUp answers that ArrowDown', async () => {
+    const view = await open('')
+    await type(view, '/')
+    await press(view, 'ArrowDown')
+    await press(view, 'ArrowUp')
+    expect(highlighted().map((r) => r.textContent)).toEqual(['Heading 1'])
+  })
+
+  it('reaches the last row on an ArrowUp from the fresh open', async () => {
+    const view = await open('')
+    await type(view, '/')
+    await press(view, 'ArrowUp')
+    expect(highlighted().map((r) => r.textContent)).toEqual(['Webpage'])
   })
 })

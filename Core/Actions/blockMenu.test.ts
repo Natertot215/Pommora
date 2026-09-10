@@ -53,6 +53,7 @@ describe('the block menu filter', () => {
   it('keeps a section whose rows match and drops the rest', () => {
     const hea = filterBlockMenu(seated, 'hea')
     expect(hea.map((s) => s.title)).toEqual(['Headings'])
+    expect(hea[0].at).toBe(0)
     expect(hea[0].rows).toHaveLength(5)
     expect(hea[0].rows.every((r) => r.at === 0)).toBe(true)
     expect(filterBlockMenu(seated, 'HEA')).toEqual(hea)
@@ -72,9 +73,46 @@ describe('the block menu filter', () => {
     expect(filterBlockMenu(seated, 'zz')).toEqual([])
   })
 
+  it('keeps a whole section whose title matches', () => {
+    const link = filterBlockMenu(seated, 'link')
+    expect(link.map((s) => s.title)).toEqual(['Link'])
+    expect(link[0].at).toBe(0)
+    expect(link[0].rows.map((r) => [r.label, r.at])).toEqual([
+      ['Connection', null],
+      ['Markdown Link', 9],
+      ['External Link', 9],
+    ])
+
+    const embed = filterBlockMenu(seated, 'embed')
+    expect(embed.map((s) => s.title)).toEqual(['Embed'])
+    expect(embed[0].at).toBe(0)
+    expect(embed[0].rows.map((r) => [r.label, r.at])).toEqual([
+      ['Internal Page', null],
+      ['Webpage', null],
+    ])
+  })
+
+  it('holds a section title to the same word-start rule its rows answer', () => {
+    const list = filterBlockMenu(seated, 'list')
+    expect(list.map((s) => s.title)).toEqual(['Lists'])
+    expect(list[0].at).toBe(0)
+    expect(list[0].rows.map((r) => [r.label, r.at])).toEqual([
+      ['Bullet List', 7],
+      ['Numbered List', 9],
+      ['Task List', 5],
+    ])
+  })
+
+  it('leaves a section whose title matches nothing to its rows alone', () => {
+    const bl = filterBlockMenu(seated, 'bl')
+    expect(bl[0].title).toBe('Insert')
+    expect(bl[0].at).toBeNull()
+  })
+
   it('keeps everything at 0 for an empty query', () => {
     const all = filterBlockMenu(seated, '')
     expect(all.map((s) => s.title)).toEqual(seated.map((s) => s.title))
+    expect(all.every((s) => s.at === 0)).toBe(true)
     expect(all.flatMap((s) => s.rows)).toHaveLength(19)
     expect(all.flatMap((s) => s.rows).every((r) => r.at === 0)).toBe(true)
   })
