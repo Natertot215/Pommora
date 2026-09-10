@@ -5,9 +5,9 @@ Pommora's Markdown editor, and the surface every Page body is written in. It beh
 
 ### Architecture
 
-The editor is built on CodeMirror 6, which provides the text substrate — caret, selection, IME, undo, viewport — with micromark and mdast supplying the Markdown parse behind `Engine/parser.ts`. Everything above those two layers is Pommora's and lives in `Core/MarkdownPM/`, one folder per concern: `Engine/` is the pure half — it scans the document once per version into a cached model of every construct (fences, tables, callouts, embeds, the citations section, the outline) and turns that model into the marks, widgets, and caret-skip spans the view draws, with no React and no store; `Input/` holds the typing transforms, `Guards/` the transaction filters that refuse or repair an edit that would corrupt a construct, `Gestures/` the block drag and pointer work, `Links/` the connection layer, `Citations/` the footnote apparatus, `Embeds/` the page and webpage widgets, `Widgets/` the shared widget plumbing, `Menus/` the editor's own menu models, `Tables/` the table widget, and `Autocomplete/` the title picker. `MarkdownEditor.tsx` at the root wires them into CM6.
+The editor is built on CodeMirror 6, which provides the text substrate — caret, selection, IME, undo, viewport — with micromark and mdast supplying the Markdown parse behind `Engine/parser.ts`. Everything above those two layers is Pommora's and lives in `Core/MarkdownPM/`, one folder per concern: `Engine/` is the pure half — it scans the document once per version into a cached model of every construct (fences, tables, callouts, embeds, the citations section, the outline) and turns that model into the marks, widgets, and caret-skip spans the view draws, with no React and no store; `Input/` holds the typing transforms, `Guards/` the transaction filters that refuse or repair an edit that would corrupt a construct, `Gestures/` the block drag and pointer work, `Links/` the connection layer, `Citations/` the footnote apparatus, `Embeds/` the page and webpage widgets, `Menus/` the editor's own menu models, `Tables/` the table widget, and `Autocomplete/` the title picker. `MarkdownEditor.tsx` at the root wires them into CM6, over the shared React-widget chassis in `reactWidget.ts`.
 
-The editor takes everything it cannot know from an **EditorHost** — one object declared in `Core/MarkdownPM/api.ts` and built by `Core/Pages/editorHost.tsx`: the tile components an embed mounts, the connections API a `[[Title]]` resolves against, the settings it reads, the glance and menu affordances, and the warm-state seam. A host that leaves a member out simply loses that affordance, which is what lets the same editor run inside a page, a window, a tile, and a test harness. Appearance is `markdown-pm.css`, reading the design system's tokens through the CSS-variable bridge. Four rules hold the design together:
+The editor takes everything it cannot know from an **EditorHost** — one object declared in `Core/MarkdownPM/api.ts` and built by `Core/Pages/editorHost.tsx`: the tiles an embed asks it to render, the alias memory and pasted-link title lookup, the settings it reads, and the glance and menu affordances. A host that leaves out `glance` or the format menu simply loses that affordance, which is what lets the same editor run inside a page, a window, a tile, and a test harness. Appearance is `markdown-pm.css`, reading the design system's tokens through the CSS-variable bridge. Four rules hold the design together:
 
 - **The document is the file.** The editor's document string is the page body as saved on disk. There is no intermediate model and no reconstruction step.
 - **Display is not source.** The same bytes render differently depending on where the caret is, and the editor never tidies or normalizes what you wrote — every change to the file is one you made.
@@ -18,11 +18,11 @@ The editor takes everything it cannot know from an **EditorHost** — one object
 
 Markdown syntax in the editor is dynamic. A construct's markers — the asterisks around bold text, the hashes before a heading, the dashes of a list — appear as literal, editable text while the caret is inside it, and are hidden or replaced by styling the moment it leaves. Writing feels like editing source on the line you're on and reading a rendered page everywhere else. Each construct is recognized by `Engine/`, given its marks by the tokenizer, and drawn by the decoration layer, which emits both what is shown and which spans the caret must skip from one intent stream so the two can never disagree. The chrome the editor draws — the horizontal rule, the quote card, code fills, list glyphs — exists only on screen, while reveal is line-scoped for inline marks, headings, and the thematic break, and marker-local for list glyphs; the box constructs (blockquote and callout) keep their chrome visible at all times.
 
-- **Inline Marks** — bold, italic, bold-italic, strikethrough, highlight, inline code, links, and Connections. Each reveals with the caret, scales with the heading it sits in, and is suppressed inside code. All of them are reachable from the context menu's Format submenu and their ⌘ shortcuts, and each auto-pairs as you type.
+- **Inline Marks** — bold, italic, strikethrough, highlight, inline code, links, and Connections. Each reveals with the caret, scales with the heading it sits in, and is suppressed inside code. All of them are reachable from the context menu's Format submenu and their ⌘ shortcuts, and each auto-pairs as you type.
 - **Headings** — H1 through H6, sized on the em scale; the menus offer Paragraph and H1–H5. A heading folds from a chevron in the gutter. One with nothing beneath it carries no chevron but still appears in the page outline, and fold state is remembered per machine.
 - **Lists** — bullets (`-`, drawn as `•`), `+`, arrows (typed `->`, drawn `→`), numbered lists, and GFM checklists all share one indent zone and one set of behaviors. Dragging an item by its glyph moves it together with its nested block and renumbers as it lands, and deleting an item closes the numbering gap in the same stroke. The grip menu's **Type ▸** switches a whole block between the four kinds, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one. With **Mute Checked Items** on, a checked task reads as done — dimmed and struck through — while the file keeps its plain `- [x]`.
 - **Outliner Rails** — an optional hairline guide down each nested list run, one per ancestor level, turned on with **Outliner Lines**. It covers dash bullets and checklists.
-- **Code** — inline code and fenced blocks share the mono family and little else: inline code wears the code color over a tinted fill, a fenced block a neutral one. A fence's info word sets its language. Any of the forty-odd languages in the roster gets a syntax-colored parse; a bare fence stays plain. The backticks always show, but a typed block hides its info word behind the language's name and mark at the top-right, revealing the raw word again while the caret is on the fence line. That tag is also the block's copy control. **Show Line Count In Code Blocks** numbers the content lines.
+- **Code** — inline code and fenced blocks share the mono family and little else: inline code uses the code color over a tinted fill, a fenced block a neutral one. A fence's info word sets its language. Any of the thirty-eight languages in the roster gets a syntax-colored parse; a bare fence stays plain. The backticks always show, but a typed block hides its info word behind the language's name and mark at the top-right, revealing the raw word again while the caret is on the fence line. That tag is also the block's copy control. **Show Line Count In Code Blocks** numbers the content lines.
 - **Blockquote** — an always-visible rounded card with an accent bar down its side. Other block constructs nest inside it at any depth. A `>` counts as a marker only when whitespace or the line's end follows it, so `>a` stays ordinary prose.
 - **Callout** — a `> [!callout]` blockquote rendered as a bordered box spanning the gutter width, typed with the `||` shorthand. Each head is detected on its own, so adjacent or pasted callouts never merge, and an invalid tag falls back to a plain quote. The hidden head can't be reached by the caret, and Shift+Enter keeps you inside the box.
 - **Horizontal Lines** — `---` draws as a full-width rule whenever the caret is off its line. It is never read as a setext heading.
@@ -32,7 +32,7 @@ Markdown syntax in the editor is dynamic. A construct's markers — the asterisk
 
 #### Typing Transforms
 
-A handful of rewrites fire as you type, implemented in `Input/` as CodeMirror transaction handlers: each fires as one atomic transaction with a re-entry guard, and each is prefix-aware, so a list inside a blockquote behaves exactly like one at the top level. They only ever respond to keystrokes — pasted text is left as it was.
+A handful of rewrites fire as you type, implemented in `Input/` as a high-precedence keymap and an input handler: each fires as one atomic transaction, and each is prefix-aware, so a list inside a blockquote behaves exactly like one at the top level. They only ever respond to keystrokes — pasted text is left as it was.
 
 - **List continuation** — Enter continues a list, Tab indents (to a cap), Shift+Tab outdents, and `-[]` canonicalizes to `- [ ]`.
 - **Callout shorthand** — `||` becomes `> [!callout] `.
@@ -43,20 +43,20 @@ A handful of rewrites fire as you type, implemented in `Input/` as CodeMirror tr
 
 ### Tables
 
-GFM pipe tables render as an editable HTML table rather than as rows of pipes: a block-replace widget drawn over the canonical GFM source, ported to React from [ckant/codemirror-markdown-tables](https://github.com/ckant/codemirror-markdown-tables) (MIT) and living in `Core/MarkdownPM/Tables/`. `regions.ts` finds every table in the document model, `codec.ts` translates between a cell's text and its GFM encoding, `guard.ts` refuses edits that would corrupt the structure, and `widget.tsx` draws the table. You click into a cell and type; the editor writes the pipes. GFM sets the ceiling — rectangular cells, per-column alignment, and inline-only content — which is exactly what a widget over that source can express without loss, so a table built here is a table anywhere. Pommora's additions on top of the port are dash-count column widths with drag-to-resize, the heading-column toggle, the structure guards, in-cell undo, and the native grip menus.
+GFM pipe tables render as an editable HTML table rather than as rows of pipes: a block-replace widget drawn over the canonical GFM source, ported to React from [ckant/codemirror-markdown-tables](https://github.com/ckant/codemirror-markdown-tables) (MIT) and living in `Core/MarkdownPM/Tables/` over the pure table model in `Core/MarkdownPM/Engine/Tables/`. There, `regions.ts` finds every table in the document model and `codec.ts` translates between a cell's text and its GFM encoding, while `guard.ts` refuses edits that would corrupt the structure and `widget.tsx` draws the table. You click into a cell and type; the editor writes the pipes. GFM sets the ceiling — rectangular cells, per-column alignment, and inline-only content — which is exactly what a widget over that source can express without loss, so a table built here is a table anywhere. Pommora's additions on top of the port are dash-count column widths with drag-to-resize, the heading-column toggle, the structure guards, in-cell undo, and the native grip menus.
 
-- **Cells** — the focused cell mounts a nested editor with the main editor's inline rendering; resting cells render without one. ⌘Z inside a cell forwards to the page's own history. Each cell is single-line GFM — `|` and `\` are escaped, and Shift+Enter writes a `<br>` — so no keystroke or paste can split a row.
+- **Cells** — the focused cell mounts a nested editor with the main editor's inline rendering; resting cells render without one. ⌘Z inside a cell forwards to the page's own history. Each cell is single-line GFM — `|` is escaped, along with a `\` that would otherwise escape one, and Shift+Enter writes a `<br>` — so no keystroke or paste can split a row.
 - **Structure** — because the widget replaces the source, the caret never reaches the pipes. Deleting at a table's boundary removes the entire block in a single undoable step, and tables are fenced by blank lines, so two can't be fused.
 - **Connections in cells** — connections render, autocomplete, and carry their menu inside cells just as they do in the body.
 - **Width** — a column's width is the number of dashes in its delimiter cell (the Pandoc convention), rendered as proportional widths here and treated as best-effort cosmetics by other tools.
 - **Self-healing** — a region is a widget only while it parses as a single GFM table. A table that breaks falls back to raw text with the caret where it was, and tables written elsewhere round-trip byte-for-byte.
 - **Selection** — cross-cell selections become an array of highlighted cells, just like any standard document editor. ⌘C copies it, ⌘X cuts, ⌘V pastes from its corner, Delete blanks it, and Escape or a click elsewhere lets it go; within a single cell, text still selects as text.
 - **Clipboard** — every copy is plain pipe-row text, so it reads as Markdown pasted anywhere, and shape carries the meaning back in: pipe rows fill cells from the paste point, growing the table to fit; a one-column payload with a delimiter is a copied column, its body filling downward and its header landing only where the target's is empty; anything wider with a delimiter is a whole table, which pastes as a fresh table in prose but refuses a table cell, a list line, and the citations section — a paste can never clear what it lands on.
-- **Grips** — hovering a row reveals its grip, and the heading row reveals the hovered column's. Dragging a grip reorders; right-clicking opens the native menu — rows and columns lead with Copy, then align, insert, clear, and delete, plus Make Heading Column on the first column, while the heading row's grip speaks for the whole table: Copy Outline (shape and headings, body blank), Copy Content, Clear Row, Clear Table, and Delete. Dragging a column boundary resizes; the header row's grip drags the table as a block, and the strips along the bottom and right edges append a row or column, standing down while you're working inside a cell.
+- **Grips** — hovering a row reveals its grip, and the heading row reveals the hovered column's. Dragging a grip reorders; right-clicking opens the native menu — a row's is Copy, Insert Row Above, Insert Row Below, Clear, and Delete, and a column's is Copy, Align, Insert Column Left, Insert Column Right, Clear, and Delete, with Make Heading Column following Align on the first column, while the heading row's grip speaks for the whole table: Copy Outline (shape and headings, body blank), Copy Content, Clear Row, Clear Table, and Delete. Dragging a column boundary resizes; the header row's grip drags the table as a block, and the strips along the bottom and right edges append a row or column, standing down while you're working inside a cell.
 
 ### Embeds
 
-Two forms, each written alone on its own line, render as live tiles on the page: another Page, or a website. A tile is the real thing — a page tile is that page's editor, scrollable and editable in place, and a webpage tile is the live site. The editor's side of it is small: `Engine/` recognizes a lone-line embed, `Core/MarkdownPM/Engine/embedRanges.ts` decides which lines claim a tile, and `Core/MarkdownPM/Embeds/embedWidget.tsx` mounts the shared `PageTile` or `WebTile` component from `Core/Tiles/Surfaces/`, the same components the dashboard, the Page Window, and the glance pane render through. Both forms stay plain Markdown on disk — Obsidian's `![[Title]]` for a page and the image form `![Label](url)` for a site — so a Nexus reads the same outside Pommora and the tile is presentation over an ordinary line.
+Two forms, each written alone on its own line, render as live tiles on the page: another Page, or a website. A tile is the real thing — a page tile is that page's editor, scrollable and editable in place, and a webpage tile is the live site. The editor's side of it is small: `Engine/` recognizes a lone-line embed, `Core/MarkdownPM/Engine/embedRanges.ts` decides which lines claim a tile, and `Core/MarkdownPM/Embeds/embedWidget.tsx` hands the claim to the editor host, which renders the shared `PageTile` or `WebTile` from `Core/Tiles/Surfaces/` — `PageTile` being the same component the dashboard, the Page Window, and the glance pane render through. Both forms stay plain Markdown on disk — Obsidian's `![[Title]]` for a page and the image form `![Label](url)` for a site — so a Nexus reads the same outside Pommora and the tile is presentation over an ordinary line.
 
 - **Page Embeds** — `![[Title]]` embeds that Page in place as an editable tile; edits made within the tile are edits to the page itself. A title resolving to exactly one page claims a tile (the first occurrence per document). Unresolved, ambiguous, duplicate, non-page, and self-referencing targets remain as inert tokens and become tiles the moment resolution succeeds. Tiles are blank-line-fenced like tables, and only a deliberate gesture removes one — the grip's Delete, or a selection swept across it. There are four ways to create one: the `![[` autocomplete, which offers only pages the syntax can express; the context menu's **Embed ▸ Internal Page**; **Paste As ▸ Embedded Page** on a copied connection; and the grip's **Source ▸** tree, which re-aims an existing tile. The grip's **Scale ▸** carries the shared Scale ramp, and both the factor and the tile's dragged height persist per machine. Nested embeds render one level down, display-only. Sub-targets such as `#heading`, `^block`, and `|alias` rest as the inert token.
 - **Webpage Embeds** — `![Label](url)` with an explicit http(s) scheme renders the site as a live tile on the same framework. The tile and everything about it that faces the web belong to Webview.
@@ -71,38 +71,38 @@ Whether the citations section is visible follows **Show Footnotes By Default**, 
 
 The editor treats the document as a sequence of blocks — paragraphs, headings, lists, quotes, callouts, code blocks, tables, tiles — resolved from the document model by `Core/MarkdownPM/Engine/blockModel.ts`, and every block has a handle in the gutter to its left (`Core/MarkdownPM/Menus/blockHandles.ts`) that is both how you move it (`Core/MarkdownPM/Gestures/blockDrag.ts`) and where the grip menu lives. Blocks that already carry chrome of their own use it as the handle: the heading's fold chevron, the quote and callout grips, the table's heading-row grip. Dragging the handle relocates the block to the nearest block boundary as one move of its source lines, kept blank-separated at both seams so it never fuses with a neighbor; the gesture itself is the shared insertion-line drag. A folded heading unfolds when its drag begins.
 
-The handle is also where the grip menu lives. One menu model serves every kind of block, with rows keyed to what that block is:
+The handle is also where the grip menu lives. One menu model serves every kind of block outside the table, with rows keyed to what that block is:
 
 | Block | Rows |
 | -------------------------------------- | -------------------------------------------------------------- |
-| Plain (paragraph, quote, callout, code, table) | Delete |
+| Plain (paragraph, quote, callout, code) | Delete |
 | Heading | Rename · Size ▸ (Paragraph, H1–H5) · Delete — removes the heading line and keeps its body |
 | List | Type ▸ (Numbered, Bulleted, Checklist, Arrowed) · Delete |
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
 
-**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Link, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. Return or a click removes the typed query and writes the block through the same action the context menu runs; one undo reverts it. The pane is the editor's own, drawn in-app whatever Use Native Menus says, and never opens inside code, math, or the footnotes, behind a quote or list marker, or in a table cell.
+**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Link, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. Return or a click removes the typed query and writes the block through the editor's own action dispatch, the one the context menu's items also run; one undo reverts it. The pane is the editor's own, drawn in-app, and won't activate inside code, math, footnotes, behind quote or list markers, or inside table cells.
 
 ### Context Menu + Shortcuts
 
-Right-clicking text in the editor opens the operating system's own menu rather than an in-app one; where a surface answers the press itself — a block grip, a heading gutter, a citation, a connection — the renderer calls `preventDefault` on the `contextmenu` event, and that withholds the host's editor menu. The renderer sends a snapshot of the editor state — what's selected, what construct the caret is in, whether a footnote could bind here — over IPC, and `Desktop/Actions/editorMenu.ts` builds the native menu from it, so the standard edit roles, spelling, Speech, and Share all arrive native and every Pommora item's enabled state reflects where you clicked. The submenu models themselves (`Core/Actions/pasteAsMenu.ts`, `Core/Actions/gripMenu.ts`, `Core/MarkdownPM/Citations/citationMenu.ts`) are shared code both processes read, so the renderer and main can't disagree about what a menu offers:
+Right-clicking text in the editor opens the operating system's own menu rather than an in-app one; where a surface answers the press itself — a block grip, a heading gutter, a citation, a connection — the renderer calls `preventDefault` on the `contextmenu` event, and that withholds the host's editor menu. The renderer sends a snapshot of the editor state — what's selected, what construct the caret is in, whether a footnote could bind here — over IPC, and `Desktop/Actions/editorMenu.ts` builds the native menu from it, so the standard edit roles, spelling, Speech, and Share all arrive native and every Pommora item's checked state and presence reflect where you clicked. Heading ▸ and Paste As ▸ come from shared models (`Core/Actions/gripMenu.ts`, `Core/Actions/pasteAsMenu.ts`) that both processes read, so the renderer and main can't disagree about what they offer:
 
 - **Insert ▸** — Blockquote, Horizontal Rule, Code Block, Callout, Table, and — anywhere a marker can bind — Footnote.
 - **Insert Link** — appears when the selection is itself an address, and points it at itself in place.
 - **Format ▸** — the inline marks, plus Connection and Link.
 - **Embed ▸** — Webpage or Internal Page.
-- **Heading ▸** — Paragraph and H1–H5. **Lists ▸** — Bullet, Numbered, Task.
+- **Heading ▸** — Paragraph and H1–H5. **Lists ▸** — Bullet List, Numbered List, Task List.
 - **Paste As ▸** — what the clipboard could become rather than what a plain paste would make of it.
 
 An address offers the three link forms, Plain Text, and Embedded Link on a blank line; a copied connection or markdown link offers Connection, Markdown Link, and Embedded Page; any text offers Footnote wherever a marker can bind.
 
-Keyboard shortcuts are the Format marks' ⌘ chords and **Inverse Paste** on ⌘⇧V, bound from the one command table every reader derives from, so a rebinding in `settings.json` reaches them.
+Keyboard shortcuts are the Format marks' ⌘ chords and the inverse paste on ⌘⇧V, bound from the one command table every reader derives from, so a rebinding in `settings.json` reaches them.
 
 ### Design System
 
-The editor's design vocabulary is defined in one stylesheet as scoped custom-property families; there is no separate theme module. The editor doesn't consume the type ramp — everything scales in `em` multiples off its own zoom root.
+The editor's design vocabulary is defined as scoped custom-property families across `markdown-pm.css` and the table widget's `markdown-tables.css`; there is no separate theme module. Body text scales in `em` multiples off the editor's own zoom root; only the page title and the fold chevron take a type-ramp size, multiplied by the editor's scale.
 
-**SOURCE:** `Core/MarkdownPM/markdown-pm.css`
+**SOURCE:** `Core/MarkdownPM/markdown-pm.css`, `Core/MarkdownPM/markdown-tables.css`
 
 #### II. Scale
 
@@ -121,13 +121,13 @@ The page header's own measures — the title size and the zones the banner and h
 
 | Title | Token | Value · Scope |
 | --- | --- | --- |
-| Page Title Size | `--detail-title-size` | `calc(28px * var(--editor-scale, 1))` · `.mdpm-header .detail-title` |
-| Add-Banner Strip | `--add-banner-zone` | `44px` · `.mdpm-header:not(.has-banner)` |
+| Page Title Size | `--detail-title-size` | `calc(var(--text-title-large-size) * var(--editor-scale, 1))` · `.mdpm-header .detail-title` |
+| Add-Banner Strip | `--banner-add-zone` | `44px` · `.mdpm-header:not(.has-banner)` |
 | Header Park Distance | `--header-zone` | JS-set on `.mdpm-shell`; fallback `90px` |
 
 #### II. Lists & Outliner
 
-List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `--list-outline-*` primitives and adds its caps and x-position.
+List geometry scopes to `.cm-line.md-list-item`; the outliner rail aliases the shared `--list-outline-*` width, gap and radius, reads the color directly, and adds its caps and x-position.
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -135,9 +135,9 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Indent Step | `--list-indent` | `20px` |
 | Bullet / Number / Task Gutter | `--bullet-zone` / `--number-zone` / `--task-zone` | `16px` / `1.3em` / `1.8em` |
 | Bullet Glyph | `--bullet-size` | `1.25em` |
-| Inner-Gutter Origin | `--li-origin` | `0px`; `16px` in quotes; callout pad in callouts |
-| Computed Column | `--li-col` | `calc((var(--li-level, 0) + 1) * var(--list-indent))` |
-| Rail Width / Color / Gap / Radius | `--outliner-*` | → the `--list-outline-*` tokens |
+| Inner-Gutter Origin | `--list-origin` | `0px`; `16px` in quotes; callout pad in callouts |
+| Computed Column | `--list-column` | `calc((var(--list-level, 0) + 1) * var(--list-indent))` |
+| Rail Width / Gap / Radius / Color | `--outline-width` / `--outline-gap` / `--outline-radius` | → the matching `--list-outline-*` tokens; the color is read straight from `--list-outline-color`, unaliased |
 | Rail Level | `--rail-level` | JS-set per rail element |
 
 #### II. Quotes, Callouts & Code
@@ -146,39 +146,39 @@ The box constructs — quote, callout, code, and highlight — share a corner ra
 
 | Title | Token | Value · Scope |
 | --- | --- | --- |
-| Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-bq` |
+| Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-blockquote` |
 | Quote Box | `--box-fill` / `--box-radius-r` | → fill-tertiary / `6px` |
-| Quote Gap | `--bq-gap` | → box gap |
+| Quote Gap | `--blockquote-gap` | → box gap |
 | Callout Frame | `--callout-border` / `--callout-bw` / `--callout-radius` | → label-tertiary / `1.5px` / `6px` · `.md-callout` |
-| Callout Padding | `--callout-pad` / `--callout-gap` / `--callout-inner-pad` | `15px` / `6px` / `8px` |
+| Callout Padding | `--callout-pad` / `--callout-gap` / `--callout-inner-pad` | `16px` / → box gap / `8px` |
 | Callout Grip | `--grip-x` / `--grip-y` | `-18px` / `4px` |
-| Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--box-radius-r` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
-| Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / → box corner / `0.85em` / `6px` / `12px` (`10px` inside quotes and callouts) · `.md-cb` |
+| Nested Quote | `--nested-quote-bar` / `--nested-quote-bar-radius` / `--box-radius-r` / `--nested-quote-gap` / `--nested-quote-inset` | `3px` / `2px` / `5px` / `8px` / `2px` · `.md-callout.md-blockquote-nested` |
+| Code Block | `--box-fill` / `--codeblock-radius` / `--box-pad` / `--codeblock-pad` | → fill-quaternary / → box corner / `6px` / `12px` (`10px` inside quotes and callouts) · `.codeblock`, whose text is a bare `font-size: 0.85em` |
 | Box Corner | `--md-box-radius` | `6px` · `:root` — what quote, callout, code and highlight round to; each still names its own knob |
 | Box Gap | `--md-box-gap-base` / `--md-box-gap` | `6px` · `:root` / `base × --glyph-scale` · `.mdpm-shell` — what quote, callout, code and the table float off their neighbours by, scaling with the surface |
-| Highlight | `--highlight` / `--highlight-bleed` | → the Highlight Color, else the accent, worn at tint-secondary / `0.1em` · `.md-highlight` |
-| Language Tag | `.md-cb-lang` | name at → label-control, its mark at → label-secondary, `1.15em` — fifteen languages carry a mark; the tag is the block's copy control |
-| Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
+| Highlight | `--highlight` / `--highlight-bleed` | → the Highlight Color, else the accent, at tint-secondary / `0.1em` · `.md-highlight` |
+| Language Tag | `.codeblock-language` | name at → label-control, its mark at → label-secondary, `1.15em` — fifteen languages carry a mark; the tag is the block's copy control |
+| Line-Number Zone | `--codeblock-line-zone` | `calc(3ch + var(--list-gap))` · `:root.codeblock-line-count` |
 
 #### II. Syntax Colors
 
-One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary))` — the same tint-step system as the rest of the design system.
+One pastel recipe: `color-mix(in srgb, var(--syntax-solid) var(--tint-primary), var(--label-primary))` — the same tint-step system as the rest of the design system.
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Pastel Mix Step | `--tok-tint` | → `var(--tint-primary)` (60%) |
-| Keyword / String / Number | `--tok-solid` on `.tok-kw` / `.tok-str` / `.tok-num` | purple / green / orange solids |
-| Property / Function / Type | `.tok-prop` / `.tok-fn` / `.tok-type` | cobalt / yellow / cyan solids |
+| Pastel Mix Step | `--tint-primary` | 60% |
+| Keyword / String / Number | `--syntax-solid` on `.syntax-keyword` / `.syntax-string` / `.syntax-number` | purple / green / orange solids |
+| Property / Function / Type | `.syntax-property` / `.syntax-function` / `.syntax-type` | light-blue / yellow / cyan solids |
 
 #### II. Embeds & Autocomplete
 
-The tile ring and grip, and the autocomplete pane's one editor-owned measure.
+The tile ring and grip, and the autocomplete pane's own width bounds.
 
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |
 | Embed Grip Top | `--grip-top` | `28px` · `.mdpm-embed-line` |
-| Autocomplete | `PICKER_MAX_HEIGHT` | `240px` · `.mdpm-ac-slot` — the pane is a PickerMenu, which owns its radius |
+| Autocomplete | `.mdpm-autocomplete-slot` | `180px`–`320px` wide; the height ceiling is UIX's `PICKER_MAX_HEIGHT` (`240px`) — the pane is a PickerMenu, which owns its radius |
 
 ---
 
