@@ -105,20 +105,19 @@ Context membership is keyed by Space *title*, which is the model's structural co
 
 ##### 6. The Table/Cards View Engine
 
-**Lenses and state:** Debt, Decision, Duplication, Asymmetry, Performance, Tests. **Effort:** Large. **Deletes:** About 230 lines of duplicated interaction layer, 40 lines of view-kind lists, two mounted pickers per card.
+**Lenses and state:** Debt, Decision, Duplication, Asymmetry, Performance, Tests. **Effort:** Large. **Deletes:** About 230 lines of duplicated interaction layer, two mounted pickers per card.
 
-**Found.** The data half of views is finished, excellent, and shouldn't be touched: one filter, one sorter, one grouper, one pure pipeline, one real host that owns every writer. The renderer half is two prototypes that both grew past 1,300 lines and write the same interaction layer twice: band drops, relocation, reorder, page opening, hover glance, menu dispatch, the ghost lifecycle. They aren't copy-paste duplicates, which is exactly why they drift; each pair is the same idea with one policy detail changed. Neither renderer virtualizes. Cards mounts two closed picker components and six store subscriptions per card, where Table already does it correctly with one picker at the root. Cards has one smoke assertion against Table's 1,330 lines of interaction tests. Six view kinds are registered, two render, and the other four silently render as tables, because there's no registry, only "is it cards, else table" across twelve places. Adding a third view kind means writing all of it a third time.
+**Found.** The data half of views is finished, excellent, and shouldn't be touched: one filter, one sorter, one grouper, one pure pipeline, one real host that owns every writer. The renderer half is two prototypes that both grew past 1,300 lines and write the same interaction layer twice: band drops, relocation, reorder, page opening, hover glance, menu dispatch, the ghost lifecycle. They aren't copy-paste duplicates, which is exactly why they drift; each pair is the same idea with one policy detail changed. Neither renderer virtualizes. Cards mounts two closed picker components and six store subscriptions per card, where Table already does it correctly with one picker at the root. Cards has one smoke assertion against Table's 1,330 lines of interaction tests. Six view kinds are registered and two render. Adding a third view kind means writing the interaction layer a third time.
 
 **Change.**
 
 1. Extract one `useRowInteractions({ host, policy })` in `Core/Views/Host` returning relocate, reorder, band drop, open, hover, menu dispatch, and ghost; the policy is the two-field difference that actually exists (landing at end or slot, bands nest or not). Both renderers consume it. *(L; ~230 lines)*
 2. Hoist Cards' icon and image pickers to the grid level the way Table already does. *(S; 2 mounted pickers per card)*
-3. Scope the ghost's rect reads to the anchor's own zone; replace the per-drop group flattening with the host's existing row-to-band map. *(S; ~25 lines)*
-4. Build a view-kind registry, or trim the union to the two kinds that render. *(M; after D-6; ~40 lines of lists)*
-5. Add a Cards drop suite, a Cards value and menu suite, and a creation suite, on the harness the Table suites already use. *(M)*
-6. Virtualize both renderers with the already-declared virtualizer. Separate, larger work; Mobile hits this wall first. *(L)*
+3. Scope the ghost's rect reads to the anchor's own zone. *(S; ~15 lines)*
+4. Add a Cards drop suite, a Cards value and menu suite, and a creation suite, on the harness the Table suites already use. *(M)*
+5. Virtualize both renderers with the already-declared virtualizer. Separate, larger work; Mobile hits this wall first. *(L)*
 
-**Findings:** R-32, R-33, R-34, R-35, R-36.
+**Findings:** R-32, R-33, R-35, R-36.
 
 ##### 8. UIX: Engines, Bundle, Touch, Filing
 
@@ -179,10 +178,6 @@ Ordered by how much later work each gates. D-1 (state placement) and D-4 (Contex
 
 **D-3: How does identity re-minting behave with a second writer?** The one-writer rule was not adopted as policy on 09-07-2026, so this narrows to re-minting alone. Options: **(i)** a synced, hand-editable conflict ledger under `.nexus/`; **(ii)** re-minting becomes a user-confirmed action rather than a silent open-time pass. Riding on it: whether the crash journals stay in the synced `.nexus/` directory.
 
-**D-6: Four unbuilt view kinds, drop them or build the registry?** Options: **(i)** trim the union to the two that render; **(ii)** build a view-kind registry now and make an unimplemented kind explicitly blank per the placeholder rule. Today they're selectable and silently render as tables, which is the one option nobody chose.
-
-**Recommendation:** (ii) if a third view kind is planned within the next few cycles, otherwise (i).
-
 **D-7: Does the design kit get touch?** Options: **(i)** decide Mobile is a WebView host and add coarse-pointer branches now, before more hover-revealed controls are built; **(ii)** decide Mobile gets its own interaction layer and let UIX stay desktop-only. The cost of deferring is linear in how many hover affordances get built meanwhile.
 
 **D-9: Smaller rulings, each one edit once decided** 
@@ -227,9 +222,8 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-18 | 4     | D    | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes                               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts`                                            |
 | R-32 | 6     | Dt   | Table and Cards write the same interaction layer twice                                                                             | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx`                                                      |
 | R-33 | 6     | Dt   | Neither renderer virtualizes, and every card carries six store subscriptions and two mounted pickers                               | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
-| R-34 | 6     | D    | Six view kinds are registered, two render, and adding a third touches twelve places                                                | `Core/Views/views.ts, Core/Views/Host/ViewHost.tsx, Core/Views/Settings/LayoutFrame.tsx`                              |
 | R-35 | 6     | Dt   | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests                                                | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
-| R-36 | 6     | Dt   | The Cards ghost reads every card's rect twice on every hover dwell, and re-flattens the group tree it was handed                   | `Core/Views/Cards/CardsView.tsx, Core/Views/Host/useViewHost.ts`                                                      |
+| R-36 | 6     | Dt   | The Cards ghost reads every card's rect twice on every hover dwell                                                                 | `Core/Views/Cards/CardsView.tsx`                                                                                      |
 | R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |
 | R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                                | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`                    |
 | R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                               | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                         |

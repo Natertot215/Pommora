@@ -40,19 +40,19 @@ The app knows six kinds of view (Table, Cards, List, Gallery, Calendar, Timeline
 
 #### Implementation Process
 
-- [ ] **Phase 1** — The Registry
+- [x] **Phase 1** — The Registry
   - [x] Task 1.1 — The registry in `views.ts`
   - [x] Task 1.2 — The seat reads the registry
   - [x] Task 1.3 — One glyph resolver
   - [x] Task 1.4 — The picker and the flatness reads
-  - [ ] Review Checkpoint
-- [ ] **Phase 2** — The Host Row List
+  - [x] Review Checkpoint
+- [x] **Phase 2** — The Host Row List
   - [x] Task 2.1 — `paintOrder` on the host
   - [x] Task 2.2 — Cards reads the host
   - [x] Task 2.3 — Table reads the host
-- [ ] **Phase 3** — The Record
-  - [ ] Task 3.1 — Features
-  - [ ] Task 3.2 — The audit ledger, Context, and History
+- [x] **Phase 3** — The Record
+  - [x] Task 3.1 — Features
+  - [x] Task 3.2 — The audit ledger, Context, and History
 
 Phases 1 and 2 share no file, but Phase 1's VERIFY runs the suites that render Phase 2's files, so they run in sequence in one working tree rather than in two worktrees.
 
@@ -676,5 +676,8 @@ Per Writing-Plans-V3 §5.5: the plain-language report with Phase by Phase, Verif
 ### Deviations
 
 - **Phase 1's own shortstat is net positive.** The Review Checkpoint asks for deletions exceeding insertions within the phase, but the registry (`views.ts`, +17) is the plan's one net addition and Phase 1 holds none of the Phase 2 deletions that offset it. Core-only for the phase: 150 insertions, 135 deletions, of which about 45 lines are Biome reindenting `LayoutFrame.tsx`'s footing block. Carried as written; the plan's net figure is measured on the full range.
+- **`GroupFrame.tsx` derives its sub-grouping from its own `flat` read.** Task 1.4 had `LayoutFrame.tsx` and `SettingsFrame.tsx` pass `subGrouping={!VIEW_KINDS[view.type].flat}` into a pane that already reads `VIEW_KINDS[view.type].flat` for its None row; the closeout's simplification pass folded the prop, so the fact is read once and the two callers pass nothing. `ViewTileScope.test.tsx` dropped the prop from its one `GroupFrame` mount; the fixture is a table, so the default it exercised is unchanged.
+- **`ContextPM.md`'s Recent Work gained PM-135 alongside PM-136.** Task 3.2 assumed the five entries there were the five latest History entries; PM-135 had never been added, so both went in and PM-131 and PM-130 dropped off.
+- **The published audit page was republished.** The plan's Reconciliation named only the Markdown report; `ContextPM.md` states the published page mirrors it, so the same R-34, D-6, Change-list, Deletes, Found, and R-36 edits were mirrored there, with the open and closed counts moved to 23 and 49.
 - **`LayoutFrame.tsx`'s Layout leaf reads `switches` in its Cards branch too.** Task 1.4 named only the `VisibilityList` footer and the flat door as `switches` readers; the leaf's Cards branch sits inside the same `cards` test, so it reads `switches` as well and `CARD_SWITCHES` and `TABLE_SWITCHES` have one reader each.
 
