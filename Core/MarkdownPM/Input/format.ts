@@ -15,7 +15,7 @@ import { lineStartAt, lineEndAt } from './edits'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 
-export type InlineFormat = keyof typeof WRAP | 'link' | 'connection'
+export type InlineFormat = keyof typeof WRAP | 'link' | 'linkText' | 'connection'
 export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 
@@ -38,7 +38,8 @@ const WRAP = {
 } as const
 
 export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
-  if (fmt === 'link') return toggleWrap(doc, from, to, 'link', '[', ']()', (_f, t) => t + 3)
+  if (fmt === 'link' || fmt === 'linkText')
+    return toggleWrap(doc, from, to, 'link', '[', ']()', (f, t) => (fmt === 'link' ? t + 3 : f + 1))
   if (fmt === 'connection')
     return toggleWrap(doc, from, to, 'wikiLink', '[[', ']]', (f, t) => (f === t ? f + 2 : t + 2))
   const kind = fmt as keyof typeof WRAP & TokenKind

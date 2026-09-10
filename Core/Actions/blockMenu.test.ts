@@ -19,7 +19,11 @@ describe('the block menu catalog', () => {
       'Numbered List',
       'Task List',
     ])
-    expect(seated[2].rows.map((r) => r.label)).toEqual(['Connection', 'Markdown Link'])
+    expect(seated[2].rows.map((r) => r.label)).toEqual([
+      'Connection',
+      'Markdown Link',
+      'External Link',
+    ])
     expect(seated[3].rows.map((r) => r.label)).toEqual([
       'Blockquote',
       'Callout',
@@ -32,9 +36,9 @@ describe('the block menu catalog', () => {
   })
 
   it('offers Footnote only where a marker can bind', () => {
-    expect(seated.flatMap((s) => s.rows)).toHaveLength(18)
+    expect(seated.flatMap((s) => s.rows)).toHaveLength(19)
     const unseated = blockMenuSections(false)
-    expect(unseated.flatMap((s) => s.rows)).toHaveLength(17)
+    expect(unseated.flatMap((s) => s.rows)).toHaveLength(18)
     expect(unseated.flatMap((s) => s.rows).map((r) => r.label)).not.toContain('Footnote')
   })
 
@@ -71,7 +75,7 @@ describe('the block menu filter', () => {
   it('keeps everything at 0 for an empty query', () => {
     const all = filterBlockMenu(seated, '')
     expect(all.map((s) => s.title)).toEqual(seated.map((s) => s.title))
-    expect(all.flatMap((s) => s.rows)).toHaveLength(18)
+    expect(all.flatMap((s) => s.rows)).toHaveLength(19)
     expect(all.flatMap((s) => s.rows).every((r) => r.at === 0)).toBe(true)
   })
 })

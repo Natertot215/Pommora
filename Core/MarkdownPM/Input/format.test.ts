@@ -28,6 +28,14 @@ describe('toggleInline', () => {
   it('link wraps with an empty url ready for typing', () => {
     expect(apply('site', toggleInline('site', 0, 4, 'link'))).toBe('[site]()')
   })
+  it('seats an empty link at its url, and an alias-first one at its text', () => {
+    const url = toggleInline('', 0, 0, 'link')
+    expect(url.changes.map((c) => c.insert).join('')).toBe('[]()')
+    expect(url.selection).toBe(3)
+    const text = toggleInline('', 0, 0, 'linkText')
+    expect(text.changes.map((c) => c.insert).join('')).toBe('[]()')
+    expect(text.selection).toBe(1)
+  })
   it('connection wraps the selection in [[ ]], and unwraps from inside', () => {
     expect(apply('Page', toggleInline('Page', 0, 4, 'connection'))).toBe('[[Page]]')
     const doc = 'a [[Page]] b'
@@ -213,6 +221,10 @@ describe('setBlock', () => {
     const below = setBlock(doc, 2, 2, 'hr')
     expect(apply(doc, below)).toBe('a\n---\n\nb')
     expect(below.selection).toBe(6)
+    const opening = '\ntext'
+    const first = setBlock(opening, 0, 0, 'hr')
+    expect(apply(opening, first)).toBe('---\n\ntext')
+    expect(first.selection).toBe(4)
   })
   it('fences the whole selection as one block', () => {
     expect(apply(three, setBlock(three, 0, three.length, 'code'))).toBe('```\none\ntwo\nthree\n```')
