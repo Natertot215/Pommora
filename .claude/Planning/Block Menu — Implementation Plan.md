@@ -9,11 +9,11 @@ Typing `/` on an empty line in a Page opens a pane under the caret listing the b
 
 The pane is the editor's own, a peer of the `[[` autocomplete rather than a door menu: it filters as the user types, which the door's presenter cannot do and an OS menu cannot do while the editor holds focus. The row catalog is a React-free model in `Core/Actions`, where every other menu model lives; the native context menu is a different surface with its own rows and is not touched.
 
-Bounded to the four sections Nathan ratified and to a line that holds nothing but the slash and its query. Inline Format marks, chord display, table cells, the arrow list kind, and a `/` typed after a quote, callout, or list prefix are out.
+Bounded to the five sections Nathan ratified and to a line that holds nothing but the slash and its query. Inline Format marks, chord display, table cells, the arrow list kind, and a `/` typed after a quote, callout, or list prefix are out.
 
 **Requirements**
 
-1. A model in `Core/Actions/blockMenu.ts` yields four titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Insert (Blockquote, Callout, Code Block, Table, Horizontal Rule, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
+1. A model in `Core/Actions/blockMenu.ts` yields five titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
 2. A filter over the model keeps a row whose label has a word starting with the query, case-insensitively, and returns where that match begins; an empty query keeps everything; a section with no surviving rows disappears with its heading.
 3. A `/` typed as the entire text of a line, with the caret at line end, outside code, math, and the citations run, opens the pane under the caret; each further non-space character narrows it; a space, a caret move off the line, or blur closes it; Escape closes it until the next edit, as the `[[` pane does; the pane shows only while a row matches.
 4. Return or a click on a row removes the typed `/query` and applies the row's action; one undo reverts the block and leaves the blank line.
@@ -374,33 +374,31 @@ export function BlockMenu(props: {
 
 **Why:** Nathan's pass found the pane right and six details wrong: no width to tune, no way to make a link, a label, the typed query drawn as prose, a divider that traps the caret in its own syntax, and a quote that glues its marker to the first word.
 
-**Now** — `markdown-pm.css:988` carries `.mdpm-autocomplete-slot { min-width: 180px; max-width: 320px }` and nothing sets a width, so the pane sized to its longest row; `blockMenuSections` returned four sections, `['Headings', 'Lists', 'Insert', 'Embed']`, sixteen rows seated and fifteen unseated, with no inline format among them; the rule's row read `Horizontal Rule`; `build` in `decorations.ts` marked no part of a `/query` line, so the slash and its query drew as prose; `setBlock`'s `case 'hr'` wrote `'---'` on a blank line with `selection: ls + 3`, leaving the caret on the rule's own line; `case 'quote'` wrote the bare `'>'` for every blank line, the single-line pick included.
+**Now** — `.mdpm-autocomplete-slot` at `markdown-pm.css:988` carries only `min-width: 180px` and `max-width: 320px`, and nothing sets a width, so the pane sized to its longest row; `blockMenuSections` returned four sections, `['Headings', 'Lists', 'Insert', 'Embed']`, sixteen rows seated and fifteen unseated, with no inline format among them; the rule's row read `Horizontal Rule`; `build` in `decorations.ts` marked no part of a `/query` line, so the slash and its query drew as prose; `setBlock`'s `case 'hr'` wrote `'---'` on a blank line with `selection: ls + 3`, leaving the caret on the rule's own line; `case 'quote'` wrote the bare `'>'` for every blank line, the single-line pick included.
 
 **Becomes**
 
-```css
-/* Core/MarkdownPM/markdown-pm.css, after .mdpm-autocomplete-slot */
-.mdpm-block-menu .mdpm-autocomplete-slot {
-  width: 260px; /* KNOB */
-}
-```
-
 ```ts
 // Core/Actions/blockMenu.ts
+export const BLOCK_MENU_WIDTH = 260
+// Core/MarkdownPM/Menus/BlockMenu.tsx passes it to PickerMenu as style={{ width: BLOCK_MENU_WIDTH }},
+// which lands on the pane's own Shell element; MenuScrollFrame forwards no style, and UIX is out of scope.
+
 import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
 
 export type BlockMenuAction =
   | `heading:${1 | 2 | 3 | 4 | 5}`
   | `list:${Extract<ListKind, 'bullet' | 'ordered' | 'checkbox'>}`
-  | `format:${Extract<InlineFormat, 'link' | 'connection'>}`
+  | `format:${Extract<InlineFormat, 'link' | 'linkText' | 'connection'>}`
   | `block:${BlockFormat}` | 'block:citation' | 'block:page' | 'block:webpage'
 
 const LINK_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Connection', action: 'format:connection', icon: 'link' },
-  { label: 'Markdown Link', action: 'format:link', icon: 'link-2' },
+  { label: 'Markdown Link', action: 'format:linkText', icon: 'link-2' },
+  { label: 'External Link', action: 'format:link', icon: 'external-link' },
 ]
 // Insert's rule row is { label: 'Divider', action: 'block:hr', icon: 'separator-horizontal' }
-// blockMenuSections: Headings · Lists · Link · Insert · Embed — eighteen rows seated, seventeen unseated
+// blockMenuSections: Headings · Lists · Link · Insert · Embed — nineteen rows seated, eighteen unseated
 ```
 
 ```ts
@@ -419,6 +417,15 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 ```
 
 ```ts
+// Core/MarkdownPM/Input/format.ts
+export type InlineFormat = keyof typeof WRAP | 'link' | 'linkText' | 'connection'
+// toggleInline routes both through toggleWrap(doc, from, to, 'link', '[', ']()', …):
+//   'link' seats the caret at t + 3, inside the parentheses · 'linkText' at f + 1, inside the brackets
+
+// Core/MarkdownPM/Input/edits.ts
+export const lineStartAt = (doc: string, pos: number): number =>
+  pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
+
 // Core/MarkdownPM/Input/format.ts, setBlock
     case 'quote': {
       const blank = lines.length === 1 ? '> ' : '>'
@@ -432,11 +439,13 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 **Verify — automated**
 
 - [x] Red first, eight failures across the three files: `titles five sections and lists their rows in order`, `offers Footnote only where a marker can bind`, `keeps everything at 0 for an empty query`, `shows the five sections and every row`, `writes an empty connection and seats the caret between its brackets`, `tones the slash as syntax and the query as a phantom`, `quotes a blank line on its own with the marker and its space`, `seats the caret below a rule written on a blank line`; then green.
-- [x] Full gate green, exit codes read directly: typecheck 0, test 0 at 362 files / 4376 tests, lint 0.
+- [x] Red first on the follow-up, nine failures: the three model counts, `starts the first line at 0 even where the document opens on a newline`, `seats an empty link at its url, and an alias-first one at its text`, `seats the caret below a rule written on a blank line`, `shows the five sections and every row`, `seats an external link at its url`, `seats a Markdown link at its text`; then green.
+- [x] Full gate green, exit codes read directly: typecheck 0, test 0 at 362 files / 4380 tests, lint 0.
 
 **Verify — user**
 
-- [ ] The pane's width follows the knob; `/` draws in the syntax tone and the query in the phantom tone; `/conn` writes `[[]]` and opens the title picker; `/mark` writes a Markdown link; Divider leaves the caret on the line below a rendered rule; Blockquote leaves `> ` with the caret after the space.
+- [ ] The pane's width follows `BLOCK_MENU_WIDTH`; `/` draws in the syntax tone and the query in the phantom tone; `/conn` writes `[[]]` and opens the title picker; `/mark` writes a Markdown link; Divider leaves the caret on the line below a rendered rule; Blockquote leaves `> ` with the caret after the space.
+- [ ] `/ext` writes `[]()` with the caret in the parentheses; `/mark` with it in the brackets.
 
 #### Gate 2 — the pane on screen · **declared stop**
 
@@ -503,7 +512,7 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 - [x] **Phase 2** — The pane · base `bfdb7b126`
   - [x] Task 4 — The trigger · `f7209dc59`
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
-  - [x] Task 5b — The stop's refinements · `<commit>`
+  - [x] Task 5b — The stop's refinements · `6d30b72a7` · `<commit>`
 - [ ] **Phase 3** — The record · base `<commit>`
   - [ ] Task 6 — Context, History, and the grounding · `<commit>`
 
@@ -518,8 +527,8 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 - 09-09-2026, Claude (routine, disclosed): the blank-line no-op is fixed in `selectedLines` for the caret-only case, repairing the context menu's Heading and Lists rows on an empty line as well.
 - 09-09-2026, Claude (routine, disclosed): Escape is a one-shot dismissal; the next edit on the line re-detects and reopens, as the `[[` pane does. No dismissed-offset latch.
 - 09-09-2026, Claude (routine, disclosed): the trigger refuses a math block and the citations run as well as code, mirroring the two seat predicates beside it; the context menu still offers its rows there, which is its own exposure and not this plan's.
-- 09-09-2026, Nathan: the pane's width is a knob rather than its longest row, set on the block menu's own slot.
-- 09-09-2026, Nathan: a Link section sits between Lists and Insert with Connection and Markdown Link, reversing the "no Format section" ruling for links alone; External Link is pending an answer and is not built.
+- 09-09-2026, Nathan: the pane's width is a knob rather than its longest row, and the knob is `BLOCK_MENU_WIDTH` in `Core/Actions/blockMenu.ts` beside the rows it sizes, not a CSS rule.
+- 09-09-2026, Nathan: a Link section sits between Lists and Insert with Connection, Markdown Link, and External Link, reversing the "no Format section" ruling for links alone. External Link is the same `[]()` write with the caret in the parentheses; Markdown Link is alias-first, with the caret in the brackets.
 - 09-09-2026, Nathan: the rule's row reads `Divider` in the block menu; the native context menu keeps `Horizontal Rule`.
 - 09-09-2026, Nathan: a typed `/query` line draws in the `[[` pane's phantom state — the slash as syntax, the query as a phantom connection — so `plain-unresolved` governs both alike.
 - 09-09-2026, Nathan: a divider written on a blank line leaves the caret on the line below the rendered rule.
@@ -535,6 +544,7 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 - Task 5: the flow test's red run was five behavioral failures and two trivially green negative cases, not module-not-found; the test drives `mountEditor` and imports none of the new modules, so it cannot fail to resolve them.
 - Task 4: the fence, math, and table refusal that `blockQueryAt` and `embedSeatAt` each spelled out is one `inSealedBlockAt` in `Engine/docScan.ts`, read by both; `Embeds/embedInsert.ts` changed for it. Gate 2 simplification.
 - Task 5: the selection cursor and its `AcCtl` were written once more in `useBlockMenu`; both panes now share `useMenuCtl` and `CLOSED_GEOMETRY` from `useConnectionAutocomplete.ts`. Gate 2 simplification.
+- Task 5b: `lineStartAt` resolved caret 0 of a document opening with a newline to its second line, so every line transform on that first blank line acted one line down; guarded at the source in `Input/edits.ts`.
 - Task 5b: the divider's second case was specified as `'\ntext'` with the caret at 0, which `lineStartAt` resolves to the *second* line — `doc.lastIndexOf('\n', -1)` reads a negative index as 0 and finds the leading newline — so `setBlock` answered `{ from: 1, to: 0 }`. The case is written as `'a\n\nb'` with the caret at 2, the blank line between two paragraphs, which is the same shape without the pre-existing pos-0 quirk.
 - Task 5: a mousedown on a pane held through its exit animation applied a block against the closed render's range; both panes' picks now refuse unless the shared ctl reads open. The connection pane carried the same hole and took the same line. Gate 2 attack.
 

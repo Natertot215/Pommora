@@ -18,7 +18,8 @@ export interface Edit {
   selection: number
 }
 
-export const lineStartAt = (doc: string, pos: number): number => doc.lastIndexOf('\n', pos - 1) + 1
+export const lineStartAt = (doc: string, pos: number): number =>
+  pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
 export const lineEndAt = (doc: string, pos: number): number => {
   const i = doc.indexOf('\n', pos)
   return i === -1 ? doc.length : i

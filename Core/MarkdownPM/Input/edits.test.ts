@@ -13,6 +13,7 @@ import {
   continueBlockquoteOnEnter,
   calloutShorthand,
   shiftEnterEdit,
+  lineStartAt,
   type Edit,
 } from './edits'
 
@@ -379,5 +380,13 @@ describe('nested list behavior inside a callout', () => {
     const doc = '> [!callout] head\n> -[]'
     const r = canonicalizeCheckbox(doc, doc.length, doc.length, ' ')!
     expect(apply(doc, r)).toBe('> [!callout] head\n> - [ ] ')
+  })
+})
+
+describe('line bounds', () => {
+  it('starts the first line at 0 even where the document opens on a newline', () => {
+    expect(lineStartAt('\ntext', 0)).toBe(0)
+    expect(lineStartAt('\ntext', 1)).toBe(1)
+    expect(lineStartAt('a\nb', 3)).toBe(2)
   })
 })

@@ -989,9 +989,6 @@
   min-width: 180px; /* KNOB */
   max-width: 320px; /* KNOB */
 }
-.mdpm-block-menu .mdpm-autocomplete-slot {
-  width: 260px; /* KNOB */
-}
 .mdpm-autocomplete-match {
   font-weight: var(--weight-emphasized);
 }

@@ -77,7 +77,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     for (const title of ['Headings', 'Lists', 'Link', 'Insert', 'Embed'])
       expect(text).toContain(title)
     expect(text).toContain('Footnote')
-    expect(rows()).toHaveLength(18)
+    expect(rows()).toHaveLength(19)
   })
 
   it('leaves the headings alone under a heading query', async () => {
@@ -139,6 +139,24 @@ describe('picking a row writes the block and leaves one undo step', () => {
       undo(view)
     })
     expect(view.state.doc.toString()).toBe('')
+  })
+
+  it('seats an external link at its url', async () => {
+    const view = await open('')
+    await type(view, '/ext')
+    expect(rows()).toHaveLength(1)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[]()')
+    expect(view.state.selection.main.head).toBe(3)
+  })
+
+  it('seats a Markdown link at its text', async () => {
+    const view = await open('')
+    await type(view, '/mark')
+    expect(rows()).toHaveLength(1)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[]()')
+    expect(view.state.selection.main.head).toBe(1)
   })
 
   it('writes a table from its own query', async () => {
