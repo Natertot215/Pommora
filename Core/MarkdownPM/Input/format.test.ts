@@ -200,6 +200,20 @@ describe('setBlock', () => {
     const gapped = 'one\n\ntwo'
     expect(apply(gapped, setBlock(gapped, 0, gapped.length, 'quote'))).toBe('> one\n>\n> two')
   })
+  it('quotes a blank line on its own with the marker and its space', () => {
+    const edit = setBlock('', 0, 0, 'quote')
+    expect(apply('', edit)).toBe('> ')
+    expect(edit.selection).toBe(2)
+  })
+  it('seats the caret below a rule written on a blank line', () => {
+    const edit = setBlock('', 0, 0, 'hr')
+    expect(apply('', edit)).toBe('---\n')
+    expect(edit.selection).toBe(4)
+    const doc = 'a\n\nb'
+    const below = setBlock(doc, 2, 2, 'hr')
+    expect(apply(doc, below)).toBe('a\n---\n\nb')
+    expect(below.selection).toBe(6)
+  })
   it('fences the whole selection as one block', () => {
     expect(apply(three, setBlock(three, 0, three.length, 'code'))).toBe('```\none\ntwo\nthree\n```')
   })
