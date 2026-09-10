@@ -1,56 +1,131 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Execute `.claude/Planning/Menu System — Implementation Plan.md` once ratified: orchestrate only, Opus agents implement and run gates, one writer on the tree, every gate simplify → review → fix, Gate 1 a declared stop. Through the run: no comments from any agent; MarkdownPM never imports the store; attended sessions get a manual check list instead of a CDP smoke launch; when done, delete the plan from disk, scrub audit topic 5 from the report and the published artifact as if it never existed, write a grounding document for a MarkdownPM slash-command menu on the door, and close out in the codemap format.
+> **User Prompt:** Execute `.claude/Planning/Block Menu — Implementation Plan.md` (ratified 09-09-2026): orchestrate only, Opus agents implement and review, one writer on the tree, per phase implement → simplify → attack → fix → commit, Gate 2 a declared stop with a manual check list; no comments from any agent; MarkdownPM never imports the store. At the stop Nathan redirected the layout (width knob, a Link section, Divider, phantom-toned query, caret seats, title matching, no initial highlight) and then closed it: run a targeted attack on footnotes, every transformation, caret placement, and cross-feature edges, defer nothing, write History "MarkdownPM Block Menu", reconcile the Codebase Audit report and republish its artifact in Pommora's theme, sweep MarkdownPM.md for accuracy, reconcile Context and Handoff retiring the states and menu-system focuses and keeping glances, point the upcoming focus at the Codebase Report's remaining items, and push to origin.
 
 #### Current Focus
 
-**Dates:** 09-08-2026
-**Model:** Fable 5.1 supervising, Opus 4.8 implementing
+**Session ID:** 6b0e857e-d460-45bc-a39a-8b796e042333
+**Dates:** 09-09-2026 → 09-10
+**Model:** Fable 5.1 supervising, Opus 5 implementing and reviewing
 
-**The menu system has one door.** `popMenu(items, trigger?, { solid, stay, compact })` in `Core/Actions/menuActions.ts` is the only way a menu opens: no trigger means the operating system's menu at the cursor, a trigger means the Use Native Menus preference decides between a system menu anchored under the control and `MenuPresenter`, the one in-app renderer. Both renderers draw from one `ActionItem` tree, and `Desktop/Actions/menu.test.ts` deep-equals their projections from one fixture. The tile handle menu is one model, `tileHandleMenu.ts`, with its 413-line hand-built pane gone; `PickerControl` opens through `MenuDoorContext`; the connection menu model sits in `Core/Actions` with its siblings. Every keyboard chord is a row in `Core/Actions/commands.ts`, read by the native menu at `refreshMenu`, by the editor through its host's `settings().commands` behind a Compartment, and by every renderer handler; `readCommands` keeps only known ids and drops chords it cannot spell. Escape has one arbiter: six window listeners joined the dismissal stack through `pushEscape` and `useEscape`, each pinned glance holds its own entry, and a press on an open menu's own trigger closes it. The grip-hot stand-down chain is gone; the renderer's `preventDefault` on `contextmenu` was always what withheld main's menu.
+**The MarkdownPM Block Menu, closed.** The session opened on a ratified three-phase plan for a `/` pane and ran it end to end: Phase 1 built the React-free catalog in `Core/Actions/blockMenu.ts`, made `selectedLines` admit a caret-only blank line, and shared the caret geometry and key guard between the two editor panes; Phase 2 built the trigger over the cached scan, the hook, the pane, its jsdom flow test, and the mount in `MarkdownEditor.tsx`; Phase 3 wrote the record. Every gate ran simplify → attack → fix, and the finds were real: a bare `>` line took its marker glued to the prefix, a whitespace-only line became a nested bullet, and — the one High before the stop — a pane held through its exit animation kept the closed render's click handlers, so a click on the fading pane applied a block against a stale range. The `[[` pane had carried that hole since before the plan; both picks now refuse unless the shared ctl reads open.
 
-**Fourteen rulings landed during the run.** Nathan's stop at Gate 1 restored `solid` for the three window-set pickers, gave the tile menu its five root glyphs and the deleted pane's 120 floor and 180 cap, then in later passes made Lock, Style, and Scale stay rows that redraw the pane in place, put the lock glyph on Lock, returned picker lists to their natural width through `compact`, made a press on an open menu's trigger close it while keeping an outside click's click-through, kept the three untriggered click menus native, made the cell editor's format chords live, and had a right-click on a resting table cell activate it. Escape order is open order; focus never reorders it.
+**Nathan's stop redirected the surface.** He asked for a width knob (`BLOCK_MENU_WIDTH` at the top of `BlockMenu.tsx`, 140 at close), a Link section (Connection, Markdown Link alias-first, External Link URL-first through a new `linkText` inline format), `Divider` for the horizontal rule, the typed `/query` in the `[[` pane's phantom tones, a divider and a quote that seat the caret where a writer expects, the filter matching section titles so `/link`, `/embed`, and `/list` keep a whole section, and no row highlighted until an arrow key moves it. All of it landed as Task 5b across seven commits, each reviewed. The Gate 2b simplifier folded the fence/math/table refusal into one `inSealedBlockAt` that `embedSeatAt` reads too, and one `useMenuCtl` cursor that both panes share; its attacker found a Divider written directly under a paragraph reading as a setext heading in every other Markdown reader, fixed by giving the divider the table's leading blank.
 
-**What the reviews were worth.** Four gates and a closeout pass ran simplify → review → fix; the finds were mostly real. Gate 1: the door resolved nothing on an empty list where the native popper returned null, both projections disagreed on a checked row with a submenu, and `PickerRow` had no disabled state. Gate 3: every pinned glance shared one Escape entry pushed on the first pin, so a pin opened after a window was never the layer Escape closed. Gate 4: a modifier-only chord in settings killed its shortcut silently. The closeout attack found the settings row claiming a wider reach than the code has, which Nathan settled by narrowing the row, and three pre-plan chord literals in the cell editor, now derived from CodeMirror's own history keymap.
+**The closeout found two more Highs, both fixed.** A neutral verifier held every requirement; Nathan's targeted attack ran all nineteen rows across nine contexts with one undo each (133 live cells correct) and found that a pre-existing `/word` line became a live menu when the caret landed at its end — its pick unrecoverable — and that Internal Page and Webpage threw `RangeError` on a document's leading blank line through a hand-rolled twin of the `lineStartAt` guard the plan had already added once. The pane now opens only on a document change, `embedInsert.ts` reads `lineStartAt`, a Footnote written on the anchor line keeps a blank between marker and run, and a Table pick always seats the caret below the table. The final gate stands at typecheck 0, lint 0 with no warnings, 362 files / 4396 tests.
+
+**Verified against assumed.** The flow tests pin every clause of the acceptance criterion and every redirect; the closeout smoke launch over CDP observed every acceptance clause on the real Nexus after Task 5b and caught one layout defect — a section heading's emphasis fragment splitting across its flex row — fixed by keeping headings plain (Nathan saw the pane before the redirect). That launch killed a Pommora instance that had been running since 09-08 with four tabs open and relaunched it with the same tabs; no data loss was found. The one thing this session could not do is rewrite history: an amend meant for Task 6's trailer landed on the audit-report commit an agent had placed above it, so `bedab5188` carries the audit change under Task 6's message and `1c74dccb2` is Task 6; both trees are right, the harness declined the rewrite, and the plan's Deviations record it.
 
 #### Completion Criteria
 
-- [x] Every menu opens through `popMenu`; `popRowMenu`, `RowMenuHost`, `rowMenuRows`, `NativePickerContext`, `useNativeMenus`, the tile pane and its stylesheet, `accelerators.ts`, `FORMAT_CHORDS`, and the grip-hot chain sweep to zero against a control of 107 `ActionItem` hits.
-- [x] One parity test proves the native template and the presenter rows agree, including checked with submenu, checked with disabled, and stay.
-- [x] Every chord is a table row; no chord literal outside `commands.ts`; `chords.ts` is the engine graph's fourth UIX file.
-- [x] MarkdownPM imports nothing from `Core/Session/store`; the editor's chords ride `EditorHost.settings().commands`.
-- [x] Gates green at every commit: typecheck 0, lint 0, 358 files / 4317 tests at close.
-- [x] Nathan's own pass at Gate 1 and after Phases 2 and 3: the tile menu, the pickers, the grip right-clicks, and the Escape order behave as described.
-- [x] Audit topic 5 and R-21 to R-24 removed from the report and the published artifact; Context and the Features docs describe the door.
-- [ ] Nathan's live pass on the closeout fold: a right-click on a resting table cell activates it, a rebind reaches an open cell editor on the table's next render, and ⌘N / ⌘B still fire after a full dev-process restart.
+- [x] Every numbered requirement of the plan traces to a landed task, and the acceptance criterion holds in `blockMenuFlow.test.tsx`.
+- [x] Every finding from every review pass fixed or carrying a ruling in the plan's Log; no concern carried.
+- [x] MarkdownPM.md, ContextPM.md, HistoryPM.md (PM-134), and the grounding document reconciled; the audit report and its artifact reconciled and restyled.
+- [x] Gates green at close with no lint warnings.
+- [x] `main` pushed to origin.
 
 #### Next Session
 
-- **The system menu's Format rows still act on the page editor, not a focused cell.** `host.menus.format.onAction` has one reader, `MarkdownEditor`; routing the action to whichever view holds focus, with a `pushState` from the cell so the menu's checkmarks follow it, is the piece that finishes "a right-click into a cell targets it." Recorded under Known Issues.
-- **A press on a second picker while one list is open reopens inside the first's bloom-out.** Closing it costs the click-through Ruling 14 keeps. Recorded under Known Issues.
-- **Escape follows open order and the stack cannot re-insert.** Raise-on-click for floating windows and a pinned glance's entry surviving a tab round-trip both need an open-sequence number on stack entries. Recorded under Open Calls.
-- **The slash-command menu** has its grounding in `// Planning`'s `Slash Command Menu — Grounding.md`: the door needs to accept a `MenuAnchor` rect where it accepts an element, the editor reaches it through a new `EditorHost.menus.slash`, and the model sits in `Core/Actions`.
-- **A Shortcuts settings pane** over the one table, with the named-key map and the duplicate-chord rule it needs. Recorded under Next-Feature Candidates.
+- **Rule D-2**, the external-edit reload policy, from the audit's Where Brainwaves Go table; it gates the concurrency topic and unblocks the most.
+- **The cheap audit fixes** beside it: the two registry readers (R-17, R-18) and the ready watch-patch id narrowing (R-38).
+- **The audit ledger's count.** The report's Method paragraph says 72 findings were issued and the ledger holds 28 open; the artifact's stat reads 44 closed or withdrawn, corrected from a stale 40 this session. Confirm the 72 against the ledger's history if it matters.
+- **Two hand-rolled `lastIndexOf('\n', … - 1)` sites remain**, `Engine/parser.ts:12` and `Menus/gripMenu.ts:50`, both traced safe by their own guards; fold them onto `lineStartAt` when either file is next open.
 
 #### Feedback
 
-- "Tell the Opus agents not to add comments." Every implementer brief carries it; the plan's `//` lines are notes to the agent, not code to write.
-- "The store import thing shouldn't happen." MarkdownPM reaches app state only through `EditorHost`; saved to memory.
-- "Why is the agent smoke testing? Is this something I can do manually?" The agent smoke launch is the unattended default; an attended session gets a numbered check list. Saved to memory.
-- "Keep the click-through, and make sure this also removes any of the grip menu's ad-hoc reconciliation of that exact behavior, if it exists." None existed; the stack's `suppressReleaseClick` was already the one writer.
-- "YAGNI" on a setting for right-click dismissal: a right-click outside an in-app surface closes nothing, an outside left-click closes the whole stack, no preference.
+- "Looks good. Please assign it a fixed-width line in the file so I can tweak that."
+- "Each section should have autocomplete fire on its section name itself."
+- "H1 shouldn't be highlighted immediately, it's just the first-in-line, not hovered until the hovering actually happens."
+- "**THE STANDARD:** The work is finished when a later review of it finds nothing to correct… Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen."
+- "Do another final sweep of the MarkdownPM doc to ensure it's accurate — silence isn't contradiction."
 
 #### Session Pointers
 
-- The plan is deleted; its rulings, deviations, and lessons live in this Handoff, in Context, and in the commits `39e8d9439..c1fcce94b` filtered by the Fable trailer. No History entry by ruling.
-- Two arcs interleave on `main`: this one and Nathan's own MarkdownPM class-vocabulary, glance, and audit-ledger work. A whole-range diff credits this arc with the other's; the codemap in the closeout report was built per commit from this session's 31 commits alone.
-- Task 6's commit `1b6c552e7` carried two of Nathan's `md-bq` → `md-blockquote` hunks because they sat in the same files; that one commit alone draws no blockquote grip. The tree is consistent.
-- The audit artifact was republished by the parallel session twice between this session's reads and its publish; the final scrub was reapplied onto the newest version and published from a merged copy.
+- The plan, its rulings, deviations, closeout claim, and verdict: `.claude/Planning/Block Menu — Implementation Plan.md` (Status: Closed).
+- The width knob: `BLOCK_MENU_WIDTH` at the top of `Core/MarkdownPM/Menus/BlockMenu.tsx`.
+- The catalog and filter: `Core/Actions/blockMenu.ts`; the trigger: `Core/MarkdownPM/Menus/blockQuery.ts`; the hook: `useBlockMenu.ts` beside it.
+- The shared pane plumbing: `caretGeometry`, `whenAcOpen`, `useMenuCtl`, `CLOSED_GEOMETRY` in `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts`.
+- The three lessons this arc earned: the tail of `.claude/Guidelines/Editor-Internals.md`.
+- The audit page: `https://claude.ai/code/artifact/a9f3a52c-cb0f-45dc-900d-03275fd87e9c`, mirrored from `.claude/Planning/Codebase Audit — Report.md`.
 
 #### Working Notes
 
-- **A press on a menu's own trigger never closed it before this plan either.** The shield sits above every trigger and the stack held the trigger's entry to avoid flicker; the toggle is new behavior, not a restoration. Three reviewers assumed the opposite before one tested it at the base commit.
-- **The stack's `layer: () => null` never holds a target.** Every press is outside it; `outsidePress: false` is the whole protection. Two briefs had the two roles swapped.
-- **`--only` on a shared index carries the other session's hunks in a shared file.** The rule is to bundle them; the cost is one commit whose own tree is inconsistent. Say so in the commit's Lesson and move on.
-- **A stay handler must return rows in the same count and order.** The presenter identifies the open branch by row index; `tileHandleMenu.ts` satisfies it only because `drill()` runs before the `off` check.
-- **`historyKeymap`'s third binding has no `key`** (it is `linux: 'Ctrl-Shift-z'`), and mac redo lives on the second's `mac` field; derive bindings by spreading the whole entry, never by reading `key`.
+- **A pane's `open` must be read live, never captured.** `PickerMenu` holds children ~380 ms through its exit; a row's `onMouseDown` from the last open render is still clickable with that render's state. Both editor panes guard on `ctl.current.open`.
+- **`useMenuCtl(count, resetKey, drive, initial)`:** `initial = null` is what gives the block menu no highlight on open; the `[[` pane passes 0. `move` from `null` goes to the first or last row by direction; `pick` reads `index ?? 0`.
+- **The filter matches titles.** `filterBlockMenu` keeps a whole section when its title has a word starting with the query, so `/link` shows Connection although "Connection" never matches; a row's `at` is `null` when only the title matched, and `emphasized` renders the plain label then.
+- **`format:linkText` exists only for the block menu.** No chord and no context-menu row dispatch it; `toggleInline` seats its caret inside the brackets where `format:link` seats it inside the parentheses.
+- **The phantom tone follows the grammar, not the pane**, by ruling: a `/word` line draws in the phantom tones wherever the decorations run, a table cell and a read-only editor included, even though the pane opens only on typing.
+- **Biome's `useImportType` warning exits 0.** A type-only import written as `import { type A }` passes `npm run lint`'s exit code and still prints a warning; read the output.
+- **`git commit --amend --only` amends whatever HEAD is.** With agents committing on the shared branch, confirm HEAD's hash before an amend; this session mislabeled one commit that way.
+
+**FILES ADDED**
+
+- Core/Actions/blockMenu.ts
+- Core/Actions/blockMenu.test.ts
+- Core/MarkdownPM/Menus/BlockMenu.tsx
+- Core/MarkdownPM/Menus/blockQuery.ts
+- Core/MarkdownPM/Menus/blockQuery.test.ts
+- Core/MarkdownPM/Menus/useBlockMenu.ts
+- Core/MarkdownPM/Menus/blockMenuFlow.test.tsx
+
+**FILES MODIFIED**
+
+- Core/MarkdownPM/Autocomplete/AutocompletePane.tsx
+- Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
+- Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx
+- Core/MarkdownPM/Citations/citationEdits.ts
+- Core/MarkdownPM/Citations/citationCreate.test.tsx
+- Core/MarkdownPM/Embeds/embedInsert.ts
+- Core/MarkdownPM/Embeds/embedInsert.test.ts
+- Core/MarkdownPM/Engine/docScan.ts
+- Core/MarkdownPM/Input/edits.ts
+- Core/MarkdownPM/Input/edits.test.ts
+- Core/MarkdownPM/Input/format.ts
+- Core/MarkdownPM/Input/format.test.ts
+- Core/MarkdownPM/MarkdownEditor.tsx
+- Core/MarkdownPM/Tables/CellEditor.tsx
+- Core/MarkdownPM/decorations.ts
+- UIX/Menus/menu-index.tsx
+- .claude/ContextPM.md
+- .claude/HandoffPM.md
+- .claude/HistoryPM.md
+- .claude/Features/MarkdownPM.md
+- .claude/Guidelines/Editor-Internals.md
+- .claude/Planning/Block Menu — Implementation Plan.md
+- .claude/Planning/Codebase Audit — Report.md
+
+**FILES REMOVED**
+
+- .claude/Planning/Slash Command Menu — Grounding.md
+
+**COMMITS**
+
+- `077b5f222` — fix(markdownpm): a section heading stays one plain label
+- `862143a0b` — fix(markdownpm): a divider and a table share one trailing blank and seat the caret below what they wrote
+- `534c3cf3f` — docs(plan): the Block Menu plan closes — claim, verdict, rulings, and the lessons routed
+- `7d8630b4f` — fix(markdownpm): the block menu opens on typing alone; embeds, footnotes, and tables seat the caret where they should
+- `8c30eebc6` — docs(markdownpm): the feature doc reads as the code stands
+- `bedab5188` — docs(pommora): the block menu's record — Context, History PM-134, the grounding retired
+- `1c74dccb2` — docs(pommora): the block menu's record — Context, History PM-134, the grounding retired
+- `182d40369` — fix(markdownpm): a divider keeps a blank line above it; the matched section heading is emphasized
+- `da348382b` — feat(markdownpm): the block menu filter matches a section's title and opens with no row highlighted
+- `47e2bc5f3` — fix(markdownpm): the block menu's rows follow its width knob
+- `3d016ef75` — fix(markdownpm): the block menu's model import is type-only
+- `26383fc20` — refactor(markdownpm): the block menu's width knob lives in its pane
+- `b94097bd3` — feat(markdownpm): External Link and an alias-first Markdown Link; a caret at 0 starts on line one
+- `6d30b72a7` — feat(markdownpm): the block menu's stop refinements — a width knob, a Link section, Divider, phantom-toned query, and a divider and quote that seat the caret
+- `7e6ffb293` — fix(markdownpm): a pick refuses while its pane is closing
+- `9fec99d90` — refactor(markdownpm): one sealed-block predicate and one menu cursor for both panes
+- `d4921077b` — refactor(markdownpm): the trigger reads the fence table directly; the ctl list lives in the mount effect
+- `fe04d8532` — feat(markdownpm): the block menu pane, its hook, and its mount
+- `f7209dc59` — feat(markdownpm): the block menu trigger reads the cached scan
+- `bfdb7b126` — fix(markdownpm): a marker behind a bare quote prefix keeps its space
+- `81e192714` — refactor(actions): readonly block menu rows, no empty-query guard, one caret-geometry branch
+- `75db3a248` — refactor(markdownpm): one caret geometry and a multi-ctl key guard
+- `913ed48f9` — fix(markdownpm): a caret alone on a blank line is a selected line
+- `0b0783569` — feat(actions): the block menu model and its filter
+
+#### Handoff Guidelines
+
+- Restate rather than amend; a handled item leaves for Context, History, or the Feature docs with no tombstone.
+- §Working Notes holds what a fresh session would trip over; what Context or the Feature docs already say isn't restated.

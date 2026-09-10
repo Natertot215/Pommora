@@ -2,13 +2,13 @@
 
 ### Current Focus
 
-**The menu system has one door.** Every menu opens through `popMenu` in `Core/Actions/menuActions.ts`: a press with no trigger element pops the operating system's menu at the cursor over the `menu` channel, and a menu hanging from a control draws natively or through the in-app `MenuPresenter` by the Use Native Menus preference, from the same `ActionItem` tree. The tile handle menu and `PickerControl` are its first two consumers. Keyboard chords are one table in `Core/Actions/commands.ts` that the application menu, the editor's keymap, and every renderer key handler derive from; each ID is rebindable from `settings.json`, and Escape has one arbiter: the dismissal stack closes the most recently opened layer first. 
+**The editor has a block menu.** Typing `/` alone on a line opens a pane under the caret listing what the editor can make — Headings, Lists, Link, Insert, and Embed, nineteen rows — filtered by what follows the slash against section titles and row labels alike, with the typed query drawn in the phantom tones the `[[` pane uses. Return or a click removes the query outside history and runs the same action dispatch the context menu's items run, so one ⌘Z leaves the blank line; the pane opens only on a document change, never on a caret landing at the end of a line that already reads `/word`. The catalog is a React-free model in `Core/Actions/blockMenu.ts`; the trigger, hook, and pane live in `Core/MarkdownPM/Menus/`, sharing the caret geometry, key guard, cursor, and closed geometry with the connection pane. On the way, `selectedLines` began admitting a caret-only blank line, so Heading and List rows work on an empty line from the context menu too, and the divider, table, quote, footnote, and embed transforms each seat the caret where a writer expects it.
 
 **Glances went cross-surface.** The hover-preview pane now reaches sidebar rows, tabs, nav-view rows, cards, and table rows — not just editor links — through one Off-gated `armPreview` facade, with a single `previewPersistence` setting (Off / 1s / 5s / 10s / Until Closed) standing in for the old linger slider and enable toggle. Shift arbitrates with the create-ghost on the surfaces that host one (and raises the resting row when pressed at rest), a preview never covers the page already in view, and a right-click can't be clobbered by one. A corner lock pins a page preview into the new `Core/Session/glanceSlice`; pins survive navigation, scroll, and tab-switching, unlock leaves the pane standing, and every close blooms out through `PickerMenu`'s exit presence. 
 
-**State is placed by what it belongs to.** A chosen view and a hand-dragged row order are fields of the container's own sidecar (`active_view`, and `manual_order` on the view record), so both travel with the Nexus to every device. Pane widths, sidebar folds, and floating-window size are nested keys on the `devicePrefs` singleton in `nexus.db` — per machine, per Nexus, and discardable on a schema bump without losing anything authored. `localStorage` holds nothing. Interface Scale and Webpage Zoom remain the deliberate exception in the other direction, staying in the synced settings file because the Nexus defines how it is meant to be read.
+**What comes next is the Codebase Audit's remaining ledger.** `// Planning`'s `Codebase Audit — Report.md` is the current state of the audit and shrinks as items close; its Where Brainwaves Go table orders the work: rule D-2, the external-edit reload policy, first; the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it; then the ruled foundation work of folding the Table and Cards renderers onto one engine; then building on the openings whose plumbing exists. The published audit page mirrors the report in Pommora's own theme.
 
-The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
+The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
 
@@ -87,30 +87,30 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
-#### PM-129 || The Repo Restructure
-**DATE:** 09-05-2026 → 09-06
+#### PM-134 || MarkdownPM Block Menu
+**DATE:** 09-09-2026
 
-The app was refiled as `Core`, `UIX`, and `Desktop`, with every Node and Electron call behind `Core/Platform` and the desktop host, one channel table, every list menu on one path, the editor on an `EditorHost`, and the comments, duplicates, and dead paths cut across the tree. The code lines fell from 69,459 to 68,679 on the run's counter and by 1,002 on a count that excludes test harnesses; the documentation was reconciled on a fixed character budget.
+`/` on an empty line opens an in-app pane of five sections and nineteen rows, filtered by title and label as the query is typed, picked by Return or a click, and undone in one step to the blank line. The model sits in `Core/Actions/blockMenu.ts`, the trigger reads the cached scan through the same `inSealedBlockAt` the embed seat reads, and the pane shares its geometry, key guard, and cursor with the `[[` autocomplete. The blank-line fix in `selectedLines` repaired the context menu's Heading and List rows on an empty line, and the divider, table, quote, footnote, and embed transforms now seat the caret consistently.
 
-#### PM-128 || Tiles
-**DATE:** 09-05-2026
+#### PM-133 || The Engine Boundary
+**DATE:** 09-07-2026
 
-`SurfacePM/` became `Tiles/` and every tile-system "block" became "tile"; the grid's drags and the embed handle moved onto the one pointer engine; the three tile kinds are declared in `TILE_KINDS`, `TILE_SURFACES`, and `TILE_COPY`; each host's document is `_tiles.json` in its folder, watched and reloaded live. The closeout's polish took the arc net negative and retired the row migration.
+A Vitest walker over the import graph from `Core/Contract/serve.ts` fails on any `.tsx`, DOM global, or package outside `ulidx`/`yaml`/`zod`, and the Desktop node tsconfig makes a DOM reference in an engine file a type error. Every channel in `Core/Contract/bridge.ts` answers through the `Result` envelope, and Core's tests open in-memory stores through `Core/Testing/machines.ts`, so Core passes `vitest` with `Desktop/` renamed away.
 
-#### PM-127 || The Resize Frame
-**DATE:** 09-04-2026
+#### PM-132 || State Placement
+**DATE:** 09-07-2026
 
-Every drag-to-size and drag-to-move gesture on one box — the floating windows, the glance pane, the sidebar and inspector strips, the window side panes — runs through `useResizeFrame` in `UIX/Interactions/ResizeFrame.tsx` on the shared pointer engine; a host owns its rect and declares its floor, ceiling, whether it is equilateral, and whether it is outlined. `FloatingWindow.tsx` and the two strip sheets are gone.
+A chosen view and a hand-dragged row order became fields of the container's own sidecar (`active_view`, and `manual_order` on the view record), so both travel with the Nexus; pane widths, sidebar folds, and a floating window's size became nested keys on the `devicePrefs` singleton in `nexus.db`, per machine and per Nexus. `localStorage` holds nothing of Pommora's, and Interface Scale and Webpage Zoom stay in the synced settings file by decision.
 
-#### PM-126 || Active Cache Framework
-**DATE:** 09-03-2026
+#### PM-131 || Cross-Surface Glances
+**DATE:** 09-06-2026
 
-Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `UIX/Utilities/capMap.ts`; the per-tab warm and page-detail caps rose to 50. The parked-tab count became a user setting — Active Tab Cache (`personalization.tabCache`, 5–20, default 5), read live in `ContentView`'s `useHosts`. A default-on Pause Media on Tab Switch toggle pauses a parked tab's webpage-guest media through the new `webGuestMedia:pause` channel, one-directional by decision — returning never resumes — with the tab-active signal threaded through CodeMirror state to the detached-root `WebTile`.
+The Glance hover-preview pane reached sidebar rows, tabs, nav-view rows, cards, and table rows through one Off-gated `armPreview` facade, with a single `previewPersistence` setting standing in for the old linger slider and enable toggle. A corner lock pins a page preview into `Core/Session/glanceSlice`, and pins survive navigation, scroll, and tab-switching.
 
-#### PM-125 || Page File History
-**DATE:** 09-02-2026
+#### PM-130 || The One Value Picker & Panel
+**DATE:** 09-06-2026
 
-A page's body accumulates device-local snapshots in `versions.db` under one capture rule, restorable from a Page History window reached by View History in every page menu and History beside Properties; a restore replaces the body alone and reaches every open editor, cancelling any save armed under it. Files & Links carries the four File History settings. The two-host lost update and the store's presence in NexusOS's repository are recorded under Known Issues; the external-edit reload through `replaceBody` is the next mechanism the arc seeded. A secondary review over six lenses, the tests, and a final regression pass landed after the closeout in five commits ending at `c770e9a4`, netting −11 lines against the arc.
+Nine hand-rolled popup compositions that each assigned a property value collapsed onto `Core/Properties/Pickers/PropertyPicker.tsx`, and the page-property rows became `Core/Properties/PropertyPanel.tsx` over the design system's `MenuItem`. The fold shed the nine wrappers at a net of −267 source lines.
 
 
 ### Guidelines
