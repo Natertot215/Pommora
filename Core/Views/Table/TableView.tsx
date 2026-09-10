@@ -106,6 +106,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setPaths,
     rowById,
     rowBand,
+    paintOrder,
     bandLabel,
     collapsed,
     toggleCollapse,
@@ -878,19 +879,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const renameTarget = editing?.mode === 'rename' ? editing : null
   const activeCell = editing ? { rowId: editing.rowId, colId: editing.colId } : null
   // Above the early returns — a hook after a conditional return crashes React the moment the condition flips.
-  const { dataRows, rowPath } = useMemo(() => {
-    const rows: { id: string; path: string; groupKey: string }[] = []
-    const collect = (g: ResolvedGroup): void => {
-      for (const r of g.items) rows.push({ id: r.id, path: r.path, groupKey: g.key })
-      for (const c of g.children ?? []) collect(c)
-    }
-    groups.forEach(collect)
-    return {
-      dataRows: rows,
-      rowPath: new Map(rows.map((r) => [r.id, r.path] as const)),
-    }
-  }, [groups])
-
   const subTargets = useMemo(() => {
     const m = new Map<string, { setId: string | null; bucket: string | null }>()
     for (const g of groups) {
@@ -1023,7 +1011,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       commitGroupValue(pageId, groupPropId, groupPropType, destGroupKey)
       return
     }
-    const path = rowPath.get(pageId)
+    const path = rowById.get(pageId)?.path
     const dest = subTargets.get(destGroupKey)
     if (!path || !dest) return
     const destPath = dest.setId === null ? source.path : setPaths.get(dest.setId)
@@ -1037,7 +1025,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       void write?.then((ok) => ok && mutate({ op: 'movePage', path, newParentPath: destPath }))
   }
   const relocateRow = (pageId: string, destGroupKey: string): void => {
-    const path = rowPath.get(pageId)
+    const path = rowById.get(pageId)?.path
     const destPath = destGroupKey === UNGROUPED ? source.path : setPaths.get(destGroupKey)
     if (!path || !destPath || destPath === relDirname(path)) return
     const order = [...containerPages(destPath), pageId]
@@ -1054,7 +1042,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setManualOverride(orderIds)
     if (structuralOrder) {
       const groupPages = orderIds.filter((id) => rowBand.get(id) === groupKey)
-      const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
+      const firstPath = groupPages.length ? rowById.get(groupPages[0])?.path : undefined
       if (firstPath) {
         const containerPath = relDirname(firstPath)
         void mutate({
@@ -1174,7 +1162,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       />
       <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop}>
         <TableRowDnd
-          rows={dataRows}
+          rows={paintOrder}
           disabled={dragDisabled}
           canReorderWithin={canReorderWithin}
           canReassign={canReassign}
