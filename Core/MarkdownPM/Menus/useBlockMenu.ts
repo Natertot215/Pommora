@@ -23,10 +23,14 @@ export interface BlockMenuState extends BlockQuery, CaretGeometry {
   citeSeat: boolean
 }
 
-export function detectBlockQuery(view: EditorView, set: (s: BlockMenuState | null) => void): void {
+export function detectBlockQuery(
+  view: EditorView,
+  set: (s: BlockMenuState | null) => void,
+  typed: boolean,
+): void {
   const sel = view.state.selection.main
   let next: BlockMenuState | null = null
-  if (sel.empty) {
+  if (sel.empty && typed) {
     const q = blockQueryAt(docScan(view.state.doc), sel.head)
     if (q) {
       const g = caretGeometry(view, sel.head)

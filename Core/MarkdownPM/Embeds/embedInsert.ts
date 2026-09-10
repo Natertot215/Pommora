@@ -2,6 +2,7 @@ import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
 import { inSealedBlockAt } from '../Engine/docScan'
+import { lineStartAt } from '../Input/edits'
 import { docScan, docString } from '../docCache'
 
 export function embedInsertAfter(
@@ -13,11 +14,10 @@ export function embedInsertAfter(
   const nextLineEnd = doc.indexOf('\n', nextLineStart)
   const nextLine = doc.slice(nextLineStart, nextLineEnd === -1 ? doc.length : nextLineEnd)
   const trail = nextLine.trim() === '' ? '' : '\n'
-  const lineStart = doc.lastIndexOf('\n', blockTo - 1) + 1
+  const lineStart = lineStartAt(doc, blockTo)
   const curBlank = doc.slice(lineStart, blockTo).trim() === ''
   const prevBlank =
-    lineStart === 0 ||
-    doc.slice(doc.lastIndexOf('\n', lineStart - 2) + 1, lineStart - 1).trim() === ''
+    lineStart === 0 || doc.slice(lineStartAt(doc, lineStart - 1), lineStart - 1).trim() === ''
   const lead = curBlank ? (prevBlank ? '' : '\n') : '\n\n'
   const from = curBlank ? lineStart : blockTo
   return {

@@ -308,7 +308,7 @@ export function MarkdownEditor({
         // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly) {
           detectConnectionQuery(u.view, setAc, true)
-          detectBlockQuery(u.view, block.setState)
+          detectBlockQuery(u.view, block.setState, u.docChanged)
         }
       }),
     ]
