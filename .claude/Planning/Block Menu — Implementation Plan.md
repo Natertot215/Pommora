@@ -330,7 +330,7 @@ export function BlockMenu(props: {
 }): React.JSX.Element
 // one ref holds the last { state, matches, selected } while open, as AutocompletePane.tsx:35-37 does, so the close animates over real rows
 // PickerMenu glass="window" open anchorX/anchorY/anchorHeight/bounds origin="center" manageFocus={false} contentClassName="mdpm-block-menu"
-// MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot"
+// MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}, no slot class: the frame stretches to the pane's BLOCK_MENU_WIDTH
 // per match: <MenuRowView row={{ kind: 'heading', label: title, caps: true }} /> then MenuItem rows: className="mdpm-block-row", leading <Icon name={row.icon}>, selected={row.action === selected}, ref={keepInView} from ../Autocomplete/useKeepInView, onMouseDown preventDefault → onPick
 // the label's slice at row.at of the query's length wrapped in .mdpm-autocomplete-match
 ```
@@ -527,7 +527,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - 09-09-2026, Claude (routine, disclosed): the blank-line no-op is fixed in `selectedLines` for the caret-only case, repairing the context menu's Heading and Lists rows on an empty line as well.
 - 09-09-2026, Claude (routine, disclosed): Escape is a one-shot dismissal; the next edit on the line re-detects and reopens, as the `[[` pane does. No dismissed-offset latch.
 - 09-09-2026, Claude (routine, disclosed): the trigger refuses a math block and the citations run as well as code, mirroring the two seat predicates beside it; the context menu still offers its rows there, which is its own exposure and not this plan's.
-- 09-09-2026, Nathan: the pane's width is a knob rather than its longest row, and the knob is `BLOCK_MENU_WIDTH` at the top of `Core/MarkdownPM/Menus/BlockMenu.tsx`, the pane it sizes, not a CSS rule or a model export.
+- 09-09-2026, Nathan: the pane's width is a knob rather than its longest row, and the knob is `BLOCK_MENU_WIDTH` at the top of `Core/MarkdownPM/Menus/BlockMenu.tsx`, the pane it sizes, not a CSS rule or a model export. The scroll frame carries no `mdpm-autocomplete-slot` class, whose 180px floor had let the rows overflow a narrower pane.
 - 09-09-2026, Nathan: a Link section sits between Lists and Insert with Connection, Markdown Link, and External Link, reversing the "no Format section" ruling for links alone. External Link is the same `[]()` write with the caret in the parentheses; Markdown Link is alias-first, with the caret in the brackets.
 - 09-09-2026, Nathan: the rule's row reads `Divider` in the block menu; the native context menu keeps `Horizontal Rule`.
 - 09-09-2026, Nathan: a typed `/query` line draws in the `[[` pane's phantom state — the slash as syntax, the query as a phantom connection — so `plain-unresolved` governs both alike.
