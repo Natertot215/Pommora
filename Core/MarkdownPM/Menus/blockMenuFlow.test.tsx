@@ -239,16 +239,17 @@ describe('the query is emphasized wherever it matched', () => {
     expect(rows()[1]?.textContent).toBe('Code Block')
   })
 
-  it('marks the heading as well as each row when the title matched', async () => {
+  it('marks each row when the title and the rows matched alike', async () => {
     const view = await open('')
     await type(view, '/hea')
-    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
+    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
   })
 
-  it('marks only the heading when the rows matched through their section', async () => {
+  it('marks nothing when the rows matched only through their section', async () => {
     const view = await open('')
     await type(view, '/embed')
-    expect(marks()).toEqual(['Embed'])
+    expect(marks()).toEqual([])
+    expect(rows()).toHaveLength(2)
   })
 })
 
