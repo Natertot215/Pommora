@@ -2,7 +2,7 @@
 
 Nine read-only auditors each covered a slice of the tree or a cross-cutting lens, a tenth merged their reports and re-checked every ranked claim against the code, and the result was spot-checked again before consolidation. Planning documents, the context document, history, handoff, and all code comments were excluded as evidence. Features docs were read only as statements of intent. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the topics they settle.
 
-**Tree audited:** 76,468 lines of non-test source across 688 files, Core 61,612, UIX 12,829, Desktop 2,027. Mobile and Sync are empty package shells. **Gates:** typecheck clean, lint clean, 341 test files and 4,146 tests passing after the day's fixes.
+**Tree audited:** 76,468 lines of non-test source across 688 files, Core 61,612, UIX 12,829, Desktop 2,027. Mobile and Sync are empty package shells. **Gates:** typecheck clean, lint clean, 362 test files and 4,391 tests passing.
 
 #### The Verdict
 
@@ -19,38 +19,9 @@ Nine read-only auditors each covered a slice of the tree or a cross-cutting lens
 
 **Does continuing to build undermine the foundations?** Not the foundations themselves. The boundary holds by construction and won't erode from feature work. What erodes is the cost of the undecided policies: every new stateful feature picks its own storage home until the placement rule is applied, every new hover control lengthens the touch backlog, every new view kind is written a third time. Deferral has a linear price.
 
-#### What Has Changed Since The Audit
-
-All on 09-07-2026, all gated green, committed on `main` as `f67ba25e4` (index), `f959e5690` (six fixes), `df045582e` (narrowed walks), and `4377b6555` (audit documents); the property-restore fix as `dd78ef63e`.
-
-- **Six one-machine defects.** Ambiguous asset names render as unresolved instead of silently taking the first match. The Markdown table's cell sweep runs on the shared pointer harness so cancel, blur, and Escape tear it down. Two personalization keys decode to unset like their siblings, and a never-set accent follows the system accent, which the settings row already promised. Empty settings frames render blank. A CSS rule targeting a class CodeMirror never emits is gone. The table's column-widening animation survives StrictMode.
-- **Property restore keeps the newer value (`dd78ef63e`).** Re-assigning a removed property no longer overwrites a value the page acquired in between; the restore skips a page that already holds a value the definition accepts. A hand-written value the definition rejects still reconciles to blank and is overwritten; that narrower gap is recorded, not fixed.
-- **Context membership in the content index.** A `memberships` table, every Context-key writer re-indexing inside its own lock, the three cascade arms sweeping only the pages the index reports with a full-corpus fallback when no store is present, and one reverse query. One correction to the audit: Context keys were already indexed at key level; membership at value level was the missing piece.
-- **Four narrowed walks.** The pre-rename holder check narrows through the index and confirms from disk. The callout atomic-range set is built once per document version. Tab and window persistence is debounced with a flush before a nexus switch. The Grouping pane's date list is memoized.
-- **Withdrawn.** Interface Scale and Webpage Zoom syncing is intended design. ⌘-click on a table title opens a new tab; the finding was denied by manual test. The page outline is already surfaced as a dropdown.
-
-A second pass on 09-08-2026, gated green (typecheck, lint, 4,333 tests, production build), cleared another batch:
-
-- **The heading-column toggle follows its table (R-06).** The last confirmed one-machine defect: the toggle was keyed by a table's position, so inserting a table above moved it onto the wrong table. It is now keyed to the table's header row and remaps on document change; an in-place structural edit that rewrites a header keeps the toggle put.
-- **The Lucide icon library left the critical path (R-53).** The full icon set no longer ships with every icon; the glyph components load on demand while a lightweight name list keeps icon validation synchronous, so fallbacks are unchanged.
-- **The page-resolution contract moved to `Core/Connections` (R-43).** What a page is when something links to it no longer lives inside the editor's folder.
-- **The governed write preserves an unresolvable Context tag (R-11, ruled).** It now matches the on-open repair sweep rather than dropping a tag whose Space it cannot find.
-- **The write-echo filter is tested and its per-event scan narrowed to an ancestor walk (R-12).**
-- **The atomicity requirement is declared and conformance-tested (R-08).** The machine interface's write methods carry the all-or-nothing contract, and one shared test discriminates it for any host; single-writer stays unadopted by ruling.
-- **The settings roster and the sidebar's Disclosure were split out (R-62).** Two ~930-line files shed a data table and a component that can now be tested on its own.
-- **Two UIX cleanups (R-57, partial).** The dead `pending` drop state is gone; the picker's Solid variation is ruled a deliberate stacked-picker style and documented, not a duplicate to collapse.
-
-A third pass on 09-09-2026, gated green (typecheck, lint, 4,336 tests), closed Topic 10 — filing, naming, taxonomy, and coverage hygiene:
-
-- **One parent-path helper and named container finders (R-65).** A rootless-safe `relDirname` in the paths module carries the two former parent-path copies and the duplicate basename; the three container finders now say what they match, and the watch-patch by-path walk reads through the shared predicate finder.
-- **The Agenda vocabulary has one source (R-70).** `task`/`event` and their plural folder forms derive from one list that lives in the paths module, so nothing reaches upward for it; the on-disk `agenda_singletons` key is `agenda_folders`, normalized once when identity is read with a best-effort cleanup write behind it.
-- **The naming canon holds (R-69).** Sixteen renames align test stems, kebab `.ts`, and lowercase `.css` with the canon, and a duplicate test stem merges.
-- **One modal scrim (R-71).** A single UIX `ModalScrim` owns the portal, event swallowing, dismissal, and the floating-window entrance and exit; the confirmation window and the image picker both adopt it.
-- **The coverage numbers are settled (R-72).** No export is fully dead; thirty-six over-exported symbols lost their bare `export`. The Sync tsconfig joins `npm run typecheck` once Sync carries source — an empty project has nothing to check.
-
 #### Where Brainwaves Go
 
-Nathan's scarce resource is decisions; the implementation is Claude's. Two passes have landed since the audit. This cycle's cleanup cleared the cheap behind-the-wall half — the locale fold and the read-modify-write consolidation in Topic 4, the MarkdownPM link-token and engine-filing debt, the import and test-scaffolding hygiene, the property-panel resolver, and the widget-unmount discipline. What that leaves, ordered by what to reach for first:
+Nathan's scarce resource is decisions; the implementation is Claude's. What remains, ordered by what to reach for first:
 
 | Share                | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
 | -------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -335,5 +306,3 @@ This report is the source of truth for the audit, and it is written to shrink. A
 5. Grep the whole document for the `R-NN`, the file paths, and the prose hook, and confirm no residue survives anywhere — Verdict, Grounding, Where Brainwaves Go, and Creative Openings included.
 
 **Correcting a claim.** Apply the most minimal edit that makes the sentence true — change what is written rather than appending an amendment. Where a statement is simply no longer relevant, remove it; silence is not contradiction, so a claim that has become false is deleted or restated, never patched with a footnote.
-
-**The changelog and the mirror.** *What Has Changed Since The Audit* is the one place a resolved item is briefly recorded — a pointer to the work, while the finding itself still leaves the topics and the ledger. The published audit artifact is a rendered mirror of this report, brought to match at commit time; this document, not the artifact, is authoritative.
