@@ -55,9 +55,7 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
       <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
         {v.matches.map((m) => (
           <Fragment key={m.title}>
-            <MenuRowView
-              row={{ kind: 'heading', label: emphasized(m.title, m.at, matchLen), caps: true }}
-            />
+            <MenuRowView row={{ kind: 'heading', label: m.title, caps: true }} />
             {m.rows.map((row) => (
               <MenuItem
                 key={row.action}
