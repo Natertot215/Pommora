@@ -87,6 +87,16 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-136 || View-Kind Registry & Host Paint Order
+**DATE:** 09-10-2026
+
+The six view kinds became one registry in `Core/Views/views.ts`, each entry carrying its label, its icon, and whether it lays structural groups flat, and `ViewHost` seats a renderer from an exported map that falls back to Table. The picker, the settings panes, and every glyph site read the registry in place of five hand-copied lists and five table-glyph fallbacks, so a view without an icon of its own draws its kind's glyph and the flat Settings door's inverted kind test is gone. The host's row walk also yields the painted order, which both renderers read instead of walking the group tree themselves.
+
+#### PM-135 || MarkdownPM Consolidation
+**DATE:** 09-10-2026
+
+The four per-machine editor preferences became one generic `EditorPref<T>` in `api.ts`, with the heading-columns load joining the settled group so it applies before the scroll restore. The table's rectangle selection, its active cell, and embed-tile editing moved onto the shared `UIX/Interactions` dismissal stack, so Escape and outside presses follow the stack's rules. The list-item drag and the block drag folded into a single `rebuildMove` core, and `renumberOrderedRun`'s backward walk was made symmetric with its forward scan.
+
 #### PM-134 || MarkdownPM Block Menu
 **DATE:** 09-09-2026
 
@@ -101,17 +111,6 @@ A Vitest walker over the import graph from `Core/Contract/serve.ts` fails on any
 **DATE:** 09-07-2026
 
 A chosen view and a hand-dragged row order became fields of the container's own sidecar (`active_view`, and `manual_order` on the view record), so both travel with the Nexus; pane widths, sidebar folds, and a floating window's size became nested keys on the `devicePrefs` singleton in `nexus.db`, per machine and per Nexus. `localStorage` holds nothing of Pommora's, and Interface Scale and Webpage Zoom stay in the synced settings file by decision.
-
-#### PM-131 || Cross-Surface Glances
-**DATE:** 09-06-2026
-
-The Glance hover-preview pane reached sidebar rows, tabs, nav-view rows, cards, and table rows through one Off-gated `armPreview` facade, with a single `previewPersistence` setting standing in for the old linger slider and enable toggle. A corner lock pins a page preview into `Core/Session/glanceSlice`, and pins survive navigation, scroll, and tab-switching.
-
-#### PM-130 || The One Value Picker & Panel
-**DATE:** 09-06-2026
-
-Nine hand-rolled popup compositions that each assigned a property value collapsed onto `Core/Properties/Pickers/PropertyPicker.tsx`, and the page-property rows became `Core/Properties/PropertyPanel.tsx` over the design system's `MenuItem`. The fold shed the nine wrappers at a net of −267 source lines.
-
 
 ### Guidelines
 

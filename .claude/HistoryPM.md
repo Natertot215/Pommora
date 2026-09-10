@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-10-2026              | PM-136 | View-Kind Registry & Host Paint Order                |
 | 09-10-2026              | PM-135 | MarkdownPM Consolidation                             |
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
@@ -138,6 +139,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-136 || View-Kind Registry & Host Paint Order
+**DATE:** 09-10-2026
+
+`Core/Views/views.ts` exports `VIEW_TYPES` and carries `VIEW_KINDS`, one record per kind holding its label, its icon, and whether it lays structural groups flat, with `DEFAULT_VIEW_TYPE` read by the codec's catches and by `mintNewView`. `ViewHost.tsx` seats a renderer from its exported `VIEW_RENDERERS` map, falling back to `TableView`, and hands the kind's flatness to `useViewHost`; `LayoutFrame.tsx`'s picker maps the exported tuple and gates a tile on the renderer map, which retired its three hand-listed copies of the kind set, and its flat Settings door reads the same switch list as its Layout leaf, where it had tested the opposite kind. `viewIcon.ts`'s `viewGlyph` resolves a view's glyph from its own icon or its kind's, replacing five table-glyph fallbacks, and `iconForTypeSwitch` reads the registry in place of a passed icon map; `GroupFrame.tsx` and `SortFrame.tsx` offer the None row and the Location sort to a flat kind, and `GroupFrame` derives its sub-grouping from that same read rather than a prop. `useViewHost.ts`'s row walk also yields `paintOrder`, which `CardsView.tsx` and `TableView.tsx` read in place of their own group-tree walks, retiring `flattenGroups` and the `rowPath` memo.
+
+- **Commits:** `db1ff57b9^..fdda39069`
+- **Diff:** Net −17 | +151 / −168
 
 #### PM-135 || MarkdownPM Consolidation
 **DATE:** 09-10-2026
