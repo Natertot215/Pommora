@@ -10,7 +10,7 @@ import { useKeepInView } from './useKeepInView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import type { AcRow } from './autocomplete'
-import type { AcState } from './useConnectionAutocomplete'
+import { CLOSED_GEOMETRY, type AcState } from './useConnectionAutocomplete'
 
 interface Props {
   ac: AcState | null
@@ -19,16 +19,7 @@ interface Props {
   onPick: (row: AcRow) => void
 }
 
-const CLOSED: AcState = {
-  query: '',
-  from: 0,
-  to: 0,
-  form: 'link',
-  caretX: 0,
-  caretTop: 0,
-  caretBottom: 0,
-  bounds: { left: 0, right: 0 },
-}
+const CLOSED: AcState = { query: '', from: 0, to: 0, form: 'link', ...CLOSED_GEOMETRY }
 
 export function AutocompletePane({ ac, candidates, index, onPick }: Props): React.JSX.Element {
   const live = ac !== null && candidates.length > 0

@@ -89,6 +89,13 @@ export function inCalloutAt(scan: DocScan, pos: number): boolean {
   return scan.callouts[lineIndexAt(scan, pos)] !== undefined
 }
 
+export function inSealedBlockAt(scan: DocScan, i: number): boolean {
+  if (scan.fences[i]) return true
+  const from = scan.lineStarts[i]
+  const holds = (f: number, t: number): boolean => from >= f && from <= t
+  return scan.maths.some(([f, t]) => holds(f, t)) || scan.tables.some((r) => holds(r.from, r.to))
+}
+
 /** A few texts rather than one, because more than one page can be on screen and a single slot would let their renders evict each other. */
 const TEXT_SLOTS = 4
 export function perText<T>(derive: (text: string) => T): (text: string) => T {
