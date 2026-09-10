@@ -20,6 +20,13 @@ export interface CaretGeometry {
   bounds: { left: number; right: number }
 }
 
+export const CLOSED_GEOMETRY: CaretGeometry = {
+  caretX: 0,
+  caretTop: 0,
+  caretBottom: 0,
+  bounds: { left: 0, right: 0 },
+}
+
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
 
 export interface AcCtl {
@@ -27,6 +34,27 @@ export interface AcCtl {
   pick: () => void
   move: (d: number) => void
   close: () => void
+}
+
+export function useMenuCtl(
+  count: number,
+  resetKey: unknown,
+  drive: { open: boolean; pick: (index: number) => void; close: () => void },
+): { index: number; ctl: RefObject<AcCtl> } {
+  const [index, setIndex] = useState(0)
+  const selected = Math.min(index, Math.max(count - 1, 0))
+
+  const ctl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
+  ctl.current = {
+    open: drive.open,
+    pick: () => drive.pick(selected),
+    move: (d) => setIndex((i) => clamp(i + d, 0, count - 1)),
+    close: drive.close,
+  }
+
+  useEffect(() => setIndex(0), [resetKey])
+
+  return { index: selected, ctl }
 }
 
 export const whenAcOpen =
@@ -52,7 +80,6 @@ export function useConnectionAutocomplete(
   candidatesFor: (q: AcQuery) => AcRow[],
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
-  const [acIndex, setAcIndex] = useState(0)
   const candidatesForRef = useRef(candidatesFor)
   candidatesForRef.current = candidatesFor
   const query = ac?.query ?? null
@@ -94,23 +121,16 @@ export function useConnectionAutocomplete(
     view.focus()
   }
 
-  // Clamped where it's read: forgetting a row shrinks the list without touching the query, and an open panel holds Enter away from the editor while picking nothing.
-  const selected = Math.min(acIndex, Math.max(candidates.length - 1, 0))
-
-  const acCtl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
-  acCtl.current = {
+  const { index, ctl } = useMenuCtl(candidates.length, ac?.query, {
     open: ac !== null && candidates.length > 0,
-    pick: () => {
-      const r = candidates[selected]
+    pick: (i) => {
+      const r = candidates[i]
       if (r) commit(r)
     },
-    move: (d) => setAcIndex((i) => clamp(i + d, 0, candidates.length - 1)),
     close: () => setAc(null),
-  }
+  })
 
-  useEffect(() => setAcIndex(0), [ac?.query])
-
-  return { ac, setAc, candidates, acIndex: selected, commit, acCtl }
+  return { ac, setAc, candidates, acIndex: index, commit, acCtl: ctl }
 }
 
 /** The editor's nearest SCROLLING ancestor — the editor itself never scrolls, so `scrollDOM` is the wrong answer. */
