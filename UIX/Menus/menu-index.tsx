@@ -23,7 +23,7 @@ export type Trailing =
   | { kind: 'field'; children: ReactNode }
 
 export type MenuRow = (
-  | { kind: 'heading'; label: string; caps?: boolean }
+  | { kind: 'heading'; label: ReactNode; caps?: boolean }
   | { kind: 'separator' }
   | { kind: 'caption'; text: ReactNode }
   | { kind: 'action'; label: string; trailing?: Trailing; onClick: () => void }

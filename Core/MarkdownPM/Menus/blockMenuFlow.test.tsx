@@ -222,7 +222,7 @@ describe('a row held through the closing animation picks nothing', () => {
   })
 })
 
-describe('the query is emphasized where each row matched it', () => {
+describe('the query is emphasized wherever it matched', () => {
   it('marks the matched word, not the start of the label', async () => {
     const view = await open('')
     await type(view, '/bl')
@@ -230,10 +230,16 @@ describe('the query is emphasized where each row matched it', () => {
     expect(rows()[1]?.textContent).toBe('Code Block')
   })
 
-  it('marks the leading letters when that is where the word starts', async () => {
+  it('marks the heading as well as each row when the title matched', async () => {
     const view = await open('')
     await type(view, '/hea')
-    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
+    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
+  })
+
+  it('marks only the heading when the rows matched through their section', async () => {
+    const view = await open('')
+    await type(view, '/embed')
+    expect(marks()).toEqual(['Embed'])
   })
 })
 

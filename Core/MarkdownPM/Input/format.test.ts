@@ -219,8 +219,10 @@ describe('setBlock', () => {
     expect(edit.selection).toBe(4)
     const doc = 'a\n\nb'
     const below = setBlock(doc, 2, 2, 'hr')
-    expect(apply(doc, below)).toBe('a\n---\n\nb')
-    expect(below.selection).toBe(6)
+    expect(apply(doc, below)).toBe('a\n\n---\n\nb')
+    expect(below.selection).toBe(7)
+    const spaced = 'a\n\n\nb'
+    expect(apply(spaced, setBlock(spaced, 3, 3, 'hr'))).toBe('a\n\n---\n\nb')
     const opening = '\ntext'
     const first = setBlock(opening, 0, 0, 'hr')
     expect(apply(opening, first)).toBe('---\n\ntext')

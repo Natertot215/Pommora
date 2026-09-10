@@ -14,7 +14,7 @@ Bounded to the five sections Nathan ratified and to a line that holds nothing bu
 **Requirements**
 
 1. A model in `Core/Actions/blockMenu.ts` yields five titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
-2. A filter over the model matches the query, case-insensitively, against a section's title as well as its rows' labels, by the same word-start rule, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in each row label that matched on its own, and the heading label stays plain because `MenuRow`'s heading `label` is a `string`.
+2. A filter over the model matches the query, case-insensitively, against a section's title as well as its rows' labels, by the same word-start rule, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in the section heading when the title matched and in each row label that matched on its own.
 3. A `/` typed as the entire text of a line, with the caret at line end, outside code, math, and the citations run, opens the pane under the caret; each further non-space character narrows it; a space, a caret move off the line, or blur closes it; Escape closes it until the next edit, as the `[[` pane does; the pane shows only while a row matches.
 4. Return or a click on a row removes the typed `/query` and applies the row's action; one undo reverts the block and leaves the blank line.
 5. `setHeading` and `setList` act on a blank line when the caret alone selects it, so Heading 2 on an empty line writes `## ` from the pane and from the context menu alike.
@@ -530,11 +530,13 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - [x] **Phase 2** — The pane · base `bfdb7b126`
   - [x] Task 4 — The trigger · `f7209dc59`
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
-  - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3`
+  - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3` · `26383fc20` · `3d016ef75` · `47e2bc5f3` · `da348382b` · Gate 2b fixes below
 - [ ] **Phase 3** — The record · base `<commit>`
   - [ ] Task 6 — Context, History, and the grounding · `<commit>`
 
 ### Rulings
+
+- 09-09-2026, Claude (routine, disclosed): the `/query` tone follows the grammar wherever the decorations draw, a table cell and a read-only editor included, as the phantom-link tone does; no host flag is threaded into the decoration build for a color.
 
 - 09-09-2026, Nathan: Use Native Menus is unaffected; the block menu always draws in-app.
 - 09-09-2026, Nathan: the four-section layout as proposed; Format marks omitted.
@@ -558,6 +560,9 @@ export const lineStartAt = (doc: string, pos: number): number =>
 ### Open Against Later Tasks
 
 ### Deviations
+
+- Task 5b: `MenuRow`'s heading `label` widened from `string` to `ReactNode` in `UIX/Menus/menu-index.tsx`, the one UIX line the heading emphasis needed; `BlockMenu.tsx` renders headings and rows through one `emphasized` helper.
+- Task 5b: a divider picked on the blank line directly under a paragraph wrote `foo\n---`, a setext heading to every other Markdown reader; `setBlock` now computes the leading blank once for both the divider and the table. Gate 2b attack.
 
 - Task 1: `BlockMenuSection.rows` and `BlockMenuMatch.rows` are `readonly`, with the heading rows hoisted to a module constant beside the other three, so `blockMenuSections` allocates only the Insert list; the Becomes block wrote them mutable. Gate 1 simplification.
 - Task 2: a blank body behind a bare `>` prefix took the marker glued to the `>` (`>## `), and a whitespace-only body became list indent; `selectedLines` now carries a `pad` and clears the indent on a blank body. Gate 1 attack, commits `81e192714` and `bfdb7b126`.
