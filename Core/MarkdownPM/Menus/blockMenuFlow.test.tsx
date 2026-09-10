@@ -7,13 +7,6 @@ import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 stubEditorBridge()
 afterEach(async () => {
   await cleanupEditor()

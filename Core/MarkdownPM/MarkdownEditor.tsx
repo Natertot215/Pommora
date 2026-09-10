@@ -192,9 +192,9 @@ export function MarkdownEditor({
     },
   )
   const block = useBlockMenu(viewRef)
-  const acCtls = [acCtl, block.ctl]
 
   useEffect(() => {
+    const acCtls = [acCtl, block.ctl]
     const parent = editorRef.current
     if (!parent) return
     const extensions = [

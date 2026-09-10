@@ -454,6 +454,7 @@ export function BlockMenu(props: {
 
 - Task 1: `BlockMenuSection.rows` and `BlockMenuMatch.rows` are `readonly`, with the heading rows hoisted to a module constant beside the other three, so `blockMenuSections` allocates only the Insert list; the Becomes block wrote them mutable. Gate 1 simplification.
 - Task 2: a blank body behind a bare `>` prefix took the marker glued to the `>` (`>## `), and a whitespace-only body became list indent; `selectedLines` now carries a `pad` and clears the indent on a blank body. Gate 1 attack, commits `81e192714` and `bfdb7b126`.
+- Task 5: the flow test's red run was five behavioral failures and two trivially green negative cases, not module-not-found; the test drives `mountEditor` and imports none of the new modules, so it cannot fail to resolve them.
 
 ### Lessons
 
