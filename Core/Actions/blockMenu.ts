@@ -71,7 +71,7 @@ export function filterBlockMenu(sections: BlockMenuSection[], query: string): Bl
   const q = query.toLowerCase()
   const out: BlockMenuMatch[] = []
   for (const s of sections) {
-    const rows: (ActionItem<BlockMenuAction> & { at: number })[] = []
+    const rows: BlockMenuMatch['rows'][number][] = []
     for (const row of s.rows) {
       const at = wordStart(row.label, q)
       if (at !== null) rows.push({ ...row, at })
