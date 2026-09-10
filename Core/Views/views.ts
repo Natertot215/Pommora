@@ -4,8 +4,25 @@ import { z } from 'zod'
 import { columnStyle, type ColumnStyle } from '../Properties/columnStyles'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
 
-const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
+export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
 export type ViewType = (typeof VIEW_TYPES)[number]
+export const DEFAULT_VIEW_TYPE: ViewType = 'table'
+
+export interface ViewKind {
+  label: string
+  icon: string
+  flat: boolean
+}
+
+export const VIEW_KINDS: Record<ViewType, ViewKind> = {
+  // Table indents its structural groups until Table Flatten lands, at which point flatness becomes the view's own setting with the kind as its default.
+  table: { label: 'Table', icon: 'table', flat: false },
+  cards: { label: 'Cards', icon: 'cards-grid', flat: true },
+  list: { label: 'List', icon: 'list-rounded', flat: false },
+  gallery: { label: 'Gallery', icon: 'layout-dashboard', flat: false },
+  calendar: { label: 'Calendar', icon: 'calendar-days', flat: false },
+  timeline: { label: 'Timeline', icon: 'chart-gantt', flat: false },
+}
 
 const VIEW_FORMATS = ['standard', 'compact'] as const
 type ViewFormat = (typeof VIEW_FORMATS)[number]
@@ -206,10 +223,10 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
 /** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode defensively. */
 export const savedView = z.looseObject({
   id: z.string().catch(''),
-  name: z.string().catch('Table'),
+  name: z.string().catch(VIEW_KINDS[DEFAULT_VIEW_TYPE].label),
   icon: z.string().optional(),
   color: z.string().optional(),
-  type: z.enum(VIEW_TYPES).catch('table'),
+  type: z.enum(VIEW_TYPES).catch(DEFAULT_VIEW_TYPE),
   property_order: z.array(z.string()).catch([]),
   hidden_properties: z.array(z.string()).catch([]),
   column_widths: z.record(z.string(), z.number()).optional(),
@@ -260,8 +277,8 @@ export function mintNewView(name: string, schema: PropertyDefinition[]): SavedVi
   return {
     id: DEFAULT_VIEW_ID,
     name,
-    icon: 'table',
-    type: 'table',
+    icon: VIEW_KINDS[DEFAULT_VIEW_TYPE].icon,
+    type: DEFAULT_VIEW_TYPE,
     group: { kind: 'structural' },
     property_order: [RESERVED_PROPERTY_ID.title],
     hidden_properties: schema.map((d) => d.id),
@@ -269,5 +286,5 @@ export function mintNewView(name: string, schema: PropertyDefinition[]): SavedVi
 }
 
 export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
-  return mintNewView('Table', schema)
+  return mintNewView(VIEW_KINDS[DEFAULT_VIEW_TYPE].label, schema)
 }

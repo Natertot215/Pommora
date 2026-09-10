@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
-import { Icon, iconNameOr, type IconName } from '@pommora/uix/Symbols'
+import { VIEW_KINDS } from '@pommora/core/Views/views'
+import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf } from '../../Nexus/treeIndex'
@@ -9,6 +10,7 @@ import { footerLock, ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeIndex'
 import { pickView } from '../Pipeline/pickView'
+import { viewGlyph } from '../viewIcon'
 import { saveViewAdopting } from '../Host/viewMint'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { VisibilityList } from './HiddenFrame'
@@ -152,9 +154,7 @@ export function SettingsFrame(): React.JSX.Element | null {
       <InlineEditHeader
         value={scope ? view.name : node.title}
         readOnly={configLocked}
-        icon={
-          scope ? iconNameOr(view.icon, 'table') : entityIcon(node.kind, node.icon, defaultIcons)
-        }
+        icon={scope ? viewGlyph(view) : entityIcon(node.kind, node.icon, defaultIcons)}
         iconRef={iconRef}
         iconOpen={iconOpen}
         onIconClick={() => setIconOpen(true)}
@@ -259,7 +259,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         view={view}
         schema={schema}
         label="Settings"
-        subGrouping={view.type !== 'cards'}
+        subGrouping={!VIEW_KINDS[view.type].flat}
         onBack={back}
       />
     ) : detailId === 'sort' ? (

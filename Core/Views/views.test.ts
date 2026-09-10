@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
 import {
   savedView,
+  DEFAULT_VIEW_TYPE,
   decodeGroupConfig,
   decodeSubGroup,
   mintDefaultView,
@@ -229,7 +230,7 @@ describe('SavedView format (the cards density field)', () => {
   const base = { id: 'view_x', name: 'B', property_order: [], hidden_properties: [] }
   it('coerces an unknown type to table and round-trips a valid format', () => {
     const v = savedView.parse({ ...base, type: 'board', format: 'compact' })
-    expect(v.type).toBe('table')
+    expect(v.type).toBe(DEFAULT_VIEW_TYPE)
     expect(v.format).toBe('compact')
   })
   it('drops an unknown format value', () => {
