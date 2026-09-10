@@ -618,7 +618,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 **Gates at close:** typecheck 0 · lint 0 with no warnings · 362 files / 4396 tests (baseline 359 / 4336). **Dead Vocabulary:** `Slash Command Menu` and `menus.slash` each in `HandoffPM.md` alone; control `AutocompletePane` at 8 (see Deviations). **Lessons routed** to `.claude/Guidelines/Editor-Internals.md`: the `lineStartAt` rule, the held-pane rule, and where each block transform seats the caret.
 
-**Live:** one unattended smoke launch over CDP walked the acceptance criterion clause by clause (its result is in the session report); Nathan closed the Gate 2 stop on the running app before Task 5b, and ruled the pane's width, the Link section, Divider, the phantom tone, the divider's and quote's caret seats, title matching, and the un-highlighted first row from that pass.
+**Live:** one unattended smoke launch over CDP walked the acceptance criterion clause by clause on the real Nexus — every clause observed, the pane 140px wide with nineteen rows, the caret below a picked table and divider, the phantom tones present — and caught the heading-emphasis layout defect fixed in `077b5f222`; Nathan closed the Gate 2 stop on the running app before Task 5b, and ruled the pane's width, the Link section, Divider, the phantom tone, the divider's and quote's caret seats, title matching, and the un-highlighted first row from that pass.
 
 ---
 
@@ -648,7 +648,7 @@ Everything else is the standard below.
 **The deliverable**
 
 - [x] Every numbered requirement traces to a landed task.
-- [ ] The acceptance criterion observed running, clause by clause.
+- [x] The acceptance criterion observed running, clause by clause.
 - [x] Task 5's flow test green as listed.
 
 **The passes**
