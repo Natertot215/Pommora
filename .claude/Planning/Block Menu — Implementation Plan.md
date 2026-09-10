@@ -1,47 +1,47 @@
 ## Block Menu — Implementation Plan
 
-> **Status:** written, pending review · Spec: Nathan's direction of 09-09-2026 (in-app only, layout ratified, `/` trigger), over `Slash Command Menu — Grounding.md` · Three phases · Execute tasks in order.
+> **Status:** written, pending review · Spec: Nathan's direction of 09-09-2026 (in-app only, layout ratified, `/` trigger, the native menu untouched), over `Slash Command Menu — Grounding.md` · Three phases · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
 
-Typing `/` on an empty line in a Page opens a pane under the caret listing the blocks the editor can make, filtered by what follows the slash, picked by Return or a click, and undone in one step. At the end, a keyboard writer creates any block without leaving the line, the context menu's Heading and Lists rows work on an empty line, which they don't today, and the block roster the context menu and the pane both offer is defined once.
+Typing `/` on an empty line in a Page opens a pane under the caret listing the blocks the editor can make, filtered by what follows the slash, picked by Return or a click, and undone in one step. At the end, a keyboard writer creates any block without leaving the line, and the context menu's Heading and Lists rows work on an empty line, which they don't today.
 
-The pane is the editor's own, a peer of the `[[` autocomplete rather than a door menu: it filters as the user types, which the door's presenter cannot do and an OS menu cannot do while the editor holds focus. The row catalog is a React-free model in `Core/Actions`, where every other menu model lives; the editor filters it by the typed query and the native context menu builds its Insert, Embed, and Lists submenus from it. The blank-line no-op in `setHeading` and `setList` is fixed at the source rather than routed around, so the context menu gains the same behavior.
+The pane is the editor's own, a peer of the `[[` autocomplete rather than a door menu: it filters as the user types, which the door's presenter cannot do and an OS menu cannot do while the editor holds focus. The row catalog is a React-free model in `Core/Actions`, where every other menu model lives, in the pane's own order; the native context menu is a different surface with its own rows and is not touched. The blank-line no-op in `setHeading` and `setList` is fixed at the source rather than routed around, so the context menu gains the same behavior.
 
 Bounded to the four sections Nathan ratified and to a line that holds nothing but the slash and its query. Inline Format marks, chord display, table cells, the arrow list kind, and a `/` typed after a quote, callout, or list prefix are out; the cell editor is single-line inline GFM and cannot hold a block, and every `block:` and `list:` action is a toggle that would strip the prefix it was typed behind.
 
 **Requirements**
 
-1. A model in `Core/Actions/blockMenu.ts` yields four titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Insert (Blockquote, Callout, Code Block, Table, Horizontal Rule, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs. The native context menu's Insert, Embed, and Lists submenus read the same model.
+1. A model in `Core/Actions/blockMenu.ts` yields four titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Insert (Blockquote, Callout, Code Block, Table, Horizontal Rule, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
 2. A filter over the model matches a query against the start of any word in a row's label, case-insensitively, and reports where the match begins; an empty query keeps everything; a section with no surviving rows disappears with its heading.
 3. A `/` typed as the entire text of a line, with the caret at line end and outside code, opens the pane under the caret; each further non-space character narrows it; a space, a caret move off the line, or blur closes it; Escape closes it until the next edit, as the `[[` pane does; the pane shows only while a row matches.
 4. Return or a click on a row removes the typed `/query` and applies the row's action; one undo reverts the block and leaves the blank line.
 5. `setHeading` and `setList` act on a blank line when the caret alone selects it, so Heading 2 on an empty line writes `## ` from the pane and from the context menu alike.
-6. The record: `MarkdownPM.md` carries a `Block Menu:` sub-label under Block Structure and names the model among the shared submenu models; `ContextPM.md`'s Slash Commands item closes; the grounding document leaves the tree; History gains PM-134.
+6. The record: `MarkdownPM.md` carries a `Block Menu:` sub-label under Block Structure; `ContextPM.md`'s Slash Commands item closes; the grounding document leaves the tree; History gains PM-134.
 
-**Acceptance — the whole thing working:** In a Page with the dev build, on an empty line type `/hea`: a pane under the caret shows a Headings section with five rows and nothing else. Press ArrowDown once and Return: the line reads `## ` with the caret after the space and no `/hea` anywhere. Press ⌘Z once: the line is blank. Type `/` inside a code fence: nothing opens. Type `/` then a space: the pane closes. Right-click the blank line: Insert ▸ reads Blockquote, Callout, Code Block, Table, Horizontal Rule, Footnote in that order. With `npm run test`, `Core/MarkdownPM/Menus/blockMenuFlow.test.tsx` asserts the first four outcomes.
+**Acceptance — the whole thing working:** In a Page with the dev build, on an empty line type `/hea`: a pane under the caret shows a Headings section with five rows and nothing else. Press ArrowDown once and Return: the line reads `## ` with the caret after the space and no `/hea` anywhere. Press ⌘Z once: the line is blank. Type `/` inside a code fence: nothing opens. Type `/` then a space: the pane closes. With `npm run test`, `Core/MarkdownPM/Menus/blockMenuFlow.test.tsx` asserts the same four outcomes.
 
 **Forced By** *(what each grounded fact makes mandatory or impossible)*
 
-- `@codemirror/commands`' history joins only `input.type` and `delete` user events (`joinableUserEvent`, dist/index.js:471), so two `input` dispatches never merge; and `embedInsertAtCaret`, `webpageInsertAtCaret`, and `insertCitation` dispatch for themselves (`Embeds/embedInsert.ts:39-55`, `Citations/citationActions.ts:56-67`), so no composed single transaction serves every row → the `/query` removal leaves history through `addToHistory.of(false)`, and the action's own dispatch is the one history entry for all sixteen rows. → Task 6.
-- `setBlock('> ', 2, 2, 'quote')` and `setList('- ', 2, 2, 'bullet')` strip the prefix (`Input/format.ts:249-267, 182-198`), and `setBlock` table and hr on a non-blank line write the line above the block → a pane pick on a prefixed line would delete or strand what the user typed; the trigger admits only a line that is exactly `/` plus the query. → Task 5.
-- `selectedLines` (`Input/format.ts:154-179`) pushes only lines whose body is non-blank, so `setHeading` and `setList` return `{ changes: [] }` on an empty line and `applyEditorAction` dispatches an empty change set and returns `true` → the pane cannot rely on the runner's boolean; the blank line must count when the caret alone selects it. → Task 3.
-- `Desktop/Actions/editorMenu.ts:106-178` builds Insert, Embed, and Lists from literal label and action pairs identical to the model's → a second definition; the native menu reads the model and adds its checked state by action. → Task 2.
-- `applyEditorAction` (`Menus/menu.ts:68`) refuses a string without `EDITOR_ACTION_PREFIX` → the model carries bare actions as `pasteAsMenu.ts` does, and each caller prepends the prefix. → Tasks 1, 2, 6.
+- `@codemirror/commands`' history joins only `input.type` and `delete` user events (`joinableUserEvent`, dist/index.js:471), so two `input` dispatches never merge; and `embedInsertAtCaret`, `webpageInsertAtCaret`, and `insertCitation` dispatch for themselves (`Embeds/embedInsert.ts:39-55`, `Citations/citationActions.ts:56-67`), so no composed single transaction serves every row → the `/query` removal leaves history through `addToHistory.of(false)`, and the action's own dispatch is the one history entry for all sixteen rows. → Task 5.
+- `setBlock('> ', 2, 2, 'quote')` and `setList('- ', 2, 2, 'bullet')` strip the prefix (`Input/format.ts:249-267, 182-198`), and `setBlock` table and hr on a non-blank line write the line above the block → a pane pick on a prefixed line would delete or strand what the user typed; the trigger admits only a line that is exactly `/` plus the query. → Task 4.
+- `selectedLines` (`Input/format.ts:154-179`) pushes only lines whose body is non-blank, so `setHeading` and `setList` return `{ changes: [] }` on an empty line and `applyEditorAction` dispatches an empty change set and returns `true` → the pane cannot rely on the runner's boolean; the blank line must count when the caret alone selects it. → Task 2.
+- `applyEditorAction` (`Menus/menu.ts:68`) refuses a string without `EDITOR_ACTION_PREFIX` → the model carries bare actions as `pasteAsMenu.ts` does, and the pick prepends the prefix. → Tasks 1, 5.
 - `HEADING_LEVELS[].level` is `number` (`Core/Actions/gripMenu.ts:32`) → a row built from it needs the action narrowed to the union. → Task 1.
-- `MenuRowView`'s item branch forwards neither `ref` nor `onMouseDown` (`UIX/Menus/menu-index.tsx:112-127`), and a row must `preventDefault` its mousedown or the editor blurs before the click lands → headings render through `MenuRowView`, rows through `MenuItem` directly, as `AutocompletePane.tsx:53-88` does. → Task 6.
-- `picker-base.css.ts:64` composes `menuCompact` into every `PickerMenu` pane → the pane is compact by being a `PickerMenu`; nothing to add. → Task 6.
-- The extension array in `MarkdownEditor.tsx:196+` is built once, so a closure returned by a hook would be captured stale → the detector is a module-level function fed the hook's stable setter, as `detectConnectionQuery` is. → Task 6.
-- `whenAcOpen` (`useConnectionAutocomplete.ts:29-33`) is the one seam the keymap knows, and the two panes are exclusive by grammar → it takes a list of ctls and the keymap keeps four entries. → Task 4.
-- `Editor-Internals.md`: a predicate answered on every caret move reads the cached scan → detection takes `docScan(view.state.doc)` and `inCodeAt`, never the document string. → Task 5.
-- Only `Core/Actions/commands.ts` reaches UIX today, through the pinned `chords.ts` leaf (`Core/Contract/engineGraph.test.ts:15-22`), and `Desktop/Actions/editorMenu.ts` will import the model → the model carries icon names as plain strings and imports nothing from UIX; its test, not the model, imports `ICON_NAMES`. → Task 1.
+- `MenuRowView`'s item branch forwards neither `ref` nor `onMouseDown` (`UIX/Menus/menu-index.tsx:112-127`), and a row must `preventDefault` its mousedown or the editor blurs before the click lands → headings render through `MenuRowView`, rows through `MenuItem` directly, as `AutocompletePane.tsx:53-88` does. → Task 5.
+- `picker-base.css.ts:64` composes `menuCompact` into every `PickerMenu` pane → the pane is compact by being a `PickerMenu`; nothing to add. → Task 5.
+- The extension array in `MarkdownEditor.tsx:196+` is built once, so a closure returned by a hook would be captured stale → the detector is a module-level function fed the hook's stable setter, as `detectConnectionQuery` is. → Task 5.
+- `whenAcOpen` (`useConnectionAutocomplete.ts:29-33`) is the one seam the keymap knows, and the two panes are exclusive by grammar → it takes a list of ctls and the keymap keeps four entries. → Task 3.
+- `Editor-Internals.md`: a predicate answered on every caret move reads the cached scan → detection takes `docScan(view.state.doc)` and `inCodeAt`, never the document string. → Task 4.
+- Only `Core/Actions/commands.ts` reaches UIX today, through the pinned `chords.ts` leaf (`Core/Contract/engineGraph.test.ts:15-22`) → by convention the model carries icon names as plain strings; its test, not the model, imports `ICON_NAMES`. → Task 1.
 
 **Inherited Reasoning**
 
 - The grounding recorded `//` as the trigger to avoid "CommonMark's escape." Backslash is the escape; `/` has no Markdown meaning, and the empty-line constraint is what makes a single `/` unambiguous. `//` is retired.
 - The door widening to `HTMLElement | MenuAnchor`, `EditorHost.menus.slash`, a parity-fixture row in `Desktop/Actions/menu.test.ts`, and the Configuration row edit were all premised on the door. Nathan ruled native menus unaffected; none is built, and the union the previous plan cut stays cut.
 - A prefix-aware trigger (`> /`, `- /`) was drafted and withdrawn in review: the runner's toggles strip the prefix, and Table, Horizontal Rule, and the Embed rows strand it. Gating rows on the prefix state was the alternative; the narrower grammar is the smaller one.
+- Having `Desktop/Actions/editorMenu.ts` build its Insert, Embed, and Lists submenus from the model was drafted and withdrawn: Nathan ruled the block menu its own surface with its own order, and the native menu untouched. The overlap in labels and action strings is two surfaces naming the same editor actions, not one definition written twice.
 
 **Grounding** *(re-open these; don't cite them)*
 
@@ -51,15 +51,15 @@ Bounded to the four sections Nathan ratified and to a line that holds nothing bu
 - `Core/MarkdownPM/Menus/menu.ts` — `applyEditorAction` and `editFor`, the one runner every row resolves through.
 - `Core/MarkdownPM/Input/format.ts:154-179` — `selectedLines`.
 - `Core/Actions/gripMenu.ts:32-39` — `HEADING_LEVELS`, exported, leading with Paragraph.
-- `Core/Actions/pasteAsMenu.ts` — the bare-action-plus-prefix pattern and the `citeSeat` gate; `Desktop/Actions/editorMenu.ts:181-196` — how the native menu already consumes a shared row model.
+- `Core/Actions/pasteAsMenu.ts` — the bare-action-plus-prefix pattern and the `citeSeat` gate.
 - `Core/MarkdownPM/Citations/citationActions.ts:45` — `citationSeatAt(state)`, the Footnote gate.
 - `Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx:26-40` — how a pane test mounts, spies `coordsAtPos`, and sends keys.
 - `.claude/Guidelines/Editor-Internals.md` — the cached-scan rule and the offset rule.
-- `.claude/Features/MarkdownPM.md:70-93` — Block Structure and Context Menu + Shortcuts, where the record lands.
+- `.claude/Features/MarkdownPM.md:70-82` — Block Structure, where the record lands.
 
 **Environment:** Plan directory `.claude/Planning`. Spec input: Nathan's ratification in session over the grounding document. Explorer: `Explore` agents on Opus. Reviewer and simplifier: Opus agents briefed per the skill, `code-simplification` then `build-breaking`. Neutral verifier: a general-purpose Opus agent handed the claim, the requirements, and the range. Gates from `package.json`: `npm run typecheck`, `npm run test`, `npm run lint`. Rules directory `.claude/Guidelines`. Format references live at `~/The Studio/.claude/references/History-Format.md` and `Context-Format.md`. Baseline before Phase 1, measured 09-09-2026: `npm run test` at 359 files / 4336 tests, all green.
 
-**Shapes:** additive · fix (Task 3) · refactor (Tasks 2, 4) · user-visible.
+**Shapes:** additive · fix (Task 2) · refactor (Task 3) · user-visible.
 
 **Declared Stops**
 
@@ -72,18 +72,16 @@ Bounded to the four sections Nathan ratified and to a line that holds nothing bu
 - MarkdownPM imports nothing from `Core/Session/store`; the editor reaches app state only through `EditorHost`. `Core/Actions` imports no React and nothing from `Core/Interface` or UIX beyond the four pinned leaves.
 - Biome formats every write through the hook; a whitespace mismatch on an Edit means re-read and retry, never hand-align.
 - One writer on the tree. Commit per task; tick the task's boxes in the same commit. Bundle any unattributed hunks Nathan leaves in a shared file.
-- Out of scope everywhere: `Core/Actions/menuActions.ts`, `Core/Session/chromeSlice.ts`, `Core/Interface/Menus/`, `Desktop/` beyond `Desktop/Actions/editorMenu.ts`, `Core/MarkdownPM/api.ts`, `Core/MarkdownPM/editorHarness.ts`, `UIX/`, `.claude/Features/ConfigurationPM.md`, `Showcase/`. `Core/MarkdownPM/Tables/CellEditor.tsx` changes only at its three `whenAcOpen` calls in Task 4 and never mounts the block menu.
+- Out of scope everywhere: `Core/Actions/menuActions.ts`, `Core/Session/chromeSlice.ts`, `Core/Interface/Menus/`, `Desktop/`, `Core/MarkdownPM/api.ts`, `Core/MarkdownPM/editorHarness.ts`, `UIX/`, `.claude/Features/ConfigurationPM.md`, `Showcase/`. `Core/MarkdownPM/Tables/CellEditor.tsx` changes only at its three `whenAcOpen` calls in Task 3 and never mounts the block menu.
 
 **Made False** *(each rewrite lands in the commit that falsifies it)*
 
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| `.claude/Features/MarkdownPM.md:86` | "The submenu models themselves (`Core/Actions/pasteAsMenu.ts`, `Core/Actions/gripMenu.ts`, `Core/MarkdownPM/Citations/citationMenu.ts`) are shared code both processes read" | A fourth shared model, `Core/Actions/blockMenu.ts`. | 2 |
-| `.claude/Features/MarkdownPM.md:88` | "**Insert ▸** — Blockquote, Horizontal Rule, Code Block, Callout, Table, and — anywhere a marker can bind — Footnote." | The native order becomes the model's: Blockquote, Callout, Code Block, Table, Horizontal Rule, Footnote. | 2 |
-| `.claude/Features/MarkdownPM.md:72, 74` | "…and where its menu lives." · "The handle is also where the block's menu lives." | A second block menu exists; these are the grip's. | 6 |
-| `.claude/ContextPM.md:45` | "**Slash Commands** … triggered via `//` … records what the menu door provides" | The menu ships on `/`, in-app, off the door. The item closes. | 7 |
-| `.claude/HandoffPM.md:32` | "the door needs to accept a `MenuAnchor` rect … `EditorHost.menus.slash`" | Neither is built. The Handoff is rewritten by `/handoff` at session end; this line goes then. | 7 |
-| `.claude/Planning/Slash Command Menu — Grounding.md` | The whole premise: door, native-or-in-app, `//`. | This plan supersedes it. Deleted. | 7 |
+| `.claude/Features/MarkdownPM.md:72, 74` | "…and where its menu lives." · "The handle is also where the block's menu lives." | A second block menu exists; these are the grip's. | 5 |
+| `.claude/ContextPM.md:45` | "**Slash Commands** … triggered via `//` … records what the menu door provides" | The menu ships on `/`, in-app, off the door. The item closes. | 6 |
+| `.claude/HandoffPM.md:32` | "the door needs to accept a `MenuAnchor` rect … `EditorHost.menus.slash`" | Neither is built. The Handoff is rewritten by `/handoff` at session end; this line goes then. | 6 |
+| `.claude/Planning/Slash Command Menu — Grounding.md` | The whole premise: door, native-or-in-app, `//`. | This plan supersedes it. Deleted. | 6 |
 
 **Dead Vocabulary**
 
@@ -93,13 +91,13 @@ Bounded to the four sections Nathan ratified and to a line that holds nothing bu
 
 ---
 
-### Phase 1 — The catalog, its native reader, the blank line, and the shared seams
+### Phase 1 — The catalog, the blank line, and the shared seams
 
 #### Task 1: The block menu model
 
 **Requirement:** 1, 2
 
-**Why:** The rows the pane draws and the native menu lists are one roster; keeping it beside the other menu models in `Core/Actions`, React-free and tested on its own, is what lets both consumers be thin views over it. The filter and its match offset live with the data they read.
+**Why:** The rows the pane draws are data; keeping them beside the other menu models in `Core/Actions`, React-free and tested on their own, is what lets the pane be a thin view over a filter. The filter and its match offset live with the data they read.
 
 **Now** — `—` (new file). `HEADING_LEVELS` at `Core/Actions/gripMenu.ts:32-39` is the one heading label source, typed `{ level: number; label: string }`; `LIST_KIND_LABELS` at `:41` is private and carries the grip's vocabulary, so it is not reused.
 
@@ -130,9 +128,9 @@ export function matchAt(label: string, query: string): number | null
 export function filterBlockMenu(sections: BlockMenuSection[], query: string): BlockMenuSection[]
 ```
 
-Actions are bare; each caller prepends `EDITOR_ACTION_PREFIX`. Icons are plain strings.
+Actions are bare; the caller prepends `EDITOR_ACTION_PREFIX`. Icons are plain strings.
 
-**Assumed by:** Task 2 (the native menu maps the sections), Task 6 (draws them, prepends the prefix, gates on `citeSeat`, highlights from `matchAt`).
+**Assumed by:** Task 5 (draws the sections, prepends the prefix, gates on `citeSeat`, highlights from `matchAt`).
 
 **Verify — automated**
 
@@ -142,52 +140,9 @@ Actions are bare; each caller prepends `EDITOR_ACTION_PREFIX`. Icons are plain s
 
 **Verify — user**
 
-- [ ] *(none — nothing on screen until Task 6.)*
+- [ ] *(none — nothing on screen until Task 5.)*
 
-#### Task 2: The native menu reads the catalog
-
-**Requirement:** 1, 6 (the shared-models sentence)
-
-**Why:** The native context menu's Insert, Embed, and Lists submenus are the same sixteen labels and actions the model now owns. One roster is what keeps the two surfaces from drifting, and it is the invariant `MarkdownPM.md` already states for the other three shared models.
-
-**Now** — `rg -F "'Horizontal Rule'" Desktop Core --glob '!node_modules'` → 2 files after Task 1 (`Desktop/Actions/editorMenu.ts`, `Core/Actions/blockMenu.ts`):
-
-```ts
-// Desktop/Actions/editorMenu.ts:106-178 — pommoraItems builds Insert, Embed, and Lists from literal label/action pairs
-{ label: 'Insert', submenu: [ { label: 'Blockquote', type: 'checkbox', checked: s.block === 'quote', click: act('block:quote') }, { label: 'Horizontal Rule', click: act('block:hr') }, … ] },
-{ label: 'Embed', submenu: [ { label: 'Webpage', click: act('block:webpage') }, { label: 'Internal Page', click: act('block:page') } ] },
-{ label: 'Lists', submenu: [ { label: 'Bullet List', type: 'checkbox', checked: s.list === 'bullet', click: act('list:bullet') }, … ] },
-```
-
-**Becomes**
-
-```ts
-// Desktop/Actions/editorMenu.ts
-import { blockMenuSections, type BlockMenuAction } from '@pommora/core/Actions/blockMenu'
-// checked: block:quote → s.block === 'quote' · list:<kind> → s.list === kind · every other row unchecked, no type
-function catalogItem(wc: WebContents, s: FormatState, row: ActionItem<BlockMenuAction>): MenuItemConstructorOptions
-// Insert, Embed, and Lists submenus map the section of that title from blockMenuSections(s.citeSeat); Heading keeps HEADING_LEVELS with Paragraph; Format is untouched
-```
-
-```md
-<!-- .claude/Features/MarkdownPM.md:86 — the shared list adds `Core/Actions/blockMenu.ts` -->
-<!-- :88 — **Insert ▸** — Blockquote, Callout, Code Block, Table, Horizontal Rule, and — anywhere a marker can bind — Footnote. -->
-```
-
-**Assumed by:** Task 7 (History names the native reader).
-
-**Verify — automated**
-
-- [ ] `rg -F "'Horizontal Rule'" Desktop Core --glob '!node_modules'` → 1 file (`Core/Actions/blockMenu.ts`). Control: `rg -F "'Insert Link'" Desktop` → 1.
-- [ ] `rg -F "blockMenuSections" Desktop` → 1. Control: `rg -F "pasteAsRows" Desktop` → 1.
-- [ ] `rg -F "Callout, Code Block, Table, Horizontal Rule" .claude/Features/MarkdownPM.md` → 1; `rg -F "blockMenu.ts" .claude/Features/MarkdownPM.md` → 1. Control: `rg -F "pasteAsMenu.ts" .claude/Features/MarkdownPM.md` → 1.
-- [ ] Full gate green, exit codes read directly; the main-process typecheck (`tsc -p Desktop/tsconfig.node.json`) is where a UIX import in the model would fail.
-
-**Verify — user**
-
-- [ ] Right-click in a Page: Insert ▸ reads Blockquote, Callout, Code Block, Table, Horizontal Rule, and Footnote where a marker can bind; Blockquote shows its check inside a quote; Lists ▸ checks the current kind; Embed ▸ reads Internal Page, Webpage.
-
-#### Task 3: A caret on a blank line counts
+#### Task 2: A caret on a blank line counts
 
 **Requirement:** 5
 
@@ -216,7 +171,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
 
 `setHeading('', 0, 0, 2)` → `## ` with selection 3 · `setList('', 0, 0, 'bullet')` → `- ` · `setList('> ', 2, 2, 'ordered')` → `> 1. ` · `setHeading('one\n\ntwo', 0, 8, 1)` unchanged at `# one\n\n# two`.
 
-**Assumed by:** Task 6 (every heading and list row runs through the unchanged `applyEditorAction` on the emptied line).
+**Assumed by:** Task 5 (every heading and list row runs through the unchanged `applyEditorAction` on the emptied line).
 
 **Verify — automated**
 
@@ -228,11 +183,11 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
 
 - [ ] On an empty line, right-click → Heading ▸ Heading 2 writes `## `; Lists ▸ Bullet List writes `- `.
 
-#### Task 4: One caret geometry and one key guard for both panes
+#### Task 3: One caret geometry and one key guard for both panes
 
 **Requirement:** 3
 
-**Why:** The block pane anchors exactly where the connection pane does and answers the same four keys. One exported geometry helper and a guard that takes a list of ctls keep both in one place, so Task 6 adds a pane without adding a keymap.
+**Why:** The block pane anchors exactly where the connection pane does and answers the same four keys. One exported geometry helper and a guard that takes a list of ctls keep both in one place, so Task 5 adds a pane without adding a keymap.
 
 **Now** — `rg -F "surfaceOf" Core` → 1 file, private; `rg -F "AcCtl" Core` → 1 file, private; `rg -F "whenAcOpen(" Core --glob '!*.test.*'` → 7 calls in 2 files (`MarkdownEditor.tsx:206-209`, `CellEditor.tsx:160-162`):
 
@@ -271,34 +226,34 @@ export function caretGeometry(view: EditorView, pos: number): CaretGeometry | nu
 
 Refactor baseline: `Core/MarkdownPM/Autocomplete/*.test.*` and `Core/MarkdownPM/Tables/*.test.*` pass counts before equal after.
 
-**Assumed by:** Task 5 (calls `caretGeometry`), Task 6 (types its ctl as `AcCtl`, joins the list).
+**Assumed by:** Task 4 (calls `caretGeometry`), Task 5 (types its ctl as `AcCtl`, joins the list).
 
 **Verify — automated**
 
 - [ ] `npx vitest run Core/MarkdownPM/Autocomplete Core/MarkdownPM/Tables` green with the same test count as at the phase base.
 - [ ] `rg -F "coordsAtPos" Core/MarkdownPM --glob '!*.test.*'` → the same 4 files as before the edit (`useConnectionAutocomplete.ts`, `Gestures/blockDrag.ts`, `Gestures/listDrag.ts`, `lineDom.ts`). Control: `rg -F "caretGeometry" Core/MarkdownPM` → 1 file.
-- [ ] `rg -F "whenAcOpen(acCtl" Core` → 0. Control: `rg -F "whenAcOpen([acCtl]" Core/MarkdownPM/Tables/CellEditor.tsx` → 3 (the editor's four become `[acCtl, block.ctl]` in Task 6).
+- [ ] `rg -F "whenAcOpen(acCtl" Core` → 0. Control: `rg -F "whenAcOpen([acCtl]" Core/MarkdownPM/Tables/CellEditor.tsx` → 3 (the editor's four become `[acCtl, block.ctl]` in Task 5).
 - [ ] Full gate green, exit codes read directly.
 
 **Verify — user**
 
 - [ ] *(none — behavior-preserving.)*
 
-#### Gate 1 — the catalog stands and is read twice, the blank line answers, the seams are shared
+#### Gate 1 — the catalog stands, the blank line answers, the seams are shared
 
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
 - [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/Actions/blockMenu*`, `Desktop/Actions/editorMenu.ts`, `Core/MarkdownPM/Input/format*`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts`, `Core/MarkdownPM/MarkdownEditor.tsx`, `Core/MarkdownPM/Tables/CellEditor.tsx`; the reports cite files inside it.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/Actions/blockMenu*`, `Core/MarkdownPM/Input/format*`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts`, `Core/MarkdownPM/MarkdownEditor.tsx`, `Core/MarkdownPM/Tables/CellEditor.tsx`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] Progress hashes filled in; lessons written into the later tasks they change.
-- [ ] Not a declared stop: Phase 2 opens; Tasks 2 and 3's user boxes carry to Completion Criteria.
+- [ ] Not a declared stop: Phase 2 opens; Task 2's user box carries to Completion Criteria.
 
 ---
 
 ### Phase 2 — The pane
 
-#### Task 5: The trigger
+#### Task 4: The trigger
 
 **Requirement:** 3
 
@@ -318,7 +273,7 @@ export function blockQueryAt(scan: DocScan, caret: number): BlockQuery | null
 
 Cases: `'/'` caret 1 → `{ '', 0, 1 }` · `'/hea'` caret 4 → `{ 'hea', 0, 4 }` · `'/he a'` → null · `'a/'` → null · `' /'` → null · `'> /'` → null · `'- /'` → null · `'/hea'` caret 2 → null · a `/` on a line inside a fence → null · a `/` on the fence line itself → null · `'/'` followed by a second line, caret on line one → the first case.
 
-**Assumed by:** Task 6 (calls it from the update listener).
+**Assumed by:** Task 5 (calls it from the update listener).
 
 **Verify — automated**
 
@@ -327,9 +282,9 @@ Cases: `'/'` caret 1 → `{ '', 0, 1 }` · `'/hea'` caret 4 → `{ 'hea', 0, 4 }
 
 **Verify — user**
 
-- [ ] *(none — surfaces in Task 6.)*
+- [ ] *(none — surfaces in Task 5.)*
 
-#### Task 6: The pane, its hook, and the mount
+#### Task 5: The pane, its hook, and the mount
 
 **Requirement:** 3, 4, 6 (the Block Structure half)
 
@@ -338,7 +293,7 @@ Cases: `'/'` caret 1 → `{ '', 0, 1 }` · `'/hea'` caret 4 → `{ 'hea', 0, 4 }
 **Now** — `rg -F "AutocompletePane" Core UIX Desktop .claude` → 9 files:
 
 ```tsx
-// Core/MarkdownPM/MarkdownEditor.tsx (after Task 4)
+// Core/MarkdownPM/MarkdownEditor.tsx (after Task 3)
 // :206-209  { key: 'ArrowDown', run: whenAcOpen([acCtl], (c) => c.move(1)) }, … four entries
 // :266  blur: () => { setAc(null); return false },
 // :303-305  if ((u.docChanged || u.selectionSet) && !u.state.readOnly) detectConnectionQuery(u.view, setAc, true)
@@ -396,7 +351,7 @@ export function BlockMenu(props: {
 **Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. Return or a click removes the typed query and writes the block through the same action the context menu runs; one undo reverts it. The pane is the editor's own, drawn in-app whatever Use Native Menus says, and never opens inside code, behind a quote or list marker, or in a table cell.
 ```
 
-**Assumed by:** Task 7 (History names these files).
+**Assumed by:** Task 6 (History names these files).
 
 **Verify — automated**
 
@@ -423,13 +378,13 @@ export function BlockMenu(props: {
 - [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Core/MarkdownPM/Menus/` and `Core/MarkdownPM/MarkdownEditor.tsx`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] Progress hashes filled in; lessons written into the later tasks they change.
-- [ ] **Declared stop.** Execution halts until Nathan closes Task 6's user boxes and Tasks 2 and 3's carried boxes, or redirects the layout.
+- [ ] **Declared stop.** Execution halts until Nathan closes Task 5's user boxes and Task 2's carried box, or redirects the layout.
 
 ---
 
 ### Phase 3 — The record
 
-#### Task 7: Context, History, and the grounding
+#### Task 6: Context, History, and the grounding
 
 **Requirement:** 6
 
@@ -442,7 +397,7 @@ export function BlockMenu(props: {
 ```md
 <!-- .claude/ContextPM.md:45 — the Slash Commands item is removed from Next-Feature Candidates -->
 <!-- .claude/Features/MarkdownPM.md:72 — `Core/MarkdownPM/Menus/blockHandles.ts` -->
-<!-- .claude/HistoryPM.md — index row `| 09-09-2026 | PM-134 | The Block Menu |` and an entry in History-Format naming Core/Actions/blockMenu.ts, its native reader in Desktop/Actions/editorMenu.ts, Core/MarkdownPM/Menus/blockQuery.ts, useBlockMenu.ts, BlockMenu.tsx, the selectedLines fix, and the history-free removal -->
+<!-- .claude/HistoryPM.md — index row `| 09-09-2026 | PM-134 | The Block Menu |` and an entry in History-Format naming Core/Actions/blockMenu.ts, Core/MarkdownPM/Menus/blockQuery.ts, useBlockMenu.ts, BlockMenu.tsx, the selectedLines fix, and the history-free removal -->
 <!-- .claude/Planning/Slash Command Menu — Grounding.md — deleted -->
 ```
 
@@ -472,27 +427,26 @@ export function BlockMenu(props: {
 
 ### Progress
 
-- [ ] **Phase 1** — The catalog, its native reader, the blank line, and the shared seams · base `<commit>`
+- [ ] **Phase 1** — The catalog, the blank line, and the shared seams · base `<commit>`
   - [ ] Task 1 — The block menu model · `<commit>`
-  - [ ] Task 2 — The native menu reads the catalog · `<commit>`
-  - [ ] Task 3 — A caret on a blank line counts · `<commit>`
-  - [ ] Task 4 — One caret geometry and one key guard for both panes · `<commit>`
+  - [ ] Task 2 — A caret on a blank line counts · `<commit>`
+  - [ ] Task 3 — One caret geometry and one key guard for both panes · `<commit>`
 - [ ] **Phase 2** — The pane · base `<commit>`
-  - [ ] Task 5 — The trigger · `<commit>`
-  - [ ] Task 6 — The pane, its hook, and the mount · `<commit>`
+  - [ ] Task 4 — The trigger · `<commit>`
+  - [ ] Task 5 — The pane, its hook, and the mount · `<commit>`
 - [ ] **Phase 3** — The record · base `<commit>`
-  - [ ] Task 7 — Context, History, and the grounding · `<commit>`
+  - [ ] Task 6 — Context, History, and the grounding · `<commit>`
 
 ### Rulings
 
 - 09-09-2026, Nathan: Use Native Menus is unaffected; the block menu always draws in-app.
 - 09-09-2026, Nathan: the four-section layout as proposed; Format marks omitted.
 - 09-09-2026, Nathan: `/` is the trigger, not `//`.
+- 09-09-2026, Nathan: the block menu is not native and defines its own order; the native context menu is not changed by this plan.
+- 09-09-2026, Nathan: the trigger admits only a line that is exactly `/` plus the query; a prefixed or indented line never opens the pane.
 - 09-09-2026, Claude (routine, disclosed): undo after a pick leaves the blank line rather than restoring `/query`; the typed query was a command, not content, and it is the one mechanism that gives every row a single undo step.
 - 09-09-2026, Claude (routine, disclosed): the blank-line no-op is fixed in `selectedLines` for the caret-only case, repairing the context menu's Heading and Lists rows on an empty line as well.
 - 09-09-2026, Claude (routine, disclosed): Escape is a one-shot dismissal; the next edit on the line re-detects and reopens, as the `[[` pane does. No dismissed-offset latch.
-- 09-09-2026, Claude (routine, disclosed): the trigger admits only a line that is exactly `/` plus the query. A prefixed or indented line never opens the pane; the alternative, gating rows on the prefix state, was the larger change and still stranded prefixes under Table, Horizontal Rule, and the Embed rows.
-- 09-09-2026, Claude (routine, disclosed): the native context menu reads the model for Insert, Embed, and Lists, adopting the model's Insert order. One roster, per the once-defined rule; Heading keeps `HEADING_LEVELS` with Paragraph, which the pane has no use for.
 
 ### Open Against Later Tasks
 
@@ -503,7 +457,7 @@ export function BlockMenu(props: {
 ### Sequenced After
 
 - Chord display on rows, once a display speller for the command table exists (the Shortcuts settings pane candidate in Context).
-- A Format section, if Nathan wants the inline marks reachable from `/`; one more section in `blockMenuSections`, and the native Format submenu would read it too.
+- A Format section, if Nathan wants the inline marks reachable from `/`; one more section in `blockMenuSections`.
 - A prefix-aware trigger (`> /`, `- /`), which needs the rows gated on the line's quote, callout, and list state and the Table, Horizontal Rule, and Embed transforms taught to reuse a prefixed blank line.
 - Rows that read their query as an argument (`/todo Buy milk`), which the removal-then-action pick shape forecloses as written.
 - `MenuIndex`'s item branch forwarding `ref` and `onMouseDown`, which would let both editor panes render through it and retire their hand-rolled row loops. UIX is out of this plan's scope.
@@ -518,7 +472,7 @@ export function BlockMenu(props: {
 
 ```
 Execute .claude/Planning/Block Menu — Implementation Plan.md. Live.
-Live-verify: Task 6's user list and Tasks 2 and 3's carried boxes, at the Gate 2 stop.
+Live-verify: Task 5's user list and Task 2's carried box, at the Gate 2 stop.
 Screenshots: none — Nathan is present.
 Pings: at Gate 2.
 Record: History PM-134, The Block Menu.
@@ -549,9 +503,8 @@ Everything else is the standard below.
 
 **The user's own pass**
 
-- [ ] Task 2's native Insert, Embed, and Lists submenus.
-- [ ] Task 3's context-menu check on an empty line.
-- [ ] Task 6's five boxes.
+- [ ] Task 2's context-menu check on an empty line.
+- [ ] Task 5's five boxes.
 
 **The record**
 
