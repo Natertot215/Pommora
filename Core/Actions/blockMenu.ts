@@ -2,8 +2,6 @@ import type { ActionItem } from './menuModel'
 import { HEADING_LEVELS, type ListKind } from './gripMenu'
 import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
 
-export const BLOCK_MENU_WIDTH = 260
-
 export type BlockMenuAction =
   | `heading:${1 | 2 | 3 | 4 | 5}`
   | `list:${Extract<ListKind, 'bullet' | 'ordered' | 'checkbox'>}`
