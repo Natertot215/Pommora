@@ -184,8 +184,16 @@ describe('picking a row writes the block and leaves one undo step', () => {
     await type(view, '/tab')
     await press(view, 'Enter')
     const doc = view.state.doc.toString()
-    expect(doc).toBe(serialize(emptyTable(3, 3)))
+    expect(doc).toBe(`${serialize(emptyTable(3, 3))}\n`)
     expect(doc).not.toContain('/')
+  })
+
+  it('writes an embed on a document that opens with a blank line', async () => {
+    const view = await open('\nfoo', 0)
+    await type(view, '/int')
+    expect(rows()).toHaveLength(1)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('![[]]\n\nfoo')
   })
 
   it('writes the table from a click on its row', async () => {
@@ -194,7 +202,7 @@ describe('picking a row writes the block and leaves one undo step', () => {
     expect(rows()).toHaveLength(1)
     await click(rows()[0])
     const doc = view.state.doc.toString()
-    expect(doc).toBe(serialize(emptyTable(3, 3)))
+    expect(doc).toBe(`${serialize(emptyTable(3, 3))}\n`)
     expect(doc).not.toContain('/')
     await act(async () => {
       undo(view)
@@ -297,5 +305,23 @@ describe('the block menu opens with no row highlighted', () => {
     await type(view, '/')
     await press(view, 'ArrowUp')
     expect(highlighted().map((r) => r.textContent)).toEqual(['Webpage'])
+  })
+})
+
+describe('the pane opens on a document change, never on a caret landing', () => {
+  it('leaves a pre-existing slash line closed until an edit reaches it', async () => {
+    const view = await open('notes\n\n/table\n\nmore', 13)
+    expect(pane()).toBeNull()
+    await type(view, 's')
+    await gone()
+    expect(pane()).toBeNull()
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 13, to: 14 },
+        selection: { anchor: 13 },
+        userEvent: 'delete',
+      })
+    })
+    expect(pane()).toBeTruthy()
   })
 })

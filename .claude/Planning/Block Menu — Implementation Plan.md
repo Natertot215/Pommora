@@ -24,7 +24,7 @@ Bounded to the five sections Nathan ratified and to a line that holds nothing bu
 
 **Forced By** *(what each grounded fact makes mandatory or impossible)*
 
-- `@codemirror/commands`' history joins only `input.type` and `delete` user events (`joinableUserEvent`, dist/index.js:471), so two `input` dispatches never merge; and `embedInsertAtCaret`, `webpageInsertAtCaret`, and `insertCitation` dispatch for themselves (`Embeds/embedInsert.ts:39-55`, `Citations/citationActions.ts:56-67`), so no composed single transaction serves every row → the `/query` removal leaves history through `addToHistory.of(false)`, and the action's own dispatch is the one history entry for all sixteen rows. → Task 5.
+- `@codemirror/commands`' history joins only `input.type` and `delete` user events (`joinableUserEvent`, dist/index.js:471), so two `input` dispatches never merge; and `embedInsertAtCaret`, `webpageInsertAtCaret`, and `insertCitation` dispatch for themselves (`Embeds/embedInsert.ts:39-55`, `Citations/citationActions.ts:56-67`), so no composed single transaction serves every row → the `/query` removal leaves history through `addToHistory.of(false)`, and the action's own dispatch is the one history entry for all nineteen rows. → Task 5.
 - `setBlock('> ', 2, 2, 'quote')` and `setList('- ', 2, 2, 'bullet')` strip the prefix (`Input/format.ts:249-267, 181-198`), and `setBlock` table and hr on a non-blank line write the line above the block → a pick on a prefixed line would delete or strand what the user typed. → Task 4.
 - `selectedLines` (`Input/format.ts:154-176`) pushes only lines whose body is non-blank, so `setHeading` and `setList` return `{ changes: [] }` on an empty line and `applyEditorAction` dispatches an empty change set and returns `true` → the pane cannot rely on the runner's boolean. → Task 2.
 - `embedSeatAt` (`Embeds/embedInsert.ts:31-38`) refuses fences, `scan.maths`, and `scan.tables`, and `citationSeatAt` (`Citations/citationActions.ts:45-52`) refuses the citations mask; a Heading written inside the citations run dissolves the whole section (`MarkdownPM.md:66`) → the trigger refuses everything its two sibling predicates refuse. → Task 4.
@@ -380,10 +380,11 @@ export function BlockMenu(props: {
 
 ```ts
 // Core/MarkdownPM/Menus/BlockMenu.tsx
-const BLOCK_MENU_WIDTH = 260
+const BLOCK_MENU_WIDTH = 140
 // passed to PickerMenu as style={{ width: BLOCK_MENU_WIDTH }},
 // which lands on the pane's own Shell element; MenuScrollFrame forwards no style, and UIX is out of scope.
 
+// Core/Actions/blockMenu.ts
 import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
 
 export type BlockMenuAction =
@@ -462,7 +463,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 **Verify — user**
 
-- [ ] The pane's width follows `BLOCK_MENU_WIDTH`; `/` draws in the syntax tone and the query in the phantom tone; `/conn` writes `[[]]` and opens the title picker; `/mark` writes a Markdown link; Divider leaves the caret on the line below a rendered rule; Blockquote leaves `> ` with the caret after the space.
+- [ ] The pane's width follows `BLOCK_MENU_WIDTH`; `/` draws in the syntax tone and the query in the phantom tone; `/conn` writes `[[]]` with the caret inside, where typing opens the title picker; `/mark` writes a Markdown link; Divider leaves the caret on the line below a rendered rule; Blockquote leaves `> ` with the caret after the space.
 - [ ] `/ext` writes `[]()` with the caret in the parentheses; `/mark` with it in the brackets.
 
 #### Gate 2 — the pane on screen · **declared stop**
@@ -513,9 +514,9 @@ export const lineStartAt = (doc: string, pos: number): number =>
 #### Gate 3 — the record is true
 
 - [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Dead Vocabulary sweep at its expected counts against the control.
-- [ ] Progress hashes filled in.
+- [x] Every task's **Verify — automated** list ticked.
+- [x] Dead Vocabulary sweep at its expected counts against the control.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -531,8 +532,8 @@ export const lineStartAt = (doc: string, pos: number): number =>
   - [x] Task 4 — The trigger · `f7209dc59`
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
   - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3` · `26383fc20` · `3d016ef75` · `47e2bc5f3` · `da348382b` · Gate 2b fixes below
-- [ ] **Phase 3** — The record · base `182d40369`
-  - [ ] Task 6 — Context, History, and the grounding · `<commit>`
+- [x] **Phase 3** — The record · base `182d40369`
+  - [x] Task 6 — Context, History, and the grounding · `bedab5188`
 
 ### Rulings
 
@@ -556,6 +557,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - 09-09-2026, Claude (routine, disclosed): an unclosed `$$` line does not seal the lines below it — the document model pairs display math like fences but records only closed pairs — so the trigger opens there, exactly as `embedSeatAt` admits it. The two predicates stay identical.
 - 09-09-2026, Nathan: the filter matches section titles as well as row labels, so `/link`, `/embed`, and `/list` each keep a whole section; a title match emphasizes the heading, a label match the row.
 - 09-09-2026, Nathan: the block menu opens with no row highlighted; the first row is first in line for Return, and the highlight appears only once an arrow key moves it or the pointer hovers. The `[[` pane keeps its immediate highlight.
+- 09-09-2026, Claude (routine, disclosed): the pane opens only on a document change, never on a caret landing at the end of a line that already reads `/word`; Requirement 3's "typed" is what the trigger tests, and a pre-existing line is content.
 
 ### Open Against Later Tasks
 
@@ -572,6 +574,10 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - Task 5b: `lineStartAt` resolved caret 0 of a document opening with a newline to its second line, so every line transform on that first blank line acted one line down; guarded at the source in `Input/edits.ts`.
 - Task 5b: the divider's second case was specified as `'\ntext'` with the caret at 0, which `lineStartAt` resolves to the *second* line — `doc.lastIndexOf('\n', -1)` reads a negative index as 0 and finds the leading newline — so `setBlock` answered `{ from: 1, to: 0 }`. The case was first written as `'a\n\nb'` with the caret at 2, and both cases stand since the guard above landed.
 - Task 5: a mousedown on a pane held through its exit animation applied a block against the closed render's range; both panes' picks now refuse unless the shared ctl reads open. The connection pane carried the same hole and took the same line. Gate 2 attack.
+- Task 5b: `Embeds/embedInsert.ts` carried the `lineStartAt` twin and threw `RangeError` on a document's leading blank line for Internal Page and Webpage; both sites read `lineStartAt` now. `Engine/parser.ts:12` (guarded by `Math.max` and a loop that never runs at 0) and `Menus/gripMenu.ts:50` (gated on `r.from >= 2`) were traced safe. Closeout attack.
+- Task 5b: a Footnote written on the blank line above the citations run kept no blank line between marker and run, which every other Markdown reader parses as one paragraph; the citation write keeps the blank. Pre-existing; the block menu made it one keystroke. Closeout attack.
+- Task 5b: a Table pick on an empty document or a document ending in a newline seated the caret at the end of the table's last row; `setBlock` now always seats it below the table. Closeout attack.
+- The Dead Vocabulary control `AutocompletePane` reads 8 files rather than 9: another session's uncommitted deletion of `Pommora Monorepo — Implementation Plan.md` removed one hit; the sweep's two retired tokens are at their expected 1.
 
 ### Lessons
 

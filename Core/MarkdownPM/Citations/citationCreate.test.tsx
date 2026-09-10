@@ -77,6 +77,13 @@ describe('Insert ▸ Footnote writes a complete pair', () => {
     expect(doc(view)).toBe('a[^1] b[^2]\n\n[^1]: \n[^2]: one')
   })
 
+  it('keeps a blank line between a marker on the anchor line and the run below it', async () => {
+    const view = await mountEditor({ initialBody: 'body[^1]\n\n\n[^1]: note' })
+    await at(view, 10)
+    expect(await insert(view)).toBe(true)
+    expect(doc(view)).toBe('body[^1]\n\n[^2]\n\n[^1]: note\n[^2]: ')
+  })
+
   it('seats the marker after a selection, so the words it annotates keep their text', async () => {
     const view = await mountEditor({ initialBody: 'one two' })
     await act(async () => {

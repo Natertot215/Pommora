@@ -46,6 +46,13 @@ describe('embedInsertAfter', () => {
     expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('para\n\n![[T]]')
   })
 
+  it('opens a document that begins with a blank line without crossing its bounds', () => {
+    const doc = '\nfoo'
+    const c = embedInsertAfter(doc, 0, '![[]]')
+    expect(c).toMatchObject({ from: 0, to: 0, insert: '![[]]\n' })
+    expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('![[]]\n\nfoo')
+  })
+
   it('the Embed ▸ Webpage pair seats the caret between the parens', () => {
     const doc = 'para\nnext'
     const c = embedInsertAfter(doc, 4, '![]()')

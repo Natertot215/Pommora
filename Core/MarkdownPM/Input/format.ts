@@ -266,7 +266,6 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
-      // A blank line inside a longer quote takes the bare `>` that keeps the block whole; quoted alone it takes the space, so what follows is typed clear of the marker.
       const blank = lines.length === 1 ? '> ' : '>'
       for (const { ls: s, le: e } of lines) {
         const text = doc.slice(s, e)
@@ -297,7 +296,7 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       const table = serialize(emptyTable(3, 3))
       const after = doc.slice(le)
       const trail =
-        after.startsWith('\n') && !after.startsWith('\n\n') && after.length > 1 ? '\n' : ''
+        after === '' || (after.startsWith('\n') && !after.startsWith('\n\n')) ? '\n' : ''
       const insert = `${lead}${table}${trail}`
       return { changes: [{ from: ls, to: le, insert }], selection: ls + insert.length }
     }
