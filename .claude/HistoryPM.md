@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
 | 09-07-2026              | PM-132 | State Placement                                      |
 | 09-06-206               | PM-131 | Cross-Surface Glances                                |
@@ -136,6 +137,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-134 || MarkdownPM Block Menu
+**DATE:** 09-09-2026
+
+The catalog was written into `Core/Actions/blockMenu.ts` as five sections of nineteen rows, with `filterBlockMenu` matching a query against section titles as well as row labels and reporting where each match begins. The trigger landed in `Core/MarkdownPM/Menus/blockQuery.ts` as a pure read of the cached scan, admitting a line that holds nothing but the slash and its query and refusing code, math, tables, and the citations run through `inSealedBlockAt` in `Engine/docScan.ts`, which `embedSeatAt` was rewritten to read in place of its own spelling of the same refusal. `useBlockMenu.ts` and `BlockMenu.tsx`, mounted in `MarkdownEditor.tsx`, shared `caretGeometry`, `whenAcOpen`, `useMenuCtl`, and `CLOSED_GEOMETRY` with the `[[` pane in `useConnectionAutocomplete.ts`; the pane opened with no row highlighted, and both panes refused a pick while closing. A pick removed the typed `/query` outside history and then ran `applyEditorAction`, leaving the action's own dispatch as the single history entry, so one undo returned the blank line. `selectedLines` in `Input/format.ts` admitted a caret-only blank line and carried a `pad` behind a bare `>`, `setBlock` wrote `> ` on a lone blank line and `---\n` with its leading blank, `toggleInline` gained `linkText`, and `lineStartAt` was guarded at 0. `decorations.ts` drew the typed query in the phantom tones, and `MenuRow`'s heading label widened to `ReactNode` so a matched section title could be emphasized.
+
+- **Commits:** `0b0783569^..182d40369`
+- **Diff:** Net +337 | +401 / -64
 
 #### PM-133 || The Engine Boundary
 **DATE:** 09-07-2026

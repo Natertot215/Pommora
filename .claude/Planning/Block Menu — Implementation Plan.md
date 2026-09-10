@@ -501,9 +501,9 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 **Verify — automated**
 
-- [ ] `rg -F "Slash Command Menu" .claude Core --glob '!Block Menu*'` → 1 file (`HandoffPM.md`). Control: `rg -F "Block Menu" .claude/Features .claude/HistoryPM.md` → 2 files.
-- [ ] `rg -F "PM-134" .claude/HistoryPM.md` → 2 lines.
-- [ ] `test ! -e ".claude/Planning/Slash Command Menu — Grounding.md" && test -e ".claude/Planning/Block Menu — Implementation Plan.md"` exits 0.
+- [x] `rg -F "Slash Command Menu" .claude Core --glob '!Block Menu*'` → 1 file (`HandoffPM.md`). Control: `rg -F "Block Menu" .claude/Features .claude/HistoryPM.md` → 2 files.
+- [x] `rg -F "PM-134" .claude/HistoryPM.md` → 2 lines.
+- [x] `test ! -e ".claude/Planning/Slash Command Menu — Grounding.md" && test -e ".claude/Planning/Block Menu — Implementation Plan.md"` exits 0.
 - [ ] Full gate green, exit codes read directly.
 
 **Verify — user**
@@ -531,7 +531,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
   - [x] Task 4 — The trigger · `f7209dc59`
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
   - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3` · `26383fc20` · `3d016ef75` · `47e2bc5f3` · `da348382b` · Gate 2b fixes below
-- [ ] **Phase 3** — The record · base `<commit>`
+- [ ] **Phase 3** — The record · base `182d40369`
   - [ ] Task 6 — Context, History, and the grounding · `<commit>`
 
 ### Rulings
