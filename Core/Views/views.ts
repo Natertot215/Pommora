@@ -8,7 +8,7 @@ export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'tim
 export type ViewType = (typeof VIEW_TYPES)[number]
 export const DEFAULT_VIEW_TYPE: ViewType = 'table'
 
-export interface ViewKind {
+interface ViewKind {
   label: string
   icon: string
   flat: boolean

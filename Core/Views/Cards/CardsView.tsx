@@ -619,7 +619,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         >
           <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
             {groups.map((g) => {
-              const rows = g.items
               const isCollapsed = !flatMode && collapsed.has(g.key)
               return (
                 <ViewGroupBand
@@ -639,10 +638,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   <SortableZone
                     group="cards"
                     id={g.key}
-                    items={rows.map((r) => r.id)}
+                    items={g.items.map((r) => r.id)}
                     className="cards-grid card-grid is-fill"
                   >
-                    {rows.flatMap((row) => {
+                    {g.items.flatMap((row) => {
                       const card = (
                         <PageCard
                           key={row.id}

@@ -178,7 +178,6 @@ describe('a locked view-embed scope', () => {
           view={view}
           schema={[statusDef]}
           label="Settings"
-          subGrouping
           onBack={() => {}}
         />
       </ViewTileScopeProvider>,
