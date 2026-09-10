@@ -173,9 +173,9 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
 
 **Verify — automated**
 
-- [ ] Red first in `format.test.ts`: `heads a blank line the caret sits on` and `marks a blank line the caret sits on` (the four cases above); the existing `leaves a blank line unheaded` and `leaves a blank line unmarked` stay green throughout. Expect 2 failures; then green.
-- [ ] `rg -F "from === to" Core/MarkdownPM/Input/format.ts` → 2. Control: `rg -F "selectedLines" Core/MarkdownPM/Input/format.ts` → 3.
-- [ ] Full gate green, exit codes read directly.
+- [x] Red first in `format.test.ts`: `heads a blank line the caret sits on` and `marks a blank line the caret sits on` (the four cases above); the existing `leaves a blank line unheaded` and `leaves a blank line unmarked` stay green throughout. Expect 2 failures; then green.
+- [x] `rg -F "from === to" Core/MarkdownPM/Input/format.ts` → 2. Control: `rg -F "selectedLines" Core/MarkdownPM/Input/format.ts` → 3.
+- [x] Full gate green, exit codes read directly.
 
 **Verify — user**
 
