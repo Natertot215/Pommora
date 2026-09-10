@@ -601,8 +601,8 @@ The audit's Topic 6 Change list item 3 reads "Scope the ghost's rect reads to th
 **CHANGE**
 
 - [x] Audit Topic 6: trim item 3 to its ghost-rect half; delete item 4 and renumber; drop "40 lines of view-kind lists" from Deletes; rewrite the Found sentence so it no longer claims twelve places or a missing registry, keeping the two-renderer and interaction-layer claims; drop R-34 from the Findings line; delete R-34's table row; delete D-6 and its Recommendation; R-36 keeps its ghost-rect half and drops "and re-flattens the group tree it was handed", with the CardsView citation kept and `useViewHost.ts` dropped from its citation.
-- [x] `ContextPM.md`: Current Focus's audit paragraph stays as written (the renderer fold is still what follows). Recent Work gains PM-136 at the top under the History heading and date with a three-to-four-sentence summary, and the oldest of the five drops off.
-- [x] `HistoryPM.md`: index row and entry PM-136 per `History-Format.md` (`~/The Studio/.claude/references/`), titled for what changed (the view-kind registry and the host paint order), dated 09-10-2026 or the range the commits span, with the commit range and the diff from the report.
+- [ ] `ContextPM.md`: Current Focus's audit paragraph stays as written (the renderer fold is still what follows). Recent Work gains PM-136 at the top under the History heading and date with a three-to-four-sentence summary, and the oldest of the five drops off.
+- [ ] `HistoryPM.md`: index row and entry PM-136 per `History-Format.md` (`~/The Studio/.claude/references/`), titled for what changed (the view-kind registry and the host paint order), dated 09-10-2026 or the range the commits span, with the commit range and the diff from the report.
 
 **AFTER**
 
@@ -611,7 +611,7 @@ The audit no longer lists R-34 or D-6; R-36 and Change item 3 are each one claim
 **VERIFY**
 
 - [x] `grep -n "R-34\|D-6\|twelve places\|re-flattens\|per-drop group flattening" ".claude/Planning/Codebase Audit — Report.md"` → 0.
-- [x] `grep -c "PM-136" .claude/HistoryPM.md` → 2 (index row and heading); `grep -c "PM-136" .claude/ContextPM.md` → 1.
+- [ ] `grep -c "PM-136" .claude/HistoryPM.md` → 2 (index row and heading); `grep -c "PM-136" .claude/ContextPM.md` → 1.
 
 ### Completion Criteria
 
@@ -677,7 +677,7 @@ Per Writing-Plans-V3 §5.5: the plain-language report with Phase by Phase, Verif
 
 - **Phase 1's own shortstat is net positive.** The Review Checkpoint asks for deletions exceeding insertions within the phase, but the registry (`views.ts`, +17) is the plan's one net addition and Phase 1 holds none of the Phase 2 deletions that offset it. Core-only for the phase: 151 insertions, 136 deletions, of which about 45 lines are Biome reindenting `LayoutFrame.tsx`'s footing block. Carried as written; the plan's net figure is measured on the full range.
 - **`GroupFrame.tsx` derives its sub-grouping from its own `flat` read.** Task 1.4 had `LayoutFrame.tsx` and `SettingsFrame.tsx` pass `subGrouping={!VIEW_KINDS[view.type].flat}` into a pane that already reads `VIEW_KINDS[view.type].flat` for its None row; the closeout's simplification pass folded the prop, so the fact is read once and the two callers pass nothing. `ViewTileScope.test.tsx` dropped the prop from its one `GroupFrame` mount; the fixture is a table, so the default it exercised is unchanged.
-- **`ContextPM.md`'s Recent Work gained PM-135 alongside PM-136.** Task 3.2 assumed the five entries there were the five latest History entries; PM-135 had never been added, so both went in and PM-131 and PM-130 dropped off.
+- **No History entry, by Nathan's ruling of 09-10-2026.** Task 3.2's PM-136 entry and its Context mirror were written and then removed; History's latest entry stays PM-135. Recent Work holds PM-135 through PM-131: PM-135 had never been added there, so it went in and PM-130 dropped off.
 - **The published audit page was republished.** The plan's Reconciliation named only the Markdown report; `ContextPM.md` states the published page mirrors it, so the same R-34, D-6, Change-list, Deletes, Found, and R-36 edits were mirrored there, with the open and closed counts moved to 23 and 49.
 - **`ViewKind` is not exported.** Task 1.1's AFTER block exports the interface; nothing outside `views.ts` reads it, so it stays file-local.
 - **`LayoutFrame.tsx`'s Layout leaf reads `switches` in its Cards branch too.** Task 1.4 named only the `VisibilityList` footer and the flat door as `switches` readers; the leaf's Cards branch sits inside the same `cards` test, so it reads `switches` as well and `CARD_SWITCHES` and `TABLE_SWITCHES` have one reader each.
