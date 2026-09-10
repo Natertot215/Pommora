@@ -264,10 +264,11 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
+      // A blank line inside a longer quote takes the bare `>` that keeps the block whole; quoted alone it takes the space, so what follows is typed clear of the marker.
+      const blank = lines.length === 1 ? '> ' : '>'
       for (const { ls: s, le: e } of lines) {
         const text = doc.slice(s, e)
-        // A blank line takes the bare `>` that keeps the quote one block; trailing whitespace would be all that marker carried.
-        const next = strip ? stripQuotePrefix(text) : text === '' ? '>' : `> ${text}`
+        const next = strip ? stripQuotePrefix(text) : text === '' ? blank : `> ${text}`
         changes.push({ from: s, to: e, insert: next })
         lastEnd = s + next.length
       }
@@ -286,7 +287,7 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       return { changes: [{ from: ls, to: end, insert: next }], selection: ls + 4 + body.length }
     }
     case 'hr': {
-      const insert = line.length === 0 ? '---' : `${line}\n\n---\n`
+      const insert = line.length === 0 ? '---\n' : `${line}\n\n---\n`
       return { changes: [{ from: ls, to: le, insert }], selection: ls + insert.length }
     }
     case 'table': {

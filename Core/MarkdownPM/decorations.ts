@@ -23,6 +23,7 @@ import {
   type WidgetSpec,
 } from './Engine/intents'
 import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
+import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { editorHost } from './api'
@@ -259,6 +260,8 @@ function widgetFor(spec: WidgetSpec): WidgetType {
 }
 
 const hideMarker = Decoration.replace({})
+const querySlash = Decoration.mark({ class: 'md-phantom-syntax' })
+const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
@@ -465,6 +468,13 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
+  }
+  if (sel.empty) {
+    const q = blockQueryAt(scan, sel.head)
+    if (q) {
+      ranges.push(querySlash.range(q.from, q.from + 1))
+      if (q.query !== '') ranges.push(queryText.range(q.from + 1, q.to))
+    }
   }
   const bidir = Decoration.mark({ class: 'dual-direction-arrow' })
   for (const { from, to } of view.visibleRanges)

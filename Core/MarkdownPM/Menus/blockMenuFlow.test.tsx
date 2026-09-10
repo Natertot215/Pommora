@@ -69,14 +69,15 @@ async function gone(): Promise<void> {
 }
 
 describe('the block menu opens on the slash and narrows as it is typed', () => {
-  it('shows the four sections and every row', async () => {
+  it('shows the five sections and every row', async () => {
     const view = await open('')
     await type(view, '/')
     expect(pane()).toBeTruthy()
     const text = pane()?.textContent ?? ''
-    for (const title of ['Headings', 'Lists', 'Insert', 'Embed']) expect(text).toContain(title)
+    for (const title of ['Headings', 'Lists', 'Link', 'Insert', 'Embed'])
+      expect(text).toContain(title)
     expect(text).toContain('Footnote')
-    expect(rows()).toHaveLength(16)
+    expect(rows()).toHaveLength(18)
   })
 
   it('leaves the headings alone under a heading query', async () => {
@@ -84,7 +85,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     await type(view, '/hea')
     const text = pane()?.textContent ?? ''
     expect(text).toContain('Headings')
-    for (const title of ['Lists', 'Insert', 'Embed']) expect(text).not.toContain(title)
+    for (const title of ['Lists', 'Link', 'Insert', 'Embed']) expect(text).not.toContain(title)
     expect(rows()).toHaveLength(5)
   })
 
@@ -121,6 +122,19 @@ describe('picking a row writes the block and leaves one undo step', () => {
     expect(view.state.doc.toString()).toBe('## ')
     await gone()
     expect(pane()).toBeNull()
+    await act(async () => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe('')
+  })
+
+  it('writes an empty connection and seats the caret between its brackets', async () => {
+    const view = await open('')
+    await type(view, '/conn')
+    expect(rows()).toHaveLength(1)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[]]')
+    expect(view.state.selection.main.head).toBe(2)
     await act(async () => {
       undo(view)
     })
@@ -182,5 +196,24 @@ describe('the query is emphasized where each row matched it', () => {
     const view = await open('')
     await type(view, '/hea')
     expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
+  })
+})
+
+describe('the typed query reads as unresolved syntax', () => {
+  const spans = (view: EditorView, cls: string): string[] =>
+    [...view.contentDOM.querySelectorAll(`.${cls}`)].map((s) => s.textContent ?? '')
+
+  it('tones the slash as syntax and the query as a phantom', async () => {
+    const view = await open('')
+    await type(view, '/hea')
+    expect(spans(view, 'md-phantom-syntax')).toEqual(['/'])
+    expect(spans(view, 'md-connection-phantom')).toEqual(['hea'])
+  })
+
+  it('leaves a line that never held a slash alone', async () => {
+    const view = await open('')
+    await type(view, 'hea')
+    expect(spans(view, 'md-phantom-syntax')).toEqual([])
+    expect(spans(view, 'md-connection-phantom')).toEqual([])
   })
 })

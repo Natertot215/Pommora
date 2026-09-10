@@ -5,8 +5,8 @@ import { blockMenuSections, filterBlockMenu } from './blockMenu'
 const seated = blockMenuSections(true)
 
 describe('the block menu catalog', () => {
-  it('titles four sections and lists their rows in order', () => {
-    expect(seated.map((s) => s.title)).toEqual(['Headings', 'Lists', 'Insert', 'Embed'])
+  it('titles five sections and lists their rows in order', () => {
+    expect(seated.map((s) => s.title)).toEqual(['Headings', 'Lists', 'Link', 'Insert', 'Embed'])
     expect(seated[0].rows.map((r) => r.label)).toEqual([
       'Heading 1',
       'Heading 2',
@@ -19,21 +19,22 @@ describe('the block menu catalog', () => {
       'Numbered List',
       'Task List',
     ])
-    expect(seated[2].rows.map((r) => r.label)).toEqual([
+    expect(seated[2].rows.map((r) => r.label)).toEqual(['Connection', 'Markdown Link'])
+    expect(seated[3].rows.map((r) => r.label)).toEqual([
       'Blockquote',
       'Callout',
       'Code Block',
       'Table',
-      'Horizontal Rule',
+      'Divider',
       'Footnote',
     ])
-    expect(seated[3].rows.map((r) => r.label)).toEqual(['Internal Page', 'Webpage'])
+    expect(seated[4].rows.map((r) => r.label)).toEqual(['Internal Page', 'Webpage'])
   })
 
   it('offers Footnote only where a marker can bind', () => {
-    expect(seated.flatMap((s) => s.rows)).toHaveLength(16)
+    expect(seated.flatMap((s) => s.rows)).toHaveLength(18)
     const unseated = blockMenuSections(false)
-    expect(unseated.flatMap((s) => s.rows)).toHaveLength(15)
+    expect(unseated.flatMap((s) => s.rows)).toHaveLength(17)
     expect(unseated.flatMap((s) => s.rows).map((r) => r.label)).not.toContain('Footnote')
   })
 
@@ -70,7 +71,7 @@ describe('the block menu filter', () => {
   it('keeps everything at 0 for an empty query', () => {
     const all = filterBlockMenu(seated, '')
     expect(all.map((s) => s.title)).toEqual(seated.map((s) => s.title))
-    expect(all.flatMap((s) => s.rows)).toHaveLength(16)
+    expect(all.flatMap((s) => s.rows)).toHaveLength(18)
     expect(all.flatMap((s) => s.rows).every((r) => r.at === 0)).toBe(true)
   })
 })
