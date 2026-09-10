@@ -259,6 +259,7 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
   const le = lineEndAt(doc, from)
   const line = doc.slice(ls, le)
   const lead = line.length > 0 ? `${line}\n\n` : ls === 0 || doc.endsWith('\n\n', ls) ? '' : '\n'
+  const trail = doc.startsWith('\n\n', le) ? '' : '\n'
   switch (fmt) {
     case 'quote': {
       // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it.
@@ -288,17 +289,17 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       return { changes: [{ from: ls, to: end, insert: next }], selection: ls + 4 + body.length }
     }
     case 'hr': {
-      const insert = `${lead}---\n`
-      return { changes: [{ from: ls, to: le, insert }], selection: ls + insert.length }
+      const insert = `${lead}---${trail}`
+      return { changes: [{ from: ls, to: le, insert }], selection: ls + lead.length + 4 }
     }
     case 'table': {
       // A GFM table parses as its own block ONLY when blank lines fence it; without one it merges with an adjacent table below, whose header and delimiter then become body rows.
       const table = serialize(emptyTable(3, 3))
-      const after = doc.slice(le)
-      const trail =
-        after === '' || (after.startsWith('\n') && !after.startsWith('\n\n')) ? '\n' : ''
       const insert = `${lead}${table}${trail}`
-      return { changes: [{ from: ls, to: le, insert }], selection: ls + insert.length }
+      return {
+        changes: [{ from: ls, to: le, insert }],
+        selection: ls + lead.length + table.length + 1,
+      }
     }
   }
 }

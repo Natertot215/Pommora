@@ -11,7 +11,7 @@ import type { BlockMenuState } from './useBlockMenu'
 const BLOCK_MENU_WIDTH = 140
 
 function emphasized(label: string, at: number | null, len: number): ReactNode {
-  if (at === null) return label
+  if (at === null || len === 0) return label
   return (
     <>
       {label.slice(0, at)}

@@ -11,15 +11,17 @@ export type BlockMenuAction =
   | 'block:page'
   | 'block:webpage'
 
-export interface BlockMenuSection {
+interface BlockMenuSection {
   title: string
   rows: readonly ActionItem<BlockMenuAction>[]
 }
 
+type BlockMenuRow = ActionItem<BlockMenuAction> & { at: number | null }
+
 export interface BlockMenuMatch {
   title: string
   at: number | null
-  rows: readonly (ActionItem<BlockMenuAction> & { at: number | null })[]
+  rows: readonly BlockMenuRow[]
 }
 
 const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.slice(1).map((h) => ({
@@ -81,7 +83,7 @@ export function filterBlockMenu(sections: BlockMenuSection[], query: string): Bl
   const out: BlockMenuMatch[] = []
   for (const s of sections) {
     const titleAt = wordStart(s.title, q)
-    const rows: BlockMenuMatch['rows'][number][] = []
+    const rows: BlockMenuRow[] = []
     for (const row of s.rows) {
       const at = wordStart(row.label, q)
       if (titleAt !== null || at !== null) rows.push({ ...row, at })
