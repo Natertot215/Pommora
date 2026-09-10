@@ -212,7 +212,6 @@ export function LayoutFrame({
         view={view}
         schema={schema}
         label="Views"
-        subGrouping={!VIEW_KINDS[view.type].flat}
         onBack={() => setFrame(null)}
       />
     ) : frame === 'sort' ? (

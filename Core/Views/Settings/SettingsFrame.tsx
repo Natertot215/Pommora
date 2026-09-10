@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
-import { VIEW_KINDS } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -254,14 +253,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         onClose={back}
       />
     ) : detailId === 'group' ? (
-      <GroupFrame
-        source={node}
-        view={view}
-        schema={schema}
-        label="Settings"
-        subGrouping={!VIEW_KINDS[view.type].flat}
-        onBack={back}
-      />
+      <GroupFrame source={node} view={view} schema={schema} label="Settings" onBack={back} />
     ) : detailId === 'sort' ? (
       <SortFrame source={node} view={view} schema={schema} label="Settings" onBack={back} />
     ) : detailId === 'filter' ? (

@@ -97,14 +97,12 @@ export function GroupFrame({
   view,
   schema,
   label,
-  subGrouping = true,
   onBack,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
   label: string
-  subGrouping?: boolean
   onBack: () => void
 }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
@@ -122,10 +120,11 @@ export function GroupFrame({
 
   const group = view.group ?? { kind: 'structural' as const }
   const structural = groupsStructurally(group, schema)
+  const flat = VIEW_KINDS[view.type].flat
   const groupable = schema.filter((d) => GROUPABLE_PANE.has(declaredType(d.id, schema) ?? ''))
   const activeDef =
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
-  const subGroup = structural && subGrouping ? view.sub_group : undefined
+  const subGroup = structural && !flat ? view.sub_group : undefined
   const dateHeadingProp =
     group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime'
       ? group.property_id
@@ -158,9 +157,7 @@ export function GroupFrame({
         ? group.property_id
         : 'location'
   const groupByOptions: PickerOption<string>[] = [
-    ...(VIEW_KINDS[view.type].flat
-      ? [{ value: 'none', label: 'None', icon: 'circle-off' as const }]
-      : []),
+    ...(flat ? [{ value: 'none', label: 'None', icon: 'circle-off' as const }] : []),
     { value: 'location', label: 'Location', icon: 'folder' as const },
     ...groupable.map((d) => ({
       value: d.id,
@@ -282,7 +279,7 @@ export function GroupFrame({
           )}
         />
       )}
-      {structural && subGrouping && (
+      {structural && !flat && (
         <>
           <SubGroupRow subGroup={subGroup} groupable={groupable} onSave={saveSub} />
           {subGroup && declaredType(subGroup.property_id, schema) === 'datetime' && (
