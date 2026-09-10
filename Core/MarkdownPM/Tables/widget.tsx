@@ -55,10 +55,6 @@ const tableConnections = Facet.define<ConnGetter, ConnGetter>({
 })
 
 // A Pommora-only visual with no GFM equivalent, kept per machine (`local_state` rows) rather than in the file.
-export interface TableHeadingColsApi {
-  load: () => Promise<number[]>
-  save: (indices: number[]) => void
-}
 const setHeadingColsEffect = StateEffect.define<number[]>()
 const toggleHeadingColEffect = StateEffect.define<number>()
 

@@ -14,11 +14,6 @@ import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'
 import { lineElementAt } from './lineDom'
 
-export interface FoldsApi {
-  load: () => Promise<string[]>
-  save: (keys: string[]) => void
-}
-
 /** The reveal's beat plus slack for the frame that draws its final height — a travel timed earlier lands on the collapsed document. */
 export const FOLD_SETTLE_MS = ms(duration.fast) + 30
 

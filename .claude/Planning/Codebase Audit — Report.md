@@ -120,21 +120,6 @@ Context membership is keyed by Space *title*, which is the model's structural co
 
 **Findings:** R-32, R-33, R-34, R-35, R-36.
 
-##### 7. MarkdownPM Filing And The Widget Layer
-
-**Lenses and state:** Debt, Decision, Separation, Duplication, Performance. **Effort:** Small to large. **Deletes:** About 300 lines.
-
-**Found.** The most carefully built directory in the codebase. The pure engine is settled and would survive a second host intact. The React widget layer (tables, page tiles, webpage tiles) grew three independent answers to sizing, dismissal, and selection. Links and connections also never enter the intent stream, so the resting table cell had to re-implement their rendering by hand.
-
-**Change.**
-
-1. Add `linkIntents` to the intent layer; the CodeMirror decorator and the resting table cell become thin renderers of it. *(M; ~125 lines)*
-2. One widget chassis for sizing, dismissal, and selection across page tiles, webpage tiles, and tables; outside-press goes through the dismissal stack. *(L; ~120 lines)*
-3. One `EditorPref` type and one load loop for the four per-machine editor prefs. *(S; ~15 lines)*
-4. Fold the two range movers into one with a reindent option; measure the whole-document derivation at 1k, 5k, and 20k lines before adding any new whole-document consumer. *(M / L; after D-8; ~50 lines)*
-
-**Findings:** R-46, R-47, R-50, R-51.
-
 ##### 8. UIX: Engines, Bundle, Touch, Filing
 
 **Lenses and state:** Gates Mobile · touch, Foundation risk, Debt, Decision, Asymmetry, Duplication, Performance, Filing. **Effort:** Small to large. **Deletes:** About 450 lines of the second reorder engine, 60 lines of small duplications, 490 relocated.
@@ -200,8 +185,6 @@ Ordered by how much later work each gates. D-1 (state placement) and D-4 (Contex
 
 **D-7: Does the design kit get touch?** Options: **(i)** decide Mobile is a WebView host and add coarse-pointer branches now, before more hover-revealed controls are built; **(ii)** decide Mobile gets its own interaction layer and let UIX stay desktop-only. The cost of deferring is linear in how many hover affordances get built meanwhile.
 
-**D-8: How long may a Pommora page be?** Not a fix, a measurement and then a ruling. Every whole-document editor derivation is linear in length with no incremental route and no recorded ceiling. Measure at 1k, 5k, and 20k lines, then either accept a stated ceiling or invest in a line-range-invalidating scan.
-
 **D-9: Smaller rulings, each one edit once decided** 
 
 - Which slot a page lands in when moved across bands (Table appends, Cards lands at the drop slot, neither documented as intentional).
@@ -247,10 +230,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-34 | 6     | D    | Six view kinds are registered, two render, and adding a third touches twelve places                                                | `Core/Views/views.ts, Core/Views/Host/ViewHost.tsx, Core/Views/Settings/LayoutFrame.tsx`                              |
 | R-35 | 6     | Dt   | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests                                                | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
 | R-36 | 6     | Dt   | The Cards ghost reads every card's rect twice on every hover dwell, and re-flattens the group tree it was handed                   | `Core/Views/Cards/CardsView.tsx, Core/Views/Host/useViewHost.ts`                                                      |
-| R-46 | 7     | Dt   | Links and connections never enter the intent stream, so a second renderer had to re-implement them                                 | `Core/MarkdownPM/Engine/intents.ts, Core/MarkdownPM/decorations.ts, Core/MarkdownPM/Tables/cellStatic.tsx`            |
-| R-47 | 7     | Dt   | The three widget kinds re-implement sizing, dismissal and selection independently                                                  | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx, Core/MarkdownPM/Tables/MarkdownTable.tsx` |
-| R-50 | 7     | Dt   | One persistence contract under three names for the four per-machine editor prefs                                                   | `Core/MarkdownPM/Embeds/embedWidget.tsx, Core/MarkdownPM/Tables/widget.tsx`                                           |
-| R-51 | 7     | D    | Two implementations of "move this range to that slot," and no incremental path for the whole-document derivation                   | `Core/MarkdownPM/Engine/listDragModel.ts, Core/MarkdownPM/Engine/docScan.ts, Core/MarkdownPM/Engine/intents.ts`       |
 | R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |
 | R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                                | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`                    |
 | R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                               | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                         |
@@ -276,20 +255,7 @@ Nothing was denied outright by the reconciler. Four findings had a sub-claim den
 - **Context keys were already indexed.** The audit said Context keys were outside the content index; `page_values` already held them at key level. Membership at value level was what was missing, and it now exists.
 - **Two findings fell to manual test or intent.** ⌘-click on a table title opens a new tab; Interface Scale and Webpage Zoom syncing is intended design.
 
-#### Appendix C: Doc Drift Summary
-
-Thirty-seven documentation corrections remain, of which the ones that hide a real finding are:
-
-- **DesktopPM** describes the file lock as cross-process; it's in-process. This makes the single-writer problem look solved.
-- **DesktopPM** and **CorePM** attribute the atomic write to a Core file that only forwards to the host. This makes the atomicity contract look declared.
-- **CorePM** and **ConfigurationPM** count persistence tiers as four, two, or three. There are five, and browser storage appears in none of them. The placement rule replaces all three descriptions.
-- **MarkdownPM** says links come from one intent stream. They don't, and the doc describes the design the code should reach.
-- **ContextsPM** and **PagesPM** contradict each other on whether losing a tag re-dates a page. PagesPM is right.
-- **Editor-Internals** says atomic ranges never rebuild; that is now true of both providers.
-- **The project CLAUDE.md** cites `Surface` as the glass boundary (it's `GlassSurface`), says Node is called only from Desktop (true for production, not tests), and describes the Contract as the only host relationship (the host also runs the engine half directly, which is correct and should be stated).
-- **CorePM** calls itself the map and covers 11 of 22 Core folders; `Core/Session` appears in no Features doc at all.
-
-#### Appendix D: Method
+#### Appendix C: Method
 
 Nine Opus auditors, dispatched in parallel with one shared brief. Six owned a directory slice and applied all eleven lenses: Foundations, Content Model, Views, Shell, MarkdownPM, UIX. Three were cross-cutting: Duplication and Asymmetry, Filing and Taxonomy, and Mechanical Sweeps. A tenth Opus agent merged the nine into 72 findings, re-opened every ranked claim against the code, and produced a corrections section so nothing disappeared silently. The eight findings most likely to land above the fold were independently traced before the first consolidation. The fixes that followed were each dispatched to one agent with the finding's file pointers and the full gate, and each diff was read before its finding was removed. Remaining process document: `Corpus Walk Deferrals — Scope.md` (topic 11).
 

@@ -61,6 +61,7 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 
 - **The cascade is per-file, not cross-file atomic.** A page pass failing partway reverts the target's rename, leaving already-rewritten bodies pointing at a title no page holds until the rename is re-run.
 - **The markdown-block healing pass is best-effort.** Its failure is swallowed, and blocks stay stale until the next rewrite.
+- **Connection rendering is written twice.** The editor's decoration layer and the resting property-cell renderer each map a connection's resolved state to its styling by hand, so the two can drift — today the cell omits the open-state glyph and target mark the editor draws.
 
 #### Prospects
 

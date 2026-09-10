@@ -27,7 +27,7 @@ import {
   subBlockAt,
   dropChanges,
   applyChanges,
-  blockMoveChanges,
+  moveRange,
   renumberOrderedRun,
   checkboxToggleChange,
   type Slot,
@@ -83,6 +83,26 @@ describe('ordered list renumbers after a move', () => {
     const doc = '1. a\n2. b\n3. c'
     const out = drop(doc, lineStart(doc, 'a'), doc.length)
     expect(out).toBe('1. b\n2. c\n3. a')
+  })
+  it('renumbers the whole run when an item with a continuation line moves up', () => {
+    const doc = '1. a\n2. b\n3. c\n   more about c\n4. d'
+    const out = drop(doc, lineStart(doc, '3. c'), lineStart(doc, '2. b'))
+    expect(out).toBe('1. a\n2. c\n   more about c\n3. b\n4. d')
+  })
+  it('renumbers the whole run when an item with a bullet child moves up', () => {
+    const doc = '1. a\n2. b\n3. c\n   - kid\n4. d'
+    const out = drop(doc, lineStart(doc, '3. c'), lineStart(doc, '2. b'))
+    expect(out).toBe('1. a\n2. c\n   - kid\n3. b\n4. d')
+  })
+  it('renumbers the whole run when an item with a nested ordered child moves up', () => {
+    const doc = '1. a\n2. b\n3. c\n   1. kid\n4. d'
+    const out = drop(doc, lineStart(doc, '3. c'), lineStart(doc, '2. b'))
+    expect(out).toBe('1. a\n2. c\n   1. kid\n3. b\n4. d')
+  })
+  it('renumbers the whole run when an item with a child moves to the top', () => {
+    const doc = '1. a\n2. b\n3. c\n   more about c\n4. d'
+    const out = drop(doc, lineStart(doc, '3. c'), 0)
+    expect(out).toBe('1. c\n   more about c\n2. a\n3. b\n4. d')
   })
 })
 
@@ -164,9 +184,9 @@ describe('drag inside a callout (prefix-aware)', () => {
   })
 })
 
-describe('blockMoveChanges (blank-separated block move)', () => {
+describe('moveRange (blank-separated block move)', () => {
   const apply = (doc: string, range: { from: number; to: number }, at: number): string | null => {
-    const c = blockMoveChanges(doc, range, { at })
+    const c = moveRange(doc, range, { at })
     return c ? applyChanges(doc, c) : null
   }
 
@@ -191,7 +211,7 @@ describe('blockMoveChanges (blank-separated block move)', () => {
   })
 
   it('returns null when dropping a block onto its own start', () => {
-    expect(blockMoveChanges('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 3 })).toBeNull()
+    expect(moveRange('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 3 })).toBeNull()
   })
 
   it('preserves a trailing newline and does not double-blank on a move to EOF', () => {
@@ -203,10 +223,10 @@ describe('blockMoveChanges (blank-separated block move)', () => {
     const doc = '# A\nbody\n\n# B\nx'
     const secA = blockAt(doc, 0)
     expect(secA).not.toBeNull()
-    const moved = applyChanges(doc, blockMoveChanges(doc, secA!, { at: doc.length })!)
+    const moved = applyChanges(doc, moveRange(doc, secA!, { at: doc.length })!)
     expect(moved).toBe('# B\nx\n\n# A\nbody')
     const secBack = blockAt(moved, moved.indexOf('# A'))
-    expect(applyChanges(moved, blockMoveChanges(moved, secBack!, { at: 0 })!)).toBe(doc)
+    expect(applyChanges(moved, moveRange(moved, secBack!, { at: 0 })!)).toBe(doc)
   })
 
   it('snaps a blank-line drop target to the next content block', () => {
@@ -215,7 +235,7 @@ describe('blockMoveChanges (blank-separated block move)', () => {
   })
 
   it('returns null when dropping onto its own preceding blank', () => {
-    expect(blockMoveChanges('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 2 })).toBeNull()
+    expect(moveRange('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 2 })).toBeNull()
   })
 
   it('injects a blank separator when moving within a doc that had none', () => {
@@ -223,8 +243,8 @@ describe('blockMoveChanges (blank-separated block move)', () => {
   })
 
   it('a single-block doc has no valid target', () => {
-    expect(blockMoveChanges('only', { from: 0, to: 4 }, { at: 0 })).toBeNull()
-    expect(blockMoveChanges('only', { from: 0, to: 4 }, { at: 4 })).toBeNull()
+    expect(moveRange('only', { from: 0, to: 4 }, { at: 0 })).toBeNull()
+    expect(moveRange('only', { from: 0, to: 4 }, { at: 4 })).toBeNull()
   })
 
   // A glue-adjacent seam (two blockStarts-distinct blocks with no blank between) must not fuse on a drop — the move has to re-blank-separate both new seams.

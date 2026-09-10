@@ -1,7 +1,7 @@
 import type { EditorView } from '@codemirror/view'
 import { headingOutline, sectionEnd } from '../MarkdownPM/Engine/headingScan'
 import { travelTo } from '../MarkdownPM/travel'
-import { blockMoveChanges } from '../MarkdownPM/Engine/listDragModel'
+import { moveRange } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 
 // Registered by the page surface at mount, so an embedded tile's or window's editor can never be picked up instead.
@@ -40,6 +40,6 @@ export function moveHeadingSection(dragKey: string, beforeKey: string | null): v
   const range = { from, to: from + doc.slice(from, sectionEndPos).trimEnd().length }
   const at =
     beforeKey === null ? doc.length : (heads.find((x) => x.key === beforeKey)?.from ?? doc.length)
-  const changes = blockMoveChanges(doc, range, { at })
+  const changes = moveRange(doc, range, { at })
   if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
 }
