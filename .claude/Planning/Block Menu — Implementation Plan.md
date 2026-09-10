@@ -565,6 +565,8 @@ export const lineStartAt = (doc: string, pos: number): number =>
 
 ### Deviations
 
+- Task 5b: the divider doubled the blank line below itself where a blank already followed, and a table seated the caret inside its last row in the same case; `setBlock` computes one `trail` beside `lead` for both and seats the caret one line past what it wrote. Closeout simplification.
+
 - Task 6's commit is `1c74dccb2`; an amend meant for its trailer landed on the audit-report commit that another agent had placed above it, so `bedab5188` carries the audit report's change under Task 6's message. Both trees are correct; the messages are the only defect, and a history rewrite to fix them was declined by the harness.
 
 - Task 5b: `MenuRow`'s heading `label` widened from `string` to `ReactNode` in `UIX/Menus/menu-index.tsx`, the one UIX line the heading emphasis needed; `BlockMenu.tsx` renders headings and rows through one `emphasized` helper.

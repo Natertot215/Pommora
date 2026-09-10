@@ -81,6 +81,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
       expect(text).toContain(title)
     expect(text).toContain('Footnote')
     expect(rows()).toHaveLength(19)
+    expect(marks()).toEqual([])
   })
 
   it('leaves the headings alone under a heading query', async () => {

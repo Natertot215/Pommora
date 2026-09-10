@@ -223,6 +223,7 @@ describe('setBlock', () => {
     expect(below.selection).toBe(7)
     const spaced = 'a\n\n\nb'
     expect(apply(spaced, setBlock(spaced, 3, 3, 'hr'))).toBe('a\n\n---\n\nb')
+    expect(apply(spaced, setBlock(spaced, 2, 2, 'hr'))).toBe('a\n\n---\n\nb')
     const opening = '\ntext'
     const first = setBlock(opening, 0, 0, 'hr')
     expect(apply(opening, first)).toBe('---\n\ntext')
@@ -249,6 +250,9 @@ describe('setBlock', () => {
     const trailing = setBlock('a\n\n', 2, 2, 'table')
     expect(apply('a\n\n', trailing)).toBe(`a\n\n${t}\n\n`)
     expect(trailing.selection).toBe(t.length + 4)
+    const fenced = setBlock('text\n\n\nrest', 5, 5, 'table')
+    expect(apply('text\n\n\nrest', fenced)).toBe(`text\n\n${t}\n\nrest`)
+    expect(fenced.selection).toBe(6 + t.length + 1)
   })
 
   it('blank-line-fences the inserted table below too, so it never merges with an adjacent table', () => {
