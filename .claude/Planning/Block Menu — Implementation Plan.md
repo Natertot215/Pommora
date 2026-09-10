@@ -1,6 +1,6 @@
 ## Block Menu — Implementation Plan
 
-> **Status:** written, pending approval · Spec: Nathan's direction of 09-09-2026 (in-app only, layout ratified, `/` trigger, the native menu untouched), over `Slash Command Menu — Grounding.md` · Three phases · Execute tasks in order.
+> **Status:** Ratified — in execution · Spec: Nathan's direction of 09-09-2026 (in-app only, layout ratified, `/` trigger, the native menu untouched), over `Slash Command Menu — Grounding.md` · Three phases · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -132,9 +132,9 @@ Actions are bare; the caller prepends `EDITOR_ACTION_PREFIX`. Icons are plain st
 
 **Verify — automated**
 
-- [ ] Red first: the test file asserts section titles `['Headings', 'Lists', 'Insert', 'Embed']`, the label list of each, sixteen rows with `true` and fifteen with `false`, every `icon` a member of `ICON_NAMES` from `@pommora/uix/Symbols/iconNames`, `filterBlockMenu(s, 'hea')` yielding one section of five each at 0, `filterBlockMenu(s, 'bl')` yielding Insert with Blockquote at 0 and Code Block at 5, `filterBlockMenu(s, 'od')` yielding `[]`, `filterBlockMenu(s, 'zz')` yielding `[]`, and `filterBlockMenu(s, '')` carrying every row at 0. Expect module-not-found; then green.
-- [ ] `rg -F "@pommora/uix" Core/Actions/blockMenu.ts` → 0. Control: `rg -F "@pommora/uix" Core/Actions/blockMenu.test.ts` → 1.
-- [ ] Full gate green, exit codes read directly.
+- [x] Red first: the test file asserts section titles `['Headings', 'Lists', 'Insert', 'Embed']`, the label list of each, sixteen rows with `true` and fifteen with `false`, every `icon` a member of `ICON_NAMES` from `@pommora/uix/Symbols/iconNames`, `filterBlockMenu(s, 'hea')` yielding one section of five each at 0, `filterBlockMenu(s, 'bl')` yielding Insert with Blockquote at 0 and Code Block at 5, `filterBlockMenu(s, 'od')` yielding `[]`, `filterBlockMenu(s, 'zz')` yielding `[]`, and `filterBlockMenu(s, '')` carrying every row at 0. Expect module-not-found; then green.
+- [x] `rg -F "@pommora/uix" Core/Actions/blockMenu.ts` → 0. Control: `rg -F "@pommora/uix" Core/Actions/blockMenu.test.ts` → 1.
+- [x] Full gate green, exit codes read directly.
 
 **Verify — user**
 
@@ -426,7 +426,7 @@ export function BlockMenu(props: {
 
 ### Progress
 
-- [ ] **Phase 1** — The catalog, the blank line, and the shared seams · base `<commit>`
+- [ ] **Phase 1** — The catalog, the blank line, and the shared seams · base `03fd99873`
   - [ ] Task 1 — The block menu model · `<commit>`
   - [ ] Task 2 — A caret on a blank line counts · `<commit>`
   - [ ] Task 3 — One caret geometry and one key guard for both panes · `<commit>`
