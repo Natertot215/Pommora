@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PropertyDefinition, optionsOf } from '@pommora/core/Properties/properties'
-import type {
-  DateGranularity,
-  GroupConfig,
-  GroupOrderMode,
-  SavedView,
-  StructuralOrderMode,
-  SubGroupConfig,
+import {
+  type DateGranularity,
+  type GroupConfig,
+  type GroupOrderMode,
+  type SavedView,
+  type StructuralOrderMode,
+  type SubGroupConfig,
+  VIEW_KINDS,
 } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
 import {
@@ -157,7 +158,7 @@ export function GroupFrame({
         ? group.property_id
         : 'location'
   const groupByOptions: PickerOption<string>[] = [
-    ...(view.type === 'cards'
+    ...(VIEW_KINDS[view.type].flat
       ? [{ value: 'none', label: 'None', icon: 'circle-off' as const }]
       : []),
     { value: 'location', label: 'Location', icon: 'folder' as const },

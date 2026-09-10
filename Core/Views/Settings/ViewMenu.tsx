@@ -1,10 +1,10 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
-import { iconNameOr } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../../Nexus/treeIndex'
 import { useActiveView } from '../Host/useActiveView'
 import { ViewFrame } from './ViewFrame'
+import { viewGlyph } from '../viewIcon'
 import * as s from '../../Interface/Toolbar/toolbar-menu.css'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
@@ -45,7 +45,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
 
   return (
     <MenuDropdown
-      icon={iconNameOr(view.icon, 'table')}
+      icon={viewGlyph(view)}
       title="Views"
       label={view.name}
       labelCollapsed={!labeled}

@@ -1,12 +1,12 @@
-import type { IconName } from '@pommora/uix/Symbols'
-import type { ViewType } from '@pommora/core/Views/views'
+import { asRenderableIcon } from '@pommora/uix/Symbols'
+import { type SavedView, VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
 
-export function iconForTypeSwitch(
-  currentIcon: string | undefined,
-  oldType: ViewType,
-  newType: ViewType,
-  glyphOf: Record<ViewType, IconName>,
-): IconName | undefined {
-  const wasDefault = currentIcon === undefined || currentIcon === glyphOf[oldType]
-  return wasDefault ? glyphOf[newType] : undefined
+type Glyphed = Pick<SavedView, 'icon' | 'type'>
+
+export const viewGlyph = (view: Glyphed): string =>
+  asRenderableIcon(view.icon) ?? VIEW_KINDS[view.type].icon
+
+export function iconForTypeSwitch(view: Glyphed, newType: ViewType): string | undefined {
+  const wasDefault = view.icon === undefined || view.icon === VIEW_KINDS[view.type].icon
+  return wasDefault ? VIEW_KINDS[newType].icon : undefined
 }

@@ -10,7 +10,7 @@ import {
   type SavedView,
   type ViewState,
 } from '@pommora/core/Views/views'
-import { Icon, iconNameOr } from '@pommora/uix/Symbols'
+import { Icon } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
@@ -23,6 +23,7 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { findCollection, findSet } from '../../Nexus/treeIndex'
 import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
+import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
@@ -94,8 +95,6 @@ function usePillPresence(views: SavedView[]): {
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
 
-const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
-
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = labelColorFor(v.color)
   if (key === 'default') return undefined
@@ -141,7 +140,7 @@ function ViewPill({
       onContextMenu={onMenu}
       onAnimationEnd={onAnimEnd}
     >
-      <Icon name={viewIcon(view)} size={SEGMENT_ICON} />
+      <Icon name={viewGlyph(view)} size={SEGMENT_ICON} />
       <span className={cx(labelSlot, !renameNode && !labeled && labelSlotHidden)}>
         <span className={labelText}>{renameNode ?? view.name}</span>
       </span>
@@ -368,7 +367,7 @@ export function ViewTile({
       style={strokeStyle(view)}
       onClick={() => setListOpen(true)}
     >
-      <Icon name={viewIcon(view)} size={SEGMENT_ICON} />
+      <Icon name={viewGlyph(view)} size={SEGMENT_ICON} />
       <span className={cx(labelSlot, !labeled && labelSlotHidden)}>
         <span className={labelText}>{view.name}</span>
       </span>
@@ -420,7 +419,7 @@ export function ViewTile({
               <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
                 <Icon
                   ref={titleIconRef}
-                  name={viewIcon(view)}
+                  name={viewGlyph(view)}
                   className={cx(
                     `md-h${titleLevel}`,
                     'title-icon-reveal',
@@ -492,7 +491,7 @@ export function ViewTile({
                   <MenuItem
                     key={v.id}
                     className={i === index ? optionRing : undefined}
-                    leading={<Icon name={viewIcon(v)} size="headline" />}
+                    leading={<Icon name={viewGlyph(v)} size="headline" />}
                     onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
                     onContextMenu={(e) => void rowMenu(i, e, false)}
                   >

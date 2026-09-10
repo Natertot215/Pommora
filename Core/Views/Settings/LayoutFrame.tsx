@@ -5,6 +5,8 @@ import {
   type CardBanner,
   isCompact,
   type SavedView,
+  VIEW_KINDS,
+  VIEW_TYPES,
   type ViewType,
 } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
@@ -29,6 +31,7 @@ import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { iconForTypeSwitch } from '../viewIcon'
+import { VIEW_RENDERERS } from '../Host/ViewHost'
 import { ViewItemMenu } from './ViewItemMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
@@ -71,17 +74,6 @@ function ViewSwitches({
     </>
   )
 }
-
-const TYPE_ORDER: ViewType[] = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
-const TYPE_GLYPH: Record<ViewType, IconName> = {
-  table: 'table',
-  cards: 'cards-grid',
-  list: 'list-rounded',
-  gallery: 'layout-dashboard',
-  calendar: 'calendar-days',
-  timeline: 'chart-gantt',
-}
-const IMPLEMENTED: ReadonlySet<ViewType> = new Set(['table', 'cards'])
 
 const SCALE_MIN = 0.5
 const SCALE_MAX = 1.5
@@ -138,68 +130,69 @@ export function LayoutFrame({
   const rename = (name: string): void => {
     if (name && name !== view.name) write({ name })
   }
+  const cards = view.type === 'cards'
+  const switches = cards ? CARD_SWITCHES : TABLE_SWITCHES
   const setType = (type: ViewType): void => {
     if (type === view.type) return
-    const icon = iconForTypeSwitch(view.icon, view.type, type, TYPE_GLYPH)
+    const icon = iconForTypeSwitch(view, type)
     write(icon ? { type, icon } : { type })
   }
   const toggleFormat = (): void => write({ format: isCompact(view) ? 'standard' : 'compact' })
 
-  const cardsFooting =
-    view.type === 'cards' ? (
-      <MenuFooting>
-        <FootingItem
-          icon="palette"
-          label="Style"
-          value={isCompact(view) ? 'Compact' : 'Standard'}
-          trailing={
-            <span className={footingSymbol}>
-              <Icon name="chevrons-up-down" size="control" />
-            </span>
-          }
-          onClick={toggleFormat}
-        />
-        <FootingItem
-          icon="image"
-          label="Banner"
-          trailing={
-            <PickerControl
-              ariaLabel="Card Banner"
-              solid
-              value={view.card_banner ?? 'image'}
-              options={BANNERS}
-              onPick={(v) => write({ card_banner: v })}
-            />
-          }
-        />
-        <FootingItem
-          icon="scaling"
-          label="Size"
-          trailing={
-            <Slider
-              value={view.card_size ?? 1}
-              min={SCALE_MIN}
-              max={SCALE_MAX}
-              step={0.05}
-              ariaLabel="Size"
-              onInput={(v) => scrubCardScale(v, view.id)}
-              onCommit={(v) => write({ card_size: v })}
-              format={(v) => `${v.toFixed(2)}x`}
-              readoutClassName={footingLabel}
-            />
-          }
-        />
-      </MenuFooting>
-    ) : null
+  const cardsFooting = cards ? (
+    <MenuFooting>
+      <FootingItem
+        icon="palette"
+        label="Style"
+        value={isCompact(view) ? 'Compact' : 'Standard'}
+        trailing={
+          <span className={footingSymbol}>
+            <Icon name="chevrons-up-down" size="control" />
+          </span>
+        }
+        onClick={toggleFormat}
+      />
+      <FootingItem
+        icon="image"
+        label="Banner"
+        trailing={
+          <PickerControl
+            ariaLabel="Card Banner"
+            solid
+            value={view.card_banner ?? 'image'}
+            options={BANNERS}
+            onPick={(v) => write({ card_banner: v })}
+          />
+        }
+      />
+      <FootingItem
+        icon="scaling"
+        label="Size"
+        trailing={
+          <Slider
+            value={view.card_size ?? 1}
+            min={SCALE_MIN}
+            max={SCALE_MAX}
+            step={0.05}
+            ariaLabel="Size"
+            onInput={(v) => scrubCardScale(v, view.id)}
+            onCommit={(v) => write({ card_size: v })}
+            format={(v) => `${v.toFixed(2)}x`}
+            readoutClassName={footingLabel}
+          />
+        }
+      />
+    </MenuFooting>
+  ) : null
 
   const leafPane =
     frame === 'layout' ? (
-      view.type === 'cards' ? (
+      cards ? (
         <MenuScrollFrame
           header={<MenuTopRow label="Views" current="Layout" onBack={() => setFrame(null)} />}
           maxHeight={VIEWSETTINGS_MAX_HEIGHT}
         >
-          <ViewSwitches source={source} view={view} switches={CARD_SWITCHES} />
+          <ViewSwitches source={source} view={view} switches={switches} />
         </MenuScrollFrame>
       ) : (
         <VisibilityList
@@ -210,7 +203,7 @@ export function LayoutFrame({
           current="Layout"
           maxHeight={VIEWSETTINGS_MAX_HEIGHT}
           onBack={() => setFrame(null)}
-          footer={<ViewSwitches source={source} view={view} switches={TABLE_SWITCHES} separated />}
+          footer={<ViewSwitches source={source} view={view} switches={switches} separated />}
         />
       )
     ) : frame === 'group' ? (
@@ -219,7 +212,7 @@ export function LayoutFrame({
         view={view}
         schema={schema}
         label="Views"
-        subGrouping={view.type !== 'cards'}
+        subGrouping={!VIEW_KINDS[view.type].flat}
         onBack={() => setFrame(null)}
       />
     ) : frame === 'sort' ? (
@@ -247,15 +240,15 @@ export function LayoutFrame({
   const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const grid = (
     <div className={vs.grid}>
-      {TYPE_ORDER.map((t) => (
+      {VIEW_TYPES.map((t) => (
         <button
           key={t}
           type="button"
           className={cx(vs.tile, t === view.type && vs.tileSelected)}
-          aria-label={t}
-          onClick={() => IMPLEMENTED.has(t) && setType(t)}
+          aria-label={VIEW_KINDS[t].label}
+          onClick={() => t in VIEW_RENDERERS && setType(t)}
         >
-          <Icon name={TYPE_GLYPH[t]} size="titleMedium" />
+          <Icon name={VIEW_KINDS[t].icon} size="titleMedium" />
         </button>
       ))}
     </div>
@@ -295,10 +288,8 @@ export function LayoutFrame({
             },
           ]}
         />
-      ) : view.type === 'table' ? (
-        <ViewSwitches source={source} view={view} switches={TABLE_SWITCHES} separated />
       ) : (
-        <ViewSwitches source={source} view={view} switches={CARD_SWITCHES} separated />
+        <ViewSwitches source={source} view={view} switches={switches} separated />
       )}
     </MenuScrollFrame>
   )
