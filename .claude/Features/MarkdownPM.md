@@ -81,7 +81,7 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
 
-**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. Return or a click removes the typed query and writes the block through the same action the context menu runs; one undo reverts it. The pane is the editor's own, drawn in-app whatever Use Native Menus says, and never opens inside code, math, or the footnotes, behind a quote or list marker, or in a table cell.
+**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Link, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. Return or a click removes the typed query and writes the block through the same action the context menu runs; one undo reverts it. The pane is the editor's own, drawn in-app whatever Use Native Menus says, and never opens inside code, math, or the footnotes, behind a quote or list marker, or in a table cell.
 
 ### Context Menu + Shortcuts
 
