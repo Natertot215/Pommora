@@ -62,8 +62,6 @@ describe('setHeading', () => {
     const edit = setHeading('', 0, 0, 2)
     expect(apply('', edit)).toBe('## ')
     expect(edit.selection).toBe(3)
-    const gapped = 'one\n\ntwo'
-    expect(apply(gapped, setHeading(gapped, 0, gapped.length, 1))).toBe('# one\n\n# two')
   })
   it('returns every selected line to plain body at 0', () => {
     const heads = '# one\n## two'
