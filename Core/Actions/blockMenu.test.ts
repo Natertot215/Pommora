@@ -59,17 +59,20 @@ describe('the block menu filter', () => {
     expect(filterBlockMenu(seated, 'HEA')).toEqual(hea)
   })
 
-  it('matches a word anywhere in the label and reports where it begins', () => {
+  it('matches anywhere in the label and reports where it begins', () => {
     const bl = filterBlockMenu(seated, 'bl')
     expect(bl.map((s) => s.title)).toEqual(['Insert'])
     expect(bl[0].rows.map((r) => [r.label, r.at])).toEqual([
       ['Blockquote', 0],
       ['Code Block', 5],
+      ['Table', 2],
+    ])
+    expect(filterBlockMenu(seated, 'quo')[0].rows.map((r) => [r.label, r.at])).toEqual([
+      ['Blockquote', 5],
     ])
   })
 
-  it('refuses a match that starts mid-word, and one nothing carries', () => {
-    expect(filterBlockMenu(seated, 'od')).toEqual([])
+  it('refuses a query nothing carries', () => {
     expect(filterBlockMenu(seated, 'zz')).toEqual([])
   })
 

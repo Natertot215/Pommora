@@ -71,21 +71,19 @@ export function blockMenuSections(citeSeat: boolean): BlockMenuSection[] {
   ]
 }
 
-function wordStart(label: string, query: string): number | null {
-  for (const m of label.matchAll(/\S+/g)) {
-    if (m[0].toLowerCase().startsWith(query)) return m.index
-  }
-  return null
+function matchAt(label: string, query: string): number | null {
+  const at = label.toLowerCase().indexOf(query)
+  return at === -1 ? null : at
 }
 
 export function filterBlockMenu(sections: BlockMenuSection[], query: string): BlockMenuMatch[] {
   const q = query.toLowerCase()
   const out: BlockMenuMatch[] = []
   for (const s of sections) {
-    const titleAt = wordStart(s.title, q)
+    const titleAt = matchAt(s.title, q)
     const rows: BlockMenuRow[] = []
     for (const row of s.rows) {
-      const at = wordStart(row.label, q)
+      const at = matchAt(row.label, q)
       if (titleAt !== null || at !== null) rows.push({ ...row, at })
     }
     if (rows.length > 0) out.push({ title: s.title, at: titleAt, rows })

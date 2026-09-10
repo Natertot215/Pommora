@@ -224,10 +224,10 @@ describe('a row held through the closing animation picks nothing', () => {
 
   it('refuses the click that lands after the query matched nothing', async () => {
     const view = await open('')
-    await type(view, '/quo')
+    await type(view, '/zz')
     expect(rows().length).toBeGreaterThan(0)
     await click(rows()[0])
-    expect(view.state.doc.toString()).toBe('/quo')
+    expect(view.state.doc.toString()).toBe('/zz')
   })
 })
 
@@ -235,7 +235,7 @@ describe('the query is emphasized wherever it matched', () => {
   it('marks the matched word, not the start of the label', async () => {
     const view = await open('')
     await type(view, '/bl')
-    expect(marks()).toEqual(['Bl', 'Bl'])
+    expect(marks()).toEqual(['Bl', 'Bl', 'bl'])
     expect(rows()[1]?.textContent).toBe('Code Block')
   })
 
