@@ -228,9 +228,9 @@ Refactor baseline: `Core/MarkdownPM/Autocomplete/*.test.*` and `Core/MarkdownPM/
 
 **Verify — automated**
 
-- [ ] `npx vitest run Core/MarkdownPM/Autocomplete Core/MarkdownPM/Tables` green with the same test count as at the phase base.
-- [ ] `rg -F "whenAcOpen(acCtl" Core` → 0. Control: `rg -F "whenAcOpen(" Core --glob '!*.test.*'` → 7 matches in 2 files.
-- [ ] Full gate green, exit codes read directly.
+- [x] `npx vitest run Core/MarkdownPM/Autocomplete Core/MarkdownPM/Tables` green with the same test count as at the phase base.
+- [x] `rg -F "whenAcOpen(acCtl" Core` → 0. Control: `rg -F "whenAcOpen(" Core --glob '!*.test.*'` → 7 matches in 2 files.
+- [x] Full gate green, exit codes read directly.
 
 **Verify — user**
 

@@ -203,10 +203,10 @@ export function MarkdownEditor({
       history(),
       Prec.highest(
         keymap.of([
-          { key: 'ArrowDown', run: whenAcOpen(acCtl, (c) => c.move(1)) },
-          { key: 'ArrowUp', run: whenAcOpen(acCtl, (c) => c.move(-1)) },
-          { key: 'Enter', run: whenAcOpen(acCtl, (c) => c.pick()) },
-          { key: 'Escape', run: whenAcOpen(acCtl, (c) => c.close()) },
+          { key: 'ArrowDown', run: whenAcOpen([acCtl], (c) => c.move(1)) },
+          { key: 'ArrowUp', run: whenAcOpen([acCtl], (c) => c.move(-1)) },
+          { key: 'Enter', run: whenAcOpen([acCtl], (c) => c.pick()) },
+          { key: 'Escape', run: whenAcOpen([acCtl], (c) => c.close()) },
         ]),
       ),
       markdownInput,
