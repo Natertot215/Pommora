@@ -274,8 +274,8 @@ Cases: `'/'` caret 1 → `{ '', 0, 1 }` · `'/hea'` caret 4 → `{ 'hea', 0, 4 }
 
 **Verify — automated**
 
-- [ ] Red first on the thirteen cases above through `scanOf(text)`; expect module-not-found; then green.
-- [ ] Full gate green, exit codes read directly.
+- [x] Red first on the thirteen cases above through `scanOf(text)`; expect module-not-found; then green.
+- [x] Full gate green, exit codes read directly.
 
 **Verify — user**
 
@@ -430,7 +430,7 @@ export function BlockMenu(props: {
   - [x] Task 1 — The block menu model · `0b0783569`
   - [x] Task 2 — A caret on a blank line counts · `913ed48f9`
   - [x] Task 3 — One caret geometry and one key guard for both panes · `75db3a248`
-- [ ] **Phase 2** — The pane · base `<commit>`
+- [ ] **Phase 2** — The pane · base `bfdb7b126`
   - [ ] Task 4 — The trigger · `<commit>`
   - [ ] Task 5 — The pane, its hook, and the mount · `<commit>`
 - [ ] **Phase 3** — The record · base `<commit>`
@@ -453,7 +453,7 @@ export function BlockMenu(props: {
 ### Deviations
 
 - Task 1: `BlockMenuSection.rows` and `BlockMenuMatch.rows` are `readonly`, with the heading rows hoisted to a module constant beside the other three, so `blockMenuSections` allocates only the Insert list; the Becomes block wrote them mutable. Gate 1 simplification.
-- Task 2: a blank body behind a bare `>` prefix took the marker glued to the `>` (`>## `), and a whitespace-only body became list indent; `selectedLines` now carries a `pad` and clears the indent on a blank body. Gate 1 attack, commits `81e192714` and this commit.
+- Task 2: a blank body behind a bare `>` prefix took the marker glued to the `>` (`>## `), and a whitespace-only body became list indent; `selectedLines` now carries a `pad` and clears the indent on a blank body. Gate 1 attack, commits `81e192714` and `bfdb7b126`.
 
 ### Lessons
 
