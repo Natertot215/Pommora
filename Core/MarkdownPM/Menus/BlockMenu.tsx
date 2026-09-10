@@ -3,7 +3,11 @@ import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
-import type { BlockMenuAction, BlockMenuMatch } from '@pommora/core/Actions/blockMenu'
+import {
+  BLOCK_MENU_WIDTH,
+  type BlockMenuAction,
+  type BlockMenuMatch,
+} from '@pommora/core/Actions/blockMenu'
 import { useKeepInView } from '../Autocomplete/useKeepInView'
 import { CLOSED_GEOMETRY } from '../Autocomplete/useConnectionAutocomplete'
 import type { BlockMenuState } from './useBlockMenu'
@@ -37,6 +41,7 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
       origin="center"
       manageFocus={false}
       contentClassName="mdpm-block-menu"
+      style={{ width: BLOCK_MENU_WIDTH }}
     >
       <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
         {v.matches.map((m) => (

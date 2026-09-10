@@ -2,10 +2,12 @@ import type { ActionItem } from './menuModel'
 import { HEADING_LEVELS, type ListKind } from './gripMenu'
 import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
 
+export const BLOCK_MENU_WIDTH = 260
+
 export type BlockMenuAction =
   | `heading:${1 | 2 | 3 | 4 | 5}`
   | `list:${Extract<ListKind, 'bullet' | 'ordered' | 'checkbox'>}`
-  | `format:${Extract<InlineFormat, 'link' | 'connection'>}`
+  | `format:${Extract<InlineFormat, 'link' | 'linkText' | 'connection'>}`
   | `block:${BlockFormat}`
   | 'block:citation'
   | 'block:page'
@@ -35,7 +37,8 @@ const LIST_ROWS: readonly ActionItem<BlockMenuAction>[] = [
 
 const LINK_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Connection', action: 'format:connection', icon: 'link' },
-  { label: 'Markdown Link', action: 'format:link', icon: 'link-2' },
+  { label: 'Markdown Link', action: 'format:linkText', icon: 'link-2' },
+  { label: 'External Link', action: 'format:link', icon: 'external-link' },
 ]
 
 const INSERT_ROWS: readonly ActionItem<BlockMenuAction>[] = [
