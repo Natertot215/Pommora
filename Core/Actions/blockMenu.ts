@@ -1,10 +1,11 @@
 import type { ActionItem } from './menuModel'
 import { HEADING_LEVELS, type ListKind } from './gripMenu'
-import type { BlockFormat } from '../MarkdownPM/Input/format'
+import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
 
 export type BlockMenuAction =
   | `heading:${1 | 2 | 3 | 4 | 5}`
   | `list:${Extract<ListKind, 'bullet' | 'ordered' | 'checkbox'>}`
+  | `format:${Extract<InlineFormat, 'link' | 'connection'>}`
   | `block:${BlockFormat}`
   | 'block:citation'
   | 'block:page'
@@ -32,12 +33,17 @@ const LIST_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Task List', action: 'list:checkbox', icon: 'list-todo' },
 ]
 
+const LINK_ROWS: readonly ActionItem<BlockMenuAction>[] = [
+  { label: 'Connection', action: 'format:connection', icon: 'link' },
+  { label: 'Markdown Link', action: 'format:link', icon: 'link-2' },
+]
+
 const INSERT_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Blockquote', action: 'block:quote', icon: 'text-quote' },
   { label: 'Callout', action: 'block:callout', icon: 'message-square-quote' },
   { label: 'Code Block', action: 'block:code', icon: 'square-code' },
   { label: 'Table', action: 'block:table', icon: 'table' },
-  { label: 'Horizontal Rule', action: 'block:hr', icon: 'separator-horizontal' },
+  { label: 'Divider', action: 'block:hr', icon: 'separator-horizontal' },
 ]
 
 const FOOTNOTE_ROW: ActionItem<BlockMenuAction> = {
@@ -55,6 +61,7 @@ export function blockMenuSections(citeSeat: boolean): BlockMenuSection[] {
   return [
     { title: 'Headings', rows: HEADING_ROWS },
     { title: 'Lists', rows: LIST_ROWS },
+    { title: 'Link', rows: LINK_ROWS },
     { title: 'Insert', rows: citeSeat ? [...INSERT_ROWS, FOOTNOTE_ROW] : INSERT_ROWS },
     { title: 'Embed', rows: EMBED_ROWS },
   ]
