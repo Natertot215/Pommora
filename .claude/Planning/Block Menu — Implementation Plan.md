@@ -379,9 +379,9 @@ export function BlockMenu(props: {
 **Becomes**
 
 ```ts
-// Core/Actions/blockMenu.ts
-export const BLOCK_MENU_WIDTH = 260
-// Core/MarkdownPM/Menus/BlockMenu.tsx passes it to PickerMenu as style={{ width: BLOCK_MENU_WIDTH }},
+// Core/MarkdownPM/Menus/BlockMenu.tsx
+const BLOCK_MENU_WIDTH = 260
+// passed to PickerMenu as style={{ width: BLOCK_MENU_WIDTH }},
 // which lands on the pane's own Shell element; MenuScrollFrame forwards no style, and UIX is out of scope.
 
 import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
@@ -512,7 +512,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - [x] **Phase 2** — The pane · base `bfdb7b126`
   - [x] Task 4 — The trigger · `f7209dc59`
   - [x] Task 5 — The pane, its hook, and the mount · `fe04d8532`
-  - [x] Task 5b — The stop's refinements · `6d30b72a7` · `<commit>`
+  - [x] Task 5b — The stop's refinements · `6d30b72a7` · `b94097bd3`
 - [ ] **Phase 3** — The record · base `<commit>`
   - [ ] Task 6 — Context, History, and the grounding · `<commit>`
 
@@ -527,7 +527,7 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - 09-09-2026, Claude (routine, disclosed): the blank-line no-op is fixed in `selectedLines` for the caret-only case, repairing the context menu's Heading and Lists rows on an empty line as well.
 - 09-09-2026, Claude (routine, disclosed): Escape is a one-shot dismissal; the next edit on the line re-detects and reopens, as the `[[` pane does. No dismissed-offset latch.
 - 09-09-2026, Claude (routine, disclosed): the trigger refuses a math block and the citations run as well as code, mirroring the two seat predicates beside it; the context menu still offers its rows there, which is its own exposure and not this plan's.
-- 09-09-2026, Nathan: the pane's width is a knob rather than its longest row, and the knob is `BLOCK_MENU_WIDTH` in `Core/Actions/blockMenu.ts` beside the rows it sizes, not a CSS rule.
+- 09-09-2026, Nathan: the pane's width is a knob rather than its longest row, and the knob is `BLOCK_MENU_WIDTH` at the top of `Core/MarkdownPM/Menus/BlockMenu.tsx`, the pane it sizes, not a CSS rule or a model export.
 - 09-09-2026, Nathan: a Link section sits between Lists and Insert with Connection, Markdown Link, and External Link, reversing the "no Format section" ruling for links alone. External Link is the same `[]()` write with the caret in the parentheses; Markdown Link is alias-first, with the caret in the brackets.
 - 09-09-2026, Nathan: the rule's row reads `Divider` in the block menu; the native context menu keeps `Horizontal Rule`.
 - 09-09-2026, Nathan: a typed `/query` line draws in the `[[` pane's phantom state — the slash as syntax, the query as a phantom connection — so `plain-unresolved` governs both alike.
