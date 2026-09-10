@@ -21,7 +21,7 @@ import {
 import { ReactWidget, type ReactDom } from '../reactWidget'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
-import { type DismissalHandle, pushEscape } from '@pommora/uix/Interactions/dismissalStack'
+import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@pommora/core/Connections/connections'
 import '../../Tiles/tile-base.css'
@@ -56,11 +56,6 @@ export const resolutionNudge = StateEffect.define<null>()
 export const setEmbedHeights = StateEffect.define<Record<string, number>>()
 
 export const setEmbedZooms = StateEffect.define<Record<string, number>>()
-
-export interface EmbedHeightsApi {
-  load: () => Promise<Record<string, number>>
-  save: (heights: Record<string, number>) => void
-}
 
 type TileRange =
   | { kind: 'page'; from: number; to: number; path: string; title: string }
@@ -549,9 +544,6 @@ const editingExit = ViewPlugin.fromClass(
           requestAnimationFrame(() => {
             if (view.hasFocus) view.contentDOM.blur()
           })
-        if (!view.state.field(embedField).editing) return
-        if (t?.closest?.('.mdpm-embed-tile.is-editing-tile')) return
-        view.dispatch({ effects: setEmbedEditing.of(null) })
       }
       document.addEventListener('pointerdown', this.onDown, true)
     }
@@ -565,7 +557,10 @@ const editingExit = ViewPlugin.fromClass(
         return
       }
       const { view } = u
-      this.dismissal ??= pushEscape(() => view.dispatch({ effects: setEmbedEditing.of(null) }))
+      this.dismissal ??= pushDismissal({
+        layer: () => view.dom.querySelector('.mdpm-embed-tile.is-editing-tile'),
+        dismiss: () => view.dispatch({ effects: setEmbedEditing.of(null) }),
+      })
     }
 
     destroy(): void {

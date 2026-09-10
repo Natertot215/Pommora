@@ -9,6 +9,7 @@ import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi, ConnMenuTarget } from '../Links/connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
+import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -169,11 +170,13 @@ describe('the picker survives being clicked', () => {
     const panel = document.createElement('div')
     panel.className = 'mdpm-ac'
     document.body.appendChild(panel)
+    const shield = pushDismissal({ layer: () => panel })
     await act(async () => {
       panel.dispatchEvent(
         new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
       )
     })
+    shield.release()
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
     panel.remove()
   })

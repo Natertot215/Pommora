@@ -15,7 +15,7 @@ import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
+import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
@@ -220,19 +220,9 @@ export function MarkdownTable({
     setAddsHidden(true)
   }, [active])
 
-  useEffect(() => {
-    if (!sel) return
-    const onDown = (e: PointerEvent): void => {
-      if (wrapRef.current?.contains(e.target as Node)) return
-      setSel(null)
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    return () => document.removeEventListener('pointerdown', onDown, true)
-  }, [sel])
-
   const rect = useMemo(() => (sel ? normRect(sel.a, sel.h) : null), [sel])
 
-  useEscape(rect !== null, () => setSel(null))
+  useDismissal(rect !== null, false, { layer: () => wrapRef.current, dismiss: () => setSel(null) })
 
   useEffect(() => {
     if (!rect) return
@@ -334,18 +324,10 @@ export function MarkdownTable({
     if (prev && (prev.row !== active?.row || prev.col !== active?.col)) onSettled?.()
   }, [active, onSettled])
 
-  useEffect(() => {
-    if (!active) return
-    const onDown = (e: PointerEvent): void => {
-      const wrap = wrapRef.current
-      if (!wrap || wrap.contains(e.target as Node)) return
-      // The autocomplete pane is a body-level portal — demoting there tears the editor down before the press that picked reaches it.
-      if ((e.target as HTMLElement).closest?.('.mdpm-ac')) return
-      setActive(null)
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    return () => document.removeEventListener('pointerdown', onDown, true)
-  }, [active])
+  useDismissal(active !== null, false, {
+    layer: () => wrapRef.current,
+    dismiss: () => setActive(null),
+  })
 
   // The grip is re-rendered mid-drag, which is why the shared skeleton binds its listeners on window.
   const beginGesture = usePointerGesture()

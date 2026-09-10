@@ -66,36 +66,83 @@ export interface Slot {
 const LEAD_RE = /^[ \t]*(?:>[ \t]?)*[ \t]*/
 
 /** Strips the head's lead by LENGTH off each line's own lead, so it can't silently skip a descendant that mixes tabs and spaces. */
-function reindentBlock(blockText: string, targetIndent: string | undefined): string {
-  if (targetIndent === undefined) return blockText
-  const headLen = (blockText.match(LEAD_RE)?.[0] ?? '').length
-  return blockText
-    .split('\n')
-    .map((line) => {
-      const ws = line.match(LEAD_RE)?.[0] ?? ''
-      return targetIndent + ws.slice(Math.min(headLen, ws.length)) + line.slice(ws.length)
-    })
-    .join('\n')
+function reindentBlock(blockLines: string[], targetIndent: string | undefined): string[] {
+  if (targetIndent === undefined) return blockLines
+  const headLen = (blockLines[0].match(LEAD_RE)?.[0] ?? '').length
+  return blockLines.map((line) => {
+    const ws = line.match(LEAD_RE)?.[0] ?? ''
+    return targetIndent + ws.slice(Math.min(headLen, ws.length)) + line.slice(ws.length)
+  })
 }
 
-function moveBlockChanges(doc: string, block: BlockRange, slot: Slot): ChangeSpec[] | null {
-  const blockText = reindentBlock(doc.slice(block.from, block.to), slot.indent)
-  // Cut one adjoining newline so no blank line is orphaned: the trailing one, or the preceding one at EOF.
-  const atEof = block.to >= doc.length
-  const cutFrom = atEof && block.from > 0 ? block.from - 1 : block.from
-  const cutTo = atEof ? doc.length : block.to + 1
+type MoveSeams = 'exact' | 'fenced'
 
-  if (slot.at >= cutFrom && slot.at <= cutTo) return null
+function rebuildMove(
+  doc: string,
+  range: BlockRange,
+  slot: Slot,
+  seams: MoveSeams,
+): { doc: string; sourceAt: number; destAt: number } | null {
+  const fenced = seams === 'fenced'
+  const trailingNL = doc.endsWith('\n')
+  const lines = doc.split('\n')
+  if (trailingNL) lines.pop()
+  const starts = lineOffsetsOf(lines)
+  const isBlank = (i: number): boolean => i >= 0 && i < lines.length && lines[i].trim() === ''
 
-  const cut: ChangeSpec = { from: cutFrom, to: cutTo, insert: '' }
+  const bStart = starts.indexOf(range.from)
+  if (bStart < 0) return null
+  let bEnd = bStart
+  while (bEnd + 1 < lines.length && starts[bEnd + 1] <= range.to) bEnd++
 
-  if (slot.at >= doc.length) {
-    return [
-      cut,
-      { from: doc.length, to: doc.length, insert: (doc.endsWith('\n') ? '' : '\n') + blockText },
-    ]
+  let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
+  if (tLine < 0) return null
+  while (fenced && tLine < lines.length && isBlank(tLine)) tLine++
+  if (tLine >= bStart && tLine <= bEnd + 1) return null
+
+  const blockLines = reindentBlock(lines.slice(bStart, bEnd + 1), slot.indent)
+  let cutStart = bStart
+  let cutEnd = bEnd
+  if (fenced && isBlank(bEnd + 1)) cutEnd = bEnd + 1
+  else if (fenced && isBlank(bStart - 1)) cutStart = bStart - 1
+
+  const out: string[] = []
+  const sep = (): void => {
+    if (fenced && out.length && out[out.length - 1].trim() !== '') out.push('')
   }
-  return [cut, { from: slot.at, to: slot.at, insert: `${blockText}\n` }]
+  let destLine = 0
+  let sourceLine = 0
+  for (let i = 0; i < lines.length; i++) {
+    if (i === tLine) {
+      sep()
+      destLine = out.length
+      out.push(...blockLines)
+      if (fenced) out.push('')
+    }
+    if (i < cutStart || i > cutEnd) {
+      if (i === cutEnd + 1) {
+        sep()
+        sourceLine = out.length
+      }
+      out.push(lines[i])
+    }
+  }
+  if (tLine === lines.length) {
+    sep()
+    destLine = out.length
+    out.push(...blockLines)
+  }
+  if (cutEnd + 1 >= lines.length) sourceLine = out.length
+
+  const joined = out.join('\n')
+  const newDoc = joined + (trailingNL ? '\n' : '')
+  if (newDoc === doc) return null
+  const offsets = lineOffsetsOf(out)
+  return {
+    doc: newDoc,
+    sourceAt: offsets[sourceLine] ?? joined.length,
+    destAt: offsets[destLine] ?? joined.length,
+  }
 }
 
 export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
@@ -105,23 +152,24 @@ export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
   if (lm === null || lm.kind !== 'ordered') return []
   const indent = doc.slice(ls, ls + lm.markerStart)
 
-  let runStart = ls
-  while (runStart > 0) {
-    const prevEnd = runStart - 1
-    const prevStart = lineStartAt(doc, prevEnd)
-    const plm = parseListMarker(doc.slice(prevStart, prevEnd))
-    if (
-      plm === null ||
-      plm.kind !== 'ordered' ||
-      doc.slice(prevStart, prevStart + plm.markerStart) !== indent
-    )
-      break
-    runStart = prevStart
-  }
-
   // Renumbered from the run's SMALLEST present digit: a move only permutes the digits, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers and continuations are skipped, not terminators.
   const isNested = (t: string): boolean =>
     t.trim() !== '' && t.startsWith(indent) && /^[ \t]/.test(t.slice(indent.length))
+
+  let runStart = ls
+  for (let p = ls; p > 0; ) {
+    const prevStart = lineStartAt(doc, p - 1)
+    const t = doc.slice(prevStart, p - 1)
+    const plm = parseListMarker(t)
+    if (
+      plm !== null &&
+      plm.kind === 'ordered' &&
+      doc.slice(prevStart, prevStart + plm.markerStart) === indent
+    )
+      runStart = prevStart
+    else if (!isNested(t)) break
+    p = prevStart
+  }
 
   type Row = { digitFrom: number; digits: string }
   const rows: Row[] = []
@@ -147,22 +195,20 @@ export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
 
 /** Both renumber passes run against the POST-MOVE doc so the digit offsets are correct, then map back onto the original. */
 export function dropChanges(doc: string, block: BlockRange, slot: Slot): ChangeSpec[] | null {
-  const move = moveBlockChanges(doc, block, slot)
-  if (move === null) return null
-
-  const moved = applyChanges(doc, move)
-
-  const [cut, ins] = move
-  const cutLen = cut.to - cut.from
-  const destAnchor = ins.from > cut.from ? ins.from - cutLen : ins.from
-  const sourceAnchor = Math.min(block.from, moved.length)
+  const moved = rebuildMove(doc, block, slot, 'exact')
+  if (moved === null) return null
 
   const renumber = [
-    ...renumberOrderedRun(moved, sourceAnchor),
-    ...renumberOrderedRun(moved, destAnchor),
+    ...renumberOrderedRun(moved.doc, moved.sourceAt),
+    ...renumberOrderedRun(moved.doc, moved.destAt),
   ]
-  const finalDoc = applyChanges(moved, dedupeChanges(renumber))
+  const finalDoc = applyChanges(moved.doc, dedupeChanges(renumber))
   return diffAsSingleReplace(doc, finalDoc)
+}
+
+export function moveRange(doc: string, range: BlockRange, slot: Slot): ChangeSpec[] | null {
+  const moved = rebuildMove(doc, range, slot, 'fenced')
+  return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
 }
 
 // Source and dest passes can touch the same run, so duplicate digit edits at one offset are dropped.
@@ -196,56 +242,4 @@ export function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
   let suf = 0
   while (suf < max - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++
   return [{ from: pre, to: a.length - suf, insert: b.slice(pre, b.length - suf) }]
-}
-
-/** A block owns the blank line after it: the cut takes one adjoining blank so old neighbors collapse to one. */
-export function blockMoveChanges(
-  doc: string,
-  range: BlockRange,
-  slot: { at: number },
-): ChangeSpec[] | null {
-  const trailingNL = doc.endsWith('\n')
-  const lines = doc.split('\n')
-  if (trailingNL) lines.pop()
-  const starts = lineOffsetsOf(lines)
-  const isBlank = (i: number): boolean => i >= 0 && i < lines.length && lines[i].trim() === ''
-
-  const bStart = starts.indexOf(range.from)
-  if (bStart < 0) return null
-  let bEnd = bStart
-  while (bEnd + 1 < lines.length && starts[bEnd + 1] <= range.to) bEnd++
-
-  let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
-  if (tLine < 0) return null
-  while (tLine < lines.length && isBlank(tLine)) tLine++
-  if (tLine >= bStart && tLine <= bEnd + 1) return null
-
-  const blockLines = lines.slice(bStart, bEnd + 1)
-  let cutStart = bStart
-  let cutEnd = bEnd
-  if (isBlank(bEnd + 1)) cutEnd = bEnd + 1
-  else if (isBlank(bStart - 1)) cutStart = bStart - 1
-
-  // A block is delimited by a blank line, so both new seams — the insert and the hole the cut leaves — are guarded against fusing two non-blank lines into one list or paragraph.
-  const out: string[] = []
-  const sep = (): void => {
-    if (out.length && out[out.length - 1].trim() !== '') out.push('')
-  }
-  for (let i = 0; i < lines.length; i++) {
-    if (i === tLine) {
-      sep()
-      out.push(...blockLines, '')
-    }
-    if (i < cutStart || i > cutEnd) {
-      if (i === cutEnd + 1) sep()
-      out.push(lines[i])
-    }
-  }
-  if (tLine === lines.length) {
-    sep()
-    out.push(...blockLines)
-  }
-
-  const newDoc = out.join('\n') + (trailingNL ? '\n' : '')
-  return newDoc === doc ? null : diffAsSingleReplace(doc, newDoc)
 }

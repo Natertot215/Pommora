@@ -7,11 +7,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { EDITOR_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
 import { markdownDecorations } from './decorations'
 import { markdownInput } from './Input/markdownInput'
-import {
-  tableWidgetExtension,
-  applySavedHeadingCols,
-  type TableHeadingColsApi,
-} from './Tables/widget'
+import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
 import { listDragExtension } from './Gestures/listDrag'
 import { listRenumberOnDelete } from './Input/listRenumber'
 import { blockHandles, blockGripHover } from './Menus/blockHandles'
@@ -22,7 +18,6 @@ import {
 } from './Gestures/blockDrag'
 import { gripMenu } from './Menus/gripMenu'
 import {
-  type EmbedHeightsApi,
   embedExclusions,
   embedField,
   embedTiles,
@@ -48,12 +43,7 @@ import { pasteLink } from './Links/pasteLink'
 import { pendingTitle } from './Links/pendingTitle'
 import { aliasOnLeave } from './Links/linkEdit'
 import { linkRest, linkTyping } from './Gestures/linkGestures'
-import {
-  markdownFolding,
-  applySavedFolds,
-  applyCitationsVisibility,
-  type FoldsApi,
-} from './folding'
+import { markdownFolding, applySavedFolds, applyCitationsVisibility } from './folding'
 import { applyEditorAction, claimEditorMenu, ownsEditorMenu, releaseEditorMenu } from './Menus/menu'
 import { formatKeymap } from './Input/formatKeymap'
 import { embedSeatAt } from './Embeds/embedInsert'
@@ -70,7 +60,7 @@ import { BlockMenu } from './Menus/BlockMenu'
 import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
-import { type EditorHost, editorHost } from './api'
+import { type EditorHost, type EditorPref, editorHost } from './api'
 import './markdown-pm.css'
 
 export const EDITOR_BASE_PT = 15
@@ -87,10 +77,10 @@ interface Props {
   scale?: number
   connections?: ConnectionsApi
   embedAncestors?: readonly string[]
-  embedHeights?: EmbedHeightsApi
-  embedZooms?: EmbedHeightsApi
-  folds?: FoldsApi
-  tableHeadingColumns?: TableHeadingColsApi
+  embedHeights?: EditorPref<Record<string, number>>
+  embedZooms?: EditorPref<Record<string, number>>
+  folds?: EditorPref<string[]>
+  tableHeadingColumns?: EditorPref<number[]>
   autoFocus?: boolean
   readOnly?: boolean
   edgeFade?: boolean
@@ -354,23 +344,26 @@ export function MarkdownEditor({
     const foldsLoad = foldsRef.current?.load()
     const heightsLoad = embedHeightsRef.current?.load()
     const zoomsLoad = embedZoomsRef.current?.load()
-    if (foldsLoad || heightsLoad || zoomsLoad)
-      void Promise.allSettled([foldsLoad, heightsLoad, zoomsLoad]).then(([keys, h, z]) => {
-        if (keys.status === 'fulfilled' && keys.value) applySavedFolds(view, keys.value)
-        if (h.status === 'fulfilled' && h.value && Object.keys(h.value).length > 0)
-          view.dispatch({
-            effects: setEmbedHeights.of({ ...h.value, ...view.state.field(embedField).heights }),
-          })
-        if (z.status === 'fulfilled' && z.value && Object.keys(z.value).length > 0) {
-          view.dispatch({
-            effects: setEmbedZooms.of({ ...z.value, ...view.state.field(embedField).zooms }),
-          })
-          refreshTileZooms(view, false)
-        }
-        restoreScroll()
-      })
+    const colsLoad = tableHeadingColsRef.current?.load()
+    if (foldsLoad || heightsLoad || zoomsLoad || colsLoad)
+      void Promise.allSettled([foldsLoad, heightsLoad, zoomsLoad, colsLoad]).then(
+        ([keys, h, z, cols]) => {
+          if (keys.status === 'fulfilled' && keys.value) applySavedFolds(view, keys.value)
+          if (h.status === 'fulfilled' && h.value && Object.keys(h.value).length > 0)
+            view.dispatch({
+              effects: setEmbedHeights.of({ ...h.value, ...view.state.field(embedField).heights }),
+            })
+          if (z.status === 'fulfilled' && z.value && Object.keys(z.value).length > 0) {
+            view.dispatch({
+              effects: setEmbedZooms.of({ ...z.value, ...view.state.field(embedField).zooms }),
+            })
+            refreshTileZooms(view, false)
+          }
+          if (cols.status === 'fulfilled' && cols.value) applySavedHeadingCols(view, cols.value)
+          restoreScroll()
+        },
+      )
     else requestAnimationFrame(restoreScroll)
-    void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
     const unsubMenu = hostRef.current.menus.format?.onAction((action) => {
       if (ownsEditorMenu(view)) applyEditorAction(view, action)
     })
