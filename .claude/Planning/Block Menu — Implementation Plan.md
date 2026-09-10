@@ -14,7 +14,7 @@ Bounded to the five sections Nathan ratified and to a line that holds nothing bu
 **Requirements**
 
 1. A model in `Core/Actions/blockMenu.ts` yields five titled sections of rows: Headings (Heading 1–5), Lists (Bullet List, Numbered List, Task List), Link (Connection, Markdown Link, External Link), Insert (Blockquote, Callout, Code Block, Table, Divider, and Footnote only where a marker can bind), Embed (Internal Page, Webpage). Every row carries an icon the registry resolves and an action `applyEditorAction` already runs.
-2. A filter over the model matches the query, case-insensitively, against a section's title as well as its rows' labels, by the same word-start rule, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in the section heading when the title matched and in each row label that matched on its own.
+2. A filter over the model matches the query, case-insensitively, against a section's title as well as its rows' labels, by the same word-start rule, and returns where each match begins. A section whose title matches keeps every row; otherwise it keeps the rows whose own labels match. An empty query keeps everything; a section with no surviving rows disappears with its heading. The matched letters are emphasized in each row label that matched on its own; a section heading stays plain.
 3. A `/` typed as the entire text of a line, with the caret at line end, outside code, math, and the citations run, opens the pane under the caret; each further non-space character narrows it; a space, a caret move off the line, or blur closes it; Escape closes it until the next edit, as the `[[` pane does; the pane shows only while a row matches.
 4. Return or a click on a row removes the typed `/query` and applies the row's action; one undo reverts the block and leaves the blank line.
 5. `setHeading` and `setList` act on a blank line when the caret alone selects it, so Heading 2 on an empty line writes `## ` from the pane and from the context menu alike.
@@ -557,13 +557,15 @@ export const lineStartAt = (doc: string, pos: number): number =>
 - 09-09-2026, Nathan: a divider written on a blank line leaves the caret on the line below the rendered rule.
 - 09-09-2026, Nathan: a quote picked on a blank line of its own takes `> `, with the caret after the space; a blank line inside a longer quote keeps the bare `>`.
 - 09-09-2026, Claude (routine, disclosed): an unclosed `$$` line does not seal the lines below it — the document model pairs display math like fences but records only closed pairs — so the trigger opens there, exactly as `embedSeatAt` admits it. The two predicates stay identical.
-- 09-09-2026, Nathan: the filter matches section titles as well as row labels, so `/link`, `/embed`, and `/list` each keep a whole section; a title match emphasizes the heading, a label match the row.
+- 09-09-2026, Nathan: the filter matches section titles as well as row labels, so `/link`, `/embed`, and `/list` each keep a whole section; a label match emphasizes its row.
 - 09-09-2026, Nathan: the block menu opens with no row highlighted; the first row is first in line for Return, and the highlight appears only once an arrow key moves it or the pointer hovers. The `[[` pane keeps its immediate highlight.
 - 09-09-2026, Claude (routine, disclosed): the pane opens only on a document change, never on a caret landing at the end of a line that already reads `/word`; Requirement 3's "typed" is what the trigger tests, and a pre-existing line is content.
 
 ### Open Against Later Tasks
 
 ### Deviations
+
+- Task 5b: the heading emphasis rendered as a fragment inside a `space-between` flex heading, so `/hea` drew "HEA" and "DINGS" at opposite edges, and the emphasized footnote weight the heading already uses made the span invisible besides; headings stay plain strings and `MenuRow`'s `label` returned to `string`. Closeout smoke launch.
 
 - Task 5b: the divider doubled the blank line below itself where a blank already followed, and a table seated the caret inside its last row in the same case; `setBlock` computes one `trail` beside `lead` for both and seats the caret one line past what it wrote. Closeout simplification.
 
