@@ -41,7 +41,7 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
       contentClassName="mdpm-block-menu"
       style={{ width: BLOCK_MENU_WIDTH }}
     >
-      <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
+      <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
         {v.matches.map((m) => (
           <Fragment key={m.title}>
             <MenuRowView row={{ kind: 'heading', label: m.title, caps: true }} />
