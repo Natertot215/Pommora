@@ -186,6 +186,7 @@ The tile ring and grip, and the autocomplete pane's own width bounds.
 
 - **An unreproduced renderer crash** on a programmatic scroll toward a table inside an embed tile — the window goes black with no crash log, and the same jump replays cleanly.
 - **A code fence on the first line of a callout reads as prose** — the fence grammar admits only whitespace and `>` before its marker run, so a fence authored on the head line sits behind the `[!type]` tag.
+- There isn't yet a defined length or derivation optimization structure in place yet — it's a long-term goal, but isn't something that needs to be addressed immediately.
 
 #### Pending
 
