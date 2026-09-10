@@ -15,6 +15,11 @@ export type GlanceTarget =
   | { kind: 'page'; id: string; path: string }
   | { kind: 'site'; url: string }
 
+export interface EditorPref<T> {
+  load: () => Promise<T>
+  save: (value: T) => void
+}
+
 export interface EditorMenuApi {
   pushState: (s: FormatState) => void
   onAction: (cb: (action: string) => void) => () => void

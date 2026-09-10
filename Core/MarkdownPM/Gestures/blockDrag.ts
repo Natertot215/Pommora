@@ -6,7 +6,7 @@ import { docScan, docString } from '../docCache'
 import { nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt } from '../lineDom'
-import { blockMoveChanges } from '../Engine/listDragModel'
+import { moveRange } from '../Engine/listDragModel'
 
 function bottomAbove(view: EditorView, at: number): number | null {
   if (at === 0) return null
@@ -82,7 +82,7 @@ export function startBlockDrag(
       at === block.from || at === shape.afterBlock
         ? null
         : { left: slot.left, top: y, width: slot.right - slot.left },
-    commit: ({ at }) => blockMoveChanges(docString(view.state.doc), block, { at }),
+    commit: ({ at }) => moveRange(docString(view.state.doc), block, { at }),
     onDragStart: () => onDragStart?.(view, block),
     onTap: line ? () => onClick?.(view, line) : undefined,
   })
