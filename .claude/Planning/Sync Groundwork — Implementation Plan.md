@@ -1,5 +1,7 @@
 ## Sync Groundwork — Implementation Plan
 
+> **Status:** Closed 09-11-2026 · [[NexusSyncPM]] describes what stands.
+
 ### Context
 
 This plan implements [[Sync Groundwork — Decision Log]] (converged 09-10-2026, every decision `[confirmed]`): the identity groundwork Pommora Sync and the mobile companion need regardless of their final shape. It touches `Desktop/Config` and `Desktop/main.ts` (the device key, its secret store, the two new host members), `Core/Contract` (two `HostContext` members, six bridge channels), a new `Core/Sync/` (the wire types, the canonical signing string, the client, the handlers), a new `Sync/server.ts` (the initial server with four verbs), `Core/Settings` (the Nexus heading in General), the gates that gain `Sync/`, and the documents the arc makes false.

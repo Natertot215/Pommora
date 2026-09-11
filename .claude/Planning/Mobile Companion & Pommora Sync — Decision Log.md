@@ -112,7 +112,7 @@
 
 #### I — Phone Flow
 
-- **I-1:** [confirmed] First run: server address, pair this device, wait for approval, Nexus password, pull. The local copy lives in the app's Documents folder, exposed to the Files app as On My iPhone › Pommora › the Nexus, the shape Obsidian uses on Nathan's phone today. Known limitation: other apps may then edit in place without file coordination; Obsidian ships without it, most-recent-wins governs the race, and a coordination plugin is a Prospect. Per-device state stays out of Documents.
+- **I-1:** [confirmed] First run: server address, pair this device against a remote Nexus, wait for approval, Nexus password, pull. The local copy lives in the app's Documents folder, exposed to the Files app as On My iPhone › Pommora › the Nexus, the shape Obsidian uses on Nathan's phone today. Known limitation: other apps may then edit in place without file coordination; Obsidian ships without it, most-recent-wins governs the race, and a coordination plugin is a Prospect. Per-device state stays out of Documents.
 - **I-2:** [assumed] The phone pushes on a short debounce after its own writes, subscribes to the change feed while foregrounded, and runs a catch-up pull on resume and once at launch. It has no watcher: its own writes are known at the write, and the stat walk that every sync runs before pushing catches an edit another app made through the Files exposure. A sync is always pull, then detect, then push.
 - **I-3:** [assumed] Phase 8: the phone applies each pulled item and patches its tree through the same classification the desktop's watcher performs; a full re-walk is the fallback for the unclassifiable, never the mechanism.
 
