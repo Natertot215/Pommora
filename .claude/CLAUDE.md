@@ -25,7 +25,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### Hard Rules
 
-- **The host owns the machine.** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place Node and Electron are called; UIX reaches nothing outside itself.
+- **The host owns the machine.** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place the app calls Node and Electron; `Sync/` is a separate process on Node's built-ins alone; UIX reaches nothing outside itself.
 - **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts`, and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
 - **The engine never depends on the renderer.** The host-run half of Core must never import React or depend on an interface — three gates go red the moment it does.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
@@ -82,6 +82,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 ├── // Properties    | • Typed attributes and their editors
 ├── // Session       | • Store slices and per-tab state
 ├── // Settings      | • The settings window and its rows
+├── // Sync          | • The wire contract, the signing string, and the device client
 ├── // Testing       | • The shared test tree builder
 ├── // Tiles         | • The homepage and Space tile surfaces
 ├── // Trash         | • Deletion, bundling, and restore records
@@ -106,7 +107,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 ├── // Utilities     | • Small pure helpers
 └── // Windows       | • Window chrome and bounds
 
-// Desktop           | • The Electron host — the only caller of Node
+// Desktop           | • The Electron host — the app's only caller of Node
 // Mobile            | • The mobile companion
 // Showcase          | • The deployed design-system showcase
 // Sync              | • The cross-device sync layer
