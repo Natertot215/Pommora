@@ -14,7 +14,7 @@ import {
 } from 'electron'
 import { ASSET_MIME, IMAGE_EXTS } from '@pommora/core/Assets/assetMime'
 import { underAssetRoot } from '@pommora/core/Assets/assetRoots'
-import type { HostContext, PickKind } from '@pommora/core/Contract/handlers'
+import type { HostContext, HostDevice, PickKind } from '@pommora/core/Contract/handlers'
 import { handlers } from '@pommora/core/Contract/serve'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { flushNavigation } from '@pommora/core/Navigation/navigationFile'
@@ -46,11 +46,13 @@ import {
   trashModeOf,
   updateAppConfig,
 } from './Config/appConfig'
+import { ensureDevice } from './Config/device'
 import { interfaceScaleZoom } from './Config/interfaceScale'
 import { startWatcher, stopWatcher } from './FileWatch/watcher'
 import { nodeMachine } from './Platform/nodeMachine'
 import { closeSessionDb, openSessionDb } from './Store/sessionDb'
 import { fetchPageTitle } from './Web/linkTitles'
+import { transport } from './Web/transport'
 import {
   installWebGuests,
   pauseGuestMedia,
@@ -142,6 +144,7 @@ const userData = (): string => app.getPath('userData')
 const posixPath = (p: string): string => p.split(sep).join('/')
 
 let mainWindow: BrowserWindow | null = null
+let device: HostDevice | null = null
 async function refreshMenu(): Promise<void> {
   const win = mainWindow
   if (!win) return
@@ -252,6 +255,8 @@ function hostContext(win: BrowserWindow | null): HostContext {
     webGuests: { setZoom: setGuestTileZoom, pauseMedia: pauseGuestMedia },
     trashMode: async () => trashModeOf(await readAppConfig(userData())),
     fetchTitle: fetchPageTitle,
+    device,
+    transport,
     openStores: openSessionDb,
     async adopted(root, path) {
       if (mainWindow) {
@@ -306,6 +311,11 @@ app
   .whenReady()
   .then(async () => {
     if (!app.hasSingleInstanceLock()) return
+    try {
+      device = await ensureDevice(userData())
+    } catch (e) {
+      console.error('Device identity unavailable:', e)
+    }
     // No picker here — a launch never blocks; a failed restore degrades to the empty state.
     try {
       const restore = await resolveRestorePath(await readAppConfig(userData()))
