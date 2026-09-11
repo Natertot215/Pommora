@@ -54,6 +54,8 @@ export interface HostContext {
   webGuests: { setZoom(guestId: number, factor: number): void; pauseMedia(guestId: number): void }
   trashMode(): Promise<TrashMode>
   fetchTitle(url: string): Promise<string | null>
+  device: HostDevice | null
+  transport(req: TransportRequest): Promise<TransportReply>
   openStores(root: string): void
   adopted(root: string, path: string): Promise<void>
   watch(root: string): Promise<void>
