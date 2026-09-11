@@ -20,6 +20,7 @@ import type {
 } from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
+import type { SyncState } from '../Sync/contract'
 
 /** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
 interface PickFileOptions {
@@ -206,6 +207,12 @@ export interface Asks {
   'glance:save': { args: [size: GlanceSize]; reply: Result<null> }
   'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
+  'sync:state': { args: []; reply: Result<SyncState> }
+  'sync:renameDevice': { args: [name: string]; reply: Result<SyncState> }
+  'sync:connect': { args: [address: string]; reply: Result<SyncState> }
+  'sync:disconnect': { args: []; reply: Result<SyncState> }
+  'sync:approve': { args: [deviceId: string]; reply: Result<SyncState> }
+  'sync:revoke': { args: [deviceId: string]; reply: Result<SyncState> }
 
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
