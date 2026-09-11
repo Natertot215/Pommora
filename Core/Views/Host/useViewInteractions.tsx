@@ -35,7 +35,6 @@ import type { ViewHostApi } from './useViewHost'
 export interface ViewInteractionPolicy {
   ghost: {
     graceMs: number
-    /** Re-read when the dwell fires; the icon picker seat below adds its own suppression. */
     suppressed: () => boolean
     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
   }
@@ -49,7 +48,7 @@ export type ViewDrop = { activeId: string; toZone: string; beforeId: string | nu
 
 export type TitleMenuContext = PageMoveContext & { alreadyOpen: boolean }
 
-/** The pointer handlers every row wears: the ghost's hover and the location glance. */
+/** The pointer handlers every row uses: the ghost's hover and the location glance. */
 export function rowHover(
   row: ViewRow,
   onHover: GhostAnchor['onHover'],
@@ -325,8 +324,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const [iconOpen, setIconOpen] = useState(false)
   const [iconTarget, setIconTarget] = useState<{ path: string; icon?: string } | null>(null)
   const iconAnchor = useRef<HTMLElement | null>(null)
-  const iconOpenRef = useRef(iconOpen)
-  iconOpenRef.current = iconOpen
   const openIconPicker = (row: ViewRow, anchor: HTMLElement): void => {
     iconAnchor.current = anchor
     setIconTarget({ path: row.path, icon: typeof row.icon === 'string' ? row.icon : undefined })
@@ -386,7 +383,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const ghost = useGhostAnchor({
     dwellMs: GHOST_DWELL_MS,
     graceMs: policy.ghost.graceMs,
-    suppressed: () => iconOpenRef.current || policy.ghost.suppressed(),
+    suppressed: () => iconOpen || policy.ghost.suppressed(),
     travelHold: policy.ghost.travelHold,
   })
   useClearStrandedGhost(ghost, rowById)
