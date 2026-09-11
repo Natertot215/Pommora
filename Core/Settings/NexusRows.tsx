@@ -23,35 +23,47 @@ const captionFor = (binding: SyncBinding): string => {
   }
 }
 
-export function NexusRows(): React.JSX.Element | null {
+// Keyed on the nexus so a switch with Settings open mounts a body with its own fetch and its own in-flight gate.
+export function NexusRows(): React.JSX.Element {
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
+  return <NexusBody key={nexusId} nexusId={nexusId} />
+}
+
+function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [state, setState] = useState<SyncState | null>(null)
   const [draft, setDraft] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const inFlight = useRef(false)
 
   // One channel in flight at a time: each reply is the whole state, so a second call would answer from a list the first has already replaced.
-  const run = useCallback(async (ask: () => Promise<Result<SyncState>>): Promise<boolean> => {
-    if (inFlight.current) return false
-    inFlight.current = true
-    setBusy(true)
-    try {
-      const r = await ask()
-      if (r.ok) setState(r.value)
-      else await host().ask('error:show', r.error.message)
-      return r.ok
-    } finally {
-      inFlight.current = false
-      setBusy(false)
-    }
-  }, [])
+  // `report` is what separates a user's action from the mount's own fetch: only an action the user took answers a refusal with a dialog.
+  const run = useCallback(
+    async (ask: () => Promise<Result<SyncState>>, report = true): Promise<boolean> => {
+      if (inFlight.current) return false
+      inFlight.current = true
+      setBusy(true)
+      try {
+        const r = await ask()
+        if (r.ok) setState(r.value)
+        else if (report) await host().ask('error:show', r.error.message)
+        return r.ok
+      } finally {
+        inFlight.current = false
+        setBusy(false)
+      }
+    },
+    [],
+  )
 
-  const refresh = useCallback((): void => {
-    void run(() => host().ask('sync:state'))
-  }, [run])
+  const refresh = useCallback(
+    (report = true): void => {
+      void run(() => host().ask('sync:state'), report)
+    },
+    [run],
+  )
 
   useEffect(() => {
-    refresh()
+    refresh(false)
   }, [refresh])
 
   if (state === null) return null
@@ -65,12 +77,7 @@ export function NexusRows(): React.JSX.Element | null {
   }
 
   const connect = (
-    <Button
-      type="filled"
-      label="Connect"
-      disabled={busy || address === ''}
-      onClick={() => void onConnect()}
-    />
+    <Button type="filled" label="Connect" disabled={busy} onClick={() => void onConnect()} />
   )
 
   return (
@@ -78,10 +85,14 @@ export function NexusRows(): React.JSX.Element | null {
       <SettingsFieldRow label="This Device" hint={fingerprint(state.device.id)}>
         <InputField
           label="Device name"
-          edit={{
-            value: state.device.name,
-            onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
-          }}
+          edit={
+            busy
+              ? undefined
+              : {
+                  value: state.device.name,
+                  onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
+                }
+          }
         >
           {state.device.name}
         </InputField>
@@ -100,7 +111,7 @@ export function NexusRows(): React.JSX.Element | null {
           {binding?.state !== 'approved' && connect}
           {binding !== null && (
             <>
-              <Button type="base" label="Refresh" disabled={busy} onClick={refresh} />
+              <Button type="base" label="Refresh" disabled={busy} onClick={() => refresh()} />
               <Button
                 type="base"
                 label="Disconnect"
@@ -119,6 +130,7 @@ export function NexusRows(): React.JSX.Element | null {
             key={device.id}
             row={{
               kind: 'item',
+              inert: true,
               label: device.name,
               caption: `${fingerprint(device.id)} · ${revoking ? 'Approved' : 'Pending'}`,
               trailing: own
