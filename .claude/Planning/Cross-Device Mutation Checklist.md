@@ -102,16 +102,16 @@ A property definition is nexus-wide and lives in `.nexus/properties.json`; a Col
 | Remove a Space | `Core/Trash/delete.ts` `deleteOp` with `kind: 'space'` → `Core/Contexts/contextCascade.ts` `unlinkSpaceValue` | The folder moves to `.trash`; the value is stripped from every holding page | The Space is gone and no page names it |
 | Assign a page to a Space | `Core/Contexts/contextWrite.ts` `setContextOnPath` | The page's frontmatter, the bare `<Context Title>:` key | The page is listed under that Space |
 | Set a Space color | `Core/Contexts/contextWrite.ts` `setSpaceColor` | `_space.json`, `color` | The Space renders in that color |
-| Reorder Contexts or Spaces | `Core/Nexus/reorder.ts` `reorderContextsOp`, `setSpaceOrder` | `.nexus/contexts/contexts.json` order, or `space_orders` in `.nexus/state.json` | The sidebar order matches |
+| Reorder Context groups | `Core/Contexts/reorderContexts.ts` `reorderContextsOp` → `Core/Contexts/contextsRegistry.ts` `mutateRegistryFile` | `.nexus/contexts/contexts.json`, the order of the `contexts` array | The sidebar order matches |
+| Reorder Spaces within a group | `Core/Nexus/reorder.ts` `setSpaceOrder` | `.nexus/state.json`, `space_orders.<contextId>` | The sidebar order matches |
 
 #### Tasks And Events
 
-Agenda entities are pages: the same writers, distinguished by the kind mark inside the ULID and validated against the folder's `_taskconfig.json` or `_eventconfig.json`.
+Agenda entities are Markdown files whose kind is marked inside the ULID and validated against the folder's `_taskconfig.json` or `_eventconfig.json`. Agenda's surface is unbuilt, so no in-app creator mints a `task` or `event` id: `Core/Nexus/page.ts` `createPage` mints `page` for every page it writes, and `Core/Nexus/adopt.ts` is the only writer that stamps either agenda kind, resolved from the folder the file already sits in.
 
 | Mutation | Writer | On-Disk Effect | Expected On B |
 | --- | --- | --- | --- |
-| Create a Task | `Core/Nexus/create.ts` `createPageOp` under the `Tasks` folder | A Markdown file whose `ID` carries the `task` mark | The Task appears in the Agenda surface |
-| Create an Event | `createPageOp` under the `Events` folder | A Markdown file whose `ID` carries the `event` mark | The Event appears in the Agenda surface |
+| Place a Task or Event file into its folder by hand | `Core/Nexus/adopt.ts` on the next open | A Markdown file whose `ID` carries the `task` or `event` mark, stamped from the file's birth time | The file and its stamped id land; B reads the same kind from the same folder |
 | Edit a Task or Event value | `Core/Properties/setProperty.ts` `setPropertyOp` | The file's frontmatter | The value renders |
 | Rename, move, or delete either | The Page Lifecycle writers | As the Page Lifecycle table | As the Page Lifecycle table |
 | Read the Agenda folder registration | `Core/Nexus/identity.ts` `ensureIdentity` seeds it once | `.nexus/nexus.json`, `agenda_folders` | Both instances resolve the same two folders by id |
@@ -161,8 +161,9 @@ Agenda entities are pages: the same writers, distinguished by the kind mark insi
 | --- | --- | --- | --- |
 | Change any personalization setting | `Core/Settings/handlers.ts` `personalization:set` → `Core/Settings/settings.ts` `writePersonalization` | `.nexus/settings.json`, `personalization.<key>` | The setting reads the same, Interface Scale and Webpage Zoom included, by standing decision |
 | Set excluded folders | `Core/Settings/handlers.ts` `exclusions:set` → `Core/Settings/settings.ts` `writeExcludedFolders` | `.nexus/settings.json`, `excluded_folders` | The same folders leave B's tree |
-| Rebind a command chord | `Core/Settings/settings.ts` `updateSettings` through the commands editor | `.nexus/settings.json`, `commands.<id>` | The same chord fires |
-| Set the profile icon or subtitle | `Core/Nexus/mutate.ts` `setProfileIcon`, the settings editor | `.nexus/settings.json`, `profile_icon`, `profile_subtitle` | Both render |
+| Rebind a command chord | No writer today; `Core/Settings/codec.ts` `readCommands` reads the key a hand edit supplies | `.nexus/settings.json`, `commands.<id>` | The same chord fires |
+| Set the profile icon | `Core/Nexus/mutate.ts` `setProfileIcon` → `Core/Settings/settings.ts` `updateSettings` | `.nexus/settings.json`, `profile_icon` | The icon renders |
+| Set the profile subtitle | No writer today; `Core/Settings/codec.ts` reads `profile_subtitle` from a hand edit | `.nexus/settings.json`, `profile_subtitle` | The subtitle renders |
 | Set the subfield or nav view modes | `Core/Settings/settings.ts` `writeSubfield`, `writeNavViewModes` | `.nexus/settings.json`, `subfield`, `navViewModes` | Both match |
 | Pin or favorite an item | `Core/Navigation/handlers.ts` `nav:write` → `Core/Navigation/navigationFile.ts` `writeNavigationState` | `.nexus/navigation.json`, `pinned`, `favorites`, `banner` | The same items are pinned and favorited; `recents` is per-device and stays behind |
 | Rename the Nexus | `Core/Nexus/handlers.ts` `nexus:rename` | The Nexus folder's own name | B's folder name is its own; the `nexus.json` id is what makes the two one Nexus |
@@ -187,7 +188,7 @@ Every row here is per-machine state. A value crossing to B is a failure of the w
 | `local_state` scope `tabs` | The open tab set, true of this window on this machine |
 | `local_state` scope `windows` | Window bounds, true of this display |
 | `local_state` scope `recents` | The recently visited list, true of this machine's reading |
-| `local_state` scope `record` | The per-machine session record |
+| `local_state` scope `record` | The identity re-minting baseline read and written by `Core/Nexus/remintLedger.ts`, adjudicated from this machine's own history |
 | `local_state` scope `glancePane` | The glance pane's size, true of this display |
 | `local_state` scope `devicePrefs` | Menu style, pane widths, sidebar folds, and window sizes — `Core/Settings/devicePrefs.ts` states the rule |
 | `local_state` scope `sync` | The server address this machine's Nexus is bound to, per device by design |
