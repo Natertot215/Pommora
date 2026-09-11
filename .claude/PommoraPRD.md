@@ -22,7 +22,7 @@ Pommora's bet: a Markdown-canonical foundation with a fast property and query en
 
 - Personal-first, single-user, Mac-first for v1. A mobile companion app is a near-term focus, which has already been discussed but without formal planning.
 - Always open-source.
-- Architected so future cross-device and cloud sync stay viable, but neither is a v1 concern. Multi-user collaboration and a plugin system are out of scope indefinitely.
+- Cross-device sync is Pommora's own ([[NexusSyncPM]]); the mobile companion follows it. Multi-user collaboration and a plugin system are out of scope indefinitely.
 
 ---
 
@@ -87,7 +87,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 #### Core Constraints
 
-1. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
+1. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite.
 
 2. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Contexts, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[Connection]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
 
@@ -202,4 +202,4 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - Inline editing of embedded views.
 - One design scheme plus in-app accent customization.
 
-**Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — the catalog is [[FrameworkPM]] §Prospects.
+**Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — the catalog is [[FrameworkPM]] §Prospects.

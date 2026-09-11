@@ -52,6 +52,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 - **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
 - **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision, but legibility concerns context, not every byte the app stores: per-machine operational info, accelerators, file metadata, or similar information may be better stored in the `nexus.db` rather than hand-editable data.
+- **What Syncs:** Pommora Sync carries the whole Nexus, `.nexus/` included; the two databases never travel, excluded in code. The model and its identities are [[NexusSyncPM]].
 
 #### Important Information
 
