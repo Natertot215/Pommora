@@ -82,7 +82,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
 
   return (
     <>
-      <SettingsFieldRow label="This Device" hint={fingerprint(state.device.id)}>
+      <SettingsFieldRow label="This Device">
         <InputField
           label="Device name"
           edit={
