@@ -96,6 +96,9 @@ export type Row =
   | PickerControlRow<PreviewPersistence>
   | PickerControlRow<TabOpenBehavior>
   | (RowText & {
+      kind: 'nexus'
+    })
+  | (RowText & {
       kind: 'zoom'
       key: KeyOf<number>
       fallback: number
@@ -188,6 +191,10 @@ export const FRAMES = roster([
             options: timeFormatOptions,
           },
         ],
+      },
+      {
+        title: 'Nexus',
+        rows: [{ kind: 'nexus', label: 'Nexus' }],
       },
     ],
   },
