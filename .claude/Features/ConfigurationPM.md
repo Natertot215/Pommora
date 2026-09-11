@@ -5,7 +5,7 @@ Configuration reads at three scopes. A **Nexus** is configured from the Settings
 
 ### Settings
 
-The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis. Its rail lists the frames below; each row writes one key of the `personalization` object (`Personalization` in `Core/Settings/personalization.ts`), and a row at its default stores no key. Defaults are bold.
+The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis. Its rail lists the frames below; most rows write one key of the `personalization` object (`Personalization` in `Core/Settings/personalization.ts`), and a row at its default stores no key; the Nexus heading reads and writes the device and the server binding instead. Defaults are bold.
 
 #### General
 
@@ -13,6 +13,12 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 | --- | --- | --- | --- |
 | Date Format | `dateFormat` | The date format every interface without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
 | Time Format | `timeFormat` | The Nexus's clock, wherever a time renders. | **12 Hours** · 24 Hours |
+
+##### Nexus
+
+The Nexus heading holds the sync identity: This Device, whose name is editable and whose hint is the first twelve characters of the device fingerprint; Nexus ID, the identifier of the open Nexus; Server, an editable address with Connect, and with Refresh and Disconnect once a binding exists; and, when the binding is approved, one row per device carrying its name, fingerprint, and state, with Approve on a pending device and Revoke on an approved one. This device's own row carries neither, since the server refuses a self-revoke.
+
+The heading reads three binding states. Unbound shows the address field and Connect alone. Approved captions the Server row "Approved" and lists the devices. Awaiting approval captions it "Awaiting approval from an approved device" and lists nothing, with Connect still reachable, since a revoked device reads as pending and re-registers by connecting again. An unreachable server captions the failure. None of these rows writes a `personalization` key.
 
 #### Interface
 

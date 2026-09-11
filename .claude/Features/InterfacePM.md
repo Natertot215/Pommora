@@ -64,7 +64,7 @@ The NavWindow is one kind of the same window: tab 1 is a perma-pinned, icon-only
 
 #### The Settings Window
 
-The Nexus Settings window (`Core/Settings/SettingsWindow.tsx`) is summoned and dismissed by the ribbon's Settings glyph, a rail of frames in a side slot beside the frame it opens: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations, and Shortcuts from the top, Trash anchored to the foot. A frame either fills with sections of labeled rows, each writing one key of the Nexus's personalization, or is a surface of its own, as Trash is. A frame whose settings are undecided still holds its place and opens empty.
+The Nexus Settings window (`Core/Settings/SettingsWindow.tsx`) is summoned and dismissed by the ribbon's Settings glyph, a rail of frames in a side slot beside the frame it opens: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations, and Shortcuts from the top, Trash anchored to the foot. A frame either fills with sections of labeled rows, each writing one key of the Nexus's personalization or, as the Nexus heading does, binding to the device and the server, or is a surface of its own, as Trash is. A frame whose settings are undecided still holds its place and opens empty.
 
 ### Confirmation & Notifications
 
