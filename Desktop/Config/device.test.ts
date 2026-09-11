@@ -1,11 +1,12 @@
 import { createHash, createPublicKey, verify } from 'node:crypto'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as appConfig from './appConfig'
 import { readAppConfig } from './appConfig'
 import { ensureDevice } from './device'
+import { KEYCHAIN_UNAVAILABLE } from './secrets'
 
 const keychain = vi.hoisted(() => ({ available: true, denyOnce: false }))
 vi.mock('electron', () => ({
@@ -83,6 +84,13 @@ describe('ensureDevice', () => {
     const second = await ensureDevice(dir)
     expect(second.id).not.toBe(first.id)
     expect(reported).toHaveBeenCalledTimes(1)
+  })
+
+  it('mints nothing when the keychain is unavailable', async () => {
+    keychain.available = false
+    await expect(ensureDevice(dir)).rejects.toThrow(KEYCHAIN_UNAVAILABLE)
+    expect((await readAppConfig(dir)).device).toBeUndefined()
+    expect(existsSync(join(dir, 'secrets.json'))).toBe(false)
   })
 
   it('keeps the identity across a launch the keychain refused', async () => {
