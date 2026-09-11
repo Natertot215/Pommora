@@ -269,40 +269,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       />
     )
   }
-  const massPicker = (): React.ReactNode => {
-    if (!mass) return null
-    const col = columns.find((c) => c.id === mass.colId)
-    if (!col) return null
-    const rows = mass.rowIds.flatMap((id) => {
-      const r = rowById.get(id)
-      return r ? [r] : []
-    })
-    if (rows.length < 2) return null
-    const target = pickTarget(rows[0], col)
-    const contextOptions = target.kind === 'options' ? target.contextOptions : undefined
-    const currents = rows.map((r) => resolveFieldValue(r, col.id, schema))
-    return (
-      <MassPropertyPicker
-        key={`${mass.colId}:${mass.rowIds.join('.')}`}
-        def={target.def}
-        currents={currents}
-        open={massOpen}
-        triggerRef={massTriggerRef}
-        look={colStyle(col.id).look}
-        {...(contextOptions ? { contextOptions } : {})}
-        onPick={(commits) => {
-          if (commits.length)
-            groupValueUndo(() => {
-              for (const { index, next } of commits) commitValue(rows[index], col, next)
-            })
-        }}
-        onDismiss={() => {
-          setMassOpen(false)
-          cellSweep.clear()
-        }}
-      />
-    )
-  }
   const renameField = (): React.ReactNode => {
     const cell = editing?.mode === 'rename' ? editing : lastRename.current
     const row = cell && rowById.get(cell.rowId)
@@ -444,6 +410,41 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setMassOpen(false)
     cellSweep.clear()
   })
+
+  const massPicker = (): React.ReactNode => {
+    if (!mass) return null
+    const col = columns.find((c) => c.id === mass.colId)
+    if (!col) return null
+    const rows = mass.rowIds.flatMap((id) => {
+      const r = rowById.get(id)
+      return r ? [r] : []
+    })
+    if (rows.length < 2) return null
+    const target = pickTarget(rows[0], col)
+    const contextOptions = target.kind === 'options' ? target.contextOptions : undefined
+    const currents = rows.map((r) => resolveFieldValue(r, col.id, schema))
+    return (
+      <MassPropertyPicker
+        key={`${mass.colId}:${mass.rowIds.join('.')}`}
+        def={target.def}
+        currents={currents}
+        open={massOpen}
+        triggerRef={massTriggerRef}
+        look={colStyle(col.id).look}
+        {...(contextOptions ? { contextOptions } : {})}
+        onPick={(commits) => {
+          if (commits.length)
+            groupValueUndo(() => {
+              for (const { index, next } of commits) commitValue(rows[index], col, next)
+            })
+        }}
+        onDismiss={() => {
+          setMassOpen(false)
+          cellSweep.clear()
+        }}
+      />
+    )
+  }
 
   // ── The row api ───────────────────────────────────────────────────────────
 
