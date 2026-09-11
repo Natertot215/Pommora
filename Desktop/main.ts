@@ -246,6 +246,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
         return null
       }
     },
+    platform: () => (process.platform === 'win32' ? 'windows' : 'posix'),
     menu: (req) => (win ? popNativeMenu(win, req) : Promise.resolve(null)),
     thumbnails: {
       capture: (root, navKey, rect, scaleFactor) =>

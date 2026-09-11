@@ -22,6 +22,8 @@ import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
 import type { SyncState } from '../Sync/contract'
 
+export type HostPlatform = 'windows' | 'posix'
+
 /** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
 interface PickFileOptions {
   dir?: string
@@ -196,6 +198,7 @@ export interface Asks {
     reply: Result<null>
   }
   'theme:systemAccent': { args: []; reply: Result<string | null> }
+  'host:platform': { args: []; reply: Result<HostPlatform> }
 
   'nav:read': { args: []; reply: Result<NavigationState> }
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }

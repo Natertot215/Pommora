@@ -37,6 +37,7 @@ export async function installAppMenu(
     await updateAppConfig(userData, () => ({ recents }))
   }
   const hasSession = sessionRoot() !== null
+  const isMac = process.platform === 'darwin'
   const send = (action: string): void => push(win, 'menu:action', action)
 
   const recentItems: MenuItemConstructorOptions[] = recents.length
@@ -50,7 +51,7 @@ export async function installAppMenu(
     : [{ label: 'No Recent Nexuses', enabled: false }]
 
   const template: MenuItemConstructorOptions[] = [
-    { role: 'appMenu' },
+    ...(isMac ? [{ role: 'appMenu' as const }] : []),
     {
       label: 'File',
       submenu: [
@@ -71,7 +72,7 @@ export async function installAppMenu(
         },
         { type: 'separator' },
         {
-          label: 'Reveal in Finder',
+          label: process.platform === 'win32' ? 'Show in File Explorer' : 'Reveal in Finder',
           enabled: hasSession,
           click: () => {
             const root = sessionRoot()
@@ -91,7 +92,7 @@ export async function installAppMenu(
           },
         },
         { type: 'separator' },
-        { role: 'close' },
+        isMac ? { role: 'close' as const } : { role: 'quit' as const },
       ],
     },
     // Spelled out so Paste and Match Style gives up ⌘⇧V, which the role claims main-side (→ ConfigurationPM §Commands).
@@ -110,8 +111,15 @@ export async function installAppMenu(
         },
         { role: 'delete' },
         { role: 'selectAll' },
-        { type: 'separator' },
-        { label: 'Speech', submenu: [{ role: 'startSpeaking' }, { role: 'stopSpeaking' }] },
+        ...(isMac
+          ? [
+              { type: 'separator' as const },
+              {
+                label: 'Speech',
+                submenu: [{ role: 'startSpeaking' as const }, { role: 'stopSpeaking' as const }],
+              },
+            ]
+          : []),
       ],
     },
     {

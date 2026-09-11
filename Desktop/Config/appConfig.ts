@@ -81,7 +81,7 @@ export async function resolveRestorePath(config: AppConfig): Promise<string | nu
 export function isTrashedPath(p: string): boolean {
   return p.split('/').some((seg) => {
     const s = seg.toLowerCase()
-    return s === TRASH_DIR || s === '.trashes'
+    return s === TRASH_DIR || s === '.trashes' || s === '$recycle.bin'
   })
 }
 

@@ -12,6 +12,7 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -425,7 +426,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
     const owner = tree.collections.find((c) => page.path.startsWith(`${c.path}/`))
     if (owner?.openIn === 'page-preview') {
-      if (e?.metaKey) void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
+      if (e && isCmd(e))
+        void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
       else useSession.getState().openWindow({ id: page.id, path: page.path })
       return
     }

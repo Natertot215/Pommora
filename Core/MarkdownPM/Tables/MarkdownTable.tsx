@@ -2,6 +2,7 @@
 import '../markdown-tables.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { Icon } from '@pommora/uix/Symbols'
 import type { Align, TableModel } from '../Engine/Tables/model'
@@ -232,7 +233,7 @@ export function MarkdownTable({
     }
     const clear = (): void => onClearCells?.(rect.r0, rect.c0, rect.r1, rect.c1)
     const onKey = (e: KeyboardEvent): void => {
-      const mod = e.metaKey || e.ctrlKey
+      const mod = isCmd(e)
       if (e.key === 'Backspace' || e.key === 'Delete') {
         claim(e)
         clear()

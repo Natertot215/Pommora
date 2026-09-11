@@ -1,4 +1,5 @@
 import type { Extension } from '@codemirror/state'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
 import { linkTokenAt } from '../Engine/tokens'
 import type { ConnectionsApi } from './connectionsApi'
@@ -72,7 +73,7 @@ export function connectionClicks(getApi: GetApi): Extension {
             { kind: 'page', page },
             '',
             getApi(),
-            event.metaKey,
+            isCmd(event),
             event.target as Element,
             view.state.facet(editorHost),
           )
