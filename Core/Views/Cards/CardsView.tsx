@@ -33,6 +33,7 @@ import {
 import {
   DragGroup,
   type DragItem,
+  reorder,
   SortableZone,
   useDragItem,
   useGroupedDragItem,
@@ -90,7 +91,6 @@ import {
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { linkEditText } from '@pommora/core/Connections/linkValue'
 import { CardValue } from './CardValue'
-import { reorderIds } from './cardsOrder'
 import {
   type AddEntry,
   addColumn,
@@ -180,11 +180,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   useEffect(() => setSetOrderOverride(null), [source])
 
   const reorderSets = (activeId: string, overId: string): void => {
-    const order = reorderIds(
-      sets.map((s) => s.id),
-      activeId,
-      overId,
-    )
+    const order = reorder(sets, activeId, overId).map((s) => s.id)
     const moved = sets.find((s) => s.id === activeId)
     if (!moved) return
     setSetOrderOverride(order)
