@@ -215,6 +215,6 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 #### Pending
 
 - **Knobs without a row** — default icons and the placement keys are hand-set in `settings.json`, with the watcher applying the change live; both are wireable through the existing setter.
-- **Scopes without a renderer setter** — the per-device app config has no IPC a UI could write through. The profile is further along: its image and icon are written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface.
+- **Scopes without a renderer setter** — the profile's image and icon are written from the ribbon's identity menu, and its subtitle has an op and handler waiting on a surface.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.
 - **Two names for one date form** — the Trash column's menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form.
