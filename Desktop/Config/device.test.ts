@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as appConfig from './appConfig'
 import { readAppConfig } from './appConfig'
 import { ensureDevice } from './device'
 
@@ -22,6 +23,11 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
   vi.restoreAllMocks()
 })
+
+function verifies(publicKey: string, canonical: string, signature: string): boolean {
+  const key = createPublicKey({ key: { kty: 'OKP', crv: 'Ed25519', x: publicKey }, format: 'jwk' })
+  return verify(null, Buffer.from(canonical), key, Buffer.from(signature, 'base64url'))
+}
 
 describe('ensureDevice', () => {
   it('mints once and writes the public half to the config', async () => {
@@ -49,13 +55,7 @@ describe('ensureDevice', () => {
 
   it('signs a string so the public key verifies it', async () => {
     const device = await ensureDevice(dir)
-    const signature = await device.sign('x')
-    const publicKey = createPublicKey({
-      key: { kty: 'OKP', crv: 'Ed25519', x: device.publicKey },
-      format: 'jwk',
-    })
-    const sig = Buffer.from(signature, 'base64url')
-    expect(verify(null, Buffer.from('x'), publicKey, sig)).toBe(true)
+    expect(verifies(device.publicKey, 'x', await device.sign('x'))).toBe(true)
   })
 
   it('persists a rename', async () => {
@@ -73,5 +73,21 @@ describe('ensureDevice', () => {
     const second = await ensureDevice(dir)
     expect(second.id).not.toBe(first.id)
     expect(reported).toHaveBeenCalledTimes(1)
+  })
+
+  it('re-mints after a crash between the key write and the config write', async () => {
+    await ensureDevice(dir)
+    rmSync(join(dir, 'secrets.json'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const actual = appConfig.updateAppConfig
+    const spy = vi.spyOn(appConfig, 'updateAppConfig').mockImplementation(async (d, mutate) => {
+      if (mutate({}).device) throw new Error('crash')
+      return actual(d, mutate)
+    })
+    await expect(ensureDevice(dir)).rejects.toThrow('crash')
+    spy.mockRestore()
+    const third = await ensureDevice(dir)
+    const stored = (await readAppConfig(dir)).device
+    expect(verifies(stored?.publicKey ?? '', 'x', await third.sign('x'))).toBe(true)
   })
 })

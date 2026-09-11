@@ -1,6 +1,4 @@
-// One Ed25519 key per install: the public half, its fingerprint, and the machine's name in
-// pommora.json, the PKCS8 private half in the secret store. The key exists in this process as a
-// CryptoKey this module never hands out.
+// The private key lives in this process as a CryptoKey this module never hands out.
 
 import { hostname } from 'node:os'
 import type { HostDevice } from '@pommora/core/Contract/handlers'
@@ -25,8 +23,9 @@ async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: Cry
     publicKey: Buffer.from(raw).toString('base64url'),
     name: hostname(),
   }
-  // The secret first: a crash between the two writes leaves a config that re-mints rather than one
-  // naming a key nothing holds.
+  // The config gives up its device before the store takes the new private key, so a config never
+  // names a public key while the store holds a different private half: any crash mid-mint re-mints.
+  await updateAppConfig(userDataDir, () => ({ device: undefined }))
   await setSecret(userDataDir, SECRET, Buffer.from(pkcs8).toString('base64'))
   await updateAppConfig(userDataDir, () => ({ device }))
   return { device, key: pair.privateKey }
@@ -50,39 +49,28 @@ async function load(userDataDir: string): Promise<CryptoKey | null> {
 
 export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
   const stored = (await readAppConfig(userDataDir)).device
-  let device = stored ?? null
-  let key = stored ? await load(userDataDir) : null
-  if (device && !key) {
+  const loaded = stored ? await load(userDataDir) : null
+  if (stored && !loaded) {
     console.error('Device key missing from the secret store; minting a new identity')
   }
-  if (!device || !key) {
-    const minted = await mint(userDataDir)
-    device = minted.device
-    key = minted.key
-  }
-  const state = device
-  const signingKey = key
-  return {
-    get id() {
-      return state.id
-    },
-    get publicKey() {
-      return state.publicKey
-    },
-    get name() {
-      return state.name
-    },
+  const { device, key } =
+    stored && loaded ? { device: stored, key: loaded } : await mint(userDataDir)
+  const host: HostDevice = {
+    ...device,
     async sign(canonical: string): Promise<string> {
       const signature = await globalThis.crypto.subtle.sign(
         'Ed25519',
-        signingKey,
+        key,
         new TextEncoder().encode(canonical),
       )
       return Buffer.from(signature).toString('base64url')
     },
     async rename(name: string): Promise<void> {
-      await updateAppConfig(userDataDir, () => ({ device: { ...state, name } }))
-      state.name = name
+      await updateAppConfig(userDataDir, () => ({
+        device: { id: host.id, publicKey: host.publicKey, name },
+      }))
+      host.name = name
     },
   }
+  return host
 }

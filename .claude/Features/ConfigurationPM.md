@@ -208,7 +208,7 @@ Three more keys sit at the settings root beside `personalization`: `excluded_fol
 
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's private key sits in the OS keychain through the same folder's `secrets.json`. It is never part of a Nexus and never syncs. A second class of machine-local state lives in the Nexus's own database as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
+Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's private key sits, keychain-encrypted, in the same folder's `secrets.json`. It is never part of a Nexus and never syncs. A second class of machine-local state lives in the Nexus's own database as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
 
 ---
 

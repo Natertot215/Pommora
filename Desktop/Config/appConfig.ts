@@ -7,7 +7,7 @@ import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashRow
 import { TRASH_DIR } from '@pommora/core/Paths/nexusPaths'
 import type { SyncDevice } from '@pommora/core/Sync/contract'
 
-export interface AppConfig {
+interface AppConfig {
   lastNexusPath?: string
   recents?: string[]
   trashMode?: TrashMode
