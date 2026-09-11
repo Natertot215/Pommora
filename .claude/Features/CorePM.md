@@ -5,10 +5,10 @@ The Nexus on disk, the data layer that reads and writes it, and the rules that h
 
 ### The Nexus Layout
 
-A Nexus is a single folder, opened through a picker and treated as canonical content. It can sit in iCloud Drive, Dropbox, or any synced folder for device-to-device sync.
+A Nexus is a single folder, opened through a picker and treated as canonical content. It syncs through Pommora Sync ([[NexusSyncPM]]), never through a third-party folder transport.
 
 ```
-// <Nexus>                               | • The picked folder — canonical content; syncs with the cloud
+// <Nexus>                               | • The picked folder — canonical content; travels through Pommora Sync
 ├── // .nexus                            | • App-internal config and the device-local database
 │   ├── // assets                        | • The default asset directory — banners, files, thumbnails
 │   │   └── crops.json                   | • Per-image framing, keyed by the image
@@ -103,7 +103,7 @@ Autosave belongs to one path-keyed flush registry shared by every editor host: e
 
 **SOURCE:** `Core/Properties/schema.ts` · `Core/Platform/localState.ts` · `Core/Index/indexSeed.ts`
 
-`nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it never syncs: it holds what is true of this computer's session, and what this computer has indexed of the content, rather than the content itself. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the window tab sets, the recents stream, the record baseline, the glance pane size, device preferences, and the server binding — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `memberships`, `indexed_files`) records which pages mention which titles, which governed keys and values each page carries, and which Spaces each page tags under which Context key, the Space titles normalized as resolution matches them. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
+`nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it is excluded from sync by the manifest rule: it holds what is true of this computer's session, and what this computer has indexed of the content, rather than the content itself. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the window tab sets, the recents stream, the record baseline, the glance pane size, device preferences, and the server binding — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `memberships`, `indexed_files`) records which pages mention which titles, which governed keys and values each page carries, and which Spaces each page tags under which Context key, the Space titles normalized as resolution matches them. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
 
 The schema grows without migrations — additive tables reach existing files on open — and a version mismatch on an existing table's shape deletes the file and starts clean, costing a machine its chrome once while the index reseeds from the corpus; the index carries its own generation, so a change to what it records drops the index alone. On the file side, nothing on disk carries a schema version: sidecars decode loosely, a version key an outside tool adds survives as a foreign key, and `settings.json` is written into existence by the first write that needs it, every read tolerating its absence.
 
@@ -111,7 +111,7 @@ The schema grows without migrations — additive tables reach existing files on 
 
 **SOURCE:** `Core/Pages/fileHistory.ts` · `Desktop/Store/versionsDb.ts` · `Core/Pages/restoreSnapshot.ts`
 
-A page accumulates snapshots of its whole file while it is edited, in `versions.db`, the second device-local file. The store is one table, `snapshots(page_id, ts, source, blob)`: each row is the page's entire text, frontmatter included, compressed with zlib in its wrapped form, keyed by the page's `ID` and the moment it was taken, and marked `edit`, `external`, or `restore` by what produced it. It opens and closes beside `nexus.db`, travels with a moved Nexus, and never syncs. A store that will not open — locked, mid-sync, or unreadable — is left in place for the next launch, as `nexus.db` leaves a locked file; only a damaged one, reported by SQLite as not a database or as a malformed image, or one that opens but fails its integrity check, is set aside as `versions.corrupt-<stamp>.db` for a fresh store, and nothing is ever deleted. Any name ending in `.db`, `-wal`, or `-shm` is neither watched nor listed anywhere in the Nexus, so a store's own churn never costs a walk, and a SQLite file is refused as an attachment for the same reason: it is not content.
+A page accumulates snapshots of its whole file while it is edited, in `versions.db`, the second device-local file. The store is one table, `snapshots(page_id, ts, source, blob)`: each row is the page's entire text, frontmatter included, compressed with zlib in its wrapped form, keyed by the page's `ID` and the moment it was taken, and marked `edit`, `external`, or `restore` by what produced it. It opens and closes beside `nexus.db`, travels with a moved Nexus, and is excluded from sync by the manifest rule. A store that will not open — locked, mid-sync, or unreadable — is left in place for the next launch, as `nexus.db` leaves a locked file; only a damaged one, reported by SQLite as not a database or as a malformed image, or one that opens but fails its integrity check, is set aside as `versions.corrupt-<stamp>.db` for a fresh store, and nothing is ever deleted. Any name ending in `.db`, `-wal`, or `-shm` is neither watched nor listed anywhere in the Nexus, so a store's own churn never costs a walk, and a SQLite file is refused as an attachment for the same reason: it is not content.
 
 Every body write passes through one path, `writeBody`, which offers the text it is about to overwrite to one rule, `captureIfDue`. Pages alone qualify, by the `ID`'s kind mark, and nothing lands while the toggle is off. An `edit` lands only when the page's last row is older than the Snapshot Interval and the text is under 1 MB; text a foreign writer left, recognized because its hash differs from the last text Pommora wrote, and the text a restore overwrites both land at once and at any size, since the write is the act that destroys them. A body identical to the latest row never lands twice. A burst of typing ends with one more row from a per-page quiet timer at the interval; a watcher-noticed outside edit arms the same timer under its own label, a restore disarms it, and a quit, a root switch, or a root rename offers every armed page before it leaves. Rows older than the History Timeframe are deleted at open and whenever the timeframe shrinks, a deleted row or a cleared store frees the page's interval clock, and Clear History gives the file's bytes back rather than holding its high-water mark.
 
@@ -139,7 +139,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering |
 | Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page |
 
-**Stays on this machine, inside the Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs; it holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history.
+**Stays on this machine, inside the Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but is excluded from sync by the manifest rule; it holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history.
 
 | State | What it remembers | What clears it |
 | --- | --- | --- |
@@ -182,7 +182,6 @@ The app reaches the machine — the filesystem, the database handles, native men
 ### What the Data Layer Leaves to the OS
 
 - **Backup and versioning beyond the body** — Time Machine, `git` on the Nexus, filesystem snapshots. Page file history is Pommora's own, in `versions.db`; in-session undo comes from the editor.
-- **Cross-device sync** — placing the Nexus in a synced folder gives device-to-device sync; real cloud sync is a long-term prospect.
 
 ---
 
