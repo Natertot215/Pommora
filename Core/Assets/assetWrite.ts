@@ -4,9 +4,7 @@ import { connectionText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
-import { createDisambiguated } from '../Paths/disambiguate'
-import { CROPS_REL } from '../Paths/nexusPaths'
-import { foldKey } from '../Paths/caseFold'
+import { createDisambiguated, reservedAssetLeaf } from '../Paths/names'
 import { assetsDir, relPosix } from '../Paths/paths'
 
 export async function writeAssetFile(
@@ -16,7 +14,7 @@ export async function writeAssetFile(
   bytes: Uint8Array,
 ): Promise<Result<string>> {
   const dir = assetsDir(root, assetDir)
-  if (foldKey(relPosix(root, join(dir, base))) === foldKey(CROPS_REL))
+  if (reservedAssetLeaf(relPosix(root, join(dir, base))))
     return fail('reserved', `${base} is a reserved name at the assets root.`)
   await machine().mkdir(dir)
   const ext = extname(base)

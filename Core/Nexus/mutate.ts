@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
-import { createDisambiguated } from '../Paths/disambiguate'
+import { createDisambiguated } from '../Paths/names'
 import { errText, fault, ok, NO_NEXUS, type Result } from '../Contract/result'
 import { emptyBundle, restoreArtifact } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'

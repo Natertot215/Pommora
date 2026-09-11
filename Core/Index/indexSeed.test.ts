@@ -7,7 +7,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { queryKeyHolders, queryMembers, queryMentions, readIndexedStats } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
-import { sweepAdmitsBody } from '../Nexus/util'
+import { sweepAdmitsBody } from '../Files/pageFile'
 import { seedContentIndex } from './indexSeed'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'

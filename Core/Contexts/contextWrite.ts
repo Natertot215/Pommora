@@ -17,14 +17,13 @@ import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { adoptedId, newId } from '../Nexus/ids'
-import { createDisambiguated } from '../Paths/disambiguate'
+import { createDisambiguated, nameError } from '../Paths/names'
 import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
 import { isMarkdownFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { invalidContextTitle } from '../Nexus/util'
 
 type Raw = Record<string, unknown>
 
@@ -214,7 +213,8 @@ export async function createContextGroup(
   root: string,
   name: string,
 ): Promise<Result<{ id: string; path: string }>> {
-  if (invalidContextTitle(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
+  const why = nameError(name, 'directory')
+  if (why) return fail('invalid-name', why)
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
   // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently share one folder with the existing group.

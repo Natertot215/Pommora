@@ -14,7 +14,7 @@ import type { GovernedWorld } from '../Contexts/contextResolve'
 import { PAGE_MODELED_KEYS } from './identityMark'
 import { errText, ok, fail, type Result } from '../Contract/result'
 import { pathExists } from '../Files/atomicWrite'
-import { invalidName } from './util'
+import { nameError } from '../Paths/names'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'
 
@@ -32,7 +32,8 @@ export async function createPage(
     values?: { def: PropertyDefinition; value: PropertyValue }[]
   } = {},
 ): Promise<Result<{ id: string; path: string }>> {
-  if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
+  const why = nameError(name, 'page')
+  if (why) return fail('invalid-name', why)
   const file = join(parentDir, name + MD)
   if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
   const id = newContentId('page')
@@ -63,7 +64,8 @@ export async function renamePage(
   absFile: string,
   newName: string,
 ): Promise<Result<{ path: string }>> {
-  if (invalidName(newName)) return fail('invalid-name', `"${newName}" is not a valid name.`)
+  const why = nameError(newName, 'page')
+  if (why) return fail('invalid-name', why)
   const target = join(dirname(absFile), newName + MD)
   if (target === absFile) return ok({ path: absFile })
   if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)

@@ -53,4 +53,5 @@ export const nodeMachine: Machine = {
   realpath,
   lock: serializeOnFile,
   sha256Hex: (text) => createHash('sha256').update(text).digest('hex'),
+  platform: process.platform === 'win32' ? 'windows' : 'posix',
 }

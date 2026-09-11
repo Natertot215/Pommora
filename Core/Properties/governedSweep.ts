@@ -10,7 +10,7 @@ import { indexWrittenPage } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { listFilesRecursive } from '../Files/walk'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
-import { sweepAdmits } from '../Nexus/util'
+import { sweepAdmits } from '../Files/pageFile'
 
 export type Raw = Record<string, unknown>
 
