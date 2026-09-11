@@ -2,6 +2,7 @@ import { createHash, createPublicKey, verify } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -85,7 +86,7 @@ function verbs(db: DatabaseSync) {
   )
 
   const list = (nexusId: string): Wire.DeviceRecord[] => {
-    const rows = listStatement.all(nexusId) as unknown as {
+    const rows = listStatement.all(nexusId) as {
       id: string
       publicKey: string
       name: string
@@ -120,7 +121,8 @@ function verbs(db: DatabaseSync) {
       }
       if (name.length < 1 || name.length > 64) return refuse(400, 'malformed')
       db.prepare(
-        'INSERT OR REPLACE INTO device (fingerprint, public_key, name) VALUES (?, ?, ?)',
+        `INSERT INTO device (fingerprint, public_key, name) VALUES (?, ?, ?)
+         ON CONFLICT(fingerprint) DO UPDATE SET public_key = excluded.public_key, name = excluded.name`,
       ).run(caller, publicKey, name)
       const seeded = db.prepare('SELECT 1 FROM membership WHERE nexus_id = ?').get(nexusId)
       db.prepare(
@@ -154,8 +156,8 @@ function verbs(db: DatabaseSync) {
       const nexusId = nexusOf(body)
       const deviceId = targetOf(body)
       if (!nexusId || !deviceId) return refuse(400, 'malformed')
-      if (deviceId === caller) return refuse(400, 'self-revoke')
       if (!approvedStatement.get(nexusId, caller)) return refuse(404, 'not-found')
+      if (deviceId === caller) return refuse(400, 'self-revoke')
       db.prepare('DELETE FROM membership WHERE nexus_id = ? AND fingerprint = ?').run(
         nexusId,
         deviceId,
@@ -183,21 +185,22 @@ function signatureOf(req: IncomingMessage): Signature | null {
 }
 
 function verifySigned(
-  req: IncomingMessage,
+  path: string,
   rawBody: Buffer,
   signed: Signature,
   publicKey: string,
-): number | null {
+): Reply | null {
   try {
     const key = createPublicKey({
       key: { kty: 'OKP', crv: 'Ed25519', x: publicKey },
       format: 'jwk',
     })
-    const path = new URL(req.url ?? '/', `http://${HOST}`).pathname
-    const data = Buffer.from(canonical(req.method ?? 'POST', path, rawBody, signed.ts), 'utf8')
-    return verify(null, data, key, Buffer.from(signed.sig, 'base64url')) ? null : 401
+    const data = Buffer.from(canonical('POST', path, rawBody, signed.ts), 'utf8')
+    return verify(null, data, key, Buffer.from(signed.sig, 'base64url'))
+      ? null
+      : refuse(401, 'unauthorized')
   } catch {
-    return 400
+    return refuse(400, 'bad-key')
   }
 }
 
@@ -205,19 +208,24 @@ function readBody(req: IncomingMessage): Promise<Buffer | null> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     let size = 0
-    let over = false
     req.on('data', (chunk: Buffer) => {
       size += chunk.length
-      if (size > BODY_CAP) over = true
-      else chunks.push(chunk)
+      if (size <= BODY_CAP) chunks.push(chunk)
     })
-    req.on('end', () => resolve(over ? null : Buffer.concat(chunks)))
+    req.on('end', () => resolve(size > BODY_CAP ? null : Buffer.concat(chunks)))
     req.on('error', reject)
   })
 }
 
+const MALFORMED = Symbol('malformed')
+
 function parseBody(raw: Buffer): unknown {
-  return raw.length === 0 ? null : JSON.parse(raw.toString('utf8'))
+  if (raw.length === 0) return null
+  try {
+    return JSON.parse(raw.toString('utf8'))
+  } catch {
+    return MALFORMED
+  }
 }
 
 async function route(
@@ -235,19 +243,15 @@ async function route(
   if (!signed) return refuse(401, 'unauthorized')
 
   if (name === 'connect') {
-    let body: unknown
-    try {
-      body = parseBody(raw)
-    } catch {
-      return refuse(400, 'malformed')
-    }
+    const body = parseBody(raw)
+    if (body === MALFORMED) return refuse(400, 'malformed')
     const publicKey = (body as Partial<Wire.ConnectBody> | null)?.publicKey
     if (typeof publicKey !== 'string' || !PUBLIC_KEY.test(publicKey)) {
       return refuse(400, 'malformed')
     }
     if (fingerprintOf(publicKey) !== signed.device) return refuse(401, 'unauthorized')
-    const bad = verifySigned(req, raw, signed, publicKey)
-    if (bad) return refuse(bad, bad === 400 ? 'bad-key' : 'unauthorized')
+    const bad = verifySigned(path, raw, signed, publicKey)
+    if (bad) return bad
     return handlers.connect(signed.device, body)
   }
 
@@ -255,14 +259,10 @@ async function route(
     .prepare('SELECT public_key FROM device WHERE fingerprint = ?')
     .get(signed.device) as { public_key: string } | undefined
   if (!row) return refuse(404, 'not-found')
-  const bad = verifySigned(req, raw, signed, row.public_key)
-  if (bad) return refuse(bad, bad === 400 ? 'bad-key' : 'unauthorized')
-  let body: unknown
-  try {
-    body = parseBody(raw)
-  } catch {
-    return refuse(400, 'malformed')
-  }
+  const bad = verifySigned(path, raw, signed, row.public_key)
+  if (bad) return bad
+  const body = parseBody(raw)
+  if (body === MALFORMED) return refuse(400, 'malformed')
   return handlers[name](signed.device, body)
 }
 
@@ -286,9 +286,8 @@ export async function start(opts: {
   await new Promise<void>((resolve) => {
     server.listen(opts.port, HOST, resolve)
   })
-  const address = server.address()
   return {
-    port: typeof address === 'object' && address !== null ? address.port : opts.port,
+    port: (server.address() as AddressInfo).port,
     close: () =>
       new Promise<void>((resolve, reject) => {
         server.closeAllConnections()
