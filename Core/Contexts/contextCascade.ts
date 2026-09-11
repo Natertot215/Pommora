@@ -20,7 +20,7 @@ import {
 import { loadContextWorld } from './contextWrite'
 import { queryMembers } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
-import { invalidContextTitle, invalidDirectoryTitle } from '../Nexus/util'
+import { nameError } from '../Paths/names'
 
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
@@ -164,7 +164,8 @@ export async function renameContextOp(
   contextId: string,
   newName: string,
 ): Promise<Result<null>> {
-  if (invalidContextTitle(newName)) return fail('invalid-name', `"${newName}" is not valid.`)
+  const why = nameError(newName, 'directory')
+  if (why) return fail('invalid-name', why)
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
   const entry = reg.value.contexts.find((c) => c.id === contextId)
@@ -216,7 +217,8 @@ export async function renameSpaceOp(
   spaceId: string,
   newName: string,
 ): Promise<Result<null>> {
-  if (invalidDirectoryTitle(newName)) return fail('invalid-name', `"${newName}" is not valid.`)
+  const why = nameError(newName, 'directory')
+  if (why) return fail('invalid-name', why)
   const world = await loadContextWorld(root)
   if (!world.ok) return world
   const ref = world.value.spaceById.get(spaceId)

@@ -5,7 +5,7 @@ import { newId } from './ids'
 import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
 import { recordWrite } from '../Files/writeEcho'
 import { pathExists } from '../Files/atomicWrite'
-import { invalidDirectoryTitle } from './util'
+import { nameError } from '../Paths/names'
 import type { SidecarKind } from '../Paths/paths'
 import { ok, fail, type Result } from '../Contract/result'
 
@@ -15,7 +15,8 @@ export async function createFolderEntity(
   name: string,
   extra: Record<string, unknown> = {},
 ): Promise<Result<{ id: string; path: string }>> {
-  if (invalidDirectoryTitle(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
+  const why = nameError(name, 'directory')
+  if (why) return fail('invalid-name', why)
   const folder = join(parentDir, name)
   if (await pathExists(folder)) return fail('exists', `"${name}" already exists.`)
   const id = newId()
@@ -30,8 +31,8 @@ export async function renameFolderEntity(
   absFolder: string,
   newName: string,
 ): Promise<Result<{ path: string }>> {
-  if (invalidDirectoryTitle(newName))
-    return fail('invalid-name', `"${newName}" is not a valid name.`)
+  const why = nameError(newName, 'directory')
+  if (why) return fail('invalid-name', why)
   const target = join(dirname(absFolder), newName)
   if (target === absFolder) return ok({ path: absFolder })
   if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)

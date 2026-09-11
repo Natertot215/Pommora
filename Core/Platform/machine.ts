@@ -30,6 +30,7 @@ export interface Machine {
   /** Re-taking a key already held inside `fn` rejects rather than deadlocks. */
   lock<T>(key: string, fn: () => Promise<T>): Promise<T>
   sha256Hex(text: string): string
+  platform: 'windows' | 'posix'
   trashToSystem?(p: string): Promise<void>
 }
 

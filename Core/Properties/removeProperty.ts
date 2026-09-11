@@ -14,7 +14,7 @@ import { isBlankValue, isPlainObject, reconcilePropertyValue } from './propertyV
 import { updatePageProperty } from '../Nexus/page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
-import { sweepAdmits } from '../Nexus/util'
+import { sweepAdmits } from '../Files/pageFile'
 import { ok, type Result } from '../Contract/result'
 
 export function removeProperty(

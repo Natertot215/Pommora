@@ -8,7 +8,7 @@ import {
   isSeq,
 } from 'yaml'
 import { basename, basenameNoMd, join } from '../Paths/posix'
-import { contentId } from '../Nexus/identityMark'
+import { admitContentFile, contentId } from '../Nexus/identityMark'
 import { adoptedId } from '../Nexus/ids'
 import type { PageDetail } from '../Pages/pageDetail'
 import { atomicWriteFile } from './atomicWrite'
@@ -159,4 +159,14 @@ export async function readPageDetail(rootPath: string, relPath: string): Promise
     frontmatter,
     body: splitEnvelope(content).body,
   }
+}
+
+// An identity-less page is admitted deliberately: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear.
+export function sweepAdmitsBody(content: string): boolean {
+  return admitContentFile(splitFrontmatter(content), 'page').state !== 'unknown'
+}
+
+// Identity admits it, and its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
+export function sweepAdmits(content: string): boolean {
+  return sweepAdmitsBody(content) && frontmatterWritable(content)
 }
