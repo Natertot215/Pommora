@@ -249,6 +249,21 @@ describe('sync:renameDevice', () => {
     expect(sent[0].url).toBe(`${ADDRESS}/connect`)
   })
 
+  it('reports a downed bound server from the re-issued connect alone', async () => {
+    await syncHandlers['sync:connect'](host(bound), ADDRESS)
+    sent = []
+    const ctx = host(() => Promise.reject(new Error('down')))
+    const state = await unwrap<{
+      device: { name: string }
+      binding: { state: string; why: string }
+    }>(syncHandlers['sync:renameDevice'](ctx, 'Studio'))
+    expect(sent).toHaveLength(1)
+    expect(sent[0].url).toBe(`${ADDRESS}/connect`)
+    expect(state.device.name).toBe('Studio')
+    expect(state.binding.state).toBe('unreachable')
+    expect(state.binding.why).toContain('down')
+  })
+
   it('renames an unbound device without reaching any server', async () => {
     const state = await unwrap<{ device: { name: string } }>(
       syncHandlers['sync:renameDevice'](host(canned(200, '{}')), 'Studio'),

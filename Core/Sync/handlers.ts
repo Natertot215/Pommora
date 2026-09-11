@@ -75,19 +75,35 @@ const act = (route: 'approve' | 'revoke') =>
 export const syncHandlers = {
   'sync:state': withRoot((root, ctx) => state(root, ctx)),
 
-  'sync:renameDevice': withRoot(async (root, ctx, raw: unknown) => {
-    const r = await ready(root, ctx)
-    if (!r.ok) return r
-    const name = typeof raw === 'string' ? raw.trim() : ''
-    if (name.length === 0 || name.length > 64)
-      return fail('invalid-name', 'A device name is one to sixty-four characters.')
-    const { nexusId, device, host, address } = r.value
-    await host.device.rename(name)
-    // The name is server state on the device's one global row, so the bound server hears it too.
-    if (address !== null)
-      await call(host, address, 'connect', { nexusId, publicKey: device.publicKey, name })
-    return state(root, ctx)
-  }),
+  'sync:renameDevice': withRoot(
+    async (root: string, ctx: HostContext, raw: unknown): Promise<Result<SyncState>> => {
+      const r = await ready(root, ctx)
+      if (!r.ok) return r
+      const name = typeof raw === 'string' ? raw.trim() : ''
+      if (name.length === 0 || name.length > 64)
+        return fail('invalid-name', 'A device name is one to sixty-four characters.')
+      const { nexusId, device, host, address } = r.value
+      await host.device.rename(name)
+      if (address === null) return state(root, ctx)
+      // The name is server state on the device's one global row, so the bound server hears it too.
+      const outcome = await call(host, address, 'connect', {
+        nexusId,
+        publicKey: device.publicKey,
+        name,
+      })
+      // A server that did not answer would take the transport's full wait a second time, so its silence is reported from the call already made.
+      if (outcome.status === 0)
+        return ok({
+          device: { ...device, name },
+          binding: {
+            address,
+            state: 'unreachable',
+            why: outcome.error ?? 'The server did not answer.',
+          },
+        })
+      return state(root, ctx)
+    },
+  ),
 
   'sync:connect': withRoot(async (root, ctx, raw: unknown) => {
     const r = await ready(root, ctx)
