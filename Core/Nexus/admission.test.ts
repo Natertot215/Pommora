@@ -13,6 +13,7 @@ import { renameCascade } from './cascade'
 import { handleMutate, type MutateDeps } from './mutate'
 import { openSession, closeSession } from './session'
 import {
+  contextsDir,
   contextsRegistryFile,
   nexusDir,
   nexusConfig,
@@ -39,6 +40,7 @@ beforeEach(async () => {
     JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDNX', createdAt: '2026' }),
   )
   await writeFile(nexusConfig(root, NEXUS_CONFIG_FILES.settings), '{}')
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(

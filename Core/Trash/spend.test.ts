@@ -44,6 +44,7 @@ const onlyBundle = async (): Promise<{ dir: string; record: unknown }> => {
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-prov-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
     JSON.stringify({ id: 'nx', createdAt: '2026' }),

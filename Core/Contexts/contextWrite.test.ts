@@ -19,6 +19,7 @@ let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-ctxwrite-'))
   await mkdir(nexusDir(root), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({

@@ -38,6 +38,7 @@ const rel = (abs: string) => abs.slice(root.length + 1)
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-gworld-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(
     contextsRegistryFile(root),

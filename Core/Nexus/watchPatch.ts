@@ -48,7 +48,7 @@ import {
   type TreeEntity,
   updateNodeInTree,
 } from './treePatch'
-import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Paths/nexusPaths'
+import { CONTEXTS_DIRNAME, CROPS_REL, NEXUS_DIR } from '../Paths/nexusPaths'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
@@ -104,6 +104,7 @@ export function classifyEvent(
   if (rel === null) return { kind: 'full-refresh' }
   const segs = rel.split('/')
   const name = segs[segs.length - 1]
+  if (rel === CROPS_REL) return { kind: 'crops-leaf' }
   // First of every arm, so `excluded_folders` means the content corpus and nothing more: a shared attachments folder is usually named there already, and every other arm below would otherwise claim it.
   if (assetMatcher(scope.assetDir)(segs)) return { kind: 'asset', rel, event: ev.event }
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
@@ -125,7 +126,6 @@ export function classifyEvent(
     }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
-    if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`) return { kind: 'crops-leaf' }
     if (
       segs[1] === CONTEXTS_DIRNAME &&
       segs.length === 5 &&

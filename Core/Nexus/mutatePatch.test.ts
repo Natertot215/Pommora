@@ -26,7 +26,7 @@ beforeEach(async () => {
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await writeFile(
-    abs('.nexus', 'contexts.json'),
+    abs('.nexus', 'contexts', 'contexts.json'),
     JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas' }] }),
   )
   await writeFile(

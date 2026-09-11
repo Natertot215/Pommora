@@ -54,11 +54,11 @@ beforeEach(async () => {
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(join(root, '.nexus', 'settings.json'), '{}')
+  await mkdir(join(root, '.nexus', 'contexts', 'Projects', 'Pommora'), { recursive: true })
   await writeFile(
-    join(root, '.nexus', 'contexts.json'),
+    join(root, '.nexus', 'contexts', 'contexts.json'),
     JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
   )
-  await mkdir(join(root, '.nexus', 'contexts', 'Projects', 'Pommora'), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'contexts', 'Projects', 'Pommora', '_space.json'),
     JSON.stringify({ id: 'sp-pom' }),

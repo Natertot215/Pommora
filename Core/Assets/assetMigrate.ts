@@ -1,7 +1,7 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
 import { parseConnectionText } from '../Connections/connections'
-import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT, TRASH_DIR } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { basename, basenameNoMd, dirname, extname, join } from '../Paths/posix'
 import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -21,7 +21,7 @@ import {
   updateNexusConfig,
   updateSettings,
 } from '../Settings/settings'
-import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './assetMap'
+import { AMBIGUOUS, buildAssetMap, indexable, refreshAssetMap, resolveAssetName } from './assetMap'
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 
@@ -191,8 +191,8 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
 
 async function sweepLegacyRoot(root: string): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
-  const files = (await listFilesRecursive(dir)).filter(
-    (abs) => !abs.split('/').includes(THUMBNAILS_SEGMENT),
+  const files = (await listFilesRecursive(dir)).filter((abs) =>
+    indexable(relPosix(root, abs), ASSETS_DIR_REL),
   )
   for (const abs of files) await trashFileFlat(root, abs)
   for (const entry of await listEntries(dir)) {

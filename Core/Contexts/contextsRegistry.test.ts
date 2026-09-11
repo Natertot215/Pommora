@@ -9,7 +9,7 @@ import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-ctxreg-'))
-  await mkdir(nexusDir(root), { recursive: true })
+  await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -17,7 +17,7 @@ afterEach(async () => {
 
 describe('paths', () => {
   it('lays the registry file out under .nexus', () => {
-    expect(contextsRegistryFile(root)).toBe(join(root, '.nexus', 'contexts.json'))
+    expect(contextsRegistryFile(root)).toBe(join(root, '.nexus', 'contexts', 'contexts.json'))
   })
 })
 

@@ -45,6 +45,13 @@ describe('buildAssetMap', () => {
     expect(Object.keys((await buildAssetMap(root, ASSETS_DIR_REL)).files)).toEqual(['keep.png'])
   })
 
+  it('excludes its own crops config at the default asset root', async () => {
+    const A = ASSETS_DIR_REL.split('/')
+    await put(...A, 'crops.json')
+    await put(...A, 'Keep.png')
+    expect(Object.keys((await buildAssetMap(root, ASSETS_DIR_REL)).files)).toEqual(['keep.png'])
+  })
+
   it('a missing or empty directory is an empty map, never a throw', async () => {
     await expect(buildAssetMap(root, 'nope')).resolves.toEqual({ files: {}, version: 0 })
     await mkdir(join(root, 'file-assets'), { recursive: true })

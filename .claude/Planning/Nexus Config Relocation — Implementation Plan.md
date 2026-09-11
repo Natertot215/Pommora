@@ -42,10 +42,10 @@ Every grep above quotes its `--include` glob; an unquoted `*.ts` errors under zs
 #### Implementation Process
 
 - [ ] **Phase 1** — Relocate, migrate, and reconcile the runtime
-  - [ ] Task 1.1 — Move the path constants
-  - [ ] Task 1.2 — Teach the watcher and asset subsystem the two exceptions
-  - [ ] Task 1.3 — On-open dir seeding and one-time migration
-  - [ ] Task 1.4 — Reconcile and extend the tests
+  - [x] Task 1.1 — Move the path constants
+  - [x] Task 1.2 — Teach the watcher and asset subsystem the two exceptions
+  - [x] Task 1.3 — On-open dir seeding and one-time migration
+  - [x] Task 1.4 — Reconcile and extend the tests
   - [ ] Review Checkpoint
 - [ ] **Phase 2** — Reconcile the documentation
   - [ ] Task 2.1 — Rewrite every old-location claim in the docs
@@ -404,4 +404,7 @@ Written when the chain is confirmed, in the skill's report shape.
 - `crops.json` is a reserved name at the assets root. The in-app defense is the edit #5 import guard (Task 1.2), which Nathan chose over soft migration handling. It cannot cover a file placed at `.nexus/assets/crops.json` directly on disk outside the app; under most-recent-wins that on-disk file would shadow the config. This is an accepted local-first edge, not a code path the app can produce.
 
 ### Deviations
+
+- **Task 1.4 — ten fixtures beyond the named eleven needed the contexts parent.** The plan's test audit was grep-driven on flat-path string literals, which cannot see a fixture that seeds the registry through `contextsRegistryFile(root)` — a helper, not a literal. Ten such files (`contextWrite`, `contextCascade`, `admission`, `governedWorldWrite`, `repairSweep`, and the five `Trash/*` suites) wrote the registry at its new `.nexus/contexts/contexts.json` path with a raw `writeFile` whose parent did not yet exist, throwing ENOENT (175 failures). Each got a `mkdir(contextsDir(root))` before its registry seed — the same parent-dir fix the plan prescribes for the literal fixtures. No path or assertion logic changed; only the missing directory.
+- **Task 1.2, edit #5 — `'reserved'` error code.** The plan's `fail('reserved', …)` requires a code the closed `ErrorCode` union in `Core/Contract/result.ts` did not carry. Added `'reserved'` to that union (one line), the single place codes are declared — `result.ts` is outside the task's named FILES but is the correct home for a new code, and it fits the existing specific-code family (`'invalid-name'`, `'invalid-path'`). No call site branches on the value; the human-readable message carries the meaning.
 

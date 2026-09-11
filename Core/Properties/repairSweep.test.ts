@@ -33,6 +33,7 @@ const frontmatter = async (keys: string): Promise<void> => {
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-repair-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
     JSON.stringify({ id: '01ARZ3NDEKPSV4RRFFQ69G5FAV' }),

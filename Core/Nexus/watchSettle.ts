@@ -37,7 +37,8 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
       (segs[0] === NEXUS_DIR &&
         segs[1] === HOMEPAGE_HOST_DIRNAME &&
         segs.length >= 3 &&
-        segs[2] !== TILE_DOC_FILENAME) ||
+        segs[2] !== TILE_DOC_FILENAME &&
+        rel !== `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) ||
       // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
       (segs[0] === NEXUS_DIR &&
         segs[1] === CONTEXTS_DIRNAME &&

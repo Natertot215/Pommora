@@ -17,7 +17,8 @@ const asset = async (rel: string, bytes: string): Promise<void> => {
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-migrate-'))
-  await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
+  await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx' }))
   await writeFile(
@@ -69,7 +70,7 @@ describe('migrateAssets', () => {
     await asset('one/Purplish Dark Sky.png', 'real')
     await asset('two/banner-mxplrbde.jpg', 'invented')
     await writeFile(
-      join(root, '.nexus', 'homepage.json'),
+      join(root, '.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: '.nexus/assets/one/Purplish Dark Sky.png' }),
     )
     await writeFile(
@@ -77,7 +78,9 @@ describe('migrateAssets', () => {
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/two/banner-mxplrbde.jpg' }),
     )
     await migrateAssets(root)
-    expect(JSON.parse(await read('.nexus/homepage.json')).banner).toBe('[[Purplish Dark Sky.png]]')
+    expect(JSON.parse(await read('.nexus/homepage/homepage.json')).banner).toBe(
+      '[[Purplish Dark Sky.png]]',
+    )
     expect(JSON.parse(await read('Notes/_pagecollection.json')).banner).toBe('[[Notes Banner.jpg]]')
   })
 
@@ -114,7 +117,7 @@ describe('migrateAssets', () => {
     expect(trashed.some((n) => String(n).includes('orphan.png'))).toBe(true)
   })
 
-  it('empties .nexus/assets outright, thumbnails included', async () => {
+  it('empties .nexus/assets of images and thumbnails, keeping only its own crops config', async () => {
     await asset('thumbnails/abc.jpg', 'thumb')
     await asset('live/kept.png', 'kept')
     await writeFile(
@@ -122,7 +125,7 @@ describe('migrateAssets', () => {
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
     )
     await migrateAssets(root)
-    expect(await readdir(join(root, '.nexus/assets')).catch(() => [])).toEqual([])
+    expect(await readdir(join(root, '.nexus/assets')).catch(() => [])).toEqual(['crops.json'])
   })
 
   it('a page banner migrates through the frontmatter, body and foreign keys intact', async () => {
@@ -146,11 +149,11 @@ describe('migrateAssets', () => {
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/a/Photo.png' }),
     )
     await writeFile(
-      join(root, '.nexus', 'crops.json'),
+      join(root, '.nexus', 'assets', 'crops.json'),
       JSON.stringify({ byImage: { '.nexus/assets/a/Photo.png': { x: 0.3, y: 0.4, zoom: 2 } } }),
     )
     await migrateAssets(root)
-    expect(JSON.parse(await read('.nexus/crops.json')).byImage).toEqual({
+    expect(JSON.parse(await read('.nexus/assets/crops.json')).byImage).toEqual({
       'file-assets/Photo.png': { x: 0.3, y: 0.4, zoom: 2 },
     })
   })
@@ -159,7 +162,7 @@ describe('migrateAssets', () => {
     await asset('one/Sunset.png', 'a')
     await asset('two/banner-dddddd44.jpg', 'b')
     await writeFile(
-      join(root, '.nexus', 'homepage.json'),
+      join(root, '.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: '.nexus/assets/one/Sunset.png' }),
     )
     await writeFile(
@@ -169,7 +172,7 @@ describe('migrateAssets', () => {
     await migrateAssets(root)
     const map = await liveAssetMap(sessionRoot()!)
     for (const value of [
-      JSON.parse(await read('.nexus/homepage.json')).banner,
+      JSON.parse(await read('.nexus/homepage/homepage.json')).banner,
       JSON.parse(await read('Notes/_pagecollection.json')).banner,
     ]) {
       const named = parseConnectionText(value)
@@ -199,7 +202,7 @@ describe('migrateAssets', () => {
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
     )
     await writeFile(
-      join(root, '.nexus', 'homepage.json'),
+      join(root, '.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: '.nexus/assets/gone/missing.png' }),
     )
     const r = await migrateAssets(root)
@@ -226,7 +229,7 @@ describe('migrateAssets', () => {
   it('a store that refuses its write is reported, and the sweep is held', async () => {
     await asset('live/kept.png', 'kept')
     await writeFile(
-      join(root, '.nexus', 'homepage.json'),
+      join(root, '.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: '.nexus/assets/live/kept.png' }),
     )
     await mkdir(join(root, 'Locked'), { recursive: true })
@@ -240,7 +243,7 @@ describe('migrateAssets', () => {
       expect(r?.rewritten).toBe(1)
       expect(r?.skipped.map((x) => x.store)).toEqual(['Locked/_pagecollection.json'])
       expect(r?.trashed).toBe(0)
-      expect(JSON.parse(await read('.nexus/homepage.json')).banner).toBe('[[kept.png]]')
+      expect(JSON.parse(await read('.nexus/homepage/homepage.json')).banner).toBe('[[kept.png]]')
     } finally {
       await chmod(join(root, 'Locked'), 0o755)
     }
