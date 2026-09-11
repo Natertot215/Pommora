@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  test: { projects: ['UIX', 'Core', 'Desktop'] },
+  test: { projects: ['UIX', 'Core', 'Desktop', 'Sync'] },
 })
