@@ -13,10 +13,7 @@ import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
-import {
-  contextOptionsFor as contextOptionsForSpaces,
-  type ContextOption,
-} from '../../Contexts/contextOptions'
+import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
@@ -306,11 +303,6 @@ export function useViewHost(
     if (target === undefined) return
     commitGroupValue(activeId, sortReassign.propertyId, sortReassign.type, target)
   }
-  const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
-    if (column.kind !== 'context' || !tree) return null
-    return contextOptionsForSpaces(column.id, tree)
-  }
-
   const styleFor = useStyleFor()
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
     const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
@@ -326,7 +318,7 @@ export function useViewHost(
       current,
       look: style.look,
       contextOptions:
-        column.kind === 'context' && tree ? contextOptionsForSpaces(column.id, tree) : undefined,
+        column.kind === 'context' && tree ? contextOptionsFor(column.id, tree) : undefined,
     }
   }
 
@@ -398,7 +390,6 @@ export function useViewHost(
     commitBand,
     commitValue,
     commitGroupValue,
-    contextOptionsFor,
     pickTarget,
     creation,
     mutate,
