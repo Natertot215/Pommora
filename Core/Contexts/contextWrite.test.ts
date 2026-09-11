@@ -78,8 +78,8 @@ describe('createContextGroup', () => {
     if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/projects 2')
   })
 
-  it('refuses the registry filename as a title — a folder there would collide with the registry', async () => {
-    for (const name of ['contexts.json', 'Contexts.JSON']) {
+  it('refuses any title carrying a period — a dotted folder reads as a file and can shadow a config leaf', async () => {
+    for (const name of ['contexts.json', 'Contexts.JSON', 'Q3.2025']) {
       const r = await createContextGroup(root, name)
       expect(r.ok).toBe(false)
       if (!r.ok) expect(r.error.code).toBe('invalid-name')

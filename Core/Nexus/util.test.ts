@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { invalidContextTitle, invalidName, sweepAdmits, sweepAdmitsBody } from './util'
+import {
+  invalidContextTitle,
+  invalidDirectoryTitle,
+  invalidName,
+  sweepAdmits,
+  sweepAdmitsBody,
+} from './util'
 import { splitFrontmatter } from '../Files/pageFile'
 
 describe('invalidName', () => {
@@ -74,10 +80,15 @@ describe('invalidContextTitle', () => {
     expect(invalidContextTitle(' _Work')).toBe(true)
   })
 
-  it('the ban is a prefix, not a character, and a Context is not a page', () => {
+  it('the hidden ban is a prefix, not a character — a mid or trailing underscore is fine', () => {
     expect(invalidContextTitle('Side_Projects')).toBe(false)
     expect(invalidContextTitle('Work_')).toBe(false)
-    expect(invalidContextTitle('Q1.md')).toBe(false)
+  })
+
+  it('refuses any period — a dotted title reads as a file and can shadow a config leaf', () => {
+    expect(invalidContextTitle('Q1.md')).toBe(true)
+    expect(invalidContextTitle('contexts.json')).toBe(true)
+    expect(invalidContextTitle('v1.2')).toBe(true)
   })
 
   it('accepts ordinary titles, and titles carrying a sigil glyph', () => {
@@ -85,5 +96,16 @@ describe('invalidContextTitle', () => {
     expect(invalidContextTitle('Side Projects')).toBe(false)
     expect(invalidContextTitle('Q3 (Draft)')).toBe(false)
     expect(invalidContextTitle('Pro[ject')).toBe(false)
+  })
+})
+
+describe('invalidDirectoryTitle', () => {
+  it('carries the page name-rules and refuses a period on top', () => {
+    expect(invalidDirectoryTitle('Notes')).toBe(false)
+    expect(invalidDirectoryTitle('Side Projects')).toBe(false)
+    expect(invalidDirectoryTitle('Q3.2025')).toBe(true)
+    expect(invalidDirectoryTitle('crops.json')).toBe(true)
+    expect(invalidDirectoryTitle('a/b')).toBe(true)
+    expect(invalidDirectoryTitle('_Hidden')).toBe(true)
   })
 })
