@@ -9,8 +9,7 @@ import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interact
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../Session/store'
 import { ViewHost } from './Host/ViewHost'
-import { propsAtRoot } from './propsAtRoot'
-import { valuesReply } from './pageValues'
+import { propsAtRoot, valuesReply } from '../Testing/pageValues'
 import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

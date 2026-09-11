@@ -4,7 +4,7 @@ import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { FilterGroup } from '@pommora/core/Views/views'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { applyFilter, FILTER_OPS } from './filter'
-import { propsAtRoot } from '../propsAtRoot'
+import { propsAtRoot } from '../../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [
   {

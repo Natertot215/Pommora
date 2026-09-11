@@ -5,7 +5,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { makeSorter, resolveManualOrder, resolvedSortCount } from './sort'
 import { applyFilter } from './filter'
 import { resolveFieldValue } from '../../Properties/value'
-import { propsAtRoot } from '../propsAtRoot'
+import { propsAtRoot } from '../../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [
   {
