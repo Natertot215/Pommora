@@ -2,13 +2,13 @@
 
 Nine read-only auditors each covered a slice of the tree or a cross-cutting lens, a tenth merged their reports and re-checked every ranked claim against the code, and the result was spot-checked again before consolidation. Planning documents, the context document, history, handoff, and all code comments were excluded as evidence. Features docs were read only as statements of intent. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the topics they settle.
 
-**Tree audited:** 76,468 lines of non-test source across 688 files, Core 61,612, UIX 12,829, Desktop 2,027. Mobile and Sync are empty package shells. **Gates:** typecheck clean, lint clean, 362 test files and 4,391 tests passing.
+**Tree audited:** 76,468 lines of non-test source across 688 files, Core 61,612, UIX 12,829, Desktop 2,027. Mobile is an empty package shell; `Sync/` holds the device server. **Gates:** typecheck clean, lint clean, 362 test files and 4,391 tests passing.
 
 #### The Verdict
 
 **The codebase is workable and foundational.** This isn't a soft yes. The claims the project makes about itself were tested rather than assumed, and they hold:
 
-- **The host boundary is real and machine-verified.** Core contains zero Node or Electron imports outside tests. The module graph the main process loads is 156 files, zero of them React, with three external dependencies. A second host is a bounded job, not a rewrite.
+- **The host boundary is real and machine-verified.** Core contains zero Node or Electron imports outside tests. The module graph the main process loads is 171 files, zero of them React, with three external dependencies. A second host is a bounded job, not a rewrite.
 - **The read path is read-only.** No read channel writes.
 - **Mechanical debt is near zero.** No export is fully dead. Zero raw colors across 44 Core style files. One dead CSS selector out of 631, now gone. Zero assertion-free tests. Textual duplication is 0.41% of tokens. Every declared folder exists under exactly its declared name, and there are zero orphan files.
 - **The best code is in the places that matter most.** The view pipeline, the tile layout model, the navigation reference model, the pure editor engine, the pointer harness, the property value model, and the connections grammar were each independently called the strongest code in their slice. They should not be touched.
@@ -192,7 +192,7 @@ Ordered by how much later work each gates. D-1 (state placement) and D-4 (Contex
 - **Backlinks, a Context view, and Linked-From now have their query.** The content index carries Context membership as of 09-07-2026 and `queryMembers` answers "which pages hold Space X or Context C." All three pending features were waiting on exactly that; each is now a surface over an existing read.
 - **The main window's inspector is a live empty pane, and the panel built for it already works.** The inspector opens, slides, resizes, remembers its width, and shows nothing, while the property panel is already mounted in the Page Window and the NavWindow. Wiring it behind a page selection is a handful of lines against machinery that exists.
 - **Agenda is threaded through the whole navigation layer with no surface at the end of it.** Tasks and Events are first-class in the data model, admitted into navigation references, and refused at every use. The plumbing is ahead of the surface, and the entity vocabulary now resolves to one source, which makes the surface the cheap part.
-- **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 17 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan, D-2, and touch.
+- **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 19 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan, D-2, and touch.
 
 #### Solid, Leave Alone
 

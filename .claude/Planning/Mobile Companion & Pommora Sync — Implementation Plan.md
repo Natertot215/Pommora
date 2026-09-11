@@ -15,6 +15,8 @@
 > | `Pommora/Sync`, `Pommora/Mobile` | `Sync/`, `Mobile/` at the repository root |
 > | the host seam Task 0 would add | `Core/Platform/machine.ts`, implemented by `Desktop/Platform` |
 > | "run from `Pommora/`" | from the repository root |
+>
+> Tasks 3–6, 12, 14, and 15 re-derive against [[Sync Groundwork — Decision Log]] at execution; the device model, the server's schema, and the Settings surface are already built there.
 
 **Goal**
 

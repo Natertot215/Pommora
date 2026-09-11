@@ -1,6 +1,6 @@
 ## Mobile Companion & Pommora Sync — Decision Log
 
-> **Standing (09-04-2026):** nothing here is ratified for execution, and the work is not starting now. This log states the v0 mandate and the decisions that stay true regardless of when it starts; the implementation plan holds the specifics and re-derives every one of them at execution.
+> **Standing (09-04-2026):** nothing here is ratified for execution, and the work is not starting now. This log states the v0 mandate and the decisions that stay true regardless of when it starts; the implementation plan holds the specifics and re-derives every one of them at execution. The identity groundwork shipped first under [[Sync Groundwork — Decision Log]].
 >
 > **Step 1, before anything else:** an app-wide, long-term restructuring of the repository into a monorepo is necessitated, so that desktop, mobile, the server, and the shared core are one long-term solution rather than a package with attachments. Its exact architecture is yet to be decided; the workspace layout named below is the current candidate, and it is settled at a declared stop before the restructure runs.
 
@@ -63,7 +63,7 @@
 - **C-7:** [confirmed] Live updates are core. The desktop pushes on a short debounce from the write funnel plus watcher activity; the phone from its own writes; both subscribe to the server's change feed for the Nexus while open, so a landing reaches every connected device within seconds; a reconnect or foreground runs a catch-up pull from the last sequence; a periodic sweep catches what no watcher delivers. Sync Now in Settings is the manual fallback on both hosts.
 - **C-8:** [confirmed] End-to-end encryption ships in v0: the server holds ciphertext only, file names included.
 - **C-9:** [confirmed] A Pommora Sync server that is always reachable, so a device closed during the other's edits catches up when it reopens. V0 develops against it on localhost beside the desktop and the Simulator, and ships it as one container with an env-configured data directory so it deploys to any always-on host; the host itself is Nathan's pick. Docker is installed before the server phase begins.
-- **C-10:** [confirmed] Email and password on the Pommora server. Sign-in yields a device token behind one seam. OAuth providers are deferred (ruled 09-04-2026) and slot in behind that seam later.
+- **C-10:** [confirmed] No accounts on the Pommora server. Each install mints an Ed25519 key at first launch and is named by that key's fingerprint; a Nexus holds a list of approved devices, and a device joins by pairing — it connects, arrives pending, and an already-approved device approves it. Revoking a lost device is removing one key. OAuth providers are deferred (ruled 09-04-2026) and would later group devices under a person, leaving the device key as the identity.
 - **C-11:** [confirmed] Page history is preserved on mobile. The remote Nexus retains every stored version of an item within the Nexus's History Timeframe, so version history is cross-device in the manner of Obsidian Sync's; the desktop's `versions.db` keeps capturing local edit bursts between syncs, and the Page History window lists local snapshots and remote versions together, timestamp-only. The phone's history is the remote's.
 
 #### D — Mobile Host And Shell
@@ -97,22 +97,22 @@
 
 #### G — Server
 
-- **G-1:** [confirmed] `Sync/`: one Node process on built-ins alone (HTTP, SQLite, crypto), no framework, no dependency, one SQLite file holding users, device tokens, Nexus', items, versions, and blobs. Packaged as one container with an env-configured data directory. Run as `node` on the source with type stripping, so there is no build step.
-- **G-2:** [assumed] Account passwords are hashed with a memory-hard function; device tokens are random, revocable rows; every Nexus request checks ownership, answering not-found rather than forbidden so a foreign id is never confirmed to exist.
+- **G-1:** [confirmed] `Sync/`: one Node process on built-ins alone (HTTP, SQLite, crypto), no framework, no dependency, one SQLite file holding devices, memberships, Nexus', items, versions, and blobs. Packaged as one container with an env-configured data directory. Run as `node` on the source with type stripping, so there is no build step.
+- **G-2:** [assumed] Every request is signed by the device key over one canonical string — method, path, body hash, timestamp — so the server stores no secret of the caller's and issues nothing; a timestamp outside a short window is refused. Every Nexus request checks membership, answering not-found rather than forbidden so a foreign id is never confirmed to exist.
 - **G-3:** [assumed] The phone's WebView is cross-origin to the server, so the server answers CORS for it. Development runs over plain HTTP to localhost; a deployed server is reached over HTTPS, and no arbitrary-loads exception is ever added.
 - **G-4:** [assumed] The server's schema grows additively with a version row, on the same rule `nexus.db` follows.
 
 #### H — Desktop Integration
 
-- **H-1:** [assumed] The desktop sync client runs in the host (it owns the files and the watcher); the sync model itself lives in `Sync` and is host-neutral, reaching a machine through `Core/Platform` as every other engine module does.
-- **H-2:** [assumed] Sync state per Nexus (last sequence, per-item base, keyed by the remote Nexus id) is a scope in `local_state`; the server address and the signed-in device token are app-level, in the app config and the platform's secret store, since they belong to the machine rather than to any Nexus. Disconnecting keeps the bases so reconnecting resumes.
-- **H-3:** [confirmed] Settings › General gains two sections, Account (sign in, sign out, the server, the device's name) and Sync (create the remote from this Nexus or connect to it, the Nexus password, status, Sync Now, Disconnect). Connect lists only remotes whose id matches this Nexus and refuses a mismatch with the reason; Create against an id the server already holds becomes Connect. Every action has its inverse. The design of the sections is Nathan's: the plan stops to ask before they are built.
+- **H-1:** [assumed] The desktop sync client runs in the host (it owns the files and the watcher); the client model itself lives in `Core/Sync` and is host-neutral, reaching a machine through `Core/Platform` as every other engine module does, while `Sync/` holds the server alone.
+- **H-2:** [assumed] Sync state per Nexus (last sequence, per-item base, keyed by the remote Nexus id) is a scope in `local_state`, and the address a Nexus is bound to sits in that same scope: the binding is per Nexus and per device, since two Nexuses may sit on two servers and two devices holding one Nexus may reach it at two addresses. The device's own key is app-level, its public half in the app config and its private half in the platform's secret store, since it belongs to the machine rather than to any Nexus. Disconnecting keeps the bases so reconnecting resumes.
+- **H-3:** [confirmed] Settings › General's Nexus heading gains the Sync rows beside the device rows it already carries: the Nexus password, status, Sync Now, and Disconnect. A server admits this Nexus by its own id, so a mismatch is refused with the reason rather than offered as a choice, and every action has its inverse. The design of the rows is Nathan's: the plan stops to ask before they are built.
 - **H-4:** [assumed] A remote version landing over a page the desktop has open is not reloaded into the editor in v0; the outgoing text is captured into page file history first and the landing is itself a retained remote version, so the next autosave can overwrite it without losing either. The watcher-driven external-edit reload is the named successor.
 - **H-5:** [assumed] Thumbnails sync, as the paths module already names them a synced folder.
 
 #### I — Phone Flow
 
-- **I-1:** [confirmed] First run: server address, sign in, pick a remote Nexus, Nexus password, pull. The local copy lives in the app's Documents folder, exposed to the Files app as On My iPhone › Pommora › the Nexus, the shape Obsidian uses on Nathan's phone today. Known limitation: other apps may then edit in place without file coordination; Obsidian ships without it, most-recent-wins governs the race, and a coordination plugin is a Prospect. Per-device state stays out of Documents.
+- **I-1:** [confirmed] First run: server address, pair this device, wait for approval, Nexus password, pull. The local copy lives in the app's Documents folder, exposed to the Files app as On My iPhone › Pommora › the Nexus, the shape Obsidian uses on Nathan's phone today. Known limitation: other apps may then edit in place without file coordination; Obsidian ships without it, most-recent-wins governs the race, and a coordination plugin is a Prospect. Per-device state stays out of Documents.
 - **I-2:** [assumed] The phone pushes on a short debounce after its own writes, subscribes to the change feed while foregrounded, and runs a catch-up pull on resume and once at launch. It has no watcher: its own writes are known at the write, and the stat walk that every sync runs before pushing catches an edit another app made through the Files exposure. A sync is always pull, then detect, then push.
 - **I-3:** [assumed] Phase 8: the phone applies each pulled item and patches its tree through the same classification the desktop's watcher performs; a full re-walk is the fallback for the unclassifiable, never the mechanism.
 
@@ -145,8 +145,8 @@
 
 - The repository restructured into a monorepo before anything else lands, to an architecture decided at that step.
 - The host seam with a Node binding; the sync client behind it.
-- The Pommora Sync server with its change feed, packaged as one deployable container; the desktop client in main; the Settings › General sections to sign in and connect a remote Nexus, designed at a stop.
-- The mobile host and a sign-in and status shell booting on the Simulator, with the Nexus visible in the Files app.
+- The Pommora Sync server with its change feed, packaged as one deployable container; the desktop client in main; the Settings › General Nexus heading to pair this device and bind the Nexus, designed at a stop.
+- The mobile host and a pairing and status shell booting on the Simulator, with the Nexus visible in the Files app.
 - Cross-device history through remote-retained versions, surfaced in the Page History window.
 - The device install path documented and configured, gated only on a developer account.
 - The success criteria above observed end to end.
@@ -154,7 +154,7 @@
 
 #### Prospects (allowed later, not now)
 
-- OAuth providers (Sign in with Apple, Google) — deferred by ruling 09-04-2026; don't-foreclose: sign-in yields a device token behind one seam.
+- OAuth providers (Sign in with Apple, Google) — deferred by ruling 09-04-2026; don't-foreclose: the device key's signature seam.
 - Chunked transfer and large-file handling — why deferred: a Nexus is pages plus modest assets; don't-foreclose: the store call carries size and hash.
 - Mobile toolbar, touch-tuned editor, bottom-bar design — by ruling.
 - Phone-local edit-burst capture between syncs — why deferred: the remote retains every synced version; don't-foreclose: the capture rule is the page write's host policy.
