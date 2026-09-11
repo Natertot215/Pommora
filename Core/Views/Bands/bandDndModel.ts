@@ -1,6 +1,8 @@
 // A drop slot resolves its IMPLIED PARENT from the band below the line — the router compares it against the dragged band's current parent to pick reorder vs reparent (a flat array alone can never lift a child past its parent).
 
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
+import type { SavedView } from '@pommora/core/Views/views'
+import type { SetTreeNode } from '../Pipeline/group'
 import { type MeasuredRow, nextOrder } from '@pommora/uix/Interactions/reorderModel'
 
 export interface Band {
@@ -135,4 +137,37 @@ export function propertyOrderAfterDrop(
 /** Its CURRENT children + the moved id APPENDED — never the visual drop position, which persists only in the view's group_order: the per-view order must not leak into the filesystem. */
 export function reparentFsOrder(destChildIds: string[], movedId: string): string[] {
   return [...destChildIds.filter((id) => id !== movedId), movedId]
+}
+
+export function childIdsOf(nodes: SetTreeNode[], id: string): string[] | null {
+  for (const n of nodes) {
+    if (n.id === id) return n.children.map((c) => c.id)
+    const hit = childIdsOf(n.children, id)
+    if (hit) return hit
+  }
+  return null
+}
+
+/** A nested bucket band dragged among its siblings writes the GLOBAL bucket order; a drop beside the same bucket in another Set is a noop. */
+export function subGroupOrderPatch(
+  groups: ResolvedGroup[],
+  sub: NonNullable<SavedView['sub_group']>,
+  draggedId: string,
+  beforeId: string | null,
+): Partial<SavedView> | null {
+  const bucketByKey = new Map(
+    groups.flatMap((g) =>
+      (g.children ?? []).flatMap((c) =>
+        c.bucket !== undefined ? [[c.key, c.bucket] as const] : [],
+      ),
+    ),
+  )
+  const draggedBucket = bucketByKey.get(draggedId)
+  if (draggedBucket === undefined) return null
+  const beforeBucket = beforeId === null ? null : (bucketByKey.get(beforeId) ?? null)
+  if (beforeBucket === draggedBucket) return null
+  const present = [...new Set(bucketByKey.values())]
+  return {
+    sub_group: { ...sub, order: propertyOrderAfterDrop(present, draggedBucket, beforeBucket) },
+  }
 }
