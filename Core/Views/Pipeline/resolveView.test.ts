@@ -14,8 +14,7 @@ import type { SetNode } from '@pommora/core/Nexus/tree'
 import { propertyDefinition, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import { flattenContainer } from './group'
 import { resolveView } from './resolveView'
-import { propsAtRoot } from '../propsAtRoot'
-import { pageValues } from '../pageValues'
+import { pageValues, propsAtRoot } from '../../Testing/pageValues'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const collection = (pages: PageNode[]): CollectionNode => ({

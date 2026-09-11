@@ -9,7 +9,7 @@ import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { Cell } from './Cell'
 import type { ValueContext } from '../valueContext'
-import { propsAtRoot } from '../../Views/propsAtRoot'
+import { propsAtRoot } from '../../Testing/pageValues'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

@@ -12,8 +12,7 @@ import {
   resolveGroups,
   subGroupKey,
 } from './group'
-import { propsAtRoot } from '../propsAtRoot'
-import { pageValues } from '../pageValues'
+import { pageValues, propsAtRoot } from '../../Testing/pageValues'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({

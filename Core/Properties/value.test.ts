@@ -3,7 +3,7 @@ import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from './value'
-import { propsAtRoot } from '../Views/propsAtRoot'
+import { propsAtRoot } from '../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [
   {
