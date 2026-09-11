@@ -26,12 +26,12 @@ export async function call<K extends keyof RouteTable>(
   const ts = Date.now()
   try {
     const canonical = canonicalString(method, path, machine().sha256Hex(json), ts)
-    const headers: SignedHeaders & { 'content-type': string } = {
-      'content-type': 'application/json',
+    const signed: SignedHeaders = {
       'x-pommora-device': host.device.id,
       'x-pommora-timestamp': String(ts),
       'x-pommora-signature': await host.device.sign(canonical),
     }
+    const headers: Record<string, string> = { 'content-type': 'application/json', ...signed }
     const reply = await host.transport({
       url: address.replace(/\/$/, '') + path,
       method,
