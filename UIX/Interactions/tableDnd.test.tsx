@@ -15,8 +15,9 @@ function Row({ id }: { id: string }): React.JSX.Element {
 
 let host: HTMLDivElement
 let root: Root
-let reorderSpy: ReturnType<typeof vi.fn<(orderIds: string[], groupKey: string) => void>>
-let reassignSpy: ReturnType<typeof vi.fn<(activeId: string, targetGroupKey: string) => void>>
+let dropSpy: ReturnType<
+  typeof vi.fn<(activeId: string, toGroup: string, beforeId: string | null) => void>
+>
 
 const ROWS = [
   { id: 'r1', groupKey: 'g' },
@@ -28,8 +29,7 @@ beforeEach(async () => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  reorderSpy = vi.fn()
-  reassignSpy = vi.fn()
+  dropSpy = vi.fn()
   await act(async () => {
     root.render(
       <TableRowDnd
@@ -37,8 +37,7 @@ beforeEach(async () => {
         disabled={false}
         canReorderWithin
         canReassign={false}
-        reorderTo={reorderSpy}
-        reassign={reassignSpy}
+        onDrop={dropSpy}
       >
         <Row id="r1" />
         <Row id="r2" />
@@ -80,8 +79,7 @@ describe('table row drag — Esc abort', () => {
     await act(async () => {
       firePointer(window, 'pointerup')
     })
-    expect(reorderSpy).not.toHaveBeenCalled()
-    expect(reassignSpy).not.toHaveBeenCalled()
+    expect(dropSpy).not.toHaveBeenCalled()
   })
 
   it('is a no-op while idle and still commits a normal drop afterwards', async () => {
@@ -92,7 +90,7 @@ describe('table row drag — Esc abort', () => {
     await act(async () => {
       firePointer(window, 'pointerup')
     })
-    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r2', 'r1', 'r3'], 'g', 'r1')
+    expect(dropSpy).toHaveBeenCalledExactlyOnceWith('r1', 'g', 'r3')
   })
 
   it('a mid-drag rows change re-measures, so the drop commits against the live rows', async () => {
@@ -109,8 +107,7 @@ describe('table row drag — Esc abort', () => {
           disabled={false}
           canReorderWithin
           canReassign={false}
-          reorderTo={reorderSpy}
-          reassign={reassignSpy}
+          onDrop={dropSpy}
         >
           <Row id="r1" />
           <Row id="r3" />
@@ -125,7 +122,7 @@ describe('table row drag — Esc abort', () => {
       firePointer(window, 'pointerup')
     })
     // Fresh rects put 40 below r3's midline → r1 lands after it. A frozen snapshot still holds the dead r2 and resolves a no-op, so the drop goes silent.
-    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
+    expect(dropSpy).toHaveBeenCalledExactlyOnceWith('r1', 'g', null)
   })
 
   it('a rows push with the pointer held still re-resolves, so an immediate drop commits fresh', async () => {
@@ -141,8 +138,7 @@ describe('table row drag — Esc abort', () => {
           disabled={false}
           canReorderWithin
           canReassign={false}
-          reorderTo={reorderSpy}
-          reassign={reassignSpy}
+          onDrop={dropSpy}
         >
           <Row id="r1" />
           <Row id="r3" />
@@ -153,7 +149,7 @@ describe('table row drag — Esc abort', () => {
     await act(async () => {
       firePointer(window, 'pointerup')
     })
-    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
+    expect(dropSpy).toHaveBeenCalledExactlyOnceWith('r1', 'g', null)
   })
 
   it('a drop below the row the dragged one already follows is a no-op, not a slot above it', async () => {
@@ -167,7 +163,7 @@ describe('table row drag — Esc abort', () => {
     await act(async () => {
       firePointer(window, 'pointerup')
     })
-    expect(reorderSpy).not.toHaveBeenCalled()
+    expect(dropSpy).not.toHaveBeenCalled()
   })
 
   it('detaches the keydown listener after the gesture settles', async () => {
