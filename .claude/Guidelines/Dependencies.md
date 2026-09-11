@@ -21,7 +21,7 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 #### State · Data · Search
 
 - **Zustand 5** (vanilla + `useSyncExternalStore`) — framework-agnostic store. **Decided.**
-- **`node:sqlite`** (WAL) — synchronous SQLite behind `Desktop/Store/driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
+- **`node:sqlite`** (WAL) — synchronous SQLite behind `Desktop/Store/driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node and in Node 24 for the server, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
 - **zod 4** — schema = codec = type for sidecars + frontmatter. **Decided.** `z.looseObject` defensively retains foreign keys on sidecars — note this is *defensive*, not required: sidecars are controlled schemas, and markdown frontmatter (not the sidecar) is the preserve-everything surface.
 - **ulidx** — monotonic ULID ids. **Decided.**
 - **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API. **Decided.**
@@ -33,6 +33,10 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 - **PommoraDND** — the **in-house drag-and-drop engine** (behind the `UIX/Interactions/drag.tsx` seam): measure-once, no mid-drag array churn, pointer-capture single sensor, closest-center + hysteresis, decide-then-animate; constraints, auto-scroll, keyboard + ARIA. **Decided + shipped** — replaced `@dnd-kit` entirely. Spec → [[PommoraDND]].
 - **@dnd-kit** — the reference engine PommoraDND was dissected from. **Replaced + uninstalled** — no longer a dependency or import; kept here only as a historical anchor.
 - **react-grid-layout** — responsive, draggable + resizable **grid** layout with breakpoints; React-only, MIT. Fits 2-D **dashboard / widget** composition — the Homepage's tiled dashboard. Distinct from PommoraDND (which owns linear / nested reorder), not a substitute. **Candidate** — verify React 19 compatibility + maintenance health at adoption time.
+
+### Server
+
+`Sync/server.ts` runs on Node's built-ins alone (`node:http`, `node:sqlite`, `node:crypto`), as plain `node` over the source with type stripping. No library enters it; a need that seems to want one is a design question first.
 
 ### Distribution — Packaging, Signing, Notarization
 

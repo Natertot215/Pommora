@@ -13,7 +13,7 @@ How to run, test, and not break the app while working on it. For how the app its
 
 ### Toolchain
 
-- **The preload is CommonJS** — Electron requires it of a sandboxed preload, so `Desktop` is not `type: module`. Core's own format is unconstrained: it is only ever bundled. (The "named imports fail" symptom is a transpiler caveat, not an Electron limit; the host may move to ESM under Electron 42.)
+- **The preload is CommonJS** — Electron requires it of a sandboxed preload, so `Desktop` is not `type: module`. Core stays CommonJS-format under `nodenext`: that is what makes a value import from `Sync/` a compile error, so `Core/package.json` never gains `type: module`. (The "named imports fail" symptom is a transpiler caveat, not an Electron limit; the host may move to ESM under Electron 42.)
 - **Version pins: Vite 7 + `@vitejs/plugin-react` 5** — newer plugin-react needs Vite 8, which electron-vite 5 doesn't support yet.
 - **vanilla-extract `*.css.ts` may only export serializable values** (styles, variants, vars). A plain-function export throws at `build`/`build:showcase` but passes typecheck + vitest, so it fails only at build — put shared helpers in a plain `.ts` beside the `.css.ts`.
 - **A theme-contract change splits the dev server's brain.** Editing a `createGlobalTheme` contract regenerates its hashed var names while the dev server keeps serving other modules' CSS against the old hashes, so `var(--label-*)` consumers silently fall back to inherited color. ⌘R doesn't heal it — restart the dev process. Diagnose: `getComputedStyle(document.documentElement).getPropertyValue('--label-secondary')` empty = split-brain. (Deleting a token from `color.css.ts` shifts every later var hash the same way.)
@@ -21,7 +21,7 @@ How to run, test, and not break the app while working on it. For how the app its
 
 ### Gates & Verification
 
-- **The gates:** `npm run typecheck` (the only type gate — the build strips types unchecked — covering all four tsconfig projects), `npm run test` (Vitest), `npm run lint` (`biome check`), `npm run build` / `build:showcase`. Formatting is Biome's — a PostToolUse hook formats every TS/CSS/JSON write (single-quote, no semicolons), so never hand-align; a shell-driven edit bypasses the hook (which is why the gate checks it), and `npm run format` repairs one.
+- **The gates:** `npm run typecheck` (the only type gate — the build strips types unchecked — covering all six tsconfig projects), `npm run test` (Vitest), `npm run lint` (`biome check`), `npm run build` / `build:showcase`. Formatting is Biome's — a PostToolUse hook formats every TS/CSS/JSON write (single-quote, no semicolons), so never hand-align; a shell-driven edit bypasses the hook (which is why the gate checks it), and `npm run format` repairs one.
 - **Verify with `&&`, don't `| tail` the final step** — a pipe or `;`-chain masks the real exit code (tail exits 0 even on failure); confirm `✓ built in` on every build step.
 - **Biome's `noDuplicateTestHooks` flags any test-file local named `before` or `after`** — a helper named that way reads as a hook to the linter; name it for what it does.
 - **`biome lint` exits 0 WITH warnings** — read the `Found N warnings` line; the zero-warnings gate lives in the text, not the exit code.
