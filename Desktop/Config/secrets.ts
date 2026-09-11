@@ -7,6 +7,10 @@ import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 
 const FILE = 'secrets.json'
 
+export const KEYCHAIN_UNAVAILABLE = 'The OS keychain refused: no encryption is available.'
+
+export const secretsAvailable = (): boolean => safeStorage.isEncryptionAvailable()
+
 function secretsPath(userDataDir: string): string {
   return join(userDataDir, FILE)
 }
@@ -23,9 +27,7 @@ export async function getSecret(userDataDir: string, name: string): Promise<stri
 }
 
 export async function setSecret(userDataDir: string, name: string, plain: string): Promise<void> {
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('The OS keychain refused: no encryption is available.')
-  }
+  if (!secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
   const value = safeStorage.encryptString(plain).toString('base64')
   const written = await rmwJsonStrict(
     secretsPath(userDataDir),
