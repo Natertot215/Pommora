@@ -42,10 +42,21 @@ const canned =
 const devices = (approved: boolean): string =>
   JSON.stringify({ devices: [{ id: 'fe1c', publicKey: PUBLIC_KEY, name: 'Recorder', approved }] })
 
+const bound: Answer = (req) =>
+  req.url.endsWith('/connect')
+    ? { status: 200, body: '{"approved":true}' }
+    : { status: 200, body: devices(true) }
+
 const unwrap = async <T>(r: unknown): Promise<T> => {
   const result = (await r) as { ok: boolean; value: T; error?: { code: string } }
   expect(result.ok, JSON.stringify(result.error)).toBe(true)
   return result.value
+}
+
+const refuse = async (r: unknown): Promise<{ code: string }> => {
+  const result = (await r) as { ok: boolean; error: { code: string } }
+  expect(result.ok).toBe(false)
+  return result.error
 }
 
 beforeEach(async () => {
@@ -73,22 +84,14 @@ describe('sync:state', () => {
 
   it('refuses with no-nexus when no tree is open', async () => {
     dropLiveTree()
-    const r = (await syncHandlers['sync:state'](host(canned(200, '{}')))) as {
-      ok: boolean
-      error: { code: string }
-    }
-    expect(r.ok).toBe(false)
-    expect(r.error.code).toBe('no-nexus')
+    const error = await refuse(syncHandlers['sync:state'](host(canned(200, '{}'))))
+    expect(error.code).toBe('no-nexus')
   })
 })
 
 describe('sync:connect', () => {
   it('writes the binding on a 200 and reports the list the server answers', async () => {
-    const ctx = host((req) =>
-      req.url.endsWith('/connect')
-        ? { status: 200, body: '{"approved":true}' }
-        : { status: 200, body: devices(true) },
-    )
+    const ctx = host(bound)
     const state = await unwrap<{ binding: { state: string; devices: unknown[] } }>(
       syncHandlers['sync:connect'](ctx, ADDRESS),
     )
@@ -110,22 +113,14 @@ describe('sync:connect', () => {
   })
 
   it('refuses without writing when the server does not answer', async () => {
-    const ctx = { device, transport: async () => Promise.reject(new Error('down')) } as HostContext
-    const r = (await syncHandlers['sync:connect'](ctx, ADDRESS)) as { ok: boolean }
-    expect(r.ok).toBe(false)
+    const ctx = host(() => Promise.reject(new Error('down')))
+    await refuse(syncHandlers['sync:connect'](ctx, ADDRESS))
     expect(readValue('sync')).toBeNull()
   })
 
   it('reports a bound server that stops answering as unreachable, carrying its text', async () => {
-    await syncHandlers['sync:connect'](
-      host((req) =>
-        req.url.endsWith('/connect')
-          ? { status: 200, body: '{"approved":true}' }
-          : { status: 200, body: devices(true) },
-      ),
-      ADDRESS,
-    )
-    const ctx = { device, transport: async () => Promise.reject(new Error('down')) } as HostContext
+    await syncHandlers['sync:connect'](host(bound), ADDRESS)
+    const ctx = host(() => Promise.reject(new Error('down')))
     const state = await unwrap<{ binding: { state: string; why: string } }>(
       syncHandlers['sync:state'](ctx),
     )
@@ -136,11 +131,7 @@ describe('sync:connect', () => {
 
 describe('sync:disconnect', () => {
   it('clears the binding row', async () => {
-    const ctx = host((req) =>
-      req.url.endsWith('/connect')
-        ? { status: 200, body: '{"approved":true}' }
-        : { status: 200, body: devices(true) },
-    )
+    const ctx = host(bound)
     await syncHandlers['sync:connect'](ctx, ADDRESS)
     const state = await unwrap<{ binding: unknown }>(syncHandlers['sync:disconnect'](ctx))
     expect(state.binding).toBeNull()
@@ -150,18 +141,12 @@ describe('sync:disconnect', () => {
 
 describe('sync:approve', () => {
   it('refuses an empty id without reaching the server', async () => {
-    const r = (await syncHandlers['sync:approve'](host(canned(200, devices(true))), '  ')) as {
-      ok: boolean
-    }
-    expect(r.ok).toBe(false)
+    await refuse(syncHandlers['sync:approve'](host(canned(200, devices(true))), '  '))
     expect(sent).toEqual([])
   })
 
   it('refuses while the nexus is bound to no server', async () => {
-    const r = (await syncHandlers['sync:approve'](host(canned(200, devices(true))), 'ab')) as {
-      ok: boolean
-    }
-    expect(r.ok).toBe(false)
+    await refuse(syncHandlers['sync:approve'](host(canned(200, devices(true))), 'ab'))
     expect(sent).toEqual([])
   })
 
@@ -182,21 +167,15 @@ describe('sync:approve', () => {
 
 describe('sync:renameDevice', () => {
   it('refuses a name past sixty-four characters', async () => {
-    const r = (await syncHandlers['sync:renameDevice'](
-      host(canned(200, '{}')),
-      'n'.repeat(65),
-    )) as { ok: boolean; error: { code: string } }
-    expect(r.ok).toBe(false)
-    expect(r.error.code).toBe('invalid-name')
+    const error = await refuse(
+      syncHandlers['sync:renameDevice'](host(canned(200, '{}')), 'n'.repeat(65)),
+    )
+    expect(error.code).toBe('invalid-name')
     expect(sent).toEqual([])
   })
 
   it('re-issues connect against a bound server so the new name reaches its row', async () => {
-    const ctx = host((req) =>
-      req.url.endsWith('/connect')
-        ? { status: 200, body: '{"approved":true}' }
-        : { status: 200, body: devices(true) },
-    )
+    const ctx = host(bound)
     await syncHandlers['sync:connect'](ctx, ADDRESS)
     sent = []
     await unwrap(syncHandlers['sync:renameDevice'](ctx, '  Studio  '))
