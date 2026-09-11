@@ -7,12 +7,13 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
-import { ViewHost } from './ViewHost'
-import { pageValues, propsAtRoot } from '../../Testing/pageValues'
+import { propsAtRoot } from '../../Testing/pageValues'
+import { pageValues } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
+import { installViewEnvironment, renderView } from '../../Testing/viewHarness'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -504,12 +505,7 @@ describe('settleOrders — a create composes with the live order', () => {
 })
 
 describe('the root seat', () => {
-  const mountSeat = async (source: CollectionNode): Promise<void> => {
-    await act(async () => {
-      root.render(<ViewHost source={source} />)
-    })
-    await act(async () => {})
-  }
+  const mountSeat = (source: CollectionNode): Promise<void> => renderView(root, source)
 
   it('paints Loading… while the host is null', async () => {
     useSession.setState({ tree: null as never })

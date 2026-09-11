@@ -5,23 +5,15 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
+import { firePointer, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../Session/store'
-import { ViewHost } from './Host/ViewHost'
-import { propsAtRoot, valuesReply } from '../Testing/pageValues'
+import { propsAtRoot } from '../Testing/pageValues'
+import { valuesReply } from '../Testing/pageValues'
 import { stubDialer } from '../vitest.setup'
+import { installViewEnvironment, renderView, settle } from '../Testing/viewHarness'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
-stubPointerCapture()
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -139,10 +131,7 @@ afterEach(() => {
 })
 
 const mountTable = async (view?: Partial<SavedView>): Promise<void> => {
-  await act(async () => {
-    root.render(<ViewHost source={source(view)} />)
-  })
-  await act(async () => {})
+  await renderView(root, source(view))
   const box = host.querySelector('.drop-line-host')
   if (box) stubRect(box, { top: 0, bottom: 48 })
   for (const [i, id] of ['p1', 'p2'].entries()) {
@@ -163,16 +152,11 @@ const dragSecondRowUp = async (): Promise<void> => {
   await act(async () => {
     firePointer(window, 'pointerup')
   })
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 1))
-  })
+  await settle()
 }
 
 const mountBanded = async (view?: Partial<SavedView>): Promise<void> => {
-  await act(async () => {
-    root.render(<ViewHost source={banded(view)} />)
-  })
-  await act(async () => {})
+  await renderView(root, banded(view))
   const box = host.querySelector('.drop-line-host')
   if (box) stubRect(box, { top: 0, bottom: 96 })
   for (const [i, id] of ['p1', 'p2'].entries()) {
@@ -193,16 +177,11 @@ const dragFirstRowDown = async (): Promise<void> => {
   await act(async () => {
     firePointer(window, 'pointerup')
   })
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 1))
-  })
+  await settle()
 }
 
 const mountCards = async (view?: Partial<SavedView>): Promise<void> => {
-  await act(async () => {
-    root.render(<ViewHost source={source({ type: 'cards', ...view })} />)
-  })
-  await act(async () => {})
+  await renderView(root, source({ type: 'cards', ...view }))
   const zone = host.querySelector('.cards-grid')
   if (zone) stubRect(zone, { top: 0, bottom: 200, left: 0, right: 200 })
   for (const [i, id] of ['p1', 'p2'].entries()) {
@@ -223,9 +202,7 @@ const dragSecondCardUp = async (): Promise<void> => {
   await act(async () => {
     firePointer(window, 'pointerup')
   })
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 400))
-  })
+  await settle(400)
 }
 
 const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView

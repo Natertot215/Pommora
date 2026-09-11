@@ -9,14 +9,8 @@ import { useSession } from '../../Session/store'
 import { SortFrame } from './SortFrame'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
+import { installViewEnvironment } from '../../Testing/viewHarness'
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
