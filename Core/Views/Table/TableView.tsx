@@ -387,7 +387,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       base.kind === 'title' ? { ...base, ...interactions.titleMenuContext(row) } : base
     const action = await interactions.holdGhost(() => popMenu(cellMenuModel(ctx)))
     if (!action) return
-    if (interactions.runTitleAction(action, row, cellEl)) return
+    const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
+    if (interactions.runTitleAction(action, row, glyph)) return
     if (
       runFileMenuAction(
         action,
