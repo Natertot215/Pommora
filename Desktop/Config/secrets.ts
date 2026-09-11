@@ -19,11 +19,7 @@ export async function getSecret(userDataDir: string, name: string): Promise<stri
   const obj = await readJsonObject(secretsPath(userDataDir))
   const value = obj?.[name]
   if (typeof value !== 'string') return null
-  try {
-    return safeStorage.decryptString(Buffer.from(value, 'base64'))
-  } catch {
-    return null
-  }
+  return safeStorage.decryptString(Buffer.from(value, 'base64'))
 }
 
 export async function setSecret(userDataDir: string, name: string, plain: string): Promise<void> {

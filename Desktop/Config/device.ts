@@ -35,17 +35,13 @@ async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: Cry
 async function load(userDataDir: string): Promise<CryptoKey | null> {
   const secret = await getSecret(userDataDir, SECRET)
   if (secret === null) return null
-  try {
-    return await globalThis.crypto.subtle.importKey(
-      'pkcs8',
-      new Uint8Array(Buffer.from(secret, 'base64')),
-      'Ed25519',
-      false,
-      ['sign'],
-    )
-  } catch {
-    return null
-  }
+  return globalThis.crypto.subtle.importKey(
+    'pkcs8',
+    new Uint8Array(Buffer.from(secret, 'base64')),
+    'Ed25519',
+    false,
+    ['sign'],
+  )
 }
 
 export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
