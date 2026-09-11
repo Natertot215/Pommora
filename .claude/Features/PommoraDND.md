@@ -49,9 +49,9 @@ The tunables are custom properties declared at `:root`, overridable on any ances
 
 ### Constraints & Accessibility
 
-- **Constraints and modifiers** — an `axis` lock, a `bounds` clamp, a `modifiers` escape hatch, `swap` mode (exchange active and over), and async drop rejection, where the item holds lifted in a `pending` state until the verdict resolves.
+- **Constraints** — an `axis` lock on the single-zone engine, and a `resolveIndex` veto on the cross-list engine that refuses a landing slot outside the dragged item's run.
 - **Announcements** — an assertive ARIA live region announces every product drag's pick-up and drop, pointer or keyboard, through the one `announce` primitive.
-- **Keyboard** — Space or Enter lifts, arrow keys move on a geometric next-slot getter covering list, row, and grid, Space, Enter, or Tab drops, and Esc cancels; focus returns to the item on drop. Items are focusable, and the handle role is `button` by default, settable to `null` so table rows keep `<tr>` semantics.
+- **Keyboard** — Space or Enter lifts, arrow keys move on a geometric next-slot getter covering list, row, and grid, Space, Enter, or Tab drops, and Esc cancels; focus returns to the item on drop. Items are focusable and the handle role is `button`.
 
 ---
 
