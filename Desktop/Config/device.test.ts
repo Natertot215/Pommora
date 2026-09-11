@@ -5,7 +5,6 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readAppConfig } from './appConfig'
 import { ensureDevice } from './device'
-import { secretsPath } from './secrets'
 
 vi.mock('electron', () => ({
   safeStorage: {
@@ -69,7 +68,7 @@ describe('ensureDevice', () => {
 
   it('re-mints and reports once when the secret store lost the key', async () => {
     const first = await ensureDevice(dir)
-    rmSync(secretsPath(dir))
+    rmSync(join(dir, 'secrets.json'))
     const reported = vi.spyOn(console, 'error').mockImplementation(() => {})
     const second = await ensureDevice(dir)
     expect(second.id).not.toBe(first.id)
