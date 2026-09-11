@@ -1,5 +1,4 @@
-import type { Handlers, HostContext } from '../Contract/handlers'
-import { withRoot } from '../Contract/handlers'
+import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
 import { fail, NO_NEXUS, ok, type Result } from '../Contract/result'
 import { getLiveTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
@@ -39,8 +38,8 @@ function bindingFrom(
 ): SyncBinding {
   if (outcome.reply) return { address, state: 'approved', devices: outcome.reply.devices }
   if (outcome.status === 404) return { address, state: 'pending' }
-  const why = outcome.status === 0 ? outcome.error : `The server answered ${outcome.status}.`
-  return { address, state: 'unreachable', why: why ?? 'The server did not answer.' }
+  const why = outcome.error ?? `The server answered ${outcome.status}.`
+  return { address, state: 'unreachable', why }
 }
 
 async function state(ctx: HostContext): Promise<Result<SyncState>> {

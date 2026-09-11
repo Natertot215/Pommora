@@ -55,7 +55,7 @@ export interface SyncState {
   binding: SyncBinding | null
 }
 
-export interface SignedHeaders {
+export type SignedHeaders = {
   'x-pommora-device': string
   'x-pommora-timestamp': string
   'x-pommora-signature': string

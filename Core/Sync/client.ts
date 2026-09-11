@@ -8,7 +8,7 @@ export interface SyncHost {
   transport: HostContext['transport']
 }
 
-/** `error` is present only on a status of 0, which is the transport's own refusal rather than the server's. */
+/** `error` is present only on a status of 0: a refusal before any reply was read, by the transport, the signer, or an unparseable body. */
 export interface CallOutcome<K extends keyof RouteTable> {
   status: number
   reply: RouteTable[K]['reply'] | null
@@ -26,12 +26,12 @@ export async function call<K extends keyof RouteTable>(
   const ts = Date.now()
   try {
     const canonical = canonicalString(method, path, machine().sha256Hex(json), ts)
-    const signed: SignedHeaders = {
+    const headers: SignedHeaders & { 'content-type': string } = {
+      'content-type': 'application/json',
       'x-pommora-device': host.device.id,
       'x-pommora-timestamp': String(ts),
       'x-pommora-signature': await host.device.sign(canonical),
     }
-    const headers: Record<string, string> = { 'content-type': 'application/json', ...signed }
     const reply = await host.transport({
       url: address.replace(/\/$/, '') + path,
       method,
