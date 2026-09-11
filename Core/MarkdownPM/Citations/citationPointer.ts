@@ -1,4 +1,5 @@
 import type { Extension } from '@codemirror/state'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { EditorView } from '@codemirror/view'
 import { resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'
 import { type MarkerRef, citationFor, lineEndOf, markersFor } from '../Engine/detect'
@@ -86,7 +87,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
                 { kind: 'page', page: res.page },
                 '',
                 api,
-                event.metaKey,
+                isCmd(event),
                 el,
                 view.state.facet(editorHost),
               )
@@ -98,7 +99,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
           resolveMdTarget(api, hit.lone.url),
           hit.lone.url,
           api,
-          event.metaKey,
+          isCmd(event),
           el,
           view.state.facet(editorHost),
         )

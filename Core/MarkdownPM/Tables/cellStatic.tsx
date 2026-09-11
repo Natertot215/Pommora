@@ -1,4 +1,5 @@
 import { Fragment, memo, useRef } from 'react'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { linkTarget, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import { CONTENT_CLASS } from '../Engine/intents'
@@ -157,7 +158,7 @@ function StaticCellImpl({
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
     const go =
-      found && followTarget(found.target, found.url, connections?.(), e.metaKey, found.el, host)
+      found && followTarget(found.target, found.url, connections?.(), isCmd(e), found.el, host)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()

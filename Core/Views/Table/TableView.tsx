@@ -40,6 +40,7 @@ import { BandDnd, type BandDrop } from '../Bands/BandDnd'
 import { flattenBands, propertyOrderAfterDrop, reparentFsOrder } from '../Bands/bandDndModel'
 import { bandReorderPatch } from '../Bands/useBandOrdering'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
+import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
@@ -433,8 +434,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
   }
   const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
-    // Ctrl+Click is macOS's secondary-click: it fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
-    if (e.ctrlKey) return
+    // A secondary-click fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
+    if (isSecondaryClick(e)) return
     triggerElRef.current = e.currentTarget as HTMLElement
     if (col.kind === 'title') {
       e.stopPropagation()
@@ -443,7 +444,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           ? source
           : findCollectionForSet(useSession.getState().tree, source.id)
       if (owner?.openIn === 'page-preview') {
-        if (e.metaKey) void select({ kind: 'page', id: row.id, path: row.path }, { newTab: true })
+        if (isCmd(e)) void select({ kind: 'page', id: row.id, path: row.path }, { newTab: true })
         else useSession.getState().openWindow({ id: row.id, path: row.path })
       } else void select({ kind: 'page', id: row.id, path: row.path })
       return

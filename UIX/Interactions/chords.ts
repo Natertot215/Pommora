@@ -41,12 +41,28 @@ interface KeyPress {
   shiftKey: boolean
 }
 
+let cmdIsCtrl = false
+
+export function setCmdModifier(commandIsCtrl: boolean): void {
+  cmdIsCtrl = commandIsCtrl
+}
+
+export function isCmd(e: { metaKey: boolean; ctrlKey: boolean }): boolean {
+  return cmdIsCtrl ? e.ctrlKey : e.metaKey
+}
+
+export function isSecondaryClick(e: { ctrlKey: boolean }): boolean {
+  return !cmdIsCtrl && e.ctrlKey
+}
+
 export function matchesCommand(spec: string | undefined, e: KeyPress): boolean {
   const chord = spec ? chordOf(spec) : null
   if (!chord) return false
+  const mods = cmdIsCtrl
+    ? e.ctrlKey === (chord.cmd || chord.ctrl) && !e.metaKey
+    : e.metaKey === chord.cmd && e.ctrlKey === chord.ctrl
   return (
-    e.metaKey === chord.cmd &&
-    e.ctrlKey === chord.ctrl &&
+    mods &&
     e.altKey === chord.alt &&
     e.shiftKey === chord.shift &&
     e.key.toLowerCase() === chord.key

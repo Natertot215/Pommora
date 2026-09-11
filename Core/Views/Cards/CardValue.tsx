@@ -6,6 +6,7 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { cellMenuContextFor, cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { isOptionsKind } from '../../Properties/properties'
@@ -67,7 +68,7 @@ export function CardValue({
     isOptionsKind(t) || t === 'datetime' || t === 'number' || t === 'url' || t === 'file'
 
   const onClick = (e: React.MouseEvent): void => {
-    if (e.ctrlKey) return // macOS secondary-click — let the context menu win
+    if (isSecondaryClick(e)) return
     e.stopPropagation()
     // React events cross portals along the component tree: a click inside the picker bubbles back through this span and would re-open what the pick just dismissed.
     if (!e.currentTarget.contains(e.target as Node)) return

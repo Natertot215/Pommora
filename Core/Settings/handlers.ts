@@ -97,4 +97,5 @@ export const settingsHandlers = {
   }),
 
   'theme:systemAccent': async (ctx) => ok(await ctx.systemAccent()),
+  'host:platform': async (ctx) => ok(ctx.platform()),
 } satisfies Partial<Handlers>

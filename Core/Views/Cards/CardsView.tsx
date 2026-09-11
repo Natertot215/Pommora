@@ -17,6 +17,7 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isOptionsKind } from '@pommora/core/Properties/properties'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import { Icon } from '@pommora/uix/Symbols'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
@@ -854,7 +855,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
       locked
       onClick={(e) => {
         if (!drag?.isDragging)
-          void select({ kind: 'set', id: set.id, path: set.path }, { newTab: e.metaKey })
+          void select({ kind: 'set', id: set.id, path: set.path }, { newTab: isCmd(e) })
       }}
     >
       <CardBody>
@@ -1292,7 +1293,7 @@ const PageCard = memo(function PageCard({
         if (drag?.isDragging || naming) return
         const hit = document.elementFromPoint(e.clientX, e.clientY)
         if (hit && e.currentTarget.contains(hit) && hit.closest('.card-title, .card-thumb'))
-          onOpen(row, e.metaKey)
+          onOpen(row, isCmd(e))
       }}
       onContextMenu={onCardContextMenu}
     >

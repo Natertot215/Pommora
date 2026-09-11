@@ -13,6 +13,7 @@ import {
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
+import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, INSPECTOR_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
@@ -37,6 +38,7 @@ export interface NexusSlice {
 }
 
 let systemAccentCache: string | null | undefined
+let cmdModifierSet = false
 // Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
 let devicePrefsLoaded = false
 
@@ -83,6 +85,12 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     load: async () => {
       // Only the first load shows it; a refetch keeps the tree mounted so selection survives.
       if (!get().tree) set({ status: 'loading', error: undefined })
+      if (!cmdModifierSet) {
+        cmdModifierSet = true
+        void host()
+          .ask('host:platform')
+          .then((r) => setCmdModifier(valueOr(r, 'posix') === 'windows'))
+      }
       void host()
         .ask('theme:systemAccent')
         .then((r) => {

@@ -3,7 +3,7 @@ import { createGlobalTheme, style } from '@vanilla-extract/css'
 export const font = createGlobalTheme(':root', {
   family:
     "'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-  mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  mono: "ui-monospace, SFMono-Regular, Menlo, 'Cascadia Mono', Consolas, monospace",
 
   weight: {
     standard: '400',
