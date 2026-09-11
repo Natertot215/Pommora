@@ -4,12 +4,31 @@ import { sessionRoot } from '../Nexus/session'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
 import type { TrashMode } from '../Trash/trashRow'
+import type { SyncDevice } from '../Sync/contract'
 
 export type PickKind = 'file' | 'folder' | 'image' | 'exclusion'
 
 interface PickOptions {
   defaultPath?: string
   message?: string
+}
+
+// The host holds the private key: signing and renaming are its acts, and Core sees only the result.
+export interface HostDevice extends SyncDevice {
+  sign(canonical: string): Promise<string>
+  rename(name: string): Promise<void>
+}
+
+export interface TransportRequest {
+  url: string
+  method: string
+  headers: Record<string, string>
+  body?: string
+}
+
+export interface TransportReply {
+  status: number
+  body: string
 }
 
 /** What a host does that the engine cannot. Every path handed in is forward-slash. */
