@@ -53,11 +53,12 @@ describe('nameError — Windows rules are gated on the host', () => {
     'a?b',
     'a*b',
     'Note.',
-    'Note ',
+    'CON.txt',
   ]
 
-  it('a posix host allows the reserved characters and device names', () => {
-    for (const n of ['CON', 'a<b', 'a?b']) expect(nameError(n, 'page'), n).toBe(null)
+  it('a posix host allows the reserved characters, device names, and a trailing period', () => {
+    for (const n of ['CON', 'CON.txt', 'a<b', 'a?b', 'Note.'])
+      expect(nameError(n, 'page'), n).toBe(null)
   })
 
   it('a Windows host refuses them', () => {
