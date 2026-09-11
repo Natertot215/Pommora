@@ -7,9 +7,9 @@ Pommora carries a Nexus between devices itself. A Nexus, a device, and a server 
 
 The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.json`, the Nexus identity file, orderings, and the asset directory are as much a part of a Nexus as the Markdown beside them, and a copy missing them is a copy missing its organization.
 
-What travels is one rule: every entry the watcher would watch, plus `.trash` at the top level, minus any name ending in `.db`, `-wal`, or `-shm`. `nexus.db` and `versions.db` and their journals are excluded by that rule rather than by convention, and they are excluded because they are device-local by content: this machine's chrome and the index it derived from the content it can re-derive. Every other dot-entry stays home, `.obsidian`, `.git`, and `.claude` among them, since they belong to another application rather than to the Nexus. The watcher's own predicate (`neverWatched` in `Core/Paths/exclusion.ts`) already drops a database and its siblings, so the rule is defined against a predicate the read path shares.
+What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level, minus any name ending in `.db`, `-wal`, or `-shm`. `nexus.db` and `versions.db` and their journals are excluded by that rule rather than by convention, and they are excluded because they are device-local by content: this machine's chrome and the index derived from content it can rebuild. Every other dot-entry stays home, `.obsidian`, `.git`, and `.claude` among them, since they belong to another application rather than to the Nexus. The watcher's own predicate (`neverWatched` in `Core/Paths/exclusion.ts`) already drops a database and its siblings, so the rule is defined against a predicate the read path shares.
 
-A folder transport of any other kind is prior art, never a dependency. NexusOS reaches a second machine through Obsidian Sync today, which drops every dot-entry but `.obsidian` and so leaves `.nexus/` behind; Pommora's own transport is what makes a Nexus a complete travelling unit.
+A folder transport of any other kind is prior art, never a dependency. NexusOS reaches a second machine through Obsidian Sync, which drops every dot-entry but `.obsidian` and so leaves `.nexus/` behind; Pommora's own transport is what makes a Nexus a complete travelling unit.
 
 ### Three Identities
 
@@ -25,7 +25,7 @@ A Nexus on the server holds a list of devices. The first device to connect a Nex
 
 Connect is idempotent on the public key: it upserts the device row and adds the membership only when there is none, so a device that connects twice is in the same state it was. The device row is global — one name across every Nexus — while membership is per Nexus, so a rename is visible everywhere at once and approval is not. Renaming re-issues connect for the open Nexus, which is also how a revoked device that renames itself reappears pending on an approver's list.
 
-A refused approve or revoke answers the interface with a freshly fetched list rather than a guess: the server refuses an unknown target with 409 and a caller it does not admit with 404, and neither refusal says anything true about the list. A device cannot revoke itself; that refusal is what leaves this device's own row without a Revoke.
+A refused approve or revoke answers the interface with a freshly fetched list rather than a guess: approve refuses a target that is no member of the Nexus with 409, and both verbs refuse a caller they do not admit with 404; neither refusal says anything true about the list. A device cannot revoke itself; that refusal is what leaves this device's own row without a Revoke.
 
 ### Signed Requests
 
