@@ -7,12 +7,11 @@ import { machine } from '../Platform/machine'
 
 async function migrateFile(oldAbs: string, newAbs: string): Promise<void> {
   if (!(await pathExists(oldAbs))) return
+  recordWrite(oldAbs)
   if (await pathExists(newAbs)) {
-    recordWrite(oldAbs)
     await machine().remove(oldAbs)
     return
   }
-  recordWrite(oldAbs)
   recordWrite(newAbs)
   await machine().rename(oldAbs, newAbs)
 }

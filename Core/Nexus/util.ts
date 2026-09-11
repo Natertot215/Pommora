@@ -1,5 +1,7 @@
 import { invalidBasename } from '../Contexts/contexts'
+import { foldKey } from '../Paths/caseFold'
 import { hiddenName } from '../Paths/exclusion'
+import { CONTEXTS_REGISTRY_FILENAME } from '../Paths/nexusPaths'
 import { admitContentFile } from './identityMark'
 import { frontmatterWritable, splitFrontmatter } from '../Files/pageFile'
 
@@ -18,7 +20,11 @@ export function invalidName(name: string): boolean {
 
 /** A managed extension is legal here where it is not on a page — nothing appends one to a Context folder. */
 export function invalidContextTitle(title: string): boolean {
-  return invalidBasename(title) || hiddenName(title.trim())
+  return (
+    invalidBasename(title) ||
+    hiddenName(title.trim()) ||
+    foldKey(title.trim()) === CONTEXTS_REGISTRY_FILENAME
+  )
 }
 
 /** An identity-less page is admitted deliberately: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear. */

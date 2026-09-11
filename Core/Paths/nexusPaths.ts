@@ -9,7 +9,8 @@ export const NON_CORPUS_TOP: ReadonlySet<string> = new Set([NEXUS_DIR, TRASH_DIR
 
 /** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'
-export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}/contexts.json`
+export const CONTEXTS_REGISTRY_FILENAME = 'contexts.json'
+export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}/${CONTEXTS_REGISTRY_FILENAME}`
 export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 
 export const ASSETS_DIRNAME = 'assets'
