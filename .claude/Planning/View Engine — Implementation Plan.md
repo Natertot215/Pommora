@@ -487,7 +487,7 @@ export const VIEW_KINDS: Record<ViewType, ViewKind> = {
 
 - [ ] `views.ts`: add `setCards: boolean` to `ViewKind` with its doc line; `true` on `cards`, `false` on the other five.
 - [ ] `ViewHost.tsx`: replace the two `setChrome` lines with `const setChrome = VIEW_KINDS[view.type].setCards && (source.sets?.length ?? 0) > 0`.
-- [ ] `useViewHost.ts`: add `flat: flattenStructural,` to the returned object after `liveView`; add `pickTarget(row, column)` beside `contextOptionsFor` and return it (the imports change as drawn: `contextOptionsFor` from `contextOptions.ts` under its own name, `PickTarget` + `syntheticContextDef`, `resolveFieldValue`, `styleFor`). The kind comes from the column's declared type, the definition from the schema or the Context synthesis, the style from `styleFor` with the nexus date format. `contextOptionsFor` stays until Task 3.1.
+- [ ] `useViewHost.ts`: add `flat: flattenStructural,` to the returned object after `liveView`; add `pickTarget(row, column)` beside `contextOptionsFor` and return it (the imports gain `PickTarget` + `syntheticContextDef`, `resolveFieldValue`, and `styleFor`; the aliased `contextOptionsForSpaces` import stays while the local wrapper exists). The kind comes from the column's declared type, the definition from the schema or the Context synthesis, the style from `styleFor` with the nexus date format. `contextOptionsFor` stays until Task 3.1.
 - [ ] `engine.tsx` / `drag.tsx`: delete every `itemRole` declaration and read; the handle carries `role: 'button'` and `'aria-pressed': isDragging || undefined`.
 - [ ] `.claude/Guidelines/Development-Environment.md`, the drag-handle bullet: its last sentence names the prop this task deletes; it ends instead with the rule that stays true.
 
@@ -525,7 +525,6 @@ export const VIEW_KINDS: Record<ViewType, ViewKind> = {
 `useViewHost.ts`, the changed imports, the builder, and the return's head:
 
 ```ts
-import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { mergeStyleRecords, styleFor } from './useColumnStyles'
@@ -546,7 +545,7 @@ import { mergeStyleRecords, styleFor } from './useColumnStyles'
       current,
       look: style.look,
       contextOptions:
-        column.kind === 'context' && tree ? contextOptionsFor(column.id, tree) : undefined,
+        column.kind === 'context' && tree ? contextOptionsForSpaces(column.id, tree) : undefined,
     }
   }
 ```
@@ -3849,7 +3848,7 @@ index a0fcbedda..888723193 100644
 - [ ] `PageCard` spreads `rowHover(row, api.hover)`.
 - [ ] FLIP: the first effect measures `.card-displace` only inside the grid holding the anchor (`ghostLiveId ?? ghostShown`) and `.group-band` root-wide; the second iterates the measured map and skips disconnected nodes.
 - [ ] `ctx` is `ValueContext`, not nullable, in every card component; the unreachable `if (!ctx) return null` guards go.
-- [ ] `pickTargetFor` and the `useStyleFor` reader go: the value picker's target is `pickTarget(vRow, valuePicker.column)` over the row looked up once, and the add picker's `resolveTarget` is `pickTarget(addRow, addColumn(e.id, tree))`. `useViewHost.ts` then drops `contextOptionsFor` (the wrapper and its return line), which has no reader left.
+- [ ] `pickTargetFor` and the `useStyleFor` reader go: the value picker's target is `pickTarget(vRow, valuePicker.column)` over the row looked up once, and the add picker's `resolveTarget` is `pickTarget(addRow, addColumn(e.id, tree))`. `useViewHost.ts` then drops `contextOptionsFor` (the wrapper and its return line), which has no reader left, and imports `contextOptionsFor` from `contextOptions.ts` under its own name for `pickTarget`.
 
 **AFTER**
 
