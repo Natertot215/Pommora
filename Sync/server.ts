@@ -283,7 +283,8 @@ export async function start(opts: {
         res.end(JSON.stringify(reply.body))
       })
   })
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject)
     server.listen(opts.port, HOST, resolve)
   })
   return {
@@ -301,7 +302,12 @@ export async function start(opts: {
 }
 
 if (import.meta.main) {
-  void start({ dataDir: DATA_DIR, port: PORT }).then(({ port }) => {
-    console.log(`Pommora Sync on http://${HOST}:${port}`)
-  })
+  void start({ dataDir: DATA_DIR, port: PORT })
+    .then(({ port }) => {
+      console.log(`Pommora Sync on http://${HOST}:${port}`)
+    })
+    .catch((e) => {
+      console.error('Pommora Sync failed to start:', e instanceof Error ? e.message : e)
+      process.exitCode = 1
+    })
 }
