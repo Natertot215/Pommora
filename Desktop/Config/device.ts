@@ -22,7 +22,7 @@ async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: Cry
   const device: SyncDevice = {
     id: await fingerprintOf(raw),
     publicKey: Buffer.from(raw).toString('base64url'),
-    name: hostname(),
+    name: hostname().slice(0, 64),
   }
   // The config gives up its device before the store takes the new private key, so a config never
   // names a public key while the store holds a different private half: any crash mid-mint re-mints.

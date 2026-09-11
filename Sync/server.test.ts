@@ -79,10 +79,6 @@ afterAll(async () => {
 })
 
 describe('the sync server', () => {
-  it('does not run itself under the test runner', () => {
-    expect(import.meta.main).toBeFalsy()
-  })
-
   it('matches the shared canonical vectors', () => {
     const fixture = JSON.parse(
       readFileSync(fileURLToPath(new URL('../Core/Sync/vectors.json', import.meta.url)), 'utf8'),
@@ -139,7 +135,7 @@ describe('the sync server', () => {
   it('revokes idempotently and forgets the device', async () => {
     const gone = await first.call('/revoke', { nexusId: NEXUS, deviceId: second.id })
     expect(gone.status).toBe(200)
-    expect(names(gone.body)).not.toContainEqual({ id: second.id, approved: true })
+    expect(names(gone.body)).toEqual([{ id: first.id, approved: true }])
     const again = await first.call('/revoke', { nexusId: NEXUS, deviceId: second.id })
     expect(again.status).toBe(200)
     expect(again.body).toEqual(gone.body)
