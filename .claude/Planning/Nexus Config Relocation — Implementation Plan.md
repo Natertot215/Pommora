@@ -37,7 +37,7 @@ Recorded at ratification, after the tree is swept clean and before Task 1.1:
 Every grep above quotes its `--include` glob; an unquoted `*.ts` errors under zsh and pipes empty into `wc -l`, reading a red state as `0`.
 
 **START:** `2026-09-11T00:59:28Z`
-**END:** `<same command, run as the report is given>`
+**END:** `2026-09-11T01:52:00Z`
 
 #### Implementation Process
 
@@ -376,12 +376,12 @@ Every path literal and title reflects the new layout; the two collision fixes ca
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct — the files moved, the systems that assumed the old layout taught the one exception each, existing data migrated without loss, and every doc and test reading true. Nothing carried as a concern, nothing deferred where the fix is known, nothing declared that wasn't watched happen. Ambiguity met during execution takes the simplest reading and is recorded here, not raised mid-run. Adjacent edits found in the touched docs that no task made belong to the user — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `<baseline commit>..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched: Phase 1 (two Opus agents) · Phase 2 (folded into neutral verification, docs-only)
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `51c2a67aa..HEAD`
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -405,6 +405,10 @@ Written when the chain is confirmed, in the skill's report shape.
 
 ### Deviations
 
+- **Post-review hardening — two new-collision edges the relocation introduced, both fixed.** The Phase 1 correctness review found two LOW edges that only exist because the files moved. (a) The `writeAssetFile` reserved-name guard compared the path case-sensitively, but Pommora's filesystems are case-insensitive, so `Crops.json` slipped past it — now folded through `caseFold.foldKey`. (b) A Context group titled exactly `contexts.json` would collide with the relocated registry that now shares `.nexus/contexts/`: the failed `mkdir` leaves a phantom registry entry, and deleting that phantom trashes the registry file (Context-identity loss). `invalidContextTitle` now rejects that name, single-sourced as `CONTEXTS_REGISTRY_FILENAME` in `nexusPaths.ts`. Both changes touch `Core/Nexus/util.ts` and `Core/Paths/nexusPaths.ts` (util.ts is outside the plan's named FILES). The plan-mandated `writeAssetFile` reserved-name test, which had been omitted, was added as `Core/Assets/assetWrite.test.ts` alongside a `contexts.json`-title case in `contextWrite.test.ts`; both go red with their fix reverted.
+- **Task 1.2 — `sweepLegacyRoot` now also spares `neverWatched` files.** Reusing the `indexable` predicate (the DRY fix the plan prescribes) means the legacy-root sweep now leaves dotfiles/`node_modules`/store files in place, where the old hand-rolled split trashed everything but thumbnails. This is a widening the plan did not state; kept deliberately, since aligning the sweep with the real "is this an indexable asset" predicate is the coherent behavior and trashing a stray `.DS_Store` was the prior wart.
+- **Task 1.4 — two `mutate.test.ts` titles left as bare leaf names.** "…never homepage.json" (611) and "a corrupt crops.json…" (974) name the config by its unchanged leaf, not a path, so they read true without an edit; changing them to subpaths would misframe a store name as a location.
+- **Baseline grep counts rise, not fall.** The raw `grep "crops.json" Core --include='*.ts'` count goes 15→ higher because the new subpaths (`assets/crops.json`, etc.) still contain the substring. The retirement check is the flat-literal grep (`.nexus/<file>.json` and `'.nexus', '<file>.json'`), which is zero in runtime code outside `migrateConfig.ts`'s retirement literals — not the substring count.
 - **Task 2.1 — SurfacePM.md left unchanged.** The plan listed it for the homepage host-sidecar location. Its only reference (`SurfacePM.md:18`) already names the host folder as `.nexus/homepage/` and calls the config file by its bare leaf `homepage.json`, parallel to `_space.json` in the same parenthetical — no `.nexus/homepage.json` root claim exists there, and the leaf name is unchanged by the move. Editing it would break the leaf-name parallel without correcting anything, so it was left as written; it already passes the Phase 2 VERIFY grep.
 - **Review Checkpoint — smoke launch skipped by ruling.** The migration runs in place on the live NexusOS registry on open. With Nathan present, he ruled to skip the on-real-data smoke launch and rely on the unit coverage (idempotency, both-present-wins, fresh-nexus seeding, the two collision regressions), verifying himself when he next opens the app. The plan's autonomous stand-in was therefore not run; every other checkpoint item holds.
 - **Task 1.4 — ten fixtures beyond the named eleven needed the contexts parent.** The plan's test audit was grep-driven on flat-path string literals, which cannot see a fixture that seeds the registry through `contextsRegistryFile(root)` — a helper, not a literal. Ten such files (`contextWrite`, `contextCascade`, `admission`, `governedWorldWrite`, `repairSweep`, and the five `Trash/*` suites) wrote the registry at its new `.nexus/contexts/contexts.json` path with a raw `writeFile` whose parent did not yet exist, throwing ENOENT (175 failures). Each got a `mkdir(contextsDir(root))` before its registry seed — the same parent-dir fix the plan prescribes for the literal fixtures. No path or assertion logic changed; only the missing directory.
