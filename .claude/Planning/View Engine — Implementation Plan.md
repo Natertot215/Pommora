@@ -5722,3 +5722,4 @@ The orchestrator writes the report in the shape the planning skill prescribes (f
 ### Deviations
 
 - Phase 2 hand check 3: Table's icon picker anchors on the title's glyph instead of the whole cell, per Nathan; the cell was the anchor before this plan too.
+- Phase 2 review: Table's hover ghost is suppressed while the icon picker is open, as Cards' already was; the hook owns the picker so the suppression rides with it. A fifth convergence beside the four the Summary names.
