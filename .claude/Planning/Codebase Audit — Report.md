@@ -13,7 +13,7 @@ Nine read-only auditors each covered a slice of the tree or a cross-cutting lens
 - **Mechanical debt is near zero.** No export is fully dead. Zero raw colors across 44 Core style files. One dead CSS selector out of 631, now gone. Zero assertion-free tests. Textual duplication is 0.41% of tokens. Every declared folder exists under exactly its declared name, and there are zero orphan files.
 - **The best code is in the places that matter most.** The view pipeline, the tile layout model, the navigation reference model, the pure editor engine, the pointer harness, the property value model, and the connections grammar were each independently called the strongest code in their slice. They should not be touched.
 
-**What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. Two of them were ruled on 09-07-2026 and are now work rather than questions: where each piece of state lives (a rule, applied row by row) and how Context tags are keyed (titles stay). The one that remains open and gates the most is what "most recent wins" means for a reader: an open page never learns its file changed, and the next keystroke writes the stale copy back.
+**What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. One of them was ruled on 09-07-2026 and is now work rather than a question: where each piece of state lives, a rule applied row by row. The one that remains open and gates the most is what "most recent wins" means for a reader: an open page never learns its file changed, and the next keystroke writes the stale copy back.
 
 **Is what already exists flawless?** Eight one-machine defects were confirmed at audit time. All eight are fixed. The audit's own ninth item was denied by manual test.
 
@@ -38,7 +38,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 
 - `Core/Platform` and `Core/Contract`: the whole second-host contract. Solid.
 - `Core/Files`, `Core/Nexus`, `Core/Paths`, `Core/Index`: atomicity, the walk, identity re-minting, the rename cascade. The index now carries Context membership.
-- `Core/Contexts` and `Core/Properties`: title-keyed Context membership is the model's largest structural commitment, now ruled to stay. The value model beside it is excellent.
+- `Core/Contexts` and `Core/Properties`: the value model is excellent.
 - `Core/Session` and `Core/Navigation`: identity-first references are exactly what sync needs. Session is where the external-edit reload has to land, and it appears in no Features doc.
 - `Core/Actions`: portable menu models and the one door every menu opens through; a second host owes it only the native `menu` channel.
 - `Desktop/Platform`, `Desktop/Store`, `Desktop/Bridge`, `Desktop/FileWatch`: where every safety guarantee actually lives. Desktop is 2,027 lines, readable end to end in an afternoon.
@@ -55,7 +55,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 
 #### Topics, In Priority Order
 
-Nine lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
+Six lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
 
 ##### 1. Where Persisted State Lives
 
@@ -79,9 +79,7 @@ One thing still sits outside that shape. Six page-level authoring decisions — 
 
 The most reachable piece: **when a file changes outside Pommora, the open page never finds out.** The tree updates, the search index updates, and the editor keeps showing the old text. The next keystroke writes that old text back over the file. The overwritten version is snapshotted, but into a store that never leaves the machine. "Most recent wins" is currently implemented as *the most recent write to disk wins*, not *the most recent version reaches the reader*. The plumbing to fix it already exists as three calls; the missing part is one push channel and a policy for dirty tabs.
 
-Context membership is keyed by Space *title*, which is the model's structural commitment and stays.
-
-**Ruled 09-07-2026:** Context tags stay title-keyed; Space ids in frontmatter would violate Reasonable Legibility. A one-writer-per-nexus rule is not adopted as policy, since a future shared nexus may want something else; the atomicity contract is declared, and the cross-process story stays open until Sync is designed.
+**Ruled 09-07-2026:** A one-writer-per-nexus rule is not adopted as policy, since a future shared nexus may want something else; the atomicity contract is declared, and the cross-process story stays open until Sync is designed.
 
 **Change.**
 
@@ -156,7 +154,7 @@ Context membership is keyed by Space *title*, which is the model's structural co
 
 #### Decisions Only Nathan Can Make
 
-Ordered by how much later work each gates. D-1 (state placement) and D-4 (Context tags) were ruled on 09-07-2026 and are written into their topics above.
+Ordered by how much later work each gates. D-1 (state placement) was ruled on 09-07-2026 and is written into its topic above.
 
 **D-2: What does "most recent wins" mean for a reader?** Options: **(i)** reload the page body silently when the tab is clean and prompt when it's dirty; **(ii)** always reload and rely on file history for recovery; **(iii)** leave it and accept that Pommora quietly overwrites external edits.
 
