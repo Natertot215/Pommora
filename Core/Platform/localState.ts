@@ -16,6 +16,7 @@ export type Scope =
   | 'record'
   | 'glancePane'
   | 'devicePrefs'
+  | 'sync'
 
 const SINGLETON = ''
 

@@ -6,6 +6,7 @@ import { nexusHandlers } from '../Nexus/handlers'
 import { pagesHandlers } from '../Pages/handlers'
 import { propertiesHandlers } from '../Properties/handlers'
 import { settingsHandlers } from '../Settings/handlers'
+import { syncHandlers } from '../Sync/handlers'
 import { tilesHandlers } from '../Tiles/handlers'
 import { trashHandlers } from '../Trash/handlers'
 import { viewsHandlers } from '../Views/handlers'
@@ -21,6 +22,7 @@ export const handlers: Handlers = {
   ...trashHandlers,
   ...assetsHandlers,
   ...settingsHandlers,
+  ...syncHandlers,
   ...navigationHandlers,
   ...interfaceHandlers,
   ...webHandlers,
