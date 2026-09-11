@@ -12,19 +12,11 @@ function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {
   return parsed.success ? ok(parsed.data) : fail('operation-failed', 'Invalid contexts registry.')
 }
 
-export async function readRegistry(root: string): Promise<Result<ContextsRegistry>> {
-  const raw = await readJsonStrict(contextsRegistryFile(root))
-  if (raw.ok) return parseRegistry(raw.value)
-  if (raw.error.code !== 'not-found') return raw
-
-  const seeded = seededRegistry(newId)
-  await writeJson(contextsRegistryFile(root), seeded)
-  return ok(seeded)
-}
-
 /** The registry IS Context identity, so a nexus without one has no Contexts and no way to mint the first — every create reads it strictly and fails on a missing file. */
 export async function ensureContextsRegistry(root: string): Promise<void> {
-  await readRegistry(root)
+  const raw = await readJsonStrict(contextsRegistryFile(root))
+  if (raw.ok || raw.error.code !== 'not-found') return
+  await writeJson(contextsRegistryFile(root), seededRegistry(newId))
 }
 
 export async function readRegistryStrict(root: string): Promise<Result<ContextsRegistry>> {

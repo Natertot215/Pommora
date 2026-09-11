@@ -272,6 +272,19 @@ describe('option replay', () => {
   })
 })
 
+describe('an unreadable registry holds the record', () => {
+  it('a delete record does not sweep when the registry cannot be read', async () => {
+    const root = await seedNexus()
+    await openSession(root)
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await writeFile(join(root, '.nexus', 'properties.json'), '{nope')
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toContain('Stage: Draft')
+    expect(await page(root, 'B')).toContain('Stage: Draft')
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+  })
+})
+
 describe('unreadable holders hold the record', () => {
   it('a delete that cannot read one holder keeps its record, and the replay heals it later', async () => {
     const root = await seedNexus()

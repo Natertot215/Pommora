@@ -1,6 +1,6 @@
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { valueOr } from '../Contract/result'
-import { readJsonObject, readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { isPlainObject } from './propertyValue'
 import { propertyDefinition, type PropertyDefinition } from './properties'
@@ -30,10 +30,14 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   return { registry: { order, defs }, unparsed }
 }
 
+async function readRegistryObject(root: string): Promise<Record<string, unknown>> {
+  const read = await readJsonStrict(registryPath(root))
+  if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
+  return valueOr(read, {})
+}
+
 export async function readRegistry(root: string): Promise<RegistryFile> {
-  const obj = await readJsonObject(registryPath(root))
-  if (obj === null) return { order: [], defs: {} }
-  return normalizeRegistry(obj).registry
+  return normalizeRegistry(await readRegistryObject(root)).registry
 }
 
 export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
@@ -59,9 +63,7 @@ export function mutateRegistry<T>(
   fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
 ): Promise<T> {
   return machine().lock(registryPath(root), async () => {
-    const read = await readJsonStrict(registryPath(root))
-    if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
-    const { registry, unparsed } = normalizeRegistry(valueOr(read, {}))
+    const { registry, unparsed } = normalizeRegistry(await readRegistryObject(root))
     const { next, result } = fn(registry)
     if (next) {
       const defs: Record<string, unknown> = { ...next.defs }

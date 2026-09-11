@@ -26,6 +26,13 @@ describe('propertiesRegistry', () => {
     expect(await readRegistry(root)).toEqual({ order: [], defs: {} })
   })
 
+  it('refuses an unreadable file rather than answering "no properties"', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(join(root, '.nexus', 'properties.json'), '{nope')
+    await expect(readRegistry(root)).rejects.toThrow()
+    await expect(mutateRegistry(root, () => ({ result: undefined }))).rejects.toThrow()
+  })
+
   it('round-trips a registry written through the mutation chain', async () => {
     const reg = {
       order: ['prop_b', 'prop_a'],
