@@ -154,7 +154,6 @@
 - `58152ac5a` — feat(pommora): carry the device in the app config
 - `d06635c48` — feat(pommora): add the keychain-backed secret store
 - `3adf2ecf1` — docs(pommora): state the type-only gate's mechanism precisely
-- `7ca135851` — docs(planning): the name refusals the checklist tracked now exist, Windows-gated
 - `9e2a89efb` — docs(pommora): fold the Sync workspace into the rules and guidelines
 - `ff4395dad` — feat(sync): add the canonical signing string and its pinned vectors
 - `38d1b479f` — feat(sync): declare the type-only wire contract
