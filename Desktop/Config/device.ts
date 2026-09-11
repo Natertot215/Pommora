@@ -1,6 +1,6 @@
 // One Ed25519 key per install: the public half, its fingerprint, and the machine's name in
 // pommora.json, the PKCS8 private half in the secret store. The key exists in this process as a
-// non-extractable CryptoKey, so nothing outside this module can read it back out.
+// CryptoKey this module never hands out.
 
 import { hostname } from 'node:os'
 import type { HostDevice } from '@pommora/core/Contract/handlers'
