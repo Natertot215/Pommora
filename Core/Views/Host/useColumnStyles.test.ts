@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { styleFor } from './useColumnStyles'
+import { mergeStyleRecords, styleFor } from './useColumnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { savedView, type SavedView } from '@pommora/core/Views/views'
 
@@ -79,5 +79,23 @@ describe('styleFor', () => {
     expect(styleFor('prop_m', withModified, view({}), 'dayMonthYear').date_format).toBe(
       'dayMonthYear',
     )
+  })
+})
+
+describe('mergeStyleRecords', () => {
+  it('folds per-KEY — a partial override never wipes a saved sibling key', () => {
+    const out = mergeStyleRecords(
+      { a: { look: 'compact', date_format: 'short' } },
+      { a: { time_format: 'twelveHour' } },
+    )
+    expect(out.a).toEqual({ look: 'compact', date_format: 'short', time_format: 'twelveHour' })
+  })
+
+  it('keeps untouched columns and lets the override key win', () => {
+    const out = mergeStyleRecords(
+      { a: { look: 'standard' }, b: { look: 'checkbox' } },
+      { a: { look: 'compact' } },
+    )
+    expect(out).toEqual({ a: { look: 'compact' }, b: { look: 'checkbox' } })
   })
 })

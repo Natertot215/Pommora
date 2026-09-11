@@ -3,7 +3,6 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { GroupBand, resolveBandHead } from './GroupBand'
-import { bandShowsAdd } from './cardsBand'
 import { useBandDrag } from './BandDnd'
 import type { ValueContext } from '../../Properties/valueContext'
 import { showEntityMenu } from '../../Interface/Menus/entityMenuActions'
@@ -63,7 +62,7 @@ export function ViewGroupBand({
       glyph={glyph}
       collapsed={collapsed}
       onToggle={onToggle}
-      showAdd={bandShowsAdd(group.kind)}
+      showAdd={group.kind === 'structural-set'}
       onAdd={onAdd}
       subBand={group.bucket !== undefined}
       indent={indent}
