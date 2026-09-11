@@ -35,7 +35,9 @@ The host answers one `menu` channel, and `menu.ts` is the one popper behind it: 
 
 ### Config
 
-`Desktop/Config/appConfig.ts` reads and writes `pommora.json` in the app's own support folder — the last Nexus opened, the recent list, and the trash mode. It belongs to the app rather than to any Nexus, so it holds no matter which one is open. `interfaceScale.ts` maps the Interface Scale setting onto Electron's zoom factor.
+`Desktop/Config/appConfig.ts` reads and writes `pommora.json` in the app's own support folder — the last Nexus opened, the recent list, the trash mode, and the device. It belongs to the app rather than to any Nexus, so it holds no matter which one is open. `interfaceScale.ts` maps the Interface Scale setting onto Electron's zoom factor.
+
+`secrets.ts` holds the values the config must not carry in the clear: `secrets.json` sits beside `pommora.json` and each value is encrypted by the OS keychain through Electron's `safeStorage`, so the config file itself stays hand-readable. `device.ts` mints one Ed25519 key per install through WebCrypto — the public half, its SHA-256 fingerprint as the device id, and the machine's hostname go into `pommora.json`, the PKCS8 private half into the secret store, and the key lives on in the host process as a non-extractable `CryptoKey`. A config naming a key the secret store no longer holds is a lost identity: the host reports it once and mints again. The host hands the result to Core as two `HostContext` members, `device` — id, public key, name, `sign`, and `rename` — and `transport`, which sends one HTTP request over Electron's `net.fetch` and answers with the status and body. The private key never leaves the host; Core sees a base64url signature.
 
 ### Packaging
 
