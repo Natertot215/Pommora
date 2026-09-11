@@ -38,6 +38,11 @@ describe('createFolderEntity', () => {
     expect((await createFolderEntity(root, 'collection', '..')).ok).toBe(false)
     expect((await createFolderEntity(root, 'collection', '   ')).ok).toBe(false)
   })
+
+  it('rejects a title carrying a period, which reads as a file and can shadow a config leaf', async () => {
+    expect((await createFolderEntity(root, 'collection', 'Q3.2025')).ok).toBe(false)
+    expect((await createFolderEntity(root, 'set', 'crops.json')).ok).toBe(false)
+  })
 })
 
 describe('renameFolderEntity', () => {
