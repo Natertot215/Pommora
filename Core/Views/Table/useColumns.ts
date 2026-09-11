@@ -252,7 +252,7 @@ export function useColumns(host: ViewHostApi) {
     return src && src.id === colDrag.id
       ? { from: colDrag.from, to: colDrag.to, width: colWidth(colDrag.from) }
       : null
-  }, [colDrag, columns])
+  }, [colDrag, columns, widthByCol, collapsing])
 
   const reflowWidth = columns.reduce((sum, _c, i) => sum + colWidth(i), 0)
   reflowRef.current = reflowWidth
@@ -344,12 +344,9 @@ export function useColumns(host: ViewHostApi) {
       column_alignments: { ...liveView.column_alignments, ...alignOverride, [id]: align },
     })
   }
-  /** The style half of any column menu — false when the action belongs to the caller. */
-  const runStyleAction = (id: string, action: string): boolean => {
+  const runStyleAction = (id: string, action: string): void => {
     const parsed = parseStyleAction(action)
-    if (!parsed) return false
-    setStylePatch(id, parsed.key, parsed.value)
-    return true
+    if (parsed) setStylePatch(id, parsed.key, parsed.value)
   }
   const openHeaderMenu = async (
     id: string,

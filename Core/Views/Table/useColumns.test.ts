@@ -10,15 +10,17 @@ import {
   widthFor,
 } from './useColumns'
 
-describe('column widths', () => {
-  const schema: PropertyDefinition[] = [
-    { id: 'prop_status', name: 'Status', type: 'status' },
-    { id: 'prop_select', name: 'Tag', type: 'select' },
-    { id: 'prop_multi', name: 'Tags', type: 'multi_select' },
-    { id: 'prop_n', name: 'Count', type: 'number' },
-    { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  ]
+const schema: PropertyDefinition[] = [
+  { id: 'prop_status', name: 'Status', type: 'status' },
+  { id: 'prop_select', name: 'Tag', type: 'select' },
+  { id: 'prop_multi', name: 'Tags', type: 'multi_select' },
+  { id: 'prop_n', name: 'Count', type: 'number' },
+  { id: 'prop_done', name: 'Done', type: 'checkbox' },
+  { id: 'prop_url', name: 'Link', type: 'url' },
+  { id: 'prop_date', name: 'Due', type: 'datetime' },
+]
 
+describe('column widths', () => {
   describe('widthFor', () => {
     it('keys reserved columns by their declared type', () => {
       expect(widthFor(RESERVED_PROPERTY_ID.title, schema).default).toBe(280)
@@ -82,14 +84,6 @@ describe('column widths', () => {
 })
 
 describe('column alignment', () => {
-  const schema: PropertyDefinition[] = [
-    { id: 'prop_status', name: 'Status', type: 'status' },
-    { id: 'prop_multi', name: 'Tags', type: 'multi_select' },
-    { id: 'prop_n', name: 'Count', type: 'number' },
-    { id: 'prop_url', name: 'Link', type: 'url' },
-    { id: 'prop_date', name: 'Due', type: 'datetime' },
-  ]
-
   function view(over: Partial<SavedView>): SavedView {
     return savedView.parse({
       id: 'view_x',
