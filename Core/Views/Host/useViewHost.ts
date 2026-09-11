@@ -30,7 +30,7 @@ import { resolveView } from '../Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride, useContainerValues } from './useValuesEpoch'
-import { mergeStyleRecords, styleFor } from './useColumnStyles'
+import { mergeStyleRecords, useStyleFor } from './useColumnStyles'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
@@ -311,11 +311,11 @@ export function useViewHost(
     return contextOptionsForSpaces(column.id, tree)
   }
 
-  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
+  const styleFor = useStyleFor()
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
     const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
     const current = resolveFieldValue(row, column.id, schema)
-    const style = styleFor(column.id, schema, liveView, nexusDateFormat)
+    const style = styleFor(column.id, schema, liveView)
     const type = declaredType(column.id, schema, contextIds)
     if (type === 'datetime')
       return { kind: 'datetime', def, current, dateFormat: style.date_format }

@@ -46,10 +46,10 @@ export function useColumnStyleMap(
   host: Pick<ViewHostApi, 'columns' | 'schema' | 'liveView'>,
 ): Map<string, ColumnStyle> {
   const { columns, schema, liveView } = host
-  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
+  const styleFor = useStyleFor()
   return useMemo(
-    () => new Map(columns.map((c) => [c.id, styleFor(c.id, schema, liveView, nexusDateFormat)])),
-    [columns, schema, liveView, nexusDateFormat],
+    () => new Map(columns.map((c) => [c.id, styleFor(c.id, schema, liveView)])),
+    [columns, schema, liveView, styleFor],
   )
 }
 
