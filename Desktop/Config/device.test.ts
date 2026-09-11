@@ -1,19 +1,22 @@
 import { createHash, createPublicKey, verify } from 'node:crypto'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as appConfig from './appConfig'
 import { readAppConfig } from './appConfig'
 import { ensureDevice } from './device'
-import { KEYCHAIN_UNAVAILABLE } from './secrets'
 
-const keychain = vi.hoisted(() => ({ available: true }))
+const keychain = vi.hoisted(() => ({ available: true, denyOnce: false }))
 vi.mock('electron', () => ({
   safeStorage: {
     isEncryptionAvailable: () => keychain.available,
     encryptString: (s: string) => Buffer.from(`enc:${s}`),
     decryptString: (b: Buffer) => {
+      if (keychain.denyOnce) {
+        keychain.denyOnce = false
+        throw new Error('denied')
+      }
       if (!keychain.available) throw new Error('unavailable')
       return b.toString().slice(4)
     },
@@ -27,6 +30,7 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
   keychain.available = true
+  keychain.denyOnce = false
   vi.restoreAllMocks()
 })
 
@@ -85,11 +89,30 @@ describe('ensureDevice', () => {
     const first = await ensureDevice(dir)
     keychain.available = false
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    await expect(ensureDevice(dir)).rejects.toThrow(KEYCHAIN_UNAVAILABLE)
+    await expect(ensureDevice(dir)).rejects.toThrow('unavailable')
     keychain.available = true
     const second = await ensureDevice(dir)
     expect(second.id).toBe(first.id)
     expect(second.publicKey).toBe(first.publicKey)
+  })
+
+  it('keeps the key and the identity across a launch that could not decrypt it', async () => {
+    const first = await ensureDevice(dir)
+    const before = createHash('sha256')
+      .update(readFileSync(join(dir, 'secrets.json')))
+      .digest('hex')
+    const reported = vi.spyOn(console, 'error').mockImplementation(() => {})
+    keychain.denyOnce = true
+    await expect(ensureDevice(dir)).rejects.toThrow('denied')
+    expect(reported).not.toHaveBeenCalled()
+    const second = await ensureDevice(dir)
+    expect(second.id).toBe(first.id)
+    expect(second.publicKey).toBe(first.publicKey)
+    expect(
+      createHash('sha256')
+        .update(readFileSync(join(dir, 'secrets.json')))
+        .digest('hex'),
+    ).toBe(before)
   })
 
   it('re-mints after a crash between the key write and the config write', async () => {
