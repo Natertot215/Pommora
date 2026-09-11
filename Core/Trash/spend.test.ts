@@ -283,7 +283,7 @@ describe('listBundles — what the trash offers', () => {
   })
 
   it('the record shares a folder with the artifact and can never collide with it', async () => {
-    // The one name that would collide if the record wore a plain one. `invalidName` lets a user choose it; the record's `_` prefix is what keeps the two namespaces apart.
+    // The one name that would collide if the record wore a plain one. A folder arriving on disk from outside the app can carry it; the record's `_` prefix is what keeps the two namespaces apart.
     await mkdir(join(root, 'record.json'), { recursive: true })
     await writeFile(
       join(root, 'record.json', '_pagecollection.json'),
