@@ -5,11 +5,13 @@ import { stat } from 'node:fs/promises'
 import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashRow'
 import { TRASH_DIR } from '@pommora/core/Paths/nexusPaths'
+import type { SyncDevice } from '@pommora/core/Sync/contract'
 
-interface AppConfig {
+export interface AppConfig {
   lastNexusPath?: string
   recents?: string[]
   trashMode?: TrashMode
+  device?: SyncDevice
 }
 
 const FILE = 'pommora.json'
@@ -18,6 +20,15 @@ export const trashModeOf = (config: AppConfig): TrashMode => config.trashMode ??
 
 export function appConfigPath(userDataDir: string): string {
   return join(userDataDir, FILE)
+}
+
+function readDevice(v: unknown): SyncDevice | undefined {
+  if (typeof v !== 'object' || v === null) return undefined
+  const { id, publicKey, name } = v as Record<string, unknown>
+  if (typeof id !== 'string' || !id) return undefined
+  if (typeof publicKey !== 'string' || !publicKey) return undefined
+  if (typeof name !== 'string' || !name) return undefined
+  return { id, publicKey, name }
 }
 
 export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
@@ -29,6 +40,7 @@ export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
       ? obj.recents.filter((p): p is string => typeof p === 'string')
       : undefined,
     trashMode: obj.trashMode === 'system' || obj.trashMode === 'nexus' ? obj.trashMode : undefined,
+    device: readDevice(obj.device),
   }
 }
 
