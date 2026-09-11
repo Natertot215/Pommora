@@ -6,7 +6,8 @@ import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, type SavedView } from '@pommora/core/Views/views'
 import { useActiveView } from './useActiveView'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+import { installViewEnvironment } from '../../Testing/viewHarness'
+installViewEnvironment()
 
 const schema: PropertyDefinition[] = [{ id: 'prop_status', name: 'Status', type: 'status' }]
 

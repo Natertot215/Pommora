@@ -8,14 +8,8 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { FilterFrame } from './FilterFrame'
 import { stubDialer } from '../../vitest.setup'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
+import { installViewEnvironment } from '../../Testing/viewHarness'
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',

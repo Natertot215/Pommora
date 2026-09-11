@@ -6,30 +6,18 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
-import {
-  firePointer,
-  pressEscape,
-  stubPointerCapture,
-  stubRect,
-} from '@pommora/uix/Interactions/pointerHarness'
+import { firePointer, pressEscape, stubRect } from '@pommora/uix/Interactions/pointerHarness'
+import { installViewEnvironment, renderView, settle } from '../../Testing/viewHarness'
 import { useSession } from '../../Session/store'
 import { ViewHost } from '../Host/ViewHost'
-import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
+import { propsAtRoot } from '../../Testing/pageValues'
+import { valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { entityMenuItems } from '@pommora/core/Actions/entityMenu'
 import { containerCreators } from '@pommora/core/Nexus/mutateRequest'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
-stubPointerCapture()
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -168,10 +156,7 @@ afterEach(() => {
 })
 
 const mountTable = async (source: CollectionNode): Promise<void> => {
-  await act(async () => {
-    root.render(<ViewHost source={source} />)
-  })
-  await act(async () => {})
+  await renderView(root, source)
   stubBandRects()
 }
 
@@ -199,9 +184,7 @@ const drop = async (): Promise<void> => {
     firePointer(window, 'pointerup')
   })
   // A committed drop arms the one-tick post-drag click swallower — flush it so a test's follow-up click isn't eaten.
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 1))
-  })
+  await settle()
 }
 
 const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView

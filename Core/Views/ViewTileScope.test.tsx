@@ -16,14 +16,8 @@ import {
   type ViewTileScopeValue,
 } from './ViewTileScope'
 import { stubDialer } from '../vitest.setup'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
+import { installViewEnvironment } from '../Testing/viewHarness'
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',

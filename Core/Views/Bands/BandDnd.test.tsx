@@ -4,18 +4,12 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
-import {
-  firePointer,
-  pressEscape,
-  stubPointerCapture,
-  stubRect,
-} from '@pommora/uix/Interactions/pointerHarness'
+import { firePointer, pressEscape, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import type { Band } from './bandDndModel'
 import { BandDnd, useBandDrag, type BandDrop } from './BandDnd'
 import { ViewGroupBand } from './ViewGroupBand'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-stubPointerCapture()
+import { installViewEnvironment } from '../../Testing/viewHarness'
+installViewEnvironment()
 
 // A[A1], B — the glyph span is the drag surface, the header div is the measured band row.
 const BANDS: Band[] = [

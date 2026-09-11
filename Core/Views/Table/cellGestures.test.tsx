@@ -8,18 +8,13 @@ import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { useSession } from '../../Session/store'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { ViewHost } from '../Host/ViewHost'
-import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
+import { propsAtRoot } from '../../Testing/pageValues'
+import { valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
+import { installViewEnvironment, renderView, settle } from '../../Testing/viewHarness'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
+installViewEnvironment()
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -183,10 +178,7 @@ afterEach(() => {
 })
 
 const mountTable = async (source: CollectionNode): Promise<void> => {
-  await act(async () => {
-    root.render(<ViewHost source={source} />)
-  })
-  await act(async () => {})
+  await renderView(root, source)
 }
 
 const statusCell = (): HTMLElement => {
@@ -222,9 +214,7 @@ describe('status cell gestures', () => {
     await act(async () => {
       option?.click()
     })
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 450))
-    })
+    await settle(450)
     expect(pickerButtons().some((b) => b.textContent?.includes('Not started'))).toBe(false)
   })
 
@@ -453,6 +443,18 @@ describe('open actions + row-click narrowing', () => {
       row?.click()
     })
     expect(selectSpy).not.toHaveBeenCalled()
+  })
+
+  it('a ⌘-click on the title opens the page in a new tab', async () => {
+    await mountTable(sourceWith())
+    const title = host.querySelector<HTMLElement>('.data-cell')
+    await act(async () => {
+      title?.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }))
+    })
+    expect(selectSpy).toHaveBeenCalledExactlyOnceWith(
+      { kind: 'page', id: 'p1', path: 'Col/Page One.md' },
+      { newTab: true },
+    )
   })
 
   it('url cell click opens externally through the sanctioned IPC, not navigation', async () => {

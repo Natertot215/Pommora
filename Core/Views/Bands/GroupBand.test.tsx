@@ -9,7 +9,8 @@ import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { GroupConfig, SavedView } from '@pommora/core/Views/views'
 import type { ValueContext } from '../../Properties/valueContext'
 import { resolveBandHead } from './GroupBand'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+import { installViewEnvironment } from '../../Testing/viewHarness'
+installViewEnvironment()
 
 const schema: PropertyDefinition[] = [
   {
