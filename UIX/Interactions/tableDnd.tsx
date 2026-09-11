@@ -10,7 +10,7 @@ import { nearestByTop, useInsertionDrag } from './insertionDrag'
 import { type MeasuredRow, nextOrder, slotInGroup } from './reorderModel'
 import { DROP_LINE_INSET } from './shared'
 
-type Slot = { lineY: number; left: number; width: number; commit: () => void }
+type Slot = { lineY: number; left: number; width: number; group: string; beforeId: string | null }
 type TableRow = MeasuredRow & { left: number; contentRight: number; group: string }
 type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number }
 
@@ -27,9 +27,7 @@ export function TableRowDnd({
   canReorderWithin,
   canReassign,
   canRelocate = false,
-  reorderTo,
-  reassign,
-  relocate = () => {},
+  onDrop,
   children,
 }: {
   rows: { id: string; groupKey: string }[]
@@ -38,10 +36,8 @@ export function TableRowDnd({
   canReassign: boolean
   /** True under plain location grouping: the bands ARE folders, so a cross-band drop MOVES the page. */
   canRelocate?: boolean
-  /** The group key maps a structural group to its on-disk container for the page_order write. */
-  reorderTo: (orderIds: string[], groupKey: string, activeId: string) => void
-  reassign: (activeId: string, targetGroupKey: string) => void
-  relocate?: (activeId: string, targetGroupKey: string) => void
+  /** `beforeId` is null at the target group's end. The caller routes a same-group drop to a reorder and a cross-group one to a relocate or a reassign. */
+  onDrop: (activeId: string, toGroup: string, beforeId: string | null) => void
   children: ReactNode
 }): React.JSX.Element {
   const els = useRef(new Map<string, HTMLElement>())
@@ -78,25 +74,24 @@ export function TableRowDnd({
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
       const near = nearestByTop(s.rows, point.y)
+      const group = near.group
+      const crossing = group !== activeGroup
+      if (crossing ? !canRelocate && !canReassign : !canReorderWithin) return null
+      const groupOrder = rows.flatMap((r) => (r.groupKey === group ? [r.id] : []))
+      const { beforeId } = slotInGroup(groupOrder, near, point.y, id)
+      // A slot reproducing the standing order is a noop — no line, no commit.
+      if (!crossing && nextOrder(groupOrder, id, beforeId).every((x, i) => x === groupOrder[i]))
+        return null
       const above = point.y < near.mid
-      const targetGroup = near.group
-      const lineY = (above ? near.top : near.bottom) - s.boxTop
-      const left = near.left - s.boxLeft + DROP_LINE_INSET
-      const width = near.contentRight - near.left - DROP_LINE_INSET * 2
-
-      if (targetGroup === activeGroup) {
-        if (!canReorderWithin) return null
-        const order = rows.map((x) => x.id)
-        const next = nextOrder(order, id, slotInGroup(order, near, point.y, id).beforeId)
-        // A slot reproducing the standing order is a noop — no line, no commit.
-        if (next.every((x, i) => x === order[i])) return null
-        return { lineY, left, width, commit: () => reorderTo(next, activeGroup, id) }
+      return {
+        lineY: (above ? near.top : near.bottom) - s.boxTop,
+        left: near.left - s.boxLeft + DROP_LINE_INSET,
+        width: near.contentRight - near.left - DROP_LINE_INSET * 2,
+        group,
+        beforeId,
       }
-      if (canRelocate) return { lineY, left, width, commit: () => relocate(id, targetGroup) }
-      if (!canReassign) return null
-      return { lineY, left, width, commit: () => reassign(id, targetGroup) }
     },
-    commit: (_id, slot) => slot.commit(),
+    commit: (id, slot) => onDrop(id, slot.group, slot.beforeId),
     lineFor: (slot) => ({ top: slot.lineY, left: slot.left, width: slot.width, right: 'auto' }),
     label: () => 'row',
     ghost: 'none',
