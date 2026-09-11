@@ -16,9 +16,9 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 
 **Nexus**
 
-The Nexus heading holds the sync identity: This Device, whose name is editable and whose hint is the first twelve characters of the device fingerprint; Nexus ID, the identifier of the open Nexus; Server, an editable address with Connect, and with Refresh and Disconnect once a binding exists; and, when the binding is approved, one row per device carrying its name, fingerprint, and state, with Approve on a pending device and Revoke on an approved one. This device's own row carries neither, since the server refuses a self-revoke.
+The Nexus heading holds the sync identity: This Device, whose name is editable and whose hint is the first twelve characters of the device fingerprint; Nexus ID, the identifier of the open Nexus; Server, an editable address with Connect until the binding is approved, and with Refresh and Disconnect once a binding exists; and, when the binding is approved, one row per device carrying its name, fingerprint, and state, with Approve on a pending device and Revoke on an approved one. This device's own row carries neither, since the server refuses a self-revoke.
 
-The heading reads three binding states. Unbound shows the address field and Connect alone. Approved captions the Server row "Approved" and lists the devices. Awaiting approval captions it "Awaiting approval from an approved device" and lists nothing, with Connect still reachable, since a revoked device reads as pending and re-registers by connecting again. An unreachable server captions the failure. None of these rows writes a `personalization` key.
+The heading reads the unbound state and three binding states. Unbound shows the address field and Connect alone. Approved captions the Server row "Approved" and lists the devices. Awaiting approval captions it "Awaiting approval from an approved device" and lists nothing, with Connect still reachable, since a revoked device reads as pending and re-registers by connecting again. An unreachable server captions the failure. None of these rows writes a `personalization` key.
 
 #### Interface
 
