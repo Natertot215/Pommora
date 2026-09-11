@@ -25,7 +25,6 @@ type SortableZoneProps = {
   onReorder?: (activeId: string, overId: string) => void
   disabled?: boolean
   axis?: 'x' | 'y'
-  itemRole?: string | null
   getItemLabel?: (id: string) => string
   group?: string
   className?: string

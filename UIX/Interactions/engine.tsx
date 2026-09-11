@@ -69,7 +69,6 @@ type ZoneValue = {
   dropState: DropState
   keyboard: boolean
   disabled: boolean
-  itemRole: string | null
   register: (id: string, el: HTMLElement | null) => void
   begin: (id: string, e: ReactPointerEvent) => void
   liftKeyboard: (id: string) => void
@@ -81,7 +80,6 @@ type ZoneProps = {
   onReorder?: (activeId: string, overId: string) => void
   disabled?: boolean
   axis?: 'x' | 'y'
-  itemRole?: string | null
   getItemLabel?: (id: string) => string
   children: ReactNode
 }
@@ -91,7 +89,6 @@ export function Zone({
   onReorder,
   disabled = false,
   axis,
-  itemRole = 'button',
   getItemLabel,
   children,
 }: ZoneProps): React.JSX.Element {
@@ -360,12 +357,11 @@ export function Zone({
       dropState,
       keyboard,
       disabled,
-      itemRole,
       register,
       begin,
       liftKeyboard,
     }),
-    [ids, activeId, overIndex, rects, dropState, keyboard, disabled, itemRole],
+    [ids, activeId, overIndex, rects, dropState, keyboard, disabled],
   )
   return <ZoneCtx.Provider value={value}>{children}</ZoneCtx.Provider>
 }
@@ -392,7 +388,6 @@ export function useZoneItem(id: string): DragItem {
     dropState,
     keyboard,
     disabled,
-    itemRole,
     register,
     begin,
     liftKeyboard,
@@ -435,11 +430,11 @@ export function useZoneItem(id: string): DragItem {
           liftKeyboard(id)
         }
       },
-      role: itemRole ?? undefined,
+      role: 'button',
       tabIndex: disabled ? -1 : 0,
       'aria-roledescription': 'sortable',
       'aria-describedby': INSTRUCTIONS_ID,
-      'aria-pressed': itemRole != null && isDragging ? true : undefined,
+      'aria-pressed': isDragging || undefined,
       'aria-disabled': disabled || undefined,
     },
     isDragging,

@@ -30,8 +30,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     onCreated: { current: () => {} },
   }).current
   const host = useViewHost(source, VIEW_KINDS[view.type].flat, upward)
-  // Cards' set cards render independently of the pipeline, so a cards view with Sets present always mounts.
-  const setChrome = view.type === 'cards' && (source.sets?.length ?? 0) > 0
+  const setChrome = VIEW_KINDS[view.type].setCards && (source.sets?.length ?? 0) > 0
   if (!host) return <div className="view-empty">Loading…</div>
   if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
   return (
