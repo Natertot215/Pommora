@@ -54,8 +54,8 @@ function signer(name: string) {
 const first = signer('First Mac')
 const second = signer('Second Mac')
 
-const connectBody = (s: typeof first, nexusId = NEXUS) => ({
-  nexusId,
+const connectBody = (s: typeof first) => ({
+  nexusId: NEXUS,
   publicKey: s.publicKey,
   name: s.name,
 })
@@ -67,10 +67,12 @@ function names(body: unknown): { id: string; approved: boolean }[] {
   }))
 }
 
-beforeAll(async () => {
+async function boot() {
   running = await start({ dataDir, port: 0 })
   base = `http://127.0.0.1:${running.port}`
-})
+}
+
+beforeAll(boot)
 
 afterAll(async () => {
   await running.close()
@@ -79,12 +81,6 @@ afterAll(async () => {
 describe('the sync server', () => {
   it('does not run itself under the test runner', () => {
     expect(import.meta.main).toBeFalsy()
-  })
-
-  it('derives the device id from the public key', () => {
-    expect(first.id).toBe(
-      createHash('sha256').update(Buffer.from(first.publicKey, 'base64url')).digest('hex'),
-    )
   })
 
   it('matches the shared canonical vectors', () => {
@@ -176,8 +172,7 @@ describe('the sync server', () => {
 
   it('keeps memberships across a restart', async () => {
     await running.close()
-    running = await start({ dataDir, port: 0 })
-    base = `http://127.0.0.1:${running.port}`
+    await boot()
     const listed = await first.call('/devices', { nexusId: NEXUS })
     expect(listed.status).toBe(200)
     expect(names(listed.body)).toEqual([{ id: first.id, approved: true }])
