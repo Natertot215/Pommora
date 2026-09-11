@@ -30,18 +30,6 @@ export function parseContextKey(key: string): string | null {
     : null
 }
 
-export function invalidBasename(name: string): boolean {
-  const trimmed = name.trim()
-  return (
-    !trimmed ||
-    name.includes('/') ||
-    name.includes('\\') ||
-    name.includes('\0') || // a NUL byte throws in fs calls — reject as a clean invalid-name
-    trimmed === '.' ||
-    trimmed === '..'
-  )
-}
-
 export function seededRegistry(mintId: () => string): ContextsRegistry {
   return {
     contexts: [
