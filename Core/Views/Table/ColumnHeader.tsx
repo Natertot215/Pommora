@@ -1,5 +1,6 @@
 import { cx } from '@pommora/uix/Utilities/cx'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
+import { readZoom } from '@pommora/uix/Utilities/zoom'
 import type { ColumnAlign } from '@pommora/core/Views/views'
 
 /** The resize strip stops propagation so a resize never starts a reorder; its pointer delta is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
@@ -40,8 +41,8 @@ export function ColumnHeader({
     e.preventDefault()
     e.stopPropagation()
     const grip = e.currentTarget
-    const cell = grip.closest('.col-header')
-    const zoom = (cell && cell.getBoundingClientRect().width / width) || 1
+    const grid = grip.closest('.table-grid')
+    const zoom = grid ? readZoom(grid) : 1
     const startX = e.clientX
     let last = width
     beginGesture({
