@@ -1,0 +1,46 @@
+## Sync Groundwork — Provider Research
+
+> **Standing (09-10-2026):** evidence for the Accounts Prospect in [[Sync Groundwork — Decision Log]]. The day-one identity model is device-key with no account; this annex records what a hosted identity provider would cost and require if that layer lands later. Verified from vendor pricing and docs pages on 09-10-2026; the stale-risk section names what could not be sourced.
+
+### Cross-Cutting Constraints
+
+- **RFC 8252** binds native apps: no embedded user-agents for authorization, PKCE mandatory for public clients, redirect by private-use scheme, claimed https, or loopback.
+- **Google's embedded-webview block** never touches Pommora directly; the provider's hosted page talks to Google. The only implication is opening that page in the system browser (`shell.openExternal`) or SFSafariViewController / ASWebAuthenticationSession, never a `BrowserWindow`.
+- **Apple is mandatory once Google is offered.** App Store Guideline 4.8 requires an equivalent privacy-preserving login beside any third-party login. Sign in with Apple as a web provider needs a Services ID, which needs the Apple Developer Program (99 USD/year), which the iOS app needs regardless.
+- **Bring your own Google client and Apple Services ID** on every provider; shared developer keys are dev-only or capped.
+- **No vendor ships a Capacitor plugin.** The working path is `@capacitor/browser` plus `@capacitor/app`'s `appUrlOpen` with hand-rolled PKCE (about forty lines); ASWebAuthenticationSession needs a native plugin.
+- **Passkeys never migrate.** A credential is scoped to its Relying Party ID, so passkeys registered on a vendor subdomain die on a vendor switch; a custom domain is a first-week decision.
+- **Token storage on desktop:** Electron `safeStorage` backs onto macOS Keychain, Windows DPAPI, Linux libsecret. Custom-scheme callbacks arrive via `app.setAsDefaultProtocolClient` plus `open-url` (macOS) or `second-instance` (Windows, Linux).
+
+### Comparison
+
+| Provider | Free Tier / First Paid | Native Desktop, Plain PKCE | iOS | Passkeys | Hosted Login Page | Token / JWKS / Refresh | Export | Electron Blocker |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Auth0** | 25,000 MAU; Essentials $35/mo | Generic RFC 8252 guidance, no Electron guide; public clients need no secret | Ionic/Capacitor quickstart on `@capacitor/browser` | Yes, free | Yes, Universal Login | RS256, no ES256; JWKS at `/.well-known/jwks.json`; rotation with reuse detection | Bulk export not on Free; password hashes by ticket, not on Free | Callback wildcards are subdomain-only; register a fixed loopback port or scheme |
+| **WorkOS AuthKit** | 1,000,000 MAU; then $2,500/mo per 1M | Public OAuth app, PKCE, `none` auth method | Official Swift SDK on ASWebAuthenticationSession | Yes, hosted UI only, custom domain required ($99/mo) | Yes | JWT; JWKS at `/oauth2/jwks`; rotating refresh | Users API plus identities endpoint | Loopback allowed in production by explicit exception |
+| **Clerk** | 50,000 MRU; Pro $25/mo | Public-client PKCE documented; non-https redirect URIs undocumented | Official Swift SDK | Yes, paid in production | Account Portal can't redirect to a native target; use `/oauth/authorize` | RS256; tokens 1 day; refresh never expires; JWKS on the frontend API | Cleanest: self-serve CSV with hashes | SDK sessions ride an httpOnly cookie, unusable from Electron; the OIDC path avoids it |
+| **Firebase Auth** | Free for email and social; Identity Platform Blaze free to 50,000 MAU | Not an OIDC authorization server: no `authorization_endpoint`; SDK or REST only | Official iOS SDK; no official Capacitor plugin | No | No | RS256; real JWKS exists; ID token 1h | Best: CLI export with scrypt hashes and salts | Web SDK sign-in throws on non-http origins; driving Google yourself is what the policy forbids |
+| **Kinde** | 10,500 MAU free, no card; Pro $25/mo | Official Electron guide: "Other native", `http://127.0.0.1:53180/callback`, S256, `shell.openExternal`, no secret | Official Swift SDK; custom scheme documented; no Capacitor docs | Yes, paid plan | Yes, mandatory, redirect-only | RS256 only; refresh 15 d rotating; scope is `offline`, not `offline_access` | Full NDJSON with identities and hashes | None; custom domain free |
+| **Descope** | 7,500 MAU; Pro $249/mo | Standard OIDC endpoints; OIDC Federated Apps GA | Official Swift SDK | Yes, but RP ID on a Descope host unless Pro | Yes, Auth Hosting App | RS256; rotation Pro+ | Search-users API; hashes by ticket | No `offline_access` in supported scopes; refresh for public clients unpublished |
+| **Stytch** | 10,000 MAU; then $0.20/MAU | Cleanest public-client spec: `none`, PKCE, loopback and custom schemes | iOS SDK in public beta | Login only, not signup | No, you host the authorize UI | RS256; id token 1h; refresh 3 months | Search-users export with provider subjects | You build and host the login and consent web app |
+| **Supabase Auth** | 50,000 MAU; free projects pause after a week idle; Pro $25/mo | OAuth 2.1 server in beta, public clients with PKCE | Official Swift SDK on ASWebAuthenticationSession | Experimental | No, at any tier | ES256/RS256/Ed25519; new projects RS256; no `id_token` in a normal session | Postgres tables, CSV via SQL | Free-project pausing is the operational hazard |
+
+### Node 24 Verification With No Dependency
+
+Confirmed empirically on v24.15.0: `createPublicKey({ key: jwk, format: 'jwk' })` plus `crypto.verify` verifies RS256 and ES256 JWTs and rejects tampered signatures; Firebase's live JWKS imports all four keys. ES256 needs `dsaEncoding: 'ieee-p1363'`, since JWT ECDSA signatures are raw `r || s` and the default is DER; without it verification returns false with no error. Global `fetch` is stable since v21 for the JWKS pull; honor the response's `cache-control`.
+
+### Recommendation
+
+Kinde, if the Accounts Prospect lands. It is the only provider with all of: a documented Electron loopback recipe, a documented iOS custom scheme, a free custom domain, and self-serve export including hashes. WorkOS's free tier is irrelevant at Pommora's scale and its custom-scheme support is undocumented; Auth0's free tier is the one you can't cleanly leave; Clerk carries two unverified items on its make-or-break path; Descope pairs an open refresh-token question with a $249/mo cliff. Concretely: app type "Other native", scope `openid profile email offline`, read `jwks_uri` from discovery, register an API and pass `audience` so the access token carries an `aud`, and buy the custom domain on day one so the passkey RP ID never moves.
+
+### Stale Risk
+
+- **Auth0:** RS256 as the default is not stated, only recommended; passkey GA status inferred.
+- **WorkOS:** signing algorithm never stated (read `alg` off the JWKS); custom-scheme redirect support has zero doc hits.
+- **Clerk:** loopback and custom-scheme acceptance undocumented; whether `/oauth/authorize` renders sign-in for an unauthenticated browser; refresh rotation.
+- **Firebase:** the Spark cap contradicts itself across two Google pages (3,000 DAU versus 50K MAU); auto-upgrade to Identity Platform unconfirmed.
+- **Kinde:** ASWebAuthenticationSession never named in the iOS docs; `/jwks` versus `/jwks.json` differs between docs and the Electron guide; an error string says only a `localhost` suffix works with http, against the guide's `127.0.0.1`; the passkey tier is "a paid plan" by elimination.
+- **Descope:** loopback acceptance; whether the token endpoint issues a refresh token to a public PKCE client; default lifetimes; provider subject ids in the export.
+- **Stytch:** S256 is prose-only in discovery; passkey tier inferred.
+- **Supabase:** RS256-by-default exists only in a changelog.
+- **Cross-cutting:** Apple's web sign-in docs don't themselves state the paid-membership prerequisite; it follows from the enrollment page and App Store distribution.

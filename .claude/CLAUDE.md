@@ -32,7 +32,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch, and hoist shared logic; duplication = debt, and repetition = regression.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
-- **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first. Any in-flight decisions must be disclosed as they’re being made.
+- **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 - **Don’t** waste time on screenshots, CDP driving, or DOM inspection to test something Nathan can see on his own — unless I’m asleep or specifically ask, don’t waste your efforts.
 - **Don’t** treat comments as authoritative — a constraint a comment claims isn’t a law, and change-scoping shouldn’t treat them as fact.

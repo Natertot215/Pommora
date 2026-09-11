@@ -36,6 +36,7 @@ Findings where the correct answer isn't established in the codebase — design a
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 - [ ] **Escape follows open order, not focus.** The dismissal stack pushes on open and never re-inserts, so raising a floating window on click (Escape then closing the focused window) needs an open-sequence number on each entry; the same machinery would keep a pinned glance's entry in place across a tab round-trip, where today it remounts on top of a window opened after it.
 - [ ] **`showError` versus `notifyError`.** Two error surfaces stand side by side and neither was made the other's; the store's `mutate` reports a failed write through `error:show`, and the notification label is its own path. One of them is the app's answer for a failed act.
+- [ ] **Database:** Move nexus.db and versions.db out of the Nexus folder entirely, into the app's own storage keyed by the Nexus ID? Then "never syncs" is a physical fact under any transport, the manifest needs no exception, and the user's folder holds no binary blobs
 
 
 #### II. Next-Feature Candidates
