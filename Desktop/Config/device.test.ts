@@ -6,12 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as appConfig from './appConfig'
 import { readAppConfig } from './appConfig'
 import { ensureDevice } from './device'
+import { KEYCHAIN_UNAVAILABLE } from './secrets'
 
+const keychain = vi.hoisted(() => ({ available: true }))
 vi.mock('electron', () => ({
   safeStorage: {
-    isEncryptionAvailable: () => true,
+    isEncryptionAvailable: () => keychain.available,
     encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (b: Buffer) => b.toString().slice(4),
+    decryptString: (b: Buffer) => {
+      if (!keychain.available) throw new Error('unavailable')
+      return b.toString().slice(4)
+    },
   },
 }))
 
@@ -21,6 +26,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
+  keychain.available = true
   vi.restoreAllMocks()
 })
 
@@ -73,6 +79,17 @@ describe('ensureDevice', () => {
     const second = await ensureDevice(dir)
     expect(second.id).not.toBe(first.id)
     expect(reported).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the identity across a launch the keychain refused', async () => {
+    const first = await ensureDevice(dir)
+    keychain.available = false
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(ensureDevice(dir)).rejects.toThrow(KEYCHAIN_UNAVAILABLE)
+    keychain.available = true
+    const second = await ensureDevice(dir)
+    expect(second.id).toBe(first.id)
+    expect(second.publicKey).toBe(first.publicKey)
   })
 
   it('re-mints after a crash between the key write and the config write', async () => {

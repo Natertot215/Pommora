@@ -48,7 +48,8 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
     └── _taskconfig.json
 
 // <app-support>                         | • Machine-specific; never syncs
-└── pommora.json                         | • Last-opened Nexus, recent Nexuses, trash mode, the device's public key, fingerprint, and name
+├── pommora.json                         | • Last-opened Nexus, recent Nexuses, trash mode, the device's public key, fingerprint, and name
+└── secrets.json                         | • The device's private key, keychain-encrypted
 ```
 
 Every sidecar's field shape is canonical in `Core/Nexus/schemas.ts`; every on-disk name both processes speak is in `Core/Paths/nexusPaths.ts`, and every absolute path main builds comes from `Core/Paths/paths.ts`.

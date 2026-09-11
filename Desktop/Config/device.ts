@@ -4,7 +4,7 @@ import { hostname } from 'node:os'
 import type { HostDevice } from '@pommora/core/Contract/handlers'
 import type { SyncDevice } from '@pommora/core/Sync/contract'
 import { readAppConfig, updateAppConfig } from './appConfig'
-import { getSecret, setSecret } from './secrets'
+import { getSecret, KEYCHAIN_UNAVAILABLE, secretsAvailable, setSecret } from './secrets'
 
 const SECRET = 'device-key'
 
@@ -14,6 +14,7 @@ async function fingerprintOf(raw: ArrayBuffer): Promise<string> {
 }
 
 async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: CryptoKey }> {
+  if (!secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
   const pair = await globalThis.crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
   if (!('privateKey' in pair)) throw new Error('Ed25519 generated no key pair.')
   const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
