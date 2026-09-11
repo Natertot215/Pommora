@@ -1,0 +1,28 @@
+{
+  "canonical": [
+    {
+      "method": "POST",
+      "path": "/devices",
+      "body": "",
+      "timestampMs": 1757462400000,
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical": "POST\n/devices\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\n1757462400000"
+    },
+    {
+      "method": "POST",
+      "path": "/connect",
+      "body": "{\"nexusId\":\"01JQZ\",\"name\":\"Nathan’s MacBook — café\"}",
+      "timestampMs": 1757462401234,
+      "bodySha256": "52734c6e2aa78391745018751eb419f26f6d4c66633862f0367390f3c5622079",
+      "canonical": "POST\n/connect\n52734c6e2aa78391745018751eb419f26f6d4c66633862f0367390f3c5622079\n1757462401234"
+    },
+    {
+      "method": "POST",
+      "path": "/approve",
+      "body": "line one\nline two",
+      "timestampMs": 1757462402500,
+      "bodySha256": "b6858b03a6cae635deeaeab09a74e598979b72c917cbfff0bb3fe2cd05111dbc",
+      "canonical": "POST\n/approve\nb6858b03a6cae635deeaeab09a74e598979b72c917cbfff0bb3fe2cd05111dbc\n1757462402500"
+    }
+  ]
+}
