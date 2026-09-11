@@ -9,6 +9,7 @@ How to run, test, and not break the app while working on it. For how the app its
 - **Killing the dev wrapper orphans the app.** `pkill -f "electron-vite dev"` leaves the Electron child running, reparented to init; kill it by pid and confirm with `ps`, or a relaunch stacks a second instance on the same Nexus.
 - **Worktree Electron binary:** a worktree's `node_modules` is often installed for the Vitest gate only and omits the Electron binary, so the first launch dies with `Error: Electron uninstall` — run `./node_modules/.bin/electron --version` once to download it. Kill test instances when done.
 - **Don't auto-launch the GUI** — verify headlessly (`npm run typecheck && npm run build && npx vitest run`); launch only when a human will look.
+- **The sync server:** `npm run sync` from the root starts `Sync/server.ts` on `http://127.0.0.1:7473`, its SQLite file under `~/.pommora-sync/` (`POMMORA_SYNC_DATA` and `POMMORA_SYNC_PORT` override both); it is a separate process, never started by the app.
 - **CDP-typing into the live editor writes to disk.** The dev app opens the user's real Nexus, and any CM6 change you inject fires the debounced autosave → writes the page's `.md`; `window.nexus.*` is a frozen contextBridge object you cannot stub. Drive a NEW throwaway page, never an existing one. Read-only CDP screenshots are always safe.
 
 ### Toolchain
