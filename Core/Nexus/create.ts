@@ -1,6 +1,6 @@
 import { basename, relJoin } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { createDisambiguated } from '../Paths/disambiguate'
+import { createDisambiguated } from '../Paths/names'
 import { newId } from './ids'
 import { ok } from '../Contract/result'
 import { indexWrittenPage } from '../Index/indexSeed'

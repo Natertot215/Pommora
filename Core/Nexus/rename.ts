@@ -1,6 +1,6 @@
 import { basename, basenameNoMd, relJoin } from '../Paths/posix'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
-import { createDisambiguated } from '../Paths/disambiguate'
+import { createDisambiguated } from '../Paths/names'
 import { fault, ok } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
 import { rewriteTileConnections } from '../Tiles/tilesFile'

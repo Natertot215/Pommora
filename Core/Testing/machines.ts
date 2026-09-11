@@ -94,6 +94,7 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
     realpath: async (p) => p,
     lock: chainLock(),
     sha256Hex,
+    platform: 'posix',
   }
   return { machine, fs: { files, dirs } }
 }
@@ -156,5 +157,6 @@ export function diskMachine(): Machine {
     realpath,
     lock: chainLock(),
     sha256Hex,
+    platform: 'posix',
   }
 }

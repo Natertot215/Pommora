@@ -4,7 +4,7 @@ import { errText } from '../Contract/result'
 import { extractMentions, frontmatterMentions } from '../Connections/scan'
 import { normalizeTitle } from '../Connections/connections'
 import { parseContextKey } from '../Contexts/contexts'
-import { sweepAdmitsBody } from '../Nexus/util'
+import { sweepAdmitsBody } from '../Files/pageFile'
 import {
   markIndexReady,
   readIndexedStat,

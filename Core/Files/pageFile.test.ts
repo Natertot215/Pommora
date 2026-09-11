@@ -4,10 +4,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   splitEnvelope,
+  splitFrontmatter,
   assembleEnvelope,
   mergeFrontmatter,
   renameFrontmatterKey,
   writePageFile,
+  sweepAdmits,
+  sweepAdmitsBody,
 } from './pageFile'
 
 describe('splitEnvelope / assembleEnvelope', () => {
@@ -249,5 +252,29 @@ describe('mergeFrontmatter — every assembly path emits one line ending', () =>
 
   it('a body-only write folds a CRLF body too', () => {
     expect(mergeFrontmatter(crlf, {}, [], splitEnvelope(crlf).body)).not.toContain('\r')
+  })
+})
+
+const ALIAS = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\nsomething: *word\n---\nbody'
+const TAB = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
+const HEALTHY = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n---\nbody'
+
+describe('sweepAdmits — the field-write gate', () => {
+  it('an unresolvable alias reads as empty rather than throwing', () => {
+    expect(splitFrontmatter(ALIAS)).toEqual({})
+  })
+
+  it('refuses both shapes of unwritable frontmatter', () => {
+    expect(sweepAdmits(ALIAS)).toBe(false)
+    expect(sweepAdmits(TAB)).toBe(false)
+  })
+
+  it('admits a page whose frontmatter round-trips', () => {
+    expect(sweepAdmits(HEALTHY)).toBe(true)
+  })
+
+  it('a body-only rewrite asks the identity half alone — a link still heals on a broken page', () => {
+    expect(sweepAdmitsBody(TAB)).toBe(true)
+    expect(sweepAdmitsBody(HEALTHY)).toBe(true)
   })
 })
