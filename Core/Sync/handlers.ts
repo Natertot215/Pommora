@@ -18,7 +18,7 @@ interface Ready {
   address: string | null
 }
 
-// THE two refusals this domain can answer, in one place: every handler reaches the server through here.
+// THE two session refusals, in one place: every handler reaches the server through here.
 // `device` is a projection, never the host member, whose functions cannot cross IPC.
 function ready(ctx: HostContext): Result<Ready> {
   const tree = getLiveTree()
