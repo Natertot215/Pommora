@@ -36,6 +36,7 @@ async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promi
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-scrub-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
     JSON.stringify({ id: 'nx', createdAt: '2026' }),

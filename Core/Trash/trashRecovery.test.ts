@@ -32,6 +32,7 @@ beforeEach(async () => {
   handed.length = 0
   root = await mkdtemp(join(tmpdir(), 'pom-e2e-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
     JSON.stringify({ id: 'nx', createdAt: '2026' }),

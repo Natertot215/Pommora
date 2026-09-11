@@ -1,6 +1,6 @@
 import { normalizeTitle } from '../Connections/connections'
 import { stabilize } from '../Nexus/treeStabilize'
-import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, CROPS_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
 import type { AssetMap } from '../Nexus/tree'
 import { neverWatched, rootSegs } from '../Paths/exclusion'
 import { assetsDir, relPosix } from '../Paths/paths'
@@ -12,7 +12,10 @@ import type { WatchEventName } from '../Nexus/watchPatch'
 export function indexable(rel: string, assetDir: string): boolean {
   const below = rel.split('/').slice(rootSegs(assetDir).length)
   if (below.some(neverWatched)) return false
-  return !(rel.startsWith(`${ASSETS_DIR_REL}/`) && below.includes(THUMBNAILS_SEGMENT))
+  return !(
+    rel.startsWith(`${ASSETS_DIR_REL}/`) &&
+    (below.includes(THUMBNAILS_SEGMENT) || rel === CROPS_REL)
+  )
 }
 
 const nameOf = (rel: string): string => normalizeTitle(rel.split('/').pop() ?? '')

@@ -7,13 +7,13 @@ export const TRASH_DIR = '.trash'
 /** The walk, the index, and every mutation refuse these. Not the watcher — it watches `.nexus`. */
 export const NON_CORPUS_TOP: ReadonlySet<string> = new Set([NEXUS_DIR, TRASH_DIR])
 
-export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/contexts.json`
-
 /** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'
+export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}/contexts.json`
 export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 
-export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
+export const ASSETS_DIRNAME = 'assets'
+export const ASSETS_DIR_REL = `${NEXUS_DIR}/${ASSETS_DIRNAME}`
 
 /** The asset root a file property's files land under; an absent subfolder means the root itself. */
 export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
@@ -28,6 +28,8 @@ export const THUMBNAILS_SEGMENT = 'thumbnails'
 export const thumbsRel = (nexusId: string): string =>
   `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
+
+export const CROPS_REL = `${ASSETS_DIR_REL}/crops.json`
 
 // One spelling: the write side keys crops from `assetFilePath`, the read side `resolveAssetValue`.
 export function cropKeyFor(rel: string | null, raw: string): string | null {

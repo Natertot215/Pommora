@@ -31,7 +31,8 @@ const read = async (rel: string): Promise<string> => readFile(join(root, rel), '
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-mutate-'))
-  await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
+  await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
@@ -591,7 +592,7 @@ describe('handleMutate — review-round hardening', () => {
 
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
     await writeFile(
-      join(root, '.nexus', 'homepage.json'),
+      join(root, '.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ outside_field: 2, icon: 'house', blocks: [{ t: 'x' }] }),
     )
     const src = join(root, 'Pick.png')
@@ -601,7 +602,7 @@ describe('handleMutate — review-round hardening', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const cfg = JSON.parse(await read('.nexus/homepage.json'))
+    const cfg = JSON.parse(await read('.nexus/homepage/homepage.json'))
     expect(cfg.banner).toBe('[[Pick.png]]')
     expect(cfg.blocks).toEqual([{ t: 'x' }])
     expect(cfg.icon).toBe('house')
@@ -877,14 +878,14 @@ describe('handleMutate — setBanner', () => {
     expect(await read(pagePath)).not.toMatch(/banner:/)
   })
 
-  it('sets a homepage banner in .nexus/homepage.json', async () => {
+  it('sets a homepage banner in .nexus/homepage/homepage.json', async () => {
     await withAssetDir()
     const r = await handleMutate(
       { op: 'setBanner', path: '', kind: 'homepage', source: await pick('Home.png') },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(JSON.parse(await read('.nexus/homepage.json')).banner).toBe('[[Home.png]]')
+    expect(JSON.parse(await read('.nexus/homepage/homepage.json')).banner).toBe('[[Home.png]]')
     expect((await readNexus(root)).homepage.banner).toBe('[[Home.png]]')
   })
 })
@@ -908,7 +909,7 @@ describe('handleMutate — setCrop', () => {
     handleMutate({ op: 'setCrop', image, crop }, nexusDeps)
   const cropsOf = async (): Promise<Record<string, Crop> | undefined> => {
     try {
-      return JSON.parse(await read('.nexus/crops.json')).byImage
+      return JSON.parse(await read('.nexus/assets/crops.json')).byImage
     } catch {
       return undefined
     }
@@ -949,15 +950,15 @@ describe('handleMutate — setCrop', () => {
   it('null deletes the key and preserves a foreign top-level key', async () => {
     await setBannerPage(await pick('Cover.png'))
     await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 2 })
-    const raw = JSON.parse(await read('.nexus/crops.json'))
+    const raw = JSON.parse(await read('.nexus/assets/crops.json'))
     await writeFile(
-      join(root, '.nexus', 'crops.json'),
+      join(root, '.nexus', 'assets', 'crops.json'),
       JSON.stringify({ ...raw, plugin_field: 'keep' }),
     )
     const r = await setCrop('[[Cover.png]]', null)
     expect(r.ok).toBe(true)
     expect(await cropsOf()).toEqual({})
-    expect(JSON.parse(await read('.nexus/crops.json')).plugin_field).toBe('keep')
+    expect(JSON.parse(await read('.nexus/assets/crops.json')).plugin_field).toBe('keep')
   })
 
   // Negative control: replacing a page's cover clears the old cover's crop (dropReplacedAsset) and leaves every other key untouched. Remove the updateCrops call in dropReplacedAsset and the first assertion goes red.
@@ -973,7 +974,7 @@ describe('handleMutate — setCrop', () => {
 
   it('a corrupt crops.json does not fail a banner replace (best-effort crop cleanup)', async () => {
     await setBannerPage(await pick('Cover.png'))
-    await writeFile(join(root, '.nexus', 'crops.json'), '[]')
+    await writeFile(join(root, '.nexus', 'assets', 'crops.json'), '[]')
     expect((await setBannerPage(await pick('Next.png'))).ok).toBe(true)
   })
 

@@ -41,9 +41,11 @@ const ev = (event: WatchEvent['event'], ...segs: string[]): WatchEvent => ({
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-watch-'))
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
+  await mkdir(abs('.nexus', 'assets'), { recursive: true })
+  await mkdir(abs('.nexus', 'homepage'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await writeFile(
-    abs('.nexus', 'contexts.json'),
+    abs('.nexus', 'contexts', 'contexts.json'),
     JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas' }] }),
   )
   await writeFile(
@@ -82,7 +84,10 @@ describe('applyWatchEvents — must agree with the walk', () => {
       abs('.nexus', 'settings.json'),
       JSON.stringify({ profile_subtitle: 'Second brain' }),
     )
-    await writeFile(abs('.nexus', 'homepage.json'), JSON.stringify({ banner: 'Loose/b.png' }))
+    await writeFile(
+      abs('.nexus', 'homepage', 'homepage.json'),
+      JSON.stringify({ banner: 'Loose/b.png' }),
+    )
 
     const result = await applyWatchEvents(
       root,
@@ -93,7 +98,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
         ev('change', 'Notes', '_pagecollection.json'),
         ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
         ev('change', '.nexus', 'settings.json'),
-        ev('change', '.nexus', 'homepage.json'),
+        ev('change', '.nexus', 'homepage', 'homepage.json'),
       ],
       scope(),
     )
@@ -116,7 +121,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
   it('patches crops.json as a leaf, dropping a malformed entry, walk-identically', async () => {
     await refreshTree(root)
     await writeFile(
-      abs('.nexus', 'crops.json'),
+      abs('.nexus', 'assets', 'crops.json'),
       JSON.stringify({
         byImage: {
           'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 },
@@ -124,7 +129,11 @@ describe('applyWatchEvents — must agree with the walk', () => {
         },
       }),
     )
-    const result = await applyWatchEvents(root, [ev('change', '.nexus', 'crops.json')], scope())
+    const result = await applyWatchEvents(
+      root,
+      [ev('change', '.nexus', 'assets', 'crops.json')],
+      scope(),
+    )
     expect(result).toBe('patched')
     const live = getLiveTree()
     expect(live?.crops).toEqual({ 'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 } })
@@ -182,7 +191,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     const result = await applyWatchEvents(
       root,
-      [ev('add', 'Notes', 'B.md'), ev('change', '.nexus', 'contexts.json')],
+      [ev('add', 'Notes', 'B.md'), ev('change', '.nexus', 'contexts', 'contexts.json')],
       scope(),
     )
     expect(result).toBe('refresh')
@@ -228,7 +237,7 @@ describe('classifyEvent', () => {
       'space-meta',
     )
     expect(kind(ev('change', '.nexus', 'settings.json'))).toBe('settings-leaf')
-    expect(kind(ev('change', '.nexus', 'homepage.json'))).toBe('homepage-leaf')
+    expect(kind(ev('change', '.nexus', 'homepage', 'homepage.json'))).toBe('homepage-leaf')
     expect(
       classifyEvent(tree, root, ev('change', '.nexus', 'homepage', '_tiles.json'), scope()),
     ).toEqual({
@@ -259,12 +268,12 @@ describe('classifyEvent', () => {
       ),
     ).toBe('ignored')
     expect(kind(ev('addDir', '.nexus', 'homepage'))).toBe('ignored')
-    expect(kind(ev('change', '.nexus', 'crops.json'))).toBe('crops-leaf')
+    expect(kind(ev('change', '.nexus', 'assets', 'crops.json'))).toBe('crops-leaf')
     expect(kind(ev('add', 'Loose', 'second.md'))).toBe('index-only')
     expect(kind(ev('add', 'root-note.md'))).toBe('index-only')
     expect(kind(ev('change', 'Hidden', 'x.md'), ['Hidden'])).toBe('ignored')
 
-    expect(kind(ev('change', '.nexus', 'contexts.json'))).toBe('full-refresh')
+    expect(kind(ev('change', '.nexus', 'contexts', 'contexts.json'))).toBe('full-refresh')
     expect(kind(ev('change', '.nexus', 'properties.json'))).toBe('full-refresh')
     expect(kind(ev('change', '.nexus', 'state.json'))).toBe('full-refresh')
     expect(kind(ev('addDir', 'Notes', 'Sub'))).toBe('full-refresh')
@@ -365,6 +374,11 @@ describe('the asset root outranks every other skip', () => {
     expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', 'x.png'))).toBe(false)
     for (const junk of ['.DS_Store', 'node_modules', '.git'])
       expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', junk, 'x'))).toBe(true)
+  })
+
+  it('the homepage config under its host folder stays watched, though tile bodies do not', () => {
+    expect(ignoredUnder(root, scope())(abs('.nexus', 'homepage', 'homepage.json'))).toBe(false)
+    expect(ignoredUnder(root, scope())(abs('.nexus', 'homepage', 'anything.md'))).toBe(true)
   })
 
   it('fifty files landing in the asset root patch the map once and never walk', async () => {

@@ -16,8 +16,9 @@ beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-shape-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
+  await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })
   await writeFile(
-    join(root, '.nexus', 'contexts.json'),
+    join(root, '.nexus', 'contexts', 'contexts.json'),
     JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas' }] }),
   )
   await mkdir(join(root, 'Notes'), { recursive: true })

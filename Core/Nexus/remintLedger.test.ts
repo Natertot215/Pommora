@@ -216,7 +216,7 @@ describe('latchBaseline', () => {
         path: 'Library/Gone.md',
       },
     }
-    const latched = latchBaseline(projected(), ['.nexus/contexts.json'], prior)
+    const latched = latchBaseline(projected(), ['.nexus/contexts/contexts.json'], prior)
     expect(latched['ctx-areas']).toEqual(prior['ctx-areas'])
     expect(latched['space-personal']).toEqual(prior['space-personal'])
     expect(latched['page-gone']).toBeUndefined()

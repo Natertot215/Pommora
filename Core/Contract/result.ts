@@ -7,6 +7,7 @@ type ErrorCode =
   | 'invalid-name'
   | 'invalid-path'
   | 'invalid-property'
+  | 'reserved'
   | 'lossy-change-requires-confirmation'
   | 'operation-failed'
   | 'no-nexus'

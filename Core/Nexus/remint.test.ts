@@ -127,11 +127,11 @@ describe('the re-mint writes', () => {
       join(root, '.nexus', 'nexus.json'),
       JSON.stringify({ id: 'nx-remint', createdAt: '2026' }),
     )
+    await mkdir(join(root, '.nexus', 'contexts', 'Areas', 'Work'), { recursive: true })
     await writeFile(
-      join(root, '.nexus', 'contexts.json'),
+      join(root, '.nexus', 'contexts', 'contexts.json'),
       JSON.stringify({ contexts: [{ id: 'ctx_a', title: 'Areas', singular: 'Area' }] }),
     )
-    await mkdir(join(root, '.nexus', 'contexts', 'Areas', 'Work'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'contexts', 'Areas', 'Work', '_space.json'),
       JSON.stringify({ id: SPACE, color: 'blue', keep_me: 'foreign' }),

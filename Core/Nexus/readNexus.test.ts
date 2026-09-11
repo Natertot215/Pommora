@@ -293,8 +293,9 @@ describe('readNexus — registry-backed contexts', () => {
     reg = mkdtempSync(join(tmpdir(), 'pom-reg-'))
     d(join(reg, '.nexus'))
     w(join(reg, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxr', createdAt: '2026' }))
+    d(join(reg, '.nexus', 'contexts'))
     w(
-      join(reg, '.nexus', 'contexts.json'),
+      join(reg, '.nexus', 'contexts', 'contexts.json'),
       JSON.stringify({
         contexts: [
           { id: 'ctx_areas', title: 'Areas', singular: 'Area' },
@@ -379,8 +380,9 @@ describe('readNexus — the walk names what it cannot read', () => {
     root = mkdtempSync(join(tmpdir(), 'pom-unread-'))
     d(join(root, '.nexus'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxu', createdAt: '2026' }))
+    d(join(root, '.nexus', 'contexts'))
     w(
-      join(root, '.nexus', 'contexts.json'),
+      join(root, '.nexus', 'contexts', 'contexts.json'),
       JSON.stringify({ contexts: [{ id: 'ctx_a', title: 'Areas', singular: 'Area' }] }),
     )
     d(join(root, '.nexus', 'contexts', 'Areas', 'Good'))
@@ -429,10 +431,11 @@ describe('readNexus — the walk names what it cannot read', () => {
     try {
       d(join(r, '.nexus'))
       w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxc', createdAt: '2026' }))
-      w(join(r, '.nexus', 'contexts.json'), '{corrupt')
+      d(join(r, '.nexus', 'contexts'))
+      w(join(r, '.nexus', 'contexts', 'contexts.json'), '{corrupt')
       const t = await readNexus(r)
       expect(t.contexts).toEqual([])
-      expect(t.unreadable?.map((u) => u.path)).toEqual(['.nexus/contexts.json'])
+      expect(t.unreadable?.map((u) => u.path)).toEqual(['.nexus/contexts/contexts.json'])
     } finally {
       rmSync(r, { recursive: true, force: true })
     }

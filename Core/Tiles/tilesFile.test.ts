@@ -30,7 +30,7 @@ beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'tiles-'))
   await mkdir(spaceDir(), { recursive: true })
   await writeFile(
-    join(root, '.nexus', 'contexts.json'),
+    join(root, '.nexus', 'contexts', 'contexts.json'),
     JSON.stringify({ contexts: [{ id: 'g1', title: 'Realms', singular: 'Realm' }] }),
   )
   await writeFile(spaceSidecar(), JSON.stringify({ id: 'sp1', color: 'mint' }))

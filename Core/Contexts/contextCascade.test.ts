@@ -36,6 +36,7 @@ beforeEach(async () => {
   root = await realpath(await mkdtemp(join(tmpdir(), 'pom-cascade-')))
   await openSession(root)
   await mkdir(nexusDir(root), { recursive: true })
+  await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({
