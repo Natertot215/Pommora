@@ -5,6 +5,7 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { MenuItem } from '@pommora/uix/Menus'
 import { overlay, rowDragging } from '@pommora/uix/Menus/menu-base.css'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'
+import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import type { NavRef, SelectTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
@@ -202,11 +203,14 @@ export function NavList({
   if (items.length === 0 && pinRows.length === 0) return null
   const recents = reorderable ? items : []
 
-  const commitReorder = (orderIds: string[], groupKey: string, activeId: string): void => {
+  const commitReorder = (activeId: string, groupKey: string, beforeId: string | null): void => {
     const group = groupKey === 'pins' ? pinRows : recents
-    const keys = new Set(group.map((g) => g.key))
-    const nextOrder = orderIds.filter((id) => keys.has(id))
-    const over = group[nextOrder.indexOf(activeId)]?.key
+    const next = nextOrder(
+      group.map((g) => g.key),
+      activeId,
+      beforeId,
+    )
+    const over = group[next.indexOf(activeId)]?.key
     if (!over || over === activeId) return
     if (groupKey === 'pins') reorderPin(activeId, over)
     else onReorderRecent?.(activeId, over)
@@ -231,8 +235,7 @@ export function NavList({
           disabled={false}
           canReorderWithin
           canReassign={false}
-          reorderTo={commitReorder}
-          reassign={() => {}}
+          onDrop={commitReorder}
         >
           {list}
         </TableRowDnd>
