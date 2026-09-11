@@ -9,7 +9,7 @@ The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.js
 
 What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level, minus any name ending in `.db`, `-wal`, or `-shm`. `nexus.db` and `versions.db` and their journals are excluded by that rule rather than by convention, and they are excluded because they are device-local by content: this machine's chrome and the index derived from content it can rebuild. Every other dot-entry stays home, `.obsidian`, `.git`, and `.claude` among them, since they belong to another application rather than to the Nexus. The watcher's own predicate (`neverWatched` in `Core/Paths/exclusion.ts`) already drops a database and its siblings, so the rule is defined against a predicate the read path shares.
 
-A folder transport of any other kind is prior art, never a dependency. NexusOS reaches a second machine through Obsidian Sync, which drops every dot-entry but `.obsidian` and so leaves `.nexus/` behind; Pommora's own transport is what makes a Nexus a complete travelling unit.
+A folder transport of any other kind is prior art, never a dependency. NexusOS reaches a second machine through Obsidian Sync, which drops every dot-entry but `.obsidian` and so leaves `.nexus/` behind; Pommora's own transport is what makes a Nexus a complete traveling unit.
 
 ### Three Identities
 
