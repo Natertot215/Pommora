@@ -2,6 +2,8 @@
 
 ### Current Focus
 
+**Pommora Sync has its identities.** Every install mints one Ed25519 key at first launch: the fingerprint of that key is the device's id, its public half and a name sit in the `device` field of `pommora.json`, and its private half sits keychain-encrypted in `secrets.json` beside it. `Sync/server.ts` is one Node file on built-ins that keeps which devices a Nexus admits, answering connect, devices, approve, and revoke to requests each signed by the device key, with no session and no account; `Core/Sync/` carries the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General's Nexus heading shows this device, the Nexus id, the bound server, and the Nexus's device list with Approve and Revoke. What does not exist is everything above that line: no file content crosses, the phone has nothing on it, the Nexus password and content encryption are unwritten, the manifest rule deciding what travels is described rather than expressed as a predicate, and the server has run only on localhost. [[NexusSyncPM]] describes what stands.
+
 **The editor has a block menu.** Typing `/` alone on a line opens a pane under the caret listing what the editor can make — Headings, Lists, Link, Insert, and Embed, nineteen rows — filtered by what follows the slash against section titles and row labels alike, with the typed query drawn in the phantom tones the `[[` pane uses. Return or a click removes the query outside history and runs the same action dispatch the context menu's items run, so one ⌘Z leaves the blank line; the pane opens only on a document change, never on a caret landing at the end of a line that already reads `/word`. The catalog is a React-free model in `Core/Actions/blockMenu.ts`; the trigger, hook, and pane live in `Core/MarkdownPM/Menus/`, sharing the caret geometry, key guard, cursor, and closed geometry with the connection pane. On the way, `selectedLines` began admitting a caret-only blank line, so Heading and List rows work on an empty line from the context menu too, and the divider, table, quote, footnote, and embed transforms each seat the caret where a writer expects it.
 
 **Glances went cross-surface.** The hover-preview pane now reaches sidebar rows, tabs, nav-view rows, cards, and table rows — not just editor links — through one Off-gated `armPreview` facade, with a single `previewPersistence` setting (Off / 1s / 5s / 10s / Until Closed) standing in for the old linger slider and enable toggle. Shift arbitrates with the create-ghost on the surfaces that host one (and raises the resting row when pressed at rest), a preview never covers the page already in view, and a right-click can't be clobbered by one. A corner lock pins a page preview into the new `Core/Session/glanceSlice`; pins survive navigation, scroll, and tab-switching, unlock leaves the pane standing, and every close blooms out through `PickerMenu`'s exit presence. 
@@ -36,7 +38,7 @@ Findings where the correct answer isn't established in the codebase — design a
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 - [ ] **Escape follows open order, not focus.** The dismissal stack pushes on open and never re-inserts, so raising a floating window on click (Escape then closing the focused window) needs an open-sequence number on each entry; the same machinery would keep a pinned glance's entry in place across a tab round-trip, where today it remounts on top of a window opened after it.
 - [ ] **`showError` versus `notifyError`.** Two error surfaces stand side by side and neither was made the other's; the store's `mutate` reports a failed write through `error:show`, and the notification label is its own path. One of them is the app's answer for a failed act.
-- [ ] **Database:** Move nexus.db and versions.db out of the Nexus folder entirely, into the app's own storage keyed by the Nexus ID? Then "never syncs" is a physical fact under any transport, the manifest needs no exception, and the user's folder holds no binary blobs
+- [ ] **Database:** Move nexus.db and versions.db out of the Nexus folder entirely, into the app's own storage keyed by the Nexus ID? Then they sit outside anything a transport could reach, the manifest rule has nothing to exclude, and the user's folder holds no binary blobs
 
 
 #### II. Next-Feature Candidates
@@ -87,15 +89,15 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
-#### PM-135 || MarkdownPM Consolidation
-**DATE:** 09-10-2026
+#### PM-135 || Sync Groundwork
+**DATE:** 09-11-2026
 
-The four per-machine editor preferences became one generic `EditorPref<T>` in `api.ts`, with the heading-columns load joining the settled group so it applies before the scroll restore. The table's rectangle selection, its active cell, and embed-tile editing moved onto the shared `UIX/Interactions` dismissal stack, so Escape and outside presses follow the stack's rules. The list-item drag and the block drag folded into a single `rebuildMove` core, and `renumberOrderedRun`'s backward walk was made symmetric with its forward scan.
+Every install mints one Ed25519 key at first launch, its fingerprint naming the device, with the public half and a name in `pommora.json` and the private half keychain-encrypted beside it. `Sync/server.ts` is one Node file on built-ins keeping which devices each Nexus admits over four verbs, and every request to it is signed by the device key rather than carried by a session or a token. `Core/Sync/` holds the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General gained a Nexus heading over them. Content itself does not cross yet; the next arc adds it against the same server and the same identities.
 
 #### PM-134 || MarkdownPM Block Menu
 **DATE:** 09-09-2026
 
-`/` on an empty line opens an in-app pane of five sections and nineteen rows, filtered by title and label as the query is typed, picked by Return or a click, and undone in one step to the blank line. The model sits in `Core/Actions/blockMenu.ts`, the trigger reads the cached scan through the same `inSealedBlockAt` the embed seat reads, and the pane shares its geometry, key guard, and cursor with the `[[` autocomplete. The blank-line fix in `selectedLines` repaired the context menu's Heading and List rows on an empty line, and the divider, table, quote, footnote, and embed transforms now seat the caret consistently.
+MarkdownPM gained a command menu: `/` on an empty line opens an in-app pane of five sections and nineteen rows, filtered by title and label as the query is typed, picked by Return or a click, and undone in one step to the blank line. The model sits in `Core/Actions/blockMenu.ts`, the trigger reads the cached scan through the same `inSealedBlockAt` the embed seat reads, and the pane shares its geometry, key guard, and cursor with the `[[` autocomplete. The blank-line fix in `selectedLines` repaired the context menu's Heading and List rows on an empty line, and the divider, table, quote, footnote, and embed transforms now seat the caret consistently.
 
 #### PM-133 || The Engine Boundary
 **DATE:** 09-07-2026

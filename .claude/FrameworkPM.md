@@ -10,7 +10,7 @@ The React + Electron build rebuilt the Swift paradigm from the ground up, reache
 
 #### v0.5.x — The Baseline Hardened
 
-Since the baseline: Cards as the second renderer with its interaction hardening and picker-host architecture; the certified cleanup campaign (one-walk mutations, shared interaction primitives); Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane; the truing campaign against real code; one syntax for every Pommora-owned key, with operational state moved into `nexus.db`; the hardening campaign — one strict read-modify-write, the parallel walk, the guard audit, and the HOIST design-system consolidation; and the erasure campaigns — Swift parity removed wholesale, navigation persistence consolidated onto one `navigation.json` contract; the live-tree & content-index arc — Core holds the tree, writes and watcher events patch it in place, and the rename and property cascades open only the files the index names; and the repository restructure into six workspaces, which put Pommora's engine and interface in `Core`, the design kit in `UIX`, and everything Electron in `Desktop`, behind one machine seam and one channel contract.
+Since the baseline: Cards as the second renderer with its interaction hardening and picker-host architecture; the certified cleanup campaign (one-walk mutations, shared interaction primitives); Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane; the truing campaign against real code; one syntax for every Pommora-owned key, with operational state moved into `nexus.db`; the hardening campaign — one strict read-modify-write, the parallel walk, the guard audit, and the HOIST design-system consolidation; and the erasure campaigns — Swift parity removed wholesale, navigation persistence consolidated onto one `navigation.json` contract; the live-tree & content-index arc — Core holds the tree, writes and watcher events patch it in place, and the rename and property cascades open only the files the index names; and the repository restructure into six workspaces, which put Pommora's engine and interface in `Core`, the design kit in `UIX`, and everything Electron in `Desktop`, behind one machine seam and one channel contract; and the Sync Groundwork arc, which gives every install its own Ed25519 device key, stands up a one-file server holding which devices a Nexus admits, and adds the Nexus heading to Settings › General.
 
 #### UPCOMING VERSIONS
 
@@ -38,7 +38,7 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 #### Post-v1
 
-No phase commitments — Sub-pages, independent UI titles, a graph view, and a plugin system among them. The catalog is Prospects below. The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`.
+No phase commitments — Sub-pages, independent UI titles, a graph view, and a plugin system among them. The catalog is Prospects below. The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`; the identity groundwork shipped first.
 
 ---
 
