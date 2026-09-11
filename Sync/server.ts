@@ -285,7 +285,10 @@ export async function start(opts: {
   })
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
-    server.listen(opts.port, HOST, resolve)
+    server.listen(opts.port, HOST, () => {
+      server.off('error', reject)
+      resolve()
+    })
   })
   return {
     port: (server.address() as AddressInfo).port,
