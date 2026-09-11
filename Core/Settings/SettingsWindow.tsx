@@ -22,6 +22,7 @@ import { useSession } from '../Session/store'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
+import { NexusRows } from './NexusRows'
 import { useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
 import {
   type CategoryKey,
@@ -157,6 +158,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <ClearActionRow label={row.label} hint={row.hint} clear={row.clear} />
     case 'color':
       return <ColorRow row={row} />
+    case 'nexus':
+      return <NexusRows />
   }
 }
 
