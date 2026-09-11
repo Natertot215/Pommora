@@ -152,7 +152,7 @@ Pommora gained the identities a cross-device transport needs before any content 
 
 **The Heading:** Settings › General gained a Nexus heading through a `nexus` row kind and `NexusRows`, showing this device, the Nexus id, the bound server, and the Nexus's device list with Approve and Revoke. Two instances on one Mac holding one Nexus id walked connect, pending, approve, revoke, and reconnect, each state surviving a server restart and an app relaunch.
 
-- **Commits:** `53688425a^..58b5391a4`, excluding `a68ad1551` and `3c601d0bb`, a parallel naming arc's
+- **Commits:** `53688425a^..0aa4a5369`, excluding `a68ad1551`, `7ca135851`, and `3c601d0bb`, a parallel naming arc's
 - **Diff:** Net +808 (source, comments and tests excluded)
 
 #### PM-134 || MarkdownPM Block Menu
