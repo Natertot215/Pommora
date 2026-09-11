@@ -5,8 +5,8 @@
 ### Sources
 
 - [[Sync Groundwork — Decision Log]] — the arc this sweep serves; its Sources list the path, echo, watcher, and settings-placement observations re-verified here.
-- `Core/Paths/` — `posix.ts`, `pathSafety.ts`, `paths.ts`, `nexusPaths.ts`, `exclusion.ts`, `caseFold.ts`, `urlPath.ts`.
-- `Core/Nexus/` — `session.ts`, `identity.ts`, `ids.ts`, `util.ts`, `page.ts`, `folderEntity.ts`, `rename.ts`, `mutate.ts`, `readNexus.ts`, `watchSettle.ts`, `handlers.ts`.
+- `Core/Paths/` — `posix.ts`, `pathSafety.ts`, `paths.ts`, `nexusPaths.ts`, `names.ts`, `exclusion.ts`, `caseFold.ts`, `urlPath.ts`.
+- `Core/Nexus/` — `session.ts`, `identity.ts`, `ids.ts`, `page.ts`, `folderEntity.ts`, `rename.ts`, `mutate.ts`, `readNexus.ts`, `watchSettle.ts`, `handlers.ts`.
 - `Core/Files/` — `writeEcho.ts`, `atomicWrite.ts`. `Core/Index/indexSeed.ts`. `Core/Trash/` — `bundle.ts`, `delete.ts`, `spend.ts`. `Core/Contexts/` — `contexts.ts`, `contextCascade.ts`.
 - `Core/Platform/` — `machine.ts`, `assetScheme.ts`, `localState.ts`. `Core/Contract/handlers.ts`.
 - `Core/Assets/` — `assetRoots.ts`, `assetUrl.ts`. `Core/Actions/commands.ts`. `Core/Settings/` — `settings.ts`, `personalization.ts`.
@@ -61,9 +61,9 @@
 
 #### Filenames & Filesystem
 
-- **Name Refusal Coverage:** `Core/Contexts/contexts.ts:33-43` refuses `/`, `\`, NUL, `.`, and `..`, and `Core/Nexus/util.ts:7-17` adds `|`, hidden-name prefixes, and a trailing `.md`. Windows additionally refuses `<`, `>`, `:`, `"`, `?`, `*`, and the device names `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9` with or without an extension. A page or Collection carrying one of those is creatable on macOS and unwritable on Windows. What would need to hold: a name accepted on one host is writable on the other.
-- **Untrimmed Leaf:** `Core/Nexus/page.ts:35-37` and `Core/Nexus/folderEntity.ts:18-20` validate the trimmed name and then build the target from the raw `name`. Windows silently strips a trailing dot or space from a created file, so the file that lands differs from the name the app recorded and the follow-up `pathExists` and index rows point at a path that is not there. What would need to hold: the name written to disk is the name the app believes it wrote.
-- **Titles as Folder Names:** `Core/Paths/nexusPaths.ts:39-42` derives a Context folder and a Space folder from their titles, and `Core/Contexts/contextCascade.ts:219` gates a retitle on `invalidName`. Every filename constraint above therefore applies to user-visible titles as well. What would need to hold: a title that is legal to type is legal to store as a folder on both hosts.
+- **Name Refusal Coverage:** `Core/Contexts/contexts.ts:33-43` refuses `/`, `\`, NUL, `.`, and `..`, and `Core/Paths/names.ts` adds `|`, hidden-name prefixes, and — for a page — a trailing `.md`. Behind a `machine().platform === 'windows'` gate it also refuses `<`, `>`, `:`, `"`, `?`, `*`, the device names `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, and a trailing dot or space. A Windows host refuses each of these at creation; a macOS host accepts them, so a name typed on macOS can still travel to a Windows peer that cannot write it. What would need to hold: a name accepted on one host is writable on the other, which the host-gated refusal covers only for names created on Windows.
+- **Untrimmed Leaf:** `Core/Paths/names.ts` refuses a name that does not equal its trimmed form, so a leading or trailing space is rejected on both hosts before `Core/Nexus/page.ts:35-36` and `Core/Nexus/folderEntity.ts:18-19` build the target, and the Windows gate adds the trailing dot that Windows would otherwise strip. The leaf that lands matches the recorded name.
+- **Titles as Folder Names:** `Core/Paths/nexusPaths.ts:39-42` derives a Context folder and a Space folder from their titles, and `Core/Contexts/contextCascade.ts` gates a retitle on `nameError(title, 'directory')`, which refuses any period alongside the shared rules. Every filename constraint above therefore applies to user-visible titles as well. What would need to hold: a title that is legal to type is legal to store as a folder on both hosts.
 - **Thumbnail Key:** `Core/Paths/nexusPaths.ts:24` replaces the first colon in a nav key, and its own note calls a colon hostile in a filename. A second colon would survive into `thumbRel` (`:30`) and fail on NTFS. What would need to hold: a derived filename carries no character the target filesystem refuses.
 - **Held-File Writes:** `Desktop/Platform/nodeMachine.ts:30-31` writes through `write-file-atomic` (temp plus rename), `:50` renames, and `:51` removes recursively. Windows fails each with `EPERM`/`EBUSY` while another process holds the file open — Obsidian on the same folder, a search indexer, or antivirus — where the same call succeeds on macOS. "Most recent wins" against an external editor therefore behaves differently. What would need to hold: a write contending with an external holder resolves to a stated outcome rather than a raw errno.
 - **Path Length:** `Core/Trash/bundle.ts:19-31` prefixes a deleted item with a 24-character stamp inside `.trash/<mirrored chain>/`, roughly doubling the leaf and adding the chain depth again. Windows applies a 260-character limit unless long paths are enabled and the call is prefixed. What would need to hold: a delete that succeeds on the corpus also succeeds into the trash mirror; how Node handles a long path under Electron 42 is unverified from macOS.
@@ -94,9 +94,9 @@
 - [ ] `Core/Paths/pathSafety.ts:6-14` with `Core/Paths/posix.ts:1` — the lexical containment guard recognizes each host's absolute and UNC forms, holding independently of the realpath comparison.
 - [ ] `Desktop/Bridge/preload.ts:25` and `Desktop/Platform/nodeMachine.ts:53` — every route a host path takes into Core converges on one spelling, alongside `Desktop/main.ts:142,151,220,228,312`.
 - [ ] `Core/Paths/posix.ts:3-17` — segment arithmetic agrees with the host on separators and drive prefixes.
-- [ ] `Core/Contexts/contexts.ts:33-43` with `Core/Nexus/util.ts:7-17` — name refusal covers the Windows-reserved characters and device names.
-- [ ] `Core/Nexus/page.ts:35-37` and `Core/Nexus/folderEntity.ts:18-20` — the leaf written to disk matches the name recorded, trailing dots and spaces included.
-- [ ] `Core/Paths/nexusPaths.ts:39-42` — Context and Space titles remain storable as folder names on both hosts.
+- [~] `Core/Contexts/contexts.ts:33-43` with `Core/Paths/names.ts` — name refusal covers the Windows-reserved characters and device names on a Windows host; a name created on macOS still travels unrefused.
+- [x] `Core/Nexus/page.ts:35-36` and `Core/Nexus/folderEntity.ts:18-19` — the leaf written to disk matches the name recorded, trailing dots and spaces included.
+- [~] `Core/Paths/nexusPaths.ts:39-42` — Context and Space titles carry the directory name-rules through `nameError`; the cross-host residual matches the name-refusal item above.
 - [ ] `Desktop/main.ts:67` with `Core/Nexus/handlers.ts:95-96` — a delete on a volume without a system trash has a stated outcome.
 - [ ] `Desktop/electron-builder.yml:23-26` — `npm run package` produces a runnable Windows artifact.
 - [ ] `Desktop/Platform/nodeMachine.ts:53` with `Core/Paths/pathSafety.ts:24-25` — junctions, mapped drives, UNC shares, and OneDrive placeholders resolve consistently.
