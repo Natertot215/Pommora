@@ -18,7 +18,8 @@ import {
   type ContextOption,
 } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
-import { declaredType } from '../../Properties/value'
+import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
+import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Cells/cellResolve'
 import { hideShown, unhide } from '../hiddenFrameModel'
@@ -29,7 +30,7 @@ import { resolveView } from '../Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride, useContainerValues } from './useValuesEpoch'
-import { mergeStyleRecords } from './useColumnStyles'
+import { mergeStyleRecords, styleFor } from './useColumnStyles'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
@@ -310,6 +311,25 @@ export function useViewHost(
     return contextOptionsForSpaces(column.id, tree)
   }
 
+  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
+  const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
+    const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
+    const current = resolveFieldValue(row, column.id, schema)
+    const style = styleFor(column.id, schema, liveView, nexusDateFormat)
+    const type = declaredType(column.id, schema, contextIds)
+    if (type === 'datetime')
+      return { kind: 'datetime', def, current, dateFormat: style.date_format }
+    if (type === 'file') return { kind: 'file', def, current }
+    return {
+      kind: 'options',
+      def,
+      current,
+      look: style.look,
+      contextOptions:
+        column.kind === 'context' && tree ? contextOptionsForSpaces(column.id, tree) : undefined,
+    }
+  }
+
   const creation = useViewCreation(() => ({
     source,
     view: liveView,
@@ -338,6 +358,7 @@ export function useViewHost(
     schema,
     view,
     liveView,
+    flat: flattenStructural,
     values,
     effectiveValues,
     setValueOverride,
@@ -378,6 +399,7 @@ export function useViewHost(
     commitValue,
     commitGroupValue,
     contextOptionsFor,
+    pickTarget,
     creation,
     mutate,
     select,
