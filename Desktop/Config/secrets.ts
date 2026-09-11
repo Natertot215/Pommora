@@ -7,7 +7,7 @@ import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 
 const FILE = 'secrets.json'
 
-export function secretsPath(userDataDir: string): string {
+function secretsPath(userDataDir: string): string {
   return join(userDataDir, FILE)
 }
 
