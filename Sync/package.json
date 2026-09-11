@@ -1,4 +1,5 @@
 {
   "name": "@pommora/sync",
-  "private": true
+  "private": true,
+  "type": "module"
 }
