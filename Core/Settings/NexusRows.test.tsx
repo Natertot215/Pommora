@@ -12,6 +12,8 @@ import { stubDialer } from '../vitest.setup'
 let host: HTMLDivElement
 let root: Root
 
+const NEXUS_ID = '01JTESTNEXUSID0000000000AB'
+
 const THIS_DEVICE: SyncDevice = { id: 'aaaaaaaaaaaaaaaa', publicKey: 'pk-a', name: 'Air' }
 const OTHER: DeviceRecord = {
   id: 'bbbbbbbbbbbbbbbb',
@@ -38,7 +40,7 @@ const bothApproved = approved([
 const reply = (value: SyncState) => vi.fn(async () => ({ ok: true, value }))
 
 const render = async (channels: Record<string, unknown>): Promise<void> => {
-  useSession.setState({ tree: { nexus: { id: '01JTESTNEXUSID0000000000AB' } } as never })
+  useSession.setState({ tree: { nexus: { id: NEXUS_ID } } as never })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -49,6 +51,22 @@ const render = async (channels: Record<string, unknown>): Promise<void> => {
 const buttons = (): HTMLButtonElement[] => Array.from(host.querySelectorAll('button'))
 const button = (label: string): HTMLButtonElement | undefined =>
   buttons().find((b) => b.textContent === label)
+
+const refuse = (message: string) =>
+  vi.fn(async () => ({ ok: false, error: { code: 'operation-failed', message } }))
+
+// A field commits the way it does under the pointer: open it, type into its input, press Enter.
+const commit = async (label: string, text: string): Promise<void> => {
+  await act(async () => host.querySelector<HTMLElement>(`[aria-label="${label}"]`)?.click())
+  const input = host.querySelector('input') as HTMLInputElement
+  input.value = text
+  await act(async () => {
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+  })
+}
+
+const fieldText = (label: string): string =>
+  host.querySelector<HTMLElement>(`[aria-label="${label}"]`)?.textContent ?? ''
 
 afterEach(async () => {
   await act(async () => root.unmount())
@@ -61,7 +79,7 @@ describe('NexusRows', () => {
     expect(host.textContent).toContain('This Device')
     expect(host.textContent).toContain('Air')
     expect(host.textContent).toContain('aaaaaaaaaaaa')
-    expect(host.textContent).toContain('01JTESTNEXUSID0000000000AB')
+    expect(host.textContent).toContain(NEXUS_ID)
     expect(host.querySelector('[aria-label="Server address"]')).not.toBeNull()
     expect(button('Connect')).toBeDefined()
     expect(button('Disconnect')).toBeUndefined()
@@ -98,6 +116,63 @@ describe('NexusRows', () => {
     expect(host.textContent).not.toContain('Studio')
     expect(button('Connect')).toBeDefined()
     expect(button('Disconnect')).toBeDefined()
+  })
+
+  it('Connect asks the channel with the committed address and takes the reply address', async () => {
+    const ask = reply(pending)
+    await render({ 'sync:state': reply(unbound), 'sync:connect': ask })
+    await commit('Server address', 'http://typed:1')
+    expect(fieldText('Server address')).toBe('http://typed:1')
+    await act(async () => button('Connect')?.click())
+    expect(ask).toHaveBeenCalledWith('http://typed:1')
+    expect(fieldText('Server address')).toBe('http://127.0.0.1:7473')
+  })
+
+  it('a refused Connect keeps the draft and reports the message', async () => {
+    const show = vi.fn()
+    await render({
+      'sync:state': reply(unbound),
+      'sync:connect': refuse('nope'),
+      'error:show': show,
+    })
+    await commit('Server address', 'http://typed:1')
+    await act(async () => button('Connect')?.click())
+    expect(show).toHaveBeenCalledWith('nope')
+    expect(fieldText('Server address')).toBe('http://typed:1')
+  })
+
+  it('Disconnect asks its channel and re-renders from the reply', async () => {
+    const ask = reply(unbound)
+    await render({ 'sync:state': reply(pending), 'sync:disconnect': ask })
+    await act(async () => button('Disconnect')?.click())
+    expect(ask).toHaveBeenCalled()
+    expect(button('Disconnect')).toBeUndefined()
+  })
+
+  it('a committed device name asks the rename channel with the new text', async () => {
+    const ask = reply({ ...unbound, device: { ...THIS_DEVICE, name: 'Studio' } })
+    await render({ 'sync:state': reply(unbound), 'sync:renameDevice': ask })
+    await commit('Device name', 'Studio')
+    expect(ask).toHaveBeenCalledWith('Studio')
+    expect(host.textContent).toContain('Studio')
+  })
+
+  it('a refused state on mount reports nothing and draws nothing', async () => {
+    const show = vi.fn()
+    await render({ 'sync:state': refuse('no identity'), 'error:show': show })
+    expect(show).not.toHaveBeenCalled()
+    expect(host.textContent).toBe('')
+  })
+
+  it('a nexus switch fetches the state again', async () => {
+    const ask = reply(unbound)
+    await render({ 'sync:state': ask })
+    expect(ask).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      useSession.setState({ tree: { nexus: { id: 'OTHERNEXUS' } } as never })
+    })
+    expect(ask).toHaveBeenCalledTimes(2)
+    expect(host.textContent).toContain('OTHERNEXUS')
   })
 
   it('a second action while one is in flight is ignored', async () => {
