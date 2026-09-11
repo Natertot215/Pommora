@@ -1,5 +1,5 @@
 import { join, relative } from './posix'
-import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from './nexusPaths'
+import { ASSETS_DIRNAME, CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from './nexusPaths'
 import { rootSegs } from './exclusion'
 
 export const relPosix = (root: string, abs: string): string => relative(root, abs)
@@ -71,8 +71,8 @@ export const NEXUS_CONFIG_FILES = {
   identity: 'nexus.json',
   settings: 'settings.json',
   state: 'state.json',
-  homepage: 'homepage.json',
+  homepage: `${HOMEPAGE_HOST_DIRNAME}/homepage.json`,
   navigation: 'navigation.json',
   properties: 'properties.json',
-  crops: 'crops.json',
+  crops: `${ASSETS_DIRNAME}/crops.json`,
 } as const

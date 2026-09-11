@@ -16,6 +16,7 @@ import { stampAdopted } from './adopt'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
+import { ensureConfigLayout } from './migrateConfig'
 import { handleMutate, type MutateDeps } from './mutate'
 import { confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
@@ -29,6 +30,7 @@ export const adopting = (): boolean => adoptingDepth > 0
 async function prepareOpenedNexus(path: string): Promise<void> {
   try {
     await ensureIdentity(path)
+    await ensureConfigLayout(path)
     await ensureContextsRegistry(path)
   } catch (e) {
     console.error('ensure config-on-open failed:', e)
