@@ -78,7 +78,7 @@ describe('NexusRows', () => {
     await render({ 'sync:state': reply(unbound) })
     expect(host.textContent).toContain('This Device')
     expect(host.textContent).toContain('Air')
-    expect(host.textContent).toContain('aaaaaaaaaaaa')
+    expect(host.textContent).not.toContain('aaaaaaaaaaaa')
     expect(host.textContent).toContain(NEXUS_ID)
     expect(host.querySelector('[aria-label="Server address"]')).not.toBeNull()
     expect(button('Connect')).toBeDefined()

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ensureContextsRegistry, mutateRegistryFile, readRegistry } from './contextsRegistry'
+import { ensureContextsRegistry, mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
 
@@ -21,45 +21,34 @@ describe('paths', () => {
   })
 })
 
-describe('readRegistry', () => {
-  it('seeds the three contexts on a true fresh nexus and writes the file', async () => {
-    const r = await readRegistry(root)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.contexts.map((c) => c.id)).toHaveLength(3)
-    expect(new Set(r.value.contexts.map((c) => c.id)).size).toBe(3)
-    expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
-    const onDisk = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    expect(onDisk.contexts).toHaveLength(3)
-  })
-
-  // The open path is the ONLY seeder: every create reads the registry strictly and fails on a missing file, so a nexus that opens without one can never mint its first Context.
-  it('ensureContextsRegistry seeds a fresh nexus, and leaves an existing registry alone', async () => {
+// The open path is the ONLY seeder: every create reads the registry strictly and fails on a missing file, so a nexus that opens without one can never mint its first Context.
+describe('ensureContextsRegistry', () => {
+  it('seeds the three contexts on a true fresh nexus, then leaves the file alone', async () => {
     await mkdir(nexusDir(root), { recursive: true })
     await ensureContextsRegistry(root)
-    const seeded = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    expect(seeded.contexts.map((c: { title: string }) => c.title)).toEqual([
-      'Areas',
-      'Topics',
-      'Projects',
-    ])
 
+    const r = await readRegistryStrict(root)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(new Set(r.value.contexts.map((c) => c.id)).size).toBe(3)
+    expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
+
+    const seeded = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     await ensureContextsRegistry(root)
-    const again = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    expect(again).toEqual(seeded)
+    expect(JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))).toEqual(seeded)
   })
 
-  it('fails on corrupt JSON and leaves the file untouched', async () => {
+  it('leaves a corrupt registry untouched, and the strict read fails', async () => {
     await writeFile(contextsRegistryFile(root), '{nope')
-    const r = await readRegistry(root)
-    expect(r.ok).toBe(false)
+    await ensureContextsRegistry(root)
     expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe('{nope')
+    expect((await readRegistryStrict(root)).ok).toBe(false)
   })
 })
 
 describe('mutateRegistryFile', () => {
   it('round-trips unknown fields at both levels', async () => {
-    await readRegistry(root)
+    await ensureContextsRegistry(root)
     const before = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     before.foreign = { keep: true }
     before.contexts[0].future_field = 7
@@ -92,7 +81,7 @@ describe('mutateRegistryFile', () => {
         contexts: [...cur.contexts, { id: 'ctx_y', title: 'Y', singular: 'Y' }],
       })),
     ])
-    const after = await readRegistry(root)
+    const after = await readRegistryStrict(root)
     expect(after.ok).toBe(true)
     if (!after.ok) return
     const titles = after.value.contexts.map((c) => c.title)
