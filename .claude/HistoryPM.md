@@ -2,7 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 09-10-2026              | PM-135 | MarkdownPM Consolidation                             |
+| 09-11-2026              | PM-135 | Sync Groundwork                                      |
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
 | 09-07-2026              | PM-132 | State Placement                                      |
@@ -139,13 +139,21 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
-#### PM-135 || MarkdownPM Consolidation
-**DATE:** 09-10-2026
+#### PM-135 || Sync Groundwork
+**DATE:** 09-11-2026
 
-MarkdownPM's editor-preference handles, widget dismissal, and range-movers each collapsed onto a single form. The four per-machine preferences — folds, embed heights, embed zooms, and table heading columns — had been declared as three identical `load`/`save` interfaces under separate names, and became one generic `EditorPref<T>` in `api.ts`; the heading-columns load, which had run on its own promise, joined the settled group so it applies before the scroll restore rather than racing it. The table's rectangle selection, its active cell, and embed-tile editing had each dismissed on an outside press through their own capture-phase document listener, and all three moved onto the shared `UIX/Interactions` dismissal stack; the hand-written autocomplete-portal exception fell away because the connection pane already publishes its own stack layer above the cell. Escape now closes an active cell as it closes every other layer, and outside dismissal follows the stack's primary-button rule. The list-item drag and the block drag, two spellings of one cut-and-reinsert, folded into a single `rebuildMove` core parameterized by whether its edges are copied exactly or fenced with a blank line — the list gesture stays tight and renumbers, the block gesture normalizes — and `renumberOrderedRun`'s backward run-start walk was made symmetric with its forward scan, so a numbered item carrying a child line renumbers correctly when dragged up.
+Pommora gained the identities a cross-device transport needs before any content moves. A Nexus was already named by the ULID in `.nexus/nexus.json`; a device is now named by the fingerprint of a key it mints once, and a server by the address one device binds one Nexus to. No content crosses a wire yet — what exists is the admission layer the content arc runs on.
 
-- **Commits:** `389d5cb64`
-- **Diff:** Net −17 | +173 / −190
+**Identity:** `Desktop/Config/device.ts` mints one Ed25519 pair per install through WebCrypto at first launch; the device id is the lowercase hex SHA-256 of the raw public-key bytes, and the public half, the id, and a hostname-derived name sit in the `device` field of `pommora.json`. `Desktop/Config/secrets.ts` holds the private half encrypted by Electron's `safeStorage` in `secrets.json` beside it, and refuses to mint before writing anything when the keychain is unavailable. `HostContext` gained `device` and `transport`, the two members through which Core reaches a signature and the network without handling key bytes itself.
+
+**The Server:** `Sync/server.ts` is one file on `node:http`, `node:sqlite`, and `node:crypto`, run as `npm run sync` under type stripping, keeping `sync.db` in its own directory outside both the app and any Nexus. It answers four verbs — connect, devices, approve, revoke — over a `meta`, `device`, and `membership` schema, and reaches Core with `import type` alone: `Sync/tsconfig.json`'s `nodenext` program reads Core as CommonJS, which makes a value import from Core a compile error. `Sync/` joined `npm run typecheck` as a sixth project and gained its own Vitest project.
+
+**Client And Channels:** `Core/Sync/contract.ts` declares the wire types and the route table and exports nothing executable; `Core/Sync/authority.ts` builds the canonical signing string — the method, the path, the body's hash, and the timestamp, newline-joined — against pinned vectors both the Core and server suites assert. `Core/Sync/client.ts` and `Core/Sync/handlers.ts` carry six `sync:*` channels through `Core/Contract/bridge.ts` — connect, disconnect, approve, revoke, rename, and state — and the address a Nexus is bound to sits in a new `sync` scope of `local_state`, per Nexus and per device.
+
+**The Heading:** Settings › General gained a Nexus heading through a `nexus` row kind and `NexusRows`, showing this device, the Nexus id, the bound server, and the Nexus's device list with Approve and Revoke. Two instances on one Mac holding one Nexus id walked connect, pending, approve, revoke, and reconnect, each state surviving a server restart and an app relaunch.
+
+- **Commits:** `53688425a^..58b5391a4`, excluding `a68ad1551` and `3c601d0bb`, a parallel naming arc's
+- **Diff:** Net +808 (source, comments and tests excluded)
 
 #### PM-134 || MarkdownPM Block Menu
 **DATE:** 09-09-2026

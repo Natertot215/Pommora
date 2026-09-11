@@ -1,131 +1,164 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Execute `.claude/Planning/Block Menu — Implementation Plan.md` (ratified 09-09-2026): orchestrate only, Opus agents implement and review, one writer on the tree, per phase implement → simplify → attack → fix → commit, Gate 2 a declared stop with a manual check list; no comments from any agent; MarkdownPM never imports the store. At the stop Nathan redirected the layout (width knob, a Link section, Divider, phantom-toned query, caret seats, title matching, no initial highlight) and then closed it: run a targeted attack on footnotes, every transformation, caret placement, and cross-feature edges, defer nothing, write History "MarkdownPM Block Menu", reconcile the Codebase Audit report and republish its artifact in Pommora's theme, sweep MarkdownPM.md for accuracy, reconcile Context and Handoff retiring the states and menu-system focuses and keeping glances, point the upcoming focus at the Codebase Report's remaining items, and push to origin.
+> **User Prompt:** Execute `.claude/Planning/Sync Groundwork — Implementation Plan.md` (ratified 09-11-2026) as Fable orchestrating background Opus agents: dispatch, review, and verify, never implement; one tree-touching writer at a time; every phase runs implement → simplify → attack → fix → commit, with each agent claim independently checked by reading the diff and rerunning the gates rather than trusting the report. The goal is one Ed25519 device key minted per install, a one-file server holding which devices a Nexus admits, six bridge channels, and a Nexus heading in Settings › General, proved by two instances on one Mac walking connect → pending → approve → revoke → reconnect. The Settings surface is designed headlessly against the existing kit, its decisions disclosed in-chat and not requested. Reconcile every document the arc makes false and write the closeout records.
 
 #### Current Focus
 
-**Session ID:** 6b0e857e-d460-45bc-a39a-8b796e042333
-**Dates:** 09-09-2026 → 09-10
-**Model:** Fable 5.1 supervising, Opus 5 implementing and reviewing
+**Session ID:** 12e60a02-f033-4f39-b9fb-d2c2722c463c
+**Dates:** 09-11-2026
+**Model:** Fable 5.1 orchestrating, Opus 5 implementing and reviewing
 
-**The MarkdownPM Block Menu, closed.** The session opened on a ratified three-phase plan for a `/` pane and ran it end to end: Phase 1 built the React-free catalog in `Core/Actions/blockMenu.ts`, made `selectedLines` admit a caret-only blank line, and shared the caret geometry and key guard between the two editor panes; Phase 2 built the trigger over the cached scan, the hook, the pane, its jsdom flow test, and the mount in `MarkdownEditor.tsx`; Phase 3 wrote the record. Every gate ran simplify → attack → fix, and the finds were real: a bare `>` line took its marker glued to the prefix, a whitespace-only line became a nested bullet, and — the one High before the stop — a pane held through its exit animation kept the closed render's click handlers, so a click on the fading pane applied a block against a stale range. The `[[` pane had carried that hole since before the plan; both picks now refuse unless the shared ctl reads open.
+**The Sync groundwork, closed.** The session opened on a six-phase ratified plan and ran it end to end. Phase 1 turned `Sync/` into a gated workspace under a `nodenext` tsconfig and wrote `Core/Sync/contract.ts` — types and a route table, nothing executable — beside `authority.ts`, the canonical signing string, pinned to a fixture both the Core and server suites assert. Phase 2 gave Desktop its identity: `secrets.ts` over Electron's `safeStorage`, the `device` field in `pommora.json`, `device.ts` minting one Ed25519 pair per install through WebCrypto, a `net.fetch` transport, and the two new `HostContext` members. Phase 3 wrote the server, Phase 4 the client, the handlers, the six `sync:*` channels, and the `sync` scope of `local_state`, and Phase 5 the Nexus heading. Phase 6 proved the whole thing and rewrote every document the arc made false.
 
-**Nathan's stop redirected the surface.** He asked for a width knob (`BLOCK_MENU_WIDTH` at the top of `BlockMenu.tsx`, 140 at close), a Link section (Connection, Markdown Link alias-first, External Link URL-first through a new `linkText` inline format), `Divider` for the horizontal rule, the typed `/query` in the `[[` pane's phantom tones, a divider and a quote that seat the caret where a writer expects, the filter matching section titles so `/link`, `/embed`, and `/list` keep a whole section, and no row highlighted until an arrow key moves it. All of it landed as Task 5b across seven commits, each reviewed. The Gate 2b simplifier folded the fence/math/table refusal into one `inSealedBlockAt` that `embedSeatAt` reads too, and one `useMenuCtl` cursor that both panes share; its attacker found a Divider written directly under a paragraph reading as a setext heading in every other Markdown reader, fixed by giving the divider the table's leading blank.
+**The design decisions Nathan could not oversee were disclosed rather than asked.** The heading composes existing Settings rows and adds no UIX kind: a `nexus` row kind in `frames.ts`, a `NexusRows` component keying a `NexusBody` on the Nexus id so a Nexus switch re-derives rather than carrying stale rows, device rows that are inert display with Approve and Revoke as their only controls, and a busy gate held in a ref so a double-press cannot double-send. Placeholders are blank: an unbound heading shows the address field and Connect and says nothing about what has not been built.
 
-**The closeout found two more Highs, both fixed.** A neutral verifier held every requirement; Nathan's targeted attack ran all nineteen rows across nine contexts with one undo each (133 live cells correct) and found that a pre-existing `/word` line became a live menu when the caret landed at its end — its pick unrecoverable — and that Internal Page and Webpage threw `RangeError` on a document's leading blank line through a hand-rolled twin of the `lineStartAt` guard the plan had already added once. The pane now opens only on a document change, `embedInsert.ts` reads `lineStartAt`, a Footnote written on the anchor line keeps a blank between marker and run, and a Table pick always seats the caret below the table. The final gate stands at typecheck 0, lint 0 with no warnings, 362 files / 4396 tests.
+**The reviews found real things.** Every gate ran a simplification pass before a build-breaking pass, both dual-briefed to flag bugs. The finds that mattered: a mint that wrote the config's device before the keychain had answered, which a crash between the two writes would have left mismatched — `mint` now refuses before any write when the keychain is unavailable and clears the config's device before writing the new secret; a re-mint on an *undecryptable* secret, which would have thrown away a key that may still return — only an absent key re-mints now, and an undecryptable one leaves the launch identity-less and reported; a refused approve or revoke answering the interface with a guess instead of a re-fetched list; and a connect whose header fingerprint did not match the public key in its own body, which now answers 401 rather than trusting the body.
 
-**Verified against assumed.** The flow tests pin every clause of the acceptance criterion and every redirect; the closeout smoke launch over CDP observed every acceptance clause on the real Nexus after Task 5b and caught one layout defect — a section heading's emphasis fragment splitting across its flex row — fixed by keeping headings plain (Nathan saw the pane before the redirect). That launch killed a Pommora instance that had been running since 09-08 with four tabs open and relaunched it with the same tabs; no data loss was found. An amend meant for Task 6's trailer first landed on the audit-report commit an agent had placed above it; on Nathan's word the eight commits above `182d40369` were rebuilt with their own trees and corrected messages and force-pushed, so the history reads as intended.
+**Verified against assumed.** The two-instance proof was observed, not inferred: one Mac, one Nexus id, instance A approved by construction, instance B pending, approved, revoked, reconnected, every state surviving a server restart and both apps relaunching, with `sync.db` read directly for its `device` and `membership` rows. The scratch tree under `$HOME/pommora-sync-proof/` was deleted afterward and `git status --porcelain` confirmed clean of it. What is *not* verified is anything above the admission layer, because none of it exists: no content crosses, nothing is encrypted, and the server has never run anywhere but localhost.
 
 #### Completion Criteria
 
-- [x] Every numbered requirement of the plan traces to a landed task, and the acceptance criterion holds in `blockMenuFlow.test.tsx`.
-- [x] Every finding from every review pass fixed or carrying a ruling in the plan's Log; no concern carried.
-- [x] MarkdownPM.md, ContextPM.md, HistoryPM.md (PM-134), and the grounding document reconciled; the audit report and its artifact reconciled and restyled.
-- [x] Gates green at close with no lint warnings.
-- [x] `main` pushed to origin.
+- [x] Every task of the plan ticked, with no scaffolding, debug output, or unauthorized TODO in `2d17c1ead..HEAD`.
+- [x] A fresh `POMMORA_USERDATA` mints a device that survives a relaunch; `npm run sync` serves four verbs and refuses unsigned, stale, tampered, and oversized requests.
+- [x] Two instances holding one Nexus id walk connect, pending, approve, revoke, and reconnect, every state surviving a server restart and an app relaunch.
+- [x] Every review finding fixed or ruled on; nothing carried as a concern.
+- [x] Gates green: `npm run typecheck`, `npm run test`, `npm run lint`, `npm run build`.
+- [x] Reconciliation complete — `NexusSyncPM`, the Features docs, the PRD, CLAUDE.md, the Guidelines, the Mobile log and plan, Framework, History PM-135, Context, and this document.
+- [ ] Nathan's own pass over the Nexus heading in Settings › General.
 
 #### Next Session
 
-- **Rule D-2**, the external-edit reload policy, from the audit's Where Brainwaves Go table; it gates the concurrency topic and unblocks the most.
-- **The cheap audit fixes** beside it: the two registry readers (R-17, R-18) and the ready watch-patch id narrowing (R-38).
-- **The audit ledger's count.** The report's Method paragraph says 72 findings were issued and the ledger holds 28 open; the artifact's stat reads 44 closed or withdrawn, corrected from a stale 40 this session. Confirm the 72 against the ledger's history if it matters.
-- **Two hand-rolled `lastIndexOf('\n', … - 1)` sites remain**, `Engine/parser.ts:12` and `Menus/gripMenu.ts:50`, both traced safe by their own guards; fold them onto `lineStartAt` when either file is next open.
+- **Content sync**, the arc this one paved for: items, versions, blobs, and the change feed over the same server and the same device identities. `.claude/Planning/Cross-Device Mutation Checklist.md` is its test plan — every mutation the app can make, and what has to cross for each.
+- **The Nexus password and the wrap key.** One random content key per Nexus wrapped by the password, with a second wrapped entry per device against an X25519 key each device mints beside its signing key, so an approved device unlocks without the password being typed again.
+- **The phone**, which binds the same client to a native transport and a native secret store; `.claude/Planning/Mobile Companion & Pommora Sync — Implementation Plan.md` is unratified and re-derives Tasks 3–6, 12, 14, and 15 against this arc at execution.
+- **The manifest predicate.** What travels is described in `NexusSyncPM` and expressed nowhere — it lands as one predicate beside `neverWatched` in `Core/Paths/exclusion.ts` when the sync client consumes it.
+- **Deployment and TLS**, untouched: the server has only ever run on localhost over plain HTTP.
 
 #### Feedback
 
-- "Looks good. Please assign it a fixed-width line in the file so I can tweak that."
-- "Each section should have autocomplete fire on its section name itself."
-- "H1 shouldn't be highlighted immediately, it's just the first-in-line, not hovered until the hovering actually happens."
-- "**THE STANDARD:** The work is finished when a later review of it finds nothing to correct… Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen."
-- "Do another final sweep of the MarkdownPM doc to ensure it's accurate — silence isn't contradiction."
+- "You never drive smoke launches or CDP yourself; the implementer's brief carries the recipe and reports back."
+- "Every agent claim is independently evaluated before it counts: completion, accuracy, and concerns are checked by reading the diff and rerunning the gates, never by trusting the report."
+- "The settings surface itself should be minimally functional with a simple interface that requires the agent to stop and look for best-practices in the codebase to drive the design of it headlessly… I cannot oversee its design so you should disclose your decisions in-chat and proceed."
 
 #### Session Pointers
 
-- The plan, its rulings, deviations, closeout claim, and verdict: `.claude/Planning/Block Menu — Implementation Plan.md` (Status: Closed).
-- The width knob: `BLOCK_MENU_WIDTH` at the top of `Core/MarkdownPM/Menus/BlockMenu.tsx`.
-- The catalog and filter: `Core/Actions/blockMenu.ts`; the trigger: `Core/MarkdownPM/Menus/blockQuery.ts`; the hook: `useBlockMenu.ts` beside it.
-- The shared pane plumbing: `caretGeometry`, `whenAcOpen`, `useMenuCtl`, `CLOSED_GEOMETRY` in `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts`.
-- The three lessons this arc earned: the tail of `.claude/Guidelines/Editor-Internals.md`.
-- The audit page: `https://claude.ai/code/artifact/a9f3a52c-cb0f-45dc-900d-03275fd87e9c`, mirrored from `.claude/Planning/Codebase Audit — Report.md`.
+- The plan, its ticked tasks, START/END, and Deviations: `.claude/Planning/Sync Groundwork — Implementation Plan.md`; the why behind each decision: `.claude/Planning/Sync Groundwork — Decision Log.md`.
+- What the whole thing is, in one document: `.claude/Features/NexusSyncPM.md`.
+- The canonical signing string and its pinned fixture: `Core/Sync/authority.ts` and `Core/Sync/vectors.json`; the wire types and route table: `Core/Sync/contract.ts`.
+- The device mint and its secret store: `Desktop/Config/device.ts` and `Desktop/Config/secrets.ts`; the transport: `Desktop/Web/transport.ts`.
+- The server: `Sync/server.ts`, started with `npm run sync` from the root, its `sync.db` under `~/.pommora-sync/`.
+- The heading: `Core/Settings/NexusRows.tsx`, reached through the `nexus` row kind in `Core/Settings/frames.ts`.
+- The two-device recipe (a copied Nexus with its databases deleted, two `POMMORA_USERDATA` dirs, built output): `.claude/Guidelines/Development-Environment.md` §Parallel Write Agents.
 
 #### Working Notes
 
-- **A pane's `open` must be read live, never captured.** `PickerMenu` holds children ~380 ms through its exit; a row's `onMouseDown` from the last open render is still clickable with that render's state. Both editor panes guard on `ctl.current.open`.
-- **`useMenuCtl(count, resetKey, drive, initial)`:** `initial = null` is what gives the block menu no highlight on open; the `[[` pane passes 0. `move` from `null` goes to the first or last row by direction; `pick` reads `index ?? 0`.
-- **The filter matches titles, anywhere.** `filterBlockMenu` keeps a whole section when its title contains the query, so `/link` shows Connection although "Connection" never matches, and `/quo` reaches Blockquote; a row's `at` is `null` when only the title matched, and `emphasized` renders the plain label then.
-- **`format:linkText` exists only for the block menu.** No chord and no context-menu row dispatch it; `toggleInline` seats its caret inside the brackets where `format:link` seats it inside the parentheses.
-- **The phantom tone follows the grammar, not the pane**, by ruling: a `/word` line draws in the phantom tones wherever the decorations run, a table cell and a read-only editor included, even though the pane opens only on typing.
-- **Biome's `useImportType` warning exits 0.** A type-only import written as `import { type A }` passes `npm run lint`'s exit code and still prints a warning; read the output.
-- **`git commit --amend --only` amends whatever HEAD is.** With agents committing on the shared branch, confirm HEAD's hash before an amend.
+- **`node_modules/.bin/electron` is a Node shim.** It spawns the real Electron as a child, so killing the launch pid orphans the app exactly as `electron-vite dev` does; kill the port holder or the process carrying `--user-data-dir=`.
+- **Two `npm run dev` processes cannot coexist.** They share one renderer server through a stale port, which is why both proof instances launched from built output.
+- **A copied Nexus is a replica, not a new Nexus.** The id lives in `.nexus/nexus.json` and travels with the copy; deleting `.nexus/*.db*` is what gives the copy its own per-machine state while keeping that id.
+- **Core stays string-only across the sync seam.** `Core/Sync/` never handles key bytes and never base64-encodes; Desktop signs and hands back a base64url string. No gate enforces this — it is a review rule.
+- **`Core/package.json` has no `"type": "module"`, and that is the gate.** Sync's `nodenext` program reads Core's files as CommonJS, which is what makes a value import from Core a compile error under `verbatimModuleSyntax`; adding the key would silently open the door.
+- **Connect verifies against the key in its own body**, not a stored one — it is the one route that must, and it refuses unless that key's fingerprint equals the caller's device id.
 
 **FILES ADDED**
 
-- Core/Actions/blockMenu.ts
-- Core/Actions/blockMenu.test.ts
-- Core/MarkdownPM/Menus/BlockMenu.tsx
-- Core/MarkdownPM/Menus/blockQuery.ts
-- Core/MarkdownPM/Menus/blockQuery.test.ts
-- Core/MarkdownPM/Menus/useBlockMenu.ts
-- Core/MarkdownPM/Menus/blockMenuFlow.test.tsx
+- Core/Settings/NexusRows.tsx
+- Core/Settings/NexusRows.test.tsx
+- Core/Sync/contract.ts
+- Core/Sync/authority.ts
+- Core/Sync/authority.test.ts
+- Core/Sync/vectors.json
+- Core/Sync/client.ts
+- Core/Sync/client.test.ts
+- Core/Sync/handlers.ts
+- Core/Sync/handlers.test.ts
+- Desktop/Config/device.ts
+- Desktop/Config/device.test.ts
+- Desktop/Config/secrets.ts
+- Desktop/Config/secrets.test.ts
+- Desktop/Web/transport.ts
+- Sync/server.ts
+- Sync/server.test.ts
+- Sync/vitest.config.ts
+- .claude/Features/NexusSyncPM.md
+- .claude/Planning/Cross-Device Mutation Checklist.md
 
 **FILES MODIFIED**
 
-- Core/MarkdownPM/Autocomplete/AutocompletePane.tsx
-- Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
-- Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx
-- Core/MarkdownPM/Citations/citationEdits.ts
-- Core/MarkdownPM/Citations/citationCreate.test.tsx
-- Core/MarkdownPM/Embeds/embedInsert.ts
-- Core/MarkdownPM/Embeds/embedInsert.test.ts
-- Core/MarkdownPM/Engine/docScan.ts
-- Core/MarkdownPM/Input/edits.ts
-- Core/MarkdownPM/Input/edits.test.ts
-- Core/MarkdownPM/Input/format.ts
-- Core/MarkdownPM/Input/format.test.ts
-- Core/MarkdownPM/MarkdownEditor.tsx
-- Core/MarkdownPM/Tables/CellEditor.tsx
-- Core/MarkdownPM/decorations.ts
-- UIX/Menus/menu-index.tsx
+- Core/Contract/bridge.ts
+- Core/Contract/handlers.ts
+- Core/Contract/serve.ts
+- Core/Platform/localState.ts
+- Core/Settings/SettingsWindow.tsx
+- Core/Settings/frames.ts
+- Desktop/Config/appConfig.ts
+- Desktop/Config/appConfig.test.ts
+- Desktop/main.ts
+- Sync/package.json
+- Sync/tsconfig.json
+- package.json
+- vitest.config.ts
+- .claude/CLAUDE.md
 - .claude/ContextPM.md
+- .claude/FrameworkPM.md
 - .claude/HandoffPM.md
 - .claude/HistoryPM.md
-- .claude/Features/MarkdownPM.md
-- .claude/Guidelines/Editor-Internals.md
-- .claude/Planning/Block Menu — Implementation Plan.md
+- .claude/PommoraPRD.md
+- .claude/Features/ConfigurationPM.md
+- .claude/Features/CorePM.md
+- .claude/Features/DesktopPM.md
+- .claude/Features/InterfacePM.md
+- .claude/Guidelines/Dependencies.md
+- .claude/Guidelines/Development-Environment.md
 - .claude/Planning/Codebase Audit — Report.md
+- .claude/Planning/Cross-Platform Compatibility Checklist.md
+- .claude/Planning/Mobile Companion & Pommora Sync — Decision Log.md
+- .claude/Planning/Mobile Companion & Pommora Sync — Implementation Plan.md
+- .claude/Planning/Sync Groundwork — Implementation Plan.md
 
 **FILES REMOVED**
 
-- .claude/Planning/Slash Command Menu — Grounding.md
+- *(none — the deletions in this range belong to the parallel naming arc.)*
 
 **COMMITS**
 
-- `f50baa8e9` — feat(actions): the block menu filter matches anywhere in a title or label
-- `e25f34a9d` — docs(pommora): handoff and context for the block menu session
-- `923735426` — fix(markdownpm): a section heading stays one plain label
-- `51fbbcfe1` — fix(markdownpm): a divider and a table share one trailing blank and seat the caret below what they wrote
-- `86a278db9` — docs(plan): the Block Menu plan closes — claim, verdict, rulings, and the lessons routed
-- `08f0d749b` — fix(markdownpm): the block menu opens on typing alone; embeds, footnotes, and tables seat the caret where they should
-- `59caded49` — docs(markdownpm): the feature doc reads as the code stands
-- `203e47813` — docs(audit): the report drops its changelog and reads as current state
-- `b54225118` — docs(pommora): the block menu's record — Context, History PM-134, the grounding retired
-- `182d40369` — fix(markdownpm): a divider keeps a blank line above it; the matched section heading is emphasized
-- `da348382b` — feat(markdownpm): the block menu filter matches a section's title and opens with no row highlighted
-- `47e2bc5f3` — fix(markdownpm): the block menu's rows follow its width knob
-- `3d016ef75` — fix(markdownpm): the block menu's model import is type-only
-- `26383fc20` — refactor(markdownpm): the block menu's width knob lives in its pane
-- `b94097bd3` — feat(markdownpm): External Link and an alias-first Markdown Link; a caret at 0 starts on line one
-- `6d30b72a7` — feat(markdownpm): the block menu's stop refinements — a width knob, a Link section, Divider, phantom-toned query, and a divider and quote that seat the caret
-- `7e6ffb293` — fix(markdownpm): a pick refuses while its pane is closing
-- `9fec99d90` — refactor(markdownpm): one sealed-block predicate and one menu cursor for both panes
-- `d4921077b` — refactor(markdownpm): the trigger reads the fence table directly; the ctl list lives in the mount effect
-- `fe04d8532` — feat(markdownpm): the block menu pane, its hook, and its mount
-- `f7209dc59` — feat(markdownpm): the block menu trigger reads the cached scan
-- `bfdb7b126` — fix(markdownpm): a marker behind a bare quote prefix keeps its space
-- `81e192714` — refactor(actions): readonly block menu rows, no empty-query guard, one caret-geometry branch
-- `75db3a248` — refactor(markdownpm): one caret geometry and a multi-ctl key guard
-- `913ed48f9` — fix(markdownpm): a caret alone on a blank line is a selected line
-- `0b0783569` — feat(actions): the block menu model and its filter
+- `0aa4a5369` — docs(planning): rewrite the Mobile log to the device-key model and close the Sync Groundwork plan
+- `58b5391a4` — docs(planning): correct four writer cells in the mutation checklist
+- `76074b531` — docs(planning): write the cross-device mutation checklist for the sync arc
+- `96fd2d117` — docs(pommora): name the manifest rule and tighten two NexusSyncPM sentences
+- `a542bf469` — docs(pommora): write NexusSyncPM and restate every sync claim
+- `313dc4c94` — fix(pommora): make the first Connect land, follow a Nexus switch, and keep the mount fetch quiet
+- `6b6bcfa4c` — refactor(pommora): settle the Nexus heading to its minimal form and enforce its busy gate
+- `2eeb90e30` — docs(pommora): title the Nexus subsection the way the frame's sub-groupings read
+- `e0ded0d51` — feat(pommora): add the Nexus heading to Settings › General
+- `98444c79f` — fix(sync): detach the listen error handler once bound
+- `b944cc84b` — fix(pommora): re-mint only on an absent key, never on an unreadable one
+- `9c3e39528` — fix(sync): answer a refused act with the true list and self-heal a dropped tree
+- `bb6894f8f` — refactor(sync): settle the client and handlers to their minimal form
+- `4f3155c6a` — docs(sync): name the two refusals ready() holds
+- `ae01671be` — fix(sync): hand the transport a plain header record
+- `87c0c9a97` — feat(sync): expose the six sync channels
+- `563bdfc98` — feat(sync): sign and send any route through the host
+- `f4c549096` — fix(sync): report a failed start and pin the revoke test to the list
+- `ff5db3a67` — refactor(sync): settle the server to its minimal form
+- `61d35329d` — docs(pommora): name the sync server start command
+- `0b81617cc` — test(sync): drive the server through its verbs and refusals
+- `f52152b57` — feat(sync): serve the four device verbs on built-ins alone
+- `64297b748` — fix(pommora): refuse a mint before the keychain answers and bound the transport
+- `7fce0c924` — refactor(pommora): settle the device mint to its minimal form
+- `3d717b765` — feat(pommora): keep the secret store to its two exports
+- `acc701e8f` — docs(pommora): describe the device identity and its secret store
+- `426050dcb` — feat(pommora): hand the device and transport to every host context
+- `8bbd3649e` — feat(pommora): add the host transport over net.fetch
+- `f381e9b21` — feat(pommora): mint the device key once per install
+- `4f6644da4` — feat(pommora): declare the host device and transport types
+- `58152ac5a` — feat(pommora): carry the device in the app config
+- `d06635c48` — feat(pommora): add the keychain-backed secret store
+- `3adf2ecf1` — docs(pommora): state the type-only gate's mechanism precisely
+- `7ca135851` — docs(planning): the name refusals the checklist tracked now exist, Windows-gated
+- `9e2a89efb` — docs(pommora): fold the Sync workspace into the rules and guidelines
+- `ff4395dad` — feat(sync): add the canonical signing string and its pinned vectors
+- `38d1b479f` — feat(sync): declare the type-only wire contract
+- `53688425a` — feat(sync): make Sync a gated workspace
 
 #### Handoff Guidelines
 
