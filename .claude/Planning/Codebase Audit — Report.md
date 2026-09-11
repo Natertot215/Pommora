@@ -26,7 +26,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 | Share                | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
 | -------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **The next sitting** | Decisions             | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
-| **~5%**              | Behind-the-wall fixes | The two registry readers (R-17, R-18) and the ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
+| **~5%**              | Behind-the-wall fixes | The ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
 | **~55%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt) and folding the Table and Cards renderers onto one engine (Topic 6) before a third view kind is written a third time.                                                                                                                  |
 | **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface.                                                                                                                    |
 
@@ -89,19 +89,6 @@ Context membership is keyed by Space *title*, which is the model's structural co
 2. Identity re-minting's adjudication record: a synced, hand-editable ledger under `.nexus/`, or a user-confirmed action instead of a silent open-time pass. *(M; after D-3)*
 
 **Findings:** R-07, R-09.
-
-##### 4. Registry Read Policy
-
-**Lenses and state:** Gates Mobile/Sync · cheap, Foundation risk, Decision, Asymmetry, Duplication. **Effort:** Small to medium. **Deletes:** About 30 lines.
-
-**Found.** One policy inconsistency in the write path. Two functions with the same name read the two nexus-wide registry files with opposite ideas of what an unreadable file means, and the lenient one hands back "no properties" for a file that's momentarily mid-sync, after which a rename half-lands and page creation skips the collection's schema.
-
-**Change.**
-
-1. One shared registry reader for both nexus-wide JSON files with the strict policy; make the on-open journal replay bail instead of sweep when the registry is unreadable. *(S–M; ~30 lines)*
-2. Fold the Contexts `readRegistry` into its ensure wrapper so a read never writes; pick one foreign-field preservation strategy for both files. *(S; after D-9)*
-
-**Findings:** R-17, R-18.
 
 ##### 6. The Table/Cards View Engine
 
@@ -185,6 +172,7 @@ Ordered by how much later work each gates. D-1 (state placement) and D-4 (Contex
 - Whether the two tab models' three differences become parameters.
 - Whether Showcase keeps a public surface in the design kit.
 - Whether a folder's agenda classification may carry existence separately from parse success, and whether the three watch-batch consumers may share one classification.
+- Whether the properties registry and the contexts registry should share one foreign-field preservation strategy.
 - Whether File History stays per-device.
 
 #### Creative Openings
@@ -217,8 +205,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-05 | 1     | D    | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change            | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts`                                                              |
 | R-07 | 2     | FR   | An external edit never reaches an open page, and the next keystroke writes over it                                                 | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts`                                 |
 | R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync       | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                             |
-| R-17 | 4     | FR   | Two nexus-wide registries, opposite corruption policies — and the lenient one gates a rename cascade that half-lands               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts, Core/Files/atomicWrite.ts`                 |
-| R-18 | 4     | D    | Two registry machineries, two foreign-field strategies, one colliding name, and a reader that writes                               | `Core/Properties/propertiesRegistry.ts, Core/Contexts/contextsRegistry.ts`                                            |
 | R-32 | 6     | Dt   | Table and Cards write the same interaction layer twice                                                                             | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx`                                                      |
 | R-33 | 6     | Dt   | Every card carries six store subscriptions and two mounted pickers                                                                 | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
 | R-35 | 6     | Dt   | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests                                                | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
