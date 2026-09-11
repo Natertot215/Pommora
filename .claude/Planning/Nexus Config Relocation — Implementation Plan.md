@@ -46,9 +46,9 @@ Every grep above quotes its `--include` glob; an unquoted `*.ts` errors under zs
   - [x] Task 1.2 — Teach the watcher and asset subsystem the two exceptions
   - [x] Task 1.3 — On-open dir seeding and one-time migration
   - [x] Task 1.4 — Reconcile and extend the tests
-  - [ ] Review Checkpoint
-- [ ] **Phase 2** — Reconcile the documentation
-  - [ ] Task 2.1 — Rewrite every old-location claim in the docs
+  - [x] Review Checkpoint — gates green; smoke launch skipped by ruling (see Deviations)
+- [x] **Phase 2** — Reconcile the documentation
+  - [x] Task 2.1 — Rewrite every old-location claim in the docs
 
 ---
 
@@ -405,6 +405,8 @@ Written when the chain is confirmed, in the skill's report shape.
 
 ### Deviations
 
+- **Task 2.1 — SurfacePM.md left unchanged.** The plan listed it for the homepage host-sidecar location. Its only reference (`SurfacePM.md:18`) already names the host folder as `.nexus/homepage/` and calls the config file by its bare leaf `homepage.json`, parallel to `_space.json` in the same parenthetical — no `.nexus/homepage.json` root claim exists there, and the leaf name is unchanged by the move. Editing it would break the leaf-name parallel without correcting anything, so it was left as written; it already passes the Phase 2 VERIFY grep.
+- **Review Checkpoint — smoke launch skipped by ruling.** The migration runs in place on the live NexusOS registry on open. With Nathan present, he ruled to skip the on-real-data smoke launch and rely on the unit coverage (idempotency, both-present-wins, fresh-nexus seeding, the two collision regressions), verifying himself when he next opens the app. The plan's autonomous stand-in was therefore not run; every other checkpoint item holds.
 - **Task 1.4 — ten fixtures beyond the named eleven needed the contexts parent.** The plan's test audit was grep-driven on flat-path string literals, which cannot see a fixture that seeds the registry through `contextsRegistryFile(root)` — a helper, not a literal. Ten such files (`contextWrite`, `contextCascade`, `admission`, `governedWorldWrite`, `repairSweep`, and the five `Trash/*` suites) wrote the registry at its new `.nexus/contexts/contexts.json` path with a raw `writeFile` whose parent did not yet exist, throwing ENOENT (175 failures). Each got a `mkdir(contextsDir(root))` before its registry seed — the same parent-dir fix the plan prescribes for the literal fixtures. No path or assertion logic changed; only the missing directory.
 - **Task 1.2, edit #5 — `'reserved'` error code.** The plan's `fail('reserved', …)` requires a code the closed `ErrorCode` union in `Core/Contract/result.ts` did not carry. Added `'reserved'` to that union (one line), the single place codes are declared — `result.ts` is outside the task's named FILES but is the correct home for a new code, and it fits the existing specific-code family (`'invalid-name'`, `'invalid-path'`). No call site branches on the value; the human-readable message carries the meaning.
 

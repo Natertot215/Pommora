@@ -11,14 +11,14 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 // <Nexus>                               | • The picked folder — canonical content; syncs with the cloud
 ├── // .nexus                            | • App-internal config and the device-local database
 │   ├── // assets                        | • The default asset directory — banners, files, thumbnails
+│   │   └── crops.json                   | • Per-image framing, keyed by the image
 │   ├── // contexts                      | • One folder per Context, one per Space beneath it
+│   │   ├── contexts.json                | • The Context registry — order is display order
 │   │   └── // <Context>
 │   │       └── // <Space>
 │   │           └── _space.json          | • The Space's identity, color, banner, and its own relation keys
 │   ├── // homepage                      | • The Homepage's tile document and markdown-tile bodies
-│   ├── contexts.json                    | • The Context registry — order is display order
-│   ├── crops.json                       | • Per-image framing, keyed by the image
-│   ├── homepage.json                    | • The Homepage's banner and heading icon
+│   │   └── homepage.json                | • The Homepage's banner and heading icon
 │   ├── navigation.json                  | • Pins and favorites as ordered id arrays, plus the NavView banner
 │   ├── nexus.db                         | • Device-local operational state and the content index
 │   ├── versions.db                      | • Device-local page file history — the snapshot store

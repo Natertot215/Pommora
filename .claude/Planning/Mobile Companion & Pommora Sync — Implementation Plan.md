@@ -822,7 +822,7 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { deb
 
 ```ts
 // src/engine/Sync/e2e.test.ts — imports createApp through '../../../Sync/src/app.ts' (the node project types it; Task 3) and the client beside it
-// Sync/test/fixture/  a 14-file Nexus: .nexus/{nexus.json,settings.json,properties.json,contexts.json,state.json}, Ideas/{_pagecollection.json,A.md,B.md},
+// Sync/test/fixture/  a 14-file Nexus: .nexus/{nexus.json,settings.json,properties.json,state.json}, .nexus/contexts/contexts.json, Ideas/{_pagecollection.json,A.md,B.md},
 //                      Ideas/Set/{_pageset.json,C.md}, .trash/Ideas/2026-01-01T00-00-00-000Z__D.md.deleted/{D.md,_record.json}, .nexus/assets/pic.png, .nexus/nexus.db (excluded)
 export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]; onlyB: string[]; differ: string[] }>   // Sync/test/diffRoots.ts; manifests + sha-256 per file
 // scenarios, each its own `it`, in this order, two temp roots A and B, one server on an ephemeral port with DATA_DIR in a temp dir:
@@ -1871,7 +1871,7 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 
 **Verify — automated**
 
-- [ ] Red first (`session.test.ts`, memory host, fake transport): a landing of `Ideas/A.md` patches the page node without a walk (spy on `readNexus` → 0 calls); a sidecar landing patches the container; a `.nexus/contexts.json` landing triggers one walk; three landings in one page trigger one `nexus:changed`. Then green.
+- [ ] Red first (`session.test.ts`, memory host, fake transport): a landing of `Ideas/A.md` patches the page node without a walk (spy on `readNexus` → 0 calls); a sidecar landing patches the container; a `.nexus/contexts/contexts.json` landing triggers one walk; three landings in one page trigger one `nexus:changed`. Then green.
 - [ ] Red first: a `context-menu` ask with a page target presents `contextMenuModel`'s rows (the pane stubbed) and, picked `delete`, emits `confirm-delete` with the target; `mutate` rename on a page rewrites a sibling's `[[Old]]` (memory host) and notes every write; `mutate` delete leaves the bundle and notes both files; a `delete` of kind `space` answers `{ ok: false }`; a path failing `safeRel` answers `{ ok: false }` before any write. Every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled envelope channel answers `{ ok: false }` with the shared code; a menu channel answers null; an unhandled raw channel answers undefined and `linkTitles.get()` answers `{}`; `tabs.load()` answers `{ ok: true, value: null }` before any save and round-trips a saved set; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` notes two own writes (the page and the sidecar). Then green.
 - [ ] Full gate green.
 
