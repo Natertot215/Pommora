@@ -72,7 +72,7 @@ function systemItems(
 
 // Last, so the Pommora formatting block sits directly under the edit items.
 function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions[] {
-  if (!params.selectionText) return []
+  if (!params.selectionText || process.platform !== 'darwin') return []
   return [
     { type: 'separator' },
     { label: 'Speech', submenu: [{ role: 'startSpeaking' }, { role: 'stopSpeaking' }] },
@@ -147,7 +147,7 @@ function pommoraItems(
       label: 'Heading',
       submenu: HEADING_LEVELS.map(({ level, label }) => ({
         label,
-        type: 'radio' as const,
+        type: 'checkbox' as const,
         checked: s.heading === level,
         click: act(`heading:${level}`),
       })),

@@ -1,4 +1,5 @@
 import type { Extension } from '@codemirror/state'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
 import { hasWebScheme, normalizeLinkUrl } from '@pommora/core/Connections/links'
 import { linkTarget, linkTokenAt } from '../Engine/tokens'
@@ -85,7 +86,7 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
             hit.target,
             hit.url,
             getApi(),
-            event.metaKey,
+            isCmd(event),
             event.target as Element,
             view.state.facet(editorHost),
           )

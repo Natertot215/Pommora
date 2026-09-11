@@ -8,6 +8,7 @@ import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
 import { isHttpLink } from '@pommora/core/Connections/links'
 import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { linkDisplayText, readLink, type LinkTarget } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
@@ -50,7 +51,7 @@ export function LinkCell({
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          if (e.ctrlKey) return // Ctrl+Click = macOS secondary-click; let the contextmenu menu win
+          if (isSecondaryClick(e)) return
           openWebLink(url)
         }}
       >
@@ -79,8 +80,8 @@ function ConnectionCell({
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          if (e.ctrlKey || !page) return
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: e.metaKey })
+          if (isSecondaryClick(e) || !page) return
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: isCmd(e) })
         }}
       >
         {showTitle ? target.title : (target.alias ?? target.title)}
