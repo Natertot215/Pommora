@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
+import { isEmptyBand, type ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { GroupBand, resolveBandHead } from './GroupBand'
 import { useBandDrag } from './BandDnd'
@@ -61,7 +61,7 @@ export function ViewGroupBand({
     <GroupBand
       glyph={glyph}
       collapsed={collapsed}
-      empty={group.items.length === 0 && !group.children?.length}
+      empty={isEmptyBand(group)}
       onToggle={onToggle}
       showAdd={group.kind === 'structural-set'}
       onAdd={onAdd}

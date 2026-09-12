@@ -166,6 +166,48 @@ describe('band drag gesture', () => {
     expect(dropSpy).not.toHaveBeenCalled()
   })
 
+  it('marks a band with no items and no sub-bands empty, so opening it adds no clearance', async () => {
+    const view: SavedView = {
+      id: 'v',
+      name: 'V',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+      group: { kind: 'structural' },
+    }
+    const mount = async (group: ResolvedGroup): Promise<boolean> => {
+      await act(async () => {
+        root.render(
+          <BandDnd bands={BANDS} labelFor={(id) => id} onDrop={dropSpy}>
+            <ViewGroupBand
+              group={group}
+              view={view}
+              ctx={{ schema: [] } as never}
+              setNames={new Map([['A', 'A']])}
+              setIcons={new Map()}
+              source={{ kind: 'collection', title: 'Col' } as never}
+              collapsed={false}
+              onToggle={() => {}}
+              indent="0px"
+            >
+              {null}
+            </ViewGroupBand>
+          </BandDnd>,
+        )
+      })
+      return (host.querySelector('.group-band-row') as HTMLElement).hasAttribute('data-empty')
+    }
+    const bare: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [], isCollapsed: false }
+    expect(await mount(bare)).toBe(true)
+    const child: ResolvedGroup = {
+      key: 'A1',
+      kind: 'structural-set',
+      items: [],
+      isCollapsed: false,
+    }
+    expect(await mount({ ...bare, children: [child] })).toBe(false)
+  })
+
   it('classifies a middle-zone hover as nest-into with the target highlighted', async () => {
     await drag('B', 36)
     expect(host.querySelector('[data-band="A1"]')?.getAttribute('data-nest')).toBe('true')

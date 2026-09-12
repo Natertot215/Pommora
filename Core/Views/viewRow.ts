@@ -44,5 +44,8 @@ export interface ResolvedGroup {
   bucket?: string
 }
 
+export const isEmptyBand = (group: Pick<ResolvedGroup, 'items' | 'children'>): boolean =>
+  group.items.length === 0 && !group.children?.length
+
 /** Stored on disk in `collapsed_groups`, so it round-trips across builds — the single source the pipeline and the render code both match group keys against. */
 export const UNGROUPED = '_ungrouped'
