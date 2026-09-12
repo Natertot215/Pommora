@@ -247,7 +247,7 @@ type EngineValue = {
 const EngineCtx = createContext<EngineValue | null>(null)
 const ZoneIdCtx = createContext<{ zoneId: string; disabled: boolean } | null>(null)
 
-export type DragGroupProps = {
+type DragGroupProps = {
   onCommit?: (activeId: string, toZone: string, toIndex: number) => void
   crossZone?: boolean
   /** Null refuses the landing. Must be idempotent: an index it returned maps to itself. */
