@@ -2,10 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { DragGroup, SortableZone, useDropSlot, useZoneItem } from './engine'
+import { DragGroup, placeCell, SortableZone, useDragItem, useDropSlot } from './engine'
 import { firePointer, pressEscape, stubPointerCapture, stubRect } from './pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
-import { SETTLE_FALLBACK } from './shared'
+import { type Box, SETTLE_FALLBACK } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
@@ -13,13 +13,13 @@ stubPointerCapture()
 const ZONES: Record<string, string[]> = { E: [], A: ['a1', 'a2'], B: ['b1'], C: [], D: ['d1'] }
 const BAND: Record<string, number> = { E: -200, A: 0, B: 200, C: 400, D: 600 }
 
-let commitSpy: ReturnType<typeof vi.fn>
-let reorderSpy: ReturnType<typeof vi.fn>
+let commitSpy: ReturnType<typeof vi.fn<(activeId: string, zone: string, index: number) => void>>
+let reorderSpy: ReturnType<typeof vi.fn<(activeId: string, overId: string) => void>>
 let resolve: (zoneId: string, index: number, activeId: string) => number | null
 let withOverlay = false
 
 function Item({ id }: { id: string }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useZoneItem(id)
+  const { setNodeRef, style, handle } = useDragItem(id)
   return <div ref={setNodeRef} data-id={id} style={style} {...handle} />
 }
 
@@ -277,5 +277,69 @@ describe('the drag engine across zones', () => {
     expect(commitSpy).not.toHaveBeenCalled()
     await settle()
     expect(commitSpy).toHaveBeenCalledOnce()
+  })
+})
+
+// A column of uniform 10px-tall slots at y = 0,10,20,...
+const column = (n: number): Box[] =>
+  Array.from({ length: n }, (_, i) => ({
+    left: 0,
+    top: i * 10,
+    width: 100,
+    height: 10,
+    cx: 50,
+    cy: i * 10 + 5,
+  }))
+
+// A `cols`-wide grid of 100px cells.
+const grid = (count: number, cols: number): Box[] =>
+  Array.from({ length: count }, (_, i) => {
+    const c = i % cols
+    const r = Math.floor(i / cols)
+    return {
+      left: c * 100,
+      top: r * 100,
+      width: 100,
+      height: 100,
+      cx: c * 100 + 50,
+      cy: r * 100 + 50,
+    }
+  })
+
+const cellIn = (rects: Box[], over: number, activeIdx: number, index: number): { y: number } =>
+  placeCell(rects, activeIdx, over, index, 10, 100)
+
+describe('placeCell — the displacement core', () => {
+  it('shifts the passed-over items up when dragging forward', () => {
+    const r = column(4)
+    expect(cellIn(r, 2, 0, 1).y).toBe(0)
+    expect(cellIn(r, 2, 0, 2).y).toBe(10)
+    expect(cellIn(r, 2, 0, 3).y).toBe(30)
+  })
+
+  it('shifts the passed-over items down when dragging backward', () => {
+    const r = column(4)
+    expect(cellIn(r, 1, 3, 0).y).toBe(0)
+    expect(cellIn(r, 1, 3, 1).y).toBe(20)
+    expect(cellIn(r, 1, 3, 2).y).toBe(30)
+  })
+
+  it('is a no-op when over === active (hovering its own slot)', () => {
+    const r = column(4)
+    for (let i = 0; i < 4; i++) expect(cellIn(r, 1, 1, i).y).toBe(i * 10)
+  })
+
+  it('closes the gap when the active item is in another zone', () => {
+    const r = column(4)
+    expect(cellIn(r, -1, 1, 0).y).toBe(0)
+    expect(cellIn(r, -1, 1, 2).y).toBe(10)
+    expect(cellIn(r, -1, 1, 3).y).toBe(20)
+  })
+
+  it('opens a slot for a foreign item, and walks the grid past the last cell', () => {
+    const g = grid(4, 2)
+    expect(placeCell(g, -1, 0, 0, 100, 200)).toEqual({ x: 100, y: 0 })
+    expect(placeCell(g, -1, 4, 3, 100, 200)).toEqual({ x: 100, y: 100 })
+    expect(placeCell(g, -1, 0, 3, 100, 200)).toEqual({ x: 0, y: 200 })
   })
 })

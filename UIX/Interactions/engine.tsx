@@ -389,7 +389,7 @@ export function DragGroup({
     const d = drag.current
     if (!d.active || !d.rect) return
     const { x: dx, y: dy } = travel(d, cx, cy)
-    // Written straight to the element: a delta in context would re-render every item per pointermove. useZoneItem omits `transform` so React never clobbers this write.
+    // Written straight to the element: a delta in context would re-render every item per pointermove. useDragItem omits `transform` so React never clobbers this write.
     if (overlayEl.current) overlayEl.current.style.transform = translate(dx, dy)
     else if (d.el && !overlayOn.current)
       d.el.style.transform = translate((dx + d.compX) / d.zoom, (dy + d.compY) / d.zoom)
@@ -817,7 +817,7 @@ export function useDropSlot(): Box | null {
   return engine && engine.dropState === 'dragging' ? engine.dropBox() : null
 }
 
-export function useZoneItem(id: string): DragItem {
+export function useDragItem(id: string): DragItem {
   const engine = useContext(EngineCtx)
   const zone = useContext(ZoneIdCtx)
   if (!engine || zone === null) throw new Error('useDragItem must be used inside a <SortableZone>')

@@ -1,10 +1,9 @@
-import { DragGroup, SortableZone, useDropSlot, useZoneItem } from './engine'
 import './drop-chrome.css'
 import type { DragItem } from './shared'
 import { moveItem } from '../Utilities/moveItem'
 
 export type { DragItem }
-export { DragGroup, SortableZone, useDropSlot, useZoneItem as useDragItem }
+export { DragGroup, SortableZone, useDragItem, useDropSlot } from './engine'
 
 export function reorder<T extends { id: string }>(
   items: T[],
