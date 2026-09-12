@@ -4,7 +4,7 @@
 
 **Pommora Sync has its identities.** Every install mints one Ed25519 key at first launch: the fingerprint of that key is the device's id, its public half and a name sit in the `device` field of `pommora.json`, and its private half sits keychain-encrypted in `secrets.json` beside it. `Sync/server.ts` is one Node file on built-ins that keeps which devices a Nexus admits, answering connect, devices, approve, and revoke to requests each signed by the device key, with no session and no account; `Core/Sync/` carries the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General's Nexus heading shows this device, the Nexus ID, the bound server, and the Nexus's device list with Approve and Revoke. What does not exist is everything above that line: no file content crosses, the phone has nothing on it, the Nexus password and content encryption are unwritten, the manifest rule deciding what travels is described rather than expressed as a predicate, and the server has run only on localhost. [[NexusSyncPM]] describes what stands.
 
-**Next is the sync arc's content half.** The content sync rides the same server and identities the groundwork mints; `// Planning`'s `Cross-Device Mutation Checklist.md` is its test plan. Behind it sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` is the current state of the audit and shrinks as items close; its Where Brainwaves Go table orders the work: rule D-2, the external-edit reload policy, first; the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it; then building on the openings whose plumbing exists. The published audit page mirrors the report in Pommora's own theme. The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, and ghost behavior.
+**Next is the sync arc's content half.** The content sync rides the same server and identities the groundwork mints; `// Planning`'s `Cross-Device Mutation Checklist.md` is its test plan. Behind it sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` is the current state of the audit and shrinks as items close; its Where Brainwaves Go table orders the work: rule D-2, the external-edit reload policy, first; the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it; then building on the openings whose plumbing exists. The published audit page mirrors the report in Pommora's own theme. The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, and every drag surface over one engine, `UIX/Interactions/engine.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, ghost, and drag behavior.
 
 The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
@@ -48,7 +48,7 @@ Findings where the correct answer isn't established in the codebase — design a
 
 - **A personalization key has to take its readers with it.** A surface left reading the tree's copy of a setting sees a value that only refreshes on a disk round-trip, which presents as a settings row that doesn't work — the store slice is what updates live.
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
-- **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
+- **A whole-surface drag handle steals its own children's clicks.** The gesture captures the pointer once a drag activates, so an interactive descendant that must not lift stops pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide, and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
 - **A write built on a failed parse must refuse, and `rmwJsonStrict` is that refusal.** The config readers stay lenient — a malformed file reads as empty — but every read-modify-write goes through the strict primitive, which fails the operation on an unparseable file rather than rewriting it holding only the toggled key; only a genuinely absent file starts from a seed.
@@ -84,6 +84,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-137 || One Drag Engine
+**DATE:** 09-12-2026
+
+`UIX/Interactions/engine.tsx` is the one drag engine behind the design kit's façade, carrying the zone registry a `DragGroup` holds, a trailing landing cell walked along a foreign grid's own columns, the `resolveIndex` veto, and the optional portal overlay Cards needs for a card leaving a clipping host; the second reorder engine that served Cards alone retired. The landing slot takes the size of the cell it lands in, an addressable zone grows a floor the size of the lifted card only while a drag is in flight, and every surface divides its geometry by the rendered zoom `currentZoom` reads. Cards gained same-band keyboard reorder, and `engine.test.tsx` is the kit's first DOM test of the engine.
+
 #### PM-136 || One View Mechanism
 **DATE:** 09-11-2026
 
@@ -103,11 +108,6 @@ MarkdownPM gained a command menu: `/` on an empty line opens an in-app pane of f
 **DATE:** 09-07-2026
 
 A Vitest walker over the import graph from `Core/Contract/serve.ts` fails on any `.tsx`, DOM global, or package outside `ulidx`/`yaml`/`zod`, and the Desktop node tsconfig makes a DOM reference in an engine file a type error. Every channel in `Core/Contract/bridge.ts` answers through the `Result` envelope, and Core's tests open in-memory stores through `Core/Testing/machines.ts`, so Core passes `vitest` with `Desktop/` renamed away.
-
-#### PM-132 || State Placement
-**DATE:** 09-07-2026
-
-A chosen view and a hand-dragged row order became fields of the container's own sidecar (`active_view`, and `manual_order` on the view record), so both travel with the Nexus; pane widths, sidebar folds, and a floating window's size became nested keys on the `devicePrefs` singleton in `nexus.db`, per machine and per Nexus. `localStorage` holds nothing of Pommora's, and Interface Scale and Webpage Zoom stay in the synced settings file by decision.
 
 ### Guidelines
 
