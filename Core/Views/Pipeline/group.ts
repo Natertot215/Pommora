@@ -12,7 +12,7 @@ import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import { optionValues, type PropertyDefinition } from '@pommora/core/Properties/properties'
-import { UNGROUPED } from '@pommora/core/Views/viewRow'
+import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 
 const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'datetime'])
@@ -367,7 +367,7 @@ export function pruneEmptyBuckets(groups: ResolvedGroup[]): ResolvedGroup[] {
   return groups.flatMap((group) => {
     const { children: nested, ...band } = group
     const children = nested ? pruneEmptyBuckets(nested) : undefined
-    if (group.kind === 'property' && group.items.length === 0 && !children?.length) return []
+    if (group.kind === 'property' && isEmptyBand({ ...band, children })) return []
     return [children?.length ? { ...band, children } : band]
   })
 }
@@ -377,7 +377,7 @@ export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
     if (group.kind !== 'structural-set') return [group]
     const { children: nested, ...band } = group
     const children = nested ? pruneEmptyGroups(nested) : []
-    if (band.items.length === 0 && children.length === 0) return []
+    if (isEmptyBand({ ...band, children })) return []
     return [children.length > 0 ? { ...band, children } : band]
   })
 }
