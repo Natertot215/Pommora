@@ -1064,9 +1064,9 @@ const PageCard = memo(function PageCard({
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
-  const gdrag = useDragItem(row.id)
-  const drag = draggable ? gdrag : null
-  // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it would rebuild on every drag frame — exactly when CardFace's memo has to hold.
+  const item = useDragItem(row.id)
+  const drag = draggable ? item : null
+  // The boolean, not the object: `item` is a fresh object per slot flip, so a handler keyed on it would rebuild on every drag frame — exactly when CardFace's memo has to hold.
   const isDragging = drag?.isDragging ?? false
   const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
   const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
