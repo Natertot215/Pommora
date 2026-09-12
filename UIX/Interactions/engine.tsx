@@ -37,7 +37,6 @@ const INTERACTIVE_ACTIVATION = 12
 const INTERACTIVE = '[data-drag-slop], button, input, textarea, select, a[href], [contenteditable]'
 
 type Point = { x: number; y: number }
-type Bounds = { left: number; right: number; top: number; bottom: number }
 
 type ZoneReg = {
   ids: string[]
@@ -129,11 +128,6 @@ function ensureZone(zones: ZoneMap, zoneId: string): ZoneReg {
 
 // ── Measurement ─────────────────────────────────────────────────────────────
 
-function boundsOf(el: HTMLElement): Bounds {
-  const r = el.getBoundingClientRect()
-  return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
-}
-
 // Smallest positive vertical step, not rects[1] - rects[0]: a grid's first two items share a row.
 function pitchOf(rects: Box[], activeHeight: number): number {
   const tops = [...new Set(rects.map((b) => b.top))].sort((a, b) => a - b)
@@ -224,10 +218,11 @@ export function placeCell(
 }
 
 const STILL = 'translate3d(0,0,0)'
+const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
 
 /** Local px, so a zoomed root's items travel the screen distance the pointer did. */
 const placeTransform = (target: Point, base: Box, zoom: number): string =>
-  `translate3d(${px((target.x - base.left) / zoom)}, ${px((target.y - base.top) / zoom)}, 0)`
+  translate((target.x - base.left) / zoom, (target.y - base.top) / zoom)
 
 // ── Context ─────────────────────────────────────────────────────────────────
 
@@ -270,12 +265,14 @@ export function DragGroup({
   crossZoneRef.current = crossZone
   const resolveRef = useRef(resolveIndex)
   resolveRef.current = resolveIndex
+  const resolveAt = (zoneId: string, index: number): number | null =>
+    resolveRef.current ? resolveRef.current(zoneId, index, drag.current.id) : index
   const overlayOn = useRef(renderOverlay != null)
   overlayOn.current = renderOverlay != null
 
   const zones = useRef<ZoneMap>(new Map())
   const frozen = useRef(new Map<string, Frozen>())
-  const bounds = useRef(new Map<string, Bounds>())
+  const bounds = useRef(new Map<string, DOMRect>())
   const drag = useRef(blankDrag())
   const overlayEl = useRef<HTMLDivElement | null>(null)
   const pending = useRef<(() => void) | null>(null)
@@ -284,8 +281,7 @@ export function DragGroup({
 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeRect, setActiveRect] = useState<Box | null>(null)
-  const [overZone, setOverZone] = useState<string | null>(null)
-  const [over, setOver] = useState(-1)
+  const [landing, setLanding] = useState<[string, number] | null>(null)
   const [dropState, setDropState] = useState<DropState>('idle')
   const [keyboard, setKeyboard] = useState(false)
   const beginGesture = usePointerGesture()
@@ -307,13 +303,10 @@ export function DragGroup({
   const labelOf = (zoneId: string, id: string): string =>
     zones.current.get(zoneId)?.getItemLabel?.(id) ?? id
 
-  const widthOf = (zoneId: string): number => {
-    const b = bounds.current.get(zoneId)
-    return b ? b.right - b.left : 0
-  }
+  const widthOf = (zoneId: string): number => bounds.current.get(zoneId)?.width ?? 0
   const syncBounds = (): void => {
     for (const [zid, z] of zones.current)
-      if (z.container) bounds.current.set(zid, boundsOf(z.container))
+      if (z.container) bounds.current.set(zid, z.container.getBoundingClientRect())
   }
   const freeze = (zoneId: string): Frozen | null => {
     const held = frozen.current.get(zoneId)
@@ -382,8 +375,7 @@ export function DragGroup({
     d.mapped = idx
     setActiveId(id)
     setActiveRect(d.rect)
-    setOverZone(zoneId)
-    setOver(idx)
+    setLanding([zoneId, idx])
     setDropState('dragging')
     return f
   }
@@ -393,10 +385,9 @@ export function DragGroup({
     if (!d.active || !d.rect) return
     const { x: dx, y: dy } = travel(d, cx, cy)
     // Written straight to the element: a delta in context would re-render every item per pointermove. useZoneItem omits `transform` so React never clobbers this write.
-    if (overlayEl.current)
-      overlayEl.current.style.transform = `translate3d(${px(dx)}, ${px(dy)}, 0)`
+    if (overlayEl.current) overlayEl.current.style.transform = translate(dx, dy)
     else if (d.el && !overlayOn.current)
-      d.el.style.transform = `translate3d(${px((dx + d.compX) / d.zoom)}, ${px((dy + d.compY) / d.zoom)}, 0)`
+      d.el.style.transform = translate((dx + d.compX) / d.zoom, (dy + d.compY) / d.zoom)
 
     const from = d.pickZone
     const zid = crossZoneRef.current ? (zoneAt(cx, cy) ?? from) : d.zoneId
@@ -424,14 +415,12 @@ export function DragGroup({
     }
     // A new candidate has to beat the standing one; on a zone switch the argmin wins outright.
     if (zid === from && pick !== d.pick && distTo(d.pick) - nearest <= HYSTERESIS) pick = d.pick
-    const mapped = resolveRef.current ? resolveRef.current(zid, pick, d.id) : pick
+    const mapped = resolveAt(zid, pick)
     d.pickZone = zid
     d.pick = pick
     if (mapped !== d.mapped || zid !== from) {
       d.mapped = mapped
-      const [zone, idx] = landingOf(d)
-      setOverZone(zone)
-      setOver(idx)
+      setLanding(landingOf(d))
     }
   }
 
@@ -451,8 +440,7 @@ export function DragGroup({
     bounds.current.clear()
     setActiveId(null)
     setActiveRect(null)
-    setOverZone(null)
-    setOver(-1)
+    setLanding(null)
     setDropState('idle')
     setKeyboard(false)
   }
@@ -556,10 +544,8 @@ export function DragGroup({
       const next = keyboardNext(f.rects, d.pick, ARROW_DIRS[e.key])
       if (next !== d.pick) {
         d.pick = next
-        d.mapped = resolveRef.current ? resolveRef.current(d.zoneId, next, d.id) : next
-        const [zone, idx] = landingOf(d)
-        setOverZone(zone)
-        setOver(idx)
+        d.mapped = resolveAt(d.zoneId, next)
+        setLanding(landingOf(d))
         announce(`Moved to position ${next + 1} of ${f.rects.length}.`)
       }
     } else if (e.key === ' ' || e.key === 'Enter' || e.key === 'Tab') {
@@ -600,13 +586,12 @@ export function DragGroup({
     d.active = false
     detach()
     setDropState('dropping')
-    setOverZone(zoneId)
-    setOver(idx)
+    setLanding([zoneId, idx])
     const target = targetCell(zoneId, idx)
     const el = overlayEl.current ?? d.el
     if (overlayEl.current && target && d.rect) {
       overlayEl.current.style.transition = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
-      overlayEl.current.style.transform = `translate3d(${px(target.x - d.rect.left)}, ${px(target.y - d.rect.top)}, 0)`
+      overlayEl.current.style.transform = translate(target.x - d.rect.left, target.y - d.rect.top)
     }
     let done = false
     const finish = (): void => {
@@ -647,7 +632,7 @@ export function DragGroup({
     const d = drag.current
     if (!el || !d.active) return
     const t = travel(d, d.lastX, d.lastY)
-    el.style.transform = `translate3d(${px(t.x)}, ${px(t.y)}, 0)`
+    el.style.transform = translate(t.x, t.y)
   }, [])
 
   const overlay =
@@ -688,7 +673,7 @@ export function DragGroup({
       if (dropState === 'dragging' && !keyboard)
         return { transform: undefined, hidden: false, animate: false }
       const base = frozen.current.get(d.zoneId)?.rects[d.activeIdx]
-      const target = overZone === null ? null : targetCell(overZone, over)
+      const target = landing && targetCell(...landing)
       if (!base || !target) return atRest(animate)
       return { transform: placeTransform(target, base, d.zoom), hidden: false, animate: true }
     }
@@ -698,7 +683,7 @@ export function DragGroup({
     const target = placeCell(
       f.rects,
       zoneId === d.zoneId ? d.activeIdx : -1,
-      zoneId === overZone ? over : -1,
+      landing && landing[0] === zoneId ? landing[1] : -1,
       index,
       f.pitch,
       widthOf(zoneId),
@@ -707,8 +692,9 @@ export function DragGroup({
   }
 
   const dropBox = (): Box | null => {
-    const target = overZone === null ? null : targetCell(overZone, over)
-    if (!activeRect || !target || over < 0) return null
+    if (!activeRect || !landing || landing[1] < 0) return null
+    const target = targetCell(...landing)
+    if (!target) return null
     const { width, height } = activeRect
     return {
       left: target.x,
@@ -733,7 +719,7 @@ export function DragGroup({
       itemState,
       dropBox,
     }),
-    [activeId, activeRect, overZone, over, dropState, keyboard],
+    [activeId, activeRect, landing, dropState, keyboard],
   )
 
   return (
