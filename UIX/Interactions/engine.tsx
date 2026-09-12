@@ -696,9 +696,11 @@ export function DragGroup({
     return { transform: placeTransform(target, f.rects[index], d.zoom), hidden: false, animate }
   }
 
-  // Containers grow their drag-time floor on the lift commit, so every measurement is re-read once it has laid out.
+  // Containers grow their drag-time floor on the lift commit, so every measurement is re-read once it has laid out; the landing re-renders because dropBox reads the shifted rects at render.
   useLayoutEffect(() => {
-    if (dropState === 'dragging') resync()
+    if (dropState !== 'dragging') return
+    resync()
+    setLanding((l) => l && [...l])
   }, [dropState])
 
   const dropBox = (): Box | null => {

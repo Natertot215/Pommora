@@ -9,9 +9,9 @@ import { SETTLE_FALLBACK } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
-// Two banded zones of 200px and an empty one below them, each card a 100px row.
-const ZONES: Record<string, string[]> = { A: ['a1', 'a2'], B: ['b1'], C: [], D: ['d1'] }
-const BAND: Record<string, number> = { A: 0, B: 200, C: 400, D: 600 }
+// An empty zone above two banded zones of 200px, an empty one below them, and a wide one; each card a 100px row.
+const ZONES: Record<string, string[]> = { E: [], A: ['a1', 'a2'], B: ['b1'], C: [], D: ['d1'] }
+const BAND: Record<string, number> = { E: -200, A: 0, B: 200, C: 400, D: 600 }
 
 let commitSpy: ReturnType<typeof vi.fn>
 let reorderSpy: ReturnType<typeof vi.fn>
@@ -25,7 +25,9 @@ function Item({ id }: { id: string }): React.JSX.Element {
 
 function Slot(): React.JSX.Element | null {
   const slot = useDropSlot()
-  return slot ? <i data-slot style={{ width: slot.width, height: slot.height }} /> : null
+  return slot ? (
+    <i data-slot style={{ top: slot.top, width: slot.width, height: slot.height }} />
+  ) : null
 }
 
 function Board(): React.JSX.Element {
@@ -179,6 +181,37 @@ describe('the drag engine across zones', () => {
     })
     await settle()
     expect(host.querySelector('.zone-C')?.hasAttribute('data-drag-active')).toBe(false)
+  })
+
+  it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
+    // Zone A sits under E, so A's rects move down by E's floor once a drag is in flight.
+    const grown = (): number =>
+      host.querySelector('.zone-E')?.hasAttribute('data-drag-active') ? 44 : 0
+    const shifted = (el: Element, top: number, bottom: number): void => {
+      el.getBoundingClientRect = () => {
+        const dy = grown()
+        return {
+          top: top + dy,
+          bottom: bottom + dy,
+          left: 0,
+          right: 200,
+          width: 200,
+          height: bottom - top,
+        } as DOMRect
+      }
+    }
+    shifted(host.querySelector('.zone-A') as Element, 0, 200)
+    shifted(item('a1'), 0, 100)
+    shifted(item('a2'), 100, 200)
+    await act(async () => {
+      firePointer(item('a1'), 'pointerdown', { x: 100, y: 50 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 194 })
+    })
+    const slot = host.querySelector('[data-slot]') as HTMLElement
+    expect(slot.style.top).toBe('144px')
+    pressEscape()
   })
 
   it('lands at index 0 in an empty zone', async () => {
