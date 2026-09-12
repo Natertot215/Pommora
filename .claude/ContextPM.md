@@ -88,7 +88,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-136 || The View Engine
 **DATE:** 09-11-2026
 
-`Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `{ activeId, toZone, beforeId }` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share. The audit's topic 6 closed.
+`Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `(activeId, toZone, beforeId)` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share. The audit's topic 6 closed.
 
 #### PM-135 || Sync Groundwork
 **DATE:** 09-11-2026
