@@ -320,7 +320,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
   const bannerFrameRef = useRef<HTMLElement | null>(null)
-  // Resolved every render rather than snapshotted into the request: a cover written while the seat is open must reach the editor, and a vanished owner leaves it inert.
+  // Resolved every render rather than snapshotted into the request: a cover written while the seat is open must reach the editor, and a vanished owner closes it.
   const bannerOwner = ((): { path: string; value: string | undefined } | null => {
     if (!bannerRequest) return null
     if (bannerRequest.kind === 'set') {
@@ -344,6 +344,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     noun: bannerRequest?.kind === 'page' ? 'Banner' : undefined,
     autoEdit: true,
   })
+  const bannerOrphaned = bannerRequest !== null && bannerOwner === null
+  useEffect(() => {
+    if (!bannerOrphaned) return
+    setBannerRequest(null)
+    closeBannerEditor()
+  }, [bannerOrphaned])
   useEffect(() => {
     if (!bannerRequest) return
     bannerFrameRef.current = bannerRequest.frame
