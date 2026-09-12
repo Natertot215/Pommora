@@ -1,14 +1,14 @@
 import type { ActionItem } from './menuModel'
 import {
   type PageMoveAction,
-  type PageMoveContext,
+  type PageMenuContext,
   type PageSendAction,
   pageMetaMenuSubset,
   pageSendActions,
 } from './pageMenu'
 import { favoriteLabel, openLabel, pinLabel } from './toggleLabels'
 
-export interface NavRowMenuContext extends PageMoveContext {
+export interface NavRowMenuContext extends PageMenuContext {
   canOpenNewTab: boolean
   alreadyOpen: boolean
   isPage: boolean

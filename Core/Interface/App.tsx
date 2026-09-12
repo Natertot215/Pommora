@@ -26,6 +26,7 @@ import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { popMenu } from '../Actions/menuActions'
 import { MenuDoorContext } from '@pommora/uix/Pickers/PickerControl'
 import { MenuPresenter } from './Menus/MenuPresenter'
+import { ValuePickPresenter } from './Menus/ValuePickPresenter'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -181,6 +182,7 @@ export function App(): React.JSX.Element {
         {status === 'ready' && <IterationWindow />}
         <ConfirmationWindow />
         <MenuPresenter />
+        <ValuePickPresenter />
         <NotificationLabel />
         {status === 'ready' && <GlancePane />}
         {status === 'ready' && inspectorOpen && (

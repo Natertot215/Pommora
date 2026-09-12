@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
-import type { PageMoveContext } from '@pommora/core/Actions/pageMenu'
+import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import {
@@ -13,10 +13,12 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
+import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
+import { propertyMenuRows, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -44,7 +46,7 @@ export interface ViewInteractionPolicy {
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
 }
 
-export type TitleMenuContext = PageMoveContext & { alreadyOpen: boolean }
+export type TitleMenuContext = PageMenuContext & { alreadyOpen: boolean }
 
 /** The pointer handlers every row uses: the ghost's hover and the location glance. */
 export function rowHover(
@@ -83,6 +85,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     paintOrder,
     setPaths,
     collapsed,
+    schema,
     tree,
     structuralGrouping,
     subGrouped,
@@ -96,11 +99,14 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     setManualOverride,
     persistView,
     commitBand,
+    commitValue,
     commitGroupValue,
     creation,
     mutate,
     select,
   } = host
+
+  const capitalize = useCapitalizeMetadata()
 
   // ── Bands ─────────────────────────────────────────────────────────────────
 
@@ -344,12 +350,24 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const { tabs, pinned } = useSession.getState()
     return {
       alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
+      properties: propertyMenuRows({ tree, schema, row, capitalize }),
       ...pageMoveContext(tree, row.path),
     }
   }
   /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
   const runTitleAction = (action: string, row: ViewRow, anchor: HTMLElement): boolean => {
     if (runPageSendAction(action, row)) return true
+    if (
+      runPropertyAction(action, {
+        tree,
+        schema,
+        row,
+        capitalize,
+        trigger: anchor,
+        commit: (column, value) => commitValue(row, column, value),
+      })
+    )
+      return true
     switch (action) {
       case 'title:window':
         useSession.getState().openWindow({ id: row.id, path: row.path })

@@ -1,16 +1,15 @@
 import {
   type PageMetaAction,
+  type PageMenuContext,
   type PageMoveAction,
-  type PageMoveContext,
   pageMetaMenuItems,
 } from './pageMenu'
 import { type ActionItem, afterSeparator } from './menuModel'
 
-type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction | 'image:edit'
+type CardMenuAction = PageMetaAction | PageMoveAction | 'add' | 'image:edit'
 
-interface CardMenuContext extends PageMoveContext {
-  /** Blank, addable properties — already ordered by the renderer (pane-kinds first). */
-  addable: Array<{ id: string; name: string }>
+interface CardMenuContext extends PageMenuContext {
+  addable: boolean
   alreadyOpen?: boolean
   editableImage?: boolean
 }
@@ -21,17 +20,10 @@ export function cardMenuModel(ctx: CardMenuContext): ActionItem<CardMenuAction>[
     move: ctx,
     clipboard: true,
     history: true,
-  })
+  }) as ActionItem<CardMenuAction>[]
   const items: ActionItem<CardMenuAction>[] = ctx.editableImage
     ? [{ label: 'Edit Image', action: 'image:edit' }, ...meta]
     : meta
-  if (ctx.addable.length === 0) return items
-  return [
-    {
-      label: 'Add Property',
-      action: `add:${ctx.addable[0].id}`,
-      submenu: ctx.addable.map((d) => ({ label: d.name, action: `add:${d.id}` as const })),
-    },
-    ...afterSeparator(items),
-  ]
+  if (!ctx.addable) return items
+  return [{ label: 'Add Property', action: 'add' }, ...afterSeparator(items)]
 }

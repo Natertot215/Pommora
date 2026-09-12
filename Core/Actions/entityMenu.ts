@@ -1,12 +1,14 @@
 import { type ActionItem, afterSeparator } from './menuModel'
 import { type CreateMenuAction, createMenuItems } from './createMenu'
 import { type PageMetaAction, type PageMoveAction, pageMetaMenuItems } from './pageMenu'
+import type { PropertyAction } from './propertyRows'
 import { openLabel } from './toggleLabels'
 import type { ContextTarget, Creator } from '../Nexus/mutateRequest'
 
 export type EntityMenuAction =
   | PageMetaAction
   | PageMoveAction
+  | PropertyAction
   | CreateMenuAction
   | 'open'
   | 'rename'
@@ -23,6 +25,7 @@ export function entityMenuItems(
       window: true,
       newPages: 'pair',
       move: target,
+      properties: target.properties,
       clipboard: true,
       history: true,
       reveal: true,

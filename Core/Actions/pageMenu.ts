@@ -1,4 +1,5 @@
 import type { ActionItem } from './menuModel'
+import { type PropertyAction, type PropertyMenuRow, propertiesRow } from './propertyRows'
 import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
 
@@ -36,12 +37,13 @@ export interface MoveTarget {
   children?: MoveTarget[]
 }
 
-export interface PageMoveContext {
+export interface PageMenuContext {
   moveTargets?: MoveTarget[]
   currentParentPath?: string
+  properties?: PropertyMenuRow[]
 }
 
-function offersMove(ctx: PageMoveContext): boolean {
+function offersMove(ctx: PageMenuContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
 }
 
@@ -67,7 +69,7 @@ export function destinationRows<A>(
   return targets.map(node)
 }
 
-function moveRow(ctx: PageMoveContext): ActionItem<PageMetaAction | PageMoveAction> {
+function moveRow(ctx: PageMenuContext): ActionItem<PageMetaAction | PageMoveAction> {
   return {
     label: 'Move To',
     action: PAGE_MOVE_ROW,
@@ -98,7 +100,7 @@ const PAGE_SEND_ACTIONS = [
   ...PAGE_REACH_ACTIONS,
 ] as const satisfies readonly PageSendAction[]
 
-export function pageSendActions(ctx: PageMoveContext): readonly PageSendAction[] {
+export function pageSendActions(ctx: PageMenuContext): readonly PageSendAction[] {
   return offersMove(ctx) ? PAGE_SEND_ACTIONS : PAGE_REACH_ACTIONS
 }
 
@@ -108,18 +110,20 @@ export function pageMetaMenuItems(
   opts: {
     window?: boolean
     newPages?: 'pair' | 'single'
-    move?: PageMoveContext
+    move?: PageMenuContext
+    properties?: PropertyMenuRow[]
     clipboard?: boolean
     history?: boolean
     reveal?: boolean
   } = {},
-): ActionItem<PageMetaAction | PageMoveAction>[] {
+): ActionItem<PageMetaAction | PageMoveAction | PropertyAction>[] {
   const move = opts.move !== undefined && offersMove(opts.move)
   return [
     ...(opts.window ? [{ label: 'Open Preview', action: 'title:window' as const }] : []),
     { label: openLabel(alreadyOpen), action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Edit Icon', action: 'title:icon' },
+    ...(opts.properties?.length ? [propertiesRow(opts.properties)] : []),
     ...(opts.newPages === 'pair'
       ? [
           { label: 'New Page Above', action: 'title:newabove' as const, separatorBefore: true },
@@ -159,12 +163,12 @@ export function pageMetaMenuSubset<A extends PageMetaAction>(
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen: boolean | undefined,
-  move: PageMoveContext,
+  move: PageMenuContext,
 ): ActionItem<A | PageMoveAction>[]
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,
-  move?: PageMoveContext,
+  move?: PageMenuContext,
 ): ActionItem<A | PageMoveAction>[] {
   const kept = pageMetaMenuItems(alreadyOpen, {
     window: true,

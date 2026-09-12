@@ -1,4 +1,6 @@
 import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { Notification } from '../Interface/Notifications/notifications'
 import type { Slice } from './sessionState'
@@ -10,6 +12,13 @@ interface MenuPending extends MenuOptions {
   settle: (action: string | null) => void
 }
 
+export interface ValuePickRequest {
+  def: PropertyDefinition
+  current: PropertyValue
+  trigger: HTMLElement
+  commit: (value: PropertyValue | null) => void
+}
+
 export interface ChromeSlice {
   pendingConfirm: { req: ConfirmRequest; settle: (confirmed: boolean) => void } | null
   askConfirm: (req: ConfirmRequest) => Promise<boolean>
@@ -19,6 +28,9 @@ export interface ChromeSlice {
     trigger: HTMLElement,
     options?: MenuOptions,
   ) => Promise<string | null>
+  pendingPick: (ValuePickRequest & { id: number }) | null
+  requestPick: (req: ValuePickRequest) => void
+  dismissPick: () => void
   notification: (Notification & { id: number }) | null
   notify: (n: Notification) => void
   dismissNotification: (id: number) => void
@@ -27,6 +39,7 @@ export interface ChromeSlice {
 
 let notificationSeq = 0
 let menuSeq = 0
+let pickSeq = 0
 
 export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   pendingConfirm: null,
@@ -52,6 +65,10 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
       set({ pendingMenu: { ...options, id: ++menuSeq, items, trigger, settle } })
     }),
 
+  pendingPick: null,
+  requestPick: (req) => set({ pendingPick: { ...req, id: ++pickSeq } }),
+  dismissPick: () => set({ pendingPick: null }),
+
   notification: null,
   notify: (n) => set({ notification: { ...n, id: ++notificationSeq } }),
   dismissNotification: (id) =>
@@ -60,6 +77,6 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   resetChrome: () => {
     get().pendingConfirm?.settle(false)
     get().pendingMenu?.settle(null)
-    set({ pendingConfirm: null, pendingMenu: null, notification: null })
+    set({ pendingConfirm: null, pendingMenu: null, pendingPick: null, notification: null })
   },
 })
