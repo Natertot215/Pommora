@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
+import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
 
 // This file owns only the snapshot and the drop classification (reorder vs reparent, routed by the slot's implied parent vs the dragged band's current parent) — the caller never re-derives it.
@@ -16,7 +17,7 @@ export type BandDrop =
   | { kind: 'reorder'; beforeId: string | null }
   | { kind: 'reparent'; targetParentId: string | null; beforeId: string | null }
 
-type Snapshot = { index: BandIndex; boxTop: number; boxBottom: number }
+type Snapshot = { index: BandIndex; boxTop: number; boxBottom: number; zoom: number }
 type Slot = BandSlot & { topInBox: number }
 
 type Value = {
@@ -62,11 +63,12 @@ export function BandDnd({
         index: buildBandIndex(bands, rows),
         boxTop: boxRect.top,
         boxBottom: boxRect.bottom,
+        zoom: currentZoom(el),
       }
     },
     resolve: (id, point, s) => {
       const slot = bandSlot(s.index, point.y, id, s.boxBottom, nestable)
-      return slot ? { ...slot, topInBox: slot.lineY - s.boxTop } : null
+      return slot ? { ...slot, topInBox: (slot.lineY - s.boxTop) / s.zoom } : null
     },
     commit: (id, slot) => {
       const dragged = bands.find((b) => b.id === id)

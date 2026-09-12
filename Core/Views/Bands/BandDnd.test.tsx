@@ -77,6 +77,13 @@ describe('band drag gesture', () => {
     expect(host.querySelector('[data-band="A1"]')?.getAttribute('data-dragging')).toBe('true')
   })
 
+  it("places the line in the host's own px when the host renders zoomed", async () => {
+    const box = host.querySelector('.drop-line-host') as HTMLElement
+    Object.defineProperty(box, 'currentCSSZoom', { value: 0.5, configurable: true })
+    await drag('B', 26)
+    expect((line() as HTMLElement).style.top).toBe('48px')
+  })
+
   it('Escape clears the line + mute and commits nothing', async () => {
     await drag('A1', 2)
     await act(async () => {
