@@ -17,7 +17,7 @@ import {
   selectedValues,
   syntheticContextDef,
 } from '../../Properties/Pickers/PropertyPicker'
-import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { resolveFieldValue } from '../../Properties/value'
 import { useSession } from '../../Session/store'
 
 const STAMP_TYPES: ReadonlySet<PropertyType> = new Set(['created_time', 'last_edited_time'])
@@ -47,25 +47,20 @@ export function propertyMenuRows({
   capitalize = false,
 }: PropertyMenuTarget): PropertyMenuRow[] {
   const contexts = contextsByIdOf(tree)
-  const name = (id: string): string => columnLabel(id, schema, contexts, capitalize)
   const build = (id: string, def: PropertyDefinition): PropertyMenuRow => {
+    const base = { id, name: columnLabel(id, schema, contexts, capitalize) }
     const current = resolveFieldValue(row, id, schema)
     if (def.type === 'checkbox') {
       const checked = current.kind === 'checkbox' && current.value
       return {
-        id,
-        name: name(id),
-        options: CHECKBOX_OPTIONS.map((o) => ({
-          ...o,
-          checked: (o.value === 'true') === checked,
-        })),
+        ...base,
+        options: CHECKBOX_OPTIONS.map((o) => ({ ...o, checked: (o.value === 'true') === checked })),
       }
     }
-    if (!isOptionsKind(def.type)) return { id, name: name(id) }
+    if (!isOptionsKind(def.type)) return base
     const selected = selectedValues(current)
     return {
-      id,
-      name: name(id),
+      ...base,
       options: pickShape(def, contextOptionsOf(tree, def)).options.map((o) => ({
         value: o.value,
         label: o.label,
@@ -74,15 +69,11 @@ export function propertyMenuRows({
     }
   }
   const contextRows = [...contexts.keys()].map((id) => build(id, syntheticContextDef(id)))
-  return [
-    ...contextRows,
-    ...schema
-      .filter((d) => !STAMP_TYPES.has(d.type))
-      .map((def, i) => ({
-        ...build(def.id, def),
-        ...(i === 0 && contextRows.length > 0 ? { separatorBefore: true } : {}),
-      })),
-  ]
+  const built = schema.filter((d) => !STAMP_TYPES.has(d.type)).map((def) => build(def.id, def))
+  const schemaRows = [...built.filter((r) => r.options), ...built.filter((r) => !r.options)]
+  if (contextRows.length > 0 && schemaRows.length > 0)
+    schemaRows[0] = { ...schemaRows[0], separatorBefore: true }
+  return [...contextRows, ...schemaRows]
 }
 
 export function runPropertyAction(
@@ -104,18 +95,15 @@ export function runPropertyAction(
   const contextIds = contextIdsOf(tree)
   const def = schema.find((d) => d.id === id) ?? syntheticContextDef(id)
   const current = resolveFieldValue(row, id, schema)
-  const type = declaredType(id, schema, contextIds)
   const commitValue = (next: PropertyValue | null): void =>
     commit({ id, kind: contextIds.includes(id) ? 'context' : 'property' }, next)
-  if (value !== null)
-    commitValue(
-      type === 'checkbox'
-        ? value === 'true'
-          ? { kind: 'checkbox', value: true }
-          : null
-        : pickedValue(def, current, value, contextOptionsOf(tree, def)),
-    )
-  else if (type === 'file') pickFileInto(def, current, null, commitValue)
-  else useSession.getState().requestPick({ def, current, trigger, commit: commitValue })
+  if (value === null) {
+    if (def.type === 'file') pickFileInto(def, current, null, commitValue)
+    else useSession.getState().requestPick({ def, current, trigger, commit: commitValue })
+    return true
+  }
+  if (def.type === 'checkbox')
+    commitValue(value === 'true' ? { kind: 'checkbox', value: true } : null)
+  else commitValue(pickedValue(def, current, value, contextOptionsOf(tree, def)))
   return true
 }
