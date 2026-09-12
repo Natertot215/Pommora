@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom'
 import { stack } from '../Theme/stack'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { clamp } from '../Utilities/clamp'
+import { currentZoom } from '../Utilities/zoom'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
 import { usePointerGesture } from './gesture'
@@ -373,7 +374,7 @@ export function DragGroup({
     d.axis = z.axis
     // A copy, not the frozen entry: the projection and the overlay's origin both need the lift-time rect, which resync shifts out from under them.
     d.rect = { ...rect }
-    d.zoom = el.currentCSSZoom || 1
+    d.zoom = currentZoom(el)
     d.pickZone = zoneId
     d.pick = idx
     d.mapped = idx
