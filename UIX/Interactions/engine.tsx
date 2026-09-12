@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  type CSSProperties,
   useId,
   useMemo,
   useRef,
@@ -231,6 +232,8 @@ type ItemState = { transform: string | undefined; hidden: boolean; animate: bool
 type EngineValue = {
   activeId: string | null
   dropState: DropState
+  /** The lifted item's height in a container's own px while a drag is in flight: the floor an empty zone grows to hold it. */
+  floor: number | null
   setZone: (zoneId: string, props: ZoneProps) => void
   releaseZone: (zoneId: string) => void
   registerContainer: (zoneId: string, el: HTMLElement | null) => void
@@ -723,6 +726,7 @@ export function DragGroup({
     () => ({
       activeId,
       dropState,
+      floor: activeRect && dropState !== 'idle' ? activeRect.height / drag.current.zoom : null,
       setZone,
       releaseZone,
       registerContainer,
@@ -794,7 +798,11 @@ function ZoneBody({
         <div
           ref={(el) => engine.registerContainer(zoneId, el)}
           className={className}
-          data-drag-active={engine.dropState !== 'idle' || undefined}
+          style={
+            engine.floor === null
+              ? undefined
+              : ({ '--drag-floor': px(engine.floor) } as CSSProperties)
+          }
         >
           {children}
         </div>
