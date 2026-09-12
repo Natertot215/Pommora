@@ -50,6 +50,7 @@ interface ViewCreationConfig {
 
 interface ViewCreation {
   bandAdd: (setKey: string) => Promise<boolean>
+  createFirst: () => Promise<boolean>
   createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<boolean>
   createAfter: (row: ViewRow) => Promise<boolean>
   containerPages: (path: string) => string[]
@@ -66,7 +67,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     return filterSeeds(c.view.filter, c.view.filter_enabled !== false, c.schema)
   }
-  // The created page's seeds reach the pipeline the way a band-drop's reassign does — the value cache never re-reads mid-session, so a disk-only stamp would resolve blank until next open.
+  // The created page's seeds reach the pipeline the way a band-drop's reassign does.
   const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
     const c = cfg()
     const entries = Object.entries(seeds)
@@ -80,7 +81,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: null } }
     })
   }
-  // The full child list of the container a create targets — never the view's visible rows: an order built from a filtered view permanently re-ranks every row the filter was hiding.
+  // The full child list of the container a create targets.
   const containerPagesOf = (path: string): string[] => {
     const walk = (node: CollectionNode | SetNode): string[] | null => {
       if (node.path === path) return node.pages.map((p) => p.id)
@@ -143,23 +144,27 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       },
     )
 
-  const bandAdd = (setKey: string): Promise<boolean> => {
+  const addIn = (parentPath: string): Promise<boolean> => {
     const c = cfg()
-    const setPath = c.setPaths.get(setKey)
-    if (!setPath) return Promise.resolve(false)
-    if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
-    const seeds = impliedSeeds()
     const gestureViewId = c.view.id
     const order = c.structuralOrder
-      ? orderWithSlot(containerPagesOf(setPath), null, 'last')
+      ? orderWithSlot(containerPagesOf(parentPath), null, 'last')
       : undefined
-    return createPageIn(setPath, seeds, order, (created) => {
+    return createPageIn(parentPath, impliedSeeds(), order, (created) => {
       // A non-structural view has no page_order write to land the "end of the group" — absent any live array, the read-side title fallback would rank the newborn mid-band.
       const latest = cfg()
       latest.onCreated(created)
       if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, 'below')
       requestAnimationFrame(() => glideToRow(created.id))
     })
+  }
+
+  const bandAdd = (setKey: string): Promise<boolean> => {
+    const c = cfg()
+    const setPath = c.setPaths.get(setKey)
+    if (!setPath) return Promise.resolve(false)
+    if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
+    return addIn(setPath)
   }
 
   // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
@@ -191,6 +196,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
 
   return {
     bandAdd,
+    createFirst: () => addIn(cfg().source.path),
     createAdjacent,
     createAfter: (row) => createAdjacent(row, 'below'),
     containerPages: containerPagesOf,

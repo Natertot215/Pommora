@@ -494,6 +494,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
 
   const ghost = interactions.ghost.ghost
+  const ghostRowProps = {
+    columns,
+    hideIcon: liveView.hide_page_icons ?? false,
+    onClosed: interactions.ghost.closed,
+    onEnter: interactions.ghost.onGhostEnter,
+    onLeave: interactions.ghost.onGhostLeave,
+    onCreate: () => void interactions.ghostCreate(),
+  }
   let renderedAnyRow = false
   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
     const isCollapsed = collapsed.has(g.key)
@@ -530,13 +538,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             <GhostRow
               key={`ghost-${row.id}`}
               padLeft={memberIndent(itemDepth)}
-              columns={columns}
-              hideIcon={liveView.hide_page_icons ?? false}
               closing={ghost.closing}
-              onClosed={interactions.ghost.closed}
-              onEnter={interactions.ghost.onGhostEnter}
-              onLeave={interactions.ghost.onGhostLeave}
-              onCreate={() => void interactions.ghostCreate()}
+              {...ghostRowProps}
             />,
           )
         return rendered
@@ -634,6 +637,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
               <div className="cell-filler" aria-hidden="true" />
             </div>
             {groups.flatMap((g) => renderRows(g, 0, true))}
+            {interactions.ghostStanding && (
+              <GhostRow padLeft={indent(0)} closing={false} {...ghostRowProps} />
+            )}
           </div>
         </TableRowDnd>
       </BandDnd>
