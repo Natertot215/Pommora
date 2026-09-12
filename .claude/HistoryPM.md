@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-11-2026              | PM-136 | The View Engine                                      |
 | 09-11-2026              | PM-135 | Sync Groundwork                                      |
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
@@ -138,6 +139,18 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-136 || The View Engine
+**DATE:** 09-11-2026
+
+`Core/Views/Host/useViewInteractions.tsx` took the interaction layer `TableView.tsx` and `CardsView.tsx` each carried: band drops, row drops, page opening, the hover glance, the title menu's page actions, the icon picker seat, and the ghost lifecycle. A renderer mounts it beside `useViewHost` with a `ViewInteractionPolicy` naming its ghost timing and suppression, the layer it folds into every persist, and its rename surface. Every row drop reaches the hook as `{ activeId, toZone, beforeId }`; `UIX/Interactions/tableDnd.tsx` reports that shape and Cards' `DragGroup` adapter converts the engine's landing index in one expression, so the two drag engines stay behind their adapters. Table's ⌘-click opens a new tab, its cross-band relocate lands at the drop slot, its structural reorder builds the on-disk order from the dragged page's true siblings, and a plain click on a card follows the Tab Open Behavior preference — each converging on the renderer that had it right.
+
+**Columns And Pickers:** `Core/Views/Table/useColumns.ts` holds the width table, the alignment default, the reorder helper, and the column layer the Table keeps out of `liveView`; `columnWidths.ts`, `columnReorder.ts`, and `columnAlign.ts` retired into it. `useViewHost` gained `pickTarget(row, column)`, the one builder of a property-picker target, and returns the kind's flatness so no renderer restates it. Cards seats its icon and image pickers once at the grid root through a `BannerRequest` whose owner resolves at render, drops seven store subscriptions per card, and scopes the ghost FLIP to the anchor's grid.
+
+**Tests And Filing:** `Core/Testing/viewHarness.tsx` owns each view suite's act environment, mount, and teardown through `mountEachTest`, and `Core/Testing/pageValues.ts` holds the fixtures that lived in the production tree; Cards gained `cardDrops`, `cardGestures`, and `cardCreation` suites. `Core/Views/viewMerge.ts`, `Bands/cardsBand.ts`, `Cards/cardsOrder.ts`, the `itemRole` prop no consumer passed, and the seat's hardcoded kind check went; `VIEW_KINDS` carries `setCards`, and `UIX/Utilities` gained `zoom.ts` and `stableApi.ts`.
+
+- **Commits:** `2808db5ba^..5682ba027`
+- **Diff:** Net −44 (source, comments and tests excluded) | +1796 / −1621 source lines
 
 #### PM-135 || Sync Groundwork
 **DATE:** 09-11-2026

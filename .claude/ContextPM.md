@@ -4,7 +4,7 @@
 
 **Pommora Sync has its identities.** Every install mints one Ed25519 key at first launch: the fingerprint of that key is the device's id, its public half and a name sit in the `device` field of `pommora.json`, and its private half sits keychain-encrypted in `secrets.json` beside it. `Sync/server.ts` is one Node file on built-ins that keeps which devices a Nexus admits, answering connect, devices, approve, and revoke to requests each signed by the device key, with no session and no account; `Core/Sync/` carries the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General's Nexus heading shows this device, the Nexus id, the bound server, and the Nexus's device list with Approve and Revoke. What does not exist is everything above that line: no file content crosses, the phone has nothing on it, the Nexus password and content encryption are unwritten, the manifest rule deciding what travels is described rather than expressed as a predicate, and the server has run only on localhost. [[NexusSyncPM]] describes what stands.
 
-**What comes next is the sync arc's content half.** The content sync rides the same server and identities the groundwork mints; `// Planning`'s `Cross-Device Mutation Checklist.md` is its test plan. Behind it sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` is the current state of the audit and shrinks as items close; its Where Brainwaves Go table orders the work: rule D-2, the external-edit reload policy, first; the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it; then the ruled foundation work of folding the Table and Cards renderers onto one engine; then building on the openings whose plumbing exists. The published audit page mirrors the report in Pommora's own theme.
+**What comes next is the sync arc's content half.** The content sync rides the same server and identities the groundwork mints; `// Planning`'s `Cross-Device Mutation Checklist.md` is its test plan. Behind it sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` is the current state of the audit and shrinks as items close; its Where Brainwaves Go table orders the work: rule D-2, the external-edit reload policy, first; the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it; then building on the openings whose plumbing exists. The published audit page mirrors the report in Pommora's own theme. The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, and ghost behavior.
 
 The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
@@ -85,6 +85,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-136 || The View Engine
+**DATE:** 09-11-2026
+
+`Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `{ activeId, toZone, beforeId }` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share. The audit's topic 6 closed.
+
 #### PM-135 || Sync Groundwork
 **DATE:** 09-11-2026
 
@@ -104,11 +109,6 @@ A Vitest walker over the import graph from `Core/Contract/serve.ts` fails on any
 **DATE:** 09-07-2026
 
 A chosen view and a hand-dragged row order became fields of the container's own sidecar (`active_view`, and `manual_order` on the view record), so both travel with the Nexus; pane widths, sidebar folds, and a floating window's size became nested keys on the `devicePrefs` singleton in `nexus.db`, per machine and per Nexus. `localStorage` holds nothing of Pommora's, and Interface Scale and Webpage Zoom stay in the synced settings file by decision.
-
-#### PM-131 || Cross-Surface Glances
-**DATE:** 09-06-2026
-
-The Glance hover-preview pane reached sidebar rows, tabs, nav-view rows, cards, and table rows through one Off-gated `armPreview` facade, with a single `previewPersistence` setting standing in for the old linger slider and enable toggle. A corner lock pins a page preview into `Core/Session/glanceSlice`, and pins survive navigation, scroll, and tab-switching.
 
 ### Guidelines
 
