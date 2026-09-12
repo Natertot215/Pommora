@@ -146,7 +146,7 @@
 
 `UIX/Interactions/engine.tsx` became the one drag engine behind the design kit's façade and `group.tsx`, the cross-list engine that served Cards alone, retired. The engine gained the zone registry a `DragGroup` holds, a trailing landing cell walked along a foreign grid's own columns so an item can land at a band's end, past the last card of a full row, or in an empty band, the `resolveIndex` veto, and an optional portal overlay for a lifted item that must leave a clipping host; it read the surface's CSS zoom off the lifted element, so the Set-card row stopped mis-scaling at embed zoom, and cards gained same-band keyboard reorder. The engine froze a zone's geometry as it was first entered and shifted it by its reference element's movement, a drop landed where the preview showed, and the landing slot took the size of the cell it landed in. An empty band opened without clearance beneath its head, and `.cards-grid`'s permanent floor gave way to `--drag-floor`, the lifted card's height an addressable zone's container carried only while a drag was in flight. `currentZoom` in `UIX/Utilities/zoom.ts` read the compounded rendered zoom the engine's lift and the band and row insertion lines divided by, so those lines landed in a zoomed host's own px, and `engine.test.tsx` became the kit's first DOM test of the engine.
 
-- **Commits:** `dcdd95c58^..01e491a5b`
+- **Commits:** `dcdd95c58^..ce0bb135b`
 - **Diff:** Net −308 (source, comments and tests excluded)
 
 #### PM-136 || One View Mechanism
