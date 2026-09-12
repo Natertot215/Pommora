@@ -16,11 +16,11 @@ The enumeration of every mutation whose on-disk effect is expected to reach a se
 
 #### Page Body
 
-| Mutation | Writer | On-Disk Effect | Expected On B |
-| --- | --- | --- | --- |
-| Type in a page's editor | `Core/Pages/handlers.ts` `page:updateBody` → `Core/Pages/fileHistory.ts` `writeBody` | `<Collection>/<Page>.md`, the bytes after the closing frontmatter fence | The file carries the new body; a closed tab opens on it |
-| Restore a File History snapshot | `Core/Pages/handlers.ts` `history:restore` → `Core/Pages/fileHistory.ts` `restoreSnapshot` | The same file, body replaced from A's local snapshot store | The restored body lands; the snapshot it came from does not |
-| Edit a page open on both instances | as above | The same file, last writer's bytes | Most recent wins at the byte level; an editor already holding the old text is the open concurrency item (Topic 2 of [[Codebase Audit — Report]]) |
+| Mutation                           | Writer                                                                                     | On-Disk Effect                                                          | Expected On B                                                                                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Type in a page's editor            | `Core/Pages/handlers.ts` `page:updateBody` → `Core/Pages/fileHistory.ts` `writeBody`       | `<Collection>/<Page>.md`, the bytes after the closing frontmatter fence | The file carries the new body; a closed tab opens on it                                                                                          |
+| Restore a File History snapshot    | `Core/Pages/handlers.ts` `history:restore` → `Core/Pages/fileHistory.ts` `restoreSnapshot` | The same file, body replaced from A's local snapshot store              | The restored body lands; the snapshot it came from does not                                                                                      |
+| Edit a page open on both instances | as above                                                                                   | The same file, last writer's bytes                                      | Most recent wins at the byte level; an editor already holding the old text is the open concurrency item (Topic 2 of [[Codebase Audit — Report]]) |
 
 #### Page Frontmatter Values
 
@@ -143,15 +143,15 @@ Agenda entities are Markdown files whose kind is marked inside the ULID and vali
 
 `.trash` travels under B-1 but sits outside the watcher, so the Trash surface re-asks after every action it takes rather than updating live.
 
-| Mutation | Writer | On-Disk Effect | Expected On B |
-| --- | --- | --- | --- |
-| Delete with the Nexus trash mode | `Core/Trash/delete.ts` `deleteOp` → `Core/Trash/bundle.ts` `mintBundle`, `settleBundle` | `.trash/<chain>/<stamp>.deleted/` holding `_record.json` and the artifact under its own name | The bundle lands; the listing shows it on the next `trash:list`, not live |
-| Delete with the system trash mode | `deleteOp` → the host's `trashToSystem` | The artifact leaves the Nexus; no bundle is written | The artifact's absence propagates; nothing lands in `.trash` |
-| Delete a Context or a Space | `deleteOp` with the cascade writers | The bundle carries the membership evidence the restore replays | The bundle lands with its evidence intact |
-| Restore an artifact | `Core/Trash/spend.ts` `restoreArtifact` | The artifact moves to the recorded parent; the bundle directory is removed | The entity is back in the tree and the bundle is gone |
-| Restore a deleted property | `Core/Trash/restoreProperty.ts` `restoreProperty` | The def returns to `.nexus/properties.json`, values return to their pages, assignments return to their sidecars | The property and every value are back |
-| Empty one bundle | `Core/Trash/spend.ts` `emptyBundle` | The artifact is removed or handed to the system trash; the bundle directory follows | Both are gone |
-| Empty the whole Trash | `emptyBundle` per bundle | As above, per bundle | `.trash` holds no bundles |
+| Mutation                          | Writer                                                                                  | On-Disk Effect                                                                                                  | Expected On B                                                             |
+| --------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Delete with the Nexus trash mode  | `Core/Trash/delete.ts` `deleteOp` → `Core/Trash/bundle.ts` `mintBundle`, `settleBundle` | `.trash/<chain>/<stamp>.deleted/` holding `_record.json` and the artifact under its own name                    | The bundle lands; the listing shows it on the next `trash:list`, not live |
+| Delete with the system trash mode | `deleteOp` → the host's `trashToSystem`                                                 | The artifact leaves the Nexus; no bundle is written                                                             | The artifact's absence propagates; nothing lands in `.trash`              |
+| Delete a Context or a Space       | `deleteOp` with the cascade writers                                                     | The bundle carries the membership evidence the restore replays                                                  | The bundle lands with its evidence intact                                 |
+| Restore an artifact               | `Core/Trash/spend.ts` `restoreArtifact`                                                 | The artifact moves to the recorded parent; the bundle directory is removed                                      | The entity is back in the tree and the bundle is gone                     |
+| Restore a deleted property        | `Core/Trash/restoreProperty.ts` `restoreProperty`                                       | The def returns to `.nexus/properties.json`, values return to their pages, assignments return to their sidecars | The property and every value are back                                     |
+| Empty one bundle                  | `Core/Trash/spend.ts` `emptyBundle`                                                     | The artifact is removed or handed to the system trash; the bundle directory follows                             | Both are gone                                                             |
+| Empty the whole Trash             | `emptyBundle` per bundle                                                                | As above, per bundle                                                                                            | `.trash` holds no bundles                                                 |
 
 #### Settings, Navigation, And State
 

@@ -55,7 +55,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 
 #### Topics, In Priority Order
 
-Six lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
+Five lines of effort, ranked by foundation risk first, then debt that compounds, then hygiene. Each topic states what the audit found, the ruling that settles it where one was made, and what should change as a numbered action list with effort, what it deletes, and the ruling it waits on. Finding IDs point into the ledger in the appendix.
 
 ##### 1. Where Persisted State Lives
 
@@ -205,7 +205,7 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 
 Nothing was denied outright by the reconciler. Four findings had a sub-claim denied and thirteen were downgraded; each is carried above in corrected form. The ones that matter:
 
-- **TableView is not untested.** Two suites render the real view host, which renders TableView, so it has 1,330 lines of interaction tests. Cards, Sidebar, and SettingsWindow genuinely have none.
+- **TableView is not untested.** Two suites render the real view host, which renders TableView, so it has 1,330 lines of interaction tests. Sidebar and SettingsWindow genuinely have none.
 - **The lenient registry read doesn't strand Context references.** Context keys begin with `<`, which the property-name validator refuses, so the rename cascade never touches them. What it strands is link-valued property values.
 - **Desktop is 2,027 lines, not 10,000.** The brief's initial count included build output.
 - **Path-scoped churn is unmeasurable.** The top-level folders only exist since 09-05-2026, so any per-folder churn figure measures two days.

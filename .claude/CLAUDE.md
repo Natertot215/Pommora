@@ -1,8 +1,10 @@
 ## Project Pommora
 
-Pommora is Nathan’s main project — a personal management and all-in-one productivity app aimed at providing an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora's current structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties,** and linking them all together through relationships to **Contexts.**
+Pommora is Nathan’s main project — a personal management and all-in-one productivity app aimed at providing an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora’s long-term vision is an alternative to cloud-based enterprise organizational and project management tools that provides local-first security, case-specific customization, and an agentic-accessible and advantaged platform. 
 
 ### The Model
+
+Pommora's current structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties,** and linking them all together through relationships to **Contexts.**
 
 **Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content entities can relate to, resolved through the registry via `<Title>:` fromt
 
@@ -52,7 +54,6 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 - **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
 - **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision, but legibility concerns context, not every byte the app stores: per-machine operational info, accelerators, file metadata, or similar information may be better stored in the `nexus.db` rather than hand-editable data.
-- **What Syncs:** Pommora Sync carries the whole Nexus, `.nexus/` included; the two databases never travel, excluded in code. The model and its identities are [[NexusSyncPM]].
 
 #### Important Information
 

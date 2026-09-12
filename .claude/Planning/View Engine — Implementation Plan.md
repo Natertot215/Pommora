@@ -40,30 +40,30 @@ The outcome is a smaller codebase that is easier to read: two renderers each a f
 - `python3 .claude/scripts/loc.py | python3 -c "import json,sys; print(json.load(sys.stdin)['total'])"` → 69411 — drops to 69368 (−43). The hoist moves code rather than deleting it, so most of the reduction is structural: five modules and three test files gone, three column modules folded into one, TableView −600 lines, CardsView −183, two mounted pickers and seven store subscriptions per card gone, thirteen copied test preambles gone, one pick-target builder on the host, and one definition of every interaction. See Open Items.
 
 **START:** 2026-09-11T23:12:52Z
-**END:** <same command, run as the report is given>
+**END:** 2026-09-12T00:51:08Z
 
 #### Implementation Process
 
-- [ ] **Phase 1** — Root Moves and Fixtures
-  - [ ] Task 1.1 — Test fixtures and the view harness
-  - [ ] Task 1.2 — The band model and the retired one-liners
-  - [ ] Task 1.3 — The registry flag, the host's flatness, and the dead engine prop
-  - [ ] Task 1.4 — Two design-kit utilities
-  - [ ] Review Checkpoint
-- [ ] **Phase 2** — The Shared Layer and Table
-  - [ ] Task 2.1 — `useViewInteractions` and the table-drag contract
-  - [ ] Task 2.2 — Table onto the shared layer, with one column module
-  - [ ] Task 2.3 — The view suites on the harness
-  - [ ] Task 2.4 — Documents Phase 2 makes false
-  - [ ] Review Checkpoint
-- [ ] `[Stop: Nathan drives Table on the shared layer before Cards is rewritten onto it]`
-- [ ] **Phase 3** — Cards
-  - [ ] Task 3.1 — Cards onto the shared layer, pickers seated once, the FLIP scoped
-  - [ ] Task 3.2 — The Cards suites
-  - [ ] Task 3.3 — Documents Phase 3 makes false
-  - [ ] Review Checkpoint
-- [ ] **Phase 4** — The Ledger
-  - [ ] Task 4.1 — The audit report, the context document, and history
+- [x] **Phase 1** — Root Moves and Fixtures
+  - [x] Task 1.1 — Test fixtures and the view harness
+  - [x] Task 1.2 — The band model and the retired one-liners
+  - [x] Task 1.3 — The registry flag, the host's flatness, and the dead engine prop
+  - [x] Task 1.4 — Two design-kit utilities
+  - [x] Review Checkpoint
+- [x] **Phase 2** — The Shared Layer and Table
+  - [x] Task 2.1 — `useViewInteractions` and the table-drag contract
+  - [x] Task 2.2 — Table onto the shared layer, with one column module
+  - [x] Task 2.3 — The view suites on the harness
+  - [x] Task 2.4 — Documents Phase 2 makes false
+  - [x] Review Checkpoint
+- [x] `[Stop: Nathan drives Table on the shared layer before Cards is rewritten onto it]`
+- [x] **Phase 3** — Cards
+  - [x] Task 3.1 — Cards onto the shared layer, pickers seated once, the FLIP scoped
+  - [x] Task 3.2 — The Cards suites
+  - [x] Task 3.3 — Documents Phase 3 makes false
+  - [x] Review Checkpoint
+- [x] **Phase 4** — The Ledger
+  - [x] Task 4.1 — The audit report, the context document, and history
 
 ### Phase 1 — Root Moves and Fixtures
 
@@ -5643,7 +5643,7 @@ The report reads with topics 1, 2, 8, 9, 11 and a 16-row ledger; the two D-9 rul
 **VERIFY**
 
 - [ ] `grep -n "R-32\|R-33\|R-35\|R-36\|Topic 6\|third time\|keyboard dragging for free\|Which slot a page lands" ".claude/Planning/Codebase Audit — Report.md"` → no output.
-- [ ] `grep -c "^| R-" ".claude/Planning/Codebase Audit — Report.md"` → 16.
+- [ ] `grep -c "^| R-" ".claude/Planning/Codebase Audit — Report.md"` → 17.
 - [ ] `grep -n "PM-136" .claude/HistoryPM.md | wc -l` → 2 (index row and entry heading).
 
 ### Completion Criteria
@@ -5725,3 +5725,5 @@ The orchestrator writes the report in the shape the planning skill prescribes (f
 - Phase 2 review: Table's hover ghost is suppressed while the icon picker is open, as Cards' already was; the hook owns the picker so the suppression rides with it. A fifth convergence beside the four the Summary names.
 - Phase 3 review: a same-slot drop on a sorted or grouped view writes nothing, as Table's did; Cards used to persist `manual_order` on that no-op. A sixth convergence.
 - Phase 3 review: the harness's `installViewEnvironment` became `mountEachTest`, which also owns the per-test host and root; every harness suite lost its own mount and unmount lines.
+- Ledger: the arc measures −53 (69411 → 69358) against the plan's −43; the review folds and the closeout pass took the rest. The audit ledger keeps 17 rows, not the 16 the plan counted: it held 21 before the four closed.
+- Closeout: every row drop reaches the hook as three positional arguments, `(activeId, toZone, beforeId)`, in place of a `ViewDrop` object nothing else imported; `TableRowDnd` takes one `crossZone` flag in place of `canReassign` + `canRelocate`. TableView ends at 824 lines and CardsView at 1166, past the 827 and 1165 the Baseline states, after the review folds.

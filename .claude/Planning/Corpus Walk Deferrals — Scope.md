@@ -13,12 +13,12 @@ So **8.6 is the keystone** for 8.8. Its decision — stay rebuild-on-identity, o
 
 **8.5** is independent too: it lives in the agenda-folder classifier, touches neither the tree index nor the title map, and is two small correctness calls.
 
-| Item | Finding | Where | Depends on |
-| --- | --- | --- | --- |
-| 8.6 | R-39 | `Core/Nexus/treeIndex.ts` | — (keystone for 8.8) |
-| 8.8 | R-41 | `Core/MarkdownPM/decorations.ts` | 8.6 |
-| 8.3 | — | `Desktop/FileWatch/watcher.ts`, `Core/Nexus/watchPatch.ts`, `valuesChanged.ts` | — (engine side) |
-| 8.5 | R-38 (d)(e) | `Core/Nexus/folderKind.ts`, `Desktop/FileWatch/watcher.ts` | — |
+| Item | Finding     | Where                                                                          | Depends on           |
+| ---- | ----------- | ------------------------------------------------------------------------------ | -------------------- |
+| 8.6  | R-39        | `Core/Nexus/treeIndex.ts`                                                      | — (keystone for 8.8) |
+| 8.8  | R-41        | `Core/MarkdownPM/decorations.ts`                                               | 8.6                  |
+| 8.3  | —           | `Desktop/FileWatch/watcher.ts`, `Core/Nexus/watchPatch.ts`, `valuesChanged.ts` | — (engine side)      |
+| 8.5  | R-38 (d)(e) | `Core/Nexus/folderKind.ts`, `Desktop/FileWatch/watcher.ts`                     | —                    |
 
 ##### 8.6 / R-39 — The Title Map Rebuilds Wholesale · Keystone
 
