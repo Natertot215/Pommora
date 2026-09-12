@@ -6,13 +6,12 @@ import {
   type Creator,
 } from '@pommora/core/Nexus/mutateRequest'
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
-import { pageRowOf, schemaForPage } from '@pommora/core/Properties/pageRow'
+import { fetchPageRow, schemaForPage } from '@pommora/core/Properties/pageRow'
 import { contextTargetToSelect } from '../../Navigation/tabsModel'
-import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import { propertyMenuRows, runPropertyAction } from './propertyMenuActions'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
@@ -39,8 +38,11 @@ function creatorsFor(target: ContextTarget): Creator[] {
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
 export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElement): Promise<void> {
   const creators = creatorsFor(target)
-  const row = trigger && target.kind === 'page' && target.id ? await pageRowFor(target) : null
   const s = useSession.getState()
+  const row =
+    trigger && target.kind === 'page' && target.id
+      ? await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
+      : null
   const schema = row ? schemaForPage(s.tree, target.path) : []
   const properties = row
     ? propertyMenuRows({
@@ -59,27 +61,19 @@ export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElemen
   runEntityAction(target, creators, action)
 }
 
-async function pageRowFor(target: ContextTarget): Promise<ViewRow | null> {
-  const detail = readPageDetail(target.path) ?? (await fetchPageDetail(target.path))
-  return detail
-    ? pageRowOf(
-        useSession.getState().tree,
-        { id: target.id ?? '', path: target.path, title: detail.title },
-        detail.frontmatter as PageFrontmatter,
-      )
-    : null
-}
-
 function pageValueCommit(
-  schema: ReturnType<typeof schemaForPage>,
-  row: ViewRow,
+  schema: PropertyDefinition[],
+  opened: ViewRow,
 ): (column: ResolvedColumn, value: PropertyValue | null) => void {
+  let row = opened
   const writer: { current: ValueWriter | null } = {
     current: {
       schema,
       mutate: (req) => useSession.getState().mutate(req),
       rowOf: (id) => (id === row.id ? row : undefined),
-      apply: () => undefined,
+      apply: (_, frontmatter) => {
+        row = { ...row, frontmatter }
+      },
     },
   }
   return (column, value) => {

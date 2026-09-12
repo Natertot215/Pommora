@@ -1,22 +1,12 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { valueOr } from '@pommora/core/Contract/result'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { PageValues } from '@pommora/core/Views/viewRow'
+import { fetchPageValues } from '../../Properties/pageRow'
 import { useSession } from '../../Session/store'
-import { host } from '../../Platform/dialer'
 
 type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
-
-/** A failed batch read keeps the values already held — a blank container reads as data loss. */
-const fetchValues = (
-  path: string,
-  pageIds?: string[],
-): Promise<Record<string, PageValues> | null> =>
-  host()
-    .ask('view:loadValues', path, pageIds)
-    .then((r) => valueOr(r, null))
 
 export const patchOverride = (
   set: SetOverrides,
@@ -82,7 +72,7 @@ function useValuesEpoch(
       setValueOverride?.((prev) => rekeyOverrides(prev, oldKey, newKey))
     }
     let canceled = false
-    void fetchValues(path, only).then((v) => {
+    void fetchPageValues(path, only).then((v) => {
       if (!v) return
       if (only) {
         if (live.current === path) setValues((prev) => ({ ...prev, ...v }))
@@ -107,7 +97,7 @@ export function useContainerValues(
   useEffect(() => {
     let canceled = false
     setValueOverride?.(null)
-    void fetchValues(path).then((v) => {
+    void fetchPageValues(path).then((v) => {
       if (v && !canceled) setValues(v)
     })
     return () => {
