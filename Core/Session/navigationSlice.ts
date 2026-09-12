@@ -48,12 +48,12 @@ import {
   clearCache,
   dropPageDetail,
   dropCacheDetail,
+  cachePageDetail,
   fetchPageDetail,
 } from './pageDetailCache'
 import { dropCacheTab, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { findContainerWhere } from '../Nexus/treePatch'
-import { fetchPageValues } from '../Properties/pageRow'
 import { relDirname } from '../Paths/posix'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
@@ -104,7 +104,6 @@ export interface NavigationSlice {
   unpinTarget: (key: string) => void
   reorderPin: (activeKey: string, overKey: string) => void
   applyNavChanged: (nav: Omit<NavigationState, 'recents'>) => void
-  refreshSlotValues: (pageIds: readonly string[]) => void
   thumbVersions: Record<string, number>
   bumpThumb: (key: string) => void
   evictThumbs: () => void
@@ -589,8 +588,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         }
         case 'page': {
           const pageSel: PageTarget = { kind: 'page', id: target.id, path: target.path }
-          const land = (slot: PageSlot): void =>
+          const land = (slot: PageSlot): void => {
+            if (slot.status === 'ready') cachePageDetail(slot.detail)
             set((s) => ({ selection: pageSel, pages: { ...s.pages, [target.id]: slot } }))
+          }
           const loaded = get().pages[target.id]
           if (loaded?.status === 'ready' && loaded.detail.path === target.path) {
             set({ selection: pageSel })
@@ -727,27 +728,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         set({ tabs, activeTabId: active, tabMru: [active] })
       }
       syncActiveDetail()
-    },
-
-    refreshSlotValues: (pageIds) => {
-      const pages = get().pages
-      for (const id of pageIds) {
-        const slot = pages[id]
-        if (slot?.status !== 'ready') continue
-        const { path } = slot.detail
-        void fetchPageValues(relDirname(path), [id]).then((values) => {
-          const frontmatter = values?.[id]?.frontmatter
-          if (!frontmatter) return
-          set((s) => {
-            const live = s.pages[id]
-            return live?.status === 'ready' && live.detail.path === path
-              ? {
-                  pages: { ...s.pages, [id]: { ...live, detail: { ...live.detail, frontmatter } } },
-                }
-              : {}
-          })
-        })
-      }
     },
 
     patchPagesFor: (req) => {
