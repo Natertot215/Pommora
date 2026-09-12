@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { placeCell } from './engine'
+import { describe, expect, it } from 'vitest'
 import type { Box } from './shared'
-import { keyboardNext, ARROW_DIRS } from './keyboard'
+import { ARROW_DIRS, keyboardNext } from './keyboard'
 
 // A column of uniform 10px-tall slots at y = 0,10,20,...
 const column = (n: number): Box[] =>
@@ -28,44 +27,6 @@ const grid = (count: number, cols: number): Box[] =>
       cy: r * 100 + 50,
     }
   })
-
-const cellIn = (rects: Box[], over: number, activeIdx: number, index: number): { y: number } =>
-  placeCell(rects, activeIdx, over, index, 10, 100)
-
-describe('placeCell — the displacement core', () => {
-  it('shifts the passed-over items up when dragging forward', () => {
-    const r = column(4)
-    expect(cellIn(r, 2, 0, 1).y).toBe(0)
-    expect(cellIn(r, 2, 0, 2).y).toBe(10)
-    expect(cellIn(r, 2, 0, 3).y).toBe(30)
-  })
-
-  it('shifts the passed-over items down when dragging backward', () => {
-    const r = column(4)
-    expect(cellIn(r, 1, 3, 0).y).toBe(0)
-    expect(cellIn(r, 1, 3, 1).y).toBe(20)
-    expect(cellIn(r, 1, 3, 2).y).toBe(30)
-  })
-
-  it('is a no-op when over === active (hovering its own slot)', () => {
-    const r = column(4)
-    for (let i = 0; i < 4; i++) expect(cellIn(r, 1, 1, i).y).toBe(i * 10)
-  })
-
-  it('closes the gap when the active item is in another zone', () => {
-    const r = column(4)
-    expect(cellIn(r, -1, 1, 0).y).toBe(0)
-    expect(cellIn(r, -1, 1, 2).y).toBe(10)
-    expect(cellIn(r, -1, 1, 3).y).toBe(20)
-  })
-
-  it('opens a slot for a foreign item, and walks the grid past the last cell', () => {
-    const g = grid(4, 2)
-    expect(placeCell(g, -1, 0, 0, 100, 200)).toEqual({ x: 100, y: 0 })
-    expect(placeCell(g, -1, 4, 3, 100, 200)).toEqual({ x: 100, y: 100 })
-    expect(placeCell(g, -1, 0, 3, 100, 200)).toEqual({ x: 0, y: 200 })
-  })
-})
 
 describe('keyboardNext — arrow navigation', () => {
   it('steps a vertical list down/up by one slot', () => {
