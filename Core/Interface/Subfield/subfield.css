@@ -49,7 +49,6 @@
   gap: 6px;
   white-space: nowrap;
 }
-.subfield-add,
 .subfield-viewtype {
   color: var(--label-secondary);
   -webkit-app-region: no-drag;

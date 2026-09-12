@@ -445,6 +445,19 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       if (!ok) setPendingSeat(null)
     })
   }
+  const ghostCard = (
+    <GhostCard
+      banner={banner}
+      view={liveView}
+      columns={columns}
+      ctx={ctx}
+      capitalize={capitalize}
+      iconName={entityIcon('page', undefined, defaultIcons)}
+      onEnter={interactions.ghost.onGhostEnter}
+      onLeave={interactions.ghost.onGhostLeave}
+      onCreate={ghostCreate}
+    />
+  )
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void =>
     interactions.onDrop(
       activeId,
@@ -542,7 +555,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   collapsed={isCollapsed}
                   onToggle={() => toggleCollapse(g.key)}
                   onAdd={setPaths.has(g.key) ? () => creation.bandAdd(g.key) : undefined}
-                  headless={flatMode}
+                  headless={flatMode || (g.kind === 'ungrouped' && structural)}
                   fill
                 >
                   <SortableZone
@@ -580,17 +593,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                           fill
                           onCollapsed={interactions.ghost.closed}
                         >
-                          <GhostCard
-                            banner={banner}
-                            view={liveView}
-                            columns={columns}
-                            ctx={ctx}
-                            capitalize={capitalize}
-                            iconName={entityIcon('page', undefined, defaultIcons)}
-                            onEnter={interactions.ghost.onGhostEnter}
-                            onLeave={interactions.ghost.onGhostLeave}
-                            onCreate={ghostCreate}
-                          />
+                          {ghostCard}
                         </Reveal>,
                       ]
                     })}
@@ -600,6 +603,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             })}
           </BandDnd>
         </DragGroup>
+        {interactions.ghostStanding && (
+          <div className="cards-grid card-grid is-fill">{ghostCard}</div>
+        )}
         {interactions.iconPicker}
         <ImagePicker
           open={bannerEditing}

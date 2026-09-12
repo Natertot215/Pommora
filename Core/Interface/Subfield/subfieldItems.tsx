@@ -1,11 +1,9 @@
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { containerCreators } from '@pommora/core/Nexus/mutateRequest'
 import { type PageTarget, useSession } from '../../Session/store'
-import { findCollection } from '../../Nexus/treeIndex'
 import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'
 
-type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
+type SubfieldItemId = 'pageStats' | 'viewType'
 
 export interface SubfieldPage {
   target: PageTarget
@@ -20,8 +18,8 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   homepage: [],
   context: [],
   space: [],
-  collection: ['addMenu'],
-  set: ['addMenu'],
+  collection: [],
+  set: [],
   page: ['pageStats'],
 }
 
@@ -35,27 +33,6 @@ function PageStatsItem({ page }: SubfieldItemProps): React.JSX.Element {
       <span className="subfield-sep">·</span>
       {stats.characters.toLocaleString()}
     </span>
-  )
-}
-
-function AddMenuItem(): React.JSX.Element | null {
-  const selection = useSession((s) => s.selection)
-  const tree = useSession((s) => s.tree)
-  if (selection.kind !== 'collection' && selection.kind !== 'set') return null
-  const parentPath =
-    selection.kind === 'set' ? selection.path : (findCollection(tree, selection.id)?.path ?? '')
-  const creators = containerCreators(selection.kind, parentPath)
-  const onAdd = (): void => void useSession.getState().createFromMenu(creators, 'detail')
-  return (
-    <Button
-      size="button-inline"
-      icon="plus"
-      iconSize="body"
-      className="subfield-add"
-      onClick={onAdd}
-      aria-label="Add"
-      title={creators.map((c) => c.label).join(' / ')}
-    />
   )
 }
 
@@ -84,8 +61,6 @@ export function SubfieldItem({
   switch (id) {
     case 'pageStats':
       return <PageStatsItem page={page} />
-    case 'addMenu':
-      return <AddMenuItem />
     case 'viewType':
       return <ViewTypeItem />
   }

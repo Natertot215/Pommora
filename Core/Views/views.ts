@@ -12,18 +12,16 @@ interface ViewKind {
   label: string
   icon: string
   flat: boolean
-  /** Draws a Set Cards row off the pipeline, so the view mounts over Sets even when no page resolves. */
-  setCards: boolean
 }
 
 export const VIEW_KINDS: Record<ViewType, ViewKind> = {
   // Table indents its structural groups until Table Flatten lands, at which point flatness becomes the view's own setting with the kind as its default.
-  table: { label: 'Table', icon: 'table', flat: false, setCards: false },
-  cards: { label: 'Cards', icon: 'cards-grid', flat: true, setCards: true },
-  list: { label: 'List', icon: 'list-rounded', flat: false, setCards: false },
-  gallery: { label: 'Gallery', icon: 'layout-dashboard', flat: false, setCards: false },
-  calendar: { label: 'Calendar', icon: 'calendar-days', flat: false, setCards: false },
-  timeline: { label: 'Timeline', icon: 'chart-gantt', flat: false, setCards: false },
+  table: { label: 'Table', icon: 'table', flat: false },
+  cards: { label: 'Cards', icon: 'cards-grid', flat: true },
+  list: { label: 'List', icon: 'list-rounded', flat: false },
+  gallery: { label: 'Gallery', icon: 'layout-dashboard', flat: false },
+  calendar: { label: 'Calendar', icon: 'calendar-days', flat: false },
+  timeline: { label: 'Timeline', icon: 'chart-gantt', flat: false },
 }
 
 const VIEW_FORMATS = ['standard', 'compact'] as const

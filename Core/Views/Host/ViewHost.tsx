@@ -8,7 +8,6 @@ import { useActiveView } from './useActiveView'
 import { TableView } from '../Table/TableView'
 import { CardsView } from '../Cards/CardsView'
 import { useViewHost, type ViewHostApi } from './useViewHost'
-import './view-host.css'
 
 const identity = (v: SavedView): SavedView => v
 const NO_SCHEMA: PropertyDefinition[] = []
@@ -30,9 +29,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     onCreated: { current: () => {} },
   }).current
   const host = useViewHost(source, VIEW_KINDS[view.type].flat, upward)
-  const setChrome = VIEW_KINDS[view.type].setCards && (source.sets?.length ?? 0) > 0
-  if (!host) return <div className="view-empty">Loading…</div>
-  if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
+  if (!host) return <div />
   return (
     <div style={scale === 1 ? undefined : { zoom: scale }}>
       <Renderer host={host} />
