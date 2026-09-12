@@ -7,7 +7,8 @@
   padding-bottom: var(--band-clearance);
   transition: padding-bottom var(--drop-outline-beat, var(--duration-fast)) var(--ease-base);
 }
-.group-band-row[data-disclose] {
+.group-band-row[data-disclose],
+.group-band-row[data-empty] {
   padding-bottom: 0;
 }
 [data-reveal] > * > .group-band:first-child > .group-band-row {

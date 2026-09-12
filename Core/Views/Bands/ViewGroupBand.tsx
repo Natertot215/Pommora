@@ -61,6 +61,7 @@ export function ViewGroupBand({
     <GroupBand
       glyph={glyph}
       collapsed={collapsed}
+      empty={group.items.length === 0 && !group.children?.length}
       onToggle={onToggle}
       showAdd={group.kind === 'structural-set'}
       onAdd={onAdd}
