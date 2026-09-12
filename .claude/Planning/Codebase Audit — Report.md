@@ -17,7 +17,7 @@ Nine read-only auditors each covered a slice of the tree or a cross-cutting lens
 
 **Is what already exists flawless?** Eight one-machine defects were confirmed at audit time. All eight are fixed. The audit's own ninth item was denied by manual test.
 
-**Does continuing to build undermine the foundations?** Not the foundations themselves. The boundary holds by construction and won't erode from feature work. What erodes is the cost of the undecided policies: every new stateful feature picks its own storage home until the placement rule is applied, every new hover control lengthens the touch backlog, every new view kind is written a third time. Deferral has a linear price.
+**Does continuing to build undermine the foundations?** Not the foundations themselves. The boundary holds by construction and won't erode from feature work. What erodes is the cost of the undecided policies: every new stateful feature picks its own storage home until the placement rule is applied, every new hover control lengthens the touch backlog. Deferral has a linear price.
 
 #### Where Brainwaves Go
 
@@ -27,7 +27,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 | -------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **The next sitting** | Decisions             | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
 | **~5%**              | Behind-the-wall fixes | The ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
-| **~55%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt) and folding the Table and Cards renderers onto one engine (Topic 6) before a third view kind is written a third time.                                                                                                                  |
+| **~55%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt).                                                                                                                  |
 | **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface.                                                                                                                    |
 
 **Focus next:** rule **D-2** — the cheapest decision with the widest unlock — and run the cheap unblocked fixes alongside it. Ruled foundation work second; building last, on the openings whose plumbing is done.
@@ -47,7 +47,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 
 **Matters for the product.** Shapes what the app can do; can be reworked freely with no cross-device consequence:
 
-- `Core/Views/Pipeline`: finished work. `Core/Views/Table` and `Core/Views/Cards`: two prototypes past 1,300 lines each, a rework target, not a risk.
+- `Core/Views/Pipeline` and `Core/Views/Host`: finished work; the renderers draw presentation over one interaction layer.
 - `Core/Tiles`: the layout model is sync-ready; the surfaces have one hotspot.
 - `Core/Interface`, `Core/Settings`, `Core/Pages`, `Core/Assets`, `Core/Trash`, `Core/Web`: ordinary accumulation, no findings above hygiene except an empty inspector waiting for its panel.
 
@@ -88,31 +88,16 @@ The most reachable piece: **when a file changes outside Pommora, the open page n
 
 **Findings:** R-07, R-09.
 
-##### 6. The Table/Cards View Engine
-
-**Lenses and state:** Debt, Decision, Duplication, Asymmetry, Performance, Tests. **Effort:** Large. **Deletes:** About 230 lines of duplicated interaction layer, two mounted pickers per card.
-
-**Found.** The data half of views is finished, excellent, and shouldn't be touched: one filter, one sorter, one grouper, one pure pipeline, one real host that owns every writer. The renderer half is two prototypes that both grew past 1,300 lines and write the same interaction layer twice: band drops, relocation, reorder, page opening, hover glance, menu dispatch, the ghost lifecycle. They aren't copy-paste duplicates, which is exactly why they drift; each pair is the same idea with one policy detail changed. Cards mounts two closed picker components and six store subscriptions per card, where Table already does it correctly with one picker at the root. Cards has one smoke assertion against Table's 1,330 lines of interaction tests. Six view kinds are registered and two render. Adding a third view kind means writing the interaction layer a third time.
-
-**Change.**
-
-1. Extract one `useRowInteractions({ host, policy })` in `Core/Views/Host` returning relocate, reorder, band drop, open, hover, menu dispatch, and ghost; the policy is the two-field difference that actually exists (landing at end or slot, bands nest or not). Both renderers consume it. *(L; ~230 lines)*
-2. Hoist Cards' icon and image pickers to the grid level the way Table already does. *(S; 2 mounted pickers per card)*
-3. Scope the ghost's rect reads to the anchor's own zone. *(S; ~15 lines)*
-4. Add a Cards drop suite, a Cards value and menu suite, and a creation suite, on the harness the Table suites already use. *(M)*
-
-**Findings:** R-32, R-33, R-35, R-36.
-
 ##### 8. UIX: Engines, Bundle, Touch, Filing
 
 **Lenses and state:** Gates Mobile · touch, Foundation risk, Debt, Decision, Asymmetry, Duplication, Performance, Filing. **Effort:** Small to large. **Deletes:** About 450 lines of the second reorder engine, 60 lines of small duplications, 490 relocated.
 
-**Found.** The strongest-built part of the codebase, and the numbers aren't soft: one pointer harness every drag surface funnels through, one picker base, one menu vocabulary, zero raw colors, a hard import boundary that holds. Two things would resist a second host. Nothing in the kit ever asks what kind of pointer is driving it, in a kit whose reveal affordances are all hover-gated, so on a touch device a class of controls is simply absent. And reordering by dragging is implemented twice behind one façade, the larger version serving exactly one screen, carrying no keyboard support, and having no tests. Alongside: the design kit carries Pommora's application vocabulary in four files, and the drawn caret is split across three packages with UIX styling CodeMirror's classes directly.
+**Found.** The strongest-built part of the codebase, and the numbers aren't soft: one pointer harness every drag surface funnels through, one picker base, one menu vocabulary, zero raw colors, a hard import boundary that holds. Two things would resist a second host. Nothing in the kit ever asks what kind of pointer is driving it, in a kit whose reveal affordances are all hover-gated, so on a touch device a class of controls is simply absent. And reordering by dragging is implemented twice behind one façade, the larger version serving exactly one screen and carrying no keyboard support, while the single-zone engine serving the other twelve call sites has no DOM test of its own. Alongside: the design kit carries Pommora's application vocabulary in four files, and the drawn caret is split across three packages with UIX styling CodeMirror's classes directly.
 
 **Change.**
 
 1. Add a coarse-pointer branch that pins hover reveals visible, a press-delay beside the travel threshold in the gesture harness, and a long-press route to dwell-to-create. *(L; after D-7)*
-2. Fold cross-zone support into the single-zone engine as a zone registry; retire the second engine. Cards gains keyboard dragging for free. *(L; ~350–450 lines)*
+2. Fold cross-zone support into the single-zone engine as a zone registry and retire the second. The fold is three axes — the registry, the collision model, and the overlay presentation — and cross-zone keyboard is its own step after it; the views consume one drop contract, so the fold touches only Cards' adapter. *(L; −200 to −400 lines)*
 3. Move the drawn caret into one `Core/Caret` with both geometry producers and both stylesheets; UIX keeps only the four caret tokens. *(M; ~490 lines relocated)*
 4. Move the property drop model to `Core/Properties` and the on-disk color key names beside the schemas that persist them; parameterize the three class-name queries. *(M; after D-9; ~78 lines relocated)*
 5. Generate the kebab token republish from the source list; one Bloom factory. *(S)*
@@ -166,7 +151,6 @@ Ordered by how much later work each gates. D-1 (state placement) was ruled on 09
 
 **D-9: Smaller rulings, each one edit once decided** 
 
-- Which slot a page lands in when moved across bands (Table appends, Cards lands at the drop slot, neither documented as intentional).
 - Whether the two tab models' three differences become parameters.
 - Whether Showcase keeps a public surface in the design kit.
 - Whether a folder's agenda classification may carry existence separately from parse success, and whether the three watch-batch consumers may share one classification.
@@ -203,10 +187,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-05 | 1     | D    | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change            | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts`                                                              |
 | R-07 | 2     | FR   | An external edit never reaches an open page, and the next keystroke writes over it                                                 | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts`                                 |
 | R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync       | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                             |
-| R-32 | 6     | Dt   | Table and Cards write the same interaction layer twice                                                                             | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx`                                                      |
-| R-33 | 6     | Dt   | Every card carries six store subscriptions and two mounted pickers                                                                 | `Core/Views/Table/TableView.tsx, Core/Views/Cards/CardsView.tsx, UIX/Pickers/IconPicker.tsx`                          |
-| R-35 | 6     | Dt   | CardsView gets one mount assertion; TableView gets 1,330 lines of interaction tests                                                | `Core/Views/Table/bandCommits.test.tsx, Core/Views/Table/cellGestures.test.tsx, Core/Views/Host/useViewHost.test.tsx` |
-| R-36 | 6     | Dt   | The Cards ghost reads every card's rect twice on every hover dwell                                                                 | `Core/Views/Cards/CardsView.tsx`                                                                                      |
 | R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |
 | R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                                | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`                    |
 | R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                               | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                         |
