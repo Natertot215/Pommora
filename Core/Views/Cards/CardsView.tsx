@@ -115,7 +115,6 @@ type CardApi = {
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   setStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
   open: (row: ViewRow, newTab: boolean) => void
-  reveal: (id: string) => void
   hide: (id: string) => void
   openValuePicker: (req: ValuePickerRequest) => void
   openAddPicker: (req: AddPickerRequest) => void
@@ -364,7 +363,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commitValue,
     setStyle: setStylePatch,
     open: interactions.openPage,
-    reveal: revealProperty,
     hide: hideProperty,
     openValuePicker,
     openAddPicker,
@@ -1100,11 +1098,10 @@ const PageCard = memo(function PageCard({
     e.stopPropagation()
     if (drag?.isDragging) return
     const anchor = textRef.current ?? (e.currentTarget as HTMLElement)
-    const addable = api.addableFor(row)
     const action = await holdGhost(() =>
       popMenu(
         cardMenuModel({
-          addable: orderAddableEntries(addable).map((a) => ({ id: a.id, name: a.name })),
+          addable: api.addableFor(row).length > 0,
           editableImage: banner === 'image' && !!cover,
           ...api.titleMenuContext(row),
         }),
@@ -1113,13 +1110,8 @@ const PageCard = memo(function PageCard({
     if (!action) return
     if (api.titleAction(action, row, anchor)) return
     if (action === 'image:edit') requestBanner('edit', anchor)
-    else if (action.startsWith('add:')) {
-      const entry = addable.find((a) => a.id === action.slice(4))
-      if (!entry) return
-      if (entry.revealOnly) api.reveal(entry.id)
-      else if (textRef.current)
-        api.openAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: entry })
-    }
+    else if (action === 'add' && textRef.current)
+      api.openAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
   }
 
   const iconName = entityIcon('page', row.icon, defaultIcons)

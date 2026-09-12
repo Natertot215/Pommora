@@ -32,17 +32,14 @@ export type WidgetSpec =
   | { type: 'hr' }
   | { type: 'bullet' }
   | { type: 'checkbox'; bracketFrom: number; checked: boolean }
-  /** Drawn as the number its position earns rather than the label it holds — which is why it is a widget over hidden source and not a class on the source itself. */
   | { type: 'citeRef'; ordinal: number }
 
 export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
   | { kind: 'hide'; from: number; to: number }
-  /** Carried as its own intent rather than inferred from the replaces: a marker's slot is the run from its first character through the gap before its text, which no single replace spans. */
   | { kind: 'atomic'; from: number; to: number }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
-  /** `name` is absent when the fence named none the roster answers to — the copy affordance the tag carries is the same either way. */
   | { kind: 'codeTag'; from: number; name?: string }
   | { kind: 'line'; from: number; className: string; level?: number }
   | {

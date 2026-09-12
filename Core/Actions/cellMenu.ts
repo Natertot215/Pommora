@@ -3,15 +3,16 @@ import type { ColumnStyle } from '../Properties/columnStyles'
 import {
   type PageMetaAction,
   type PageMoveAction,
-  type PageMoveContext,
+  type PageMenuContext,
   pageMetaMenuItems,
 } from './pageMenu'
+import type { PropertyAction } from './propertyRows'
 import type { PropertyType } from '../Properties/properties'
 import type { ResolvedColumn } from '../Views/viewRow'
 import { type ActionItem, afterSeparator } from './menuModel'
 
 type CellMenuKind =
-  | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
+  | ({ kind: 'title'; alreadyOpen?: boolean } & PageMenuContext)
   | {
       kind: 'style-only'
       type: PropertyType
@@ -28,6 +29,7 @@ export type CellMenuContext = CellMenuKind & { hideable?: boolean }
 export type CellMenuAction =
   | PageMetaAction
   | PageMoveAction
+  | PropertyAction
   | 'cell:edit'
   | 'cell:rename'
   | 'cell:clear'
@@ -107,6 +109,7 @@ function baseCellMenuModel(ctx: CellMenuContext): {
           window: true,
           newPages: 'pair',
           move: ctx,
+          properties: ctx.properties,
           clipboard: true,
           history: true,
         }),

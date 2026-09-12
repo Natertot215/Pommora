@@ -49,25 +49,31 @@ import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure } from './Disclosure'
 
-function showContextFor(node: {
-  kind: MutableKind
-  id: string
-  path: string
-  title: string
-  disclosureLocked?: boolean
-}): Promise<void> {
+function showContextFor(
+  node: {
+    kind: MutableKind
+    id: string
+    path: string
+    title: string
+    disclosureLocked?: boolean
+  },
+  trigger?: HTMLElement | null,
+): Promise<void> {
   const { tabs, pinned, tree } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
-  return showEntityMenu({
-    kind: node.kind,
-    id: node.id,
-    path: node.path,
-    title: node.title,
-    alreadyOpen,
-    disclosureLocked: node.disclosureLocked,
-    host: 'sidebar',
-    ...(node.kind === 'page' ? pageMoveContext(tree, node.path) : {}),
-  })
+  return showEntityMenu(
+    {
+      kind: node.kind,
+      id: node.id,
+      path: node.path,
+      title: node.title,
+      alreadyOpen,
+      disclosureLocked: node.disclosureLocked,
+      host: 'sidebar',
+      ...(node.kind === 'page' ? pageMoveContext(tree, node.path) : {}),
+    },
+    trigger ?? undefined,
+  )
 }
 
 function isCollectionSelected(sel: SelectionState, id: string): boolean {
@@ -126,7 +132,7 @@ function PageRow({
             depth={depth}
             selected={isPageSelected(selection, page.id)}
             onSelect={(e) => onSelectPage(page, e)}
-            onContextMenu={() => void holdGhost(() => showContextFor(page))}
+            onContextMenu={() => void holdGhost(() => showContextFor(page, rowRef.current))}
             rename={{ path: page.path, kind: page.kind }}
           />
         </div>

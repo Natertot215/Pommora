@@ -1,5 +1,5 @@
 import type { Result } from '../Contract/result'
-import type { PageMoveContext } from '../Actions/pageMenu'
+import type { PageMenuContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { Crop } from './schemas'
 
@@ -76,7 +76,7 @@ export type MutateRequest =
 
 export type RenameHost = 'detail' | 'sidebar'
 
-export interface ContextTarget extends PageMoveContext {
+export interface ContextTarget extends PageMenuContext {
   kind: MutableKind
   path: string
   title: string
