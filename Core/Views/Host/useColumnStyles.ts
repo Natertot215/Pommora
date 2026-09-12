@@ -39,8 +39,6 @@ export function useStyleFor(): (
   )
 }
 
-export const NO_STYLE: ColumnStyle = {}
-
 /** Every rendered column's resolved style, keyed by id — one fold of the saved entries over the type defaults for whichever view kind paints them. */
 export function useColumnStyleMap(
   host: Pick<ViewHostApi, 'columns' | 'schema' | 'liveView'>,
