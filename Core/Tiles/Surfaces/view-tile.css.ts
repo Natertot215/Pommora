@@ -127,7 +127,7 @@ export const body = style({
   vars: { '--over-scroll-fade': FADE_RISE },
 })
 
-globalStyle(`${body} .table-view, ${body} .view-empty`, {
+globalStyle(`${body} .table-view`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
 })
 

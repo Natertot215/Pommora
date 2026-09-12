@@ -386,11 +386,22 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     travelHold: policy.ghost.travelHold,
   })
   useClearStrandedGhost(ghost, rowById)
-  /** Claims the ghost's anchor and creates below it; undefined when no ghost stands. */
+  // The container itself holds nothing, so the ghost stands on its own as its first New Page instead of waiting on a hover anchor. Reading the container rather than the pipeline keeps it off a view whose filter is what emptied the paint — there the create would land a page the filter hides again.
+  const ghostStanding = rows.length === 0
+  const standingFlight = useRef<Promise<boolean> | null>(null)
+  /** Claims the ghost's anchor and creates below it, or creates the container's first page under a standing ghost; undefined when no ghost stands. */
   const ghostCreate = (): Promise<boolean> | undefined => {
     const anchorId = ghost.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    return anchor && creation.createAfter(anchor)
+    if (anchor) return creation.createAfter(anchor)
+    if (!ghostStanding) return undefined
+    // The standing ghost stays mounted until the row lands, so the create is claimed for its whole flight.
+    if (standingFlight.current) return standingFlight.current
+    const flight = creation.createFirst().finally(() => {
+      standingFlight.current = null
+    })
+    standingFlight.current = flight
+    return flight
   }
 
   // ── What the create engine reads at fire time ─────────────────────────────
@@ -409,6 +420,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     runTitleAction,
     iconPicker,
     ghost,
+    ghostStanding,
     ghostCreate,
     holdGhost: ghost.suppressWrap,
   }

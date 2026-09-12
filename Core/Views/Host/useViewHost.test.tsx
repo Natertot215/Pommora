@@ -500,21 +500,58 @@ describe('settleOrders — a create composes with the live order', () => {
 
 describe('the root seat', () => {
   const mountSeat = (source: CollectionNode): Promise<void> => renderView(root, source)
+  const mutateSpy = (): ReturnType<typeof vi.fn> =>
+    useSession.getState().mutate as unknown as ReturnType<typeof vi.fn>
+  const clickGhost = async (selector: string): Promise<void> => {
+    const ghost = host.querySelector<HTMLElement>(selector)
+    expect(ghost).toBeTruthy()
+    await act(async () => ghost?.click())
+  }
 
-  it('paints Loading… while the host is null', async () => {
+  it('paints nothing while the host is null', async () => {
     useSession.setState({ tree: null as never })
     await mountSeat(collection())
-    expect(host.textContent).toContain('Loading…')
+    expect(host.textContent).toBe('')
   })
 
-  it('paints No pages here when the pipeline yields no groups', async () => {
+  it('an empty container paints its head and one standing ghost row, which creates the first page', async () => {
     const empty = collection()
     ;(empty as unknown as { pages: unknown[] }).pages = []
     await mountSeat(empty)
-    expect(host.textContent).toContain('No pages here')
+    expect(host.querySelector('.table-head')).toBeTruthy()
+    expect(host.querySelectorAll('.ghost-row').length).toBe(1)
+    expect(host.querySelectorAll('.data-row:not(.ghost-row)').length).toBe(0)
+    await clickGhost('.ghost-row')
+    expect(mutateSpy()).toHaveBeenCalledWith(
+      expect.objectContaining({ op: 'createPage', parentPath: 'Col' }),
+      expect.any(Function),
+    )
   })
 
-  it('a cards view with Sets present mounts the renderer instead — the Set Cards toggle is irrelevant', async () => {
+  it('the standing ghost claims its create for the flight, so a double click mints one page', async () => {
+    const empty = collection()
+    ;(empty as unknown as { pages: unknown[] }).pages = []
+    useSession.setState({ mutate: vi.fn(() => new Promise<boolean>(() => {})) as never })
+    await mountSeat(empty)
+    await clickGhost('.ghost-row')
+    await clickGhost('.ghost-row')
+    expect(mutateSpy()).toHaveBeenCalledTimes(1)
+  })
+
+  it('a filter that hides every page stands no ghost — the container is not the empty one', async () => {
+    await mountSeat(
+      collection({
+        filter: {
+          match: 'all',
+          rules: [{ property_id: 'prop_status', op: 'is', value: 'archived' }],
+        },
+      } as unknown as Partial<SavedView>),
+    )
+    expect(host.querySelectorAll('.data-row').length).toBe(0)
+    expect(host.querySelector('.ghost-row')).toBeFalsy()
+  })
+
+  it('a cards view over Sets holding no pages mounts the renderer with a standing ghost card', async () => {
     const source = setCollection({
       hide_empty_groups: true,
       set_cards: false,
@@ -525,7 +562,7 @@ describe('the root seat', () => {
       tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,
     })
     await mountSeat(source)
-    expect(host.textContent).not.toContain('No pages here')
     expect(host.querySelector('.cards-view')).toBeTruthy()
+    expect(host.querySelectorAll('.ghost-card').length).toBe(1)
   })
 })
