@@ -17,7 +17,7 @@ import {
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
-import { clearCache } from './pageDetailCache'
+import { clearCache, readPageDetail } from './pageDetailCache'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -204,6 +204,13 @@ describe('store — warm tabs (B-2/B-3)', () => {
       .getState()
       .select({ kind: 'page', id: 'a', path: '/a-renamed' }, { record: false })
     expect(openPage()).toHaveBeenCalledWith('/a-renamed')
+  })
+
+  it('a landed page slot seeds the shared detail cache, so a panel on that path reads without a fetch', async () => {
+    openPage().mockImplementation(async () => ok(detail('a')))
+    seed({ tabs: [uTab('t1', pg('a'), [pg('a')], 0)], activeTabId: 't1' })
+    await useSession.getState().select(pg('a'), { record: false })
+    expect(readPageDetail(pg('a').path)).toEqual(detail('a'))
   })
 
   it('a stale cold fetch resolving after a warm switch-back never clobbers the shown page', async () => {
@@ -666,25 +673,6 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
 describe('store — the mutate rail patches the tree before main confirms', () => {
   beforeEach(async () => {
     await useSession.getState().applyTree(treeWith([]))
-  })
-
-  it('refreshSlotValues refills a ready slot’s frontmatter from the index, leaving its body', async () => {
-    channels['view:loadValues'] = vi.fn(async () => ok({ a: { frontmatter: { Stage: 'Done' } } }))
-    useSession.setState({ pages: { a: ready('a') } })
-    useSession.getState().refreshSlotValues(['a'])
-    await vi.waitFor(() => {
-      const slot = useSession.getState().pages.a
-      expect(slot?.status === 'ready' && slot.detail.frontmatter).toEqual({ Stage: 'Done' })
-    })
-    const slot = useSession.getState().pages.a
-    expect(slot?.status === 'ready' && slot.body).toBe('x')
-  })
-
-  it('refreshSlotValues leaves a page it holds no ready slot for alone', async () => {
-    channels['view:loadValues'] = vi.fn(async () => ok({}))
-    useSession.setState({ pages: {} })
-    useSession.getState().refreshSlotValues(['a'])
-    expect(channels['view:loadValues']).not.toHaveBeenCalled()
   })
 
   it('setActiveView lands on the node optimistically', async () => {

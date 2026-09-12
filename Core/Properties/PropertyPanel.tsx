@@ -69,15 +69,8 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   const pageId = props.page.id
   const fm = override?.[pageId]?.fm ?? base
 
-  const stored = pageDetail?.frontmatter ?? null
-  useEffect(() => {
-    if (!pageFrame) return
-    setBase((stored ?? null) as PageFrontmatter | null)
-  }, [pageFrame, stored])
-
   const path = props.page.path
   useEffect(() => {
-    if (pageFrame) return
     setEditing(null)
     const cached = readPageDetail(path)
     if (cached) {
@@ -95,7 +88,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     return () => {
       live = false
     }
-  }, [pageFrame, path])
+  }, [path])
 
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   useEffect(() => {
@@ -105,7 +98,6 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
       named || valuesEpoch.changes.some((c) => c.pageIds.length === 0 && c.rel === relDirname(path))
     if (!mine) return
     setOverride((prev) => retireSettled(prev, named ? [pageId] : null))
-    if (pageFrame) return
     let live = true
     void fetchPageValues(relDirname(path), [pageId]).then((values) => {
       const next = values?.[pageId]?.frontmatter
@@ -114,7 +106,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     return () => {
       live = false
     }
-  }, [valuesEpoch, pageFrame, pageId, path])
+  }, [valuesEpoch, pageId, path])
 
   const nexusId = tree?.nexus.id
   useEffect(() => {

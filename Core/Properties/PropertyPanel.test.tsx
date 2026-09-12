@@ -92,6 +92,7 @@ const renderPanel = async (node: React.JSX.Element): Promise<void> => {
 
 describe('PropertyPanel', () => {
   it('the page frame (onBack) seeds Context rows shown (B8)', async () => {
+    cachePageDetail(detailWith({}))
     await renderPanel(<PropertyPanel page={detailWith({})} onBack={() => {}} />)
     expect(text()).toContain('Areas')
   })
