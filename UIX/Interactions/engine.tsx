@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useId,
   useMemo,
   useRef,
@@ -695,11 +696,17 @@ export function DragGroup({
     return { transform: placeTransform(target, f.rects[index], d.zoom), hidden: false, animate }
   }
 
+  // Containers grow their drag-time floor on the lift commit, so every measurement is re-read once it has laid out.
+  useLayoutEffect(() => {
+    if (dropState === 'dragging') resync()
+  }, [dropState])
+
   const dropBox = (): Box | null => {
     if (!activeRect || !landing || landing[1] < 0) return null
     const target = targetCell(...landing)
     if (!target) return null
-    const { width, height } = activeRect
+    // The slot takes the size of the cell it lands in; past the last cell it has only the lifted item's.
+    const { width, height } = frozen.current.get(landing[0])?.rects[landing[1]] ?? activeRect
     return {
       left: target.x,
       top: target.y,
@@ -782,7 +789,11 @@ function ZoneBody({
       {id == null ? (
         children
       ) : (
-        <div ref={(el) => engine.registerContainer(zoneId, el)} className={className}>
+        <div
+          ref={(el) => engine.registerContainer(zoneId, el)}
+          className={className}
+          data-drag-active={engine.dropState !== 'idle' || undefined}
+        >
           {children}
         </div>
       )}

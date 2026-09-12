@@ -30,7 +30,7 @@
   margin-top: var(--band-gap);
 }
 
-.cards-grid {
+.cards-grid[data-drag-active] {
   min-height: 44px;
 }
 
