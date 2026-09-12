@@ -48,18 +48,18 @@ At `main` `4cae54e5d`, gates green: `npm run typecheck` · `npm run test` → 37
 #### Implementation Process
 
 - [x] **Phase 1** — One Engine
-  - [ ] Task 1.1 — the engine and its tests
-  - [ ] Task 1.2 — the façade and the drop-slot comment
-  - [ ] Task 1.3 — Cards on the one engine
-  - [ ] Review Checkpoint
+  - [x] Task 1.1 — the engine and its tests
+  - [x] Task 1.2 — the façade and the drop-slot comment
+  - [x] Task 1.3 — Cards on the one engine
+  - [x] Review Checkpoint
 - [x] **Phase 2** — Empty Band Clearance
-  - [ ] Task 2.1
-  - [ ] Review Checkpoint
+  - [x] Task 2.1
+  - [x] Review Checkpoint
 - [x] `[Stop: Nathan's hand checks over every drag surface before the second engine is deleted — the CDP smoke informs the stop, only Nathan clears it]`
 - [x] **Phase 3** — Retire and Reconcile
-  - [ ] Task 3.1 — delete `group.tsx`
-  - [ ] Task 3.2 — the documents
-  - [ ] Review Checkpoint
+  - [x] Task 3.1 — delete `group.tsx`
+  - [x] Task 3.2 — the documents
+  - [x] Review Checkpoint
 
 The phases run in sequence in one working tree; Phase 2 is its own phase because it shares no file with the fold, and every commit carries a pathspec so one phase's staged files never ride another's commit. Phase 3 waits on the stop. Agents: Sonnet at low effort copies files from the branch and runs gates (Tasks 1.1, 1.2, 1.3, 2.1, 3.1); Opus writes Task 3.2's living-document text and reviews; two Opus reviewers per phase, simplify then break.
 
