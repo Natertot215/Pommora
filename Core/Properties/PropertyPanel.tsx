@@ -24,7 +24,7 @@ import {
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
-import { pageRowOf, schemaForPage } from './pageRow'
+import { fetchPageValues, pageRowOf, schemaForPage } from './pageRow'
 import { parseEditorValue } from './parseEditorValue'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
@@ -35,6 +35,8 @@ import { displayPropertyName, useCapitalizeMetadata } from './Cells/columnLabel'
 import { propertyIcon } from './Cells/PropertyTypes'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { contextIdentityOf, contextIdsOf, isContextColumnId } from '../Contexts/contextIdentity'
+import { relDirname } from '@pommora/core/Paths/posix'
+import { type Overrides, patchOverride, retireSettled } from './valueOverride'
 import { useSession, type WindowTarget } from '../Session/store'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
@@ -61,13 +63,16 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   const addRef = useRef<HTMLButtonElement | null>(null)
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
   const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
-  const [fm, setFm] = useState<PageFrontmatter | null>(null)
+  const [base, setBase] = useState<PageFrontmatter | null>(null)
+  const [override, setOverride] = useState<Overrides | null>(null)
   const [fetchedTitle, setFetchedTitle] = useState('')
+  const pageId = props.page.id
+  const fm = override?.[pageId]?.fm ?? base
 
   const stored = pageDetail?.frontmatter ?? null
   useEffect(() => {
     if (!pageFrame) return
-    setFm((stored ?? null) as PageFrontmatter | null)
+    setBase((stored ?? null) as PageFrontmatter | null)
   }, [pageFrame, stored])
 
   const path = props.page.path
@@ -76,21 +81,40 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     setEditing(null)
     const cached = readPageDetail(path)
     if (cached) {
-      setFm(cached.frontmatter as PageFrontmatter)
+      setBase(cached.frontmatter as PageFrontmatter)
       setFetchedTitle(cached.title)
       return
     }
     let live = true
-    setFm(null)
+    setBase(null)
     void fetchPageDetail(path).then((detail) => {
       if (!live || !detail) return
-      setFm(detail.frontmatter as PageFrontmatter)
+      setBase(detail.frontmatter as PageFrontmatter)
       setFetchedTitle(detail.title)
     })
     return () => {
       live = false
     }
   }, [pageFrame, path])
+
+  const valuesEpoch = useSession((st) => st.valuesEpoch)
+  useEffect(() => {
+    if (valuesEpoch?.kind !== 'container') return
+    const named = valuesEpoch.changes.some((c) => c.pageIds.includes(pageId))
+    const mine =
+      named || valuesEpoch.changes.some((c) => c.pageIds.length === 0 && c.rel === relDirname(path))
+    if (!mine) return
+    setOverride((prev) => retireSettled(prev, named ? [pageId] : null))
+    if (pageFrame) return
+    let live = true
+    void fetchPageValues(relDirname(path), [pageId]).then((values) => {
+      const next = values?.[pageId]?.frontmatter
+      if (live && next) setBase(next as PageFrontmatter)
+    })
+    return () => {
+      live = false
+    }
+  }, [valuesEpoch, pageFrame, pageId, path])
 
   const nexusId = tree?.nexus.id
   useEffect(() => {
@@ -114,8 +138,8 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     [tree],
   )
   const row = useMemo<ViewRow | null>(
-    () => (fm ? pageRowOf(tree, { id: props.page.id, path, title }, fm) : null),
-    [fm, tree, props.page.id, path, title],
+    () => (fm ? pageRowOf(tree, { id: pageId, path, title }, fm) : null),
+    [fm, tree, pageId, path, title],
   )
   const contextValues = row?.contextValues
 
@@ -127,7 +151,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
       schema,
       mutate,
       rowOf: (id) => (row?.id === id ? row : undefined),
-      apply: (_, next) => setFm(next),
+      apply: (id, next, write) => patchOverride(setOverride, id, next, write),
     }
     return () => {
       writer.current = null
