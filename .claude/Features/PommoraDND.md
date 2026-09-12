@@ -20,7 +20,7 @@ One gesture runs at a time. A press becomes a drag only once it travels far enou
 ### Core Principles
 
 - **One pointer sensor** handles mouse, trackpad, pen, and touch through Pointer Events over the one gesture skeleton, which listens on the window and captures the pointer once a drag activates, so a sub-threshold tap keeps its click.
-- **Measure once.** Item rects are frozen at drag start, collision runs against the frozen snapshot, the items array is never mutated mid-drag, and the reorder commits exactly once, on drop; a scroll or structural change invalidates the snapshot and the next move re-measures once.
+- **Measure once.** Item rects are frozen as a zone is first entered, collision runs against the frozen snapshot, the items array is never mutated mid-drag, and the reorder commits exactly once, on drop. The engine shifts its snapshot by its reference element's movement on scroll and disclosure; the insertion-line surfaces invalidate theirs and retake it lazily on the next move.
 - **Closest-center collision with hysteresis.** The over-slot is the nearest item center to the projected drag point, and switching slots must clear a small threshold, so a boundary never flickers.
 - **One strategy-agnostic shift.** Displacement is a rects-reflow — each non-dragged item moves to the slot it will occupy — covering vertical lists, horizontal rows, and wrapping grids alike.
 - **Decide, then animate.** On drop the accept-or-reject decision is made first, then one animation moves the item to its true resting slot, and the commit fires when that animation ends, never on a blind timer.

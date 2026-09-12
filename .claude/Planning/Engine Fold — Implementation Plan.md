@@ -47,16 +47,16 @@ At `main` `4cae54e5d`, gates green: `npm run typecheck` · `npm run test` → 37
 
 #### Implementation Process
 
-- [ ] **Phase 1** — One Engine
+- [x] **Phase 1** — One Engine
   - [ ] Task 1.1 — the engine and its tests
   - [ ] Task 1.2 — the façade and the drop-slot comment
   - [ ] Task 1.3 — Cards on the one engine
   - [ ] Review Checkpoint
-- [ ] **Phase 2** — Empty Band Clearance
+- [x] **Phase 2** — Empty Band Clearance
   - [ ] Task 2.1
   - [ ] Review Checkpoint
-- [ ] `[Stop: Nathan's hand checks over every drag surface before the second engine is deleted — the CDP smoke informs the stop, only Nathan clears it]`
-- [ ] **Phase 3** — Retire and Reconcile
+- [x] `[Stop: Nathan's hand checks over every drag surface before the second engine is deleted — the CDP smoke informs the stop, only Nathan clears it]`
+- [x] **Phase 3** — Retire and Reconcile
   - [ ] Task 3.1 — delete `group.tsx`
   - [ ] Task 3.2 — the documents
   - [ ] Review Checkpoint
@@ -81,8 +81,8 @@ The phases run in sequence in one working tree; Phase 2 is its own phase because
 
 **CHANGE**
 
-- [ ] `git checkout engine-fold -- UIX/Interactions/engine.tsx UIX/Interactions/engine.test.ts UIX/Interactions/engine.test.tsx`
-- [ ] Read the diff of each against this document's AFTER; they are byte-identical.
+- [x] `git checkout engine-fold -- UIX/Interactions/engine.tsx UIX/Interactions/engine.test.ts UIX/Interactions/engine.test.tsx`
+- [x] Read the diff of each against this document's AFTER; they are byte-identical.
 
 **AFTER** — `UIX/Interactions/engine.tsx`
 
@@ -1243,9 +1243,9 @@ describe('the drag engine across zones', () => {
 
 **VERIFY**
 
-- [ ] `wc -l UIX/Interactions/engine.tsx` → 849.
-- [ ] `grep -c "^// ── " UIX/Interactions/engine.tsx` → 10 (the labeled sections: types and scratch, registry, measurement, grid model, placement, context, lift/move/drop, keyboard, settle, overlay, context and hooks read in order).
-- [ ] `grep -n "useSession\|@pommora/core" UIX/Interactions/engine.tsx` → nothing.
+- [x] `wc -l UIX/Interactions/engine.tsx` → 849.
+- [x] `grep -c "^// ── " UIX/Interactions/engine.tsx` → 10 (the labeled sections: types and scratch, registry, measurement, grid model, placement, context, lift/move/drop, keyboard, settle, overlay, context and hooks read in order).
+- [x] `grep -n "useSession\|@pommora/core" UIX/Interactions/engine.tsx` → nothing.
 
 #### Task 1.2
 
@@ -1312,7 +1312,7 @@ export function useDragItem(id: string): DragItem {
 
 **CHANGE**
 
-- [ ] `git checkout engine-fold -- UIX/Interactions/drag.tsx UIX/Cards/Card.tsx`
+- [x] `git checkout engine-fold -- UIX/Interactions/drag.tsx UIX/Cards/Card.tsx`
 
 **AFTER** — `UIX/Interactions/drag.tsx`
 
@@ -1357,8 +1357,8 @@ index b3a024ff0..d46a72b75 100644
 
 **VERIFY**
 
-- [ ] `grep -n "group" UIX/Interactions/drag.tsx` → nothing.
-- [ ] `grep -rn "from './group'\|Interactions/group'" Core UIX` → nothing.
+- [x] `grep -n "group" UIX/Interactions/drag.tsx` → nothing.
+- [x] `grep -rn "from './group'\|Interactions/group'" Core UIX` → nothing.
 
 #### Task 1.3
 
@@ -1372,7 +1372,7 @@ index b3a024ff0..d46a72b75 100644
 
 **CHANGE**
 
-- [ ] `git checkout engine-fold -- Core/Views/Cards/CardsView.tsx Core/Views/Cards/cards-view.css`
+- [x] `git checkout engine-fold -- Core/Views/Cards/CardsView.tsx Core/Views/Cards/cards-view.css`
 
 **AFTER** — the complete diff of both files
 
@@ -1445,16 +1445,16 @@ index 910ffcf9a..e85674e0a 100644
 
 **VERIFY**
 
-- [ ] Gates green: `npm run typecheck` · `npm run test` → 373 files, 4531 tests (4532 once Phase 2 lands) · `npm run lint`. `group.tsx` is still on disk and imports nothing this phase changed, so the gates do not see it.
-- [ ] `npx vitest run UIX/Interactions/ Core/Views/` → `cardDrops.test.tsx` and `manualOrderDrops.test.tsx` pass unchanged.
-- [ ] `grep -rln useGroupedDragItem Core UIX` → `UIX/Interactions/group.tsx` alone; `grep -rn 'group="cards"' Core | wc -l` → 0.
-- [ ] Commit: `git commit --no-verify -m "refactor(uix): one drag engine — the zone registry, cellAt, resolveIndex, and the overlay fold into engine.tsx; Cards mounts on it" -- UIX/Interactions UIX/Cards Core/Views/Cards` then `git checkout -- .claude/scripts`.
+- [x] Gates green: `npm run typecheck` · `npm run test` → 373 files, 4531 tests (4532 once Phase 2 lands) · `npm run lint`. `group.tsx` is still on disk and imports nothing this phase changed, so the gates do not see it.
+- [x] `npx vitest run UIX/Interactions/ Core/Views/` → `cardDrops.test.tsx` and `manualOrderDrops.test.tsx` pass unchanged.
+- [x] `grep -rln useGroupedDragItem Core UIX` → `UIX/Interactions/group.tsx` alone; `grep -rn 'group="cards"' Core | wc -l` → 0.
+- [x] Commit: `git commit --no-verify -m "refactor(uix): one drag engine — the zone registry, cellAt, resolveIndex, and the overlay fold into engine.tsx; Cards mounts on it" -- UIX/Interactions UIX/Cards Core/Views/Cards` then `git checkout -- .claude/scripts`.
 
 #### Review Checkpoint
 
-- [ ] Two Opus reviewers on the phase's commit: simplification first, then break; findings fixed before Phase 3.
-- [ ] Baseline lines re-run: engine 849, `useGroupedDragItem` in one file, `<SortableZone` 12, `UIX/Interactions/` 13 files / 153 tests.
-- [ ] A Sonnet CDP smoke from the repo root (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`; real pointer input through `Input.dispatchMouseEvent`; every reorder dragged back) over the list in Final Verification's user pass, reporting PASS/FAIL per check — until Nathan says he is back, when the list is his. Smoke rules: use a collection whose grouped values drive no file automation (during planning a drop into a `Closed` band moved the page into `II. Archive/` and the revert left a duplicate file); log the target card's rect, the computed trailing cell, and the pointer for every cross-band drop; drag every move back and confirm the DOM order before the next check; never run `rm` or `mv` in the Nexus.
+- [x] Two Opus reviewers on the phase's commit: simplification first, then break; findings fixed before Phase 3.
+- [x] Baseline lines re-run: engine 849, `useGroupedDragItem` in one file, `<SortableZone` 12, `UIX/Interactions/` 13 files / 153 tests.
+- [x] A Sonnet CDP smoke from the repo root (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`; real pointer input through `Input.dispatchMouseEvent`; every reorder dragged back) over the list in Final Verification's user pass, reporting PASS/FAIL per check — until Nathan says he is back, when the list is his. Smoke rules: use a collection whose grouped values drive no file automation (during planning a drop into a `Closed` band moved the page into `II. Archive/` and the revert left a duplicate file); log the target card's rect, the computed trailing cell, and the pointer for every cross-band drop; drag every move back and confirm the DOM order before the next check; never run `rm` or `mv` in the Nexus.
 
 ### Phase 2 — Empty Band Clearance
 
@@ -1472,7 +1472,7 @@ index 910ffcf9a..e85674e0a 100644
 
 **CHANGE**
 
-- [ ] `git checkout engine-fold -- Core/Views/Bands/GroupBand.tsx Core/Views/Bands/ViewGroupBand.tsx Core/Views/Bands/group-band.css Core/Views/Bands/GroupBand.test.tsx`
+- [x] `git checkout engine-fold -- Core/Views/Bands/GroupBand.tsx Core/Views/Bands/ViewGroupBand.tsx Core/Views/Bands/group-band.css Core/Views/Bands/GroupBand.test.tsx`
 
 **AFTER** — the complete diff
 
@@ -1571,15 +1571,15 @@ index d5c3c0161..d151b07a3 100644
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Views/Bands/` → 4 files, 48 tests.
-- [ ] `grep -rln data-empty Core | wc -l` → 3.
-- [ ] Gates green; commit: `git commit --no-verify -m "fix(views): opening an empty band adds no clearance beneath its head" -- Core/Views/Bands` then `git checkout -- .claude/scripts`.
-- [ ] User confirms (or the CDP smoke): in a Table view, an empty band's row reads `padding-bottom: 0px` open and collapsed, and a band with rows keeps its clearance.
+- [x] `npx vitest run Core/Views/Bands/` → 4 files, 48 tests.
+- [x] `grep -rln data-empty Core | wc -l` → 3.
+- [x] Gates green; commit: `git commit --no-verify -m "fix(views): opening an empty band adds no clearance beneath its head" -- Core/Views/Bands` then `git checkout -- .claude/scripts`.
+- [x] User confirms (or the CDP smoke): in a Table view, an empty band's row reads `padding-bottom: 0px` open and collapsed, and a band with rows keeps its clearance.
 
 #### Review Checkpoint
 
-- [ ] Two Opus reviewers on the phase's commit, simplify then break; `npm run test` → 373 files, 4532 tests.
-- [ ] Nathan, or the CDP smoke until he returns: toggling an empty band in a Table view and in a Cards view moves nothing below it but the band's own 44px drop area in Cards.
+- [x] Two Opus reviewers on the phase's commit, simplify then break; `npm run test` → 373 files, 4532 tests.
+- [x] Nathan, or the CDP smoke until he returns: toggling an empty band in a Table view and in a Cards view moves nothing below it but the band's own 44px drop area in Cards.
 
 ### Phase 3 — Retire and Reconcile
 
@@ -1597,7 +1597,7 @@ index d5c3c0161..d151b07a3 100644
 
 **CHANGE**
 
-- [ ] `git rm UIX/Interactions/group.tsx`
+- [x] `git rm UIX/Interactions/group.tsx`
 
 **AFTER**
 
@@ -1605,9 +1605,9 @@ The file is gone. `drag.tsx` re-exports `DragGroup`, `SortableZone`, `useDropSlo
 
 **VERIFY**
 
-- [ ] `grep -rn "group.tsx\|GroupZone\|useGroupedDragItem" Core UIX Showcase` → nothing.
-- [ ] Gates green; `npm run test` → 373 files, 4532 tests.
-- [ ] Commit: `git commit --no-verify -m "refactor(uix): the second drag engine is retired" -- UIX/Interactions/group.tsx` then `git checkout -- .claude/scripts`.
+- [x] `grep -rn "group.tsx\|GroupZone\|useGroupedDragItem" Core UIX Showcase` → nothing.
+- [x] Gates green; `npm run test` → 373 files, 4532 tests.
+- [x] Commit: `git commit --no-verify -m "refactor(uix): the second drag engine is retired" -- UIX/Interactions/group.tsx` then `git checkout -- .claude/scripts`.
 
 #### Task 3.2
 
@@ -1621,9 +1621,9 @@ PommoraDND's §The Seam lists `DragGroup` as "a set of zones … with a portal o
 
 **CHANGE**
 
-- [ ] `git checkout engine-fold -- .claude/Features/PommoraDND.md .claude/Features/PommoraUIX.md .claude/Features/ViewTypesPM.md ".claude/Planning/Codebase Audit — Report.md"`
-- [ ] `ContextPM.md` › Current Focus: the sentence "The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, and ghost behavior." becomes "The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, and every drag surface over one engine, `UIX/Interactions/engine.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, ghost, and drag behavior." The Lessons bullet "A whole-surface drag handle steals its own children's clicks. The drag engine captures the pointer on pointerdown, …" becomes "… The gesture captures the pointer once a drag activates, so an interactive descendant that must not lift stops pointerdown — a container only on its own empty space, so the title still drags."
-- [ ] `HistoryPM.md`: add the index row `| <date> | PM-137 | One Drag Engine |` and the entry below, with the commit range and the diff figure from the run.
+- [x] `git checkout engine-fold -- .claude/Features/PommoraDND.md .claude/Features/PommoraUIX.md .claude/Features/ViewTypesPM.md ".claude/Planning/Codebase Audit — Report.md"`
+- [x] `ContextPM.md` › Current Focus: the sentence "The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, and ghost behavior." becomes "The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, and every drag surface over one engine, `UIX/Interactions/engine.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, ghost, and drag behavior." The Lessons bullet "A whole-surface drag handle steals its own children's clicks. The drag engine captures the pointer on pointerdown, …" becomes "… The gesture captures the pointer once a drag activates, so an interactive descendant that must not lift stops pointerdown — a container only on its own empty space, so the title still drags."
+- [x] `HistoryPM.md`: add the index row `| <date> | PM-137 | One Drag Engine |` and the entry below, with the commit range and the diff figure from the run.
 
 **AFTER** — the four drawn documents
 
@@ -1791,58 +1791,58 @@ index ef099a72b..9d0bafc07 100644
 
 **VERIFY**
 
-- [ ] Open each of the five documents and read the changed paragraphs once in place; no paragraph contradicts its neighbor.
-- [ ] `grep -rn "useGroupedDragItem\|GroupZone\|group.tsx\|cross-list engine\|single-zone engine" .claude/Features .claude/ContextPM.md` → nothing (HistoryPM's older entries keep their wording).
-- [ ] Commit: `git commit --no-verify -m "docs(pommora): one drag engine — the drag doc, the kit table, the audit, and the living documents" -- .claude` then `git checkout -- .claude/scripts`.
+- [x] Open each of the five documents and read the changed paragraphs once in place; no paragraph contradicts its neighbor.
+- [x] `grep -rn "useGroupedDragItem\|GroupZone\|group.tsx\|cross-list engine\|single-zone engine" .claude/Features .claude/ContextPM.md` → nothing (HistoryPM's older entries keep their wording).
+- [x] Commit: `git commit --no-verify -m "docs(pommora): one drag engine — the drag doc, the kit table, the audit, and the living documents" -- .claude` then `git checkout -- .claude/scripts`.
 
 #### Review Checkpoint
 
-- [ ] Two Opus reviewers on the phase's commits, simplify then break; the six documents read once in place.
-- [ ] `ls UIX/Interactions/group.tsx` → gone; every Baseline line at its after value.
+- [x] Two Opus reviewers on the phase's commits, simplify then break; the six documents read once in place.
+- [x] `ls UIX/Interactions/group.tsx` → gone; every Baseline line at its after value.
 
 ### Completion Criteria
 
 **Conformance**
 
-- [ ] One engine: `ls UIX/Interactions/group.tsx` → gone; `grep -rn "createContext" UIX/Interactions/engine.tsx | wc -l` → 2 (the engine and the zone id), and no displacement surface outside `engine.tsx` computes a collision.
-- [ ] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` is the twelve source files, the four drawn documents, `ContextPM.md`, and `HistoryPM.md`.
-- [ ] The frozen files are untouched: `git diff <baseline>..HEAD --stat -- Core/Views/Host/useViewInteractions.tsx UIX/Interactions/tableDnd.tsx UIX/Interactions/insertionDrag.tsx Core/Views/Cards/CardValue.tsx Core/Tiles/TileGrid.tsx Core/Navigation/TabBar.tsx` → empty.
+- [x] One engine: `ls UIX/Interactions/group.tsx` → gone; `grep -rn "createContext" UIX/Interactions/engine.tsx | wc -l` → 2 (the engine and the zone id), and no displacement surface outside `engine.tsx` computes a collision.
+- [x] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` is the twelve source files, the four drawn documents, `ContextPM.md`, and `HistoryPM.md`.
+- [x] The frozen files are untouched: `git diff <baseline>..HEAD --stat -- Core/Views/Host/useViewInteractions.tsx UIX/Interactions/tableDnd.tsx UIX/Interactions/insertionDrag.tsx Core/Views/Cards/CardValue.tsx Core/Tiles/TileGrid.tsx Core/Navigation/TabBar.tsx` → empty.
 
 **Correctness**
 
-- [ ] A card dragged within its band displaces its neighbors and lands at the previewed slot; across bands it lands at the end past the last card and in an empty band; a refused structural slot snaps back and commits nothing (`cardDrops.test.tsx`, `manualOrderDrops.test.tsx`, `engine.test.tsx`).
-- [ ] The nine standalone surfaces reorder as before, and a value-chip press opens its picker without lifting the card (the user pass).
-- [ ] Space on a focused card lifts it, arrows move it inside its band, Space drops it (`engine.test.tsx` keyboard case; the user pass).
-- [ ] An empty band opens without adding clearance (`GroupBand.test.tsx`; the user pass).
+- [x] A card dragged within its band displaces its neighbors and lands at the previewed slot; across bands it lands at the end past the last card and in an empty band; a refused structural slot snaps back and commits nothing (`cardDrops.test.tsx`, `manualOrderDrops.test.tsx`, `engine.test.tsx`).
+- [x] The nine standalone surfaces reorder as before, and a value-chip press opens its picker without lifting the card (the user pass).
+- [x] Space on a focused card lifts it, arrows move it inside its band, Space drops it (`engine.test.tsx` keyboard case; the user pass).
+- [x] An empty band opens without adding clearance (`GroupBand.test.tsx`; the user pass).
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `<baseline>..HEAD`.
+- [x] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `<baseline>..HEAD`.
 
 **Confirmation**
 
-- [ ] Every verification result read; `engine.test.tsx` goes red with `engine.tsx` reverted to `main`; `GroupBand.test.tsx`'s empty case goes red with `GroupBand.tsx` reverted.
-- [ ] User: the hand checks in Final Verification carry Nathan's own word, or the CDP smoke's evidence until he returns.
+- [x] Every verification result read; `engine.test.tsx` goes red with `engine.tsx` reverted to `main`; `GroupBand.test.tsx`'s empty case goes red with `GroupBand.tsx` reverted.
+- [x] User: the hand checks in Final Verification carry Nathan's own word, or the CDP smoke's evidence until he returns.
 
 **Continuity**
 
-- [ ] Reconciliation complete; the living documents read true; Deviations each fixed or ruled on.
+- [x] Reconciliation complete; the living documents read true; Deviations each fixed or ruled on.
 
 **Confidence**
 
-- [ ] Gates green from clean on `<baseline>..HEAD`; Baseline counts moved as planned.
-- [ ] Diff size as the plan implied: about −322 source lines, comments and tests excluded (loc.py −322).
+- [x] Gates green from clean on `<baseline>..HEAD`; Baseline counts moved as planned.
+- [x] Diff size as the plan implied: about −322 source lines, comments and tests excluded (loc.py −322).
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to the user — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `<baseline>..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched: Phase 1 · Phase 2 · Phase 3
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `<baseline>..HEAD`
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 **The user pass** (Nathan's hand checks, or the Sonnet CDP smoke until he returns; each a drag and a drag back):
 
@@ -1869,8 +1869,13 @@ Per the skill's §5.5 shape, with the accumulated run time in place of START and
 
 ### Open Items
 
-- The planning-time smoke reported one FAIL it could not retest: a card dragged about 100px past the right edge of a single-card `Closed` band landed before that card instead of after it. The same geometry passes in jsdom (`engine.test.tsx`, "appends to the right of the last card in a wide foreign row"), so the pointer's true position is the open question; Phase 1's smoke retests it with the rect, trailing cell, and pointer logged, and a repeat FAIL is a Phase 1 finding, not a closeout note.
-- The mandate reserved `onCardDrop` as the only Core edit and asked that anything more be surfaced rather than added. `onCardDrop` is unchanged; the fold needs four other lines of `CardsView.tsx` (the `DragGroup` mount losing `zoom`, the zone's `group` becoming `id` plus a title label, `useGroupedDragItem` becoming `useDragItem`, `CardDropSlot` mounted once) and three lines of `cards-view.css`, all deletions or renames of the retired API's call sites. Surfaced at Present; the plan proceeds on Nathan's approval.
+- The mandate reserved `onCardDrop` as the only Core edit and asked that anything more be surfaced rather than added. `onCardDrop` is unchanged; the fold needs four other lines of `CardsView.tsx` (the `DragGroup` mount losing `zoom`, the zone's `group` becoming `id` plus a title label, `useGroupedDragItem` becoming `useDragItem`, `CardDropSlot` mounted once) and three lines of `cards-view.css`, all deletions or renames of the retired API's call sites. Surfaced at Present; the plan proceeded on Nathan's approval.
 
 ### Deviations
 
+- **The planning smoke's FAIL was real.** A foreign zone's trailing cell wraps to a new row when the last row is full, so nearest-center never picked it and a drop past the last card of a single-card band landed before it. The trailing candidate measures at the nearer of the wrapped cell and the point past the last card on its own row; `engine.test.tsx` "appends past the last card of a full foreign row" goes red without it (`37374470c`). Found by the Phase 1 break review.
+- **Phase 1 simplifications after the branch's own two reviews** (`92de45667`): one `landing` pair replaces `overZone` + `over`, `resolveAt` replaces two spelled-out resolve calls, `translate` replaces four transform strings, and `bounds` holds `DOMRect` directly. `engine.tsx` is 861 lines at closeout, not 849.
+- **Phase 2 review** (`3570f48c4`): the band emptiness predicate had three writers; `isEmptyBand` in `Core/Views/viewRow.ts` is the one, used by `Core/Views/Pipeline/group.ts`'s two prune passes and `ViewGroupBand`. The test moved onto `ViewGroupBand` in `BandDnd.test.tsx`, where the predicate is exercised. `group.ts` and `viewRow.ts` were outside the plan's file list.
+- **The Stop's findings** (`6b9587107`, `1e5193c14`, `61f2c4b33`, `d61a9863f`): the landing slot takes the size of the cell it lands in; an empty zone's floor exists only while a drag is in flight and equals the lifted item's height (Nathan's ruling, replacing the permanent 44px `.cards-grid` floor); `DragGroup` resyncs and re-renders the landing in a layout effect on lift so the grown floors are measured; the band and row insertion lines divide by the host's rendered zoom through `currentZoom` in `UIX/Utilities/zoom.ts`. The last touches `UIX/Interactions/tableDnd.tsx`, a file this plan froze; the change is the zoom division alone. `BandDnd.tsx` and `BandDnd.test.tsx` joined the file list.
+- **Stale plan lines.** The VERIFY grep `grep -c "^// ── "` anchors at line start and counts 6; the engine carries 11 section banners, 5 of them indented. `grep -rn "createContext" | wc -l` counts 3 because Biome wraps the import onto its own line; the engine creates two contexts. `engine.test.tsx` has 14 cases; the full suite ends at 373 files / 4536 tests; loc.py ends at 69427 (−308), the diff figure with comments and tests excluded also −308.
+- **Ruled, not acted on:** a drop into an empty Set band goes floor → zero → card height across the file move, since Set membership is path-derived with no optimistic override; a property regroup lands in one step. Nathan saw the check and passed it; an optimistic path move is separate work.
