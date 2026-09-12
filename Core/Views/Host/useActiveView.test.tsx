@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, type SavedView } from '@pommora/core/Views/views'
 import { useActiveView } from './useActiveView'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 const schema: PropertyDefinition[] = [{ id: 'prop_status', name: 'Status', type: 'status' }]
 
@@ -31,8 +30,10 @@ const source = (over: Partial<CollectionNode>): CollectionNode =>
     ...over,
   }) as unknown as CollectionNode
 
-let host: HTMLDivElement
 let root: Root
+mountEachTest((_h, r) => {
+  root = r
+})
 let seen: ReturnType<typeof useActiveView>
 
 function Probe({ node }: { node: CollectionNode }): null {
@@ -43,16 +44,6 @@ function Probe({ node }: { node: CollectionNode }): null {
 const mount = (node: CollectionNode): void => {
   act(() => root.render(<Probe node={node} />))
 }
-
-beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
-})
 
 describe('useActiveView', () => {
   it("takes the sidecar's active view when it names a saved view", () => {

@@ -5723,3 +5723,5 @@ The orchestrator writes the report in the shape the planning skill prescribes (f
 
 - Phase 2 hand check 3: Table's icon picker anchors on the title's glyph instead of the whole cell, per Nathan; the cell was the anchor before this plan too.
 - Phase 2 review: Table's hover ghost is suppressed while the icon picker is open, as Cards' already was; the hook owns the picker so the suppression rides with it. A fifth convergence beside the four the Summary names.
+- Phase 3 review: a same-slot drop on a sorted or grouped view writes nothing, as Table's did; Cards used to persist `manual_order` on that no-op. A sixth convergence.
+- Phase 3 review: the harness's `installViewEnvironment` became `mountEachTest`, which also owns the per-test host and root; every harness suite lost its own mount and unmount lines.

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
@@ -10,9 +10,7 @@ import { useViewHost, type ViewHostApi } from './useViewHost'
 import { propsAtRoot, pageValues } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
-import { installViewEnvironment, renderView } from '../../Testing/viewHarness'
-
-installViewEnvironment()
+import { mountEachTest, renderView } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -87,6 +85,10 @@ const VALUES = pageValues({
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let saveSpy: ReturnType<typeof vi.fn>
 let channels: Record<string, unknown>
 let api: ViewHostApi | null = null
@@ -106,9 +108,6 @@ const mount = async (source: CollectionNode | SetNode, flatten = false): Promise
 }
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   api = null
   upward = {
     foldOverrides: { current: (v) => v },
@@ -126,10 +125,6 @@ beforeEach(() => {
     tree: { collections: [], contexts: [], personalization: {} } as never,
     mutate: vi.fn(async () => true) as never,
   })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView

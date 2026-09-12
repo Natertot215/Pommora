@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ReactNode } from 'react'
@@ -9,8 +9,7 @@ import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { GroupConfig, SavedView } from '@pommora/core/Views/views'
 import type { ValueContext } from '../../Properties/valueContext'
 import { resolveBandHead } from './GroupBand'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 const schema: PropertyDefinition[] = [
   {
@@ -82,15 +81,16 @@ const group = (kind: ResolvedGroup['kind'], key: string, bucket?: string): Resol
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 const textOf = (glyph: ReactNode): string => {
   host = document.createElement('div')
   root = createRoot(host)
   act(() => root.render(glyph))
   return host.textContent ?? ''
 }
-afterEach(() => {
-  act(() => root.unmount())
-})
 
 describe('resolveBandHead', () => {
   it('structural-set → the Set icon + name', () => {

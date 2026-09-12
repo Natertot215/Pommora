@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { useSession } from '../../Session/store'
@@ -11,9 +11,7 @@ import { ViewHost } from '../Host/ViewHost'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
-import { installViewEnvironment, renderView, settle } from '../../Testing/viewHarness'
-
-installViewEnvironment()
+import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -119,15 +117,16 @@ const key = (input: HTMLElement, k: string): void => {
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let mutateSpy: ReturnType<typeof vi.fn>
 let selectSpy: ReturnType<typeof vi.fn>
 let openExternalSpy: ReturnType<typeof vi.fn>
 let channels: Record<string, unknown>
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   mutateSpy = vi.fn(async () => {})
   selectSpy = vi.fn(async () => {})
   openExternalSpy = vi.fn(async () => {})
@@ -170,10 +169,6 @@ beforeEach(() => {
     select: selectSpy as never,
     mutate: mutateSpy as never,
   })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const mountTable = async (source: CollectionNode): Promise<void> => {

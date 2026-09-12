@@ -8,8 +8,7 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { FilterFrame } from './FilterFrame'
 import { stubDialer } from '../../vitest.setup'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -51,6 +50,13 @@ const source = {
 
 let host: HTMLDivElement
 let root: Root
+afterEach(() => {
+  document.body.innerHTML = ''
+})
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let saveSpy: ReturnType<typeof vi.fn>
 
 const mount = async (v: SavedView): Promise<void> => {
@@ -90,19 +96,11 @@ const optionWithText = (t: string): Element | undefined =>
     .at(-1)
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'views:save': saveSpy,
   })
   useSession.setState({ load: vi.fn(async () => {}) as never })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
-  document.body.innerHTML = ''
 })
 
 const lastSaved = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import { act, useEffect } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView, ViewState } from '@pommora/core/Views/views'
@@ -16,8 +16,7 @@ import {
   type ViewTileScopeValue,
 } from './ViewTileScope'
 import { stubDialer } from '../vitest.setup'
-import { installViewEnvironment } from '../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -54,6 +53,10 @@ const view: SavedView = {
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let persistConfig: Mock<(next: SavedView) => void>
 let persistState: Mock<(next: ViewState) => void>
 let sourceSave: Mock
@@ -82,9 +85,6 @@ const clickRow = (label: string, which: 'first' | 'last' = 'first'): Promise<voi
 }
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   persistConfig = vi.fn()
   persistState = vi.fn()
   sourceSave = vi.fn(async () => ({ ok: true, value: { id: view.id } }))
@@ -93,10 +93,6 @@ beforeEach(() => {
     'error:show': vi.fn(async () => {}),
   })
   useSession.setState({ load: vi.fn(async () => {}) as never })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
