@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { DragGroup, SortableZone, useZoneItem } from './engine'
+import { DragGroup, SortableZone, useDropSlot, useZoneItem } from './engine'
 import { firePointer, pressEscape, stubPointerCapture, stubRect } from './pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { SETTLE_FALLBACK } from './shared'
@@ -21,6 +21,11 @@ let withOverlay = false
 function Item({ id }: { id: string }): React.JSX.Element {
   const { setNodeRef, style, handle } = useZoneItem(id)
   return <div ref={setNodeRef} data-id={id} style={style} {...handle} />
+}
+
+function Slot(): React.JSX.Element | null {
+  const slot = useDropSlot()
+  return slot ? <i data-slot style={{ width: slot.width, height: slot.height }} /> : null
 }
 
 function Board(): React.JSX.Element {
@@ -44,6 +49,7 @@ function Board(): React.JSX.Element {
           ))}
         </SortableZone>
       ))}
+      <Slot />
     </DragGroup>
   )
 }
@@ -154,6 +160,25 @@ describe('the drag engine across zones', () => {
     })
     await settle()
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 1)
+  })
+
+  it('sizes the landing slot to the cell it lands in and floors every zone while in flight', async () => {
+    stubRect(item('b1'), { top: 200, bottom: 350, left: 0, right: 200 })
+    const r = item('a1').getBoundingClientRect()
+    await act(async () => {
+      firePointer(item('a1'), 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 210 })
+    })
+    const slot = host.querySelector('[data-slot]') as HTMLElement
+    expect(slot.style.height).toBe('150px')
+    expect(host.querySelector('.zone-C')?.hasAttribute('data-drag-active')).toBe(true)
+    await act(async () => {
+      firePointer(window, 'pointerup', { x: 100, y: 210 })
+    })
+    await settle()
+    expect(host.querySelector('.zone-C')?.hasAttribute('data-drag-active')).toBe(false)
   })
 
   it('lands at index 0 in an empty zone', async () => {
