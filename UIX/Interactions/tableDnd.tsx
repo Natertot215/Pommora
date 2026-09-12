@@ -25,17 +25,15 @@ export function TableRowDnd({
   rows,
   disabled,
   canReorderWithin,
-  canReassign,
-  canRelocate = false,
+  crossZone,
   onDrop,
   children,
 }: {
   rows: { id: string; groupKey: string }[]
   disabled: boolean
   canReorderWithin: boolean
-  canReassign: boolean
-  /** True under plain location grouping: the bands ARE folders, so a cross-band drop MOVES the page. */
-  canRelocate?: boolean
+  /** Whether a drop onto another group is offered at all — the caller decides whether it relocates the page or rewrites its group value. */
+  crossZone: boolean
   /** `beforeId` is null at the target group's end. The caller routes a same-group drop to a reorder and a cross-group one to a relocate or a reassign. */
   onDrop: (activeId: string, toGroup: string, beforeId: string | null) => void
   children: ReactNode
@@ -76,7 +74,7 @@ export function TableRowDnd({
       const near = nearestByTop(s.rows, point.y)
       const group = near.group
       const crossing = group !== activeGroup
-      if (crossing ? !canRelocate && !canReassign : !canReorderWithin) return null
+      if (crossing ? !crossZone : !canReorderWithin) return null
       const groupOrder = rows.flatMap((r) => (r.groupKey === group ? [r.id] : []))
       const { beforeId } = slotInGroup(groupOrder, near, point.y, id)
       // A slot reproducing the standing order is a noop — no line, no commit.

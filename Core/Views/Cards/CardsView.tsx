@@ -60,7 +60,6 @@ import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/us
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
-
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
@@ -228,6 +227,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── Interactions ──────────────────────────────────────────────────────────
 
   const banner: CardBanner = view.card_banner ?? 'image'
+  const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
   const flatMode = view.group?.kind === 'flat'
   const hideLocation = view.hide_location ?? false
 
@@ -446,14 +446,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     })
   }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void =>
-    interactions.onDrop({
+    interactions.onDrop(
       activeId,
       toZone,
-      beforeId:
-        (groups.find((g) => g.key === toZone)?.items.filter((r) => r.id !== activeId) ?? [])[
-          toIndex
-        ]?.id ?? null,
-    })
+      (groups.find((g) => g.key === toZone)?.items.filter((r) => r.id !== activeId) ?? [])[toIndex]
+        ?.id ?? null,
+    )
 
   return (
     <GhostSuppress.Provider value={interactions.holdGhost}>
@@ -461,7 +459,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         ref={(el) => {
           host.seam.viewRootRef.current = el
         }}
-        className={cx('cards-view', banner === 'none' && 'is-compact')}
+        className={shellClass}
         data-view-id={view.id}
         style={{ '--card-scale': view.card_size ?? 1 } as React.CSSProperties}
       >
@@ -489,7 +487,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             if (!r) return null
             return (
               <div
-                className={cx('cards-view', banner === 'none' && 'is-compact')}
+                className={shellClass}
                 style={
                   {
                     zoom: effectiveZoom,
@@ -747,7 +745,7 @@ function GhostCard({
   )
 }
 
-// ── Set cards ───────────────────────────────────────────────────────────────
+// ── The Set card ────────────────────────────────────────────────────────────
 
 interface SetCardProps {
   set: SetNode
