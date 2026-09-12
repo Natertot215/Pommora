@@ -668,6 +668,25 @@ describe('store — the mutate rail patches the tree before main confirms', () =
     await useSession.getState().applyTree(treeWith([]))
   })
 
+  it('refreshSlotValues refills a ready slot’s frontmatter from the index, leaving its body', async () => {
+    channels['view:loadValues'] = vi.fn(async () => ok({ a: { frontmatter: { Stage: 'Done' } } }))
+    useSession.setState({ pages: { a: ready('a') } })
+    useSession.getState().refreshSlotValues(['a'])
+    await vi.waitFor(() => {
+      const slot = useSession.getState().pages.a
+      expect(slot?.status === 'ready' && slot.detail.frontmatter).toEqual({ Stage: 'Done' })
+    })
+    const slot = useSession.getState().pages.a
+    expect(slot?.status === 'ready' && slot.body).toBe('x')
+  })
+
+  it('refreshSlotValues leaves a page it holds no ready slot for alone', async () => {
+    channels['view:loadValues'] = vi.fn(async () => ok({}))
+    useSession.setState({ pages: {} })
+    useSession.getState().refreshSlotValues(['a'])
+    expect(channels['view:loadValues']).not.toHaveBeenCalled()
+  })
+
   it('setActiveView lands on the node optimistically', async () => {
     expect(useSession.getState().tree?.collections[0]?.activeView).toBeUndefined()
     const done = await useSession

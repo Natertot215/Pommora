@@ -5,7 +5,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { SetOverrides } from './useValuesEpoch'
+import type { SetOverrides } from '../../Properties/valueOverride'
 import {
   applyValueAtRoot,
   isBlankValue,

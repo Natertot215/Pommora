@@ -2,6 +2,8 @@
 import { useEffect } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
+import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
+import { dropDetailsWhere } from './pageDetailCache'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
@@ -20,7 +22,20 @@ export function useBridgeSubscriptions(): void {
   useEffect(() => dialer().on('nexus:changed', (next) => void applyTree(next)), [applyTree])
 
   const bumpContainerValues = useSession((s) => s.bumpContainerValues)
-  useEffect(() => dialer().on('values:changed', bumpContainerValues), [bumpContainerValues])
+  useEffect(
+    () =>
+      dialer().on('values:changed', (changes) => {
+        const changed = new Set(changes.flatMap((c) => c.pageIds))
+        const byPath = pageIdIndex(useSession.getState().tree)
+        dropDetailsWhere((path) => {
+          const id = byPath.get(path)
+          return id !== undefined && changed.has(id)
+        })
+        bumpContainerValues(changes)
+        useSession.getState().refreshSlotValues([...changed])
+      }),
+    [bumpContainerValues],
+  )
 
   useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
 
