@@ -164,7 +164,7 @@ describe('the drag engine across zones', () => {
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 1)
   })
 
-  it('sizes the landing slot to the cell it lands in and floors every zone while in flight', async () => {
+  it('sizes the landing slot to the cell it lands in and floors every zone to the lifted height while in flight', async () => {
     stubRect(item('b1'), { top: 200, bottom: 350, left: 0, right: 200 })
     const r = item('a1').getBoundingClientRect()
     await act(async () => {
@@ -175,18 +175,22 @@ describe('the drag engine across zones', () => {
     })
     const slot = host.querySelector('[data-slot]') as HTMLElement
     expect(slot.style.height).toBe('150px')
-    expect(host.querySelector('.zone-C')?.hasAttribute('data-drag-active')).toBe(true)
+    const floorOf = (): string =>
+      (host.querySelector('.zone-C') as HTMLElement).style.getPropertyValue('--drag-floor')
+    expect(floorOf()).toBe('100.0px')
     await act(async () => {
       firePointer(window, 'pointerup', { x: 100, y: 210 })
     })
     await settle()
-    expect(host.querySelector('.zone-C')?.hasAttribute('data-drag-active')).toBe(false)
+    expect(floorOf()).toBe('')
   })
 
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
     // Zone A sits under E, so A's rects move down by E's floor once a drag is in flight.
     const grown = (): number =>
-      host.querySelector('.zone-E')?.hasAttribute('data-drag-active') ? 44 : 0
+      parseFloat(
+        (host.querySelector('.zone-E') as HTMLElement).style.getPropertyValue('--drag-floor'),
+      ) || 0
     const shifted = (el: Element, top: number, bottom: number): void => {
       el.getBoundingClientRect = () => {
         const dy = grown()
@@ -207,10 +211,10 @@ describe('the drag engine across zones', () => {
       firePointer(item('a1'), 'pointerdown', { x: 100, y: 50 })
     })
     await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 194 })
+      firePointer(window, 'pointermove', { x: 100, y: 250 })
     })
     const slot = host.querySelector('[data-slot]') as HTMLElement
-    expect(slot.style.top).toBe('144px')
+    expect(slot.style.top).toBe('200px')
     pressEscape()
   })
 

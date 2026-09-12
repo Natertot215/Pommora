@@ -30,8 +30,8 @@
   margin-top: var(--band-gap);
 }
 
-.cards-grid[data-drag-active] {
-  min-height: 44px;
+.cards-grid {
+  min-height: var(--drag-floor, 0px);
 }
 
 .card-overlay .card-body {
