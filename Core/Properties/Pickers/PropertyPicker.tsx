@@ -246,12 +246,21 @@ function pickSemantics(
   const { options, kind } = pickShape(def, contextOptions)
   const selected = selectedValues(current)
   const pick = (value: string): void => {
-    if (kind !== 'select') {
-      onCommit({ kind, value: toggleValue(selected, value) })
-      return
-    }
-    onCommit(selected.includes(value) ? null : { kind: 'select', value })
-    onSinglePicked()
+    onCommit(pickedValue(def, current, value, contextOptions))
+    if (kind === 'select') onSinglePicked()
   }
   return { options, selected, pick }
+}
+
+/** The value a pick lands on, independent of the surface that offered it: a repeat select clears, every other kind toggles. */
+export function pickedValue(
+  def: PropertyDefinition,
+  current: PropertyValue | null,
+  value: string,
+  contextOptions?: PickOption[],
+): PropertyValue | null {
+  const { kind } = pickShape(def, contextOptions)
+  const selected = selectedValues(current)
+  if (kind !== 'select') return { kind, value: toggleValue(selected, value) }
+  return selected.includes(value) ? null : { kind: 'select', value }
 }

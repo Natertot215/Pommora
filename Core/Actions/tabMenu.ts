@@ -2,13 +2,13 @@ import type { ActionItem } from './menuModel'
 import {
   type PageMoveAction,
   type PageSendAction,
-  type PageMoveContext,
+  type PageMenuContext,
   pageMetaMenuSubset,
   pageSendActions,
 } from './pageMenu'
 import { pinLabel } from './toggleLabels'
 
-interface TabMenuContext extends PageMoveContext {
+interface TabMenuContext extends PageMenuContext {
   pinned: boolean
   isNewTab: boolean
   isPage?: boolean

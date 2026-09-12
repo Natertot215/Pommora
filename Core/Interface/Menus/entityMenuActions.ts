@@ -6,7 +6,14 @@ import {
   type Creator,
 } from '@pommora/core/Nexus/mutateRequest'
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
+import { pageRowOf, schemaForPage } from '@pommora/core/Properties/pageRow'
 import { contextTargetToSelect } from '../../Navigation/tabsModel'
+import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
+import { propertyMenuRows, runPropertyAction } from './propertyMenuActions'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { useSession } from '../../Session/store'
@@ -30,10 +37,54 @@ function creatorsFor(target: ContextTarget): Creator[] {
 }
 
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
-export async function showEntityMenu(target: ContextTarget): Promise<void> {
+export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElement): Promise<void> {
   const creators = creatorsFor(target)
-  const action = await popMenu(entityMenuItems(target, creators))
-  if (action !== null) runEntityAction(target, creators, action)
+  const row = trigger && target.kind === 'page' && target.id ? await pageRowFor(target) : null
+  const s = useSession.getState()
+  const schema = row ? schemaForPage(s.tree, target.path) : []
+  const properties = row
+    ? propertyMenuRows({
+        tree: s.tree,
+        schema,
+        row,
+        capitalize: s.personalization.capitalizeMetadata ?? false,
+      })
+    : undefined
+  const action = await popMenu(entityMenuItems({ ...target, properties }, creators))
+  if (action === null) return
+  if (row && trigger) {
+    const commit = pageValueCommit(schema, row)
+    if (runPropertyAction(action, { tree: s.tree, schema, row, commit, trigger })) return
+  }
+  runEntityAction(target, creators, action)
+}
+
+async function pageRowFor(target: ContextTarget): Promise<ViewRow | null> {
+  const detail = readPageDetail(target.path) ?? (await fetchPageDetail(target.path))
+  return detail
+    ? pageRowOf(
+        useSession.getState().tree,
+        { id: target.id ?? '', path: target.path, title: detail.title },
+        detail.frontmatter as PageFrontmatter,
+      )
+    : null
+}
+
+function pageValueCommit(
+  schema: ReturnType<typeof schemaForPage>,
+  row: ViewRow,
+): (column: ResolvedColumn, value: PropertyValue | null) => void {
+  const writer: { current: ValueWriter | null } = {
+    current: {
+      schema,
+      mutate: (req) => useSession.getState().mutate(req),
+      rowOf: (id) => (id === row.id ? row : undefined),
+      apply: () => undefined,
+    },
+  }
+  return (column, value) => {
+    assignValue(writer, row, column, value)
+  }
 }
 
 function runEntityAction(

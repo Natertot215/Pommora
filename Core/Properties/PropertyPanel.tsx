@@ -11,9 +11,7 @@ import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { resolveTreeContextKeys } from '@pommora/core/Contexts/contextResolve'
 import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
@@ -26,6 +24,7 @@ import {
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
+import { pageRowOf, schemaForPage } from './pageRow'
 import { parseEditorValue } from './parseEditorValue'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
@@ -48,9 +47,6 @@ type Field = { id: string; label: string; icon: string; def: PropertyDefinition 
 type PropertyPanelProps =
   | { page: PageDetail; onBack: () => void }
   | { page: WindowTarget; onBack?: never }
-
-const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] =>
-  tree?.collections.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
 
 export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   const pageFrame = props.onBack !== undefined
@@ -117,28 +113,11 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
       }),
     [tree],
   )
-  const contextValues = useMemo(() => {
-    if (!fm || !tree?.contexts) return undefined
-    const links = resolveTreeContextKeys(tree, fm as Record<string, unknown>)
-    const rider = fm.contextValues as Record<string, string[]> | undefined
-    return links.size || rider ? { ...Object.fromEntries(links), ...rider } : undefined
-  }, [fm, tree])
   const row = useMemo<ViewRow | null>(
-    () =>
-      fm
-        ? {
-            id: props.page.id,
-            title,
-            icon: fm.icon,
-            path,
-            frontmatter: fm,
-            createdAt: null,
-            modifiedAt: null,
-            contextValues,
-          }
-        : null,
-    [fm, props.page.id, path, title, contextValues],
+    () => (fm ? pageRowOf(tree, { id: props.page.id, path, title }, fm) : null),
+    [fm, tree, props.page.id, path, title],
   )
+  const contextValues = row?.contextValues
 
   const isContextRow = (id: string): boolean => isContextColumnId(tree, id)
 
