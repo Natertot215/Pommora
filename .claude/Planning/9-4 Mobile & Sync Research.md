@@ -1,6 +1,6 @@
 ## Mobile Companion & Pommora Sync — Research
 
-Outward research gathered 09-04-2026 for the [[Mobile Companion & Pommora Sync — Decision Log]]: sixteen questions, each answered by one researcher reading the cited sources, with the load-bearing claims re-checked by one skeptic per scope. Each section carries the claims, their sources, the researcher's verdict, and what stayed unresolved. The decision log records what the design took from it.
+Outward research gathered 09-04-2026: sixteen questions, each answered by one researcher reading the cited sources, with the load-bearing claims re-checked by one skeptic per scope. Each section carries the claims, their sources, the researcher's verdict, and what stayed unresolved. The decision log records what the design took from it.
 
 ### Sync And Encryption
 
@@ -277,4 +277,3 @@ Outward research gathered 09-04-2026 for the [[Mobile Companion & Pommora Sync �
 **Verdict:** Borrow: commit `ios/` wholesale (including the CLI-owned `CapApp-SPM/Package.swift`, which `cap sync` rewrites with an `exact:` pin every bump), let the template's `.gitignore` drop `App/App/public`, `capacitor.config.json`, `DerivedData`, `xcuserdata`; open and build `ios/App/App.xcodeproj` (no workspace exists under SPM, the docs/ios page is stale on that); `--packagemanager SPM` is optional on Capacitor 8; the loop is `npm run build` → `npx cap sync` → `npx cap run ios --target <sim id>` or `npx cap open ios`.
 
 **Unresolved:** No Capacitor doc page states a commit policy; the committed-vs-generated split above is inferred from the template's `.gitignore` files. Where Xcode writes `Package.resolved` for an `.xcodeproj` with a local package (and whether to commit it) is not in any fetched source. Whether the `docs/ios` page's `App.xcworkspace`/CocoaPods wording is deliberately CocoaPods-only or simply unrevised is unknown. Nothing fetched addresses running on the Simulator without a paid Apple Developer account. Xcode 26.6 specifically is not named anywhere; the floor is "Xcode 26.0+". The GitHub source for the docs pages (raw.githubusercontent.com/ionic-team/capacitor-docs) 404'd for the SPM, iOS, and getting-started pages, so only the rendered capacitorjs.com pages were read.
-

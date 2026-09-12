@@ -6,7 +6,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 Pommora's current structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties,** and linking them all together through relationships to **Contexts.**
 
-**Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content entities can relate to, resolved through the registry via `<Title>:` fromt
+**Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content entities can relate to, resolved through the registry via `<Title>:` keys.
 
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and front-matter for content ↔ Space relations.
 
