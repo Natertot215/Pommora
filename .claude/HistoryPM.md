@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-12-2026              | PM-137 | One Drag Engine                                      |
 | 09-11-2026              | PM-136 | One View Mechanism                                   |
 | 09-11-2026              | PM-135 | Sync Groundwork                                      |
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
@@ -139,6 +140,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-137 || One Drag Engine
+**DATE:** 09-12-2026
+
+`UIX/Interactions/engine.tsx` became the one drag engine behind the design kit's façade and `group.tsx`, the cross-list engine that served Cards alone, retired. The engine gained the zone registry a `DragGroup` holds, a trailing landing cell walked along a foreign grid's own columns so an item can land at a band's end or in an empty band, the `resolveIndex` veto, and an optional portal overlay for a lifted item that must leave a clipping host; it reads the surface's CSS zoom off the lifted element, so the Set-card row stopped mis-scaling at embed zoom, and cards gained same-band keyboard reorder. Every drag surface freezes geometry at lift and shifts it by its container's movement, and a drop lands where the preview showed: the landing slot takes the size of the cell it lands in, and only a trailing or empty landing takes the lifted item's own. `engine.test.tsx` is the kit's first DOM test of the engine. Opening an empty band no longer adds clearance beneath its head. `.cards-grid`'s permanent floor gave way to `--drag-floor`, which an addressable zone's container carries while a drag is in flight, so an empty band holds room for the lifted card only for as long as one is up. `currentZoom` in `UIX/Utilities/zoom.ts` became the one reader of an element's rendered zoom, which put the band and row insertion lines in a zoomed host's own px.
+
+- **Commits:** `dcdd95c58^..01e491a5b`
+- **Diff:** Net −308 (source, comments and tests excluded)
 
 #### PM-136 || One View Mechanism
 **DATE:** 09-11-2026

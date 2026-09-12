@@ -42,7 +42,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 - `Core/Session` and `Core/Navigation`: identity-first references are exactly what sync needs. Session is where the external-edit reload has to land, and it appears in no Features doc.
 - `Core/Actions`: portable menu models and the one door every menu opens through; a second host owes it only the native `menu` channel.
 - `Desktop/Platform`, `Desktop/Store`, `Desktop/Bridge`, `Desktop/FileWatch`: where every safety guarantee actually lives. Desktop is 2,027 lines, readable end to end in an afternoon.
-- `UIX/Interactions`, `UIX/Symbols`, `UIX/Theme`: one harness to keep, two engines to fold, no touch awareness.
+- `UIX/Interactions`, `UIX/Symbols`, `UIX/Theme`: one harness to keep, no touch awareness.
 - `Core/MarkdownPM/Engine` and `Core/MarkdownPM/Links`: the pure engine is the asset that ports.
 
 **Matters for the product.** Shapes what the app can do; can be reworked freely with no cross-device consequence:
@@ -88,22 +88,21 @@ The most reachable piece: **when a file changes outside Pommora, the open page n
 
 **Findings:** R-07, R-09.
 
-##### 8. UIX: Engines, Bundle, Touch, Filing
+##### 8. UIX: Bundle, Touch, Filing
 
-**Lenses and state:** Gates Mobile · touch, Foundation risk, Debt, Decision, Asymmetry, Duplication, Performance, Filing. **Effort:** Small to large. **Deletes:** About 450 lines of the second reorder engine, 60 lines of small duplications, 490 relocated.
+**Lenses and state:** Gates Mobile · touch, Foundation risk, Debt, Decision, Asymmetry, Duplication, Performance, Filing. **Effort:** Small to large. **Deletes:** 60 lines of small duplications, 490 relocated.
 
-**Found.** The strongest-built part of the codebase, and the numbers aren't soft: one pointer harness every drag surface funnels through, one picker base, one menu vocabulary, zero raw colors, a hard import boundary that holds. Two things would resist a second host. Nothing in the kit ever asks what kind of pointer is driving it, in a kit whose reveal affordances are all hover-gated, so on a touch device a class of controls is simply absent. And reordering by dragging is implemented twice behind one façade, the larger version serving exactly one screen and carrying no keyboard support, while the single-zone engine serving the other twelve call sites has no DOM test of its own. Alongside: the design kit carries Pommora's application vocabulary in four files, and the drawn caret is split across three packages with UIX styling CodeMirror's classes directly.
+**Found.** The strongest-built part of the codebase, and the numbers aren't soft: one pointer harness every drag surface funnels through, one picker base, one menu vocabulary, zero raw colors, a hard import boundary that holds. Two things would resist a second host. Nothing in the kit ever asks what kind of pointer is driving it, in a kit whose reveal affordances are all hover-gated, so on a touch device a class of controls is simply absent. Alongside: the design kit carries Pommora's application vocabulary in four files, and the drawn caret is split across three packages with UIX styling CodeMirror's classes directly.
 
 **Change.**
 
 1. Add a coarse-pointer branch that pins hover reveals visible, a press-delay beside the travel threshold in the gesture harness, and a long-press route to dwell-to-create. *(L; after D-7)*
-2. Fold cross-zone support into the single-zone engine as a zone registry and retire the second. The fold is three axes — the registry, the collision model, and the overlay presentation — and cross-zone keyboard is its own step after it; the views consume one drop contract, so the fold touches only Cards' adapter. *(L; −200 to −400 lines)*
-3. Move the drawn caret into one `Core/Caret` with both geometry producers and both stylesheets; UIX keeps only the four caret tokens. *(M; ~490 lines relocated)*
-4. Move the property drop model to `Core/Properties` and the on-disk color key names beside the schemas that persist them; parameterize the three class-name queries. *(M; after D-9; ~78 lines relocated)*
-5. Generate the kebab token republish from the source list; one Bloom factory. *(S)*
-6. Record the tile grid as a third drag treatment in the drag doc; put the tab bar's window drag on the shared harness. *(S; ~20 lines)*
+2. Move the drawn caret into one `Core/Caret` with both geometry producers and both stylesheets; UIX keeps only the four caret tokens. *(M; ~490 lines relocated)*
+3. Move the property drop model to `Core/Properties` and the on-disk color key names beside the schemas that persist them; parameterize the three class-name queries. *(M; after D-9; ~78 lines relocated)*
+4. Generate the kebab token republish from the source list; one Bloom factory. *(S)*
+5. Put the tab bar's window drag on the shared harness. *(S; ~20 lines)*
 
-**Findings:** R-52, R-54, R-55, R-56, R-57, R-58.
+**Findings:** R-54, R-55, R-56, R-57, R-58.
 
 ##### 9. Shell Debt
 
@@ -187,12 +186,11 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-05 | 1     | D    | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change            | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts`                                                              |
 | R-07 | 2     | FR   | An external edit never reaches an open page, and the next keystroke writes over it                                                 | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts`                                 |
 | R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync       | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                             |
-| R-52 | 8     | Dt   | Two reorder engines behind one façade, the larger serving one screen                                                               | `UIX/Interactions/engine.tsx, UIX/Interactions/group.tsx, UIX/Interactions/drag.tsx`                                  |
 | R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                                | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`                    |
 | R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                               | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                         |
 | R-56 | 8     | Dt   | Pommora's application vocabulary sits inside the design kit                                                                        | `UIX/Interactions/frameDndModel.ts, Core/Views/hiddenFrameModel.ts, UIX/Interactions/revealBar.ts`                    |
 | R-57 | 8     | P    | Small UIX duplications: a hand-maintained kebab token republish and a second Bloom factory                                         | `UIX/Glass/glass-window.tsx, UIX/Glass/glass-surface.tsx`                                                             |
-| R-58 | 8     |      | The tile grid is a third drop treatment, and the tab bar hand-rolls the harness                                                    | `Core/Tiles/TileGrid.tsx, Core/Navigation/TabBar.tsx`                                                                 |
+| R-58 | 8     |      | The tab bar hand-rolls the harness for its window drag                                                                             | `Core/Navigation/TabBar.tsx`                                                                                          |
 | R-59 | 9     | D    | Two tab models in two folders, with types crossing both ways                                                                       | `Core/Navigation/tabsModel.ts, Core/Interface/Windows/windowTabs.ts, Core/Navigation/TabBar.tsx`                      |
 | R-60 | 9     | Dt   | Four warm caches, one shared helper, two adopters                                                                                  | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx`            |
 | R-61 | 9     | Dt   | A new user-facing setting needs three edits, and only two are checked by the compiler                                              | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx`                          |
