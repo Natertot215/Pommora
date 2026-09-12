@@ -88,7 +88,7 @@ export function CardTitle({
   )
 }
 
-/** The landing slot painted while a card is in flight; the grouped engine draws its own across zones. */
+/** The landing slot painted while a card is in flight, wherever in the group it would land. */
 export function CardDropSlot(): React.JSX.Element | null {
   const slot = useDropSlot()
   if (!slot) return null

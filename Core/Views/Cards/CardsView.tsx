@@ -34,7 +34,6 @@ import {
   reorder,
   SortableZone,
   useDragItem,
-  useGroupedDragItem,
 } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
@@ -487,7 +486,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         )}
         <DragGroup
           onCommit={onCardDrop}
-          zoom={effectiveZoom}
           crossZone={canReassign || canRelocate}
           resolveIndex={interactions.structuralSlot}
           renderOverlay={(id, rect) => {
@@ -530,6 +528,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             )
           }}
         >
+          <CardDropSlot />
           <BandDnd
             bands={interactions.bands}
             labelFor={bandLabel}
@@ -554,9 +553,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   fill
                 >
                   <SortableZone
-                    group="cards"
                     id={g.key}
                     items={g.items.map((r) => r.id)}
+                    getItemLabel={(id) => rowById.get(id)?.title ?? 'card'}
                     className="cards-grid card-grid is-fill"
                   >
                     {g.items.flatMap((row) => {
@@ -1065,7 +1064,7 @@ const PageCard = memo(function PageCard({
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
-  const gdrag = useGroupedDragItem(row.id)
+  const gdrag = useDragItem(row.id)
   const drag = draggable ? gdrag : null
   // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it would rebuild on every drag frame — exactly when CardFace's memo has to hold.
   const isDragging = drag?.isDragging ?? false
