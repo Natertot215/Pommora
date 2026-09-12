@@ -155,6 +155,7 @@ interface BandDragHandle {
 export function GroupBand({
   glyph,
   collapsed,
+  empty = false,
   onToggle,
   showAdd = false,
   onAdd,
@@ -169,6 +170,8 @@ export function GroupBand({
 }: {
   glyph: ReactNode
   collapsed: boolean
+  /** Opening a band with nothing inside adds no clearance beneath its head. */
+  empty?: boolean
   onToggle: () => void
   showAdd?: boolean
   onAdd?: () => void
@@ -199,6 +202,7 @@ export function GroupBand({
           className="group-band-row"
           ref={rowRef}
           data-disclose={collapsed ? '' : undefined}
+          data-empty={empty ? '' : undefined}
           style={indent ? { paddingLeft: indent } : undefined}
         >
           {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}

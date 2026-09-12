@@ -8,7 +8,7 @@ import { EMPTY_ASSET_MAP, type CollectionNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { GroupConfig, SavedView } from '@pommora/core/Views/views'
 import type { ValueContext } from '../../Properties/valueContext'
-import { resolveBandHead } from './GroupBand'
+import { GroupBand, resolveBandHead } from './GroupBand'
 import { mountEachTest } from '../../Testing/viewHarness'
 
 const schema: PropertyDefinition[] = [
@@ -211,5 +211,23 @@ describe('resolveBandHead — Context grouping', () => {
       source,
     )
     expect(head.label).toBe('ghost')
+  })
+})
+
+describe('GroupBand — an empty band', () => {
+  const mount = (empty: boolean): HTMLElement => {
+    act(() =>
+      root.render(
+        <GroupBand glyph="G" collapsed={false} empty={empty} onToggle={() => {}}>
+          {null}
+        </GroupBand>,
+      ),
+    )
+    return host.querySelector('.group-band-row') as HTMLElement
+  }
+
+  it('marks its row so opening it adds no clearance', () => {
+    expect(mount(true).hasAttribute('data-empty')).toBe(true)
+    expect(mount(false).hasAttribute('data-empty')).toBe(false)
   })
 })
