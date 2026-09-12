@@ -157,7 +157,7 @@ export function numberBarCapable(schema: PropertyDefinition[], columnId: string)
   )
 }
 
-// TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
+// KNOB — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25
 
 // ── The hook ────────────────────────────────────────────────────────────────

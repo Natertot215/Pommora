@@ -44,8 +44,6 @@ export interface ViewInteractionPolicy {
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
 }
 
-export type ViewDrop = { activeId: string; toZone: string; beforeId: string | null }
-
 export type TitleMenuContext = PageMoveContext & { alreadyOpen: boolean }
 
 /** The pointer handlers every row uses: the ghost's hover and the location glance. */
@@ -278,8 +276,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       void write?.then((ok) => ok && mutate({ op: 'movePage', path, newParentPath: destPath }))
   }
 
-  /** One entry for every row drop: a same-band slot reorders, a cross-band one moves the page or rewrites its group value. */
-  const onDrop = ({ activeId, toZone, beforeId }: ViewDrop): void => {
+  /** One entry for every row drop: a same-band slot reorders, a cross-band one moves the page or rewrites its group value. `beforeId` is null at the target band's end. */
+  const onDrop = (activeId: string, toZone: string, beforeId: string | null): void => {
     const from = rowBand.get(activeId)
     if (from === undefined) return
     if (toZone === from) {

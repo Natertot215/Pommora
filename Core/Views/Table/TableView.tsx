@@ -129,8 +129,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   if (editing?.mode === 'rename') {
     lastRename.current = { rowId: editing.rowId, colId: editing.colId, nonce: editing.nonce ?? 0 }
   }
-  const editingRef = useRef(editing)
-  editingRef.current = editing
   const strandedEditId = editing !== null && !rowById.has(editing.rowId) ? editing.rowId : null
   useEffect(() => {
     if (strandedEditId !== null) setEditing((e) => (e?.rowId === strandedEditId ? null : e))
@@ -139,7 +137,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const titleColId = titleCol?.id
 
   const interactions = useViewInteractions(host, {
-    ghost: { graceMs: 0, suppressed: () => editingRef.current !== null || glanceShown() },
+    ghost: { graceMs: 0, suppressed: () => editing !== null || glanceShown() },
     foldOverrides,
     rename: (target, fromCreate) => {
       if (titleColId)
@@ -596,11 +594,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           rows={paintOrder}
           disabled={dragDisabled}
           canReorderWithin={canReorderWithin}
-          canReassign={canReassign}
-          canRelocate={canRelocate}
-          onDrop={(activeId, toGroup, beforeId) =>
-            interactions.onDrop({ activeId, toZone: toGroup, beforeId })
-          }
+          crossZone={canReassign || canRelocate}
+          onDrop={interactions.onDrop}
         >
           <div
             className={cx(

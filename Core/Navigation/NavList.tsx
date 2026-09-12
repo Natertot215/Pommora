@@ -234,7 +234,7 @@ export function NavList({
           rows={dndRows}
           disabled={false}
           canReorderWithin
-          canReassign={false}
+          crossZone={false}
           onDrop={commitReorder}
         >
           {list}
