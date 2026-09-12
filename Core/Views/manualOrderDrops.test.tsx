@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -10,9 +10,7 @@ import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../Session/store'
 import { propsAtRoot, valuesReply } from '../Testing/pageValues'
 import { stubDialer } from '../vitest.setup'
-import { installViewEnvironment, renderView, settle } from '../Testing/viewHarness'
-
-installViewEnvironment()
+import { mountEachTest, renderView, settle } from '../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -102,13 +100,14 @@ const SORTED: Partial<SavedView> = {
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let mutateSpy: ReturnType<typeof vi.fn>
 let saveSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   mutateSpy = vi.fn(async () => true)
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'view_1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -123,10 +122,6 @@ beforeEach(() => {
     mutate: mutateSpy as never,
     select: vi.fn(async () => {}) as never,
   })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const mountTable = async (view?: Partial<SavedView>): Promise<void> => {

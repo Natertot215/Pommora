@@ -1,16 +1,14 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { firePointer, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../../Session/store'
-import { installViewEnvironment, STATUS_DEF, renderView, settle } from '../../Testing/viewHarness'
+import { mountEachTest, STATUS_DEF, renderView, settle } from '../../Testing/viewHarness'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
-
-installViewEnvironment()
 
 const collection = (sets: unknown[], pages: unknown[], group: unknown): CollectionNode =>
   ({
@@ -72,12 +70,13 @@ const VALUES = valuesReply({
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let mutateSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   mutateSpy = vi.fn(async () => true)
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
@@ -91,10 +90,6 @@ beforeEach(() => {
     mutate: mutateSpy as never,
     select: vi.fn(async () => {}) as never,
   })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const ROW = 100

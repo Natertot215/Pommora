@@ -1,15 +1,14 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { firePointer, pressEscape, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import type { Band } from './bandDndModel'
 import { BandDnd, useBandDrag, type BandDrop } from './BandDnd'
 import { ViewGroupBand } from './ViewGroupBand'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 // A[A1], B — the glyph span is the drag surface, the header div is the measured band row.
 const BANDS: Band[] = [
@@ -34,12 +33,13 @@ function Header({ id }: { id: string }): React.JSX.Element {
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let dropSpy: ReturnType<typeof vi.fn<(draggedId: string, drop: BandDrop) => void>>
 
 beforeEach(async () => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   dropSpy = vi.fn()
   await act(async () => {
     root.render(
@@ -56,10 +56,6 @@ beforeEach(async () => {
     const el = host.querySelector(`[data-band="${id}"]`)
     if (el) stubRect(el, { top: i * 24, bottom: i * 24 + 24 })
   }
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const glyph = (id: string): HTMLElement => host.querySelector(`[data-glyph="${id}"]`) as HTMLElement

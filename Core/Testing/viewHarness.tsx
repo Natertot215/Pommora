@@ -1,7 +1,8 @@
 // The jsdom seat every view suite mounts through: the act environment, the ResizeObserver jsdom lacks, pointer capture, and one render-and-flush of the real ViewHost.
 
 import { act } from 'react'
-import type { Root } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
+import { afterEach, beforeEach, vi } from 'vitest'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
@@ -13,12 +14,25 @@ class ResizeObserverStub {
   disconnect(): void {}
 }
 
-/** Once per suite, at module scope. jsdom ships no `CSS.escape`, which the ghost's id-scoped queries call. */
-export function installViewEnvironment(): void {
+/** Once per suite, at module scope: the jsdom seat, then a fresh host and root before every test, unmounted and removed after it. jsdom ships no `CSS.escape`, which the ghost's id-scoped queries call. */
+export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => void): void {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
   ;(globalThis as { CSS?: unknown }).CSS ??= { escape: (s: string) => s }
   stubPointerCapture()
+  let host: HTMLDivElement
+  let root: Root
+  beforeEach(() => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    onMount(host, root)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    act(() => root.unmount())
+    host.remove()
+  })
 }
 
 export async function renderView(root: Root, source: CollectionNode): Promise<void> {

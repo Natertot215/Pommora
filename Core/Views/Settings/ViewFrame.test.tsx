@@ -1,15 +1,14 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { ViewFrame } from './ViewFrame'
 import { stubDialer } from '../../vitest.setup'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 const schema: PropertyDefinition[] = [{ id: 'prop_status', name: 'Status', type: 'status' }]
 
@@ -33,8 +32,10 @@ const source = (views?: SavedView[]): CollectionNode =>
     views,
   }) as unknown as CollectionNode
 
-let host: HTMLDivElement
 let root: Root
+mountEachTest((_h, r) => {
+  root = r
+})
 let mutate: ReturnType<typeof vi.fn>
 
 const mount = async (node: CollectionNode): Promise<void> => {
@@ -52,18 +53,11 @@ const clickRow = async (name: string): Promise<void> => {
 }
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   mutate = vi.fn(async () => true)
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'views:save': vi.fn(async () => ({ ok: true, value: { id: 'view_a' } })),
   })
   useSession.setState({ load: vi.fn(async () => {}) as never, mutate: mutate as never })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 describe('ViewFrame — switching the active view', () => {

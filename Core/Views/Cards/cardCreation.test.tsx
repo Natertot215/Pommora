@@ -1,16 +1,14 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { GHOST_DWELL_MS } from '@pommora/uix/Interactions/ghostCreate'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../../Session/store'
-import { installViewEnvironment, renderView } from '../../Testing/viewHarness'
+import { mountEachTest, renderView } from '../../Testing/viewHarness'
 import { valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
-
-installViewEnvironment()
 
 const source = (): CollectionNode =>
   ({
@@ -40,13 +38,14 @@ const VALUES = valuesReply({ p1: { [ID_KEY]: 'p1' }, p2: { [ID_KEY]: 'p2' } })
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let mutateSpy: ReturnType<typeof vi.fn>
 let renameSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   mutateSpy = vi.fn(async (req: { op: string }, onCreated?: (c: unknown) => void) => {
     if (req.op === 'createPage') onCreated?.({ id: 'p3', path: 'Col/Untitled.md' })
     return true
@@ -65,11 +64,6 @@ beforeEach(() => {
     select: vi.fn(async () => {}) as never,
     beginRename: renameSpy as never,
   })
-})
-afterEach(() => {
-  vi.useRealTimers()
-  act(() => root.unmount())
-  host.remove()
 })
 
 const card = (id: string): HTMLElement => host.querySelector(`[data-rid="${id}"]`) as HTMLElement

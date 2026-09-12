@@ -1,12 +1,11 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import { firePointer, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import type { Band } from '../Bands/bandDndModel'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 const BANDS: Band[] = [
   { id: 'A', kind: 'property', depth: 0, parentId: null },
@@ -30,6 +29,10 @@ function List({ onDrop }: { onDrop: (id: string, drop: GroupingDrop) => void }):
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let dropSpy: ReturnType<typeof vi.fn<(id: string, drop: GroupingDrop) => void>>
 
 const stubRows = (offset: number): void => {
@@ -40,9 +43,6 @@ const stubRows = (offset: number): void => {
 }
 
 beforeEach(async () => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   dropSpy = vi.fn()
   await act(async () => {
     root.render(<List onDrop={dropSpy} />)
@@ -50,10 +50,6 @@ beforeEach(async () => {
   const box = host.querySelector('[data-box]')
   if (box) stubRect(box, { top: 0, bottom: 72 })
   stubRows(0)
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const handle = (id: string): HTMLElement =>

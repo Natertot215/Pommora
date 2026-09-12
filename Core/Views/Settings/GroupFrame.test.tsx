@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -9,8 +9,7 @@ import { useSession } from '../../Session/store'
 import { GroupFrame } from './GroupFrame'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
-import { installViewEnvironment } from '../../Testing/viewHarness'
-installViewEnvironment()
+import { mountEachTest } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -49,6 +48,10 @@ const source = {
 
 let host: HTMLDivElement
 let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
 let saveSpy: ReturnType<typeof vi.fn>
 
 const mount = async (v: SavedView): Promise<void> => {
@@ -83,19 +86,12 @@ const pickOption = async (t: string): Promise<void> => {
 }
 
 beforeEach(() => {
-  host = document.createElement('div')
-  document.body.appendChild(host)
-  root = createRoot(host)
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'views:save': saveSpy,
     'view:loadValues': vi.fn(async () => ({ ok: true, value: {} })),
   })
   useSession.setState({ load: vi.fn(async () => {}) as never })
-})
-afterEach(() => {
-  act(() => root.unmount())
-  host.remove()
 })
 
 const lastSaved = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView
