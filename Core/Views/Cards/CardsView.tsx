@@ -63,12 +63,9 @@ import { ancestryOf } from '../../Nexus/treeIndex'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
+import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { resolveFieldValue } from '../../Properties/value'
-import {
-  numberFormatGlyph,
-  propertyIcon,
-  propertyTypeIconName,
-} from '../../Properties/Cells/PropertyTypes'
+import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { linkEditText } from '@pommora/core/Connections/linkValue'
 import { CardValue } from './CardValue'
@@ -626,18 +623,16 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             setValuePicker(null)
           }}
         />
-        <TextPicker
-          open={valuePicker?.kind === 'number'}
-          onDismiss={() => setValuePicker(null)}
-          triggerRef={pickerAnchorRef}
-          value={vTarget?.current?.kind === 'number' ? String(vTarget.current.value) : ''}
-          leading={vTarget ? numberFormatGlyph(vTarget.def) : undefined}
-          onCommit={(raw) => {
-            const nv = parseEditorValue('number', raw)
-            if (nv != null) commitPicked(nv)
-            setValuePicker(null)
-          }}
-        />
+        {vTarget && (
+          <NumberValuePicker
+            open={valuePicker?.kind === 'number'}
+            triggerRef={pickerAnchorRef}
+            def={vTarget.def}
+            current={vTarget.current}
+            onCommit={commitPicked}
+            onDismiss={() => setValuePicker(null)}
+          />
+        )}
         <PropertyPicker
           target={valuePopup ? vTarget : null}
           chooser={

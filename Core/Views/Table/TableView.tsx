@@ -15,6 +15,7 @@ import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
 import { groupValueUndo } from '../../Properties/valueUndo'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
+import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
@@ -36,7 +37,6 @@ import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { text } from '@pommora/uix/Theme'
 import { Icon } from '@pommora/uix/Symbols'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
-import { numberDivisor } from '../../Properties/formatValue'
 import { ColumnHeader } from './ColumnHeader'
 import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
@@ -275,24 +275,19 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const v = resolveFieldValue(row, col.id, schema)
     const open = editing?.mode === 'rename'
     const key = `${cell.rowId}:${cell.colId}:${cell.nonce}`
-    if (declaredType(col.id, schema) === 'number') {
-      const divisor = numberDivisor(schema.find((d) => d.id === col.id))
+    const numberDef = schema.find((d) => d.id === col.id)
+    if (numberDef && declaredType(col.id, schema) === 'number')
       return (
-        <TextPicker
+        <NumberValuePicker
           key={key}
           open={open}
           triggerRef={triggerElRef}
-          value={v.kind === 'number' ? String(v.value) : ''}
-          trailing={divisor !== undefined ? `/ ${divisor}` : undefined}
-          onCommit={(text) => {
-            const next = parseEditorValue('number', text)
-            if (next !== undefined) commitValue(row, col, next)
-            setEditing(null)
-          }}
+          def={numberDef}
+          current={v}
+          onCommit={(next) => commitValue(row, col, next)}
           onDismiss={() => setEditing(null)}
         />
       )
-    }
     const raw = v.kind === 'url' ? v.value : ''
     const linkDef = schema.find((d) => d.id === col.id)
     return (
@@ -348,7 +343,13 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     })
     if (!base) return
     const ctx: CellMenuContext =
-      base.kind === 'title' ? { ...base, ...interactions.titleMenuContext(row) } : base
+      base.kind === 'title'
+        ? {
+            ...base,
+            ...interactions.titleMenuContext(row),
+            properties: interactions.propertyRows(row),
+          }
+        : base
     const action = await interactions.holdGhost(() => popMenu(cellMenuModel(ctx)))
     if (!action) return
     const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
