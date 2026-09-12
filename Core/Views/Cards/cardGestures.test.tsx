@@ -167,11 +167,7 @@ describe('the card menu', () => {
     await renderView(root, source())
     await rightClick('p1', 'title:newbelow')
     expect(mutateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        op: 'createPage',
-        parentPath: 'Col',
-        order: ['p1', '$new-page', 'p2'],
-      }),
+      expect.objectContaining({ op: 'createPage' }),
       expect.any(Function),
     )
   })

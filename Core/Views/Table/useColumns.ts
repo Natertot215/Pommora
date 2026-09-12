@@ -15,7 +15,7 @@ import { readZoom } from '@pommora/uix/Utilities/zoom'
 import { popMenu } from '../../Actions/menuActions'
 import { numberDivisor } from '../../Properties/formatValue'
 import { declaredType } from '../../Properties/value'
-import { NO_STYLE, useColumnStyleMap } from '../Host/useColumnStyles'
+import { useColumnStyleMap } from '../Host/useColumnStyles'
 import type { ViewHostApi } from '../Host/useViewHost'
 
 // ── Widths ──────────────────────────────────────────────────────────────────
@@ -201,10 +201,7 @@ export function useColumns(host: ViewHostApi) {
     () => columns.map((c) => alignOverride[c.id] ?? alignFor(c.id, schema, liveView, contextIds)),
     [columns, schema, liveView, alignOverride, contextIds],
   )
-  const styleByCol = useMemo(
-    () => columns.map((c) => styleMap.get(c.id) ?? NO_STYLE),
-    [columns, styleMap],
-  )
+  const styleByCol = useMemo(() => columns.map((c) => styleMap.get(c.id)!), [columns, styleMap])
   const widthByCol = useMemo(
     () =>
       columns.map((c, i) =>

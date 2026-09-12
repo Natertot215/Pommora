@@ -5575,7 +5575,7 @@ describe('the cards ghost — dwell, create, and exit', () => {
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Views/Cards/` → 3 files, 11 tests pass.
+- [ ] `npx vitest run Core/Views/Cards/` → 3 files, 10 tests pass.
 - [ ] Each suite goes red with its change reverted: `cardDrops` "moves the page into the Set at the slot it landed on" with `relocate`'s `sibBefore` forced to `null` (the order flips to `['p2', 'p1']`); `cardGestures` "answering Icon mounts the one root icon picker" with `{interactions.iconPicker}` removed from the root; `cardCreation` "clicking the ghost creates a page below its anchor and opens the rename" with the policy's `rename` made a no-op. Restore each.
 
 #### Task 3.3

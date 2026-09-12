@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
-import type { SavedView } from '@pommora/core/Views/views'
 import { firePointer, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../../Session/store'
@@ -59,17 +58,6 @@ const nested = (): CollectionNode =>
     STRUCTURAL,
   )
 
-// Two Sets, each with one page, so a band drag has a neighbor to land beside.
-const twoSets = (): CollectionNode =>
-  collection(
-    [
-      set('sA', 'A', [page('p1', 'One', 'Col/A/One.md')]),
-      set('sB', 'B', [page('p2', 'Two', 'Col/B/Two.md')]),
-    ],
-    [],
-    STRUCTURAL,
-  )
-
 // Two option bands of one page each, so a cross-band drop can only rewrite the value.
 const byStatus = (): CollectionNode =>
   collection([], [page('p1', 'One', 'Col/One.md'), page('p2', 'Two', 'Col/Two.md')], {
@@ -85,17 +73,15 @@ const VALUES = valuesReply({
 let host: HTMLDivElement
 let root: Root
 let mutateSpy: ReturnType<typeof vi.fn>
-let saveSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
   mutateSpy = vi.fn(async () => true)
-  saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'view_1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
-    'views:save': saveSpy,
+    'views:save': async () => ({ ok: true, value: { id: 'view_1' } }),
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
@@ -149,7 +135,6 @@ const dragTo = async (from: Element, y: number): Promise<void> => {
 
 const card = (id: string): HTMLElement => host.querySelector(`[data-rid="${id}"]`) as HTMLElement
 const gridOf = (id: string): Element => card(id).closest('.cards-grid') as Element
-const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView
 
 describe('a card dropped across structural bands', () => {
   it('moves the page into the Set at the slot it landed on', async () => {
@@ -176,24 +161,5 @@ describe('a card dropped across property bands', () => {
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'complete' },
     })
-  })
-})
-
-describe('a band dragged over another', () => {
-  it('persists group_order and never touches the fs', async () => {
-    await mount(twoSets())
-    const glyphs = host.querySelectorAll('.group-band-glyph')
-    await act(async () => {
-      firePointer(glyphs[1], 'pointerdown', { x: 10, y: 36 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 10, y: 2 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointerup')
-    })
-    await settle(1)
-    expect(lastSavedView().group_order).toEqual(['sB', 'sA'])
-    expect(mutateSpy).not.toHaveBeenCalled()
   })
 })

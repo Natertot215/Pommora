@@ -53,7 +53,7 @@ import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/g
 import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
-import { NO_STYLE, useColumnStyleMap } from '../Host/useColumnStyles'
+import { useColumnStyleMap } from '../Host/useColumnStyles'
 import { ViewGroupBand } from '../Bands/ViewGroupBand'
 import { BandDnd } from '../Bands/BandDnd'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
@@ -103,13 +103,12 @@ type AddPickerRequest = {
   initialEntry: AddEntry | null
 }
 
-/** What a card asks the one root banner seat to do; the nonce re-fires a repeat request on the same card. */
+/** What a card asks the one root banner seat to do. */
 type BannerRequest = {
   id: string
   kind: 'page' | 'set'
   frame: HTMLElement
   mode: 'menu' | 'edit'
-  nonce: number
 }
 
 /** Every gesture a card hands back, as one identity-stable object. */
@@ -126,7 +125,7 @@ type CardApi = {
   titleAction: (action: string, row: ViewRow, anchor: HTMLElement) => boolean
   addableFor: (row: ViewRow) => AddEntry[]
   openSet: (set: SetNode, newTab: boolean) => void
-  banner: (req: Omit<BannerRequest, 'nonce'>) => void
+  banner: (req: BannerRequest) => void
 }
 
 type ValueApi = Pick<CardApi, 'commitValue' | 'setStyle' | 'hide' | 'openValuePicker'>
@@ -232,8 +231,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const flatMode = view.group?.kind === 'flat'
   const hideLocation = view.hide_location ?? false
 
-  const pickersOpenRef = useRef(false)
   const [pendingSeat, setPendingSeat] = useState<string | null>(null)
+  const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
+  const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   const ghostRowmate = (enteringId: string): boolean => {
     const root = host.seam.viewRootRef.current
     const ghostEl = root?.querySelector('.ghost-card')
@@ -247,7 +247,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
       suppressed: () =>
-        pickersOpenRef.current || useSession.getState().renamingPath !== null || glanceShown(),
+        valuePicker !== null ||
+        addPicker !== null ||
+        useSession.getState().renamingPath !== null ||
+        glanceShown(),
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
     rename: (target, fromCreate) => {
@@ -258,10 +261,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const effectiveZoom = useElementZoom(host.seam.viewRootRef)
 
   // ── Value and add pickers ─────────────────────────────────────────────────
-
-  const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
-  const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
-  pickersOpenRef.current = valuePicker !== null || addPicker !== null
 
   const openValuePicker = (req: ValuePickerRequest): void => setValuePicker(req)
   const openAddPicker = (req: AddPickerRequest): void => {
@@ -321,7 +320,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
   const bannerFrameRef = useRef<HTMLElement | null>(null)
-  const bannerNonce = useRef(0)
   // Resolved every render rather than snapshotted into the request: a cover written while the seat is open must reach the editor, and a vanished owner leaves it inert.
   const bannerOwner = ((): { path: string; value: string | undefined } | null => {
     if (!bannerRequest) return null
@@ -369,16 +367,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     titleAction: interactions.runTitleAction,
     addableFor: (row) => addEntriesFor(row, liveView, ctx, columns, tree, capitalize),
     openSet: (set, newTab) => {
-      // A plain click passes NO option, so the tab-open preference still decides, the way `openPage` does.
       void select(
         { kind: 'set', id: set.id, path: set.path },
         newTab ? { newTab: true } : undefined,
       )
     },
-    banner: (req) => {
-      bannerNonce.current += 1
-      setBannerRequest({ ...req, nonce: bannerNonce.current })
-    },
+    banner: setBannerRequest,
   })
   const locByRow = useMemo(() => {
     const m = new Map<string, TrailSegment[]>()
@@ -438,11 +432,22 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }, [ghostShown])
   const ghostCreate = (): void => {
     const seat = interactions.ghost.ghost?.anchorId ?? null
+    const created = interactions.ghostCreate()
+    if (!created) return
     setPendingSeat(seat)
-    void interactions.ghostCreate()?.then((ok) => {
+    void created.then((ok) => {
       if (!ok) setPendingSeat(null)
     })
   }
+  const onCardDrop = (activeId: string, toZone: string, toIndex: number): void =>
+    interactions.onDrop({
+      activeId,
+      toZone,
+      beforeId:
+        (groups.find((g) => g.key === toZone)?.items.filter((r) => r.id !== activeId) ?? [])[
+          toIndex
+        ]?.id ?? null,
+    })
 
   return (
     <GhostSuppress.Provider value={interactions.holdGhost}>
@@ -469,15 +474,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           </div>
         )}
         <DragGroup
-          onCommit={(activeId, toZone, toIndex) =>
-            interactions.onDrop({
-              activeId,
-              toZone,
-              beforeId:
-                (groups.find((g) => g.key === toZone)?.items.filter((r) => r.id !== activeId) ??
-                  [])[toIndex]?.id ?? null,
-            })
-          }
+          onCommit={onCardDrop}
           zoom={effectiveZoom}
           crossZone={canReassign || canRelocate}
           resolveIndex={interactions.structuralSlot}
@@ -848,7 +845,7 @@ function CardProperties({
       row={row}
       column={c}
       ctx={ctx}
-      style={styleById.get(c.id) ?? NO_STYLE}
+      style={styleById.get(c.id)!}
       onCommit={(col, v) => api.commitValue(row, col, v)}
       onStyle={api.setStyle}
       onHide={api.hide}
