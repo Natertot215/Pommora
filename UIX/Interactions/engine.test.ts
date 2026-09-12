@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reflow } from './engine'
+import { placeCell } from './engine'
 import type { Box } from './shared'
 import { keyboardNext, ARROW_DIRS } from './keyboard'
 
@@ -29,24 +29,41 @@ const grid = (count: number, cols: number): Box[] =>
     }
   })
 
-describe('reflow — the displacement core', () => {
+const cellIn = (rects: Box[], over: number, activeIdx: number, index: number): { y: number } =>
+  placeCell(rects, activeIdx, over, index, 10, 100)
+
+describe('placeCell — the displacement core', () => {
   it('shifts the passed-over items up when dragging forward', () => {
     const r = column(4)
-    expect(reflow(r, 2, 0, 1).top).toBe(0)
-    expect(reflow(r, 2, 0, 2).top).toBe(10)
-    expect(reflow(r, 2, 0, 3).top).toBe(30)
+    expect(cellIn(r, 2, 0, 1).y).toBe(0)
+    expect(cellIn(r, 2, 0, 2).y).toBe(10)
+    expect(cellIn(r, 2, 0, 3).y).toBe(30)
   })
 
   it('shifts the passed-over items down when dragging backward', () => {
     const r = column(4)
-    expect(reflow(r, 1, 3, 0).top).toBe(0)
-    expect(reflow(r, 1, 3, 1).top).toBe(20)
-    expect(reflow(r, 1, 3, 2).top).toBe(30)
+    expect(cellIn(r, 1, 3, 0).y).toBe(0)
+    expect(cellIn(r, 1, 3, 1).y).toBe(20)
+    expect(cellIn(r, 1, 3, 2).y).toBe(30)
   })
 
   it('is a no-op when over === active (hovering its own slot)', () => {
     const r = column(4)
-    for (let i = 0; i < 4; i++) expect(reflow(r, 1, 1, i).top).toBe(i * 10)
+    for (let i = 0; i < 4; i++) expect(cellIn(r, 1, 1, i).y).toBe(i * 10)
+  })
+
+  it('closes the gap when the active item is in another zone', () => {
+    const r = column(4)
+    expect(cellIn(r, -1, 1, 0).y).toBe(0)
+    expect(cellIn(r, -1, 1, 2).y).toBe(10)
+    expect(cellIn(r, -1, 1, 3).y).toBe(20)
+  })
+
+  it('opens a slot for a foreign item, and walks the grid past the last cell', () => {
+    const g = grid(4, 2)
+    expect(placeCell(g, -1, 0, 0, 100, 200)).toEqual({ x: 100, y: 0 })
+    expect(placeCell(g, -1, 4, 3, 100, 200)).toEqual({ x: 100, y: 100 })
+    expect(placeCell(g, -1, 0, 3, 100, 200)).toEqual({ x: 0, y: 200 })
   })
 })
 
