@@ -1,4 +1,4 @@
-// The path-keyed page-detail slot for embed rehydration — module state, written through by the shared save scheduler so a returning tile always seeds on the newest body.
+// The path-keyed page-detail store — module state, seeded by every landed page and written through by the shared save scheduler so a returning reader always sees the newest body.
 import { useSyncExternalStore } from 'react'
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'

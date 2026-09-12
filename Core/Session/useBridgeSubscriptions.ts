@@ -32,7 +32,6 @@ export function useBridgeSubscriptions(): void {
           return id !== undefined && changed.has(id)
         })
         bumpContainerValues(changes)
-        useSession.getState().refreshSlotValues([...changed])
       }),
     [bumpContainerValues],
   )
