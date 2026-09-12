@@ -9,10 +9,11 @@ import {
 import { nearestByTop, useInsertionDrag } from './insertionDrag'
 import { type MeasuredRow, nextOrder, slotInGroup } from './reorderModel'
 import { DROP_LINE_INSET } from './shared'
+import { currentZoom } from '../Utilities/zoom'
 
 type Slot = { lineY: number; left: number; width: number; group: string; beforeId: string | null }
 type TableRow = MeasuredRow & { left: number; contentRight: number; group: string }
-type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number }
+type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number; zoom: number }
 
 type Value = {
   draggingId: string | null
@@ -66,7 +67,7 @@ export function TableRowDnd({
         })
       }
       measured.sort((a, b) => a.top - b.top)
-      return { rows: measured, boxTop: boxRect.top, boxLeft: boxRect.left }
+      return { rows: measured, boxTop: boxRect.top, boxLeft: boxRect.left, zoom: currentZoom(box) }
     },
     resolve: (id, point, s) => {
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
@@ -82,9 +83,9 @@ export function TableRowDnd({
         return null
       const above = point.y < near.mid
       return {
-        lineY: (above ? near.top : near.bottom) - s.boxTop,
-        left: near.left - s.boxLeft + DROP_LINE_INSET,
-        width: near.contentRight - near.left - DROP_LINE_INSET * 2,
+        lineY: ((above ? near.top : near.bottom) - s.boxTop) / s.zoom,
+        left: (near.left - s.boxLeft) / s.zoom + DROP_LINE_INSET,
+        width: (near.contentRight - near.left) / s.zoom - DROP_LINE_INSET * 2,
         group,
         beforeId,
       }
