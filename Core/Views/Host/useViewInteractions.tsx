@@ -331,6 +331,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   }
   const iconPicker = (
     <IconChoice
+      key={iconTarget?.path}
       open={iconOpen}
       onClose={() => setIconOpen(false)}
       triggerRef={iconAnchor}
