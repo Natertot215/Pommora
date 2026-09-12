@@ -398,11 +398,15 @@ export function DragGroup({
     const half = { x: d.rect.width / 2, y: d.rect.height / 2 }
     // A foreign zone's candidates are its rects plus one trailing cell, so a card can land past the last one.
     const count = f.rects.length + (zid === d.zoneId ? 0 : 1)
+    const last = f.rects[f.rects.length - 1]
     const distTo = (i: number): number => {
       const b = f.rects[i]
-      return b
-        ? Math.hypot(b.cx - projX, b.cy - projY)
-        : Math.hypot(f.tail.x + half.x - projX, f.tail.y + half.y - projY)
+      if (b) return Math.hypot(b.cx - projX, b.cy - projY)
+      // The tail wraps to a new row when the last row is full, so past the last card's edge on its own row counts as after it too.
+      const toTail = Math.hypot(f.tail.x + half.x - projX, f.tail.y + half.y - projY)
+      return last
+        ? Math.min(toTail, Math.hypot(last.left + last.width + half.x - projX, last.cy - projY))
+        : toTail
     }
     let pick = 0
     let nearest = Infinity

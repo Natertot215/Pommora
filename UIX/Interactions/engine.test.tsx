@@ -138,6 +138,24 @@ describe('the drag engine across zones', () => {
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'D', 1)
   })
 
+  it('appends past the last card of a full foreign row', async () => {
+    const r = item('a1').getBoundingClientRect()
+    await act(async () => {
+      firePointer(item('a1'), 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 250 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 300, y: 250 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup', { x: 300, y: 250 })
+    })
+    await settle()
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 1)
+  })
+
   it('lands at index 0 in an empty zone', async () => {
     await dropAt('a1', 100, 450)
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'C', 0)
