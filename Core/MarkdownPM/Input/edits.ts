@@ -437,7 +437,11 @@ export function dashArrow(
     if (arrows && doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
     if (doc[c - 1] === '-' && (arrows || opensLine(doc, c - 1)))
       return { from: c - 1, to: c, insert: '→', selection: c }
+    if (arrows && doc[c - 1] === '>' && !opensLine(doc, c - 1))
+      return { from: c - 1, to: c, insert: '»', selection: c }
   }
+  if (arrows && inserted === '<' && doc[c - 1] === '<')
+    return { from: c - 1, to: c, insert: '«', selection: c }
   if (arrows && inserted === '-' && doc[c - 1] === '<')
     return { from: c - 1, to: c, insert: '←', selection: c }
   if (dashes && inserted === ' ' && c >= 2 && doc[c - 1] === '-' && doc[c - 2] === ' ') {
