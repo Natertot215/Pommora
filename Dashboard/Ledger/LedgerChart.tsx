@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { type Band, dayLabel, fmt, sum } from './ledgerModel'
 
@@ -61,14 +61,24 @@ export function LedgerChart({
 
   const i0 = Math.max(0, Math.floor(lo))
   const i1 = Math.min(last, Math.ceil(hi))
-  const totals = values.map(sum)
+  const totals = useMemo(() => values.map(sum), [values])
   const visMax = Math.max(...totals.slice(i0, i1 + 1))
   const step = visMax > 30000 ? 10000 : visMax > 12000 ? 5000 : 2000
   const yMax = Math.ceil(visMax / step) * step
   const y = (v: number): number => M.t + IH - (v / yMax) * IH
 
   // Cumulative upper edge of each band, bottom of the stack first.
-  const edges = bands.map((_, k) => values.map((row) => sum(row.slice(0, k + 1))))
+  const edges = useMemo(
+    () =>
+      bands.map((_, k) =>
+        values.map((row) => {
+          let acc = 0
+          for (let j = 0; j <= k; j++) acc += row[j]
+          return acc
+        }),
+      ),
+    [bands, values],
+  )
   const lowerOf = (k: number, i: number): number => (k === 0 ? 0 : edges[k - 1][i])
 
   const paths = bands.map((band, k) => {
@@ -103,7 +113,7 @@ export function LedgerChart({
     }
     svg.addEventListener('wheel', onWheel, { passive: false })
     return () => svg.removeEventListener('wheel', onWheel)
-  })
+  }, [win, last, onWindow])
 
   // The tip is placed against measured widths, so it is written to the node rather than round-tripped through state.
   useLayoutEffect(() => {

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
@@ -30,8 +30,8 @@ export function LedgerLeaf(): React.JSX.Element {
   const [filtering, setFiltering] = useState(false)
   const filterRef = useRef<HTMLButtonElement>(null)
 
-  const stack = bands(LEDGER, filters)
-  const values = series.map((s) => stacked(s, filters))
+  const stack = useMemo(() => bands(LEDGER, filters), [filters])
+  const values = useMemo(() => series.map((s) => stacked(s, filters)), [series, filters])
   const today = values[last]
   const total = sum(today)
   const order = today.map((_, k) => k).sort((a, b) => today[b] - today[a])
