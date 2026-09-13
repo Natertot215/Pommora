@@ -111,6 +111,15 @@ export function readPersonalization(raw: unknown): Personalization {
     editorScale: scale(p.editorScale, EDITOR_SCALE_DEFAULT),
     citationsShown: bool(p.citationsShown),
     jumpToCitation: bool(p.jumpToCitation),
+    transformDashes: bool(p.transformDashes),
+    transformArrows: bool(p.transformArrows),
+    transformEllipses: bool(p.transformEllipses),
+    transformCallouts: bool(p.transformCallouts),
+    pairBrackets: bool(p.pairBrackets),
+    pairMarkers: bool(p.pairMarkers),
+    pairQuotes: bool(p.pairQuotes),
+    deletePairsTogether: bool(p.deletePairsTogether),
+    exitPairsOnEnter: bool(p.exitPairsOnEnter),
   }
 }
 

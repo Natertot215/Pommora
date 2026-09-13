@@ -45,6 +45,7 @@ type KeyOf<V, R = Personalization> = {
 export interface RowText {
   label: string
   hint?: string
+  syntax?: readonly (readonly [written: string, result: string])[]
 }
 
 type PickerControlRow<T extends string> = RowText & {
@@ -556,7 +557,7 @@ export const FRAMES = roster([
   },
   {
     key: 'pages',
-    label: 'Pages & Editor',
+    label: 'Pages & Writing',
     icon: 'file-pen',
     sections: [
       {
@@ -573,6 +574,98 @@ export const FRAMES = roster([
             key: 'outlinerLines',
             label: 'Outliner Lines',
             hint: 'Show indent rails on nested lists in the editor.',
+          },
+        ],
+      },
+      {
+        title: 'Transformations',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'transformDashes',
+            label: 'Dashes',
+            syntax: [
+              ['--', '—'],
+              [' - ', ' – '],
+            ],
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'transformArrows',
+            label: 'Arrows',
+            syntax: [
+              ['->', '→'],
+              ['<-', '←'],
+              ['<->', '↔'],
+            ],
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'transformEllipses',
+            label: 'Ellipses',
+            syntax: [['...', '…']],
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'transformCallouts',
+            label: 'Callout',
+            syntax: [['||', '> [!callout]']],
+            defaultOn: true,
+          },
+        ],
+      },
+      {
+        title: 'Autopairing',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'pairBrackets',
+            label: 'Brackets',
+            syntax: [
+              ['(', '()'],
+              ['[', '[]'],
+            ],
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'pairMarkers',
+            label: 'Markers',
+            syntax: [
+              ['*', '**'],
+              ['_', '__'],
+              ['`', '``'],
+              ['~~', '~~~~'],
+              ['==', '===='],
+            ],
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'pairQuotes',
+            label: 'Quotes',
+            syntax: [
+              ['"', '""'],
+              ["'", "''"],
+            ],
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'deletePairsTogether',
+            label: 'Delete Pairs Together',
+            hint: 'Backspace inside an empty pair removes both halves.',
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'exitPairsOnEnter',
+            label: 'Exit On Enter',
+            hint: 'Enter moves the caret past the closer of an open pair.',
+            defaultOn: true,
           },
         ],
       },

@@ -118,6 +118,15 @@ export interface Personalization {
   editorScale?: number
   citationsShown?: boolean
   jumpToCitation?: boolean
+  transformDashes?: boolean
+  transformArrows?: boolean
+  transformEllipses?: boolean
+  transformCallouts?: boolean
+  pairBrackets?: boolean
+  pairMarkers?: boolean
+  pairQuotes?: boolean
+  deletePairsTogether?: boolean
+  exitPairsOnEnter?: boolean
 }
 
 export const SCALE_STEPS = [0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5] as const

@@ -116,12 +116,21 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Repair Properties On Open | `repairOnOpen` | Canonicalizes drifted property and Context values on the pages changed since the last open. | On · **Off** |
 | Capitalize All Metadata | `capitalizeMetadata` | Presents every property name Title Cased; the stored key and the rename fields are untouched. | On · **Off** |
 
-#### Pages & Editor
+#### Pages & Writing
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Editor Scale | `editorScale` | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% (**100%**) |
 | Outliner Lines | `outlinerLines` | Draws indent rails on nested lists in the editor. | On · **Off** |
+| Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
+| Arrows | `transformArrows` | `->`, `<-`, and `<->` become `→`, `←`, and `↔`; an arrow list's marker converts either way. | **On** · Off |
+| Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
+| Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
+| Brackets | `pairBrackets` | `(` and `[` add their closers. | **On** · Off |
+| Markers | `pairMarkers` | Emphasis, code, strikethrough, and highlight markers pair. | **On** · Off |
+| Quotes | `pairQuotes` | `"` and `'` pair. | **On** · Off |
+| Delete Pairs Together | `deletePairsTogether` | Backspace inside an empty pair removes both halves. | **On** · Off |
+| Exit On Enter | `exitPairsOnEnter` | Enter moves the caret past the closer of an open pair. | **On** · Off |
 | Show Footnotes By Default | `citationsShown` | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |
 | Jump To Citation On Creation | `jumpToCitation` | Carries the caret down to the citation a new footnote just made. | **On** · Off |
 | Highlight Color | `highlightColor` | The wash behind highlighted text. Cleared follows the accent. | Any ramp cell · **the accent** |

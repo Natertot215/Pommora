@@ -33,6 +33,15 @@ export type EditorSettings = Pick<
   | 'jumpToCitation'
   | 'pasteLinkIntoText'
   | 'defaultLinkFormat'
+  | 'transformDashes'
+  | 'transformArrows'
+  | 'transformEllipses'
+  | 'transformCallouts'
+  | 'pairBrackets'
+  | 'pairMarkers'
+  | 'pairQuotes'
+  | 'deletePairsTogether'
+  | 'exitPairsOnEnter'
 > & { commands: Commands }
 
 type TileMount =
