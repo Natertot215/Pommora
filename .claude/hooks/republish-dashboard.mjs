@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// PostToolUse(Bash) hook: when a built dashboard page has moved past what was last published, ask
-// Claude to republish it.
+// PostToolUse(Bash) hook: when a built dashboard page or the data it reads has moved past what was
+// last published, ask Claude to republish the page or rewrite the data.
 //
-// A shell hook can't reach the Artifact publish API, so an artifact only refreshes when the
-// session republishes it. The post-commit git hook rebuilds both pages on every commit; this one
-// compares each build against the hash recorded at its last republish and puts a one-line
-// republish instruction in front of Claude, so the artifacts track the local build through a
-// working session. The records live inside the git dir, where they are untracked by construction
+// A shell hook can't reach the Artifact API, so an artifact only refreshes through the session. The
+// post-commit git hook rebuilds both pages and refreshes the ledger's data on every commit; this one
+// compares each build and each data file against the hash recorded at its last publish and puts a
+// one-line instruction in front of Claude. The ledger page reads its data from the artifact's
+// database, so a commit that only moves the numbers costs one small document write rather than a
+// republish of the whole page. The records live inside the git dir, where they are untracked by construction
 // and shared by every session working in this clone.
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -17,6 +18,7 @@ const PAGES = [
     name: 'dashboard',
     page: 'Dashboard/dist/dashboard.html',
     url: 'https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401',
+    data: { file: 'Dashboard/Ledger/loc-history.json', collection: 'ledger', doc: 'history' },
   },
   {
     name: 'showcase',
@@ -50,14 +52,14 @@ process.stdin.on('end', () => {
     process.exit(0)
   }
 
-  const stale = PAGES.filter(({ name, page }) => {
+  const moved = (file, stampName) => {
     let hash = ''
     try {
-      hash = execFileSync('git', ['hash-object', page], { cwd: root, encoding: 'utf8' }).trim()
+      hash = execFileSync('git', ['hash-object', file], { cwd: root, encoding: 'utf8' }).trim()
     } catch {
       return false
     }
-    const stamp = join(gitDir, `${name}-published`)
+    const stamp = join(gitDir, stampName)
     let published = ''
     try {
       published = readFileSync(stamp, 'utf8').trim()
@@ -68,21 +70,28 @@ process.stdin.on('end', () => {
     try {
       writeFileSync(stamp, `${hash}\n`)
     } catch {
-      // An unrecorded republish only costs a repeated instruction on the next commit.
+      // An unrecorded publish only costs a repeated instruction on the next commit.
     }
     return true
-  })
-  if (stale.length === 0) process.exit(0)
+  }
 
-  const steps = stale
-    .map(({ page, url }) => `read ${url} first, then publish ${page} to that same url`)
-    .join('; ')
+  const steps = PAGES.flatMap(({ name, page, url, data }) => [
+    ...(moved(page, `${name}-published`)
+      ? [`read ${url} first, then publish ${page} to that same url`]
+      : []),
+    ...(data && moved(data.file, `${name}-data-published`)
+      ? [
+          `write_db to ${url} with db_op "set", collection "${data.collection}", doc_id "${data.doc}", and file_path ${data.file}`,
+        ]
+      : []),
+  ])
+  if (steps.length === 0) process.exit(0)
+
   const additionalContext =
-    `The Pommora ${stale.map((p) => p.name).join(' and ')} build has moved past the version ` +
-    `published to its artifact, so the hosted page is now stale. Silently republish via the ` +
-    `Artifact tool so the hosted page matches: ${steps}. Do this as a background chore — do not ` +
-    `announce it, describe it, or paste an artifact link in your reply; say nothing about it ` +
-    `unless a republish fails.`
+    `A Pommora dashboard artifact has fallen behind the local build, so the hosted page is now ` +
+    `stale. Silently bring it current via the Artifact tool: ${steps.join('; ')}. Do this as a ` +
+    `background chore — do not announce it, describe it, or paste an artifact link in your reply; ` +
+    `say nothing about it unless it fails.`
   process.stdout.write(
     JSON.stringify({
       hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext },

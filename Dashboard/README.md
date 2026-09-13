@@ -4,7 +4,7 @@ Two plain browser pages built from the design system, each folded into a single 
 
 ## Pommora Dashboard
 
-`dashboard.html` → the line ledger: real code lines per system, day by day, over the branch's history. It imports `Ledger/loc-history.json` at build time, so a data refresh is a rebuild; `.claude/scripts/loc.py` writes that file and the versioned post-commit hook runs both steps after every commit. The include menu folds import and export lines, comment lines, and test lines in or out of the chart and the table.
+`dashboard.html` → the line ledger: real code lines per system, day by day, over the branch's history. It reads `Ledger/loc-history.json` from the artifact's database (`ledger/history`) and follows it live, so a data refresh is a document write rather than a rebuild; the dev server imports the file directly. `.claude/scripts/loc.py` writes that file and the versioned post-commit hook runs it after every commit. The include menu folds import and export lines, comment lines, and test lines in or out of the chart and the table.
 
 Published at https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401.
 
@@ -20,7 +20,7 @@ Published at https://claude.ai/code/artifact/684b7af1-55b2-49cf-b2fa-1b3a6b15dd9
 
 ## Publishing
 
-No shell hook can reach the artifact publish API, so republishing is the session's step: `.claude/hooks/republish-dashboard.mjs` compares each build against the hash recorded at its last republish and asks Claude to republish the pages that moved. Commits made outside a session leave the artifacts to the next one.
+No shell hook can reach the Artifact API, so publishing is the session's step: `.claude/hooks/republish-dashboard.mjs` compares each build and the ledger's data file against the hash recorded at its last publish, and asks Claude to republish a page whose build moved or rewrite the `ledger/history` document when only the data did. Commits made outside a session leave the artifacts to the next one.
 
 ## Assets
 

@@ -7,13 +7,14 @@ import {
   DEFAULT_FILTERS,
   FILTER_ROWS,
   type Filters,
-  LEDGER,
+  type Ledger,
   bands,
   dayLabel,
   fmt,
   stacked,
   sum,
 } from './ledgerModel'
+import { useLedger } from './useLedger'
 import './ledger.css'
 
 const CENSUS: ReadonlyArray<[string, string]> = [
@@ -22,15 +23,20 @@ const CENSUS: ReadonlyArray<[string, string]> = [
   ['config', 'config files'],
 ]
 
-export function LedgerLeaf(): React.JSX.Element {
-  const { series, head, files, kinds } = LEDGER
+export function LedgerLeaf(): React.JSX.Element | null {
+  const ledger = useLedger()
+  return ledger && <LedgerBody key={ledger.head} ledger={ledger} />
+}
+
+function LedgerBody({ ledger }: { ledger: Ledger }): React.JSX.Element {
+  const { series, head, files, kinds } = ledger
   const last = series.length - 1
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [win, setWin] = useState<Window>({ lo: 0, hi: last })
   const [filtering, setFiltering] = useState(false)
   const filterRef = useRef<HTMLButtonElement>(null)
 
-  const stack = useMemo(() => bands(LEDGER, filters), [filters])
+  const stack = useMemo(() => bands(ledger, filters), [ledger, filters])
   const values = useMemo(() => series.map((s) => stacked(s, filters)), [series, filters])
   const today = values[last]
   const total = sum(today)

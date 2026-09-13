@@ -1,5 +1,3 @@
-import history from './loc-history.json'
-
 export type Sample = { d: string; v: number[]; io: number[]; c: number[]; t: number[] }
 
 export type Ledger = {
@@ -10,8 +8,6 @@ export type Ledger = {
   files: number[]
   kinds: Record<string, number>
 }
-
-export const LEDGER: Ledger = history
 
 export type Filters = { io: boolean; comments: boolean; tests: boolean }
 
