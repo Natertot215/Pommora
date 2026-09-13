@@ -20,7 +20,6 @@ import {
   TAB_MAX_WIDTH,
   TAB_MIN_WIDTH,
   coerceScale,
-  coerceInterfaceScale,
   EDITOR_SCALE_DEFAULT,
   type EntityIconKind,
   type FolderPlacement,
@@ -90,8 +89,6 @@ export function readPersonalization(raw: unknown): Personalization {
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
-    interfaceScale:
-      typeof p.interfaceScale === 'number' ? coerceInterfaceScale(p.interfaceScale) : undefined,
     previewPersistence: coercePreviewPersistence(p.previewPersistence),
     dismissPreviewOnPointer: bool(p.dismissPreviewOnPointer),
     fileHistory: p.fileHistory === false ? false : undefined,

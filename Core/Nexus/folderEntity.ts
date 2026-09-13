@@ -4,7 +4,7 @@ import type { z } from 'zod'
 import { newId } from './ids'
 import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
 import { recordWrite } from '../Files/writeEcho'
-import { pathExists } from '../Files/atomicWrite'
+import { pathExists, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import type { SidecarKind } from '../Paths/paths'
 import { ok, fail, type Result } from '../Contract/result'
@@ -35,7 +35,7 @@ export async function renameFolderEntity(
   if (why) return fail('invalid-name', why)
   const target = join(dirname(absFolder), newName)
   if (target === absFolder) return ok({ path: absFolder })
-  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)
+  if (await targetTaken(absFolder, target)) return fail('exists', `"${newName}" already exists.`)
   // The watcher's unlinkDir/addDir echo (and every child event under a folder) must not buy a second full walk.
   recordWrite(absFolder)
   recordWrite(target)

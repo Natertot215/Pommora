@@ -1,8 +1,12 @@
-// Preferences that belong to the MACHINE rather than the Nexus: menu style, pane widths, sidebar folds and window sizes are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar folds and window sizes are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+import { sessionRoot } from '../Nexus/session'
+import { readValue } from '../Platform/localState'
+import { coerceInterfaceScale } from './personalization'
 
 // Nested rather than flat: packDevicePrefs drops a top-level `false` and a disclosure map is mostly false, while a truthy object survives whole.
 export interface DevicePrefs {
   nativeMenus?: boolean
+  interfaceScale?: number
   panes?: { sidebar?: number; inspector?: number }
   disclosure?: Record<string, boolean>
   windows?: Record<string, { w: number; h: number }>
@@ -14,3 +18,8 @@ export function packDevicePrefs(raw: unknown): DevicePrefs {
   const kept = Object.entries(raw).filter(([, v]) => v !== undefined && v !== null && v !== false)
   return Object.fromEntries(kept) as DevicePrefs
 }
+
+export const readInterfaceScale = (): number =>
+  coerceInterfaceScale(
+    sessionRoot() === null ? null : readValue<DevicePrefs>('devicePrefs')?.interfaceScale,
+  )

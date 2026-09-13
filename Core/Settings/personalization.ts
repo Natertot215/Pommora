@@ -96,7 +96,6 @@ export interface Personalization {
   connectionsOpenInPreview?: boolean
   plainUnresolvedLinks?: boolean
   ribbonOrder?: string[]
-  interfaceScale?: number
   previewPersistence?: PreviewPersistence
   dismissPreviewOnPointer?: boolean
   fileHistory?: boolean

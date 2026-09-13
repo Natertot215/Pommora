@@ -1,28 +1,37 @@
-export const isAbsolute = (p: string): boolean => p.startsWith('/')
+const ROOT = /^(?:[A-Za-z]:\/|\/\/(?=[^/])|\/)/
+
+const rootOf = (p: string): string => ROOT.exec(p)?.[0] ?? ''
+
+export const isAbsolute = (p: string): boolean => /^(?:[A-Za-z]:)?[\\/]/.test(p)
 
 function normalize(p: string): string {
-  const abs = isAbsolute(p)
+  const root = rootOf(p)
   const out: string[] = []
-  for (const seg of p.split('/')) {
+  for (const seg of p.slice(root.length).split('/')) {
     if (seg === '' || seg === '.') continue
     if (seg === '..') {
       if (out.length && out[out.length - 1] !== '..') out.pop()
-      else if (!abs) out.push('..')
+      else if (!root) out.push('..')
       continue
     }
     out.push(seg)
   }
   const body = out.join('/')
-  return abs ? `/${body}` : body || '.'
+  return root ? root + body : body || '.'
 }
 
-export const join = (...parts: string[]): string => normalize(parts.filter(Boolean).join('/'))
+export const join = (...parts: string[]): string =>
+  normalize(
+    parts
+      .filter(Boolean)
+      .reduce((acc, part) => (acc ? `${acc.replace(/\/+$/, '')}/${part}` : part), ''),
+  )
 
 export function dirname(p: string): string {
-  const trimmed = p.replace(/\/+$/, '') || (isAbsolute(p) ? '/' : '')
+  const root = rootOf(p)
+  const trimmed = p.replace(/\/+$/, '')
   const i = trimmed.lastIndexOf('/')
-  if (i < 0) return '.'
-  return i === 0 ? '/' : trimmed.slice(0, i)
+  return i < root.length ? root || '.' : trimmed.slice(0, i)
 }
 
 export function relDirname(p: string): string {

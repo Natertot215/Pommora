@@ -1,9 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import {
   PREVIEW_PERSISTENCE_DEFAULT,
+  coerceInterfaceScale,
   coercePreviewPersistence,
   previewLingerMs,
 } from './personalization'
+
+describe('coerceInterfaceScale', () => {
+  it('clamps out-of-range values so a typo cannot brick the window', () => {
+    expect(coerceInterfaceScale(1.25)).toBe(1.25)
+    expect(coerceInterfaceScale(125)).toBe(1.5)
+    expect(coerceInterfaceScale(0.1)).toBe(0.5)
+  })
+
+  it('falls back to 1.0 on an absent or non-numeric value', () => {
+    expect(coerceInterfaceScale(undefined)).toBe(1)
+    expect(coerceInterfaceScale('big')).toBe(1)
+  })
+})
 
 describe('coercePreviewPersistence', () => {
   it('passes a valid rung through', () => {

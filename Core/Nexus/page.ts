@@ -13,7 +13,7 @@ import {
 import type { GovernedWorld } from '../Contexts/contextResolve'
 import { PAGE_MODELED_KEYS } from './identityMark'
 import { errText, ok, fail, type Result } from '../Contract/result'
-import { pathExists } from '../Files/atomicWrite'
+import { pathExists, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -68,7 +68,7 @@ export async function renamePage(
   if (why) return fail('invalid-name', why)
   const target = join(dirname(absFile), newName + MD)
   if (target === absFile) return ok({ path: absFile })
-  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)
+  if (await targetTaken(absFile, target)) return fail('exists', `"${newName}" already exists.`)
   await relocatePage(absFile, target)
   return ok({ path: target })
 }
