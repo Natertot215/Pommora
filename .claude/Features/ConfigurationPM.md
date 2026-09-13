@@ -124,9 +124,10 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Outliner Lines | `outlinerLines` | Draws indent rails on nested lists in the editor. | On · **Off** |
 | Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
 | Arrows | `transformArrows` | `->`, `<-`, `<->`, `>>`, and `<<` become `→`, `←`, `↔`, `»`, and `«`; an arrow list's marker converts either way. | **On** · Off |
+| Equations | `transformEquations` | `>=`, `<=`, `!=` · `/=` · `=/`, `+-` · `-+`, and `~=` become `≥`, `≤`, `≠`, `±`, and `≈`. | **On** · Off |
 | Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
 | Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
-| Brackets | `pairBrackets` | `(` and `[` add their closers. | **On** · Off |
+| Brackets | `pairBrackets` | `(`, `[`, and `{` add their closers; `[[` pairs either way so connections stay reachable. | **On** · Off |
 | Markers | `pairMarkers` | Emphasis, code, strikethrough, and highlight markers pair. | **On** · Off |
 | Quotes | `pairQuotes` | `"` and `'` pair. | **On** · Off |
 | Delete Pairs Together | `deletePairsTogether` | Backspace inside an empty pair removes both halves. | **On** · Off |
