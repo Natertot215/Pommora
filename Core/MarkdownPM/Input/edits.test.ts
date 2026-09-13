@@ -188,6 +188,20 @@ describe('auto-pair + auto-delete', () => {
     expect(apply('()', autoPair(scanDoc('()'), 1, 1, '_')!)).toBe('(__)')
     expect(apply('****', autoPair(scanDoc('****'), 2, 2, '"')!)).toBe('**""**')
   })
+  it('closing brackets step over their closer', () => {
+    for (const ch of [')', ']', '}']) {
+      const doc = `a${ch}`
+      const e = autoPair(scanDoc(doc), 1, 1, ch)!
+      expect(e.insert).toBe('')
+      expect(e.selection).toBe(2)
+    }
+    expect(autoPair(scanDoc('a)'), 1, 1, ')', { pairBrackets: false })).toBeNull()
+  })
+  it('typing the closing ** of bold steps over instead of stacking markers', () => {
+    const e = autoPair(scanDoc('**bold**'), 7, 7, '*')!
+    expect(e.insert).toBe('')
+    expect(e.selection).toBe(8)
+  })
   it('a closer still steps over itself after a word', () => {
     const e = autoPair(scanDoc('"word"'), 5, 5, '"')!
     expect(e.insert).toBe('')
@@ -274,6 +288,10 @@ describe('dash + arrow auto-format', () => {
     expect(apply('"a >', dashArrow(scanDoc('"a >'), 4, 4, '>')!)).toBe('"a »')
     expect(dashArrow(scanDoc('a >'), 3, 3, '>', { transformArrows: false })).toBeNull()
   })
+  it('an HTML comment keeps its dashes', () => {
+    expect(dashArrow(scanDoc('<!--'), 4, 4, ' ')).toBeNull()
+    expect(dashArrow(scanDoc('<!-- c --'), 9, 9, '>')).toBeNull()
+  })
   it('dashes off leaves every dash literal', () => {
     const off = { transformDashes: false }
     expect(dashArrow(scanDoc('--'), 2, 2, 'a', off)).toBeNull()
@@ -321,6 +339,7 @@ describe('equations', () => {
   })
   it('stays literal after a doubled character, in code, and when off', () => {
     expect(equations(scanDoc('=='), 2, 2, '/')).toBeNull()
+    expect(equations(scanDoc('PATH='), 5, 5, '/')).toBeNull()
     expect(equations(scanDoc('`a >`'), 4, 4, '=')).toBeNull()
     expect(equations(scanDoc('a >'), 3, 3, '=', { transformEquations: false })).toBeNull()
   })
