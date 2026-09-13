@@ -8,7 +8,6 @@
 - `Core/Paths/` — `caseFold.ts`, `paths.ts`. `Core/Nexus/ids.ts`. `Core/Index/indexSeed.ts`. `Core/Trash/bundle.ts`. `Core/Navigation/navRef.ts`.
 - `Core/Platform/` — `assetScheme.ts`, `localState.ts`. `Core/Contract/handlers.ts`.
 - `Core/Assets/assetRoots.ts`. `Core/Actions/commands.ts`. `Core/Settings/settings.ts`.
-- `Core/Interface/Toolbar/toolbar.css`.
 - `Desktop/` — `main.ts`, `Platform/nodeMachine.ts`, `Config/appConfig.ts`, `Store/open.ts`, `Store/ddl.ts`.
 
 ### Findings
@@ -16,10 +15,6 @@
 #### Host Config
 
 - **Single-Instance Coordination:** `Desktop/main.ts:298` takes the lock per userData directory, and `:74` lets `POMMORA_USERDATA` open a second one. Its own comment records that every write lock is module state, so two hosts on one folder coordinate nothing. Windows adds no new mechanism, and a second machine on a shared folder is outside the lock's reach entirely. What would need to hold: concurrent writers against one Nexus have a coordination story that does not depend on being one process.
-
-#### Windowing & Theme
-
-- **Reserved Control Room:** `Core/Interface/Toolbar/toolbar.css:27` reserves `padding-left: 135px` for the traffic lights when the sidebar is hidden. Windows places its controls at the trailing edge, where the `titleBarOverlay` at `Desktop/main.ts:170-172` sits over `.app-toolbar-right` (`toolbar.css:39`), so that reservation is empty space on the wrong side and the trailing edge has none. What would need to hold: the toolbar reserves room where the host's controls actually sit.
 
 #### Settings Placement
 
@@ -29,8 +24,6 @@
 
 - [ ] `Core/Platform/localState.ts:4-19` with `Desktop/Store/open.ts:25-27` — per-machine rows are reachable only by their own machine.
 - [ ] `Desktop/main.ts:298,74` — concurrent writers against one Nexus coordinate beyond the per-userData lock.
-- [ ] `Core/Interface/Toolbar/toolbar.css:27` — reserved control room sits where the host's controls sit.
-
 ### Already Cross-Platform
 
 - **Case Folding:** `Core/Paths/caseFold.ts:1-13` pins its locale rather than reading the host's, so `foldKey` and `compareTitles` land the same on a Turkish Windows machine as on macOS.

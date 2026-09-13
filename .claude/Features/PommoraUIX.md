@@ -243,7 +243,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title       | Export        | What it is                                                                                                                                            |
 | ----------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar.                                                                                  |
+| Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar, and `trailingDivider` to close the run on one more divider.                                                                                  |
 | Checkbox    | `Checkbox`    | The app's one checkbox — `size` (standard/compact), a `filled` wash, a `color` override, and a `readOnly` glyph form; on the accent or a chosen cell. |
 | DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass segment.                                                                                                        |
 | ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker.                                                                                            |

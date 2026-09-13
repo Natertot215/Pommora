@@ -55,4 +55,15 @@ describe('Segmented', () => {
     expect(host.querySelectorAll(`.${segment}`)).toHaveLength(1)
     expect(host.querySelectorAll('button')[1].disabled).toBe(true)
   })
+
+  it('closes the run on one more segment when trailingDivider is set', () => {
+    act(() =>
+      root.render(
+        <Segmented segments={[{ icon: 'map' }, { icon: 'panel-right' }]} trailingDivider />,
+      ),
+    )
+    const run = host.firstElementChild!
+    expect(run.querySelectorAll(`.${segment}`)).toHaveLength(2)
+    expect(run.lastElementChild!.className).toContain(segment)
+  })
 })

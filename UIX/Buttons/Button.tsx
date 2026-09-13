@@ -104,20 +104,23 @@ export function Segmented({
   iconSize,
   glass = false,
   labelCollapsed,
+  trailingDivider,
   className,
   radius,
 }: Look & {
   segments: Segment[]
   glass?: boolean
   labelCollapsed?: boolean
+  trailingDivider?: boolean
   className?: string
   /** The glass clips to the element's computed radius, so a CSS value (a var) works for both the glass and the cover. */
   radius?: string
 }): React.JSX.Element {
+  const divider = <span className={cx(segment, s.dividerBar)} />
   const buttons = segments.map((seg, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: segments are a fixed config array that never reorders
     <Fragment key={i}>
-      {i > 0 && <span className={cx(segment, s.dividerBar)} />}
+      {i > 0 && divider}
       <Button
         inRun
         type={type}
@@ -136,6 +139,7 @@ export function Segmented({
       />
     </Fragment>
   ))
+  if (trailingDivider) buttons.push(<Fragment key={segments.length}>{divider}</Fragment>)
   // display/align stay INLINE: <Glass>'s root sets `display: inline-block` inline, which a class can't beat.
   const hostProps = {
     className: cx(s.container, s.size[size], className),
