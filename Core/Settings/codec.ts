@@ -113,6 +113,7 @@ export function readPersonalization(raw: unknown): Personalization {
     jumpToCitation: bool(p.jumpToCitation),
     transformDashes: bool(p.transformDashes),
     transformArrows: bool(p.transformArrows),
+    transformEquations: bool(p.transformEquations),
     transformEllipses: bool(p.transformEllipses),
     transformCallouts: bool(p.transformCallouts),
     pairBrackets: bool(p.pairBrackets),

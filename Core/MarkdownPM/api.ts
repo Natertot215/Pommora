@@ -35,6 +35,7 @@ export type EditorSettings = Pick<
   | 'defaultLinkFormat'
   | 'transformDashes'
   | 'transformArrows'
+  | 'transformEquations'
   | 'transformEllipses'
   | 'transformCallouts'
   | 'pairBrackets'

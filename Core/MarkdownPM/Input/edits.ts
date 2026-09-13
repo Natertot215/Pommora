@@ -250,6 +250,7 @@ const PAIRS: Record<string, PairSpec> = {
   '`': { close: '`', multi: '``', group: 'pairMarkers' },
   '(': { close: ')', multi: '))', group: 'pairBrackets' },
   '[': { close: ']', multi: ']]', group: 'pairBrackets' },
+  '{': { close: '}', multi: '}}', group: 'pairBrackets' },
   '"': { close: '"', group: 'pairQuotes' },
   "'": { close: "'", group: 'pairQuotes' },
 }
@@ -271,9 +272,10 @@ export function autoPair(
   const doc = scan.text
   const c = selStart
   const pair = PAIRS[inserted]
-  if (!pair || settings[pair.group] === false || !isPairEdge(doc[c], CLOSE_MARKS)) return null
-  if (inCodeAt(scan, c)) return null
+  if (!pair || !isPairEdge(doc[c], CLOSE_MARKS)) return null
   const prev = doc[c - 1]
+  if (settings[pair.group] === false && !(inserted === '[' && prev === '[')) return null
+  if (inCodeAt(scan, c)) return null
 
   if (pair.multi && prev === inserted) {
     if (doc[c] === pair.close)
@@ -313,6 +315,7 @@ export function autoDelete(
 
 const CLOSERS: readonly { close: string; open: string }[] = [
   { close: ']]', open: '[[' },
+  { close: '}}', open: '{{' },
   { close: '**', open: '**' },
   { close: '__', open: '__' },
   { close: '``', open: '``' },
@@ -320,6 +323,7 @@ const CLOSERS: readonly { close: string; open: string }[] = [
   { close: '==', open: '==' },
   { close: ']', open: '[' },
   { close: ')', open: '(' },
+  { close: '}', open: '{' },
   { close: '"', open: '"' },
   { close: "'", open: "'" },
   { close: '*', open: '*' },
@@ -406,6 +410,34 @@ export function ellipsis(
   return { from: c - 2, to: c, insert: '…', selection: c - 1 }
 }
 
+const EQUATIONS: Record<string, string> = {
+  '>=': '≥',
+  '<=': '≤',
+  '!=': '≠',
+  '/=': '≠',
+  '=/': '≠',
+  '+-': '±',
+  '-+': '±',
+  '~=': '≈',
+}
+
+export function equations(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  inserted: string,
+  settings: Personalization = {},
+): Edit | null {
+  if (selStart !== selEnd || settings.transformEquations === false) return null
+  const doc = scan.text
+  const c = selStart
+  const glyph = EQUATIONS[`${doc[c - 1]}${inserted}`]
+  if (!glyph || doc[c - 2] === doc[c - 1]) return null
+  if (inCodeAt(scan, c) || inCodeAt(scan, c - 1) || isInsideWikilink(c, doc) || inUrlRun(doc, c))
+    return null
+  return { from: c - 1, to: c, insert: glyph, selection: c }
+}
+
 export function dashArrow(
   scan: DocScan,
   selStart: number,
@@ -437,7 +469,7 @@ export function dashArrow(
     if (arrows && doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
     if (doc[c - 1] === '-' && (arrows || opensLine(doc, c - 1)))
       return { from: c - 1, to: c, insert: '→', selection: c }
-    if (arrows && doc[c - 1] === '>' && !opensLine(doc, c - 1))
+    if (arrows && doc[c - 1] === '>' && doc.slice(lineStartAt(doc, c - 1), c - 1).trim() !== '')
       return { from: c - 1, to: c, insert: '»', selection: c }
   }
   if (arrows && inserted === '<' && doc[c - 1] === '<')
