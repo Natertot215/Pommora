@@ -11,6 +11,7 @@ import {
   closeConstructOnShiftEnter,
   dashArrow,
   ellipsis,
+  equations,
   calloutShorthand,
   shiftEnterEdit,
   indentListOnTab,
@@ -148,7 +149,8 @@ export const markdownInput = [
         canonicalizeCheckbox(scan.text, from, from, text) ??
         autoPair(scan, from, from, text, settings) ??
         dashArrow(scan, from, from, text, settings) ??
-        ellipsis(scan, from, from, text, settings),
+        ellipsis(scan, from, from, text, settings) ??
+        equations(scan, from, from, text, settings),
     )
   }),
 ]

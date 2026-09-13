@@ -10,6 +10,7 @@ import {
   closeConstructOnShiftEnter,
   dashArrow,
   ellipsis,
+  equations,
   indentListOnTab,
   continueBlockquoteOnEnter,
   calloutShorthand,
@@ -119,9 +120,16 @@ describe('auto-pair + auto-delete', () => {
     const e = autoDelete(scanDoc('[]'), 1, 1)!
     expect(apply('[]', e)).toBe('')
   })
-  it('{ is removed from the auto-pair system — no pairing, no paired-delete', () => {
-    expect(autoPair(scanDoc(''), 0, 0, '{')).toBeNull()
-    expect(autoDelete(scanDoc('{}'), 1, 1)).toBeNull()
+  it('{ pairs as a bracket, nests with the others, and deletes as a pair', () => {
+    expect(apply('', autoPair(scanDoc(''), 0, 0, '{')!)).toBe('{}')
+    expect(apply('[]', autoPair(scanDoc('[]'), 1, 1, '{')!)).toBe('[{}]')
+    expect(apply('{}', autoPair(scanDoc('{}'), 1, 1, '(')!)).toBe('{()}')
+    expect(apply('{}', autoDelete(scanDoc('{}'), 1, 1)!)).toBe('')
+  })
+  it('[[ still pairs with Brackets off', () => {
+    const off = { pairBrackets: false }
+    expect(autoPair(scanDoc(''), 0, 0, '[', off)).toBeNull()
+    expect(apply('[', autoPair(scanDoc('['), 1, 1, '[', off)!)).toBe('[[]]')
   })
   it('[[ collapses the existing closer instead of stacking a stray ]', () => {
     const e = autoPair(scanDoc('[]'), 1, 1, '[')!
@@ -264,7 +272,8 @@ describe('dash + arrow auto-format', () => {
     expect(apply('a >', dashArrow(scanDoc('a >'), 3, 3, '>')!)).toBe('a »')
     expect(apply('a <', dashArrow(scanDoc('a <'), 3, 3, '<')!)).toBe('a «')
     expect(dashArrow(scanDoc('>'), 1, 1, '>')).toBeNull()
-    expect(dashArrow(scanDoc('> >'), 3, 3, '>')).toBeNull()
+    expect(apply('> >', dashArrow(scanDoc('> >'), 3, 3, '>')!)).toBe('> »')
+    expect(apply('"a >', dashArrow(scanDoc('"a >'), 4, 4, '>')!)).toBe('"a »')
     expect(dashArrow(scanDoc('a >'), 3, 3, '>', { transformArrows: false })).toBeNull()
   })
   it('dashes off leaves every dash literal', () => {
@@ -293,6 +302,28 @@ describe('ellipsis', () => {
     expect(ellipsis(scanDoc('`a..`'), 4, 4, '.')).toBeNull()
     expect(dashArrow(scanDoc('`--`'), 3, 3, 'x')).toBeNull()
     expect(ellipsis(scanDoc('..'), 2, 2, '.', { transformEllipses: false })).toBeNull()
+  })
+})
+
+describe('equations', () => {
+  it('each pair resolves to its glyph', () => {
+    const cases: [string, string, string][] = [
+      ['a >', '=', 'a ≥'],
+      ['a <', '=', 'a ≤'],
+      ['a !', '=', 'a ≠'],
+      ['a /', '=', 'a ≠'],
+      ['a =', '/', 'a ≠'],
+      ['a +', '-', 'a ±'],
+      ['a -', '+', 'a ±'],
+      ['a ~', '=', 'a ≈'],
+    ]
+    for (const [doc, ch, out] of cases)
+      expect(apply(doc, equations(scanDoc(doc), doc.length, doc.length, ch)!)).toBe(out)
+  })
+  it('stays literal after a doubled character, in code, and when off', () => {
+    expect(equations(scanDoc('=='), 2, 2, '/')).toBeNull()
+    expect(equations(scanDoc('`a >`'), 4, 4, '=')).toBeNull()
+    expect(equations(scanDoc('a >'), 3, 3, '=', { transformEquations: false })).toBeNull()
   })
 })
 

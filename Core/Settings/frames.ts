@@ -593,6 +593,12 @@ export const FRAMES = roster([
           },
           {
             kind: 'toggle',
+            key: 'transformEquations',
+            label: 'Equations',
+            defaultOn: true,
+          },
+          {
+            kind: 'toggle',
             key: 'transformEllipses',
             label: 'Ellipses',
             defaultOn: true,
