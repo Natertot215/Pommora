@@ -31,8 +31,8 @@ import type { TileHostRef } from '../Tiles/tiles'
 import {
   readCropLeaves,
   readHomepageLeaves,
+  readOrder,
   readPageRecord,
-  readSpaceOrders,
   resolveAssignedSchema,
   resolveEntityContexts,
 } from './readNexus'
@@ -65,6 +65,7 @@ type WatchClass =
   | { kind: 'settings-leaf' }
   | { kind: 'homepage-leaf' }
   | { kind: 'crops-leaf' }
+  | { kind: 'order-leaf' }
   | { kind: 'tiles-leaf'; host: TileHostRef }
   | { kind: 'asset'; rel: string; event: WatchEventName }
   | { kind: 'index-only'; rel: string }
@@ -126,6 +127,7 @@ export function classifyEvent(
     }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
+    if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.state}`) return { kind: 'order-leaf' }
     if (
       segs[1] === CONTEXTS_DIRNAME &&
       segs.length === 5 &&
@@ -235,6 +237,8 @@ async function applyOne(
       return patchHomepageFromDisk(root)
     case 'crops-leaf':
       return patchCropsFromDisk(root)
+    case 'order-leaf':
+      return patchOrderFromDisk(root)
     case 'full-refresh':
       return 'refresh'
   }
@@ -367,31 +371,19 @@ function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refr
   }))
 }
 
-export async function patchTopOrderFromDisk(root: string): Promise<'ok' | 'refresh'> {
-  const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
-  return applyPatch(root, (t) => ({
-    ...t,
-    collections: resolveOrder(t.collections, asStringArray(state.collection_order)),
-  }))
-}
-
-export async function patchSpaceOrderFromDisk(
-  root: string,
-  contextId: string,
-): Promise<'ok' | 'refresh'> {
-  const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
-  const orders = readSpaceOrders(state)
-  return applyPatch(root, (t) => ({
-    ...t,
-    contexts: t.contexts.map((g) =>
-      g.def.id === contextId
-        ? {
-            ...g,
-            spaces: resolveOrder(g.spaces, asStringArray(orders[contextId])),
-          }
-        : g,
-    ),
-  }))
+export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'> {
+  const order = readOrder((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {})
+  return applyPatch(root, (t) => {
+    const collections = resolveOrder(t.collections, order.collections)
+    const contexts = t.contexts.map((g) => {
+      const spaces = resolveOrder(g.spaces, asStringArray(order.spaces[g.def.id]))
+      return spaces.some((s, i) => s !== g.spaces[i]) ? { ...g, spaces } : g
+    })
+    const moved = collections.some((c, i) => c !== t.collections[i])
+    return moved || contexts.some((g, i) => g !== t.contexts[i])
+      ? { ...t, collections, contexts }
+      : t
+  })
 }
 
 export async function patchHomepageFromDisk(root: string): Promise<'ok' | 'refresh'> {

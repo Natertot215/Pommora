@@ -1,5 +1,4 @@
 import { machine } from '../Platform/machine'
-import { readSpaceOrders } from './readNexus'
 import type { z } from 'zod'
 import { rmwJsonStrict, pathExists } from '../Files/atomicWrite'
 import {
@@ -12,7 +11,8 @@ import {
 import { updateFolderSidecar } from './folderEntity'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { ok, type Result } from '../Contract/result'
-import type { StateOrderKey, ChildOrderKey } from './mutateRequest'
+import type { ChildOrderKey } from './mutateRequest'
+import { isPlainObject } from '../Properties/propertyValue'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -23,33 +23,29 @@ const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWi
 async function writeStateOrder(
   nexusRoot: string,
   ids: string[],
-  patch: (state: Record<string, unknown>, clean: string[]) => Record<string, unknown>,
+  patch: (order: Record<string, unknown>, clean: string[]) => Record<string, unknown>,
 ): Promise<Result<string[]>> {
   const clean = persistable(ids)
   await machine().mkdir(nexusDir(nexusRoot))
   const written = await rmwJsonStrict(
     nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
-    (state) => patch(state, clean),
+    (state) => ({ ...state, order: patch(isPlainObject(state.order) ? state.order : {}, clean) }),
     () => ({}),
   )
   return written.ok ? ok(clean) : written
 }
 
-export const setStateOrder = (
-  nexusRoot: string,
-  key: StateOrderKey,
-  ids: string[],
-): Promise<Result<string[]>> =>
-  writeStateOrder(nexusRoot, ids, (state, clean) => ({ ...state, [key]: clean }))
+export const setCollectionOrder = (nexusRoot: string, ids: string[]): Promise<Result<string[]>> =>
+  writeStateOrder(nexusRoot, ids, (order, clean) => ({ ...order, collections: clean }))
 
 export const setSpaceOrder = (
   nexusRoot: string,
   contextId: string,
   ids: string[],
 ): Promise<Result<string[]>> =>
-  writeStateOrder(nexusRoot, ids, (state, clean) => ({
-    ...state,
-    space_orders: { ...readSpaceOrders(state), [contextId]: clean },
+  writeStateOrder(nexusRoot, ids, (order, clean) => ({
+    ...order,
+    spaces: { ...(isPlainObject(order.spaces) ? order.spaces : {}), [contextId]: clean },
   }))
 
 export async function setContainerOrder<S extends z.ZodType>(

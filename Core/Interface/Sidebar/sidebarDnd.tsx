@@ -254,9 +254,9 @@ function siblingGroup(draggedEntry: Entry, idx: Index): string[] {
 function reorderCommit(draggedEntry: Entry, order: string[]): MutateRequest | null {
   switch (draggedEntry.kind) {
     case 'collection':
-      return { op: 'reorderTop', key: 'collection_order', order }
+      return { op: 'reorderTop', order }
     case 'space':
-      // A Space reorders within its Context group — `space_orders[contextId]` in state.json.
+      // A Space reorders within its Context group — `order.spaces[contextId]` in state.json.
       return draggedEntry.parentId
         ? { op: 'reorderSpaces', contextId: draggedEntry.parentId, ids: order }
         : null
