@@ -45,7 +45,6 @@ type KeyOf<V, R = Personalization> = {
 export interface RowText {
   label: string
   hint?: string
-  syntax?: readonly (readonly [written: string, result: string])[]
 }
 
 type PickerControlRow<T extends string> = RowText & {
@@ -584,35 +583,24 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'transformDashes',
             label: 'Dashes',
-            syntax: [
-              ['--', '—'],
-              [' - ', ' – '],
-            ],
             defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformArrows',
             label: 'Arrows',
-            syntax: [
-              ['->', '→'],
-              ['<-', '←'],
-              ['<->', '↔'],
-            ],
             defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformEllipses',
             label: 'Ellipses',
-            syntax: [['...', '…']],
             defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformCallouts',
             label: 'Callout',
-            syntax: [['||', '> [!callout]']],
             defaultOn: true,
           },
         ],
@@ -624,33 +612,18 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'pairBrackets',
             label: 'Brackets',
-            syntax: [
-              ['(', '()'],
-              ['[', '[]'],
-            ],
             defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'pairMarkers',
             label: 'Markers',
-            syntax: [
-              ['*', '**'],
-              ['_', '__'],
-              ['`', '``'],
-              ['~~', '~~~~'],
-              ['==', '===='],
-            ],
             defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'pairQuotes',
             label: 'Quotes',
-            syntax: [
-              ['"', '""'],
-              ["'", "''"],
-            ],
             defaultOn: true,
           },
           {

@@ -6,12 +6,10 @@ import {
   Menu,
   MenuItem,
   MenuRowView,
-  MenuSegments,
   MenuSeparator,
   type MenuRow,
   type Trailing,
 } from '@pommora/uix/Menus'
-import { chevron, chevronSmall } from '@pommora/uix/Elements/nav-trail.css'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
@@ -35,7 +33,6 @@ import {
   type RowOf,
   type RowText,
 } from './frames'
-import * as sc from './syntax-caption.css'
 import './settings-window.css'
 
 const DRAG_SURFACES =
@@ -44,25 +41,9 @@ const DRAG_SURFACES =
 const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
   kind: 'item',
   label: row.label,
-  caption: row.syntax ? <SyntaxCaption syntax={row.syntax} /> : row.hint,
+  caption: row.hint,
   trailing,
 })
-
-function SyntaxCaption({ syntax }: { syntax: NonNullable<RowText['syntax']> }): React.JSX.Element {
-  return (
-    <MenuSegments
-      parts={syntax.map(([written, result]) => (
-        <span key={written} className={sc.mapping}>
-          <span className={sc.written}>{written}</span>
-          <span aria-hidden className={cx(chevron, chevronSmall)}>
-            ›
-          </span>
-          {result}
-        </span>
-      ))}
-    />
-  )
-}
 
 export function SettingsWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.settingsOpen)

@@ -260,6 +260,13 @@ describe('dash + arrow auto-format', () => {
     const doc = 'a -'
     expect(apply(doc, dashArrow(scanDoc(doc), 3, 3, ' ')!)).toBe('a – ')
   })
+  it('>> → » and << → «, leaving a nested blockquote opener alone', () => {
+    expect(apply('a >', dashArrow(scanDoc('a >'), 3, 3, '>')!)).toBe('a »')
+    expect(apply('a <', dashArrow(scanDoc('a <'), 3, 3, '<')!)).toBe('a «')
+    expect(dashArrow(scanDoc('>'), 1, 1, '>')).toBeNull()
+    expect(dashArrow(scanDoc('> >'), 3, 3, '>')).toBeNull()
+    expect(dashArrow(scanDoc('a >'), 3, 3, '>', { transformArrows: false })).toBeNull()
+  })
   it('dashes off leaves every dash literal', () => {
     const off = { transformDashes: false }
     expect(dashArrow(scanDoc('--'), 2, 2, 'a', off)).toBeNull()
