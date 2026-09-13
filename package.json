@@ -7,16 +7,16 @@
     "Desktop",
     "Mobile",
     "Sync",
-    "Showcase"
+    "Dashboard"
   ],
   "scripts": {
     "dev": "npm run dev -w Desktop",
     "build": "npm run build -w Desktop",
     "package": "npm run package -w Desktop",
-    "showcase": "npm run dev -w Showcase",
-    "build:showcase": "npm run build -w Showcase",
+    "dashboard": "npm run dev -w Dashboard",
+    "build:dashboard": "npm run build -w Dashboard",
     "sync": "node Sync/server.ts",
-    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json && tsc -p Sync",
+    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json && tsc -p Sync && tsc -p Dashboard",
     "test": "vitest run",
     "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan",
     "format": "biome format --write .",

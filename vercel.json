@@ -1,8 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "npm install",
-  "buildCommand": "npm run build:showcase",
-  "outputDirectory": "Showcase/dist",
-  "rewrites": [{ "source": "/", "destination": "/design-system.html" }]
-}
