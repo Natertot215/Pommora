@@ -3,10 +3,13 @@
 
 Counts .ts / .tsx / .css across the workspaces, excluding blank lines, comment lines, test files,
 type declaration shims, build configuration, and anything outside a workspace (node_modules, dist).
+Beside the count, each area carries the import and export lines inside it, the comment lines it
+dropped, and the code lines of its test files, so the dashboard can fold each back in on demand.
 
   loc.py            -> JSON for the working tree
   loc.py --history  -> JSON with one sample per day of main's history
-  loc.py --update   -> fold HEAD into loc-history.json and the Line-Ledger page
+  loc.py --update   -> fold HEAD into the dashboard's loc-history.json
+  loc.py --rebuild  -> rewrite loc-history.json from the branch's history
 """
 
 from __future__ import annotations
@@ -26,9 +29,9 @@ WORKSPACES = ["Core", "UIX", "Desktop"]
 # measures every commit on the branch and the earlier samples stay comparable.
 LEGACY_ROOT = "Pommora/src"
 
-# The showcase is not the app: its lines are excluded here and at every prefix it ever sat under,
+# The dashboard is not the app: its lines are excluded here and at every prefix it ever sat under,
 # so a legacy path does not fall through to App Chrome.
-SKIP_PREFIX = ["Showcase", "renderer/Showcase"]
+SKIP_PREFIX = ["Dashboard", "Showcase", "renderer/Showcase"]
 
 # Ordered: the first matching prefix wins, so specific paths precede their parents. Each entry is
 # (area, new prefixes, prefixes under the legacy root).
@@ -146,11 +149,10 @@ def classify(rel: str) -> str | None:
         or ".test." in base
         or ".spec." in base
         or base.endswith(TEST_SUFFIX)
-        or base == "vitest.setup.ts"
     ):
         return "tests"
     if (
-        base.endswith((".d.ts", ".config.ts", *CONFIG_EXT))
+        base.endswith((".d.ts", ".config.ts", ".setup.ts", *CONFIG_EXT))
         or base in CONFIG_NAMES
         or (base.startswith("tsconfig") and base.endswith(".json"))
     ):
@@ -160,46 +162,70 @@ def classify(rel: str) -> str | None:
 
 BLOCK_OPEN = re.compile(r"/\*")
 BLOCK_CLOSE = re.compile(r"\*/")
+# An import statement, a re-export or export list, or a stylesheet import. Declarations that happen
+# to be exported (`export const`) are code; a dynamic `import(` inside a body is too.
+IO_START = re.compile(r"^(import\s(?!\()|import\{|export\s+(type\s+)?\{|export\s+(type\s+)?\*|@import\b)")
 
 
-def code_lines(text: str) -> int:
-    n = 0
+class Lines(NamedTuple):
+    code: int
+    io: int
+    comments: int
+
+
+def count_lines(text: str) -> Lines:
+    """Non-blank, non-comment lines, with the import/export lines among them and the comment lines
+    dropped counted beside. A multi-line import stays an import line until its specifier closes."""
+    code = io = comments = 0
     in_block = False
+    in_io = False
     for raw in text.split("\n"):
         line = raw.strip()
         if in_block:
+            comments += 1
             if BLOCK_CLOSE.search(line):
                 in_block = False
                 line = line.split("*/", 1)[1].strip()
                 if not line:
                     continue
+                comments -= 1
             else:
                 continue
         if not line:
             continue
         if line.startswith("//"):
+            comments += 1
             continue
         if BLOCK_OPEN.match(line):
             if not BLOCK_CLOSE.search(line):
                 in_block = True
+                comments += 1
                 continue
             line = line.split("*/", 1)[1].strip()
             if not line:
+                comments += 1
                 continue
-        n += 1
-    return n
+        code += 1
+        if in_io or IO_START.match(line):
+            io += 1
+            ends = line.endswith(("'", '"', ";")) or ("}" in line and "from" not in line)
+            in_io = not ends
+    return Lines(code, io, comments)
 
 
 class Census(NamedTuple):
     lines: dict[str, int]
+    io: dict[str, int]
+    comments: dict[str, int]
+    tests: dict[str, int]
     files: dict[str, int]
     kinds: dict[str, int]
 
 
 def measure_tree(base: str) -> Census:
     """base holds a checkout: the workspaces at its root, or the pre-monorepo Pommora/src."""
-    lines: dict[str, int] = {name: 0 for name in ORDER}
-    files: dict[str, int] = {name: 0 for name in ORDER}
+    per_area = lambda: {name: 0 for name in ORDER}
+    lines, io, comments, tests, files = per_area(), per_area(), per_area(), per_area(), per_area()
     kinds: dict[str, int] = {"source": 0, "tests": 0, "config": 0}
     for root in [*WORKSPACES, LEGACY_ROOT]:
         top = os.path.join(base, root)
@@ -215,12 +241,18 @@ def measure_tree(base: str) -> Census:
                 if kind is None or area is None:
                     continue
                 kinds[kind] += 1
-                if kind != "source":
+                if kind == "config" or not rel.endswith(EXT):
+                    continue
+                with open(full, encoding="utf-8", errors="ignore") as fh:
+                    counted = count_lines(fh.read())
+                if kind == "tests":
+                    tests[area] += counted.code
                     continue
                 files[area] += 1
-                with open(full, encoding="utf-8", errors="ignore") as fh:
-                    lines[area] += code_lines(fh.read())
-    return Census(lines, files, kinds)
+                lines[area] += counted.code
+                io[area] += counted.io
+                comments[area] += counted.comments
+    return Census(lines, io, comments, tests, files, kinds)
 
 
 def git(*args: str) -> str:
@@ -257,19 +289,28 @@ def history() -> list[dict]:
             except subprocess.CalledProcessError:
                 continue
             subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
-            lines = measure_tree(tmp).lines
-        if sum(lines.values()) == 0:
+            census = measure_tree(tmp)
+        if sum(census.lines.values()) == 0:
             continue
-        out.append({"d": date, "v": [lines[a] for a in ORDER]})
-        print(f"  {date}  {sum(lines.values()):>7}", file=sys.stderr)
+        out.append(sample(date, census))
+        print(f"  {date}  {sum(census.lines.values()):>7}", file=sys.stderr)
     return out
 
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-HISTORY_JSON = os.path.join(HERE, "loc-history.json")
-LEDGER_HTML = os.path.join(HERE, "Line-Ledger.html")
-DATA_TAG = re.compile(r'(<script id="data" type="application/json">).*?(</script>)', re.S)
-LEDGER_URL = "https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401"
+def sample(date: str, census: Census) -> dict:
+    """One day of the series: per area, the source lines, the import and export lines among them,
+    the comment lines beside them, and the code lines of the area's tests."""
+    return {
+        "d": date,
+        "v": [census.lines[a] for a in ORDER],
+        "io": [census.io[a] for a in ORDER],
+        "c": [census.comments[a] for a in ORDER],
+        "t": [census.tests[a] for a in ORDER],
+    }
+
+
+# The dashboard imports the series at build time, so the data lives beside the page that reads it.
+HISTORY_JSON = os.path.join(ROOT, "Dashboard", "Ledger", "loc-history.json")
 
 
 def measure_commit(rev: str) -> Census:
@@ -288,6 +329,9 @@ def census_payload(census: Census) -> dict:
     return {"files": [census.files[a] for a in ORDER], "kinds": census.kinds}
 
 
+SERIES_KEYS = ("v", "io", "c", "t")
+
+
 def migrate(payload: dict) -> dict:
     """Re-key a stored payload onto the current area list: a renamed area carries its samples over,
     an area the tree gained reads zero for every day before it existed."""
@@ -299,14 +343,17 @@ def migrate(payload: dict) -> dict:
     payload["areas"] = ORDER
     payload["colors"] = COLORS
     payload["series"] = [
-        {"d": s["d"], "v": [s["v"][k] if 0 <= k < len(s["v"]) else 0 for k in slots]}
+        {
+            "d": s["d"],
+            **{key: [s[key][k] if 0 <= k < len(s[key]) else 0 for k in slots] for key in SERIES_KEYS},
+        }
         for s in payload["series"]
     ]
     return payload
 
 
 def update() -> str:
-    """Fold HEAD into the stored history and the page that reads it.
+    """Fold HEAD into the stored history.
 
     The series holds one sample per day, so a new commit touches exactly one row — the last one on
     its own date. Re-walking every day of the branch to learn that costs seconds and answers the
@@ -315,18 +362,18 @@ def update() -> str:
     date = git("log", "-1", "--format=%ad", "--date=short", "HEAD").strip()
     head = git("rev-parse", "--short", "HEAD").strip()
     census = measure_commit("HEAD")
-    row = {"d": date, "v": [census.lines[a] for a in ORDER]}
+    row = sample(date, census)
     counts = census_payload(census)
 
     with open(HISTORY_JSON, encoding="utf-8") as fh:
         payload = migrate(json.load(fh))
-    # A commit that moved no code leaves the page alone. Rewriting it just to stamp a new SHA would
+    # A commit that moved no code leaves the file alone. Rewriting it just to stamp a new SHA would
     # dirty the tree on every commit forever — including the commit that carries the refresh — so
     # `head` means the commit these numbers were measured at, which is the truthful reading anyway.
     if (
         payload["areas"] == ORDER
         and all(payload.get(k) == v for k, v in counts.items())
-        and any(s["d"] == date and s["v"] == row["v"] for s in payload["series"])
+        and any(s == row for s in payload["series"])
     ):
         return f"{date}  {head}  unchanged"
     series = [s for s in payload["series"] if s["d"] != date]
@@ -341,15 +388,8 @@ def update() -> str:
 
 
 def write_payload(payload: dict) -> None:
-    blob = json.dumps(payload, ensure_ascii=False)
     with open(HISTORY_JSON, "w", encoding="utf-8") as fh:
-        fh.write(blob + "\n")
-    with open(LEDGER_HTML, encoding="utf-8") as fh:
-        page = fh.read()
-    if not DATA_TAG.search(page):
-        raise SystemExit("Line-Ledger.html has no <script id=\"data\"> tag to fill")
-    with open(LEDGER_HTML, "w", encoding="utf-8") as fh:
-        fh.write(DATA_TAG.sub(lambda m: m.group(1) + blob + m.group(2), page, count=1))
+        fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":
@@ -367,7 +407,6 @@ if __name__ == "__main__":
         sys.exit(0)
     if "--update" in sys.argv:
         print(f"line ledger: {update()}")
-        print(f"  republish {os.path.relpath(LEDGER_HTML, ROOT)} to {LEDGER_URL}")
         sys.exit(0)
     if "--history" in sys.argv:
         payload = {
@@ -382,7 +421,7 @@ if __name__ == "__main__":
         payload = {
             "areas": ORDER,
             "head": git("rev-parse", "--short", "HEAD").strip(),
-            "totals": [census.lines[a] for a in ORDER],
+            **sample("working tree", census),
             "total": sum(census.lines.values()),
             **census_payload(census),
         }
