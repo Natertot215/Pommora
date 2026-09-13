@@ -12,7 +12,7 @@ A per-Nexus, UI-agnostic store of recents, pins, and favorites, plus client-side
 - **Favorites** — the durable, explicitly curated list, changed only by an explicit add or remove.
 - **Search** — a title-based fuzzy scan over the in-memory tree, memoized per tree. A Context isn't itself a hit; it's the path crumb its Spaces resolve under.
 
-Pins and favorites persist as ordered arrays in `.nexus/navigation.json`, which is hand-editable and follows the Nexus; recents persist per machine, since two machines interleaving one history has no correct answer.
+Pins and favorites persist as ordered arrays in the `navigation` section of `.nexus/state.json`, which is hand-editable and follows the Nexus; recents persist per machine, since two machines interleaving one history has no correct answer.
 
 ### NavWindow
 
