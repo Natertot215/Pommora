@@ -5,7 +5,7 @@ import { adopting } from '../Nexus/handlers'
 import { isPlainObject } from '../Properties/propertyValue'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
-import { type DevicePrefs, packDevicePrefs } from '../Settings/devicePrefs'
+import { type DevicePrefs, packDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
 import { readTabsState, sanitizeTabSet, writeTabsState } from '../Navigation/tabsState'
 import type { GlanceSize } from './Windows/windowRecord'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './Windows/windowState'
@@ -60,9 +60,12 @@ export const interfaceHandlers = {
 
   'devicePrefs:load': () =>
     sessionRoot() === null ? NO_NEXUS : ok(readValue<DevicePrefs>('devicePrefs')),
-  'devicePrefs:save': (_ctx, prefs: unknown) => {
+  'devicePrefs:save': async (ctx, prefs: unknown) => {
     if (adopting()) return BUSY
-    return writeValue('devicePrefs', packDevicePrefs(prefs)) ? ok(null) : NO_NEXUS
+    const scale = readInterfaceScale()
+    if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_NEXUS
+    if (readInterfaceScale() !== scale) await ctx.applyZoom()
+    return ok(null)
   },
 
   'folds:get': scopeGet<string[]>('folds'),

@@ -67,7 +67,7 @@ export const settingsHandlers = {
     await writePersonalization(root, key, value)
     // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
     await confirmSettingsWrite(ctx)
-    if (key === 'webZoomFactor' || key === 'interfaceScale') await ctx.applyZoom()
+    if (key === 'webZoomFactor') await ctx.applyZoom()
     if (key === 'historyDays') void sweepFileHistory(root)
     return ok(null)
   }),

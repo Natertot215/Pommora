@@ -1,10 +1,5 @@
 import type { Commands } from '../Actions/commands'
-import {
-  coerceInterfaceScale,
-  HISTORY_DAYS,
-  HISTORY_INTERVAL,
-  type Personalization,
-} from './personalization'
+import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personalization'
 import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import type { WatchScope } from '../Paths/exclusion'
 import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
@@ -61,10 +56,6 @@ export const readLiveCommands = async (root: string): Promise<Commands> =>
 
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))
-
-export async function readInterfaceScale(root: string): Promise<number> {
-  return coerceInterfaceScale((await readLivePersonalization(root)).interfaceScale)
-}
 
 /** Anything not literally `true` reads as off — the destructive direction is never reached by a truthy coercion. */
 export async function readPermanentDelete(root: string): Promise<boolean> {

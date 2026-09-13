@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
+import { posixPath } from '../Platform/hostPath'
 
 const ask = <K extends keyof Asks>(k: K, ...args: Asks[K]['args']): Promise<Asks[K]['reply']> =>
   ipcRenderer.invoke(k, ...args)
@@ -22,5 +23,5 @@ contextBridge.exposeInMainWorld('nexus', {
   tell,
   on,
   // Only the preload can resolve a dropped File to its path.
-  openDropped: (file: File) => ask('nexus:openPath', webUtils.getPathForFile(file)),
+  openDropped: (file: File) => ask('nexus:openPath', posixPath(webUtils.getPathForFile(file))),
 })

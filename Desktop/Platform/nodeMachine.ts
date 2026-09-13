@@ -3,6 +3,8 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, utimes } from 'no
 import writeFileAtomic from 'write-file-atomic'
 import type { DirEntry, Machine } from '@pommora/core/Platform/machine'
 import { serializeOnFile } from './fileLock'
+import { posixPath } from './hostPath'
+import { basename } from '@pommora/core/Paths/posix'
 
 const isAbsent = (e: unknown): boolean => {
   const code = (e as NodeJS.ErrnoException).code
@@ -18,6 +20,22 @@ async function absentToNull<T>(read: Promise<T>): Promise<T | null> {
   }
 }
 
+const windows = process.platform === 'win32'
+const HELD = new Set(['EBUSY', 'EPERM', 'EACCES'])
+const HOLDER_ATTEMPTS = 5
+
+async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await op()
+    } catch (e) {
+      if (!windows || !HELD.has((e as NodeJS.ErrnoException).code ?? '')) throw e
+      if (attempt === HOLDER_ATTEMPTS) throw new Error(`${basename(p)} is in use by another app.`)
+      await new Promise((resolve) => setTimeout(resolve, attempt * 100))
+    }
+  }
+}
+
 const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
   e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
 
@@ -27,8 +45,8 @@ const asBuffer = (bytes: Uint8Array): Buffer =>
 export const nodeMachine: Machine = {
   readText: (p) => absentToNull(readFile(p, 'utf8')),
   readBytes: (p) => absentToNull(readFile(p)),
-  writeText: (p, text) => writeFileAtomic(p, text, { encoding: 'utf8' }),
-  writeBytes: (p, bytes) => writeFileAtomic(p, asBuffer(bytes)),
+  writeText: (p, text) => outlastHolder(p, () => writeFileAtomic(p, text, { encoding: 'utf8' })),
+  writeBytes: (p, bytes) => outlastHolder(p, () => writeFileAtomic(p, asBuffer(bytes))),
   async stat(p) {
     const s = await absentToNull(stat(p))
     return (
@@ -47,11 +65,11 @@ export const nodeMachine: Machine = {
   async mkdir(p) {
     return (await mkdir(p, { recursive: true })) === undefined ? 'exists' : 'created'
   },
-  rename,
-  remove: (p) => rm(p, { recursive: true, force: true }),
+  rename: (from, to) => outlastHolder(from, () => rename(from, to)),
+  remove: (p) => outlastHolder(p, () => rm(p, { recursive: true, force: true })),
   utimes: (p, mtimeMs) => utimes(p, mtimeMs / 1000, mtimeMs / 1000),
-  realpath,
+  realpath: async (p) => posixPath(await realpath(p)),
   lock: serializeOnFile,
   sha256Hex: (text) => createHash('sha256').update(text).digest('hex'),
-  platform: process.platform === 'win32' ? 'windows' : 'posix',
+  platform: windows ? 'windows' : 'posix',
 }

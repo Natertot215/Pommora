@@ -4,7 +4,8 @@ import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
 import { recordWrite } from './writeEcho'
 import { machine } from '../Platform/machine'
-import { basename } from '../Paths/posix'
+import { basename, dirname } from '../Paths/posix'
+import { foldKey } from '../Paths/caseFold'
 
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
   recordWrite(filePath)
@@ -147,4 +148,10 @@ export async function pathExists(p: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export async function targetTaken(source: string, target: string): Promise<boolean> {
+  if (foldKey(source) !== foldKey(target)) return pathExists(target)
+  const name = basename(target)
+  return (await machine().readDir(dirname(target))).some((e) => e.name === name)
 }

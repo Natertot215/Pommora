@@ -5,11 +5,11 @@ import { pruneRecents, readAppConfig, updateAppConfig } from '../Config/appConfi
 import { push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { readInterfaceScale } from '@pommora/core/Settings/settings'
+import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { type Commands, toAccelerator } from '@pommora/core/Actions/commands'
 import { setHostZoom, stepHostZoom } from '../Web/webGuests'
-import { INTERFACE_SCALE_DEFAULT } from '@pommora/core/Settings/personalization'
 import { interfaceScaleZoom } from '../Config/interfaceScale'
+import { nativePath } from '../Platform/hostPath'
 
 type AdoptFn = (path: string) => Promise<void>
 
@@ -76,7 +76,7 @@ export async function installAppMenu(
           enabled: hasSession,
           click: () => {
             const root = sessionRoot()
-            if (root) shell.showItemInFolder(root)
+            if (root) shell.showItemInFolder(nativePath(root))
           },
         },
         {
@@ -131,15 +131,12 @@ export async function installAppMenu(
           click: () => send('toggle-sidebar'),
         },
         { type: 'separator' },
-        // Read fresh, so a settings.json edit to interfaceScale takes effect without a relaunch.
         {
           label: 'Actual Size',
           accelerator: toAccelerator(commands['actual-size']),
-          click: async () => {
-            const root = sessionRoot()
-            const scale = root ? await readInterfaceScale(root) : INTERFACE_SCALE_DEFAULT
+          click: () => {
             const w = menuTarget(win)
-            if (w) setHostZoom(w.webContents, interfaceScaleZoom(scale))
+            if (w) setHostZoom(w.webContents, interfaceScaleZoom(readInterfaceScale()))
           },
         },
         // De-roled: a zoom role acts on the focused WebContents, so a guest would bypass the guest-zoom sync. The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.

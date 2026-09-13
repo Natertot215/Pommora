@@ -1,7 +1,7 @@
 // Written under the SYNCED thumbnails tree so a second machine gets real previews. Full-page capturePage then crop sidesteps the HiDPI rect-crop bug; JPEG has no alpha, dodging the transparent→black resize bug.
 
 import { mkdir, readdir, rm } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { dirname, join } from '@pommora/core/Paths/posix'
 import { nativeImage } from 'electron'
 import type { BrowserWindow, NativeImage } from 'electron'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
