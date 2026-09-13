@@ -1,6 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from './identityMark'
-import { chmod, mkdtemp, rm, mkdir, realpath, stat, readFile, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  mkdtemp,
+  rm,
+  mkdir,
+  readdir,
+  realpath,
+  stat,
+  readFile,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
@@ -94,6 +104,14 @@ describe('renamePage', () => {
     await createPage(typeDir, 'B')
     if (!a.ok) throw new Error('setup failed')
     expect((await renamePage(a.value.path, 'B')).ok).toBe(false)
+  })
+
+  it('lands a case-only rename', async () => {
+    const c = await createPage(typeDir, 'title', { body: 'b' })
+    if (!c.ok) throw new Error('setup failed')
+    const r = await renamePage(c.value.path, 'Title')
+    expect(r.ok).toBe(true)
+    expect(await readdir(typeDir)).toEqual(['Title.md'])
   })
 })
 

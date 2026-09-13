@@ -147,6 +147,7 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
     case 'picker':
       return <PickerControlRow row={row} />
     case 'zoom':
+    case 'deviceZoom':
       return <ZoomRow row={row} />
     case 'device':
       return <DeviceRow row={row} />
@@ -208,14 +209,21 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   return switchRow(row, on, (next) => setDevicePref(row.key, next || undefined))
 }
 
-function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
-  const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
+function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Element {
+  const stored =
+    useSession((s) =>
+      row.kind === 'zoom' ? s.personalization[row.key] : s.devicePrefs[row.key],
+    ) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
+  const setDevicePref = useSession((s) => s.setDevicePref)
   const steps = row.steps ?? SCALE_STEPS
   const unit = row.unit ?? PERCENT
   const shown = (value: number): number => Math.round(value * unit.scale)
-  const commit = (value: number): void =>
-    setPersonalization(row.key, value === row.fallback ? undefined : value)
+  const commit = (value: number): void => {
+    const next = value === row.fallback ? undefined : value
+    if (row.kind === 'zoom') setPersonalization(row.key, next)
+    else setDevicePref(row.key, next)
+  }
   const choices = stepsWith(steps, stored).map((f) => ({
     value: String(f),
     label: `${shown(f)}${unit.suffix}`,

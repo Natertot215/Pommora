@@ -13,6 +13,7 @@ import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { isRecentWrite } from '@pommora/core/Files/writeEcho'
 import { push as pushToWindow } from '../Bridge/ipc'
+import { posixPath } from '../Platform/hostPath'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { getLiveTree, refreshAfterWrite } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
@@ -36,8 +37,9 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   stopWatcher()
   const scope = await readWatchScope(root)
   if (sessionRoot() !== root) return // session switched during the settings read
+  const ignored = ignoredUnder(root, scope)
   watcher = chokidar.watch(root, {
-    ignored: ignoredUnder(root, scope),
+    ignored: (path: string) => ignored(posixPath(path)),
     ignoreInitial: true,
     persistent: true,
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
@@ -45,7 +47,8 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   })
   const onEvent =
     (event: WatchEventName) =>
-    (path: string): void => {
+    (hostPath: string): void => {
+      const path = posixPath(hostPath)
       // The app's own writes echo back and confirm through their own channels; state.json skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
       if (isStatePath(root, path)) {
         if (navDebounce) clearTimeout(navDebounce)

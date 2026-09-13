@@ -22,17 +22,14 @@ import { adoptNexus, openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { installMachine } from '@pommora/core/Platform/machine'
-import {
-  coerceInterfaceScale,
-  coerceScale,
-  WEB_ZOOM_DEFAULT,
-} from '@pommora/core/Settings/personalization'
+import { coerceScale, WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
+import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import {
   readLiveCommands,
   readLivePersonalization,
   readWatchScope,
 } from '@pommora/core/Settings/settings'
-import { WINDOW_BG } from '@pommora/uix/Theme/colors'
+import { SYSTEM, WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { installAppMenu } from './Actions/appMenu'
 import { installEditorContextMenu, setFormatState, setEditorCommands } from './Actions/editorMenu'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
@@ -49,6 +46,7 @@ import {
 import { ensureDevice } from './Config/device'
 import { interfaceScaleZoom } from './Config/interfaceScale'
 import { startWatcher, stopWatcher } from './FileWatch/watcher'
+import { nativePath, posixPath } from './Platform/hostPath'
 import { nodeMachine } from './Platform/nodeMachine'
 import { closeSessionDb, openSessionDb } from './Store/sessionDb'
 import { fetchPageTitle } from './Web/linkTitles'
@@ -66,7 +64,7 @@ import {
 // that directory on its first read.
 app.setName('Pommora')
 
-installMachine({ ...nodeMachine, trashToSystem: (p) => shell.trashItem(p) })
+installMachine({ ...nodeMachine, trashToSystem: (p) => shell.trashItem(nativePath(p)) })
 
 if (process.env.POMMORA_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.POMMORA_DEBUG_PORT)
@@ -140,8 +138,6 @@ function registerAssetProtocol(): void {
 }
 
 const userData = (): string => app.getPath('userData')
-// Core's path arithmetic is '/'-only, so every path the host hands it is forward-slash.
-const posixPath = (p: string): string => p.split(sep).join('/')
 
 let mainWindow: BrowserWindow | null = null
 let device: HostDevice | null = null
@@ -160,8 +156,7 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   const root = sessionRoot()
   const p = root ? await readLivePersonalization(root) : null
   setWebZoomFactor(coerceScale(p?.webZoomFactor, WEB_ZOOM_DEFAULT))
-  if (!win.isDestroyed())
-    setHostZoom(win.webContents, interfaceScaleZoom(coerceInterfaceScale(p?.interfaceScale)))
+  if (!win.isDestroyed()) setHostZoom(win.webContents, interfaceScaleZoom(readInterfaceScale()))
 }
 
 function createWindow(): void {
@@ -172,6 +167,9 @@ function createWindow(): void {
     // Title bar hidden but the native frame kept (macOS corner radius + shadow); traffic lights repositioned into the sidebar, which stays opaque to sample the window.
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 18, y: 18 },
+    ...(process.platform === 'win32' && {
+      titleBarOverlay: { color: WINDOW_BG, symbolColor: SYSTEM.white },
+    }),
     backgroundColor: WINDOW_BG,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -233,7 +231,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
       read: async () => clipboard.readText(),
       write: async (text) => clipboard.writeText(text),
     },
-    reveal: (p) => shell.showItemInFolder(p),
+    reveal: (p) => shell.showItemInFolder(nativePath(p)),
     openExternal: (url) => shell.openExternal(url),
     async message(type, message, detail) {
       if (win) await dialog.showMessageBox(win, { type, message, detail })
@@ -270,7 +268,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
           lastNexusPath: path,
           recents: addRecent(cur.recents ?? [], path),
         }))
-        app.addRecentDocument(path)
+        app.addRecentDocument(nativePath(path))
       } catch (e) {
         console.error('Could not persist recents / last-opened:', e)
       }

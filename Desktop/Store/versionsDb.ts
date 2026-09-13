@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
-import { join } from 'node:path'
+import { join } from '@pommora/core/Paths/posix'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@pommora/core/Contract/result'
 import { damagedStore, openDb, type Db } from './driver'

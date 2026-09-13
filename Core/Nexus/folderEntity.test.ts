@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createFolderEntity, renameFolderEntity, updateFolderSidecar } from './folderEntity'
@@ -70,6 +70,13 @@ describe('renameFolderEntity', () => {
     await createFolderEntity(root, 'collection', 'B')
     if (!a.ok) throw new Error('setup failed')
     expect((await renameFolderEntity(a.value.path, 'B')).ok).toBe(false)
+  })
+
+  it('lands a case-only rename', async () => {
+    const c = await createFolderEntity(root, 'collection', 'notes')
+    if (!c.ok) throw new Error('setup failed')
+    expect((await renameFolderEntity(c.value.path, 'Notes')).ok).toBe(true)
+    expect(await readdir(root)).toEqual(['Notes'])
   })
 })
 

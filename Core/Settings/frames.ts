@@ -98,13 +98,20 @@ export type Row =
   | (RowText & {
       kind: 'nexus'
     })
-  | (RowText & {
+  | (ZoomSpec & {
       kind: 'zoom'
       key: KeyOf<number>
-      fallback: number
-      steps?: readonly number[]
-      unit?: NumberUnit
     })
+  | (ZoomSpec & {
+      kind: 'deviceZoom'
+      key: KeyOf<number, DevicePrefs>
+    })
+
+type ZoomSpec = RowText & {
+  fallback: number
+  steps?: readonly number[]
+  unit?: NumberUnit
+}
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
@@ -238,7 +245,7 @@ export const FRAMES = roster([
             options: pickerSelectionOptions,
           },
           {
-            kind: 'zoom',
+            kind: 'deviceZoom',
             key: 'interfaceScale',
             label: 'Interface Scale',
             hint: 'The scaling factor applied to the entire interface; additional scaling preferences compound this value.',

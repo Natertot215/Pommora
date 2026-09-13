@@ -1,5 +1,5 @@
 import { rmSync, existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { join } from '@pommora/core/Paths/posix'
 import { DB_SIBLINGS, openDb, type Db } from './driver'
 import {
   applySchema,

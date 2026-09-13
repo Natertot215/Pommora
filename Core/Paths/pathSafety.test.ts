@@ -37,6 +37,13 @@ describe('resolveUnderRoot', () => {
     expect(r.error.code).toBe('invalid-path')
   })
 
+  it('rejects a Windows drive or UNC absolute path', async () => {
+    for (const p of ['C:\\Windows', 'C:/Windows', '\\\\server\\share']) {
+      const r = await resolveUnderRoot(root, p)
+      expect(r.ok ? null : r.error.code).toBe('invalid-path')
+    }
+  })
+
   it('rejects a `..` traversal', async () => {
     const r = await resolveUnderRoot(root, '../escape')
     expect(r.ok).toBe(false)
