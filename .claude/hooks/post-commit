@@ -2,11 +2,11 @@
 # Git post-commit hook: refresh the line ledger and rebuild the dashboard pages after every commit,
 # whoever makes it.
 #
-# Folds the new HEAD into loc-history.json (loc.py --update), builds the two pages (the ledger
-# imports it), then re-checks the token atlas. The refresh lands in the working tree, so the next
-# commit carries the numbers. Quiet during a rebase or merge replay — those cycle many commits and
-# only the last one's numbers survive. Republishing the built pages to their artifact URLs is the
-# session's step, prompted by republish-dashboard.mjs.
+# Folds the new HEAD into loc-history.json (loc.py --update), builds the two pages, then re-checks
+# the token atlas. The refresh lands in the working tree, so the next commit carries the numbers.
+# Quiet during a rebase or merge replay — those cycle many commits and only the last one's numbers
+# survive. Publishing a moved page, or the ledger's data to its artifact database, is the session's
+# step, prompted by republish-dashboard.mjs.
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" || exit 0
