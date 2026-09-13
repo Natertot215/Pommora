@@ -12,7 +12,7 @@ import {
   outdentListOnShiftTab,
 } from './Input/edits'
 import { setHeading, setList } from './Input/format'
-import { subBlockAt, renumberOrderedRun } from './Engine/listDragModel'
+import { subBlockAt, renumberSequencedRun } from './Engine/listDragModel'
 import { calloutDeleteVerdict, type GuardVerdict } from './Guards/calloutGuard'
 import { scanOf } from './Engine/docScan'
 import { headingSections } from './Engine/headingScan'
@@ -218,10 +218,10 @@ describe('subBlockAt — continuation lines ride with their item', () => {
   })
 })
 
-describe('renumberOrderedRun — nested lines are skipped, not terminators', () => {
+describe('renumberSequencedRun — nested lines are skipped, not terminators', () => {
   it('renumbers a run past its sublists', () => {
     const doc = '1. a\n\t1. x\n2. b\n2. c'
-    const changes = renumberOrderedRun(doc, 0)
+    const changes = renumberSequencedRun(doc, 0)
     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
   })
 })

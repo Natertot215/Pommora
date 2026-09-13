@@ -80,7 +80,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     for (const title of ['Headings', 'Lists', 'Link', 'Insert', 'Embed'])
       expect(text).toContain(title)
     expect(text).toContain('Footnote')
-    expect(rows()).toHaveLength(19)
+    expect(rows()).toHaveLength(20)
     expect(marks()).toEqual([])
   })
 
@@ -276,7 +276,7 @@ describe('the block menu opens with no row highlighted', () => {
   it('draws nothing as selected until an arrow moves the cursor', async () => {
     const view = await open('')
     await type(view, '/')
-    expect(rows()).toHaveLength(19)
+    expect(rows()).toHaveLength(20)
     expect(highlighted()).toHaveLength(0)
   })
 

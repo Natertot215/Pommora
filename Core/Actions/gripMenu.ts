@@ -1,6 +1,6 @@
 import type { ActionItem } from './menuModel'
 
-export type ListKind = 'ordered' | 'bullet' | 'checkbox' | 'arrow'
+export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
 export interface PickNode {
   label: string
@@ -40,6 +40,7 @@ export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
 
 const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [
   { kind: 'ordered', label: 'Numbered' },
+  { kind: 'alphabetical', label: 'Alphabetical' },
   { kind: 'bullet', label: 'Bulleted' },
   { kind: 'checkbox', label: 'Checklist' },
   { kind: 'arrow', label: 'Arrowed' },

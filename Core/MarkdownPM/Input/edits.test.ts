@@ -32,6 +32,16 @@ describe('list continuation (Enter)', () => {
     const e = continueListOnEnter(doc, doc.length, doc.length)!
     expect(apply(doc, e)).toBe('1. a\n2. ')
   })
+  it('advances an alphabetical marker and restarts at A past Z', () => {
+    const doc = 'Y. a\nZ. b'
+    const e = continueListOnEnter(doc, 4, 4)!
+    expect(apply(doc, e)).toBe('Y. a\nZ. \nA. b')
+  })
+  it('leaves a numbered sibling out of an alphabetical renumber', () => {
+    const doc = 'A. a\n1. b'
+    const e = continueListOnEnter(doc, 4, 4)!
+    expect(apply(doc, e)).toBe('A. a\nB. \n1. b')
+  })
   it('renumbers the following siblings when inserting mid-list (1,2 → 1,2,3)', () => {
     const doc = '1. a\n2. b'
     const e = continueListOnEnter(doc, 4, 4)!

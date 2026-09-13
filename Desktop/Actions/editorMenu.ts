@@ -168,6 +168,12 @@ function pommoraItems(
           click: act('list:ordered'),
         },
         {
+          label: 'Alphabetical List',
+          type: 'checkbox',
+          checked: s.list === 'alphabetical',
+          click: act('list:alphabetical'),
+        },
+        {
           label: 'Task List',
           type: 'checkbox',
           checked: s.list === 'checkbox',

@@ -365,7 +365,7 @@ export function indentLevel(ws: string): number {
 export interface ListMarker {
   kind: ListKind
   bullet?: string
-  digits?: string
+  ordinal?: string
   level: number
   markerStart: number
   markerEnd: number
@@ -375,8 +375,25 @@ export interface ListMarker {
 }
 
 // `-` and `+` are the only bullet characters: `*` and `•` stay prose, or the drag layer is handed items nothing draws.
-const LIST_MARKER_RE = /^([ \t]*)(?:(\d+)\.|([-+]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
+const LIST_MARKER_RE = /^([ \t]*)(?:(\d+|[A-Z])\.|([-+]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
 const ARROW_MARKER_RE = /^([ \t]*)→([ \t]+)/
+
+export type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
+
+export const isSequenced = (kind: ListKind): kind is SequencedKind =>
+  kind === 'ordered' || kind === 'alphabetical'
+
+export const ordinalOf = (lm: ListMarker): number =>
+  lm.kind === 'alphabetical'
+    ? (lm.ordinal ?? 'A').charCodeAt(0) - 64
+    : parseInt(lm.ordinal ?? '0', 10)
+
+// An alphabetical run past Z starts over at A.
+export const ordinalText = (kind: SequencedKind, n: number): string =>
+  kind === 'alphabetical' ? String.fromCharCode(65 + ((n - 1) % 26)) : String(n)
+
+export const nestedUnder = (line: string, indent: string): boolean =>
+  line.trim() !== '' && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
 
 export function parseListMarker(line: string): ListMarker | null {
   const arrow = ARROW_MARKER_RE.exec(line)
@@ -417,8 +434,8 @@ export function parseListMarker(line: string): ListMarker | null {
   }
   if (m[2] !== undefined) {
     return {
-      kind: 'ordered',
-      digits: m[2],
+      kind: /\d/.test(m[2]) ? 'ordered' : 'alphabetical',
+      ordinal: m[2],
       level,
       markerStart,
       markerEnd: markerStart + m[2].length + 1,

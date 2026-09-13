@@ -573,7 +573,11 @@ describe('outliner rails', () => {
     expect(taskParent[0].typeClass).toBe('md-outline-task')
   })
 
-  it('rails are scoped to bullets + checkboxes — ordered / arrow / + ancestors get none (deferred)', () => {
+  it('an alphabetical ancestor draws its own rail', () => {
+    expect(rails('A. parent\n\t- child').map((r) => r.typeClass)).toEqual(['md-outline-alpha'])
+  })
+
+  it('rails are scoped to bullets, checkboxes, and letters — ordered / arrow / + ancestors get none (deferred)', () => {
     expect(rails('1. parent\n\t- child')).toHaveLength(0)
     expect(rails('→ parent\n\t- child')).toHaveLength(0)
     expect(rails('+ parent\n\t- child')).toHaveLength(0)

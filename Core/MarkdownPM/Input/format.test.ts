@@ -100,6 +100,11 @@ describe('setList', () => {
       '1. one\n2. two\n3. three',
     )
   })
+  it('letters an alphabetical run down the selection', () => {
+    expect(apply(three, setList(three, 0, three.length, 'alphabetical'))).toBe(
+      'A. one\nB. two\nC. three',
+    )
+  })
   it('clears only where every line already reads that way', () => {
     const all = '- one\n- two'
     expect(apply(all, setList(all, 0, all.length, 'bullet'))).toBe('one\ntwo')
