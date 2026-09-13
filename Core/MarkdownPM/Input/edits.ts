@@ -4,6 +4,10 @@ import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { inCalloutAt, inCodeAt, type DocScan } from '../Engine/docScan'
 import {
   parseListMarker,
+  isSequenced,
+  ordinalOf,
+  ordinalText,
+  nestedUnder,
   MAX_NESTING_LEVEL,
   blockquotePrefixRe,
   calloutHeadPrefixLen,
@@ -26,7 +30,7 @@ export const lineEndAt = (doc: string, pos: number): number => {
   return i === -1 ? doc.length : i
 }
 
-const lineMarkerRe = /^(\s*)(?:\d+\.|[-+→]|>|#{1,6})(?:[ \t]*\[[ xX]?\])?[ \t]+/
+const lineMarkerRe = /^(\s*)(?:(?:\d+|[A-Z])\.|[-+→]|>|#{1,6})(?:[ \t]*\[[ xX]?\])?[ \t]+/
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
 // Gated to REAL blockquotes only (whitespace after `>`) so `>x` isn't read as quoted here while the renderer treats it as plain text.
@@ -45,13 +49,12 @@ export function continueListOnEnter(doc: string, selStart: number, selEnd: numbe
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
   const indent = line.slice(pfx.length, pfx.length + lm.markerStart)
-  const isNested = (inner: string): boolean =>
-    inner.trim() !== '' && inner.startsWith(indent) && /^[ \t]/.test(inner.slice(indent.length))
 
-  if (lm.kind === 'ordered') {
+  const kind = lm.kind
+  if (isSequenced(kind)) {
     const restOfLine = doc.slice(selStart, lineEnd)
-    let counter = parseInt(lm.digits ?? '0', 10) + 1
-    const newPrefix = `\n${pfx}${indent}${counter}. `
+    let counter = ordinalOf(lm) + 1
+    const newPrefix = `\n${pfx}${indent}${ordinalText(kind, counter)}. `
     const caret = selStart + newPrefix.length
     let insert = `${newPrefix}${restOfLine}`
     let to = lineEnd
@@ -66,18 +69,18 @@ export function continueListOnEnter(doc: string, selStart: number, selEnd: numbe
       const flm = parseListMarker(finner)
       const sameLevel =
         flm !== null &&
-        flm.kind === 'ordered' &&
+        flm.kind === kind &&
         fpfx === pfx &&
         fline.slice(fpfx.length, fpfx.length + flm.markerStart) === indent
       if (!sameLevel) {
-        if (fpfx === pfx && isNested(finner)) {
+        if (fpfx === pfx && nestedUnder(finner, indent)) {
           pendingSkipped += `\n${fline}`
           p = fe
           continue
         }
         break
       }
-      insert += `${pendingSkipped}\n${pfx}${indent}${counter}. ${finner.slice(flm.contentStart)}`
+      insert += `${pendingSkipped}\n${pfx}${indent}${ordinalText(kind, counter)}. ${finner.slice(flm.contentStart)}`
       pendingSkipped = ''
       counter++
       to = fe

@@ -439,10 +439,15 @@
   background: var(--list-outline-color);
   pointer-events: none;
 }
-.outline-lines .md-outline-bullet {
-  --rail-x: calc(var(--bullet-size) / 4);
+.outline-lines :is(.md-outline-bullet, .md-outline-alpha) {
   --outline-gap-top: -2px;
   --outline-gap-bottom: -2px;
+}
+.outline-lines .md-outline-bullet {
+  --rail-x: calc(var(--bullet-size) / 4);
+}
+.outline-lines .md-outline-alpha {
+  --rail-x: calc(var(--number-zone) - var(--list-gap) - 0.6em);
 }
 .outline-lines .md-outline-task {
   --rail-x: calc(8.5px * var(--glyph-scale));

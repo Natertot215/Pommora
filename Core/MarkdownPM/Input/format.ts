@@ -5,6 +5,7 @@ import {
   calloutHeadPrefixLen,
   isBlockquoteLine,
   isCalloutHead,
+  ordinalText,
   parseListMarker,
   parseListMarkerPrefixed,
   stripQuotePrefix,
@@ -106,7 +107,8 @@ function toggleWrap(
 function listMarkerText(kind: ListKind, n = 1): string {
   switch (kind) {
     case 'ordered':
-      return `${n}. `
+    case 'alphabetical':
+      return `${ordinalText(kind, n)}. `
     case 'checkbox':
       return '- [ ] '
     case 'arrow':
@@ -185,7 +187,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   return out
 }
 
-/** A mixed block becomes one list rather than half a list. Ordered runs count per indent level. */
+/** A mixed block becomes one list rather than half a list. Sequenced runs count per indent level. */
 export function setList(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
   const lines = selectedLines(doc, from, to)
   if (lines.length === 0) return { changes: [] }

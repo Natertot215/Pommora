@@ -1,8 +1,8 @@
 import { EditorState, type Extension } from '@codemirror/state'
 import { docString } from '../docCache'
-import { renumberOrderedRun, type ChangeSpec } from '../Engine/listDragModel'
+import { renumberSequencedRun, type ChangeSpec } from '../Engine/listDragModel'
 
-// A deletion that removes a whole line from an ordered run leaves the numbers gapped. The renumber rides the same transaction, so one undo takes both.
+// A deletion that removes a whole line from a sequenced run leaves the ordinals gapped. The renumber rides the same transaction, so one undo takes both.
 export const listRenumberOnDelete: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || !tr.isUserEvent('delete')) return tr
   const startDoc = docString(tr.startState.doc)
@@ -11,7 +11,7 @@ export const listRenumberOnDelete: Extension = EditorState.transactionFilter.of(
   const seen = new Set<number>()
   tr.changes.iterChanges((fromA, toA, fromB) => {
     if (!startDoc.slice(fromA, toA).includes('\n')) return
-    for (const c of renumberOrderedRun(newDoc, Math.min(fromB, newDoc.length))) {
+    for (const c of renumberSequencedRun(newDoc, Math.min(fromB, newDoc.length))) {
       if (seen.has(c.from)) continue
       seen.add(c.from)
       changes.push(c)
