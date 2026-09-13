@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import {
   agendaContext,
   readAgendaRegistration,
@@ -20,7 +20,7 @@ const REG = (): FolderKindContext => ({
 })
 const ADOPTING = (): FolderKindContext => ({ agenda: {}, homed: new Set(), root, adopting: true })
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-kind-'))
+  root = tempRoot('pom-kind-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

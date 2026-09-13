@@ -1,6 +1,6 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import * as liveTree from '../Nexus/liveTree'
@@ -15,7 +15,7 @@ let notes: string
 let statusId: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-world-'))
+  root = tempRoot('pom-world-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   const col = await createFolderEntity(root, 'collection', 'Notes')

@@ -1,6 +1,5 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm } from 'node:fs/promises'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   markIndexReady,
@@ -27,7 +26,7 @@ let db: Db
 let versionsDb: Db
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-stores-'))
+  root = tempRoot('pom-stores-')
   db = openNexusDb(root)!
   versionsDb = openVersionsDb(root)!
 })

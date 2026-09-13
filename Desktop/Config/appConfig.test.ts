@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rmSync, writeFileSync, readFileSync } from 'node:fs'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import {
   readAppConfig,
   updateAppConfig,
@@ -14,7 +14,7 @@ import {
 
 let dir: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'pom-cfg-'))
+  dir = tempRoot('pom-cfg-')
 })
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
@@ -145,7 +145,7 @@ describe('updateAppConfig', () => {
 describe('resolveRestorePath', () => {
   let dir: string
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'pom-sess-'))
+    dir = tempRoot('pom-sess-')
   })
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true })
@@ -184,14 +184,14 @@ describe('isTrashedPath', () => {
 describe('pruneRecents', () => {
   let dir: string
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'pom-rec-'))
+    dir = tempRoot('pom-rec-')
   })
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true })
   })
 
   it('drops a deleted nexus (gone path) while keeping live ones, order preserved', async () => {
-    const live = mkdtempSync(join(tmpdir(), 'pom-live-'))
+    const live = tempRoot('pom-live-')
     const gone = join(dir, 'deleted-nexus')
     expect(await pruneRecents([dir, gone, live])).toEqual([dir, live])
     rmSync(live, { recursive: true, force: true })
@@ -199,7 +199,7 @@ describe('pruneRecents', () => {
 
   it('drops an entry that resolves into the trash even if it exists', async () => {
     const trashed = join(dir, '.Trash', 'Nexus')
-    mkdtempSync(join(tmpdir(), 'pom-x-'))
+    tempRoot('pom-x-')
     expect(await pruneRecents([trashed])).toEqual([])
   })
 

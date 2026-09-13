@@ -4,7 +4,7 @@ import { contextKey, type ContextsRegistry } from './contexts'
 import { contentId } from '../Nexus/identityMark'
 import { ok, fail, errText, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
-import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { pathExists, readJsonObject, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
@@ -225,8 +225,7 @@ export async function renameSpaceOp(
   if (!ref) return fail('not-found', 'Unknown Space.')
   if (ref.title === newName) return ok(null)
   const target = join(contextsDir(root), ref.contextTitle, newName)
-  const caseOnly = normalizeTitle(ref.title) === normalizeTitle(newName)
-  if (!caseOnly && (await pathExists(target))) return fail('exists', `"${newName}" already exists.`)
+  if (await targetTaken(ref.dir, target)) return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = {
     contextId: ref.contextId,

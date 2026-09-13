@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { ensureIdentity, readIdentity } from './identity'
 import { agendaContext, resolveFolderKind } from './folderKind'
 import { isUlid } from './ids'
@@ -11,7 +11,7 @@ import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-identity-'))
+  root = tempRoot('pom-identity-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -87,28 +87,31 @@ describe('ensureIdentity', () => {
     expect(await readFile(idPath(), 'utf8')).toBe(after)
   })
 
-  it('classifies through the retired key when the cleanup write is refused', async () => {
-    const { chmod } = await import('node:fs/promises')
-    const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
-    await writeId({ id: 'nx', createdAt: '2026', agenda_singletons: { tasks: TASKS } })
-    await mkdir(join(root, 'Tasks'), { recursive: true })
-    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
-    const before = await readFile(idPath(), 'utf8')
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await chmod(nexusDir(root), 0o555)
-    try {
-      await expect(ensureIdentity(root)).resolves.toEqual({ id: 'nx', created: false })
-      expect(logged).toHaveBeenCalledTimes(1)
-      expect(await readFile(idPath(), 'utf8')).toBe(before)
-      const identity = valueOr(await readIdentity(root), null)
-      expect(identity?.agenda_singletons).toBeUndefined()
-      const ctx = await agendaContext(root, identity)
-      expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks')
-    } finally {
-      await chmod(nexusDir(root), 0o755)
-      logged.mockRestore()
-    }
-  })
+  it.skipIf(noModeBits)(
+    'classifies through the retired key when the cleanup write is refused',
+    async () => {
+      const { chmod } = await import('node:fs/promises')
+      const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
+      await writeId({ id: 'nx', createdAt: '2026', agenda_singletons: { tasks: TASKS } })
+      await mkdir(join(root, 'Tasks'), { recursive: true })
+      await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
+      const before = await readFile(idPath(), 'utf8')
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+      await chmod(nexusDir(root), 0o555)
+      try {
+        await expect(ensureIdentity(root)).resolves.toEqual({ id: 'nx', created: false })
+        expect(logged).toHaveBeenCalledTimes(1)
+        expect(await readFile(idPath(), 'utf8')).toBe(before)
+        const identity = valueOr(await readIdentity(root), null)
+        expect(identity?.agenda_singletons).toBeUndefined()
+        const ctx = await agendaContext(root, identity)
+        expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks')
+      } finally {
+        await chmod(nexusDir(root), 0o755)
+        logged.mockRestore()
+      }
+    },
+  )
 
   it('drops the retired key while repairing an id-less file', async () => {
     const reg = { tasks: '01KVGMT8BFP350FZZXAMG1QDT1' }

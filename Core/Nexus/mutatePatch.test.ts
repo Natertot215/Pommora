@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mkdir, mkdtemp, rename, rm, unlink, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rename, rm, unlink, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
@@ -22,7 +22,7 @@ let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-mutpatch-'))
+  root = tempRoot('pom-mutpatch-')
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await writeFile(

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, mkdir, writeFile, readdir, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, writeFile, readdir, rm } from 'node:fs/promises'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { ensureIdentity } from '@pommora/core/Nexus/identity'
 import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
 import { evictThumbnails } from './thumbnails'
@@ -19,7 +19,7 @@ describe('thumbnail keys + rel', () => {
 describe('evictThumbnails', () => {
   let root: string
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'pom-thumbs-'))
+    root = tempRoot('pom-thumbs-')
   })
   afterEach(async () => {
     await rm(root, { recursive: true, force: true })

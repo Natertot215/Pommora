@@ -24,3 +24,5 @@ mac:
   target: dir
   identity: null # unsigned/ad-hoc — local preview build (right-click → Open first time)
   category: public.app-category.productivity
+win:
+  target: dir

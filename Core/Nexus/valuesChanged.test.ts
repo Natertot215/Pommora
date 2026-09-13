@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { join } from '../Paths/posix'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from './tree'
 import { flushValueWrites, noteValueWrite, pageIdIndex } from './valuesChanged'

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import type { NexusTree } from './tree'
 import { insertCreatedInTree } from './treePatch'
 import { stabilize } from './treeStabilize'
@@ -13,7 +13,7 @@ let root: string
 
 // A sidecar-mode nexus with one Collection and one Context group — the "before" state the create transforms are applied against. The entities the second walk finds on disk are written between the walks by the test itself.
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-shape-'))
+  root = tempRoot('pom-shape-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })

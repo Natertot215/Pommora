@@ -1,6 +1,6 @@
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { isUlidShaped } from './identityMark'
 import type { EntityRecord } from './record'
@@ -121,7 +121,7 @@ describe('the re-mint writes', () => {
   let root: string
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'pom-remint-'))
+    root = tempRoot('pom-remint-')
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'nexus.json'),
@@ -362,7 +362,7 @@ describe('the re-mint writes', () => {
 
 describe('the whole-Collection copy — the acceptance shape', () => {
   it('after two opens every copied id is fresh and every original keeps its own', async () => {
-    const root2 = await mkdtemp(join(tmpdir(), 'pom-remint-col-'))
+    const root2 = tempRoot('pom-remint-col-')
     try {
       await mkdir(join(root2, '.nexus'), { recursive: true })
       await writeFile(

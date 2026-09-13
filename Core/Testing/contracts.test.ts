@@ -1,6 +1,4 @@
-import { mkdtemp, realpath } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { realpathPosix, tempRoot } from './hostFs'
 import { describeMachine } from './machineContract'
 import { diskMachine, memoryMachine } from './machines'
 import { memoryStores } from './memoryStores'
@@ -12,12 +10,12 @@ import {
 
 describeMachine('memoryMachine', async () => ({
   machine: memoryMachine().machine,
-  root: join(tmpdir(), 'pom-mem-machine'),
+  root: tempRoot('pom-mem-machine-'),
 }))
 
 describeMachine('diskMachine', async () => ({
   machine: diskMachine(),
-  root: await realpath(await mkdtemp(join(tmpdir(), 'pom-disk-machine-'))),
+  root: await realpathPosix(tempRoot('pom-disk-machine-')),
 }))
 
 describeKeyValueStore('memoryStores key-value', () => memoryStores().stores.keyValue!)

@@ -1,6 +1,6 @@
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
@@ -26,7 +26,7 @@ const del = (
 ): Promise<MutateReply> => handleMutate({ op: 'delete', path, kind }, nexusDeps)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-rows-'))
+  root = tempRoot('pom-rows-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(

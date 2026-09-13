@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { readPageDetail } from './pageFile'
 import { ID_KEY } from '../Nexus/identityMark'
 
@@ -17,7 +17,7 @@ const w = (p: string, c: string): void => {
 let root: string
 
 beforeAll(() => {
-  root = mkdtempSync(join(tmpdir(), 'pom-page-'))
+  root = tempRoot('pom-page-')
   d(join(root, 'Vault A', 'Collection A'))
   w(
     join(root, 'Vault A', 'Collection A', 'Page A.md'),

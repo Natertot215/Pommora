@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import {
   setOptions,
   renameOption,
@@ -25,7 +25,7 @@ import { flushValueWrites } from '../Nexus/valuesChanged'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-opt-'))
+  root = tempRoot('pom-opt-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

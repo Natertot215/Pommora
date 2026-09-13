@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { setCollectionOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
@@ -10,7 +10,7 @@ import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-reorder-'))
+  root = tempRoot('pom-reorder-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

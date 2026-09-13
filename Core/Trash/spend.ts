@@ -1,4 +1,5 @@
-import { basename, dirname, isAbsolute, join, relative } from '../Paths/posix'
+import { basename, dirname, join, relative } from '../Paths/posix'
+import { escapes } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
@@ -208,8 +209,7 @@ export async function restoreArtifact(
   // Records are plain user-visible JSON — shape validation is not safety validation. The final name must be a plain basename landing exactly in the resolver's chosen directory, inside the nexus and outside the trash; anything else is a recorded title steering the move.
   const targetRel = relative(root, targetAbs)
   if (
-    targetRel.startsWith('..') ||
-    isAbsolute(targetRel) ||
+    escapes(targetRel) ||
     targetRel.split('/')[0] === TRASH_DIR ||
     dirname(targetAbs) !== join(root, dir) ||
     basename(targetAbs) !== finalName

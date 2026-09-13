@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { existsSync } from 'node:fs'
-import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { realpathPosix, tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
 import {
   atomicWriteFile,
@@ -37,7 +37,7 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 let observed: { path: string; journaled: boolean }[]
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(join(tmpdir(), 'pom-jwire-')))
+  root = await realpathPosix(tempRoot('pom-jwire-'))
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(abs('.nexus', 'settings.json'), '{}')
@@ -252,7 +252,7 @@ describe('the slot protects a stranded record', () => {
 
 describe('a second nexus', () => {
   it('sweeps and clears its own record while the session is open elsewhere', async () => {
-    const other = await realpath(await mkdtemp(join(tmpdir(), 'pom-jwire2-')))
+    const other = await realpathPosix(tempRoot('pom-jwire2-'))
     await mkdir(join(other, '.nexus'), { recursive: true })
     await writeFile(
       join(other, '.nexus', 'nexus.json'),

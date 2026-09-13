@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
 import { AMBIGUOUS, buildAssetMap, patchAssetMap, resolveAssetName } from './assetMap'
 
@@ -12,7 +12,7 @@ const put = async (...segs: string[]): Promise<void> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-assetmap-'))
+  root = tempRoot('pom-assetmap-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

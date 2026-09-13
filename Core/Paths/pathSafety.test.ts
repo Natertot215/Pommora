@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, symlink, realpath } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, symlink } from 'node:fs/promises'
+import { join } from './posix'
+import { realpathPosix, tempRoot, windows } from '../Testing/hostFs'
 import { resolveUnderRoot } from './pathSafety'
 
 let root: string
 let outside: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-pathsafety-'))
-  outside = await mkdtemp(join(tmpdir(), 'pom-outside-'))
+  root = tempRoot('pom-pathsafety-')
+  outside = tempRoot('pom-outside-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -22,7 +22,7 @@ describe('resolveUnderRoot', () => {
     const r = await resolveUnderRoot(root, 'Notes/a.md')
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value).toBe(join(await realpath(root), 'Notes', 'a.md'))
+    expect(r.value).toBe(join(await realpathPosix(root), 'Notes', 'a.md'))
   })
 
   it('accepts the root itself', async () => {
@@ -64,7 +64,7 @@ describe('resolveUnderRoot', () => {
     expect(r.error.code).toBe('not-found')
   })
 
-  it('rejects an in-nexus symlink that resolves OUTSIDE the root', async () => {
+  it.skipIf(windows)('rejects an in-nexus symlink that resolves OUTSIDE the root', async () => {
     await writeFile(join(outside, 'secret.txt'), 'top secret')
     // A symlink inside the nexus pointing at the outside dir — lexically `link/...` looks contained; only realpath sees it escapes.
     await symlink(outside, join(root, 'link'))

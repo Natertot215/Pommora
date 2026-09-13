@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from './identityMark'
-import { mkdtemp, rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { stampAdopted } from './adopt'
 import { readSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -14,7 +14,7 @@ let root: string
 
 // A raw, sidecar-less nexus: a top folder (→ Collection), a nested folder (→ Set), a deeper one (→ Sub-Set), a page carrying foreign frontmatter but no id, and an excluded folder.
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-adopt-'))
+  root = tempRoot('pom-adopt-')
   await mkdir(join(root, 'Notes', 'Daily', 'Deep'), { recursive: true })
   await writeFile(join(root, 'Notes', 'Note1.md'), '---\naliases:\n  - foo\n---\n\nbody text')
   await writeFile(join(root, 'Notes', 'Daily', 'Day1.md'), '# Day\n\nno frontmatter')

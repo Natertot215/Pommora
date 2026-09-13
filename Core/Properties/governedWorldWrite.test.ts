@@ -1,7 +1,7 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import type { NexusTree } from '../Nexus/tree'
@@ -36,7 +36,7 @@ const fm = async (abs: string) => splitFrontmatter(await readFile(abs, 'utf8'))
 const rel = (abs: string) => abs.slice(root.length + 1)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-gworld-'))
+  root = tempRoot('pom-gworld-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))

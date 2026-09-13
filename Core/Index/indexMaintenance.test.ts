@@ -2,9 +2,9 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { mkdtemp, rm, mkdir, writeFile, unlink } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, unlink } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
 import { openSession, closeSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -49,7 +49,7 @@ async function expectMaintained(): Promise<void> {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-imaint-'))
+  root = tempRoot('pom-imaint-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))

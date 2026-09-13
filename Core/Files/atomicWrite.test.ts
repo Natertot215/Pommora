@@ -1,9 +1,9 @@
 import { stableStringify } from './stableJson'
 import { ok } from '../Contract/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { dirname, join, basename } from 'node:path'
+import { rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'
+import { dirname, join, basename } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import {
   atomicWriteFile,
   rewritePageSerialized,
@@ -15,7 +15,7 @@ import { mintBundle, settleBundle, trashFileFlat } from '../Trash/bundle'
 
 let dir: string
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'pom-io-'))
+  dir = tempRoot('pom-io-')
 })
 afterEach(async () => {
   await rm(dir, { recursive: true, force: true })
@@ -156,7 +156,7 @@ describe('mintBundle', () => {
   })
 
   it('lands flat when the source is not under the root', async () => {
-    const outside = await mkdtemp(join(tmpdir(), 'pom-out-'))
+    const outside = tempRoot('pom-out-')
     try {
       const bundle = await mintBundle(dir, join(outside, 'Stray.md'))
       expect(dirname(bundle)).toBe(join(dir, '.trash'))

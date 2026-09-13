@@ -1,9 +1,9 @@
 // A delete's record must exist on disk BEFORE the step that destroys what it describes. Every assertion here is taken from inside the arm's real code — the collaborators are wrapped, never replaced — because ordering is invisible to an after-the-fact assertion.
 
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
@@ -65,7 +65,7 @@ beforeEach(async () => {
   atSweep = undefined
   atSettle = undefined
   settleFails = false
-  root = await mkdtemp(join(tmpdir(), 'pom-order-'))
+  root = tempRoot('pom-order-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(

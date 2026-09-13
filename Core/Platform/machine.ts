@@ -1,3 +1,4 @@
+import type { HostPlatform } from '../Contract/bridge'
 export interface FileStat {
   size: number
   mtimeMs: number
@@ -30,7 +31,7 @@ export interface Machine {
   /** Re-taking a key already held inside `fn` rejects rather than deadlocks. */
   lock<T>(key: string, fn: () => Promise<T>): Promise<T>
   sha256Hex(text: string): string
-  platform: 'windows' | 'posix'
+  platform: HostPlatform
   trashToSystem?(p: string): Promise<void>
 }
 

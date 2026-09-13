@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { mkdtemp, realpath, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { realpathPosix, tempRoot, windows } from '../Testing/hostFs'
 import {
   renameContextOp,
   renameSpaceOp,
@@ -33,7 +33,7 @@ const other = () => join(root, 'Notes', 'B.md')
 const csSidecar = () => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(join(tmpdir(), 'pom-cascade-')))
+  root = await realpathPosix(tempRoot('pom-cascade-'))
   await openSession(root)
   await mkdir(nexusDir(root), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
@@ -223,22 +223,25 @@ describe('renameSpaceOp', () => {
 })
 
 describe('skip-aware journal (D-7b)', () => {
-  it('an unreadable file is skipped, the registry still commits, the journal survives; the next replay heals it', async () => {
-    // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to read it — the skip path, without needing a permission trick.
-    const broken = join(root, 'Notes', 'Broken.md')
-    await symlink(join(root, 'Notes', 'Nowhere.md'), broken)
-    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
-    expect(r.ok).toBe(true)
-    expect(await regTitle('ctx_projects')).toBe('Ventures')
-    const j = await readJournal(root)
-    expect(j?.skipped).toEqual([broken])
+  it.skipIf(windows)(
+    'an unreadable file is skipped, the registry still commits, the journal survives; the next replay heals it',
+    async () => {
+      // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to read it — the skip path, without needing a permission trick.
+      const broken = join(root, 'Notes', 'Broken.md')
+      await symlink(join(root, 'Notes', 'Nowhere.md'), broken)
+      const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
+      expect(r.ok).toBe(true)
+      expect(await regTitle('ctx_projects')).toBe('Ventures')
+      const j = await readJournal(root)
+      expect(j?.skipped).toEqual([broken])
 
-    await rm(broken)
-    await writeFile(broken, '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
-    await replayPendingRename(root)
-    expect((await fmOf(broken))['<Ventures>']).toEqual(['Pommora'])
-    expect(await readJournal(root)).toBeNull()
-  })
+      await rm(broken)
+      await writeFile(broken, '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
+      await replayPendingRename(root)
+      expect((await fmOf(broken))['<Ventures>']).toEqual(['Pommora'])
+      expect(await readJournal(root)).toBeNull()
+    },
+  )
 })
 
 describe('unlink cascades (D-3)', () => {

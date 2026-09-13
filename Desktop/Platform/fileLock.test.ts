@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile, writeFile } from 'node:fs/promises'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { serializeOnFile } from './fileLock'
 import { rewritePageSerialized, atomicWriteFile } from '@pommora/core/Files/atomicWrite'
 
@@ -11,7 +11,7 @@ let dir: string
 let file: string
 let other: string
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'pom-lock-'))
+  dir = tempRoot('pom-lock-')
   file = join(dir, 'f.txt')
   other = join(dir, 'other.txt')
   await writeFile(file, 'base')

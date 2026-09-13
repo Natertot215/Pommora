@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, mkdtemp, rm, writeFile, symlink } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile, symlink } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, windows } from '../Testing/hostFs'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { validateAssetDir } from './assetDirValidate'
 import { readSettingsLeaves } from './codec'
@@ -15,8 +15,8 @@ const dir = async (...segs: string[]): Promise<string> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-assetdir-'))
-  outside = await mkdtemp(join(tmpdir(), 'pom-outside-'))
+  root = tempRoot('pom-assetdir-')
+  outside = tempRoot('pom-outside-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -93,7 +93,7 @@ describe('validateAssetDir', () => {
     expect((await validateAssetDir(root, root)).ok).toBe(false)
   })
 
-  it('refuses a folder outside the nexus, symlinked or not', async () => {
+  it.skipIf(windows)('refuses a folder outside the nexus, symlinked or not', async () => {
     expect((await validateAssetDir(root, outside)).ok).toBe(false)
     await symlink(outside, join(root, 'link'))
     expect((await validateAssetDir(root, join(root, 'link'))).ok).toBe(false)

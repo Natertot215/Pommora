@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { openNexusDb, DB_FILENAME } from './open'
 import { INDEX_GENERATION, INDEX_TABLES, SCHEMA_VERSION, readMeta } from './ddl'
 import { openDb, type Db } from './driver'
@@ -12,7 +12,7 @@ import { markIndexReady, queryMentions, upsertPageIndex } from '@pommora/core/In
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-db-open-'))
+  root = tempRoot('pom-db-open-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { openSession, closeSession, sessionRoot } from '../Nexus/session'
 import { pathExists } from '../Files/atomicWrite'
 import { migrateAssets } from './assetMigrate'
@@ -16,7 +16,7 @@ const asset = async (rel: string, bytes: string): Promise<void> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-migrate-'))
+  root = tempRoot('pom-migrate-')
   await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
   await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
   await mkdir(join(root, 'Notes'), { recursive: true })
@@ -228,26 +228,29 @@ describe('migrateAssets', () => {
     expect(await pathExists(join(root, '.nexus/assets/b/Twin.png'))).toBe(true)
   })
 
-  it('a store that refuses its write is reported, and the sweep is held', async () => {
-    await asset('live/kept.png', 'kept')
-    await writeFile(
-      join(root, '.nexus', 'homepage', 'homepage.json'),
-      JSON.stringify({ banner: '.nexus/assets/live/kept.png' }),
-    )
-    await mkdir(join(root, 'Locked'), { recursive: true })
-    await writeFile(
-      join(root, 'Locked', '_pagecollection.json'),
-      JSON.stringify({ id: 'lk', banner: '.nexus/assets/live/kept.png' }),
-    )
-    await chmod(join(root, 'Locked'), 0o555)
-    try {
-      const r = await migrateAssets(root)
-      expect(r?.rewritten).toBe(1)
-      expect(r?.skipped.map((x) => x.store)).toEqual(['Locked/_pagecollection.json'])
-      expect(r?.trashed).toBe(0)
-      expect(JSON.parse(await read('.nexus/homepage/homepage.json')).banner).toBe('[[kept.png]]')
-    } finally {
-      await chmod(join(root, 'Locked'), 0o755)
-    }
-  })
+  it.skipIf(noModeBits)(
+    'a store that refuses its write is reported, and the sweep is held',
+    async () => {
+      await asset('live/kept.png', 'kept')
+      await writeFile(
+        join(root, '.nexus', 'homepage', 'homepage.json'),
+        JSON.stringify({ banner: '.nexus/assets/live/kept.png' }),
+      )
+      await mkdir(join(root, 'Locked'), { recursive: true })
+      await writeFile(
+        join(root, 'Locked', '_pagecollection.json'),
+        JSON.stringify({ id: 'lk', banner: '.nexus/assets/live/kept.png' }),
+      )
+      await chmod(join(root, 'Locked'), 0o555)
+      try {
+        const r = await migrateAssets(root)
+        expect(r?.rewritten).toBe(1)
+        expect(r?.skipped.map((x) => x.store)).toEqual(['Locked/_pagecollection.json'])
+        expect(r?.trashed).toBe(0)
+        expect(JSON.parse(await read('.nexus/homepage/homepage.json')).banner).toBe('[[kept.png]]')
+      } finally {
+        await chmod(join(root, 'Locked'), 0o755)
+      }
+    },
+  )
 })

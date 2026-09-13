@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { pathExists } from '../Files/atomicWrite'
 import { CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
 import { NEXUS_CONFIG_FILES, contextsRegistryFile, nexusConfig } from '../Paths/paths'
@@ -12,7 +12,7 @@ const read = (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
 const has = (rel: string): Promise<boolean> => pathExists(join(root, rel))
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-config-'))
+  root = tempRoot('pom-config-')
   await mkdir(join(root, '.nexus'), { recursive: true })
 })
 afterEach(async () => {

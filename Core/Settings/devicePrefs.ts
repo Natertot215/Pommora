@@ -1,5 +1,4 @@
 // Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar folds and window sizes are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
-import { sessionRoot } from '../Nexus/session'
 import { readValue } from '../Platform/localState'
 import { coerceInterfaceScale } from './personalization'
 
@@ -20,6 +19,4 @@ export function packDevicePrefs(raw: unknown): DevicePrefs {
 }
 
 export const readInterfaceScale = (): number =>
-  coerceInterfaceScale(
-    sessionRoot() === null ? null : readValue<DevicePrefs>('devicePrefs')?.interfaceScale,
-  )
+  coerceInterfaceScale(readValue<DevicePrefs>('devicePrefs')?.interfaceScale)

@@ -1,9 +1,9 @@
 // A content file whose key contradicts the folder it sits in is Unknown — invisible to every read, and byte-untouched by every write. "Untouched" is asserted against the BYTES, not against a flag.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { ID_KEY, kindOf } from './identityMark'
 import { readNexus } from './readNexus'
 import { stampAdopted } from './adopt'
@@ -33,7 +33,7 @@ const UNKNOWN_FILES: Record<string, string> = {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-admit-'))
+  root = tempRoot('pom-admit-')
   await mkdir(nexusDir(root), { recursive: true })
   await writeFile(
     nexusConfig(root, NEXUS_CONFIG_FILES.identity),

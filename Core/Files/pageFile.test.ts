@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { chmod, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { chmod, rm, readFile, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, noModeBits } from '../Testing/hostFs'
 import {
   splitEnvelope,
   splitFrontmatter,
@@ -157,7 +157,7 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
 describe('writePageFile (fs)', () => {
   let dir: string
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'pom-page-'))
+    dir = tempRoot('pom-page-')
   })
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true })
@@ -197,18 +197,15 @@ describe('writePageFile (fs)', () => {
     expect(r.written).toContain('id: X')
   })
 
-  it.skipIf(process.getuid?.() === 0)(
-    'refuses when the read fails for any reason but absence',
-    async () => {
-      const p = join(dir, 'page.md')
-      const before = assembleEnvelope('id: X\n', 'one')
-      await writeFile(p, before, 'utf8')
-      await chmod(p, 0o000)
-      await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow(/EACCES/)
-      await chmod(p, 0o644)
-      expect(await readFile(p, 'utf8')).toBe(before)
-    },
-  )
+  it.skipIf(noModeBits)('refuses when the read fails for any reason but absence', async () => {
+    const p = join(dir, 'page.md')
+    const before = assembleEnvelope('id: X\n', 'one')
+    await writeFile(p, before, 'utf8')
+    await chmod(p, 0o000)
+    await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow(/EACCES/)
+    await chmod(p, 0o644)
+    expect(await readFile(p, 'utf8')).toBe(before)
+  })
 })
 
 describe('mergeFrontmatter — broken frontmatter is never re-serialized', () => {

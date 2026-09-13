@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { mkdtemp, rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import {
   createContextGroup,
   createSpace,
@@ -17,7 +17,7 @@ import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-ctxwrite-'))
+  root = tempRoot('pom-ctxwrite-')
   await mkdir(nexusDir(root), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(

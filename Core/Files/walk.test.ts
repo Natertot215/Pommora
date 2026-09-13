@@ -3,9 +3,9 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { WatchScope } from '../Paths/exclusion'
 
 const scope = (excluded: string[] = []): WatchScope => ({ excluded, assetDir: ASSETS_DIR_REL })
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join, relative } from 'node:path'
+import { rm, mkdir, writeFile } from 'node:fs/promises'
+import { join, relative } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { corpusFiles, listMarkdownFiles } from './walk'
 import { installMachine, machine } from '../Platform/machine'
 
@@ -15,7 +15,7 @@ installMachine({ ...base, readDir: readSpy })
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-walk-'))
+  root = tempRoot('pom-walk-')
   await mkdir(join(root, 'sub'), { recursive: true })
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(join(root, '.trash'), { recursive: true })
@@ -30,8 +30,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const rels = (paths: string[]) =>
-  paths.map((p) => relative(root, p).split(/[/\\]/).join('/')).sort()
+const rels = (paths: string[]) => paths.map((p) => relative(root, p)).sort()
 
 describe('listMarkdownFiles', () => {
   it('lists .md recursively (only .md), absolute paths', async () => {
@@ -77,9 +76,7 @@ describe('corpusFiles', () => {
     await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
     await writeFile(join(root, '.trash', 'deep', 'gone.md'), 'x', 'utf8')
     expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual(['a.md', 'sub/b.md'])
-    const opened = readSpy.mock.calls.map((c) =>
-      relative(root, String(c[0])).split(/[/\\]/).join('/'),
-    )
+    const opened = readSpy.mock.calls.map((c) => relative(root, String(c[0])))
     expect(opened).toEqual(['', 'sub'])
   })
 })

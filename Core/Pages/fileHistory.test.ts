@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -63,7 +63,7 @@ const untilRows = async (n: number, id = PAGE): Promise<void> => {
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
   vi.setSystemTime(new Date('2026-09-02T12:00:00Z'))
-  root = await mkdtemp(join(tmpdir(), 'pom-history-'))
+  root = tempRoot('pom-history-')
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(abs('Notes'), { recursive: true })

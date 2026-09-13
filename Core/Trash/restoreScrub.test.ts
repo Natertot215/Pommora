@@ -1,9 +1,9 @@
 // A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled against, so restore can never reintroduce a governed key nothing stands behind.
 
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
@@ -34,7 +34,7 @@ async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promi
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-scrub-'))
+  root = tempRoot('pom-scrub-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(

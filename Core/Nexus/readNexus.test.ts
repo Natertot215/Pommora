@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
-import { tmpdir, homedir } from 'node:os'
-import { join } from 'node:path'
+import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from '../Paths/posix'
+import { posixPath, tempRoot } from '../Testing/hostFs'
 import { readNexus } from './readNexus'
 import {
   nexusFolderRefusal,
@@ -185,7 +186,7 @@ const w = (p: string, c = ''): void => {
 let sidecar: string
 
 beforeAll(() => {
-  sidecar = mkdtempSync(join(tmpdir(), 'pom-sc-'))
+  sidecar = tempRoot('pom-sc-')
   d(join(sidecar, '.nexus'))
   w(join(sidecar, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1', createdAt: '2026' }))
   w(join(sidecar, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Archive'] }))
@@ -249,7 +250,7 @@ describe('readNexus — sidecar mode', () => {
 describe('readNexus — agenda is config-driven, never name-reserved', () => {
   const roots: string[] = []
   const mk = (build: (root: string) => void): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-agenda-'))
+    const root = tempRoot('pom-agenda-')
     roots.push(root)
     d(join(root, '.nexus'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxg', createdAt: '2026' }))
@@ -290,7 +291,7 @@ describe('readNexus — agenda is config-driven, never name-reserved', () => {
 describe('readNexus — registry-backed contexts', () => {
   let reg: string
   beforeAll(() => {
-    reg = mkdtempSync(join(tmpdir(), 'pom-reg-'))
+    reg = tempRoot('pom-reg-')
     d(join(reg, '.nexus'))
     w(join(reg, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxr', createdAt: '2026' }))
     d(join(reg, '.nexus', 'contexts'))
@@ -377,7 +378,7 @@ describe('readNexus — the walk names what it cannot read', () => {
   const INSIDE = '01KVGMT8BFP350FZZXAMG1QDRT'
   let root: string
   beforeAll(() => {
-    root = mkdtempSync(join(tmpdir(), 'pom-unread-'))
+    root = tempRoot('pom-unread-')
     d(join(root, '.nexus'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxu', createdAt: '2026' }))
     d(join(root, '.nexus', 'contexts'))
@@ -427,7 +428,7 @@ describe('readNexus — the walk names what it cannot read', () => {
   })
 
   it('an unusable registry names itself — a blank Contexts layer is not mass deletion', async () => {
-    const r = mkdtempSync(join(tmpdir(), 'pom-unread-reg-'))
+    const r = tempRoot('pom-unread-reg-')
     try {
       d(join(r, '.nexus'))
       w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxc', createdAt: '2026' }))
@@ -445,7 +446,7 @@ describe('readNexus — the walk names what it cannot read', () => {
 describe('readNexus — the asset root leaves the tree and the corpus together', () => {
   // shouldSkipDir and corpusFilesUnder are two independent skip tests over the same tree; a folder either leaves both or the index and the tree disagree about what exists.
   const build = (asset_directory?: string): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-asset-'))
+    const root = tempRoot('pom-asset-')
     mkdirSync(join(root, '.nexus'), { recursive: true })
     writeFileSync(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxa' }))
     writeFileSync(
@@ -498,7 +499,7 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
 })
 
 describe('readNexus — real test nexus (optional smoke)', () => {
-  const real = process.env.TEST_NEXUS_PATH || join(homedir(), 'test')
+  const real = posixPath(process.env.TEST_NEXUS_PATH || join(homedir(), 'test'))
   it.runIf(existsSync(real))('reads the real nexus without throwing', async () => {
     const t = await readNexus(real)
     expect(Array.isArray(t.collections)).toBe(true)
@@ -508,7 +509,7 @@ describe('readNexus — real test nexus (optional smoke)', () => {
 describe('readNexus — personalization', () => {
   const roots: string[] = []
   const mk = (settings: object): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-pers-'))
+    const root = tempRoot('pom-pers-')
     roots.push(root)
     d(join(root, '.nexus'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
@@ -658,7 +659,7 @@ describe('readNexus — personalization', () => {
 describe('readNexus — profile (from settings)', () => {
   const roots: string[] = []
   const mk = (settings: object): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-profile-'))
+    const root = tempRoot('pom-profile-')
     roots.push(root)
     d(join(root, '.nexus'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
@@ -689,7 +690,7 @@ describe('readNexus — profile (from settings)', () => {
 describe('readNexus — container paths (nexus-relative, for mutation addressing)', () => {
   let root: string
   beforeAll(() => {
-    root = mkdtempSync(join(tmpdir(), 'pom-paths-'))
+    root = tempRoot('pom-paths-')
     d(join(root, '.nexus'))
     d(join(root, 'Notes', 'Daily', 'Morning'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
@@ -713,7 +714,7 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
 
 describe('PropertiesV2 — registry-resolved collection schema', () => {
   it('resolves assignment ids to registry defs in order, dropping dangling refs', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-readnexus-v2-'))
+    const root = tempRoot('pom-readnexus-v2-')
     d(join(root, '.nexus'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx' }))
     w(

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { realpathPosix, tempRoot } from '../Testing/hostFs'
 import { closeSession, openSession } from '../Nexus/session'
 import {
   clearSchemaJournal,
@@ -14,7 +14,7 @@ let root: string
 const journalPath = (): string => join(root, '.nexus', 'property-cascade.json')
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(join(tmpdir(), 'pom-pjournal-')))
+  root = await realpathPosix(tempRoot('pom-pjournal-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
   await openSession(root)
 })
@@ -82,7 +82,7 @@ describe('clearSchemaJournal', () => {
   })
 
   it('clears a record on a nexus other than the open session', async () => {
-    const other = await realpath(await mkdtemp(join(tmpdir(), 'pom-pjournal2-')))
+    const other = await realpathPosix(tempRoot('pom-pjournal2-'))
     await mkdir(join(other, '.nexus'), { recursive: true })
     await writeSchemaJournal(other, SHAPES[0])
     await clearSchemaJournal(other, SHAPES[0])

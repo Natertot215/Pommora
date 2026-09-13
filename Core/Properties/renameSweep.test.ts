@@ -1,6 +1,6 @@
-import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { readFile, rm, writeFile, mkdir } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameSweep } from './registryProperty'
 
@@ -10,7 +10,7 @@ let page: string
 const seed = async (fm: string): Promise<void> => writeFile(page, `---\n${fm}---\nbody\n`)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'sweep-'))
+  root = tempRoot('sweep-')
   const col = join(root, 'Col')
   await mkdir(col, { recursive: true })
   await writeFile(join(col, '_pagecollection.json'), JSON.stringify({ id: 'c', properties: [] }))

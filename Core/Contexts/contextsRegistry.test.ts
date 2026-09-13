@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-ctxreg-'))
+  root = tempRoot('pom-ctxreg-')
   await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })
 })
 afterEach(async () => {

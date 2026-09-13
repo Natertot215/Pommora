@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { mkdir, mkdtemp, rm, unlink, utimes, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, unlink, utimes, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { queryKeyHolders, queryMembers, queryMentions, readIndexedStats } from './contentIndex'
@@ -17,7 +17,7 @@ let mem: ReturnType<typeof memoryStores>
 const abs = (...segs: string[]): string => join(root, ...segs)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-seed-'))
+  root = tempRoot('pom-seed-')
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Hidden'] }))
   await mkdir(abs('Notes'), { recursive: true })

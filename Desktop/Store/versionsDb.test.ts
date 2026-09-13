@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile, readdir, stat, truncate } from 'node:fs/promises'
+import { rm, mkdir, readFile, writeFile, readdir, stat, truncate } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { DatabaseSync } from 'node:sqlite'
 import {
   VERSIONS_FILENAME,
@@ -22,7 +22,7 @@ import { ignoredUnder } from '@pommora/core/Nexus/watchSettle'
 let root: string
 let dbPath: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-versions-'))
+  root = tempRoot('pom-versions-')
   dbPath = join(root, '.nexus', VERSIONS_FILENAME)
 })
 afterEach(async () => {
