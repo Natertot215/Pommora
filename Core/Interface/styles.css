@@ -90,6 +90,10 @@ textarea,
   --content-start: calc(var(--sidebar-clearance) + var(--content-edge));
   --content-start-right: calc(var(--inspector-clearance) + var(--content-edge));
   --surface-lane: 8px;
+  --expand-left: 96px;
+}
+.shell.no-traffic-lights {
+  --expand-left: calc(var(--app-inset) + 4px);
 }
 .shell.sidebar-hidden {
   --sidebar-clearance: 0px;

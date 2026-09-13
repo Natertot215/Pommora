@@ -5,6 +5,7 @@ import { hasWebScheme, isHttpLink } from '@pommora/core/Connections/links'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
 import { push } from '../Bridge/ipc'
+import { isWindows } from '../Platform/hostPath'
 
 /** Its server-side detection additionally trips on the Chrome token. */
 const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
@@ -153,7 +154,14 @@ export function pauseGuestMedia(guestId: number): void {
 export function setHostZoom(wc: WebContents, factor: number): void {
   wc.setZoomFactor(factor)
   syncGuestZoom()
+  if (isWindows)
+    BrowserWindow.fromWebContents(wc)?.setTitleBarOverlay({
+      height: Math.round(TOOLBAR_BAND_H * factor),
+    })
 }
+
+// Twice the toolbar trio's vertical center, so the caption controls center on it.
+const TOOLBAR_BAND_H = 45
 
 // Chromium's visual zoom range; the native roles let the stored level run past the visible cap.
 const ZOOM_FACTOR_MIN = 0.25

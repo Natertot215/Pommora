@@ -45,6 +45,7 @@ export function App(): React.JSX.Element {
   const openDropped = useSession((s) => s.openDropped)
   const ribbonVisible = useSession((s) => s.ribbonVisible)
   const toggleRibbon = useSession((s) => s.toggleRibbon)
+  const trafficLights = useSession((s) => s.hostPlatform !== 'windows' && !s.fullscreen)
   const toggleIteration = useSession((s) => s.toggleIteration)
   const toggleNav = useSession((s) => s.toggleNav)
   const commands = useSession((s) => s.commands)
@@ -102,6 +103,7 @@ export function App(): React.JSX.Element {
           'shell' +
           (sidebarHidden ? ' sidebar-hidden' : '') +
           (ribbonVisible ? '' : ' ribbon-hidden') +
+          (trafficLights ? '' : ' no-traffic-lights') +
           (inspectorOpen ? ' inspector-open' : '') +
           (resizing ? ' is-resizing' : '')
         }

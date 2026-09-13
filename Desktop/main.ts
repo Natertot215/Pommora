@@ -168,7 +168,7 @@ function createWindow(): void {
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 18, y: 18 },
     ...(isWindows && {
-      titleBarOverlay: { color: WINDOW_BG, symbolColor: SYSTEM.white },
+      titleBarOverlay: { color: '#00000000', symbolColor: SYSTEM.white },
     }),
     backgroundColor: WINDOW_BG,
     webPreferences: {
@@ -183,6 +183,8 @@ function createWindow(): void {
   win.on('ready-to-show', () => void applyDefaultZoom(win).finally(() => win.show()))
   installEditorContextMenu(win)
   installWebGuests(win)
+  win.on('enter-full-screen', () => push(win, 'win:fullscreen', true))
+  win.on('leave-full-screen', () => push(win, 'win:fullscreen', false))
   mainWindow = win
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null
@@ -288,6 +290,9 @@ const tells: TellHandlers = {
   'win:zoom': (win) => {
     if (win?.isMaximized()) win.unmaximize()
     else win?.maximize()
+  },
+  'win:resendFullscreen': (win) => {
+    if (win) push(win, 'win:fullscreen', win.isFullScreen())
   },
   'web:wheel': (_win, ...args) => wheelGuest(...args),
 }
