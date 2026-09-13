@@ -1,10 +1,12 @@
 #!/bin/sh
-# Git post-commit hook: refresh the line ledger after every commit, whoever makes it.
+# Git post-commit hook: refresh the line ledger and rebuild the dashboard pages after every commit,
+# whoever makes it.
 #
-# Folds the new HEAD into loc-history.json + the ledger page (loc.py --update), then re-checks the
-# token atlas. The refresh lands in the working tree, so the next commit carries the numbers.
-# Quiet during a rebase or merge replay — those cycle many commits and only the last one's numbers
-# survive. Republishing the page to its artifact URL stays a separate, manual step.
+# Folds the new HEAD into loc-history.json (loc.py --update), builds the two pages (the ledger
+# imports it), then re-checks the token atlas. The refresh lands in the working tree, so the next
+# commit carries the numbers. Quiet during a rebase or merge replay — those cycle many commits and
+# only the last one's numbers survive. Republishing the built pages to their artifact URLs is the
+# session's step, prompted by republish-dashboard.mjs.
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" || exit 0
@@ -15,6 +17,8 @@ if [ -n "$GIT_DIR" ] && { [ -d "$GIT_DIR/rebase-merge" ] || [ -d "$GIT_DIR/rebas
 fi
 
 python3 .claude/scripts/loc.py --update || echo "line ledger: skipped (loc.py --update failed)" >&2
+
+npm run --silent build:dashboard >/dev/null 2>&1 && echo "dashboard: built both pages into Dashboard/dist" || echo "dashboard: build failed" >&2
 
 node .claude/scripts/check-atlas.mjs || echo "token ledger: drift above — the Features SOURCE tables disagree with the code" >&2
 exit 0

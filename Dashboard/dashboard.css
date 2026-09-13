@@ -1,0 +1,20 @@
+:root {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg-window);
+  color: var(--label-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--surface-tertiary);
+  padding: 1px 5px;
+  border-radius: 4px;
+}

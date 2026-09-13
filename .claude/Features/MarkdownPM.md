@@ -36,7 +36,7 @@ A handful of rewrites fire as you type, implemented in `Input/` as a high-preced
 
 - **List continuation** — Enter continues a list, Tab indents (to a cap), Shift+Tab outdents, and `-[]` canonicalizes to `- [ ]`.
 - **Callout shorthand** — `||` becomes `> [!callout] `.
-- **Auto-pairing** — round, square, and curly brackets, the single emphasis and code markers, and quotes pair when the caret has whitespace, a line edge, or existing pair syntax on both sides, so nothing pairs against a character. A marker or closing bracket types over its own closer on the way out, doubled emphasis promotes to the stronger form rather than pairing again, and Backspace inside an empty pair removes both halves.
+- **Auto-pairing** — round, square, and curly brackets, the single emphasis and code markers, and quotes pair when the caret has whitespace, a line edge, or existing pair syntax on both sides, so nothing pairs against a character. Paired syntax types over its closing on enter, doubled emphasis promotes to the stronger form rather than pairing again, and Backspace inside an empty pair removes both halves.
 - **Enter and Shift+Enter** — Enter steps past an open construct's closer; Shift+Enter closes it first, then breaks the line.
 - **Dashes, arrows, and ellipses** — `--` becomes `—`, a spaced ` - ` becomes `–`, `->` becomes `→`, `>>` and `<<` become `»` and `«`, and `...` becomes `…`. A `>>` opening a line stays a nested blockquote, while one after a quote's `> ` converts. An arrow list's `->` converts whether or not inline arrows do.
 - **Equations** — `>=` becomes `≥`, `<=` becomes `≤`, `!=`, `/=`, and `=/` become `≠`, `+-` and `-+` become `±`, and `~=` becomes `≈`. A doubled character ahead of the pair, code, links, and URLs leave it literal.

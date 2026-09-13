@@ -7,8 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/republish-ledger.mjs\"",
-            "statusMessage": "Checking the line ledger"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/republish-dashboard.mjs\"",
+            "statusMessage": "Checking the dashboard"
           }
         ]
       },

@@ -11,7 +11,7 @@ The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the insp
 ### Immediate Work
 
 - [ ] Phase 2 of the cross-platform scaffolding — content syncing.
-- [ ] **MarkdownPM:** Add auto-transformation and pairing per-case toggles in settings, support for alphabetical lists, persisted embedding heights on source change, and a few interactive bug fixes.  
+- [ ] **MarkdownPM:** Support for alphabetical lists, persisted embedding heights on source change, and a few interactive bug fixes.  
 
 ### Pending Focuses
 

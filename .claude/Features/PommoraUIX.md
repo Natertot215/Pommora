@@ -3,7 +3,7 @@
 
 The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. This document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. The composite shells built from it — the tile frame, the sidebar, the toolbar, the tab strip — are recorded in [[SurfacePM]], [[InterfacePM]], and [[NavigationPM]]. Values live in §Theme and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
-- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `UIX/Theme/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; `UIX/Utilities/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
+- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `UIX/Theme/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase page in `Dashboard/`; `UIX/Utilities/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
 
 - **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
 
