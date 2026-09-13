@@ -168,7 +168,7 @@
 }
 .sidebar-expand {
   top: calc(var(--app-inset) + 1px);
-  left: 96px;
+  left: var(--expand-left);
   opacity: 0;
   transform: translateX(-6px);
   pointer-events: none;

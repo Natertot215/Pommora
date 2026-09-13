@@ -1,3 +1,4 @@
+import type { HostPlatform } from '@pommora/core/Contract/bridge'
 import type { NavViewMode } from '@pommora/core/Interface/chrome'
 import type { Slice } from './sessionState'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -25,6 +26,9 @@ export interface LayoutSlice {
   iterationOpen: boolean
   closeIteration: () => void
   toggleIteration: () => void
+  hostPlatform: HostPlatform
+  fullscreen: boolean
+  setHostWindow: (host: Partial<Pick<LayoutSlice, 'hostPlatform' | 'fullscreen'>>) => void
   resetLayout: () => void
 }
 
@@ -89,6 +93,10 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     iterationOpen: false,
     closeIteration: () => set({ iterationOpen: false }),
     toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
+
+    hostPlatform: 'posix',
+    fullscreen: false,
+    setHostWindow: (host) => set(host),
 
     resetLayout: () => set({ ...PER_NEXUS }),
   }

@@ -247,6 +247,7 @@ export interface Tells {
   'editor:format-state': [state: FormatState]
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
+  'win:resendFullscreen': []
   // Handed to the guest a host-owned pointer covers — the only way it can still scroll beneath it.
   'web:wheel': [guestId: number, x: number, y: number, deltaX: number, deltaY: number]
 }
@@ -258,6 +259,7 @@ export interface Pushes {
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]
   'tiles:changed': TileHostRef
+  'win:fullscreen': boolean
   // A guest's window.open, denied main-side so popups route through the one link adjudicator.
   'web:popup': string
 }

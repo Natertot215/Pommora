@@ -1,6 +1,7 @@
 // Every push the host bridge makes into the running session. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
 import { useEffect } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
+import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
 import { dropDetailsWhere } from './pageDetailCache'
@@ -18,6 +19,20 @@ export function useBridgeSubscriptions(): void {
   const toggleSidebar = useSession((s) => s.toggleSidebar)
   const newPage = useSession((s) => s.newPage)
   const openNewTab = useSession((s) => s.openNewTab)
+
+  const setHostWindow = useSession((s) => s.setHostWindow)
+  useEffect(() => {
+    void dialer()
+      .ask('host:platform')
+      .then((r) => {
+        const hostPlatform = valueOr(r, 'posix')
+        setCmdModifier(hostPlatform === 'windows')
+        setHostWindow({ hostPlatform })
+      })
+    const off = dialer().on('win:fullscreen', (fullscreen) => setHostWindow({ fullscreen }))
+    dialer().tell('win:resendFullscreen')
+    return off
+  }, [setHostWindow])
 
   useEffect(() => dialer().on('nexus:changed', (next) => void applyTree(next)), [applyTree])
 

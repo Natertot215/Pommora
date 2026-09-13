@@ -39,10 +39,10 @@ export function Toolbar({
     if (!el) return
     const apply = (): void => {
       el.closest<HTMLElement>('.app-toolbar')?.style.setProperty('--trio-w', `${el.offsetWidth}px`)
-      // Both rects carry the cluster's ride transform, so their difference cancels it out. Measures the cover layer alone — the glass layer behind holds a hidden duplicate of every button.
+      // Both rects carry the cluster's ride transform, so their difference cancels it out. Skips the inert glass layer, which holds a hidden duplicate of every button.
       const right = el.getBoundingClientRect().right
       const next = Array.from(
-        el.querySelectorAll<HTMLElement>('.toolbar-trio-cover button'),
+        el.querySelectorAll<HTMLElement>('.toolbar-trio > :not([inert]) button'),
         (b) => {
           const r = b.getBoundingClientRect()
           return right - (r.left + r.width / 2)
@@ -60,6 +60,7 @@ export function Toolbar({
 
   const toggle = (p: TrioPanel): void => setPanel((cur) => (cur === p ? null : p))
 
+  const flat = useSession((s) => s.hostPlatform === 'windows')
   const goBack = useSession((s) => s.goBack)
   const goForward = useSession((s) => s.goForward)
   const canGoBack = useSession((s) => {
@@ -105,7 +106,7 @@ export function Toolbar({
         <OutlineMenu />
         <SpaceMenu />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
-          <ToolbarTrio segments={trio} />
+          <ToolbarTrio segments={trio} flat={flat} />
           {navP.mounted && (
             <NavMenu closing={navP.closing} notchInsetRight={beakFor('navigation')} />
           )}

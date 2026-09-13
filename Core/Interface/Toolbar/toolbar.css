@@ -10,13 +10,17 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 0 var(--app-inset) 0 4px;
+  --trailing-room: max(
+    var(--app-inset),
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+  );
+  padding: 0 var(--trailing-room) 0 4px;
   pointer-events: none;
   --trio-inset: 4px;
   /* Inputs to the shared --toolbar-slide swallow (Animation/toolbar-slide.css). */
   --slide-panel-w: var(--inspector-width);
   --slide-inset: var(--app-inset);
-  --slide-home: var(--app-inset);
+  --slide-home: var(--trailing-room);
   --slide-cluster-w: var(--trio-w);
   --slide-breathing: var(--trio-inset);
 
@@ -24,7 +28,7 @@
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;
-  padding-left: 135px; /* Reserve room for the traffic lights + the expand toggle, centered between them and Back/Forward. */
+  padding-left: calc(var(--expand-left) + var(--button-large-height) + 7px);
 }
 .shell.is-resizing .app-toolbar {
   transition: none;
@@ -53,7 +57,8 @@
   width: fit-content;
   --trio-radius: 12px;
 }
-.toolbar-trio-glass {
+.toolbar-trio-glass,
+.toolbar-trio--flat > div > span:last-child {
   opacity: clamp(0, calc((0.3 - var(--io)) / 0.3), 1);
 }
 /* The glass layer's icons + dividers are duplicates of the cover's — hidden, layout kept so they still size the pill. */
