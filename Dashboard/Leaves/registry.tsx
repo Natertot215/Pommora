@@ -5,10 +5,8 @@ import { IconsLeaf } from './IconsLeaf'
 import { ButtonsLeaf } from './ButtonsLeaf'
 import { ComponentsLeaf } from './ComponentsLeaf'
 import { GlassLeaf } from './GlassLeaf'
-import { PanesLeaf } from './PanesLeaf'
-import { TileLab } from './TileLab'
 
-export type SectionId = 'foundations' | 'components' | 'materials' | 'interactions'
+export type SectionId = 'foundations' | 'components'
 
 export type Leaf = {
   id: string
@@ -19,10 +17,8 @@ export type Leaf = {
 }
 
 export const SECTIONS: ReadonlyArray<{ id: SectionId; label: string }> = [
-  { id: 'foundations', label: 'Foundations' },
+  { id: 'foundations', label: 'Primitives' },
   { id: 'components', label: 'Components' },
-  { id: 'materials', label: 'Materials' },
-  { id: 'interactions', label: 'Interactions' },
 ]
 
 export const LEAVES: readonly Leaf[] = [
@@ -48,6 +44,13 @@ export const LEAVES: readonly Leaf[] = [
     render: () => <IconsLeaf />,
   },
   {
+    id: 'glass',
+    label: 'Glass',
+    icon: 'layers',
+    section: 'foundations',
+    render: () => <GlassLeaf />,
+  },
+  {
     id: 'buttons',
     label: 'Buttons',
     icon: 'square-dashed',
@@ -60,27 +63,6 @@ export const LEAVES: readonly Leaf[] = [
     icon: 'tag',
     section: 'components',
     render: () => <ComponentsLeaf />,
-  },
-  {
-    id: 'glass',
-    label: 'Glass',
-    icon: 'layers',
-    section: 'materials',
-    render: () => <GlassLeaf />,
-  },
-  {
-    id: 'panes',
-    label: 'Side Panes',
-    icon: 'panel-right',
-    section: 'interactions',
-    render: () => <PanesLeaf />,
-  },
-  {
-    id: 'surfacepm',
-    label: 'Tiles Lab',
-    icon: 'layout-dashboard',
-    section: 'interactions',
-    render: () => <TileLab />,
   },
 ]
 
