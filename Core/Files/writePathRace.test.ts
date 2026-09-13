@@ -1,9 +1,8 @@
 // Every writer of a container's sidecar rewrites that file WHOLE, so they all serialize on the sidecar's own path; a read-merge-write on any other key races its siblings and silently drops what they just set. The page half is the same law across a path change: a relocate takes the SOURCE page's lock.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readdir, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readdir, readFile } from 'node:fs/promises'
+import { tempRoot } from '../Testing/hostFs'
 import type { SavedView } from '../Views/views'
 import type { PropertyDefinition } from '../Properties/properties'
 import { machine } from '../Platform/machine'
@@ -26,7 +25,7 @@ const view = (id: string): SavedView => ({
 let root: string
 let folder: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-sidecar-race-'))
+  root = tempRoot('pom-sidecar-race-')
   const c = await createFolderEntity(root, 'collection', 'Notes')
   if (!c.ok) throw new Error('setup failed')
   folder = c.value.path

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { tempRoot } from '../Testing/hostFs'
 import {
   readWatchScope,
   readPermanentDelete,
@@ -14,7 +13,7 @@ import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-settings-'))
+  root = tempRoot('pom-settings-')
   // The open path guarantees `.nexus/` exists before any settings write (identity mkdirs it).
   await mkdir(nexusDir(root), { recursive: true })
 })

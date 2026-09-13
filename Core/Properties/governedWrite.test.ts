@@ -1,6 +1,6 @@
-import { mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { GovernedWorld } from '../Contexts/contextResolve'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -11,7 +11,7 @@ let dir: string
 let page: string
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'governed-'))
+  dir = tempRoot('governed-')
   page = join(dir, 'p.md')
 })
 afterEach(async () => {

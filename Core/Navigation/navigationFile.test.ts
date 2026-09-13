@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import type { NavRef } from './navRef'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -9,7 +9,7 @@ import { readNavigationFile, readNavigationState, writeNavigationState } from '.
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-navigation-'))
+  root = tempRoot('pom-navigation-')
   installStores(memoryStores().stores)
 })
 afterEach(async () => {

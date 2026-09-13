@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, writeFile, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import type { SavedView } from './views'
 import { saveView, reorderViews, deleteView } from './viewsFile'
 
 let folder: string
 beforeEach(async () => {
-  folder = await mkdtemp(join(tmpdir(), 'pom-views-crud-'))
+  folder = tempRoot('pom-views-crud-')
 })
 afterEach(async () => {
   await rm(folder, { recursive: true, force: true })

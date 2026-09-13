@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { assetFileToDelete, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
 import { isAssetPath } from '../Navigation/navigationFile'
@@ -53,7 +53,7 @@ describe('assetFileToDelete', () => {
     await writeFile(join(root, ...segs), 'bytes')
   }
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'pom-assetroots-'))
+    root = tempRoot('pom-assetroots-')
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'settings.json'),

@@ -1,7 +1,7 @@
 import { ok } from '../Contract/result'
-import { chmod, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { chmod, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import {
@@ -27,7 +27,7 @@ const seed = (dir: string, tiles: unknown[]): Promise<unknown> =>
   writeTileDocAt(dir, (cur) => ({ ...cur, tiles }))
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'tiles-'))
+  root = tempRoot('tiles-')
   await mkdir(spaceDir(), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'contexts', 'contexts.json'),
@@ -125,18 +125,21 @@ describe('the document', () => {
 })
 
 describe('markdown tile lifecycle', () => {
-  it('an absent body is not-found; a body the read fails on is not an empty one', async () => {
-    const id = await createMarkdownTile(home())
-    await writeMarkdownTile(home(), id, 'prose')
-    expect((await readMarkdownTile(home(), 'x')).ok).toBe(false)
-    expect(await readMarkdownTile(home(), 'x')).toMatchObject({ error: { code: 'not-found' } })
-    await chmod(tileFilePath(home(), id), 0o000)
-    expect(await readMarkdownTile(home(), id)).toMatchObject({
-      error: { code: 'operation-failed' },
-    })
-    await chmod(tileFilePath(home(), id), 0o644)
-    expect(await readMarkdownTile(home(), id)).toEqual(ok('prose'))
-  })
+  it.skipIf(noModeBits)(
+    'an absent body is not-found; a body the read fails on is not an empty one',
+    async () => {
+      const id = await createMarkdownTile(home())
+      await writeMarkdownTile(home(), id, 'prose')
+      expect((await readMarkdownTile(home(), 'x')).ok).toBe(false)
+      expect(await readMarkdownTile(home(), 'x')).toMatchObject({ error: { code: 'not-found' } })
+      await chmod(tileFilePath(home(), id), 0o000)
+      expect(await readMarkdownTile(home(), id)).toMatchObject({
+        error: { code: 'operation-failed' },
+      })
+      await chmod(tileFilePath(home(), id), 0o644)
+      expect(await readMarkdownTile(home(), id)).toEqual(ok('prose'))
+    },
+  )
 
   it('create mints the dir + empty file + entry; the body round-trips pure (no frontmatter)', async () => {
     const id = await createMarkdownTile(home())

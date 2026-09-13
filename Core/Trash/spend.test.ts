@@ -1,7 +1,7 @@
-import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, join } from '../Paths/posix'
+import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
@@ -42,7 +42,7 @@ const onlyBundle = async (): Promise<{ dir: string; record: unknown }> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-prov-'))
+  root = tempRoot('pom-prov-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(
@@ -734,28 +734,37 @@ describe('restore — the attack folds', () => {
     expect(await pathExists(join(root, 'Notes', 'Daily', 'Notes.md'))).toBe(false)
   })
 
-  it('a failed move rolls the registry re-entry back — the restore stays retryable', async () => {
-    const { chmod } = await import('node:fs/promises')
-    await handleMutate(
-      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-      nexusDeps,
-    )
-    await chmod(join(root, '.nexus', 'contexts'), 0o555)
-    try {
+  it.skipIf(noModeBits)(
+    'a failed move rolls the registry re-entry back — the restore stays retryable',
+    async () => {
+      const { chmod } = await import('node:fs/promises')
+      await handleMutate(
+        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+        nexusDeps,
+      )
+      await chmod(join(root, '.nexus', 'contexts'), 0o555)
+      try {
+        const [listed] = await listBundles(root)
+        const failed = await handleMutate(
+          { op: 'restore', bundlePath: listed.bundlePath },
+          nexusDeps,
+        )
+        expect(failed.ok).toBe(false)
+        // No ghost entry: the append reversed when the move refused.
+        const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+        expect(reg.contexts.some((c: { id: string }) => c.id === 'ctx_projects')).toBe(false)
+      } finally {
+        await chmod(join(root, '.nexus', 'contexts'), 0o755)
+      }
       const [listed] = await listBundles(root)
-      const failed = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
-      expect(failed.ok).toBe(false)
-      // No ghost entry: the append reversed when the move refused.
-      const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-      expect(reg.contexts.some((c: { id: string }) => c.id === 'ctx_projects')).toBe(false)
-    } finally {
-      await chmod(join(root, '.nexus', 'contexts'), 0o755)
-    }
-    const [listed] = await listBundles(root)
-    const retried = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
-    expect(retried.ok).toBe(true)
-    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
-  })
+      const retried = await handleMutate(
+        { op: 'restore', bundlePath: listed.bundlePath },
+        nexusDeps,
+      )
+      expect(retried.ok).toBe(true)
+      expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
+    },
+  )
 
   it('a disambiguated Context restore re-keys its own passengers to the final title', async () => {
     // Sapphire tags Pommora INSIDE Projects — a passenger link the delete never strips.

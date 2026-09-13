@@ -1,5 +1,6 @@
 import { type Handlers, withRoot } from '../Contract/handlers'
 import { fail, ok, type Result } from '../Contract/result'
+import { machine } from '../Platform/machine'
 import { seedContentIndex } from '../Index/indexSeed'
 import type { NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import { rootSegs } from '../Paths/exclusion'
@@ -97,5 +98,5 @@ export const settingsHandlers = {
   }),
 
   'theme:systemAccent': async (ctx) => ok(await ctx.systemAccent()),
-  'host:platform': async (ctx) => ok(ctx.platform()),
+  'host:platform': async () => ok(machine().platform),
 } satisfies Partial<Handlers>

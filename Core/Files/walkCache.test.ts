@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync, utimesSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rmSync, writeFileSync, utimesSync } from 'node:fs'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { beginWalk, cachedParse, endWalk, forgetParse } from './walkCache'
 
 // Backdate a file past the racy window so (mtime, size) is trusted immediately.
@@ -13,7 +13,7 @@ const cool = (path: string, secondsAgo = 10): void => {
 describe('walkCache', () => {
   let root: string
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'walk-cache-'))
+    root = tempRoot('walk-cache-')
   })
   afterEach(() => rmSync(root, { recursive: true, force: true }))
 

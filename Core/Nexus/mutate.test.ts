@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
-import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate, type MutateDeps } from './mutate'
 import { setActiveViewOp } from '../Pages/setActiveView'
@@ -30,7 +30,7 @@ const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, 
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-mutate-'))
+  root = tempRoot('pom-mutate-')
   await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
   await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
@@ -631,7 +631,7 @@ describe('handleMutate — review-round hardening', () => {
     expect(r.error.code).toBe('operation-failed')
   })
 
-  it('reverts the page rename when the link cascade fails', async () => {
+  it.skipIf(noModeBits)('reverts the page rename when the link cascade fails', async () => {
     // A page linking [[Beta]] in a read-only dir → the cascade's rewrite commit throws.
     await mkdir(join(root, 'Notes', 'Locked'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Locked', '_pageset.json'), JSON.stringify({ id: 'lk' }))
@@ -657,7 +657,7 @@ describe('handleMutate — review-round hardening', () => {
 describe('handleMutate — setBanner', () => {
   let outside: string
   beforeEach(async () => {
-    outside = await mkdtemp(join(tmpdir(), 'pom-pick-'))
+    outside = tempRoot('pom-pick-')
   })
   afterEach(async () => {
     await rm(outside, { recursive: true, force: true })
@@ -890,7 +890,7 @@ describe('handleMutate — setBanner', () => {
 describe('handleMutate — setCrop', () => {
   let outside: string
   beforeEach(async () => {
-    outside = await mkdtemp(join(tmpdir(), 'pom-pick-'))
+    outside = tempRoot('pom-pick-')
   })
   afterEach(async () => {
     await rm(outside, { recursive: true, force: true })
@@ -1124,7 +1124,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
 describe('adoptFile — the shared adoption seam', () => {
   let outside: string
   beforeEach(async () => {
-    outside = await mkdtemp(join(tmpdir(), 'pom-adopt-'))
+    outside = tempRoot('pom-adopt-')
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
@@ -1209,16 +1209,19 @@ describe('adoptFile — the shared adoption seam', () => {
     expect(await readdir(join(root, 'file-assets'))).toEqual([])
   })
 
-  it('refuses a subfolder that is a symlink INTO the nexus — the lexical check cannot see it', async () => {
-    // A linked attachments folder is ordinary in a vault. Containment passes, and `resolveUnderRoot` bounds the NEXUS, which a link at the content tree satisfies — so the bytes would land among the user's pages, under a name `buildAssetMap` never walks into and can never resolve again.
-    await mkdir(join(root, 'Projects', 'Secret'), { recursive: true })
-    await symlink(join(root, 'Projects', 'Secret'), join(root, 'file-assets', 'Linked'))
+  it.skipIf(windows)(
+    'refuses a subfolder that is a symlink INTO the nexus — the lexical check cannot see it',
+    async () => {
+      // A linked attachments folder is ordinary in a vault. Containment passes, and `resolveUnderRoot` bounds the NEXUS, which a link at the content tree satisfies — so the bytes would land among the user's pages, under a name `buildAssetMap` never walks into and can never resolve again.
+      await mkdir(join(root, 'Projects', 'Secret'), { recursive: true })
+      await symlink(join(root, 'Projects', 'Secret'), join(root, 'file-assets', 'Linked'))
 
-    const r = await adoptFile(root, await pick('Leak.pdf'), { allow: 'any', subfolder: 'Linked' })
+      const r = await adoptFile(root, await pick('Leak.pdf'), { allow: 'any', subfolder: 'Linked' })
 
-    expect(r.ok).toBe(false)
-    expect(await readdir(join(root, 'Projects', 'Secret'))).toEqual([])
-  })
+      expect(r.ok).toBe(false)
+      expect(await readdir(join(root, 'Projects', 'Secret'))).toEqual([])
+    },
+  )
 
   it('a pick from a hidden folder UNDER the root is copied out, never referenced in place', async () => {
     // `underAssetRoot` admits the dot-prefixed segment `indexable` drops, so an in-place reference here would name a file the map can never hold — resolvable by nothing, with no error anywhere.
@@ -1292,7 +1295,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
   // The one that crosses the per-step facts the way a session does — pick, add, add, replace, remove, clear — asserting the page's actual bytes, since the criterion is what an outside tool sees, not what the decoder answers.
   let outside: string
   beforeEach(async () => {
-    outside = await mkdtemp(join(tmpdir(), 'pom-chain-'))
+    outside = tempRoot('pom-chain-')
     await createProperty(root, { id: 'prop_f', name: 'Attachments', type: 'file' })
     await writeFile(
       join(root, '.nexus', 'settings.json'),

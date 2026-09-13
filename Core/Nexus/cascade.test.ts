@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from '../Properties/properties'
 import { renameCascade } from './cascade'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
@@ -25,7 +25,7 @@ const sweptFiles = (): string[] => sweepSpy.mock.calls[0]?.[1] ?? []
 let root: string
 let dir: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-cascade-'))
+  root = tempRoot('pom-cascade-')
   dir = join(root, 'Notes')
   await mkdir(dir, { recursive: true })
 })

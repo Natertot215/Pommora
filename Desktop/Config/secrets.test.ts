@@ -1,6 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rmSync } from 'node:fs'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getSecret, setSecret } from './secrets'
 
@@ -16,7 +15,7 @@ vi.mock('electron', () => ({
 
 let dir: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'pom-sec-'))
+  dir = tempRoot('pom-sec-')
   available.value = true
 })
 afterEach(() => {

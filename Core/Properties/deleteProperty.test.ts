@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile, readdir } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
@@ -43,7 +43,7 @@ installMachine({
 
 beforeEach(async () => {
   recordedBeforeScrub = undefined
-  root = await mkdtemp(join(tmpdir(), 'pom-del-'))
+  root = tempRoot('pom-del-')
   const a = await createFolderEntity(root, 'collection', 'Notes')
   const b = await createFolderEntity(root, 'collection', 'Tasks')
   if (!a.ok || !b.ok) throw new Error('setup failed')

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, utimes } from 'node:fs/promises'
+import { rm, mkdir, writeFile, utimes } from 'node:fs/promises'
 import { decodeTime } from 'ulidx'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { loadValues } from './loadValues'
 import { readNexus } from '../Nexus/readNexus'
 import { dropLiveTree, seedLiveTree } from '../Nexus/liveTree'
@@ -12,7 +12,7 @@ const P2 = '01KVGMT8BFP350FZZXAMG1QDR2'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-loadvalues-'))
+  root = tempRoot('pom-loadvalues-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

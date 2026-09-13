@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import type { BrowserWindow } from 'electron'
 import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/liveTree'
 import { recordWrite } from '@pommora/core/Files/writeEcho'
@@ -54,7 +54,7 @@ const settleAll = async (until?: () => boolean): Promise<void> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-watchglue-'))
+  root = tempRoot('pom-watchglue-')
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(abs('Notes'), { recursive: true })

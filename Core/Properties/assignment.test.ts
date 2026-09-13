@@ -1,7 +1,6 @@
 import { it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm } from 'node:fs/promises'
+import { tempRoot } from '../Testing/hostFs'
 import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -12,7 +11,7 @@ import type { PropertyDefinition } from './properties'
 let root: string
 let notes: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-assign-'))
+  root = tempRoot('pom-assign-')
   const c = await createFolderEntity(root, 'collection', 'Notes')
   if (!c.ok) throw new Error('setup failed')
   notes = c.value.path

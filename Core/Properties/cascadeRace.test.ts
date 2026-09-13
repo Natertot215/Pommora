@@ -1,9 +1,9 @@
 // The cascade and the cell-write path must serialize on the SAME per-file lock. They match only because openSession canonicalizes the root — on a symlinked-root ancestry (a macOS tmpdir IS /var→/private/var) a raw sessionRoot would split them into different buckets.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join, relative } from 'node:path'
+import { rm } from 'node:fs/promises'
+import { relative } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { renameOption } from './optionOps'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
@@ -22,7 +22,7 @@ const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition =>
 
 let rawRoot: string
 beforeEach(async () => {
-  rawRoot = await mkdtemp(join(tmpdir(), 'pom-race-'))
+  rawRoot = tempRoot('pom-race-')
 })
 afterEach(async () => {
   closeSession()

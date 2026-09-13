@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest'
-import { chmodSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { chmodSync, rmSync, existsSync } from 'node:fs'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot, noModeBits } from '@pommora/core/Testing/hostFs'
 import { keyValueStore } from '@pommora/core/Platform/stores'
 import { closeSessionDb, openSessionDb, sessionDb, sessionVersionsDb } from './sessionDb'
 import { VERSIONS_FILENAME } from './versionsDb'
@@ -10,7 +10,7 @@ import { DB_FILENAME } from './open'
 describe('sessionDb', () => {
   let root: string
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'pom-sessdb-'))
+    root = tempRoot('pom-sessdb-')
   })
   afterEach(() => {
     closeSessionDb()
@@ -28,8 +28,8 @@ describe('sessionDb', () => {
     expect(sessionVersionsDb()).toBeNull()
   })
 
-  it('never throws on read-only media, opening without persistence', () => {
-    const ro = mkdtempSync(join(tmpdir(), 'pom-readonly-'))
+  it.skipIf(noModeBits)('never throws on read-only media, opening without persistence', () => {
+    const ro = tempRoot('pom-readonly-')
     chmodSync(ro, 0o555)
     try {
       expect(() => openSessionDb(ro)).not.toThrow()

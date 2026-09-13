@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdir, mkdtemp, rm, unlink, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, unlink, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
@@ -39,7 +39,7 @@ const ev = (event: WatchEvent['event'], ...segs: string[]): WatchEvent => ({
 
 // A sidecar-mode nexus with one Collection (one page), one Context group with one Space, and one un-adopted folder holding a loose note — the live tree's whole vocabulary in miniature.
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-watch-'))
+  root = tempRoot('pom-watch-')
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
   await mkdir(abs('.nexus', 'assets'), { recursive: true })
   await mkdir(abs('.nexus', 'homepage'), { recursive: true })
@@ -286,7 +286,7 @@ describe('classifyEvent', () => {
   })
 
   it('a raw nexus never classifies container-meta — the walk reads no sidecars there', async () => {
-    const raw = await mkdtemp(join(tmpdir(), 'pom-raw-'))
+    const raw = tempRoot('pom-raw-')
     try {
       await mkdir(join(raw, 'Things'), { recursive: true })
       await writeFile(join(raw, 'Things', 'note.md'), 'text\n')

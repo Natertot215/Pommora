@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   editProperty,
@@ -18,7 +18,7 @@ import type { PropertyDefinition } from './properties'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-regcrud-'))
+  root = tempRoot('pom-regcrud-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

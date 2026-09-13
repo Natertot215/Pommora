@@ -1,6 +1,5 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { readFile, rm } from 'node:fs/promises'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -59,7 +58,7 @@ const onlyBundlePath = async (): Promise<string> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-restoreprop-'))
+  root = tempRoot('pom-restoreprop-')
   const a = await createFolderEntity(root, 'collection', 'Notes')
   const b = await createFolderEntity(root, 'collection', 'Tasks')
   if (!a.ok || !b.ok) throw new Error('setup failed')

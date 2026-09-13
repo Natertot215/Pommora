@@ -25,7 +25,7 @@ const CENSUS: ReadonlyArray<[string, string]> = [
 
 export function LedgerLeaf(): React.JSX.Element | null {
   const ledger = useLedger()
-  return ledger && <LedgerBody key={ledger.head} ledger={ledger} />
+  return ledger && <LedgerBody key={ledger.series.length} ledger={ledger} />
 }
 
 function LedgerBody({ ledger }: { ledger: Ledger }): React.JSX.Element {

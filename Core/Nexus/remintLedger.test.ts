@@ -1,6 +1,6 @@
-import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { EntityRecord } from './record'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode } from './tree'
@@ -243,7 +243,7 @@ describe('latchBaseline', () => {
 describe('the record rows', () => {
   let root: string
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'pom-record-'))
+    root = tempRoot('pom-record-')
     installStores(memoryStores().stores)
   })
   afterEach(async () => {
@@ -284,7 +284,7 @@ describe('runOpenLedger — the open sequence', () => {
   const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
   let root: string
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'pom-open-'))
+    root = tempRoot('pom-open-')
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'nexus.json'),

@@ -1,6 +1,6 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type {
   HostContext,
@@ -95,7 +95,7 @@ describe('sync:state', () => {
   })
 
   it('walks the nexus itself when the live tree was dropped', async () => {
-    walkable = await mkdtemp(join(tmpdir(), 'pom-sync-'))
+    walkable = tempRoot('pom-sync-')
     await mkdir(join(walkable, '.nexus'), { recursive: true })
     await writeFile(join(walkable, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
     await openSession(walkable)

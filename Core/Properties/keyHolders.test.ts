@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { nexusCorpus, seedContentIndex } from '../Index/indexSeed'
@@ -29,7 +29,7 @@ const page = (n: string, fm: string): Promise<void> =>
   )
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-keyh-'))
+  root = tempRoot('pom-keyh-')
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(abs('.nexus', 'settings.json'), '{}')

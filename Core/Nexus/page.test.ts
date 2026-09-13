@@ -1,18 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from './identityMark'
-import {
-  chmod,
-  mkdtemp,
-  rm,
-  mkdir,
-  readdir,
-  realpath,
-  stat,
-  readFile,
-  writeFile,
-} from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { realpathPosix, tempRoot, noModeBits } from '../Testing/hostFs'
 import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 
@@ -32,7 +22,7 @@ const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition =>
 let root: string
 let typeDir: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-page-crud-'))
+  root = tempRoot('pom-page-crud-')
   typeDir = join(root, 'Notes')
   await mkdir(typeDir, { recursive: true })
 })
@@ -146,21 +136,18 @@ describe('updatePageBody', () => {
     })
   })
 
-  it.skipIf(process.getuid?.() === 0)(
-    'a read failure refuses and leaves the file alone',
-    async () => {
-      const c = await createPage(typeDir, 'P', { body: 'one' })
-      if (!c.ok) throw new Error('setup failed')
-      const before = await bytesOf(c.value.path)
-      await chmod(c.value.path, 0o000)
-      const r = await updatePageBody(c.value.path, 'two')
-      await chmod(c.value.path, 0o644)
-      expect(r.ok).toBe(false)
-      if (r.ok) return
-      expect(r.error.code).toBe('operation-failed')
-      expect(await bytesOf(c.value.path)).toBe(before)
-    },
-  )
+  it.skipIf(noModeBits)('a read failure refuses and leaves the file alone', async () => {
+    const c = await createPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    const before = await bytesOf(c.value.path)
+    await chmod(c.value.path, 0o000)
+    const r = await updatePageBody(c.value.path, 'two')
+    await chmod(c.value.path, 0o644)
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.error.code).toBe('operation-failed')
+    expect(await bytesOf(c.value.path)).toBe(before)
+  })
 })
 
 describe('movePage', () => {
@@ -248,7 +235,7 @@ describe('updatePageProperty', () => {
   })
 
   it('notes the value write against the root it was handed, not the open session', async () => {
-    const open = await realpath(await mkdtemp(join(tmpdir(), 'pom-page-open-')))
+    const open = await realpathPosix(tempRoot('pom-page-open-'))
     await mkdir(join(open, '.nexus'), { recursive: true })
     await writeFile(
       join(open, '.nexus', 'nexus.json'),
@@ -256,7 +243,7 @@ describe('updatePageProperty', () => {
     )
     await openSession(open)
     try {
-      const other = await realpath(root)
+      const other = await realpathPosix(root)
       const c = await createPage(join(other, 'Notes'), 'Elsewhere', { body: 'x' })
       if (!c.ok) throw new Error('setup failed')
       await updatePageProperty(other, c.value.path, defOf('prop_status'), {

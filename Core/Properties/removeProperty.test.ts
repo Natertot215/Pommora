@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { flushValueWrites } from '../Nexus/valuesChanged'
 import { removeProperty } from './removeProperty'
 import { assignProperty } from './assignment'
@@ -43,7 +43,7 @@ const stageDef = {
 } as PropertyDefinition
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-remove-'))
+  root = tempRoot('pom-remove-')
   const c = await createFolderEntity(root, 'collection', 'Notes')
   const p = await createProperty(root, stageDef)
   if (!c.ok || !p.ok) throw new Error('setup failed')

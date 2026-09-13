@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, readdir, rm, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { readdir, rm, stat } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { createFolderEntity, renameFolderEntity, updateFolderSidecar } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { baseSidecar, pageCollectionSidecar } from './schemas'
@@ -9,7 +9,7 @@ import { isUlid } from './ids'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-crud-'))
+  root = tempRoot('pom-crud-')
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })

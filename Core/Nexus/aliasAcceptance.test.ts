@@ -1,6 +1,6 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameCascade } from './cascade'
 import { encodeLinkTarget } from '../Connections/links'
@@ -34,7 +34,7 @@ const body = (): string =>
 const read = async (): Promise<string> => readFile(host, 'utf8')
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'alias-acceptance-'))
+  root = tempRoot('alias-acceptance-')
   const col = join(root, 'Notes')
   await mkdir(col, { recursive: true })
   await writeFile(join(col, '_pagecollection.json'), JSON.stringify({ id: 'c1', properties: [] }))

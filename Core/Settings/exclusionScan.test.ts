@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { excludedArtifacts, clearExclusionData } from './exclusionScan'
 
 let root: string
@@ -34,7 +34,7 @@ const expectIdentityStripped = async (): Promise<string> => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-exscan-'))
+  root = tempRoot('pom-exscan-')
   await d('Archive/Set')
   await d('Archive/Tasks')
   await d('Archive/node_modules/pkg')

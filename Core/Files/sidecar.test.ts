@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, readFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { readSidecar, writeSidecar } from './sidecar'
 import { SIDECAR_FILENAME } from '../Paths/paths'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 
 let dir: string
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'pom-sidecar-'))
+  dir = tempRoot('pom-sidecar-')
 })
 afterEach(async () => {
   await rm(dir, { recursive: true, force: true })

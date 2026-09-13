@@ -1,9 +1,9 @@
 // The crash-window suite: each window is the exact on-disk state a killed op leaves, and the replay must land the same disk an uninterrupted op lands.
 
 import { describe, it, expect, afterEach } from 'vitest'
-import { chmod, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { realpathPosix, tempRoot, noModeBits } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -34,7 +34,7 @@ afterEach(async () => {
 const PAGE_IDS = ['01ARZ3NDEKPSV4RRFFQ69G5FAA', '01ARZ3NDEKPSV4RRFFQ69G5FAB']
 
 async function seedNexus(): Promise<string> {
-  const root = await realpath(await mkdtemp(join(tmpdir(), 'pom-replay-')))
+  const root = await realpathPosix(tempRoot('pom-replay-'))
   roots.push(root)
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
@@ -286,19 +286,22 @@ describe('an unreadable registry holds the record', () => {
 })
 
 describe('unreadable holders hold the record', () => {
-  it('a delete that cannot read one holder keeps its record, and the replay heals it later', async () => {
-    const root = await seedNexus()
-    await openSession(root)
-    await chmod(join(root, 'Col', 'B.md'), 0o000)
-    expect((await deleteProperty(root, 'prop_s')).ok).toBe(true)
-    expect((await readRegistry(root)).defs.prop_s).toBeUndefined()
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
-    expect(await replaySchemaCascade(root).then(() => readSchemaJournal(root))).not.toBeNull()
-    await chmod(join(root, 'Col', 'B.md'), 0o644)
-    await replaySchemaCascade(root)
-    expect(await page(root, 'B')).not.toContain('Stage')
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
+  it.skipIf(noModeBits)(
+    'a delete that cannot read one holder keeps its record, and the replay heals it later',
+    async () => {
+      const root = await seedNexus()
+      await openSession(root)
+      await chmod(join(root, 'Col', 'B.md'), 0o000)
+      expect((await deleteProperty(root, 'prop_s')).ok).toBe(true)
+      expect((await readRegistry(root)).defs.prop_s).toBeUndefined()
+      expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+      expect(await replaySchemaCascade(root).then(() => readSchemaJournal(root))).not.toBeNull()
+      await chmod(join(root, 'Col', 'B.md'), 0o644)
+      await replaySchemaCascade(root)
+      expect(await page(root, 'B')).not.toContain('Stage')
+      expect(await readSchemaJournal(root)).toBeNull()
+    },
+  )
 })
 
 describe('the index seam', () => {

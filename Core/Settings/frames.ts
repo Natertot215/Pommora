@@ -54,6 +54,12 @@ type PickerControlRow<T extends string> = RowText & {
   fallback: T
 }
 
+type ZoomSpec = RowText & {
+  fallback: number
+  steps?: readonly number[]
+  unit?: NumberUnit
+}
+
 type InheritSentinel = 'system' | 'accent' | 'default'
 
 export type Row =
@@ -106,12 +112,6 @@ export type Row =
       kind: 'deviceZoom'
       key: KeyOf<number, DevicePrefs>
     })
-
-type ZoomSpec = RowText & {
-  fallback: number
-  steps?: readonly number[]
-  unit?: NumberUnit
-}
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 

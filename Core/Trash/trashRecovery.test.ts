@@ -1,7 +1,7 @@
 // Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
@@ -30,7 +30,7 @@ const del = async (path: string, kind: string) => {
 
 beforeEach(async () => {
   handed.length = 0
-  root = await mkdtemp(join(tmpdir(), 'pom-e2e-'))
+  root = tempRoot('pom-e2e-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(

@@ -17,7 +17,8 @@ describe('posix roots', () => {
 
   it('keeps a UNC root through join and dirname', () => {
     expect(join('//server/share/Nexus', 'Notes')).toBe('//server/share/Nexus/Notes')
-    expect(dirname('//server/share/Nexus')).toBe('//server/share')
+    expect(dirname('//server/share/Nexus')).toBe('//server/share/')
+    expect(dirname('//server/share')).toBe('//server/share')
   })
 
   it('reads every host absolute form as absolute', () => {

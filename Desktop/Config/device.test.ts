@@ -1,7 +1,7 @@
 import { createHash, createPublicKey, verify } from 'node:crypto'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { join } from '@pommora/core/Paths/posix'
+import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as appConfig from './appConfig'
 import { readAppConfig } from './appConfig'
@@ -26,7 +26,7 @@ vi.mock('electron', () => ({
 
 let dir: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'pom-dev-'))
+  dir = tempRoot('pom-dev-')
 })
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { rm, mkdir, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { writeAssetFile } from './assetWrite'
 
@@ -9,7 +9,7 @@ let root: string
 const bytes = new TextEncoder().encode('image-bytes')
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-assetwrite-'))
+  root = tempRoot('pom-assetwrite-')
   await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
   await writeFile(join(root, '.nexus', 'settings.json'), '{}')
 })

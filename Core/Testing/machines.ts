@@ -1,17 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash } from 'node:crypto'
-import {
-  mkdir,
-  readdir,
-  readFile,
-  realpath,
-  rename,
-  rm,
-  stat,
-  utimes,
-  writeFile,
-} from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { dirname } from '../Paths/posix'
+import { realpathPosix, windows } from './hostFs'
 import type { DirEntry, FileStat, Machine } from '../Platform/machine'
 
 const sha256Hex = (text: string): string => createHash('sha256').update(text).digest('hex')
@@ -154,9 +145,9 @@ export function diskMachine(): Machine {
     rename,
     remove: (p) => rm(p, { recursive: true, force: true }),
     utimes: (p, mtimeMs) => utimes(p, mtimeMs / 1000, mtimeMs / 1000),
-    realpath,
+    realpath: realpathPosix,
     lock: chainLock(),
     sha256Hex,
-    platform: 'posix',
+    platform: windows ? 'windows' : 'posix',
   }
 }
