@@ -1,15 +1,18 @@
 import { isNavRef, toNavRef } from './navRef'
-import { valueOr } from '../Contract/result'
 import type { NavRef, NavigationState } from './navRef'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Paths/paths'
 import { readValue, writeValue } from '../Platform/localState'
-import { readJsonObject, readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { parseConnectionText } from '../Connections/connections'
 import { underAssetRoot } from '../Assets/assetRoots'
 import { readWatchScope } from '../Settings/settings'
+import { isPlainObject } from '../Properties/propertyValue'
 
-const navigationPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.navigation)
+const statePath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.state)
+
+const navigationOf = (state: Record<string, unknown> | null): Record<string, unknown> =>
+  isPlainObject(state?.navigation) ? state.navigation : {}
 
 export function isAssetPath(v: unknown, assetDir: string): v is string {
   if (typeof v !== 'string') return false
@@ -29,7 +32,7 @@ const FILE_KEYS = ['pinned', 'favorites'] as const
 const asList = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
 export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
-  const obj = (await readJsonObject(navigationPath(root))) ?? {}
+  const obj = navigationOf(await readJsonObject(statePath(root)))
   const { assetDir } = await readWatchScope(root)
   const file: Omit<NavigationState, 'recents'> = {}
   for (const key of FILE_KEYS) {
@@ -58,24 +61,27 @@ export async function writeNavigationState(
   }
   const touchesFile = FILE_KEYS.some((k) => k in patch) || 'banner' in patch
   if (!touchesFile) return
-  const path = navigationPath(root)
-  const write = machine().lock(path, async () => {
-    // The write's read-half is STRICT — absent is a fact (start empty), unreadable is ignorance, and a write may act on a fact, never on ignorance.
-    const read = await readJsonStrict(path)
-    if (!read.ok && read.error.code !== 'not-found')
-      throw new Error(`navigation.json is unreadable: ${read.error.message}`)
-    const base = valueOr(read, {})
-    const out: Record<string, unknown> = { ...base }
-    for (const key of FILE_KEYS) {
-      const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
-      if (refs.length) out[key] = refs
-      else delete out[key]
-    }
-    const banner = 'banner' in patch ? patch.banner : base.banner
-    if (isAssetPath(banner, (await readWatchScope(root)).assetDir)) out.banner = banner
-    else delete out.banner
+  const write = (inFlight ?? Promise.resolve()).then(noop, noop).then(async () => {
+    const { assetDir } = await readWatchScope(root)
     await machine().mkdir(nexusDir(root))
-    await writeJson(path, out)
+    const written = await rmwJsonStrict(
+      statePath(root),
+      (state) => {
+        const base = navigationOf(state)
+        const navigation: Record<string, unknown> = { ...base }
+        for (const key of FILE_KEYS) {
+          const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
+          if (refs.length) navigation[key] = refs
+          else delete navigation[key]
+        }
+        const banner = 'banner' in patch ? patch.banner : base.banner
+        if (isAssetPath(banner, assetDir)) navigation.banner = banner
+        else delete navigation.banner
+        return { ...state, navigation }
+      },
+      () => ({}),
+    )
+    if (!written.ok) throw new Error(written.error.message)
   })
   inFlight = write
   try {

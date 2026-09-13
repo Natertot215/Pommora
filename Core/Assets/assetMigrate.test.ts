@@ -88,8 +88,8 @@ describe('migrateAssets', () => {
     await asset('banner-aaaaaa11.jpg', 'nav')
     await asset('id/profile-bbbbbb22.png', 'icon')
     await writeFile(
-      join(root, '.nexus', 'navigation.json'),
-      JSON.stringify({ banner: '.nexus/assets/banner-aaaaaa11.jpg' }),
+      join(root, '.nexus', 'state.json'),
+      JSON.stringify({ navigation: { banner: '.nexus/assets/banner-aaaaaa11.jpg' } }),
     )
     await writeFile(
       join(root, '.nexus', 'settings.json'),
@@ -99,7 +99,9 @@ describe('migrateAssets', () => {
       }),
     )
     await migrateAssets(root)
-    expect(JSON.parse(await read('.nexus/navigation.json')).banner).toBe('[[nexus-banner.jpg]]')
+    expect(JSON.parse(await read('.nexus/state.json')).navigation.banner).toBe(
+      '[[nexus-banner.jpg]]',
+    )
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[nexus-icon.png]]')
   })
 

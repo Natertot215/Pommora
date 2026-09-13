@@ -28,8 +28,7 @@ export interface RestoreDestination {
   id: string
 }
 
-export type StateOrderKey = 'collection_order'
-export type ChildOrderKey = 'collection_order' | 'set_order'
+export type ChildOrderKey = 'set_order'
 
 export type MutateRequest =
   | {
@@ -64,7 +63,7 @@ export type MutateRequest =
   | { op: 'movePage'; path: string; newParentPath: string; order?: string[] }
   | { op: 'moveSet'; path: string; newParentPath: string; order: string[] }
   | { op: 'reorderChildren'; parentPath: string; key: ChildOrderKey; order: string[] }
-  | { op: 'reorderTop'; key: StateOrderKey; order: string[] }
+  | { op: 'reorderTop'; order: string[] }
   | { op: 'createContextGroup'; name: string }
   | { op: 'createSpace'; contextId: string; name: string }
   | { op: 'renameContext'; contextId: string; newName: string }

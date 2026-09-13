@@ -19,13 +19,12 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   │           └── _space.json          | • The Space's identity, color, banner, and its own relation keys
 │   ├── // homepage                      | • The Homepage's tile document and markdown-tile bodies
 │   │   └── homepage.json                | • The Homepage's banner and heading icon
-│   ├── navigation.json                  | • Pins and favorites as ordered id arrays, plus the NavView banner
 │   ├── nexus.db                         | • Device-local operational state and the content index
 │   ├── versions.db                      | • Device-local page file history — the snapshot store
 │   ├── nexus.json                       | • The Nexus id, creation stamp, and the Agenda registration
 │   ├── properties.json                  | • The nexus-wide property registry
 │   ├── settings.json                    | • Personalization, accent, excluded folders, the profile
-│   └── state.json                       | • Top-level Collection order
+│   └── state.json                       | • Pins, favorites, and the NavView banner; Collection and Space order
 ├── // .trash                            | • Deleted entities, mirroring the chain they came from
 │   └── // <Collection>
 │       └── // <stamp>__<Page>           | • A deletion bundle — the artifact beside its record
@@ -132,7 +131,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | State | Where it lives | What clears it |
 | --- | --- | --- |
 | Every setting in the Settings window | `settings.json` | Changing it; a row at its default stores no key |
-| Pins and Favorites | `navigation.json` | Unpinning or removing; an entry that stops resolving hides but is never dropped |
+| Pins and Favorites | `state.json` | Unpinning or removing; an entry that stops resolving hides but is never dropped |
 | Property definitions and their order | `properties.json` | Editing the registry |
 | Top-level Collection order | `state.json` | Reordering |
 | Saved views and what a container is | Each container's own sidecar | Editing the view; deleting the container |

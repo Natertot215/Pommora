@@ -30,7 +30,7 @@ import type { TrashMode } from '../Trash/trashRow'
 import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { renameOp } from './rename'
-import { setChildOrder, setSpaceOrder, setStateOrder } from './reorder'
+import { setChildOrder, setCollectionOrder, setSpaceOrder } from './reorder'
 import { sessionRoot } from './session'
 
 export interface MutateDeps {
@@ -126,7 +126,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'reorderTop':
-      return done(await setStateOrder(root, req.key, req.order))
+      return done(await setCollectionOrder(root, req.order))
 
     case 'createContextGroup': {
       const r = await createContextGroup(root, req.name)

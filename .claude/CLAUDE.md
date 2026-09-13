@@ -1,6 +1,6 @@
 ## Project Pommora
 
-Pommora is Nathan’s main project — a personal management and all-in-one productivity app aimed at providing an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora’s long-term vision is an alternative to cloud-based enterprise organizational and project management tools that provides local-first security, case-specific customization, and an agentic-accessible and advantaged platform. 
+Pommora is Nathan’s main project — a personal management and all-in-one productivity app leveraging an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora’s long-term vision is an alternative to cloud-based enterprise organizational and project management tools, providing local-first security, case-specific customization, and an agentic-accessible, advantaged platform. 
 
 ### The Model
 
@@ -35,7 +35,6 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first.
-- **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 - **Don’t** waste time on screenshots, CDP driving, or DOM inspection to test something Nathan can see on his own — unless I’m asleep or specifically ask, don’t waste your efforts.
 - **Don’t** treat comments as authoritative — a constraint a comment claims isn’t a law, and change-scoping shouldn’t treat them as fact.
 
@@ -52,13 +51,15 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 
 **Nothing is set in stone but these:** Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it. These decisions need explicit sign-offs to change; everything else needs only a good reason.
 
-- **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
-- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision, but legibility concerns context, not every byte the app stores: per-machine operational info, accelerators, file metadata, or similar information may be better stored in the `nexus.db` rather than hand-editable data.
+- **Legibility & Translation:** The user's Nexus, its filesystem structure, and the general layout of the content within it must be reasonably understandable through the filesystem structure itself, app-agnostic, and clearly understood through a single user guide.
+- **Database:** The database shouldn’t be expected to contain anything that would need to be persistent through cross-device synchronization, and should be limited to what’s appropriate as a regenerative index.
+- **Concurrency:** Recency-first resolution is the *current* approach behind cross-device or external editing conflicts, with per-section updates to synced configuration files as the likely approach.
+- **Scalability:** All product decisions must be handled through the perspectives of platform-scaling eventualities and potential enablement.
 
 #### Important Information
 
 - **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. Its commits are archived on its own branch; `git log` reaches them directly.
-- **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime — subordinate to the daily Pommora grind — it brings similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
+- **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project — subordinate to the daily Pommora grind — that functions as the interim bridge bringing similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
 - **NexusOS** is both an Obsidian vault *and* a Pommora Nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian fixtures until Pommora is completed.
 - **Mobile Companion:** A mobile companion app is a near-term focus; it’s been discussed yet hasn’t been formally planned.
 

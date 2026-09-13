@@ -60,7 +60,7 @@ Every typed value is written by `Core/Properties/setProperty.ts` `setPropertyOp`
 | Move a Set | `Core/Nexus/move.ts` `moveSetOp` → `Core/Nexus/folderEntity.ts` `moveFolderEntity` | The folder moves; the destination's `set_order` is rewritten | The Set sits under its new parent, ordered |
 | Delete a Collection or Set | `Core/Trash/delete.ts` `deleteOp` | The folder moves into a `.deleted` bundle beside its `_record.json` | See the Trash table |
 | Reorder children | `Core/Nexus/reorder.ts` `setChildOrder` | `page_order` or `set_order` on the parent's sidecar | The order matches |
-| Reorder top-level Collections | `Core/Nexus/reorder.ts` `setStateOrder` | `.nexus/state.json`, `collection_order` | The sidebar order matches |
+| Reorder top-level Collections | `Core/Nexus/reorder.ts` `setCollectionOrder` | `.nexus/state.json`, `order.collections` | The sidebar order matches |
 | Lock a container's disclosure | `Core/Pages/setDisclosureLock.ts` `setDisclosureLockOp` | The sidecar's `disclosure_locked` | The container reads locked |
 | Set a container's icon or banner | `Core/Pages/setIcon.ts` `setIconOp`, `Core/Pages/setBanner.ts` `setBannerOp` | The sidecar's `icon`, `banner` | Both render |
 | Set Open In or the view button | `Core/Views/handlers.ts` `container:configure` → `Core/Views/containerConfig.ts` `setContainerConfig` | The sidecar's `open_in`, `view_button` | The container opens the same way |
@@ -103,7 +103,7 @@ A property definition is nexus-wide and lives in `.nexus/properties.json`; a Col
 | Assign a page to a Space | `Core/Contexts/contextWrite.ts` `setContextOnPath` | The page's frontmatter, the bare `<Context Title>:` key | The page is listed under that Space |
 | Set a Space color | `Core/Contexts/contextWrite.ts` `setSpaceColor` | `_space.json`, `color` | The Space renders in that color |
 | Reorder Context groups | `Core/Contexts/reorderContexts.ts` `reorderContextsOp` → `Core/Contexts/contextsRegistry.ts` `mutateRegistryFile` | `.nexus/contexts/contexts.json`, the order of the `contexts` array | The sidebar order matches |
-| Reorder Spaces within a group | `Core/Nexus/reorder.ts` `setSpaceOrder` | `.nexus/state.json`, `space_orders.<contextId>` | The sidebar order matches |
+| Reorder Spaces within a group | `Core/Nexus/reorder.ts` `setSpaceOrder` | `.nexus/state.json`, `order.spaces.<contextId>` | The sidebar order matches |
 
 #### Tasks And Events
 
@@ -155,7 +155,7 @@ Agenda entities are Markdown files whose kind is marked inside the ULID and vali
 
 #### Settings, Navigation, And State
 
-`.nexus/settings.json`, `.nexus/navigation.json`, and `.nexus/state.json` are nexus data and travel.
+`.nexus/settings.json` and `.nexus/state.json` are nexus data and travel.
 
 | Mutation | Writer | On-Disk Effect | Expected On B |
 | --- | --- | --- | --- |
@@ -165,7 +165,7 @@ Agenda entities are Markdown files whose kind is marked inside the ULID and vali
 | Set the profile icon | `Core/Nexus/mutate.ts` `setProfileIcon` → `Core/Settings/settings.ts` `updateSettings` | `.nexus/settings.json`, `profile_icon` | The icon renders |
 | Set the profile subtitle | No writer today; `Core/Settings/codec.ts` reads `profile_subtitle` from a hand edit | `.nexus/settings.json`, `profile_subtitle` | The subtitle renders |
 | Set the subfield or nav view modes | `Core/Settings/settings.ts` `writeSubfield`, `writeNavViewModes` | `.nexus/settings.json`, `subfield`, `navViewModes` | Both match |
-| Pin or favorite an item | `Core/Navigation/handlers.ts` `nav:write` → `Core/Navigation/navigationFile.ts` `writeNavigationState` | `.nexus/navigation.json`, `pinned`, `favorites`, `banner` | The same items are pinned and favorited; `recents` is per-device and stays behind |
+| Pin or favorite an item | `Core/Navigation/handlers.ts` `nav:write` → `Core/Navigation/navigationFile.ts` `writeNavigationState` | `.nexus/state.json`, `navigation.pinned`, `navigation.favorites`, `navigation.banner` | The same items are pinned and favorited; `recents` is per-device and stays behind |
 | Rename the Nexus | `Core/Nexus/handlers.ts` `nexus:rename` | The Nexus folder's own name | B's folder name is its own; the `nexus.json` id is what makes the two one Nexus |
 
 ### Must Not Travel

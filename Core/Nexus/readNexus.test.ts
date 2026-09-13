@@ -307,7 +307,7 @@ describe('readNexus — registry-backed contexts', () => {
     )
     w(
       join(reg, '.nexus', 'state.json'),
-      JSON.stringify({ space_orders: { ctx_projects: ['sp-cs-proj', 'sp-pom'] } }),
+      JSON.stringify({ order: { spaces: { ctx_projects: ['sp-cs-proj', 'sp-pom'] } } }),
     )
     d(join(reg, '.nexus', 'contexts', 'Areas', 'Work'))
     w(

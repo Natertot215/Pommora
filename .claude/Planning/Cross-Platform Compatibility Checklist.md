@@ -35,7 +35,7 @@
 
 - **Emitted Separators:** `node_modules/chokidar/index.js:713,202` composes emitted paths with `node:path`'s `join`, and its `normalizePathToUnix` (`:104`) is reached only by `normalizeIgnored` (`:106-113`), which handles string ignore patterns rather than event paths. On win32 the emitted path is native throughout, even when the watched root was passed forward-slash. What would need to hold: the path the watcher reports and the path Core reasons about agree.
 - **Ignore Predicate:** `Core/Nexus/watchSettle.ts:25-49` builds `ignoredUnder` as a predicate chokidar calls per path; `:30-31` returns `false` whenever `relative(root, path)` comes back empty or escaping. A native-separator path relativizes to nothing recognizable, so `.trash`, `node_modules`, dotfiles, `.db`/`-wal`/`-shm`, excluded folders, and tile bodies stop being filtered, and the WAL churn `Core/Paths/exclusion.ts:5` exists to drop reaches the settle path. What would need to hold: the ignore filter recognizes the paths chokidar hands it, and an unrecognizable path is not treated as watchable.
-- **Nav Classification:** `Desktop/FileWatch/watcher.ts:49` routes an event through `isNavPath` (`Core/Nexus/watchSettle.ts:19-22`), which also splits a relative path on `/`. A misclassified navigation write follows the tree branch instead of the nav push. What would need to hold: the classifier reads the same path shape the watcher emits.
+- **Nav Classification:** `Desktop/FileWatch/watcher.ts:50` routes an event through `isStatePath` (`Core/Nexus/watchSettle.ts:19-22`), which also splits a relative path on `/`. A misclassified `state.json` write skips the navigation push. What would need to hold: the classifier reads the same path shape the watcher emits.
 
 #### Host Config
 
@@ -85,15 +85,13 @@
 - [ ] `Core/Paths/pathSafety.ts:6-14` with `Core/Paths/posix.ts:1` — the lexical containment guard recognizes each host's absolute and UNC forms, holding independently of the realpath comparison.
 - [ ] `Desktop/Bridge/preload.ts:25` and `Desktop/Platform/nodeMachine.ts:53` — every route a host path takes into Core converges on one spelling, alongside `Desktop/main.ts:142,151,220,228,312`.
 - [ ] `Core/Paths/posix.ts:3-17` — segment arithmetic agrees with the host on separators and drive prefixes.
-- [~] `Core/Contexts/contexts.ts:33-43` with `Core/Paths/names.ts` — name refusal covers the Windows-reserved characters and device names on a Windows host; a name created on macOS still travels unrefused.
-- [~] `Core/Paths/nexusPaths.ts:39-42` — Context and Space titles carry the directory name-rules through `nameError`; the cross-host residual matches the name-refusal item above.
 - [ ] `Desktop/main.ts:67` with `Core/Nexus/handlers.ts:95-96` — a delete on a volume without a system trash has a stated outcome.
 - [ ] `Desktop/electron-builder.yml:23-26` — `npm run package` produces a runnable Windows artifact.
 - [ ] `Desktop/Platform/nodeMachine.ts:53` with `Core/Paths/pathSafety.ts:24-25` — junctions, mapped drives, UNC shares, and OneDrive placeholders resolve consistently.
 - [ ] `Core/Trash/bundle.ts:19-31` — a delete that succeeds on the corpus succeeds into the trash mirror at Windows path lengths.
 - [ ] `Desktop/main.ts:233-234,267` — reveal, external open, and recent-document registration accept the path shape Core hands them.
 - [ ] `Desktop/Platform/fileLock.ts:5,10` — one file resolves to one lock key from every caller.
-- [ ] `Core/Nexus/watchSettle.ts:19-22` with `Desktop/FileWatch/watcher.ts:49` — `isNavPath` reads the same path shape the watcher emits.
+- [ ] `Core/Nexus/watchSettle.ts:19-22` with `Desktop/FileWatch/watcher.ts:50` — `isStatePath` reads the same path shape the watcher emits.
 - [ ] `Core/Settings/personalization.ts:99,115` with `Desktop/main.ts:158-161` — display-bound scale values are read by the machine they describe.
 - [ ] `Core/Platform/localState.ts:4-19` with `Desktop/Store/open.ts:25-27` — per-machine rows are reachable only by their own machine.
 - [ ] `Desktop/Store/ddl.ts:41`, `Core/Index/indexSeed.ts:145`, `Desktop/Platform/nodeMachine.ts:52` — a restored mtime reads back equal on NTFS as it does on APFS.

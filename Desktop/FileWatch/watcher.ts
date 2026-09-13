@@ -5,7 +5,7 @@ import type { BrowserWindow } from 'electron'
 import { sameScope, type WatchScope } from '@pommora/core/Paths/exclusion'
 import {
   ignoredUnder,
-  isNavPath,
+  isStatePath,
   tilesChangedIn,
   valueChangesOf,
 } from '@pommora/core/Nexus/watchSettle'
@@ -29,6 +29,7 @@ const SETTLE_MS = 200
 let watcher: FSWatcher | null = null
 let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
+let pushedNav = ''
 let batch: WatchEvent[] = []
 
 export async function startWatcher(root: string, win: BrowserWindow): Promise<void> {
@@ -45,14 +46,11 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   const onEvent =
     (event: WatchEventName) =>
     (path: string): void => {
-      // Nav events skip the echo suppression below: one never touches the tree, so a hand-edit landing right after the app's own write is not swallowed.
-      if (isNavPath(root, path)) {
+      // The app's own writes echo back and confirm through their own channels; state.json skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
+      if (isStatePath(root, path)) {
         if (navDebounce) clearTimeout(navDebounce)
         navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
-        return
-      }
-      // The app's own writes echo back here; each confirms through its own channel instead.
-      if (isRecentWrite(path)) return
+      } else if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)
@@ -76,6 +74,7 @@ export function stopWatcher(): void {
     clearTimeout(navDebounce)
     navDebounce = null
   }
+  pushedNav = ''
   if (watcher) {
     void watcher.close()
     watcher = null
@@ -122,11 +121,14 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
   }
 }
 
-/** Fires on ANY navigation.json change, the app's own included, so an external or synced-in edit surfaces live. */
+/** Pushes state.json's navigation section whenever it moves, the app's own writes included, so an external or synced-in edit surfaces live. */
 async function pushNav(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
     const nav = await readNavigationFile(root)
+    const text = JSON.stringify(nav)
+    if (text === pushedNav) return
+    pushedNav = text
     pushToWindow(win, 'nav:changed', nav)
   } catch {
     // Transient FS state mid-sync — the next settle re-reads.
