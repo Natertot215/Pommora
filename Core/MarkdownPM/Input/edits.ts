@@ -271,14 +271,17 @@ export function autoPair(
   if (selStart !== selEnd) return null
   const doc = scan.text
   const c = selStart
+  if (')]}'.includes(inserted) && doc[c] === inserted && settings.pairBrackets !== false)
+    return inCodeAt(scan, c) ? null : { from: c, to: c, insert: '', selection: c + 1 }
   const pair = PAIRS[inserted]
   if (!pair || settings[pair.group] === false || !isPairEdge(doc[c], CLOSE_MARKS)) return null
   if (inCodeAt(scan, c)) return null
   const prev = doc[c - 1]
 
   if (pair.multi && prev === inserted) {
-    if (doc[c] === pair.close)
+    if (doc[c] === pair.close && isPairEdge(doc[c - 2], OPEN_MARKS))
       return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
+    if (doc[c] === inserted) return { from: c, to: c, insert: '', selection: c + 1 }
     // A doubled marker only pairs as a fresh OPENER — not glued to a word, and not completing an earlier unmatched double.
     const beforeRun = doc.slice(lineStartAt(doc, c), c - 1)
     const openDoubles = beforeRun.split(inserted + inserted).length - 1
@@ -437,6 +440,7 @@ export function equations(
   const c = selStart
   const glyph = EQUATIONS[`${doc[c - 1]}${inserted}`]
   if (!glyph || doc[c - 2] === doc[c - 1] || isLiteralAt(scan, c)) return null
+  if ((doc[c - 1] === '/' || inserted === '/') && /\w/.test(doc[c - 2] ?? '')) return null
   return { from: c - 1, to: c, insert: glyph, selection: c }
 }
 
@@ -457,10 +461,12 @@ export function dashArrow(
   if (
     dashes &&
     inserted !== '-' &&
+    inserted !== '>' &&
     c >= 2 &&
     doc[c - 1] === '-' &&
     doc[c - 2] === '-' &&
-    doc[c - 3] !== '-'
+    doc[c - 3] !== '-' &&
+    doc[c - 3] !== '!'
   ) {
     if (isInsideWikilink(c, doc) || inUrlRun(doc, c)) return null
     return { from: c - 2, to: c, insert: `—${inserted}`, selection: c }
@@ -469,7 +475,7 @@ export function dashArrow(
     return { from: c - 1, to: c, insert: '—', selection: c }
   if (inserted === '>') {
     if (arrows && doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
-    if (doc[c - 1] === '-' && (arrows || opensLine(doc, c - 1)))
+    if (doc[c - 1] === '-' && doc[c - 2] !== '-' && (arrows || opensLine(doc, c - 1)))
       return { from: c - 1, to: c, insert: '→', selection: c }
     if (arrows && doc[c - 1] === '>' && doc.slice(lineStartAt(doc, c - 1), c - 1).trim() !== '')
       return { from: c - 1, to: c, insert: '»', selection: c }
