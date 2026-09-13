@@ -7,7 +7,7 @@ import { customSelection } from '../selection'
 import { markdownDecorations } from '../decorations'
 import { formatKeymap } from '../Input/formatKeymap'
 import { cellCitations, citesChanged } from './cellCitations'
-import { autoPair, autoDelete, type Edit } from '../Input/edits'
+import { autoPair, autoDelete, dashArrow, ellipsis, equations, type Edit } from '../Input/edits'
 import { docScan } from '../docCache'
 import { AC_MAX, aliasRows, pageRow } from '../Autocomplete/autocomplete'
 import { refusedInAlias } from '../Guards/aliasGuard'
@@ -116,7 +116,7 @@ export function CellEditor({
         doc: initial,
         extensions: [
           editorHost.of(host),
-          markdownDecorations(connections ?? noConn),
+          markdownDecorations(connections ?? noConn, true),
           cellCitations(() => ordinalOfRef.current),
           // A cell authors aliases like the body does — without this an abandoned pipe reaches disk.
           aliasOnLeave(() => connections?.()),
@@ -185,12 +185,20 @@ export function CellEditor({
           ),
           formatGate.current.of(formatKeymap(lastCommands.current)),
           keymap.of(defaultKeymap),
-          // Character-pair auto-pairing only, so the `[[…]]` query closes and autocomplete can fire.
           EditorView.inputHandler.of((view, from, to, text) => {
+            if (view.composing || view.compositionStarted) return false
             if (text.length !== 1 || from !== to) return false
             const scan = docScan(view.state.doc)
             if (refusedInAlias(scan.text, from, text)) return true
-            return applyEdit(view, autoPair(scan, from, from, text, host.settings()), 'input')
+            const settings = host.settings()
+            return applyEdit(
+              view,
+              autoPair(scan, from, from, text, settings) ??
+                dashArrow(scan, from, from, text, settings) ??
+                ellipsis(scan, from, from, text, settings) ??
+                equations(scan, from, from, text, settings),
+              'input',
+            )
           }),
           EditorView.domEventHandlers({
             blur: () => {
