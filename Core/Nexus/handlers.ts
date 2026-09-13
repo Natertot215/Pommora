@@ -3,7 +3,7 @@ import { errText, fail, ok, type Result } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
-import { pathExists } from '../Files/atomicWrite'
+import { targetTaken } from '../Files/atomicWrite'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { basename, dirname, join } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
@@ -136,7 +136,7 @@ export const nexusHandlers = {
     if (trimmed === basename(root))
       return fail('operation-failed', 'That’s already the nexus name.')
     const newRoot = join(dirname(root), trimmed)
-    if (await pathExists(newRoot))
+    if (await targetTaken(root, newRoot))
       return fail('operation-failed', 'A folder with that name already exists.')
     await retireFileHistory(root)
     await machine().rename(root, newRoot)

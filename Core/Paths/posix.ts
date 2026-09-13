@@ -1,4 +1,4 @@
-const ROOT = /^(?:[A-Za-z]:\/|\/\/(?=[^/])|\/)/
+const ROOT = /^(?:[A-Za-z]:\/|\/\/[^/]+\/[^/]+(?:\/|$)|\/)/
 
 const rootOf = (p: string): string => ROOT.exec(p)?.[0] ?? ''
 

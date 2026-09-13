@@ -9,7 +9,7 @@ import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { type Commands, toAccelerator } from '@pommora/core/Actions/commands'
 import { setHostZoom, stepHostZoom } from '../Web/webGuests'
 import { interfaceScaleZoom } from '../Config/interfaceScale'
-import { nativePath } from '../Platform/hostPath'
+import { isWindows, nativePath, posixPath } from '../Platform/hostPath'
 
 type AdoptFn = (path: string) => Promise<void>
 
@@ -29,7 +29,7 @@ export async function installAppMenu(
   adopt: AdoptFn,
   commands: Commands,
 ): Promise<void> {
-  const userData = app.getPath('userData')
+  const userData = posixPath(app.getPath('userData'))
   const stored = (await readAppConfig(userData)).recents ?? []
   // Drop trashed nexuses so Open Recent never lists a dead path.
   const recents = await pruneRecents(stored)
@@ -72,7 +72,7 @@ export async function installAppMenu(
         },
         { type: 'separator' },
         {
-          label: process.platform === 'win32' ? 'Show in File Explorer' : 'Reveal in Finder',
+          label: isWindows ? 'Show in File Explorer' : 'Reveal in Finder',
           enabled: hasSession,
           click: () => {
             const root = sessionRoot()

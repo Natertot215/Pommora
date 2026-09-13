@@ -1,10 +1,11 @@
 // Device-level config, not nexus data. Parametrized by the userData dir (not app.getPath) so the logic stays testable without Electron.
 
-import { join } from 'node:path'
+import { join } from '@pommora/core/Paths/posix'
 import { stat } from 'node:fs/promises'
 import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashRow'
 import { TRASH_DIR } from '@pommora/core/Paths/nexusPaths'
+import { foldKey } from '@pommora/core/Paths/caseFold'
 import type { SyncDevice } from '@pommora/core/Sync/contract'
 
 interface AppConfig {
@@ -58,7 +59,7 @@ export async function updateAppConfig(
 }
 
 export function addRecent(recents: string[], path: string, cap = 10): string[] {
-  return [path, ...recents.filter((p) => p !== path)].slice(0, cap)
+  return [path, ...recents.filter((p) => foldKey(p) !== foldKey(path))].slice(0, cap)
 }
 
 async function isExistingDir(p: string): Promise<boolean> {

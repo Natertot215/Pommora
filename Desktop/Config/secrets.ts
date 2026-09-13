@@ -1,7 +1,7 @@
 // Values the config file must not carry in the clear, encrypted by the OS keychain through
 // safeStorage and written beside pommora.json so the config itself stays hand-readable.
 
-import { join } from 'node:path'
+import { join } from '@pommora/core/Paths/posix'
 import { safeStorage } from 'electron'
 import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 

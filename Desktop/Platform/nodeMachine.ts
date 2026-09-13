@@ -3,7 +3,7 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, utimes } from 'no
 import writeFileAtomic from 'write-file-atomic'
 import type { DirEntry, Machine } from '@pommora/core/Platform/machine'
 import { serializeOnFile } from './fileLock'
-import { posixPath } from './hostPath'
+import { isWindows, posixPath } from './hostPath'
 import { basename } from '@pommora/core/Paths/posix'
 
 const isAbsent = (e: unknown): boolean => {
@@ -20,7 +20,6 @@ async function absentToNull<T>(read: Promise<T>): Promise<T | null> {
   }
 }
 
-const windows = process.platform === 'win32'
 const HELD = new Set(['EBUSY', 'EPERM', 'EACCES'])
 const HOLDER_ATTEMPTS = 5
 
@@ -29,8 +28,11 @@ async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
     try {
       return await op()
     } catch (e) {
-      if (!windows || !HELD.has((e as NodeJS.ErrnoException).code ?? '')) throw e
-      if (attempt === HOLDER_ATTEMPTS) throw new Error(`${basename(p)} is in use by another app.`)
+      if (!isWindows || !HELD.has((e as NodeJS.ErrnoException).code ?? '')) throw e
+      if (attempt === HOLDER_ATTEMPTS)
+        throw new Error(`${basename(p)} is held open by another app or isn't writable.`, {
+          cause: e,
+        })
       await new Promise((resolve) => setTimeout(resolve, attempt * 100))
     }
   }
@@ -71,5 +73,5 @@ export const nodeMachine: Machine = {
   realpath: async (p) => posixPath(await realpath(p)),
   lock: serializeOnFile,
   sha256Hex: (text) => createHash('sha256').update(text).digest('hex'),
-  platform: windows ? 'windows' : 'posix',
+  platform: isWindows ? 'windows' : 'posix',
 }

@@ -4,7 +4,12 @@ import { NON_CORPUS_TOP, TRASH_DIR } from './nexusPaths'
 import { fail, ok, type Result } from '../Contract/result'
 
 export function escapes(rel: string): boolean {
-  return rel === '..' || rel.startsWith('../') || isAbsolute(rel)
+  return (
+    rel === '..' ||
+    rel.startsWith('../') ||
+    isAbsolute(rel) ||
+    (machine().platform === 'windows' && rel.includes('\\'))
+  )
 }
 
 export async function resolveUnderRoot(root: string, relPath: unknown): Promise<Result<string>> {

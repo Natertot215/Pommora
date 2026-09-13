@@ -46,7 +46,7 @@ import {
 import { ensureDevice } from './Config/device'
 import { interfaceScaleZoom } from './Config/interfaceScale'
 import { startWatcher, stopWatcher } from './FileWatch/watcher'
-import { nativePath, posixPath } from './Platform/hostPath'
+import { isWindows, nativePath, posixPath } from './Platform/hostPath'
 import { nodeMachine } from './Platform/nodeMachine'
 import { closeSessionDb, openSessionDb } from './Store/sessionDb'
 import { fetchPageTitle } from './Web/linkTitles'
@@ -137,7 +137,7 @@ function registerAssetProtocol(): void {
   })
 }
 
-const userData = (): string => app.getPath('userData')
+const userData = (): string => posixPath(app.getPath('userData'))
 
 let mainWindow: BrowserWindow | null = null
 let device: HostDevice | null = null
@@ -164,10 +164,10 @@ function createWindow(): void {
     width: 1280,
     height: 832,
     show: false,
-    // Title bar hidden but the native frame kept (macOS corner radius + shadow); traffic lights repositioned into the sidebar, which stays opaque to sample the window.
+    // Title bar hidden but the native frame kept (macOS corner radius + shadow, Windows caption controls as an overlay); traffic lights repositioned into the sidebar, which stays opaque to sample the window.
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 18, y: 18 },
-    ...(process.platform === 'win32' && {
+    ...(isWindows && {
       titleBarOverlay: { color: WINDOW_BG, symbolColor: SYSTEM.white },
     }),
     backgroundColor: WINDOW_BG,
@@ -210,7 +210,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
     async pick(kind, opts) {
       const options: OpenDialogOptions = {
         properties: PICK_PROPERTIES[kind],
-        ...(opts?.defaultPath && { defaultPath: opts.defaultPath }),
+        ...(opts?.defaultPath && { defaultPath: nativePath(opts.defaultPath) }),
         ...(opts?.message && { message: opts.message }),
         ...(kind === 'image' && { filters: [{ name: 'Images', extensions: IMAGE_EXTS }] }),
       }
@@ -244,7 +244,6 @@ function hostContext(win: BrowserWindow | null): HostContext {
         return null
       }
     },
-    platform: () => (process.platform === 'win32' ? 'windows' : 'posix'),
     menu: (req) => (win ? popNativeMenu(win, req) : Promise.resolve(null)),
     thumbnails: {
       capture: (root, navKey, rect, scaleFactor) =>
