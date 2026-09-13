@@ -171,7 +171,7 @@ export function CellEditor({
                   const s = view.state.selection.main
                   return applyEdit(
                     view,
-                    autoDelete(docScan(view.state.doc), s.from, s.to),
+                    autoDelete(docScan(view.state.doc), s.from, s.to, host.settings()),
                     'delete',
                   )
                 },
@@ -190,7 +190,7 @@ export function CellEditor({
             if (text.length !== 1 || from !== to) return false
             const scan = docScan(view.state.doc)
             if (refusedInAlias(scan.text, from, text)) return true
-            return applyEdit(view, autoPair(scan, from, from, text), 'input')
+            return applyEdit(view, autoPair(scan, from, from, text, host.settings()), 'input')
           }),
           EditorView.domEventHandlers({
             blur: () => {

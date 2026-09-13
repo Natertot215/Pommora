@@ -10,6 +10,7 @@ import {
   closeConstructOnEnter,
   closeConstructOnShiftEnter,
   dashArrow,
+  ellipsis,
   calloutShorthand,
   shiftEnterEdit,
   indentListOnTab,
@@ -23,6 +24,9 @@ import type { DocScan } from '../Engine/docScan'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
 import { docScan, docString } from '../docCache'
+import { editorHost } from '../api'
+
+const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
 
 function apply(view: EditorView, edit: Edit | null): boolean {
   if (!edit) return false
@@ -47,7 +51,7 @@ const onEnter = (view: EditorView): boolean => {
   const scan = docScan(view.state.doc)
   return apply(
     view,
-    closeConstructOnEnter(scan, s.from, s.to) ??
+    closeConstructOnEnter(scan, s.from, s.to, settingsOf(view)) ??
       tableBoundaryEnter(scan, s) ??
       continueListOnEnter(scan.text, s.from, s.to) ??
       continueBlockquoteOnEnter(scan, s.from, s.to),
@@ -87,7 +91,10 @@ const onBackspace = (view: EditorView): boolean => {
     return true
   if (citationCascade(view, s.from, s.to)) return true
   const scan = docScan(view.state.doc)
-  return apply(view, smartBackspace(scan, s.from, s.to) ?? autoDelete(scan, s.from, s.to))
+  return apply(
+    view,
+    smartBackspace(scan, s.from, s.to) ?? autoDelete(scan, s.from, s.to, settingsOf(view)),
+  )
 }
 
 const onTab = (view: EditorView): boolean => {
@@ -108,7 +115,8 @@ const onShiftEnter = (view: EditorView): boolean => {
   const scan = docScan(view.state.doc)
   return apply(
     view,
-    closeConstructOnShiftEnter(scan, s.from, s.to) ?? shiftEnterEdit(scan, s.from, s.to),
+    closeConstructOnShiftEnter(scan, s.from, s.to, settingsOf(view)) ??
+      shiftEnterEdit(scan, s.from, s.to),
   )
 }
 
@@ -133,12 +141,14 @@ export const markdownInput = [
     const scan = docScan(view.state.doc)
     if (refusedInAlias(scan.text, from, text)) return true
     if (text === ']' && seedTypedCitation(view, from)) return true
+    const settings = settingsOf(view)
     return apply(
       view,
-      calloutShorthand(scan.text, from, from, text) ??
+      calloutShorthand(scan.text, from, from, text, settings) ??
         canonicalizeCheckbox(scan.text, from, from, text) ??
-        autoPair(scan, from, from, text) ??
-        dashArrow(scan, from, from, text),
+        autoPair(scan, from, from, text, settings) ??
+        dashArrow(scan, from, from, text, settings) ??
+        ellipsis(scan, from, from, text, settings),
     )
   }),
 ]
