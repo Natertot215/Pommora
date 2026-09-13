@@ -38,7 +38,7 @@ A handful of rewrites fire as you type, implemented in `Input/` as a high-preced
 - **Callout shorthand** — `||` becomes `> [!callout] `.
 - **Auto-pair** — brackets, the single emphasis and code markers, and quotes pair when the caret has whitespace, a line edge, or existing pair syntax on both sides, so nothing pairs against a character. A marker types over its own closer on the way out, doubled emphasis promotes to the stronger form rather than pairing again, and Backspace inside an empty pair removes both halves. `~` and `=` pair only on the second press, since a single one is punctuation. All of this works inside table cells too.
 - **Enter and Shift+Enter** — Enter steps past an open construct's closer; Shift+Enter closes it first, then breaks the line.
-- **Dashes, arrows, and ellipses** — `--` becomes `—`, a spaced ` - ` becomes `–`, `->` becomes `→`, and `...` becomes `…`. An arrow list's `->` converts whether or not inline arrows do.
+- **Dashes, arrows, and ellipses** — `--` becomes `—`, a spaced ` - ` becomes `–`, `->` becomes `→`, `>>` and `<<` become `»` and `«`, and `...` becomes `…`. A `>>` opening a line stays a nested blockquote. An arrow list's `->` converts whether or not inline arrows do.
 
 Settings › Pages & Writing turns each group on or off: the Transformations section holds Dashes, Arrows, Ellipses, and Callout, and the Autopairing section holds Brackets, Markers, Quotes, Delete Pairs Together, and Exit On Enter. Every one of them starts on; list continuation and checkbox canonicalization have no setting.
 - **Whole-marker backspace** — on a marker line, Backspace removes the whole marker at once, callouts included.

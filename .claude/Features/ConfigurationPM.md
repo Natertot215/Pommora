@@ -123,7 +123,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Editor Scale | `editorScale` | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% (**100%**) |
 | Outliner Lines | `outlinerLines` | Draws indent rails on nested lists in the editor. | On · **Off** |
 | Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
-| Arrows | `transformArrows` | `->`, `<-`, and `<->` become `→`, `←`, and `↔`; an arrow list's marker converts either way. | **On** · Off |
+| Arrows | `transformArrows` | `->`, `<-`, `<->`, `>>`, and `<<` become `→`, `←`, `↔`, `»`, and `«`; an arrow list's marker converts either way. | **On** · Off |
 | Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
 | Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
 | Brackets | `pairBrackets` | `(` and `[` add their closers. | **On** · Off |
