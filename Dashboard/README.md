@@ -10,7 +10,7 @@ Published at https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d1140
 
 ## Pommora Showcase
 
-`showcase.html` → the design system, live: color tokens, the type ramp, icons, buttons, components, glass materials, and the pane replicas, with a sidebar on desktop and a top-right menu on mobile.
+`showcase.html` → the design system, live: color tokens, the type ramp, icons, glass materials, buttons, and components, with a sidebar on desktop and a top-right menu on mobile.
 
 Published at https://claude.ai/code/artifact/684b7af1-55b2-49cf-b2fa-1b3a6b15dd9c.
 
