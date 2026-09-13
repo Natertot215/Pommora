@@ -367,7 +367,6 @@ describe('pinned panes (Task 10)', () => {
     expect(layer).not.toBeNull()
     expect(layer.style.left).toBe('200px')
     expect(layer.style.top).toBe(`${100 + 16 + MENU_GAP}px`)
-    expect(layer.style.transform).toContain('translateX(-50%)')
   })
 
   it('survives a navigation that dismisses the live pane (control)', () => {

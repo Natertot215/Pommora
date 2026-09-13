@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { Button, Segmented } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
+import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { LedgerChart, type Window, zoomed } from './LedgerChart'
 import {
@@ -69,33 +69,32 @@ export function LedgerLeaf(): React.JSX.Element {
             Hover a day for its breakdown · pinch or ⌘-scroll to zoom · drag to pan
           </span>
           <div className="lg-zoom">
-            <Segmented
-              type="solid"
-              segments={[
-                {
-                  icon: 'minus',
-                  title: 'Zoom out',
-                  disabled: win.hi - win.lo >= last,
-                  onClick: () => setWin(zoomed(win, last, 1.6)),
-                },
-                {
-                  icon: 'plus',
-                  title: 'Zoom in',
-                  disabled: win.hi - win.lo <= 3,
-                  onClick: () => setWin(zoomed(win, last, 1 / 1.6)),
-                },
-              ]}
-            />
-            <Button
+            <button
+              type="button"
+              title="Zoom out"
+              disabled={win.hi - win.lo >= last}
+              onClick={() => setWin(zoomed(win, last, 1.6))}
+            >
+              −
+            </button>
+            <button
+              type="button"
+              title="Zoom in"
+              disabled={win.hi - win.lo <= 3}
+              onClick={() => setWin(zoomed(win, last, 1 / 1.6))}
+            >
+              +
+            </button>
+            <button
               ref={filterRef}
-              type="solid"
-              size="button-large"
-              icon="funnel"
+              type="button"
               title="Include"
               aria-label="Include"
-              pressed={filtering}
+              aria-pressed={filtering}
               onClick={() => setFiltering((o) => !o)}
-            />
+            >
+              <Icon name="funnel" size={13} />
+            </button>
             <PickerMenu
               solid
               open={filtering}
@@ -112,12 +111,9 @@ export function LedgerLeaf(): React.JSX.Element {
                 </PickerRow>
               ))}
             </PickerMenu>
-            <Button
-              type="solid"
-              size="button-large"
-              label="Reset"
-              onClick={() => setWin({ lo: 0, hi: last })}
-            />
+            <button type="button" onClick={() => setWin({ lo: 0, hi: last })}>
+              Reset
+            </button>
             <span className="lg-span">
               {dayLabel(series[i0].d)} – {dayLabel(series[i1].d)}
             </span>

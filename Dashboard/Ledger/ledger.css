@@ -116,6 +116,35 @@
   align-items: center;
   gap: 6px;
 }
+.lg-zoom button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 8px;
+  border: var(--width-100) solid var(--border-base);
+  border-radius: 7px;
+  background: var(--surface-secondary);
+  color: var(--label-control);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-base),
+    color var(--duration-fast) var(--ease-base);
+}
+.lg-zoom button:hover,
+.lg-zoom button[aria-pressed="true"] {
+  background: var(--surface-tertiary);
+  color: var(--label-primary);
+}
+.lg-zoom button:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: var(--surface-secondary);
+}
 .lg-span {
   margin-left: 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

@@ -94,9 +94,10 @@ const portalText = (): string =>
 const buttons = (): HTMLButtonElement[] => [
   ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
 ]
+// jsdom measures the pane at zero width, so a centred pane's left edge sits exactly on the click.
 const isCentred = (): boolean =>
-  [...document.querySelectorAll<HTMLElement>('[data-picker-portal]')].some((e) =>
-    (e.style.transform ?? '').includes('translateX(-50%)'),
+  [...document.querySelectorAll<HTMLElement>('[data-picker-portal]')].some(
+    (e) => e.style.left === '200px',
   )
 
 describe('PropertyPicker panes', () => {

@@ -23,7 +23,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 **Pommora —**  `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42• React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react`  as a secondary source to pull from per-icon. **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor.
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as claude.ai artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); the post-commit hook rebuilds both and a session republishes them. The showcase is **never** a priority during development.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); post-commit hooks rebuild both and a session republishes them. The showcase is **never** a priority during development.
 
 ### Hard Rules
 

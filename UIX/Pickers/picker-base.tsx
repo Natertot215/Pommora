@@ -52,11 +52,18 @@ type Pos = {
   right?: number
   left?: number
   origin?: string
-  centered?: boolean
 }
-const POS_KEYS = ['top', 'bottom', 'right', 'left', 'origin', 'centered'] as const
+const POS_KEYS = ['top', 'bottom', 'right', 'left', 'origin'] as const
 const samePos = (a: Pos | null, b: Pos): boolean =>
   a !== null && POS_KEYS.every((k) => a[k] === b[k])
+// A fixed pane on a half-pixel offset composites its text blurry under the frost, and a measured trigger sits on one whenever its layout does.
+const snapped = (p: Pos): Pos => ({
+  ...p,
+  ...(p.top !== undefined && { top: Math.round(p.top) }),
+  ...(p.bottom !== undefined && { bottom: Math.round(p.bottom) }),
+  ...(p.left !== undefined && { left: Math.round(p.left) }),
+  ...(p.right !== undefined && { right: Math.round(p.right) }),
+})
 
 export function PickerMenu({
   children,
@@ -148,7 +155,10 @@ export function PickerMenu({
 
   const glassRef = useRef<HTMLDivElement>(null)
   const [pos, setPosState] = useState<Pos | null>(null)
-  const setPos = (next: Pos): void => setPosState((prev) => (samePos(prev, next) ? prev : next))
+  const setPos = (raw: Pos): void => {
+    const next = snapped(raw)
+    setPosState((prev) => (samePos(prev, next) ? prev : next))
+  }
   const [effDir, setEffDir] = useState<PickerDirection>(direction)
   const decidedDir = useRef<PickerDirection | null>(null)
   const decidedCenter = useRef<boolean | null>(null)
@@ -229,7 +239,7 @@ export function PickerMenu({
       if (decidedCenter.current) {
         const half = pw / 2
         const left = Math.min(Math.max(c, edgeL + half), edgeR - half)
-        setPos({ ...vertical, left, centered: true, origin: near(c - (left - half)) })
+        setPos({ ...vertical, left: left - half, origin: near(c - (left - half)) })
         return
       }
       if (origin === 'left') {
@@ -390,10 +400,7 @@ export function PickerMenu({
               ...(pos?.top !== undefined ? { top: `${pos.top}px` } : null),
               ...(pos?.bottom !== undefined ? { bottom: `${pos.bottom}px` } : null),
               ...(pos?.left !== undefined
-                ? {
-                    left: `${pos.left}px`,
-                    ...(pos.centered ? { transform: 'translateX(-50%)' } : null),
-                  }
+                ? { left: `${pos.left}px` }
                 : pos?.right !== undefined
                   ? { right: `${pos.right}px` }
                   : null),

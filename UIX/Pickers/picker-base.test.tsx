@@ -410,8 +410,7 @@ describe('PickerMenu auto-centering', () => {
     triggerCenter = 512
     await render(<Host open={false} />)
     await render(<Host open />)
-    expect(layer().style.transform).toBe('translateX(-50%)')
-    expect(layer().style.left).toBe('512px')
+    expect(layer().style.left).toBe('412px')
   })
 
   // A named `center` slides within its bounds; `auto` declines to center at all once it would have to be clamped.
@@ -421,15 +420,14 @@ describe('PickerMenu auto-centering', () => {
     const b = { left: 200, right: 600 }
     await render(<Host open={false} origin="center" bounds={b} />)
     await render(<Host open origin="center" bounds={b} />)
-    expect(layer().style.transform).toBe('translateX(-50%)')
-    expect(layer().style.left).toBe('492px')
+    expect(layer().style.left).toBe('392px')
   })
 
   it('centers freely at that same point when nothing bounds it', async () => {
     triggerCenter = 580
     await render(<Host open={false} origin="center" />)
     await render(<Host open origin="center" />)
-    expect(layer().style.left).toBe('580px')
+    expect(layer().style.left).toBe('480px')
   })
 
   it('declines to center under `auto` when the bounds would clamp it', async () => {
