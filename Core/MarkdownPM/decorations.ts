@@ -328,7 +328,7 @@ function atomicFor(doc: Text, scan: DocScan, head: number): DecorationSet {
   })
 }
 
-function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
+function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boolean): Built {
   const text = docString(view.state.doc)
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
@@ -353,10 +353,16 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — a spread into push throws past V8's argument ceiling, and CM deactivates a crashed plugin for good.
-  for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head, view.viewport))
-    intents.push(it)
+  if (!inline)
+    for (const it of assembleLineIntents(
+      scan,
+      docLineIntentsOf(view.state.doc),
+      head,
+      view.viewport,
+    ))
+      intents.push(it)
   const ranges: Range<Decoration>[] = []
-  const atomic = atomicFor(view.state.doc, scan, head)
+  const atomic = inline ? Decoration.none : atomicFor(view.state.doc, scan, head)
   for (const it of intents) {
     if (it.kind === 'line') {
       const spec =
@@ -483,12 +489,15 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   return { deco: Decoration.set(ranges, true), atomic }
 }
 
-export function markdownDecorations(getConn: () => ConnectionsApi | undefined): Extension {
+export function markdownDecorations(
+  getConn: () => ConnectionsApi | undefined,
+  inline = false,
+): Extension {
   return ViewPlugin.fromClass(
     class {
       built: Built
       constructor(view: EditorView) {
-        this.built = build(view, getConn())
+        this.built = build(view, getConn(), inline)
       }
       update(u: ViewUpdate): void {
         // Inline tokens are viewport-scoped, so scroll must rebuild too; line-level chrome spans the whole doc.
@@ -499,7 +508,7 @@ export function markdownDecorations(getConn: () => ConnectionsApi | undefined): 
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
         )
-          this.built = build(u.view, getConn())
+          this.built = build(u.view, getConn(), inline)
       }
     },
     {

@@ -272,10 +272,9 @@ export function autoPair(
   const doc = scan.text
   const c = selStart
   const pair = PAIRS[inserted]
-  if (!pair || !isPairEdge(doc[c], CLOSE_MARKS)) return null
-  const prev = doc[c - 1]
-  if (settings[pair.group] === false && !(inserted === '[' && prev === '[')) return null
+  if (!pair || settings[pair.group] === false || !isPairEdge(doc[c], CLOSE_MARKS)) return null
   if (inCodeAt(scan, c)) return null
+  const prev = doc[c - 1]
 
   if (pair.multi && prev === inserted) {
     if (doc[c] === pair.close)
@@ -388,6 +387,11 @@ const inLinkTarget = (doc: string, c: number): boolean => {
 }
 const inUrlRun = (doc: string, c: number): boolean =>
   urlRunRe.test(doc.slice(lineStartAt(doc, c), c)) || inLinkTarget(doc, c)
+const isLiteralAt = (scan: DocScan, c: number): boolean =>
+  inCodeAt(scan, c) ||
+  inCodeAt(scan, c - 1) ||
+  isInsideWikilink(c, scan.text) ||
+  inUrlRun(scan.text, c)
 
 const opensLine = (doc: string, pos: number): boolean => {
   const before = doc.slice(lineStartAt(doc, pos), pos)
@@ -404,8 +408,7 @@ export function ellipsis(
   if (inserted !== '.' || selStart !== selEnd || settings.transformEllipses === false) return null
   const doc = scan.text
   const c = selStart
-  if (doc[c - 1] !== '.' || doc[c - 2] !== '.' || doc[c - 3] === '.') return null
-  if (inCodeAt(scan, c) || inCodeAt(scan, c - 1) || isInsideWikilink(c, doc) || inUrlRun(doc, c))
+  if (doc[c - 1] !== '.' || doc[c - 2] !== '.' || doc[c - 3] === '.' || isLiteralAt(scan, c))
     return null
   return { from: c - 2, to: c, insert: '…', selection: c - 1 }
 }
@@ -419,6 +422,7 @@ const EQUATIONS: Record<string, string> = {
   '+-': '±',
   '-+': '±',
   '~=': '≈',
+  '=~': '≈',
 }
 
 export function equations(
@@ -432,9 +436,7 @@ export function equations(
   const doc = scan.text
   const c = selStart
   const glyph = EQUATIONS[`${doc[c - 1]}${inserted}`]
-  if (!glyph || doc[c - 2] === doc[c - 1]) return null
-  if (inCodeAt(scan, c) || inCodeAt(scan, c - 1) || isInsideWikilink(c, doc) || inUrlRun(doc, c))
-    return null
+  if (!glyph || doc[c - 2] === doc[c - 1] || isLiteralAt(scan, c)) return null
   return { from: c - 1, to: c, insert: glyph, selection: c }
 }
 

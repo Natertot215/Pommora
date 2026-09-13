@@ -286,6 +286,19 @@ describe('decoration intents', () => {
     expect(intents.some((d) => d.kind === 'hide' && d.from === 0 && d.to === 2)).toBe(true)
   })
 
+  it('a nested > inside a blockquote stays visible; only one quote level hides', () => {
+    const t = '> >'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 3)
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 0 && d.to === 2)).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.to > 2)).toBe(false)
+  })
+
+  it('a nested quote with content still renders its constructs', () => {
+    const t = '> > - item'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 99)
+    expect(intents.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
+  })
+
   it('multi-line blockquote → only the outer lines round (first vs last)', () => {
     const t = '> a\n> b'
     const lines = decorationsFor(t, tokenize(t), new Set(), 99).filter(

@@ -8,7 +8,7 @@ export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)
 
 export const blockquotePrefixRe = /^[ \t]*(?:>[ \t]?)+/
 
-const oneQuoteLevelRe = /^([ \t]*)>[ \t]?/
+export const oneQuoteLevelRe = /^([ \t]*)>[ \t]?/
 export function stripQuotePrefix(line: string): string {
   return line.replace(oneQuoteLevelRe, '$1')
 }
