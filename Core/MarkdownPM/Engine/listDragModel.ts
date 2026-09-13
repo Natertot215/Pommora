@@ -1,4 +1,11 @@
-import { parseListMarkerPrefixed as parseListMarker } from './detect'
+import {
+  isSequenced,
+  nestedUnder,
+  ordinalOf,
+  ordinalText,
+  parseListMarkerPrefixed as parseListMarker,
+  type ListMarker,
+} from './detect'
 import { lineOffsetsOf, quoteDepthOf } from './markdownCode'
 import { scanOf } from './docScan'
 import { lineStartAt, lineEndAt } from '../Input/edits'
@@ -145,17 +152,39 @@ function rebuildMove(
   }
 }
 
-export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
+/** Tab and Shift+Tab move one item between levels, so both runs it touched count again: the one it joined and the one it left. `edit` is in `doc`'s coordinates; the changes returned are in the edited document's. */
+export function renumberAfterNest(doc: string, edit: ChangeSpec): ChangeSpec[] {
+  const ls = lineStartAt(doc, edit.from)
+  const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, ls)))
+  if (lm === null) return []
+  const left = doc.slice(ls, ls + lm.markerStart)
+  const next = applyChanges(doc, [edit])
+  let leftRow: number | null = null
+  for (let p = lineEndAt(next, ls) + 1; p <= next.length; p = lineEndAt(next, p) + 1) {
+    const t = next.slice(p, lineEndAt(next, p))
+    const plm = parseListMarker(t)
+    if (plm !== null && next.slice(p, p + plm.markerStart) === left) {
+      leftRow = p
+      break
+    }
+    if (!nestedUnder(t, left)) break
+  }
+  return dedupeChanges([
+    ...renumberSequencedRun(next, ls, ls),
+    ...(leftRow === null ? [] : renumberSequencedRun(next, leftRow)),
+  ])
+}
+
+/** `arrived` names a line that joined the run from another level: its ordinal belonged to that level, so it never sets a top-level run's start. */
+export function renumberSequencedRun(doc: string, pos: number, arrived = -1): ChangeSpec[] {
   if (pos < 0 || pos > doc.length) return []
   const ls = lineStartAt(doc, pos)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
-  if (lm === null || lm.kind !== 'ordered') return []
+  if (lm === null || !isSequenced(lm.kind)) return []
+  const kind = lm.kind
   const indent = doc.slice(ls, ls + lm.markerStart)
 
-  // Renumbered from the run's SMALLEST present digit: a move only permutes the digits, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers and continuations are skipped, not terminators.
-  const isNested = (t: string): boolean =>
-    t.trim() !== '' && t.startsWith(indent) && /^[ \t]/.test(t.slice(indent.length))
-
+  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers and continuations are skipped, not terminators.
   let runStart = ls
   for (let p = ls; p > 0; ) {
     const prevStart = lineStartAt(doc, p - 1)
@@ -163,44 +192,48 @@ export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
     const plm = parseListMarker(t)
     if (
       plm !== null &&
-      plm.kind === 'ordered' &&
+      plm.kind === kind &&
       doc.slice(prevStart, prevStart + plm.markerStart) === indent
     )
       runStart = prevStart
-    else if (!isNested(t)) break
+    else if (!nestedUnder(t, indent)) break
     p = prevStart
   }
 
-  type Row = { digitFrom: number; digits: string }
+  type Row = { line: number; from: number; marker: ListMarker }
   const rows: Row[] = []
   for (let p = runStart; p < doc.length; ) {
     const le = lineEndAt(doc, p)
     const t = doc.slice(p, le)
     const rlm = parseListMarker(t)
     const sameLevel =
-      rlm !== null && rlm.kind === 'ordered' && doc.slice(p, p + rlm.markerStart) === indent
-    if (sameLevel) rows.push({ digitFrom: p + rlm.markerStart, digits: rlm.digits ?? '0' })
-    else if (!isNested(t)) break
+      rlm !== null && rlm.kind === kind && doc.slice(p, p + rlm.markerStart) === indent
+    if (sameLevel) rows.push({ line: p, from: p + rlm.markerStart, marker: rlm })
+    else if (!nestedUnder(t, indent)) break
     p = le + 1
   }
-  const start = Math.min(...rows.map((r) => parseInt(r.digits, 10)))
+  const settled = rows.filter((r) => r.line !== arrived)
+  const start =
+    lm.level > 0
+      ? 1
+      : Math.min(...(settled.length > 0 ? settled : rows).map((r) => ordinalOf(r.marker)))
   const changes: ChangeSpec[] = []
-  rows.forEach((r, i) => {
-    const want = String(start + i)
-    if (r.digits !== want)
-      changes.push({ from: r.digitFrom, to: r.digitFrom + r.digits.length, insert: want })
+  rows.forEach(({ from, marker }, i) => {
+    const have = marker.ordinal ?? ''
+    const want = ordinalText(kind, start + i)
+    if (have !== want) changes.push({ from, to: from + have.length, insert: want })
   })
   return changes
 }
 
-/** Both renumber passes run against the POST-MOVE doc so the digit offsets are correct, then map back onto the original. */
+/** Both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then map back onto the original. */
 export function dropChanges(doc: string, block: BlockRange, slot: Slot): ChangeSpec[] | null {
   const moved = rebuildMove(doc, block, slot, 'exact')
   if (moved === null) return null
 
   const renumber = [
-    ...renumberOrderedRun(moved.doc, moved.sourceAt),
-    ...renumberOrderedRun(moved.doc, moved.destAt),
+    ...renumberSequencedRun(moved.doc, moved.sourceAt),
+    ...renumberSequencedRun(moved.doc, moved.destAt),
   ]
   const finalDoc = applyChanges(moved.doc, dedupeChanges(renumber))
   return diffAsSingleReplace(doc, finalDoc)
@@ -211,7 +244,7 @@ export function moveRange(doc: string, range: BlockRange, slot: Slot): ChangeSpe
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
 }
 
-// Source and dest passes can touch the same run, so duplicate digit edits at one offset are dropped.
+// Two passes can touch the same run, so a duplicate edit at one offset is dropped.
 function dedupeChanges(changes: ChangeSpec[]): ChangeSpec[] {
   const seen = new Set<number>()
   const out: ChangeSpec[] = []

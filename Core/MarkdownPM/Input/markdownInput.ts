@@ -18,6 +18,7 @@ import {
   outdentListOnShiftTab,
   type Edit,
 } from './edits'
+import { renumberAfterNest, type ChangeSpec } from '../Engine/listDragModel'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
@@ -29,16 +30,30 @@ import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
 
-function apply(view: EditorView, edit: Edit | null): boolean {
+/** `recount` lands in the edited document's coordinates, in the same transaction, so one undo takes both. */
+function apply(view: EditorView, edit: Edit | null, recount: ChangeSpec[] = []): boolean {
   if (!edit) return false
-  view.dispatch({
-    changes: { from: edit.from, to: edit.to, insert: edit.insert },
-    selection: { anchor: edit.selection },
-    scrollIntoView: true,
-    userEvent: 'input',
-  })
+  view.dispatch(
+    {
+      changes: { from: edit.from, to: edit.to, insert: edit.insert },
+      selection: { anchor: edit.selection },
+      scrollIntoView: true,
+      userEvent: 'input',
+    },
+    { changes: recount, sequential: true },
+  )
   return true
 }
+
+const nest =
+  (transform: (doc: string, selStart: number, selEnd: number) => Edit | null) =>
+  (view: EditorView): boolean => {
+    const s = view.state.selection.main
+    const doc = docString(view.state.doc)
+    const edit = transform(doc, s.from, s.to)
+    if (edit) apply(view, edit, renumberAfterNest(doc, edit))
+    return true
+  }
 
 // GFM lazy continuation absorbs any non-blank line touching a table as a row, so Enter at the bottom boundary lays a blank-line fence.
 const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edit | null => {
@@ -98,18 +113,6 @@ const onBackspace = (view: EditorView): boolean => {
   )
 }
 
-const onTab = (view: EditorView): boolean => {
-  const s = view.state.selection.main
-  apply(view, indentListOnTab(docString(view.state.doc), s.from, s.to))
-  return true
-}
-
-const onShiftTab = (view: EditorView): boolean => {
-  const s = view.state.selection.main
-  apply(view, outdentListOnShiftTab(docString(view.state.doc), s.from, s.to))
-  return true
-}
-
 // Except inside a callout, where it stays in the box. An unclosed pair is closed first so the break never lands inside it.
 const onShiftEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
@@ -127,8 +130,8 @@ export const markdownInput = [
       { key: 'Enter', run: commitAliasOnEnter },
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },
-      { key: 'Tab', run: onTab },
-      { key: 'Shift-Tab', run: onShiftTab },
+      { key: 'Tab', run: nest(indentListOnTab) },
+      { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
       { key: 'Backspace', run: onBackspace },
       { key: 'Delete', run: onForwardDelete },
       // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.

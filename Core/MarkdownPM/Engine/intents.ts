@@ -3,6 +3,7 @@ import {
   isThematicBreakLine,
   isHeadingLine,
   isBlockquoteLine,
+  isSequenced,
   parseListMarker,
   blockquotePrefixRe,
   oneQuoteLevelRe,
@@ -56,6 +57,7 @@ export type DecoIntent =
 function railTypeClass(m: ListMarker): string | null {
   if (m.kind === 'checkbox') return 'md-outline-task'
   if (m.kind === 'bullet' && m.bullet === '-') return 'md-outline-bullet'
+  if (m.kind === 'alphabetical') return 'md-outline-alpha'
   return null
 }
 
@@ -439,8 +441,8 @@ function pushConstruct(
       to: innerStart + lm.contentStart,
     })
     return lm
-  } else if (lm?.kind === 'ordered') {
-    // Literal recolored source, no widget, so typing after the number can't hit an atomic range.
+  } else if (lm && isSequenced(lm.kind)) {
+    // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
     intents.push({
       kind: 'line',
       from: ls,

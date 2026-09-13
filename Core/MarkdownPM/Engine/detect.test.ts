@@ -52,8 +52,16 @@ describe('parseListMarker (single marker source)', () => {
   it('ordered: digits + marker spans through the dot', () => {
     const m = parseListMarker('12. y')!
     expect(m.kind).toBe('ordered')
-    expect(m.digits).toBe('12')
+    expect(m.ordinal).toBe('12')
     expect([m.markerStart, m.markerEnd, m.contentStart]).toEqual([0, 3, 4])
+  })
+  it('alphabetical: one uppercase letter + dot; lowercase stays prose', () => {
+    const m = parseListMarker('B. y')!
+    expect(m.kind).toBe('alphabetical')
+    expect(m.ordinal).toBe('B')
+    expect([m.markerStart, m.markerEnd, m.contentStart]).toEqual([0, 2, 3])
+    expect(parseListMarker('b. y')).toBeNull()
+    expect(parseListMarker('AB. y')).toBeNull()
   })
   it('checkbox: bracket span + checked, markerEnd at the bracket end', () => {
     const m = parseListMarker('- [x] done')!

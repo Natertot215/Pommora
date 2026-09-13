@@ -4,7 +4,7 @@ import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
 
 export type BlockMenuAction =
   | `heading:${1 | 2 | 3 | 4 | 5}`
-  | `list:${Extract<ListKind, 'bullet' | 'ordered' | 'checkbox'>}`
+  | `list:${Exclude<ListKind, 'arrow'>}`
   | `format:${Extract<InlineFormat, 'link' | 'linkText' | 'connection'>}`
   | `block:${BlockFormat}`
   | 'block:citation'
@@ -33,6 +33,7 @@ const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.slic
 const LIST_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Bullet List', action: 'list:bullet', icon: 'list' },
   { label: 'Numbered List', action: 'list:ordered', icon: 'list-ordered' },
+  { label: 'Alphabetical List', action: 'list:alphabetical', icon: 'arrow-down-az' },
   { label: 'Task List', action: 'list:checkbox', icon: 'list-todo' },
 ]
 

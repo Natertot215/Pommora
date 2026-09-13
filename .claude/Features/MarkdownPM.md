@@ -20,8 +20,8 @@ Markdown syntax in the editor is dynamic. A construct's markers — the asterisk
 
 - **Inline Marks** — bold, italic, strikethrough, highlight, inline code, links, and Connections. Each reveals with the caret, scales with the heading it sits in, and is suppressed inside code. All of them are reachable from the context menu's Format submenu and their ⌘ shortcuts, and each auto-pairs as you type.
 - **Headings** — H1 through H6, sized on the em scale; the menus offer Paragraph and H1–H5. A heading folds from a chevron in the gutter. One with nothing beneath it carries no chevron but still appears in the page outline, and fold state is remembered per machine.
-- **Lists** — bullets (`-`, drawn as `•`), `+`, arrows (typed `->`, drawn `→`), numbered lists, and GFM checklists all share one indent zone and one set of behaviors. Dragging an item by its glyph moves it together with its nested block and renumbers as it lands, and deleting an item closes the numbering gap in the same stroke. The grip menu's **Type ▸** switches a whole block between the four kinds, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one. With **Mute Checked Items** on, a checked task reads as done — dimmed and struck through — while the file keeps its plain `- [x]`.
-- **Outliner Rails** — an optional hairline guide down each nested list run, one per ancestor level, turned on with **Outliner Lines**. It covers dash bullets and checklists.
+- **Lists** — bullets (`-`, drawn as `•`), `+`, arrows (typed `->`, drawn `→`), numbered lists, alphabetical lists (`A.` through `Z.`, restarting at `A`), and GFM checklists all share one indent zone and one set of behaviors. Dragging an item by its glyph moves it together with its nested block and renumbers as it lands, deleting an item closes the numbering gap in the same stroke, and Tab or Shift+Tab recounts both runs an item moves between, so a nested run always counts from its first number or letter. The grip menu's **Type ▸** switches a whole block between the five kinds, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one. With **Mute Checked Items** on, a checked task reads as done — dimmed and struck through — while the file keeps its plain `- [x]`.
+- **Outliner Rails** — an optional hairline guide down each nested list run, one per ancestor level, turned on with **Outliner Lines**. It covers dash bullets, checklists, and alphabetical lists.
 - **Code** — inline code and fenced blocks share the mono family and little else: inline code uses the code color over a tinted fill, a fenced block a neutral one. A fence's info word sets its language. Any of the thirty-eight languages in the roster gets a syntax-colored parse; a bare fence stays plain. The backticks always show, but a typed block hides its info word behind the language's name and mark at the top-right, revealing the raw word again while the caret is on the fence line. That tag is also the block's copy control. **Show Line Count In Code Blocks** numbers the content lines.
 - **Blockquote** — an always-visible rounded card with an accent bar down its side. Other block constructs nest inside it at any depth. A `>` counts as a marker only when whitespace or the line's end follows it, so `>a` stays ordinary prose.
 - **Callout** — a `> [!callout]` blockquote rendered as a bordered box spanning the gutter width, typed with the `||` shorthand. Each head is detected on its own, so adjacent or pasted callouts never merge, and an invalid tag falls back to a plain quote. The hidden head can't be reached by the caret, and Shift+Enter keeps you inside the box.
@@ -80,7 +80,7 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 | -------------------------------------- | -------------------------------------------------------------- |
 | Plain (paragraph, quote, callout, code) | Delete |
 | Heading | Rename · Size ▸ (Paragraph, H1–H5) · Delete — removes the heading line and keeps its body |
-| List | Type ▸ (Numbered, Bulleted, Checklist, Arrowed) · Delete |
+| List | Type ▸ (Numbered, Alphabetical, Bulleted, Checklist, Arrowed) · Delete |
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
 
@@ -94,7 +94,7 @@ Right-clicking text in the editor opens the operating system's own menu rather t
 - **Insert Link** — appears when the selection is itself an address, and points it at itself in place.
 - **Format ▸** — the inline marks, plus Connection and Link.
 - **Embed ▸** — Webpage or Internal Page.
-- **Heading ▸** — Paragraph and H1–H5. **Lists ▸** — Bullet List, Numbered List, Task List.
+- **Heading ▸** — Paragraph and H1–H5. **Lists ▸** — Bullet List, Numbered List, Alphabetical List, Task List.
 - **Paste As ▸** — what the clipboard could become rather than what a plain paste would make of it.
 
 An address offers the three link forms, Plain Text, and Embedded Link on a blank line; a copied connection or markdown link offers Connection, Markdown Link, and Embedded Page; any text offers Footnote wherever a marker can bind.
@@ -196,5 +196,5 @@ The tile ring and grip, and the autocomplete pane's own width bounds.
 - **Multi-citation markers** — `[^#-#]`, one marker binding two footnotes.
 - **Image and LaTeX rendering** — LaTeX is detected and styled only; an image-style`![[file.png]]` target renders nothing. The bang-paren form is the webpage embed, so a future image renderer arrives through the wiki form.
 - **Heading fold and tables inside a callout** — headings render there, but the chevron isn't prefix-aware; a table inside a callout renders as raw text.
-- **Outliner rails on numbered, arrow, and `+` lists** — the guide is bullets and checklists only.
+- **Outliner rails on numbered, arrow, and `+` lists** — the guide is bullets, checklists, and alphabetical lists only.
 - **Language ▸ on the code block grip** — retyping a block's language from its grip, following the list's Type ▸.

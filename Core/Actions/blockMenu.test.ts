@@ -17,6 +17,7 @@ describe('the block menu catalog', () => {
     expect(seated[1].rows.map((r) => r.label)).toEqual([
       'Bullet List',
       'Numbered List',
+      'Alphabetical List',
       'Task List',
     ])
     expect(seated[2].rows.map((r) => r.label)).toEqual([
@@ -36,9 +37,9 @@ describe('the block menu catalog', () => {
   })
 
   it('offers Footnote only where a marker can bind', () => {
-    expect(seated.flatMap((s) => s.rows)).toHaveLength(19)
+    expect(seated.flatMap((s) => s.rows)).toHaveLength(20)
     const unseated = blockMenuSections(false)
-    expect(unseated.flatMap((s) => s.rows)).toHaveLength(18)
+    expect(unseated.flatMap((s) => s.rows)).toHaveLength(19)
     expect(unseated.flatMap((s) => s.rows).map((r) => r.label)).not.toContain('Footnote')
   })
 
@@ -102,6 +103,7 @@ describe('the block menu filter', () => {
     expect(list[0].rows.map((r) => [r.label, r.at])).toEqual([
       ['Bullet List', 7],
       ['Numbered List', 9],
+      ['Alphabetical List', 13],
       ['Task List', 5],
     ])
   })
@@ -116,7 +118,7 @@ describe('the block menu filter', () => {
     const all = filterBlockMenu(seated, '')
     expect(all.map((s) => s.title)).toEqual(seated.map((s) => s.title))
     expect(all.every((s) => s.at === 0)).toBe(true)
-    expect(all.flatMap((s) => s.rows)).toHaveLength(19)
+    expect(all.flatMap((s) => s.rows)).toHaveLength(20)
     expect(all.flatMap((s) => s.rows).every((r) => r.at === 0)).toBe(true)
   })
 })
