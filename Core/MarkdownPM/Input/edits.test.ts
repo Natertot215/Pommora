@@ -126,10 +126,8 @@ describe('auto-pair + auto-delete', () => {
     expect(apply('{}', autoPair(scanDoc('{}'), 1, 1, '(')!)).toBe('{()}')
     expect(apply('{}', autoDelete(scanDoc('{}'), 1, 1)!)).toBe('')
   })
-  it('[[ still pairs with Brackets off', () => {
-    const off = { pairBrackets: false }
-    expect(autoPair(scanDoc(''), 0, 0, '[', off)).toBeNull()
-    expect(apply('[', autoPair(scanDoc('['), 1, 1, '[', off)!)).toBe('[[]]')
+  it('Brackets off leaves [[ unpaired too', () => {
+    expect(autoPair(scanDoc('['), 1, 1, '[', { pairBrackets: false })).toBeNull()
   })
   it('[[ collapses the existing closer instead of stacking a stray ]', () => {
     const e = autoPair(scanDoc('[]'), 1, 1, '[')!
@@ -316,6 +314,7 @@ describe('equations', () => {
       ['a +', '-', 'a ±'],
       ['a -', '+', 'a ±'],
       ['a ~', '=', 'a ≈'],
+      ['a =', '~', 'a ≈'],
     ]
     for (const [doc, ch, out] of cases)
       expect(apply(doc, equations(scanDoc(doc), doc.length, doc.length, ch)!)).toBe(out)

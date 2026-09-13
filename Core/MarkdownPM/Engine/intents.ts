@@ -5,6 +5,7 @@ import {
   isBlockquoteLine,
   parseListMarker,
   blockquotePrefixRe,
+  oneQuoteLevelRe,
   headingParts,
   type CalloutLine,
   type CitationEntry,
@@ -133,7 +134,8 @@ function lineIntentsInto(
       base += qm[0].length
     }
   } else if (quoteChromeAt(i)) {
-    const bm = blockquotePrefixRe.exec(line)
+    const full = blockquotePrefixRe.exec(line)
+    const bm = full && line.slice(full[0].length).trim() === '' ? oneQuoteLevelRe.exec(line) : full
     if (bm) {
       const first = i === 0 || !quoteChromeAt(i - 1)
       const last = i === lines.length - 1 || !quoteChromeAt(i + 1)
