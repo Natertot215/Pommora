@@ -51,7 +51,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
   const settingsFile = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
 
   refs.push({
-    store: 'navigation.json',
+    store: 'state.json',
     owner: 'nexus-banner',
     read: async () => (await readNavigationFile(root)).banner,
     write: async (link) => {

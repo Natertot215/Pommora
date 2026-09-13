@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { BrowserWindow } from 'electron'
 import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/liveTree'
+import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { push } from '../Bridge/ipc'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { ignoredUnder } from '@pommora/core/Nexus/watchSettle'
@@ -99,9 +100,9 @@ describe('the watcher settle', () => {
   it('a mixed batch lands as one walk, pushed once', async () => {
     await startWatcher(root, win)
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
-    await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ collection_order: ['c1'] }))
+    await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
     emit('add', 'Notes', 'B.md')
-    emit('change', '.nexus', 'state.json')
+    emit('change', '.nexus', 'nexus.json')
     await settleAll(() => pushMock.mock.calls.length > 0)
     const channels = pushMock.mock.calls.map((c) => c[1])
     expect(channels).toEqual(['nexus:changed', 'values:changed'])
@@ -120,14 +121,51 @@ describe('a host document under the watcher', () => {
     await startWatcher(root, win)
     await mkdir(abs('.nexus', 'homepage'), { recursive: true })
     await writeFile(abs('.nexus', 'homepage', '_tiles.json'), '{}')
-    await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ collection_order: ['c1'] }))
+    await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
     emit('change', '.nexus', 'homepage', '_tiles.json')
     emit('change', '.nexus', 'homepage', '_tiles.json')
-    emit('change', '.nexus', 'state.json')
+    emit('change', '.nexus', 'nexus.json')
     await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'tiles:changed'))
     const tiles = pushMock.mock.calls.filter((c) => c[1] === 'tiles:changed')
     expect(tiles).toHaveLength(1)
     expect(tiles[0][2]).toEqual({ kind: 'homepage' })
+  })
+})
+
+describe('state.json under the watcher', () => {
+  it('lands an outside edit inside the echo window: navigation pushed once, order patched without a walk', async () => {
+    await mkdir(abs('Other'), { recursive: true })
+    await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+    vi.useRealTimers()
+    await refreshTree(root)
+    vi.useFakeTimers()
+    await startWatcher(root, win)
+    const nav = { pinned: [{ kind: 'homepage' }] }
+    recordWrite(abs('.nexus', 'state.json'))
+    await writeFile(
+      abs('.nexus', 'state.json'),
+      JSON.stringify({ navigation: nav, order: { collections: ['c2', 'c1'] } }),
+    )
+    emit('change', '.nexus', 'state.json')
+    emit('change', '.nexus', 'state.json')
+    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'nexus:changed'))
+    emit('change', '.nexus', 'state.json')
+    await settleAll()
+    const channels = pushMock.mock.calls.map((c) => c[1])
+    expect(channels.filter((c) => c === 'nav:changed')).toHaveLength(1)
+    expect(pushMock.mock.calls.find((c) => c[1] === 'nav:changed')?.[2]).toEqual(nav)
+    expect(channels.filter((c) => c === 'nexus:changed')).toHaveLength(1)
+    expect(getLiveTree()?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
+  })
+
+  it('an order that did not move pushes no tree', async () => {
+    await startWatcher(root, win)
+    const before = getLiveTree()
+    await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { collections: ['c1'] } }))
+    emit('change', '.nexus', 'state.json')
+    await settleAll()
+    expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['nav:changed'])
+    expect(getLiveTree()).toBe(before)
   })
 })
 

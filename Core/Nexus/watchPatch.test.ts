@@ -275,7 +275,7 @@ describe('classifyEvent', () => {
 
     expect(kind(ev('change', '.nexus', 'contexts', 'contexts.json'))).toBe('full-refresh')
     expect(kind(ev('change', '.nexus', 'properties.json'))).toBe('full-refresh')
-    expect(kind(ev('change', '.nexus', 'state.json'))).toBe('full-refresh')
+    expect(kind(ev('change', '.nexus', 'state.json'))).toBe('order-leaf')
     expect(kind(ev('addDir', 'Notes', 'Sub'))).toBe('full-refresh')
     expect(kind(ev('unlinkDir', 'Notes'))).toBe('full-refresh')
     expect(kind(ev('unlink', 'Notes', '_pagecollection.json'))).toBe('full-refresh')

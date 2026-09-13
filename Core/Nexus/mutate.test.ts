@@ -352,13 +352,10 @@ describe('handleMutate — move + guards', () => {
     expect(JSON.parse(await read('Notes/_pagecollection.json')).set_order).toEqual(['wk', 'col'])
   })
 
-  it('reorderTop persists collection_order to .nexus/state.json', async () => {
-    const r = await handleMutate(
-      { op: 'reorderTop', key: 'collection_order', order: ['v2', 'v1'] },
-      nexusDeps,
-    )
+  it('reorderTop persists order.collections to .nexus/state.json', async () => {
+    const r = await handleMutate({ op: 'reorderTop', order: ['v2', 'v1'] }, nexusDeps)
     expect(r.ok).toBe(true)
-    expect(JSON.parse(await read('.nexus/state.json')).collection_order).toEqual(['v2', 'v1'])
+    expect(JSON.parse(await read('.nexus/state.json')).order.collections).toEqual(['v2', 'v1'])
   })
 
   it('moveSet relocates a set folder (with its pages) to another collection AND writes the destination set_order', async () => {
@@ -609,7 +606,7 @@ describe('handleMutate — review-round hardening', () => {
     expect(cfg.outside_field).toBe(2)
   })
 
-  it('navview setBanner writes + clears the navigation.json banner, never homepage.json', async () => {
+  it('navview setBanner writes + clears the state.json navigation banner, never homepage.json', async () => {
     const src = join(root, 'Nav.png')
     await writeFile(src, 'bytes')
     const r = await handleMutate(
@@ -617,13 +614,13 @@ describe('handleMutate — review-round hardening', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(JSON.parse(await read('.nexus/navigation.json')).banner).toBe('[[Nav.png]]')
+    expect(JSON.parse(await read('.nexus/state.json')).navigation.banner).toBe('[[Nav.png]]')
     const clear = await handleMutate(
       { op: 'setBanner', kind: 'navview', path: '', source: null },
       nexusDeps,
     )
     expect(clear.ok).toBe(true)
-    expect(JSON.parse(await read('.nexus/navigation.json')).banner).toBeUndefined()
+    expect(JSON.parse(await read('.nexus/state.json')).navigation.banner).toBeUndefined()
   })
 
   it('a malformed op returns a clean fault, not a throw', async () => {

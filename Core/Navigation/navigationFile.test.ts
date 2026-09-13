@@ -17,7 +17,15 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const navPath = (r: string): string => join(r, '.nexus', 'navigation.json')
+const statePath = (r: string): string => join(r, '.nexus', 'state.json')
+const readState = async (): Promise<{
+  navigation: Record<string, unknown>
+  [k: string]: unknown
+}> => JSON.parse(await readFile(statePath(root), 'utf8'))
+const seedState = async (state: unknown): Promise<void> => {
+  await mkdir(join(root, '.nexus'), { recursive: true })
+  await writeFile(statePath(root), typeof state === 'string' ? state : JSON.stringify(state))
+}
 
 describe('navigation state — one contract, routed storage', () => {
   it('reads the empty state from a fileless nexus', async () => {
@@ -25,15 +33,13 @@ describe('navigation state — one contract, routed storage', () => {
   })
 
   it('round-trips refs and drops junk elements on read', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(
-      navPath(root),
-      JSON.stringify({
+    await seedState({
+      navigation: {
         pinned: [{ kind: 'page', id: 'p1' }, { kind: 'nope' }, 42],
         favorites: [{ kind: 'homepage' }, { kind: 'space', id: 's1' }],
         banner: '.nexus/assets/b.jpg',
-      }),
-    )
+      },
+    })
     expect(await readNavigationFile(root)).toEqual({
       pinned: [{ kind: 'page', id: 'p1' }],
       favorites: [{ kind: 'homepage' }, { kind: 'space', id: 's1' }],
@@ -44,8 +50,7 @@ describe('navigation state — one contract, routed storage', () => {
   it('an emptied array deletes its key', async () => {
     await writeNavigationState(root, { pinned: [{ kind: 'page', id: 'p1' }] })
     await writeNavigationState(root, { pinned: [] })
-    const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
-    expect('pinned' in raw).toBe(false)
+    expect('pinned' in (await readState()).navigation).toBe(false)
   })
 
   it('a patch touches only its own keys — the banner survives an arrays write and vice versa', async () => {
@@ -63,8 +68,7 @@ describe('navigation state — one contract, routed storage', () => {
       pinned: [{ kind: 'homepage' }],
     })
     expect((await readNavigationState(root)).recents).toEqual([{ kind: 'space', id: 's1' }])
-    const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
-    expect('recents' in raw).toBe(false)
+    expect('recents' in (await readState()).navigation).toBe(false)
   })
 
   it('an emptied recents list deletes its row', async () => {
@@ -74,39 +78,39 @@ describe('navigation state — one contract, routed storage', () => {
   })
 
   it('the banner gate: only a shared-assets path survives either direction', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(navPath(root), JSON.stringify({ banner: '../taxes-2025.pdf' }))
+    await seedState({ navigation: { banner: '../taxes-2025.pdf' } })
     expect(await readNavigationFile(root)).toEqual({})
     await writeNavigationState(root, { banner: 'Notes/Alpha.md' })
-    expect('banner' in JSON.parse(await readFile(navPath(root), 'utf8'))).toBe(false)
+    expect('banner' in (await readState()).navigation).toBe(false)
     await writeNavigationState(root, { banner: '.nexus/assets/banner-x.jpg' })
     expect((await readNavigationFile(root)).banner).toBe('.nexus/assets/banner-x.jpg')
   })
 
   it('a write REFUSES an unreadable file rather than clobbering it', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(navPath(root), '{ corrupt')
+    await seedState('{ corrupt')
     await expect(writeNavigationState(root, { pinned: [{ kind: 'homepage' }] })).rejects.toThrow()
-    expect(await readFile(navPath(root), 'utf8')).toBe('{ corrupt')
+    expect(await readFile(statePath(root), 'utf8')).toBe('{ corrupt')
   })
 
-  it('foreign keys ride through a patch write untouched', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(navPath(root), JSON.stringify({ myNote: 'keep me' }))
+  it('the order section and foreign keys ride through a navigation write untouched', async () => {
+    await seedState({
+      order: { collections: ['c1'] },
+      myNote: 'keep me',
+      navigation: { mine: 1 },
+    })
     await writeNavigationState(root, { pinned: [{ kind: 'page', id: 'p1' }] })
-    const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
+    const raw = await readState()
+    expect(raw.order).toEqual({ collections: ['c1'] })
     expect(raw.myNote).toBe('keep me')
-    expect(raw.pinned).toEqual([{ kind: 'page', id: 'p1' }])
+    expect(raw.navigation).toEqual({ mine: 1, pinned: [{ kind: 'page', id: 'p1' }] })
   })
 
   it('a homepage ref smuggling an id drops, as does an empty id', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(
-      navPath(root),
-      JSON.stringify({
+    await seedState({
+      navigation: {
         pinned: [{ kind: 'homepage' }, { kind: 'homepage', id: 'x' }, { kind: 'page', id: '' }],
-      }),
-    )
+      },
+    })
     expect((await readNavigationFile(root)).pinned).toEqual([{ kind: 'homepage' }])
   })
 
@@ -115,8 +119,7 @@ describe('navigation state — one contract, routed storage', () => {
       pinned: [{ kind: 'page', id: 'p1', path: 'A/b.md', title: 'B' } as unknown as NavRef],
       recents: [{ kind: 'set', id: 's1', path: 'A/S' } as unknown as NavRef],
     })
-    const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
-    expect(raw.pinned).toEqual([{ kind: 'page', id: 'p1' }])
+    expect((await readState()).navigation.pinned).toEqual([{ kind: 'page', id: 'p1' }])
     expect((await readNavigationState(root)).recents).toEqual([{ kind: 'set', id: 's1' }])
   })
 })

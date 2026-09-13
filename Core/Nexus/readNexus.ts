@@ -22,6 +22,7 @@ import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
+import { isPlainObject } from '../Properties/propertyValue'
 import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from '../Files/walkCache'
@@ -49,10 +50,12 @@ export function readCropLeaves(config: Json): NexusTree['crops'] {
   return Object.fromEntries(Object.entries(byImage).filter((e): e is [string, Crop] => !!e[1]))
 }
 
-export function readSpaceOrders(state: Json): Json {
-  return state.space_orders != null && typeof state.space_orders === 'object'
-    ? (state.space_orders as Json)
-    : {}
+export function readOrder(state: Json): { collections?: string[]; spaces: Json } {
+  const order = isPlainObject(state.order) ? state.order : {}
+  return {
+    collections: asStringArray(order.collections),
+    spaces: isPlainObject(order.spaces) ? order.spaces : {},
+  }
 }
 
 export function resolveEntityContexts(
@@ -306,13 +309,13 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const scope = scopeOf(leaves)
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
-  const spaceOrders = readSpaceOrders(state)
+  const order = readOrder(state)
   const unreadable: string[] = []
   // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
     unreadable.push(CONTEXTS_REGISTRY_REL)
   const contexts = ctxRegistry
-    ? await readContextGroups(root, ctxRegistry, spaceOrders, scope, unreadable)
+    ? await readContextGroups(root, ctxRegistry, order.spaces, scope, unreadable)
     : undefined
 
   const rootDirs = (await listEntries(root)).filter(
@@ -326,7 +329,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     }),
   )
   const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)
-  const orderedCollections = resolveOrder(allCollections, asStringArray(state.collection_order))
+  const orderedCollections = resolveOrder(allCollections, order.collections)
 
   const collections = orderedCollections
 

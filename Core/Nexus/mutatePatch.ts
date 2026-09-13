@@ -21,11 +21,10 @@ import {
   patchContainerFromDisk,
   patchCropsFromDisk,
   patchHomepageFromDisk,
+  patchOrderFromDisk,
   patchPageFromDisk,
   patchSettingsFromDisk,
   patchSpaceFromDisk,
-  patchSpaceOrderFromDisk,
-  patchTopOrderFromDisk,
 } from './watchPatch'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 
@@ -170,16 +169,15 @@ async function routeMutation(
           const own = reply.created ? await patchContainerFromDisk(root, reply.created.path) : 'ok'
           if (own === 'refresh') return 'refresh'
           return req.parentPath === ''
-            ? patchTopOrderFromDisk(root)
+            ? patchOrderFromDisk(root)
             : patchContainerFromDisk(root, req.parentPath)
         }
         case 'reorderChildren':
           return patchContainerFromDisk(root, req.parentPath)
         case 'reorderTop':
-          return patchTopOrderFromDisk(root)
         case 'createSpace':
         case 'reorderSpaces':
-          return patchSpaceOrderFromDisk(root, req.contextId)
+          return patchOrderFromDisk(root)
         default:
           return 'ok'
       }

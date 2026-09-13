@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
+import { setCollectionOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
@@ -20,38 +20,44 @@ async function readState(): Promise<Record<string, unknown>> {
   return JSON.parse(await readFile(nexusConfig(root, NEXUS_CONFIG_FILES.state), 'utf8'))
 }
 
-describe('setStateOrder', () => {
-  it('persists a top-level order to .nexus/state.json (creating .nexus)', async () => {
-    await setStateOrder(root, 'collection_order', ['b', 'a', 'c'])
-    expect((await readState()).collection_order).toEqual(['b', 'a', 'c'])
+describe('setCollectionOrder', () => {
+  it('persists the Collection order to .nexus/state.json (creating .nexus)', async () => {
+    await setCollectionOrder(root, ['b', 'a', 'c'])
+    expect((await readState()).order).toEqual({ collections: ['b', 'a', 'c'] })
   })
 
-  it('does not clobber other state keys (read-modify-write)', async () => {
+  it('does not clobber the space orders or the navigation section (read-modify-write)', async () => {
+    await mkdir(nexusDir(root), { recursive: true })
+    await writeFile(
+      nexusConfig(root, NEXUS_CONFIG_FILES.state),
+      JSON.stringify({ navigation: { pinned: [{ kind: 'homepage' }] } }),
+    )
     await setSpaceOrder(root, 'ctx_areas', ['x', 'y'])
-    await setStateOrder(root, 'collection_order', ['a'])
-    const state = await readState()
-    expect(state.collection_order).toEqual(['a'])
-    expect((state.space_orders as Record<string, unknown>).ctx_areas).toEqual(['x', 'y'])
+    await setCollectionOrder(root, ['a'])
+    expect(await readState()).toEqual({
+      navigation: { pinned: [{ kind: 'homepage' }] },
+      order: { collections: ['a'], spaces: { ctx_areas: ['x', 'y'] } },
+    })
   })
 
   it('never persists adopted- placeholder ids', async () => {
-    await setStateOrder(root, 'collection_order', ['01ABC', 'adopted-deadbeef', '01XYZ'])
-    expect((await readState()).collection_order).toEqual(['01ABC', '01XYZ'])
+    await setCollectionOrder(root, ['01ABC', 'adopted-deadbeef', '01XYZ'])
+    expect((await readState()).order).toEqual({ collections: ['01ABC', '01XYZ'] })
   })
 
-  it('setSpaceOrder writes per-context entries in the space_orders map', async () => {
+  it('setSpaceOrder writes per-context entries in the spaces map', async () => {
     await setSpaceOrder(root, 'ctx_projects', ['s2', 's1'])
     await setSpaceOrder(root, 'ctxC', ['x'])
-    const orders = (await readState()).space_orders as Record<string, unknown>
-    expect(orders.ctx_projects).toEqual(['s2', 's1'])
-    expect(orders.ctxC).toEqual(['x'])
+    expect((await readState()).order).toEqual({
+      spaces: { ctx_projects: ['s2', 's1'], ctxC: ['x'] },
+    })
   })
 
   it('fails against an unreadable state.json and leaves it byte-identical', async () => {
     const statePath = nexusConfig(root, NEXUS_CONFIG_FILES.state)
     await mkdir(nexusDir(root), { recursive: true })
     await writeFile(statePath, '{ corrupt', 'utf8')
-    const r = await setStateOrder(root, 'collection_order', ['a'])
+    const r = await setCollectionOrder(root, ['a'])
     expect(r.ok).toBe(false)
     expect(await readFile(statePath, 'utf8')).toBe('{ corrupt')
   })
