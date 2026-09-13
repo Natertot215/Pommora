@@ -9,6 +9,7 @@ import {
   closeConstructOnEnter,
   closeConstructOnShiftEnter,
   dashArrow,
+  ellipsis,
   indentListOnTab,
   continueBlockquoteOnEnter,
   calloutShorthand,
@@ -168,6 +169,31 @@ describe('auto-pair + auto-delete', () => {
     expect(apply('**', autoDelete(scanDoc('**'), 1, 1)!)).toBe('')
     expect(apply('``', autoDelete(scanDoc('``'), 1, 1)!)).toBe('')
   })
+  it('nothing pairs against a character on either side of the caret', () => {
+    expect(autoPair(scanDoc('foo'), 3, 3, '(')).toBeNull()
+    expect(autoPair(scanDoc('end.'), 4, 4, '"')).toBeNull()
+    expect(autoPair(scanDoc(' .'), 1, 1, '(')).toBeNull()
+    expect(autoPair(scanDoc(' word'), 1, 1, '[')).toBeNull()
+  })
+  it('a link target still pairs its parenthesis after the label', () => {
+    expect(apply('[label]', autoPair(scanDoc('[label]'), 7, 7, '(')!)).toBe('[label]()')
+  })
+  it('pairs inside existing pair syntax', () => {
+    expect(apply('()', autoPair(scanDoc('()'), 1, 1, '_')!)).toBe('(__)')
+    expect(apply('****', autoPair(scanDoc('****'), 2, 2, '"')!)).toBe('**""**')
+  })
+  it('a closer still steps over itself after a word', () => {
+    const e = autoPair(scanDoc('"word"'), 5, 5, '"')!
+    expect(e.insert).toBe('')
+    expect(e.selection).toBe(6)
+  })
+  it('each pair group follows its own setting', () => {
+    expect(autoPair(scanDoc(''), 0, 0, '(', { pairBrackets: false })).toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '*', { pairMarkers: false })).toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '"', { pairQuotes: false })).toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '"', { pairBrackets: false })).not.toBeNull()
+    expect(autoDelete(scanDoc('[]'), 1, 1, { deletePairsTogether: false })).toBeNull()
+  })
 })
 
 describe('close construct on Enter', () => {
@@ -233,6 +259,43 @@ describe('dash + arrow auto-format', () => {
   it('spaced " - " second space → en-dash', () => {
     const doc = 'a -'
     expect(apply(doc, dashArrow(scanDoc(doc), 3, 3, ' ')!)).toBe('a – ')
+  })
+  it('dashes off leaves every dash literal', () => {
+    const off = { transformDashes: false }
+    expect(dashArrow(scanDoc('--'), 2, 2, 'a', off)).toBeNull()
+    expect(dashArrow(scanDoc('a -'), 3, 3, ' ', off)).toBeNull()
+  })
+  it('arrows off leaves inline arrows literal but still opens an arrow list', () => {
+    const off = { transformArrows: false }
+    expect(dashArrow(scanDoc('a -'), 3, 3, '>', off)).toBeNull()
+    expect(dashArrow(scanDoc('<'), 1, 1, '-', off)).toBeNull()
+    expect(apply('\t-', dashArrow(scanDoc('\t-'), 2, 2, '>', off)!)).toBe('\t→')
+    expect(apply('> -', dashArrow(scanDoc('> -'), 3, 3, '>', off)!)).toBe('> →')
+  })
+})
+
+describe('ellipsis', () => {
+  it('the third dot becomes an ellipsis', () => {
+    const e = ellipsis(scanDoc('so..'), 4, 4, '.')!
+    expect(apply('so..', e)).toBe('so…')
+    expect(e.selection).toBe(3)
+  })
+  it('stays literal past three dots, in code, and when off', () => {
+    expect(ellipsis(scanDoc('...'), 3, 3, '.')).toBeNull()
+    expect(ellipsis(scanDoc('```\n..'), 6, 6, '.')).toBeNull()
+    expect(ellipsis(scanDoc('`a..`'), 4, 4, '.')).toBeNull()
+    expect(dashArrow(scanDoc('`--`'), 3, 3, 'x')).toBeNull()
+    expect(ellipsis(scanDoc('..'), 2, 2, '.', { transformEllipses: false })).toBeNull()
+  })
+})
+
+describe('callout and exit settings', () => {
+  it('callout shorthand follows its setting', () => {
+    expect(calloutShorthand('|', 1, 1, '|', { transformCallouts: false })).toBeNull()
+  })
+  it('exit on enter follows its setting', () => {
+    expect(closeConstructOnEnter(scanDoc('[]'), 1, 1, { exitPairsOnEnter: false })).toBeNull()
+    expect(closeConstructOnShiftEnter(scanDoc('[]'), 1, 1, { exitPairsOnEnter: false })).toBeNull()
   })
 })
 

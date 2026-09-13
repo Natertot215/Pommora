@@ -1,3 +1,4 @@
+import type { Personalization } from '@pommora/core/Settings/personalization'
 import { isInsideWikilink } from '../Engine/parser'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { inCalloutAt, inCodeAt, type DocScan } from '../Engine/docScan'
@@ -115,8 +116,9 @@ export function calloutShorthand(
   selStart: number,
   selEnd: number,
   inserted: string,
+  settings: Personalization = {},
 ): Edit | null {
-  if (inserted !== '|' || selStart !== selEnd) return null
+  if (inserted !== '|' || selStart !== selEnd || settings.transformCallouts === false) return null
   const c = selStart
   const ls = lineStartAt(doc, c)
   if (ls !== c - 1 || doc[c - 1] !== '|') return null
@@ -238,35 +240,38 @@ export function canonicalizeCheckbox(
 interface PairSpec {
   close: string
   multi?: string
+  group: 'pairBrackets' | 'pairMarkers' | 'pairQuotes'
 }
 const PAIRS: Record<string, PairSpec> = {
-  '*': { close: '*', multi: '**' },
-  '~': { close: '~', multi: '~~' },
-  '=': { close: '=', multi: '==' },
-  _: { close: '_', multi: '__' },
-  '`': { close: '`', multi: '``' },
-  '(': { close: ')', multi: '))' },
-  '[': { close: ']', multi: ']]' },
-  '"': { close: '"' },
-  "'": { close: "'" },
+  '*': { close: '*', multi: '**', group: 'pairMarkers' },
+  '~': { close: '~', multi: '~~', group: 'pairMarkers' },
+  '=': { close: '=', multi: '==', group: 'pairMarkers' },
+  _: { close: '_', multi: '__', group: 'pairMarkers' },
+  '`': { close: '`', multi: '``', group: 'pairMarkers' },
+  '(': { close: ')', multi: '))', group: 'pairBrackets' },
+  '[': { close: ']', multi: ']]', group: 'pairBrackets' },
+  '"': { close: '"', group: 'pairQuotes' },
+  "'": { close: "'", group: 'pairQuotes' },
 }
 
-// These pair only when NOT right after a word char, so contractions, units `5"`, `2 * 3` and snake_case stay literal.
-const GATED_PAIRS = new Set(['"', "'", '*', '_', '`'])
+const DOUBLED_ONLY = new Set(['~', '='])
+const OPEN_MARKS = new Set(Object.keys(PAIRS))
+const CLOSE_MARKS = new Set(Object.values(PAIRS).map((p) => p.close))
+const isPairEdge = (ch: string | undefined, marks: Set<string>): boolean =>
+  ch === undefined || /\s/.test(ch) || marks.has(ch)
 
 export function autoPair(
   scan: DocScan,
   selStart: number,
   selEnd: number,
   inserted: string,
+  settings: Personalization = {},
 ): Edit | null {
   if (selStart !== selEnd) return null
   const doc = scan.text
   const c = selStart
   const pair = PAIRS[inserted]
-  if (!pair) return null
-  // Nothing auto-closes hard against a word: the closer would land buried in the text already ahead of the caret.
-  if (doc[c] !== pair.close && isWordCh(doc[c])) return null
+  if (!pair || settings[pair.group] === false || !isPairEdge(doc[c], CLOSE_MARKS)) return null
   if (inCodeAt(scan, c)) return null
   const prev = doc[c - 1]
 
@@ -280,29 +285,25 @@ export function autoPair(
     if (glued || openDoubles % 2 === 1) return null
     return { from: c, to: c, insert: inserted + pair.multi, selection: c + 1 }
   }
+  if (DOUBLED_ONLY.has(inserted)) return null
+  if (doc[c] === inserted && pair.close === inserted)
+    return { from: c, to: c, insert: '', selection: c + 1 }
+  if (!isPairEdge(prev, OPEN_MARKS) && !(inserted === '(' && prev === ']')) return null
   if (inserted === '[') {
     const ls = lineStartAt(doc, c)
     // Never inside an alias: the pair's `]` is the character the input guard refuses there, and would truncate the link.
     if (aliasSpanAt(doc.slice(ls, lineEndAt(doc, c)), c - ls)) return null
-    if (c === ls || prev === ' ' || prev === '\t' || prev === '\n') {
-      return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
-    }
-    return null
   }
-  if (inserted === '(') {
-    return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
-  }
-  if (GATED_PAIRS.has(inserted)) {
-    if (doc[c] === inserted) return { from: c, to: c, insert: '', selection: c + 1 }
-    if (prev === undefined || !/\w/.test(prev)) {
-      return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
-    }
-    return null
-  }
-  return null
+  return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
 }
 
-export function autoDelete(scan: DocScan, selStart: number, selEnd: number): Edit | null {
+export function autoDelete(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  settings: Personalization = {},
+): Edit | null {
+  if (settings.deletePairsTogether === false) return null
   if (selStart !== selEnd || selStart === 0 || inCodeAt(scan, selStart)) return null
   const doc = scan.text
   const close = PAIRS[doc[selStart - 1]]?.close
@@ -356,8 +357,9 @@ export function closeConstructOnEnter(
   scan: DocScan,
   selStart: number,
   selEnd: number,
+  settings: Personalization = {},
 ): Edit | null {
-  if (selStart !== selEnd) return null
+  if (selStart !== selEnd || settings.exitPairsOnEnter === false) return null
   const end = closerEndAt(scan, selStart)
   return end === null ? null : { from: selStart, to: selStart, insert: '', selection: end }
 }
@@ -366,8 +368,9 @@ export function closeConstructOnShiftEnter(
   scan: DocScan,
   selStart: number,
   selEnd: number,
+  settings: Personalization = {},
 ): Edit | null {
-  if (selStart !== selEnd) return null
+  if (selStart !== selEnd || settings.exitPairsOnEnter === false) return null
   const end = closerEndAt(scan, selStart)
   return end === null ? null : shiftEnterEdit(scan, end, end)
 }
@@ -382,18 +385,43 @@ const inLinkTarget = (doc: string, c: number): boolean => {
 const inUrlRun = (doc: string, c: number): boolean =>
   urlRunRe.test(doc.slice(lineStartAt(doc, c), c)) || inLinkTarget(doc, c)
 
+const opensLine = (doc: string, pos: number): boolean => {
+  const before = doc.slice(lineStartAt(doc, pos), pos)
+  return before.slice(blockPrefix(before).length).trim() === ''
+}
+
+export function ellipsis(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  inserted: string,
+  settings: Personalization = {},
+): Edit | null {
+  if (inserted !== '.' || selStart !== selEnd || settings.transformEllipses === false) return null
+  const doc = scan.text
+  const c = selStart
+  if (doc[c - 1] !== '.' || doc[c - 2] !== '.' || doc[c - 3] === '.') return null
+  if (inCodeAt(scan, c) || inCodeAt(scan, c - 1) || isInsideWikilink(c, doc) || inUrlRun(doc, c))
+    return null
+  return { from: c - 2, to: c, insert: '…', selection: c - 1 }
+}
+
 export function dashArrow(
   scan: DocScan,
   selStart: number,
   selEnd: number,
   inserted: string,
+  settings: Personalization = {},
 ): Edit | null {
   if (selStart !== selEnd || inserted.length !== 1) return null
   const doc = scan.text
   const c = selStart
-  if (inCodeAt(scan, c)) return null
+  if (inCodeAt(scan, c) || inCodeAt(scan, c - 1)) return null
+  const dashes = settings.transformDashes !== false
+  const arrows = settings.transformArrows !== false
 
   if (
+    dashes &&
     inserted !== '-' &&
     c >= 2 &&
     doc[c - 1] === '-' &&
@@ -403,15 +431,16 @@ export function dashArrow(
     if (isInsideWikilink(c, doc) || inUrlRun(doc, c)) return null
     return { from: c - 2, to: c, insert: `—${inserted}`, selection: c }
   }
-  if (inserted === '-' && doc[c - 1] === '–')
+  if (dashes && inserted === '-' && doc[c - 1] === '–')
     return { from: c - 1, to: c, insert: '—', selection: c }
   if (inserted === '>') {
-    if (doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
-    if (doc[c - 1] === '-') return { from: c - 1, to: c, insert: '→', selection: c }
+    if (arrows && doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
+    if (doc[c - 1] === '-' && (arrows || opensLine(doc, c - 1)))
+      return { from: c - 1, to: c, insert: '→', selection: c }
   }
-  if (inserted === '-' && doc[c - 1] === '<')
+  if (arrows && inserted === '-' && doc[c - 1] === '<')
     return { from: c - 1, to: c, insert: '←', selection: c }
-  if (inserted === ' ' && c >= 2 && doc[c - 1] === '-' && doc[c - 2] === ' ') {
+  if (dashes && inserted === ' ' && c >= 2 && doc[c - 1] === '-' && doc[c - 2] === ' ') {
     const ls = lineStartAt(doc, c)
     const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
     const before = doc.slice(ls + pfx.length, c - 2)
