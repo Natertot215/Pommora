@@ -120,6 +120,7 @@ export interface Personalization {
   jumpToCitation?: boolean
   transformDashes?: boolean
   transformArrows?: boolean
+  transformEquations?: boolean
   transformEllipses?: boolean
   transformCallouts?: boolean
   pairBrackets?: boolean

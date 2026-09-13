@@ -63,6 +63,7 @@ function buildEditorHost(
         defaultLinkFormat: p.defaultLinkFormat,
         transformDashes: p.transformDashes,
         transformArrows: p.transformArrows,
+        transformEquations: p.transformEquations,
         transformEllipses: p.transformEllipses,
         transformCallouts: p.transformCallouts,
         pairBrackets: p.pairBrackets,
