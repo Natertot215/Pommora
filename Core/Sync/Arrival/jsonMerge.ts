@@ -56,8 +56,9 @@ export function mergeKeys(
     if (!localChanged && !remoteChanged) take(base, key)
     else if (!remoteChanged) take(local, key)
     else if (!localChanged) take(remote, key)
-    else if (level > 0 && isPlainObject(b) && isPlainObject(l) && isPlainObject(r)) {
-      out[key] = mergeKeys(b, l, r, levelFor(unionKeys(b, l, r), level - 1), pick)
+    else if (level > 0 && isPlainObject(l) && isPlainObject(r)) {
+      const from = isPlainObject(b) ? b : {}
+      out[key] = mergeKeys(from, l, r, levelFor(unionKeys(from, l, r), level - 1), pick)
     } else take(pick() === 'local' ? local : remote, key)
   }
   return out

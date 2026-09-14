@@ -1,6 +1,5 @@
 import { landBytes, parseJsonText } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
-import { listEntries } from '../../Files/walk'
 import { getLiveTree } from '../../Nexus/liveTree'
 import { tileHostAt } from '../../Nexus/watchPatch'
 import { tileBodyUnder } from '../../Nexus/watchSettle'
@@ -106,7 +105,7 @@ export async function landDelete(root: string, change: Change): Promise<void> {
     if (await machine().stat(abs)) {
       await machine().remove(abs)
       const parent = dirname(abs)
-      if (parent !== root && (await listEntries(parent)).length === 0)
+      if (parent !== root && (await machine().readDir(parent)).length === 0)
         await machine().remove(parent)
     }
     syncStore()?.deleteBase(change.path)
