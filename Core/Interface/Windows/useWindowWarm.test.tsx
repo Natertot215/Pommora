@@ -1,5 +1,5 @@
-import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
+import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, createElement, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'

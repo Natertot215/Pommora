@@ -1,5 +1,5 @@
-import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
+import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'

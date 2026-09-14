@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { detail } from '@pommora/core/Testing/fixtures'
 import { machine } from '../Platform/machine'
-import { clearCache, readPageDetail } from './pageDetailCache'
+import { cachePageDetail, clearCache, readPageDetail } from './pageDetailCache'
 import { flushPageSave, schedulePageSave, setStaleSaveSink } from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
 
@@ -33,6 +33,7 @@ describe('schedulePageSave', () => {
   it('does not requeue a stale ack and calls the sink once', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     stub({ ok: true, value: { hash: machine().sha256Hex('disk'), stale: true } })
+    cachePageDetail(disk)
     const stale = vi.fn()
     setStaleSaveSink(stale)
     schedulePageSave(PATH, 'typed')
@@ -42,22 +43,27 @@ describe('schedulePageSave', () => {
     expect(stale).toHaveBeenCalledExactlyOnceWith(PATH)
   })
 
-  it('opens the page once when no base is held before saving', async () => {
+  it('sends the write before any await so an unload flush escapes', async () => {
     stub({ ok: true, value: { hash: machine().sha256Hex('typed'), stale: false } })
+    cachePageDetail(disk)
     schedulePageSave(PATH, 'typed')
-    await flushPageSave(PATH)
-    expect(openPage).toHaveBeenCalledTimes(1)
+    const landed = flushPageSave(PATH)
     expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', disk.bodyHash)
+    expect(readPageDetail(PATH)?.body).toBe('typed')
+    await landed
     schedulePageSave(PATH, 'typed again')
     await flushPageSave(PATH)
-    expect(openPage).toHaveBeenCalledTimes(1)
     expect(updateBody).toHaveBeenLastCalledWith(PATH, 'typed again', machine().sha256Hex('typed'))
+    expect(openPage).not.toHaveBeenCalled()
   })
 
-  it('writes the live body through after the opening fetch', async () => {
-    stub({ ok: true, value: { hash: machine().sha256Hex('typed'), stale: false } })
+  it('answers stale when no base is held', async () => {
+    stub({ ok: true, value: { hash: machine().sha256Hex('disk'), stale: true } })
+    const stale = vi.fn()
+    setStaleSaveSink(stale)
     schedulePageSave(PATH, 'typed')
     await flushPageSave(PATH)
-    expect(readPageDetail(PATH)?.body).toBe('typed')
+    expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', '')
+    expect(stale).toHaveBeenCalledExactlyOnceWith(PATH)
   })
 })

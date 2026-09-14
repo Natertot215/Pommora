@@ -50,6 +50,7 @@ import {
   dropCacheDetail,
   cachePageDetail,
   fetchPageDetail,
+  setBodyBase,
 } from './pageDetailCache'
 import { dropCacheTab, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
@@ -356,6 +357,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       dropCacheDetail(path)
       const detail = await fetchPageDetail(path)
       if (!detail) return false
+      setBodyBase(path, { text: detail.body, hash: detail.bodyHash })
       get().setPageBody(path, detail.body)
       bumpBodyEpoch(path)
       return true

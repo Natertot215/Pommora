@@ -5,6 +5,7 @@ import {
   bumpBodyEpoch,
   cachePageDetail,
   clearCache,
+  dropCacheDetail,
   dropPageDetail,
   fetchPageDetail,
   readBodyBase,
@@ -103,20 +104,21 @@ describe('the body base', () => {
     expect(readBodyBase('x/a.md')).toBeNull()
   })
 
-  it('keeps the body base across write-through and refresh', () => {
+  it('keeps the body base across a cache refresh and the cap', () => {
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
     const base = readBodyBase('x/a.md')
     writeThroughBody('x/a.md', 'typed')
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    dropCacheDetail('x/a.md')
+    for (let i = 0; i < 60; i++) cachePageDetail(detail({ path: `x/p${i}.md`, body: 'other' }))
+    expect(readPageDetail('x/a.md')).toBeUndefined()
     expect(readBodyBase('x/a.md')).toEqual(base)
-    expect(readPageDetail('x/a.md')?.body).toBe('hello')
   })
 
-  it('patches the cached bodyHash when the base is set', () => {
+  it('a set base is the one the next save asserts', () => {
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
     setBodyBase('x/a.md', { text: 'typed', hash: machine().sha256Hex('typed') })
-    expect(readPageDetail('x/a.md')?.bodyHash).toBe(machine().sha256Hex('typed'))
-    expect(readBodyBase('x/a.md')?.text).toBe('typed')
+    expect(readBodyBase('x/a.md')).toEqual({ text: 'typed', hash: machine().sha256Hex('typed') })
   })
 })
 
