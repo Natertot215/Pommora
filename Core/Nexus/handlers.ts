@@ -12,6 +12,7 @@ import { machine } from '../Platform/machine'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { readPermanentDelete } from '../Settings/settings'
+import { startSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
@@ -69,6 +70,7 @@ export async function openNexusSequence(
       }
     }
     await seedContentIndex(root)
+    void startSession(ctx, root, (getLiveTree() ?? (await refreshTree(root))).nexus.id)
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     void runRepairSweep(root).then(() => pushValueChanges(ctx, root))
   }
