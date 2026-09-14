@@ -4,9 +4,11 @@ import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createServer as httpsCreateServer } from 'node:https'
 import type { AddressInfo } from 'node:net'
+import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { identify, verify } from './authority.ts'
+import { identify, type Routes, verify } from './authority.ts'
+import { nexusRoutes } from './Routes/nexus.ts'
 import { rosterRoutes } from './Routes/roster.ts'
 import { openStore, type Store } from './Store/open.ts'
 import {
@@ -41,7 +43,7 @@ function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
 
 async function route(
   store: Store,
-  routes: ReturnType<typeof rosterRoutes>,
+  routes: Routes<keyof Wire.RouteTable>,
   req: IncomingMessage,
   timeoutMs: number | undefined,
 ): Promise<Reply> {
@@ -69,7 +71,7 @@ export async function start(opts: {
   tls?: { cert: string; key: string }
 }): Promise<{ port: number; pin: string | null; close(): Promise<void> }> {
   const store = openStore(opts.dataDir)
-  const routes = rosterRoutes(store)
+  const routes = { ...rosterRoutes(store), ...nexusRoutes(store) }
   const handler = (req: IncomingMessage, res: ServerResponse) => {
     const send = (reply: Reply): void => {
       if (res.headersSent) return
