@@ -53,7 +53,11 @@ describe('captureLoser', () => {
     const added = vi.spyOn(mem.stores.captures!, 'addCapture')
     await captureLoser(root, 'Notes/A.md', utf8(page('lost body\n')), 'local-lost')
     expect(added).toHaveBeenCalledTimes(1)
-    expect(snapshotStore()!.listSnapshots(PAGE).map((r) => r.source)).toEqual(['external'])
+    expect(
+      snapshotStore()!
+        .listSnapshots(PAGE)
+        .map((r) => r.source),
+    ).toEqual(['external'])
   })
 
   it('captures a page into captures alone with File History off', async () => {

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { type Json, isMergedJson, mergeDepthFor, mergeKeys } from './jsonMerge'
 
-const takeLocal = () => 'local' as const
-const takeRemote = () => 'remote' as const
+type Pick = () => 'local' | 'remote'
 
-const merge = (base: Json, local: Json, remote: Json, depth = {}, pick = takeRemote): Json =>
+const takeLocal: Pick = () => 'local'
+const takeRemote: Pick = () => 'remote'
+
+const merge = (base: Json, local: Json, remote: Json, depth = {}, pick: Pick = takeRemote): Json =>
   mergeKeys(base, local, remote, depth, pick)
 
 describe('mergeKeys', () => {
