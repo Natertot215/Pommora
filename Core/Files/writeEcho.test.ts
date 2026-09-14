@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { isRecentWrite, recordWrite } from './writeEcho'
+import { isRecentWrite, recordWrite, setWriteTap } from './writeEcho'
 
 // WINDOW_MS is 2000; PREFIX_WINDOW_MS is 800. The module-level map has no reset, so each test uses a distinct root to keep records from bleeding across tests.
 beforeEach(() => {
@@ -42,5 +42,17 @@ describe('isRecentWrite', () => {
     recordWrite('/t5/Notes')
     vi.setSystemTime(100)
     expect(isRecentWrite('/t5/NotesX/child.md')).toBe(false)
+  })
+})
+
+describe('setWriteTap', () => {
+  it('hands every recorded path to the tap until it is cleared', () => {
+    const seen: string[] = []
+    setWriteTap((p) => seen.push(p))
+    recordWrite('/t6/a.md')
+    recordWrite('/t6/b.md')
+    setWriteTap(null)
+    recordWrite('/t6/c.md')
+    expect(seen).toEqual(['/t6/a.md', '/t6/b.md'])
   })
 })

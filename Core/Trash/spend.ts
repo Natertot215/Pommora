@@ -142,14 +142,17 @@ export async function emptyBundle(
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   if (opened.value.entity === 'property') {
+    recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
     return ok(null)
   }
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
+  recordWrite(artifactAbs)
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
+  recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
   return ok(null)
 }
@@ -190,6 +193,7 @@ export async function restoreArtifact(
     if (destination) return fail('operation-failed', NO_DESTINATION)
     const rebuilt = await restoreProperty(root, opened.value)
     if (!rebuilt.ok) return rebuilt
+    recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
     return ok(null)
   }
@@ -253,6 +257,7 @@ export async function restoreArtifact(
       }))
     return fail('operation-failed', errText(e))
   }
+  recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
 
   const roots = projectBaseline(tree).entries

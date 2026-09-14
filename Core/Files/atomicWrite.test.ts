@@ -6,12 +6,14 @@ import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import {
   atomicWriteFile,
+  landBytes,
   rewritePageSerialized,
   writeJson,
   readJsonStrict,
   rmwJsonStrict,
 } from './atomicWrite'
 import { mintBundle, settleBundle, trashFileFlat } from '../Trash/bundle'
+import { isRecentWrite } from './writeEcho'
 
 let dir: string
 beforeEach(async () => {
@@ -213,5 +215,16 @@ describe('trashFileFlat', () => {
     expect(second).not.toBe(first)
     expect(await readFile(first, 'utf8')).toBe('one')
     expect(await readFile(second, 'utf8')).toBe('two')
+  })
+})
+
+describe('landBytes', () => {
+  it('records no echo and stamps the given mtime', async () => {
+    const p = join(dir, 'landed.md')
+    const when = 1600000000000
+    await landBytes(p, new TextEncoder().encode('arrived'), when)
+    expect(isRecentWrite(p)).toBe(false)
+    expect((await stat(p)).mtimeMs).toBe(when)
+    expect(await readFile(p, 'utf8')).toBe('arrived')
   })
 })
