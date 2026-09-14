@@ -7,6 +7,7 @@ import { RenamableLabel } from './RenamableLabel'
 export interface FieldEdit {
   value: string
   onCommit: (next: string) => void
+  type?: 'text' | 'password'
   /** Where the caret lands — a `title` opens with it at the end, a `row` selected whole. */
   renames?: 'title' | 'row'
   /** A value rather than a name: clearing the field commits the empty string. */
@@ -82,6 +83,7 @@ export function InputField({
           renames={edit.renames ?? 'title'}
           editing={editing}
           value={edit.value}
+          type={edit.type}
           className={s.draftInput}
           boxed
           ariaLabel={label}

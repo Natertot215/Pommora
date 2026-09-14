@@ -1,6 +1,7 @@
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '@pommora/core/Contract/result'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import {
   insertCreatedInTree,
   patchContextGroupsInTree,
@@ -24,7 +25,9 @@ export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
   tree: NexusTree | null
   error?: PommoraError
+  syncStatus: SyncStatus | null
   load: () => Promise<void>
+  applySyncStatus: (status: SyncStatus) => void
   applyTree: (tree: NexusTree) => Promise<void>
   choose: () => Promise<void>
   openDropped: (file: File) => Promise<void>
@@ -79,6 +82,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     status: 'idle',
     tree: null,
     error: undefined,
+    syncStatus: null,
+
+    applySyncStatus: (status) => set({ syncStatus: status }),
 
     load: async () => {
       // Only the first load shows it; a refetch keeps the tree mounted so selection survives.
