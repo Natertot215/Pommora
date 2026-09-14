@@ -20,7 +20,7 @@ import type {
 } from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
-import type { SyncState } from '../Sync/Contract/wire'
+import type { SyncState, SyncStatus } from '../Sync/Contract/wire'
 
 export type HostPlatform = 'windows' | 'posix'
 
@@ -262,6 +262,7 @@ export interface Pushes {
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]
   'tiles:changed': TileHostRef
+  'sync:changed': SyncStatus
   'win:fullscreen': boolean
   // A guest's window.open, denied main-side so popups route through the one link adjudicator.
   'web:popup': string

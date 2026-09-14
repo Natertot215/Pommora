@@ -36,7 +36,7 @@ function parseObject(bytes: Uint8Array): Json | null {
   }
 }
 
-function recordOf(change: Change): ItemRecord {
+export function recordOf(change: Change): ItemRecord {
   if (!change.record) throw new Error(`Change ${change.seq} on ${change.path} carries no record.`)
   return change.record
 }
