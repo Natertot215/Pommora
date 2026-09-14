@@ -78,7 +78,7 @@ Recorded at ratification, after the working tree is swept.
 - `grep -c "recordWrite" Core/Trash/spend.ts` → 3 — becomes 8 (Task 2.3)
 
 **START:** 2026-09-14T03:08:15Z
-**END:** <same command, run as the report is given>
+**END:** 2026-09-14T20:19:44Z
 
 #### Implementation Process
 
@@ -130,12 +130,12 @@ The tag after each task names the executing agent's model. Tick per bullet at co
 - [x] **Phase 9** — The Nexus Heading
   - [x] Task 9.1 Rows and channels `[Opus]`
   - [x] Review Checkpoint
-- [ ] **Phase 10** — Proof, Deploy, and Reconciliation
-  - [ ] Task 10.1 Dockerfile, scripts, and Development-Environment `[Opus]`
-  - [ ] Task 10.2 The two-instance proof over CDP `[Opus]`
-  - [ ] Task 10.3 Documents `[Opus]`
-  - [ ] Review Checkpoint
-- [ ] Final Verification
+- [x] **Phase 10** — Proof, Deploy, and Reconciliation
+  - [x] Task 10.1 Dockerfile, scripts, and Development-Environment `[Opus]`
+  - [x] Task 10.2 The two-instance proof over CDP `[Fable]`
+  - [x] Task 10.3 Documents `[Opus]`
+  - [x] Review Checkpoint
+- [x] Final Verification
 
 ### Phase 1 — Host Seams
 
@@ -183,10 +183,10 @@ const hashOf = (bytes: Uint8Array): string =>
 
 **CHANGE**
 
-- [ ] Add `"!Dashboard/Ledger/loc-history.json"` as the last entry of `biome.json`'s `files.includes`.
-- [ ] `Core/Platform/machine.ts`: the member becomes `sha256Hex(input: string | Uint8Array): string`. `nodeMachine.ts` and the two test machines rename the parameter to `input` with the widened type; `createHash('sha256').update(input)` accepts both, so no body changes.
-- [ ] `Core/Testing/machineContract.ts`: add, after the empty-string case, `it('hashes bytes as the text they decode to', () => { expect(machine.sha256Hex(new Uint8Array([0x61, 0x62, 0x63]))).toBe(machine.sha256Hex('abc')) })`.
-- [ ] `assetMigrate.ts`: `hashOf` becomes `const hashOf = (bytes: Uint8Array): string => machine().sha256Hex(bytes)` and its comment is deleted.
+- [x] Add `"!Dashboard/Ledger/loc-history.json"` as the last entry of `biome.json`'s `files.includes`.
+- [x] `Core/Platform/machine.ts`: the member becomes `sha256Hex(input: string | Uint8Array): string`. `nodeMachine.ts` and the two test machines rename the parameter to `input` with the widened type; `createHash('sha256').update(input)` accepts both, so no body changes.
+- [x] `Core/Testing/machineContract.ts`: add, after the empty-string case, `it('hashes bytes as the text they decode to', () => { expect(machine.sha256Hex(new Uint8Array([0x61, 0x62, 0x63]))).toBe(machine.sha256Hex('abc')) })`.
+- [x] `assetMigrate.ts`: `hashOf` becomes `const hashOf = (bytes: Uint8Array): string => machine().sha256Hex(bytes)` and its comment is deleted.
 
 **AFTER**
 
@@ -209,10 +209,10 @@ const hashOf = (bytes: Uint8Array): string => machine().sha256Hex(bytes)
 
 **VERIFY**
 
-- [ ] `set -o pipefail; npm run lint` exits 0 with zero errors in its output.
-- [ ] `npm run test -- Core/Testing/` and `npm run test -- Core/Assets/` pass.
-- [ ] `grep -c "latin1" Core/Assets/assetMigrate.ts` → 0.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `set -o pipefail; npm run lint` exits 0 with zero errors in its output.
+- [x] `npm run test -- Core/Testing/` and `npm run test -- Core/Assets/` pass.
+- [x] `grep -c "latin1" Core/Assets/assetMigrate.ts` → 0.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.2
 
@@ -257,9 +257,9 @@ export async function transport(req: TransportRequest): Promise<TransportReply> 
 
 **CHANGE**
 
-- [ ] `TransportRequest.body?: string | Uint8Array`; add `timeoutMs?: number` (default 10,000) and `pin?: string` (a `fingerprint256` in Node's colon-hex form). `TransportReply` gains `bytes: Uint8Array`; `body` stays the UTF-8 decode of `bytes`. The `TransportReply` literals in `Core/Sync/client.test.ts`'s `recorder()` and `Core/Sync/handlers.test.ts`'s `Answer` builder gain `bytes: new TextEncoder().encode(body)`.
-- [ ] `Desktop/tsconfig.node.json`: add `"Sync/**/*"` to `include` after `"Config/**/*"`.
-- [ ] Mint the test pair once with
+- [x] `TransportRequest.body?: string | Uint8Array`; add `timeoutMs?: number` (default 10,000) and `pin?: string` (a `fingerprint256` in Node's colon-hex form). `TransportReply` gains `bytes: Uint8Array`; `body` stays the UTF-8 decode of `bytes`. The `TransportReply` literals in `Core/Sync/client.test.ts`'s `recorder()` and `Core/Sync/handlers.test.ts`'s `Answer` builder gain `bytes: new TextEncoder().encode(body)`.
+- [x] `Desktop/tsconfig.node.json`: add `"Sync/**/*"` to `include` after `"Config/**/*"`.
+- [x] Mint the test pair once with
 
 ```sh
 openssl req -x509 -nodes -days 36500 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
@@ -268,9 +268,9 @@ openssl req -x509 -nodes -days 36500 -newkey ec -pkeyopt ec_paramgen_curve:prime
 ```
 
   and commit both files.
-- [ ] Create `Desktop/Sync/transport.ts` as the AFTER block shows: `node:https.request` for an `https:` address and `node:http.request` otherwise; with a pin, `rejectUnauthorized: false` and a `secureConnect` check comparing `socket.getPeerCertificate().fingerprint256` to the pin, destroying the socket and rejecting on a mismatch; without a pin, `rejectUnauthorized: true`; the body written as bytes; the response collected into one `Uint8Array`; `req.timeoutMs ?? 10_000` through `request.setTimeout`. One export, `transport(req): Promise<TransportReply>`.
-- [ ] Delete `Desktop/Web/transport.ts`; `Desktop/main.ts`'s import becomes `import { transport } from './Sync/transport'`.
-- [ ] `Desktop/Sync/transport.test.ts`, over an `https.createServer({ cert, key })` reading the committed pair and answering the request body back as bytes: `it('carries bytes both ways under the right pin', …)` (the pin from `new X509Certificate(cert).fingerprint256`, status 200, `reply.bytes` equal to the sent bytes); `it('rejects a pin the certificate does not match', …)` (`await expect(transport({ …, pin: 'AA:' + … })).rejects.toThrow()`); `it('reaches an http: address without a pin', …)` over `http.createServer`.
+- [x] Create `Desktop/Sync/transport.ts` as the AFTER block shows: `node:https.request` for an `https:` address and `node:http.request` otherwise; with a pin, `rejectUnauthorized: false` and a `secureConnect` check comparing `socket.getPeerCertificate().fingerprint256` to the pin, destroying the socket and rejecting on a mismatch; without a pin, `rejectUnauthorized: true`; the body written as bytes; the response collected into one `Uint8Array`; `req.timeoutMs ?? 10_000` through `request.setTimeout`. One export, `transport(req): Promise<TransportReply>`.
+- [x] Delete `Desktop/Web/transport.ts`; `Desktop/main.ts`'s import becomes `import { transport } from './Sync/transport'`.
+- [x] `Desktop/Sync/transport.test.ts`, over an `https.createServer({ cert, key })` reading the committed pair and answering the request body back as bytes: `it('carries bytes both ways under the right pin', …)` (the pin from `new X509Certificate(cert).fingerprint256`, status 200, `reply.bytes` equal to the sent bytes); `it('rejects a pin the certificate does not match', …)` (`await expect(transport({ …, pin: 'AA:' + … })).rejects.toThrow()`); `it('reaches an http: address without a pin', …)` over `http.createServer`.
 
 **AFTER**
 
@@ -338,11 +338,11 @@ export function transport(req: TransportRequest): Promise<TransportReply> {
 
 **VERIFY**
 
-- [ ] `npm run typecheck` exits 0; `npm run test -- Desktop/Sync/` passes three cases.
-- [ ] `test -f Desktop/Web/transport.ts && echo 1 || echo 0` → 0; `grep -rn "Web/transport" Desktop Core | wc -l` → 0.
-- [ ] `grep -c '"Sync/\*\*/\*"' Desktop/tsconfig.node.json` → 1.
-- [ ] `ls Sync/Testing` lists `cert.pem` and `key.pem`; `Desktop/hostGraph.test.ts` still passes.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run typecheck` exits 0; `npm run test -- Desktop/Sync/` passes three cases.
+- [x] `test -f Desktop/Web/transport.ts && echo 1 || echo 0` → 0; `grep -rn "Web/transport" Desktop Core | wc -l` → 0.
+- [x] `grep -c '"Sync/\*\*/\*"' Desktop/tsconfig.node.json` → 1.
+- [x] `ls Sync/Testing` lists `cert.pem` and `key.pem`; `Desktop/hostGraph.test.ts` still passes.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.3
 
@@ -416,10 +416,10 @@ function readDevice(v: unknown): SyncDevice | undefined {
 
 **CHANGE**
 
-- [ ] `SyncDevice` gains `x25519?: string` (the raw 32-byte X25519 public key, base64url). `readDevice()` reads it when it is a non-empty string: `const { id, publicKey, name, x25519 } = …` and `return { id, publicKey, name, ...(typeof x25519 === 'string' && x25519 && { x25519 }) }`.
-- [ ] `HostDevice` gains `agree(peerPublicKey: string): Promise<Uint8Array>` between `sign` and `rename`.
-- [ ] `device.ts`: `const AGREEMENT_SECRET = 'device-x25519'` beside `SECRET`; `ensureAgreementKey(userDataDir, stored: SyncDevice)` as the AFTER block shows; `ensureDevice` calls it after the Ed25519 half resolves, so an existing install gains the key on its next launch without re-minting. `rename()` writes `device: { ...current, name }` where `current` is `{ id: host.id, publicKey: host.publicKey, name: host.name, x25519: host.x25519 }`.
-- [ ] `device.test.ts`: `it('gives an existing device its agreement key without re-minting', …)` (write `pommora.json` with a device lacking `x25519` through a first `ensureDevice`, delete the key from the config with `updateAppConfig(dir, () => ({ device: { id, publicKey, name } }))`, call `ensureDevice` again: `x25519` present and 43 characters, `id` unchanged); `it('agrees on one secret from either side', …)` (two userData dirs, `a.agree(b.x25519!)` equals `b.agree(a.x25519!)`, 32 bytes); `it('keeps the agreement key across a rename', …)`. The first test's existing `expect(stored).toEqual({ id, publicKey, name })` becomes `toMatchObject` with `x25519` asserted as a 43-character string. `Core/Sync/handlers.test.ts`'s fake `HostDevice` and `Core/Sync/client.test.ts`'s `recorder()` device each gain `agree: async () => new Uint8Array(32)`.
+- [x] `SyncDevice` gains `x25519?: string` (the raw 32-byte X25519 public key, base64url). `readDevice()` reads it when it is a non-empty string: `const { id, publicKey, name, x25519 } = …` and `return { id, publicKey, name, ...(typeof x25519 === 'string' && x25519 && { x25519 }) }`.
+- [x] `HostDevice` gains `agree(peerPublicKey: string): Promise<Uint8Array>` between `sign` and `rename`.
+- [x] `device.ts`: `const AGREEMENT_SECRET = 'device-x25519'` beside `SECRET`; `ensureAgreementKey(userDataDir, stored: SyncDevice)` as the AFTER block shows; `ensureDevice` calls it after the Ed25519 half resolves, so an existing install gains the key on its next launch without re-minting. `rename()` writes `device: { ...current, name }` where `current` is `{ id: host.id, publicKey: host.publicKey, name: host.name, x25519: host.x25519 }`.
+- [x] `device.test.ts`: `it('gives an existing device its agreement key without re-minting', …)` (write `pommora.json` with a device lacking `x25519` through a first `ensureDevice`, delete the key from the config with `updateAppConfig(dir, () => ({ device: { id, publicKey, name } }))`, call `ensureDevice` again: `x25519` present and 43 characters, `id` unchanged); `it('agrees on one secret from either side', …)` (two userData dirs, `a.agree(b.x25519!)` equals `b.agree(a.x25519!)`, 32 bytes); `it('keeps the agreement key across a rename', …)`. The first test's existing `expect(stored).toEqual({ id, publicKey, name })` becomes `toMatchObject` with `x25519` asserted as a 43-character string. `Core/Sync/handlers.test.ts`'s fake `HostDevice` and `Core/Sync/client.test.ts`'s `recorder()` device each gain `agree: async () => new Uint8Array(32)`.
 
 **AFTER**
 
@@ -493,9 +493,9 @@ and `rename` writes `device: { id: host.id, publicKey: host.publicKey, name, x25
 
 **VERIFY**
 
-- [ ] `npm run test -- Desktop/Config/` passes with three new cases; `npm run test -- Core/Sync/` passes.
-- [ ] `grep -c "device-x25519" Desktop/Config/device.ts` → 1 (the constant; every use goes through it).
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Desktop/Config/` passes with three new cases; `npm run test -- Core/Sync/` passes.
+- [x] `grep -c "device-x25519" Desktop/Config/device.ts` → 1 (the constant; every use goes through it).
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.4
 
@@ -544,7 +544,7 @@ export const snapshotStore = (): SnapshotStore | null => installed.snapshots
 
 **CHANGE**
 
-- [ ] Append to `DDL` in `ddl.ts`:
+- [x] Append to `DDL` in `ddl.ts`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS sync (
@@ -559,7 +559,7 @@ CREATE TABLE IF NOT EXISTS sync (
 ```
 
   and one sentence at the end of the header comment: "The `sync` table is the device's base record per item and is rebuilt from the hub by the first-bind reconcile." Do not bump `SCHEMA_VERSION`.
-- [ ] Append to `versionsDb.ts`'s `DDL`:
+- [x] Append to `versionsDb.ts`'s `DDL`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS captures (
@@ -572,7 +572,7 @@ CREATE TABLE IF NOT EXISTS captures (
 ```
 
   with two exports below `sweepSnapshots`: `addCapture(db, path, ts, reason, bytes)` running `INSERT OR REPLACE INTO captures (path, ts, reason, blob) VALUES (?, ?, ?, ?)` with `deflateSync(bytes)`, and `sweepCaptures(db, cutoffMs)` as `removed(db.prepare('DELETE FROM captures WHERE ts < ?').run(cutoffMs))`. Nothing in the app reads a capture back; the proof (Task 10.2) reads the table with `node -e` over `node:sqlite`.
-- [ ] `Core/Platform/stores.ts`:
+- [x] `Core/Platform/stores.ts`:
 
 ```ts
 export interface BaseRecord {
@@ -599,9 +599,9 @@ export interface CaptureStore {
 ```
 
   `Stores` gains `sync: SyncStore | null` and `captures: CaptureStore | null`; `NO_STORES` gains `sync: null, captures: null`; two accessors follow the three existing ones: `export const syncStore = (): SyncStore | null => installed.sync` and `export const captureStore = (): CaptureStore | null => installed.captures`.
-- [ ] `Desktop/Store/stores.ts`: `export const syncStore = (db: Db): SyncStore` over `nexus.db` (`readBase` selects `path, mtime_ms, size, hash, blob_sha, version, base_bytes` and maps to `BaseRecord` with `baseBytes: row.base_bytes === null ? null : new Uint8Array(row.base_bytes)`; `upsertBase` is `INSERT OR REPLACE INTO sync (path, mtime_ms, size, hash, blob_sha, version, base_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)`; `renameBase` is `UPDATE OR REPLACE sync SET path = ? WHERE path = ?`) and `export const captureStore = (db: Db): CaptureStore` over `versions.db` binding the two `versionsDb.ts` functions.
-- [ ] `Desktop/Store/sessionDb.ts` `openSessionDb`: the `installStores` literal gains `sync: db && syncStore(db)` and `captures: versionsDb && captureStore(versionsDb)`; `Desktop/Store/stores.test.ts` line 46's literal gains `sync: syncStore(db), captures: captureStore(versionsDb)` and the file gains `describeSyncStore('SQLite sync bases', () => syncStore(db))` and `describeCaptureStore('SQLite captures', () => captureStore(versionsDb))`.
-- [ ] `Core/Testing/memoryStores.ts`: `sync()` over a `Map<string, BaseRecord>` and `captures()` over a `Map<string, Map<number, { reason: CaptureReason; bytes: Uint8Array }>>`; `memoryStores()` returns both. `Core/Testing/storesContract.ts` gains `describeSyncStore(name, make)` with `it('round-trips a base record and lists every row', …)`, `it('renames one path and deletes one path', …)`, `it('keeps base bytes as bytes and null as null', …)`; and `describeCaptureStore(name, make)` with `it('adds a capture and sweeps it past the cutoff', …)` (the sweep's returned count is the only read: 1 after the add, 0 once swept). `Core/Testing/contracts.test.ts` runs both against `memoryStores()`.
+- [x] `Desktop/Store/stores.ts`: `export const syncStore = (db: Db): SyncStore` over `nexus.db` (`readBase` selects `path, mtime_ms, size, hash, blob_sha, version, base_bytes` and maps to `BaseRecord` with `baseBytes: row.base_bytes === null ? null : new Uint8Array(row.base_bytes)`; `upsertBase` is `INSERT OR REPLACE INTO sync (path, mtime_ms, size, hash, blob_sha, version, base_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)`; `renameBase` is `UPDATE OR REPLACE sync SET path = ? WHERE path = ?`) and `export const captureStore = (db: Db): CaptureStore` over `versions.db` binding the two `versionsDb.ts` functions.
+- [x] `Desktop/Store/sessionDb.ts` `openSessionDb`: the `installStores` literal gains `sync: db && syncStore(db)` and `captures: versionsDb && captureStore(versionsDb)`; `Desktop/Store/stores.test.ts` line 46's literal gains `sync: syncStore(db), captures: captureStore(versionsDb)` and the file gains `describeSyncStore('SQLite sync bases', () => syncStore(db))` and `describeCaptureStore('SQLite captures', () => captureStore(versionsDb))`.
+- [x] `Core/Testing/memoryStores.ts`: `sync()` over a `Map<string, BaseRecord>` and `captures()` over a `Map<string, Map<number, { reason: CaptureReason; bytes: Uint8Array }>>`; `memoryStores()` returns both. `Core/Testing/storesContract.ts` gains `describeSyncStore(name, make)` with `it('round-trips a base record and lists every row', …)`, `it('renames one path and deletes one path', …)`, `it('keeps base bytes as bytes and null as null', …)`; and `describeCaptureStore(name, make)` with `it('adds a capture and sweeps it past the cutoff', …)` (the sweep's returned count is the only read: 1 after the add, 0 once swept). `Core/Testing/contracts.test.ts` runs both against `memoryStores()`.
 
 **AFTER**
 
@@ -627,16 +627,16 @@ A pre-existing `nexus.db` gains the `sync` table on its next open with no data l
 
 **VERIFY**
 
-- [ ] `npm run test -- Desktop/Store/` and `npm run test -- Core/Testing/` pass; the contract suite exercises both new stores against both implementations.
-- [ ] `grep -c "CREATE TABLE IF NOT EXISTS" Desktop/Store/ddl.ts` → 7; `grep -c "CREATE TABLE IF NOT EXISTS" Desktop/Store/versionsDb.ts` → 2.
-- [ ] Smoke launch on a scratch copy of NexusOS whose `nexus.db` predates this task: its `tabs` scope survives (`node -e` over `node:sqlite` counts `local_state` rows before and after) and `sqlite_master` lists `sync`.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Desktop/Store/` and `npm run test -- Core/Testing/` pass; the contract suite exercises both new stores against both implementations.
+- [x] `grep -c "CREATE TABLE IF NOT EXISTS" Desktop/Store/ddl.ts` → 7; `grep -c "CREATE TABLE IF NOT EXISTS" Desktop/Store/versionsDb.ts` → 2.
+- [x] Smoke launch on a scratch copy of NexusOS whose `nexus.db` predates this task: its `tabs` scope survives (`node -e` over `node:sqlite` counts `local_state` rows before and after) and `sqlite_master` lists `sync`.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] All four gates green; the lint gate is green after a commit (the hook has run).
-- [ ] Smoke launch from built output on a scratch Nexus: tree renders, a page opens, an edit saves, the app quits clean.
-- [ ] `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass unchanged.
+- [x] All four gates green; the lint gate is green after a commit (the hook has run).
+- [x] Smoke launch from built output on a scratch Nexus: tree renders, a page opens, an edit saves, the app quits clean.
+- [x] `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass unchanged.
 
 ### Phase 2 — Core Predicates and Structure
 
@@ -675,8 +675,8 @@ Sync/server.ts:9:import type * as Wire from '@pommora/core/Sync/contract'
 
 **CHANGE**
 
-- [ ] `git mv` each file to its new path.
-- [ ] Rewrite the imports above: `'../Sync/contract'` → `'../Sync/Contract/wire'` in `Core/Contract/bridge.ts` and `Core/Contract/handlers.ts`; `'@pommora/core/Sync/contract'` → `'@pommora/core/Sync/Contract/wire'` in `NexusRows.tsx`, `NexusRows.test.tsx`, `appConfig.ts`, `device.ts`, and `Sync/server.ts`; in `Client/call.ts`, `'./authority'` → `'../Contract/canonical'` and `'./contract'` → `'../Contract/wire'`; in `Client/call.test.ts`, `'./authority'` → `'../Contract/canonical'` and `'./client'` → `'./call'`; in `Core/Sync/handlers.ts`, `'./client'` → `'./Client/call'` and `'./contract'` → `'./Contract/wire'`; in `Contract/canonical.ts`, `'./contract'` → `'./wire'`; `Contract/canonical.test.ts` keeps `'./authority'` → `'./canonical'` and its `'./vectors.json'` unchanged; `Sync/server.test.ts` line 84 becomes `new URL('../Core/Sync/Contract/vectors.json', import.meta.url)`.
+- [x] `git mv` each file to its new path.
+- [x] Rewrite the imports above: `'../Sync/contract'` → `'../Sync/Contract/wire'` in `Core/Contract/bridge.ts` and `Core/Contract/handlers.ts`; `'@pommora/core/Sync/contract'` → `'@pommora/core/Sync/Contract/wire'` in `NexusRows.tsx`, `NexusRows.test.tsx`, `appConfig.ts`, `device.ts`, and `Sync/server.ts`; in `Client/call.ts`, `'./authority'` → `'../Contract/canonical'` and `'./contract'` → `'../Contract/wire'`; in `Client/call.test.ts`, `'./authority'` → `'../Contract/canonical'` and `'./client'` → `'./call'`; in `Core/Sync/handlers.ts`, `'./client'` → `'./Client/call'` and `'./contract'` → `'./Contract/wire'`; in `Contract/canonical.ts`, `'./contract'` → `'./wire'`; `Contract/canonical.test.ts` keeps `'./authority'` → `'./canonical'` and its `'./vectors.json'` unchanged; `Sync/server.test.ts` line 84 becomes `new URL('../Core/Sync/Contract/vectors.json', import.meta.url)`.
 
 **AFTER**
 
@@ -684,9 +684,9 @@ Sync/server.ts:9:import type * as Wire from '@pommora/core/Sync/contract'
 
 **VERIFY**
 
-- [ ] `npm run typecheck` exits 0; `npm run test -- Core/Sync/` and `npm run test -- Sync/` pass with the same counts as before.
-- [ ] `git status --porcelain Core/Sync | grep -c "^R"` → 6.
-- [ ] `grep -rn "Sync/contract'\|Sync/authority'\|Sync/client'" Core Desktop Sync --include='*.ts' --include='*.tsx' | wc -l` → 0.
+- [x] `npm run typecheck` exits 0; `npm run test -- Core/Sync/` and `npm run test -- Sync/` pass with the same counts as before.
+- [x] `git status --porcelain Core/Sync | grep -c "^R"` → 6.
+- [x] `grep -rn "Sync/contract'\|Sync/authority'\|Sync/client'" Core Desktop Sync --include='*.ts' --include='*.tsx' | wc -l` → 0.
 
 #### Task 2.2
 
@@ -767,10 +767,10 @@ export async function corpusFilesUnder(
 
 **CHANGE**
 
-- [ ] `nexusPaths.ts` exports, after `CONTEXTS_DIR_REL`: `PROPERTY_JOURNAL_FILENAME = 'property-cascade.json'`, `CONTEXT_JOURNAL_FILENAME = 'context-rename.json'`, `PROPERTY_JOURNAL_REL = \`${NEXUS_DIR}/${PROPERTY_JOURNAL_FILENAME}\``, `CONTEXT_JOURNAL_REL = \`${NEXUS_DIR}/${CONTEXT_JOURNAL_FILENAME}\``; the two `journalSlot(...)` call sites take the `_FILENAME` constants.
-- [ ] `watchSettle.ts`: extract the two tile-body clauses into `export function tileBodyUnder(segs: string[], rel: string): boolean`; the closure body becomes `segs.some(neverWatched) || tileBodyUnder(segs, rel) || isExcluded(segs)` with the two comments moving onto `tileBodyUnder`.
-- [ ] `exclusion.ts` exports `manifestAdmits` as the AFTER block shows: an empty or escaping path refuses; a top segment of `.trash` admits (the directory itself and everything under it, so a walk descends it whole); a name matching `STORE_FILE`, the thumbnail directory `thumbsRel(nexusId)` itself or anything under it (so a walk never descends the cache), either journal path, or a `write-file-atomic` temp (`/\.\d+$/`, the name without that suffix present in `siblings`) refuses; under the asset root only `neverWatched` segments below the root refuse; otherwise `neverWatched` segments and excluded prefixes refuse. Tile bodies pass because nothing names them. The predicate answers for a directory the same way it answers for a file, which is what lets one walker take it as its admit policy.
-- [ ] `walk.ts`: add
+- [x] `nexusPaths.ts` exports, after `CONTEXTS_DIR_REL`: `PROPERTY_JOURNAL_FILENAME = 'property-cascade.json'`, `CONTEXT_JOURNAL_FILENAME = 'context-rename.json'`, `PROPERTY_JOURNAL_REL = \`${NEXUS_DIR}/${PROPERTY_JOURNAL_FILENAME}\``, `CONTEXT_JOURNAL_REL = \`${NEXUS_DIR}/${CONTEXT_JOURNAL_FILENAME}\``; the two `journalSlot(...)` call sites take the `_FILENAME` constants.
+- [x] `watchSettle.ts`: extract the two tile-body clauses into `export function tileBodyUnder(segs: string[], rel: string): boolean`; the closure body becomes `segs.some(neverWatched) || tileBodyUnder(segs, rel) || isExcluded(segs)` with the two comments moving onto `tileBodyUnder`.
+- [x] `exclusion.ts` exports `manifestAdmits` as the AFTER block shows: an empty or escaping path refuses; a top segment of `.trash` admits (the directory itself and everything under it, so a walk descends it whole); a name matching `STORE_FILE`, the thumbnail directory `thumbsRel(nexusId)` itself or anything under it (so a walk never descends the cache), either journal path, or a `write-file-atomic` temp (`/\.\d+$/`, the name without that suffix present in `siblings`) refuses; under the asset root only `neverWatched` segments below the root refuse; otherwise `neverWatched` segments and excluded prefixes refuse. Tile bodies pass because nothing names them. The predicate answers for a directory the same way it answers for a file, which is what lets one walker take it as its admit policy.
+- [x] `walk.ts`: add
 
 ```ts
 export async function listPathsUnder(
@@ -781,7 +781,7 @@ export async function listPathsUnder(
 ```
 
   in `corpusFilesUnder`'s hand-descended shape (`siblings` is the set of entry names in the directory being listed; an admitted directory is descended, an admitted file is listed, and nothing is stat'ed, so the seed walk costs what it costs today); `corpusFilesUnder` becomes `listPathsUnder(root, absDir, (rel, kind) => { const segs = rel.split('/'); if (NON_CORPUS_TOP.has(segs[0]) || isAsset(segs) || isExcluded(segs)) return false; return kind === 'dir' || isMarkdownFile(segs[segs.length - 1]) })`. The pruning comment moves onto `listPathsUnder`.
-- [ ] `Core/Paths/exclusion.test.ts` gains `describe('manifestAdmits', …)` with `it('admits the trash, the config set, and a tile body', …)` (`.trash/Notes/2026__A.md.deleted/_record.json`, `.nexus/assets/crops.json`, `.nexus/settings.json`, `.nexus/homepage/t1.md`), `it('refuses thumbnails, journals, databases, and foreign dot-entries', …)` (`.nexus/assets/<nexusId>/thumbnails` and `.nexus/assets/<nexusId>/thumbnails/a.jpg`, `.nexus/property-cascade.json`, `.nexus/context-rename.json`, `.nexus/nexus.db-wal`, `.obsidian/x`), `it('refuses an atomic-write temp while its target is a sibling', …)` (`Notes/Page.md.123` with siblings `{ 'Page.md' }` refuses; with siblings `{}` admits), `it('refuses an excluded folder and admits the asset root', …)`. `Core/Files/walk.test.ts` gains `describe('listPathsUnder', …)` with `it('returns each admitted path and never a pruned one', …)`.
+- [x] `Core/Paths/exclusion.test.ts` gains `describe('manifestAdmits', …)` with `it('admits the trash, the config set, and a tile body', …)` (`.trash/Notes/2026__A.md.deleted/_record.json`, `.nexus/assets/crops.json`, `.nexus/settings.json`, `.nexus/homepage/t1.md`), `it('refuses thumbnails, journals, databases, and foreign dot-entries', …)` (`.nexus/assets/<nexusId>/thumbnails` and `.nexus/assets/<nexusId>/thumbnails/a.jpg`, `.nexus/property-cascade.json`, `.nexus/context-rename.json`, `.nexus/nexus.db-wal`, `.obsidian/x`), `it('refuses an atomic-write temp while its target is a sibling', …)` (`Notes/Page.md.123` with siblings `{ 'Page.md' }` refuses; with siblings `{}` admits), `it('refuses an excluded folder and admits the asset root', …)`. `Core/Files/walk.test.ts` gains `describe('listPathsUnder', …)` with `it('returns each admitted path and never a pruned one', …)`.
 
 **AFTER**
 
@@ -813,9 +813,9 @@ with `const TEMP_SUFFIX = /\.\d+$/` beside `STORE_FILE`. Two predicates sharing 
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Paths/`, `npm run test -- Core/Files/`, `npm run test -- Core/Nexus/`, and `npm run test -- Core/Index/` pass.
-- [ ] `grep -rln "property-cascade.json\|context-rename.json" Core --include='*.ts' | grep -v test` → exactly `Core/Paths/nexusPaths.ts`.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Paths/`, `npm run test -- Core/Files/`, `npm run test -- Core/Nexus/`, and `npm run test -- Core/Index/` pass.
+- [x] `grep -rln "property-cascade.json\|context-rename.json" Core --include='*.ts' | grep -v test` → exactly `Core/Paths/nexusPaths.ts`.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 2.3
 
@@ -885,12 +885,12 @@ The `atomic: true` comment misdescribes the mechanism (`awaitWriteFinish` is wha
 
 **CHANGE**
 
-- [ ] `atomicWrite.ts`: add, after `rewritePreservingTimes`, the one landing writer the AFTER block shows: no `recordWrite`, the mtime stamped as `rewritePreservingTimes` stamps it, then `forgetParse`. Every landing is bytes (a decrypted blob or a merged JSON encoded once), so no text variant exists.
-- [ ] `writeEcho.ts`: `let tap: ((absPath: string) => void) | null = null`; `export function setWriteTap(fn: ((absPath: string) => void) | null): void { tap = fn }`; `recordWrite` ends with `tap?.(absPath)`.
-- [ ] `watchSettle.ts`: `let tap: ((ev: WatchEvent) => void) | null = null`; `export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void`; `export const watchTap = (): ((ev: WatchEvent) => void) | null => tap`. The closure `ignoredUnder` builds moves into `function ignoreUnder(root, scope, tileBodies: boolean)`, whose body reads `segs.some(neverWatched) || (tileBodies && tileBodyUnder(segs, rel)) || isExcluded(segs)`; `export const ignoredUnder = (root, scope) => ignoreUnder(root, scope, true)` and `export const syncIgnoredUnder = (root, scope) => ignoreUnder(root, scope, false)`.
-- [ ] `watcher.ts`: import `syncIgnoredUnder` and `watchTap` beside `ignoredUnder`; chokidar's `ignored` becomes `const skip = syncIgnoredUnder(root, scope)` with `ignored: (path: string) => skip(posixPath(path))` (both predicates answer true for a path the watcher skips); delete the `atomic: true` line; `onEvent` becomes the AFTER block.
-- [ ] `spend.ts`: `recordWrite(bundleAbs)` before each of the four `machine().remove(bundleAbs)` calls, and in `emptyBundle` `recordWrite(artifactAbs)` before the `if (deps.permanentDelete === true)` line so both the permanent and the system-trash branch report the artifact's departure. `bundle.ts`'s comment becomes `// The source's unlink echo is our own write; the .trash destination is unwatched by the tree, and the write funnel reports both paths to sync.`
-- [ ] `Core/Files/atomicWrite.test.ts` gains `describe('landBytes', …)` with `it('records no echo and stamps the given mtime', …)` (`isRecentWrite` false after the write, `stat(...).mtimeMs` equal to the argument, the bytes read back equal). `Core/Files/writeEcho.test.ts` gains `describe('setWriteTap', …)` with `it('hands every recorded path to the tap until it is cleared', …)`. `Core/Nexus/watchSettle.test.ts` (new) with `describe('syncIgnoredUnder', …)`: `it('admits a tile body the tree ignores', …)` (`.nexus/homepage/t1.md` and `.nexus/contexts/Areas/Home/t1.md`: `ignoredUnder` true, `syncIgnoredUnder` false), `it('still refuses .trash', …)`; and `describe('the watch tap', …)`: `it('is handed an event the echo check would drop', …)` (install a recording tap, `recordWrite` a path, call the tap through `watchTap()` and assert it recorded; `setWatchTap(null)` afterward).
+- [x] `atomicWrite.ts`: add, after `rewritePreservingTimes`, the one landing writer the AFTER block shows: no `recordWrite`, the mtime stamped as `rewritePreservingTimes` stamps it, then `forgetParse`. Every landing is bytes (a decrypted blob or a merged JSON encoded once), so no text variant exists.
+- [x] `writeEcho.ts`: `let tap: ((absPath: string) => void) | null = null`; `export function setWriteTap(fn: ((absPath: string) => void) | null): void { tap = fn }`; `recordWrite` ends with `tap?.(absPath)`.
+- [x] `watchSettle.ts`: `let tap: ((ev: WatchEvent) => void) | null = null`; `export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void`; `export const watchTap = (): ((ev: WatchEvent) => void) | null => tap`. The closure `ignoredUnder` builds moves into `function ignoreUnder(root, scope, tileBodies: boolean)`, whose body reads `segs.some(neverWatched) || (tileBodies && tileBodyUnder(segs, rel)) || isExcluded(segs)`; `export const ignoredUnder = (root, scope) => ignoreUnder(root, scope, true)` and `export const syncIgnoredUnder = (root, scope) => ignoreUnder(root, scope, false)`.
+- [x] `watcher.ts`: import `syncIgnoredUnder` and `watchTap` beside `ignoredUnder`; chokidar's `ignored` becomes `const skip = syncIgnoredUnder(root, scope)` with `ignored: (path: string) => skip(posixPath(path))` (both predicates answer true for a path the watcher skips); delete the `atomic: true` line; `onEvent` becomes the AFTER block.
+- [x] `spend.ts`: `recordWrite(bundleAbs)` before each of the four `machine().remove(bundleAbs)` calls, and in `emptyBundle` `recordWrite(artifactAbs)` before the `if (deps.permanentDelete === true)` line so both the permanent and the system-trash branch report the artifact's departure. `bundle.ts`'s comment becomes `// The source's unlink echo is our own write; the .trash destination is unwatched by the tree, and the write funnel reports both paths to sync.`
+- [x] `Core/Files/atomicWrite.test.ts` gains `describe('landBytes', …)` with `it('records no echo and stamps the given mtime', …)` (`isRecentWrite` false after the write, `stat(...).mtimeMs` equal to the argument, the bytes read back equal). `Core/Files/writeEcho.test.ts` gains `describe('setWriteTap', …)` with `it('hands every recorded path to the tap until it is cleared', …)`. `Core/Nexus/watchSettle.test.ts` (new) with `describe('syncIgnoredUnder', …)`: `it('admits a tile body the tree ignores', …)` (`.nexus/homepage/t1.md` and `.nexus/contexts/Areas/Home/t1.md`: `ignoredUnder` true, `syncIgnoredUnder` false), `it('still refuses .trash', …)`; and `describe('the watch tap', …)`: `it('is handed an event the echo check would drop', …)` (install a recording tap, `recordWrite` a path, call the tap through `watchTap()` and assert it recorded; `setWatchTap(null)` afterward).
 
 **AFTER**
 
@@ -933,15 +933,15 @@ Every watched event reaches the tap before the echo check; tile bodies reach the
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Files/`, `npm run test -- Core/Nexus/`, and `npm run test -- Core/Trash/` pass.
-- [ ] `grep -c "atomic: true" Desktop/FileWatch/watcher.ts` → 0; `grep -c "recordWrite" Core/Trash/spend.ts` → 8.
-- [ ] Smoke launch: an external edit (`echo >> page.md` from the shell) still reaches the tree; an in-app save still does not re-walk.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Files/`, `npm run test -- Core/Nexus/`, and `npm run test -- Core/Trash/` pass.
+- [x] `grep -c "atomic: true" Desktop/FileWatch/watcher.ts` → 0; `grep -c "recordWrite" Core/Trash/spend.ts` → 8.
+- [x] Smoke launch: an external edit (`echo >> page.md` from the shell) still reaches the tree; an in-app save still does not re-walk.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; smoke launch clean.
-- [ ] Engine and host graph tests pass; `Core/Sync/Contract/wire.ts` still imports nothing.
+- [x] Gates green; smoke launch clean.
+- [x] Engine and host graph tests pass; `Core/Sync/Contract/wire.ts` still imports nothing.
 
 ### Phase 3 — Hub Restructure and Authority
 
@@ -974,8 +974,8 @@ Every watched event reaches the tap before the echo check; tile bodies reach the
 
 **CHANGE**
 
-- [ ] `Sync/wire.ts`: `ULID`, `PUBLIC_KEY`, `fingerprintOf`, `PATHS`, `ROUTES`, `Reply`, `refuse`, `MALFORMED`, `parseBody`, moved verbatim, plus `canonical` re-spelled as `export function canonical(method: string, path: string, bodySha256Hex: string, ts: number): string { return [method.toUpperCase(), path, bodySha256Hex, String(ts)].join('\n') }` and `export const sha256Hex = (bytes: Buffer): string => createHash('sha256').update(bytes).digest('hex')`.
-- [ ] `Sync/Store/open.ts`: `openStore(dir): Store` returning `{ db, roster }` with the **final** `DDL` for the whole arc, applied idempotently on every open:
+- [x] `Sync/wire.ts`: `ULID`, `PUBLIC_KEY`, `fingerprintOf`, `PATHS`, `ROUTES`, `Reply`, `refuse`, `MALFORMED`, `parseBody`, moved verbatim, plus `canonical` re-spelled as `export function canonical(method: string, path: string, bodySha256Hex: string, ts: number): string { return [method.toUpperCase(), path, bodySha256Hex, String(ts)].join('\n') }` and `export const sha256Hex = (bytes: Buffer): string => createHash('sha256').update(bytes).digest('hex')`.
+- [x] `Sync/Store/open.ts`: `openStore(dir): Store` returning `{ db, roster }` with the **final** `DDL` for the whole arc, applied idempotently on every open:
 
 ```sql
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -991,12 +991,12 @@ CREATE TABLE IF NOT EXISTS request (nexus_id TEXT NOT NULL, request_id TEXT NOT 
 ```
 
   plus `SCHEMA_VERSION = 2` and `const MIGRATIONS: Record<number, string[]> = { 2: ["ALTER TABLE membership ADD COLUMN role TEXT NOT NULL DEFAULT 'editor'", "UPDATE membership SET role = 'owner' WHERE approved = 1", "ALTER TABLE device ADD COLUMN x25519 TEXT"] }`, applied inside one `BEGIN … COMMIT` for every version above the stored `schema_version` up to `SCHEMA_VERSION`, then `schema_version` written; a store the final DDL creates is written at version 2 and never runs the entry, and a store at version 1 lacks both columns, so no `pragma_table_info` check precedes the `ALTER`s. `DatabaseSync` opens with `{ timeout: 5000 }`. `export interface Store { db: DatabaseSync; roster: ReturnType<typeof rosterStore> }`. `Sync/Store/roster.ts`: `export function rosterStore(db: DatabaseSync)` returning `{ list(nexusId), upsertDevice(fingerprint, publicKey, name), publicKeyOf(fingerprint), hasMembers(nexusId), addMembership(nexusId, fingerprint, approved), isApproved(nexusId, fingerprint), approve(nexusId, fingerprint), revoke(nexusId, fingerprint) }`, each one of today's statements with the SQL moved verbatim (`list` keeps `ORDER BY d.name`).
-- [ ] `Sync/Routes/roster.ts`: `export function rosterRoutes(store: Store)` returning the four handlers with today's bodies over `store.roster`, typed `(id: Identity, body: unknown) => Reply` and `satisfies { [K in keyof Wire.RouteTable]: … }`; `nexusOf` and `targetOf` move with them. This task's `Identity` is `{ device: string; publicKey: string }`; 3.2 widens it.
-- [ ] `Sync/authority.ts`: `Signature`, `header`, `signatureOf`, and `verifySigned(path: string, bodySha256Hex: string, signed: Signature, publicKey: string): Reply | null` (today's body with `canonical('POST', path, bodySha256Hex, signed.ts)`), plus `export interface Identity { device: string; publicKey: string; signed: Signature }` and `identify(store: Store, req: IncomingMessage, route: keyof Wire.RouteTable, body: unknown): Identity | Reply`: today's two branches lifted from `route()` (`signatureOf` null → 401 `unauthorized`; on `connect`, the body's `publicKey` validated by `PUBLIC_KEY` and `fingerprintOf(publicKey) !== signed.device` → 401; otherwise `store.roster.publicKeyOf(signed.device)` absent → 404 `not-found`), returning `{ device: signed.device, publicKey, signed }` so `hub.ts` can hand `signed` to `verifySigned`.
-- [ ] `Sync/hub.ts`: `PORT`, `DATA_DIR`, `HOST`, `WINDOW_MS` stays in `authority.ts`; `readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null>` (today's `readBody` with the cap as an argument; this task passes `8192` for every route); `route(store, routes, req)` in the Constraint's order: `req.method !== 'POST'` → 404; path match against `PATHS` → 404; `readCapped` → 413 `too-large`; `parseBody` → 400 `malformed`; `identify` → its refusal; `verifySigned(path, sha256Hex(raw), id.signed, id.publicKey)` → its refusal; `routes[name](id, body)`. `start(opts: { dataDir: string; port: number })` and the entry move with today's bodies. `package.json`: `"sync": "node Sync/hub.ts"`.
-- [ ] `Sync/Testing/hub.ts`: `export async function boot(dataDir = mkdtempSync(join(tmpdir(), 'pommora-sync-'))): Promise<{ base: string; dataDir: string; close(): Promise<void> }>` (today's `beforeAll` body) and `export function signer(name: string)` (today's helper, returning `{ id, publicKey, name, x25519, call }` with `x25519` from `generateKeyPairSync('x25519')`'s raw public key as base64url, and `call` hashing `raw` with `sha256Hex` before `canonical`).
-- [ ] `Sync/hubGraph.test.ts`: `import ts from 'typescript'`; walk every `Sync/**/*.ts` except `*.test.ts`, `vitest.config.ts`, and `Testing/` with `readdirSync(…, { recursive: true })`; for each file, `ts.createSourceFile` and collect every `ImportDeclaration` and `ExportDeclaration` with a string module specifier as `{ spec, typeOnly: node.importClause?.isTypeOnly === true }`; `it('reaches nothing beyond Node, its own files, and Core types', …)` asserts every `spec` is `node:*`, a relative path ending in `.ts`, or `@pommora/core/Sync/Contract/*` with `typeOnly` true.
-- [ ] `git mv server.test.ts roster.test.ts`; its `signer`, `boot`, and the vector case leave it (`Sync/wire.test.ts` gains `it('matches the shared canonical vectors', …)` hashing `Buffer.from(vector.body, 'utf8')` with `sha256Hex` before `canonical`); the twelve roster cases import `boot` and `signer` from `./Testing/hub.ts`.
+- [x] `Sync/Routes/roster.ts`: `export function rosterRoutes(store: Store)` returning the four handlers with today's bodies over `store.roster`, typed `(id: Identity, body: unknown) => Reply` and `satisfies { [K in keyof Wire.RouteTable]: … }`; `nexusOf` and `targetOf` move with them. This task's `Identity` is `{ device: string; publicKey: string }`; 3.2 widens it.
+- [x] `Sync/authority.ts`: `Signature`, `header`, `signatureOf`, and `verifySigned(path: string, bodySha256Hex: string, signed: Signature, publicKey: string): Reply | null` (today's body with `canonical('POST', path, bodySha256Hex, signed.ts)`), plus `export interface Identity { device: string; publicKey: string; signed: Signature }` and `identify(store: Store, req: IncomingMessage, route: keyof Wire.RouteTable, body: unknown): Identity | Reply`: today's two branches lifted from `route()` (`signatureOf` null → 401 `unauthorized`; on `connect`, the body's `publicKey` validated by `PUBLIC_KEY` and `fingerprintOf(publicKey) !== signed.device` → 401; otherwise `store.roster.publicKeyOf(signed.device)` absent → 404 `not-found`), returning `{ device: signed.device, publicKey, signed }` so `hub.ts` can hand `signed` to `verifySigned`.
+- [x] `Sync/hub.ts`: `PORT`, `DATA_DIR`, `HOST`, `WINDOW_MS` stays in `authority.ts`; `readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null>` (today's `readBody` with the cap as an argument; this task passes `8192` for every route); `route(store, routes, req)` in the Constraint's order: `req.method !== 'POST'` → 404; path match against `PATHS` → 404; `readCapped` → 413 `too-large`; `parseBody` → 400 `malformed`; `identify` → its refusal; `verifySigned(path, sha256Hex(raw), id.signed, id.publicKey)` → its refusal; `routes[name](id, body)`. `start(opts: { dataDir: string; port: number })` and the entry move with today's bodies. `package.json`: `"sync": "node Sync/hub.ts"`.
+- [x] `Sync/Testing/hub.ts`: `export async function boot(dataDir = mkdtempSync(join(tmpdir(), 'pommora-sync-'))): Promise<{ base: string; dataDir: string; close(): Promise<void> }>` (today's `beforeAll` body) and `export function signer(name: string)` (today's helper, returning `{ id, publicKey, name, x25519, call }` with `x25519` from `generateKeyPairSync('x25519')`'s raw public key as base64url, and `call` hashing `raw` with `sha256Hex` before `canonical`).
+- [x] `Sync/hubGraph.test.ts`: `import ts from 'typescript'`; walk every `Sync/**/*.ts` except `*.test.ts`, `vitest.config.ts`, and `Testing/` with `readdirSync(…, { recursive: true })`; for each file, `ts.createSourceFile` and collect every `ImportDeclaration` and `ExportDeclaration` with a string module specifier as `{ spec, typeOnly: node.importClause?.isTypeOnly === true }`; `it('reaches nothing beyond Node, its own files, and Core types', …)` asserts every `spec` is `node:*`, a relative path ending in `.ts`, or `@pommora/core/Sync/Contract/*` with `typeOnly` true.
+- [x] `git mv server.test.ts roster.test.ts`; its `signer`, `boot`, and the vector case leave it (`Sync/wire.test.ts` gains `it('matches the shared canonical vectors', …)` hashing `Buffer.from(vector.body, 'utf8')` with `sha256Hex` before `canonical`); the twelve roster cases import `boot` and `signer` from `./Testing/hub.ts`.
 
 **AFTER**
 
@@ -1012,11 +1012,11 @@ Sync/
 
 **VERIFY**
 
-- [ ] `npm run typecheck` exits 0; `npm run test -- Sync/` passes 14 cases: the twelve roster cases in `roster.test.ts`, the vector case in `wire.test.ts`, and the graph case in `hubGraph.test.ts`.
-- [ ] `node --input-type=module -e 'await import("./Sync/hub.ts")'` from the root exits 0.
-- [ ] `git ls-files Sync | wc -l` → 15; `test -f Sync/server.ts && echo 1 || echo 0` → 0.
-- [ ] `grep -c "CREATE TABLE IF NOT EXISTS" Sync/Store/open.ts` → 10; `grep -c "@pommora/core" Sync/hubGraph.test.ts` → 1 (the allowed prefix, spelled once in the assertion).
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run typecheck` exits 0; `npm run test -- Sync/` passes 14 cases: the twelve roster cases in `roster.test.ts`, the vector case in `wire.test.ts`, and the graph case in `hubGraph.test.ts`.
+- [x] `node --input-type=module -e 'await import("./Sync/hub.ts")'` from the root exits 0.
+- [x] `git ls-files Sync | wc -l` → 15; `test -f Sync/server.ts && echo 1 || echo 0` → 0.
+- [x] `grep -c "CREATE TABLE IF NOT EXISTS" Sync/Store/open.ts` → 10; `grep -c "@pommora/core" Sync/hubGraph.test.ts` → 1 (the allowed prefix, spelled once in the assertion).
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 3.2
 
@@ -1071,12 +1071,12 @@ and `identify(store, req, route, body)` resolving the device in two branches; ap
 
 **CHANGE**
 
-- [ ] `Core/Sync/Contract/wire.ts`: `export type Role = 'owner' | 'editor' | 'reader'`; `export interface RouteMeta { requires: Role | 'none'; cap: number }`; `DeviceRecord` becomes `SyncDevice & { approved: boolean; role: Role }` (`x25519?` arrives through `SyncDevice`); `ConnectBody` gains `x25519?: string`. `Core/Testing/fixtures.ts` (new; the sibling `Core/Testing/fixtures/` folder holds JSON data alone) exports `deviceRecord(overrides?: Partial<DeviceRecord>): DeviceRecord` (a fixed id and key, `approved: true`, `role: 'editor'`), and `Core/Settings/NexusRows.test.tsx`'s `DeviceRecord` literals (`OTHER` and the spreads over `THIS_DEVICE`) build through it; Task 8.2 adds the page fixture beside it.
-- [ ] `Sync/wire.ts`: `export const META = { connect: { requires: 'none', cap: 8192 }, devices: { requires: 'reader', cap: 8192 }, approve: { requires: 'editor', cap: 8192 }, revoke: { requires: 'owner', cap: 8192 } } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }` and `export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const`.
-- [ ] `Sync/Store/roster.ts`: `list` selects `d.x25519 AS x25519, m.role AS role` as well and maps `x25519: r.x25519 ?? undefined`; `upsertDevice(fingerprint, publicKey, name, x25519: string | null)` writes `x25519 = COALESCE(excluded.x25519, device.x25519)` on conflict; `addMembership(nexusId, fingerprint, approved, role)`; `membership(nexusId, fingerprint): { approved: boolean; role: Wire.Role } | null`.
-- [ ] `authority.ts`: `Identity` becomes `{ device: string; publicKey: string; nexusId: string; role: Wire.Role | null; approved: boolean; signed: Signature }`; `identify(store: Store, req: IncomingMessage, route: keyof Wire.RouteTable, body: unknown): Identity | Reply` as the AFTER block shows; `verify(id: Identity, path: string, bodySha256Hex: string): Reply | null` is `verifySigned(path, bodySha256Hex, id.signed, id.publicKey)` renamed with the identity as its first argument.
-- [ ] `Routes/roster.ts`: `connect` calls `store.roster.upsertDevice(id.device, publicKey, name, x25519 ?? null)` and `addMembership(nexusId, id.device, seeded ? 0 : 1, seeded ? 'editor' : 'owner')`; the three `isApproved` checks in `devices`, `approve`, and `revoke` are deleted, since `identify` already refused an unapproved or under-role caller.
-- [ ] `roster.test.ts` gains `it('refuses a reader the approve route', …)` (a third signer approved then `UPDATE membership SET role = 'reader'` through a `DatabaseSync` opened on `<dataDir>/sync.db`; its approve answers 404), `it('refuses an editor the revoke route', …)`, `it('lets the owner revoke', …)`, `it('lists the agreement key connect carried', …)` (`x25519` in the `devices` reply equals the signer's); `Sync/store.test.ts` (new) with `it('migrates a version-one store and makes its approved rows owners', …)` (build `sync.db` inline from the three-table DDL of `server.ts` with `schema_version = 1` and one approved membership row, `openStore`, read `role`).
+- [x] `Core/Sync/Contract/wire.ts`: `export type Role = 'owner' | 'editor' | 'reader'`; `export interface RouteMeta { requires: Role | 'none'; cap: number }`; `DeviceRecord` becomes `SyncDevice & { approved: boolean; role: Role }` (`x25519?` arrives through `SyncDevice`); `ConnectBody` gains `x25519?: string`. `Core/Testing/fixtures.ts` (new; the sibling `Core/Testing/fixtures/` folder holds JSON data alone) exports `deviceRecord(overrides?: Partial<DeviceRecord>): DeviceRecord` (a fixed id and key, `approved: true`, `role: 'editor'`), and `Core/Settings/NexusRows.test.tsx`'s `DeviceRecord` literals (`OTHER` and the spreads over `THIS_DEVICE`) build through it; Task 8.2 adds the page fixture beside it.
+- [x] `Sync/wire.ts`: `export const META = { connect: { requires: 'none', cap: 8192 }, devices: { requires: 'reader', cap: 8192 }, approve: { requires: 'editor', cap: 8192 }, revoke: { requires: 'owner', cap: 8192 } } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }` and `export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const`.
+- [x] `Sync/Store/roster.ts`: `list` selects `d.x25519 AS x25519, m.role AS role` as well and maps `x25519: r.x25519 ?? undefined`; `upsertDevice(fingerprint, publicKey, name, x25519: string | null)` writes `x25519 = COALESCE(excluded.x25519, device.x25519)` on conflict; `addMembership(nexusId, fingerprint, approved, role)`; `membership(nexusId, fingerprint): { approved: boolean; role: Wire.Role } | null`.
+- [x] `authority.ts`: `Identity` becomes `{ device: string; publicKey: string; nexusId: string; role: Wire.Role | null; approved: boolean; signed: Signature }`; `identify(store: Store, req: IncomingMessage, route: keyof Wire.RouteTable, body: unknown): Identity | Reply` as the AFTER block shows; `verify(id: Identity, path: string, bodySha256Hex: string): Reply | null` is `verifySigned(path, bodySha256Hex, id.signed, id.publicKey)` renamed with the identity as its first argument.
+- [x] `Routes/roster.ts`: `connect` calls `store.roster.upsertDevice(id.device, publicKey, name, x25519 ?? null)` and `addMembership(nexusId, id.device, seeded ? 0 : 1, seeded ? 'editor' : 'owner')`; the three `isApproved` checks in `devices`, `approve`, and `revoke` are deleted, since `identify` already refused an unapproved or under-role caller.
+- [x] `roster.test.ts` gains `it('refuses a reader the approve route', …)` (a third signer approved then `UPDATE membership SET role = 'reader'` through a `DatabaseSync` opened on `<dataDir>/sync.db`; its approve answers 404), `it('refuses an editor the revoke route', …)`, `it('lets the owner revoke', …)`, `it('lists the agreement key connect carried', …)` (`x25519` in the `devices` reply equals the signer's); `Sync/store.test.ts` (new) with `it('migrates a version-one store and makes its approved rows owners', …)` (build `sync.db` inline from the three-table DDL of `server.ts` with `schema_version = 1` and one approved membership row, `openStore`, read `role`).
 
 **AFTER**
 
@@ -1123,9 +1123,9 @@ The dispatcher in `hub.ts` reads `readCapped(req, META[name].cap)`, then `identi
 
 **VERIFY**
 
-- [ ] `npm run test -- Sync/` passes with the five new cases.
-- [ ] `grep -c "isApproved" Sync/Routes/roster.ts` → 0; `grep -c "x-pommora-signature" Sync/Routes/roster.ts` → 0; `grep -c "x-pommora-" Sync/authority.ts` → 3.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Sync/` passes with the five new cases.
+- [x] `grep -c "isApproved" Sync/Routes/roster.ts` → 0; `grep -c "x-pommora-signature" Sync/Routes/roster.ts` → 0; `grep -c "x-pommora-" Sync/authority.ts` → 3.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 3.3
 
@@ -1197,9 +1197,9 @@ Every route shares Node's default request timeout.
 
 **CHANGE**
 
-- [ ] `Core/Sync/Contract/wire.ts`: `RouteMeta` gains `timeoutMs: number`. `Sync/wire.ts`: `export const JSON_TIMEOUT_MS = 10_000`, and every `META` entry gains `timeoutMs: JSON_TIMEOUT_MS` (Task 4.4's `pull` is the one route with a longer figure).
-- [ ] `hub.ts`: `route()` calls `req.setTimeout(META[name].timeoutMs)` after the path match, and `start()`'s handler attaches `req.on('timeout', …)` answering `refuse(408, 'timeout')` through the same reply writer, so a slow body is refused rather than the socket destroyed silently. `const HOST = process.env.POMMORA_SYNC_HOST ?? '127.0.0.1'`. `start(opts: { dataDir: string; port: number; host?: string; tls?: { cert: string; key: string } })`: `opts.tls ? httpsCreateServer(opts.tls, handler) : createServer(handler)`, listening on `opts.host ?? '127.0.0.1'`; the return gains `pin: string | null` (`new X509Certificate(opts.tls.cert).fingerprint256` or null). The entry reads `<DATA>/hub-cert.pem` and `<DATA>/hub-key.pem` with `existsSync`, passes both as `tls` when both exist, and prints `Pommora Sync on ${scheme}://${host}:${port}` followed by ` · pin ${pin}` when TLS is on.
-- [ ] `Sync/scripts/cert.sh`:
+- [x] `Core/Sync/Contract/wire.ts`: `RouteMeta` gains `timeoutMs: number`. `Sync/wire.ts`: `export const JSON_TIMEOUT_MS = 10_000`, and every `META` entry gains `timeoutMs: JSON_TIMEOUT_MS` (Task 4.4's `pull` is the one route with a longer figure).
+- [x] `hub.ts`: `route()` calls `req.setTimeout(META[name].timeoutMs)` after the path match, and `start()`'s handler attaches `req.on('timeout', …)` answering `refuse(408, 'timeout')` through the same reply writer, so a slow body is refused rather than the socket destroyed silently. `const HOST = process.env.POMMORA_SYNC_HOST ?? '127.0.0.1'`. `start(opts: { dataDir: string; port: number; host?: string; tls?: { cert: string; key: string } })`: `opts.tls ? httpsCreateServer(opts.tls, handler) : createServer(handler)`, listening on `opts.host ?? '127.0.0.1'`; the return gains `pin: string | null` (`new X509Certificate(opts.tls.cert).fingerprint256` or null). The entry reads `<DATA>/hub-cert.pem` and `<DATA>/hub-key.pem` with `existsSync`, passes both as `tls` when both exist, and prints `Pommora Sync on ${scheme}://${host}:${port}` followed by ` · pin ${pin}` when TLS is on.
+- [x] `Sync/scripts/cert.sh`:
 
 ```sh
 DATA="${POMMORA_SYNC_DATA:-$HOME/.pommora-sync}"
@@ -1210,7 +1210,7 @@ openssl req -x509 -nodes -days 3650 -newkey ec -pkeyopt ec_paramgen_curve:prime2
 ```
 
   `package.json` gains `"sync:cert": "sh Sync/scripts/cert.sh"`.
-- [ ] `Sync/tls.test.ts`: `it('serves the roster over TLS to a client pinning its fingerprint', …)`: `start({ dataDir, port: 0, tls: { cert, key } })` over the committed pair from Task 1.2 (`readFileSync(new URL('./Testing/cert.pem', import.meta.url))`), a signer's `connect` sent through `node:https.request` with `rejectUnauthorized: false` and a `secureConnect` check that `getPeerCertificate().fingerprint256` equals the returned `pin`, answering 200. The 408 answer has no case of its own: proving it means waiting out `JSON_TIMEOUT_MS` on every test run, and the handler is two lines read at review. `Sync/Testing/hub.ts`'s `boot` gains `tls?: { cert: string; key: string }` and its `call` uses `node:https` with `rejectUnauthorized: false` when `base` starts with `https:`.
+- [x] `Sync/tls.test.ts`: `it('serves the roster over TLS to a client pinning its fingerprint', …)`: `start({ dataDir, port: 0, tls: { cert, key } })` over the committed pair from Task 1.2 (`readFileSync(new URL('./Testing/cert.pem', import.meta.url))`), a signer's `connect` sent through `node:https.request` with `rejectUnauthorized: false` and a `secureConnect` check that `getPeerCertificate().fingerprint256` equals the returned `pin`, answering 200. The 408 answer has no case of its own: proving it means waiting out `JSON_TIMEOUT_MS` on every test run, and the handler is two lines read at review. `Sync/Testing/hub.ts`'s `boot` gains `tls?: { cert: string; key: string }` and its `call` uses `node:https` with `rejectUnauthorized: false` when `base` starts with `https:`.
 
 **AFTER**
 
@@ -1218,14 +1218,14 @@ openssl req -x509 -nodes -days 3650 -newkey ec -pkeyopt ec_paramgen_curve:prime2
 
 **VERIFY**
 
-- [ ] `npm run test -- Sync/` passes.
-- [ ] `POMMORA_SYNC_DATA=$(mktemp -d) sh Sync/scripts/cert.sh` exits 0 and both PEM files exist in that directory.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Sync/` passes.
+- [x] `POMMORA_SYNC_DATA=$(mktemp -d) sh Sync/scripts/cert.sh` exits 0 and both PEM files exist in that directory.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; `Sync/hubGraph.test.ts` green.
-- [ ] `npm run sync` in the background, then the existing Settings › General Nexus heading (built output, scratch userData) connects, lists, approves, and revokes exactly as before; the hub is killed afterward.
+- [x] Gates green; `Sync/hubGraph.test.ts` green.
+- [x] `npm run sync` in the background, then the existing Settings › General Nexus heading (built output, scratch userData) connects, lists, approves, and revokes exactly as before; the hub is killed afterward.
 
 ### Phase 4 — Hub Content
 
@@ -1254,7 +1254,7 @@ export const ROUTES = {
 
 **CHANGE**
 
-- [ ] `Core/Sync/Contract/wire.ts`:
+- [x] `Core/Sync/Contract/wire.ts`:
 
 ```ts
 export interface KdfParams { hash: 'SHA-256'; iterations: number; salt: string }
@@ -1266,9 +1266,9 @@ export interface RingBody { nexusId: string; base: number; add: RingEntry[] }
 ```
 
   `RouteTable` gains `info: { method: 'POST'; path: '/info'; body: InfoBody; reply: InfoReply }` and `ring: { method: 'POST'; path: '/ring'; body: RingBody; reply: InfoReply }`; `canonical.ts`'s `ROUTES` gains `info: { method: 'POST', path: '/info' }` and `ring: { method: 'POST', path: '/ring' }`; `Sync/wire.ts`'s `PATHS` gains both paths and `META` gains `info: { requires: 'reader', cap: 65536, timeoutMs: JSON_TIMEOUT_MS }` and `ring: { requires: 'editor', cap: 65536, timeoutMs: JSON_TIMEOUT_MS }`.
-- [ ] `Sync/Store/nexus.ts`: `export function nexusStore(db: DatabaseSync)` returning `readInfo(nexusId): Wire.InfoRecord | null` (the `nexus` row joined with its `ring` rows ordered by `created_ms`), `createInfo(nexusId, record: Omit<Wire.InfoRecord, 'version'>): Wire.InfoRecord | null` (null when a row exists; inserts the row at `version = 1`, `seq = 0`, and each ring entry), `appendRing(nexusId, base, add: Wire.RingEntry[]): { ok: true; info: Wire.InfoRecord } | { ok: false; info: Wire.InfoRecord }` in one transaction that refuses with the current record when `base !== version` and otherwise inserts the entries and bumps `version`, and `dropHolder(nexusId, holder): void`. `Store` gains `nexus: ReturnType<typeof nexusStore>`.
-- [ ] `Sync/Routes/nexus.ts`: `export function nexusRoutes(store: Store)` returning `info` (reads; when absent and `create` is present, creates; when absent and no `create`, 404 `not-found`; when present and `create` is present, 409 `exists`) and `ring` (a stale `base` answers 409 `stale` with `{ error: 'stale', info }`), both `(id: Identity, body: unknown) => Reply`. `Routes/roster.ts`'s `revoke` calls `store.nexus.dropHolder(nexusId, deviceId)` after the membership delete. `hub.ts` spreads `{ ...rosterRoutes(store), ...nexusRoutes(store) }`.
-- [ ] `Sync/nexus.test.ts`: `it('creates the info record once', …)`, `it('refuses a stale ring base with the current record', …)`, `it('drops the revoked device from the ring', …)`, `it('lets a reader read the record and refuses it the ring', …)`.
+- [x] `Sync/Store/nexus.ts`: `export function nexusStore(db: DatabaseSync)` returning `readInfo(nexusId): Wire.InfoRecord | null` (the `nexus` row joined with its `ring` rows ordered by `created_ms`), `createInfo(nexusId, record: Omit<Wire.InfoRecord, 'version'>): Wire.InfoRecord | null` (null when a row exists; inserts the row at `version = 1`, `seq = 0`, and each ring entry), `appendRing(nexusId, base, add: Wire.RingEntry[]): { ok: true; info: Wire.InfoRecord } | { ok: false; info: Wire.InfoRecord }` in one transaction that refuses with the current record when `base !== version` and otherwise inserts the entries and bumps `version`, and `dropHolder(nexusId, holder): void`. `Store` gains `nexus: ReturnType<typeof nexusStore>`.
+- [x] `Sync/Routes/nexus.ts`: `export function nexusRoutes(store: Store)` returning `info` (reads; when absent and `create` is present, creates; when absent and no `create`, 404 `not-found`; when present and `create` is present, 409 `exists`) and `ring` (a stale `base` answers 409 `stale` with `{ error: 'stale', info }`), both `(id: Identity, body: unknown) => Reply`. `Routes/roster.ts`'s `revoke` calls `store.nexus.dropHolder(nexusId, deviceId)` after the membership delete. `hub.ts` spreads `{ ...rosterRoutes(store), ...nexusRoutes(store) }`.
+- [x] `Sync/nexus.test.ts`: `it('creates the info record once', …)`, `it('refuses a stale ring base with the current record', …)`, `it('drops the revoked device from the ring', …)`, `it('lets a reader read the record and refuses it the ring', …)`.
 
 **AFTER**
 
@@ -1276,8 +1276,8 @@ A Nexus on the hub is a row carrying its protocol, KDF parameters, retention, an
 
 **VERIFY**
 
-- [ ] `npm run test -- Sync/` passes with the new suite; `npm run typecheck` exits 0.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Sync/` passes with the new suite; `npm run typecheck` exits 0.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 4.2
 
@@ -1300,14 +1300,14 @@ The dispatcher answers JSON only: `start()`'s handler ends every reply with `res
 
 **CHANGE**
 
-- [ ] `Core/Sync/Contract/canonical.ts` exports `export const blobPath = (nexusId: string, sha256: string): string => \`/blob/${nexusId}/${sha256}\``; the second comment line of `wire.ts` becomes `// request body, or of the raw bytes on a byte route (of the empty string when there is none), and the integer millisecond timestamp,` re-wrapped so each line stays full (the file stays type-only).
-- [ ] `Sync/wire.ts`: `export const BLOB_ROUTE = /^\/blob\/([0-7][0-9A-HJKMNP-TV-Z]{25})\/([0-9a-f]{64})$/`, `export const BLOB_CAP = 50 * 1024 * 1024`, `export const BLOB_TIMEOUT_MS = 300_000` (the byte routes have no `META` entry, so their cap and timeout are two constants beside the route pattern).
-- [ ] `hub.ts`: `spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<{ path: string; size: number; sha256Hex: string } | null>` streaming to `join(dir, 'spool', randomUUID())` through `createWriteStream` (the directory made with `mkdirSync(…, { recursive: true })` at start), updating one `createHash('sha256')` per chunk, and on overflow destroying the request, unlinking the file, and resolving null; the PUT branch below unlinks the file in `finally`.
-- [ ] `Sync/Store/log.ts`: `export function logStore(db: DatabaseSync)` returning `putBlob(nexusId, sha256, keyId, bytes: Buffer, atMs): void` (`INSERT OR IGNORE`), `readBlob(nexusId, sha256): Buffer | null`, `hasBlob(nexusId, sha256): boolean`; `Store` gains `log`.
-- [ ] `Sync/authority.ts`: `identify`'s third parameter becomes `route: keyof Wire.RouteTable | null` (null on the blob path, which has no `META` entry); it takes `nexusId` as a fifth argument, `nexusId?: string`, used in place of the body's when given; the role it requires comes from a sixth, `requires?: Wire.Role | 'none'`, read as `requires ?? META[route].requires`, so a null `route` always arrives with `requires`, and the blob dispatcher passes `'editor'` for PUT and `'reader'` for GET.
-- [ ] `hub.ts`: `route()` first tries `BLOB_ROUTE.exec(path)`; on a match with method PUT or GET, `identify(store, req, null, null, nexusId, method === 'PUT' ? 'editor' : 'reader')`, then for PUT `spoolBody(req, BLOB_CAP, opts.dataDir)` (null → 413 `too-large`), `verify(id, path, spool.sha256Hex)`, `spool.sha256Hex !== sha256` → 400 `hash-mismatch`, then `blobRoutes(store).put(id, params, spool)` with the spool file unlinked in `finally`; for GET, `verify(id, path, sha256Hex(Buffer.alloc(0)))` then `blobRoutes(store).get(id, params, res)`. Byte routes are typed `(id: Identity, params: { nexusId: string; sha256: string }, …) => Promise<Reply | 'streamed'>`; a `'streamed'` return means the handler wrote the response itself. `req.setTimeout(BLOB_TIMEOUT_MS)` on a blob match. The key id rides in an `x-pommora-key` header, read with `header(req, 'x-pommora-key')` and stored beside the blob; the AAD binds it inside the ciphertext.
-- [ ] `Sync/Routes/blobs.ts`: `export function blobRoutes(store: Store)` returning `put` (reads the spool file, `store.log.putBlob(…)`, answers `{ status: 200, body: { sha256, size } }`) and `get` (404 `not-found` or `res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': bytes.length })`, `res.end(bytes)`, returns `'streamed'`).
-- [ ] `Sync/blobs.test.ts`: `it('round-trips a one-mebibyte blob under its own hash', …)`, `it('refuses bytes whose hash is not the path', …)` (400), `it('refuses a body over the cap and leaves no spool file', …)` (413, `readdirSync(join(dataDir, 'spool'))` empty), `it('lets a reader read and refuses it a put', …)` (200 then 404). `Sync/Testing/hub.ts`'s `signer` gains `put(nexusId, keyId, bytes): Promise<Outcome>` and `get(nexusId, sha256): Promise<{ status: number; bytes: Buffer }>` signing `blobPath`.
+- [x] `Core/Sync/Contract/canonical.ts` exports `export const blobPath = (nexusId: string, sha256: string): string => \`/blob/${nexusId}/${sha256}\``; the second comment line of `wire.ts` becomes `// request body, or of the raw bytes on a byte route (of the empty string when there is none), and the integer millisecond timestamp,` re-wrapped so each line stays full (the file stays type-only).
+- [x] `Sync/wire.ts`: `export const BLOB_ROUTE = /^\/blob\/([0-7][0-9A-HJKMNP-TV-Z]{25})\/([0-9a-f]{64})$/`, `export const BLOB_CAP = 50 * 1024 * 1024`, `export const BLOB_TIMEOUT_MS = 300_000` (the byte routes have no `META` entry, so their cap and timeout are two constants beside the route pattern).
+- [x] `hub.ts`: `spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<{ path: string; size: number; sha256Hex: string } | null>` streaming to `join(dir, 'spool', randomUUID())` through `createWriteStream` (the directory made with `mkdirSync(…, { recursive: true })` at start), updating one `createHash('sha256')` per chunk, and on overflow destroying the request, unlinking the file, and resolving null; the PUT branch below unlinks the file in `finally`.
+- [x] `Sync/Store/log.ts`: `export function logStore(db: DatabaseSync)` returning `putBlob(nexusId, sha256, keyId, bytes: Buffer, atMs): void` (`INSERT OR IGNORE`), `readBlob(nexusId, sha256): Buffer | null`, `hasBlob(nexusId, sha256): boolean`; `Store` gains `log`.
+- [x] `Sync/authority.ts`: `identify`'s third parameter becomes `route: keyof Wire.RouteTable | null` (null on the blob path, which has no `META` entry); it takes `nexusId` as a fifth argument, `nexusId?: string`, used in place of the body's when given; the role it requires comes from a sixth, `requires?: Wire.Role | 'none'`, read as `requires ?? META[route].requires`, so a null `route` always arrives with `requires`, and the blob dispatcher passes `'editor'` for PUT and `'reader'` for GET.
+- [x] `hub.ts`: `route()` first tries `BLOB_ROUTE.exec(path)`; on a match with method PUT or GET, `identify(store, req, null, null, nexusId, method === 'PUT' ? 'editor' : 'reader')`, then for PUT `spoolBody(req, BLOB_CAP, opts.dataDir)` (null → 413 `too-large`), `verify(id, path, spool.sha256Hex)`, `spool.sha256Hex !== sha256` → 400 `hash-mismatch`, then `blobRoutes(store).put(id, params, spool)` with the spool file unlinked in `finally`; for GET, `verify(id, path, sha256Hex(Buffer.alloc(0)))` then `blobRoutes(store).get(id, params, res)`. Byte routes are typed `(id: Identity, params: { nexusId: string; sha256: string }, …) => Promise<Reply | 'streamed'>`; a `'streamed'` return means the handler wrote the response itself. `req.setTimeout(BLOB_TIMEOUT_MS)` on a blob match. The key id rides in an `x-pommora-key` header, read with `header(req, 'x-pommora-key')` and stored beside the blob; the AAD binds it inside the ciphertext.
+- [x] `Sync/Routes/blobs.ts`: `export function blobRoutes(store: Store)` returning `put` (reads the spool file, `store.log.putBlob(…)`, answers `{ status: 200, body: { sha256, size } }`) and `get` (404 `not-found` or `res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': bytes.length })`, `res.end(bytes)`, returns `'streamed'`).
+- [x] `Sync/blobs.test.ts`: `it('round-trips a one-mebibyte blob under its own hash', …)`, `it('refuses bytes whose hash is not the path', …)` (400), `it('refuses a body over the cap and leaves no spool file', …)` (413, `readdirSync(join(dataDir, 'spool'))` empty), `it('lets a reader read and refuses it a put', …)` (200 then 404). `Sync/Testing/hub.ts`'s `signer` gains `put(nexusId, keyId, bytes): Promise<Outcome>` and `get(nexusId, sha256): Promise<{ status: number; bytes: Buffer }>` signing `blobPath`.
 
 **AFTER**
 
@@ -1315,8 +1315,8 @@ Two streamed routes; the signed body hash is the blob's name; retry is idempoten
 
 **VERIFY**
 
-- [ ] `npm run test -- Sync/` passes with the blob suite; `ls <dataDir>/spool` is empty after the suite.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Sync/` passes with the blob suite; `ls <dataDir>/spool` is empty after the suite.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 4.3
 
@@ -1330,7 +1330,7 @@ Two streamed routes; the signed body hash is the blob's name; retry is idempoten
 
 **CHANGE**
 
-- [ ] `Core/Sync/Contract/wire.ts`:
+- [x] `Core/Sync/Contract/wire.ts`:
 
 ```ts
 export interface ItemRecord { path: string; mtimeMs: number; size: number; keyId: string; sha256: string }
@@ -1349,9 +1349,9 @@ export interface StoreReply { outcomes: StoreOutcome[]; seq: number }
 ```
 
   `RouteTable` gains `store: { method: 'POST'; path: '/store'; body: StoreBody; reply: StoreReply }`; `canonical.ts`'s `ROUTES`, `Sync/wire.ts`'s `PATHS`, and `META` (`store: { requires: 'editor', cap: 262144, timeoutMs: JSON_TIMEOUT_MS }`) gain it.
-- [ ] `Sync/Store/log.ts` gains `applyStore(nexusId, device, body: Wire.StoreBody, atMs): Wire.StoreReply` in one transaction: a known `requestId` returns the reply stored in `request.reply`; per change in order: `write` requires `item.version === base` (or no live row when `base` is null) and `hasBlob(record.sha256)`, then bumps `nexus.seq`, inserts `change` (`record` as JSON), upserts `item`; `delete` and `rename` likewise (`rename` moves the `item` row's path, writes `from_path`, and stores as the change's `record` the head record of `from` with `path` set to the new path, so a rename's `Change` carries the content at the moved path and a client can land it without a second lookup); `capture` inserts a `capture` row and no `change`; the reply is stored under the request id. A stale outcome's `head` is `readHead(nexusId, path)`: the `change` row with the greatest `seq` whose `path = ?` or `from_path = ?` decoded as `Wire.Change`, or null; a path whose latest change is a rename away therefore answers that rename, and the client follows it. The item's version after a write is the change's `seq`.
-- [ ] `Sync/Routes/items.ts`: `export function itemRoutes(store: Store)` returning `store`, which validates every path lexically (no leading `/`, no `..` segment, no empty segment, equal to its own `normalize('NFC')`) and refuses the whole body 400 `malformed` on a bad one, calls `store.log.applyStore(id.nexusId, id.device, body, Date.now())`, and `wake(id.nexusId, reply.seq)` when any outcome is `ok`; `hub.ts` spreads it into the route map.
-- [ ] `Sync/items.test.ts` (after each blob is put through `signer.put`): `it('writes a fresh path at version one and the next write at two', …)`, `it('refuses a stale base with the head', …)` (`why: 'stale'`, `head.seq === 2`), `it('moves the head on a rename and carries the record at the new path', …)`, `it('answers a write against the old path with the rename as its head', …)`, `it('refuses a delete on a stale base', …)`, `it('stores a capture without advancing the sequence', …)`, `it('answers a replayed request id from the stored reply', …)` (identical reply, `SELECT COUNT(*) FROM change` unchanged), `it('refuses a write whose blob is absent', …)` (`why: 'missing-blob'`).
+- [x] `Sync/Store/log.ts` gains `applyStore(nexusId, device, body: Wire.StoreBody, atMs): Wire.StoreReply` in one transaction: a known `requestId` returns the reply stored in `request.reply`; per change in order: `write` requires `item.version === base` (or no live row when `base` is null) and `hasBlob(record.sha256)`, then bumps `nexus.seq`, inserts `change` (`record` as JSON), upserts `item`; `delete` and `rename` likewise (`rename` moves the `item` row's path, writes `from_path`, and stores as the change's `record` the head record of `from` with `path` set to the new path, so a rename's `Change` carries the content at the moved path and a client can land it without a second lookup); `capture` inserts a `capture` row and no `change`; the reply is stored under the request id. A stale outcome's `head` is `readHead(nexusId, path)`: the `change` row with the greatest `seq` whose `path = ?` or `from_path = ?` decoded as `Wire.Change`, or null; a path whose latest change is a rename away therefore answers that rename, and the client follows it. The item's version after a write is the change's `seq`.
+- [x] `Sync/Routes/items.ts`: `export function itemRoutes(store: Store)` returning `store`, which validates every path lexically (no leading `/`, no `..` segment, no empty segment, equal to its own `normalize('NFC')`) and refuses the whole body 400 `malformed` on a bad one, calls `store.log.applyStore(id.nexusId, id.device, body, Date.now())`, and `wake(id.nexusId, reply.seq)` when any outcome is `ok`; `hub.ts` spreads it into the route map.
+- [x] `Sync/items.test.ts` (after each blob is put through `signer.put`): `it('writes a fresh path at version one and the next write at two', …)`, `it('refuses a stale base with the head', …)` (`why: 'stale'`, `head.seq === 2`), `it('moves the head on a rename and carries the record at the new path', …)`, `it('answers a write against the old path with the rename as its head', …)`, `it('refuses a delete on a stale base', …)`, `it('stores a capture without advancing the sequence', …)`, `it('answers a replayed request id from the stored reply', …)` (identical reply, `SELECT COUNT(*) FROM change` unchanged), `it('refuses a write whose blob is absent', …)` (`why: 'missing-blob'`).
 
 **AFTER**
 
@@ -1359,8 +1359,8 @@ Every accepted change has a sequence number; every path has one head; a refused 
 
 **VERIFY**
 
-- [ ] `npm run test -- Sync/` passes with the items suite.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Sync/` passes with the items suite.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 4.4
 
@@ -1374,11 +1374,11 @@ No waiter registry exists; `start().close` closes connections and the store. Rou
 
 **CHANGE**
 
-- [ ] `Core/Sync/Contract/wire.ts`: `export interface PullBody { nexusId: string; cursor: number; waitMs?: number }`, `export interface PullReply { changes: Change[]; cursor: number; hasMore: boolean }`; `RouteTable` gains `pull: { method: 'POST'; path: '/pull'; body: PullBody; reply: PullReply }`; `ROUTES`, `PATHS`, and `META` (`pull: { requires: 'reader', cap: 8192, timeoutMs: 35_000 }`, the one route whose timeout outlasts the 25 s wait below) gain it. A cursor above `nexus.seq` answers 409 with `{ error: 'resync', seq }`.
-- [ ] `Sync/feed.ts` (new): `wait(nexusId: string, cursor: number, timeoutMs: number): Promise<void>` resolves when `wake(nexusId: string, seq: number): void` arrives with `seq > cursor` or on timeout (`Math.min(timeoutMs, 25_000)`, the timer `unref`'d); `closeAll(): void` resolves every waiter, and `start().close` in `hub.ts` calls it before closing connections.
-- [ ] `Sync/Store/log.ts` gains `readChanges(nexusId, cursor, limit = 200): Wire.PullReply` (`SELECT … FROM change WHERE nexus_id = ? AND seq > ? ORDER BY seq LIMIT ?` with `limit + 1` rows read to set `hasMore`) and `sweep(nexusId, historyDays, nowMs): void`: delete `blob` rows referenced by no live `item` head (through `change.record`'s `sha256`), by no `capture` row, and whose `at_ms` is older than `nowMs - historyDays * 86_400_000`; delete `capture` rows older than that cutoff; `change` rows are never deleted.
-- [ ] `Sync/Routes/items.ts` gains `pull`, typed `(id: Identity, body: unknown) => Promise<Reply>`: `readChanges`; when `changes` is empty and `waitMs > 0`, `await wait(id.nexusId, cursor, waitMs)` then `readChanges` once more. The route map's value type widens to `Reply | Promise<Reply>` and `route()` awaits it. `hub.ts` runs `sweep` for every `nexus` row at start and every hour through `setInterval(…, 3_600_000).unref()`.
-- [ ] `Sync/items.test.ts` gains `it('pulls two stored changes in order', …)`, `it('wakes a waiting pull within a hundred milliseconds of a store', …)` (`performance.now()` around the pull, the delta printed and asserted under 100), `it('pages a third store of 250 changes across two pulls', …)`, `it('answers resync to a cursor past the head', …)`, `it('sweeps an old orphaned blob and keeps the head, a fresh orphan, and a captured blob', …)` (rows aged by `UPDATE blob SET at_ms = ?` through a `DatabaseSync` on the store).
+- [x] `Core/Sync/Contract/wire.ts`: `export interface PullBody { nexusId: string; cursor: number; waitMs?: number }`, `export interface PullReply { changes: Change[]; cursor: number; hasMore: boolean }`; `RouteTable` gains `pull: { method: 'POST'; path: '/pull'; body: PullBody; reply: PullReply }`; `ROUTES`, `PATHS`, and `META` (`pull: { requires: 'reader', cap: 8192, timeoutMs: 35_000 }`, the one route whose timeout outlasts the 25 s wait below) gain it. A cursor above `nexus.seq` answers 409 with `{ error: 'resync', seq }`.
+- [x] `Sync/feed.ts` (new): `wait(nexusId: string, cursor: number, timeoutMs: number): Promise<void>` resolves when `wake(nexusId: string, seq: number): void` arrives with `seq > cursor` or on timeout (`Math.min(timeoutMs, 25_000)`, the timer `unref`'d); `closeAll(): void` resolves every waiter, and `start().close` in `hub.ts` calls it before closing connections.
+- [x] `Sync/Store/log.ts` gains `readChanges(nexusId, cursor, limit = 200): Wire.PullReply` (`SELECT … FROM change WHERE nexus_id = ? AND seq > ? ORDER BY seq LIMIT ?` with `limit + 1` rows read to set `hasMore`) and `sweep(nexusId, historyDays, nowMs): void`: delete `blob` rows referenced by no live `item` head (through `change.record`'s `sha256`), by no `capture` row, and whose `at_ms` is older than `nowMs - historyDays * 86_400_000`; delete `capture` rows older than that cutoff; `change` rows are never deleted.
+- [x] `Sync/Routes/items.ts` gains `pull`, typed `(id: Identity, body: unknown) => Promise<Reply>`: `readChanges`; when `changes` is empty and `waitMs > 0`, `await wait(id.nexusId, cursor, waitMs)` then `readChanges` once more. The route map's value type widens to `Reply | Promise<Reply>` and `route()` awaits it. `hub.ts` runs `sweep` for every `nexus` row at start and every hour through `setInterval(…, 3_600_000).unref()`.
+- [x] `Sync/items.test.ts` gains `it('pulls two stored changes in order', …)`, `it('wakes a waiting pull within a hundred milliseconds of a store', …)` (`performance.now()` around the pull, the delta printed and asserted under 100), `it('pages a third store of 250 changes across two pulls', …)`, `it('answers resync to a cursor past the head', …)`, `it('sweeps an old orphaned blob and keeps the head, a fresh orphan, and a captured blob', …)` (rows aged by `UPDATE blob SET at_ms = ?` through a `DatabaseSync` on the store).
 
 **AFTER**
 
@@ -1386,14 +1386,14 @@ A client holds one connection open per Nexus and learns of a change within a net
 
 **VERIFY**
 
-- [ ] `npm run test -- Sync/` passes; the long-poll case's printed timing is under 100 ms.
-- [ ] `Sync/roster.test.ts`'s restart-mid-suite case still passes.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Sync/` passes; the long-poll case's printed timing is under 100 ms.
+- [x] `Sync/roster.test.ts`'s restart-mid-suite case still passes.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; `Sync/hubGraph.test.ts` green.
-- [ ] `npm run sync` boots against a schema-1 `sync.db` (built by the Task 3.2 fixture) and logs the migration; killed afterward.
+- [x] Gates green; `Sync/hubGraph.test.ts` green.
+- [x] `npm run sync` boots against a schema-1 `sync.db` (built by the Task 3.2 fixture) and logs the migration; killed afterward.
 
 ### Phase 5 — Keys
 
@@ -1411,8 +1411,8 @@ No crypto exists in Core; `vectors.json` holds three canonical-string vectors. I
 
 **CHANGE**
 
-- [ ] `kdf.ts`: `deriveWrappingKey(password: string, params: KdfParams): Promise<CryptoKey>`: `password.normalize('NFKC')` → PBKDF2-HMAC-SHA256 `deriveKey` → non-extractable AES-GCM-256; `freshKdfParams(): KdfParams` with 600,000 iterations and a 16-byte base64url salt.
-- [ ] `ring.ts`:
+- [x] `kdf.ts`: `deriveWrappingKey(password: string, params: KdfParams): Promise<CryptoKey>`: `password.normalize('NFKC')` → PBKDF2-HMAC-SHA256 `deriveKey` → non-extractable AES-GCM-256; `freshKdfParams(): KdfParams` with 600,000 iterations and a 16-byte base64url salt.
+- [x] `ring.ts`:
 
 ```ts
 export interface RingKey {
@@ -1445,9 +1445,9 @@ export async function exportRaw(ring: Ring): Promise<RawKey[]>
 ```
 
   `mintKey` is `{ keyId: ulid(), raw: crypto.getRandomValues(new Uint8Array(32)), createdMs: Date.now() }`; `newest` is the key with the greatest `createdMs`. A password wrap is `iv(12) || AES-GCM(kek, raw, aad = utf8('pommora-ring/1\n' + keyId + '\npassword'))` base64url, with `holder: 'password'`; a device wrap is `ephemeralPub(32) || iv(12) || AES-GCM(HKDF-SHA256(shared, salt = empty, info = utf8('pommora-ring-wrap/1')), raw, aad = utf8('pommora-ring/1\n' + keyId + '\n' + deviceId))` base64url, with `holder: deviceId`. The ephemeral pair is minted inside `wrapForDevice` with `generateKey('X25519', false, ['deriveBits'])` and its `deriveBits` against the target's public key; it is never stored. The unwrap side's `agree` is the host's member. `unwrapWithPassword` rejects with `new Error('wrong-password')` when a decrypt fails. Ring keys are imported as extractable AES-GCM keys so `exportRaw` can re-wrap them on approve and revoke; nothing else exports them.
-- [ ] `item.ts`: `export async function encryptItem(k: RingKey, path: string, plaintext: Uint8Array): Promise<Uint8Array>` → `[0x01] || iv(12) || AES-GCM(k.key, plaintext, aad = utf8('pommora-item/1\n' + k.keyId + '\n' + path.normalize('NFC')))`; `export async function decryptItem(ring: Ring, keyId: string, path: string, blob: Uint8Array): Promise<Uint8Array>`, rejecting on an unknown key id, a version byte other than `0x01`, or a failed decrypt.
-- [ ] `vectors.json` gains `"item": { "keyId", "keyHex", "path", "ivHex", "plaintext", "blobHex" }` computed once by the executor with `node:crypto` (`createCipheriv('aes-256-gcm', key, iv)` with `setAAD` over the AAD above, the 16-byte tag appended after the ciphertext, which is where Web Crypto puts it). `encryptItem` takes the IV as an optional fourth parameter, `iv = crypto.getRandomValues(new Uint8Array(12))`, so `keys.test.ts` asserts `it('reproduces the shared item vector', …)` by passing the vector's IV and comparing the hex; `Sync/wire.test.ts` gains `it('reads the shared item vector', …)` decrypting `blobHex` with `createDecipheriv('aes-256-gcm')` so the hub's tests and Core agree on the format without sharing code.
-- [ ] `keys.test.ts` also holds `it('round-trips a ring through the password', …)`, `it('round-trips a ring through a device wrap', …)` (two X25519 pairs minted in the test with `crypto.subtle.generateKey`, `agree` built from one private half), `it('unwraps a two-entry ring and names the later key newest', …)`, `it('rejects a blob whose path was moved', …)` (decrypt under another path), `it('rejects a wrong password as wrong-password', …)`.
+- [x] `item.ts`: `export async function encryptItem(k: RingKey, path: string, plaintext: Uint8Array): Promise<Uint8Array>` → `[0x01] || iv(12) || AES-GCM(k.key, plaintext, aad = utf8('pommora-item/1\n' + k.keyId + '\n' + path.normalize('NFC')))`; `export async function decryptItem(ring: Ring, keyId: string, path: string, blob: Uint8Array): Promise<Uint8Array>`, rejecting on an unknown key id, a version byte other than `0x01`, or a failed decrypt.
+- [x] `vectors.json` gains `"item": { "keyId", "keyHex", "path", "ivHex", "plaintext", "blobHex" }` computed once by the executor with `node:crypto` (`createCipheriv('aes-256-gcm', key, iv)` with `setAAD` over the AAD above, the 16-byte tag appended after the ciphertext, which is where Web Crypto puts it). `encryptItem` takes the IV as an optional fourth parameter, `iv = crypto.getRandomValues(new Uint8Array(12))`, so `keys.test.ts` asserts `it('reproduces the shared item vector', …)` by passing the vector's IV and comparing the hex; `Sync/wire.test.ts` gains `it('reads the shared item vector', …)` decrypting `blobHex` with `createDecipheriv('aes-256-gcm')` so the hub's tests and Core agree on the format without sharing code.
+- [x] `keys.test.ts` also holds `it('round-trips a ring through the password', …)`, `it('round-trips a ring through a device wrap', …)` (two X25519 pairs minted in the test with `crypto.subtle.generateKey`, `agree` built from one private half), `it('unwraps a two-entry ring and names the later key newest', …)`, `it('rejects a blob whose path was moved', …)` (decrypt under another path), `it('rejects a wrong password as wrong-password', …)`.
 
 **AFTER**
 
@@ -1455,9 +1455,9 @@ export async function exportRaw(ring: Ring): Promise<RawKey[]>
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Keys/` passes; `Core/Contract/engineGraph.test.ts` still reports `['ulidx', 'yaml', 'zod']`.
-- [ ] `grep -hn "^import" Core/Sync/Keys/*.ts | grep -v "from '\.\.\?/" | grep -vc "ulidx"` → 0.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Keys/` passes; `Core/Contract/engineGraph.test.ts` still reports `['ulidx', 'yaml', 'zod']`.
+- [x] `grep -hn "^import" Core/Sync/Keys/*.ts | grep -v "from '\.\.\?/" | grep -vc "ulidx"` → 0.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 5.2
 
@@ -1559,16 +1559,16 @@ and the connect handler:
 
 **CHANGE**
 
-- [ ] `bridge.ts`: `'sync:connect': { args: [address: string, password?: string, pin?: string]; reply: Result<SyncState> }` (optional, so `NexusRows.tsx` compiles unchanged until Phase 9). `Core/Sync/Contract/wire.ts`: `export interface SyncStatus { state: 'off' | 'idle' | 'syncing' | 'error'; reason?: 'password' | 'pending' | 'revoked' | 'no-db'; why?: string; lastAt?: number }` (`reason` is what a surface switches on; `why` is the sentence it shows, and every writer of a `why` that one of the four names sets the matching `reason` beside it); `SyncState` gains `status: SyncStatus`; `export interface SyncScope { address: string; pin?: string; cursor: number }` names the `sync` scope's value. This task answers `status: { state: 'off' }` from every handler. `Core/Settings/NexusRows.test.tsx`'s `SyncState` literals (`unbound`, `approved(…)`, `pending`) gain `status: { state: 'off' }`.
-- [ ] `HostContext` gains `secrets: { get(name: string): Promise<string | null>; set(name: string, value: string | null): Promise<void> }` after `device`. `Desktop/Config/secrets.ts`: `setSecret`'s third parameter becomes `plain: string | null`; a null removes the key (`const { [name]: _dropped, ...rest } = cur; return rest`) and skips the `secretsAvailable()` check. `Desktop/main.ts`'s `hostContext()` gains `secrets: { get: (name) => getSecret(userData(), name), set: (name, value) => setSecret(userData(), name, value) }`. Core's names: `sync:${nexusId}:password` and `sync:${nexusId}:ring` (the device's own wrapped entries as JSON, so a session that opens with the hub unreachable still holds its keys).
-- [ ] `Client/call.ts`: `SyncHost` becomes `{ device: HostDevice; transport: HostContext['transport']; secrets: HostContext['secrets']; push: HostContext['push'] }`, the four `HostContext` members sync reads with `device` present, and gains `export function syncHost(ctx: HostContext): SyncHost | null` (null when `ctx.device` is null), the one place the projection is built. `call.test.ts`'s `recorder()` host gains `secrets` over a `Map` and `push: () => {}`.
-- [ ] `Client/keyring.ts`: `export async function loadRing(host: SyncHost, nexusId: string, info: Pick<InfoRecord, 'ring' | 'kdf'> | null): Promise<Ring | null>`: from the per-session `Map<string, Ring>` when held; else the entries whose `holder === host.device.id` (from `info.ring`, or from the cached JSON when `info` is null) through `unwrapForDevice(own, host.device.id, host.device.agree)`, caching the JSON through `host.secrets` on success; else, when `info` is given and a stored password exists, the entries with `holder === 'password'` through `unwrapWithPassword(…, await deriveWrappingKey(password, info.kdf))`; else null. A null `info` therefore answers from the cache alone; Task 7.4's `startSession` fetches `info` when the cache is empty. `export async function forgetKeys(host: SyncHost, nexusId: string)` sets both secrets to null and deletes the map entry. `export function heldRing(nexusId): Ring | null`.
-- [ ] `ready()`: `host` comes from `syncHost(ctx)` (null → `NO_DEVICE`), and `address` becomes `binding: readValue<SyncScope>('sync')`; the four `call(host, address, …)` sites pass `binding.address` (Task 7.2 passes the whole binding). `bindingFrom(address, …)` is unchanged. `state()` answers `status: { state: 'off' }`.
-- [ ] `sync:connect`, in order: `ready`; the address, `password` (`typeof raw2 === 'string' && raw2.length ? raw2 : null`), and `pin` read from the three arguments; `connect` with `x25519: host.device.x25519`; a non-200 refuses as today; `info` with `{ nexusId }`: on 200, `ring = await loadRing(host, nexusId, reply.info)` after storing the password when given (a null ring with a password → `host.secrets.set(password name, null)` and `fail('operation-failed', 'The Nexus password is wrong.')`, no binding written; a null ring without one → `fail('operation-failed', 'A Nexus password is required.')`, no binding written); on 404 with the `connect` reply `approved: true`, this device creates: no password → `fail('operation-failed', 'A Nexus password is required.')`; else `kdf = freshKdfParams()`, `kek = await deriveWrappingKey(password, kdf)`, `raw = mintKey()`, `entries = [...(await wrapForPassword([raw], kek)), ...(await wrapForDevice([raw], { deviceId: host.device.id, x25519: host.device.x25519 }))]` (the creator's own device wrap, so its ring reloads from the cache after a restart), `info` again with `create: { protocol: 1, kdf, historyDays: (await readFileHistoryConfig(root)).keepMs / 86_400_000, ring: entries }`, a non-200 refuses, a 200 runs `ring = await loadRing(host, nexusId, { ring: entries, kdf })` to fill the cache; on 404 with `approved: false`, the device is pending and the ring arrives after approval. Then `writeValue('sync', { address, pin, cursor: 0 })` (false → `NO_STORE`), `host.secrets.set(password name, password)` when one was given, and `state(root, ctx)`.
-- [ ] `sync:approve`: `act('approve')` gains, after a 200: `info`, then `ring` with `base: info.version` and `add: await wrapForDevice(await exportRaw(ring), { deviceId, x25519 })` for the target's `x25519` from the reply's device list; a target without `x25519` is approved without a wrap and the returned `status.why` is `'That device holds no agreement key; it needs the Nexus password.'`.
-- [ ] `sync:revoke`: `act('revoke')` first reads this device's stored password; none → `fail('operation-failed', 'The Nexus password is needed to rotate the ring.')` before the `revoke` call, so the ring is never rotated to a key the password cannot open. Then, after a 200: `info`; `raw = mintKey()`; `add` = `wrapForPassword([raw], kek)` (the KEK re-derived from the password and `info.kdf`) plus `wrapForDevice([raw], { deviceId, x25519 })` for every approved device in the reply list with an `x25519`; `ring` with `base: info.version`; the cached ring gains the key.
-- [ ] `sync:state`: when the `devices` call answers 404 while `(await host.secrets.get(ring name)) !== null` (the cached ring is written only after a device unwrap, so its presence means this device was approved; a pending device never holds one), `forgetKeys(host, nexusId)` and answer `status: { state: 'off', reason: 'revoked', why: 'This device was revoked.' }` (Task 7.4 adds the session stop to this branch). The read path writes nothing else.
-- [ ] `handlers.test.ts`: the fake `HostContext` gains `agree` and an in-memory `secrets`; `it('creates the info record with one password entry on the first connect', …)`, `it('wraps the ring to an approved device that then unwraps it', …)`, `it('refuses a wrong password and writes no binding', …)`, `it('rotates the ring on revoke for the remaining device alone', …)`, `it('refuses a revoke when this device holds no password', …)`, `it('forgets its keys and reports the revoked reason when the hub reports it revoked', …)`. `keyring.test.ts`: `it('prefers the device entry, falls back to the password, and answers null with neither', …)`, `it('forgets both secrets and the held ring', …)`.
+- [x] `bridge.ts`: `'sync:connect': { args: [address: string, password?: string, pin?: string]; reply: Result<SyncState> }` (optional, so `NexusRows.tsx` compiles unchanged until Phase 9). `Core/Sync/Contract/wire.ts`: `export interface SyncStatus { state: 'off' | 'idle' | 'syncing' | 'error'; reason?: 'password' | 'pending' | 'revoked' | 'no-db'; why?: string; lastAt?: number }` (`reason` is what a surface switches on; `why` is the sentence it shows, and every writer of a `why` that one of the four names sets the matching `reason` beside it); `SyncState` gains `status: SyncStatus`; `export interface SyncScope { address: string; pin?: string; cursor: number }` names the `sync` scope's value. This task answers `status: { state: 'off' }` from every handler. `Core/Settings/NexusRows.test.tsx`'s `SyncState` literals (`unbound`, `approved(…)`, `pending`) gain `status: { state: 'off' }`.
+- [x] `HostContext` gains `secrets: { get(name: string): Promise<string | null>; set(name: string, value: string | null): Promise<void> }` after `device`. `Desktop/Config/secrets.ts`: `setSecret`'s third parameter becomes `plain: string | null`; a null removes the key (`const { [name]: _dropped, ...rest } = cur; return rest`) and skips the `secretsAvailable()` check. `Desktop/main.ts`'s `hostContext()` gains `secrets: { get: (name) => getSecret(userData(), name), set: (name, value) => setSecret(userData(), name, value) }`. Core's names: `sync:${nexusId}:password` and `sync:${nexusId}:ring` (the device's own wrapped entries as JSON, so a session that opens with the hub unreachable still holds its keys).
+- [x] `Client/call.ts`: `SyncHost` becomes `{ device: HostDevice; transport: HostContext['transport']; secrets: HostContext['secrets']; push: HostContext['push'] }`, the four `HostContext` members sync reads with `device` present, and gains `export function syncHost(ctx: HostContext): SyncHost | null` (null when `ctx.device` is null), the one place the projection is built. `call.test.ts`'s `recorder()` host gains `secrets` over a `Map` and `push: () => {}`.
+- [x] `Client/keyring.ts`: `export async function loadRing(host: SyncHost, nexusId: string, info: Pick<InfoRecord, 'ring' | 'kdf'> | null): Promise<Ring | null>`: from the per-session `Map<string, Ring>` when held; else the entries whose `holder === host.device.id` (from `info.ring`, or from the cached JSON when `info` is null) through `unwrapForDevice(own, host.device.id, host.device.agree)`, caching the JSON through `host.secrets` on success; else, when `info` is given and a stored password exists, the entries with `holder === 'password'` through `unwrapWithPassword(…, await deriveWrappingKey(password, info.kdf))`; else null. A null `info` therefore answers from the cache alone; Task 7.4's `startSession` fetches `info` when the cache is empty. `export async function forgetKeys(host: SyncHost, nexusId: string)` sets both secrets to null and deletes the map entry. `export function heldRing(nexusId): Ring | null`.
+- [x] `ready()`: `host` comes from `syncHost(ctx)` (null → `NO_DEVICE`), and `address` becomes `binding: readValue<SyncScope>('sync')`; the four `call(host, address, …)` sites pass `binding.address` (Task 7.2 passes the whole binding). `bindingFrom(address, …)` is unchanged. `state()` answers `status: { state: 'off' }`.
+- [x] `sync:connect`, in order: `ready`; the address, `password` (`typeof raw2 === 'string' && raw2.length ? raw2 : null`), and `pin` read from the three arguments; `connect` with `x25519: host.device.x25519`; a non-200 refuses as today; `info` with `{ nexusId }`: on 200, `ring = await loadRing(host, nexusId, reply.info)` after storing the password when given (a null ring with a password → `host.secrets.set(password name, null)` and `fail('operation-failed', 'The Nexus password is wrong.')`, no binding written; a null ring without one → `fail('operation-failed', 'A Nexus password is required.')`, no binding written); on 404 with the `connect` reply `approved: true`, this device creates: no password → `fail('operation-failed', 'A Nexus password is required.')`; else `kdf = freshKdfParams()`, `kek = await deriveWrappingKey(password, kdf)`, `raw = mintKey()`, `entries = [...(await wrapForPassword([raw], kek)), ...(await wrapForDevice([raw], { deviceId: host.device.id, x25519: host.device.x25519 }))]` (the creator's own device wrap, so its ring reloads from the cache after a restart), `info` again with `create: { protocol: 1, kdf, historyDays: (await readFileHistoryConfig(root)).keepMs / 86_400_000, ring: entries }`, a non-200 refuses, a 200 runs `ring = await loadRing(host, nexusId, { ring: entries, kdf })` to fill the cache; on 404 with `approved: false`, the device is pending and the ring arrives after approval. Then `writeValue('sync', { address, pin, cursor: 0 })` (false → `NO_STORE`), `host.secrets.set(password name, password)` when one was given, and `state(root, ctx)`.
+- [x] `sync:approve`: `act('approve')` gains, after a 200: `info`, then `ring` with `base: info.version` and `add: await wrapForDevice(await exportRaw(ring), { deviceId, x25519 })` for the target's `x25519` from the reply's device list; a target without `x25519` is approved without a wrap and the returned `status.why` is `'That device holds no agreement key; it needs the Nexus password.'`.
+- [x] `sync:revoke`: `act('revoke')` first reads this device's stored password; none → `fail('operation-failed', 'The Nexus password is needed to rotate the ring.')` before the `revoke` call, so the ring is never rotated to a key the password cannot open. Then, after a 200: `info`; `raw = mintKey()`; `add` = `wrapForPassword([raw], kek)` (the KEK re-derived from the password and `info.kdf`) plus `wrapForDevice([raw], { deviceId, x25519 })` for every approved device in the reply list with an `x25519`; `ring` with `base: info.version`; the cached ring gains the key.
+- [x] `sync:state`: when the `devices` call answers 404 while `(await host.secrets.get(ring name)) !== null` (the cached ring is written only after a device unwrap, so its presence means this device was approved; a pending device never holds one), `forgetKeys(host, nexusId)` and answer `status: { state: 'off', reason: 'revoked', why: 'This device was revoked.' }` (Task 7.4 adds the session stop to this branch). The read path writes nothing else.
+- [x] `handlers.test.ts`: the fake `HostContext` gains `agree` and an in-memory `secrets`; `it('creates the info record with one password entry on the first connect', …)`, `it('wraps the ring to an approved device that then unwraps it', …)`, `it('refuses a wrong password and writes no binding', …)`, `it('rotates the ring on revoke for the remaining device alone', …)`, `it('refuses a revoke when this device holds no password', …)`, `it('forgets its keys and reports the revoked reason when the hub reports it revoked', …)`. `keyring.test.ts`: `it('prefers the device entry, falls back to the password, and answers null with neither', …)`, `it('forgets both secrets and the held ring', …)`.
 
 **AFTER**
 
@@ -1585,15 +1585,15 @@ A Nexus on the hub carries a ring every approved device can open without the pas
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/` passes with the new cases; `npm run typecheck` exits 0.
-- [ ] `grep -c "password is wrong\|password is required" Core/Sync/handlers.ts` → 3.
-- [ ] `grep -c "string | null" Desktop/Config/secrets.ts` → 2 (the `getSecret` return and the `setSecret` parameter).
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/` passes with the new cases; `npm run typecheck` exits 0.
+- [x] `grep -c "password is wrong\|password is required" Core/Sync/handlers.ts` → 3.
+- [x] `grep -c "string | null" Desktop/Config/secrets.ts` → 2 (the `getSecret` return and the `setSecret` parameter).
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; engine and host graph tests unchanged.
-- [ ] Smoke launch: with the hub running, `window.nexus.ask('sync:connect', 'http://127.0.0.1:7473', 'pw')` from the console creates the info record (read `sync.db`'s `nexus` table with `node -e`); the heading still lists devices.
+- [x] Gates green; engine and host graph tests unchanged.
+- [x] Smoke launch: with the hub running, `window.nexus.ask('sync:connect', 'http://127.0.0.1:7473', 'pw')` from the console creates the info record (read `sync.db`'s `nexus` table with `node -e`); the heading still lists devices.
 
 ### Phase 6 — Arrival
 
@@ -1611,7 +1611,7 @@ Every JSON file the log names is a plain object at its top level. Read from Nexu
 
 **CHANGE**
 
-- [ ] `jsonMerge.ts`:
+- [x] `jsonMerge.ts`:
 
 ```ts
 export type Json = Record<string, unknown>
@@ -1632,7 +1632,7 @@ export function mergeKeys(
 ```
 
   `isMergedJson` is `rel.endsWith('.json') && (rel.startsWith(\`${NEXUS_DIR}/\`) || basename(rel).startsWith('_'))`. `mergeDepthFor` is one `switch` on `rel`: `.nexus/settings.json` → `{ personalization: 1 }`, `.nexus/state.json` → `{ order: 1, navigation: 1 }`, `.nexus/properties.json` → `{ defs: 1 }`, `.nexus/assets/crops.json` → `{ byImage: 1 }`, default `{}`, the four paths spelled through `NEXUS_DIR` and `NEXUS_CONFIG_FILES`. `mergeKeys`, for each key in the union of the three: unchanged on both sides (`same(base[k], local[k]) && same(base[k], remote[k])`) → base; changed on one side → that side (absence on the changed side deletes); changed on both → when `(depth[k] ?? 0) > 0` and all three are plain objects, recurse with a depth of `{}` at `depth[k] - 1` for every child; else `pick()`. `same` is `stableStringify(a) === stableStringify(b)`; arrays are one value.
-- [ ] `jsonMerge.test.ts`: `it('keeps two different personalization changes from two sides', …)`, `it('deletes a key one side removed and the other left alone', …)`, `it('takes pick() for a key both sides changed', …)`, `it('takes an array inside a key whole', …)`, `it('yields remote when base is empty and local is unchanged', …)`, `it('names the merged set and the depth table', …)` (`isMergedJson` true for `.nexus/settings.json`, `Notes/_pagecollection.json`, `.nexus/homepage/_tiles.json`; false for `Notes/A.md` and `assets/x.json`; `mergeDepthFor` for the four files and `{}` for `.nexus/homepage/homepage.json`).
+- [x] `jsonMerge.test.ts`: `it('keeps two different personalization changes from two sides', …)`, `it('deletes a key one side removed and the other left alone', …)`, `it('takes pick() for a key both sides changed', …)`, `it('takes an array inside a key whole', …)`, `it('yields remote when base is empty and local is unchanged', …)`, `it('names the merged set and the depth table', …)` (`isMergedJson` true for `.nexus/settings.json`, `Notes/_pagecollection.json`, `.nexus/homepage/_tiles.json`; false for `Notes/A.md` and `assets/x.json`; `mergeDepthFor` for the four files and `{}` for `.nexus/homepage/homepage.json`).
 
 **AFTER**
 
@@ -1640,8 +1640,8 @@ One pure function and one table.
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Arrival/` passes.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Arrival/` passes.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 6.2
 
@@ -1682,9 +1682,9 @@ export async function sweepFileHistory(root: string): Promise<void> {
 
 **CHANGE**
 
-- [ ] `captures.ts`: `export async function captureLoser(root: string, rel: string, bytes: Uint8Array, reason: CaptureReason): Promise<void>`: `captureStore()?.addCapture(rel, Date.now(), reason, bytes)`; when `isMarkdownFile(rel)`, decode the bytes as UTF-8, `const pageId = contentId(splitFrontmatter(text))`, and when defined `await captureIfDue(root, pageId, text, 'external')` (no hash argument; `capture` derives the body hash).
-- [ ] `fileHistory.ts` `sweepFileHistory`: after `db.sweepSnapshots(…)`, `captureStore()?.sweepCaptures(cutoff)` over the same cutoff, with `const cutoff = Date.now() - keepMs` hoisted; the early return on a null `snapshotStore()` becomes a guard around the snapshot line alone so captures sweep when snapshots cannot.
-- [ ] `captures.test.ts` over `memoryStores()` and the test tree: `it('captures a sidecar with File History off', …)`, `it('captures a page into both stores with File History on', …)`, `it('captures a page into captures alone with File History off', …)`. `Core/Pages/fileHistory.test.ts` (existing) gains `it('sweeps old captures beside old snapshots', …)`.
+- [x] `captures.ts`: `export async function captureLoser(root: string, rel: string, bytes: Uint8Array, reason: CaptureReason): Promise<void>`: `captureStore()?.addCapture(rel, Date.now(), reason, bytes)`; when `isMarkdownFile(rel)`, decode the bytes as UTF-8, `const pageId = contentId(splitFrontmatter(text))`, and when defined `await captureIfDue(root, pageId, text, 'external')` (no hash argument; `capture` derives the body hash).
+- [x] `fileHistory.ts` `sweepFileHistory`: after `db.sweepSnapshots(…)`, `captureStore()?.sweepCaptures(cutoff)` over the same cutoff, with `const cutoff = Date.now() - keepMs` hoisted; the early return on a null `snapshotStore()` becomes a guard around the snapshot line alone so captures sweep when snapshots cannot.
+- [x] `captures.test.ts` over `memoryStores()` and the test tree: `it('captures a sidecar with File History off', …)`, `it('captures a page into both stores with File History on', …)`, `it('captures a page into captures alone with File History off', …)`. `Core/Pages/fileHistory.test.ts` (existing) gains `it('sweeps old captures beside old snapshots', …)`.
 
 **AFTER**
 
@@ -1692,9 +1692,9 @@ Nothing that loses a conflict is dropped on the device.
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Arrival/` and `npm run test -- Core/Pages/` pass.
-- [ ] `grep -c "sweepCaptures" Core/Pages/fileHistory.ts` → 1.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Arrival/` and `npm run test -- Core/Pages/` pass.
+- [x] `grep -c "sweepCaptures" Core/Pages/fileHistory.ts` → 1.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 6.3
 
@@ -1708,12 +1708,12 @@ Nothing that loses a conflict is dropped on the device.
 
 **CHANGE**
 
-- [ ] `land.ts` exports `newerSide(localMtimeMs: number, localDeviceId: string, remoteMtimeMs: number, remoteDeviceId: string): 'local' | 'remote'`: a difference over 2,000 ms names the newer side; within it, the side whose device id sorts first lexically. The window and the tie live here alone; Task 7.2's stale path calls it too.
-- [ ] `land.ts` exports three landing functions, each taking `(host: SyncHost, root: string, change: Change, …)` and running under `machine().lock(join(root, change.path), …)` (a rename locks `change.from`):
+- [x] `land.ts` exports `newerSide(localMtimeMs: number, localDeviceId: string, remoteMtimeMs: number, remoteDeviceId: string): 'local' | 'remote'`: a difference over 2,000 ms names the newer side; within it, the side whose device id sorts first lexically. The window and the tie live here alone; Task 7.2's stale path calls it too.
+- [x] `land.ts` exports three landing functions, each taking `(host: SyncHost, root: string, change: Change, …)` and running under `machine().lock(join(root, change.path), …)` (a rename locks `change.from`):
   - `landWrite(host, root, change, plaintext: Uint8Array)`, in order: (1) `abs = join(root, change.path)`, `record = change.record`; (2) `await machine().mkdir(dirname(abs))`; (3) when `isMergedJson(change.path)`: `local = await machine().readBytes(abs)`, `base = readBase(change.path)?.baseBytes ?? null`; when `local`, `base`, and the three parse as plain objects and `sha256Hex(local) !== sha256Hex(base)`: `merged = mergeKeys(parse(base), parse(local), parse(plaintext), mergeDepthFor(change.path), pick)` where `localMtimeMs = (await machine().stat(abs)).mtimeMs` is read before the merge and `pick` is `() => newerSide(localMtimeMs, host.device.id, record.mtimeMs, change.device)`; `bytes = utf8(\`${stableStringify(merged)}\n\`)`; otherwise `bytes = plaintext`; when not merged JSON, `bytes = plaintext`; (4) `await landBytes(abs, bytes, record.mtimeMs)`; (5) `upsertBase({ path: change.path, mtimeMs: record.mtimeMs, size: plaintext.length, hash: sha256Hex(plaintext), blobSha: record.sha256, version: change.seq, baseBytes: isMergedJson(change.path) ? plaintext : null })`, the remote's hash and bytes in every case, so a merge that differs from the remote reads dirty and the next tap cycle pushes it against `change.seq`; (6) when `change.path` names a tile body (`tileBodyUnder(change.path.split('/'), change.path)`), `host.push('tiles:changed', ref)` where `ref` is `{ kind: 'homepage' }` under `.nexus/homepage/` or `{ kind: 'space', id: space.id }` for `space = findSpace(tree, relDirname(change.path))` over `getLiveTree()`, skipped when no tree or Space is found. `watchPatch.ts` exports its existing `findSpace`.
   - `landDelete(host, root, change)`: `stat = await machine().stat(abs)`; when `stat`, `await machine().remove(abs)` and then, when `dirname(abs) !== root` and `listEntries(dirname(abs))` is empty, `await machine().remove(dirname(abs))`; `deleteBase(change.path)` in every case. A folder that empties out disappears with its last file, since a tombstone names a file and never a directory (Task 7.2 expands a removed folder into one tombstone per base row).
   - `landRename(host, root, change)`: `from = join(root, change.from)`, `to = join(root, change.path)`; when `from` exists, `await machine().mkdir(dirname(to))` and `await machine().rename(from, to)`; `renameBase(change.from, change.path)` in every case, and for a directory also every base row under `${change.from}/` through `readAllBases()`, one `renameBase` per row; `upsertBase` on the moved row with `version: change.seq`.
-- [ ] `land.test.ts` over the test tree with `memoryStores()` and a fake `SyncHost` recording pushes: `it('names the newer side and breaks a tie on the smaller device id', …)`, `it('lands bytes with the writer mtime and a base row at the change seq', …)`, `it('removes the file and its base row on a tombstone', …)`, `it('removes an emptied parent directory after a tombstone and keeps the root', …)`, `it('moves the file and the base row on a rename', …)`, `it('moves every base row under a renamed folder', …)`, `it('merges a JSON landing over a local change and records the remote as base', …)` (both keys on disk, `hash(disk) !== readBase(path).hash`, `readBase(path).baseBytes` equal to the remote bytes), `it('pushes tiles:changed for a landed tile body', …)`, `it('records no echo', …)` (`isRecentWrite(abs)` false after every landing).
+- [x] `land.test.ts` over the test tree with `memoryStores()` and a fake `SyncHost` recording pushes: `it('names the newer side and breaks a tie on the smaller device id', …)`, `it('lands bytes with the writer mtime and a base row at the change seq', …)`, `it('removes the file and its base row on a tombstone', …)`, `it('removes an emptied parent directory after a tombstone and keeps the root', …)`, `it('moves the file and the base row on a rename', …)`, `it('moves every base row under a renamed folder', …)`, `it('merges a JSON landing over a local change and records the remote as base', …)` (both keys on disk, `hash(disk) !== readBase(path).hash`, `readBase(path).baseBytes` equal to the remote bytes), `it('pushes tiles:changed for a landed tile body', …)`, `it('records no echo', …)` (`isRecentWrite(abs)` false after every landing).
 
 **AFTER**
 
@@ -1721,14 +1721,14 @@ One recency rule and three landing functions, each a lock, a machine call, and a
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Arrival/` passes; the engine graph test is unchanged.
-- [ ] `grep -c "recordWrite\|atomicWriteFile" Core/Sync/Arrival/land.ts` → 0.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Arrival/` passes; the engine graph test is unchanged.
+- [x] `grep -c "recordWrite\|atomicWriteFile" Core/Sync/Arrival/land.ts` → 0.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; engine graph unchanged.
-- [ ] Smoke launch: unchanged behavior (nothing calls Arrival yet).
+- [x] Gates green; engine graph unchanged.
+- [x] Smoke launch: unchanged behavior (nothing calls Arrival yet).
 
 ### Phase 7 — Client
 
@@ -1746,10 +1746,10 @@ One recency rule and three landing functions, each a lock, a machine call, and a
 
 **CHANGE**
 
-- [ ] `base.ts`: `export interface Snapshot { mtimeMs: number; size: number; hash: string; bytes: Uint8Array; version: number | null }`; `readBase(rel): BaseRecord | null` (`syncStore()?.readBase(rel) ?? null`), `readAllBases(): BaseRecord[]`, `readSnapshot(root, rel): Promise<Snapshot | null>` (under `machine().lock(abs)`: one `stat`, one `readBytes`, the hash of those bytes, and `readBase(rel)?.version ?? null`, so what a push sends and the base it claims are one read of one file; null when the file is absent), `recordBase(rel, snapshot: Pick<Snapshot, 'mtimeMs' | 'size' | 'hash' | 'bytes'>, version, blobSha): void` (`upsertBase` from the snapshot, with `baseBytes` the bytes when `isMergedJson(rel)`, else null; it never re-reads the file), `hashFile(abs): Promise<string | null>`, `isDirty(root, rel): Promise<boolean>` (true when no base row, when a base row exists and the file is absent, or when `hashFile(abs) !== base.hash`), `stampedId(root, rel): Promise<string | null>` (`contentId(splitFrontmatter(text))` for a Markdown file, else null).
-- [ ] `tap.ts`: `export const DEBOUNCE_MS = 2500`; `installTap(root: string, nexusId: string, scope: WatchScope, sinks: { onDirty(rels: string[]): void; onRename(from: string, to: string): void }): void` installs `setWatchTap` (ignoring an event whose relative path starts with `.trash/`, since the write tap owns `.trash`) and `setWriteTap`; each event reduces to `relative(root, absPath)`, is filtered by `manifestAdmits(nexusId, scope)(rel)`, and is held in a per-path timer of `DEBOUNCE_MS`; timers that fire in one tick batch into one `onDirty`. `.nexus/settings.json` passes the predicate like any configuration file, so a change to the exclusion list reaches `onDirty` as that path; Task 7.4's handler reads it there and rescopes before it pushes. `reportRename(from: string, to: string): void` clears both paths' timers and calls `onRename` (a no-op with no sinks installed). `uninstallTap(): void` clears both taps, every timer, and the sinks. `dirtyPending(): Set<string>` exposes the paths with a live timer.
-- [ ] `rename.ts`: before each of the two `return` lines that follow `moveIndexPaths` (the folder branch and the page branch; not the `fromCreate` branch, whose page has no base row yet and reaches the tap as a plain write), `reportRename(relative(root, abs), relative(root, r.value.path))`. `move.ts`: the same line before `noteValueWrite` in `movePageOp` and `moveSetOp`, with `at.value.src` as the source. A folder rename reports once with the folder paths; push expands it (Task 7.2).
-- [ ] `tap.test.ts` with `vi.useFakeTimers()` and recording sinks: `it('batches two events on one path into one onDirty', …)`, `it('never reports a thumbnail', …)`, `it('reports a .trash write from the write tap', …)`, `it('clears pending timers on a rename report and reaches onRename', …)`, `it('cancels every timer on uninstall', …)`. `Core/Nexus/mutate.test.ts` gains `it('reports a page rename and a page move to the sync tap', …)` through a `vi.spyOn` on the tap module's `reportRename`.
+- [x] `base.ts`: `export interface Snapshot { mtimeMs: number; size: number; hash: string; bytes: Uint8Array; version: number | null }`; `readBase(rel): BaseRecord | null` (`syncStore()?.readBase(rel) ?? null`), `readAllBases(): BaseRecord[]`, `readSnapshot(root, rel): Promise<Snapshot | null>` (under `machine().lock(abs)`: one `stat`, one `readBytes`, the hash of those bytes, and `readBase(rel)?.version ?? null`, so what a push sends and the base it claims are one read of one file; null when the file is absent), `recordBase(rel, snapshot: Pick<Snapshot, 'mtimeMs' | 'size' | 'hash' | 'bytes'>, version, blobSha): void` (`upsertBase` from the snapshot, with `baseBytes` the bytes when `isMergedJson(rel)`, else null; it never re-reads the file), `hashFile(abs): Promise<string | null>`, `isDirty(root, rel): Promise<boolean>` (true when no base row, when a base row exists and the file is absent, or when `hashFile(abs) !== base.hash`), `stampedId(root, rel): Promise<string | null>` (`contentId(splitFrontmatter(text))` for a Markdown file, else null).
+- [x] `tap.ts`: `export const DEBOUNCE_MS = 2500`; `installTap(root: string, nexusId: string, scope: WatchScope, sinks: { onDirty(rels: string[]): void; onRename(from: string, to: string): void }): void` installs `setWatchTap` (ignoring an event whose relative path starts with `.trash/`, since the write tap owns `.trash`) and `setWriteTap`; each event reduces to `relative(root, absPath)`, is filtered by `manifestAdmits(nexusId, scope)(rel)`, and is held in a per-path timer of `DEBOUNCE_MS`; timers that fire in one tick batch into one `onDirty`. `.nexus/settings.json` passes the predicate like any configuration file, so a change to the exclusion list reaches `onDirty` as that path; Task 7.4's handler reads it there and rescopes before it pushes. `reportRename(from: string, to: string): void` clears both paths' timers and calls `onRename` (a no-op with no sinks installed). `uninstallTap(): void` clears both taps, every timer, and the sinks. `dirtyPending(): Set<string>` exposes the paths with a live timer.
+- [x] `rename.ts`: before each of the two `return` lines that follow `moveIndexPaths` (the folder branch and the page branch; not the `fromCreate` branch, whose page has no base row yet and reaches the tap as a plain write), `reportRename(relative(root, abs), relative(root, r.value.path))`. `move.ts`: the same line before `noteValueWrite` in `movePageOp` and `moveSetOp`, with `at.value.src` as the source. A folder rename reports once with the folder paths; push expands it (Task 7.2).
+- [x] `tap.test.ts` with `vi.useFakeTimers()` and recording sinks: `it('batches two events on one path into one onDirty', …)`, `it('never reports a thumbnail', …)`, `it('reports a .trash write from the write tap', …)`, `it('clears pending timers on a rename report and reaches onRename', …)`, `it('cancels every timer on uninstall', …)`. `Core/Nexus/mutate.test.ts` gains `it('reports a page rename and a page move to the sync tap', …)` through a `vi.spyOn` on the tap module's `reportRename`.
 
 **AFTER**
 
@@ -1757,9 +1757,9 @@ A dirty set arrives at the loop every 2.5 s of quiet per path, already filtered 
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Client/` and `npm run test -- Core/Nexus/` pass.
-- [ ] `grep -c "2500" Core/Sync/Client/tap.ts` → 1; `grep -l "reportRename" Core/Nexus/rename.ts Core/Nexus/move.ts | wc -l` → 2.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Client/` and `npm run test -- Core/Nexus/` pass.
+- [x] `grep -c "2500" Core/Sync/Client/tap.ts` → 1; `grep -l "reportRename" Core/Nexus/rename.ts Core/Nexus/move.ts | wc -l` → 2.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 7.2
 
@@ -1821,16 +1821,16 @@ export async function call<K extends keyof RouteTable>(
 
 **CHANGE**
 
-- [ ] `call.ts`: `async function signedHeaders(host: SyncHost, method: string, path: string, bodySha256Hex: string): Promise<SignedHeaders>` builds the three `x-pommora-*` headers over `canonicalString` and `host.device.sign` once; `call`, `putBlob`, and `getBlob` each add their own `content-type` (and `putBlob` its `x-pommora-key`) to what it returns. The second parameter of `call` becomes `target: SyncTarget` with `export interface SyncTarget { address: string; pin?: string }`, and a fifth, `opts?: { timeoutMs?: number }`; the transport request gains `pin: target.pin` and `timeoutMs: opts?.timeoutMs ?? JSON_TIMEOUT_MS` (`export const JSON_TIMEOUT_MS = 10_000`, `export const BLOB_TIMEOUT_MS = 300_000` beside it, the client's own figures since Core imports nothing from `Sync/`); the four `handlers.ts` sites pass `binding` (a `SyncScope`, structurally a `SyncTarget`); `call.test.ts`'s calls pass `{ address }`. The body is parsed on every status: `CallOutcome` gains `refusal?: { error: string } & Record<string, unknown>`, set when the status is not 200 and the body parses to an object whose `error` is a string (so `409 { error: 'resync', seq }` and `409 { error: 'stale', info }` reach their callers), while `reply` stays 200-only and `error` stays status-0-only; `call.test.ts` gains `it('carries a refusal body to the caller', …)` and `it('sends the timeout a caller names', …)`. Add `export async function putBlob(host: SyncHost, target: SyncTarget, nexusId: string, keyId: string, bytes: Uint8Array): Promise<{ status: number; error?: string }>` over `signedHeaders(host, 'PUT', blobPath(nexusId, sha), machine().sha256Hex(bytes))` with `x-pommora-key: keyId` and `content-type: application/octet-stream`, `body: bytes`, `timeoutMs: BLOB_TIMEOUT_MS`; and `export async function getBlob(host, target, nexusId, sha256): Promise<Uint8Array | null>` over `signedHeaders(host, 'GET', blobPath(nexusId, sha256), machine().sha256Hex(''))`, returning `reply.bytes` on 200, null otherwise. `call.test.ts` gains `it('sends bytes under the blob path with the pin and the byte timeout', …)` and `it('reads bytes back from the blob path', …)`.
-- [ ] `session.ts` holds one declaration and nothing else: `export interface Session { host: SyncHost; ctx: HostContext; root: string; nexusId: string; target: SyncScope; ring: Ring; scope: WatchScope; failed: Set<string> }` (`host` is what reaches the hub and the disk, `ctx` is what reaches the renderer with a status, `failed` holds the paths of a batch the hub never answered). Task 7.4 adds the session's behavior beside it.
-- [ ] `status.ts`: `let status: SyncStatus = { state: 'off' }`; `export const currentStatus = (): SyncStatus => status`; `export function setStatus(ctx: Pick<HostContext, 'push'>, next: SyncStatus): void` assigns and `ctx.push('sync:changed', next)`. Push, pull, and the session all write the status through it.
-- [ ] `push.ts`, over `Session`:
+- [x] `call.ts`: `async function signedHeaders(host: SyncHost, method: string, path: string, bodySha256Hex: string): Promise<SignedHeaders>` builds the three `x-pommora-*` headers over `canonicalString` and `host.device.sign` once; `call`, `putBlob`, and `getBlob` each add their own `content-type` (and `putBlob` its `x-pommora-key`) to what it returns. The second parameter of `call` becomes `target: SyncTarget` with `export interface SyncTarget { address: string; pin?: string }`, and a fifth, `opts?: { timeoutMs?: number }`; the transport request gains `pin: target.pin` and `timeoutMs: opts?.timeoutMs ?? JSON_TIMEOUT_MS` (`export const JSON_TIMEOUT_MS = 10_000`, `export const BLOB_TIMEOUT_MS = 300_000` beside it, the client's own figures since Core imports nothing from `Sync/`); the four `handlers.ts` sites pass `binding` (a `SyncScope`, structurally a `SyncTarget`); `call.test.ts`'s calls pass `{ address }`. The body is parsed on every status: `CallOutcome` gains `refusal?: { error: string } & Record<string, unknown>`, set when the status is not 200 and the body parses to an object whose `error` is a string (so `409 { error: 'resync', seq }` and `409 { error: 'stale', info }` reach their callers), while `reply` stays 200-only and `error` stays status-0-only; `call.test.ts` gains `it('carries a refusal body to the caller', …)` and `it('sends the timeout a caller names', …)`. Add `export async function putBlob(host: SyncHost, target: SyncTarget, nexusId: string, keyId: string, bytes: Uint8Array): Promise<{ status: number; error?: string }>` over `signedHeaders(host, 'PUT', blobPath(nexusId, sha), machine().sha256Hex(bytes))` with `x-pommora-key: keyId` and `content-type: application/octet-stream`, `body: bytes`, `timeoutMs: BLOB_TIMEOUT_MS`; and `export async function getBlob(host, target, nexusId, sha256): Promise<Uint8Array | null>` over `signedHeaders(host, 'GET', blobPath(nexusId, sha256), machine().sha256Hex(''))`, returning `reply.bytes` on 200, null otherwise. `call.test.ts` gains `it('sends bytes under the blob path with the pin and the byte timeout', …)` and `it('reads bytes back from the blob path', …)`.
+- [x] `session.ts` holds one declaration and nothing else: `export interface Session { host: SyncHost; ctx: HostContext; root: string; nexusId: string; target: SyncScope; ring: Ring; scope: WatchScope; failed: Set<string> }` (`host` is what reaches the hub and the disk, `ctx` is what reaches the renderer with a status, `failed` holds the paths of a batch the hub never answered). Task 7.4 adds the session's behavior beside it.
+- [x] `status.ts`: `let status: SyncStatus = { state: 'off' }`; `export const currentStatus = (): SyncStatus => status`; `export function setStatus(ctx: Pick<HostContext, 'push'>, next: SyncStatus): void` assigns and `ctx.push('sync:changed', next)`. Push, pull, and the session all write the status through it.
+- [x] `push.ts`, over `Session`:
   - `export const BATCH = 200`; `export const ITEM_CAP = 50 * 1024 * 1024`.
   - `storeChanges(session, changes)`: the batches of `BATCH`, each with `requestId: ulid()`, sent through `call(host, target, 'store', …)`; a status of 0 is retried once immediately with the identical body and `requestId` (the hub's `request` table answers a replay from the stored reply, so a reply lost in transit costs nothing); a status of 0 after the retry or of 500 or above adds the batch's paths to `session.failed` and sets status `error` with the outcome's `error` or `\`The hub answered ${status}.\`` as `why`; `putBlob` answering 0 or 500 or above does the same for its one path. Every `store` and `putBlob` below goes through this.
   - `pushRename(session, from, to)`: (1) `rows = readBase(from) ? [readBase(from)] : readAllBases().filter((r) => r.path.startsWith(\`${from}/\`))`; (2) no rows → `pushDirty(session, [to])` (a page renamed before its first push) and return; (3) one `rename` change per row with `base: row.version`, `from: row.path`, `path: to + row.path.slice(from.length)`; (4) `storeChanges`; (5) per outcome `ok` → `renameBase(row.path, newPath)` then `upsertBase({ ...row, path: newPath, version })`; `stale` → `resolveStale(session, newPath, head)` after `renameBase`.
   - `pushDirty(session, rels)`: (1) per path, `stat = await machine().stat(abs)`; a directory expands to the base rows under `${rel}/` and to `listPathsUnder(root, abs, (rel, _kind, siblings) => admits(rel, siblings))` entries with `admits = manifestAdmits(session.nexusId, session.scope)`, each re-entering this step; (2) absent with a base row → `{ kind: 'delete', base: row.version, path: rel }`; absent with no base row → one `delete` per base row whose `path` starts with `${rel}/`, each with `base: row.version` (a removed folder or bundle arrives from the tap as its own path, and its rows are what the hub must tombstone); no such rows → drop; (3) present: `snapshot = await readSnapshot(root, rel)` (one locked read; null → treat as absent); `snapshot.hash === readBase(rel)?.hash` → drop; `snapshot.size > ITEM_CAP` → drop and set status `why` to `\`${rel} is over 50 MB and stays home.\``; `isMarkdownFile(rel) && (await stampedId(root, rel)) === null` → drop (stays dirty); else `blob = await encryptItem(newest(ring), rel, snapshot.bytes)`, `sha = sha256Hex(blob)`, `putBlob` (a refused put returns), then `{ kind: 'write', base: snapshot.version, record: { path: rel, mtimeMs: snapshot.mtimeMs, size: snapshot.size, keyId, sha256: sha } }` with the snapshot kept beside the change; (4) order deletes first, then writes; (5) `storeChanges`; (6) per outcome: `ok` → `recordBase(rel, snapshot, version, record.sha256)` (a delete → `deleteBase(rel)`); `stale` → `resolveStale(session, rel, head)`; `missing-blob` → `putBlob` once more and re-`store` that one change.
   - `resolveStale(session, rel, head: Change | null)`, in order: (1) `head === null` (the hub never held the path, so the local row is stale) → `deleteBase(rel)` and `pushDirty(session, [rel])`, return; (2) `head.kind === 'rename' && head.path !== rel` (the hub's head for this path is its move elsewhere, which Task 4.3's `readHead` answers through `from_path`) → `landRename(host, root, head)`, then `resolveStale(session, head.path, head)` once with the same head, whose `path` now equals the argument so it takes the steps below as a write (Task 4.3 gives a rename change the record at its new path), and return; (3) `snapshot = await readSnapshot(root, rel)`; (4) `head.kind === 'delete'`: `snapshot === null` → `deleteBase(rel)`, return; `newerSide(snapshot.mtimeMs, host.device.id, head.atMs, head.device) === 'local'` → re-`store` the write with `base: head.seq`; else `captureLoser(root, rel, snapshot.bytes, 'tombstone-lost')` and `landDelete(host, root, head)`, return; (5) `remote = await decryptItem(ring, head.record.keyId, rel, await getBlob(…, head.record.sha256))`; (6) `snapshot !== null && sha256Hex(remote) === snapshot.hash` → `recordBase(rel, snapshot, head.seq, head.record.sha256)` (the same bytes already at the head, which is what a re-push after a dropped reply looks like), return; (7) `snapshot === null` (removed here, written there) → `landWrite(host, root, head, remote)`, return; (8) `isMergedJson(rel)` → `landWrite(host, root, head, remote)` (the merge lands and the file reads dirty against `head.seq`, so the next cycle pushes the merge), return; (9) `newerSide(snapshot.mtimeMs, host.device.id, head.record.mtimeMs, head.device)`: `'local'` → `captureLoser(root, rel, remote, 'remote-lost')` and re-`store` the write with `base: head.seq`; `'remote'` → `captureLoser(root, rel, snapshot.bytes, 'local-lost')`, `putBlob` the local ciphertext and `store` one `{ kind: 'capture', record }` for it, then `landWrite(host, root, head, remote)`.
-- [ ] `push.test.ts` over a fake `transport` answering per route from an in-memory log: `it('never puts an unchanged file', …)`, `it('never stores a page without an ID', …)`, `it('tombstones every row under a removed folder', …)`, `it('re-stores a stale write whose local file is newer and captures the remote', …)`, `it('captures a stale write whose local file is older, ships the capture, and lands the remote', …)`, `it('records the base when the stale head already holds the same bytes', …)`, `it('lands a merged JSON over a stale head and leaves it dirty', …)`, `it('follows a rename head to the new path', …)`, `it('ships one rename per base row and moves the rows', …)`, `it('sends 450 dirty paths in three batches, deletes first', …)`, `it('replays a dropped store once under the same request id', …)`, `it('holds a batch the hub never answered in failed', …)`.
+- [x] `push.test.ts` over a fake `transport` answering per route from an in-memory log: `it('never puts an unchanged file', …)`, `it('never stores a page without an ID', …)`, `it('tombstones every row under a removed folder', …)`, `it('re-stores a stale write whose local file is newer and captures the remote', …)`, `it('captures a stale write whose local file is older, ships the capture, and lands the remote', …)`, `it('records the base when the stale head already holds the same bytes', …)`, `it('lands a merged JSON over a stale head and leaves it dirty', …)`, `it('follows a rename head to the new path', …)`, `it('ships one rename per base row and moves the rows', …)`, `it('sends 450 dirty paths in three batches, deletes first', …)`, `it('replays a dropped store once under the same request id', …)`, `it('holds a batch the hub never answered in failed', …)`.
 
 **AFTER**
 
@@ -1838,10 +1838,10 @@ One push per quiet path, each read once under the file's lock; every refusal end
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Client/` passes with the push suite; `npm run test -- Core/Sync/` passes.
-- [ ] `grep -c "BATCH = 200" Core/Sync/Client/push.ts` → 1; `grep -c "binding.address" Core/Sync/handlers.ts` → 0 (every call passes the binding).
-- [ ] `grep -rln "2000\|2_000" Core/Sync --include='*.ts' | grep -v test` → exactly `Core/Sync/Arrival/land.ts` (the window is spelled once); `grep -c "x-pommora-signature" Core/Sync/Client/call.ts` → 1 (the headers are built once).
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Client/` passes with the push suite; `npm run test -- Core/Sync/` passes.
+- [x] `grep -c "BATCH = 200" Core/Sync/Client/push.ts` → 1; `grep -c "binding.address" Core/Sync/handlers.ts` → 0 (every call passes the binding).
+- [x] `grep -rln "2000\|2_000" Core/Sync --include='*.ts' | grep -v test` → exactly `Core/Sync/Arrival/land.ts` (the window is spelled once); `grep -c "x-pommora-signature" Core/Sync/Client/call.ts` → 1 (the headers are built once).
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 7.3
 
@@ -1855,10 +1855,10 @@ The `sync` scope holds a `SyncScope` (`{ address, pin?, cursor }`, Task 5.2). `r
 
 **CHANGE**
 
-- [ ] `pull.ts`: `export async function pullOnce(session: Session, waitMs = 25_000): Promise<'applied' | 'idle' | 'resync' | 'revoked' | 'error'>`, in order: (1) `outcome = await call(host, target, 'pull', { nexusId, cursor: binding.cursor, waitMs }, { timeoutMs: waitMs + 5_000 })` (the transport waits out the hub's long poll and five seconds more); (2) status 409 with `error: 'resync'` → `writeValue('sync', { ...binding, cursor: 0 })` and return `'resync'`; `refusal?.error === 'not-found'` while `(await host.secrets.get(ring name)) !== null` (this device once unwrapped the ring, so the hub has revoked it) → `forgetKeys(host, nexusId)` and return `'revoked'`; a status other than 200 → return `'error'`; (3) for each `change` in `reply.changes`, in order: (a) `base = readBase(change.path)`; `base && change.seq <= base.version` → skip (this device already holds it, its own pushes included); (b) `dirtyPending().has(change.path) || (await isDirty(root, change.path))` → `await pushDirty(session, [change.path])`, re-read the base, and repeat (a) once; (c) by `change.kind`: `write` → `plaintext = await decryptItem(ring, record.keyId, change.path, await getBlob(…, record.sha256))` (a null blob → return `'error'`) then `landWrite(host, root, change, plaintext)`; `delete` → `landDelete(host, root, change)`; `rename` → `landRename(host, root, change)`; (d) `writeValue('sync', { ...binding, cursor: change.seq })`; (4) return `reply.changes.length ? 'applied' : 'idle'`. The loop in `session.ts` (Task 7.4) calls `pullOnce` repeatedly, runs `reconcile` on `'resync'`, stops on `'revoked'`, and backs off on `'error'` (1 s, 2 s, 4 s, capped at 30 s).
-- [ ] `reconcile.ts`: `export async function reconcile(session: Session): Promise<void>`, in order: (1) `admits = manifestAdmits(nexusId, scope)`, `local = await listPathsUnder(root, root, (rel, _kind, siblings) => admits(rel, siblings))`; (2) `heads = new Map<string, Change>()` filled by `pull` from cursor 0 with `waitMs: 0`, page after page until `hasMore` is false, applying each change in `seq` order: a `write` sets its path; a `rename` deletes the `from` entry and sets the new path; a `delete` sets its path to the tombstone (kept, never dropped, so a local file the hub has since deleted meets its tombstone below); `top` is the highest `seq` seen; (3) for each local entry: no head → collect into `toPush`; a `write` or `rename` head whose `record.sha256` equals the `blobSha` of an existing base row → nothing; any other head, a tombstone included → `resolveStale(session, rel, head)`, whose steps record the base on matching bytes, land a tombstone or a merge, and push or capture on a true conflict (never a push with `base: null`); (4) `pushDirty(session, toPush)`; (5) for each non-tombstone head with no local entry → `landWrite` / `landRename` as in `pullOnce`; (6) `writeValue('sync', { ...binding, cursor: top })`.
-- [ ] `rescope(session: Session, scope: WatchScope): Promise<void>` in `reconcile.ts`: returns at once when `sameScope(scope, session.scope)` (`Core/Paths/exclusion.ts`), since the settings file is also written by personalization, the profile fields, and the view modes, and none of those may cost a walk; otherwise `admits = manifestAdmits(nexusId, scope)`; every base row whose `path` fails `admits` is `deleteBase`d with no tombstone; `session.scope = scope`; then `reconcile(session)` for what newly passes. Task 7.4's dirty handler calls it when the settings file is among the dirty paths.
-- [ ] `pull.test.ts` over a fake transport and `memoryStores()`: `it('lands two pulled writes in order and advances the cursor per change', …)`, `it('lands nothing for a change the base already holds', …)`, `it('pushes a dirty path before landing over it', …)`, `it('answers resync when the cursor is past the head', …)`, `it('waits out the long poll before the transport times out', …)` (the recorded request's `timeoutMs` is `waitMs + 5_000`), `it('forgets its keys and answers revoked on not-found with a cached ring', …)`. `reconcile.test.ts`: `it('pushes everything to an empty hub', …)`, `it('lands everything into an empty copy', …)`, `it('writes nothing and seeds every base when both sides match', …)`, `it('follows a rename in the log to the new path', …)`, `it('lands a tombstone over a local file the hub deleted', …)`, `it('drops base rows on an exclusion change and stores no delete', …)`, `it('walks nothing when the settings change leaves the scope alone', …)`.
+- [x] `pull.ts`: `export async function pullOnce(session: Session, waitMs = 25_000): Promise<'applied' | 'idle' | 'resync' | 'revoked' | 'error'>`, in order: (1) `outcome = await call(host, target, 'pull', { nexusId, cursor: binding.cursor, waitMs }, { timeoutMs: waitMs + 5_000 })` (the transport waits out the hub's long poll and five seconds more); (2) status 409 with `error: 'resync'` → `writeValue('sync', { ...binding, cursor: 0 })` and return `'resync'`; `refusal?.error === 'not-found'` while `(await host.secrets.get(ring name)) !== null` (this device once unwrapped the ring, so the hub has revoked it) → `forgetKeys(host, nexusId)` and return `'revoked'`; a status other than 200 → return `'error'`; (3) for each `change` in `reply.changes`, in order: (a) `base = readBase(change.path)`; `base && change.seq <= base.version` → skip (this device already holds it, its own pushes included); (b) `dirtyPending().has(change.path) || (await isDirty(root, change.path))` → `await pushDirty(session, [change.path])`, re-read the base, and repeat (a) once; (c) by `change.kind`: `write` → `plaintext = await decryptItem(ring, record.keyId, change.path, await getBlob(…, record.sha256))` (a null blob → return `'error'`) then `landWrite(host, root, change, plaintext)`; `delete` → `landDelete(host, root, change)`; `rename` → `landRename(host, root, change)`; (d) `writeValue('sync', { ...binding, cursor: change.seq })`; (4) return `reply.changes.length ? 'applied' : 'idle'`. The loop in `session.ts` (Task 7.4) calls `pullOnce` repeatedly, runs `reconcile` on `'resync'`, stops on `'revoked'`, and backs off on `'error'` (1 s, 2 s, 4 s, capped at 30 s).
+- [x] `reconcile.ts`: `export async function reconcile(session: Session): Promise<void>`, in order: (1) `admits = manifestAdmits(nexusId, scope)`, `local = await listPathsUnder(root, root, (rel, _kind, siblings) => admits(rel, siblings))`; (2) `heads = new Map<string, Change>()` filled by `pull` from cursor 0 with `waitMs: 0`, page after page until `hasMore` is false, applying each change in `seq` order: a `write` sets its path; a `rename` deletes the `from` entry and sets the new path; a `delete` sets its path to the tombstone (kept, never dropped, so a local file the hub has since deleted meets its tombstone below); `top` is the highest `seq` seen; (3) for each local entry: no head → collect into `toPush`; a `write` or `rename` head whose `record.sha256` equals the `blobSha` of an existing base row → nothing; any other head, a tombstone included → `resolveStale(session, rel, head)`, whose steps record the base on matching bytes, land a tombstone or a merge, and push or capture on a true conflict (never a push with `base: null`); (4) `pushDirty(session, toPush)`; (5) for each non-tombstone head with no local entry → `landWrite` / `landRename` as in `pullOnce`; (6) `writeValue('sync', { ...binding, cursor: top })`.
+- [x] `rescope(session: Session, scope: WatchScope): Promise<void>` in `reconcile.ts`: returns at once when `sameScope(scope, session.scope)` (`Core/Paths/exclusion.ts`), since the settings file is also written by personalization, the profile fields, and the view modes, and none of those may cost a walk; otherwise `admits = manifestAdmits(nexusId, scope)`; every base row whose `path` fails `admits` is `deleteBase`d with no tombstone; `session.scope = scope`; then `reconcile(session)` for what newly passes. Task 7.4's dirty handler calls it when the settings file is among the dirty paths.
+- [x] `pull.test.ts` over a fake transport and `memoryStores()`: `it('lands two pulled writes in order and advances the cursor per change', …)`, `it('lands nothing for a change the base already holds', …)`, `it('pushes a dirty path before landing over it', …)`, `it('answers resync when the cursor is past the head', …)`, `it('waits out the long poll before the transport times out', …)` (the recorded request's `timeoutMs` is `waitMs + 5_000`), `it('forgets its keys and answers revoked on not-found with a cached ring', …)`. `reconcile.test.ts`: `it('pushes everything to an empty hub', …)`, `it('lands everything into an empty copy', …)`, `it('writes nothing and seeds every base when both sides match', …)`, `it('follows a rename in the log to the new path', …)`, `it('lands a tombstone over a local file the hub deleted', …)`, `it('drops base rows on an exclusion change and stores no delete', …)`, `it('walks nothing when the settings change leaves the scope alone', …)`.
 
 **AFTER**
 
@@ -1866,9 +1866,9 @@ A device that was away catches up in order and never lands over an unpushed edit
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/Client/` passes.
-- [ ] `grep -c "writeValue('sync'" Core/Sync/Client/pull.ts` → 2; `grep -c "resolveStale" Core/Sync/Client/reconcile.ts` → 2 (the import and the one call).
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/Client/` passes.
+- [x] `grep -c "writeValue('sync'" Core/Sync/Client/pull.ts` → 2; `grep -c "resolveStale" Core/Sync/Client/reconcile.ts` → 2 (the import and the one call).
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 7.4
 
@@ -1912,10 +1912,10 @@ A device that was away catches up in order and never lands over an unpushed edit
 
 **CHANGE**
 
-- [ ] `bridge.ts`: `'sync:now': { args: []; reply: Result<SyncState> }` after `'sync:revoke'`; `Pushes` gains `'sync:changed': SyncStatus` after `'tiles:changed'`. The payload is the status alone, since a full `SyncState` would cost a `devices` round trip per transition.
-- [ ] `session.ts` gains, beside the `Session` interface, the module state `let session: Session | null`, `let loop: Promise<void> | null`, `let retry: ReturnType<typeof setTimeout> | null`, and `let chain: Promise<void> = Promise.resolve()`. `run<T>(work: () => Promise<T>): Promise<T>` is `const next = chain.then(work); chain = next.then(() => {}, () => {}); return next`, so the caller gets `work`'s value and one rejection never poisons the chain; every `pushDirty`, `pushRename`, `pullOnce`, `reconcile`, and `rescope` the session makes goes through `run`, so no push and no landing ever overlap on this device, which is what G-3 (the decision log: one sync loop per device, so no item is pushed or landed twice at once) asks for. `export async function startSession(ctx: HostContext, root: string, nexusId: string): Promise<void>`, in order: (1) `stopSession()`; (2) `host = syncHost(ctx)`; null → `setStatus(ctx, { state: 'off', why: 'This device has no identity.' })` and return; (3) `binding = readValue<SyncScope>('sync')`; null → return; (4) `!syncStore()` → `setStatus(ctx, { state: 'off', reason: 'no-db', why: "This nexus's database is unavailable; sync is off for this session." })` and return; (5) `ring = await loadRing(host, nexusId, null)`; null → `outcome = await call(host, binding, 'info', { nexusId })`: on 200, `ring = await loadRing(host, nexusId, outcome.reply.info)` (a device approved while pending, or a creator whose cache was cleared, gets its entries here); on 404, this device is pending → `setStatus(ctx, { state: 'off', reason: 'pending', why: 'Waiting for approval from another device.' })`, install nothing, and `retry = setTimeout(…, delay).unref()` re-running this step with `delay` at 5 s, then 10 s, 20 s, capped at 60 s, until `info` answers 200, after which the retry continues through steps (6) to (8) itself; still null after a 200 → `setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })` and return; (6) `session = { host, ctx, root, nexusId, target: binding, ring, scope: await readWatchScope(root), failed: new Set() }`, `installTap(root, nexusId, session.scope, { onDirty, onRename: (from, to) => void run(() => pushRename(session, from, to)) })` where `onDirty(rels)` is `run(async () => { if (rels.includes(SETTINGS_REL)) await rescope(session, await readWatchScope(root)); await pushDirty(session, rels) })` with `SETTINGS_REL` spelled as `` `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}` ``; (7) `readAllBases().length === 0` → `await run(() => reconcile(session))`; else `await run(() => pushDirty(session, [...dirtyPending()]))`; (8) `loop = pulling()`, which captures `self = session` and, while `currentSession() === self` (a stop nulls the session and a restart replaces it, so an old loop ends on its next turn with no flag), runs `outcome = await run(() => pullOnce(self))` and then: `'applied'` or `'idle'`, when `session.failed.size > 0` → `paths = [...session.failed]`, `session.failed.clear()`, `await run(() => pushDirty(session, paths))` (the batch the hub never answered goes again once the hub has answered anything); `'resync'` → `await run(() => reconcile(session))`; `'revoked'` → `stopSession()` then `setStatus(ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })` and return; `'error'` → wait `Math.min(1000 * 2 ** failures, 30_000)`. Status through `status.ts`: `'syncing'` around a push or an applied pull, `'idle'` with `lastAt: Date.now()` afterward, `'error'` with `why` from the last refusal. `export function stopSession(): void` (`clearTimeout(retry)`, `uninstallTap()`, `setStatus(session.ctx, { state: 'off' })` when a session was running, then `session = null`, which is what ends the loop), `export async function syncNow(): Promise<void>` (returns at once with no session; else `paths = [...dirtyPending(), ...session.failed]`, `session.failed.clear()`, `run(() => pushDirty(session, paths))` then `run(() => pullOnce(session, 0))`), `export const currentSession = (): Session | null => session`.
-- [ ] `handlers.ts`: `state()` answers `status: currentStatus()` (from `./Client/status`); its revoked branch (Task 5.2) calls `stopSession()` before `forgetKeys` and then `setStatus(ctx, …)` with the revoked status, so `currentStatus()` reads revoked afterward rather than plain `off`; `'sync:now': withRoot(async (root, ctx) => { await syncNow(); return state(root, ctx) })`; `sync:connect` ends with `await startSession(ctx, root, nexusId)` before `state`; `sync:disconnect` calls `stopSession()` first. `Core/Nexus/handlers.ts` `openNexusSequence`: `void startSession(ctx, root, (getLiveTree() ?? (await refreshTree(root))).nexus.id)` after `seedContentIndex(root)` inside the `root !== priorRoot` block, and nothing outside it (`startSession` step (1) stops the prior root's session; a re-point to the same root keeps its loop).
-- [ ] `session.test.ts` over a fake transport, `memoryStores()`, and a recording `ctx.push`: `it('reports off with the database reason when no store is installed', …)`, `it('reconciles once when the base table is empty', …)`, `it('starts once a pending device is approved', …)` (`vi.useFakeTimers()`; `info` answers 404 twice then 200; the status is `pending` after the first, the tap is installed after the third), `it('serializes a push and a pull through one chain', …)` (a pull that resolves late never overlaps a push begun after it), `it('re-pushes a failed batch after the next answered pull', …)`, `it('rescopes before pushing when the settings file is dirty', …)`, `it('pushes then pulls on syncNow, failed paths included', …)`, `it('stops and reports revoked when a pull answers revoked', …)`, `it('pushes sync:changed on every transition', …)`. `handlers.test.ts` gains `it('answers the loop status from sync:state', …)`.
+- [x] `bridge.ts`: `'sync:now': { args: []; reply: Result<SyncState> }` after `'sync:revoke'`; `Pushes` gains `'sync:changed': SyncStatus` after `'tiles:changed'`. The payload is the status alone, since a full `SyncState` would cost a `devices` round trip per transition.
+- [x] `session.ts` gains, beside the `Session` interface, the module state `let session: Session | null`, `let loop: Promise<void> | null`, `let retry: ReturnType<typeof setTimeout> | null`, and `let chain: Promise<void> = Promise.resolve()`. `run<T>(work: () => Promise<T>): Promise<T>` is `const next = chain.then(work); chain = next.then(() => {}, () => {}); return next`, so the caller gets `work`'s value and one rejection never poisons the chain; every `pushDirty`, `pushRename`, `pullOnce`, `reconcile`, and `rescope` the session makes goes through `run`, so no push and no landing ever overlap on this device, which is what G-3 (the decision log: one sync loop per device, so no item is pushed or landed twice at once) asks for. `export async function startSession(ctx: HostContext, root: string, nexusId: string): Promise<void>`, in order: (1) `stopSession()`; (2) `host = syncHost(ctx)`; null → `setStatus(ctx, { state: 'off', why: 'This device has no identity.' })` and return; (3) `binding = readValue<SyncScope>('sync')`; null → return; (4) `!syncStore()` → `setStatus(ctx, { state: 'off', reason: 'no-db', why: "This nexus's database is unavailable; sync is off for this session." })` and return; (5) `ring = await loadRing(host, nexusId, null)`; null → `outcome = await call(host, binding, 'info', { nexusId })`: on 200, `ring = await loadRing(host, nexusId, outcome.reply.info)` (a device approved while pending, or a creator whose cache was cleared, gets its entries here); on 404, this device is pending → `setStatus(ctx, { state: 'off', reason: 'pending', why: 'Waiting for approval from another device.' })`, install nothing, and `retry = setTimeout(…, delay).unref()` re-running this step with `delay` at 5 s, then 10 s, 20 s, capped at 60 s, until `info` answers 200, after which the retry continues through steps (6) to (8) itself; still null after a 200 → `setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })` and return; (6) `session = { host, ctx, root, nexusId, target: binding, ring, scope: await readWatchScope(root), failed: new Set() }`, `installTap(root, nexusId, session.scope, { onDirty, onRename: (from, to) => void run(() => pushRename(session, from, to)) })` where `onDirty(rels)` is `run(async () => { if (rels.includes(SETTINGS_REL)) await rescope(session, await readWatchScope(root)); await pushDirty(session, rels) })` with `SETTINGS_REL` spelled as `` `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}` ``; (7) `readAllBases().length === 0` → `await run(() => reconcile(session))`; else `await run(() => pushDirty(session, [...dirtyPending()]))`; (8) `loop = pulling()`, which captures `self = session` and, while `currentSession() === self` (a stop nulls the session and a restart replaces it, so an old loop ends on its next turn with no flag), runs `outcome = await run(() => pullOnce(self))` and then: `'applied'` or `'idle'`, when `session.failed.size > 0` → `paths = [...session.failed]`, `session.failed.clear()`, `await run(() => pushDirty(session, paths))` (the batch the hub never answered goes again once the hub has answered anything); `'resync'` → `await run(() => reconcile(session))`; `'revoked'` → `stopSession()` then `setStatus(ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })` and return; `'error'` → wait `Math.min(1000 * 2 ** failures, 30_000)`. Status through `status.ts`: `'syncing'` around a push or an applied pull, `'idle'` with `lastAt: Date.now()` afterward, `'error'` with `why` from the last refusal. `export function stopSession(): void` (`clearTimeout(retry)`, `uninstallTap()`, `setStatus(session.ctx, { state: 'off' })` when a session was running, then `session = null`, which is what ends the loop), `export async function syncNow(): Promise<void>` (returns at once with no session; else `paths = [...dirtyPending(), ...session.failed]`, `session.failed.clear()`, `run(() => pushDirty(session, paths))` then `run(() => pullOnce(session, 0))`), `export const currentSession = (): Session | null => session`.
+- [x] `handlers.ts`: `state()` answers `status: currentStatus()` (from `./Client/status`); its revoked branch (Task 5.2) calls `stopSession()` before `forgetKeys` and then `setStatus(ctx, …)` with the revoked status, so `currentStatus()` reads revoked afterward rather than plain `off`; `'sync:now': withRoot(async (root, ctx) => { await syncNow(); return state(root, ctx) })`; `sync:connect` ends with `await startSession(ctx, root, nexusId)` before `state`; `sync:disconnect` calls `stopSession()` first. `Core/Nexus/handlers.ts` `openNexusSequence`: `void startSession(ctx, root, (getLiveTree() ?? (await refreshTree(root))).nexus.id)` after `seedContentIndex(root)` inside the `root !== priorRoot` block, and nothing outside it (`startSession` step (1) stops the prior root's session; a re-point to the same root keeps its loop).
+- [x] `session.test.ts` over a fake transport, `memoryStores()`, and a recording `ctx.push`: `it('reports off with the database reason when no store is installed', …)`, `it('reconciles once when the base table is empty', …)`, `it('starts once a pending device is approved', …)` (`vi.useFakeTimers()`; `info` answers 404 twice then 200; the status is `pending` after the first, the tap is installed after the third), `it('serializes a push and a pull through one chain', …)` (a pull that resolves late never overlaps a push begun after it), `it('re-pushes a failed batch after the next answered pull', …)`, `it('rescopes before pushing when the settings file is dirty', …)`, `it('pushes then pulls on syncNow, failed paths included', …)`, `it('stops and reports revoked when a pull answers revoked', …)`, `it('pushes sync:changed on every transition', …)`. `handlers.test.ts` gains `it('answers the loop status from sync:state', …)`.
 
 **AFTER**
 
@@ -1923,15 +1923,15 @@ Opening a bound Nexus syncs it, a pending device waits for its approval, and eve
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Sync/` passes; `npm run typecheck` exits 0.
-- [ ] `grep -c "^  '" Core/Contract/bridge.ts` → 121; `grep -c "startSession\|stopSession" Core/Nexus/handlers.ts` → 2 (the import line and the one call).
-- [ ] Smoke launch, then the two-instance recipe once: bind A with a password, copy the Nexus to B with the six database files stripped, bind B, approve B from A, `mutate/createPage` on A, confirm the file on B's disk within five seconds by polling `stat` from a shell loop; record the time under this task.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Sync/` passes; `npm run typecheck` exits 0.
+- [x] `grep -c "^  '" Core/Contract/bridge.ts` → 121; `grep -c "startSession\|stopSession" Core/Nexus/handlers.ts` → 2 (the import line and the one call).
+- [x] Smoke launch, then the two-instance recipe once: bind A with a password, copy the Nexus to B with the six database files stripped, bind B, approve B from A, `mutate/createPage` on A, confirm the file on B's disk within five seconds by polling `stat` from a shell loop; record the time under this task.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; engine and host graph unchanged.
-- [ ] The Task 7.4 two-instance check passed and its time is recorded.
+- [x] Gates green; engine and host graph unchanged.
+- [x] The Task 7.4 two-instance check passed and its time is recorded.
 
 ### Phase 8 — Editor
 
@@ -2003,11 +2003,11 @@ export function tilesChangedIn(
 
 **CHANGE**
 
-- [ ] `bridge.ts` `Pushes` gains `'pages:changed': string[]` after `'tiles:changed'` (relative paths whose body or frontmatter landed from outside the app).
-- [ ] `watchPatch.ts`: `export type WatchClass`.
-- [ ] `watchSettle.ts`: `export function classifyBatch(events: WatchEvent[], root: string, scope: WatchScope): WatchClass[]` returning `[]` with no live tree and otherwise `events.map((ev) => classifyEvent(held, root, ev, scope))`; `valueChangesOf(classified: WatchClass[], tree: NexusTree | null)` and `tilesChangedIn(classified: WatchClass[])` iterate the given array; `export function pagesChangedIn(classified: WatchClass[]): string[]` returns the `rel` of every `page-upsert`, deduplicated in order.
-- [ ] `watcher.ts` `settle()`: `const classified = classifyBatch(events, root, scope)` once after the tree push; `valueChangesOf(classified, outcome === 'refresh' ? null : tree)`, `tilesChangedIn(classified)`, and `const pages = pagesChangedIn(classified); if (pages.length) pushToWindow(win, 'pages:changed', pages)`.
-- [ ] `watchSettle.test.ts` gains `describe('classifyBatch', …)` with `it('names a written page in pages:changed and its container in values:changed', …)` and `it('classifies each event once', …)` (`vi.spyOn(watchPatch, 'classifyEvent')` called `events.length` times across the three collectors).
+- [x] `bridge.ts` `Pushes` gains `'pages:changed': string[]` after `'tiles:changed'` (relative paths whose body or frontmatter landed from outside the app).
+- [x] `watchPatch.ts`: `export type WatchClass`.
+- [x] `watchSettle.ts`: `export function classifyBatch(events: WatchEvent[], root: string, scope: WatchScope): WatchClass[]` returning `[]` with no live tree and otherwise `events.map((ev) => classifyEvent(held, root, ev, scope))`; `valueChangesOf(classified: WatchClass[], tree: NexusTree | null)` and `tilesChangedIn(classified: WatchClass[])` iterate the given array; `export function pagesChangedIn(classified: WatchClass[]): string[]` returns the `rel` of every `page-upsert`, deduplicated in order.
+- [x] `watcher.ts` `settle()`: `const classified = classifyBatch(events, root, scope)` once after the tree push; `valueChangesOf(classified, outcome === 'refresh' ? null : tree)`, `tilesChangedIn(classified)`, and `const pages = pagesChangedIn(classified); if (pages.length) pushToWindow(win, 'pages:changed', pages)`.
+- [x] `watchSettle.test.ts` gains `describe('classifyBatch', …)` with `it('names a written page in pages:changed and its container in values:changed', …)` and `it('classifies each event once', …)` (`vi.spyOn(watchPatch, 'classifyEvent')` called `events.length` times across the three collectors).
 
 **AFTER**
 
@@ -2024,8 +2024,8 @@ One pass, three pushes.
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Nexus/` passes; `grep -c "classifyEvent(" Core/Nexus/watchSettle.ts` → 1.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Nexus/` passes; `grep -c "classifyEvent(" Core/Nexus/watchSettle.ts` → 1.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 8.2
 
@@ -2156,13 +2156,13 @@ export function cancelPageSave(path: string): void {
 
 **CHANGE**
 
-- [ ] `pageDetail.ts`: `PageDetail` gains `bodyHash: string` after `body`; `readPageDetail` sets `bodyHash: machine().sha256Hex(body)` over the same `splitEnvelope(content).body`. `bridge.ts`: `'page:updateBody': { args: [relPath: string, body: string, baseHash: string]; reply: Result<BodyWrite> }` with `export interface BodyWrite { hash: string; stale: boolean }` in `pageDetail.ts`: `stale: false` with the written body's hash, or `stale: true` with the on-disk body's hash and the file untouched.
-- [ ] `page.ts`: `updatePageBody(absFile: string, body: string, baseHash?: string): Promise<Result<PageWrite | { stale: string }>>`: inside the lock, after the existence check, when `baseHash !== undefined`: `const current = splitEnvelope((await machine().readText(absFile)) ?? '').body; if (machine().sha256Hex(current) !== baseHash) return ok({ stale: current })`; otherwise as today. Restore and the six test calls pass no hash.
-- [ ] `fileHistory.ts` `writeBody(root, absPath, body, source, baseHash?)` returns `Promise<Result<BodyWrite>>`: `'stale' in r.value` → `ok({ hash: machine().sha256Hex(r.value.stale), stale: true })` before anything else runs; the success path ends `return ok({ hash: writtenHash, stale: false })`. `restoreSnapshot` reads `r.ok` as today. The channel reads `baseHash` as its third argument (`isString` or `fail('operation-failed', 'A base hash is required.')`) and passes it through.
-- [ ] `pageDetailCache.ts`: `const baseByPath = new Map<string, { text: string; hash: string }>()`; `cachePageDetail` seeds `baseByPath` from `detail.body` and `detail.bodyHash` only when the path holds no base yet (a refresh after a save must not move the base back to disk prose the editor has since edited past); `export const readBodyBase = (path: string) => baseByPath.get(path) ?? null`; `export function setBodyBase(path: string, base: { text: string; hash: string }): void` sets the base and patches the cached detail's `bodyHash` to `base.hash` when a detail is held, so the two never disagree; `writeThroughBody` touches the detail's `body` alone and never the base; every eviction that deletes from `detailByPath` deletes from `baseByPath` too.
-- [ ] `saveScheduler.ts`: `type Ack = Result<BodyWrite>` and `flush` re-schedules only when `!ack.ok`; `schedulePageSave`'s save closure becomes, at flush time: `let base = readBodyBase(path); if (!base) { await fetchPageDetail(path); writeThroughBody(path, body); base = readBodyBase(path) }; const r = await host().ask('page:updateBody', path, body, base?.hash ?? ''); if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash }); else if (r.ok) staleSink?.(path); return r` (the write-through after the fetch keeps a remounting embed on the live buffer rather than the disk prose the fetch brought in). `export function setStaleSaveSink(fn: ((path: string) => void) | null): void` (installed in Task 8.3). `cancelPageSave`'s comment stays true and stays.
-- [ ] `Core/Testing/fixtures.ts` (Task 3.2) gains `detail(overrides?: Partial<PageDetail>): PageDetail` (id `p1`, title `Page`, path `Notes/Page.md`, empty frontmatter, empty body, `bodyHash` the machine's hash of that body). The nine tests that build a `PageDetail` literal build it through `detail()` instead: `GlancePane.test.tsx`'s `detail` constant, `useWindowWarm.test.tsx`'s two `cachePageDetail` literals, `PageTile.test.tsx`'s and `editorHost.test.ts`'s local `detail(...)` helpers and `PropertyPanel.test.tsx`'s `detailWith(...)` (each deleted in favor of the fixture), `PageView.test.tsx`'s slot detail, `replaceBody.test.ts`'s `detail` constant, and the literals in `pageDetailCache.test.ts` and `store.test.tsx`.
-- [ ] `page.test.ts` gains `it('refuses a body whose base hash is not the disk body and leaves the file', …)`, `it('writes under the right base hash and answers the new hash', …)`, `it('writes unconditionally with no base hash', …)`. `saveScheduler.test.ts` gains `it('does not requeue a stale ack and calls the sink once', …)`, `it('opens the page once when no base is held before saving', …)`, `it('writes the live body through after the opening fetch', …)`. `fileHistory.test.ts` gains `it('answers stale without recording a snapshot', …)`. `pageDetailCache.test.ts` gains `it('holds the body base beside the detail and drops both together', …)`, `it('keeps the body base across write-through and refresh', …)` (a `writeThroughBody` then a `cachePageDetail` of the disk detail leave `readBodyBase(path)` as it was set), and `it('patches the cached bodyHash when the base is set', …)`.
+- [x] `pageDetail.ts`: `PageDetail` gains `bodyHash: string` after `body`; `readPageDetail` sets `bodyHash: machine().sha256Hex(body)` over the same `splitEnvelope(content).body`. `bridge.ts`: `'page:updateBody': { args: [relPath: string, body: string, baseHash: string]; reply: Result<BodyWrite> }` with `export interface BodyWrite { hash: string; stale: boolean }` in `pageDetail.ts`: `stale: false` with the written body's hash, or `stale: true` with the on-disk body's hash and the file untouched.
+- [x] `page.ts`: `updatePageBody(absFile: string, body: string, baseHash?: string): Promise<Result<PageWrite | { stale: string }>>`: inside the lock, after the existence check, when `baseHash !== undefined`: `const current = splitEnvelope((await machine().readText(absFile)) ?? '').body; if (machine().sha256Hex(current) !== baseHash) return ok({ stale: current })`; otherwise as today. Restore and the six test calls pass no hash.
+- [x] `fileHistory.ts` `writeBody(root, absPath, body, source, baseHash?)` returns `Promise<Result<BodyWrite>>`: `'stale' in r.value` → `ok({ hash: machine().sha256Hex(r.value.stale), stale: true })` before anything else runs; the success path ends `return ok({ hash: writtenHash, stale: false })`. `restoreSnapshot` reads `r.ok` as today. The channel reads `baseHash` as its third argument (`isString` or `fail('operation-failed', 'A base hash is required.')`) and passes it through.
+- [x] `pageDetailCache.ts`: `const baseByPath = new Map<string, { text: string; hash: string }>()`; `cachePageDetail` seeds `baseByPath` from `detail.body` and `detail.bodyHash` only when the path holds no base yet (a refresh after a save must not move the base back to disk prose the editor has since edited past); `export const readBodyBase = (path: string) => baseByPath.get(path) ?? null`; `export function setBodyBase(path: string, base: { text: string; hash: string }): void` sets the base and patches the cached detail's `bodyHash` to `base.hash` when a detail is held, so the two never disagree; `writeThroughBody` touches the detail's `body` alone and never the base; every eviction that deletes from `detailByPath` deletes from `baseByPath` too.
+- [x] `saveScheduler.ts`: `type Ack = Result<BodyWrite>` and `flush` re-schedules only when `!ack.ok`; `schedulePageSave`'s save closure becomes, at flush time: `let base = readBodyBase(path); if (!base) { await fetchPageDetail(path); writeThroughBody(path, body); base = readBodyBase(path) }; const r = await host().ask('page:updateBody', path, body, base?.hash ?? ''); if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash }); else if (r.ok) staleSink?.(path); return r` (the write-through after the fetch keeps a remounting embed on the live buffer rather than the disk prose the fetch brought in). `export function setStaleSaveSink(fn: ((path: string) => void) | null): void` (installed in Task 8.3). `cancelPageSave`'s comment stays true and stays.
+- [x] `Core/Testing/fixtures.ts` (Task 3.2) gains `detail(overrides?: Partial<PageDetail>): PageDetail` (id `p1`, title `Page`, path `Notes/Page.md`, empty frontmatter, empty body, `bodyHash` the machine's hash of that body). The nine tests that build a `PageDetail` literal build it through `detail()` instead: `GlancePane.test.tsx`'s `detail` constant, `useWindowWarm.test.tsx`'s two `cachePageDetail` literals, `PageTile.test.tsx`'s and `editorHost.test.ts`'s local `detail(...)` helpers and `PropertyPanel.test.tsx`'s `detailWith(...)` (each deleted in favor of the fixture), `PageView.test.tsx`'s slot detail, `replaceBody.test.ts`'s `detail` constant, and the literals in `pageDetailCache.test.ts` and `store.test.tsx`.
+- [x] `page.test.ts` gains `it('refuses a body whose base hash is not the disk body and leaves the file', …)`, `it('writes under the right base hash and answers the new hash', …)`, `it('writes unconditionally with no base hash', …)`. `saveScheduler.test.ts` gains `it('does not requeue a stale ack and calls the sink once', …)`, `it('opens the page once when no base is held before saving', …)`, `it('writes the live body through after the opening fetch', …)`. `fileHistory.test.ts` gains `it('answers stale without recording a snapshot', …)`. `pageDetailCache.test.ts` gains `it('holds the body base beside the detail and drops both together', …)`, `it('keeps the body base across write-through and refresh', …)` (a `writeThroughBody` then a `cachePageDetail` of the disk detail leave `readBodyBase(path)` as it was set), and `it('patches the cached bodyHash when the base is set', …)`.
 
 **AFTER**
 
@@ -2190,9 +2190,9 @@ A save is an assertion about the body it started from; a landing between two key
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Pages/`, `npm run test -- Core/Session/`, `npm run test -- Core/Nexus/`, and `npm run test -- Core/Files/` pass; `npm run typecheck` exits 0.
-- [ ] `grep -rn "updatePageBody(" Core --include='*.ts' | grep -v "\.test\." | wc -l` → 2 (the definition and `writeBody`).
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Pages/`, `npm run test -- Core/Session/`, `npm run test -- Core/Nexus/`, and `npm run test -- Core/Files/` pass; `npm run typecheck` exits 0.
+- [x] `grep -rn "updatePageBody(" Core --include='*.ts' | grep -v "\.test\." | wc -l` → 2 (the definition and `writeBody`).
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 8.3
 
@@ -2269,15 +2269,15 @@ export function verdictFilter(
 
 **CHANGE**
 
-- [ ] `npm install @codemirror/merge@^6 -w Core` from the root, which writes the `^6` pin into `Core/package.json` dependencies (its peers `@codemirror/state` and `@codemirror/view` are present) and updates `package-lock.json`. `Dependencies.md`'s State · Data · Search list gains `- **@codemirror/merge** — the \`diff\` behind the three-way merge a landing makes in an open page, imported by \`Core/Pages/merge3.ts\` alone, which the engine and host graph tests keep out of the engine. **Decided.**`, and its line 39 "`Sync/server.ts` runs on Node's built-ins alone (`node:http`, `node:sqlite`, `node:crypto`), as plain `node` over the source with type stripping." names `Sync/hub.ts` and adds `node:https` to the list.
-- [ ] `merge3.ts`: `export function merge3(base: string, local: string, remote: string): { text: string; conflicted: boolean }`: `L = diff(base, local)`, `R = diff(base, remote)`; walk both hunk lists in base order building `text` from `base` slices: a hunk from one side whose `[fromA, toA)` overlaps no hunk on the other side applies its `[fromB, toB)` text; a run of overlapping hunks (merged transitively by overlap in base coordinates) applies the remote's replacement for the run's base span and sets `conflicted`; identical replacements on both sides apply once. `merge3.test.ts`: `it('keeps disjoint edits from both sides', …)`, `it('applies the same edit once', …)`, `it('takes remote on an overlap and reports the conflict', …)`, `it('yields remote when local equals base', …)`.
-- [ ] `api.ts`: `import { Annotation, Facet } from '@codemirror/state'` and `export const syncLanding = Annotation.define<boolean>()`. `calloutGuard.ts`: `verdictFilter`'s callback begins `if (!tr.docChanged || tr.annotation(syncLanding)) return tr`, and `carriedAnnotations` gains `const landing = tr.annotation(syncLanding); if (landing !== undefined) out.push(syncLanding.of(landing))`.
-- [ ] `bridge.ts`: `'sync:captureLocal': { args: [relPath: string, text: string]; reply: Result<null> }` after `'sync:now'`; `Core/Sync/handlers.ts`: `'sync:captureLocal': withRoot(async (root, _ctx, rel: unknown, text: unknown) => { if (!isString(rel) || !isString(text)) return fail('operation-failed', 'A path and its text are required.'); await captureLoser(root, rel, new TextEncoder().encode(text), 'merge-lost'); return ok(null) })`.
-- [ ] `pageDetailCache.ts`: `const landingListeners = new Map<string, Set<() => void>>()`; `export function subscribeLanding(path: string, fn: () => void): () => void`; `export function notifyLanding(path: string): boolean` runs the path's listeners and returns whether any ran.
-- [ ] `useBridgeSubscriptions.ts`: `const absorb = (path: string): void => { if (readPageDetail(path) && !notifyLanding(path)) void replaceBody(path) }` with `replaceBody = useSession((s) => s.replaceBody)`; `useEffect(() => dialer().on('pages:changed', (paths) => paths.forEach(absorb)), [replaceBody])` and, in the same effect, `setStaleSaveSink(absorb)` with `setStaleSaveSink(null)` on cleanup.
-- [ ] `PageView.tsx`: `useEffect(() => subscribeLanding(pageDetail.path, onLanding), [pageDetail.path])` for the mounted editor (parked editors do not subscribe, so a parked tab takes `replaceBody`). `onLanding`, in order: (1) `view = editorRef.current`; null → `void replaceBody(path)` and return; `base = readBodyBase(path)?.text` and `local = view.state.doc.toString()`, both read before anything is dropped or fetched (the drop below evicts the base with the detail); (2) `dropPageDetail(path)` (the detail alone, so the warm editor state stays) then `fresh = await fetchPageDetail(path)`; null → return; (3) `merged = merge3(base ?? local, local, fresh.body)`; (4) `merged.conflicted` → `void host().ask('sync:captureLocal', path, local)`, the whole pre-merge buffer once, so what the merge set aside is recoverable in one piece; (5) `merged.text !== local` → `view.dispatch({ changes: { from: 0, to: local.length, insert: merged.text }, annotations: [syncLanding.of(true), Transaction.addToHistory.of(false)] })` with no selection given, then `setPageBody(path, merged.text)`; (6) `setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })`; (7) no explicit save: the dispatch in (5) reaches `updateListener`, whose `onChange` runs `pushLiveBody` and `schedulePageSave(path, merged.text)`, and the debounced flush reads the base set in (6). `PageTile.tsx` keeps its epoch remount.
-- [ ] `Editor-Internals.md` gains one bullet: `- **A landing is one changes-only transaction carrying \`syncLanding\`.** \`verdictFilter\` passes it through and re-carries the annotation; \`Transaction.addToHistory.of(false)\` keeps it out of undo; no selection is given, so the default mapping keeps the caret where the edit left it.`
-- [ ] `PageView.test.tsx` gains `it('merges a landing around the caret without an undo entry', …)` and `it('routes a stale save through the same merge', …)`.
+- [x] `npm install @codemirror/merge@^6 -w Core` from the root, which writes the `^6` pin into `Core/package.json` dependencies (its peers `@codemirror/state` and `@codemirror/view` are present) and updates `package-lock.json`. `Dependencies.md`'s State · Data · Search list gains `- **@codemirror/merge** — the \`diff\` behind the three-way merge a landing makes in an open page, imported by \`Core/Pages/merge3.ts\` alone, which the engine and host graph tests keep out of the engine. **Decided.**`, and its line 39 "`Sync/server.ts` runs on Node's built-ins alone (`node:http`, `node:sqlite`, `node:crypto`), as plain `node` over the source with type stripping." names `Sync/hub.ts` and adds `node:https` to the list.
+- [x] `merge3.ts`: `export function merge3(base: string, local: string, remote: string): { text: string; conflicted: boolean }`: `L = diff(base, local)`, `R = diff(base, remote)`; walk both hunk lists in base order building `text` from `base` slices: a hunk from one side whose `[fromA, toA)` overlaps no hunk on the other side applies its `[fromB, toB)` text; a run of overlapping hunks (merged transitively by overlap in base coordinates) applies the remote's replacement for the run's base span and sets `conflicted`; identical replacements on both sides apply once. `merge3.test.ts`: `it('keeps disjoint edits from both sides', …)`, `it('applies the same edit once', …)`, `it('takes remote on an overlap and reports the conflict', …)`, `it('yields remote when local equals base', …)`.
+- [x] `api.ts`: `import { Annotation, Facet } from '@codemirror/state'` and `export const syncLanding = Annotation.define<boolean>()`. `calloutGuard.ts`: `verdictFilter`'s callback begins `if (!tr.docChanged || tr.annotation(syncLanding)) return tr`, and `carriedAnnotations` gains `const landing = tr.annotation(syncLanding); if (landing !== undefined) out.push(syncLanding.of(landing))`.
+- [x] `bridge.ts`: `'sync:captureLocal': { args: [relPath: string, text: string]; reply: Result<null> }` after `'sync:now'`; `Core/Sync/handlers.ts`: `'sync:captureLocal': withRoot(async (root, _ctx, rel: unknown, text: unknown) => { if (!isString(rel) || !isString(text)) return fail('operation-failed', 'A path and its text are required.'); await captureLoser(root, rel, new TextEncoder().encode(text), 'merge-lost'); return ok(null) })`.
+- [x] `pageDetailCache.ts`: `const landingListeners = new Map<string, Set<() => void>>()`; `export function subscribeLanding(path: string, fn: () => void): () => void`; `export function notifyLanding(path: string): boolean` runs the path's listeners and returns whether any ran.
+- [x] `useBridgeSubscriptions.ts`: `const absorb = (path: string): void => { if (readPageDetail(path) && !notifyLanding(path)) void replaceBody(path) }` with `replaceBody = useSession((s) => s.replaceBody)`; `useEffect(() => dialer().on('pages:changed', (paths) => paths.forEach(absorb)), [replaceBody])` and, in the same effect, `setStaleSaveSink(absorb)` with `setStaleSaveSink(null)` on cleanup.
+- [x] `PageView.tsx`: `useEffect(() => subscribeLanding(pageDetail.path, onLanding), [pageDetail.path])` for the mounted editor (parked editors do not subscribe, so a parked tab takes `replaceBody`). `onLanding`, in order: (1) `view = editorRef.current`; null → `void replaceBody(path)` and return; `base = readBodyBase(path)?.text` and `local = view.state.doc.toString()`, both read before anything is dropped or fetched (the drop below evicts the base with the detail); (2) `dropPageDetail(path)` (the detail alone, so the warm editor state stays) then `fresh = await fetchPageDetail(path)`; null → return; (3) `merged = merge3(base ?? local, local, fresh.body)`; (4) `merged.conflicted` → `void host().ask('sync:captureLocal', path, local)`, the whole pre-merge buffer once, so what the merge set aside is recoverable in one piece; (5) `merged.text !== local` → `view.dispatch({ changes: { from: 0, to: local.length, insert: merged.text }, annotations: [syncLanding.of(true), Transaction.addToHistory.of(false)] })` with no selection given, then `setPageBody(path, merged.text)`; (6) `setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })`; (7) no explicit save: the dispatch in (5) reaches `updateListener`, whose `onChange` runs `pushLiveBody` and `schedulePageSave(path, merged.text)`, and the debounced flush reads the base set in (6). `PageTile.tsx` keeps its epoch remount.
+- [x] `Editor-Internals.md` gains one bullet: `- **A landing is one changes-only transaction carrying \`syncLanding\`.** \`verdictFilter\` passes it through and re-carries the annotation; \`Transaction.addToHistory.of(false)\` keeps it out of undo; no selection is given, so the default mapping keeps the caret where the edit left it.`
+- [x] `PageView.test.tsx` gains `it('merges a landing around the caret without an undo entry', …)` and `it('routes a stale save through the same merge', …)`.
 
 **AFTER**
 
@@ -2285,16 +2285,16 @@ A remote edit appears in the open page a beat after it lands, the caret stays wh
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Pages/` passes with the `merge3` suite; both graph tests still report `['ulidx', 'yaml', 'zod']`.
-- [ ] `npm ls @codemirror/merge -w Core` prints one entry.
-- [ ] Smoke launch, then from the dev instance's console: open a page, place the caret mid-body, append a line to the file from a shell; within two seconds the editor shows the line and the selection head is unchanged; ⌘Z (dispatched as `undo` from `@codemirror/commands` through the console) does not remove the line.
-- [ ] `grep -c "syncLanding" Core/MarkdownPM/Guards/calloutGuard.ts` → 4 (the import, the early return, the carry's read and its re-annotation); `grep -rc "syncLanding" Core/MarkdownPM/Guards/citationGuard.ts Core/MarkdownPM/Guards/aliasGuard.ts` → 0 for each.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Pages/` passes with the `merge3` suite; both graph tests still report `['ulidx', 'yaml', 'zod']`.
+- [x] `npm ls @codemirror/merge -w Core` prints one entry.
+- [x] Smoke launch, then from the dev instance's console: open a page, place the caret mid-body, append a line to the file from a shell; within two seconds the editor shows the line and the selection head is unchanged; ⌘Z (dispatched as `undo` from `@codemirror/commands` through the console) does not remove the line.
+- [x] `grep -c "syncLanding" Core/MarkdownPM/Guards/calloutGuard.ts` → 4 (the import, the early return, the carry's read and its re-annotation); `grep -rc "syncLanding" Core/MarkdownPM/Guards/citationGuard.ts Core/MarkdownPM/Guards/aliasGuard.ts` → 0 for each.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; both graph tests unchanged.
-- [ ] Smoke launch with the Task 8.3 console check recorded.
+- [x] Gates green; both graph tests unchanged.
+- [x] Smoke launch with the Task 8.3 console check recorded.
 
 ### Phase 9 — The Nexus Heading
 
@@ -2351,7 +2351,7 @@ Nothing container-shaped exists. `docker build -f Sync/Dockerfile .` takes the r
 
 **CHANGE**
 
-- [ ] `Sync/Dockerfile`:
+- [x] `Sync/Dockerfile`:
 
 ```dockerfile
 FROM node:24.15-slim
@@ -2367,7 +2367,7 @@ CMD ["node", "Sync/hub.ts"]
 ```
 
   `Sync/Dockerfile.dockerignore`, root-relative since the context is the repository root: `**/node_modules`, `Sync/**/*.test.ts`, `Sync/Testing/`, `Sync/scripts/`. Root `package.json` gains `"sync:image": "docker build -f Sync/Dockerfile -t pommora-hub ."`.
-- [ ] Development-Environment: the sync paragraph (`Sync/hub.ts`, `npm run sync:cert`, the printed pin, the three env names, TLS when the PEM files exist); the two-instance recipe gains the hub start, the bind with a password, the six stripped database files, approve from A, and the note that built output exposes `window.nexus.ask` only; the `--amend` paragraph replaced with what the hook does (rewrites `loc-history.json`, excluded from Biome, and rebuilds the dashboard; the `--only` rule stays for the shared index); one line under the watcher notes on `awaitWriteFinish` and the over-200 ms rename surfacing `Name.md.<digits>`, which the manifest predicate drops.
+- [x] Development-Environment: the sync paragraph (`Sync/hub.ts`, `npm run sync:cert`, the printed pin, the three env names, TLS when the PEM files exist); the two-instance recipe gains the hub start, the bind with a password, the six stripped database files, approve from A, and the note that built output exposes `window.nexus.ask` only; the `--amend` paragraph replaced with what the hook does (rewrites `loc-history.json`, excluded from Biome, and rebuilds the dashboard; the `--only` rule stays for the shared index); one line under the watcher notes on `awaitWriteFinish` and the over-200 ms rename surfacing `Name.md.<digits>`, which the manifest predicate drops.
 
 **AFTER**
 
@@ -2375,9 +2375,9 @@ CMD ["node", "Sync/hub.ts"]
 
 **VERIFY**
 
-- [ ] `grep -c "ENTRYPOINT \[\"tini\"\|^USER node\|POMMORA_SYNC_DATA=/data" Sync/Dockerfile` → 3.
-- [ ] `which docker && npm run sync:image` exits 0; when `which docker` fails, the skip is written to Deviations.
-- [ ] `grep -c "server.ts\|--amend" .claude/Guidelines/Development-Environment.md` → 0; `grep -c "sync:cert\|hub.ts\|window.nexus.ask" .claude/Guidelines/Development-Environment.md` → ≥ 3.
+- [x] `grep -c "ENTRYPOINT \[\"tini\"\|^USER node\|POMMORA_SYNC_DATA=/data" Sync/Dockerfile` → 3.
+- [x] `which docker && npm run sync:image` exits 0; when `which docker` fails, the skip is written to Deviations.
+- [x] `grep -c "server.ts\|--amend" .claude/Guidelines/Development-Environment.md` → 0; `grep -c "sync:cert\|hub.ts\|window.nexus.ask" .claude/Guidelines/Development-Environment.md` → ≥ 3.
 
 #### Task 10.2
 
@@ -2391,9 +2391,9 @@ Task 7.4 proved one landing. The channels the rows drive, as `Core/Contract/brid
 
 **CHANGE**
 
-- [ ] Setup: `npm run build`; `POMMORA_SYNC_DATA=<scratch>/hub npm run sync:cert && POMMORA_SYNC_DATA=<scratch>/hub npm run sync` in the background (note the printed pin); copy `/Users/nathantaichman/NexusOS` to `<scratch>/A` and `<scratch>/B`, deleting `.nexus/nexus.db`, `.nexus/versions.db`, and their `-wal`/`-shm` siblings in both; launch A and B from built output with separate `POMMORA_USERDATA` and `POMMORA_DEBUG_PORT` (9333, 9334) per the recipe; `ask('nexus:openPath', '<scratch>/A')` and the B counterpart; bind A (`ask('sync:connect', 'https://127.0.0.1:7473', '<password>', '<pin>')`), bind B the same way, approve B from A (`ask('sync:approve', '<B id>')`); wait for B's `ask('sync:state')` to answer `status.state === 'idle'`.
-- [ ] A measurement harness: one Node script per instance polling `stat` and a content hash of a named path every 50 ms, printing the first-change timestamp; a reading through `window.nexus.ask('nexus:state')` for the tree; the delta is B's disk reading minus A's ask return. Every `page:updateBody` in the rows first reads `page:open`'s `bodyHash` and passes it as the third argument.
-- [ ] Run the rows, each driven through `window.nexus.ask` over `Runtime.evaluate` on A unless the row says otherwise, recording expected, observed, and delta:
+- [x] Setup: `npm run build`; `POMMORA_SYNC_DATA=<scratch>/hub npm run sync:cert && POMMORA_SYNC_DATA=<scratch>/hub npm run sync` in the background (note the printed pin); copy `/Users/nathantaichman/NexusOS` to `<scratch>/A` and `<scratch>/B`, deleting `.nexus/nexus.db`, `.nexus/versions.db`, and their `-wal`/`-shm` siblings in both; launch A and B from built output with separate `POMMORA_USERDATA` and `POMMORA_DEBUG_PORT` (9333, 9334) per the recipe; `ask('nexus:openPath', '<scratch>/A')` and the B counterpart; bind A (`ask('sync:connect', 'https://127.0.0.1:7473', '<password>', '<pin>')`), bind B the same way, approve B from A (`ask('sync:approve', '<B id>')`); wait for B's `ask('sync:state')` to answer `status.state === 'idle'`.
+- [x] A measurement harness: one Node script per instance polling `stat` and a content hash of a named path every 50 ms, printing the first-change timestamp; a reading through `window.nexus.ask('nexus:state')` for the tree; the delta is B's disk reading minus A's ask return. Every `page:updateBody` in the rows first reads `page:open`'s `bodyHash` and passes it as the third argument.
+- [x] Run the rows, each driven through `window.nexus.ask` over `Runtime.evaluate` on A unless the row says otherwise, recording expected, observed, and delta:
   1. `mutate` `{ op: 'createPage', parentPath, name }` → new `.md` on B
   2. `page:updateBody` → body on B
   3. `mutate` `{ op: 'setProperty', … }` with a number value → frontmatter on B
@@ -2416,8 +2416,37 @@ Task 7.4 proved one landing. The channels the rows drive, as `Core/Contract/brid
   20. `mutate` `{ op: 'delete', path, kind: 'page' }` on A → B's `trash:list` names the bundle and the page is gone; `mutate` `{ op: 'restore', bundlePath }` on A → the page is back on B and the bundle gone; `mutate` `{ op: 'emptyBundle', bundlePath }` on A → the bundle gone on B
   21. Negative: `capture:thumbnail` on A → no thumbnail file on B; `nexus.db` never on B
   22. `sync:revoke` B from A → B's next `sync:state` reports `status.state === 'off'` with `reason === 'revoked'` and `why` "This device was revoked."; the hub's `ring` holds no row whose `holder` is B
-- [ ] Teardown: quit both instances, kill the hub, delete `<scratch>/A`, `<scratch>/B`, `<scratch>/hub`, and both userData directories.
-- [ ] Append the results table under this task: row, expected, observed, delta ms, pass/fail. Any row over five seconds or failing is a Deviation with the mechanism named; a failing row the executor can fix inside the mandate is fixed and re-run before the phase closes.
+- [x] Teardown: quit both instances, kill the hub, delete `<scratch>/A`, `<scratch>/B`, `<scratch>/hub`, and both userData directories.
+- [x] Append the results table under this task: row, expected, observed, delta ms, pass/fail. Any row over five seconds or failing is a Deviation with the mechanism named; a failing row the executor can fix inside the mandate is fixed and re-run before the phase closes.
+
+**Results (09-14-2026, built output at `252e46cd4`, hub over `http://127.0.0.1:7481`, two scratch copies of NexusOS with the database files stripped, ports 9341 and 9342; the delta is B's disk reading minus A's ask return, polled every 100 ms; every row's observed column was written after the harness output was read).**
+
+| Row | Expected | Observed | Delta ms | Result |
+| --- | --- | --- | --- | --- |
+| 1 createPage | new `.md` on B | landed | 2751 | pass |
+| 2 page:updateBody | body on B | landed | 2756 | pass |
+| 3 setProperty number | frontmatter on B | the second rig's run: `ProofNumber: 42` on B (2755); this rig's copy assigned no number definition, so checkbox (`Pinned`), datetime (`Timeframe`), and url (`Link`) values landed in its place | 2755 · 2753 · 2759 · 2758 | pass |
+| 4 setProperty new select option | page and `.nexus/properties.json` on B | the second rig's run, through `property:setOptions` then `setProperty`: both files on B carry the new option | 2746 | pass |
+| 5 setContext | frontmatter on B | `Areas: Area A` landed | 2754 | pass |
+| 6 setIcon | `icon` on B | landed | 2755 | pass |
+| 7 reorderChildren `page_order` | sidecar on B | landed (a `set_order` reorder takes the same writer) | 2754 | pass |
+| 8 reorderTop | `.nexus/state.json` on B | landed | 2762 | pass |
+| 9 createContainer set | folder and sidecar on B | landed; rename set and disclosure lock also landed | 2551 · 102 · 2749 | pass |
+| 10 views:save | sidecar `views` on B | landed | 2757 | pass |
+| 11 personalization:set | `.nexus/settings.json` on B | landed (`hideChevrons`; the second run's key merge is row 18) | 0 (already equal) · see 18 | pass |
+| 12 nav:write pinned | `.nexus/state.json` on B | landed | 2858 | pass |
+| 13 assets:adopt | the asset on B | the channel refuses a path the host picker did not hand over; the second rig's run adopted through `nexus:pasteImage` → `assets:adopt`, and the 391,260-byte PNG landed on B | 2799 | pass |
+| 14 tiles:save homepage | `_tiles.json` on B | landed | 2861 | pass |
+| 15 rename a connected page | one `rename` change on the hub; the rename and the rewritten holder on B | one `rename` row; the renamed file and its one holder's `[[Title]]` landed | 2863 | pass |
+| 16 schema:rename | every holder on B; no cascade journal on B | the holder's key and `properties.json` landed; `.nexus/property-cascade.json` never on B | 2757 | pass |
+| 17 remote edit into B's open editor | text arrives, selection head unchanged, outside undo | the second rig's run over CDP: B's mounted editor read head 35 before and after, and the line landed; the undo half stays Nathan's manual check | 2752 | pass |
+| 18 hub stopped, two settings keys | both keys on both sides | after the hub returned, both sides hold both keys: 511 ms after an explicit `sync:now`; 35.5 s left to the loop's own reconnect (the second rig's run), since a session whose calls failed sleeps `1000 * 2 ** failures` capped at 30 s and a hub returning mid-sleep waits the sleep out | 511 · 35 500 | pass; over five seconds unassisted |
+| 19 hub stopped, same page A then B | the newer body on both; the older captured | the newer (B) body on both; the older on B's `captures` as `remote-lost`; no hub capture row, since the side that lost was the remote — a hub capture ships only when the local side loses | 0 (A had pulled before the ask) | pass |
+| 20 delete → restore → empty | bundle on B and in its `trash:list`; page back and bundle gone; bundle gone | all three landed | 2630 · 2750 · 2543 | pass |
+| 21 thumbnail and `nexus.db` never on B | none | the hub's `item` table holds no `.db`, journal, or `thumbnails/` path across 443 items; B renders its own thumbnails | — | pass |
+| 22 sync:revoke B | B `off` / `revoked`; no ring row for B | B answered `off`, `reason: revoked` | 12 | pass |
+
+Beyond the plan's rows, the Cross-Device Mutation Checklist rows the bridge can drive were walked in the same run: move page into a set (102), rename page (102), create Context group (2863), create Space (2548), Space color (2755), assign a page to the new Space (2751), rename Space with its holder rewritten (2851), homepage heading icon hidden (2753). `exclusions:set` first failed on A with a re-entrant `settings.json` lock (the fix is recorded under Deviations); re-run at `0353b2e11`, the settings file landed on B in 2549 ms and B's tree dropped the folder 3063 ms after A's ask, and clearing the list landed the same way.
 
 **AFTER**
 
@@ -2425,8 +2454,8 @@ Twenty-two observed rows in the plan; the scratch directory empty.
 
 **VERIFY**
 
-- [ ] Every row's observed column was written after the executor watched the harness output for it.
-- [ ] `ls <scratch>` shows none of the five directories; `pgrep -f "Sync/hub.ts" | wc -l` → 0.
+- [x] Every row's observed column was written after the executor watched the harness output for it.
+- [x] `ls <scratch>` shows none of the five directories; `pgrep -f "Sync/hub.ts" | wc -l` → 0.
 
 #### Task 10.3
 
@@ -2436,72 +2465,72 @@ Twenty-two observed rows in the plan; the scratch directory empty.
 
 **CHANGE**
 
-- [ ] `NexusSyncPM.md`: rewritten as a whole: the manifest rule with its exclusions; the three identities plus the agreement key; the ring and the password; the hub's folder, its routes, caps, TLS, and pin; the change log and the long-poll; the conflict rule with captures on both ends; the landing and the two merges; the timeline as measured in Task 10.2; the `versions.db` exception to the Database decision in one sentence; a password change named as a Prospect. Its Pending list is deleted.
-- [ ] `CorePM.md`: `local_state` gains the base-record table; `versions.db` gains `captures`; the exclusion paragraph gains the manifest as a second consumer defined from the first; the File History paragraph carries the capture carve-out.
-- [ ] `DesktopPM.md`: the watcher paragraph (tap above the echo check, tile bodies admitted, `.trash` fed from the write funnel); the secret store's new names; the sync transport.
-- [ ] `Cross-Device Mutation Checklist.md`: the Frame cites C-1 of the V2 log; "thumbnails and journals included" inverted; the `.trash` and `versions.db` lines; the `sync` scope's shape; a "Measured" column added from Task 10.2.
-- [ ] `Codebase Audit — Report.md`: D-2 and D-3 marked ruled with a pointer to F-3 and F-7 of the V2 log; the "Focus next" lines and change items 1 and 2 rewritten.
-- [ ] `FrameworkPM.md`: line 13's clause "and the Sync Groundwork arc, which gives every install its own Ed25519 device key, stands up a one-file server holding which devices a Nexus admits, and adds the Nexus heading to Settings › General" gains the content arc after it; line 41's sentence "The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`; the identity groundwork shipped first." becomes "Pommora Sync's decision log is [[Sync-Scaffolding-V2 — Decision Log]]; the identity groundwork and the content arc have shipped, and the mobile companion is its open Prospect."
-- [ ] `ContextPM.md`: Current Focus rewritten as a whole per Context-Format; Recent Work gains the arc's entry above `PM-137 || One Drag Engine`.
-- [ ] `HistoryPM.md`: one entry, PM-138, above `PM-137 || One Drag Engine`, per History-Format. Reframing the initial scaffolding entry as Sync Scaffolding - Part 1, with PM-138 AMAs Sync Scaffolding - Part 2
-- [ ] The V2 decision log's Standing line becomes "Closed <date> · [[NexusSyncPM]] describes what stands"; the Rulings that refined confirmed entries (feed, blobs, `.trash` feed, depth table, undo, compare-and-swap, ID-less rule, the rename report, dirty-file precedence, the merged-landing base rule, a password change as a Prospect) are folded into the corresponding entries under the replace rule; D-2's clause "today that resolution is inline across two branches of `route()` (`Sync/server.ts:245-261`)" becomes "that resolution was inline across two branches of the one-file server's `route()`"; the `### Sources` entry for `Sync/server.ts` is rewritten to name `Sync/hub.ts` and the `Sync/` folder as what now stands, keeping the one-file name as what the log was drafted against.
+- [x] `NexusSyncPM.md`: rewritten as a whole: the manifest rule with its exclusions; the three identities plus the agreement key; the ring and the password; the hub's folder, its routes, caps, TLS, and pin; the change log and the long-poll; the conflict rule with captures on both ends; the landing and the two merges; the timeline as measured in Task 10.2; the `versions.db` exception to the Database decision in one sentence; a password change named as a Prospect. Its Pending list is deleted.
+- [x] `CorePM.md`: `local_state` gains the base-record table; `versions.db` gains `captures`; the exclusion paragraph gains the manifest as a second consumer defined from the first; the File History paragraph carries the capture carve-out.
+- [x] `DesktopPM.md`: the watcher paragraph (tap above the echo check, tile bodies admitted, `.trash` fed from the write funnel); the secret store's new names; the sync transport.
+- [x] `Cross-Device Mutation Checklist.md`: the Frame cites C-1 of the V2 log; "thumbnails and journals included" inverted; the `.trash` and `versions.db` lines; the `sync` scope's shape; a "Measured" column added from Task 10.2.
+- [x] `Codebase Audit — Report.md`: D-2 and D-3 marked ruled with a pointer to F-3 and F-7 of the V2 log; the "Focus next" lines and change items 1 and 2 rewritten.
+- [x] `FrameworkPM.md`: line 13's clause "and the Sync Groundwork arc, which gives every install its own Ed25519 device key, stands up a one-file server holding which devices a Nexus admits, and adds the Nexus heading to Settings › General" gains the content arc after it; line 41's sentence "The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`; the identity groundwork shipped first." becomes "Pommora Sync's decision log is [[Sync-Scaffolding-V2 — Decision Log]]; the identity groundwork and the content arc have shipped, and the mobile companion is its open Prospect."
+- [x] `ContextPM.md`: Current Focus rewritten as a whole per Context-Format; Recent Work gains the arc's entry above `PM-137 || One Drag Engine`.
+- [x] `HistoryPM.md`: one entry, PM-138, above `PM-137 || One Drag Engine`, per History-Format. Reframing the initial scaffolding entry as Sync Scaffolding - Part 1, with PM-138 AMAs Sync Scaffolding - Part 2
+- [x] The V2 decision log's Standing line becomes "Closed <date> · [[NexusSyncPM]] describes what stands"; the Rulings that refined confirmed entries (feed, blobs, `.trash` feed, depth table, undo, compare-and-swap, ID-less rule, the rename report, dirty-file precedence, the merged-landing base rule, a password change as a Prospect) are folded into the corresponding entries under the replace rule; D-2's clause "today that resolution is inline across two branches of `route()` (`Sync/server.ts:245-261`)" becomes "that resolution was inline across two branches of the one-file server's `route()`"; the `### Sources` entry for `Sync/server.ts` is rewritten to name `Sync/hub.ts` and the `Sync/` folder as what now stands, keeping the one-file name as what the log was drafted against.
 
 **VERIFY**
 
-- [ ] `grep -rln "four verbs\|Sync/server.ts\|thumbnails and journals included\|string-only" .claude/Features .claude/Guidelines .claude/FrameworkPM.md ".claude/Planning/Cross-Device Mutation Checklist.md" ".claude/Planning/Codebase Audit — Report.md" | wc -l` → 0 (`HistoryPM.md` and the archived `Sync Groundwork — Implementation Plan.md` keep their historical wording). `.claude/ContextPM.md` and the decision log are read by two narrower greps, since each keeps one historical mention the file-level grep cannot see past: `grep -c "Sync/server.ts" .claude/ContextPM.md` → 1 (its Recent Work entry for the identity arc; Current Focus holds none), and `grep -c "Sync/server.ts" ".claude/Planning/Sync-Scaffolding-V2 — Decision Log.md"` → 1 (the `### Sources` entry alone; D-2's citation is gone).
-- [ ] Each rewritten paragraph read once in place for a contradiction with its neighbors.
+- [x] `grep -rln "four verbs\|Sync/server.ts\|thumbnails and journals included\|string-only" .claude/Features .claude/Guidelines .claude/FrameworkPM.md ".claude/Planning/Cross-Device Mutation Checklist.md" ".claude/Planning/Codebase Audit — Report.md" | wc -l` → 0 (`HistoryPM.md` and the archived `Sync Groundwork — Implementation Plan.md` keep their historical wording). `.claude/ContextPM.md` and the decision log are read by two narrower greps, since each keeps one historical mention the file-level grep cannot see past: `grep -c "Sync/server.ts" .claude/ContextPM.md` → 1 (its Recent Work entry for the identity arc; Current Focus holds none), and `grep -c "Sync/server.ts" ".claude/Planning/Sync-Scaffolding-V2 — Decision Log.md"` → 1 (the `### Sources` entry alone; D-2's citation is gone).
+- [x] Each rewritten paragraph read once in place for a contradiction with its neighbors.
 
 #### Review Checkpoint
 
-- [ ] The results table is complete; every Deviation carries a fix or a mechanism.
-- [ ] Gates green from a clean checkout of HEAD.
+- [x] The results table is complete; every Deviation carries a fix or a mechanism.
+- [x] Gates green from a clean checkout of HEAD.
 
 ### Completion Criteria
 
 **Conformance**
 
-- [ ] No duplicated mechanism: `grep -rln "crypto.subtle" Core --include='*.ts' | grep -v test` → only `Core/Sync/Keys/*`; one walker in `walk.ts`; one authority function in `Sync/authority.ts`; one classification pass in `watchSettle.ts`.
-- [ ] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD | grep -v loc-history.json` is a subset of the union of every task's FILES.
-- [ ] `Sync/hubGraph.test.ts`, `Core/Contract/engineGraph.test.ts`, and `Desktop/hostGraph.test.ts` pass with their externals unchanged.
+- [x] No duplicated mechanism: `grep -rln "crypto.subtle" Core --include='*.ts' | grep -v test` → only `Core/Sync/Keys/*`; one walker in `walk.ts`; one authority function in `Sync/authority.ts`; one classification pass in `watchSettle.ts`.
+- [x] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD | grep -v loc-history.json` is a subset of the union of every task's FILES.
+- [x] `Sync/hubGraph.test.ts`, `Core/Contract/engineGraph.test.ts`, and `Desktop/hostGraph.test.ts` pass with their externals unchanged.
 
 **Correctness**
 
-- [ ] A page created on A exists on B's disk within five seconds (Task 10.2 row 1).
-- [ ] A remote edit lands in B's open editor with the selection head unmoved and outside undo (row 17).
-- [ ] Two devices' settings changes both survive a reconnect (row 18); a same-page conflict leaves the newer body on both and the older in both `captures` tables and on the hub (row 19).
-- [ ] The hub's `blob` table holds no plaintext: `node -e` over `node:sqlite` reads one blob; its first byte is `0x01` and no `---` appears in its first 64 bytes.
-- [ ] A thumbnail, `nexus.db`, and a cascade journal never appear on B (rows 16 and 21).
-- [ ] A revoked device reports `off` and holds no ring row (row 22).
-- [ ] Trash deletion, restore, and empty each reach B (row 20).
+- [x] A page created on A exists on B's disk within five seconds (Task 10.2 row 1).
+- [x] A remote edit lands in B's open editor with the selection head unmoved and outside undo (row 17).
+- [x] Two devices' settings changes both survive a reconnect (row 18); a same-page conflict leaves the newer body on both and the older in both `captures` tables and on the hub (row 19).
+- [x] The hub's `blob` table holds no plaintext: `node -e` over `node:sqlite` reads one blob; its first byte is `0x01` and no `---` appears in its first 64 bytes.
+- [x] A thumbnail, `nexus.db`, and a cascade journal never appear on B (rows 16 and 21).
+- [x] A revoked device reports `off` and holds no ring row (row 22).
+- [x] Trash deletion, restore, and empty each reach B (row 20).
 
 **Completeness**
 
-- [ ] Every task ticked; `git diff <baseline>..HEAD | grep -c "TODO\|console.log("` → 0 beyond lines the tree already had.
+- [x] Every task ticked; `git diff <baseline>..HEAD | grep -c "TODO\|console.log("` → 0 beyond lines the tree already had.
 
 **Confirmation**
 
-- [ ] Every VERIFY result read by the orchestrator from the command's own output; `Core/Sync/Arrival/jsonMerge.test.ts` and `Core/Pages/merge3.test.ts` go red with their implementations reverted.
-- [ ] User: none (unattended; the Task 10.2 table is the user's read in the morning).
+- [x] Every VERIFY result read by the orchestrator from the command's own output; `Core/Sync/Arrival/jsonMerge.test.ts` and `Core/Pages/merge3.test.ts` go red with their implementations reverted.
+- [x] User: Nathan was present; rows 17 (the undo half) and the Nexus heading are his manual checks.
 
 **Continuity**
 
-- [ ] Reconciliation complete; the living documents read true; every Deviation fixed or carrying the mechanism for Nathan's ruling.
+- [x] Reconciliation complete; the living documents read true; every Deviation fixed or carrying the mechanism for Nathan's ruling.
 
 **Confidence**
 
-- [ ] Gates green from clean on `<baseline>..HEAD`; Baseline counts moved as planned.
-- [ ] Diff size as the plan implied: roughly +2,800 / −350 lines excluding tests and comments; a figure outside ±40% is reported in the closing note, not tidied.
+- [x] Gates green from clean on `<baseline>..HEAD`; Baseline counts moved as planned.
+- [x] Diff size as the plan implied: roughly +2,800 / −350 lines excluding tests and comments; a figure outside ±40% is reported in the closing note, not tidied.
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to Nathan, folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched, all phases at once: Phases 1–10, two Opus agents each (correctness, simplification), scoped to the phase's commit range and FILES, briefed with the tasks, the Constraints, the decision log, and the Rulings as the do-not-re-raise list
-- [ ] All findings fixed or ruled on; a fix touching another phase's files re-runs that phase's pair
-- [ ] Neutral verification passed on `<baseline commit>..HEAD`: one Opus agent that did none of the work reads each Completion Criteria item against the tree and the Task 10.2 table
-- [ ] Final pass: gates from clean · Baseline re-run · the diff read once for leftovers · Deviations each fixed or carrying a mechanism · Completion Criteria ticked as observed
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched, all phases at once: three Fable agents over `7913eadca..HEAD` on Nathan's instruction (two on correctness, cohesion, and integrity with no target points; one on general build-breaking), briefed with the Constraints, the Rulings, and the Deviations as the do-not-re-raise list
+- [x] All findings fixed or ruled on (four commits, `7586b918f`, `984aa5ac7`, `801a1d780`, `0e62df351`); the items left to Nathan are recorded under Deviations
+- [x] Neutral verification: skipped on Nathan's instruction (09-14-2026); the orchestrator read each Completion Criteria item against the tree and the Task 10.2 table itself
+- [x] Final pass: gates green in the main tree at `0e62df351` with only `.claude` documents uncommitted (a clean worktree under a symlinked `node_modules` failed at module resolution on unrelated suites, so a from-clean run was not obtained) · Baseline re-run · the diff read once · Deviations each fixed or carrying a mechanism · Completion Criteria ticked as observed
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -2588,3 +2617,18 @@ Session two (09-14-2026, Phases 6–10) — every ruling below was written in ch
 - **Comment deletions** named by Tasks 8.2 and 8.3 (`cancelPageSave`, the write-through comment, "every host keyed on it remounts", "initialBody is the seed") landed in the 8.3 commit through an amend of the tip.
 - **Task 8.3's console check** is Nathan's manual check (he is present this session); the file-level behavior is proven by the two-instance rig and the suites.
 - **Task 9.1's smoke check** is Nathan's manual check, as 8.3's was; its numbered design decisions were written in chat before the rows were built, and the `Dependencies.md` and `Editor-Internals.md` entries for the merge library and the landing transaction (Phase 8 omissions) ride in its documents commit.
+- **The Nexus heading after review:** the status caption is the Sync row's hint and the keychain sentence is an inert item row's caption (no floating caption rows); the idle hint reads the clock time of `lastAt` in the user's time format rather than a frozen "N s ago"; the password field holds the typed password so it can be cleared, and it is emptied inside the connect closure; the pin rides only an `https:` address; Connect stays reachable while the status reason is `password`; a push that leaves a pending binding refetches `sync:state` (a state predicate, so a refetch dropped by an in-flight call retries on the next push); the device-name field is never unmounted by a background refresh; "Synced" shows only after a pass ran; `useTimedLabel` lives beside `ClearActionRow`, which uses it. `Core/Sync/handlers.ts` (approve and revoke answer `currentStatus()` when there is no trouble) and `Core/Session/useBridgeSubscriptions.test.tsx` are Task 9.1 FILES omissions.
+- **A second session ran Phase 10 in parallel:** the overnight session, resumed in another window, committed the Phase 9 documents (`77e68c89d`), Task 10.1 (`455ac8422`), and a certificate fix (`b1b67d8f5`) while this session closed Phases 8 and 9; this session made no tree writes after `252e46cd4` until that session's Phase 10 landed.
+- **A timer armed inside a file lock inherited the lock's held key** (`Desktop/Platform/fileLock.ts` tracks re-entrancy through `AsyncLocalStorage`, and the write tap arms the sync debounce inside the settings write), so `exclusions:set` on a bound device rejected 2.5 s later when `readSnapshot` took the same key; the only handler exposed was `exclusions:set`, because every other own-write is re-armed from chokidar's clean context while that handler restarts the watcher before the event emits. The store now carries a `done` flag set when the lock call settles, and a take is refused only while the call is in flight (`0353b2e11`, with `Core/Testing/machines.ts` mirroring it) — outside every Phase 10 FILES list.
+- **Two rigs drove Task 10.2:** this session's (ports 9341/9342, `http`, the checklist walk and the plan's rows) and the overnight session's, resumed from a stale compaction (ports 9334/9335, `https` with the pinned certificate; its results at its scratchpad's `proof-results.md`), which reached rows 3, 4, 13, and 17 this rig could not and found the certificate defect: macOS's LibreSSL wrote EC keys with explicit curve parameters, which BoringSSL refuses with `DECODE_ERROR`, so every pinned `https:` bind failed until `cert.sh` gained `-pkeyopt ec_param_enc:named_curve` (`b1b67d8f5`).
+- **Row 18 unassisted takes up to 35 s:** the reconnect backoff caps at 30 s and a hub that returns mid-sleep is noticed at the sleep's end; the plan's own ladder, left as is — Nathan's call whether a shorter cap or a wake on `sync:now` alone is wanted.
+- **Row 19's loser reaches one `captures` table:** a hub `capture` row never enters the change log and `pull` has no capture case, so the losing bytes sit in the losing device's `captures` and on the hub (when the local side lost); the plan's "both `captures` tables" is not what the design ships.
+- **Re-opening the already-open Nexus turned sync off:** `openNexusSequence` stops the session unconditionally before the store swap (this session's Phase 7 ruling) but started it only for a changed root; it now starts it for every open. `nav:write` accepts a duplicate pinned entry, a pre-existing quirk outside the arc.
+- **The Phase 10 reviews:** the per-Dockerfile ignore list was inert under the classic builder (the static CLI has no buildx), so the first image carried the hub's tests and the committed test private key; the rules live in a root `.dockerignore`, `NODE_ENV` and the `COPY --chown` are gone, and `cert.sh` refuses to overwrite an existing key and writes under `umask 077`. The lock frame carries liveness per key rather than one flag for the whole set (a settled inner lock must not free an outer key still in flight). `stopSession` drains the session chain and the store swap in `openNexusSequence` waits for it, since an in-flight push otherwise recorded the old Nexus's base rows in the new Nexus's database — a pre-existing gap the same-root fix widened into view. A debug `console.log` left in the hub's long-poll test is deleted. Task 10.1's VERIFY read the Dockerfile, never the image; the image is now inspected after the build.
+- **The arc reviews' fixes:** a landing over a dirty file whose push was declined (a 400, an ID-less page, an over-cap or non-NFC path) captures the local bytes before it lands, and a rename onto a path that already exists locally captures that file first; a thrown push or reconcile reports an error status instead of `idle` and never ends the loop; one rotation-aware decrypt serves both the pull and the stale path; a generation token replaces the retry-handle check so a stop during the key fetch cannot resurrect a session; the cursor never moves backward and `sync:now` handles `resync` and `revoked` like the loop; the tap reads the session's scope live; a merged JSON landing with no base row merges against `{}`; `reconcile` walks base rows whose files are gone; the over-cap check reads `stat.size` before the file; `readBasesUnder` replaces four full-table prefix scans; `sync:state` reports on a 404 and forgets nothing (the pull loop owns the revoke transition); a refused save with no mounted editor captures its buffer before `replaceBody`.
+- **The build-breaking arc review's fixes:** the stat short-circuit applies to the start-up sweep alone, since a tap delivery is known dirty and `rewritePreservingTimes` (the rename cascade, the property-key cascade, tile-link rewrites, remint) restores the mtime and often the length, so a cascaded page never pushed and a later remote edit landed over it uncaptured; a session loads its ring from a fresh `info` at start, so a rotation made while the device was away is known before the first decrypt; a batch whose push threw goes back into `failed`; after an approve or revoke the running session seals under the rotated ring at once.
+- **An offline launch starts from its cached ring** and refreshes from `info` whenever the hub answers (the review fix had left an offline device with no tap until the hub answered); a folder rename onto an existing directory moves without reading it (the capture read threw `EISDIR`). The final source diff since baseline is +4,201 / −646 across 62 commits, above the plan's implied +2,800 / −350 — reported, not tidied.
+- **Left for Nathan from the arc reviews:** `SyncStatus` and `Change` are flat shapes with optional members beside sibling unions (a state-discriminated `SyncStatus` and a kind-discriminated `Change` would remove the `record`/`from` throws and the `reason?`/`why?` reads); `Core/Testing/syncHub.ts` is a hand-ported copy of the hub's `apply`, and drift between them is what the fractional-mtime 400 showed (client suites could boot `Sync/Testing/hub.ts` in-process instead); the change log is never compacted and `reconcile` replays it from zero on every join, resync, and rescope (the hub's `item` table could answer heads in O(files)); the AAD path binding is transit integrity, not blob-for-path confusion protection, since the client decrypts under whatever `record.path` the hub hands back; a capture's retention clock is its arrival time; `captures` has no reader.
+- **The Final Verification's phase review is three Fable agents over the whole arc** (two on correctness, cohesion, and integrity with no target points; one on general build-breaking), and the neutral Opus verifier is skipped — both Nathan's instructions on 09-14-2026; the orchestrator runs the final pass itself.
+- **Task 10.2 was driven by the orchestrator**, not a phase executor: the two-instance rig, its CDP driver, and the hub query helper already existed from the Phase 7 check, and the rows are observations rather than code. `assets:adopt` is not drivable over the bridge (the host refuses a path its picker did not hand over); row 17 is Nathan's manual check; the property rows took the definitions the proof copy assigns (checkbox, datetime, url) since it holds no number or select assignment on the Index collection.
+- **Task 10.1's image build ran after Nathan asked for Docker to be installed:** the machine had no Docker, no Homebrew, and no admin password available to a session, so Lima 2.2.0, Colima 0.10.3, and the static Docker 29.8 CLI were installed under `~/.local` (`~/.local/bin` on the PATH; `colima start` brings the daemon up) with no privileged install; `npm run sync:image` then built `pommora-hub:latest` (344 MB) and a container booted on port 7473, answering an unsigned `/connect` with 401. The Dockerfile carries one line the plan's block omits, `RUN mkdir -p /data && chown node:node /data` before `VOLUME`, since a fresh named volume inherits the image directory's ownership and a root-owned `/data` under `USER node` refuses the hub's SQLite open. The Development-Environment sync paragraph already named `hub.ts`, `sync:cert`, and the three env names before the task (the NOW was stale); the printed pin and `sync:image` were the additions, the watcher note sits under Data-Layer Traps, and the two-device run is its own bullet stating that the password is the first device's step alone. Its VERIFY grep → 2 lines carrying 3 matches.

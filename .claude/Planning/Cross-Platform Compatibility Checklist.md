@@ -4,7 +4,6 @@
 
 ### Sources
 
-- [[Sync Groundwork — Decision Log]] — the arc this sweep serves; its Sources list the path, echo, watcher, and settings-placement observations re-verified here.
 - `Core/Paths/` — `caseFold.ts`, `paths.ts`. `Core/Nexus/ids.ts`. `Core/Index/indexSeed.ts`. `Core/Trash/bundle.ts`. `Core/Navigation/navRef.ts`.
 - `Core/Platform/` — `assetScheme.ts`, `localState.ts`. `Core/Contract/handlers.ts`.
 - `Core/Assets/assetRoots.ts`. `Core/Actions/commands.ts`. `Core/Settings/settings.ts`.

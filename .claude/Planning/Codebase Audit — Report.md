@@ -13,7 +13,7 @@ Nine read-only auditors each covered a slice of the tree or a cross-cutting lens
 - **Mechanical debt is near zero.** No export is fully dead. Zero raw colors across 44 Core style files. One dead CSS selector out of 631, now gone. Zero assertion-free tests. Textual duplication is 0.41% of tokens. Every declared folder exists under exactly its declared name, and there are zero orphan files.
 - **The best code is in the places that matter most.** The view pipeline, the tile layout model, the navigation reference model, the pure editor engine, the pointer harness, the property value model, and the connections grammar were each independently called the strongest code in their slice. They should not be touched.
 
-**What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. One of them was ruled on 09-07-2026 and is now work rather than a question: where each piece of state lives, a rule applied row by row. The one that remains open and gates the most is what "most recent wins" means for a reader: an open page never learns its file changed, and the next keystroke writes the stale copy back.
+**What isn't foundational is a set of decisions, not a set of bugs.** Every one of them was the correct call for one machine, and none was taken with a second machine in view. One of them was ruled on 09-07-2026 and is now work rather than a question: where each piece of state lives, a rule applied row by row. What "most recent wins" means for a reader was ruled on 09-14-2026 and built: a landing merges into the open buffer, and the losing side of a conflict is kept on both devices. The one that remains open and gates the most is whether the design kit gets touch.
 
 **Is what already exists flawless?** Eight one-machine defects were confirmed at audit time. All eight are fixed. The audit's own ninth item was denied by manual test.
 
@@ -25,12 +25,12 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 
 | Share                | Category              | What it actually is                                                                                                                                                                                                                                                                                                         |
 | -------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The next sitting** | Decisions             | **D-2, the external-edit reload policy.** It gates the whole concurrency topic — the largest open foundation risk, where an open page never learns its file changed and the next keystroke writes the stale copy back. The plumbing already exists; this is a day of work behind one ruling, and nothing else unblocks as much. |
+| **The next sitting** | Decisions             | **D-7, whether the design kit gets touch.** It gates the mobile companion's interaction layer, and every hover-revealed control built meanwhile lengthens the backlog behind it. |
 | **~5%**              | Behind-the-wall fixes | The ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
 | **~55%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt).                                                                                                                  |
 | **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface.                                                                                                                    |
 
-**Focus next:** rule **D-2** — the cheapest decision with the widest unlock — and run the cheap unblocked fixes alongside it. Ruled foundation work second; building last, on the openings whose plumbing is done.
+**Focus next:** rule **D-7** — the decision the mobile companion waits on — and run the cheap unblocked fixes alongside it. Ruled foundation work second; building last, on the openings whose plumbing is done.
 
 #### Grounding: What Actually Matters
 
@@ -67,7 +67,7 @@ One thing still sits outside that shape. Six page-level authoring decisions — 
 
 **Change.**
 
-1. Whether File History stays per-device is the one open question; it is the only record of an overwritten external edit and lives in a store that never leaves the machine. *(—; Needs a ruling)*
+1. Whether File History stays per-device is the one open question; it lives in `versions.db`, which never leaves the machine, beside the `captures` table holding every conflict's losing bytes. A frame reading the hub's own retained versions is a Prospect rather than a gap. *(—; Needs a ruling)*
 
 **Findings:** R-01, R-05.
 
@@ -77,16 +77,9 @@ One thing still sits outside that shape. Six page-level authoring decisions — 
 
 **Found.** Every story in the codebase about two things writing at once is a story about one process on one machine, and it's told well: careful locks, a snapshot before every overwrite, an incremental walk, and the app quits a second instance to keep the reasoning honest. None of it survives a sync daemon or a second host, because the lock is a map in memory and the "which duplicate is the original" judge reads a database that doesn't travel and then rewrites the loser's ID into a file that does.
 
-The most reachable piece: **when a file changes outside Pommora, the open page never finds out.** The tree updates, the search index updates, and the editor keeps showing the old text. The next keystroke writes that old text back over the file. The overwritten version is snapshotted, but into a store that never leaves the machine. "Most recent wins" is currently implemented as *the most recent write to disk wins*, not *the most recent version reaches the reader*. The plumbing to fix it already exists as three calls; the missing part is one push channel and a policy for dirty tabs.
+A file changing outside Pommora reaches the open page. A `pages:changed` push carries the changed paths to the renderer, which merges the landed text into the buffer against the text the editor loaded, so a clean tab reloads and a dirty one keeps its edits with the caret in place; a body write is refused when the bytes on disk are not the ones the editor last held, and the refusal routes to the same merge. The losing side of a conflict is captured on the device and on the hub rather than overwritten.
 
-**Ruled 09-07-2026:** A one-writer-per-nexus rule is not adopted as policy, since a future shared nexus may want something else; the atomicity contract is declared, and the cross-process story stays open until Sync is designed.
-
-**Change.**
-
-1. Add a `pages:changed` push carrying the changed paths. On receipt, reload a clean tab's body using the three calls history-restore already uses, and apply the dirty-tab policy from D-2. *(L; after D-2)*
-2. Identity re-minting's adjudication record: a synced, hand-editable ledger under `.nexus/`, or a user-confirmed action instead of a silent open-time pass. *(M; after D-3)*
-
-**Findings:** R-07, R-09.
+**Findings:** R-09.
 
 ##### 8. UIX: Bundle, Touch, Filing
 
@@ -140,11 +133,7 @@ The most reachable piece: **when a file changes outside Pommora, the open page n
 
 Ordered by how much later work each gates. D-1 (state placement) was ruled on 09-07-2026 and is written into its topic above.
 
-**D-2: What does "most recent wins" mean for a reader?** Options: **(i)** reload the page body silently when the tab is clean and prompt when it's dirty; **(ii)** always reload and rely on file history for recovery; **(iii)** leave it and accept that Pommora quietly overwrites external edits.
-
-**Recommendation:** (i). The plumbing exists; this is a day of work plus a UI ruling on the dirty case.
-
-**D-3: How does identity re-minting behave with a second writer?** The one-writer rule was not adopted as policy on 09-07-2026, so this narrows to re-minting alone. Options: **(i)** a synced, hand-editable conflict ledger under `.nexus/`; **(ii)** re-minting becomes a user-confirmed action rather than a silent open-time pass. Riding on it: whether the crash journals stay in the synced `.nexus/` directory.
+**D-3: How does identity re-minting behave with a second writer?** Ruled by F-7 of the same log: no conflict ledger. A rename travels as one change-log entry, so the judge sees one claimant, and two devices minting one page id is what ULIDs make negligible. The cascade journals stay on the device that wrote them rather than travelling.
 
 **D-7: Does the design kit get touch?** Options: **(i)** decide Mobile is a WebView host and add coarse-pointer branches now, before more hover-revealed controls are built; **(ii)** decide Mobile gets its own interaction layer and let UIX stay desktop-only. The cost of deferring is linear in how many hover affordances get built meanwhile.
 
@@ -161,7 +150,7 @@ Ordered by how much later work each gates. D-1 (state placement) was ruled on 09
 - **Backlinks, a Context view, and Linked-From now have their query.** The content index carries Context membership as of 09-07-2026 and `queryMembers` answers "which pages hold Space X or Context C." All three pending features were waiting on exactly that; each is now a surface over an existing read.
 - **The main window's inspector is a live empty pane, and the panel built for it already works.** The inspector opens, slides, resizes, remembers its width, and shows nothing, while the property panel is already mounted in the Page Window and the NavWindow. Wiring it behind a page selection is a handful of lines against machinery that exists.
 - **Agenda is threaded through the whole navigation layer with no surface at the end of it.** Tasks and Events are first-class in the data model, admitted into navigation references, and refused at every use. The plumbing is ahead of the surface, and the entity vocabulary now resolves to one source, which makes the surface the cheap part.
-- **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 19 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan, D-2, and touch.
+- **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 19 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan and touch.
 
 #### Solid, Leave Alone
 
@@ -180,24 +169,21 @@ Ordered by how much later work each gates. D-1 (state placement) was ruled on 09
 
 Every open finding and where it lands. Kind: **FR** foundation risk, **D** decision, **Dt** debt, **P** polish. Every entry was confirmed against the code by the reconciler; downgrades are carried in the finding text.
 
-| ID   | Topic | Kind | Finding                                                                                                                            | Where                                                                                                                 |
-| ---- | ----- | ---- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| R-01 | 1     | D    | Six page-level authoring decisions live in the database that never syncs and is deleted on a schema bump                           | `Core/Platform/localState.ts, Desktop/Store/open.ts`                                                                  |
-| R-05 | 1     | D    | File History exists only on the machine that made the edit, and it is the sole record of an overwritten external change            | `Core/Pages/fileHistory.ts, Desktop/Store/versionsDb.ts`                                                              |
-| R-07 | 2     | FR   | An external edit never reaches an open page, and the next keystroke writes over it                                                 | `Core/Session/nexusSlice.ts, Core/Session/mutationSlice.ts, Core/Nexus/watchPatch.ts`                                 |
-| R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync       | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                             |
-| R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                                | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`                    |
-| R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                               | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                         |
-| R-56 | 8     | Dt   | Pommora's application vocabulary sits inside the design kit                                                                        | `UIX/Interactions/frameDndModel.ts, Core/Views/hiddenFrameModel.ts, UIX/Interactions/revealBar.ts`                    |
-| R-57 | 8     | P    | Small UIX duplications: a hand-maintained kebab token republish and a second Bloom factory                                         | `UIX/Glass/glass-window.tsx, UIX/Glass/glass-surface.tsx`                                                             |
-| R-58 | 8     |      | The tab bar hand-rolls the harness for its window drag                                                                             | `Core/Navigation/TabBar.tsx`                                                                                          |
-| R-59 | 9     | D    | Two tab models in two folders, with types crossing both ways                                                                       | `Core/Navigation/tabsModel.ts, Core/Interface/Windows/windowTabs.ts, Core/Navigation/TabBar.tsx`                      |
-| R-60 | 9     | Dt   | Four warm caches, one shared helper, two adopters                                                                                  | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx`            |
-| R-61 | 9     | Dt   | A new user-facing setting needs three edits, and only two are checked by the compiler                                              | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx`                          |
-| R-63 | 9     | Dt   | The shell reaches into the interface by global CSS-class selector                                                                  | `Core/Navigation/useNavThumbnails.ts, Core/Interface/Windows/windowMorph.ts, Core/Interface/ContentView.tsx`          |
-| R-38 | 11    | Dt   | Three narrow questions still answered with wide reads                                                                              | `Core/Views/loadValues.ts, Core/Nexus/folderKind.ts, Desktop/FileWatch/watcher.ts`                                    |
-| R-39 | 11    | Dt   | The connection title map is rebuilt wholesale on every real tree change                                                            | `Core/Nexus/treeIndex.ts, Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/liveTree.ts`                            |
-| R-41 | 11    | Dt   | Every scroll frame re-resolves every visible connection and re-sorts every decoration                                              | `Core/MarkdownPM/decorations.ts`                                                                                      |
+| ID   | Topic | Kind | Finding                                                                                                                      | Where                                                                                                        |
+| ---- | ----- | ---- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| R-01 | 1     | D    | Six page-level authoring decisions live in the database that never syncs and is deleted on a schema bump                     | `Core/Platform/localState.ts, Desktop/Store/open.ts`                                                         |
+| R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                    |
+| R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                          | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`           |
+| R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                         | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                |
+| R-57 | 8     | P    | Small UIX duplications: a hand-maintained kebab token republish and a second Bloom factory                                   | `UIX/Glass/glass-window.tsx, UIX/Glass/glass-surface.tsx`                                                    |
+| R-58 | 8     |      | The tab bar hand-rolls the harness for its window drag                                                                       | `Core/Navigation/TabBar.tsx`                                                                                 |
+| R-59 | 9     | D    | Two tab models in two folders, with types crossing both ways                                                                 | `Core/Navigation/tabsModel.ts, Core/Interface/Windows/windowTabs.ts, Core/Navigation/TabBar.tsx`             |
+| R-60 | 9     | Dt   | Four warm caches, one shared helper, two adopters                                                                            | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx`   |
+| R-61 | 9     | Dt   | A new user-facing setting needs three edits, and only two are checked by the compiler                                        | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx`                 |
+| R-63 | 9     | Dt   | The shell reaches into the interface by global CSS-class selector                                                            | `Core/Navigation/useNavThumbnails.ts, Core/Interface/Windows/windowMorph.ts, Core/Interface/ContentView.tsx` |
+| R-38 | 11    | Dt   | Three narrow questions still answered with wide reads                                                                        | `Core/Views/loadValues.ts, Core/Nexus/folderKind.ts, Desktop/FileWatch/watcher.ts`                           |
+| R-39 | 11    | Dt   | The connection title map is rebuilt wholesale on every real tree change                                                      | `Core/Nexus/treeIndex.ts, Core/MarkdownPM/Links/connectionsApi.ts, Core/Nexus/liveTree.ts`                   |
+| R-41 | 11    | Dt   | Every scroll frame re-resolves every visible connection and re-sorts every decoration                                        | `Core/MarkdownPM/decorations.ts`                                                                             |
 
 #### Appendix B: Corrections Made During Reconciliation
 
@@ -205,7 +191,6 @@ Nothing was denied outright by the reconciler. Four findings had a sub-claim den
 
 - **TableView is not untested.** Two suites render the real view host, which renders TableView, so it has 1,330 lines of interaction tests. Sidebar and SettingsWindow genuinely have none.
 - **The lenient registry read doesn't strand Context references.** Context keys begin with `<`, which the property-name validator refuses, so the rename cascade never touches them. What it strands is link-valued property values.
-- **Desktop is 2,027 lines, not 10,000.** The brief's initial count included build output.
 - **Path-scoped churn is unmeasurable.** The top-level folders only exist since 09-05-2026, so any per-folder churn figure measures two days.
 - **Context keys were already indexed.** The audit said Context keys were outside the content index; `page_values` already held them at key level. Membership at value level was what was missing, and it now exists.
 - **Two findings fell to manual test or intent.** ⌘-click on a table title opens a new tab; Interface Scale and Webpage Zoom syncing is intended design.
