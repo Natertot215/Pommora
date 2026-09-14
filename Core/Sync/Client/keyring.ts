@@ -53,8 +53,10 @@ export async function loadRing(
     offered = await openWithPassword(info, password)
     if (offered === null) return null
   }
-  const already = held.get(nexusId)
-  if (already !== undefined) return already
+  if (info === null) {
+    const already = held.get(nexusId)
+    if (already !== undefined) return already
+  }
   const own = (info?.ring ?? cached(await host.secrets.get(ringName(nexusId)))).filter(
     (entry) => entry.holder === host.device.id,
   )
@@ -76,15 +78,6 @@ export async function loadRing(
   const ring = await openWithPassword(info, stored)
   if (ring !== null) held.set(nexusId, ring)
   return ring
-}
-
-export async function refreshRing(
-  host: SyncHost,
-  nexusId: string,
-  info: Keys,
-): Promise<Ring | null> {
-  held.delete(nexusId)
-  return loadRing(host, nexusId, info, null)
 }
 
 export async function forgetKeys(host: SyncHost, nexusId: string): Promise<void> {
