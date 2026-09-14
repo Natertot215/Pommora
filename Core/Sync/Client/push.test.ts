@@ -1,25 +1,18 @@
 import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { HostContext, TransportRequest } from '../../Contract/handlers'
+import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
-import { type FakeHub, fakeHub } from '../../Testing/syncHub'
-import { memorySecrets, testDevice, testRing } from '../../Testing/syncDevice'
-import type { Change, ItemRecord, StoreBody } from '../Contract/wire'
-import { encryptItem } from '../Keys/item'
-import { newest, type Ring } from '../Keys/ring'
+import { type FakeHub, hubDelete, hubRename, hubSession, hubWrite } from '../../Testing/syncHub'
+import type { Change, StoreBody } from '../Contract/wire'
+import type { Ring } from '../Keys/ring'
 import { isDirty, readAllBases, readBase, upsertBase } from './base'
-import type { SyncHost } from './call'
 import { pushDirty, pushRename } from './push'
 import type { Session } from './session'
 
-const NEXUS = 'nx'
-const ADDRESS = 'http://127.0.0.1:7473'
-const LOCAL = 'aaaa'
-const REMOTE = 'bbbb'
 const REMOTE_MS = Date.UTC(2026, 8, 1, 12)
 const LOCAL_MS = REMOTE_MS + 60_000
 const OLD_MS = REMOTE_MS - 60_000
@@ -31,8 +24,7 @@ const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
 let root: string
 let hub: FakeHub
 let ring: Ring
-let host: SyncHost
-let pushes: unknown[]
+let pushes: Array<[string, unknown]>
 let session: Session
 
 const abs = (rel: string): string => join(root, rel)
@@ -60,57 +52,8 @@ const seedBase = (rel: string, bytes: Uint8Array, version: number, merged = fals
   })
 }
 
-async function remoteWrite(rel: string, text: string, mtimeMs = REMOTE_MS): Promise<number> {
-  const bytes = utf8(text)
-  const key = newest(ring)
-  const blob = await encryptItem(key, rel, new Uint8Array(bytes))
-  const sha = machine().sha256Hex(blob)
-  hub.blobs.set(sha, blob)
-  hub.seq += 1
-  const record: ItemRecord = {
-    path: rel,
-    mtimeMs,
-    size: bytes.length,
-    keyId: key.keyId,
-    sha256: sha,
-  }
-  hub.changes.push({
-    seq: hub.seq,
-    kind: 'write',
-    path: rel,
-    record,
-    device: REMOTE,
-    atMs: mtimeMs,
-  })
-  hub.items.set(rel, { version: hub.seq, deleted: false })
-  return hub.seq
-}
-
-function remoteRename(from: string, to: string): number {
-  const live = hub.items.get(from)
-  if (live === undefined) throw new Error(`no hub item at ${from}`)
-  const moved = hub.changes.find((change) => change.seq === live.version)?.record
-  hub.seq += 1
-  hub.items.delete(from)
-  hub.items.set(to, { version: hub.seq, deleted: false })
-  hub.changes.push({
-    seq: hub.seq,
-    kind: 'rename',
-    path: to,
-    from,
-    ...(moved !== undefined && { record: moved }),
-    device: REMOTE,
-    atMs: REMOTE_MS,
-  })
-  return hub.seq
-}
-
-function remoteDelete(path: string): number {
-  hub.seq += 1
-  hub.items.set(path, { version: hub.seq, deleted: true })
-  hub.changes.push({ seq: hub.seq, kind: 'delete', path, device: REMOTE, atMs: REMOTE_MS })
-  return hub.seq
-}
+const remoteWrite = (rel: string, text: string, mtimeMs = REMOTE_MS): Promise<number> =>
+  hubWrite(hub, ring, rel, text, mtimeMs)
 
 const stores = (): StoreBody[] =>
   hub.sent
@@ -126,27 +69,13 @@ beforeEach(async () => {
   root = tempRoot('pom-push-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   installStores(memoryStores().stores)
-  hub = fakeHub(REMOTE)
-  ring = await testRing()
-  pushes = []
-  host = {
-    device: await testDevice(LOCAL, 'Local'),
-    transport: hub.transport,
-    secrets: memorySecrets(),
-    push: () => {},
-  }
-  session = {
-    host,
-    ctx: {
-      push: (k: string, payload: unknown) => pushes.push([k, payload]),
-    } as unknown as HostContext,
-    root,
-    nexusId: NEXUS,
-    target: { address: ADDRESS, pin: null, cursor: 0 },
-    ring,
-    scope: { excluded: [], assetDir: '.nexus/assets' },
-    failed: new Set(),
-  }
+  const made = await hubSession(root)
+  session = made.session
+  hub = made.hub
+  ring = made.ring
+  pushes = made.pushes
+  hub.atMs = REMOTE_MS
+  hub.sent.length = 0
 })
 
 afterEach(async () => {
@@ -238,7 +167,7 @@ describe('pushDirty', () => {
 
   it('follows a rename head to the new path', async () => {
     const first = await remoteWrite('Notes/One.md', page('remote body'))
-    const moved = remoteRename('Notes/One.md', 'Notes/Two.md')
+    const moved = hubRename(hub, 'Notes/One.md', 'Notes/Two.md')
     seedBase('Notes/One.md', utf8(page('base body')), first)
     await write('Notes/One.md', page('local body'), LOCAL_MS)
 
@@ -253,7 +182,7 @@ describe('pushDirty', () => {
 
   it('re-stores a stale delete whose local file is newer', async () => {
     const first = await remoteWrite('Notes/One.md', page('remote body'))
-    const gone = remoteDelete('Notes/One.md')
+    const gone = hubDelete(hub, 'Notes/One.md')
     seedBase('Notes/One.md', utf8(page('base body')), first)
     await write('Notes/One.md', page('local body'), LOCAL_MS)
 

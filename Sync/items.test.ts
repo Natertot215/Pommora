@@ -111,7 +111,7 @@ describe('the hub change log', () => {
     expect((outcome as { head: Wire.Change }).head.seq).toBe(2)
   })
 
-  it('moves the head on a rename and carries the record at the new path', async () => {
+  it('moves the head on a rename and carries the record at the path it was sealed under', async () => {
     const moved = await push([
       { kind: 'rename', base: 2, from: 'Notes/one.md', path: 'Notes/two.md' },
     ])
@@ -119,7 +119,7 @@ describe('the hub change log', () => {
     const head = (await push([{ kind: 'write', base: 1, record: record('Notes/two.md') }])).reply
       .outcomes[0] as { head: Wire.Change }
     expect(head.head.kind).toBe('rename')
-    expect(head.head.record?.path).toBe('Notes/two.md')
+    expect(head.head.record?.path).toBe('Notes/one.md')
     expect(head.head.from).toBe('Notes/one.md')
   })
 
