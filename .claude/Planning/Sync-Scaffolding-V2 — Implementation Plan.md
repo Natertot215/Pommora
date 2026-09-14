@@ -18,9 +18,9 @@ The proof runs on one MacBook: the hub plus two app instances each holding a cop
 
 - Gates, from the repo root, each preceded by `set -o pipefail`: `npm run typecheck` (exits 0; seven `tsc -p` projects) · `npm run test` (Vitest; the output ends in a `Tests N passed` line with no failures) · `npm run lint` (`biome check .` plus the comment hook; warnings exit 0, so the output is read) · `npm run build` (exits 0, prints `✓ built in`). Never pipe the final command through `tail`. The orchestrator runs each gate itself and reads its tail; an agent's "green" is a claim, not a result.
 - Formatting is Biome's through the PostToolUse hook; a shell-driven edit runs `npm run format` afterward. Comments are full-line `//` only, reserved for what the code cannot say; a wrapped block comment fails the lint gate.
-- **Stop policy (ruled 09-13-2026):** no user stops. A decision the mandate does not settle takes the simplest reading and is recorded under Deviations. The run halts only when a gate stays red after two fix attempts on one task, or when a reviewer finding contradicts the decision log; either is written to Deviations with the state of the tree, and the session ends its turn. Commits land locally per task; nothing is pushed.
+- **Stop policy (ruled 09-13-2026):** no user stops. A decision the mandate does not settle takes the simplest reading and is recorded under Deviations. 
 - **In-flight decisions are disclosed in chat as they are made**, one line each, before the work that depends on them continues: the orchestrator writes "Ruling in flight: <what> — <the reading taken> — <why>" and copies the same line into Deviations when the reading is outside the mandate's letter. Nathan reads the chat in the morning; a decision he cannot find there is a defect.
-- **Agents by task.** Every task is executed by one agent whose model the Implementation Process names: **Opus** by default (in-flight reasoning expected), **Fable** for the two tasks whose failure would be silent data loss (Task 7.2, the push and conflict path; Task 8.3, the editor merge), **Sonnet** for the mechanical ones (Tasks 1.1 and 2.1). Reviewers and simplifiers are Opus; the neutral verifier is Fable. No subagent uses model inheritance.
+- **Agents by phase.** Each phase is executed by one Opus agent that runs its tasks in order with one commit per task; Tasks 7.2 and 8.3 stay Opus with the executor briefed on their data-loss stakes. Reviewers and simplifiers are Opus; the neutral verifier is Opus. No subagent uses model inheritance and no subagent is Fable.
 - **`Sync/` stays on Node built-ins.** Every import in `Sync/**/*.ts` is `node:*`, a relative `.ts` path, or an `import type` from `@pommora/core/Sync/Contract/*`; Task 3.1 turns that into a gate. `erasableSyntaxOnly` and `verbatimModuleSyntax` hold: no enums, no namespaces, no parameter properties, every type import spelled `import type`. A value the hub must execute (a validator, a route's cap or role) is re-spelled in `Sync/wire.ts` with `satisfies` against the Core type, as `PATHS` already is.
 - **Core's engine graph stays `['ulidx', 'yaml', 'zod']`** (`Core/Contract/engineGraph.test.ts`, `Desktop/hostGraph.test.ts`). `Core/Sync/Keys/` reaches crypto only through `globalThis.crypto.subtle` with no import; `Core/Sync/Arrival/` writes every byte through `machine()`; the merge library is imported by the renderer alone.
 - **The host owns the signing key and the agreement key.** `HostDevice.sign` and the new `HostDevice.agree` run in Desktop; Core receives a signature string or a 32-byte shared secret and never a private key. The Nexus password and the wrapped ring are stored through the host's `secrets` member; Core holds the unwrapped ring in memory only.
@@ -41,7 +41,7 @@ The proof runs on one MacBook: the hub plus two app instances each holding a cop
 
 Decisions Nathan made or delegated before the run, recorded so the executor never re-asks them.
 
-- **Concurrency Locked Decision:** F-1 (the hub's version precondition detects, recency resolves) and F-6 (per-section merge) are honored in substance; the CLAUDE.md wording is Nathan's own edit. Signed off 09-13-2026: CLAUDE.md's Concurrency decision now reads 'with per-section updates to synced configuration files.'
+- **Concurrency Locked Decision:** F-1 (the hub's version precondition detects, recency resolves) and F-6 (per-section merge) are honored in substance; the CLAUDE.md wording is Nathan's own edit.
 - **Lint:** `Dashboard/Ledger/loc-history.json` is excluded from Biome in Task 1.1 so the gate can be green after the hook runs. *Awaiting Nathan's yes at ratification.*
 - **Feed:** `pull` long-polls (E-2's one-directional intent, without a stream encoding). No `feed` route; `Sync/feed.ts` is the waiter registry the long-poll uses.
 - **Blobs:** content-addressed. Bytes travel on `PUT /blob/<nexusId>/<sha256>` and `GET /blob/<nexusId>/<sha256>`; the signed body hash is the blob id; `store` and `pull` stay small JSON bodies referencing hashes (E-4 restated).
@@ -85,31 +85,31 @@ Recorded at ratification, after the working tree is swept.
 The tag after each task names the executing agent's model. Tick per bullet at completion.
 
 - [x] **Phase 0** — Ratification: sweep the tree, run the gates, record Baseline, commit the plan.
-- [ ] **Phase 1** — Host Seams
-  - [ ] Task 1.1 Lint exclusion and byte hashing `[Sonnet]`
-  - [ ] Task 1.2 Transport bytes, the sync transport with pinning, the test certificate `[Opus]`
-  - [ ] Task 1.3 The device's agreement key `[Opus]`
-  - [ ] Task 1.4 The `sync` and `captures` tables and their store members `[Opus]`
+- [x] **Phase 1** — Host Seams
+  - [x] Task 1.1 Lint exclusion and byte hashing `[Sonnet]`
+  - [x] Task 1.2 Transport bytes, the sync transport with pinning, the test certificate `[Opus]`
+  - [x] Task 1.3 The device's agreement key `[Opus]`
+  - [x] Task 1.4 The `sync` and `captures` tables and their store members `[Opus]`
   - [ ] Review Checkpoint
-- [ ] **Phase 2** — Core Predicates and Structure
-  - [ ] Task 2.1 `Core/Sync` into `Contract/` and `Client/` `[Sonnet]`
-  - [ ] Task 2.2 The manifest predicate and the one walker `[Opus]`
-  - [ ] Task 2.3 Landing writes, the watch tap, the write tap, and Trash's writes `[Opus]`
+- [x] **Phase 2** — Core Predicates and Structure
+  - [x] Task 2.1 `Core/Sync` into `Contract/` and `Client/` `[Sonnet]`
+  - [x] Task 2.2 The manifest predicate and the one walker `[Opus]`
+  - [x] Task 2.3 Landing writes, the watch tap, the write tap, and Trash's writes `[Opus]`
   - [ ] Review Checkpoint
-- [ ] **Phase 3** — Hub Restructure and Authority
-  - [ ] Task 3.1 One file into a folder, the final schema, and the built-ins gate `[Opus]`
-  - [ ] Task 3.2 Roles, the migration proven, and one authority function `[Opus]`
-  - [ ] Task 3.3 Per-route caps and timeouts, TLS, and the bind address `[Opus]`
+- [x] **Phase 3** — Hub Restructure and Authority
+  - [x] Task 3.1 One file into a folder, the final schema, and the built-ins gate `[Opus]`
+  - [x] Task 3.2 Roles, the migration proven, and one authority function `[Opus]`
+  - [x] Task 3.3 Per-route caps and timeouts, TLS, and the bind address `[Opus]`
   - [ ] Review Checkpoint
-- [ ] **Phase 4** — Hub Content
-  - [ ] Task 4.1 The info record and the ring `[Opus]`
-  - [ ] Task 4.2 Blobs, content-addressed `[Opus]`
-  - [ ] Task 4.3 `store`: the change log `[Opus]`
-  - [ ] Task 4.4 `pull`: long-poll, cursor, resync, retention `[Opus]`
+- [x] **Phase 4** — Hub Content
+  - [x] Task 4.1 The info record and the ring `[Opus]`
+  - [x] Task 4.2 Blobs, content-addressed `[Opus]`
+  - [x] Task 4.3 `store`: the change log `[Opus]`
+  - [x] Task 4.4 `pull`: long-poll, cursor, resync, retention `[Opus]`
   - [ ] Review Checkpoint
-- [ ] **Phase 5** — Keys
-  - [ ] Task 5.1 KDF, ring, and item crypto `[Opus]`
-  - [ ] Task 5.2 Bind with a password, approve with a wrap, revoke with a rotation `[Opus]`
+- [x] **Phase 5** — Keys
+  - [x] Task 5.1 KDF, ring, and item crypto `[Opus]`
+  - [x] Task 5.2 Bind with a password, approve with a wrap, revoke with a rotation `[Opus]`
   - [ ] Review Checkpoint
 - [ ] **Phase 6** — Arrival
   - [ ] Task 6.1 Key-level JSON merge `[Opus]`
@@ -118,14 +118,14 @@ The tag after each task names the executing agent's model. Tick per bullet at co
   - [ ] Review Checkpoint
 - [ ] **Phase 7** — Client
   - [ ] Task 7.1 Base record, tap, debounce, and the rename report `[Opus]`
-  - [ ] Task 7.2 Push and the conflict path `[Fable]`
+  - [ ] Task 7.2 Push and the conflict path `[Opus]`
   - [ ] Task 7.3 Pull loop, cursor, first bind, and rescope `[Opus]`
   - [ ] Task 7.4 The session: status, `sync:now`, `sync:changed` `[Opus]`
   - [ ] Review Checkpoint
 - [ ] **Phase 8** — Editor
   - [ ] Task 8.1 `pages:changed`, one classification pass `[Opus]`
   - [ ] Task 8.2 Compare-and-swap body writes `[Opus]`
-  - [ ] Task 8.3 Three-way merge in the page view `[Fable]`
+  - [ ] Task 8.3 Three-way merge in the page view `[Opus]`
   - [ ] Review Checkpoint
 - [ ] **Phase 9** — The Nexus Heading
   - [ ] Task 9.1 Rows and channels `[Opus]`
@@ -2443,7 +2443,7 @@ Twenty-two observed rows in the plan; the scratch directory empty.
 - [ ] `Codebase Audit — Report.md`: D-2 and D-3 marked ruled with a pointer to F-3 and F-7 of the V2 log; the "Focus next" lines and change items 1 and 2 rewritten.
 - [ ] `FrameworkPM.md`: line 13's clause "and the Sync Groundwork arc, which gives every install its own Ed25519 device key, stands up a one-file server holding which devices a Nexus admits, and adds the Nexus heading to Settings › General" gains the content arc after it; line 41's sentence "The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`; the identity groundwork shipped first." becomes "Pommora Sync's decision log is [[Sync-Scaffolding-V2 — Decision Log]]; the identity groundwork and the content arc have shipped, and the mobile companion is its open Prospect."
 - [ ] `ContextPM.md`: Current Focus rewritten as a whole per Context-Format; Recent Work gains the arc's entry above `PM-137 || One Drag Engine`.
-- [ ] `HistoryPM.md`: one entry, PM-138, above `PM-137 || One Drag Engine`, per History-Format.
+- [ ] `HistoryPM.md`: one entry, PM-138, above `PM-137 || One Drag Engine`, per History-Format. Reframing the initial scaffolding entry as Sync Scaffolding - Part 1, with PM-138 AMAs Sync Scaffolding - Part 2
 - [ ] The V2 decision log's Standing line becomes "Closed <date> · [[NexusSyncPM]] describes what stands"; the Rulings that refined confirmed entries (feed, blobs, `.trash` feed, depth table, undo, compare-and-swap, ID-less rule, the rename report, dirty-file precedence, the merged-landing base rule, a password change as a Prospect) are folded into the corresponding entries under the replace rule; D-2's clause "today that resolution is inline across two branches of `route()` (`Sync/server.ts:245-261`)" becomes "that resolution was inline across two branches of the one-file server's `route()`"; the `### Sources` entry for `Sync/server.ts` is rewritten to name `Sync/hub.ts` and the `Sync/` folder as what now stands, keeping the one-file name as what the log was drafted against.
 
 **VERIFY**
@@ -2498,7 +2498,7 @@ Twenty-two observed rows in the plan; the scratch directory empty.
 
 - [ ] Phase review dispatched, all phases at once: Phases 1–10, two Opus agents each (correctness, simplification), scoped to the phase's commit range and FILES, briefed with the tasks, the Constraints, the decision log, and the Rulings as the do-not-re-raise list
 - [ ] All findings fixed or ruled on; a fix touching another phase's files re-runs that phase's pair
-- [ ] Neutral verification passed on `<baseline commit>..HEAD`: one Fable agent that did none of the work reads each Completion Criteria item against the tree and the Task 10.2 table
+- [ ] Neutral verification passed on `<baseline commit>..HEAD`: one Opus agent that did none of the work reads each Completion Criteria item against the tree and the Task 10.2 table
 - [ ] Final pass: gates from clean · Baseline re-run · the diff read once for leftovers · Deviations each fixed or carrying a mechanism · Completion Criteria ticked as observed
 - [ ] Reconciliation walked; living documents read
 - [ ] Report delivered
@@ -2526,6 +2526,7 @@ Twenty-two observed rows in the plan; the scratch directory empty.
 - `Core/Session/saveScheduler.ts` — `cancelPageSave`'s comment and the unconditional requeue — Task 8.2
 - `Core/Trash/bundle.ts` — "the `.trash` destination is unwatched" — Task 2.3
 - `.claude/CLAUDE.md` — the `Sync/` Hard Rule wording, the structure tree's two `Sync` lines, the Concurrency Locked Decision wording — Nathan's own edits, listed in the report
+- `.claude/HistoryPM.md` — PM-138 || Sync Scaffolding - Part 2
 
 #### Report & Closure
 
@@ -2537,4 +2538,18 @@ Written by the orchestrator once the chain above is confirmed, in the shape the 
 
 ### Deviations
 
-- Here
+Session one (09-14-2026, Phases 0–5) — every ruling below was written in chat as it was made.
+
+- **Agents:** one Opus agent per phase instead of one per task; no Fable subagents (Nathan's instruction). Nathan edited the neutral verifier to Opus in the plan himself.
+- **Comments:** none added unless the code cannot say it (Nathan's instruction mid-run); the comment rewrites Tasks 2.3 named in `bundle.ts` and `watcher.ts` became deletions, and every comment Phases 1–2 had added was purged in `12b567b33`.
+- **Documentation:** `.claude/**/*.md` edits accumulate uncommitted and land in one commit at the session's end; code comments land with their task.
+- **Trash manifest:** a bundle from a folder the user excluded is refused by the manifest (`!isExcluded` on the `.trash` branch); the temp-suffix rule stays sibling-gated per spec.
+- **Info record:** creating it requires `owner`; `META.info` stays `reader` for reads.
+- **Capture rows** are keyed `(nexus_id, path, sha256)` in the final DDL directly — no schema 3, since no store outside tonight's scratch dirs reached schema 2. A capture's retention clock is its arrival time; a bulk history upload is retained `historyDays` from upload — Nathan's call whether a client-supplied timestamp should travel.
+- **Unknown signer → 401** on the hub; 404 is reserved for a known device without membership, so `sync:state` forgets keys only on a real revoke.
+- **Approve/revoke order:** the key work (wrap or rotate, ring append) lands before the roster change, so a failed hand-off leaves the row and its button intact.
+- **`SyncStatus.reason` gained `'server'`** for hub refusals; a pending device stores no password (nothing to prove it against).
+- **`waitMs` clamps** to 25 000 rather than refusing above it; `historyDays < 1` refused.
+- **Task 1.4's FILES omitted `Core/Testing/contracts.test.ts`**, which the task body names; Task 4.3's omitted `Sync/feed.ts` (landed in 4.4).
+- **Two VERIFY literals** read differently from the plan: Task 5.1's import grep matches the test file and a wrapped import (source-only form → 0); Task 5.2's `grep -c` of the password refusals → 2 lines carrying 3 matches.
+- **Phase 4 exposes to the client:** an over-cap or unauthorized PUT is reset mid-stream (`connection: close` after the 413/404), and `change` rows are never swept so a cursor below head never answers `resync` while the blobs it names may be gone — Task 7.3's pull loop must treat a 404 blob as a resync trigger.

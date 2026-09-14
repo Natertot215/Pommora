@@ -157,7 +157,7 @@
 - **Commits:** `2808db5ba^..5682ba027`
 - **Diff:** Net −53 (source, comments and tests excluded)
 
-#### PM-135 || Sync Groundwork
+#### PM-135 || Sync Scaffolding - Part 1
 **DATE:** 09-11-2026
 
 Pommora gained the identities a cross-device transport needs before any content moves. A Nexus was already named by the ULID in `.nexus/nexus.json`; a device is now named by the fingerprint of a key it mints once, and a server by the address one device binds one Nexus to. No content crosses a wire yet — what exists is the admission layer the content arc runs on.
