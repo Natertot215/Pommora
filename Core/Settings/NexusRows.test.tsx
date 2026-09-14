@@ -201,13 +201,16 @@ describe('NexusRows', () => {
     expect(host.textContent).toContain('Nexus Password')
     expect(host.textContent).toContain('Not set')
     await act(async () => button('Connect')?.click())
-    expect(host.textContent).not.toContain('Nexus Password')
+    expect(host.querySelector('[aria-label="Nexus password"]')).toBeNull()
     expect(host.textContent).toContain("Held in this device's keychain")
   })
 
   it('disables Sync Now while pending', async () => {
-    await render({ 'sync:state': reply(pending) })
+    const ask = reply(bothApproved)
+    await render({ 'sync:state': reply(pending), 'sync:connect': ask })
     expect(button('Sync Now')?.disabled).toBe(true)
+    await act(async () => button('Connect')?.click())
+    expect(button('Sync Now')?.disabled).toBe(false)
   })
 
   it('captions each of the four sync states', async () => {
@@ -216,7 +219,7 @@ describe('NexusRows', () => {
     await act(async () => {
       useSession.setState({ syncStatus: { state: 'idle', lastAt: Date.now() } })
     })
-    expect(host.textContent).toContain('Last synced 0 s ago')
+    expect(host.textContent).toMatch(/Last synced \d{1,2}:\d{2}/)
     await act(async () => {
       useSession.setState({ syncStatus: { state: 'syncing' } })
     })
@@ -237,6 +240,27 @@ describe('NexusRows', () => {
   it('shows the pin field for an https address', async () => {
     await render({ 'sync:state': reply(secured) })
     expect(host.querySelector('[aria-label="Pin"]')).not.toBeNull()
+    await act(async () => root.unmount())
+    host.remove()
+    await render({ 'sync:state': reply(pending) })
+    expect(host.querySelector('[aria-label="Pin"]')).toBeNull()
+  })
+
+  it('refreshes the binding once approval arrives by push', async () => {
+    const ask = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, value: pending })
+      .mockResolvedValue({ ok: true, value: bothApproved })
+    await render({ 'sync:state': ask })
+    await act(async () => {
+      useSession.setState({ syncStatus: { state: 'off', reason: 'pending' } })
+    })
+    expect(ask).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      useSession.setState({ syncStatus: { state: 'syncing' } })
+    })
+    expect(ask).toHaveBeenCalledTimes(2)
+    expect(button('Sync Now')?.disabled).toBe(false)
   })
 
   it('sends the password and the pin with connect and never holds the password', async () => {

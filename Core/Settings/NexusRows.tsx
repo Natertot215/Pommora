@@ -5,6 +5,9 @@ import { placeholder } from '@pommora/uix/Fields/fields.css'
 import { MenuRowView } from '@pommora/uix/Menus'
 import type { Result } from '@pommora/core/Contract/result'
 import type { SyncBinding, SyncState, SyncStatus } from '@pommora/core/Sync/Contract/wire'
+import type { TimeFormat } from '@pommora/core/Properties/columnStyles'
+import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
+import { clockOf } from '../Properties/formatValue'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useTimedLabel } from './ClearActionRow'
 import { useSession } from '../Session/store'
@@ -24,12 +27,12 @@ const captionFor = (binding: SyncBinding): string => {
   }
 }
 
-const syncCaption = (status: SyncStatus): string => {
+const syncCaption = (status: SyncStatus, clock: TimeFormat): string => {
   switch (status.state) {
     case 'off':
       return status.why ?? 'Off'
     case 'idle':
-      return `Last synced ${Math.round((Date.now() - (status.lastAt ?? Date.now())) / 1000)} s ago`
+      return `Last synced ${clockOf(new Date(status.lastAt ?? Date.now()), clock)}`
     case 'syncing':
       return 'Syncing…'
     case 'error':
@@ -50,6 +53,8 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
   const inFlight = useRef(false)
+  const heldReason = useRef<SyncStatus['reason']>(undefined)
+  const clock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
   const [syncLabel, markSynced] = useTimedLabel('Sync Now', 'Synced')
 
   // One channel in flight at a time: each reply is the whole state, so a second call would answer from a list the first has already replaced.
@@ -85,8 +90,11 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
 
   const pushed = useSession((s) => s.syncStatus)
   useEffect(() => {
-    if (pushed) setState((s) => s && { ...s, status: pushed })
-  }, [pushed])
+    if (!pushed) return
+    setState((s) => s && { ...s, status: pushed })
+    if (heldReason.current === 'pending' && pushed.reason !== 'pending') refresh(false)
+  }, [pushed, refresh])
+  heldReason.current = state?.status.reason
 
   if (state === null) return null
 
@@ -97,10 +105,11 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
     binding === null || binding.state === 'pending' || state.status.reason === 'password'
 
   const onConnect = async (): Promise<void> => {
-    const ok = await run(() =>
-      host().ask('sync:connect', address, password || undefined, pin || undefined),
-    )
-    setPassword('')
+    const ok = await run(() => {
+      const sent = host().ask('sync:connect', address, password || undefined, pin || undefined)
+      setPassword('')
+      return sent
+    })
     if (ok) setDraft(null)
   }
 
@@ -136,13 +145,26 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
         <SettingsFieldRow label="Nexus Password">
           <InputField
             label="Nexus password"
-            edit={{ value: '', type: 'password', renames: 'row', onCommit: setPassword }}
+            edit={{
+              value: password,
+              type: 'password',
+              renames: 'row',
+              emptyCommits: true,
+              onCommit: setPassword,
+            }}
           >
             {password === '' ? <span className={placeholder}>Not set</span> : '••••••••'}
           </InputField>
         </SettingsFieldRow>
       ) : (
-        <MenuRowView row={{ kind: 'caption', text: "Held in this device's keychain" }} />
+        <MenuRowView
+          row={{
+            kind: 'item',
+            inert: true,
+            label: 'Nexus Password',
+            caption: "Held in this device's keychain",
+          }}
+        />
       )}
       <SettingsFieldRow label="Server" hint={binding ? captionFor(binding) : undefined}>
         <span className={x.manageCluster}>
@@ -174,11 +196,10 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
           )}
         </span>
       </SettingsFieldRow>
-      <MenuRowView row={{ kind: 'caption', text: syncCaption(state.status) }} />
-      <SettingsFieldRow label="Sync">
+      <SettingsFieldRow label="Sync" hint={syncCaption(state.status, clock)}>
         <Button
           type="filled"
-          label={state.status.state === 'syncing' ? 'Syncing…' : syncLabel}
+          label={syncLabel}
           disabled={busy || binding?.state !== 'approved'}
           onClick={() => void onSyncNow()}
         />
