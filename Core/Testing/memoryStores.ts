@@ -185,10 +185,7 @@ const sync = (): SyncStore => {
       const r = bases.get(path)
       return r ? copy(r) : null
     },
-    readAllBases: () =>
-      [...bases.values()]
-        .map(copy)
-        .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
+    readAllBases: () => [...bases.values()].map(copy),
     upsertBase: (record) => {
       bases.set(record.path, copy(record))
     },

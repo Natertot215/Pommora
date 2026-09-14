@@ -71,6 +71,7 @@ async function ensureAgreementKey(
       )
       return { x25519: stored.x25519, key }
     }
+    console.error('Agreement key missing from the secret store; minting a new one')
   }
   const { raw, key } = await mintPair(userDataDir, 'X25519', ['deriveBits'], AGREEMENT_SECRET)
   const x25519 = Buffer.from(raw).toString('base64url')

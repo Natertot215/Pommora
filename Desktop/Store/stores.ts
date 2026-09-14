@@ -160,9 +160,7 @@ export const syncStore = (db: Db): SyncStore => ({
     return row ? baseRecord(row) : null
   },
   readAllBases() {
-    return (db.prepare(`SELECT ${BASE_COLUMNS} FROM sync ORDER BY path`).all() as BaseRow[]).map(
-      baseRecord,
-    )
+    return (db.prepare(`SELECT ${BASE_COLUMNS} FROM sync`).all() as BaseRow[]).map(baseRecord)
   },
   upsertBase(record) {
     db.prepare(`INSERT OR REPLACE INTO sync (${BASE_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(

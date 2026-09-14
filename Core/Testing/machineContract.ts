@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Machine } from '../Platform/machine'
 
 const EMPTY_SHA = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+const HIGH_BYTE_SHA = 'a8100ae6aa1940d0b663bb31cd466142ebbdbd5187131b92d93818987832eb89'
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function describeMachine(
@@ -100,6 +101,10 @@ export function describeMachine(
 
     it('hashes bytes as the text they decode to', () => {
       expect(machine.sha256Hex(new Uint8Array([0x61, 0x62, 0x63]))).toBe(machine.sha256Hex('abc'))
+    })
+
+    it('hashes a byte no text encodes to the known digest', () => {
+      expect(machine.sha256Hex(new Uint8Array([0xff]))).toBe(HIGH_BYTE_SHA)
     })
 
     it('serializes overlapping takes of one key in call order', async () => {

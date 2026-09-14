@@ -62,6 +62,28 @@ describe('transport', () => {
     expect(handshakes).toBe(1)
   })
 
+  it('gives up on an address that never connects within the timeout', async () => {
+    const started = Date.now()
+    await expect(
+      transport({
+        url: 'https://192.0.2.1:7473/echo',
+        method: 'POST',
+        headers: {},
+        body: SENT,
+        pin: PIN,
+        timeoutMs: 300,
+      }),
+    ).rejects.toThrow()
+    expect(Date.now() - started).toBeLessThan(2000)
+  })
+
+  it('refuses a pinned request to an http: address rather than sending it in the clear', async () => {
+    const url = await listen(createHttpServer(), 'http')
+    await expect(
+      transport({ url, method: 'POST', headers: {}, body: SENT, pin: PIN }),
+    ).rejects.toThrow('A pinned request needs an https: address.')
+  })
+
   it('reaches an http: address without a pin', async () => {
     const url = await listen(createHttpServer(), 'http')
     const reply = await transport({ url, method: 'POST', headers: {}, body: 'hello' })
