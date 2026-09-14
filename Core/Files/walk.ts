@@ -38,7 +38,7 @@ export async function corpusFiles(root: string, scope: WatchScope): Promise<stri
   return corpusFilesUnder(root, root, scope)
 }
 
-// Descended by hand so a refused subtree is never entered, which makes pruning a directory identical to filtering its files. `siblings` is the names in the directory being listed, so a predicate can read a temp against its target; nothing is stat'ed.
+// Descended by hand so a refused subtree is never entered, which makes pruning a directory identical to filtering its files.
 export async function listPathsUnder(
   root: string,
   absDir: string,

@@ -1,23 +1,22 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { WatchScope } from '../Paths/exclusion'
-import { recordWrite, setWriteTap } from '../Files/writeEcho'
 import type { WatchEvent } from './watchPatch'
-import { ignoredUnder, setWatchTap, syncIgnoredUnder, watchTap } from './watchSettle'
+import { emitWatch, ignoredUnder, setWatchTap, syncIgnoredUnder, tileBodyOf } from './watchSettle'
 
 const root = '/nexus'
 const scope: WatchScope = { excluded: [], assetDir: ASSETS_DIR_REL }
+const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
 
 afterEach(() => {
   setWatchTap(null)
-  setWriteTap(null)
 })
 
 describe('syncIgnoredUnder', () => {
   it('admits a tile body the tree ignores', () => {
     const tree = ignoredUnder(root, scope)
     const sync = syncIgnoredUnder(root, scope)
-    for (const rel of ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']) {
+    for (const rel of TILE_BODIES) {
       expect(tree(`${root}/${rel}`)).toBe(true)
       expect(sync(`${root}/${rel}`)).toBe(false)
     }
@@ -28,13 +27,24 @@ describe('syncIgnoredUnder', () => {
   })
 })
 
-describe('the watch tap', () => {
-  it('is handed an event the echo check would drop', () => {
+describe('tileBodyOf', () => {
+  it('names what the tree drops among the events the watcher reports', () => {
+    const isTileBody = tileBodyOf(root)
+    for (const rel of TILE_BODIES) expect(isTileBody(`${root}/${rel}`)).toBe(true)
+    expect(isTileBody(`${root}/.nexus/homepage/homepage.json`)).toBe(false)
+    expect(isTileBody(`${root}/Notes/Page.md`)).toBe(false)
+    expect(isTileBody(root)).toBe(false)
+  })
+})
+
+describe('emitWatch', () => {
+  it('reaches an installed sink and builds nothing without one', () => {
     const seen: WatchEvent[] = []
+    emitWatch('change', `${root}/Notes/Page.md`)
     setWatchTap((ev) => seen.push(ev))
-    const absPath = `${root}/Notes/Page.md`
-    recordWrite(absPath)
-    watchTap()?.({ event: 'change', absPath })
-    expect(seen).toEqual([{ event: 'change', absPath }])
+    emitWatch('change', `${root}/Notes/Page.md`)
+    setWatchTap(null)
+    emitWatch('unlink', `${root}/Notes/Page.md`)
+    expect(seen).toEqual([{ event: 'change', absPath: `${root}/Notes/Page.md` }])
   })
 })

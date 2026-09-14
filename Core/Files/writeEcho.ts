@@ -5,7 +5,6 @@ const PREFIX_WINDOW_MS = 800
 
 let tap: ((absPath: string) => void) | null = null
 
-// The sync client installs itself here to see every path the app writes, the ones the watcher never reports included.
 export function setWriteTap(fn: ((absPath: string) => void) | null): void {
   tap = fn
 }

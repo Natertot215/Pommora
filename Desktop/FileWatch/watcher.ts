@@ -4,12 +4,12 @@ import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
 import { sameScope, type WatchScope } from '@pommora/core/Paths/exclusion'
 import {
-  ignoredUnder,
+  emitWatch,
   isStatePath,
   syncIgnoredUnder,
+  tileBodyOf,
   tilesChangedIn,
   valueChangesOf,
-  watchTap,
 } from '@pommora/core/Nexus/watchSettle'
 import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
@@ -39,8 +39,8 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   stopWatcher()
   const scope = await readWatchScope(root)
   if (sessionRoot() !== root) return // session switched during the settings read
-  const ignored = ignoredUnder(root, scope)
   const skip = syncIgnoredUnder(root, scope)
+  const isTileBody = tileBodyOf(root)
   watcher = chokidar.watch(root, {
     ignored: (path: string) => skip(posixPath(path)),
     ignoreInitial: true,
@@ -51,8 +51,8 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
     (event: WatchEventName) =>
     (hostPath: string): void => {
       const path = posixPath(hostPath)
-      watchTap()?.({ event, absPath: path })
-      if (ignored(path)) return
+      emitWatch(event, path)
+      if (isTileBody(path)) return
       // The app's own writes echo back and confirm through their own channels; state.json skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
       if (isStatePath(root, path)) {
         if (navDebounce) clearTimeout(navDebounce)

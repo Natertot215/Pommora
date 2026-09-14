@@ -23,7 +23,6 @@ export async function rewritePreservingTimes(filePath: string, data: string): Pr
   forgetParse(filePath)
 }
 
-// The only writer that skips the echo: a landing must classify as external so the tree reads it.
 export async function landBytes(
   filePath: string,
   bytes: Uint8Array,
