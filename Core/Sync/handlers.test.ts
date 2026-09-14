@@ -27,6 +27,7 @@ import { forgetKeys, heldRing, passwordName, ringName } from './Client/keyring'
 import type { DeviceRecord, InfoRecord } from './Contract/wire'
 import { deriveWrappingKey } from './Keys/kdf'
 import { mintKey, wrapForDevice, wrapForPassword } from './Keys/ring'
+import { readAllBases, upsertBase } from './Client/base'
 import { stopSession } from './Client/session'
 import { currentStatus } from './Client/status'
 import { syncHandlers } from './handlers'
@@ -342,6 +343,48 @@ describe('sync:connect', () => {
     )
     expect(state.binding.state).toBe('unreachable')
     expect(state.binding.why).toContain('200')
+  })
+})
+
+describe('base rows', () => {
+  it('drops every base row on a bind to another address', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    upsertBase({
+      path: 'Notes/One.md',
+      mtimeMs: 1,
+      size: 1,
+      hash: 'h',
+      blobSha: 'b',
+      version: 1,
+      baseBytes: null,
+    })
+
+    await unwrap(
+      syncHandlers['sync:connect'](host(hubAnswer(hub)), 'http://127.0.0.1:7474', PASSWORD),
+    )
+
+    expect(readAllBases()).toEqual([])
+  })
+
+  it('drops every base row on a disconnect', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    upsertBase({
+      path: 'Notes/One.md',
+      mtimeMs: 1,
+      size: 1,
+      hash: 'h',
+      blobSha: 'b',
+      version: 1,
+      baseBytes: null,
+    })
+
+    await unwrap(syncHandlers['sync:disconnect'](host(hubAnswer(hub))))
+
+    expect(readAllBases()).toEqual([])
   })
 })
 

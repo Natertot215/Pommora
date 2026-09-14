@@ -127,6 +127,8 @@ describe('landWrite', () => {
     expect(row?.hash).toBe(machine().sha256Hex(remote))
     expect(machine().sha256Hex(await readFile(abs(path)))).not.toBe(row?.hash)
     expect(row?.baseBytes).toEqual(remote)
+    expect((await stat(abs(path))).mtimeMs).not.toBe(row?.mtimeMs)
+    expect(row?.mtimeMs).toBe(MTIME)
   })
 
   it('pushes tiles:changed for a landed tile body', async () => {

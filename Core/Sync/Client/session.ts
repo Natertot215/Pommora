@@ -53,9 +53,11 @@ function settled(self: Session): void {
   if (currentStatus().state !== 'error') setStatus(self.ctx, { state: 'idle', lastAt: Date.now() })
 }
 
-function working<T>(self: Session, work: () => Promise<T>): Promise<T> {
+function working(self: Session, work: () => Promise<void>): Promise<void> {
   setStatus(self.ctx, { state: 'syncing' })
-  return run(work).finally(() => settled(self))
+  return run(async () => {
+    if (session === self) await work()
+  }).finally(() => settled(self))
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((wake) => setTimeout(wake, ms))
@@ -75,6 +77,7 @@ async function pulling(self: Session): Promise<void> {
   let failures = 0
   while (session === self) {
     const outcome = await polled(self)
+    if (session !== self) return
     if (outcome === 'revoked') {
       stopSession(self.ctx)
       setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
