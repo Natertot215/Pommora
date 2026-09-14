@@ -17,6 +17,7 @@
     "build:dashboard": "npm run build -w Dashboard",
     "sync": "node Sync/hub.ts",
     "sync:cert": "sh Sync/scripts/cert.sh",
+    "sync:image": "docker build -f Sync/Dockerfile -t pommora-hub .",
     "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json && tsc -p Sync && tsc -p Dashboard",
     "test": "vitest run",
     "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan",
