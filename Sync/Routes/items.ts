@@ -35,7 +35,8 @@ function storeChange(value: unknown): Wire.StoreChange | null {
   if (c.kind === 'write' || c.kind === 'capture') {
     const record = itemRecord((c as { record?: unknown }).record)
     if (!record) return null
-    return c.kind === 'capture' ? { kind: 'capture', record } : { kind: 'write', base, record }
+    if (c.kind === 'capture') return { kind: 'capture', record }
+    return c.base === undefined ? null : { kind: 'write', base, record }
   }
   if (base === null) return null
   const path = (c as { path?: unknown }).path

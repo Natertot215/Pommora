@@ -21,6 +21,7 @@ export function nexusStore(db: DatabaseSync) {
   )
   const bumpVersion = db.prepare('UPDATE nexus SET version = version + 1 WHERE nexus_id = ?')
   const dropStatement = db.prepare('DELETE FROM ring WHERE nexus_id = ? AND holder = ?')
+  const retentionStatement = db.prepare('SELECT nexus_id AS id, history_days AS days FROM nexus')
 
   const readInfo = (nexusId: string): Wire.InfoRecord | null => {
     const row = rowStatement.get(nexusId) as NexusRow | undefined
@@ -87,6 +88,9 @@ export function nexusStore(db: DatabaseSync) {
         throw e
       }
     },
+
+    retention: (): { id: string; days: number }[] =>
+      retentionStatement.all() as unknown as { id: string; days: number }[],
 
     dropHolder: (nexusId: string, holder: string): void => {
       dropStatement.run(nexusId, holder)
