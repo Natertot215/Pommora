@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { HostDevice, TransportReply, TransportRequest } from '../Contract/handlers'
 import { machine } from '../Platform/machine'
+import { replyOf } from '../Testing/transportReplies'
 import { canonicalString } from './authority'
 import { call, type SyncHost } from './client'
 
@@ -28,7 +29,7 @@ function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
     sent.push(req)
     if (reply instanceof Error) throw reply
-    return { ...reply, bytes: new TextEncoder().encode(reply.body) }
+    return replyOf(reply)
   }
   return { host: { device, transport }, signed, sent }
 }

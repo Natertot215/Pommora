@@ -185,7 +185,10 @@ const sync = (): SyncStore => {
       const r = bases.get(path)
       return r ? copy(r) : null
     },
-    readAllBases: () => [...bases.keys()].sort().map((path) => copy(bases.get(path)!)),
+    readAllBases: () =>
+      [...bases.values()]
+        .map(copy)
+        .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
     upsertBase: (record) => {
       bases.set(record.path, copy(record))
     },
@@ -212,7 +215,11 @@ const captures = (): CaptureStore => {
     sweepCaptures: (cutoffMs) => {
       let n = 0
       for (const p of paths.values())
-        for (const ts of [...p.keys()]) if (ts < cutoffMs && p.delete(ts)) n++
+        for (const ts of [...p.keys()])
+          if (ts < cutoffMs) {
+            p.delete(ts)
+            n++
+          }
       return n
     },
   }
