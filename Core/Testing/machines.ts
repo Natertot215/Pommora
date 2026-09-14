@@ -5,7 +5,8 @@ import { dirname } from '../Paths/posix'
 import { realpathPosix, windows } from './hostFs'
 import type { DirEntry, FileStat, Machine } from '../Platform/machine'
 
-const sha256Hex = (text: string): string => createHash('sha256').update(text).digest('hex')
+const sha256Hex = (input: string | Uint8Array): string =>
+  createHash('sha256').update(input).digest('hex')
 
 function chainLock(): Machine['lock'] {
   const chains = new Map<string, Promise<unknown>>()

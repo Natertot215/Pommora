@@ -98,6 +98,10 @@ export function describeMachine(
       expect(machine.sha256Hex('')).toBe(EMPTY_SHA)
     })
 
+    it('hashes bytes as the text they decode to', () => {
+      expect(machine.sha256Hex(new Uint8Array([0x61, 0x62, 0x63]))).toBe(machine.sha256Hex('abc'))
+    })
+
     it('serializes overlapping takes of one key in call order', async () => {
       const order: number[] = []
       const first = machine.lock('k', async () => {
