@@ -21,6 +21,22 @@ export function isStatePath(root: string, path: string): boolean {
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.state
 }
 
+// Tile bodies load through tiles:get, never the tree walk — a debounced body write must not cost a re-walk. The host's document stays watched, and so does the folder entry itself, since chokidar never descends into an ignored directory.
+// Space hosts get the same treatment file-granularly: a tile `.md` inside a Space never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
+export function tileBodyUnder(segs: string[], rel: string): boolean {
+  return (
+    (segs[0] === NEXUS_DIR &&
+      segs[1] === HOMEPAGE_HOST_DIRNAME &&
+      segs.length >= 3 &&
+      segs[2] !== TILE_DOC_FILENAME &&
+      rel !== `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) ||
+    (segs[0] === NEXUS_DIR &&
+      segs[1] === CONTEXTS_DIRNAME &&
+      segs.length >= 5 &&
+      isMarkdownFile(segs[segs.length - 1]))
+  )
+}
+
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
 export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
@@ -31,21 +47,7 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     if (!rel || escapes(rel)) return false
     const segs = rel.split('/')
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
-    return (
-      segs.some(neverWatched) ||
-      // Tile bodies load through tiles:get, never the tree walk — a debounced body write must not cost a re-walk. The host's document stays watched, and so does the folder entry itself, since chokidar never descends into an ignored directory.
-      (segs[0] === NEXUS_DIR &&
-        segs[1] === HOMEPAGE_HOST_DIRNAME &&
-        segs.length >= 3 &&
-        segs[2] !== TILE_DOC_FILENAME &&
-        rel !== `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) ||
-      // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
-      (segs[0] === NEXUS_DIR &&
-        segs[1] === CONTEXTS_DIRNAME &&
-        segs.length >= 5 &&
-        isMarkdownFile(segs[segs.length - 1])) ||
-      isExcluded(segs)
-    )
+    return segs.some(neverWatched) || tileBodyUnder(segs, rel) || isExcluded(segs)
   }
 }
 

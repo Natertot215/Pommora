@@ -1,5 +1,6 @@
 // A title rename commits this record FIRST, cascades, commits the registry, then clears it; a crash at any point leaves an exact old→new record that replays idempotently on the next open. A record's identity is its rename, so persisting the skip list updates the held record rather than displacing it.
 
+import { CONTEXT_JOURNAL_FILENAME } from '../Paths/nexusPaths'
 import { journalSlot } from '../Properties/journalSlot'
 
 export interface RenameJournal {
@@ -38,7 +39,7 @@ const same = (a: RenameJournal, b: RenameJournal): boolean =>
 const sameEntity = (a: RenameJournal, b: RenameJournal): boolean =>
   a.contextId === b.contextId && a.spaceId === b.spaceId
 
-const slot = journalSlot<RenameJournal>('context-rename.json', decode, same, sameEntity)
+const slot = journalSlot<RenameJournal>(CONTEXT_JOURNAL_FILENAME, decode, same, sameEntity)
 
 export const writeJournal = slot.write
 export const readJournal = slot.read
