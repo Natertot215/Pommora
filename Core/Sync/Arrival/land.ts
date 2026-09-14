@@ -1,11 +1,10 @@
 import { landBytes, parseJsonText } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
+import { listEntries } from '../../Files/walk'
 import { getLiveTree } from '../../Nexus/liveTree'
-import { findSpace } from '../../Nexus/watchPatch'
+import { tileHostAt } from '../../Nexus/watchPatch'
 import { tileBodyUnder } from '../../Nexus/watchSettle'
-import { NEXUS_DIR } from '../../Paths/nexusPaths'
-import { HOMEPAGE_HOST_DIRNAME } from '../../Paths/paths'
-import { dirname, join, relDirname } from '../../Paths/posix'
+import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { syncStore } from '../../Platform/stores'
 import { isPlainObject } from '../../Properties/propertyValue'
@@ -44,7 +43,7 @@ function recordOf(change: Change): ItemRecord {
 }
 
 async function bytesToLand(
-  host: SyncHost,
+  localDeviceId: string,
   abs: string,
   change: Change,
   record: ItemRecord,
@@ -61,20 +60,16 @@ async function bytesToLand(
   if (!b || !l || !r) return plaintext
   const localMtimeMs = (await machine().stat(abs))?.mtimeMs ?? 0
   const merged = mergeKeys(b, l, r, mergeDepthFor(change.path), () =>
-    newerSide(localMtimeMs, host.device.id, record.mtimeMs, change.device),
+    newerSide(localMtimeMs, localDeviceId, record.mtimeMs, change.device),
   )
   return utf8(`${stableStringify(merged)}\n`)
 }
 
 function announceTile(host: SyncHost, rel: string): void {
   if (!tileBodyUnder(rel.split('/'), rel)) return
-  if (rel.startsWith(`${NEXUS_DIR}/${HOMEPAGE_HOST_DIRNAME}/`)) {
-    host.push('tiles:changed', { kind: 'homepage' })
-    return
-  }
   const tree = getLiveTree()
-  const space = tree && findSpace(tree, relDirname(rel))
-  if (space) host.push('tiles:changed', { kind: 'space', id: space.id })
+  const ref = tree && tileHostAt(tree, rel)
+  if (ref) host.push('tiles:changed', ref)
 }
 
 export async function landWrite(
@@ -87,7 +82,11 @@ export async function landWrite(
   const abs = join(root, change.path)
   await machine().lock(abs, async () => {
     await machine().mkdir(dirname(abs))
-    await landBytes(abs, await bytesToLand(host, abs, change, record, plaintext), record.mtimeMs)
+    await landBytes(
+      abs,
+      await bytesToLand(host.device.id, abs, change, record, plaintext),
+      record.mtimeMs,
+    )
     syncStore()?.upsertBase({
       path: change.path,
       mtimeMs: record.mtimeMs,
@@ -107,7 +106,7 @@ export async function landDelete(root: string, change: Change): Promise<void> {
     if (await machine().stat(abs)) {
       await machine().remove(abs)
       const parent = dirname(abs)
-      if (parent !== root && (await machine().readDir(parent)).length === 0)
+      if (parent !== root && (await listEntries(parent)).length === 0)
         await machine().remove(parent)
     }
     syncStore()?.deleteBase(change.path)
