@@ -40,6 +40,10 @@ describe('the hub roster', () => {
     expect(names(listed.body)).toContainEqual({ id: second.id, approved: false })
   })
 
+  it('refuses a signer it has never seen as unauthorized, not as absent', async () => {
+    expect((await third.call('/devices', { nexusId: NEXUS })).status).toBe(401)
+  })
+
   it('refuses a pending device its own list', async () => {
     expect((await second.call('/devices', { nexusId: NEXUS })).status).toBe(404)
   })
