@@ -8,11 +8,11 @@
 **Dates:** 09-14-2026
 **Model:** Fable 5.1 orchestrating, Opus 5 implementing and reviewing, Fable 5.1 for the arc reviews, Sonnet 5 for the document condense
 
-**The content-sync arc is complete: 62 commits from `7913eadca` to `0e62df351`, every phase ticked, every gate green, nothing pushed.** Files travel between two devices through the hub: a page created on one lands on the other in about 2.7 seconds, every checklist mutation the bridge can drive was observed landing (37 rows measured, in the plan's Task 10.2 table and the Checklist's Measured column), conflicts resolve by recency with the losing bytes captured, a landing merges into an open editor around the caret, and the Settings heading carries the password, the pin, the status, and Sync Now. The hub builds as a container image and boots. Phases 6 through 10 ran today with the reviews the plan asked for; the three Fable arc reviews then found twenty-four things across the whole diff, of which nineteen were fixed in four commits and the rest are recorded for Nathan under the plan's Deviations.
+**The content-sync arc is complete: 62 commits from `7913eadca` to `0e62df351`, every gate green, pushed.** Files travel between two devices through the hub: a page created on one lands on the other in about 2.7 seconds, every checklist mutation the bridge can drive was observed landing (37 rows measured, in the plan's Proof table and the Checklist's Measured column), conflicts resolve by recency with the losing bytes captured, a landing merges into an open editor around the caret, and the Settings heading carries the password, the pin, the status, and Sync Now. The hub builds as a container image and boots. Phases 6 through 10 ran today with the reviews the plan asked for; the three Fable arc reviews then found twenty-four things across the whole diff, of which nineteen were fixed in four commits and the rest are recorded under the plan's Open for Nathan.
 
-**Every ruling taken today is under `### Deviations` (session two), in the order it was made,** and each was written in chat first. The ones that changed the design most: a blob stays sealed under the path it was written at and the hub keeps a renamed item's record; the long poll waits outside the session chain; a snapshot's mtime is whole milliseconds; a session starting over base rows sweeps the tree with a stat short-circuit that applies to the sweep alone; the editor's body base lives as long as the open page and a save never fetches; a landing over a dirty file whose push was declined captures the local bytes first; the tap reads the session's scope live; `sync:state` reports and never forgets.
+**Every ruling that changed the design is under the plan's `### Deviations`,** and each was written in chat first. The ones that changed the design most: a blob stays sealed under the path it was written at and the hub keeps a renamed item's record; the long poll waits outside the session chain; a snapshot's mtime is whole milliseconds; a session starting over base rows sweeps the tree with a stat short-circuit that applies to the sweep alone; the editor's body base lives as long as the open page and a save never fetches; a landing over a dirty file whose push was declined captures the local bytes first; `sync:state` reports and never forgets.
 
-**Nothing after `7913eadca` is pushed.** Push when Nathan says so. The documents commit at the end of this session carries every `.claude` edit of the day, including Nathan's own to `Cross-Platform Compatibility Checklist.md`.
+The documents commit at the end of this session carries every `.claude` edit of the day, including Nathan's own to `Cross-Platform Compatibility Checklist.md`.
 
 #### Completion Criteria
 
@@ -22,11 +22,11 @@
 - [x] Reconciliation walked; `NexusSyncPM.md` rewritten and condensed (1,828 words); PM-138 in History; Context and Framework current.
 - [x] The hub image built and booted after a user-local Docker install (Lima + Colima + the static CLI under `~/.local`).
 - [ ] Nathan's own pass: the Deviations, the open items below, the Nexus heading (his to tune), and the two manual checks (row 17's undo half; the heading's rows).
-- [ ] Push.
+- [x] Push.
 
 #### Next Session
 
-- **Nathan's open calls, recorded under Deviations:** a capture's retention clock (arrival time today) and whether a client-supplied timestamp should travel; whether `captures` earns a reader (with File History off a losing buffer sits there unseen); whether the 30 s reconnect cap should shorten; `SyncStatus` and `Change` as discriminated unions; `Core/Testing/syncHub.ts` as a hand-ported copy of the hub's `apply` (client suites could boot `Sync/Testing/hub.ts` in-process); the change log's growth (`reconcile` replays it from zero on every join, and the hub's `item` table could answer heads); the AAD path binding stated as transit integrity rather than blob-for-path protection; `nav:write` accepting a duplicate pinned entry.
+- **Nathan's open calls, recorded under the plan's Open for Nathan:** a capture's retention clock (arrival time today) and whether a client-supplied timestamp should travel; whether `captures` earns a reader (with File History off a losing buffer sits there unseen); whether the 30 s reconnect cap should shorten; `SyncStatus` and `Change` as discriminated unions; `Core/Testing/syncHub.ts` as a hand-ported copy of the hub's `apply` (client suites could boot `Sync/Testing/hub.ts` in-process); the change log's growth (`reconcile` replays it from zero on every join, and the hub's `item` table could answer heads); the AAD path binding stated as transit integrity rather than blob-for-path protection; `nav:write` accepting a duplicate pinned entry.
 - **The mobile companion** is the arc's open Prospect; `Sync/` is a folder on Node built-ins with a Dockerfile, so a hub can run anywhere Node 24 does.
 - **A clean-checkout gate run** was not obtained (a worktree under a symlinked `node_modules` failed at module resolution on unrelated suites); a fresh clone with its own `npm install` is the honest form.
 
@@ -40,7 +40,7 @@
 
 #### Session Pointers
 
-- The plan, its ticks, START/END, the Task 10.2 table, and Deviations: `.claude/Planning/Sync-Scaffolding-V2 — Implementation Plan.md`; the why: `.claude/Planning/Sync-Scaffolding-V2 — Decision Log.md`; the feature: `.claude/Features/NexusSyncPM.md`.
+- The plan's Summary, Deviations, Open for Nathan, and Proof: `.claude/Planning/Sync-Scaffolding-V2 — Implementation Plan.md`; the why: `.claude/Planning/Sync-Scaffolding-V2 — Decision Log.md`; the feature: `.claude/Features/NexusSyncPM.md`.
 - The client: `Core/Sync/Client/{session,push,pull,reconcile,tap,base,keyring,call,status}.ts`; arrival: `Core/Sync/Arrival/{land,jsonMerge,captures}.ts`; the editor's side: `Core/Pages/{merge3,PageView}.ts(x)`, `Core/Session/{saveScheduler,pageDetailCache,useBridgeSubscriptions}.ts`; the heading: `Core/Settings/NexusRows.tsx`.
 - The hub: `Sync/hub.ts`, `Sync/wire.ts`, `Sync/Store/log.ts`, `Sync/Dockerfile` with the root `.dockerignore`, `Sync/scripts/cert.sh`.
 - Test furniture the client suites share: `Core/Testing/syncHub.ts` (the route-level fake hub), `Core/Testing/syncDevice.ts`.
