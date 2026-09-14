@@ -1,3 +1,4 @@
+set -e
 DATA="${POMMORA_SYNC_DATA:-$HOME/.pommora-sync}"
 mkdir -p "$DATA"
 openssl req -x509 -nodes -days 3650 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \

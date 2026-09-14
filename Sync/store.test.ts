@@ -36,4 +36,34 @@ describe('the hub store', () => {
     })
     store.db.close()
   })
+
+  it('refuses a store written by a newer hub', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pommora-store-'))
+    const seed = new DatabaseSync(join(dir, STORE_FILE))
+    seed.exec(VERSION_ONE_DDL)
+    seed.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run('schema_version', '99')
+    seed.close()
+    expect(() => openStore(dir)).toThrow(/schema version 99/)
+  })
+
+  it('leaves a version-one store untouched when its migration fails', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pommora-store-'))
+    const seed = new DatabaseSync(join(dir, STORE_FILE))
+    seed.exec(VERSION_ONE_DDL)
+    seed.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run('schema_version', '1')
+    seed.exec('ALTER TABLE device ADD COLUMN x25519 TEXT')
+    seed.close()
+
+    expect(() => openStore(dir)).toThrow()
+    const after = new DatabaseSync(join(dir, STORE_FILE))
+    expect(after.prepare('SELECT value FROM meta WHERE key = ?').get('schema_version')).toEqual({
+      value: '1',
+    })
+    expect(
+      after
+        .prepare('SELECT COUNT(*) AS n FROM pragma_table_info(?) WHERE name = ?')
+        .get('membership', 'role'),
+    ).toEqual({ n: 0 })
+    after.close()
+  })
 })

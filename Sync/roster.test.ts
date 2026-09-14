@@ -131,6 +131,27 @@ describe('the hub roster', () => {
     expect(outcome.status).toBe(413)
   })
 
+  it('refuses a connect carrying a malformed agreement key', async () => {
+    const fourth = signer('Fourth Mac')
+    const outcome = await fourth.call('/connect', {
+      ...connectBody(fourth, NEXUS),
+      x25519: 'not-a-key',
+    })
+    expect(outcome.status).toBe(400)
+    expect((await first.call('/devices', { nexusId: NEXUS })).body).toEqual({
+      devices: [
+        {
+          id: first.id,
+          publicKey: first.publicKey,
+          name: first.name,
+          x25519: first.x25519,
+          approved: true,
+          role: 'owner',
+        },
+      ],
+    })
+  })
+
   it('keeps memberships across a restart', async () => {
     await hub.close()
     hub = await boot({ dataDir: hub.dataDir })
