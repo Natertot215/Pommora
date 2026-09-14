@@ -25,6 +25,7 @@ let root: Root
 let landed: (paths: string[]) => void
 let pushStatus: (status: SyncStatus) => void
 let replaceBody: ReturnType<typeof vi.fn<(path: string) => Promise<boolean>>>
+let captured: ReturnType<typeof vi.fn<(path: string, text: string) => unknown>>
 
 const mount = async (): Promise<void> => {
   await act(async () => {
@@ -35,6 +36,7 @@ const mount = async (): Promise<void> => {
 beforeEach(() => {
   clearCache()
   replaceBody = vi.fn(async (_path: string) => true)
+  captured = vi.fn((_path: string, _text: string) => ok(null))
   useSession.setState({ replaceBody, syncStatus: null })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'host:platform': async () => ok('posix'),
@@ -44,6 +46,7 @@ beforeEach(() => {
       return () => undefined
     },
     'page:updateBody': async () => ok({ hash: 'h', stale: true }),
+    'sync:captureLocal': captured,
     'sync:changed': (cb: (status: SyncStatus) => void) => {
       pushStatus = cb
       return () => undefined
@@ -77,6 +80,19 @@ describe('a page that changed outside the app', () => {
     cachePageDetail(detail({ path: PATH }))
     act(() => landed([PATH, 'Notes/unknown.md']))
     expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
+  })
+
+  it('captures the held body of a refused save and nothing for a plain landing', async () => {
+    await mount()
+    cachePageDetail(detail({ path: PATH }))
+    act(() => landed([PATH]))
+    expect(captured).not.toHaveBeenCalled()
+
+    schedulePageSave(PATH, 'typed')
+    await act(async () => flushPageSave(PATH))
+
+    expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
+    expect(replaceBody).toHaveBeenCalledTimes(2)
   })
 
   it('routes a stale save the same way while mounted, and nothing once unmounted', async () => {

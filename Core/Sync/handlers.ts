@@ -8,8 +8,8 @@ import { readFileHistoryConfig } from '../Settings/settings'
 import { deleteBase, readAllBases } from './Client/base'
 import { call, type CallOutcome, type SyncHost, type SyncTarget, syncHost } from './Client/call'
 import { startSession, stopSession, syncNow } from './Client/session'
-import { currentStatus, setStatus } from './Client/status'
-import { forgetHeldRing, forgetKeys, loadRing, passwordName, ringName } from './Client/keyring'
+import { currentStatus } from './Client/status'
+import { forgetHeldRing, loadRing, passwordName, ringName } from './Client/keyring'
 import type {
   DeviceRecord,
   InfoRecord,
@@ -124,12 +124,13 @@ async function state(root: string, ctx: HostContext): Promise<Result<SyncState>>
   if (binding === null) return ok({ device, binding: null, status: currentStatus() })
   const outcome = await call(host, binding, 'devices', { nexusId })
   const revoked = outcome.status === 404 && (await host.secrets.get(ringName(nexusId))) !== null
-  if (revoked) {
-    await stopSession(ctx)
-    await forgetKeys(host, nexusId)
-    setStatus(ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
-  }
-  return ok({ device, binding: bindingFrom(binding, outcome), status: currentStatus() })
+  return ok({
+    device,
+    binding: bindingFrom(binding, outcome),
+    status: revoked
+      ? { state: 'off', reason: 'revoked', why: 'This device was revoked.' }
+      : currentStatus(),
+  })
 }
 
 async function shareRing(
