@@ -7,9 +7,9 @@ import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { deleteBase, readAllBases } from './Client/base'
 import { call, type CallOutcome, type SyncHost, type SyncTarget, syncHost } from './Client/call'
-import { startSession, stopSession, syncNow } from './Client/session'
+import { currentSession, startSession, stopSession, syncNow } from './Client/session'
 import { currentStatus } from './Client/status'
-import { forgetHeldRing, loadRing, passwordName, ringName } from './Client/keyring'
+import { forgetHeldRing, heldRing, loadRing, passwordName, ringName } from './Client/keyring'
 import type {
   DeviceRecord,
   InfoRecord,
@@ -242,6 +242,9 @@ const act = (route: 'approve' | 'revoke') =>
         binding: bindingFrom(binding, listing),
         status: work.trouble === undefined ? currentStatus() : statusOf(work.trouble),
       })
+    const running = currentSession()
+    const rotated = heldRing(nexusId)
+    if (running !== null && running.nexusId === nexusId && rotated !== null) running.ring = rotated
     const outcome = await call(host, binding, route, { nexusId, deviceId })
     if (outcome.status !== 200 && outcome.status !== 0) return state(root, ctx)
     return ok({

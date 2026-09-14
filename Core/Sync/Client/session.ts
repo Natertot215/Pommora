@@ -135,8 +135,13 @@ async function begin(
   installTap(root, self.scope, {
     onDirty: (rels) => {
       void working(self, async () => {
-        if (rels.includes(SETTINGS_REL)) await rescope(self, await readWatchScope(root))
-        await pushDirty(self, rels)
+        try {
+          if (rels.includes(SETTINGS_REL)) await rescope(self, await readWatchScope(root))
+          await pushDirty(self, rels)
+        } catch (e) {
+          for (const rel of rels) self.failed.add(rel)
+          throw e
+        }
       })
     },
     onRename: (from, to) => {
@@ -146,9 +151,11 @@ async function begin(
   if (readAllBases().length === 0) await working(self, () => reconcile(self))
   else
     await working(self, async () =>
-      pushDirty(self, [
-        ...new Set([...(await admittedPaths(self)), ...readAllBases().map((row) => row.path)]),
-      ]),
+      pushDirty(
+        self,
+        [...new Set([...(await admittedPaths(self)), ...readAllBases().map((row) => row.path)])],
+        true,
+      ),
     )
   void pulling(self)
 }
@@ -162,28 +169,25 @@ async function withKeys(
   delay: number,
   token: number,
 ): Promise<void> {
-  let ring = await loadRing(host, nexusId, null, null)
+  const outcome = await call(host, binding, 'info', { nexusId })
+  if (outcome.reply === null) {
+    setStatus(
+      ctx,
+      outcome.status === 404
+        ? { state: 'off', reason: 'pending', why: 'Waiting for approval from another device.' }
+        : { state: 'off', reason: 'server', why: answered(outcome) },
+    )
+    retry = setTimeout(() => {
+      if (token !== generation) return
+      retry = null
+      void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS), token)
+    }, delay)
+    return
+  }
+  const ring = await loadRing(host, nexusId, outcome.reply.info, null)
   if (ring === null) {
-    const outcome = await call(host, binding, 'info', { nexusId })
-    if (outcome.reply === null) {
-      setStatus(
-        ctx,
-        outcome.status === 404
-          ? { state: 'off', reason: 'pending', why: 'Waiting for approval from another device.' }
-          : { state: 'off', reason: 'server', why: answered(outcome) },
-      )
-      retry = setTimeout(() => {
-        if (token !== generation) return
-        retry = null
-        void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS), token)
-      }, delay)
-      return
-    }
-    ring = await loadRing(host, nexusId, outcome.reply.info, null)
-    if (ring === null) {
-      setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
-      return
-    }
+    setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
+    return
   }
   await begin(ctx, host, root, nexusId, binding, ring, token)
 }
