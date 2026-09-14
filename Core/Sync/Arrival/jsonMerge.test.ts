@@ -5,8 +5,11 @@ type Pick = () => 'local' | 'remote'
 
 const takeLocal: Pick = () => 'local'
 const takeRemote: Pick = () => 'remote'
+const neverPicks: Pick = () => {
+  throw new Error('pick() was consulted for a key only one side changed.')
+}
 
-const merge = (base: Json, local: Json, remote: Json, depth = {}, pick: Pick = takeRemote): Json =>
+const merge = (base: Json, local: Json, remote: Json, depth = {}, pick: Pick = neverPicks): Json =>
   mergeKeys(base, local, remote, depth, pick)
 
 describe('mergeKeys', () => {

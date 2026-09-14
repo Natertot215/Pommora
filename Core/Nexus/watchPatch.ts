@@ -85,12 +85,21 @@ function findPage(tree: NexusTree, rel: string): PageNode | null {
   return container?.pages.find((p) => p.path === rel) ?? null
 }
 
-export function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
+function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
   for (const g of tree.contexts) {
     const hit = g.spaces.find((s) => s.path === dirRel)
     if (hit) return hit
   }
   return null
+}
+
+export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
+  const segs = rel.split('/')
+  if (segs[0] !== NEXUS_DIR) return null
+  if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME) return { kind: 'homepage' }
+  const space =
+    segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? findSpace(tree, relDirname(rel)) : null
+  return space ? { kind: 'space', id: space.id } : null
 }
 
 const isContentName = (name: string): boolean => !name.startsWith('_') && isMarkdownFile(name)
@@ -117,13 +126,8 @@ export function classifyEvent(
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
     if (segs.length === 2 && segs[1] === HOMEPAGE_HOST_DIRNAME) return { kind: 'ignored' }
     if (name === TILE_DOC_FILENAME) {
-      if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME)
-        return { kind: 'tiles-leaf', host: { kind: 'homepage' } }
-      const space =
-        segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? findSpace(tree, dirRel) : null
-      return space
-        ? { kind: 'tiles-leaf', host: { kind: 'space', id: space.id } }
-        : { kind: 'ignored' }
+      const host = tileHostAt(tree, rel)
+      return host ? { kind: 'tiles-leaf', host } : { kind: 'ignored' }
     }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
