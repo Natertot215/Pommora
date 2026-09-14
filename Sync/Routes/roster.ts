@@ -1,5 +1,5 @@
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
-import type { Identity } from '../authority.ts'
+import type { Identity, Routes } from '../authority.ts'
 import type { Store } from '../Store/open.ts'
 import { PUBLIC_KEY, refuse, type Reply } from '../wire.ts'
 
@@ -46,7 +46,8 @@ export function rosterRoutes(store: Store) {
       if (!deviceId) return refuse(400, 'malformed')
       if (deviceId === id.device) return refuse(400, 'self-revoke')
       roster.revoke(id.nexusId, deviceId)
+      store.nexus.dropHolder(id.nexusId, deviceId)
       return { status: 200, body: { devices: roster.list(id.nexusId) } }
     },
-  } satisfies { [K in keyof Wire.RouteTable]: (id: Identity, body: unknown) => Reply }
+  } satisfies Routes<'connect' | 'devices' | 'approve' | 'revoke'>
 }

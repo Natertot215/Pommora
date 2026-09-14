@@ -17,6 +17,10 @@ const WINDOW_MS = 5 * 60_000
 
 type Signature = { device: string; ts: number; sig: string }
 
+export type Routes<K extends keyof Wire.RouteTable> = {
+  [P in K]: (id: Identity, body: unknown) => Reply | Promise<Reply>
+}
+
 export interface Identity {
   device: string
   publicKey: string

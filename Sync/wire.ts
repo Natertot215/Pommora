@@ -19,6 +19,8 @@ export const PATHS = {
   devices: '/devices',
   approve: '/approve',
   revoke: '/revoke',
+  info: '/info',
+  ring: '/ring',
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteTable[K]['path'] }
 
 export const ROUTES = Object.keys(PATHS) as (keyof Wire.RouteTable)[]
@@ -33,6 +35,8 @@ export const META = {
   devices: { requires: 'reader', cap: JSON_CAP, timeoutMs: JSON_TIMEOUT_MS },
   approve: { requires: 'editor', cap: JSON_CAP, timeoutMs: JSON_TIMEOUT_MS },
   revoke: { requires: 'owner', cap: JSON_CAP, timeoutMs: JSON_TIMEOUT_MS },
+  info: { requires: 'reader', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
+  ring: { requires: 'editor', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
 
 export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const

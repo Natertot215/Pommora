@@ -48,11 +48,49 @@ export interface DevicesReply {
   devices: DeviceRecord[]
 }
 
+export interface KdfParams {
+  hash: 'SHA-256'
+  iterations: number
+  salt: string
+}
+
+export interface RingEntry {
+  keyId: string
+  holder: 'password' | string
+  wrapped: string
+  createdMs: number
+}
+
+export interface InfoRecord {
+  version: number
+  protocol: 1
+  kdf: KdfParams
+  historyDays: number
+  ring: RingEntry[]
+}
+
+export interface InfoBody {
+  nexusId: string
+  create?: Omit<InfoRecord, 'version'>
+}
+
+export interface InfoReply {
+  info: InfoRecord
+}
+
+export interface RingBody {
+  nexusId: string
+  base: number
+  add: RingEntry[]
+}
+
 export interface RouteTable {
   connect: { method: 'POST'; path: '/connect'; body: ConnectBody; reply: ConnectReply }
   devices: { method: 'POST'; path: '/devices'; body: NexusBody; reply: DevicesReply }
   approve: { method: 'POST'; path: '/approve'; body: DeviceBody; reply: DevicesReply }
   revoke: { method: 'POST'; path: '/revoke'; body: DeviceBody; reply: DevicesReply }
+  info: { method: 'POST'; path: '/info'; body: InfoBody; reply: InfoReply }
+  ring: { method: 'POST'; path: '/ring'; body: RingBody; reply: InfoReply }
 }
 
 export type SyncBinding = { address: string } & (

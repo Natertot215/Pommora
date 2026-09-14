@@ -5,6 +5,8 @@ export const ROUTES = {
   devices: { method: 'POST', path: '/devices' },
   approve: { method: 'POST', path: '/approve' },
   revoke: { method: 'POST', path: '/revoke' },
+  info: { method: 'POST', path: '/info' },
+  ring: { method: 'POST', path: '/ring' },
 } as const satisfies { [K in keyof RouteTable]: Pick<RouteTable[K], 'method' | 'path'> }
 
 export function canonicalString(
