@@ -2,8 +2,8 @@ import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
 import { fail, ok, type Result } from '../Contract/result'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
-import { call, type CallOutcome, type SyncHost } from './client'
-import type { SyncBinding, SyncDevice, SyncState } from './contract'
+import { call, type CallOutcome, type SyncHost } from './Client/call'
+import type { SyncBinding, SyncDevice, SyncState } from './Contract/wire'
 
 const NO_DEVICE = fail(
   'operation-failed',

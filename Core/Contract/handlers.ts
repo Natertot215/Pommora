@@ -4,7 +4,7 @@ import { sessionRoot } from '../Nexus/session'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
 import type { TrashMode } from '../Trash/trashRow'
-import type { SyncDevice } from '../Sync/contract'
+import type { SyncDevice } from '../Sync/Contract/wire'
 
 export type PickKind = 'file' | 'folder' | 'image' | 'exclusion'
 
