@@ -9,11 +9,21 @@ import { join } from 'node:path'
 import { identify, verify } from './authority.ts'
 import { rosterRoutes } from './Routes/roster.ts'
 import { openStore, type Store } from './Store/open.ts'
-import { MALFORMED, META, PATHS, parseBody, refuse, type Reply, ROUTES, sha256Hex } from './wire.ts'
+import {
+  LOOPBACK,
+  MALFORMED,
+  META,
+  PATHS,
+  parseBody,
+  refuse,
+  type Reply,
+  ROUTES,
+  sha256Hex,
+} from './wire.ts'
 
 const PORT = Number(process.env.POMMORA_SYNC_PORT ?? 7473)
 const DATA_DIR = process.env.POMMORA_SYNC_DATA ?? join(homedir(), '.pommora-sync')
-const HOST = process.env.POMMORA_SYNC_HOST ?? '127.0.0.1'
+const HOST = process.env.POMMORA_SYNC_HOST ?? LOOPBACK
 
 function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
   return new Promise((resolve, reject) => {
@@ -24,6 +34,7 @@ function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
       if (size <= cap) chunks.push(chunk)
     })
     req.on('end', () => resolve(size > cap ? null : Buffer.concat(chunks)))
+    req.on('close', () => resolve(null))
     req.on('error', reject)
   })
 }
@@ -43,7 +54,7 @@ async function route(
   const body = parseBody(raw)
   if (body === MALFORMED) return refuse(400, 'malformed')
   const id = identify(store, req, name, body)
-  if (!('signed' in id)) return id
+  if ('status' in id) return id
   const bad = verify(id, path, sha256Hex(raw))
   if (bad) return bad
   return routes[name](id, body)
@@ -63,7 +74,10 @@ export async function start(opts: {
       res.writeHead(reply.status, { 'content-type': 'application/json' })
       res.end(JSON.stringify(reply.body))
     }
-    req.on('timeout', () => send(refuse(408, 'timeout')))
+    req.on('timeout', () => {
+      res.once('finish', () => req.destroy())
+      send(refuse(408, 'timeout'))
+    })
     route(store, routes, req)
       .catch((e) => {
         console.error('Sync request failed:', e)
@@ -74,7 +88,7 @@ export async function start(opts: {
   const server = opts.tls ? httpsCreateServer(opts.tls, handler) : createServer(handler)
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
-    server.listen(opts.port, opts.host ?? '127.0.0.1', () => {
+    server.listen(opts.port, opts.host ?? LOOPBACK, () => {
       server.off('error', reject)
       resolve()
     })

@@ -1,9 +1,10 @@
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { boot, signer } from './Testing/hub.ts'
+import { STORE_FILE } from './Store/open.ts'
+import { boot, connectBody, NEXUS, signer } from './Testing/hub.ts'
+import { JSON_CAP } from './wire.ts'
 
-const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 const OTHER_NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FB0'
 
 let hub: Awaited<ReturnType<typeof boot>>
@@ -12,15 +13,8 @@ const first = signer('First Mac')
 const second = signer('Second Mac')
 const third = signer('Third Mac')
 
-const connectBody = (s: typeof first) => ({
-  nexusId: NEXUS,
-  publicKey: s.publicKey,
-  name: s.name,
-  x25519: s.x25519,
-})
-
 function setRole(fingerprint: string, role: string): void {
-  const db = new DatabaseSync(join(hub.dataDir, 'sync.db'))
+  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
   db.prepare('UPDATE membership SET role = ? WHERE nexus_id = ? AND fingerprint = ?').run(
     role,
     NEXUS,
@@ -46,13 +40,13 @@ afterAll(async () => {
 
 describe('the hub roster', () => {
   it('approves the first device of a Nexus by construction', async () => {
-    const outcome = await first.call('/connect', connectBody(first))
+    const outcome = await first.call('/connect', connectBody(first, NEXUS))
     expect(outcome.status).toBe(200)
     expect(outcome.body).toEqual({ approved: true })
   })
 
   it('leaves a second device pending and lists it', async () => {
-    const outcome = await second.call('/connect', connectBody(second))
+    const outcome = await second.call('/connect', connectBody(second, NEXUS))
     expect(outcome.body).toEqual({ approved: false })
     const listed = await first.call('/devices', { nexusId: NEXUS })
     expect(listed.status).toBe(200)
@@ -77,7 +71,7 @@ describe('the hub roster', () => {
   })
 
   it('refuses a reader the approve route', async () => {
-    await third.call('/connect', connectBody(third))
+    await third.call('/connect', connectBody(third, NEXUS))
     expect((await first.call('/approve', { nexusId: NEXUS, deviceId: third.id })).status).toBe(200)
     setRole(third.id, 'reader')
     expect((await third.call('/devices', { nexusId: NEXUS })).status).toBe(200)
@@ -133,13 +127,13 @@ describe('the hub roster', () => {
   })
 
   it('refuses a body over the cap', async () => {
-    const outcome = await first.call('/devices', { nexusId: NEXUS, pad: 'x'.repeat(8192) })
+    const outcome = await first.call('/devices', { nexusId: NEXUS, pad: 'x'.repeat(JSON_CAP) })
     expect(outcome.status).toBe(413)
   })
 
   it('keeps memberships across a restart', async () => {
     await hub.close()
-    hub = await boot(hub.dataDir)
+    hub = await boot({ dataDir: hub.dataDir })
     const listed = await first.call('/devices', { nexusId: NEXUS })
     expect(listed.status).toBe(200)
     expect(names(listed.body)).toEqual([{ id: first.id, approved: true }])

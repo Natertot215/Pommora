@@ -3,6 +3,8 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { rosterStore } from './roster.ts'
 
+export const STORE_FILE = 'sync.db'
+
 const SCHEMA_VERSION = 2
 
 const DDL = `
@@ -49,7 +51,7 @@ function migrate(db: DatabaseSync): void {
 
 export function openStore(dir: string): Store {
   mkdirSync(dir, { recursive: true })
-  const db = new DatabaseSync(join(dir, 'sync.db'), { timeout: 5000 })
+  const db = new DatabaseSync(join(dir, STORE_FILE), { timeout: 5000 })
   db.exec('PRAGMA journal_mode = WAL')
   db.exec(DDL)
   migrate(db)
