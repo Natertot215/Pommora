@@ -21,6 +21,7 @@ export const PATHS = {
   revoke: '/revoke',
   info: '/info',
   ring: '/ring',
+  store: '/store',
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteTable[K]['path'] }
 
 export const ROUTES = Object.keys(PATHS) as (keyof Wire.RouteTable)[]
@@ -37,6 +38,7 @@ export const META = {
   revoke: { requires: 'owner', cap: JSON_CAP, timeoutMs: JSON_TIMEOUT_MS },
   info: { requires: 'reader', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
   ring: { requires: 'editor', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
+  store: { requires: 'editor', cap: 262144, timeoutMs: JSON_TIMEOUT_MS },
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
 
 export const BLOB_ROUTE = /^\/blob\/([0-7][0-9A-HJKMNP-TV-Z]{25})\/([0-9a-f]{64})$/
@@ -52,6 +54,12 @@ export type Reply = { status: number; body: object }
 export function refuse(status: number, error: string): Reply {
   return { status, body: { error } }
 }
+
+export const text = (value: unknown, max: number): value is string =>
+  typeof value === 'string' && value.length > 0 && value.length <= max
+
+export const whole = (value: unknown, max: number): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max
 
 export const MALFORMED = Symbol('malformed')
 

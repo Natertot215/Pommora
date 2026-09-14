@@ -9,6 +9,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { header, identify, type Routes, verify } from './authority.ts'
 import { blobRoutes } from './Routes/blobs.ts'
+import { itemRoutes } from './Routes/items.ts'
 import { nexusRoutes } from './Routes/nexus.ts'
 import { rosterRoutes } from './Routes/roster.ts'
 import { openStore, type Store } from './Store/open.ts'
@@ -160,7 +161,7 @@ export async function start(opts: {
   mkdirSync(join(opts.dataDir, 'spool'), { recursive: true })
   const d: Dispatch = {
     store,
-    routes: { ...rosterRoutes(store), ...nexusRoutes(store) },
+    routes: { ...rosterRoutes(store), ...nexusRoutes(store), ...itemRoutes(store) },
     blobs: blobRoutes(store),
     dataDir: opts.dataDir,
     timeoutMs: opts.timeoutMs,
