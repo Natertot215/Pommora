@@ -22,12 +22,21 @@ export async function getSecret(userDataDir: string, name: string): Promise<stri
   return safeStorage.decryptString(Buffer.from(value, 'base64'))
 }
 
-export async function setSecret(userDataDir: string, name: string, plain: string): Promise<void> {
-  if (!secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
-  const value = safeStorage.encryptString(plain).toString('base64')
+export async function setSecret(
+  userDataDir: string,
+  name: string,
+  plain: string | null,
+): Promise<void> {
+  if (plain !== null && !secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
   const written = await rmwJsonStrict(
     secretsPath(userDataDir),
-    (cur) => ({ ...cur, [name]: value }),
+    (cur) => {
+      if (plain === null) {
+        const { [name]: _dropped, ...rest } = cur
+        return rest
+      }
+      return { ...cur, [name]: safeStorage.encryptString(plain).toString('base64') }
+    },
     () => ({}),
   )
   if (!written.ok) throw new Error(written.error.message)
