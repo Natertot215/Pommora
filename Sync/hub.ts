@@ -18,14 +18,14 @@ import {
   BLOB_CAP,
   BLOB_ROUTE,
   BLOB_TIMEOUT_MS,
+  KEY_ID_MAX,
   LOOPBACK,
   MALFORMED,
   META,
-  PATHS,
   parseBody,
   refuse,
   type Reply,
-  ROUTES,
+  ROUTE_OF,
   sha256Hex,
 } from './wire.ts'
 
@@ -38,12 +38,22 @@ function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     let size = 0
+    let settled = false
+    const settle = (body: Buffer | null): void => {
+      if (settled) return
+      settled = true
+      resolve(body)
+    }
     req.on('data', (chunk: Buffer) => {
       size += chunk.length
-      if (size <= cap) chunks.push(chunk)
+      if (size > cap) {
+        settle(null)
+        return
+      }
+      chunks.push(chunk)
     })
-    req.on('end', () => resolve(size > cap ? null : Buffer.concat(chunks)))
-    req.on('close', () => resolve(null))
+    req.on('end', () => settle(Buffer.concat(chunks)))
+    req.on('close', () => settle(null))
     req.on('error', reject)
   })
 }
@@ -71,14 +81,17 @@ function spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<Spoo
     }
     req.on('data', (chunk: Buffer) => {
       size += chunk.length
-      if (size > cap) return
+      if (size > cap) {
+        settle(null)
+        return
+      }
       hash.update(chunk)
       if (!file.write(chunk)) {
         req.pause()
         file.once('drain', () => req.resume())
       }
     })
-    req.on('end', () => settle(size > cap ? null : { path, size, sha256Hex: hash.digest('hex') }))
+    req.on('end', () => settle({ path, size, sha256Hex: hash.digest('hex') }))
     req.on('close', () => settle(null))
     req.on('error', reject)
   })
@@ -116,7 +129,7 @@ async function bytes(
     return verify(id, method, path, sha256Hex(Buffer.alloc(0))) ?? d.blobs.get(params, res)
   }
   const keyId = header(req, 'x-pommora-key')
-  if (keyId === null || keyId.length > 64) return refuse(400, 'malformed')
+  if (keyId === null || keyId.length > KEY_ID_MAX) return refuse(400, 'malformed')
   const spool = await spoolBody(req, BLOB_CAP, d.dataDir)
   if (spool === null) return refuse(413, 'too-large')
   try {
@@ -138,8 +151,8 @@ async function route(
   const blob = BLOB_ROUTE.exec(path)
   if (blob) return bytes(d, req, res, path, blob)
   if (req.method !== 'POST') return refuse(404, 'not-found')
-  const name = ROUTES.find((r) => PATHS[r] === path)
-  if (!name) return refuse(404, 'not-found')
+  const name = ROUTE_OF[path]
+  if (name === undefined) return refuse(404, 'not-found')
   req.setTimeout(d.timeoutMs ?? META[name].timeoutMs)
   const raw = await readCapped(req, META[name].cap)
   if (!raw) return refuse(413, 'too-large')
@@ -171,7 +184,10 @@ export async function start(opts: {
   const handler = (req: IncomingMessage, res: ServerResponse) => {
     const send = (reply: Reply): void => {
       if (res.headersSent) return
-      res.writeHead(reply.status, { 'content-type': 'application/json' })
+      res.writeHead(reply.status, {
+        'content-type': 'application/json',
+        ...(req.complete ? {} : { connection: 'close' }),
+      })
       res.end(JSON.stringify(reply.body))
     }
     req.on('timeout', () => {
@@ -185,6 +201,7 @@ export async function start(opts: {
       })
       .then((reply) => {
         if (reply !== 'streamed') send(reply)
+        if (!req.complete) res.once('finish', () => req.destroy())
       })
   }
   const sweep = (): void => {

@@ -1,15 +1,12 @@
-import { join } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { STORE_FILE } from './Store/open.ts'
-import { boot, connectBody, NEXUS, signer } from './Testing/hub.ts'
+import { boot, bootWith, connectBody, type Hub, NEXUS, signer, withDb } from './Testing/hub.ts'
 import { sha256Hex } from './wire.ts'
 
 const BYTES = Buffer.from('ciphertext')
 const DIGEST = sha256Hex(BYTES)
 
-let hub: Awaited<ReturnType<typeof boot>>
+let hub: Hub
 let request = 0
 let head = 0
 
@@ -43,23 +40,16 @@ async function pull(cursor: number, waitMs?: number): Promise<Wire.PullReply> {
   return outcome.body as Wire.PullReply
 }
 
-function withDb<T>(read: (db: DatabaseSync) => T): T {
-  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
-  try {
-    return read(db)
-  } finally {
-    db.close()
-  }
-}
-
 const only = (reply: Wire.StoreReply): Wire.StoreOutcome => reply.outcomes[0]
 
 const countChanges = (): number =>
-  withDb((db) => (db.prepare('SELECT COUNT(*) AS n FROM change').get() as { n: number }).n)
+  withDb(
+    hub.dataDir,
+    (db) => (db.prepare('SELECT COUNT(*) AS n FROM change').get() as { n: number }).n,
+  )
 
 beforeAll(async () => {
-  hub = await boot()
-  await owner.call('/connect', connectBody(owner, NEXUS))
+  hub = await bootWith({ owner })
   await owner.call('/info', {
     nexusId: NEXUS,
     create: {
@@ -232,7 +222,7 @@ describe('the hub retention sweep', () => {
   }
 
   const held = (): string[] =>
-    withDb((db) =>
+    withDb(hub.dataDir, (db) =>
       (db.prepare('SELECT sha256 FROM blob WHERE nexus_id = ?').all(NEXUS) as { sha256: string }[])
         .map((r) => r.sha256)
         .sort(),
@@ -245,7 +235,7 @@ describe('the hub retention sweep', () => {
     await push([
       { kind: 'capture', record: { ...record('Notes/kept.md'), sha256: digests.captured } },
     ])
-    withDb((db) => {
+    withDb(hub.dataDir, (db) => {
       db.prepare('UPDATE blob SET at_ms = ? WHERE nexus_id = ? AND sha256 IN (?, ?)').run(
         ancient,
         NEXUS,

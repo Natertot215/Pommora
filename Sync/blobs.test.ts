@@ -1,15 +1,13 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { STORE_FILE } from './Store/open.ts'
-import { boot, connectBody, NEXUS, signer } from './Testing/hub.ts'
+import { bootWith, type Hub, NEXUS, signer } from './Testing/hub.ts'
 import { BLOB_CAP, blobPath, sha256Hex } from './wire.ts'
 
 const MEBIBYTE = Buffer.alloc(1024 * 1024, 7)
 const DIGEST = sha256Hex(MEBIBYTE)
 
-let hub: Awaited<ReturnType<typeof boot>>
+let hub: Hub
 
 const owner = signer('Owner Mac')
 const reader = signer('Reader Mac')
@@ -17,17 +15,7 @@ const reader = signer('Reader Mac')
 const spoolFiles = (): string[] => readdirSync(join(hub.dataDir, 'spool'))
 
 beforeAll(async () => {
-  hub = await boot()
-  await owner.call('/connect', connectBody(owner, NEXUS))
-  await reader.call('/connect', connectBody(reader, NEXUS))
-  await owner.call('/approve', { nexusId: NEXUS, deviceId: reader.id })
-  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
-  db.prepare('UPDATE membership SET role = ? WHERE nexus_id = ? AND fingerprint = ?').run(
-    'reader',
-    NEXUS,
-    reader.id,
-  )
-  db.close()
+  hub = await bootWith({ owner, reader })
 })
 
 afterAll(async () => {

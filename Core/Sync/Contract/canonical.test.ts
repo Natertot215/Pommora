@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTES, canonicalString } from './canonical'
+import { blobPath, ROUTES, canonicalString } from './canonical'
 import vectors from './vectors.json'
 
 describe('canonicalString', () => {
@@ -15,5 +15,11 @@ describe('canonicalString', () => {
 describe('ROUTES', () => {
   it('carries the connect path', () => {
     expect(ROUTES.connect.path).toBe('/connect')
+  })
+})
+
+describe('blobPath', () => {
+  it('matches the pinned vector', () => {
+    expect(blobPath(vectors.blobPath.nexusId, vectors.blobPath.sha256)).toBe(vectors.blobPath.path)
   })
 })

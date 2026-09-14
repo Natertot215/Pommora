@@ -3,6 +3,9 @@ import type * as Wire from '@pommora/core/Sync/Contract/wire'
 
 export const ULID = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/
 export const PUBLIC_KEY = /^[A-Za-z0-9_-]{43}$/
+export const SHA256 = /^[0-9a-f]{64}$/
+
+export const KEY_ID_MAX = 64
 
 export function fingerprintOf(publicKey: string): string {
   return createHash('sha256').update(Buffer.from(publicKey, 'base64url')).digest('hex')
@@ -25,7 +28,9 @@ export const PATHS = {
   pull: '/pull',
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteTable[K]['path'] }
 
-export const ROUTES = Object.keys(PATHS) as (keyof Wire.RouteTable)[]
+export const ROUTE_OF = Object.fromEntries(
+  Object.entries(PATHS).map(([name, path]) => [path, name]),
+) as Record<string, keyof Wire.RouteTable>
 
 export const LOOPBACK = '127.0.0.1'
 
@@ -43,18 +48,23 @@ export const META = {
   pull: { requires: 'reader', cap: JSON_CAP, timeoutMs: 35_000 },
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
 
-export const BLOB_ROUTE = /^\/blob\/([0-7][0-9A-HJKMNP-TV-Z]{25})\/([0-9a-f]{64})$/
+const bare = (pattern: RegExp): string => pattern.source.replace(/^\^|\$$/g, '')
+
+export const BLOB_ROUTE = new RegExp(`^/blob/(${bare(ULID)})/(${bare(SHA256)})$`)
 export const BLOB_CAP = 50 * 1024 * 1024
 export const BLOB_TIMEOUT_MS = 300_000
 
 export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`
 
-export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const
+const ROLE_ORDER = ['reader', 'editor', 'owner'] as const
+
+export const permits = (role: Wire.Role | null, need: Wire.Role): boolean =>
+  role !== null && ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(need)
 
 export type Reply = { status: number; body: object }
 
-export function refuse(status: number, error: string): Reply {
-  return { status, body: { error } }
+export function refuse(status: number, error: string, extra?: object): Reply {
+  return { status, body: { error, ...extra } }
 }
 
 export const text = (value: unknown, max: number): value is string =>
