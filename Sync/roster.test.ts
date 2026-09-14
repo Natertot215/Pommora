@@ -1,3 +1,5 @@
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { boot, signer } from './Testing/hub.ts'
 
@@ -8,12 +10,24 @@ let hub: Awaited<ReturnType<typeof boot>>
 
 const first = signer('First Mac')
 const second = signer('Second Mac')
+const third = signer('Third Mac')
 
 const connectBody = (s: typeof first) => ({
   nexusId: NEXUS,
   publicKey: s.publicKey,
   name: s.name,
+  x25519: s.x25519,
 })
+
+function setRole(fingerprint: string, role: string): void {
+  const db = new DatabaseSync(join(hub.dataDir, 'sync.db'))
+  db.prepare('UPDATE membership SET role = ? WHERE nexus_id = ? AND fingerprint = ?').run(
+    role,
+    NEXUS,
+    fingerprint,
+  )
+  db.close()
+}
 
 function names(body: unknown): { id: string; approved: boolean }[] {
   return (body as { devices: { id: string; approved: boolean }[] }).devices.map((d) => ({
@@ -54,6 +68,30 @@ describe('the hub roster', () => {
     expect(approved.status).toBe(200)
     expect(names(approved.body)).toContainEqual({ id: second.id, approved: true })
     expect((await second.call('/devices', { nexusId: NEXUS })).status).toBe(200)
+  })
+
+  it('lists the agreement key connect carried', async () => {
+    const listed = await first.call('/devices', { nexusId: NEXUS })
+    const devices = (listed.body as { devices: { id: string; x25519?: string }[] }).devices
+    expect(devices.find((d) => d.id === first.id)?.x25519).toBe(first.x25519)
+  })
+
+  it('refuses a reader the approve route', async () => {
+    await third.call('/connect', connectBody(third))
+    expect((await first.call('/approve', { nexusId: NEXUS, deviceId: third.id })).status).toBe(200)
+    setRole(third.id, 'reader')
+    expect((await third.call('/devices', { nexusId: NEXUS })).status).toBe(200)
+    expect((await third.call('/approve', { nexusId: NEXUS, deviceId: second.id })).status).toBe(404)
+  })
+
+  it('refuses an editor the revoke route', async () => {
+    expect((await second.call('/revoke', { nexusId: NEXUS, deviceId: third.id })).status).toBe(404)
+  })
+
+  it('lets the owner revoke', async () => {
+    const gone = await first.call('/revoke', { nexusId: NEXUS, deviceId: third.id })
+    expect(gone.status).toBe(200)
+    expect(names(gone.body).map((d) => d.id)).not.toContain(third.id)
   })
 
   it('refuses a foreign Nexus id', async () => {

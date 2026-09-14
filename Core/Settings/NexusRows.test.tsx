@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { DeviceRecord, SyncDevice, SyncState } from '@pommora/core/Sync/Contract/wire'
+import type { DeviceRecord, SyncState } from '@pommora/core/Sync/Contract/wire'
+import { deviceRecord } from '@pommora/core/Testing/fixtures'
 import { NexusRows } from './NexusRows'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
@@ -14,13 +15,13 @@ let root: Root
 
 const NEXUS_ID = '01JTESTNEXUSID0000000000AB'
 
-const THIS_DEVICE: SyncDevice = { id: 'aaaaaaaaaaaaaaaa', publicKey: 'pk-a', name: 'Air' }
-const OTHER: DeviceRecord = {
+const THIS_DEVICE: DeviceRecord = deviceRecord()
+const OTHER: DeviceRecord = deviceRecord({
   id: 'bbbbbbbbbbbbbbbb',
   publicKey: 'pk-b',
   name: 'Studio',
   approved: false,
-}
+})
 
 const unbound: SyncState = { device: THIS_DEVICE, binding: null }
 const approved = (devices: DeviceRecord[]): SyncState => ({
@@ -31,11 +32,8 @@ const pending: SyncState = {
   device: THIS_DEVICE,
   binding: { address: 'http://127.0.0.1:7473', state: 'pending' },
 }
-const mixed = approved([{ ...THIS_DEVICE, approved: true }, OTHER])
-const bothApproved = approved([
-  { ...THIS_DEVICE, approved: true },
-  { ...OTHER, approved: true },
-])
+const mixed = approved([THIS_DEVICE, OTHER])
+const bothApproved = approved([THIS_DEVICE, { ...OTHER, approved: true }])
 
 const reply = (value: SyncState) => vi.fn(async () => ({ ok: true, value }))
 
