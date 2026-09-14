@@ -54,12 +54,16 @@ export function useBridgeSubscriptions(): void {
 
   const replaceBody = useSession((s) => s.replaceBody)
   useEffect(() => {
-    const absorb = (path: string): void => {
-      if (!notifyLanding(path) && readPageDetail(path)) void replaceBody(path)
+    const absorb = (path: string, refused: boolean): void => {
+      if (notifyLanding(path)) return
+      const held = readPageDetail(path)
+      if (!held) return
+      if (refused) void dialer().ask('sync:captureLocal', path, held.body)
+      void replaceBody(path)
     }
-    setStaleSaveSink(absorb)
+    setStaleSaveSink((path) => absorb(path, true))
     const off = dialer().on('pages:changed', (paths) => {
-      for (const path of paths) absorb(path)
+      for (const path of paths) absorb(path, false)
     })
     return () => {
       off()
