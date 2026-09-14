@@ -71,10 +71,10 @@ export async function openNexusSequence(
       }
     }
     await seedContentIndex(root)
-    void startSession(ctx, root, (getLiveTree() ?? (await refreshTree(root))).nexus.id)
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     void runRepairSweep(root).then(() => pushValueChanges(ctx, root))
   }
+  void startSession(ctx, root, (getLiveTree() ?? (await refreshTree(root))).nexus.id)
   return root
 }
 
