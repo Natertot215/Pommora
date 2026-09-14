@@ -264,6 +264,25 @@ const CLOSE_MARKS = new Set(Object.values(PAIRS).map((p) => p.close))
 const isPairEdge = (ch: string | undefined, marks: Set<string>): boolean =>
   ch === undefined || /\s/.test(ch) || marks.has(ch)
 
+const runEndAt = (doc: string, c: number): number => {
+  let end = c
+  while (end < doc.length && doc[end] === doc[c]) end++
+  return end
+}
+
+const emptyPairAt = (doc: string, c: number): boolean => {
+  const ch = doc[c]
+  if (ch === undefined) return false
+  let start = c
+  while (doc[start - 1] === ch) start--
+  const end = runEndAt(doc, c)
+  return (
+    c - start === end - c &&
+    isPairEdge(doc[start - 1], OPEN_MARKS) &&
+    isPairEdge(doc[end], CLOSE_MARKS)
+  )
+}
+
 export function autoPair(
   scan: DocScan,
   selStart: number,
@@ -282,8 +301,11 @@ export function autoPair(
   const prev = doc[c - 1]
 
   if (pair.multi && prev === inserted) {
-    if (doc[c] === pair.close && isPairEdge(doc[c - 2], OPEN_MARKS))
-      return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
+    const opensEmpty =
+      pair.close === inserted
+        ? emptyPairAt(doc, c)
+        : doc[c] === pair.close && isPairEdge(doc[c - 2], OPEN_MARKS)
+    if (opensEmpty) return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
     if (doc[c] === inserted) return { from: c, to: c, insert: '', selection: c + 1 }
     // A doubled marker only pairs as a fresh OPENER — not glued to a word, and not completing an earlier unmatched double.
     const beforeRun = doc.slice(lineStartAt(doc, c), c - 1)
@@ -292,9 +314,9 @@ export function autoPair(
     if (glued || openDoubles % 2 === 1) return null
     return { from: c, to: c, insert: inserted + pair.multi, selection: c + 1 }
   }
-  if (DOUBLED_ONLY.has(inserted)) return null
-  if (doc[c] === inserted && pair.close === inserted)
+  if (doc[c] === inserted && pair.close === inserted && !isWordCh(doc[runEndAt(doc, c)]))
     return { from: c, to: c, insert: '', selection: c + 1 }
+  if (DOUBLED_ONLY.has(inserted)) return null
   if (!isPairEdge(prev, OPEN_MARKS) && !(inserted === '(' && prev === ']')) return null
   if (inserted === '[') {
     const ls = lineStartAt(doc, c)
@@ -315,6 +337,7 @@ export function autoDelete(
   const doc = scan.text
   const close = PAIRS[doc[selStart - 1]]?.close
   if (close === undefined || doc[selStart] !== close) return null
+  if (close === doc[selStart - 1] && !emptyPairAt(doc, selStart)) return null
   return { from: selStart - 1, to: selStart + 1, insert: '', selection: selStart - 1 }
 }
 
@@ -357,7 +380,10 @@ function closerEndAt(scan: DocScan, c: number): number | null {
       continue
     // Symmetric markers count parity; asymmetric ones compare opens to closes, or `**a**|**b**` false-positives.
     const inside = open === close ? count(open) % 2 === 1 : count(open) > count(close)
-    if (inside) return c + close.length
+    if (!inside) continue
+    return open === close && PAIRS[open[0]].group === 'pairMarkers'
+      ? runEndAt(doc, c)
+      : c + close.length
   }
   return null
 }
