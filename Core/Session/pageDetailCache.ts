@@ -11,9 +11,7 @@ const detailByPath = new Map<string, PageDetail>()
 const baseByPath = new Map<string, { text: string; hash: string }>()
 
 export function cachePageDetail(detail: PageDetail): void {
-  capSet(detailByPath, detail.path, detail, DETAIL_CAP, (evicted) =>
-    baseByPath.delete(evicted.path),
-  )
+  capSet(detailByPath, detail.path, detail, DETAIL_CAP)
   if (!baseByPath.has(detail.path))
     baseByPath.set(detail.path, { text: detail.body, hash: detail.bodyHash })
 }
@@ -23,8 +21,6 @@ export const readBodyBase = (path: string): { text: string; hash: string } | nul
 
 export function setBodyBase(path: string, base: { text: string; hash: string }): void {
   baseByPath.set(path, base)
-  const d = detailByPath.get(path)
-  if (d) detailByPath.set(path, { ...d, bodyHash: base.hash })
 }
 
 export function readPageDetail(path: string): PageDetail | undefined {
@@ -70,7 +66,6 @@ export function dropPageDetail(path: string): void {
 export function dropCacheDetail(path: string): void {
   dropWarmDetail(path)
   detailByPath.delete(path)
-  baseByPath.delete(path)
   inFlight.delete(path)
 }
 

@@ -1,7 +1,7 @@
 // One debounced writer PER PATH, shared by every host that edits a page, so the newest edit from ANY host owns the file's single pending write rather than hosts racing private debounces to last-writer-wins.
 
 import type { StoredTabSet, WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
-import { fetchPageDetail, readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
+import { readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
 import { host } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 400
@@ -69,13 +69,7 @@ export function schedulePageSave(path: string, body: string): void {
   writeThroughBody(path, body)
   pageWriter.schedule(path, body, async () => {
     writeThroughBody(path, body)
-    let base = readBodyBase(path)
-    if (!base) {
-      await fetchPageDetail(path)
-      writeThroughBody(path, body)
-      base = readBodyBase(path)
-    }
-    const r = await host().ask('page:updateBody', path, body, base?.hash ?? '')
+    const r = await host().ask('page:updateBody', path, body, readBodyBase(path)?.hash ?? '')
     if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash })
     else if (r.ok) staleSink?.(path)
     return r

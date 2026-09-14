@@ -28,14 +28,9 @@ import { host } from '../Platform/dialer'
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
 
-async function absorbLanding(
-  path: string,
-  view: EditorView | null,
-  setPageBody: (path: string, body: string) => void,
-  replaceBody: (path: string) => Promise<boolean>,
-): Promise<void> {
+async function absorbLanding(path: string, view: EditorView | null): Promise<void> {
   if (!view) {
-    await replaceBody(path)
+    await useSession.getState().replaceBody(path)
     return
   }
   const base = readBodyBase(path)?.text
@@ -43,16 +38,18 @@ async function absorbLanding(
   const fresh = await fetchPageDetail(path)
   if (!fresh) return
   const local = view.state.doc.toString()
-  const merged = merge3(base ?? local, local, fresh.body)
+  const merged =
+    base === undefined ? { text: fresh.body, conflicted: true } : merge3(base, local, fresh.body)
   if (merged.conflicted) void host().ask('sync:captureLocal', path, local)
   if (merged.text !== local) {
     view.dispatch({
       changes: changesTo(local, merged.text),
       annotations: [syncLanding.of(true), Transaction.addToHistory.of(false)],
     })
-    setPageBody(path, merged.text)
+    useSession.getState().setPageBody(path, merged.text)
   }
   setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
+  if (merged.text !== fresh.body) schedulePageSave(path, merged.text)
 }
 
 export function PageView({
@@ -82,13 +79,12 @@ export function PageView({
   const pendingLive = useRef<[string, string] | null>(null)
   const path = slot?.status === 'ready' ? slot.detail.path : ''
   const bodyEpoch = useBodyEpoch(path)
-  const replaceBody = useSession((s) => s.replaceBody)
   useEffect(() => {
     if (!path || parked) return
     return subscribeLanding(path, () => {
-      void absorbLanding(path, editorRef.current, setPageBody, replaceBody)
+      void absorbLanding(path, editorRef.current)
     })
-  }, [path, parked, replaceBody, setPageBody])
+  }, [path, parked])
   // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke must not write over it.
   useEffect(() => {
     clearTimeout(liveTimer.current)
