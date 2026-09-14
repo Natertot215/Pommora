@@ -94,7 +94,7 @@ export function nexusStore(db: DatabaseSync) {
       retentionStatement.all() as unknown as { id: string; days: number }[],
 
     dropHolder: (nexusId: string, holder: string): void => {
-      dropStatement.run(nexusId, holder)
+      if (Number(dropStatement.run(nexusId, holder).changes) > 0) bumpVersion.run(nexusId)
     },
   }
 }

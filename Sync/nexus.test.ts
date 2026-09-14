@@ -52,6 +52,11 @@ describe('the hub info record', () => {
       create: { ...CREATE, kdf: { hash: 'SHA-1', iterations: 1, salt: 's' } },
     })
     expect(outcome.status).toBe(400)
+    const retention = await owner.call('/info', {
+      nexusId: NEXUS,
+      create: { ...CREATE, historyDays: 0 },
+    })
+    expect(retention.status).toBe(400)
   })
 
   it('appends a ring entry and bumps the version', async () => {
@@ -106,8 +111,11 @@ describe('the hub info record', () => {
       base: 2,
       add: [{ keyId: 'k2', holder: reader.id, wrapped: 'cmVhZGVy', createdMs: 5 }],
     })
-    expect((await read()).ring).toHaveLength(3)
+    const before = await read()
+    expect(before.ring).toHaveLength(3)
     expect((await owner.call('/revoke', { nexusId: NEXUS, deviceId: reader.id })).status).toBe(200)
-    expect((await read()).ring.map((e) => e.holder)).toEqual(['password', owner.id])
+    const after = await read()
+    expect(after.ring.map((e) => e.holder)).toEqual(['password', owner.id])
+    expect(after.version).toBe(before.version + 1)
   })
 })
