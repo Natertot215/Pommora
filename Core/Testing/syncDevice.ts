@@ -1,6 +1,14 @@
 import type { HostContext, HostDevice } from '../Contract/handlers'
 import type { KdfParams } from '../Sync/Contract/wire'
-import { fromBase64url, toBase64url } from '../Sync/Keys/ring'
+import { deriveWrappingKey } from '../Sync/Keys/kdf'
+import {
+  fromBase64url,
+  mintKey,
+  type Ring,
+  toBase64url,
+  unwrapWithPassword,
+  wrapForPassword,
+} from '../Sync/Keys/ring'
 
 export const TEST_KDF = {
   hash: 'SHA-256',
@@ -77,6 +85,11 @@ export async function testDevice(
     },
   }
   return device
+}
+
+export async function testRing(): Promise<Ring> {
+  const kek = await deriveWrappingKey('pw', TEST_KDF)
+  return unwrapWithPassword(await wrapForPassword([mintKey()], kek), kek)
 }
 
 export const testHostSecrets = (secrets: TestSecrets): HostContext['secrets'] => secrets
