@@ -8,9 +8,24 @@ import { host } from '../Platform/dialer'
 const DETAIL_CAP = 50
 
 const detailByPath = new Map<string, PageDetail>()
+const baseByPath = new Map<string, { text: string; hash: string }>()
 
 export function cachePageDetail(detail: PageDetail): void {
-  capSet(detailByPath, detail.path, detail, DETAIL_CAP)
+  capSet(detailByPath, detail.path, detail, DETAIL_CAP, (evicted) =>
+    baseByPath.delete(evicted.path),
+  )
+  // A refresh after a save must not move the base back to disk prose the editor has since edited past.
+  if (!baseByPath.has(detail.path))
+    baseByPath.set(detail.path, { text: detail.body, hash: detail.bodyHash })
+}
+
+export const readBodyBase = (path: string): { text: string; hash: string } | null =>
+  baseByPath.get(path) ?? null
+
+export function setBodyBase(path: string, base: { text: string; hash: string }): void {
+  baseByPath.set(path, base)
+  const d = detailByPath.get(path)
+  if (d) detailByPath.set(path, { ...d, bodyHash: base.hash })
 }
 
 export function readPageDetail(path: string): PageDetail | undefined {
@@ -48,6 +63,7 @@ export function dropDetailsWhere(stale: (path: string) => boolean): void {
 
 export function dropPageDetail(path: string): void {
   detailByPath.delete(path)
+  baseByPath.delete(path)
   inFlight.delete(path)
 }
 
@@ -55,6 +71,7 @@ export function dropPageDetail(path: string): void {
 export function dropCacheDetail(path: string): void {
   dropWarmDetail(path)
   detailByPath.delete(path)
+  baseByPath.delete(path)
   inFlight.delete(path)
 }
 
@@ -80,6 +97,7 @@ export const useBodyEpoch = (path: string): number =>
 export function clearCache(): void {
   clearWarm()
   detailByPath.clear()
+  baseByPath.clear()
   inFlight.clear()
   bodyEpochs.clear()
   for (const fn of epochListeners) fn()

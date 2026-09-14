@@ -1,14 +1,20 @@
+import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import {
   bumpBodyEpoch,
+  cachePageDetail,
   clearCache,
   dropPageDetail,
   fetchPageDetail,
+  readBodyBase,
   readBodyEpoch,
   readPageDetail,
+  setBodyBase,
   subscribeBodyEpoch,
+  writeThroughBody,
 } from './pageDetailCache'
+import { machine } from '../Platform/machine'
 import { captureCache, dropCacheTab, fenceWarm, readCache } from '../Navigation/warmTabs'
 import { stubDialer } from '../vitest.setup'
 
@@ -53,18 +59,10 @@ describe('warmCache', () => {
 describe('fetchPageDetail', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  const detail = (path: string): PageDetail => ({
-    id: 'p1',
-    title: 'A',
-    path,
-    frontmatter: {},
-    body: 'hello',
-  })
-
   const stubOpenPage = (): ReturnType<typeof vi.fn> => {
     const openPage = vi.fn(
       (path: string): Promise<{ ok: true; value: PageDetail }> =>
-        Promise.resolve({ ok: true, value: detail(path) }),
+        Promise.resolve({ ok: true, value: detail({ path, body: 'hello' }) }),
     )
     vi.stubGlobal('window', { nexus: stubDialer({ 'page:open': openPage }) })
     return openPage
@@ -91,6 +89,34 @@ describe('fetchPageDetail', () => {
     dropPageDetail('x/a.md')
     expect(await pending).not.toBeNull()
     expect(readPageDetail('x/a.md')).toBeUndefined()
+  })
+})
+
+describe('the body base', () => {
+  it('holds the body base beside the detail and drops both together', () => {
+    cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    expect(readBodyBase('x/a.md')).toEqual({
+      text: 'hello',
+      hash: machine().sha256Hex('hello'),
+    })
+    dropPageDetail('x/a.md')
+    expect(readBodyBase('x/a.md')).toBeNull()
+  })
+
+  it('keeps the body base across write-through and refresh', () => {
+    cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    const base = readBodyBase('x/a.md')
+    writeThroughBody('x/a.md', 'typed')
+    cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    expect(readBodyBase('x/a.md')).toEqual(base)
+    expect(readPageDetail('x/a.md')?.body).toBe('hello')
+  })
+
+  it('patches the cached bodyHash when the base is set', () => {
+    cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    setBodyBase('x/a.md', { text: 'typed', hash: machine().sha256Hex('typed') })
+    expect(readPageDetail('x/a.md')?.bodyHash).toBe(machine().sha256Hex('typed'))
+    expect(readBodyBase('x/a.md')?.text).toBe('typed')
   })
 })
 

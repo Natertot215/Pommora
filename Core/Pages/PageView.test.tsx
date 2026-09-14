@@ -1,3 +1,4 @@
+import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
@@ -51,7 +52,7 @@ const slot = (detailBody: string, liveBody: string) => ({
   a: {
     status: 'ready' as const,
     target: { kind: 'page' as const, id: 'a', path: 'Notes/a.md' },
-    detail: { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: detailBody },
+    detail: detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: detailBody }),
     body: liveBody,
   },
 })

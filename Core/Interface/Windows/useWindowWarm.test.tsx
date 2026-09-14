@@ -1,3 +1,4 @@
+import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, createElement, useRef } from 'react'
@@ -43,12 +44,12 @@ afterEach(async () => {
 describe('useWindowWarm', () => {
   it("fences the active tab's entry against the active path's fresh detail", async () => {
     captureWindowCache('tab1', { editorState: { doc: 'old' }, scrollTop: 0 })
-    cachePageDetail({ id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'new' })
+    cachePageDetail(detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'new' }))
     await act(async () => {
       root.render(createElement(Probe, { path: 'Notes/a.md' }))
     })
     expect(seam?.restore()).toBeUndefined()
-    cachePageDetail({ id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'old' })
+    cachePageDetail(detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'old' }))
     expect(seam?.restore()).toEqual({ editorState: { doc: 'old' }, scrollTop: 0 })
   })
 })

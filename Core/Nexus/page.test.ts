@@ -5,6 +5,7 @@ import { join } from '../Paths/posix'
 import { realpathPosix, tempRoot, noModeBits } from '../Testing/hostFs'
 import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
+import { machine } from '../Platform/machine'
 
 import { isUlid } from './ids'
 import { closeSession, openSession } from './session'
@@ -106,6 +107,39 @@ describe('renamePage', () => {
 })
 
 describe('updatePageBody', () => {
+  it('refuses a body whose base hash is not the disk body and leaves the file', async () => {
+    const c = await createPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    const before = await readFile(c.value.path, 'utf8')
+    const r = await updatePageBody(c.value.path, 'two', machine().sha256Hex('elsewhere'))
+    expect(r).toEqual({ ok: true, value: { stale: splitEnvelope(before).body } })
+    expect(await readFile(c.value.path, 'utf8')).toBe(before)
+  })
+
+  it('writes under the right base hash and answers the new hash', async () => {
+    const c = await createPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    const disk = splitEnvelope(await readFile(c.value.path, 'utf8')).body
+    const r = await updatePageBody(c.value.path, 'two', machine().sha256Hex(disk))
+    expect(r.ok && 'written' in r.value && splitEnvelope(r.value.written).body).toBe('two')
+    expect(splitEnvelope(await readFile(c.value.path, 'utf8')).body).toBe('two')
+  })
+
+  it('writes unconditionally with no base hash', async () => {
+    const c = await createPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    await writeFile(
+      c.value.path,
+      assembleEnvelope(
+        splitEnvelope(await readFile(c.value.path, 'utf8')).frontmatter,
+        'elsewhere',
+      ),
+    )
+    const r = await updatePageBody(c.value.path, 'two')
+    expect(r.ok).toBe(true)
+    expect(splitEnvelope(await readFile(c.value.path, 'utf8')).body).toBe('two')
+  })
+
   it('replaces the body and preserves frontmatter incl. foreign keys', async () => {
     const c = await createPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')

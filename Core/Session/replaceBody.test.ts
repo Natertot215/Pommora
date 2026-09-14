@@ -1,3 +1,4 @@
+import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSession } from './store'
@@ -6,13 +7,13 @@ import { captureCache, readCache } from '../Navigation/warmTabs'
 import { schedulePageSave } from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
 
-const detail = { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'restored' }
+const opened = detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'restored' })
 
 let channels: Record<string, unknown>
 
 beforeEach(() => {
   clearCache()
-  channels = { 'page:open': vi.fn(async () => ({ ok: true, value: detail })) }
+  channels = { 'page:open': vi.fn(async () => ({ ok: true, value: opened })) }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
 })
 afterEach(() => {
@@ -31,7 +32,7 @@ const armSave = (openPage: () => Promise<unknown>) => {
 
 describe('replaceBody', () => {
   it('drops every warm detail, refetches, patches the slot, and bumps the epoch', async () => {
-    const stale = { ...detail, body: 'stale' }
+    const stale = { ...opened, body: 'stale' }
     captureCache('t1', 'page:a', { editorState: { doc: 'stale' }, scrollTop: 4, pageDetail: stale })
     captureCache('t2', 'page:a', { pageDetail: stale })
     useSession.setState({
@@ -56,7 +57,7 @@ describe('replaceBody', () => {
 
   it('drops the pending save before a slow refetch could let it land', async () => {
     const updatePageBody = armSave(
-      () => new Promise((r) => setTimeout(() => r({ ok: true, value: detail }), 5000)),
+      () => new Promise((r) => setTimeout(() => r({ ok: true, value: opened }), 5000)),
     )
     const replaced = useSession.getState().replaceBody('Notes/a.md')
     await vi.advanceTimersByTimeAsync(5000)

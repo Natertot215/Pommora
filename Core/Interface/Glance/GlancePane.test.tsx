@@ -1,3 +1,4 @@
+import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
@@ -22,7 +23,7 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const page = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' } as const
-const detail = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'hi' }
+const alpha = detail({ title: 'Alpha', path: 'Notes/Alpha.md', body: 'hi' })
 
 const glanceStore = {
   load: vi.fn(async () => ({ ok: true as const, value: null })),
@@ -45,7 +46,7 @@ let root: Root
 beforeEach(() => {
   useSession.setState({ activeTabId: 'tab-1' })
   stubNexus({})
-  cachePageDetail(detail)
+  cachePageDetail(alpha)
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -99,7 +100,7 @@ describe('the presenter', () => {
 
   it('a cold page opens only once its fetch lands, still under the pointer', async () => {
     dropPageDetail(page.path)
-    stubNexus({ 'page:open': async () => ({ ok: true, value: detail }) })
+    stubNexus({ 'page:open': async () => ({ ok: true, value: alpha }) })
     const el = link()
     const hoverSpy = vi.spyOn(el, 'matches').mockReturnValue(true)
     present(el)
@@ -111,7 +112,7 @@ describe('the presenter', () => {
 
   it('a flick-away during the fetch opens nothing', async () => {
     dropPageDetail(page.path)
-    stubNexus({ 'page:open': async () => ({ ok: true, value: detail }) })
+    stubNexus({ 'page:open': async () => ({ ok: true, value: alpha }) })
     const el = link()
     vi.spyOn(el, 'matches').mockReturnValue(false)
     present(el)
@@ -580,7 +581,7 @@ describe('warmth', () => {
   it('a page edited elsewhere since the capture drops the entry, so the mount is cold', () => {
     const seam = glanceWarmSeam('w2', 'Notes/Alpha.md')
     seam.capture(state('hi', 40))
-    cachePageDetail({ ...detail, body: 'changed' })
+    cachePageDetail({ ...alpha, body: 'changed' })
     expect(seam.restore()).toBeUndefined()
     expect(seam.restore()).toBeUndefined()
   })
