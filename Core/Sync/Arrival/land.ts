@@ -81,11 +81,8 @@ export async function landWrite(
   const abs = join(root, change.path)
   await machine().lock(abs, async () => {
     await machine().mkdir(dirname(abs))
-    await landBytes(
-      abs,
-      await bytesToLand(host.device.id, abs, change, record, plaintext),
-      record.mtimeMs,
-    )
+    const bytes = await bytesToLand(host.device.id, abs, change, record, plaintext)
+    await landBytes(abs, bytes, bytes === plaintext ? record.mtimeMs : Date.now())
     syncStore()?.upsertBase({
       path: change.path,
       mtimeMs: record.mtimeMs,

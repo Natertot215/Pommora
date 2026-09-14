@@ -29,6 +29,9 @@ let session: Session
 
 const abs = (rel: string): string => join(root, rel)
 
+const pathOf = (change: { kind: string; path?: string; record?: { path: string } }): string =>
+  change.record?.path ?? change.path ?? ''
+
 const read = async (rel: string): Promise<string> =>
   decode((await machine().readBytes(abs(rel))) ?? new Uint8Array())
 
@@ -120,6 +123,30 @@ describe('pushDirty', () => {
     expect(read).not.toHaveBeenCalled()
     expect(stores()).toHaveLength(1)
     read.mockRestore()
+  })
+
+  it('skips a non-NFC path and stores the rest of the batch', async () => {
+    const nfd = 'Notes/Cafe\u0301.md'
+    await write(nfd, page('accented'))
+    await write('Notes/Plain.md', page('plain'))
+
+    await pushDirty(session, [nfd, 'Notes/Plain.md'])
+
+    const stored = stores().flatMap((body) => body.changes.map(pathOf))
+    expect(stored).toEqual(['Notes/Plain.md'])
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
+    expect(session.failed.size).toBe(0)
+  })
+
+  it('never requeues a batch the hub called malformed', async () => {
+    await write('Notes/One.md', page('one'))
+    hub.intercept = (req) =>
+      req.url.endsWith('/store') ? { status: 400, body: '{"error":"malformed"}' } : null
+
+    await pushDirty(session, ['Notes/One.md'])
+
+    expect(session.failed.size).toBe(0)
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
   })
 
   it('never stores a page without an ID', async () => {
@@ -273,6 +300,8 @@ describe('pushRename', () => {
     const two = await remoteWrite('Notes/Daily/Two.md', 'two')
     seedBase('Notes/Daily/One.md', utf8('one'), one)
     seedBase('Notes/Daily/Two.md', utf8('two'), two)
+    await write('Notes/Journal/One.md', 'one')
+    await write('Notes/Journal/Two.md', 'two')
 
     await pushRename(session, 'Notes/Daily', 'Notes/Journal')
 
@@ -284,6 +313,28 @@ describe('pushRename', () => {
     ).toEqual(['Notes/Journal/One.md', 'Notes/Journal/Two.md'])
     expect(hub.items.has('Notes/Journal/One.md')).toBe(true)
     expect(hub.items.has('Notes/Daily/One.md')).toBe(false)
+  })
+
+  it('pushes bytes edited inside the rename debounce', async () => {
+    const one = await remoteWrite('Notes/One.md', page('one'))
+    seedBase('Notes/One.md', utf8(page('one')), one)
+    await write('Notes/Two.md', page('edited during the rename'))
+
+    await pushRename(session, 'Notes/One.md', 'Notes/Two.md')
+
+    const kinds = stores().flatMap((body) => body.changes.map((change) => change.kind))
+    expect(kinds).toEqual(['rename', 'write'])
+    expect(readBase('Notes/Two.md')?.version).toBe(hub.seq)
+  })
+
+  it('tombstones the old path after a rename the hub never answered', async () => {
+    const one = await remoteWrite('Notes/One.md', page('one'))
+    seedBase('Notes/One.md', utf8(page('one')), one)
+    hub.intercept = (req) => (req.url.endsWith('/store') ? 'throw' : null)
+
+    await pushRename(session, 'Notes/One.md', 'Notes/Two.md')
+
+    expect([...session.failed].sort()).toEqual(['Notes/One.md', 'Notes/Two.md'])
   })
 
   it('pushes a page renamed before its first push as a write', async () => {

@@ -266,6 +266,22 @@ describe('startSession', () => {
     expect(statuses().at(-1)?.state).not.toBe('error')
   })
 
+  it('runs no queued work after stop', async () => {
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    await write('Notes/Late.md', page('late'))
+    self.failed.add('Notes/Late.md')
+    hub.sent.length = 0
+
+    const queued = syncNow()
+    stopSession({ push: () => {} })
+    await queued
+
+    expect(sent('/store')).toEqual([])
+    expect(readBase('Notes/Late.md')).toBeNull()
+  })
+
   it('stops and reports revoked when a pull answers revoked', async () => {
     await startSession(ctx, root, NEXUS)
     await ctx.secrets.set(ringName(NEXUS), '[]')
