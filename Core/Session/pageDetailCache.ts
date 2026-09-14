@@ -10,9 +10,30 @@ const DETAIL_CAP = 50
 const detailByPath = new Map<string, PageDetail>()
 const baseByPath = new Map<string, { text: string; hash: string }>()
 
+const landingListeners = new Map<string, Set<() => void>>()
+
+export function subscribeLanding(path: string, fn: () => void): () => void {
+  const fns = landingListeners.get(path) ?? new Set<() => void>()
+  landingListeners.set(path, fns)
+  fns.add(fn)
+  return () => {
+    fns.delete(fn)
+    if (fns.size === 0) landingListeners.delete(path)
+  }
+}
+
+export function notifyLanding(path: string): boolean {
+  const fns = landingListeners.get(path)
+  if (!fns?.size) return false
+  for (const fn of fns) fn()
+  return true
+}
+
+const seat = (detail: PageDetail): void => capSet(detailByPath, detail.path, detail, DETAIL_CAP)
+
 export function cachePageDetail(detail: PageDetail): void {
-  capSet(detailByPath, detail.path, detail, DETAIL_CAP)
-  if (!baseByPath.has(detail.path))
+  seat(detail)
+  if (!landingListeners.get(detail.path)?.size)
     baseByPath.set(detail.path, { text: detail.body, hash: detail.bodyHash })
 }
 
@@ -49,7 +70,7 @@ export function fetchPageDetail(path: string): Promise<PageDetail | null> {
 /** The slot's body must never lag a pending write, or a remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
 export function writeThroughBody(path: string, body: string): void {
   const d = detailByPath.get(path)
-  if (d) cachePageDetail({ ...d, body })
+  if (d) seat({ ...d, body })
 }
 
 export function dropDetailsWhere(stale: (path: string) => boolean): void {
@@ -86,25 +107,6 @@ export function subscribeBodyEpoch(fn: () => void): () => void {
 
 export const useBodyEpoch = (path: string): number =>
   useSyncExternalStore(subscribeBodyEpoch, () => readBodyEpoch(path))
-
-const landingListeners = new Map<string, Set<() => void>>()
-
-export function subscribeLanding(path: string, fn: () => void): () => void {
-  const fns = landingListeners.get(path) ?? new Set<() => void>()
-  landingListeners.set(path, fns)
-  fns.add(fn)
-  return () => {
-    fns.delete(fn)
-    if (fns.size === 0) landingListeners.delete(path)
-  }
-}
-
-export function notifyLanding(path: string): boolean {
-  const fns = landingListeners.get(path)
-  if (!fns?.size) return false
-  for (const fn of fns) fn()
-  return true
-}
 
 export function clearCache(): void {
   clearWarm()

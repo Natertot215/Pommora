@@ -60,6 +60,15 @@ describe('captureLoser', () => {
     ).toEqual(['external'])
   })
 
+  it('snapshots a body-only capture under the live page id', async () => {
+    await writeFile(abs('Notes', 'A.md'), page('on disk\n'))
+    await refreshTree(root)
+    await captureLoser(root, 'Notes/A.md', utf8('lost buffer\n'), 'merge-lost')
+    const rows = snapshotStore()!.listSnapshots(PAGE)
+    expect(rows.map((r) => r.source)).toEqual(['external'])
+    expect(snapshotStore()!.readSnapshot(PAGE, rows[0].ts)).toBe('lost buffer\n')
+  })
+
   it('captures a page into captures alone with File History off', async () => {
     await settle({ fileHistory: false })
     const added = vi.spyOn(mem.stores.captures!, 'addCapture')
