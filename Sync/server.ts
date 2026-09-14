@@ -6,7 +6,7 @@ import type { AddressInfo } from 'node:net'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
-import type * as Wire from '@pommora/core/Sync/contract'
+import type * as Wire from '@pommora/core/Sync/Contract/wire'
 
 const PORT = Number(process.env.POMMORA_SYNC_PORT ?? 7473)
 const DATA_DIR = process.env.POMMORA_SYNC_DATA ?? join(homedir(), '.pommora-sync')

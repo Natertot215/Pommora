@@ -20,7 +20,7 @@ import type {
 } from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
-import type { SyncState } from '../Sync/contract'
+import type { SyncState } from '../Sync/Contract/wire'
 
 export type HostPlatform = 'windows' | 'posix'
 

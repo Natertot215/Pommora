@@ -1,4 +1,4 @@
-import type { RouteTable } from './contract'
+import type { RouteTable } from './wire'
 
 export const ROUTES = {
   connect: { method: 'POST', path: '/connect' },

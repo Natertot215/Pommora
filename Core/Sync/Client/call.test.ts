@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { HostDevice, TransportReply, TransportRequest } from '../Contract/handlers'
-import { machine } from '../Platform/machine'
-import { replyOf } from '../Testing/transportReplies'
-import { canonicalString } from './authority'
-import { call, type SyncHost } from './client'
+import type { HostDevice, TransportReply, TransportRequest } from '../../Contract/handlers'
+import { machine } from '../../Platform/machine'
+import { replyOf } from '../../Testing/transportReplies'
+import { canonicalString } from '../Contract/canonical'
+import { call, type SyncHost } from './call'
 
 const DEVICE_ID = 'fe1c'
 const PUBLIC_KEY = 'k'.repeat(43)

@@ -1,7 +1,7 @@
-import type { HostContext, HostDevice } from '../Contract/handlers'
-import { machine } from '../Platform/machine'
-import { canonicalString, ROUTES } from './authority'
-import type { RouteTable, SignedHeaders } from './contract'
+import type { HostContext, HostDevice } from '../../Contract/handlers'
+import { machine } from '../../Platform/machine'
+import { canonicalString, ROUTES } from '../Contract/canonical'
+import type { RouteTable, SignedHeaders } from '../Contract/wire'
 
 export interface SyncHost {
   device: HostDevice

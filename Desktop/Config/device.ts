@@ -2,7 +2,7 @@
 
 import { hostname } from 'node:os'
 import type { HostDevice } from '@pommora/core/Contract/handlers'
-import type { SyncDevice } from '@pommora/core/Sync/contract'
+import type { SyncDevice } from '@pommora/core/Sync/Contract/wire'
 import { readAppConfig, updateAppConfig } from './appConfig'
 import { getSecret, KEYCHAIN_UNAVAILABLE, secretsAvailable, setSecret } from './secrets'
 

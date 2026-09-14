@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { DeviceRecord, SyncDevice, SyncState } from '@pommora/core/Sync/contract'
+import type { DeviceRecord, SyncDevice, SyncState } from '@pommora/core/Sync/Contract/wire'
 import { NexusRows } from './NexusRows'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
