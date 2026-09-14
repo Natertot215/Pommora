@@ -95,6 +95,4 @@ export async function testKeys(): Promise<{ ring: Ring; entries: RingEntry[] }> 
   return { ring: await unwrapWithPassword(entries, kek), entries }
 }
 
-export const testRing = async (): Promise<Ring> => (await testKeys()).ring
-
 export const testHostSecrets = (secrets: TestSecrets): HostContext['secrets'] => secrets

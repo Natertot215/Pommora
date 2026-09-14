@@ -26,13 +26,10 @@ export function syncHost(ctx: HostContext): SyncHost | null {
 
 export type Refusal = { error: string } & Record<string, unknown>
 
-/** `error` is present only on a status of 0: a refusal before any reply was read, by the transport, the signer, or an unparseable body. `refusal` is the hub's own JSON on any other non-200. */
-export interface CallOutcome<K extends keyof RouteTable> {
-  status: number
-  reply: RouteTable[K]['reply'] | null
-  refusal?: Refusal
-  error?: string
-}
+export type CallOutcome<K extends keyof RouteTable> =
+  | { status: 200; reply: RouteTable[K]['reply']; refusal?: never; error?: never }
+  | { status: 0; reply: null; refusal?: never; error: string }
+  | { status: number; reply: null; refusal?: Refusal; error?: never }
 
 async function signedHeaders(
   host: SyncHost,
@@ -85,9 +82,9 @@ export async function call<K extends keyof RouteTable>(
       pin: target.pin ?? undefined,
       timeoutMs: opts?.timeoutMs ?? JSON_TIMEOUT_MS,
     })
-    return reply.status === 200
-      ? { status: 200, reply: JSON.parse(reply.body) as RouteTable[K]['reply'] }
-      : { status: reply.status, reply: null, refusal: refusalOf(reply.body) }
+    if (reply.status === 200)
+      return { status: 200, reply: JSON.parse(reply.body) as RouteTable[K]['reply'] }
+    return { status: reply.status, reply: null, refusal: refusalOf(reply.body) }
   } catch (e) {
     return { status: 0, reply: null, error: String(e) }
   }

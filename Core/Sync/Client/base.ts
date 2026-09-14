@@ -58,7 +58,7 @@ export function recordBase(
   })
 }
 
-export async function hashFile(abs: string): Promise<string | null> {
+async function hashFile(abs: string): Promise<string | null> {
   const bytes = await machine().readBytes(abs)
   return bytes === null ? null : machine().sha256Hex(bytes)
 }

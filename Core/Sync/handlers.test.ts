@@ -176,7 +176,7 @@ beforeEach(async () => {
   seedLiveTree(makeTree())
 })
 afterEach(async () => {
-  stopSession()
+  stopSession({ push: () => {} })
   await forgetKeys({ secrets: memorySecrets() } as unknown as SyncHost, NEXUS)
   dropLiveTree()
   closeSession()

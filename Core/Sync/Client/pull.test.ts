@@ -13,7 +13,7 @@ import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
 import { readBase, upsertBase } from './base'
 import { ringName } from './keyring'
-import { pullOnce } from './pull'
+import { LONG_POLL_MS, pullOnce } from './pull'
 import type { Session } from './session'
 
 const REMOTE_MS = Date.UTC(2026, 8, 1, 12)
@@ -111,6 +111,20 @@ describe('pullOnce', () => {
     expect(readBase('Notes/One.md')?.version).toBe(hub.seq)
   })
 
+  it('leaves a dirty file whose push failed alone and keeps the cursor', async () => {
+    const first = await hubWrite(hub, ring, 'Notes/One.md', page('first'), REMOTE_MS)
+    await hubWrite(hub, ring, 'Notes/One.md', page('remote'), REMOTE_MS)
+    seedBase('Notes/One.md', page('base'), first)
+    await write('Notes/One.md', page('local'), LOCAL_MS)
+    hub.intercept = (req) => (req.url.endsWith('/store') ? 'throw' : null)
+
+    expect(await pullOnce(session, 0)).toBe('error')
+
+    expect(await read('Notes/One.md')).toBe(page('local'))
+    expect(cursor()).toBe(first)
+    expect([...session.failed]).toEqual(['Notes/One.md'])
+  })
+
   it('answers resync when the cursor is past the head', async () => {
     session.target = { ...session.target, cursor: 9 }
 
@@ -120,8 +134,8 @@ describe('pullOnce', () => {
   })
 
   it('waits out the long poll before the transport times out', async () => {
-    await pullOnce(session)
-    expect(pulls()[0].timeoutMs).toBe(30_000)
+    await pullOnce(session, LONG_POLL_MS)
+    expect(pulls()[0].timeoutMs).toBe(LONG_POLL_MS + 5_000)
   })
 
   it('forgets its keys and answers revoked on not-found with a cached ring', async () => {

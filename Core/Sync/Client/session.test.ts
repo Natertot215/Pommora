@@ -61,7 +61,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  stopSession()
+  stopSession({ push: () => {} })
   installStores(NO_STORES)
   vi.useRealTimers()
   await rm(root, { recursive: true, force: true })
@@ -198,6 +198,26 @@ describe('startSession', () => {
     const order = hub.sent.map((req) => new URL(req.url).pathname)
     expect(order.at(-1)).toBe('/pull')
     expect(order).toContain('/store')
+  })
+
+  it('pushes a file edited while the app was closed at start', async () => {
+    const seq = await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    await write('Notes/One.md', page('edited while closed'))
+    upsertBase({
+      path: 'Notes/One.md',
+      mtimeMs: REMOTE_MS,
+      size: 1,
+      hash: 'stale',
+      blobSha: 'stale',
+      version: seq,
+      baseBytes: null,
+    })
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(sent('/store').length).toBeGreaterThan(0)
+    expect(hub.seq).toBeGreaterThan(seq)
+    expect(readBase('Notes/One.md')?.version).toBe(hub.seq)
   })
 
   it('pushes while a long poll is out', async () => {
