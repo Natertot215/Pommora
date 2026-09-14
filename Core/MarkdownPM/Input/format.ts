@@ -38,29 +38,41 @@ const WRAP = {
   inlineCode: '`',
 } as const
 
+const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
+const MARKER_CHARS = '*_~=`'
+
 export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
   if (fmt === 'link' || fmt === 'linkText')
     return toggleWrap(doc, from, to, 'link', '[', ']()', (f, t) => (fmt === 'link' ? t + 3 : f + 1))
   if (fmt === 'connection')
     return toggleWrap(doc, from, to, 'wikiLink', '[[', ']]', (f, t) => (f === t ? f + 2 : t + 2))
   const kind = fmt as keyof typeof WRAP & TokenKind
+  const w = WRAP[kind]
   // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
   const ls = lineStartAt(doc, from)
-  const found = tokenize(doc.slice(ls, lineEndAt(doc, from))).find(
-    (tk) => tk.kind === kind && tk.contentRange[0] <= from - ls && to - ls <= tk.contentRange[1],
-  )
-  const existing = found ? shiftToken(found, ls) : undefined
-  if (existing) {
-    const [m0, m1] = existing.markerRanges
+  const line = doc.slice(ls, lineEndAt(doc, from))
+  let f = from - ls
+  let t = to - ls
+  while (f < t && MARKER_CHARS.includes(line[f])) f++
+  while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
+  const covering = tokenize(line).filter((tk) => tk.contentRange[0] <= f && t <= tk.contentRange[1])
+  const found =
+    covering.find((tk) => tk.kind === kind) ??
+    covering.find(
+      (tk) =>
+        tk.kind === SWAPS[kind] &&
+        (from === to || (tk.contentRange[0] === f && tk.contentRange[1] === t)),
+    )
+  if (found) {
+    const [m0, m1] = shiftToken(found, ls).markerRanges
+    const insert = found.kind === kind ? '' : w
     return {
       changes: [
-        { from: m0[0], to: m0[1], insert: '' },
-        { from: m1[0], to: m1[1], insert: '' },
+        { from: m0[0], to: m0[1], insert },
+        { from: m1[0], to: m1[1], insert },
       ],
-      selection: from - (m0[1] - m0[0]),
     }
   }
-  const w = WRAP[kind]
   return {
     changes: [
       { from, to: from, insert: w },
