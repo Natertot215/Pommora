@@ -14,10 +14,10 @@ export const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 let base = ''
 
 export async function boot(
-  opts: { dataDir?: string; tls?: { cert: string; key: string } } = {},
+  opts: { dataDir?: string; timeoutMs?: number; tls?: { cert: string; key: string } } = {},
 ): Promise<{ dataDir: string; port: number; pin: string | null; close(): Promise<void> }> {
   const dataDir = opts.dataDir ?? mkdtempSync(join(tmpdir(), 'pommora-sync-'))
-  const running = await start({ dataDir, port: 0, tls: opts.tls })
+  const running = await start({ dataDir, port: 0, timeoutMs: opts.timeoutMs, tls: opts.tls })
   base = `${opts.tls ? 'https' : 'http'}://${LOOPBACK}:${running.port}`
   return { dataDir, port: running.port, pin: running.pin, close: running.close }
 }
