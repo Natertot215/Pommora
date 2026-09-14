@@ -34,6 +34,7 @@ const LAST_RETRY_MS = 60_000
 const LONGEST_BACKOFF_MS = 30_000
 
 let session: Session | null = null
+let generation = 0
 let retry: ReturnType<typeof setTimeout> | null = null
 let chain: Promise<void> = Promise.resolve()
 
@@ -53,11 +54,19 @@ function settled(self: Session): void {
   if (currentStatus().state !== 'error') setStatus(self.ctx, { state: 'idle', lastAt: Date.now() })
 }
 
-function working(self: Session, work: () => Promise<void>): Promise<void> {
+function working<T>(self: Session, work: () => Promise<T>): Promise<T | undefined> {
   setStatus(self.ctx, { state: 'syncing' })
-  return run(async () => {
-    if (session === self) await work()
-  }).finally(() => settled(self))
+  return run(async () => (session === self ? await work() : undefined))
+    .catch((e: unknown) => {
+      setStatus(self.ctx, { state: 'error', why: errText(e) })
+      return undefined
+    })
+    .finally(() => settled(self))
+}
+
+async function revoked(self: Session): Promise<void> {
+  await stopSession(self.ctx)
+  setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((wake) => setTimeout(wake, ms))
@@ -79,8 +88,7 @@ async function pulling(self: Session): Promise<void> {
     const outcome = await polled(self)
     if (session !== self) return
     if (outcome === 'revoked') {
-      await stopSession(self.ctx)
-      setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
+      await revoked(self)
       return
     }
     if (outcome === 'error') {
@@ -109,7 +117,10 @@ async function begin(
   nexusId: string,
   binding: SyncScope,
   ring: Ring,
+  token: number,
 ): Promise<void> {
+  const scope = await readWatchScope(root)
+  if (token !== generation) return
   const self: Session = {
     host,
     ctx,
@@ -117,7 +128,7 @@ async function begin(
     nexusId,
     target: binding,
     ring,
-    scope: await readWatchScope(root),
+    scope,
     failed: new Set(),
   }
   session = self
@@ -149,6 +160,7 @@ async function withKeys(
   nexusId: string,
   binding: SyncScope,
   delay: number,
+  token: number,
 ): Promise<void> {
   let ring = await loadRing(host, nexusId, null, null)
   if (ring === null) {
@@ -160,12 +172,11 @@ async function withKeys(
           ? { state: 'off', reason: 'pending', why: 'Waiting for approval from another device.' }
           : { state: 'off', reason: 'server', why: answered(outcome) },
       )
-      const armed: ReturnType<typeof setTimeout> = setTimeout(() => {
-        if (retry !== armed) return
+      retry = setTimeout(() => {
+        if (token !== generation) return
         retry = null
-        void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS))
+        void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS), token)
       }, delay)
-      retry = armed
       return
     }
     ring = await loadRing(host, nexusId, outcome.reply.info, null)
@@ -174,11 +185,13 @@ async function withKeys(
       return
     }
   }
-  await begin(ctx, host, root, nexusId, binding, ring)
+  await begin(ctx, host, root, nexusId, binding, ring, token)
 }
 
 export async function startSession(ctx: HostContext, root: string, nexusId: string): Promise<void> {
   await stopSession(ctx)
+  generation += 1
+  const token = generation
   const host = syncHost(ctx)
   if (host === null) {
     setStatus(ctx, { state: 'off', why: 'This device has no identity.' })
@@ -194,10 +207,11 @@ export async function startSession(ctx: HostContext, root: string, nexusId: stri
     })
     return
   }
-  await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS)
+  await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS, token)
 }
 
 export function stopSession(ctx: Pick<HostContext, 'push'>): Promise<void> {
+  generation += 1
   if (retry !== null) clearTimeout(retry)
   retry = null
   uninstallTap()
@@ -212,5 +226,7 @@ export async function syncNow(): Promise<void> {
   const paths = [...dirtyPending(), ...self.failed]
   self.failed.clear()
   await working(self, () => pushDirty(self, paths))
-  await run(() => pullOnce(self, 0))
+  const outcome = await working(self, () => pullOnce(self, 0))
+  if (outcome === 'resync') await working(self, () => reconcile(self))
+  else if (outcome === 'revoked') await revoked(self)
 }

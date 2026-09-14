@@ -1,10 +1,10 @@
 import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { readValue } from '../../Platform/localState'
-import { installStores, NO_STORES } from '../../Platform/stores'
+import { type CaptureStore, installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { type FakeHub, hubSession, hubWrite } from '../../Testing/syncHub'
@@ -13,7 +13,7 @@ import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
 import { readBase, upsertBase } from './base'
 import { ringName } from './keyring'
-import { LONG_POLL_MS, pullOnce } from './pull'
+import { advance, LONG_POLL_MS, pullOnce } from './pull'
 import type { Session } from './session'
 
 const REMOTE_MS = Date.UTC(2026, 8, 1, 12)
@@ -27,6 +27,7 @@ let hub: FakeHub
 let ring: Ring
 let secrets: TestSecrets
 let session: Session
+let mem: ReturnType<typeof memoryStores>
 
 const abs = (rel: string): string => join(root, rel)
 
@@ -59,7 +60,8 @@ const cursor = (): number => readValue<SyncScope>('sync')?.cursor ?? -1
 beforeEach(async () => {
   root = tempRoot('pom-pull-')
   await mkdir(join(root, '.nexus'), { recursive: true })
-  installStores(memoryStores().stores)
+  mem = memoryStores()
+  installStores(mem.stores)
   const made = await hubSession(root)
   session = made.session
   hub = made.hub
@@ -72,6 +74,15 @@ beforeEach(async () => {
 afterEach(async () => {
   installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
+})
+
+describe('advance', () => {
+  it('never moves the cursor backwards', () => {
+    advance(session, 5)
+    advance(session, 3)
+    expect(session.target.cursor).toBe(5)
+    expect(cursor()).toBe(5)
+  })
 })
 
 describe('pullOnce', () => {
@@ -123,6 +134,21 @@ describe('pullOnce', () => {
     expect(await read('Notes/One.md')).toBe(page('local'))
     expect(cursor()).toBe(first)
     expect([...session.failed]).toEqual(['Notes/One.md'])
+  })
+
+  it('captures the local bytes a declined push left under a landing', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const first = await hubWrite(hub, ring, 'Notes/One.md', page('first'), REMOTE_MS)
+    await hubWrite(hub, ring, 'Notes/One.md', page('remote'), REMOTE_MS)
+    seedBase('Notes/One.md', page('base'), first)
+    await write('Notes/One.md', 'no identity, so no push', LOCAL_MS)
+
+    expect(await pullOnce(session, 0)).toBe('applied')
+
+    expect(await read('Notes/One.md')).toBe(page('remote'))
+    const [path, , reason, losing] = added.mock.calls[0]
+    expect([path, reason]).toEqual(['Notes/One.md', 'local-lost'])
+    expect(new TextDecoder().decode(losing)).toBe('no identity, so no push')
   })
 
   it('answers resync when the cursor is past the head', async () => {

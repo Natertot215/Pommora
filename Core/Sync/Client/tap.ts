@@ -12,6 +12,7 @@ export interface TapSinks {
 }
 
 let sinks: TapSinks | null = null
+let admits = manifestAdmits({ excluded: [], assetDir: '' })
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
 const batch = new Set<string>()
 let flush: ReturnType<typeof setTimeout> | null = null
@@ -35,9 +36,13 @@ function schedule(rel: string): void {
   )
 }
 
+export function setTapScope(scope: WatchScope): void {
+  admits = manifestAdmits(scope)
+}
+
 export function installTap(root: string, scope: WatchScope, next: TapSinks): void {
   sinks = next
-  const admits = manifestAdmits(scope)
+  setTapScope(scope)
   const feed = (absPath: string, watched: boolean): void => {
     const rel = relative(root, absPath)
     if (!rel) return

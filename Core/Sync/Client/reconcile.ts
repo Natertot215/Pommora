@@ -7,6 +7,7 @@ import { advance, landRemote } from './pull'
 import { pushDirty, resolveStale } from './push'
 import type { Session } from './session'
 import { setStatus } from './status'
+import { setTapScope } from './tap'
 
 interface Log {
   heads: Map<string, Change>
@@ -50,17 +51,17 @@ export async function reconcile(session: Session): Promise<void> {
     return setStatus(session.ctx, { state: 'error', why: 'The hub did not answer the change log.' })
 
   const toPush: string[] = []
-  for (const rel of local) {
+  for (const rel of new Set([...local, ...readAllBases().map((row) => row.path)])) {
     const head = log.heads.get(rel)
-    if (head === undefined) {
+    if (head === undefined || settled(rel, head)) {
       toPush.push(rel)
       continue
     }
-    if (!settled(rel, head)) await resolveStale(session, rel, head)
+    await resolveStale(session, rel, head)
   }
   await pushDirty(session, toPush)
 
-  const here = new Set(local)
+  const here = new Set([...local, ...toPush])
   for (const [rel, head] of log.heads) {
     if (head.kind === 'delete' || head.path !== rel) continue
     if (here.has(rel) || readBase(rel) !== null || !admits(rel)) continue
@@ -75,5 +76,6 @@ export async function rescope(session: Session, scope: WatchScope): Promise<void
   const admits = manifestAdmits(scope)
   for (const row of readAllBases()) if (!admits(row.path)) deleteBase(row.path)
   session.scope = scope
+  setTapScope(scope)
   await reconcile(session)
 }

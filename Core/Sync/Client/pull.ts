@@ -1,13 +1,12 @@
 import { join } from '../../Paths/posix'
 import { writeValue } from '../../Platform/localState'
 import { machine } from '../../Platform/machine'
+import { captureLoser } from '../Arrival/captures'
 import { landDelete, landRename, landWrite, recordOf } from '../Arrival/land'
-import type { Change, ItemRecord, PullReply } from '../Contract/wire'
-import { decryptItem } from '../Keys/item'
-import { owned, type Ring } from '../Keys/ring'
+import type { Change, PullReply } from '../Contract/wire'
 import { isDirty, readBase } from './base'
 import { call, getBlob } from './call'
-import { forgetKeys, loadRing, ringName } from './keyring'
+import { forgetKeys, openRecord, ringName } from './keyring'
 import { pushDirty } from './push'
 import type { Session } from './session'
 import { dirtyPending } from './tap'
@@ -16,9 +15,13 @@ export const LONG_POLL_MS = 25_000
 
 export type PullOutcome = 'applied' | 'idle' | 'resync' | 'revoked' | 'error'
 
-export function advance(session: Session, cursor: number): void {
+function setCursor(session: Session, cursor: number): void {
   session.target = { ...session.target, cursor }
   writeValue('sync', session.target)
+}
+
+export function advance(session: Session, cursor: number): void {
+  if (cursor > session.target.cursor) setCursor(session, cursor)
 }
 
 const holds = (change: Change): boolean => {
@@ -26,30 +29,11 @@ const holds = (change: Change): boolean => {
   return base !== null && change.seq <= base.version
 }
 
-async function reloaded(session: Session): Promise<Ring | null> {
-  const outcome = await call(session.host, session.target, 'info', { nexusId: session.nexusId })
-  if (outcome.reply === null) return null
-  return loadRing(session.host, session.nexusId, outcome.reply.info, null)
-}
-
-async function opened(session: Session, record: ItemRecord, blob: Uint8Array): Promise<Uint8Array> {
-  const bytes = owned(blob)
-  try {
-    return await decryptItem(session.ring, record.keyId, record.path, bytes)
-  } catch (e) {
-    if (!String(e).includes('unknown-key')) throw e
-    const ring = await reloaded(session)
-    if (ring === null) throw e
-    session.ring = ring
-    return decryptItem(ring, record.keyId, record.path, bytes)
-  }
-}
-
 export async function landRemote(session: Session, change: Change): Promise<'ok' | 'missing'> {
   const record = recordOf(change)
   const blob = await getBlob(session.host, session.target, session.nexusId, record.sha256)
   if (blob === null) return 'missing'
-  await landWrite(session.host, session.root, change, await opened(session, record, blob))
+  await landWrite(session.host, session.root, change, await openRecord(session, record, blob))
   return 'ok'
 }
 
@@ -59,6 +43,9 @@ async function landChange(session: Session, change: Change): Promise<'ok' | 'mis
     await pushDirty(session, [change.path])
     if (holds(change)) return 'ok'
     if (session.failed.has(change.path)) return 'held'
+    const local = await machine().readBytes(join(session.root, change.path))
+    if (local !== null && machine().sha256Hex(local) !== readBase(change.path)?.hash)
+      await captureLoser(session.root, change.path, local, 'local-lost')
   }
   switch (change.kind) {
     case 'write':
@@ -86,7 +73,7 @@ export async function pullWait(session: Session, waitMs: number): Promise<Waited
     { timeoutMs: waitMs + 5_000 },
   )
   if (outcome.status === 409 && outcome.refusal?.error === 'resync') {
-    advance(session, 0)
+    setCursor(session, 0)
     return { kind: 'done', outcome: 'resync' }
   }
   if (outcome.reply === null) {

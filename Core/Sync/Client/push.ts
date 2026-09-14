@@ -7,12 +7,13 @@ import { captureLoser } from '../Arrival/captures'
 import { isMergedJson } from '../Arrival/jsonMerge'
 import { landDelete, landRename, landWrite, newerSide, recordOf } from '../Arrival/land'
 import type { Change, ItemRecord, StoreChange, StoreOutcome } from '../Contract/wire'
-import { decryptItem, encryptItem } from '../Keys/item'
+import { encryptItem } from '../Keys/item'
 import { newest, owned } from '../Keys/ring'
+import { openRecord } from './keyring'
 import {
   deleteBase,
-  readAllBases,
   readBase,
+  readBasesUnder,
   readSnapshot,
   recordBase,
   renameBase,
@@ -141,9 +142,7 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
     const stat = await machine().stat(abs)
     if (stat?.isDirectory === true) {
       const under = new Set([
-        ...readAllBases()
-          .map((row) => row.path)
-          .filter((path) => path.startsWith(`${rel}/`)),
+        ...readBasesUnder(rel).map((row) => row.path),
         ...(await listPathsUnder(root, abs, (child, _kind, siblings) => admits(child, siblings))),
       ])
       for (const child of under) await collect(child)
@@ -155,21 +154,20 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
         changes.push({ kind: 'delete', base: gone.version, path: rel })
         return
       }
-      for (const under of readAllBases())
-        if (under.path.startsWith(`${rel}/`))
-          changes.push({ kind: 'delete', base: under.version, path: under.path })
+      for (const under of readBasesUnder(rel))
+        changes.push({ kind: 'delete', base: under.version, path: under.path })
       return
     }
     const row = readBase(rel)
     if (row !== null && Math.floor(stat.mtimeMs) === row.mtimeMs && stat.size === row.size) return
-    const snapshot = await readSnapshot(root, rel)
-    if (snapshot === null) return
-    if (snapshot.hash === row?.hash) return
-    if (snapshot.size > ITEM_CAP) {
+    if (stat.size > ITEM_CAP) {
       setStatus(session.ctx, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
       return
     }
-    if (isMarkdownFile(rel) && (await stampedId(root, rel)) === null) return
+    const snapshot = await readSnapshot(root, rel)
+    if (snapshot === null) return
+    if (snapshot.hash === row?.hash) return
+    if (isMarkdownFile(rel) && stampedId(new TextDecoder().decode(snapshot.bytes)) === null) return
     if (rel.normalize('NFC') !== rel) {
       setStatus(session.ctx, { state: 'error', why: `${rel} is not NFC and stays home.` })
       return
@@ -196,8 +194,7 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
 
 export async function pushRename(session: Session, from: string, to: string): Promise<void> {
   const own = readBase(from)
-  const rows =
-    own !== null ? [own] : readAllBases().filter((row) => row.path.startsWith(`${from}/`))
+  const rows = own !== null ? [own] : readBasesUnder(from)
   const moved = rows.map((row) => ({ row, path: to + row.path.slice(from.length) }))
   const changes: StoreChange[] = moved.map(({ row, path }) => ({
     kind: 'rename',
@@ -221,7 +218,7 @@ export async function resolveStale(
   rel: string,
   head: Change | null,
 ): Promise<void> {
-  const { host, root, ring, target, nexusId } = session
+  const { host, root, target, nexusId } = session
   if (head === null) {
     deleteBase(rel)
     return pushDirty(session, [rel])
@@ -251,7 +248,7 @@ export async function resolveStale(
     troubled(session, [rel], `The hub holds no bytes for ${rel}.`)
     return
   }
-  const remote = await decryptItem(ring, record.keyId, record.path, owned(blob))
+  const remote = await openRecord(session, record, blob)
   if (snapshot !== null && machine().sha256Hex(remote) === snapshot.hash) {
     recordBase(rel, snapshot, head.seq, record.sha256)
     return

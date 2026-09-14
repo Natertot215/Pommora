@@ -162,6 +162,13 @@ export const syncStore = (db: Db): SyncStore => ({
   readAllBases() {
     return (db.prepare(`SELECT ${BASE_COLUMNS} FROM sync`).all() as BaseRow[]).map(baseRecord)
   },
+  readBasesUnder(prefix) {
+    return (
+      db
+        .prepare(`SELECT ${BASE_COLUMNS} FROM sync WHERE path >= ? || '/' AND path < ? || '0'`)
+        .all(prefix, prefix) as BaseRow[]
+    ).map(baseRecord)
+  },
   upsertBase(record) {
     db.prepare(`INSERT OR REPLACE INTO sync (${BASE_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
       record.path,
