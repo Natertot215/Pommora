@@ -22,6 +22,14 @@ describe('mergeKeys', () => {
     })
   })
 
+  it('merges two sides that both created a depth key the base lacked', () => {
+    const local = { personalization: { accent: 'red' } }
+    const remote = { personalization: { font: 'serif' } }
+    expect(merge({}, local, remote, { personalization: 1 })).toEqual({
+      personalization: { accent: 'red', font: 'serif' },
+    })
+  })
+
   it('deletes a key one side removed and the other left alone', () => {
     expect(merge({ a: 1, b: 2 }, { a: 1 }, { a: 1, b: 2 })).toEqual({ a: 1 })
     expect(merge({ a: 1, b: 2 }, { a: 1, b: 2 }, { a: 1 })).toEqual({ a: 1 })
