@@ -53,7 +53,6 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
   const inFlight = useRef(false)
-  const heldReason = useRef<SyncStatus['reason']>(undefined)
   const clock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
   const [syncLabel, markSynced] = useTimedLabel('Sync Now', 'Synced')
 
@@ -89,12 +88,12 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   }, [refresh])
 
   const pushed = useSession((s) => s.syncStatus)
+  const bindingState = state?.binding?.state
   useEffect(() => {
     if (!pushed) return
     setState((s) => s && { ...s, status: pushed })
-    if (heldReason.current === 'pending' && pushed.reason !== 'pending') refresh(false)
-  }, [pushed, refresh])
-  heldReason.current = state?.status.reason
+    if (bindingState === 'pending' && pushed.reason !== 'pending') refresh(false)
+  }, [pushed, refresh, bindingState])
 
   if (state === null) return null
 
@@ -106,16 +105,24 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
 
   const onConnect = async (): Promise<void> => {
     const ok = await run(() => {
-      const sent = host().ask('sync:connect', address, password || undefined, pin || undefined)
+      const sent = host().ask(
+        'sync:connect',
+        address,
+        password || undefined,
+        address.startsWith('https:') ? pin || undefined : undefined,
+      )
       setPassword('')
       return sent
     })
     if (ok) setDraft(null)
   }
 
-  const onSyncNow = async (): Promise<void> => {
-    if (await run(() => host().ask('sync:now'))) markSynced()
-  }
+  const onSyncNow = (): Promise<boolean> =>
+    run(async () => {
+      const r = await host().ask('sync:now')
+      if (r.ok && r.value.status.state !== 'off') markSynced()
+      return r
+    })
 
   const connect = (
     <Button type="filled" label="Connect" disabled={busy} onClick={() => void onConnect()} />
@@ -126,14 +133,10 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
       <SettingsFieldRow label="This Device">
         <InputField
           label="Device name"
-          edit={
-            busy
-              ? undefined
-              : {
-                  value: state.device.name,
-                  onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
-                }
-          }
+          edit={{
+            value: state.device.name,
+            onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
+          }}
         >
           {state.device.name}
         </InputField>
@@ -182,7 +185,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
               {pin === '' ? <span className={placeholder}>No pin</span> : pin}
             </InputField>
           )}
-          {binding?.state !== 'approved' && connect}
+          {(binding?.state !== 'approved' || needsPassword) && connect}
           {binding !== null && (
             <>
               <Button type="base" label="Refresh" disabled={busy} onClick={() => refresh()} />
