@@ -11,9 +11,9 @@ import type { Ring } from '../Keys/ring'
 import { readAllBases } from './base'
 import { call, type SyncHost, syncHost } from './call'
 import { loadRing } from './keyring'
-import { applyPull, type PullOutcome, pullOnce, pullWait } from './pull'
-import { pushDirty, pushRename } from './push'
-import { reconcile, rescope } from './reconcile'
+import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait } from './pull'
+import { answered, pushDirty, pushRename } from './push'
+import { admittedPaths, reconcile, rescope } from './reconcile'
 import { currentStatus, setStatus } from './status'
 import { dirtyPending, installTap, uninstallTap } from './tap'
 
@@ -32,7 +32,6 @@ const SETTINGS_REL = `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`
 const FIRST_RETRY_MS = 5_000
 const LAST_RETRY_MS = 60_000
 const LONGEST_BACKOFF_MS = 30_000
-const LONG_POLL_MS = 25_000
 
 let session: Session | null = null
 let retry: ReturnType<typeof setTimeout> | null = null
@@ -50,6 +49,7 @@ function run<T>(work: () => Promise<T>): Promise<T> {
 }
 
 function settled(self: Session): void {
+  if (session !== self) return
   if (currentStatus().state !== 'error') setStatus(self.ctx, { state: 'idle', lastAt: Date.now() })
 }
 
@@ -63,7 +63,8 @@ const sleep = (ms: number): Promise<void> => new Promise((wake) => setTimeout(wa
 async function polled(self: Session): Promise<PullOutcome> {
   try {
     const waited = await pullWait(self, LONG_POLL_MS)
-    return waited.kind === 'reply' ? await run(() => applyPull(self, waited.reply)) : waited.outcome
+    if (waited.kind !== 'reply') return waited.outcome
+    return session === self ? await run(() => applyPull(self, waited.reply)) : 'idle'
   } catch (e) {
     setStatus(self.ctx, { state: 'error', why: errText(e) })
     return 'error'
@@ -75,7 +76,7 @@ async function pulling(self: Session): Promise<void> {
   while (session === self) {
     const outcome = await polled(self)
     if (outcome === 'revoked') {
-      stopSession()
+      stopSession(self.ctx)
       setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
       return
     }
@@ -129,7 +130,12 @@ async function begin(
     },
   })
   if (readAllBases().length === 0) await working(self, () => reconcile(self))
-  else await working(self, () => pushDirty(self, [...dirtyPending()]))
+  else
+    await working(self, async () =>
+      pushDirty(self, [
+        ...new Set([...(await admittedPaths(self)), ...readAllBases().map((row) => row.path)]),
+      ]),
+    )
   void pulling(self)
 }
 
@@ -149,15 +155,14 @@ async function withKeys(
         ctx,
         outcome.status === 404
           ? { state: 'off', reason: 'pending', why: 'Waiting for approval from another device.' }
-          : {
-              state: 'off',
-              reason: 'server',
-              why: outcome.error ?? `The hub answered ${outcome.status}.`,
-            },
+          : { state: 'off', reason: 'server', why: answered(outcome) },
       )
-      retry = setTimeout(() => {
+      const armed: ReturnType<typeof setTimeout> = setTimeout(() => {
+        if (retry !== armed) return
+        retry = null
         void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS))
       }, delay)
+      retry = armed
       return
     }
     ring = await loadRing(host, nexusId, outcome.reply.info, null)
@@ -170,7 +175,7 @@ async function withKeys(
 }
 
 export async function startSession(ctx: HostContext, root: string, nexusId: string): Promise<void> {
-  stopSession()
+  stopSession(ctx)
   const host = syncHost(ctx)
   if (host === null) {
     setStatus(ctx, { state: 'off', why: 'This device has no identity.' })
@@ -189,13 +194,12 @@ export async function startSession(ctx: HostContext, root: string, nexusId: stri
   await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS)
 }
 
-export function stopSession(): void {
+export function stopSession(ctx: Pick<HostContext, 'push'>): void {
   if (retry !== null) clearTimeout(retry)
   retry = null
-  const was = session
   uninstallTap()
   session = null
-  if (was !== null) setStatus(was.ctx, { state: 'off' })
+  setStatus(ctx, { state: 'off' })
 }
 
 export async function syncNow(): Promise<void> {

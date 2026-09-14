@@ -4,13 +4,15 @@ import { machine } from '../../Platform/machine'
 import { landDelete, landRename, landWrite, recordOf } from '../Arrival/land'
 import type { Change, ItemRecord, PullReply } from '../Contract/wire'
 import { decryptItem } from '../Keys/item'
-import type { Ring } from '../Keys/ring'
+import { owned, type Ring } from '../Keys/ring'
 import { isDirty, readBase } from './base'
 import { call, getBlob } from './call'
 import { forgetKeys, loadRing, ringName } from './keyring'
 import { pushDirty } from './push'
 import type { Session } from './session'
 import { dirtyPending } from './tap'
+
+export const LONG_POLL_MS = 25_000
 
 export type PullOutcome = 'applied' | 'idle' | 'resync' | 'revoked' | 'error'
 
@@ -31,7 +33,7 @@ async function reloaded(session: Session): Promise<Ring | null> {
 }
 
 async function opened(session: Session, record: ItemRecord, blob: Uint8Array): Promise<Uint8Array> {
-  const bytes = new Uint8Array(blob)
+  const bytes = owned(blob)
   try {
     return await decryptItem(session.ring, record.keyId, record.path, bytes)
   } catch (e) {
@@ -51,11 +53,12 @@ export async function landRemote(session: Session, change: Change): Promise<'ok'
   return 'ok'
 }
 
-async function landChange(session: Session, change: Change): Promise<'ok' | 'missing'> {
+async function landChange(session: Session, change: Change): Promise<'ok' | 'missing' | 'held'> {
   if (holds(change)) return 'ok'
   if (dirtyPending().has(change.path) || (await isDirty(session.root, change.path))) {
     await pushDirty(session, [change.path])
     if (holds(change)) return 'ok'
+    if (session.failed.has(change.path)) return 'held'
   }
   switch (change.kind) {
     case 'write':
@@ -71,7 +74,7 @@ async function landChange(session: Session, change: Change): Promise<'ok' | 'mis
   }
 }
 
-export type Waited = { kind: 'reply'; reply: PullReply } | { kind: 'done'; outcome: PullOutcome }
+type Waited = { kind: 'reply'; reply: PullReply } | { kind: 'done'; outcome: PullOutcome }
 
 export async function pullWait(session: Session, waitMs: number): Promise<Waited> {
   const { host, target, nexusId } = session
@@ -101,13 +104,15 @@ export async function pullWait(session: Session, waitMs: number): Promise<Waited
 
 export async function applyPull(session: Session, reply: PullReply): Promise<PullOutcome> {
   for (const change of reply.changes) {
-    if ((await landChange(session, change)) === 'missing') return 'resync'
+    const landed = await landChange(session, change)
+    if (landed === 'missing') return 'resync'
+    if (landed === 'held') return 'error'
     advance(session, change.seq)
   }
   return reply.changes.length > 0 ? 'applied' : 'idle'
 }
 
-export async function pullOnce(session: Session, waitMs = 25_000): Promise<PullOutcome> {
+export async function pullOnce(session: Session, waitMs: number): Promise<PullOutcome> {
   const waited = await pullWait(session, waitMs)
   return waited.kind === 'reply' ? applyPull(session, waited.reply) : waited.outcome
 }

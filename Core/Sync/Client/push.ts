@@ -8,7 +8,7 @@ import { isMergedJson } from '../Arrival/jsonMerge'
 import { landDelete, landRename, landWrite, newerSide, recordOf } from '../Arrival/land'
 import type { Change, ItemRecord, StoreChange, StoreOutcome } from '../Contract/wire'
 import { decryptItem, encryptItem } from '../Keys/item'
-import { newest } from '../Keys/ring'
+import { newest, owned } from '../Keys/ring'
 import {
   deleteBase,
   readAllBases,
@@ -22,12 +22,10 @@ import {
 } from './base'
 import { call, getBlob, putBlob } from './call'
 import type { Session } from './session'
-import { currentStatus, setStatus } from './status'
+import { setStatus } from './status'
 
 export const BATCH = 200
 export const ITEM_CAP = 50 * 1024 * 1024
-
-const owned = (bytes: Uint8Array): Uint8Array<ArrayBuffer> => new Uint8Array(bytes)
 
 const pathOf = (change: StoreChange): string =>
   change.kind === 'write' || change.kind === 'capture' ? change.record.path : change.path
@@ -37,7 +35,7 @@ function troubled(session: Session, paths: string[], why: string): void {
   setStatus(session.ctx, { state: 'error', why })
 }
 
-const answered = (outcome: { status: number; error?: string }): string =>
+export const answered = (outcome: { status: number; error?: string }): string =>
   outcome.error ?? `The hub answered ${outcome.status}.`
 
 async function storeChanges(session: Session, changes: StoreChange[]): Promise<StoreOutcome[]> {
@@ -101,11 +99,17 @@ async function settle(
       recordBase(outcome.path, snapshot, outcome.version, change.record.sha256)
     return
   }
-  if (outcome.why === 'stale') return resolveStale(session, outcome.path, outcome.head)
-  if (change.kind !== 'write' || blob === undefined) return
-  if (!(await shipBlob(session, outcome.path, change.record.keyId, blob))) return
-  for (const again of await storeChanges(session, [change]))
-    await settle(session, again, change, snapshot, undefined)
+  switch (outcome.why) {
+    case 'stale':
+      return resolveStale(session, outcome.path, outcome.head)
+    case 'missing-blob': {
+      if (change.kind !== 'write' || blob === undefined) return
+      if (!(await shipBlob(session, outcome.path, change.record.keyId, blob))) return
+      for (const again of await storeChanges(session, [change]))
+        await settle(session, again, change, snapshot, undefined)
+      return
+    }
+  }
 }
 
 async function storeLocal(
@@ -142,9 +146,9 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
       return
     }
     if (stat === null) {
-      const row = readBase(rel)
-      if (row !== null) {
-        changes.push({ kind: 'delete', base: row.version, path: rel })
+      const gone = readBase(rel)
+      if (gone !== null) {
+        changes.push({ kind: 'delete', base: gone.version, path: rel })
         return
       }
       for (const under of readAllBases())
@@ -152,11 +156,13 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
           changes.push({ kind: 'delete', base: under.version, path: under.path })
       return
     }
+    const row = readBase(rel)
+    if (row !== null && Math.floor(stat.mtimeMs) === row.mtimeMs && stat.size === row.size) return
     const snapshot = await readSnapshot(root, rel)
     if (snapshot === null) return
-    if (snapshot.hash === readBase(rel)?.hash) return
+    if (snapshot.hash === row?.hash) return
     if (snapshot.size > ITEM_CAP) {
-      setStatus(session.ctx, { ...currentStatus(), why: `${rel} is over 50 MB and stays home.` })
+      setStatus(session.ctx, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
       return
     }
     if (isMarkdownFile(rel) && (await stampedId(root, rel)) === null) return
