@@ -16,6 +16,7 @@ import {
   calloutShorthand,
   shiftEnterEdit,
   lineStartAt,
+  wrapSelection,
   type Edit,
 } from './edits'
 
@@ -243,6 +244,37 @@ describe('auto-pair + auto-delete', () => {
     expect(autoPair(scanDoc('a **b**'), 2, 2, '*')?.insert).not.toBe('')
     expect(autoPair(scanDoc('a "b"'), 2, 2, '"')?.insert).not.toBe('')
     expect(autoPair(scanDoc('*a**b**'), 2, 2, '*')?.insert).not.toBe('')
+  })
+  it('Wrap Selections wraps a selection and keeps it selected, so a second marker doubles', () => {
+    const on = { wrapSelections: true }
+    const doc = 'a word b'
+    for (const [ch, out] of [
+      ['*', 'a *word* b'],
+      ['"', 'a "word" b'],
+      ['`', 'a `word` b'],
+      ['(', 'a (word) b'],
+      ['[', 'a [word] b'],
+      ['{', 'a {word} b'],
+    ] as const) {
+      const e = wrapSelection(scanDoc(doc), 2, 6, ch, on)!
+      expect(apply(doc, e)).toBe(out)
+      expect([e.selection, e.head]).toEqual([3, 7])
+    }
+    const once = apply(doc, wrapSelection(scanDoc(doc), 2, 6, '*', on)!)
+    expect(apply(once, wrapSelection(scanDoc(once), 3, 7, '*', on)!)).toBe('a **word** b')
+    const spaced = wrapSelection(scanDoc(doc), 1, 7, '"', on)!
+    expect(apply(doc, spaced)).toBe('a "word" b')
+    expect([spaced.selection, spaced.head]).toEqual([3, 7])
+  })
+  it('Wrap Selections stays off by default, per group, in code, and for markers across lines', () => {
+    expect(wrapSelection(scanDoc('a word'), 2, 6, '*')).toBeNull()
+    expect(
+      wrapSelection(scanDoc('a word'), 2, 6, '"', { wrapSelections: true, pairQuotes: false }),
+    ).toBeNull()
+    expect(wrapSelection(scanDoc('a word'), 2, 6, 'x', { wrapSelections: true })).toBeNull()
+    expect(wrapSelection(scanDoc('`a word`'), 3, 7, '*', { wrapSelections: true })).toBeNull()
+    expect(wrapSelection(scanDoc('one\ntwo'), 0, 7, '*', { wrapSelections: true })).toBeNull()
+    expect(wrapSelection(scanDoc('one\ntwo'), 0, 7, '(', { wrapSelections: true })).not.toBeNull()
   })
   it('a closer steps over even after an earlier spaced marker on the line', () => {
     const e = autoPair(scanDoc('5 * 3 is *fif*'), 13, 13, '*')!

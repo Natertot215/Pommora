@@ -12,7 +12,7 @@ import {
   type ListMarker,
 } from '../Engine/detect'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
-import { lineStartAt, lineEndAt } from './edits'
+import { lineStartAt, lineEndAt, trimmedRange } from './edits'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 
@@ -41,7 +41,13 @@ const WRAP = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
-export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
+export function toggleInline(
+  doc: string,
+  selFrom: number,
+  selTo: number,
+  fmt: InlineFormat,
+): FormatEdit {
+  const [from, to] = trimmedRange(doc, selFrom, selTo)
   if (fmt === 'link' || fmt === 'linkText')
     return toggleWrap(doc, from, to, 'link', '[', ']()', (f, t) => (fmt === 'link' ? t + 3 : f + 1))
   if (fmt === 'connection')

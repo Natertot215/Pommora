@@ -116,6 +116,7 @@ export function readPersonalization(raw: unknown): Personalization {
     pairBrackets: bool(p.pairBrackets),
     pairMarkers: bool(p.pairMarkers),
     pairQuotes: bool(p.pairQuotes),
+    wrapSelections: bool(p.wrapSelections),
     deletePairsTogether: bool(p.deletePairsTogether),
     exitPairsOnEnter: bool(p.exitPairsOnEnter),
   }

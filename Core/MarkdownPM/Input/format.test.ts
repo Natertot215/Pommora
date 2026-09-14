@@ -45,6 +45,10 @@ describe('toggleInline', () => {
     expect(apply('a ***bi*** b', toggleInline('a ***bi*** b', 5, 7, 'italic'))).toBe('a **bi** b')
     expect(apply('a ~~s~~ b', toggleInline('a ~~s~~ b', 4, 5, 'bold'))).toBe('a ~~**s**~~ b')
   })
+  it('a leading or trailing space stays outside the wrap', () => {
+    expect(apply('a bold b', toggleInline('a bold b', 1, 7, 'bold'))).toBe('a **bold** b')
+    expect(apply('a Page b', toggleInline('a Page b', 2, 7, 'connection'))).toBe('a [[Page]] b')
+  })
   it('link wraps with an empty url ready for typing', () => {
     expect(apply('site', toggleInline('site', 0, 4, 'link'))).toBe('[site]()')
   })

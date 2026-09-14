@@ -641,6 +641,12 @@ export const FRAMES = roster([
           },
           {
             kind: 'toggle',
+            key: 'wrapSelections',
+            label: 'Wrap Selections',
+            hint: 'Typing a pair character over a selection wraps it.',
+          },
+          {
+            kind: 'toggle',
             key: 'deletePairsTogether',
             label: 'Delete Pairs Together',
             hint: 'Backspace inside an empty pair removes both halves.',

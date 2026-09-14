@@ -130,6 +130,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Brackets | `pairBrackets` | `(`, `[`, and `{` add their closers, and a typed closer steps over its own. | **On** · Off |
 | Markers | `pairMarkers` | Emphasis, code, strikethrough, and highlight markers pair. | **On** · Off |
 | Quotes | `pairQuotes` | `"` and `'` pair. | **On** · Off |
+| Wrap Selections | `wrapSelections` | Typing a pair character over a selection wraps it, within that character's enabled group. | On · **Off** |
 | Delete Pairs Together | `deletePairsTogether` | Backspace inside an empty pair removes both halves. | **On** · Off |
 | Exit On Enter | `exitPairsOnEnter` | Enter moves the caret past the closer of an open pair. | **On** · Off |
 | Show Footnotes By Default | `citationsShown` | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |

@@ -7,6 +7,7 @@ import type { ListKind } from '@pommora/core/Actions/gripMenu'
 import { insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteAs } from '../Links/pasteLink'
+import { trimmedRange } from '../Input/edits'
 import {
   toggleInline,
   setHeading,
@@ -51,12 +52,13 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
 /** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
 function insertLinkOverSelection(view: EditorView): boolean {
   const sel = view.state.selection.main
-  const text = view.state.sliceDoc(sel.from, sel.to).trim()
-  if (!text || !isValidLink(text)) return false
+  const [from, to] = trimmedRange(view.state.doc.toString(), sel.from, sel.to)
+  const text = view.state.sliceDoc(from, to)
+  if (!text.trim() || !isValidLink(text)) return false
   const insert = serializeLink({ url: normalizeLinkUrl(text), alias: text })
   view.dispatch({
-    changes: { from: sel.from, to: sel.to, insert },
-    selection: { anchor: sel.from + insert.length },
+    changes: { from, to, insert },
+    selection: { anchor: from + insert.length },
     userEvent: 'input',
   })
   view.focus()
