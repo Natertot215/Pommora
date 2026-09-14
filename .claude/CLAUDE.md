@@ -1,6 +1,6 @@
 ## Project Pommora
 
-Pommora is Nathan’s main project — a personal management and all-in-one productivity app leveraging an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora’s long-term vision is an alternative to cloud-based enterprise organizational and project management tools, providing local-first security, case-specific customization, and an agentic-accessible, advantaged platform. 
+Pommora is Nathan’s main project — a personal management and all-in-one productivity app leveraging an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora’s long-term vision is an alternative to cloud-based enterprise organizational and project management tools, providing local-first security, case-specific customization, and an agentic-accessible, advantaged platform.
 
 ### The Model
 
@@ -11,19 +11,19 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and front-matter for content ↔ Space relations.
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
-- **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `ID` key. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages.
+- **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `ID` key. Pages use MarkdownPM as their editor surface, which includes inline connections to other pages.
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped; located within `/Tasks`) and **Events** (calendar-shaped; located within `/Events`) — each as Markdown files distinguished via their id's kind mark and validated against their folder placement.
 - **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; written as bare `Property`: so any application that reads frontmatter reads them.
 - **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. 
 
-**Files are canonical for content.** Pages, Tasks, and Events are all Markdown carrying one `ID` key, the kind marked inside the ULID itself. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — contradictions are ignored.
+**Files are canonical for content.** Pages, Tasks, and Events are all Markdown files carrying one `ID` key, the kind marked inside the ULID itself. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — contradictions are ignored.
 
 ### Codebase Information
 
-**Pommora —**  `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42• React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react`  as a secondary source to pull from per-icon. **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor.
+**Pommora —**  `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42• React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react` as a secondary source to pull from per icon. **MarkdownPM** — a CodeMirror 6 custom-built Markdown editor.
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); post-commit hooks rebuild both and a session republishes them. The showcase is **never** a priority during development.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); post-commit hooks rebuild both, and a session republishes them. The showcase is **never** a priority during development.
 
 ### Hard Rules
 
@@ -43,7 +43,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 - **The visual iteration scratchpad** — `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single quotes, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs it.
 - **Launch the GUI** by copy-pasting from the repo’s root:  `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`
--  `POMMORA_DEBUG_PORT` arms CDP; the `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. 
+-  `POMMORA_DEBUG_PORT` arms CDP; the `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node, and the app crashes. 
 - **Native context menus over CDP:** send a real right-click with Input.dispatchMouseEvent (button 'right', mousePressed then mouseReleased, at the target's box); a JS-dispatched contextmenu event never reaches main's context-menu listener. Dismiss with osascript 'tell application "System Events" to key code 53'.
 
 
@@ -53,7 +53,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 
 - **Legibility & Translation:** The user's Nexus, its filesystem structure, and the general layout of the content within it must be reasonably understandable through the filesystem structure itself, app-agnostic, and clearly understood through a single user guide.
 - **Database:** The database shouldn’t be expected to contain anything that would need to be persistent through cross-device synchronization, and should be limited to what’s appropriate as a regenerative index.
-- **Concurrency:** Recency-first resolution is the *current* approach behind cross-device or external editing conflicts, with per-section updates to synced configuration files as the likely approach.
+- **Concurrency:** Recency-first resolution is the *current* approach for cross-device or external editing conflicts, with per-section updates to synced configuration files.
 - **Scalability:** All product decisions must be handled through the perspectives of platform-scaling eventualities and potential enablement.
 
 #### Important Information
@@ -93,23 +93,6 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 └── // Web           | • Web link opening and guest partitions
 
 // UIX               | • The design kit — reaches nothing outside itself
-├── // Animations    | • Motion primitives and the shared slides
-├── // Buttons
-├── // Cards
-├── // Controls      | • Checkbox, slider, and switches
-├── // Elements      | • Small composed display parts
-├── // Fields        | • Text input, search, and renamable labels
-├── // Glass         | • The frosted and liquid surface recipes
-├── // Interactions  | • Drag, drop, resize, autoscroll, activation, and the pointer harness
-├── // Labels
-├── // Menus         | • Menu frames and their growth and slide
-├── // Pickers       | • The picker control and its typed variants
-├── // Symbols       | • The curated icon registry
-├── // Table         | • Shared table tokens and styles
-├── // Theme         | • Color ramps, tokens, the caret, and theme variables
-├── // Utilities     | • Small pure helpers
-└── // Windows       | • Window chrome and bounds
-
 // Desktop           | • The Electron host — the app's only caller of Node
 // Mobile            | • The mobile companion
 // Dashboard         | • The line ledger and design-system showcase pages

@@ -1,6 +1,6 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Execute `.claude/Planning/Sync Groundwork — Implementation Plan.md` (ratified 09-11-2026) as Fable orchestrating background Opus agents: dispatch, review, and verify, never implement; one tree-touching writer at a time; every phase runs implement → simplify → attack → fix → commit, with each agent claim independently checked by reading the diff and rerunning the gates rather than trusting the report. The goal is one Ed25519 device key minted per install, a one-file server holding which devices a Nexus admits, six bridge channels, and a Nexus heading in Settings › General, proved by two instances on one Mac walking connect → pending → approve → revoke → reconnect. The Settings surface is designed headlessly against the existing kit, its decisions disclosed in-chat and not requested. Reconcile every document the arc makes false and write the closeout records.
+> **User Prompt:** Execute `.claude/Planning/Sync Groundwork — Implementation Plan.md` (ratified 09-11-2026) as Fable orchestrating background Opus agents: dispatch, review, and verify; never implement; one tree-touching writer at a time; every phase runs implement → simplify → attack → fix → commit, with each agent claim independently checked by reading the diff and rerunning the gates rather than trusting the report. The goal is one Ed25519 device key minted per install, a one-file server holding which devices a Nexus admits, six bridge channels, and a Nexus heading in Settings › General, proved by two instances on one Mac walking connect → pending → approve → revoke → reconnect. The Settings surface is designed headlessly against the existing kit, its decisions disclosed in-chat and not requested. Reconcile every document the arc makes false and write the closeout records.
 
 #### Current Focus
 
@@ -158,8 +158,3 @@
 - `ff4395dad` — feat(sync): add the canonical signing string and its pinned vectors
 - `38d1b479f` — feat(sync): declare the type-only wire contract
 - `53688425a` — feat(sync): make Sync a gated workspace
-
-#### Handoff Guidelines
-
-- Restate rather than amend; a handled item leaves for Context, History, or the Feature docs with no tombstone.
-- §Working Notes holds what a fresh session would trip over; what Context or the Feature docs already say isn't restated.
