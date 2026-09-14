@@ -120,6 +120,17 @@ describe('re-entrancy', () => {
     ).resolves.toBe('inner')
   })
 
+  it('lets a timer armed inside a lock take the same key after the lock releases', async () => {
+    const again = new Promise<string>((resolve, reject) => {
+      void serializeOnFile(file, async () => {
+        setTimeout(() => {
+          serializeOnFile(file, async () => 'again').then(resolve, reject)
+        }, 0)
+      })
+    })
+    await expect(again).resolves.toBe('again')
+  })
+
   it('a key is released when its slot settles — sequential takes are fine', async () => {
     await serializeOnFile(file, async () => 'first')
     await expect(serializeOnFile(file, async () => 'second')).resolves.toBe('second')

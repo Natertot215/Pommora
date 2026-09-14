@@ -8,14 +8,24 @@ import type { DirEntry, FileStat, Machine } from '../Platform/machine'
 const sha256Hex = (input: string | Uint8Array): string =>
   createHash('sha256').update(input).digest('hex')
 
+interface Held {
+  keys: ReadonlySet<string>
+  live: { done: boolean }
+}
+
 function chainLock(): Machine['lock'] {
   const chains = new Map<string, Promise<unknown>>()
-  const heldKeys = new AsyncLocalStorage<ReadonlySet<string>>()
+  const heldKeys = new AsyncLocalStorage<Held>()
   return <T>(key: string, fn: () => Promise<T>): Promise<T> => {
     const held = heldKeys.getStore()
-    if (held?.has(key)) return Promise.reject(new Error(`Re-entrant file lock on ${key}`))
-    const next = new Set(held).add(key)
-    const guarded = (): Promise<T> => heldKeys.run(next, fn)
+    if (held && !held.live.done && held.keys.has(key))
+      return Promise.reject(new Error(`Re-entrant file lock on ${key}`))
+    const live = { done: false }
+    const next: Held = { keys: new Set(held?.keys).add(key), live }
+    const guarded = (): Promise<T> =>
+      heldKeys.run(next, fn).finally(() => {
+        live.done = true
+      })
     const run = (chains.get(key) ?? Promise.resolve()).then(guarded, guarded)
     chains.set(
       key,
