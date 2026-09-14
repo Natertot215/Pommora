@@ -9,6 +9,8 @@ export const ROUTES = {
   ring: { method: 'POST', path: '/ring' },
 } as const satisfies { [K in keyof RouteTable]: Pick<RouteTable[K], 'method' | 'path'> }
 
+export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`
+
 export function canonicalString(
   method: string,
   path: string,

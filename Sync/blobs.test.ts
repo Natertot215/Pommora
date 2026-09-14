@@ -1,0 +1,77 @@
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { STORE_FILE } from './Store/open.ts'
+import { boot, connectBody, NEXUS, signer } from './Testing/hub.ts'
+import { BLOB_CAP, blobPath, sha256Hex } from './wire.ts'
+
+const MEBIBYTE = Buffer.alloc(1024 * 1024, 7)
+const DIGEST = sha256Hex(MEBIBYTE)
+
+let hub: Awaited<ReturnType<typeof boot>>
+
+const owner = signer('Owner Mac')
+const reader = signer('Reader Mac')
+
+const spoolFiles = (): string[] => readdirSync(join(hub.dataDir, 'spool'))
+
+beforeAll(async () => {
+  hub = await boot()
+  await owner.call('/connect', connectBody(owner, NEXUS))
+  await reader.call('/connect', connectBody(reader, NEXUS))
+  await owner.call('/approve', { nexusId: NEXUS, deviceId: reader.id })
+  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
+  db.prepare('UPDATE membership SET role = ? WHERE nexus_id = ? AND fingerprint = ?').run(
+    'reader',
+    NEXUS,
+    reader.id,
+  )
+  db.close()
+})
+
+afterAll(async () => {
+  await hub.close()
+})
+
+describe('the hub blob routes', () => {
+  it('round-trips a one-mebibyte blob under its own hash', async () => {
+    const put = await owner.put(NEXUS, 'k1', MEBIBYTE)
+    expect(put.status).toBe(200)
+    expect(put.body).toEqual({ sha256: DIGEST, size: MEBIBYTE.length })
+    const got = await owner.get(NEXUS, DIGEST)
+    expect(got.status).toBe(200)
+    expect(sha256Hex(got.bytes)).toBe(DIGEST)
+    expect(got.bytes.length).toBe(MEBIBYTE.length)
+  })
+
+  it('answers 404 for a hash it does not hold', async () => {
+    expect((await owner.get(NEXUS, 'f'.repeat(64))).status).toBe(404)
+  })
+
+  it('refuses bytes whose hash is not the path', async () => {
+    const put = await owner.put(NEXUS, 'k1', Buffer.from('elsewhere'), blobPath(NEXUS, DIGEST))
+    expect(put.status).toBe(400)
+    expect(put.body).toEqual({ error: 'hash-mismatch' })
+  })
+
+  it('refuses a put carrying no key id', async () => {
+    const put = await owner.put(NEXUS, '', Buffer.from('keyless'))
+    expect(put.status).toBe(400)
+  })
+
+  it('refuses a body over the cap and leaves no spool file', async () => {
+    const put = await owner.put(NEXUS, 'k1', Buffer.alloc(BLOB_CAP + 1, 3))
+    expect(put.status).toBe(413)
+    expect(spoolFiles()).toEqual([])
+  })
+
+  it('lets a reader read and refuses it a put', async () => {
+    expect((await reader.get(NEXUS, DIGEST)).status).toBe(200)
+    expect((await reader.put(NEXUS, 'k1', Buffer.from('reader bytes'))).status).toBe(404)
+  })
+
+  it('leaves no spool file behind', () => {
+    expect(spoolFiles()).toEqual([])
+  })
+})
