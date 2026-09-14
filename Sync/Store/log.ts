@@ -61,6 +61,21 @@ export function logStore(db: DatabaseSync) {
   const requestStatement = db.prepare(
     'SELECT reply FROM request WHERE nexus_id = ? AND request_id = ?',
   )
+  const changesStatement = db.prepare(
+    `SELECT seq, kind, path, from_path, record, device, at_ms FROM change
+     WHERE nexus_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
+  )
+  const sweepBlobs = db.prepare(
+    `DELETE FROM blob WHERE nexus_id = ? AND at_ms < ?
+       AND sha256 NOT IN (
+         SELECT json_extract(c.record, '$.sha256') FROM item i
+         JOIN change c ON c.nexus_id = i.nexus_id AND c.seq = i.version
+         WHERE i.nexus_id = ? AND i.deleted = 0 AND json_extract(c.record, '$.sha256') IS NOT NULL)
+       AND sha256 NOT IN (
+         SELECT json_extract(record, '$.sha256') FROM capture
+         WHERE nexus_id = ? AND json_extract(record, '$.sha256') IS NOT NULL)`,
+  )
+  const sweepCaptures = db.prepare('DELETE FROM capture WHERE nexus_id = ? AND at_ms < ?')
   const rememberRequest = db.prepare(
     'INSERT OR REPLACE INTO request (nexus_id, request_id, reply, at_ms) VALUES (?, ?, ?, ?)',
   )
@@ -185,6 +200,19 @@ export function logStore(db: DatabaseSync) {
 
     hasBlob,
     seqOf,
+
+    readChanges: (nexusId: string, cursor: number, limit = 200): Wire.PullReply => {
+      const rows = changesStatement.all(nexusId, cursor, limit + 1) as unknown as ChangeRow[]
+      const hasMore = rows.length > limit
+      const changes = (hasMore ? rows.slice(0, limit) : rows).map(decode)
+      return { changes, cursor: changes.at(-1)?.seq ?? cursor, hasMore }
+    },
+
+    sweep: (nexusId: string, historyDays: number, nowMs: number): void => {
+      const cutoff = nowMs - historyDays * 86_400_000
+      sweepBlobs.run(nexusId, cutoff, nexusId, nexusId)
+      sweepCaptures.run(nexusId, cutoff)
+    },
 
     applyStore: (
       nexusId: string,

@@ -47,6 +47,7 @@ function migrate(db: DatabaseSync): void {
     )
   }
   if (row && from === SCHEMA_VERSION) return
+  if (row) console.log(`Migrating the hub store from schema ${from} to ${SCHEMA_VERSION}.`)
   db.exec('BEGIN')
   try {
     for (let version = from + 1; version <= SCHEMA_VERSION; version++) {

@@ -11,6 +11,7 @@ const DIGEST = sha256Hex(BYTES)
 
 let hub: Awaited<ReturnType<typeof boot>>
 let request = 0
+let head = 0
 
 const owner = signer('Owner Mac')
 
@@ -32,17 +33,29 @@ async function push(
     requestId: requestId ?? `r${request}`,
     changes,
   })
-  return { status: outcome.status, reply: outcome.body as Wire.StoreReply }
+  const reply = outcome.body as Wire.StoreReply
+  if (typeof reply?.seq === 'number') head = reply.seq
+  return { status: outcome.status, reply }
+}
+
+async function pull(cursor: number, waitMs?: number): Promise<Wire.PullReply> {
+  const outcome = await owner.call('/pull', { nexusId: NEXUS, cursor, ...(waitMs && { waitMs }) })
+  return outcome.body as Wire.PullReply
+}
+
+function withDb<T>(read: (db: DatabaseSync) => T): T {
+  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
+  try {
+    return read(db)
+  } finally {
+    db.close()
+  }
 }
 
 const only = (reply: Wire.StoreReply): Wire.StoreOutcome => reply.outcomes[0]
 
-function countChanges(): number {
-  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
-  const row = db.prepare('SELECT COUNT(*) AS n FROM change').get() as { n: number }
-  db.close()
-  return row.n
-}
+const countChanges = (): number =>
+  withDb((db) => (db.prepare('SELECT COUNT(*) AS n FROM change').get() as { n: number }).n)
 
 beforeAll(async () => {
   hub = await boot()
@@ -155,5 +168,105 @@ describe('the hub change log', () => {
     )
     expect(again.reply).toEqual(first.reply)
     expect(countChanges()).toBe(changes)
+  })
+})
+
+describe('the hub feed', () => {
+  it('pulls two stored changes in order', async () => {
+    const pulled = await pull(head - 2)
+    expect(pulled.changes.map((c) => c.seq)).toEqual([head - 1, head])
+    expect(pulled.cursor).toBe(head)
+    expect(pulled.hasMore).toBe(false)
+  })
+
+  it('answers resync to a cursor past the head', async () => {
+    const outcome = await owner.call('/pull', { nexusId: NEXUS, cursor: head + 100 })
+    expect(outcome.status).toBe(409)
+    expect(outcome.body).toEqual({ error: 'resync', seq: head })
+  })
+
+  it('wakes a waiting pull within a hundred milliseconds of a store', async () => {
+    const cursor = head
+    const started = performance.now()
+    const waiting = pull(cursor, 5_000)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    await push([{ kind: 'write', base: null, record: record('Notes/woken.md') }])
+    const pulled = await waiting
+    const elapsed = performance.now() - started
+    console.log(`the long poll woke in ${elapsed.toFixed(1)} ms`)
+    expect(elapsed).toBeLessThan(100)
+    expect(pulled.changes.map((c) => c.path)).toEqual(['Notes/woken.md'])
+  })
+
+  it('pages a third store of 250 changes across two pulls', async () => {
+    const cursor = head
+    await push(
+      Array.from({ length: 250 }, (_, n) => ({
+        kind: 'write' as const,
+        base: null,
+        record: record(`Bulk/${n}.md`),
+      })),
+    )
+    const first = await pull(cursor)
+    expect(first.changes).toHaveLength(200)
+    expect(first.hasMore).toBe(true)
+    expect(first.cursor).toBe(cursor + 200)
+    const second = await pull(first.cursor)
+    expect(second.changes).toHaveLength(50)
+    expect(second.hasMore).toBe(false)
+    expect(second.cursor).toBe(head)
+  })
+})
+
+describe('the hub retention sweep', () => {
+  const orphanOld = Buffer.from('old orphan')
+  const orphanNew = Buffer.from('new orphan')
+  const captured = Buffer.from('captured bytes')
+  const ancient = Date.now() - 40 * 86_400_000
+
+  const digests = {
+    head: DIGEST,
+    orphanOld: sha256Hex(orphanOld),
+    orphanNew: sha256Hex(orphanNew),
+    captured: sha256Hex(captured),
+  }
+
+  const held = (): string[] =>
+    withDb((db) =>
+      (db.prepare('SELECT sha256 FROM blob WHERE nexus_id = ?').all(NEXUS) as { sha256: string }[])
+        .map((r) => r.sha256)
+        .sort(),
+    )
+
+  it('sweeps an old orphaned blob and keeps the head, a fresh orphan, and a captured blob', async () => {
+    await owner.put(NEXUS, 'k1', orphanOld)
+    await owner.put(NEXUS, 'k1', orphanNew)
+    await owner.put(NEXUS, 'k1', captured)
+    await push([
+      { kind: 'capture', record: { ...record('Notes/kept.md'), sha256: digests.captured } },
+    ])
+    withDb((db) => {
+      db.prepare('UPDATE blob SET at_ms = ? WHERE nexus_id = ? AND sha256 IN (?, ?)').run(
+        ancient,
+        NEXUS,
+        digests.orphanOld,
+        digests.captured,
+      )
+      db.prepare('UPDATE blob SET at_ms = ? WHERE nexus_id = ? AND sha256 = ?').run(
+        ancient,
+        NEXUS,
+        digests.head,
+      )
+    })
+    expect(held()).toContain(digests.orphanOld)
+
+    await hub.close()
+    hub = await boot({ dataDir: hub.dataDir })
+
+    const after = held()
+    expect(after).not.toContain(digests.orphanOld)
+    expect(after).toContain(digests.head)
+    expect(after).toContain(digests.orphanNew)
+    expect(after).toContain(digests.captured)
   })
 })
