@@ -206,6 +206,18 @@ describe('sync:state', () => {
     expect(error.message).toBe('This device has no identity; the keychain refused at launch.')
   })
 
+  it('keeps its keys when the server answers 401 rather than 404', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    const state = await unwrap<{ binding: { state: string }; status: { reason?: string } }>(
+      syncHandlers['sync:state'](host(canned(401, '{"error":"unauthorized"}'))),
+    )
+    expect(state.binding.state).toBe('unreachable')
+    expect(state.status.reason).toBeUndefined()
+    expect(secretsA.map.has(ringName(NEXUS))).toBe(true)
+  })
+
   it('forgets its keys and reports the revoked reason when the hub reports it revoked', async () => {
     const hub = newHub()
     await seedInfo(hub, [deviceA])
@@ -355,7 +367,7 @@ describe('sync:approve', () => {
     )
     expect(state.binding.state).toBe('approved')
     expect(state.status.why).toBeUndefined()
-    expect(urls()).toEqual(['/approve', '/info', '/ring'])
+    expect(urls()).toEqual(['/devices', '/info', '/ring', '/approve'])
     expect(hub.info?.ring.filter((e) => e.holder === deviceB.id)).toHaveLength(1)
 
     await forgetKeys({ secrets: memorySecrets() } as unknown as SyncHost, NEXUS)
@@ -392,7 +404,7 @@ describe('sync:approve', () => {
     const state = await unwrap<{ binding: { state: string } }>(
       syncHandlers['sync:approve'](ctx, 'ab'),
     )
-    expect(urls()).toEqual(['/approve', '/devices'])
+    expect(urls()).toEqual(['/devices', '/info', '/approve', '/devices'])
     expect(state.binding.state).toBe('approved')
   })
 })
@@ -419,8 +431,9 @@ describe('sync:revoke', () => {
       syncHandlers['sync:revoke'](host(hubAnswer(hub)), deviceB.id),
     )
     expect(state.status.why).toBe('The stored Nexus password does not open the ring.')
-    expect(urls()).toEqual(['/revoke', '/info'])
-    expect(hub.info?.version).toBe((version ?? 0) + 1)
+    expect(urls()).toEqual(['/devices', '/info'])
+    expect(hub.info?.version).toBe(version)
+    expect(hub.devices.map((d) => d.id)).toContain(deviceB.id)
   })
 
   it('reports an approved device the rotation could not reach', async () => {
@@ -445,7 +458,7 @@ describe('sync:revoke', () => {
     const first = String(hub.info?.ring[0].keyId)
     sent = []
     await unwrap(syncHandlers['sync:revoke'](host(hubAnswer(hub)), deviceB.id))
-    expect(urls()).toEqual(['/revoke', '/info', '/ring'])
+    expect(urls()).toEqual(['/devices', '/info', '/ring', '/revoke'])
     const fresh = hub.info?.ring.filter((e) => e.keyId !== first) ?? []
     expect(fresh.map((e) => e.holder)).toEqual(['password', deviceA.id])
     expect(hub.info?.ring.some((e) => e.holder === deviceB.id)).toBe(false)

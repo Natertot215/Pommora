@@ -48,6 +48,13 @@ describe('the keyring', () => {
     expect(await loadRing(host, 'typed', info, PASSWORD)).not.toBeNull()
   })
 
+  it('re-derives from the info it is handed rather than the ring it holds', async () => {
+    const first = await keys(host.device)
+    expect((await loadRing(host, 'growing', first, null))?.keys).toHaveLength(1)
+    const both = { kdf: TEST_KDF, ring: [...first.ring, ...(await keys(host.device)).ring] }
+    expect((await loadRing(host, 'growing', both, null))?.keys).toHaveLength(2)
+  })
+
   it('forgets both secrets and the held ring', async () => {
     secrets.map.set(passwordName('nx'), PASSWORD)
     expect(await loadRing(host, 'nx', await keys(host.device), null)).not.toBeNull()

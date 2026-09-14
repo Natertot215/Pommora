@@ -65,7 +65,7 @@ export function identify(
     publicKey = claimed
   } else {
     const stored = store.roster.publicKeyOf(signed.device)
-    if (stored === null) return refuse(404, 'not-found')
+    if (stored === null) return refuse(401, 'unauthorized')
     publicKey = stored
   }
   const membership = store.roster.membership(nexusId, signed.device)
