@@ -153,9 +153,23 @@ export type SyncBinding = { address: string } & (
   | { state: 'unreachable'; why: string }
 )
 
+export interface SyncStatus {
+  state: 'off' | 'idle' | 'syncing' | 'error'
+  reason?: 'password' | 'pending' | 'revoked' | 'no-db'
+  why?: string
+  lastAt?: number
+}
+
 export interface SyncState {
   device: SyncDevice
   binding: SyncBinding | null
+  status: SyncStatus
+}
+
+export interface SyncScope {
+  address: string
+  pin?: string
+  cursor: number
 }
 
 export type SignedHeaders = {

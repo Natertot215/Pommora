@@ -6,6 +6,14 @@ import type { RouteTable, SignedHeaders } from '../Contract/wire'
 export interface SyncHost {
   device: HostDevice
   transport: HostContext['transport']
+  secrets: HostContext['secrets']
+  push: HostContext['push']
+}
+
+export function syncHost(ctx: HostContext): SyncHost | null {
+  const device = ctx.device
+  if (device === null) return null
+  return { device, transport: ctx.transport, secrets: ctx.secrets, push: ctx.push }
 }
 
 export interface CallOutcome<K extends keyof RouteTable> {

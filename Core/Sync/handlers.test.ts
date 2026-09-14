@@ -1,7 +1,4 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
-import { replyOf } from '../Testing/transportReplies'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type {
   HostContext,
@@ -11,52 +8,180 @@ import type {
 } from '../Contract/handlers'
 import { dropLiveTree, seedLiveTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
+import { join } from '../Paths/posix'
 import { readValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
-import { makeTree } from '../Testing/testTree'
+import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
+import { makeTree } from '../Testing/testTree'
+import { replyOf } from '../Testing/transportReplies'
+import type { SyncHost } from './Client/call'
+import { forgetKeys, heldRing, passwordName, ringName } from './Client/keyring'
+import type { DeviceRecord, InfoRecord } from './Contract/wire'
+import { deriveWrappingKey, fromBase64url, toBase64url } from './Keys/kdf'
+import { mintKey, wrapForDevice, wrapForPassword } from './Keys/ring'
 import { syncHandlers } from './handlers'
 
 const PUBLIC_KEY = 'k'.repeat(43)
 const ADDRESS = 'http://127.0.0.1:7473'
+const NEXUS = 'nx'
+const PASSWORD = 'pw'
+const KDF = { hash: 'SHA-256', iterations: 1_000, salt: 'c2FsdA' } as const
+
+type Secrets = HostContext['secrets'] & { map: Map<string, string> }
 
 let sent: TransportRequest[]
 let renamed: string | null
 let walkable: string | null
+let deviceA: HostDevice
+let deviceB: HostDevice
+let secretsA: Secrets
+let secretsB: Secrets
 
-const device: HostDevice = {
-  id: 'fe1c',
-  publicKey: PUBLIC_KEY,
-  name: 'Recorder',
-  sign: async () => 'sig',
-  agree: async () => new Uint8Array(32),
-  rename: async (name) => {
-    renamed = name
-    device.name = name
-  },
+function memorySecrets(): Secrets {
+  const map = new Map<string, string>()
+  return {
+    map,
+    get: async (name) => map.get(name) ?? null,
+    set: async (name, value) => {
+      if (value === null) map.delete(name)
+      else map.set(name, value)
+    },
+  }
+}
+
+async function makeDevice(id: string, name: string): Promise<HostDevice> {
+  const pair = await globalThis.crypto.subtle.generateKey('X25519', false, ['deriveBits'])
+  if (!('privateKey' in pair)) throw new Error('X25519 generated no key pair.')
+  const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
+  const device: HostDevice = {
+    id,
+    publicKey: PUBLIC_KEY,
+    name,
+    x25519: toBase64url(new Uint8Array(raw)),
+    sign: async () => 'sig',
+    agree: async (peerPublicKey) => {
+      const peer = await globalThis.crypto.subtle.importKey(
+        'raw',
+        fromBase64url(peerPublicKey),
+        'X25519',
+        false,
+        [],
+      )
+      return new Uint8Array(
+        await globalThis.crypto.subtle.deriveBits(
+          { name: 'X25519', public: peer },
+          pair.privateKey,
+          256,
+        ),
+      )
+    },
+    rename: async (next) => {
+      renamed = next
+      device.name = next
+    },
+  }
+  return device
+}
+
+const record = (device: HostDevice, approved: boolean): DeviceRecord => ({
+  id: device.id,
+  publicKey: device.publicKey,
+  name: device.name,
+  x25519: device.x25519,
+  approved,
+  role: 'owner',
+})
+
+interface Hub {
+  approved: boolean
+  devices: DeviceRecord[]
+  info: InfoRecord | null
+}
+
+const newHub = (devices: DeviceRecord[] = []): Hub => ({ approved: true, devices, info: null })
+
+async function seedInfo(hub: Hub, holders: HostDevice[]): Promise<void> {
+  const key = mintKey()
+  const ring = await wrapForPassword([key], await deriveWrappingKey(PASSWORD, KDF))
+  for (const holder of holders) {
+    ring.push(
+      ...(await wrapForDevice([key], { deviceId: holder.id, x25519: String(holder.x25519) })),
+    )
+  }
+  hub.info = { version: 1, protocol: 1, kdf: KDF, historyDays: 90, ring }
 }
 
 type Reply = Omit<TransportReply, 'bytes'>
 type Answer = (req: TransportRequest) => Reply | Promise<Reply>
 
-function host(answer: Answer): HostContext {
+const found = (body: object): Reply => ({ status: 200, body: JSON.stringify(body) })
+const missing: Reply = { status: 404, body: '{"error":"not-found"}' }
+
+function hubAnswer(hub: Hub): Answer {
+  return (req) => {
+    const path = new URL(req.url).pathname
+    const body = JSON.parse(String(req.body ?? '{}')) as {
+      deviceId?: string
+      base?: number
+      add?: InfoRecord['ring']
+      create?: Omit<InfoRecord, 'version'>
+    }
+    switch (path) {
+      case '/connect':
+        return found({ approved: hub.approved })
+      case '/devices':
+        return hub.approved ? found({ devices: hub.devices }) : missing
+      case '/info':
+        if (body.create === undefined) return hub.info ? found({ info: hub.info }) : missing
+        if (hub.info) return { status: 409, body: '{"error":"exists"}' }
+        hub.info = { version: 1, ...body.create }
+        return found({ info: hub.info })
+      case '/approve': {
+        const target = hub.devices.find((d) => d.id === body.deviceId)
+        if (target) target.approved = true
+        return found({ devices: hub.devices })
+      }
+      case '/revoke':
+        hub.devices = hub.devices.filter((d) => d.id !== body.deviceId)
+        if (hub.info) {
+          hub.info = {
+            ...hub.info,
+            version: hub.info.version + 1,
+            ring: hub.info.ring.filter((e) => e.holder !== body.deviceId),
+          }
+        }
+        return found({ devices: hub.devices })
+      case '/ring':
+        if (hub.info === null) return missing
+        if (hub.info.version !== body.base) return { status: 409, body: '{"error":"stale"}' }
+        hub.info = {
+          ...hub.info,
+          version: hub.info.version + 1,
+          ring: [...hub.info.ring, ...(body.add ?? [])],
+        }
+        return found({ info: hub.info })
+      default:
+        return missing
+    }
+  }
+}
+
+function host(answer: Answer, device?: HostDevice, secrets?: Secrets): HostContext {
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
     sent.push(req)
     return replyOf(await answer(req))
   }
-  return { device, transport } as HostContext
+  return {
+    device: device ?? deviceA,
+    secrets: secrets ?? secretsA,
+    transport,
+  } as unknown as HostContext
 }
 
 const canned =
   (status: number, body: string): Answer =>
   () => ({ status, body })
-const devices = (approved: boolean): string =>
-  JSON.stringify({ devices: [{ id: 'fe1c', publicKey: PUBLIC_KEY, name: 'Recorder', approved }] })
-
-const bound: Answer = (req) =>
-  req.url.endsWith('/connect')
-    ? { status: 200, body: '{"approved":true}' }
-    : { status: 200, body: devices(true) }
 
 const unwrap = async <T>(r: unknown): Promise<T> => {
   const result = (await r) as { ok: boolean; value: T; error?: { code: string } }
@@ -70,16 +195,22 @@ const refuse = async (r: unknown): Promise<{ code: string; message: string }> =>
   return result.error
 }
 
+const urls = (): string[] => sent.map((r) => new URL(r.url).pathname)
+
 beforeEach(async () => {
   sent = []
   renamed = null
   walkable = null
-  device.name = 'Recorder'
+  secretsA = memorySecrets()
+  secretsB = memorySecrets()
+  deviceA = await makeDevice('fe1c', 'Recorder')
+  deviceB = await makeDevice('bb2d', 'Studio')
   installStores(memoryStores().stores)
   await openSession('/x')
   seedLiveTree(makeTree())
 })
 afterEach(async () => {
+  await forgetKeys({ secrets: memorySecrets() } as unknown as SyncHost, NEXUS)
   dropLiveTree()
   closeSession()
   installStores(NO_STORES)
@@ -88,10 +219,11 @@ afterEach(async () => {
 
 describe('sync:state', () => {
   it('answers an unbound nexus with no binding and a device carrying no function', async () => {
-    const state = await unwrap<{ device: object; binding: unknown }>(
+    const state = await unwrap<{ device: object; binding: unknown; status: object }>(
       syncHandlers['sync:state'](host(canned(200, '{}'))),
     )
     expect(state.binding).toBeNull()
+    expect(state.status).toEqual({ state: 'off' })
     expect(state.device).toEqual({ id: 'fe1c', publicKey: PUBLIC_KEY, name: 'Recorder' })
     expect(Object.values(state.device).some((v) => typeof v === 'function')).toBe(false)
     expect(sent).toEqual([])
@@ -116,27 +248,69 @@ describe('sync:state', () => {
     expect(error.code).toBe('operation-failed')
     expect(error.message).toBe('This device has no identity; the keychain refused at launch.')
   })
+
+  it('forgets its keys and reports the revoked reason when the hub reports it revoked', async () => {
+    const hub = newHub()
+    await seedInfo(hub, [deviceA])
+    hub.devices = [record(deviceA, true)]
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    expect(secretsA.map.has(ringName(NEXUS))).toBe(true)
+    hub.approved = false
+    const state = await unwrap<{ status: { reason?: string; why?: string } }>(
+      syncHandlers['sync:state'](host(hubAnswer(hub))),
+    )
+    expect(state.status.reason).toBe('revoked')
+    expect(state.status.why).toBe('This device was revoked.')
+    expect([...secretsA.map.keys()]).toEqual([])
+    expect(heldRing(NEXUS)).toBeNull()
+  })
 })
 
 describe('sync:connect', () => {
   it('writes the binding on a 200 and reports the list the server answers', async () => {
-    const ctx = host(bound)
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
     const state = await unwrap<{ binding: { state: string; devices: unknown[] } }>(
-      syncHandlers['sync:connect'](ctx, ADDRESS),
+      syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD),
     )
     expect(state.binding.state).toBe('approved')
     expect(state.binding.devices).toHaveLength(1)
-    expect(readValue<{ address: string }>('sync')).toEqual({ address: ADDRESS })
+    expect(readValue('sync')).toEqual({ address: ADDRESS, cursor: 0 })
+  })
+
+  it('creates the info record with one password entry on the first connect', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    expect(hub.info?.historyDays).toBe(90)
+    expect(hub.info?.ring.map((e) => e.holder)).toEqual(['password', deviceA.id])
+    expect(new Set(hub.info?.ring.map((e) => e.keyId)).size).toBe(1)
+    expect(heldRing(NEXUS)?.keys).toHaveLength(1)
+  })
+
+  it('refuses a wrong password and writes no binding', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [])
+    const error = await refuse(
+      syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, 'not-the-password'),
+    )
+    expect(error.message).toBe('The Nexus password is wrong.')
+    expect(readValue('sync')).toBeNull()
+    expect(secretsA.map.has(passwordName(NEXUS))).toBe(false)
+  })
+
+  it('refuses a nexus whose record it cannot open without a password', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [])
+    const error = await refuse(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS))
+    expect(error.message).toBe('A Nexus password is required.')
+    expect(readValue('sync')).toBeNull()
   })
 
   it('reads a 404 from the list as awaiting approval', async () => {
-    const ctx = host((req) =>
-      req.url.endsWith('/connect')
-        ? { status: 200, body: '{"approved":false}' }
-        : { status: 404, body: '{"error":"not-found"}' },
-    )
+    const hub = newHub()
+    hub.approved = false
     const state = await unwrap<{ binding: { state: string } }>(
-      syncHandlers['sync:connect'](ctx, ADDRESS),
+      syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS),
     )
     expect(state.binding.state).toBe('pending')
   })
@@ -148,7 +322,9 @@ describe('sync:connect', () => {
   })
 
   it('reports a bound server that stops answering as unreachable, carrying its text', async () => {
-    await syncHandlers['sync:connect'](host(bound), ADDRESS)
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD)
     const ctx = host(() => Promise.reject(new Error('down')))
     const state = await unwrap<{ binding: { state: string; why: string } }>(
       syncHandlers['sync:state'](ctx),
@@ -158,9 +334,8 @@ describe('sync:connect', () => {
   })
 
   it('reads a 200 that carries no list as unreachable', async () => {
-    const ctx = host(canned(200, '{}'))
     const state = await unwrap<{ binding: { state: string; why: string } }>(
-      syncHandlers['sync:connect'](ctx, ADDRESS),
+      syncHandlers['sync:connect'](host(canned(200, '{}')), ADDRESS),
     )
     expect(state.binding.state).toBe('unreachable')
     expect(state.binding.why).toContain('200')
@@ -169,8 +344,10 @@ describe('sync:connect', () => {
 
 describe('sync:disconnect', () => {
   it('clears the binding row', async () => {
-    const ctx = host(bound)
-    await syncHandlers['sync:connect'](ctx, ADDRESS)
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    const ctx = host(hubAnswer(hub))
+    await syncHandlers['sync:connect'](ctx, ADDRESS, PASSWORD)
     const state = await unwrap<{ binding: unknown }>(syncHandlers['sync:disconnect'](ctx))
     expect(state.binding).toBeNull()
     expect(readValue('sync')).toBeNull()
@@ -179,54 +356,89 @@ describe('sync:disconnect', () => {
 
 describe('sync:approve', () => {
   it('refuses an empty id without reaching the server', async () => {
-    await refuse(syncHandlers['sync:approve'](host(canned(200, devices(true))), '  '))
+    await refuse(syncHandlers['sync:approve'](host(canned(200, '{}')), '  '))
     expect(sent).toEqual([])
   })
 
   it('refuses while the nexus is bound to no server', async () => {
-    await refuse(syncHandlers['sync:approve'](host(canned(200, devices(true))), 'ab'))
+    await refuse(syncHandlers['sync:approve'](host(canned(200, '{}')), 'ab'))
     expect(sent).toEqual([])
   })
 
-  it('answers from exactly one request, since its reply already carries the fresh list', async () => {
-    const ctx = host(canned(200, '{"approved":true}'))
-    await syncHandlers['sync:connect'](ctx, ADDRESS)
+  it('wraps the ring to an approved device that then unwraps it', async () => {
+    const hub = newHub([record(deviceA, true), record(deviceB, false)])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
     sent = []
-    const ctx2 = host(canned(200, devices(true)))
-    const state = await unwrap<{ binding: { state: string; devices: unknown[] } }>(
-      syncHandlers['sync:approve'](ctx2, 'ab'),
+    const state = await unwrap<{ binding: { state: string }; status: { why?: string } }>(
+      syncHandlers['sync:approve'](host(hubAnswer(hub)), deviceB.id),
     )
-    expect(sent).toHaveLength(1)
-    expect(sent[0].url).toBe(`${ADDRESS}/approve`)
     expect(state.binding.state).toBe('approved')
-    expect(state.binding.devices).toHaveLength(1)
+    expect(state.status.why).toBeUndefined()
+    expect(urls()).toEqual(['/approve', '/info', '/ring'])
+    expect(hub.info?.ring.filter((e) => e.holder === deviceB.id)).toHaveLength(1)
+
+    await forgetKeys({ secrets: memorySecrets() } as unknown as SyncHost, NEXUS)
+    const joined = await unwrap<{ binding: { state: string } }>(
+      syncHandlers['sync:connect'](host(hubAnswer(hub), deviceB, secretsB), ADDRESS),
+    )
+    expect(joined.binding.state).toBe('approved')
+    expect(secretsB.map.has(ringName(NEXUS))).toBe(true)
+    expect(secretsB.map.has(passwordName(NEXUS))).toBe(false)
+    expect(heldRing(NEXUS)?.keys).toHaveLength(1)
+  })
+
+  it('reports a device with no agreement key rather than wrapping the ring to it', async () => {
+    const bare = { ...record(deviceB, false), x25519: undefined }
+    const hub = newHub([record(deviceA, true), bare])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    const state = await unwrap<{ status: { why?: string } }>(
+      syncHandlers['sync:approve'](host(hubAnswer(hub)), deviceB.id),
+    )
+    expect(state.status.why).toBe(
+      'That device holds no agreement key; it needs the Nexus password.',
+    )
   })
 
   it('answers a refused approve from a fresh list rather than from the refusal', async () => {
-    await syncHandlers['sync:connect'](host(bound), ADDRESS)
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD)
     sent = []
+    const answer = hubAnswer(hub)
     const ctx = host((req) =>
-      req.url.endsWith('/approve')
-        ? { status: 409, body: '{"error":"revoked"}' }
-        : { status: 200, body: devices(false) },
+      req.url.endsWith('/approve') ? { status: 409, body: '{"error":"revoked"}' } : answer(req),
     )
-    const state = await unwrap<{ binding: { state: string; devices: { approved: boolean }[] } }>(
+    const state = await unwrap<{ binding: { state: string } }>(
       syncHandlers['sync:approve'](ctx, 'ab'),
     )
-    expect(sent.map((r) => r.url)).toEqual([`${ADDRESS}/approve`, `${ADDRESS}/devices`])
+    expect(urls()).toEqual(['/approve', '/devices'])
     expect(state.binding.state).toBe('approved')
-    expect(state.binding.devices[0].approved).toBe(false)
   })
 })
 
 describe('sync:revoke', () => {
-  it('reaches the revoke route with its one request', async () => {
-    const ctx = host(bound)
-    await syncHandlers['sync:connect'](ctx, ADDRESS)
+  it('refuses a revoke when this device holds no password', async () => {
+    const hub = newHub([record(deviceA, true), record(deviceB, true)])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS))
     sent = []
-    await unwrap(syncHandlers['sync:revoke'](ctx, 'ab'))
-    expect(sent).toHaveLength(1)
-    expect(sent[0].url.endsWith('/revoke')).toBe(true)
+    const error = await refuse(syncHandlers['sync:revoke'](host(hubAnswer(hub)), deviceB.id))
+    expect(error.message).toBe('The Nexus password is needed to rotate the ring.')
+    expect(sent).toEqual([])
+  })
+
+  it('rotates the ring on revoke for the remaining device alone', async () => {
+    const hub = newHub([record(deviceA, true), record(deviceB, true)])
+    await seedInfo(hub, [deviceA, deviceB])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    const first = String(hub.info?.ring[0].keyId)
+    sent = []
+    await unwrap(syncHandlers['sync:revoke'](host(hubAnswer(hub)), deviceB.id))
+    expect(urls()).toEqual(['/revoke', '/info', '/ring'])
+    const fresh = hub.info?.ring.filter((e) => e.keyId !== first) ?? []
+    expect(fresh.map((e) => e.holder)).toEqual(['password', deviceA.id])
+    expect(hub.info?.ring.some((e) => e.holder === deviceB.id)).toBe(false)
+    expect(heldRing(NEXUS)?.keys).toHaveLength(2)
   })
 })
 
@@ -240,11 +452,12 @@ describe('sync:renameDevice', () => {
   })
 
   it('re-issues connect against a bound server so the new name reaches its row', async () => {
-    const ctx = host(bound)
-    await syncHandlers['sync:connect'](ctx, ADDRESS)
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD)
     sent = []
     const state = await unwrap<{ device: { name: string } }>(
-      syncHandlers['sync:renameDevice'](ctx, '  Studio  '),
+      syncHandlers['sync:renameDevice'](host(hubAnswer(hub)), '  Studio  '),
     )
     expect(renamed).toBe('Studio')
     expect(state.device.name).toBe('Studio')
@@ -253,7 +466,9 @@ describe('sync:renameDevice', () => {
   })
 
   it('reports a downed bound server from the re-issued connect alone', async () => {
-    await syncHandlers['sync:connect'](host(bound), ADDRESS)
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD)
     sent = []
     const ctx = host(() => Promise.reject(new Error('down')))
     const state = await unwrap<{

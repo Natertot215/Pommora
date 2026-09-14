@@ -13,6 +13,7 @@ function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
   signed: string[]
   sent: TransportRequest[]
 } {
+  const kept = new Map<string, string>()
   const signed: string[] = []
   const sent: TransportRequest[] = []
   const device: HostDevice = {
@@ -31,7 +32,14 @@ function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
     if (reply instanceof Error) throw reply
     return replyOf(reply)
   }
-  return { host: { device, transport }, signed, sent }
+  const secrets = {
+    get: async (name: string) => kept.get(name) ?? null,
+    set: async (name: string, value: string | null) => {
+      if (value === null) kept.delete(name)
+      else kept.set(name, value)
+    },
+  }
+  return { host: { device, transport, secrets, push: () => {} }, signed, sent }
 }
 
 const connectBody = { nexusId: 'nx', publicKey: PUBLIC_KEY, name: 'Recorder' }

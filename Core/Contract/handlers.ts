@@ -60,6 +60,10 @@ export interface HostContext {
   trashMode(): Promise<TrashMode>
   fetchTitle(url: string): Promise<string | null>
   device: HostDevice | null
+  secrets: {
+    get(name: string): Promise<string | null>
+    set(name: string, value: string | null): Promise<void>
+  }
   transport(req: TransportRequest): Promise<TransportReply>
   openStores(root: string): void
   adopted(root: string, path: string): Promise<void>

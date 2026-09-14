@@ -23,14 +23,18 @@ const OTHER: DeviceRecord = deviceRecord({
   approved: false,
 })
 
-const unbound: SyncState = { device: THIS_DEVICE, binding: null }
+const OFF = { state: 'off' } as const
+
+const unbound: SyncState = { device: THIS_DEVICE, binding: null, status: OFF }
 const approved = (devices: DeviceRecord[]): SyncState => ({
   device: THIS_DEVICE,
   binding: { address: 'http://127.0.0.1:7473', state: 'approved', devices },
+  status: OFF,
 })
 const pending: SyncState = {
   device: THIS_DEVICE,
   binding: { address: 'http://127.0.0.1:7473', state: 'pending' },
+  status: OFF,
 }
 const mixed = approved([THIS_DEVICE, OTHER])
 const bothApproved = approved([THIS_DEVICE, { ...OTHER, approved: true }])

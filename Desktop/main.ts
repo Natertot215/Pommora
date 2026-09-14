@@ -44,6 +44,7 @@ import {
   updateAppConfig,
 } from './Config/appConfig'
 import { ensureDevice } from './Config/device'
+import { getSecret, setSecret } from './Config/secrets'
 import { interfaceScaleZoom } from './Config/interfaceScale'
 import { startWatcher, stopWatcher } from './FileWatch/watcher'
 import { isWindows, nativePath, posixPath } from './Platform/hostPath'
@@ -256,6 +257,10 @@ function hostContext(win: BrowserWindow | null): HostContext {
     trashMode: async () => trashModeOf(await readAppConfig(userData())),
     fetchTitle: fetchPageTitle,
     device,
+    secrets: {
+      get: (name) => getSecret(userData(), name),
+      set: (name, value) => setSecret(userData(), name, value),
+    },
     transport,
     openStores: openSessionDb,
     async adopted(root, path) {
