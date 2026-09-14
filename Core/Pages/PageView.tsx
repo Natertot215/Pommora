@@ -9,7 +9,7 @@ import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { navKey } from '../Navigation/navRecents'
 import {
-  dropPageDetail,
+  dropCacheDetail,
   fetchPageDetail,
   readBodyBase,
   setBodyBase,
@@ -34,7 +34,7 @@ async function absorbLanding(path: string, view: EditorView | null): Promise<voi
     return
   }
   const base = readBodyBase(path)?.text
-  dropPageDetail(path)
+  dropCacheDetail(path)
   const fresh = await fetchPageDetail(path)
   if (!fresh) return
   const local = view.state.doc.toString()

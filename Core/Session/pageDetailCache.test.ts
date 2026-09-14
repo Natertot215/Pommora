@@ -13,6 +13,7 @@ import {
   readPageDetail,
   setBodyBase,
   subscribeBodyEpoch,
+  subscribeLanding,
   writeThroughBody,
 } from './pageDetailCache'
 import { machine } from '../Platform/machine'
@@ -105,14 +106,27 @@ describe('the body base', () => {
   })
 
   it('keeps the body base across a cache refresh and the cap', () => {
+    const off = subscribeLanding('x/a.md', () => undefined)
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
     const base = readBodyBase('x/a.md')
     writeThroughBody('x/a.md', 'typed')
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    off()
     dropCacheDetail('x/a.md')
     for (let i = 0; i < 60; i++) cachePageDetail(detail({ path: `x/p${i}.md`, body: 'other' }))
     expect(readPageDetail('x/a.md')).toBeUndefined()
     expect(readBodyBase('x/a.md')).toEqual(base)
+  })
+
+  it('reseats the base on re-open when no editor holds the page', () => {
+    cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
+    setBodyBase('x/a.md', { text: 'typed', hash: machine().sha256Hex('typed') })
+    dropCacheDetail('x/a.md')
+    cachePageDetail(detail({ path: 'x/a.md', body: 'landed' }))
+    expect(readBodyBase('x/a.md')).toEqual({
+      text: 'landed',
+      hash: machine().sha256Hex('landed'),
+    })
   })
 
   it('a set base is the one the next save asserts', () => {
