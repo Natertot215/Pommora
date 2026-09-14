@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTES, canonicalString } from './authority'
+import { ROUTES, canonicalString } from './canonical'
 import vectors from './vectors.json'
 
 describe('canonicalString', () => {

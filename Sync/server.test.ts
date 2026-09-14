@@ -81,7 +81,10 @@ afterAll(async () => {
 describe('the sync server', () => {
   it('matches the shared canonical vectors', () => {
     const fixture = JSON.parse(
-      readFileSync(fileURLToPath(new URL('../Core/Sync/vectors.json', import.meta.url)), 'utf8'),
+      readFileSync(
+        fileURLToPath(new URL('../Core/Sync/Contract/vectors.json', import.meta.url)),
+        'utf8',
+      ),
     ) as {
       canonical: {
         method: string
