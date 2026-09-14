@@ -23,6 +23,15 @@ export const PATHS = {
 
 export const ROUTES = Object.keys(PATHS) as (keyof Wire.RouteTable)[]
 
+export const META = {
+  connect: { requires: 'none', cap: 8192 },
+  devices: { requires: 'reader', cap: 8192 },
+  approve: { requires: 'editor', cap: 8192 },
+  revoke: { requires: 'owner', cap: 8192 },
+} as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
+
+export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const
+
 export type Reply = { status: number; body: object }
 
 export function refuse(status: number, error: string): Reply {

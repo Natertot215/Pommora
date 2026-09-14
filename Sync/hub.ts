@@ -3,15 +3,14 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { identify, verifySigned } from './authority.ts'
+import { identify, verify } from './authority.ts'
 import { rosterRoutes } from './Routes/roster.ts'
 import { openStore, type Store } from './Store/open.ts'
-import { MALFORMED, PATHS, parseBody, refuse, type Reply, ROUTES, sha256Hex } from './wire.ts'
+import { MALFORMED, META, PATHS, parseBody, refuse, type Reply, ROUTES, sha256Hex } from './wire.ts'
 
 const PORT = Number(process.env.POMMORA_SYNC_PORT ?? 7473)
 const DATA_DIR = process.env.POMMORA_SYNC_DATA ?? join(homedir(), '.pommora-sync')
 const HOST = '127.0.0.1'
-const BODY_CAP = 8192
 
 function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
   return new Promise((resolve, reject) => {
@@ -35,13 +34,13 @@ async function route(
   const path = new URL(req.url ?? '/', 'http://localhost').pathname
   const name = ROUTES.find((r) => PATHS[r] === path)
   if (!name) return refuse(404, 'not-found')
-  const raw = await readCapped(req, BODY_CAP)
+  const raw = await readCapped(req, META[name].cap)
   if (!raw) return refuse(413, 'too-large')
   const body = parseBody(raw)
   if (body === MALFORMED) return refuse(400, 'malformed')
   const id = identify(store, req, name, body)
   if (!('signed' in id)) return id
-  const bad = verifySigned(path, sha256Hex(raw), id.signed, id.publicKey)
+  const bad = verify(id, path, sha256Hex(raw))
   if (bad) return bad
   return routes[name](id, body)
 }

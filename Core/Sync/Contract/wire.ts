@@ -14,12 +14,20 @@ export interface SyncDevice {
   x25519?: string
 }
 
-export type DeviceRecord = SyncDevice & { approved: boolean }
+export type Role = 'owner' | 'editor' | 'reader'
+
+export interface RouteMeta {
+  requires: Role | 'none'
+  cap: number
+}
+
+export type DeviceRecord = SyncDevice & { approved: boolean; role: Role }
 
 export interface ConnectBody {
   nexusId: string
   publicKey: string
   name: string
+  x25519?: string
 }
 
 export interface ConnectReply {

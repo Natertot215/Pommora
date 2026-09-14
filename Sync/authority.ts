@@ -1,8 +1,17 @@
-import { createPublicKey, verify } from 'node:crypto'
+import { createPublicKey, verify as verifyEd25519 } from 'node:crypto'
 import type { IncomingMessage } from 'node:http'
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import type { Store } from './Store/open.ts'
-import { canonical, fingerprintOf, PUBLIC_KEY, refuse, type Reply } from './wire.ts'
+import {
+  canonical,
+  fingerprintOf,
+  META,
+  PUBLIC_KEY,
+  refuse,
+  type Reply,
+  ROLE_ORDER,
+  ULID,
+} from './wire.ts'
 
 const WINDOW_MS = 5 * 60_000
 
@@ -11,6 +20,9 @@ type Signature = { device: string; ts: number; sig: string }
 export interface Identity {
   device: string
   publicKey: string
+  nexusId: string
+  role: Wire.Role | null
+  approved: boolean
   signed: Signature
 }
 
@@ -29,26 +41,6 @@ function signatureOf(req: IncomingMessage): Signature | null {
   return { device, ts, sig }
 }
 
-export function verifySigned(
-  path: string,
-  bodySha256Hex: string,
-  signed: Signature,
-  publicKey: string,
-): Reply | null {
-  try {
-    const key = createPublicKey({
-      key: { kty: 'OKP', crv: 'Ed25519', x: publicKey },
-      format: 'jwk',
-    })
-    const data = Buffer.from(canonical('POST', path, bodySha256Hex, signed.ts), 'utf8')
-    return verify(null, data, key, Buffer.from(signed.sig, 'base64url'))
-      ? null
-      : refuse(401, 'unauthorized')
-  } catch {
-    return refuse(400, 'bad-key')
-  }
-}
-
 export function identify(
   store: Store,
   req: IncomingMessage,
@@ -57,6 +49,8 @@ export function identify(
 ): Identity | Reply {
   const signed = signatureOf(req)
   if (!signed) return refuse(401, 'unauthorized')
+  const nexusId = (body as Partial<Wire.NexusBody> | null)?.nexusId
+  if (typeof nexusId !== 'string' || !ULID.test(nexusId)) return refuse(400, 'malformed')
   let publicKey: string
   if (route === 'connect') {
     const claimed = (body as Partial<Wire.ConnectBody> | null)?.publicKey
@@ -68,5 +62,33 @@ export function identify(
     if (stored === null) return refuse(404, 'not-found')
     publicKey = stored
   }
-  return { device: signed.device, publicKey, signed }
+  const membership = store.roster.membership(nexusId, signed.device)
+  const id: Identity = {
+    device: signed.device,
+    publicKey,
+    nexusId,
+    role: membership?.role ?? null,
+    approved: membership?.approved ?? false,
+    signed,
+  }
+  const requires = META[route].requires
+  if (requires === 'none') return id
+  if (!id.approved || id.role === null) return refuse(404, 'not-found')
+  if (ROLE_ORDER.indexOf(id.role) < ROLE_ORDER.indexOf(requires)) return refuse(404, 'not-found')
+  return id
+}
+
+export function verify(id: Identity, path: string, bodySha256Hex: string): Reply | null {
+  try {
+    const key = createPublicKey({
+      key: { kty: 'OKP', crv: 'Ed25519', x: id.publicKey },
+      format: 'jwk',
+    })
+    const data = Buffer.from(canonical('POST', path, bodySha256Hex, id.signed.ts), 'utf8')
+    return verifyEd25519(null, data, key, Buffer.from(id.signed.sig, 'base64url'))
+      ? null
+      : refuse(401, 'unauthorized')
+  } catch {
+    return refuse(400, 'bad-key')
+  }
 }
