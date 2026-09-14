@@ -9,25 +9,12 @@
 - `Core/Assets/assetRoots.ts`. `Core/Actions/commands.ts`. `Core/Settings/settings.ts`.
 - `Desktop/` — `main.ts`, `Platform/nodeMachine.ts`, `Config/appConfig.ts`, `Store/open.ts`, `Store/ddl.ts`.
 
-### Findings
-
-#### Host Config
-
-- **Single-Instance Coordination:** `Desktop/main.ts:298` takes the lock per userData directory, and `:74` lets `POMMORA_USERDATA` open a second one. Its own comment records that every write lock is module state, so two hosts on one folder coordinate nothing. Windows adds no new mechanism, and a second machine on a shared folder is outside the lock's reach entirely. What would need to hold: concurrent writers against one Nexus have a coordination story that does not depend on being one process.
-
-#### Settings Placement
-
-- **Per-Machine Rows in the Nexus:** `Core/Platform/localState.ts:4-19` names fifteen `local_state` scopes — window geometry, tabs, folds, embed heights among them — and `Desktop/Store/open.ts:25-27` opens their database at `<root>/.nexus/nexus.db`. Nothing excludes that file from a folder transport, and window geometry read on a different display size is not meaningful. What would need to hold: per-machine state is reachable only by the machine it describes.
-
-### Checklist
-
-- [ ] `Core/Platform/localState.ts:4-19` with `Desktop/Store/open.ts:25-27` — per-machine rows are reachable only by their own machine.
-- [ ] `Desktop/main.ts:298,74` — concurrent writers against one Nexus coordinate beyond the per-userData lock.
 ### Already Cross-Platform
 
 - **Case Folding:** `Core/Paths/caseFold.ts:1-13` pins its locale rather than reading the host's, so `foldKey` and `compareTitles` land the same on a Turkish Windows machine as on macOS.
 - **ULID Case Sensitivity:** `Core/Nexus/ids.ts:33-36` keeps ULID validation case-sensitive on purpose, and `:11-13` floors the sub-millisecond float `stat` reports so `idAt` accepts a stamp from either filesystem.
 - **Nexus-Relative Index Keys:** `Desktop/Store/ddl.ts:19-43` keys `mentions`, `page_values`, `memberships`, and `indexed_files` on a `path` column fed by `Core/Index/indexSeed.ts:77-83`, which relativizes against the root and rejoins on `/`. Nothing absolute and nothing host-shaped enters those rows.
+- **Per-Machine Rows Stay Home:** `Core/Platform/localState.ts:4-19` keeps window geometry, tabs, folds, and embed heights in `<root>/.nexus/nexus.db`, and `Core/Paths/exclusion.ts:12` keeps every `.db` file and its journals out of what Pommora Sync carries, so each machine reads only its own rows.
 - **Bare Navigation Ids:** `Core/Navigation/navRef.ts:16-22` carries a kind and an id, nothing path-shaped, so tabs, recents, and history hold nothing filesystem-shaped.
 - **Nexus-Relative Settings:** `Core/Settings/settings.ts:135-152` stores `excluded_folders` as `/`-joined relative segments and `Core/Paths/paths.ts:48-49` resolves `asset_directory` the same way, so neither carries an absolute path into the folder.
 - **Absolute Paths Stay Outside:** `Desktop/Config/appConfig.ts:1,9-15` puts `lastNexusPath` and `recents` — the only stored absolute paths — in the host's userData directory rather than in the Nexus. Because those values pass through `posixPath` on the way in (`Desktop/main.ts:150,221,320`), the `/`-split in `isTrashedPath` (`:81`) reads them correctly.
