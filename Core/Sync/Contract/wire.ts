@@ -124,6 +124,18 @@ export interface StoreReply {
   seq: number
 }
 
+export interface PullBody {
+  nexusId: string
+  cursor: number
+  waitMs?: number
+}
+
+export interface PullReply {
+  changes: Change[]
+  cursor: number
+  hasMore: boolean
+}
+
 export interface RouteTable {
   connect: { method: 'POST'; path: '/connect'; body: ConnectBody; reply: ConnectReply }
   devices: { method: 'POST'; path: '/devices'; body: NexusBody; reply: DevicesReply }
@@ -132,6 +144,7 @@ export interface RouteTable {
   info: { method: 'POST'; path: '/info'; body: InfoBody; reply: InfoReply }
   ring: { method: 'POST'; path: '/ring'; body: RingBody; reply: InfoReply }
   store: { method: 'POST'; path: '/store'; body: StoreBody; reply: StoreReply }
+  pull: { method: 'POST'; path: '/pull'; body: PullBody; reply: PullReply }
 }
 
 export type SyncBinding = { address: string } & (

@@ -22,6 +22,7 @@ export const PATHS = {
   info: '/info',
   ring: '/ring',
   store: '/store',
+  pull: '/pull',
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteTable[K]['path'] }
 
 export const ROUTES = Object.keys(PATHS) as (keyof Wire.RouteTable)[]
@@ -39,6 +40,7 @@ export const META = {
   info: { requires: 'reader', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
   ring: { requires: 'editor', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
   store: { requires: 'editor', cap: 262144, timeoutMs: JSON_TIMEOUT_MS },
+  pull: { requires: 'reader', cap: JSON_CAP, timeoutMs: 35_000 },
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
 
 export const BLOB_ROUTE = /^\/blob\/([0-7][0-9A-HJKMNP-TV-Z]{25})\/([0-9a-f]{64})$/

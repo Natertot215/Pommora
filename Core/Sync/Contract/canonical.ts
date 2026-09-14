@@ -8,6 +8,7 @@ export const ROUTES = {
   info: { method: 'POST', path: '/info' },
   ring: { method: 'POST', path: '/ring' },
   store: { method: 'POST', path: '/store' },
+  pull: { method: 'POST', path: '/pull' },
 } as const satisfies { [K in keyof RouteTable]: Pick<RouteTable[K], 'method' | 'path'> }
 
 export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`

@@ -8,6 +8,7 @@ import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { header, identify, type Routes, verify } from './authority.ts'
+import { closeAll } from './feed.ts'
 import { blobRoutes } from './Routes/blobs.ts'
 import { itemRoutes } from './Routes/items.ts'
 import { nexusRoutes } from './Routes/nexus.ts'
@@ -31,6 +32,7 @@ import {
 const PORT = Number(process.env.POMMORA_SYNC_PORT ?? 7473)
 const DATA_DIR = process.env.POMMORA_SYNC_DATA ?? join(homedir(), '.pommora-sync')
 const HOST = process.env.POMMORA_SYNC_HOST ?? LOOPBACK
+const SWEEP_EVERY_MS = 3_600_000
 
 function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
   return new Promise((resolve, reject) => {
@@ -185,6 +187,19 @@ export async function start(opts: {
         if (reply !== 'streamed') send(reply)
       })
   }
+  const sweep = (): void => {
+    try {
+      const rows = store.db
+        .prepare('SELECT nexus_id AS id, history_days AS days FROM nexus')
+        .all() as { id: string; days: number }[]
+      for (const row of rows) store.log.sweep(row.id, row.days, Date.now())
+    } catch (e) {
+      console.error('Sync sweep failed:', e)
+    }
+  }
+  sweep()
+  const sweeping = setInterval(sweep, SWEEP_EVERY_MS)
+  sweeping.unref()
   const server = opts.tls ? httpsCreateServer(opts.tls, handler) : createServer(handler)
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
@@ -198,6 +213,8 @@ export async function start(opts: {
     pin: opts.tls ? new X509Certificate(opts.tls.cert).fingerprint256 : null,
     close: () =>
       new Promise<void>((resolve, reject) => {
+        clearInterval(sweeping)
+        closeAll()
         server.closeAllConnections()
         server.close((e) => {
           store.db.close()
