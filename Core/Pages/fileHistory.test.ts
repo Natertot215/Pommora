@@ -6,6 +6,7 @@ import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { splitEnvelope } from '../Files/pageFile'
+import { machine } from '../Platform/machine'
 import {
   type CaptureStore,
   installStores,
@@ -148,10 +149,18 @@ describe('captureIfDue', () => {
 describe('writeBody', () => {
   it('writes the body and captures the text it overwrote', async () => {
     const r = await writeBody(root, file, 'two', 'edit')
-    expect(r).toEqual({ ok: true, value: null })
+    expect(r.ok && r.value.stale).toBe(false)
     expect(splitEnvelope(await readFile(file, 'utf8')).body).toBe('two')
     expect(rows()).toHaveLength(1)
     expect(bodyOf(PAGE, rows()[0].ts)).toBe('one\n')
+  })
+
+  it('answers stale without recording a snapshot', async () => {
+    const before = await readFile(file, 'utf8')
+    const r = await writeBody(root, file, 'two', 'edit', machine().sha256Hex('elsewhere'))
+    expect(r).toEqual({ ok: true, value: { hash: machine().sha256Hex('one\n'), stale: true } })
+    expect(await readFile(file, 'utf8')).toBe(before)
+    expect(rows()).toHaveLength(0)
   })
 
   it('a folded line ending is not a foreign edit on the second save', async () => {

@@ -1,3 +1,4 @@
+import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
@@ -28,13 +29,6 @@ const stageDef: PropertyDefinition = {
 const noteDef: PropertyDefinition = { id: 'prop_note', name: 'Note', type: 'number' }
 
 const PAGE = { id: 'p1', path: 'Col/Page.md' }
-const detailWith = (frontmatter: Record<string, unknown>) => ({
-  id: 'p1',
-  title: 'Page',
-  path: 'Col/Page.md',
-  frontmatter,
-  body: '',
-})
 
 let host: HTMLDivElement
 let root: Root
@@ -92,13 +86,13 @@ const renderPanel = async (node: React.JSX.Element): Promise<void> => {
 
 describe('PropertyPanel', () => {
   it('the page frame (onBack) seeds Context rows shown (B8)', async () => {
-    cachePageDetail(detailWith({}))
-    await renderPanel(<PropertyPanel page={detailWith({})} onBack={() => {}} />)
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
+    await renderPanel(<PropertyPanel page={detail({ path: 'Col/Page.md' })} onBack={() => {}} />)
     expect(text()).toContain('Areas')
   })
 
   it('the inspector (no onBack) seeds Context rows hidden (B8)', async () => {
-    cachePageDetail(detailWith({}))
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
     await renderPanel(<PropertyPanel page={PAGE} />)
     // The Add affordance is present, but the un-valued Areas row is not seeded shown.
     expect(text()).toContain('Add Property')
@@ -106,7 +100,7 @@ describe('PropertyPanel', () => {
   })
 
   it('a property with a value shows its row with no reveal write (the live predicate)', async () => {
-    cachePageDetail(detailWith({ Stage: 'a' }))
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
     await renderPanel(<PropertyPanel page={PAGE} />)
     expect(text()).toContain('Stage')
     // Note, with no value, stays hidden behind Add.

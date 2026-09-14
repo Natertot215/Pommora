@@ -1,3 +1,4 @@
+import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
@@ -149,13 +150,8 @@ describe('store — tab wiring (Phase 0)', () => {
 })
 
 const pg = (id: string): PageTarget => ({ kind: 'page', id, path: `Notes/${id}.md` })
-const detail = (id: string, path = `Notes/${id}.md`): PageDetail => ({
-  id,
-  title: id.toUpperCase(),
-  path,
-  frontmatter: {},
-  body: 'x',
-})
+const detail = (id: string, path = `Notes/${id}.md`): PageDetail =>
+  pageDetail({ id, title: id.toUpperCase(), path, body: 'x' })
 const ready = (id: string): PageSlot => ({
   status: 'ready',
   target: pg(id),
