@@ -38,6 +38,27 @@ export async function corpusFiles(root: string, scope: WatchScope): Promise<stri
   return corpusFilesUnder(root, root, scope)
 }
 
+// Descended by hand so a refused subtree is never entered, which makes pruning a directory identical to filtering its files. `siblings` is the names in the directory being listed, so a predicate can read a temp against its target; nothing is stat'ed.
+export async function listPathsUnder(
+  root: string,
+  absDir: string,
+  admit: (rel: string, kind: 'file' | 'dir', siblings: ReadonlySet<string>) => boolean,
+): Promise<string[]> {
+  const out: string[] = []
+  const walk = async (dir: string, segs: string[]): Promise<void> => {
+    const entries = await listEntries(dir)
+    const siblings = new Set(entries.map((e) => e.name))
+    for (const entry of entries) {
+      const next = [...segs, entry.name]
+      if (!admit(next.join('/'), entry.kind === 'dir' ? 'dir' : 'file', siblings)) continue
+      if (entry.kind === 'dir') await walk(join(dir, entry.name), next)
+      else out.push(next.join('/'))
+    }
+  }
+  await walk(absDir, relative(root, absDir).split('/').filter(Boolean))
+  return out
+}
+
 export async function corpusFilesUnder(
   root: string,
   absDir: string,
@@ -45,18 +66,11 @@ export async function corpusFilesUnder(
 ): Promise<string[]> {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
-  const out: string[] = []
-  // Descended by hand so an out-of-corpus subtree is never entered: `.trash` only grows, and the prefix match makes pruning a directory identical to filtering its files.
-  const walk = async (dir: string, segs: string[]): Promise<void> => {
-    for (const entry of await listEntries(dir)) {
-      const next = [...segs, entry.name]
-      if (NON_CORPUS_TOP.has(next[0]) || isAsset(next) || isExcluded(next)) continue
-      if (entry.kind === 'dir') await walk(join(dir, entry.name), next)
-      else if (isMarkdownFile(entry.name)) out.push(next.join('/'))
-    }
-  }
-  await walk(absDir, relative(root, absDir).split('/').filter(Boolean))
-  return out
+  return listPathsUnder(root, absDir, (rel, kind) => {
+    const segs = rel.split('/')
+    if (NON_CORPUS_TOP.has(segs[0]) || isAsset(segs) || isExcluded(segs)) return false
+    return kind === 'dir' || isMarkdownFile(segs[segs.length - 1])
+  })
 }
 
 export async function listFilesRecursive(dir: string, suffixes?: string[]): Promise<string[]> {

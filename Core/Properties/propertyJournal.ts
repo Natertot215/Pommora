@@ -1,5 +1,6 @@
 // A cascade writes its intent FIRST, sweeps, then clears. Intent only, never a snapshot — the open-time replay re-derives its targets from current disk.
 
+import { PROPERTY_JOURNAL_FILENAME } from '../Paths/nexusPaths'
 import { journalSlot } from './journalSlot'
 
 export type SchemaJournal =
@@ -39,7 +40,7 @@ function decode(raw: Record<string, unknown>): SchemaJournal | null {
   }
 }
 
-const slot = journalSlot<SchemaJournal>('property-cascade.json', decode, sameRecord)
+const slot = journalSlot<SchemaJournal>(PROPERTY_JOURNAL_FILENAME, decode, sameRecord)
 
 export const writeSchemaJournal = slot.write
 export const readSchemaJournal = slot.read
