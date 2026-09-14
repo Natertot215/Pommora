@@ -122,7 +122,7 @@ async function state(root: string, ctx: HostContext): Promise<Result<SyncState>>
   const outcome = await call(host, binding, 'devices', { nexusId })
   const revoked = outcome.status === 404 && (await host.secrets.get(ringName(nexusId))) !== null
   if (revoked) {
-    stopSession()
+    stopSession(ctx)
     await forgetKeys(host, nexusId)
     setStatus(ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
   }
@@ -227,7 +227,7 @@ const act = (route: 'approve' | 'revoke') =>
     const listing = await call(host, binding, 'devices', { nexusId })
     const devices = listing.reply?.devices
     if (devices === undefined)
-      return ok({ device, binding: bindingFrom(binding, listing), status: OFF })
+      return ok({ device, binding: bindingFrom(binding, listing), status: currentStatus() })
     const work =
       password === null
         ? await shareRing(host, binding, nexusId, deviceId, devices)
@@ -278,7 +278,7 @@ export const syncHandlers = {
             state: 'unreachable',
             why: outcome.error ?? 'The server did not answer.',
           },
-          status: OFF,
+          status: currentStatus(),
         })
       return state(root, ctx)
     },
@@ -365,7 +365,7 @@ export const syncHandlers = {
     async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
       const r = await ready(root, ctx)
       if (!r.ok) return r
-      stopSession()
+      stopSession(ctx)
       forgetHeldRing(r.value.nexusId)
       return writeValue('sync', null) ? state(root, ctx) : NO_STORE
     },

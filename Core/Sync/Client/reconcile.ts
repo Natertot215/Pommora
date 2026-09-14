@@ -34,19 +34,20 @@ async function readLog(session: Session): Promise<Log | null> {
   }
 }
 
-const stalled = (session: Session, why: string): void => {
-  setStatus(session.ctx, { state: 'error', why })
-}
-
 const settled = (rel: string, head: Change): boolean =>
   head.path === rel && head.record !== undefined && readBase(rel)?.blobSha === head.record.sha256
 
-export async function reconcile(session: Session): Promise<void> {
-  const { root } = session
+export function admittedPaths(session: Session): Promise<string[]> {
   const admits = manifestAdmits(session.scope)
-  const local = await listPathsUnder(root, root, (rel, _kind, siblings) => admits(rel, siblings))
+  return listPathsUnder(session.root, session.root, (rel, _kind, siblings) => admits(rel, siblings))
+}
+
+export async function reconcile(session: Session): Promise<void> {
+  const admits = manifestAdmits(session.scope)
+  const local = await admittedPaths(session)
   const log = await readLog(session)
-  if (log === null) return stalled(session, 'The hub did not answer the change log.')
+  if (log === null)
+    return setStatus(session.ctx, { state: 'error', why: 'The hub did not answer the change log.' })
 
   const toPush: string[] = []
   for (const rel of local) {
@@ -64,7 +65,7 @@ export async function reconcile(session: Session): Promise<void> {
     if (head.kind === 'delete' || head.path !== rel) continue
     if (here.has(rel) || readBase(rel) !== null || !admits(rel)) continue
     if ((await landRemote(session, head)) === 'missing')
-      return stalled(session, `The hub holds no bytes for ${rel}.`)
+      return setStatus(session.ctx, { state: 'error', why: `The hub holds no bytes for ${rel}.` })
   }
   advance(session, log.top)
 }

@@ -29,6 +29,8 @@ const subtle = (): SubtleCrypto => globalThis.crypto.subtle
 
 export const utf8 = (text: string): Bytes => ENCODER.encode(text)
 
+export const owned = (bytes: Uint8Array): Bytes => new Uint8Array(bytes)
+
 export function toBase64url(bytes: Uint8Array): string {
   let binary = ''
   for (const byte of bytes) binary += String.fromCharCode(byte)

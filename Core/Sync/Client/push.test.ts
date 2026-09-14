@@ -1,5 +1,5 @@
 import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
@@ -108,6 +108,18 @@ describe('pushDirty', () => {
     expect(Number.isInteger(change.record.mtimeMs)).toBe(true)
     expect(readBase('Notes/One.md')?.version).toBe(hub.seq)
     expect(session.failed.size).toBe(0)
+  })
+
+  it('reads no bytes for a file whose stat matches its base', async () => {
+    await write('Notes/One.md', page('one'))
+    await pushDirty(session, ['Notes/One.md'])
+    const read = vi.spyOn(machine(), 'readBytes')
+
+    await pushDirty(session, ['Notes/One.md'])
+
+    expect(read).not.toHaveBeenCalled()
+    expect(stores()).toHaveLength(1)
+    read.mockRestore()
   })
 
   it('never stores a page without an ID', async () => {
