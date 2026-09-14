@@ -39,7 +39,7 @@ export function tileBodyUnder(segs: string[], rel: string): boolean {
 
 let tap: ((ev: WatchEvent) => void) | null = null
 
-/** The sync client installs itself here to see every watched event, the tile bodies the tree drops included. */
+// The sync client installs itself here to see every watched event, the tile bodies the tree drops included.
 export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void {
   tap = fn
 }
@@ -64,11 +64,10 @@ function ignoreUnder(
   }
 }
 
-/** What the tree drops. */
 export const ignoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
   ignoreUnder(root, scope, true)
 
-/** What chokidar never reports, which is the tree's set minus the tile bodies sync carries. */
+// What chokidar never reports, which is the tree's set minus the tile bodies sync carries.
 export const syncIgnoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
   ignoreUnder(root, scope, false)
 
