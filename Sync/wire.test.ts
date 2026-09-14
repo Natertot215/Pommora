@@ -1,3 +1,4 @@
+import { createDecipheriv } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -18,6 +19,14 @@ const fixture = JSON.parse(
   }[]
   fingerprint: { publicKey: string; id: string }
   blobPath: { nexusId: string; sha256: string; path: string }
+  item: {
+    keyId: string
+    keyHex: string
+    path: string
+    ivHex: string
+    plaintext: string
+    blobHex: string
+  }
 }
 
 describe('the hub wire', () => {
@@ -40,5 +49,21 @@ describe('the hub wire', () => {
 
   it('matches the shared blob-path vector', () => {
     expect(blobPath(fixture.blobPath.nexusId, fixture.blobPath.sha256)).toBe(fixture.blobPath.path)
+  })
+
+  it('reads the shared item vector', () => {
+    const { keyId, keyHex, path, plaintext, blobHex } = fixture.item
+    const blob = Buffer.from(blobHex, 'hex')
+    expect(blob[0]).toBe(1)
+    const iv = blob.subarray(1, 13)
+    const sealed = blob.subarray(13)
+    const decipher = createDecipheriv('aes-256-gcm', Buffer.from(keyHex, 'hex'), iv)
+    decipher.setAAD(Buffer.from(`pommora-item/1\n${keyId}\n${path}`, 'utf8'))
+    decipher.setAuthTag(sealed.subarray(sealed.length - 16))
+    const read = Buffer.concat([
+      decipher.update(sealed.subarray(0, sealed.length - 16)),
+      decipher.final(),
+    ])
+    expect(read.toString('utf8')).toBe(plaintext)
   })
 })
