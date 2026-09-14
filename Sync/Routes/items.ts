@@ -1,6 +1,6 @@
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import type { Identity, Routes } from '../authority.ts'
-import { MAX_WAIT_MS, wait, wake } from '../feed.ts'
+import { wait, wake } from '../feed.ts'
 import type { Store } from '../Store/open.ts'
 import { KEY_ID_MAX, refuse, type Reply, SHA256, text, whole } from '../wire.ts'
 
@@ -78,7 +78,9 @@ export function itemRoutes(store: Store) {
       const b = body as Partial<Wire.PullBody> | null
       if (!whole(b?.cursor, Number.MAX_SAFE_INTEGER)) return refuse(400, 'malformed')
       const waitMs = b.waitMs
-      if (waitMs !== undefined && !whole(waitMs, MAX_WAIT_MS)) return refuse(400, 'malformed')
+      if (waitMs !== undefined && !whole(waitMs, Number.MAX_SAFE_INTEGER)) {
+        return refuse(400, 'malformed')
+      }
       const seq = store.log.seqOf(id.nexusId)
       if (seq === null) return refuse(404, 'not-found')
       if (b.cursor > seq) return refuse(409, 'resync', { seq })

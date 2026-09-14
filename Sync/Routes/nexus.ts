@@ -34,7 +34,7 @@ function createRecord(value: unknown): Omit<Wire.InfoRecord, 'version'> | null {
   const kdf = c.kdf as Partial<Wire.KdfParams> | undefined
   if (kdf?.hash !== 'SHA-256' || !text(kdf.salt, 256)) return null
   if (!whole(kdf.iterations, 10_000_000) || kdf.iterations < 1) return null
-  if (!whole(c.historyDays, 36_500)) return null
+  if (!whole(c.historyDays, 36_500) || c.historyDays < 1) return null
   const ring = ringEntries(c.ring, 0)
   if (!ring) return null
   return {

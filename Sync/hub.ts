@@ -35,7 +35,7 @@ const HOST = process.env.POMMORA_SYNC_HOST ?? LOOPBACK
 const SWEEP_EVERY_MS = 3_600_000
 
 function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const chunks: Buffer[] = []
     let size = 0
     let settled = false
@@ -54,7 +54,7 @@ function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
     })
     req.on('end', () => settle(Buffer.concat(chunks)))
     req.on('close', () => settle(null))
-    req.on('error', reject)
+    req.on('error', () => settle(null))
   })
 }
 
@@ -70,14 +70,16 @@ function spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<Spoo
   const hash = createHash('sha256')
   let size = 0
   let settled = false
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const settle = (spool: Spool | null): void => {
       if (settled) return
       settled = true
-      file.end(() => {
+      const finish = (): void => {
         if (spool === null) rmSync(path, { force: true })
         resolve(spool)
-      })
+      }
+      if (file.destroyed) finish()
+      else file.end(finish)
     }
     req.on('data', (chunk: Buffer) => {
       size += chunk.length
@@ -93,7 +95,8 @@ function spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<Spoo
     })
     req.on('end', () => settle({ path, size, sha256Hex: hash.digest('hex') }))
     req.on('close', () => settle(null))
-    req.on('error', reject)
+    req.on('error', () => settle(null))
+    file.on('error', () => settle(null))
   })
 }
 
@@ -125,6 +128,7 @@ async function bytes(
     method === 'PUT' ? 'editor' : 'reader',
   )
   if ('status' in id) return id
+  if (d.store.log.seqOf(params.nexusId) === null) return refuse(404, 'not-found')
   if (method === 'GET') {
     return verify(id, method, path, sha256Hex(Buffer.alloc(0))) ?? d.blobs.get(params, res)
   }
