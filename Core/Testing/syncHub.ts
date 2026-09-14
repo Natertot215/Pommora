@@ -76,6 +76,15 @@ function headOf(hub: FakeHub, path: string): Change | null {
 const recordAt = (hub: FakeHub, seq: number): ItemRecord | null =>
   hub.changes.find((change) => change.seq === seq)?.record ?? null
 
+const whole = (value: number): boolean => Number.isInteger(value) && value >= 0
+
+export const malformed = (body: StoreBody): boolean =>
+  body.changes.some(
+    (change) =>
+      (change.kind === 'write' || change.kind === 'capture') &&
+      !(whole(change.record.mtimeMs) && whole(change.record.size)),
+  )
+
 function apply(hub: FakeHub, body: StoreBody): StoreReply {
   const outcomes: StoreOutcome[] = []
   const stale = (path: string, at: string = path): StoreOutcome => ({
@@ -171,6 +180,7 @@ async function route(
   const body = JSON.parse(String(req.body ?? '{}')) as StoreBody & { cursor?: number }
   switch (path) {
     case '/store': {
+      if (malformed(body)) return json(400, { error: 'malformed' })
       const known = hub.requests.get(body.requestId)
       if (known !== undefined) return json(200, known)
       const reply = apply(hub, body)
