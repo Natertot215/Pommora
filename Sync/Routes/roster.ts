@@ -1,7 +1,7 @@
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import type { Identity } from '../authority.ts'
 import type { Store } from '../Store/open.ts'
-import { refuse, type Reply } from '../wire.ts'
+import { PUBLIC_KEY, refuse, type Reply } from '../wire.ts'
 
 const targetOf = (body: unknown): string | null => {
   const id = (body as Partial<Wire.DeviceBody> | null)?.deviceId
@@ -16,7 +16,11 @@ export function rosterRoutes(store: Store) {
       const b = body as Partial<Wire.ConnectBody> | null
       const name = typeof b?.name === 'string' ? b.name.trim() : ''
       if (name.length < 1 || name.length > 64) return refuse(400, 'malformed')
-      roster.upsertDevice(id.device, id.publicKey, name, b?.x25519 ?? null)
+      const x25519 = b?.x25519
+      if (x25519 !== undefined && (typeof x25519 !== 'string' || !PUBLIC_KEY.test(x25519))) {
+        return refuse(400, 'malformed')
+      }
+      roster.upsertDevice(id.device, id.publicKey, name, x25519 ?? null)
       const seeded = roster.hasMembers(id.nexusId)
       roster.addMembership(id.nexusId, id.device, seeded ? 0 : 1, seeded ? 'editor' : 'owner')
       return {

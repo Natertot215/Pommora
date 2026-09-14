@@ -43,12 +43,13 @@ async function route(
   store: Store,
   routes: ReturnType<typeof rosterRoutes>,
   req: IncomingMessage,
+  timeoutMs: number | undefined,
 ): Promise<Reply> {
   if (req.method !== 'POST') return refuse(404, 'not-found')
   const path = new URL(req.url ?? '/', 'http://localhost').pathname
   const name = ROUTES.find((r) => PATHS[r] === path)
   if (!name) return refuse(404, 'not-found')
-  req.setTimeout(META[name].timeoutMs)
+  req.setTimeout(timeoutMs ?? META[name].timeoutMs)
   const raw = await readCapped(req, META[name].cap)
   if (!raw) return refuse(413, 'too-large')
   const body = parseBody(raw)
@@ -64,6 +65,7 @@ export async function start(opts: {
   dataDir: string
   port: number
   host?: string
+  timeoutMs?: number
   tls?: { cert: string; key: string }
 }): Promise<{ port: number; pin: string | null; close(): Promise<void> }> {
   const store = openStore(opts.dataDir)
@@ -78,7 +80,7 @@ export async function start(opts: {
       res.once('finish', () => req.destroy())
       send(refuse(408, 'timeout'))
     })
-    route(store, routes, req)
+    route(store, routes, req, opts.timeoutMs)
       .catch((e) => {
         console.error('Sync request failed:', e)
         return refuse(500, 'internal')

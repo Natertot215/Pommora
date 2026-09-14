@@ -37,16 +37,25 @@ function migrate(db: DatabaseSync): void {
     | { value: string }
     | undefined
   const from = row ? Number(row.value) : SCHEMA_VERSION
-  if (from < SCHEMA_VERSION) {
-    db.exec('BEGIN')
+  if (from > SCHEMA_VERSION) {
+    throw new Error(
+      `This store is at schema version ${from}; this hub understands ${SCHEMA_VERSION}.`,
+    )
+  }
+  if (row && from === SCHEMA_VERSION) return
+  db.exec('BEGIN')
+  try {
     for (let version = from + 1; version <= SCHEMA_VERSION; version++) {
       for (const statement of MIGRATIONS[version] ?? []) db.exec(statement)
     }
+    db.prepare(
+      'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    ).run('schema_version', String(SCHEMA_VERSION))
     db.exec('COMMIT')
+  } catch (e) {
+    db.exec('ROLLBACK')
+    throw e
   }
-  db.prepare(
-    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-  ).run('schema_version', String(SCHEMA_VERSION))
 }
 
 export function openStore(dir: string): Store {
