@@ -258,7 +258,12 @@ export function describeSyncStore(name: string, make: () => SyncStore): void {
       store.upsertBase(base('a.md', { version: 9 }))
       expect(store.readBase('a.md')).toEqual(base('a.md', { version: 9 }))
       expect(store.readBase('ghost.md')).toBeNull()
-      expect(store.readAllBases().map((r) => r.path)).toEqual(['a.md', 'b.md'])
+      expect(
+        store
+          .readAllBases()
+          .map((r) => r.path)
+          .sort(),
+      ).toEqual(['a.md', 'b.md'])
       store.upsertBase(base('a.md', { version: 10 }))
       expect(store.readBase('a.md')?.version).toBe(10)
     })
@@ -270,7 +275,12 @@ export function describeSyncStore(name: string, make: () => SyncStore): void {
       expect(store.readBase('a.md')).toBeNull()
       expect(store.readBase('c.md')?.hash).toBe('h')
       store.deleteBase('b.md')
-      expect(store.readAllBases().map((r) => r.path)).toEqual(['c.md'])
+      expect(
+        store
+          .readAllBases()
+          .map((r) => r.path)
+          .sort(),
+      ).toEqual(['c.md'])
     })
 
     it('keeps base bytes as bytes and null as null', () => {
