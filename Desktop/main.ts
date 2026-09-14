@@ -50,7 +50,7 @@ import { isWindows, nativePath, posixPath } from './Platform/hostPath'
 import { nodeMachine } from './Platform/nodeMachine'
 import { closeSessionDb, openSessionDb } from './Store/sessionDb'
 import { fetchPageTitle } from './Web/linkTitles'
-import { transport } from './Web/transport'
+import { transport } from './Sync/transport'
 import {
   installWebGuests,
   pauseGuestMedia,
