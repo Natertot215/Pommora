@@ -131,6 +131,20 @@ describe('re-entrancy', () => {
     await expect(again).resolves.toBe('again')
   })
 
+  it('refuses a timer that re-takes an outer key while the outer lock is in flight', async () => {
+    const retake = new Promise<string>((resolve, reject) => {
+      void serializeOnFile(file, async () => {
+        await serializeOnFile(other, async () => {
+          setTimeout(() => {
+            serializeOnFile(file, async () => 'inner').then(resolve, reject)
+          }, 0)
+        })
+        await delay(30)
+      })
+    })
+    await expect(retake).rejects.toThrow(/Re-entrant file lock/)
+  })
+
   it('a key is released when its slot settles — sequential takes are fine', async () => {
     await serializeOnFile(file, async () => 'first')
     await expect(serializeOnFile(file, async () => 'second')).resolves.toBe('second')

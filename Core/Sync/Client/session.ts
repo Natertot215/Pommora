@@ -79,7 +79,7 @@ async function pulling(self: Session): Promise<void> {
     const outcome = await polled(self)
     if (session !== self) return
     if (outcome === 'revoked') {
-      stopSession(self.ctx)
+      await stopSession(self.ctx)
       setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
       return
     }
@@ -178,7 +178,7 @@ async function withKeys(
 }
 
 export async function startSession(ctx: HostContext, root: string, nexusId: string): Promise<void> {
-  stopSession(ctx)
+  await stopSession(ctx)
   const host = syncHost(ctx)
   if (host === null) {
     setStatus(ctx, { state: 'off', why: 'This device has no identity.' })
@@ -197,12 +197,13 @@ export async function startSession(ctx: HostContext, root: string, nexusId: stri
   await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS)
 }
 
-export function stopSession(ctx: Pick<HostContext, 'push'>): void {
+export function stopSession(ctx: Pick<HostContext, 'push'>): Promise<void> {
   if (retry !== null) clearTimeout(retry)
   retry = null
   uninstallTap()
   session = null
   setStatus(ctx, { state: 'off' })
+  return chain
 }
 
 export async function syncNow(): Promise<void> {

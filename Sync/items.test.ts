@@ -217,7 +217,6 @@ describe('the hub feed', () => {
     await push([{ kind: 'write', base: null, record: record('Notes/woken.md') }])
     const pulled = await waiting
     const elapsed = performance.now() - started
-    console.log(`the long poll woke in ${elapsed.toFixed(1)} ms`)
     expect(elapsed).toBeLessThan(100)
     expect(pulled.changes.map((c) => c.path)).toEqual(['Notes/woken.md'])
   })
