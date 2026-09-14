@@ -4,7 +4,14 @@ import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { call, type CallOutcome, type SyncHost, syncHost } from './Client/call'
-import { forgetKeys, loadRing, passwordName, refreshRing, ringName } from './Client/keyring'
+import {
+  forgetHeldRing,
+  forgetKeys,
+  loadRing,
+  passwordName,
+  refreshRing,
+  ringName,
+} from './Client/keyring'
 import type {
   DeviceRecord,
   InfoRecord,
@@ -21,6 +28,13 @@ import { exportRaw, mintKey, unwrapWithPassword, wrapForDevice, wrapForPassword 
 const DAY_MS = 86_400_000
 
 const OFF: SyncStatus = { state: 'off' }
+
+type Trouble = Pick<SyncStatus, 'reason' | 'why'>
+
+const NO_RECORD: Trouble = {
+  reason: 'server',
+  why: 'The server holds no key record for this nexus.',
+}
 
 const NO_DEVICE = fail(
   'operation-failed',
@@ -62,12 +76,25 @@ function bindingFrom(
   return { address, state: 'unreachable', why }
 }
 
+const statusOf = (trouble: Trouble | undefined): SyncStatus =>
+  trouble === undefined ? OFF : { state: 'off', ...trouble }
+
 async function readInfo(
   host: SyncHost,
   address: string,
   nexusId: string,
 ): Promise<InfoRecord | null> {
   return (await call(host, address, 'info', { nexusId })).reply?.info ?? null
+}
+
+async function appendRing(
+  host: SyncHost,
+  address: string,
+  nexusId: string,
+  base: number,
+  add: RingEntry[],
+): Promise<InfoRecord | null> {
+  return (await call(host, address, 'ring', { nexusId, base, add })).reply?.info ?? null
 }
 
 async function state(root: string, ctx: HostContext): Promise<Result<SyncState>> {
@@ -91,19 +118,29 @@ async function shareRing(
   nexusId: string,
   deviceId: string,
   devices: DeviceRecord[],
-): Promise<string | undefined> {
+): Promise<Trouble | undefined> {
   const info = await readInfo(host, address, nexusId)
-  if (info === null) return 'The server holds no key record for this nexus.'
-  const ring = await loadRing(host, nexusId, info)
-  if (ring === null) return 'This device holds no keys to share; it needs the Nexus password.'
+  if (info === null) return NO_RECORD
+  const ring = await loadRing(host, nexusId, info, null)
+  if (ring === null)
+    return {
+      reason: 'password',
+      why: 'This device holds no keys to share; it needs the Nexus password.',
+    }
   const target = devices.find((d) => d.id === deviceId)
-  if (!target?.x25519) return 'That device holds no agreement key; it needs the Nexus password.'
+  if (!target?.x25519)
+    return {
+      reason: 'password',
+      why: 'That device holds no agreement key; it needs the Nexus password.',
+    }
   const known = new Set(info.ring.filter((e) => e.holder === deviceId).map((e) => e.keyId))
   const raws = (await exportRaw(ring)).filter((raw) => !known.has(raw.keyId))
   if (raws.length === 0) return undefined
   const add = await wrapForDevice(raws, { deviceId, x25519: target.x25519 })
-  const appended = await call(host, address, 'ring', { nexusId, base: info.version, add })
-  return appended.status === 200 ? undefined : 'The server refused the key hand-off.'
+  const appended = await appendRing(host, address, nexusId, info.version, add)
+  return appended === null
+    ? { reason: 'server', why: 'The server refused the key hand-off.' }
+    : undefined
 }
 
 async function rotateRing(
@@ -112,27 +149,36 @@ async function rotateRing(
   nexusId: string,
   password: string,
   devices: DeviceRecord[],
-): Promise<string | undefined> {
+): Promise<Trouble | undefined> {
   const info = await readInfo(host, address, nexusId)
-  if (info === null) return 'The server holds no key record for this nexus.'
+  if (info === null) return NO_RECORD
   const kek = await deriveWrappingKey(password, info.kdf)
   const proof = info.ring.filter((e) => e.holder === 'password')
+  const wrongPassword: Trouble = {
+    reason: 'password',
+    why: 'The stored Nexus password does not open the ring.',
+  }
+  if (proof.length === 0) return wrongPassword
   try {
-    if (proof.length === 0) throw new Error('wrong-password')
     await unwrapWithPassword(proof, kek)
   } catch {
-    return 'The stored Nexus password does not open the ring.'
+    return wrongPassword
   }
   const raw = mintKey()
   const add: RingEntry[] = await wrapForPassword([raw], kek)
-  for (const d of devices) {
-    if (d.approved && d.x25519)
-      add.push(...(await wrapForDevice([raw], { deviceId: d.id, x25519: d.x25519 })))
+  const holders = devices.filter((d) => d.approved)
+  for (const d of holders) {
+    if (d.x25519) add.push(...(await wrapForDevice([raw], { deviceId: d.id, x25519: d.x25519 })))
   }
-  const appended = await call(host, address, 'ring', { nexusId, base: info.version, add })
-  if (appended.reply === null) return 'The server refused the new key.'
-  await refreshRing(host, nexusId, appended.reply.info)
-  return undefined
+  const appended = await appendRing(host, address, nexusId, info.version, add)
+  if (appended === null) return { reason: 'server', why: 'The server refused the new key.' }
+  await refreshRing(host, nexusId, appended)
+  return holders.some((d) => !d.x25519)
+    ? {
+        reason: 'password',
+        why: 'Some approved devices hold no agreement key and need the Nexus password.',
+      }
+    : undefined
 }
 
 const act = (route: 'approve' | 'revoke') =>
@@ -143,24 +189,31 @@ const act = (route: 'approve' | 'revoke') =>
     if (deviceId.length === 0) return fail('operation-failed', 'A device id is required.')
     const { nexusId, device, host, binding } = r.value
     if (binding === null) return fail('operation-failed', 'This nexus is bound to no server.')
-    const password = await host.secrets.get(passwordName(nexusId))
-    if (route === 'revoke' && password === null)
-      return fail('operation-failed', 'The Nexus password is needed to rotate the ring.')
+    let rotate: ((devices: DeviceRecord[]) => Promise<Trouble | undefined>) | null = null
+    if (route === 'revoke') {
+      const password = await host.secrets.get(passwordName(nexusId))
+      if (password === null)
+        return fail('operation-failed', 'The Nexus password is needed to rotate the ring.')
+      rotate = (devices) => rotateRing(host, binding.address, nexusId, password, devices)
+    }
     const outcome = await call(host, binding.address, route, { nexusId, deviceId })
     if (outcome.status !== 200 && outcome.status !== 0) return state(root, ctx)
     const devices = outcome.reply?.devices ?? []
-    const why =
+    const trouble =
       outcome.status !== 200
         ? undefined
-        : route === 'approve'
+        : rotate === null
           ? await shareRing(host, binding.address, nexusId, deviceId, devices)
-          : await rotateRing(host, binding.address, nexusId, password ?? '', devices)
+          : await rotate(devices)
     return ok({
       device,
       binding: bindingFrom(binding.address, outcome),
-      status: why === undefined ? OFF : { state: 'off', why },
+      status: statusOf(trouble),
     })
   })
+
+const given = (raw: unknown): string | null =>
+  typeof raw === 'string' && raw.length > 0 ? raw : null
 
 export const syncHandlers = {
   'sync:state': withRoot((root, ctx) => state(root, ctx)),
@@ -208,8 +261,8 @@ export const syncHandlers = {
       if (!r.ok) return r
       const address = typeof raw === 'string' ? raw.trim() : ''
       if (address.length === 0) return fail('operation-failed', 'A server address is required.')
-      const password = typeof raw2 === 'string' && raw2.length ? raw2 : null
-      const pin = typeof raw3 === 'string' && raw3.length ? raw3 : undefined
+      const password = given(raw2)
+      const pin = given(raw3)
       const { nexusId, device, host } = r.value
       const outcome = await call(host, address, 'connect', {
         nexusId,
@@ -222,24 +275,24 @@ export const syncHandlers = {
           'operation-failed',
           `The server refused or did not answer: ${outcome.error ?? outcome.status}.`,
         )
-      if (password !== null) await host.secrets.set(passwordName(nexusId), password)
       const info = await readInfo(host, address, nexusId)
       if (info !== null) {
-        const ring = await loadRing(host, nexusId, info)
-        if (ring === null) {
-          if (password === null) return fail('operation-failed', 'A Nexus password is required.')
-          await host.secrets.set(passwordName(nexusId), null)
-          return fail('operation-failed', 'The Nexus password is wrong.')
-        }
+        if ((await loadRing(host, nexusId, info, password)) === null)
+          return fail(
+            'operation-failed',
+            password === null ? 'A Nexus password is required.' : 'The Nexus password is wrong.',
+          )
+        if (password !== null) await host.secrets.set(passwordName(nexusId), password)
       } else if (outcome.reply?.approved === true) {
         if (password === null) return fail('operation-failed', 'A Nexus password is required.')
         const kdf = freshKdfParams()
         const key = mintKey()
         const entries = [
           ...(await wrapForPassword([key], await deriveWrappingKey(password, kdf))),
-          ...(host.device.x25519
-            ? await wrapForDevice([key], { deviceId: host.device.id, x25519: host.device.x25519 })
-            : []),
+          ...(await wrapForDevice([key], {
+            deviceId: host.device.id,
+            x25519: host.device.x25519,
+          })),
         ]
         const created = await call(host, address, 'info', {
           nexusId,
@@ -255,14 +308,20 @@ export const syncHandlers = {
             'operation-failed',
             `The server refused the key record: ${created.error ?? created.status}.`,
           )
-        await loadRing(host, nexusId, { ring: entries, kdf })
+        await host.secrets.set(passwordName(nexusId), password)
+        await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
       return writeValue('sync', { address, pin, cursor: 0 }) ? state(root, ctx) : NO_STORE
     },
   ),
 
-  'sync:disconnect': withRoot((root, ctx) =>
-    writeValue('sync', null) ? state(root, ctx) : NO_STORE,
+  'sync:disconnect': withRoot(
+    async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
+      const r = await ready(root, ctx)
+      if (!r.ok) return r
+      forgetHeldRing(r.value.nexusId)
+      return writeValue('sync', null) ? state(root, ctx) : NO_STORE
+    },
   ),
 
   'sync:approve': act('approve'),

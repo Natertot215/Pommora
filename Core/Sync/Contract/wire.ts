@@ -155,7 +155,7 @@ export type SyncBinding = { address: string } & (
 
 export interface SyncStatus {
   state: 'off' | 'idle' | 'syncing' | 'error'
-  reason?: 'password' | 'pending' | 'revoked' | 'no-db'
+  reason?: 'password' | 'pending' | 'revoked' | 'no-db' | 'server'
   why?: string
   lastAt?: number
 }
@@ -168,7 +168,7 @@ export interface SyncState {
 
 export interface SyncScope {
   address: string
-  pin?: string
+  pin: string | null
   cursor: number
 }
 
