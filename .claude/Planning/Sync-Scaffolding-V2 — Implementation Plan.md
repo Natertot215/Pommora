@@ -111,25 +111,25 @@ The tag after each task names the executing agent's model. Tick per bullet at co
   - [x] Task 5.1 KDF, ring, and item crypto `[Opus]`
   - [x] Task 5.2 Bind with a password, approve with a wrap, revoke with a rotation `[Opus]`
   - [ ] Review Checkpoint
-- [ ] **Phase 6** — Arrival
-  - [ ] Task 6.1 Key-level JSON merge `[Opus]`
-  - [ ] Task 6.2 Captures `[Opus]`
-  - [ ] Task 6.3 Landing items, tombstones, and renames `[Opus]`
-  - [ ] Review Checkpoint
-- [ ] **Phase 7** — Client
-  - [ ] Task 7.1 Base record, tap, debounce, and the rename report `[Opus]`
-  - [ ] Task 7.2 Push and the conflict path `[Opus]`
-  - [ ] Task 7.3 Pull loop, cursor, first bind, and rescope `[Opus]`
-  - [ ] Task 7.4 The session: status, `sync:now`, `sync:changed` `[Opus]`
-  - [ ] Review Checkpoint
-- [ ] **Phase 8** — Editor
-  - [ ] Task 8.1 `pages:changed`, one classification pass `[Opus]`
-  - [ ] Task 8.2 Compare-and-swap body writes `[Opus]`
-  - [ ] Task 8.3 Three-way merge in the page view `[Opus]`
-  - [ ] Review Checkpoint
-- [ ] **Phase 9** — The Nexus Heading
-  - [ ] Task 9.1 Rows and channels `[Opus]`
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — Arrival
+  - [x] Task 6.1 Key-level JSON merge `[Opus]`
+  - [x] Task 6.2 Captures `[Opus]`
+  - [x] Task 6.3 Landing items, tombstones, and renames `[Opus]`
+  - [x] Review Checkpoint
+- [x] **Phase 7** — Client
+  - [x] Task 7.1 Base record, tap, debounce, and the rename report `[Opus]`
+  - [x] Task 7.2 Push and the conflict path `[Opus]`
+  - [x] Task 7.3 Pull loop, cursor, first bind, and rescope `[Opus]`
+  - [x] Task 7.4 The session: status, `sync:now`, `sync:changed` `[Opus]`
+  - [x] Review Checkpoint
+- [x] **Phase 8** — Editor
+  - [x] Task 8.1 `pages:changed`, one classification pass `[Opus]`
+  - [x] Task 8.2 Compare-and-swap body writes `[Opus]`
+  - [x] Task 8.3 Three-way merge in the page view `[Opus]`
+  - [x] Review Checkpoint
+- [x] **Phase 9** — The Nexus Heading
+  - [x] Task 9.1 Rows and channels `[Opus]`
+  - [x] Review Checkpoint
 - [ ] **Phase 10** — Proof, Deploy, and Reconciliation
   - [ ] Task 10.1 Dockerfile, scripts, and Development-Environment `[Opus]`
   - [ ] Task 10.2 The two-instance proof over CDP `[Opus]`
@@ -2314,11 +2314,11 @@ A remote edit appears in the open page a beat after it lands, the caret stays wh
 
 **CHANGE**
 
-- [ ] `EditableInput` gains `type?: 'text' | 'password'` rendered as the `<input>`'s `type` attribute; `RenamableLabel` gains the same prop and passes it through; `FieldEdit` gains `type?: 'text' | 'password'` and `InputField` passes `edit.type` to `RenamableLabel`.
-- [ ] `nexusSlice.ts`: `NexusSlice` gains `syncStatus: SyncStatus | null` (initial null) and `applySyncStatus: (status: SyncStatus) => void` (`set({ syncStatus: status })`). `useBridgeSubscriptions.ts`: `const applySyncStatus = useSession((s) => s.applySyncStatus)` and `useEffect(() => dialer().on('sync:changed', applySyncStatus), [applySyncStatus])`.
-- [ ] `NexusRows.tsx`, the rows per the brief: `const pushed = useSession((s) => s.syncStatus)` merged into the held state through `useEffect(() => { if (pushed) setState((s) => s && { ...s, status: pushed }) }, [pushed])`; the Nexus Password row (`SettingsFieldRow` with an `InputField` whose `edit` is `{ value: '', type: 'password', renames: 'row', onCommit: setPassword }` and whose children read `<span className={placeholder}>Not set</span>` or a masked `••••••••` while a draft is held; shown while `binding === null`, `binding.state === 'pending'`, or `state.status.reason === 'password'`, never by reading the sentence; once approved with no such reason, a `caption` row reading "Held in this device's keychain"); the Pin field (a second `InputField` in the Server cluster, shown when `address.startsWith('https:')`, `edit: { value: pin, renames: 'row', emptyCommits: true, onCommit: setPin }`); the Sync caption (`MenuRowView` `caption` row under Server whose text follows `state.status.state`: `off` → `status.why ?? 'Off'`, `idle` → `\`Last synced ${Math.round((Date.now() - (status.lastAt ?? Date.now())) / 1000)} s ago\``, `syncing` → `'Syncing…'`, `error` → `\`Error: ${status.why}\``); Sync Now (`SettingsFieldRow` with a `filled` Button, `disabled={busy || binding?.state !== 'approved'}`, label "Syncing…" while `state.status.state === 'syncing'`, "Synced" for `CLEARED_MS` after a run through the `ClearActionRow` timer pattern hoisted into a `useTimedLabel(idle, active)` hook in the same file, else "Sync Now", `onClick: run(() => host().ask('sync:now'))`); the device caption gains `· paired` when `device.x25519` is present. `onConnect` becomes `run(() => host().ask('sync:connect', address, password || undefined, pin || undefined))`, and `setPassword('')` after the call whether it succeeded or not.
-- [ ] `NexusRows.test.tsx` gains `it('shows the password row unbound and hides it once approved', …)`, `it('disables Sync Now while pending', …)`, `it('captions each of the four sync states', …)`, `it('marks a device carrying an agreement key as paired', …)`, `it('shows the pin field for an https address', …)`, `it('sends the password and the pin with connect and never holds the password', …)`.
-- [ ] `ConfigurationPM.md` line 19 (the Nexus heading paragraph) and line 21 (the states paragraph) are rewritten to the rows above; `InterfacePM.md` line 67's clause "as the Nexus heading does, binding to the device and the server" becomes "as the Nexus heading does, binding to the device, the hub, and the Nexus password".
+- [x] `EditableInput` gains `type?: 'text' | 'password'` rendered as the `<input>`'s `type` attribute; `RenamableLabel` gains the same prop and passes it through; `FieldEdit` gains `type?: 'text' | 'password'` and `InputField` passes `edit.type` to `RenamableLabel`.
+- [x] `nexusSlice.ts`: `NexusSlice` gains `syncStatus: SyncStatus | null` (initial null) and `applySyncStatus: (status: SyncStatus) => void` (`set({ syncStatus: status })`). `useBridgeSubscriptions.ts`: `const applySyncStatus = useSession((s) => s.applySyncStatus)` and `useEffect(() => dialer().on('sync:changed', applySyncStatus), [applySyncStatus])`.
+- [x] `NexusRows.tsx`, the rows per the brief: `const pushed = useSession((s) => s.syncStatus)` merged into the held state through `useEffect(() => { if (pushed) setState((s) => s && { ...s, status: pushed }) }, [pushed])`; the Nexus Password row (`SettingsFieldRow` with an `InputField` whose `edit` is `{ value: '', type: 'password', renames: 'row', onCommit: setPassword }` and whose children read `<span className={placeholder}>Not set</span>` or a masked `••••••••` while a draft is held; shown while `binding === null`, `binding.state === 'pending'`, or `state.status.reason === 'password'`, never by reading the sentence; once approved with no such reason, a `caption` row reading "Held in this device's keychain"); the Pin field (a second `InputField` in the Server cluster, shown when `address.startsWith('https:')`, `edit: { value: pin, renames: 'row', emptyCommits: true, onCommit: setPin }`); the Sync caption (`MenuRowView` `caption` row under Server whose text follows `state.status.state`: `off` → `status.why ?? 'Off'`, `idle` → `\`Last synced ${Math.round((Date.now() - (status.lastAt ?? Date.now())) / 1000)} s ago\``, `syncing` → `'Syncing…'`, `error` → `\`Error: ${status.why}\``); Sync Now (`SettingsFieldRow` with a `filled` Button, `disabled={busy || binding?.state !== 'approved'}`, label "Syncing…" while `state.status.state === 'syncing'`, "Synced" for `CLEARED_MS` after a run through the `ClearActionRow` timer pattern hoisted into a `useTimedLabel(idle, active)` hook in the same file, else "Sync Now", `onClick: run(() => host().ask('sync:now'))`); the device caption gains `· paired` when `device.x25519` is present. `onConnect` becomes `run(() => host().ask('sync:connect', address, password || undefined, pin || undefined))`, and `setPassword('')` after the call whether it succeeded or not.
+- [x] `NexusRows.test.tsx` gains `it('shows the password row unbound and hides it once approved', …)`, `it('disables Sync Now while pending', …)`, `it('captions each of the four sync states', …)`, `it('marks a device carrying an agreement key as paired', …)`, `it('shows the pin field for an https address', …)`, `it('sends the password and the pin with connect and never holds the password', …)`.
+- [x] `ConfigurationPM.md` line 19 (the Nexus heading paragraph) and line 21 (the states paragraph) are rewritten to the rows above; `InterfacePM.md` line 67's clause "as the Nexus heading does, binding to the device and the server" becomes "as the Nexus heading does, binding to the device, the hub, and the Nexus password".
 
 **AFTER**
 
@@ -2326,14 +2326,14 @@ Nine rows and a device list, all existing kinds; one optional prop on three fiel
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Settings/` and `npm run test -- UIX/Fields/` pass; `npm run typecheck` exits 0.
-- [ ] `grep -c "'password'" Core/Settings/NexusRows.tsx` → ≥ 1.
-- [ ] Smoke launch: the heading renders unbound with the password row; after `sync:connect` over the console the row becomes the caption and Sync Now enables.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] `npm run test -- Core/Settings/` and `npm run test -- UIX/Fields/` pass; `npm run typecheck` exits 0.
+- [x] `grep -c "'password'" Core/Settings/NexusRows.tsx` → ≥ 1.
+- [x] Smoke launch: the heading renders unbound with the password row; after `sync:connect` over the console the row becomes the caption and Sync Now enables.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates green; the smoke check recorded with the executor's numbered design decisions in-chat.
+- [x] Gates green; the smoke check recorded with the executor's numbered design decisions in-chat.
 
 ### Phase 10 — Proof, Deploy, and Reconciliation
 
@@ -2553,3 +2553,38 @@ Session one (09-14-2026, Phases 0–5) — every ruling below was written in cha
 - **Task 1.4's FILES omitted `Core/Testing/contracts.test.ts`**, which the task body names; Task 4.3's omitted `Sync/feed.ts` (landed in 4.4).
 - **Two VERIFY literals** read differently from the plan: Task 5.1's import grep matches the test file and a wrapped import (source-only form → 0); Task 5.2's `grep -c` of the password refusals → 2 lines carrying 3 matches.
 - **Phase 4 exposes to the client:** an over-cap or unauthorized PUT is reset mid-stream (`connection: close` after the 413/404), and `change` rows are never swept so a cursor below head never answers `resync` while the blobs it names may be gone — Task 7.3's pull loop must treat a 404 blob as a resync trigger.
+
+Session two (09-14-2026, Phases 6–10) — every ruling below was written in chat as it was made.
+
+- **A change missing its `record` (write) or `from` (rename) throws** in Arrival rather than skipping: both are optional in `wire.ts` and mandatory by protocol, and a silent skip would hide a push-side bug.
+- **`landDelete` and `landRename` take no `host`:** neither reads the device nor pushes, and an unused parameter fails the lint gate; Task 7.2 and 7.3's call sites use the two-argument form.
+- **`landRename` moves every base row under `${from}/` unconditionally** — no row ever sits under a file path, so a directory check changes nothing.
+- **One path → `TileHostRef` resolver:** `tileHostAt` in `watchPatch.ts` serves both the watcher's tiles arm and a landing's `tiles:changed` push; Task 6.3's "export `findSpace`" produced a second writer that had already drifted on depth, so `findSpace` stays unexported.
+- **`mergeKeys` treats an absent base key as `{}`** for the recursion: `personalization`, `order`, and `navigation` are created lazily, so the plan's "all three are plain objects" gate dropped one side's whole sub-object when both devices first wrote the key after the base was recorded.
+- **Task 6.1 and 6.2 commits are not gate-clean in isolation** (formatting and one test narrowing error, repaired inside Task 6.3's commit); HEAD is clean and history was not rewritten. Later executors run typecheck and lint before each commit.
+- **Phase 6 smoke launch** ran over CDP on a scratch copy of NexusOS with built output: tree of 208 pages, a page opened, an edit saved to disk, clean quit.
+- **A blob stays sealed under the path it was written at:** `itemAad` binds the NFC path, so the hub's rename keeps the item's record unchanged instead of rewriting `record.path`; `record.path` is the AAD path for every decrypt and `change.path` is where the file lives. The alternative, re-sealing every file under a renamed folder, costs one upload per file per rename, and chained renames make the `from` path unusable. `Sync/Store/log.ts` and `Sync/items.test.ts` are outside Task 7's FILES.
+- **A `rename` whose source is absent locally lands as a write** of its record's blob after the base rows move; a device that never held the source otherwise never receives the file.
+- **`Pushes['sync:changed']` landed in Task 7.2** with `status.ts`, which pushes it; `bridge.ts` is a 7.2 FILES omission. The count reads 120 after 7.2 and 121 after 7.4.
+- **A null blob in `pullOnce` answers `resync`;** in `resolveStale` and `reconcile` it is an error status, never a re-entry into `reconcile`.
+- **The long poll waits outside the chain;** only applying a reply runs under it, so a push queued during the 25 s wait runs at once (the plan's shape held the chain for the whole wait and would have missed the five-second target). A thrown pull is an error with backoff; a landing under an unknown key fetches `/info` and reloads the ring once.
+- **A write over a delete head resurrects with `base: null`**, since the hub treats a non-null base over a tombstoned item as stale; the plan's `base: head.seq` recursed forever.
+- **A snapshot's `mtimeMs` is floored** at `readSnapshot`: the hub's record validator requires an integer and macOS stat reports fractional milliseconds for app-written files, which answered 400 for whole batches on the first two-instance run.
+- **A session starting over existing base rows sweeps every local path and base row through `pushDirty`**, which skips a path whose floored mtime and size match its base row before reading it; the plan's `[...dirtyPending()]` is empty at start, so an edit made while the app was closed never pushed.
+- **A landing over a path in `failed` answers `error` and keeps the cursor;** `session === self` guards the apply, `settled`, `working`, and the retry handle; `stopSession(ctx)` always pushes `off` and runs before the store swap in `openNexusSequence`; the over-cap and non-NFC notices are error statuses without a `failed` entry; a 400 on `store` never requeues its batch.
+- **Merged JSON bytes land under the current time**, not the writer's mtime, so the stat short-circuit cannot mistake a merge for the remote; a bind to a different address and a disconnect delete every base row; `pushRename` ends with a `pushDirty` of the destination; a rename the hub never answered fails both paths.
+- **`CallOutcome` is a partial union** (`status: 200` carries `reply`, `status: 0` carries `error`, the rest an optional `refusal`), and its doc comment is gone; `installTap` takes no `nexusId` (`manifestAdmits` is one-argument); `.unref()` and the `loop` variable are gone; `LONG_POLL_MS` lives in `pull.ts`.
+- **Three VERIFY literals** read differently from the plan: Task 7.2's `grep -c "binding.address"` → 2 (two non-call sites), Task 7.3's `grep -c "writeValue('sync'"` → 1 (`advance` is the one writer); Task 7.1–7.4 test names carry two deliberate renames and several additions.
+- **`Core/Testing/syncHub.ts`** is the one route-level fake hub every client suite shares, a port of the hub's `apply` with its record validation; a FILES omission across 7.2–7.4.
+- **Two-instance check (Task 7.4):** hub on a scratch data dir, two built instances on scratch userData over scratch copies of NexusOS; bind A with a password, bind B pending, approve B from A, B `syncing` within 5 s, a page created on A on B's disk in **2.8 s**, both `idle` after; observed twice, at `730cdf847` and `3adc7afd4`.
+- **`pages:changed` is pushed before `values:changed`** in the watcher's settle, since the `values:changed` handler evicts the detail a landing merges against; `absorb` asks `notifyLanding` before `readPageDetail` for the same reason.
+- **The landing dispatch is diff-minimal** (`changesTo` in `merge3.ts`, the one importer of the merge library) rather than a whole-span replace, which would have mapped every caret to the end of the insert; the caret keeps its logical position, shifting by the length of any insertion before it. `local` is read after the fetch and the base before it; touching hunks count as an overlap.
+- **`Ack` stays `{ ok: boolean }`** on the shared body writer; stale routing lives in the save closure.
+- **The body base lives as long as the open page:** a cache refresh and the LRU cap never delete it; `replaceBody` re-seats it from the fetched detail; a cached detail seats it whenever no editor is mounted on the path; a landing drops the detail alone before its fetch. The plan's "every eviction that deletes from `detailByPath` deletes from `baseByPath` too" evicted the base on the page's own save (`values:changed` → `dropDetailsWhere`), so the next landing merged with no base and the next save adopted disk as its base.
+- **A save never fetches a base:** it sends what it holds (an empty hash when none), and a refusal routes to the merge; the plan's fetch inside the closure could not complete during a `beforeunload` flush. A landing with no base is a conflict — the buffer is captured, then the remote text lands — and the merged text is re-saved whenever it differs from disk, so local-only text reaches disk even when the dispatch is a no-op.
+- **A captured body without a frontmatter envelope resolves its page id from the live tree**, so a merge-lost buffer reaches File History; the body-only `sync:captureLocal` text has no `ID` key. With File History off, a conflict's losing buffer sits in the `captures` table alone, which no surface reads — Nathan's call whether a reader is due.
+- **`setBodyBase` no longer patches the cached detail's `bodyHash`** (no reader); `absorbLanding` reads the store through `useSession.getState()`; `subscribeLanding`'s map is not cleared by `clearCache`, since a Nexus swap must not detach a mounted editor.
+- **`Desktop/FileWatch/watcher.test.ts`** asserts the push sequence and is a Task 8.1 FILES omission; `Core/Session/navigationSlice.ts` and `Core/Session/useBridgeSubscriptions.test.tsx` (new) are Task 8.3 omissions.
+- **Comment deletions** named by Tasks 8.2 and 8.3 (`cancelPageSave`, the write-through comment, "every host keyed on it remounts", "initialBody is the seed") landed in the 8.3 commit through an amend of the tip.
+- **Task 8.3's console check** is Nathan's manual check (he is present this session); the file-level behavior is proven by the two-instance rig and the suites.
+- **Task 9.1's smoke check** is Nathan's manual check, as 8.3's was; its numbered design decisions were written in chat before the rows were built, and the `Dependencies.md` and `Editor-Internals.md` entries for the merge library and the landing transaction (Phase 8 omissions) ride in its documents commit.
