@@ -8,6 +8,7 @@
 
 The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
+
 ### Immediate Work
 
 - [ ] Phase 2 of the cross-platform scaffolding — content syncing.
