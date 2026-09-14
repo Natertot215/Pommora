@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { agreementPair, TEST_KDF } from '../../Testing/syncDevice'
 import vectors from '../Contract/vectors.json'
-import { deriveWrappingKey, fromBase64url, toBase64url } from './kdf'
+import { deriveWrappingKey } from './kdf'
 import { decryptItem, encryptItem } from './item'
 import {
   exportRaw,
@@ -14,41 +15,11 @@ import {
   wrapForPassword,
 } from './ring'
 
-const KDF = { hash: 'SHA-256', iterations: 1000, salt: 'c2FsdHlzYWx0eXNhbHR5' } as const
-
 const hex = (bytes: Uint8Array): string =>
   [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
 
 const bytesOf = (hexText: string): Uint8Array<ArrayBuffer> =>
   new Uint8Array((hexText.match(/../g) ?? []).map((pair) => Number.parseInt(pair, 16)))
-
-async function devicePair(): Promise<{
-  x25519: string
-  agree: (peerPublicKey: string) => Promise<Uint8Array>
-}> {
-  const pair = await globalThis.crypto.subtle.generateKey('X25519', false, ['deriveBits'])
-  if (!('privateKey' in pair)) throw new Error('X25519 generated no key pair.')
-  const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
-  return {
-    x25519: toBase64url(new Uint8Array(raw)),
-    agree: async (peerPublicKey: string) => {
-      const peer = await globalThis.crypto.subtle.importKey(
-        'raw',
-        fromBase64url(peerPublicKey),
-        'X25519',
-        false,
-        [],
-      )
-      return new Uint8Array(
-        await globalThis.crypto.subtle.deriveBits(
-          { name: 'X25519', public: peer },
-          pair.privateKey,
-          256,
-        ),
-      )
-    },
-  }
-}
 
 const older = (): RawKey => ({ ...mintKey(), createdMs: 1_000 })
 const later = (): RawKey => ({ ...mintKey(), createdMs: 2_000 })
@@ -73,14 +44,14 @@ async function vectorRing(): Promise<Ring> {
 
 describe('the ring', () => {
   it('round-trips a ring through the password', async () => {
-    const kek = await deriveWrappingKey('open sesame', KDF)
+    const kek = await deriveWrappingKey('open sesame', TEST_KDF)
     const raw = mintKey()
     const ring = await unwrapWithPassword(await wrapForPassword([raw], kek), kek)
     expect((await exportRaw(ring))[0].raw).toEqual(raw.raw)
   })
 
   it('round-trips a ring through a device wrap', async () => {
-    const target = await devicePair()
+    const target = await agreementPair()
     const raw = mintKey()
     const entries = await wrapForDevice([raw], { deviceId: 'fe1c', x25519: target.x25519 })
     expect(entries[0].holder).toBe('fe1c')
@@ -89,7 +60,7 @@ describe('the ring', () => {
   })
 
   it('unwraps a two-entry ring and names the later key newest', async () => {
-    const kek = await deriveWrappingKey('open sesame', KDF)
+    const kek = await deriveWrappingKey('open sesame', TEST_KDF)
     const [first, second] = [older(), later()]
     const ring = await unwrapWithPassword(await wrapForPassword([first, second], kek), kek)
     expect(ring.keys).toHaveLength(2)
@@ -97,9 +68,9 @@ describe('the ring', () => {
   })
 
   it('rejects a wrong password as wrong-password', async () => {
-    const entries = await wrapForPassword([mintKey()], await deriveWrappingKey('right', KDF))
+    const entries = await wrapForPassword([mintKey()], await deriveWrappingKey('right', TEST_KDF))
     await expect(
-      unwrapWithPassword(entries, await deriveWrappingKey('wrong', KDF)),
+      unwrapWithPassword(entries, await deriveWrappingKey('wrong', TEST_KDF)),
     ).rejects.toThrow('wrong-password')
   })
 })

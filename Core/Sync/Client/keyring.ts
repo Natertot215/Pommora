@@ -12,6 +12,10 @@ export const ringName = (nexusId: string): string => `sync:${nexusId}:ring`
 
 export const heldRing = (nexusId: string): Ring | null => held.get(nexusId) ?? null
 
+export const forgetHeldRing = (nexusId: string): void => {
+  held.delete(nexusId)
+}
+
 const attempt = async (open: () => Promise<Ring>): Promise<Ring | null> => {
   try {
     return await open()
@@ -30,13 +34,27 @@ function cached(json: string | null): RingEntry[] {
   }
 }
 
+async function openWithPassword(info: Keys, password: string): Promise<Ring | null> {
+  const entries = info.ring.filter((entry) => entry.holder === 'password')
+  if (entries.length === 0) return null
+  return attempt(async () =>
+    unwrapWithPassword(entries, await deriveWrappingKey(password, info.kdf)),
+  )
+}
+
 export async function loadRing(
   host: SyncHost,
   nexusId: string,
   info: Keys | null,
+  password: string | null,
 ): Promise<Ring | null> {
+  let offered: Ring | null = null
+  if (password !== null && info !== null) {
+    offered = await openWithPassword(info, password)
+    if (offered === null) return null
+  }
   const already = held.get(nexusId)
-  if (already) return already
+  if (already !== undefined) return already
   const own = (info?.ring ?? cached(await host.secrets.get(ringName(nexusId)))).filter(
     (entry) => entry.holder === host.device.id,
   )
@@ -48,13 +66,14 @@ export async function loadRing(
       return ring
     }
   }
+  if (offered !== null) {
+    held.set(nexusId, offered)
+    return offered
+  }
   if (info === null) return null
-  const password = await host.secrets.get(passwordName(nexusId))
-  const byPassword = info.ring.filter((entry) => entry.holder === 'password')
-  if (password === null || byPassword.length === 0) return null
-  const ring = await attempt(async () =>
-    unwrapWithPassword(byPassword, await deriveWrappingKey(password, info.kdf)),
-  )
+  const stored = await host.secrets.get(passwordName(nexusId))
+  if (stored === null) return null
+  const ring = await openWithPassword(info, stored)
   if (ring !== null) held.set(nexusId, ring)
   return ring
 }
@@ -65,7 +84,7 @@ export async function refreshRing(
   info: Keys,
 ): Promise<Ring | null> {
   held.delete(nexusId)
-  return loadRing(host, nexusId, info)
+  return loadRing(host, nexusId, info, null)
 }
 
 export async function forgetKeys(host: SyncHost, nexusId: string): Promise<void> {

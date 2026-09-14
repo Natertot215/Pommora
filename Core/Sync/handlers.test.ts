@@ -13,76 +13,33 @@ import { readValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
+import {
+  memorySecrets,
+  TEST_KDF,
+  TEST_PUBLIC_KEY,
+  testDevice,
+  type TestSecrets,
+} from '../Testing/syncDevice'
 import { makeTree } from '../Testing/testTree'
 import { replyOf } from '../Testing/transportReplies'
 import type { SyncHost } from './Client/call'
 import { forgetKeys, heldRing, passwordName, ringName } from './Client/keyring'
 import type { DeviceRecord, InfoRecord } from './Contract/wire'
-import { deriveWrappingKey, fromBase64url, toBase64url } from './Keys/kdf'
+import { deriveWrappingKey } from './Keys/kdf'
 import { mintKey, wrapForDevice, wrapForPassword } from './Keys/ring'
 import { syncHandlers } from './handlers'
 
-const PUBLIC_KEY = 'k'.repeat(43)
 const ADDRESS = 'http://127.0.0.1:7473'
 const NEXUS = 'nx'
 const PASSWORD = 'pw'
-const KDF = { hash: 'SHA-256', iterations: 1_000, salt: 'c2FsdA' } as const
-
-type Secrets = HostContext['secrets'] & { map: Map<string, string> }
 
 let sent: TransportRequest[]
 let renamed: string | null
 let walkable: string | null
 let deviceA: HostDevice
 let deviceB: HostDevice
-let secretsA: Secrets
-let secretsB: Secrets
-
-function memorySecrets(): Secrets {
-  const map = new Map<string, string>()
-  return {
-    map,
-    get: async (name) => map.get(name) ?? null,
-    set: async (name, value) => {
-      if (value === null) map.delete(name)
-      else map.set(name, value)
-    },
-  }
-}
-
-async function makeDevice(id: string, name: string): Promise<HostDevice> {
-  const pair = await globalThis.crypto.subtle.generateKey('X25519', false, ['deriveBits'])
-  if (!('privateKey' in pair)) throw new Error('X25519 generated no key pair.')
-  const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
-  const device: HostDevice = {
-    id,
-    publicKey: PUBLIC_KEY,
-    name,
-    x25519: toBase64url(new Uint8Array(raw)),
-    sign: async () => 'sig',
-    agree: async (peerPublicKey) => {
-      const peer = await globalThis.crypto.subtle.importKey(
-        'raw',
-        fromBase64url(peerPublicKey),
-        'X25519',
-        false,
-        [],
-      )
-      return new Uint8Array(
-        await globalThis.crypto.subtle.deriveBits(
-          { name: 'X25519', public: peer },
-          pair.privateKey,
-          256,
-        ),
-      )
-    },
-    rename: async (next) => {
-      renamed = next
-      device.name = next
-    },
-  }
-  return device
-}
+let secretsA: TestSecrets
+let secretsB: TestSecrets
 
 const record = (device: HostDevice, approved: boolean): DeviceRecord => ({
   id: device.id,
@@ -103,13 +60,11 @@ const newHub = (devices: DeviceRecord[] = []): Hub => ({ approved: true, devices
 
 async function seedInfo(hub: Hub, holders: HostDevice[]): Promise<void> {
   const key = mintKey()
-  const ring = await wrapForPassword([key], await deriveWrappingKey(PASSWORD, KDF))
+  const ring = await wrapForPassword([key], await deriveWrappingKey(PASSWORD, TEST_KDF))
   for (const holder of holders) {
-    ring.push(
-      ...(await wrapForDevice([key], { deviceId: holder.id, x25519: String(holder.x25519) })),
-    )
+    ring.push(...(await wrapForDevice([key], { deviceId: holder.id, x25519: holder.x25519 })))
   }
-  hub.info = { version: 1, protocol: 1, kdf: KDF, historyDays: 90, ring }
+  hub.info = { version: 1, protocol: 1, kdf: TEST_KDF, historyDays: 90, ring }
 }
 
 type Reply = Omit<TransportReply, 'bytes'>
@@ -167,7 +122,7 @@ function hubAnswer(hub: Hub): Answer {
   }
 }
 
-function host(answer: Answer, device?: HostDevice, secrets?: Secrets): HostContext {
+function host(answer: Answer, device?: HostDevice, secrets?: TestSecrets): HostContext {
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
     sent.push(req)
     return replyOf(await answer(req))
@@ -203,8 +158,10 @@ beforeEach(async () => {
   walkable = null
   secretsA = memorySecrets()
   secretsB = memorySecrets()
-  deviceA = await makeDevice('fe1c', 'Recorder')
-  deviceB = await makeDevice('bb2d', 'Studio')
+  deviceA = await testDevice('fe1c', 'Recorder', (next) => {
+    renamed = next
+  })
+  deviceB = await testDevice('bb2d', 'Studio')
   installStores(memoryStores().stores)
   await openSession('/x')
   seedLiveTree(makeTree())
@@ -224,7 +181,7 @@ describe('sync:state', () => {
     )
     expect(state.binding).toBeNull()
     expect(state.status).toEqual({ state: 'off' })
-    expect(state.device).toEqual({ id: 'fe1c', publicKey: PUBLIC_KEY, name: 'Recorder' })
+    expect(state.device).toEqual({ id: 'fe1c', publicKey: TEST_PUBLIC_KEY, name: 'Recorder' })
     expect(Object.values(state.device).some((v) => typeof v === 'function')).toBe(false)
     expect(sent).toEqual([])
   })
@@ -275,7 +232,7 @@ describe('sync:connect', () => {
     )
     expect(state.binding.state).toBe('approved')
     expect(state.binding.devices).toHaveLength(1)
-    expect(readValue('sync')).toEqual({ address: ADDRESS, cursor: 0 })
+    expect(readValue('sync')).toEqual({ address: ADDRESS, pin: null, cursor: 0 })
   })
 
   it('creates the info record with one password entry on the first connect', async () => {
@@ -304,6 +261,30 @@ describe('sync:connect', () => {
     const error = await refuse(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS))
     expect(error.message).toBe('A Nexus password is required.')
     expect(readValue('sync')).toBeNull()
+  })
+
+  it('refuses a wrong password on a device whose own wrap already opens the ring', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS))
+    expect(secretsA.map.has(passwordName(NEXUS))).toBe(false)
+    const error = await refuse(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, 'typo'))
+    expect(error.message).toBe('The Nexus password is wrong.')
+    expect(secretsA.map.has(passwordName(NEXUS))).toBe(false)
+  })
+
+  it('re-validates the password after a disconnect drops the held ring', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    const ctx = host(hubAnswer(hub))
+    await unwrap(syncHandlers['sync:connect'](ctx, ADDRESS, PASSWORD))
+    await unwrap(syncHandlers['sync:disconnect'](ctx))
+    expect(heldRing(NEXUS)).toBeNull()
+    const error = await refuse(syncHandlers['sync:connect'](ctx, ADDRESS, 'typo'))
+    expect(error.message).toBe('The Nexus password is wrong.')
+    expect(readValue('sync')).toBeNull()
+    await unwrap(syncHandlers['sync:connect'](ctx, ADDRESS, PASSWORD))
+    expect(heldRing(NEXUS)).not.toBeNull()
   })
 
   it('reads a 404 from the list as awaiting approval', async () => {
@@ -440,6 +421,21 @@ describe('sync:revoke', () => {
     expect(state.status.why).toBe('The stored Nexus password does not open the ring.')
     expect(urls()).toEqual(['/revoke', '/info'])
     expect(hub.info?.version).toBe((version ?? 0) + 1)
+  })
+
+  it('reports an approved device the rotation could not reach', async () => {
+    const bare = { ...record(deviceB, true), x25519: undefined }
+    const leaving = { ...record(deviceB, true), id: 'cc3e' }
+    const hub = newHub([record(deviceA, true), bare, leaving])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    const state = await unwrap<{ status: { reason?: string; why?: string } }>(
+      syncHandlers['sync:revoke'](host(hubAnswer(hub)), 'cc3e'),
+    )
+    expect(state.status.reason).toBe('password')
+    expect(state.status.why).toBe(
+      'Some approved devices hold no agreement key and need the Nexus password.',
+    )
   })
 
   it('rotates the ring on revoke for the remaining device alone', async () => {
