@@ -1,27 +1,14 @@
-import { join } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { STORE_FILE } from './Store/open.ts'
-import { boot, connectBody, NEXUS, signer } from './Testing/hub.ts'
+import { boot, connectBody, type Hub, NEXUS, setRole, signer } from './Testing/hub.ts'
 import { JSON_CAP } from './wire.ts'
 
 const OTHER_NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FB0'
 
-let hub: Awaited<ReturnType<typeof boot>>
+let hub: Hub
 
 const first = signer('First Mac')
 const second = signer('Second Mac')
 const third = signer('Third Mac')
-
-function setRole(fingerprint: string, role: string): void {
-  const db = new DatabaseSync(join(hub.dataDir, STORE_FILE))
-  db.prepare('UPDATE membership SET role = ? WHERE nexus_id = ? AND fingerprint = ?').run(
-    role,
-    NEXUS,
-    fingerprint,
-  )
-  db.close()
-}
 
 function names(body: unknown): { id: string; approved: boolean }[] {
   return (body as { devices: { id: string; approved: boolean }[] }).devices.map((d) => ({
@@ -73,7 +60,7 @@ describe('the hub roster', () => {
   it('refuses a reader the approve route', async () => {
     await third.call('/connect', connectBody(third, NEXUS))
     expect((await first.call('/approve', { nexusId: NEXUS, deviceId: third.id })).status).toBe(200)
-    setRole(third.id, 'reader')
+    setRole(hub.dataDir, third.id, 'reader')
     expect((await third.call('/devices', { nexusId: NEXUS })).status).toBe(200)
     expect((await third.call('/approve', { nexusId: NEXUS, deviceId: second.id })).status).toBe(404)
   })

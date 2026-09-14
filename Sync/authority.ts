@@ -6,10 +6,10 @@ import {
   canonical,
   fingerprintOf,
   META,
+  permits,
   PUBLIC_KEY,
   refuse,
   type Reply,
-  ROLE_ORDER,
   ULID,
 } from './wire.ts'
 
@@ -17,9 +17,9 @@ const WINDOW_MS = 5 * 60_000
 
 type Signature = { device: string; ts: number; sig: string }
 
-export type Routes<K extends keyof Wire.RouteTable> = {
-  [P in K]: (id: Identity, body: unknown) => Reply | Promise<Reply>
-}
+export type Handler = (id: Identity, body: unknown) => Reply | Promise<Reply>
+
+export type Routes<K extends keyof Wire.RouteTable> = Record<K, Handler>
 
 export interface Identity {
   device: string
@@ -79,8 +79,7 @@ export function identify(
   }
   const need = requires ?? (route === null ? 'none' : META[route].requires)
   if (need === 'none') return id
-  if (!id.approved || id.role === null) return refuse(404, 'not-found')
-  if (ROLE_ORDER.indexOf(id.role) < ROLE_ORDER.indexOf(need)) return refuse(404, 'not-found')
+  if (!id.approved || !permits(id.role, need)) return refuse(404, 'not-found')
   return id
 }
 

@@ -1,12 +1,11 @@
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import type { Identity, Routes } from '../authority.ts'
-import { wait, wake } from '../feed.ts'
+import { MAX_WAIT_MS, wait, wake } from '../feed.ts'
 import type { Store } from '../Store/open.ts'
-import { refuse, type Reply, text, whole } from '../wire.ts'
+import { KEY_ID_MAX, refuse, type Reply, SHA256, text, whole } from '../wire.ts'
 
 const MAX_CHANGES = 1000
 const PATH_MAX = 1024
-const SHA256 = /^[0-9a-f]{64}$/
 
 function itemPath(value: unknown): value is string {
   if (!text(value, PATH_MAX) || value.startsWith('/') || value.normalize('NFC') !== value) {
@@ -23,27 +22,33 @@ function itemRecord(value: unknown): Wire.ItemRecord | null {
   if (!whole(r.mtimeMs, Number.MAX_SAFE_INTEGER) || !whole(r.size, Number.MAX_SAFE_INTEGER)) {
     return null
   }
-  if (!text(r.keyId, 64) || !text(r.sha256, 64) || !SHA256.test(r.sha256)) return null
+  if (!text(r.keyId, KEY_ID_MAX) || !text(r.sha256, 64) || !SHA256.test(r.sha256)) return null
   return { path: r.path, mtimeMs: r.mtimeMs, size: r.size, keyId: r.keyId, sha256: r.sha256 }
 }
 
 function storeChange(value: unknown): Wire.StoreChange | null {
-  const c = value as Partial<Wire.StoreChange> & { base?: unknown; from?: unknown }
-  if (!c || typeof c !== 'object') return null
+  if (!value || typeof value !== 'object') return null
+  const c = value as Record<string, unknown>
   const base = whole(c.base, Number.MAX_SAFE_INTEGER) ? c.base : null
-  if (c.base !== null && c.base !== undefined && base === null) return null
-  if (c.kind === 'write' || c.kind === 'capture') {
-    const record = itemRecord((c as { record?: unknown }).record)
-    if (!record) return null
-    if (c.kind === 'capture') return { kind: 'capture', record }
-    return c.base === undefined ? null : { kind: 'write', base, record }
+  switch (c.kind) {
+    case 'capture': {
+      const record = itemRecord(c.record)
+      return record === null ? null : { kind: 'capture', record }
+    }
+    case 'write': {
+      const record = itemRecord(c.record)
+      if (record === null || (base === null && c.base !== null)) return null
+      return { kind: 'write', base, record }
+    }
+    case 'delete':
+      if (base === null || !itemPath(c.path)) return null
+      return { kind: 'delete', base, path: c.path }
+    case 'rename':
+      if (base === null || !itemPath(c.path) || !itemPath(c.from) || c.from === c.path) return null
+      return { kind: 'rename', base, from: c.from, path: c.path }
+    default:
+      return null
   }
-  if (base === null) return null
-  const path = (c as { path?: unknown }).path
-  if (!itemPath(path)) return null
-  if (c.kind === 'delete') return { kind: 'delete', base, path }
-  if (c.kind !== 'rename' || !itemPath(c.from) || c.from === path) return null
-  return { kind: 'rename', base, from: c.from, path }
 }
 
 export function itemRoutes(store: Store) {
@@ -73,10 +78,10 @@ export function itemRoutes(store: Store) {
       const b = body as Partial<Wire.PullBody> | null
       if (!whole(b?.cursor, Number.MAX_SAFE_INTEGER)) return refuse(400, 'malformed')
       const waitMs = b.waitMs
-      if (waitMs !== undefined && !whole(waitMs, 60_000)) return refuse(400, 'malformed')
+      if (waitMs !== undefined && !whole(waitMs, MAX_WAIT_MS)) return refuse(400, 'malformed')
       const seq = store.log.seqOf(id.nexusId)
       if (seq === null) return refuse(404, 'not-found')
-      if (b.cursor > seq) return { status: 409, body: { error: 'resync', seq } }
+      if (b.cursor > seq) return refuse(409, 'resync', { seq })
       const first = store.log.readChanges(id.nexusId, b.cursor)
       if (first.changes.length > 0 || waitMs === undefined || waitMs === 0) {
         return { status: 200, body: first }

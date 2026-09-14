@@ -28,5 +28,10 @@
   "fingerprint": {
     "publicKey": "P5ksjvos-kauBvSDlYT0VpsTMdVykgMqOlLBp_PT5eA",
     "id": "ee47603edc032799574822d7f56a3d5d7d62e7e86175e6088879d46637d179d8"
+  },
+  "blobPath": {
+    "nexusId": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "path": "/blob/01ARZ3NDEKTSV4RRFFQ69G5FAV/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   }
 }
