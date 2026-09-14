@@ -8,7 +8,7 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { readNexus } from './readNexus'
 import type { WatchScope } from '../Paths/exclusion'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
-import { ignoredUnder } from './watchSettle'
+import { syncIgnoredUnder, tileBodyOf } from './watchSettle'
 import {
   applyWatchEvents,
   classifyEvent,
@@ -370,15 +370,22 @@ describe('the asset root outranks every other skip', () => {
 
   it('the root escapes the cruft rules; what sits below it does not', async () => {
     // A root named `.attachments` is what the exemption exists for — a `.DS_Store` synced into one is not.
-    expect(ignoredUnder(root, scope([], '.attachments'))(abs('.attachments', 'x.png'))).toBe(false)
-    expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', 'x.png'))).toBe(false)
+    expect(syncIgnoredUnder(root, scope([], '.attachments'))(abs('.attachments', 'x.png'))).toBe(
+      false,
+    )
+    expect(syncIgnoredUnder(root, scope([], 'file-assets'))(abs('file-assets', 'x.png'))).toBe(
+      false,
+    )
     for (const junk of ['.DS_Store', 'node_modules', '.git'])
-      expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', junk, 'x'))).toBe(true)
+      expect(syncIgnoredUnder(root, scope([], 'file-assets'))(abs('file-assets', junk, 'x'))).toBe(
+        true,
+      )
   })
 
   it('the homepage config under its host folder stays watched, though tile bodies do not', () => {
-    expect(ignoredUnder(root, scope())(abs('.nexus', 'homepage', 'homepage.json'))).toBe(false)
-    expect(ignoredUnder(root, scope())(abs('.nexus', 'homepage', 'anything.md'))).toBe(true)
+    expect(syncIgnoredUnder(root, scope())(abs('.nexus', 'homepage', 'homepage.json'))).toBe(false)
+    expect(tileBodyOf(root)(abs('.nexus', 'homepage', 'homepage.json'))).toBe(false)
+    expect(tileBodyOf(root)(abs('.nexus', 'homepage', 'anything.md'))).toBe(true)
   })
 
   it('fifty files landing in the asset root patch the map once and never walk', async () => {
@@ -399,13 +406,13 @@ describe('the asset root outranks every other skip', () => {
     expect(await applyWatchEvents(root, events, scope([], 'Media'))).toBe('refresh')
   })
 
-  it('ignoredUnder and classifyEvent agree about what an asset path is', async () => {
+  it('syncIgnoredUnder and classifyEvent agree about what an asset path is', async () => {
     const tree = await refreshTree(root)
     for (const dir of ASSET_ROOTS) {
       const s = scope([], dir)
       const path = abs(...dir.split('/'), 'x.png')
       // A path the watcher drops but the classifier would have handled is silently lost.
-      expect(ignoredUnder(root, s)(path)).toBe(false)
+      expect(syncIgnoredUnder(root, s)(path)).toBe(false)
       expect(classifyEvent(tree, root, { event: 'change', absPath: path }, s).kind).toBe('asset')
     }
   })

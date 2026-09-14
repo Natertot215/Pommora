@@ -7,7 +7,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/live
 import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { push } from '../Bridge/ipc'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { ignoredUnder } from '@pommora/core/Nexus/watchSettle'
+import { syncIgnoredUnder, tileBodyOf } from '@pommora/core/Nexus/watchSettle'
 import { startWatcher, stopWatcher } from './watcher'
 
 vi.mock('../Bridge/ipc', () => ({ push: vi.fn() }))
@@ -169,9 +169,10 @@ describe('state.json under the watcher', () => {
   })
 })
 
-describe('ignoredUnder', () => {
+describe('syncIgnoredUnder', () => {
   const ignored = (...segs: string[]): boolean =>
-    ignoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
+    syncIgnoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
+  const tileBody = (...segs: string[]): boolean => tileBodyOf('/nexus')(join('/nexus', ...segs))
 
   it('ignores a store, its journal, and a quarantined store wherever it sits, and nothing else under .nexus', () => {
     expect(ignored('.nexus', 'versions.db')).toBe(true)
@@ -184,12 +185,19 @@ describe('ignoredUnder', () => {
     expect(ignored('Notes', 'report.md')).toBe(false)
   })
 
-  it('watches a host document but never a tile body — and lets chokidar descend into the homepage folder', () => {
-    expect(ignored('.nexus', 'homepage')).toBe(false)
-    expect(ignored('.nexus', 'homepage', '_tiles.json')).toBe(false)
-    expect(ignored('.nexus', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(true)
-    expect(ignored('.nexus', 'contexts', 'Areas', 'Home', '_tiles.json')).toBe(false)
-    expect(ignored('.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(
+  it('reports a tile body the tree then drops, and lets chokidar descend into the homepage folder', () => {
+    for (const segs of [
+      ['.nexus', 'homepage'],
+      ['.nexus', 'homepage', '_tiles.json'],
+      ['.nexus', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
+      ['.nexus', 'contexts', 'Areas', 'Home', '_tiles.json'],
+      ['.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
+    ])
+      expect(ignored(...segs)).toBe(false)
+    expect(tileBody('.nexus', 'homepage', '_tiles.json')).toBe(false)
+    expect(tileBody('.nexus', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(true)
+    expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '_tiles.json')).toBe(false)
+    expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(
       true,
     )
   })
