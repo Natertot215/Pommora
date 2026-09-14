@@ -1,4 +1,4 @@
-// Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file and starts clean rather than migrating in place. That costs a user every device-local row at once, so the content index has its own generation below and never reaches for that lever.
+// Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file and starts clean rather than migrating in place. That costs a user every device-local row at once, so the content index has its own generation below and never reaches for that lever. The `sync` table is the device's base record per item and is rebuilt from the hub by the first-bind reconcile.
 
 import type { Db } from './driver'
 
@@ -40,6 +40,15 @@ const DDL = `
     path TEXT PRIMARY KEY,
     mtime_ms REAL NOT NULL,
     size INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS sync (
+    path TEXT PRIMARY KEY,
+    mtime_ms REAL NOT NULL,
+    size INTEGER NOT NULL,
+    hash TEXT NOT NULL,
+    blob_sha TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    base_bytes BLOB
   );`
 
 export function applySchema(db: Db): void {

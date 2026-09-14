@@ -1,11 +1,15 @@
 import type { KeyValueStore } from '../Platform/machine'
 import type {
+  BaseRecord,
+  CaptureReason,
+  CaptureStore,
   ContentIndexStore,
   IndexedStat,
   SnapshotRow,
   SnapshotSource,
   SnapshotStore,
   Stores,
+  SyncStore,
 } from '../Platform/stores'
 
 interface MemoryIndex {
@@ -170,6 +174,50 @@ const snapshots = (): SnapshotStore => {
   }
 }
 
+const sync = (): SyncStore => {
+  const bases = new Map<string, BaseRecord>()
+  const copy = (r: BaseRecord): BaseRecord => ({
+    ...r,
+    baseBytes: r.baseBytes === null ? null : new Uint8Array(r.baseBytes),
+  })
+  return {
+    readBase: (path) => {
+      const r = bases.get(path)
+      return r ? copy(r) : null
+    },
+    readAllBases: () => [...bases.keys()].sort().map((path) => copy(bases.get(path)!)),
+    upsertBase: (record) => {
+      bases.set(record.path, copy(record))
+    },
+    renameBase: (oldPath, newPath) => {
+      const r = bases.get(oldPath)
+      if (!r) return
+      bases.delete(oldPath)
+      bases.set(newPath, { ...r, path: newPath })
+    },
+    deleteBase: (path) => {
+      bases.delete(path)
+    },
+  }
+}
+
+const captures = (): CaptureStore => {
+  const paths = new Map<string, Map<number, { reason: CaptureReason; bytes: Uint8Array }>>()
+  return {
+    addCapture: (path, ts, reason, bytes) => {
+      const p = paths.get(path) ?? new Map()
+      p.set(ts, { reason, bytes: new Uint8Array(bytes) })
+      paths.set(path, p)
+    },
+    sweepCaptures: (cutoffMs) => {
+      let n = 0
+      for (const p of paths.values())
+        for (const ts of [...p.keys()]) if (ts < cutoffMs && p.delete(ts)) n++
+      return n
+    },
+  }
+}
+
 export function memoryStores(): { stores: Stores; index: MemoryIndex } {
   const index: MemoryIndex = {
     mentions: new Map(),
@@ -178,7 +226,13 @@ export function memoryStores(): { stores: Stores; index: MemoryIndex } {
     stats: new Map(),
   }
   return {
-    stores: { keyValue: keyValue(), contentIndex: contentIndex(index), snapshots: snapshots() },
+    stores: {
+      keyValue: keyValue(),
+      contentIndex: contentIndex(index),
+      snapshots: snapshots(),
+      sync: sync(),
+      captures: captures(),
+    },
     index,
   }
 }

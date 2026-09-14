@@ -1,14 +1,23 @@
 import type { KeyValueStore } from '@pommora/core/Platform/machine'
-import type { ContentIndexStore, IndexedStat, SnapshotStore } from '@pommora/core/Platform/stores'
+import type {
+  BaseRecord,
+  CaptureStore,
+  ContentIndexStore,
+  IndexedStat,
+  SnapshotStore,
+  SyncStore,
+} from '@pommora/core/Platform/stores'
 import type { Db } from './driver'
 import { INDEX_TABLES } from './ddl'
 import {
+  addCapture,
   addSnapshot,
   clearSnapshots,
   deleteSnapshots,
   latestSnapshot,
   listSnapshots,
   readSnapshot,
+  sweepCaptures,
   sweepSnapshots,
 } from './versionsDb'
 
@@ -120,6 +129,64 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
 
 const paths = (db: Db, sql: string, ...params: string[]): string[] =>
   (db.prepare(sql).all(...params) as { path: string }[]).map((r) => r.path)
+
+type BaseRow = {
+  path: string
+  mtime_ms: number
+  size: number
+  hash: string
+  blob_sha: string
+  version: number
+  base_bytes: Uint8Array | null
+}
+
+const BASE_COLUMNS = 'path, mtime_ms, size, hash, blob_sha, version, base_bytes'
+
+const baseRecord = (row: BaseRow): BaseRecord => ({
+  path: row.path,
+  mtimeMs: row.mtime_ms,
+  size: row.size,
+  hash: row.hash,
+  blobSha: row.blob_sha,
+  version: row.version,
+  baseBytes: row.base_bytes === null ? null : new Uint8Array(row.base_bytes),
+})
+
+export const syncStore = (db: Db): SyncStore => ({
+  readBase(path) {
+    const row = db.prepare(`SELECT ${BASE_COLUMNS} FROM sync WHERE path = ?`).get(path) as
+      | BaseRow
+      | undefined
+    return row ? baseRecord(row) : null
+  },
+  readAllBases() {
+    return (db.prepare(`SELECT ${BASE_COLUMNS} FROM sync ORDER BY path`).all() as BaseRow[]).map(
+      baseRecord,
+    )
+  },
+  upsertBase(record) {
+    db.prepare(`INSERT OR REPLACE INTO sync (${BASE_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+      record.path,
+      record.mtimeMs,
+      record.size,
+      record.hash,
+      record.blobSha,
+      record.version,
+      record.baseBytes,
+    )
+  },
+  renameBase(oldPath, newPath) {
+    db.prepare('UPDATE OR REPLACE sync SET path = ? WHERE path = ?').run(newPath, oldPath)
+  },
+  deleteBase(path) {
+    db.prepare('DELETE FROM sync WHERE path = ?').run(path)
+  },
+})
+
+export const captureStore = (db: Db): CaptureStore => ({
+  addCapture: (path, ts, reason, bytes) => addCapture(db, path, ts, reason, bytes),
+  sweepCaptures: (cutoffMs) => sweepCaptures(db, cutoffMs),
+})
 
 export const snapshotStore = (db: Db): SnapshotStore => ({
   addSnapshot: (pageId, ts, source, text) => addSnapshot(db, pageId, ts, source, text),

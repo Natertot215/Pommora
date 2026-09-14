@@ -5,7 +5,7 @@ import { errText } from '@pommora/core/Contract/result'
 import { damagedStore, openDb, type Db } from './driver'
 import { fileStamp } from '@pommora/core/Trash/bundle'
 import { nexusDir } from '@pommora/core/Paths/paths'
-import type { SnapshotRow, SnapshotSource } from '@pommora/core/Platform/stores'
+import type { CaptureReason, SnapshotRow, SnapshotSource } from '@pommora/core/Platform/stores'
 
 export const VERSIONS_FILENAME = 'versions.db'
 
@@ -16,6 +16,13 @@ const DDL = `
     source TEXT NOT NULL,
     blob BLOB NOT NULL,
     PRIMARY KEY (page_id, ts)
+  );
+  CREATE TABLE IF NOT EXISTS captures (
+    path TEXT NOT NULL,
+    ts INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    blob BLOB NOT NULL,
+    PRIMARY KEY (path, ts)
   );`
 
 function healthy(db: Db): boolean {
@@ -122,4 +129,23 @@ export function clearSnapshots(db: Db): number {
 
 export function sweepSnapshots(db: Db, cutoffMs: number): number {
   return removed(db.prepare('DELETE FROM snapshots WHERE ts < ?').run(cutoffMs))
+}
+
+export function addCapture(
+  db: Db,
+  path: string,
+  ts: number,
+  reason: CaptureReason,
+  bytes: Uint8Array,
+): void {
+  db.prepare('INSERT OR REPLACE INTO captures (path, ts, reason, blob) VALUES (?, ?, ?, ?)').run(
+    path,
+    ts,
+    reason,
+    deflateSync(bytes),
+  )
+}
+
+export function sweepCaptures(db: Db, cutoffMs: number): number {
+  return removed(db.prepare('DELETE FROM captures WHERE ts < ?').run(cutoffMs))
 }
