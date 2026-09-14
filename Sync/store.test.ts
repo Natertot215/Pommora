@@ -3,19 +3,18 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
-import { openStore } from './Store/open.ts'
+import { openStore, STORE_FILE } from './Store/open.ts'
+import { NEXUS } from './Testing/hub.ts'
 
 const VERSION_ONE_DDL = `
   CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS device (fingerprint TEXT PRIMARY KEY, public_key TEXT NOT NULL, name TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS membership (nexus_id TEXT NOT NULL, fingerprint TEXT NOT NULL, approved INTEGER NOT NULL, PRIMARY KEY (nexus_id, fingerprint));`
 
-const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
-
 describe('the hub store', () => {
   it('migrates a version-one store and makes its approved rows owners', () => {
     const dir = mkdtempSync(join(tmpdir(), 'pommora-store-'))
-    const seed = new DatabaseSync(join(dir, 'sync.db'))
+    const seed = new DatabaseSync(join(dir, STORE_FILE))
     seed.exec(VERSION_ONE_DDL)
     seed.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run('schema_version', '1')
     seed

@@ -1,22 +1,25 @@
-import { createHash, generateKeyPairSync, sign } from 'node:crypto'
+import { generateKeyPairSync, sign } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
 import { request as httpRequest } from 'node:http'
 import type { IncomingMessage } from 'node:http'
 import { request as httpsRequest } from 'node:https'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { TLSSocket } from 'node:tls'
 import { start } from '../hub.ts'
-import { canonical, sha256Hex } from '../wire.ts'
+import { canonical, fingerprintOf, LOOPBACK, sha256Hex } from '../wire.ts'
+
+export const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 
 let base = ''
 
 export async function boot(
-  dataDir = mkdtempSync(join(tmpdir(), 'pommora-sync-')),
-  tls?: { cert: string; key: string },
-): Promise<{ base: string; dataDir: string; pin: string | null; close(): Promise<void> }> {
-  const running = await start({ dataDir, port: 0, tls })
-  base = `${tls ? 'https' : 'http'}://127.0.0.1:${running.port}`
-  return { base, dataDir, pin: running.pin, close: () => running.close() }
+  opts: { dataDir?: string; tls?: { cert: string; key: string } } = {},
+): Promise<{ dataDir: string; port: number; pin: string | null; close(): Promise<void> }> {
+  const dataDir = opts.dataDir ?? mkdtempSync(join(tmpdir(), 'pommora-sync-'))
+  const running = await start({ dataDir, port: 0, tls: opts.tls })
+  base = `${opts.tls ? 'https' : 'http'}://${LOOPBACK}:${running.port}`
+  return { dataDir, port: running.port, pin: running.pin, close: running.close }
 }
 
 type Outcome = { status: number; body: unknown; pin: string | null }
@@ -27,11 +30,12 @@ function send(
   body: string,
 ): Promise<{ status: number; text: string; pin: string | null }> {
   const secure = url.startsWith('https:')
-  const options = { method: 'POST', headers, rejectUnauthorized: false }
+  const options = { method: 'POST', headers, ...(secure && { rejectUnauthorized: false }) }
   return new Promise((resolve, reject) => {
     const answer = (res: IncomingMessage): void => {
-      const socket = res.socket as { getPeerCertificate?: () => { fingerprint256?: string } }
-      const pin = secure ? (socket.getPeerCertificate?.().fingerprint256 ?? null) : null
+      const pin = secure
+        ? ((res.socket as TLSSocket).getPeerCertificate().fingerprint256 ?? null)
+        : null
       let text = ''
       res.setEncoding('utf8')
       res.on('data', (chunk: string) => {
@@ -48,7 +52,7 @@ function send(
 export function signer(name: string) {
   const pair = generateKeyPairSync('ed25519')
   const publicKey = String(pair.publicKey.export({ format: 'jwk' }).x)
-  const id = createHash('sha256').update(Buffer.from(publicKey, 'base64url')).digest('hex')
+  const id = fingerprintOf(publicKey)
   const agreement = generateKeyPairSync('x25519')
   const x25519 = String(agreement.publicKey.export({ format: 'jwk' }).x)
 
@@ -86,3 +90,10 @@ export function signer(name: string) {
 
   return { id, publicKey, name, x25519, call }
 }
+
+export const connectBody = (s: ReturnType<typeof signer>, nexusId: string) => ({
+  nexusId,
+  publicKey: s.publicKey,
+  name: s.name,
+  x25519: s.x25519,
+})
