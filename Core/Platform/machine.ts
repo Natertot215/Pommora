@@ -30,7 +30,7 @@ export interface Machine {
   realpath(p: string): Promise<string>
   /** Re-taking a key already held inside `fn` rejects rather than deadlocks. */
   lock<T>(key: string, fn: () => Promise<T>): Promise<T>
-  sha256Hex(text: string): string
+  sha256Hex(input: string | Uint8Array): string
   platform: HostPlatform
   trashToSystem?(p: string): Promise<void>
 }

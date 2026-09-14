@@ -41,9 +41,7 @@ interface StoreRef {
 
 const INVENTED = /^(?:banner|profile)-[a-z0-9]{6,}$/i
 
-/** Latin-1 is a byte-for-byte bijection, so this digests the bytes — the machine's hash takes text. */
-const hashOf = (bytes: Uint8Array): string =>
-  machine().sha256Hex(new TextDecoder('latin1').decode(bytes))
+const hashOf = (bytes: Uint8Array): string => machine().sha256Hex(bytes)
 
 async function collectRefs(root: string): Promise<StoreRef[]> {
   const refs: StoreRef[] = []

@@ -72,6 +72,6 @@ export const nodeMachine: Machine = {
   utimes: (p, mtimeMs) => utimes(p, mtimeMs / 1000, mtimeMs / 1000),
   realpath: async (p) => posixPath(await realpath(p)),
   lock: serializeOnFile,
-  sha256Hex: (text) => createHash('sha256').update(text).digest('hex'),
+  sha256Hex: (input) => createHash('sha256').update(input).digest('hex'),
   platform: isWindows ? 'windows' : 'posix',
 }
