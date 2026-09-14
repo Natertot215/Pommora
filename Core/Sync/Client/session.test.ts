@@ -266,6 +266,56 @@ describe('startSession', () => {
     expect(statuses().at(-1)?.state).not.toBe('error')
   })
 
+  it('reports a thrown push rather than rejecting its caller', async () => {
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    self.failed.add('Notes/One.md')
+    const stat = vi.spyOn(machine(), 'stat').mockRejectedValueOnce(new Error('boom'))
+
+    await syncNow()
+
+    expect(statuses().some((status) => status.state === 'error')).toBe(true)
+    expect(currentSession()).not.toBeNull()
+    stat.mockRestore()
+  })
+
+  it('reconciles when its own pull answers resync', async () => {
+    await startSession(ctx, root, NEXUS)
+    let refused = false
+    hub.intercept = (req) => {
+      if (!req.url.endsWith('/pull')) return null
+      const waitMs = (JSON.parse(String(req.body)) as { waitMs?: number }).waitMs ?? 0
+      if (waitMs > 0) return new Promise<never>(() => {})
+      if (refused) return null
+      refused = true
+      return { status: 409, body: '{"error":"resync","seq":0}' }
+    }
+    await write('Notes/One.md', page('one'))
+    hub.sent.length = 0
+
+    await syncNow()
+
+    expect(sent('/store').length).toBeGreaterThan(0)
+    expect(readBase('Notes/One.md')?.version).toBe(hub.seq)
+  })
+
+  it('starts no session when a stop lands during the key fetch', async () => {
+    let release = (): void => {}
+    const held = new Promise<{ status: number; body: string }>((resolve) => {
+      release = () => resolve({ status: 200, body: JSON.stringify({ info: hub.info }) })
+    })
+    hub.intercept = (req) => (req.url.endsWith('/info') ? held : null)
+
+    const started = startSession(ctx, root, NEXUS)
+    while (sent('/info').length === 0) await turn(20)
+    await stopSession(ctx)
+    release()
+    await started
+
+    expect(currentSession()).toBeNull()
+  })
+
   it('runs no queued work after stop', async () => {
     await startSession(ctx, root, NEXUS)
     const self = currentSession()

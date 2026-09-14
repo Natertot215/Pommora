@@ -186,6 +186,8 @@ const sync = (): SyncStore => {
       return r ? copy(r) : null
     },
     readAllBases: () => [...bases.values()].map(copy),
+    readBasesUnder: (prefix) =>
+      [...bases.values()].filter((r) => underPrefix(r.path, prefix)).map(copy),
     upsertBase: (record) => {
       bases.set(record.path, copy(record))
     },

@@ -125,6 +125,22 @@ describe('reconcile', () => {
     expect(paths()).toEqual([])
   })
 
+  it('pushes a delete for a base row whose file is gone', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    await write('Notes/One.md', page('one'))
+    await reconcile(session)
+    expect(paths()).toEqual(['Notes/One.md'])
+    hub.sent.length = 0
+    await rm(abs('Notes/One.md'))
+
+    await reconcile(session)
+
+    expect(stores().flatMap((body) => body.changes.map((change) => change.kind))).toEqual([
+      'delete',
+    ])
+    expect(paths()).toEqual([])
+  })
+
   it('drops base rows on an exclusion change and stores no delete', async () => {
     await hubWrite(hub, ring, 'Private/Secret.md', page('secret'))
     await write('Private/Secret.md', page('secret'))

@@ -9,6 +9,7 @@ import { syncStore } from '../../Platform/stores'
 import { isPlainObject } from '../../Properties/propertyValue'
 import type { Change, ItemRecord } from '../Contract/wire'
 import type { SyncHost } from '../Client/call'
+import { captureLoser } from './captures'
 import { type Json, isMergedJson, mergeDepthFor, mergeKeys } from './jsonMerge'
 
 const RECENCY_WINDOW_MS = 2_000
@@ -50,10 +51,10 @@ async function bytesToLand(
 ): Promise<Uint8Array> {
   if (!isMergedJson(change.path)) return plaintext
   const local = await machine().readBytes(abs)
+  if (!local) return plaintext
   const base = syncStore()?.readBase(change.path)?.baseBytes ?? null
-  if (!local || !base) return plaintext
-  if (machine().sha256Hex(local) === machine().sha256Hex(base)) return plaintext
-  const b = parseObject(base)
+  if (base && machine().sha256Hex(local) === machine().sha256Hex(base)) return plaintext
+  const b = base ? parseObject(base) : {}
   const l = parseObject(local)
   const r = parseObject(plaintext)
   if (!b || !l || !r) return plaintext
@@ -117,15 +118,15 @@ export async function landRename(root: string, change: Change): Promise<void> {
   const to = join(root, change.path)
   await machine().lock(from, async () => {
     if (await machine().stat(from)) {
+      const losing = await machine().readBytes(to)
+      if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
       await machine().mkdir(dirname(to))
       await machine().rename(from, to)
     }
     const store = syncStore()
     if (!store) return
-    const prefix = `${fromRel}/`
-    for (const row of store.readAllBases())
-      if (row.path.startsWith(prefix))
-        store.renameBase(row.path, `${change.path}/${row.path.slice(prefix.length)}`)
+    for (const row of store.readBasesUnder(fromRel))
+      store.renameBase(row.path, change.path + row.path.slice(fromRel.length))
     store.renameBase(fromRel, change.path)
     const moved = store.readBase(change.path)
     if (moved) store.upsertBase({ ...moved, version: change.seq })

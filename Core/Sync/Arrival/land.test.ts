@@ -1,11 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import type { TileHostRef } from '../../Tiles/tiles'
 import { tempRoot } from '../../Testing/hostFs'
 import { makeTree } from '../../Testing/testTree'
 import { memoryStores } from '../../Testing/memoryStores'
 import { dropLiveTree, seedLiveTree } from '../../Nexus/liveTree'
-import { installStores, NO_STORES, type SyncStore, syncStore } from '../../Platform/stores'
+import {
+  type CaptureStore,
+  installStores,
+  NO_STORES,
+  type SyncStore,
+  syncStore,
+} from '../../Platform/stores'
 import { isRecentWrite } from '../../Files/writeEcho'
 import { machine } from '../../Platform/machine'
 import { join } from '../../Paths/posix'
@@ -20,6 +26,7 @@ const MTIME = Date.UTC(2026, 8, 1, 12)
 let root: string
 let pushes: TileHostRef[]
 let host: SyncHost
+let mem: ReturnType<typeof memoryStores>
 
 const abs = (rel: string): string => join(root, rel)
 const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
@@ -73,7 +80,8 @@ beforeEach(async () => {
       pushes.push(payload)
     }) as unknown as SyncHost['push'],
   }
-  installStores(memoryStores().stores)
+  mem = memoryStores()
+  installStores(mem.stores)
 })
 
 afterEach(async () => {
@@ -131,6 +139,20 @@ describe('landWrite', () => {
     expect(row?.mtimeMs).toBe(MTIME)
   })
 
+  it('merges a JSON landing against an absent base and keeps the local-only keys', async () => {
+    const path = '.nexus/settings.json'
+    const local = utf8(JSON.stringify({ personalization: { accent: 'moss' }, pinned: ['A.md'] }))
+    const remote = utf8(JSON.stringify({ personalization: { accent: 'lavender' } }))
+    await writeFile(abs(path), local)
+
+    await landWrite(host, root, write(path, remote, 4, Date.now() + 600_000), remote)
+
+    expect(JSON.parse(await readFile(abs(path), 'utf8'))).toEqual({
+      personalization: { accent: 'lavender' },
+      pinned: ['A.md'],
+    })
+  })
+
   it('pushes tiles:changed for a landed tile body', async () => {
     seedLiveTree(makeTree())
     const bytes = utf8('tile\n')
@@ -179,6 +201,20 @@ describe('landRename', () => {
     expect(await machine().stat(abs('Notes/A.md'))).toBeNull()
     expect(bases().readBase('Notes/A.md')).toBeNull()
     expect(bases().readBase('Notes/B.md')?.version).toBe(9)
+  })
+
+  it('captures a local file the rename is about to overwrite', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const bytes = utf8('moved\n')
+    await landWrite(host, root, write('Notes/A.md', bytes), bytes)
+    await writeFile(abs('Notes/B.md'), utf8('mine\n'))
+
+    await landRename(root, rename('Notes/A.md', 'Notes/B.md', 9))
+
+    expect(await readFile(abs('Notes/B.md'), 'utf8')).toBe('moved\n')
+    const [path, , reason, losing] = added.mock.calls[0]
+    expect([path, reason]).toEqual(['Notes/B.md', 'local-lost'])
+    expect(new TextDecoder().decode(losing)).toBe('mine\n')
   })
 
   it('moves every base row under a renamed folder', async () => {

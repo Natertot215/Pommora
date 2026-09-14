@@ -3,7 +3,14 @@ import { recordWrite } from '../../Files/writeEcho'
 import { emitWatch } from '../../Nexus/watchSettle'
 import type { WatchScope } from '../../Paths/exclusion'
 import { join } from '../../Paths/posix'
-import { DEBOUNCE_MS, dirtyPending, installTap, reportRename, uninstallTap } from './tap'
+import {
+  DEBOUNCE_MS,
+  dirtyPending,
+  installTap,
+  reportRename,
+  setTapScope,
+  uninstallTap,
+} from './tap'
 
 const ROOT = '/nexus'
 const SCOPE: WatchScope = { excluded: [], assetDir: '.nexus/assets' }
@@ -62,6 +69,20 @@ describe('installTap', () => {
     expect(dirtyPending()).toEqual(new Set())
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 1)
     expect(dirty).toEqual([])
+  })
+
+  it('admits against the scope it is handed last, both taps at once', async () => {
+    setTapScope({ excluded: ['Notes'], assetDir: '.nexus/assets' })
+    emitWatch('change', join(ROOT, 'Notes/One.md'))
+    recordWrite(join(ROOT, 'Notes/Two.md'))
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 1)
+    expect(dirty).toEqual([])
+
+    setTapScope(SCOPE)
+    emitWatch('change', join(ROOT, 'Notes/One.md'))
+    recordWrite(join(ROOT, 'Notes/Two.md'))
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 1)
+    expect(dirty).toEqual([['Notes/One.md', 'Notes/Two.md']])
   })
 
   it('cancels every timer on uninstall', async () => {

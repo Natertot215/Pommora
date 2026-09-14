@@ -1,7 +1,9 @@
-import type { InfoRecord, RingEntry } from '../Contract/wire'
+import type { InfoRecord, ItemRecord, RingEntry } from '../Contract/wire'
+import { decryptItem } from '../Keys/item'
 import { deriveWrappingKey } from '../Keys/kdf'
-import { type Ring, unwrapForDevice, unwrapWithPassword } from '../Keys/ring'
-import type { SyncHost } from './call'
+import { owned, type Ring, unwrapForDevice, unwrapWithPassword } from '../Keys/ring'
+import { call, type SyncHost } from './call'
+import type { Session } from './session'
 
 type Keys = Pick<InfoRecord, 'ring' | 'kdf'>
 
@@ -78,6 +80,29 @@ export async function loadRing(
   const ring = await openWithPassword(info, stored)
   if (ring !== null) held.set(nexusId, ring)
   return ring
+}
+
+async function reloaded(session: Session): Promise<Ring | null> {
+  const outcome = await call(session.host, session.target, 'info', { nexusId: session.nexusId })
+  if (outcome.reply === null) return null
+  return loadRing(session.host, session.nexusId, outcome.reply.info, null)
+}
+
+export async function openRecord(
+  session: Session,
+  record: ItemRecord,
+  blob: Uint8Array,
+): Promise<Uint8Array> {
+  const bytes = owned(blob)
+  try {
+    return await decryptItem(session.ring, record.keyId, record.path, bytes)
+  } catch (e) {
+    if (!String(e).includes('unknown-key')) throw e
+    const ring = await reloaded(session)
+    if (ring === null) throw e
+    session.ring = ring
+    return decryptItem(ring, record.keyId, record.path, bytes)
+  }
 }
 
 export async function forgetKeys(host: SyncHost, nexusId: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, rm, truncate, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
@@ -7,10 +7,11 @@ import { installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { type FakeHub, hubDelete, hubRename, hubSession, hubWrite } from '../../Testing/syncHub'
+import { testKeys } from '../../Testing/syncDevice'
 import type { Change, StoreBody } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
 import { isDirty, readAllBases, readBase, upsertBase } from './base'
-import { pushDirty, pushRename } from './push'
+import { ITEM_CAP, pushDirty, pushRename } from './push'
 import type { Session } from './session'
 
 const REMOTE_MS = Date.UTC(2026, 8, 1, 12)
@@ -280,6 +281,34 @@ describe('pushDirty', () => {
     expect(bodies[0].requestId).toBe(bodies[1].requestId)
     expect(readBase('Notes/One.md')?.version).toBe(hub.seq)
     expect(session.failed.size).toBe(0)
+  })
+
+  it('refuses a file over the cap before it reads a byte of it', async () => {
+    await write('Notes/Big.bin', 'x')
+    await truncate(abs('Notes/Big.bin'), ITEM_CAP + 1)
+    const read = vi.spyOn(machine(), 'readBytes')
+
+    await pushDirty(session, ['Notes/Big.bin'])
+
+    expect(read).not.toHaveBeenCalled()
+    expect(stores()).toEqual([])
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
+    read.mockRestore()
+  })
+
+  it('reloads the ring when a stale head names a key this device lacks', async () => {
+    const info = hub.info
+    if (info === null) throw new Error('the hub holds no key record')
+    const other = await testKeys()
+    hub.info = { ...info, ring: [...info.ring, ...other.entries] }
+    const first = await hubWrite(hub, other.ring, 'Notes/One.md', page('remote body'))
+    seedBase('Notes/One.md', utf8(page('base body')), first - 1)
+    await write('Notes/One.md', page('local body'), OLD_MS)
+
+    await pushDirty(session, ['Notes/One.md'])
+
+    expect(await read('Notes/One.md')).toBe(page('remote body'))
+    expect(hub.captures.map((record) => record.path)).toEqual(['Notes/One.md'])
   })
 
   it('holds a batch the hub never answered in failed', async () => {

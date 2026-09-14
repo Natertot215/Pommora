@@ -283,6 +283,22 @@ export function describeSyncStore(name: string, make: () => SyncStore): void {
       ).toEqual(['c.md'])
     })
 
+    it('reads the rows under one path and no sibling that merely shares its opening', () => {
+      store.upsertBase(base('Notes/a.md'))
+      store.upsertBase(base('Notes/Deep/b.md'))
+      store.upsertBase(base('Notes.md'))
+      store.upsertBase(base('NotesOther/c.md'))
+      store.upsertBase(base('Note%/d.md'))
+      expect(
+        store
+          .readBasesUnder('Notes')
+          .map((r) => r.path)
+          .sort(),
+      ).toEqual(['Notes/Deep/b.md', 'Notes/a.md'])
+      expect(store.readBasesUnder('Note%').map((r) => r.path)).toEqual(['Note%/d.md'])
+      expect(store.readBasesUnder('Nothing')).toEqual([])
+    })
+
     it('keeps base bytes as bytes and null as null', () => {
       const bytes = new Uint8Array([0x00, 0xff, 0x80])
       store.upsertBase(base('a.md', { baseBytes: bytes }))
