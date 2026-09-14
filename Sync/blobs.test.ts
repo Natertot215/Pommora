@@ -14,8 +14,16 @@ const reader = signer('Reader Mac')
 
 const spoolFiles = (): string[] => readdirSync(join(hub.dataDir, 'spool'))
 
+const INFO = {
+  protocol: 1,
+  kdf: { hash: 'SHA-256', iterations: 600_000, salt: 'c2FsdA' },
+  historyDays: 30,
+  ring: [],
+}
+
 beforeAll(async () => {
   hub = await bootWith({ owner, reader })
+  await owner.call('/info', { nexusId: NEXUS, create: INFO })
 })
 
 afterAll(async () => {
@@ -57,6 +65,18 @@ describe('the hub blob routes', () => {
   it('lets a reader read and refuses it a put', async () => {
     expect((await reader.get(NEXUS, DIGEST)).status).toBe(200)
     expect((await reader.put(NEXUS, 'k1', Buffer.from('reader bytes'))).status).toBe(404)
+  })
+
+  it('refuses bytes for a Nexus with no info record', async () => {
+    const other = '01ARZ3NDEKTSV4RRFFQ69G5FB2'
+    await owner.call('/connect', {
+      nexusId: other,
+      publicKey: owner.publicKey,
+      name: owner.name,
+      x25519: owner.x25519,
+    })
+    expect((await owner.put(other, 'k1', Buffer.from('homeless'))).status).toBe(404)
+    expect((await owner.get(other, DIGEST)).status).toBe(404)
   })
 
   it('leaves no spool file behind', () => {

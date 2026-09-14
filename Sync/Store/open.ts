@@ -18,7 +18,7 @@ const DDL = `
   CREATE TABLE IF NOT EXISTS item (nexus_id TEXT NOT NULL, path TEXT NOT NULL, version INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (nexus_id, path));
   CREATE TABLE IF NOT EXISTS change (nexus_id TEXT NOT NULL, seq INTEGER NOT NULL, kind TEXT NOT NULL, path TEXT NOT NULL, from_path TEXT, record TEXT, device TEXT NOT NULL, at_ms INTEGER NOT NULL, PRIMARY KEY (nexus_id, seq));
   CREATE TABLE IF NOT EXISTS blob (id INTEGER PRIMARY KEY, nexus_id TEXT NOT NULL, sha256 TEXT NOT NULL, key_id TEXT NOT NULL, size INTEGER NOT NULL, bytes BLOB NOT NULL, at_ms INTEGER NOT NULL, UNIQUE (nexus_id, sha256));
-  CREATE TABLE IF NOT EXISTS capture (nexus_id TEXT NOT NULL, path TEXT NOT NULL, at_ms INTEGER NOT NULL, record TEXT NOT NULL, PRIMARY KEY (nexus_id, path, at_ms));
+  CREATE TABLE IF NOT EXISTS capture (nexus_id TEXT NOT NULL, path TEXT NOT NULL, sha256 TEXT NOT NULL, at_ms INTEGER NOT NULL, record TEXT NOT NULL, PRIMARY KEY (nexus_id, path, sha256));
   CREATE TABLE IF NOT EXISTS request (nexus_id TEXT NOT NULL, request_id TEXT NOT NULL, reply TEXT NOT NULL, at_ms INTEGER NOT NULL, PRIMARY KEY (nexus_id, request_id));`
 
 const MIGRATIONS: Record<number, string[]> = {

@@ -56,7 +56,8 @@ export function logStore(db: DatabaseSync) {
   )
   const recordStatement = db.prepare('SELECT record FROM change WHERE nexus_id = ? AND seq = ?')
   const insertCapture = db.prepare(
-    'INSERT OR REPLACE INTO capture (nexus_id, path, at_ms, record) VALUES (?, ?, ?, ?)',
+    `INSERT INTO capture (nexus_id, path, sha256, at_ms, record) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT DO NOTHING`,
   )
   const requestStatement = db.prepare(
     'SELECT reply FROM request WHERE nexus_id = ? AND request_id = ?',
@@ -71,11 +72,10 @@ export function logStore(db: DatabaseSync) {
          SELECT json_extract(c.record, '$.sha256') FROM item i
          JOIN change c ON c.nexus_id = i.nexus_id AND c.seq = i.version
          WHERE i.nexus_id = ? AND i.deleted = 0 AND json_extract(c.record, '$.sha256') IS NOT NULL)
-       AND sha256 NOT IN (
-         SELECT json_extract(record, '$.sha256') FROM capture
-         WHERE nexus_id = ? AND json_extract(record, '$.sha256') IS NOT NULL)`,
+       AND sha256 NOT IN (SELECT sha256 FROM capture WHERE nexus_id = ?)`,
   )
   const sweepCaptures = db.prepare('DELETE FROM capture WHERE nexus_id = ? AND at_ms < ?')
+  const sweepRequests = db.prepare('DELETE FROM request WHERE nexus_id = ? AND at_ms < ?')
   const rememberRequest = db.prepare(
     'INSERT OR REPLACE INTO request (nexus_id, request_id, reply, at_ms) VALUES (?, ?, ?, ?)',
   )
@@ -111,11 +111,11 @@ export function logStore(db: DatabaseSync) {
     start: number,
   ): Wire.StoreReply {
     const outcomes: Wire.StoreOutcome[] = []
-    const stale = (path: string): Wire.StoreOutcome => ({
+    const stale = (path: string, at: string = path): Wire.StoreOutcome => ({
       path,
       ok: false,
       why: 'stale',
-      head: readHead(nexusId, path),
+      head: readHead(nexusId, at),
     })
     let seq = start
 
@@ -126,7 +126,7 @@ export function logStore(db: DatabaseSync) {
           outcomes.push({ path, ok: false, why: 'missing-blob' })
           continue
         }
-        insertCapture.run(nexusId, path, atMs, JSON.stringify(change.record))
+        insertCapture.run(nexusId, path, sha256, atMs, JSON.stringify(change.record))
         outcomes.push({ path, ok: true, version: seq })
         continue
       }
@@ -140,7 +140,7 @@ export function logStore(db: DatabaseSync) {
           continue
         }
       } else if (live === null || live.version !== change.base) {
-        outcomes.push(stale(path))
+        outcomes.push(stale(path, source))
         continue
       }
       if (change.kind === 'write' && !hasBlob(nexusId, change.record.sha256)) {
@@ -212,6 +212,7 @@ export function logStore(db: DatabaseSync) {
       const cutoff = nowMs - historyDays * 86_400_000
       sweepBlobs.run(nexusId, cutoff, nexusId, nexusId)
       sweepCaptures.run(nexusId, cutoff)
+      sweepRequests.run(nexusId, cutoff)
     },
 
     applyStore: (

@@ -138,12 +138,46 @@ describe('the hub change log', () => {
     expect(only(gone.reply)).toEqual({ path: 'Notes/two.md', ok: true, version: 4 })
   })
 
+  it('answers a stale rename with the head of the path it moves', async () => {
+    await push([{ kind: 'write', base: null, record: record('Stale/x.md') }])
+    const second = await push([{ kind: 'write', base: head, record: record('Stale/x.md') }])
+    const at = (only(second.reply) as { version: number }).version
+    const refused = await push([
+      { kind: 'rename', base: at - 1, from: 'Stale/x.md', path: 'Stale/y.md' },
+    ])
+    const outcome = only(refused.reply) as { path: string; why: string; head: Wire.Change }
+    expect(outcome.path).toBe('Stale/y.md')
+    expect(outcome.why).toBe('stale')
+    expect(outcome.head.seq).toBe(at)
+    expect(outcome.head.path).toBe('Stale/x.md')
+  })
+
   it('stores a capture without advancing the sequence', async () => {
     const before = (await push([{ kind: 'write', base: null, record: record('Notes/kept.md') }]))
       .reply.seq
     const captured = await push([{ kind: 'capture', record: record('Notes/kept.md') }])
     expect(only(captured.reply)).toEqual({ path: 'Notes/kept.md', ok: true, version: before })
     expect(captured.reply.seq).toBe(before)
+  })
+
+  it('keeps two captures of one path under different hashes', async () => {
+    const other = Buffer.from('another capture')
+    await owner.put(NEXUS, 'k1', other)
+    const captured = await push([
+      { kind: 'capture', record: record('Notes/kept.md') },
+      { kind: 'capture', record: { ...record('Notes/kept.md'), sha256: sha256Hex(other) } },
+    ])
+    expect(captured.reply.outcomes.every((o) => o.ok)).toBe(true)
+    const rows = withDb(
+      hub.dataDir,
+      (db) =>
+        (
+          db
+            .prepare('SELECT COUNT(*) AS n FROM capture WHERE nexus_id = ? AND path = ?')
+            .get(NEXUS, 'Notes/kept.md') as { n: number }
+        ).n,
+    )
+    expect(rows).toBe(2)
   })
 
   it('answers a replayed request id from the stored reply', async () => {
@@ -178,7 +212,7 @@ describe('the hub feed', () => {
   it('wakes a waiting pull within a hundred milliseconds of a store', async () => {
     const cursor = head
     const started = performance.now()
-    const waiting = pull(cursor, 5_000)
+    const waiting = pull(cursor, 30_000)
     await new Promise((resolve) => setTimeout(resolve, 20))
     await push([{ kind: 'write', base: null, record: record('Notes/woken.md') }])
     const pulled = await waiting
