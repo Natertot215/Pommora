@@ -90,6 +90,15 @@ describe('reconcile', () => {
     expect(session.target.cursor).toBe(2)
   })
 
+  it('sets the cursor to the log top even below a cursor the hub refused', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    session.target = { ...session.target, cursor: 9 }
+
+    await reconcile(session)
+
+    expect(session.target.cursor).toBe(1)
+  })
+
   it('writes nothing and seeds every base when both sides match', async () => {
     await hubWrite(hub, ring, 'Notes/One.md', page('one'))
     await write('Notes/One.md', page('one'))

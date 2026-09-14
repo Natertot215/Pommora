@@ -70,7 +70,7 @@ A change takes about 2.7 seconds to cross: the writing device's watcher settles,
 
 ### Status
 
-Sync reports one state per session — off, idle, syncing, or error — and an off state held by something carries why: a password is needed, the device is pending approval, it was revoked, the Nexus database is unavailable, or the hub refused. The Nexus heading in Settings › General binds to that state; [[ConfigurationPM]] is the roster of those rows.
+Sync reports one state per session — off, idle, syncing, or error — and an off state names what holds it off: a password is needed, the device is pending approval, it was revoked, the Nexus database is unavailable, or the hub refused. The Nexus heading in Settings › General binds to that state; [[ConfigurationPM]] is the roster of those rows.
 
 ### Beyond This
 
