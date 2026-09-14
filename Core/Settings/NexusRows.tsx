@@ -4,8 +4,9 @@ import { InputField } from '@pommora/uix/Fields/InputField'
 import { placeholder } from '@pommora/uix/Fields/fields.css'
 import { MenuRowView } from '@pommora/uix/Menus'
 import type { Result } from '@pommora/core/Contract/result'
-import type { SyncBinding, SyncState } from '@pommora/core/Sync/Contract/wire'
+import type { SyncBinding, SyncState, SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import { SettingsFieldRow } from './SettingsFieldRow'
+import { useTimedLabel } from './ClearActionRow'
 import { useSession } from '../Session/store'
 import * as x from './exclusion-rows.css'
 import { host } from '../Platform/dialer'
@@ -23,6 +24,19 @@ const captionFor = (binding: SyncBinding): string => {
   }
 }
 
+const syncCaption = (status: SyncStatus): string => {
+  switch (status.state) {
+    case 'off':
+      return status.why ?? 'Off'
+    case 'idle':
+      return `Last synced ${Math.round((Date.now() - (status.lastAt ?? Date.now())) / 1000)} s ago`
+    case 'syncing':
+      return 'Syncing…'
+    case 'error':
+      return `Error: ${status.why}`
+  }
+}
+
 // Keyed on the nexus so a switch with Settings open mounts a body with its own fetch and its own in-flight gate.
 export function NexusRows(): React.JSX.Element {
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
@@ -32,8 +46,11 @@ export function NexusRows(): React.JSX.Element {
 function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [state, setState] = useState<SyncState | null>(null)
   const [draft, setDraft] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
   const inFlight = useRef(false)
+  const [syncLabel, markSynced] = useTimedLabel('Sync Now', 'Synced')
 
   // One channel in flight at a time: each reply is the whole state, so a second call would answer from a list the first has already replaced.
   // `report` is what separates a user's action from the mount's own fetch: only an action the user took answers a refusal with a dialog.
@@ -66,14 +83,29 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
     refresh(false)
   }, [refresh])
 
+  const pushed = useSession((s) => s.syncStatus)
+  useEffect(() => {
+    if (pushed) setState((s) => s && { ...s, status: pushed })
+  }, [pushed])
+
   if (state === null) return null
 
   const binding = state.binding
   const address = draft ?? binding?.address ?? ''
   const devices = binding?.state === 'approved' ? binding.devices : []
+  const needsPassword =
+    binding === null || binding.state === 'pending' || state.status.reason === 'password'
 
   const onConnect = async (): Promise<void> => {
-    if (await run(() => host().ask('sync:connect', address))) setDraft(null)
+    const ok = await run(() =>
+      host().ask('sync:connect', address, password || undefined, pin || undefined),
+    )
+    setPassword('')
+    if (ok) setDraft(null)
+  }
+
+  const onSyncNow = async (): Promise<void> => {
+    if (await run(() => host().ask('sync:now'))) markSynced()
   }
 
   const connect = (
@@ -100,6 +132,18 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
       <SettingsFieldRow label="Nexus ID">
         <span className={x.count}>{nexusId}</span>
       </SettingsFieldRow>
+      {needsPassword ? (
+        <SettingsFieldRow label="Nexus Password">
+          <InputField
+            label="Nexus password"
+            edit={{ value: '', type: 'password', renames: 'row', onCommit: setPassword }}
+          >
+            {password === '' ? <span className={placeholder}>Not set</span> : '••••••••'}
+          </InputField>
+        </SettingsFieldRow>
+      ) : (
+        <MenuRowView row={{ kind: 'caption', text: "Held in this device's keychain" }} />
+      )}
       <SettingsFieldRow label="Server" hint={binding ? captionFor(binding) : undefined}>
         <span className={x.manageCluster}>
           <InputField
@@ -108,6 +152,14 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
           >
             {address === '' ? <span className={placeholder}>No server</span> : address}
           </InputField>
+          {address.startsWith('https:') && (
+            <InputField
+              label="Pin"
+              edit={{ value: pin, onCommit: setPin, renames: 'row', emptyCommits: true }}
+            >
+              {pin === '' ? <span className={placeholder}>No pin</span> : pin}
+            </InputField>
+          )}
           {binding?.state !== 'approved' && connect}
           {binding !== null && (
             <>
@@ -122,6 +174,15 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
           )}
         </span>
       </SettingsFieldRow>
+      <MenuRowView row={{ kind: 'caption', text: syncCaption(state.status) }} />
+      <SettingsFieldRow label="Sync">
+        <Button
+          type="filled"
+          label={state.status.state === 'syncing' ? 'Syncing…' : syncLabel}
+          disabled={busy || binding?.state !== 'approved'}
+          onClick={() => void onSyncNow()}
+        />
+      </SettingsFieldRow>
       {devices.map((device) => {
         const own = device.id === state.device.id
         const revoking = device.approved
@@ -132,7 +193,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
               kind: 'item',
               inert: true,
               label: device.name,
-              caption: `${fingerprint(device.id)} · ${revoking ? 'Approved' : 'Pending'}`,
+              caption: `${fingerprint(device.id)} · ${revoking ? 'Approved' : 'Pending'}${device.x25519 ? ' · paired' : ''}`,
               trailing: own
                 ? undefined
                 : {

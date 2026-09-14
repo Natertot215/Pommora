@@ -36,13 +36,18 @@ const pending: SyncState = {
   binding: { address: 'http://127.0.0.1:7473', state: 'pending' },
   status: OFF,
 }
+const secured: SyncState = {
+  device: THIS_DEVICE,
+  binding: { address: 'https://hub.example:7473', state: 'pending' },
+  status: OFF,
+}
 const mixed = approved([THIS_DEVICE, OTHER])
 const bothApproved = approved([THIS_DEVICE, { ...OTHER, approved: true }])
 
 const reply = (value: SyncState) => vi.fn(async () => ({ ok: true, value }))
 
 const render = async (channels: Record<string, unknown>): Promise<void> => {
-  useSession.setState({ tree: { nexus: { id: NEXUS_ID } } as never })
+  useSession.setState({ tree: { nexus: { id: NEXUS_ID } } as never, syncStatus: null })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -126,7 +131,7 @@ describe('NexusRows', () => {
     await commit('Server address', 'http://typed:1')
     expect(fieldText('Server address')).toBe('http://typed:1')
     await act(async () => button('Connect')?.click())
-    expect(ask).toHaveBeenCalledWith('http://typed:1')
+    expect(ask).toHaveBeenCalledWith('http://typed:1', undefined, undefined)
     expect(fieldText('Server address')).toBe('http://127.0.0.1:7473')
   })
 
@@ -189,5 +194,59 @@ describe('NexusRows', () => {
       refresh?.click()
     })
     expect(ask).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows the password row unbound and hides it once approved', async () => {
+    await render({ 'sync:state': reply(unbound), 'sync:connect': reply(bothApproved) })
+    expect(host.textContent).toContain('Nexus Password')
+    expect(host.textContent).toContain('Not set')
+    await act(async () => button('Connect')?.click())
+    expect(host.textContent).not.toContain('Nexus Password')
+    expect(host.textContent).toContain("Held in this device's keychain")
+  })
+
+  it('disables Sync Now while pending', async () => {
+    await render({ 'sync:state': reply(pending) })
+    expect(button('Sync Now')?.disabled).toBe(true)
+  })
+
+  it('captions each of the four sync states', async () => {
+    await render({ 'sync:state': reply(bothApproved) })
+    expect(host.textContent).toContain('Off')
+    await act(async () => {
+      useSession.setState({ syncStatus: { state: 'idle', lastAt: Date.now() } })
+    })
+    expect(host.textContent).toContain('Last synced 0 s ago')
+    await act(async () => {
+      useSession.setState({ syncStatus: { state: 'syncing' } })
+    })
+    expect(host.textContent).toContain('Syncing…')
+    await act(async () => {
+      useSession.setState({ syncStatus: { state: 'error', why: 'hub refused' } })
+    })
+    expect(host.textContent).toContain('Error: hub refused')
+  })
+
+  it('marks a device carrying an agreement key as paired', async () => {
+    await render({ 'sync:state': reply(approved([THIS_DEVICE, { ...OTHER, x25519: 'xk' }])) })
+    expect(host.textContent).toContain('bbbbbbbbbbbb · Pending · paired')
+    expect(host.textContent).toContain('aaaaaaaaaaaa · Approved')
+    expect(host.textContent).not.toContain('aaaaaaaaaaaa · Approved · paired')
+  })
+
+  it('shows the pin field for an https address', async () => {
+    await render({ 'sync:state': reply(secured) })
+    expect(host.querySelector('[aria-label="Pin"]')).not.toBeNull()
+  })
+
+  it('sends the password and the pin with connect and never holds the password', async () => {
+    const ask = reply(pending)
+    await render({ 'sync:state': reply(secured), 'sync:connect': ask })
+    await commit('Nexus password', 'openit')
+    await commit('Pin', '4821')
+    expect(fieldText('Nexus password')).toBe('••••••••')
+    await act(async () => button('Connect')?.click())
+    expect(ask).toHaveBeenCalledWith('https://hub.example:7473', 'openit', '4821')
+    expect(fieldText('Nexus password')).toBe('Not set')
   })
 })

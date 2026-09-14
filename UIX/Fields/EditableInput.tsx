@@ -7,6 +7,7 @@ export function EditableInput({
   value,
   initialText,
   className,
+  type,
   maxLength,
   autoSize,
   caretAtEnd,
@@ -19,6 +20,7 @@ export function EditableInput({
   value: string
   initialText?: string
   className: string
+  type?: 'text' | 'password'
   maxLength?: number
   autoSize?: boolean
   caretAtEnd?: boolean
@@ -46,6 +48,7 @@ export function EditableInput({
       ref={inputRef}
       // The eclipse fade follows the caret; Chromium drops an ellipsis while a field is focused.
       className={cx(className, !boxed && 'over-scroll-x', autoSize && autoSizeInput)}
+      type={type}
       defaultValue={initialText ?? value}
       size={autoSize ? 1 : undefined}
       spellCheck={false}
