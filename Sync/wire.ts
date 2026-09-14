@@ -39,6 +39,12 @@ export const META = {
   ring: { requires: 'editor', cap: 65536, timeoutMs: JSON_TIMEOUT_MS },
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
 
+export const BLOB_ROUTE = /^\/blob\/([0-7][0-9A-HJKMNP-TV-Z]{25})\/([0-9a-f]{64})$/
+export const BLOB_CAP = 50 * 1024 * 1024
+export const BLOB_TIMEOUT_MS = 300_000
+
+export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`
+
 export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const
 
 export type Reply = { status: number; body: object }

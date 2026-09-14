@@ -30,7 +30,7 @@ export interface Identity {
   signed: Signature
 }
 
-function header(req: IncomingMessage, name: string): string | null {
+export function header(req: IncomingMessage, name: string): string | null {
   const value = req.headers[name]
   return typeof value === 'string' && value.length > 0 ? value : null
 }
@@ -48,12 +48,14 @@ function signatureOf(req: IncomingMessage): Signature | null {
 export function identify(
   store: Store,
   req: IncomingMessage,
-  route: keyof Wire.RouteTable,
+  route: keyof Wire.RouteTable | null,
   body: unknown,
+  given?: string,
+  requires?: Wire.Role | 'none',
 ): Identity | Reply {
   const signed = signatureOf(req)
   if (!signed) return refuse(401, 'unauthorized')
-  const nexusId = (body as Partial<Wire.NexusBody> | null)?.nexusId
+  const nexusId = given ?? (body as Partial<Wire.NexusBody> | null)?.nexusId
   if (typeof nexusId !== 'string' || !ULID.test(nexusId)) return refuse(400, 'malformed')
   let publicKey: string
   if (route === 'connect') {
@@ -75,20 +77,25 @@ export function identify(
     approved: membership?.approved ?? false,
     signed,
   }
-  const requires = META[route].requires
-  if (requires === 'none') return id
+  const need = requires ?? (route === null ? 'none' : META[route].requires)
+  if (need === 'none') return id
   if (!id.approved || id.role === null) return refuse(404, 'not-found')
-  if (ROLE_ORDER.indexOf(id.role) < ROLE_ORDER.indexOf(requires)) return refuse(404, 'not-found')
+  if (ROLE_ORDER.indexOf(id.role) < ROLE_ORDER.indexOf(need)) return refuse(404, 'not-found')
   return id
 }
 
-export function verify(id: Identity, path: string, bodySha256Hex: string): Reply | null {
+export function verify(
+  id: Identity,
+  method: string,
+  path: string,
+  bodySha256Hex: string,
+): Reply | null {
   try {
     const key = createPublicKey({
       key: { kty: 'OKP', crv: 'Ed25519', x: id.publicKey },
       format: 'jwk',
     })
-    const data = Buffer.from(canonical('POST', path, bodySha256Hex, id.signed.ts), 'utf8')
+    const data = Buffer.from(canonical(method, path, bodySha256Hex, id.signed.ts), 'utf8')
     return verifyEd25519(null, data, key, Buffer.from(id.signed.sig, 'base64url'))
       ? null
       : refuse(401, 'unauthorized')

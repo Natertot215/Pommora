@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { logStore } from './log.ts'
 import { nexusStore } from './nexus.ts'
 import { rosterStore } from './roster.ts'
 
@@ -32,6 +33,7 @@ export interface Store {
   db: DatabaseSync
   roster: ReturnType<typeof rosterStore>
   nexus: ReturnType<typeof nexusStore>
+  log: ReturnType<typeof logStore>
 }
 
 function migrate(db: DatabaseSync): void {
@@ -66,5 +68,5 @@ export function openStore(dir: string): Store {
   db.exec('PRAGMA journal_mode = WAL')
   db.exec(DDL)
   migrate(db)
-  return { db, roster: rosterStore(db), nexus: nexusStore(db) }
+  return { db, roster: rosterStore(db), nexus: nexusStore(db), log: logStore(db) }
 }
