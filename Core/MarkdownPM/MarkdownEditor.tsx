@@ -382,7 +382,6 @@ export function MarkdownEditor({
       view.destroy()
       viewRef.current = null
     }
-    // Mount once per page — the host keys on path; initialBody is the seed, not a live binding.
   }, [])
 
   const commands = host.settings().commands

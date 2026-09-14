@@ -14,7 +14,6 @@ export function cachePageDetail(detail: PageDetail): void {
   capSet(detailByPath, detail.path, detail, DETAIL_CAP, (evicted) =>
     baseByPath.delete(evicted.path),
   )
-  // A refresh after a save must not move the base back to disk prose the editor has since edited past.
   if (!baseByPath.has(detail.path))
     baseByPath.set(detail.path, { text: detail.body, hash: detail.bodyHash })
 }
@@ -75,7 +74,6 @@ export function dropCacheDetail(path: string): void {
   inFlight.delete(path)
 }
 
-// A body replaced from outside the editor bumps its path's epoch; every host keyed on it remounts.
 const bodyEpochs = new Map<string, number>()
 const epochListeners = new Set<() => void>()
 
@@ -93,6 +91,25 @@ export function subscribeBodyEpoch(fn: () => void): () => void {
 
 export const useBodyEpoch = (path: string): number =>
   useSyncExternalStore(subscribeBodyEpoch, () => readBodyEpoch(path))
+
+const landingListeners = new Map<string, Set<() => void>>()
+
+export function subscribeLanding(path: string, fn: () => void): () => void {
+  const fns = landingListeners.get(path) ?? new Set<() => void>()
+  landingListeners.set(path, fns)
+  fns.add(fn)
+  return () => {
+    fns.delete(fn)
+    if (fns.size === 0) landingListeners.delete(path)
+  }
+}
+
+export function notifyLanding(path: string): boolean {
+  const fns = landingListeners.get(path)
+  if (!fns?.size) return false
+  for (const fn of fns) fn()
+  return true
+}
 
 export function clearCache(): void {
   clearWarm()

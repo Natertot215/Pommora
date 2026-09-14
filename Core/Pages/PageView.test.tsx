@@ -8,6 +8,10 @@ import { useSession } from '../Session/store'
 import { EditorView } from '@codemirror/view'
 import { PageView } from './PageView'
 import { stubDialer } from '../vitest.setup'
+import { undo } from '@codemirror/commands'
+import { machine } from '../Platform/machine'
+import { cachePageDetail, clearCache, notifyLanding } from '../Session/pageDetailCache'
+import { flushPageSave, setStaleSaveSink } from '../Session/saveScheduler'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,6 +25,10 @@ beforeEach(() => {
     disconnect(): void {}
   }
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= RO
+  clearCache()
+  onDisk = 'live'
+  updateReply = { ok: true, value: { hash: machine().sha256Hex('live'), stale: false } }
+  captured = vi.fn(async () => ok(null))
   const empty = { get: vi.fn(async () => ok({})), set: vi.fn(async () => undefined) }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'headingIcon:get': empty.get,
@@ -33,6 +41,9 @@ beforeEach(() => {
     'embedZooms:set': empty.set,
     'tableHeadingCols:get': empty.get,
     'tableHeadingCols:set': empty.set,
+    'page:open': vi.fn(async (path: string) => ok(detail({ id: 'a', path, body: onDisk }))),
+    'page:updateBody': vi.fn(async () => updateReply),
+    'sync:captureLocal': captured,
     'editor:format-state': vi.fn(),
     'menu:action': vi.fn(() => () => undefined),
     menu: vi.fn(async () => ok(null)),
@@ -43,10 +54,21 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  setStaleSaveSink(null)
+  clearCache()
   vi.useRealTimers()
   await act(async () => root.unmount())
   container.remove()
 })
+
+let onDisk: string
+let updateReply: unknown
+let captured: ReturnType<typeof vi.fn>
+
+const PATH = 'Notes/a.md'
+
+const viewOf = (): EditorView =>
+  EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement) as EditorView
 
 const slot = (detailBody: string, liveBody: string) => ({
   a: {
@@ -80,5 +102,51 @@ describe('PageView seeds its editor from the slot', () => {
     await act(async () => root.render(null))
     const slotAfter = useSession.getState().pages.a
     expect(slotAfter?.status === 'ready' && slotAfter.body).toBe('xlive')
+  })
+})
+
+describe('a landing under the open page', () => {
+  const BASE = 'alpha\nbeta\ngamma'
+
+  const mount = async (): Promise<EditorView> => {
+    cachePageDetail(detail({ id: 'a', path: PATH, body: BASE }))
+    useSession.setState({ tree: null, pages: slot(BASE, BASE) })
+    await act(async () => {
+      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+    })
+    return viewOf()
+  }
+
+  it('merges a landing around the caret without an undo entry', async () => {
+    const view = await mount()
+    onDisk = `${BASE}\ndelta`
+    await act(async () => {
+      view.dispatch({ changes: { from: 5, insert: ' ONE' }, selection: { anchor: 9 } })
+    })
+    const head = view.state.selection.main.head
+    await act(async () => {
+      notifyLanding(PATH)
+    })
+    expect(view.state.doc.toString()).toBe('alpha ONE\nbeta\ngamma\ndelta')
+    expect(view.state.selection.main.head).toBe(head)
+    act(() => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe('alpha\nbeta\ngamma\ndelta')
+    expect(captured).not.toHaveBeenCalled()
+  })
+
+  it('routes a stale save through the same merge', async () => {
+    const view = await mount()
+    setStaleSaveSink(notifyLanding)
+    onDisk = `${BASE}\ndelta`
+    updateReply = { ok: true, value: { hash: machine().sha256Hex(onDisk), stale: true } }
+    await act(async () => {
+      view.dispatch({ changes: { from: 5, insert: ' ONE' } })
+    })
+    await act(async () => {
+      await flushPageSave(PATH)
+    })
+    expect(view.state.doc.toString()).toBe('alpha ONE\nbeta\ngamma\ndelta')
   })
 })
