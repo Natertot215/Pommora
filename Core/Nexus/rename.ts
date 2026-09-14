@@ -1,4 +1,4 @@
-import { basename, basenameNoMd, relJoin } from '../Paths/posix'
+import { basename, basenameNoMd, relative, relJoin } from '../Paths/posix'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
 import { fault, ok } from '../Contract/result'
@@ -9,6 +9,7 @@ import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { renameFolderEntity } from './folderEntity'
 import { renameCascade } from './cascade'
+import { reportRename } from '../Sync/Client/tap'
 
 export async function renameOp(
   { root }: MutateContext,
@@ -22,6 +23,7 @@ export async function renameOp(
     const r = await renameFolderEntity(abs, req.newName)
     if (!r.ok) return r
     await moveIndexPaths(root, abs, r.value.path)
+    reportRename(relative(root, abs), relative(root, r.value.path))
     return ok({})
   }
   const oldTitle = basenameNoMd(basename(abs))
@@ -52,5 +54,6 @@ export async function renameOp(
     await rewriteTileConnections(root, oldTitle, req.newName)
   } catch {}
   await moveIndexPaths(root, abs, r.value.path)
+  reportRename(relative(root, abs), relative(root, r.value.path))
   return renamedReply(r.value.path)
 }

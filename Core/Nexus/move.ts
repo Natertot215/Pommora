@@ -1,4 +1,4 @@
-import { dirname } from '../Paths/posix'
+import { dirname, relative } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fail, ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
@@ -9,6 +9,7 @@ import { moveFolderEntity } from './folderEntity'
 import { resolveFolderKind } from './folderKind'
 import { setChildOrder } from './reorder'
 import { noteValueWrite } from './valuesChanged'
+import { reportRename } from '../Sync/Client/tap'
 
 async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const depth = dirname(dst) === root ? 'root' : 'nested'
@@ -42,6 +43,7 @@ export async function movePageOp(
   if (!r.ok) return r
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   await moveIndexPaths(root, at.value.src, r.value.path)
+  reportRename(relative(root, at.value.src), relative(root, r.value.path))
   noteValueWrite(root, r.value.path)
   return ok({})
 }
@@ -56,6 +58,7 @@ export async function moveSetOp(
   if (!r.ok) return r
   await setChildOrder(at.value.dst, 'set_order', req.order)
   await moveIndexPaths(root, at.value.src, r.value.path)
+  reportRename(relative(root, at.value.src), relative(root, r.value.path))
   noteValueWrite(root, r.value.path)
   return ok({})
 }
