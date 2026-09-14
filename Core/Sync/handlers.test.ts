@@ -427,6 +427,21 @@ describe('sync:revoke', () => {
     expect(sent).toEqual([])
   })
 
+  it('refuses to rotate under a stored password the ring does not open', async () => {
+    const hub = newHub([record(deviceA, true), record(deviceB, true)])
+    await seedInfo(hub, [deviceA, deviceB])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    secretsA.map.set(passwordName(NEXUS), 'typo')
+    const version = hub.info?.version
+    sent = []
+    const state = await unwrap<{ status: { why?: string } }>(
+      syncHandlers['sync:revoke'](host(hubAnswer(hub)), deviceB.id),
+    )
+    expect(state.status.why).toBe('The stored Nexus password does not open the ring.')
+    expect(urls()).toEqual(['/revoke', '/info'])
+    expect(hub.info?.version).toBe((version ?? 0) + 1)
+  })
+
   it('rotates the ring on revoke for the remaining device alone', async () => {
     const hub = newHub([record(deviceA, true), record(deviceB, true)])
     await seedInfo(hub, [deviceA, deviceB])
