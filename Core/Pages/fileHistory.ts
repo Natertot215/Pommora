@@ -5,7 +5,12 @@ import { indexWrittenPage } from '../Index/indexSeed'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { splitEnvelope } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
-import { type SnapshotSource, type SnapshotStore, snapshotStore } from '../Platform/stores'
+import {
+  captureStore,
+  type SnapshotSource,
+  type SnapshotStore,
+  snapshotStore,
+} from '../Platform/stores'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { liveIdOf, livePathOf, noteValueWrite } from '../Nexus/valuesChanged'
 import { updatePageBody } from '../Nexus/page'
@@ -188,11 +193,11 @@ export const clearHistory = (): Result<number> =>
   })
 
 export async function sweepFileHistory(root: string): Promise<void> {
-  const db = snapshotStore()
-  if (!db) return
   try {
     const { keepMs } = await readFileHistoryConfig(root)
-    db.sweepSnapshots(Date.now() - keepMs)
+    const cutoff = Date.now() - keepMs
+    snapshotStore()?.sweepSnapshots(cutoff)
+    captureStore()?.sweepCaptures(cutoff)
   } catch (e) {
     console.error('file history: the sweep failed:', errText(e))
   }
