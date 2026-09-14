@@ -33,7 +33,6 @@ export async function mintBundle(nexusRoot: string, absSource: string): Promise<
 
 export async function settleBundle(bundleDir: string, absPath: string): Promise<string> {
   const dest = join(bundleDir, basename(absPath))
-  // The source's unlink echo is our own write (the .trash destination is unwatched).
   recordWrite(absPath)
   recordWrite(dest)
   await machine().rename(absPath, dest)
@@ -47,6 +46,7 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
   const base = basename(absPath)
   let dest = join(dir, stampedLeaf(stamp, 0, base))
   for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))
+  recordWrite(dest)
   await machine().rename(absPath, dest)
   return dest
 }

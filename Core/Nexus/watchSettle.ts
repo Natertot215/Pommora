@@ -56,11 +56,7 @@ export function tileBodyOf(root: string): (path: string) => boolean {
 }
 
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
-function ignoreUnder(
-  root: string,
-  scope: WatchScope,
-  tileBodies: boolean,
-): (path: string) => boolean {
+export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
@@ -69,15 +65,9 @@ function ignoreUnder(
     if (!rel || escapes(rel)) return false
     const segs = rel.split('/')
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
-    return segs.some(neverWatched) || (tileBodies && tileBodyUnder(segs, rel)) || isExcluded(segs)
+    return segs.some(neverWatched) || isExcluded(segs)
   }
 }
-
-export const ignoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
-  ignoreUnder(root, scope, true)
-
-export const syncIgnoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
-  ignoreUnder(root, scope, false)
 
 export function valueChangesOf(
   events: WatchEvent[],

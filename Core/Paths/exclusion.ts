@@ -1,12 +1,12 @@
 import { foldKey } from './caseFold'
 import {
+  ASSETS_DIRNAME,
   CONTEXT_JOURNAL_REL,
   NEXUS_DIR,
   PROPERTY_JOURNAL_REL,
-  thumbsRel,
+  THUMBNAILS_SEGMENT,
   TRASH_DIR,
 } from './nexusPaths'
-import { escapes } from './pathSafety'
 
 /** None is content, and a journal's churn must never cost a walk. */
 const STORE_FILE = /\.db(-wal|-shm)?$/
@@ -23,21 +23,26 @@ export function neverWatched(seg: string): boolean {
   )
 }
 
+const thumbnailSegs = (segs: string[]): boolean =>
+  segs.length > 3 &&
+  segs[0] === NEXUS_DIR &&
+  segs[1] === ASSETS_DIRNAME &&
+  segs[3] === THUMBNAILS_SEGMENT
+
 export function manifestAdmits(
-  nexusId: string,
   scope: WatchScope,
 ): (rel: string, siblings?: ReadonlySet<string>) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
-  const thumbs = thumbsRel(nexusId)
   return (rel, siblings) => {
-    if (!rel || escapes(rel)) return false
+    if (!rel || rel === '..' || rel.startsWith('../') || rel.startsWith('/')) return false
     const segs = rel.split('/')
     const name = segs[segs.length - 1]
     if (TEMP_SUFFIX.test(name) && siblings?.has(name.replace(TEMP_SUFFIX, ''))) return false
-    if (segs[0] === TRASH_DIR) return !segs.slice(1).some(neverWatched)
-    if (rel === thumbs || rel.startsWith(`${thumbs}/`)) return false
+    if (segs[0] === TRASH_DIR)
+      return !segs.slice(1).some(neverWatched) && !isExcluded(segs.slice(1))
+    if (thumbnailSegs(segs)) return false
     if (rel === PROPERTY_JOURNAL_REL || rel === CONTEXT_JOURNAL_REL) return false
     if (isAsset(segs)) return !segs.slice(assetDepth).some(neverWatched)
     return !segs.some(neverWatched) && !isExcluded(segs)
