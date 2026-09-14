@@ -231,20 +231,24 @@ describe('sync:state', () => {
     expect(secretsA.map.has(ringName(NEXUS))).toBe(true)
   })
 
-  it('forgets its keys and reports the revoked reason when the hub reports it revoked', async () => {
+  it('reports the revoked reason and forgets nothing when the hub reports it revoked', async () => {
     const hub = newHub()
     await seedInfo(hub, [deviceA])
     hub.devices = [record(deviceA, true)]
     await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
     expect(secretsA.map.has(ringName(NEXUS))).toBe(true)
     hub.approved = false
+    const held = currentStatus()
+
     const state = await unwrap<{ status: { reason?: string; why?: string } }>(
       syncHandlers['sync:state'](host(hubAnswer(hub))),
     )
+
     expect(state.status.reason).toBe('revoked')
     expect(state.status.why).toBe('This device was revoked.')
-    expect([...secretsA.map.keys()]).toEqual([])
-    expect(heldRing(NEXUS)).toBeNull()
+    expect(secretsA.map.has(ringName(NEXUS))).toBe(true)
+    expect(heldRing(NEXUS)).not.toBeNull()
+    expect(currentStatus()).toEqual(held)
   })
 })
 
