@@ -1,5 +1,5 @@
-import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
+import { detail } from '@pommora/core/Testing/fixtures'
 import { describe, expect, it } from 'vitest'
 import { act, createElement, isValidElement } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -12,9 +12,7 @@ import { tileWarmSeam, useEditorHost } from './editorHost'
 describe('tileWarmSeam', () => {
   it('round-trips a capture per host chain', () => {
     const seam = tileWarmSeam(['Host.md', 'Target.md'])
-    cachePageDetail(
-      detail({ id: 'Target.md', title: 'Target.md', path: 'Target.md', body: 'hello' }),
-    )
+    cachePageDetail(detail({ path: 'Target.md', body: 'hello' }))
     seam.capture({ editorState: { doc: 'hello' }, scrollTop: 42 })
     expect(seam.restore()).toEqual({ editorState: { doc: 'hello' }, scrollTop: 42 })
     expect(tileWarmSeam(['Other.md', 'Target.md']).restore()).toBeUndefined()
@@ -22,11 +20,11 @@ describe('tileWarmSeam', () => {
 
   it('a foreign edit to the page drops the entry', () => {
     const seam = tileWarmSeam(['Host.md', 'Edited.md'])
-    cachePageDetail(detail({ id: 'Edited.md', title: 'Edited.md', path: 'Edited.md', body: 'v1' }))
+    cachePageDetail(detail({ path: 'Edited.md', body: 'v1' }))
     seam.capture({ editorState: { doc: 'v1' }, scrollTop: 10 })
-    cachePageDetail(detail({ id: 'Edited.md', title: 'Edited.md', path: 'Edited.md', body: 'v2' }))
+    cachePageDetail(detail({ path: 'Edited.md', body: 'v2' }))
     expect(seam.restore()).toBeUndefined()
-    cachePageDetail(detail({ id: 'Edited.md', title: 'Edited.md', path: 'Edited.md', body: 'v1' }))
+    cachePageDetail(detail({ path: 'Edited.md', body: 'v1' }))
     expect(seam.restore()).toBeUndefined()
   })
 })

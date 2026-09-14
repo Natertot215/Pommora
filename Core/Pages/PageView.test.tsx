@@ -1,5 +1,5 @@
-import { detail } from '@pommora/core/Testing/fixtures'
 // @vitest-environment jsdom
+import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import { act, createElement } from 'react'
@@ -10,7 +10,12 @@ import { PageView } from './PageView'
 import { stubDialer } from '../vitest.setup'
 import { undo } from '@codemirror/commands'
 import { machine } from '../Platform/machine'
-import { cachePageDetail, clearCache, notifyLanding } from '../Session/pageDetailCache'
+import {
+  cachePageDetail,
+  clearCache,
+  dropPageDetail,
+  notifyLanding,
+} from '../Session/pageDetailCache'
 import { flushPageSave, setStaleSaveSink } from '../Session/saveScheduler'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -29,6 +34,7 @@ beforeEach(() => {
   onDisk = 'live'
   updateReply = { ok: true, value: { hash: machine().sha256Hex('live'), stale: false } }
   captured = vi.fn(async () => ok(null))
+  updated = vi.fn(async () => updateReply)
   const empty = { get: vi.fn(async () => ok({})), set: vi.fn(async () => undefined) }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'headingIcon:get': empty.get,
@@ -42,7 +48,7 @@ beforeEach(() => {
     'tableHeadingCols:get': empty.get,
     'tableHeadingCols:set': empty.set,
     'page:open': vi.fn(async (path: string) => ok(detail({ id: 'a', path, body: onDisk }))),
-    'page:updateBody': vi.fn(async () => updateReply),
+    'page:updateBody': updated,
     'sync:captureLocal': captured,
     'editor:format-state': vi.fn(),
     'menu:action': vi.fn(() => () => undefined),
@@ -64,6 +70,7 @@ afterEach(async () => {
 let onDisk: string
 let updateReply: unknown
 let captured: ReturnType<typeof vi.fn>
+let updated: ReturnType<typeof vi.fn>
 
 const PATH = 'Notes/a.md'
 
@@ -134,6 +141,39 @@ describe('a landing under the open page', () => {
     })
     expect(view.state.doc.toString()).toBe('alpha\nbeta\ngamma\ndelta')
     expect(captured).not.toHaveBeenCalled()
+  })
+
+  it('captures the buffer and takes remote when no base is held', async () => {
+    const view = await mount()
+    onDisk = `${BASE}\ndelta`
+    await act(async () => {
+      view.dispatch({ changes: { from: 5, insert: ' ONE' } })
+    })
+    const local = view.state.doc.toString()
+    dropPageDetail(PATH)
+    await act(async () => {
+      notifyLanding(PATH)
+    })
+    expect(captured).toHaveBeenCalledWith(PATH, local)
+    expect(view.state.doc.toString()).toBe(onDisk)
+  })
+
+  it('saves the merged text when the dispatch is a no-op', async () => {
+    const view = await mount()
+    onDisk = BASE
+    await act(async () => {
+      view.dispatch({ changes: { from: 5, insert: ' ONE' } })
+    })
+    const local = view.state.doc.toString()
+    updated.mockClear()
+    await act(async () => {
+      notifyLanding(PATH)
+    })
+    expect(view.state.doc.toString()).toBe(local)
+    await act(async () => {
+      await flushPageSave(PATH)
+    })
+    expect(updated).toHaveBeenCalledWith(PATH, local, machine().sha256Hex(BASE))
   })
 
   it('routes a stale save through the same merge', async () => {
