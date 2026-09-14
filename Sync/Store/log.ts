@@ -171,7 +171,7 @@ export function logStore(db: DatabaseSync) {
         upsertItem.run(nexusId, path, seq, 1)
       } else {
         const moved = live && recordOf(nexusId, live.version)
-        const record = moved === null ? null : JSON.stringify({ ...moved, path })
+        const record = moved === null ? null : JSON.stringify(moved)
         dropItem.run(nexusId, path)
         moveItem.run(path, seq, nexusId, change.from)
         insertChange.run(nexusId, seq, 'rename', path, change.from, record, device, atMs)
