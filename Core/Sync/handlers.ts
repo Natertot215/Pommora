@@ -125,7 +125,7 @@ async function state(root: string, ctx: HostContext): Promise<Result<SyncState>>
   const outcome = await call(host, binding, 'devices', { nexusId })
   const revoked = outcome.status === 404 && (await host.secrets.get(ringName(nexusId))) !== null
   if (revoked) {
-    stopSession(ctx)
+    await stopSession(ctx)
     await forgetKeys(host, nexusId)
     setStatus(ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
   }
@@ -369,7 +369,7 @@ export const syncHandlers = {
     async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
       const r = await ready(root, ctx)
       if (!r.ok) return r
-      stopSession(ctx)
+      await stopSession(ctx)
       for (const row of readAllBases()) deleteBase(row.path)
       forgetHeldRing(r.value.nexusId)
       return writeValue('sync', null) ? state(root, ctx) : NO_STORE

@@ -56,7 +56,7 @@ export async function openNexusSequence(
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
   await replayPendingRename(root)
-  stopSession(ctx)
+  await stopSession(ctx)
   ctx.openStores(root)
   if (root !== priorRoot) {
     void sweepFileHistory(root)
