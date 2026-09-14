@@ -86,7 +86,7 @@ export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
   const { device, key } =
     stored && loaded ? { device: stored, key: loaded } : await mint(userDataDir)
   const agreement = await ensureAgreementKey(userDataDir, device)
-  const record: SyncDevice = { ...device, x25519: agreement.x25519 }
+  const record = { ...device, x25519: agreement.x25519 }
   const host: HostDevice = {
     ...record,
     async sign(canonical: string): Promise<string> {

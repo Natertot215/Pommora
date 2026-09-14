@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import type { HostDevice, TransportReply, TransportRequest } from '../../Contract/handlers'
 import { machine } from '../../Platform/machine'
+import { memorySecrets, TEST_PUBLIC_KEY } from '../../Testing/syncDevice'
 import { replyOf } from '../../Testing/transportReplies'
 import { canonicalString } from '../Contract/canonical'
 import { call, type SyncHost } from './call'
 
 const DEVICE_ID = 'fe1c'
-const PUBLIC_KEY = 'k'.repeat(43)
 
 function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
   host: SyncHost
   signed: string[]
   sent: TransportRequest[]
 } {
-  const kept = new Map<string, string>()
   const signed: string[] = []
   const sent: TransportRequest[] = []
   const device: HostDevice = {
     id: DEVICE_ID,
-    publicKey: PUBLIC_KEY,
+    publicKey: TEST_PUBLIC_KEY,
     name: 'Recorder',
+    x25519: 'x'.repeat(43),
     sign: async (canonical) => {
       signed.push(canonical)
       return 'sig'
@@ -32,17 +32,10 @@ function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
     if (reply instanceof Error) throw reply
     return replyOf(reply)
   }
-  const secrets = {
-    get: async (name: string) => kept.get(name) ?? null,
-    set: async (name: string, value: string | null) => {
-      if (value === null) kept.delete(name)
-      else kept.set(name, value)
-    },
-  }
-  return { host: { device, transport, secrets, push: () => {} }, signed, sent }
+  return { host: { device, transport, secrets: memorySecrets(), push: () => {} }, signed, sent }
 }
 
-const connectBody = { nexusId: 'nx', publicKey: PUBLIC_KEY, name: 'Recorder' }
+const connectBody = { nexusId: 'nx', publicKey: TEST_PUBLIC_KEY, name: 'Recorder' }
 
 describe('call', () => {
   it('sends the route under the address and signs the canonical string over the body it sent', async () => {
