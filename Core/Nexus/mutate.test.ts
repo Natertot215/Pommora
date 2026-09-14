@@ -23,6 +23,7 @@ import { readNexus } from './readNexus'
 import { pathExists } from '../Files/atomicWrite'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
+import * as tap from '../Sync/Client/tap'
 
 let root: string
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
@@ -265,6 +266,29 @@ describe('handleMutate — delete', () => {
     expect(r.ok).toBe(true)
     expect(trashToSystem).toHaveBeenCalledOnce()
     expect(trashToSystem.mock.calls[0][0]).toContain('Beta.md')
+  })
+})
+
+describe('handleMutate — sync tap', () => {
+  it('reports a page rename and a page move to the sync tap', async () => {
+    const reported = vi.spyOn(tap, 'reportRename').mockImplementation(() => {})
+    await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Archive', '_pageset.json'), JSON.stringify({ id: 'arc' }))
+
+    await handleMutate(
+      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
+      nexusDeps,
+    )
+    await handleMutate(
+      { op: 'movePage', path: 'Notes/Daily/Gamma.md', newParentPath: 'Notes/Archive' },
+      nexusDeps,
+    )
+
+    expect(reported.mock.calls).toEqual([
+      ['Notes/Daily/Beta.md', 'Notes/Daily/Gamma.md'],
+      ['Notes/Daily/Gamma.md', 'Notes/Archive/Gamma.md'],
+    ])
+    reported.mockRestore()
   })
 })
 
