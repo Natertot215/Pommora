@@ -25,15 +25,18 @@ export const pagesHandlers = {
     return ok(await readPageDetail(root, relPath))
   }),
 
-  'page:updateBody': withRoot(async (root, ctx, relPath: unknown, body: unknown) => {
-    if (!isString(relPath)) return fail('operation-failed', 'A page path is required.')
-    if (!isString(body)) return fail('operation-failed', 'A body string is required.')
-    const resolved = await resolveUnderRoot(root, relPath)
-    if (!resolved.ok) return resolved
-    const r = await writeBody(root, resolved.value, body, 'edit')
-    pushValueChanges(ctx, root)
-    return r
-  }),
+  'page:updateBody': withRoot(
+    async (root, ctx, relPath: unknown, body: unknown, baseHash: unknown) => {
+      if (!isString(relPath)) return fail('operation-failed', 'A page path is required.')
+      if (!isString(body)) return fail('operation-failed', 'A body string is required.')
+      if (!isString(baseHash)) return fail('operation-failed', 'A base hash is required.')
+      const resolved = await resolveUnderRoot(root, relPath)
+      if (!resolved.ok) return resolved
+      const r = await writeBody(root, resolved.value, body, 'edit', baseHash)
+      pushValueChanges(ctx, root)
+      return r
+    },
+  ),
 
   'history:list': async (_ctx, pageId: unknown) => {
     if (sessionRoot() === null) return NO_NEXUS

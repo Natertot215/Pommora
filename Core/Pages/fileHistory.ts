@@ -14,6 +14,7 @@ import {
 import { readFileHistoryConfig } from '../Settings/settings'
 import { liveIdOf, livePathOf, noteValueWrite } from '../Nexus/valuesChanged'
 import { updatePageBody } from '../Nexus/page'
+import type { BodyWrite } from './pageDetail'
 
 export const SNAPSHOT_MAX_BYTES = 1_048_576
 
@@ -105,9 +106,11 @@ export async function writeBody(
   absPath: string,
   body: string,
   source: 'edit' | 'restore',
-): Promise<Result<null>> {
-  const r = await updatePageBody(absPath, body)
+  baseHash?: string,
+): Promise<Result<BodyWrite>> {
+  const r = await updatePageBody(absPath, body, baseHash)
   if (!r.ok) return r
+  if ('stale' in r.value) return ok({ hash: bodyHash(r.value.stale), stale: true })
   const { previous, written } = r.value
   const pageId = liveIdOf(root, absPath)
   const known = pageId ? lastWritten.get(pageId) : undefined
@@ -126,7 +129,7 @@ export async function writeBody(
     if (source === 'edit') await arm(root, pageId, 'edit')
     else disarm(pageId)
   }
-  return ok(null)
+  return ok({ hash: writtenHash, stale: false })
 }
 
 export function noteExternalEdit(root: string, absPath: string): void {

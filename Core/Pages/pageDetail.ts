@@ -4,4 +4,10 @@ export interface PageDetail {
   path: string
   frontmatter: Record<string, unknown>
   body: string
+  bodyHash: string
+}
+
+export interface BodyWrite {
+  hash: string
+  stale: boolean
 }

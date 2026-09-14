@@ -3,7 +3,7 @@ import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { FormatState } from '../Actions/editorMenu'
 import type { SavedView } from '../Views/views'
-import type { PageDetail } from '../Pages/pageDetail'
+import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { ClearReport, TrashMode, TrashRow } from '../Trash/trashRow'
 import type { NavigationState } from '../Navigation/navRef'
 import type { GlanceSize, StoredTabSet, WindowsFile } from '../Interface/Windows/windowRecord'
@@ -53,7 +53,10 @@ export interface Asks {
   'exclusions:count': { args: []; reply: Result<number> }
 
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
-  'page:updateBody': { args: [relPath: string, body: string]; reply: Result<null> }
+  'page:updateBody': {
+    args: [relPath: string, body: string, baseHash: string]
+    reply: Result<BodyWrite>
+  }
 
   'history:list': { args: [pageId: string]; reply: Result<number[]> }
   'history:read': { args: [pageId: string, ts: number]; reply: Result<string> }

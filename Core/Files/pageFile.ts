@@ -152,12 +152,14 @@ export async function readPageDetail(rootPath: string, relPath: string): Promise
   const content = await machine().readText(absFile)
   if (content === null) throw new Error(`Page not found: ${relPath}`)
   const frontmatter = splitFrontmatter(content)
+  const body = splitEnvelope(content).body
   return {
     id: contentId(frontmatter) ?? adoptedId(relPath),
     title: basenameNoMd(basename(relPath)),
     path: relPath,
     frontmatter,
-    body: splitEnvelope(content).body,
+    body,
+    bodyHash: machine().sha256Hex(body),
   }
 }
 

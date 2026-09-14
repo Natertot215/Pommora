@@ -1,7 +1,7 @@
 import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
 import { newContentId } from './ids'
-import { type PageWrite, writePageFile } from '../Files/pageFile'
+import { type PageWrite, splitEnvelope, writePageFile } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import {
@@ -73,9 +73,17 @@ export async function renamePage(
   return ok({ path: target })
 }
 
-export async function updatePageBody(absFile: string, body: string): Promise<Result<PageWrite>> {
+export async function updatePageBody(
+  absFile: string,
+  body: string,
+  baseHash?: string,
+): Promise<Result<PageWrite | { stale: string }>> {
   return machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
+    if (baseHash !== undefined) {
+      const current = splitEnvelope((await machine().readText(absFile)) ?? '').body
+      if (machine().sha256Hex(current) !== baseHash) return ok({ stale: current })
+    }
     try {
       return ok(await writePageFile(absFile, {}, [], body))
     } catch (e) {

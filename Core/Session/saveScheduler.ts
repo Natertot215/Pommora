@@ -1,7 +1,7 @@
 // One debounced writer PER PATH, shared by every host that edits a page, so the newest edit from ANY host owns the file's single pending write rather than hosts racing private debounces to last-writer-wins.
 
 import type { StoredTabSet, WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
-import { writeThroughBody } from './pageDetailCache'
+import { fetchPageDetail, readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
 import { host } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 400
@@ -59,12 +59,26 @@ export function createBodyWriter(): BodyWriter {
 
 const pageWriter = createBodyWriter()
 
+let staleSink: ((path: string) => void) | null = null
+
+export function setStaleSaveSink(fn: ((path: string) => void) | null): void {
+  staleSink = fn
+}
+
 export function schedulePageSave(path: string, body: string): void {
-  // Write through to the warm detail slot immediately, so a remounting embed inside the debounce window can never seed on pre-edit prose; re-asserted inside the write so cache and disk still converge across a failed write's requeue.
   writeThroughBody(path, body)
-  pageWriter.schedule(path, body, () => {
+  pageWriter.schedule(path, body, async () => {
     writeThroughBody(path, body)
-    return host().ask('page:updateBody', path, body)
+    let base = readBodyBase(path)
+    if (!base) {
+      await fetchPageDetail(path)
+      writeThroughBody(path, body)
+      base = readBodyBase(path)
+    }
+    const r = await host().ask('page:updateBody', path, body, base?.hash ?? '')
+    if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash })
+    else if (r.ok) staleSink?.(path)
+    return r
   })
 }
 
@@ -73,7 +87,6 @@ export function flushPageSave(path: string): Promise<void> {
   return pageWriter.flush(path)
 }
 
-/** A body replaced from outside the editor must not be overwritten by the text it replaced. */
 export function cancelPageSave(path: string): void {
   pageWriter.cancel(path)
 }
