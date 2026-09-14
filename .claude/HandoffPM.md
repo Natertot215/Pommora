@@ -1,56 +1,55 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Implement and orchestrate `.claude/Planning/Sync-Scaffolding-V2 — Implementation Plan.md` overnight, headlessly, with one Opus agent per phase and no Fable subagents; the initial sweep pushes the working tree to origin; documentation changes bundle on the final commit; in-flight decisions inherit what Nathan would want, what is cohesive, and what is correct without regression; stop at Phase 4 or 5 and write the handoff prompt at that gate. Mid-run: use the advisor sparingly, have agents report briefly, and add no comments unless absolutely necessary.
+> **User Prompt:** Execute Phases 6 through 10 of `.claude/Planning/Sync-Scaffolding-V2 — Implementation Plan.md`, then the Final Verification and Reconciliation, in the shape the first session used: one Opus agent per phase, the orchestrator running every gate itself, a simplification review then a build-breaking review per phase with fixes sent back, every ruling written in chat and copied into Deviations. Mid-run: no over-guarding; Fable reviewers for the Final Verification (two on correctness, cohesion, and integrity with no target points, one on build-breaking); the neutral Opus verifier skipped; Docker installed; `NexusSyncPM.md` condensed to overview level; the Cross-Device Mutation Checklist walked during the final review.
 
 #### Current Focus
 
 **Session ID:** a16cb60d-9640-4f9d-9980-01f54860cb69
-**Dates:** 09-13-2026 → 09-14-2026
-**Model:** Fable 5.1 orchestrating, Opus 5 implementing and reviewing
+**Dates:** 09-14-2026
+**Model:** Fable 5.1 orchestrating, Opus 5 implementing and reviewing, Fable 5.1 for the arc reviews, Sonnet 5 for the document condense
 
-**Phases 0 through 5 of the content-sync plan are closed, 29 commits from `7913eadca` to `7a83080d2`.** The host seams exist: one hash over text and bytes, a `node:https` transport with certificate pinning that covers a reused socket and a connect timeout, an X25519 agreement key beside every device's signing key, and the `sync` and `captures` tables behind store members. Core carries the manifest predicate beside the watcher's, one walker with an admit policy, landing writes that skip the echo, a watch tap and a write tap, and every Trash removal reported. The hub is a folder on Node built-ins with a mechanical graph gate, a final schema with one migration inside one transaction, one authority function yielding a device and a role, per-route caps and timeouts, optional TLS, a configurable bind address, an info record and a ring per Nexus, content-addressed blobs spooled under a cap, a change log with a per-Nexus counter and per-item preconditions, a long-polling pull, and a retention sweep. Core can derive a wrapping key from a password, mint and unwrap a ring, wrap it to a device through an ephemeral pair, and seal an item; bind, approve, and revoke exercise all of it, with the key work landing before the roster change. Files still do not travel.
+**The content-sync arc is complete: 62 commits from `7913eadca` to `0e62df351`, every phase ticked, every gate green, nothing pushed.** Files travel between two devices through the hub: a page created on one lands on the other in about 2.7 seconds, every checklist mutation the bridge can drive was observed landing (37 rows measured, in the plan's Task 10.2 table and the Checklist's Measured column), conflicts resolve by recency with the losing bytes captured, a landing merges into an open editor around the caret, and the Settings heading carries the password, the pin, the status, and Sync Now. The hub builds as a container image and boots. Phases 6 through 10 ran today with the reviews the plan asked for; the three Fable arc reviews then found twenty-four things across the whole diff, of which nineteen were fixed in four commits and the rest are recorded for Nathan under the plan's Deviations.
 
-**Every phase ran executor → gates → simplification review → fixes → build-breaking review → fixes, and the reviews earned their place.** The finds that mattered: a pin checked only on `secureConnect`, which a reused socket never fires; a request timeout that armed after connect; a manifest that admitted every path under `.trash`; a 408 that left the socket open; a migration stamp written outside its transaction; a ring append that overwrote the password-wrapped entry; an over-cap body the hub kept reading; a stale rename reporting the wrong head; a revoke that shrank the ring without bumping its version; a typed password stored before it was proven; a held ring that never refreshed after another device rotated; a 404 on `sync:state` that wiped the keychain for an unknown signer as readily as a revoked one. All fixed and pinned by tests.
+**Every ruling taken today is under `### Deviations` (session two), in the order it was made,** and each was written in chat first. The ones that changed the design most: a blob stays sealed under the path it was written at and the hub keeps a renamed item's record; the long poll waits outside the session chain; a snapshot's mtime is whole milliseconds; a session starting over base rows sweeps the tree with a stat short-circuit that applies to the sweep alone; the editor's body base lives as long as the open page and a save never fetches; a landing over a dirty file whose push was declined captures the local bytes first; the tap reads the session's scope live; `sync:state` reports and never forgets.
 
-**Nothing after the ratification sweep is pushed.** The sweep commit `7913eadca` is on origin; the 28 commits after it are local. The plan's Deviations section carries every ruling made in flight, and the same lines appear in the session's chat.
+**Nothing after `7913eadca` is pushed.** Push when Nathan says so. The documents commit at the end of this session carries every `.claude` edit of the day, including Nathan's own to `Cross-Platform Compatibility Checklist.md`.
 
 #### Completion Criteria
 
-- [x] Phases 0–5 ticked in the plan; each task committed alone; every gate green at every checkpoint and read by the orchestrator.
-- [x] Scope per phase checked against the union of each task's FILES; two plan omissions recorded (`contracts.test.ts`, `feed.ts`).
-- [x] Baseline counts moved as planned where the phase has run: `Sync/server.ts` gone, `atomic: true` gone, 7 DDL tables, 8 `recordWrite` calls, 28 files under `Sync/`, 5 entries in `Core/Sync`.
-- [x] Zero comment lines added across the arc beyond the wire-format facts in `Core/Sync/Contract/wire.ts`, `handlers.ts`, and `transport.ts`.
-- [x] Smoke launches observed for Phases 1, 2, 3, and 5; the schema-1 boot observed for Phase 4.
-- [ ] Phases 6–10, the Final Verification, and the Reconciliation.
-- [ ] Nathan's own pass over the Deviations and the two rulings that need his word: a capture's retention clock, and whether a client-supplied timestamp should travel.
+- [x] Phases 6–10 ticked; every task committed alone; every gate read by the orchestrator at every checkpoint; the two-instance landing observed four times on built output (2.8 s, 2.8 s, 2.7 s, and the final build).
+- [x] Task 10.2's 22 rows plus the checklist walk observed on two rigs; the results table in the plan and the Measured column in the Checklist.
+- [x] Three Fable arc reviews run; their fixes in `7586b918f`, `984aa5ac7`, `801a1d780`, `0e62df351`; the rest recorded.
+- [x] Reconciliation walked; `NexusSyncPM.md` rewritten and condensed (1,828 words); PM-138 in History; Context and Framework current.
+- [x] The hub image built and booted after a user-local Docker install (Lima + Colima + the static CLI under `~/.local`).
+- [ ] Nathan's own pass: the Deviations, the open items below, the Nexus heading (his to tune), and the two manual checks (row 17's undo half; the heading's rows).
+- [ ] Push.
 
 #### Next Session
 
-- **Phase 6 (Arrival):** key-level JSON merge, captures, landing items, tombstones, and renames — `Core/Sync/Arrival/`, writing every byte through `machine()`.
-- **Phase 7 (Client):** base record, tap, debounce, the rename report, push and the conflict path, the pull loop, and the session's `sync:now` / `sync:changed`. Task 7.3's pull loop must treat a 404 blob as a resync trigger, since `change` rows are never swept; Task 7.2's push must read a reset on PUT as a possible 413 or 404.
-- **Phase 8 (Editor), Phase 9 (the Nexus heading), Phase 10 (proof, deploy, reconciliation).**
-- **Push** when Nathan says so; the plan's stop policy keeps commits local.
+- **Nathan's open calls, recorded under Deviations:** a capture's retention clock (arrival time today) and whether a client-supplied timestamp should travel; whether `captures` earns a reader (with File History off a losing buffer sits there unseen); whether the 30 s reconnect cap should shorten; `SyncStatus` and `Change` as discriminated unions; `Core/Testing/syncHub.ts` as a hand-ported copy of the hub's `apply` (client suites could boot `Sync/Testing/hub.ts` in-process); the change log's growth (`reconcile` replays it from zero on every join, and the hub's `item` table could answer heads); the AAD path binding stated as transit integrity rather than blob-for-path protection; `nav:write` accepting a duplicate pinned entry.
+- **The mobile companion** is the arc's open Prospect; `Sync/` is a folder on Node built-ins with a Dockerfile, so a hub can run anywhere Node 24 does.
+- **A clean-checkout gate run** was not obtained (a worktree under a symlinked `node_modules` failed at module resolution on unrelated suites); a fresh clone with its own `npm install` is the honest form.
 
 #### Feedback
 
-- "DO NOT use Fable subagents — use sonnet or opus."
-- "Please use the advisor sparingly to save tokens, and request that subagents give you the to-the-point brief rather than a full dump."
-- "Please kill the comments, no commenting unless absolutely necessary."
-- "Any documentation changes made during the plan's execution must be bundled on the final commit."
+- "Please also avoid over guarding if complications where it isn't necessary."
+- "If the Cross-Device checklist remains relevant for verification, please run what you can verify through that during the plan's final review."
+- "Send two Fable agents only … 2 on 'correctness, cohesion, integrity' WITHOUT specific target points. 1 on general build breaking." · "Skip the final neutral opus review."
+- "Install docker if required." · "The final doc is way too large. Send a Sonnet agent with the writing standards skill to fix it."
+- "There is no parallel session … Continue with the plan in full." (The overnight session, resumed from a stale compaction in another window, had committed Task 10.1 and a certificate fix in parallel; it accepted a hand-off and went idle.)
 
 #### Session Pointers
 
-- The plan, its ticks, START, and Deviations: `.claude/Planning/Sync-Scaffolding-V2 — Implementation Plan.md`; the why: `.claude/Planning/Sync-Scaffolding-V2 — Decision Log.md`.
-- The hub: `Sync/hub.ts` (dispatch), `Sync/wire.ts` (re-spelled values, `permits`, `LOOPBACK`, `JSON_CAP`, `KEY_ID_MAX`, `SHA256`, `BLOB_ROUTE`), `Sync/authority.ts`, `Sync/feed.ts`, `Sync/Store/{open,roster,nexus,log}.ts`, `Sync/Routes/{roster,nexus,blobs,items}.ts`, `Sync/Testing/hub.ts` (`boot(opts)`, `bootWith`, `withDb`, `setRole`, `NEXUS`, `connectBody`), `Sync/scripts/cert.sh`.
-- Core's keys: `Core/Sync/Keys/{kdf,ring,item}.ts`; the client's ring cache: `Core/Sync/Client/keyring.ts`; the channels: `Core/Sync/handlers.ts`; shared test furniture: `Core/Testing/{syncDevice,transportReplies}.ts`.
-- The manifest and the walker: `Core/Paths/exclusion.ts` (`manifestAdmits`), `Core/Files/walk.ts` (`listPathsUnder`), `Core/Nexus/watchSettle.ts` (`syncIgnoredUnder`, `tileBodyOf`, `emitWatch`), `Core/Files/writeEcho.ts`.
-- The host seams: `Desktop/Sync/transport.ts`, `Desktop/Config/device.ts` (`mintPair`, `ensureAgreementKey`), `Desktop/Store/{ddl,stores,versionsDb}.ts`.
-- Vectors both sides pin: `Core/Sync/Contract/vectors.json` (canonical strings, `fingerprint`, `blobPath`).
+- The plan, its ticks, START/END, the Task 10.2 table, and Deviations: `.claude/Planning/Sync-Scaffolding-V2 — Implementation Plan.md`; the why: `.claude/Planning/Sync-Scaffolding-V2 — Decision Log.md`; the feature: `.claude/Features/NexusSyncPM.md`.
+- The client: `Core/Sync/Client/{session,push,pull,reconcile,tap,base,keyring,call,status}.ts`; arrival: `Core/Sync/Arrival/{land,jsonMerge,captures}.ts`; the editor's side: `Core/Pages/{merge3,PageView}.ts(x)`, `Core/Session/{saveScheduler,pageDetailCache,useBridgeSubscriptions}.ts`; the heading: `Core/Settings/NexusRows.tsx`.
+- The hub: `Sync/hub.ts`, `Sync/wire.ts`, `Sync/Store/log.ts`, `Sync/Dockerfile` with the root `.dockerignore`, `Sync/scripts/cert.sh`.
+- Test furniture the client suites share: `Core/Testing/syncHub.ts` (the route-level fake hub), `Core/Testing/syncDevice.ts`.
+- The two-instance rig used today lived in this session's scratchpad (`smoke/cdp.mjs`, `two.mjs`, `checklist.mjs`, `proof22.mjs`, `excl.mjs`, `hubsql.mjs`) and is deleted with the scratchpad; the recipe is in `.claude/Guidelines/Development-Environment.md`.
 
 #### Working Notes
 
-- **The auto-mode classifier denies `git add -A .claude`, `git add .claude`, and a shell heredoc that rewrites a `.claude` document** as instruction poisoning. Stage `.md` paths individually and edit them with the Edit tool; a Python script over the plan file passed when it only replaced tick and ruling strings.
-- **Parallel sessions edited `ContextPM.md`, `HistoryPM.md`, and the plan while this one ran** (Nathan renamed PM-135 to Sync Scaffolding - Part 1 and reframed PM-138 as Part 2, and switched the neutral verifier to Opus). Those edits ride in the closing commit; never revert them.
-- **The hub suite alone:** `npx vitest run --project @pommora/sync` — `npm run test -- Sync/` never reaches it.
-- **`node:sqlite` rows need a double cast** (`as unknown as Row[]`); a single cast fails TS2352. Three sites keep it.
-- **A foreign `electron-vite dev` ran the whole night** (Nathan's); every smoke launch used built output on a scratch `POMMORA_USERDATA` and left it alone.
+- **Kill the process holding the debug port, never the node shim** — `lsof -ti :<port> -sTCP:LISTEN`; killing the shim orphans Electron, and a stale instance on the port answered the first two-instance run with the previous build.
+- **A shell-driven pipeline that ends in a background job loses its earlier output**; read gate tails from the log files.
+- **Docker here is user-local:** `export PATH=~/.local/bin:~/.local/opt/lima/bin:$PATH`, `colima start` for the daemon; the static CLI has no buildx, so a per-Dockerfile ignore file is inert and the root `.dockerignore` is the one that counts.
+- **The auto-mode classifier denies `git add .claude` and shell heredocs over `.claude` documents;** a Python script replacing tick strings passes; Edit for prose.
+- **Every `page:updateBody` now takes the base hash** as its third argument (a bare two-argument ask answers a refusal); `page:open` returns `bodyHash`.

@@ -2,9 +2,10 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-13-2026 → 09-14      | PM-138 | Sync Scaffolding - Part 2                            |
 | 09-12-2026              | PM-137 | One Drag Engine                                      |
 | 09-11-2026              | PM-136 | One View Mechanism                                   |
-| 09-11-2026              | PM-135 | Sync Groundwork                                      |
+| 09-11-2026              | PM-135 | Sync Scaffolding - Part 1                            |
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
 | 09-07-2026              | PM-132 | State Placement                                      |
@@ -140,6 +141,24 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-138 || Sync Scaffolding - Part 2
+**DATE:** 09-13-2026 → 09-14
+
+Content began crossing between devices on the identity layer Part 1 left. A device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back; the hub's per-Nexus counter is the conflict authority, recency resolves a refused push, and the loser is kept on both ends rather than overwritten.
+
+**What Travels:** `manifestAdmits` in `Core/Paths/exclusion.ts` joined `neverWatched` and is defined from it — the watcher's set plus `.trash`, minus the store files, the navigation thumbnails, and the two cascade journals. `Core/Files/walk.ts` `listPathsUnder` became the one walker taking an admit policy, and `Core/Nexus/watchSettle.ts` gained `syncIgnoredUnder` and `tileBodyOf` so chokidar admits tile bodies for the sync tap alone.
+
+**The Hub:** `Sync/server.ts` became the `Sync/` folder — `hub.ts` for dispatch, `authority.ts` for the one function resolving a caller to a device row and a role, `feed.ts` for the long poll's waiter registry, `Routes/` and `Store/` per concern — with a graph test holding every import to `node:*`, a relative path, or an `import type` from Core. The store gained the Nexus info record, the key ring, the change log with its `item` heads, content-addressed blobs spooled under a fifty-megabyte cap, captures, and request ids; `membership` gained a `role` column, and per-route caps, timeouts, and optional TLS with a printed certificate fingerprint landed with them.
+
+**Keys:** `Core/Sync/Keys/` reaches crypto through `globalThis.crypto.subtle` alone — `kdf.ts` derives a wrapping key from an NFKC-normalized password by PBKDF2 at six hundred thousand iterations, `ring.ts` mints, wraps, and unwraps ring entries under AES-GCM with an HKDF-derived key for device wraps over an ephemeral X25519 pair, and `item.ts` seals a file with the key id and its NFC path as additional authenticated data. `Desktop/Config/device.ts` mints that X25519 pair beside the Ed25519 key and answers `HostDevice.agree`; `Desktop/Sync/transport.ts` moved to `node:http` and `node:https` with certificate pinning that holds on a reused socket.
+
+**Client And Arrival:** `Core/Sync/Client/` carries the base record in a new `sync` table of `nexus.db`, a tap over the watcher and the write funnel debounced at 2,500 ms, push with the stale, missing-blob, and tombstone paths, a long-polling pull that waits outside the apply chain, and the first-bind reconcile. `Core/Sync/Arrival/` writes every landed byte through `machine()`: `land.ts` applies writes, deletes, and renames under the writer's mtime, `jsonMerge.ts` merges the `.nexus/` JSON and `_*.json` sidecars key by key against a recorded base, and `captures.ts` records a loser into the `captures` table of `versions.db`.
+
+**The Editor And The Heading:** `Core/Pages/merge3.ts` wraps `@codemirror/merge`'s `diff` into a three-way merge whose dispatch is diff-minimal, so a landing reaches an open page around the caret and outside undo; `page:updateBody` became compare-and-swap on the body hash the editor last held, with a refusal routing to that merge. Settings › General's Nexus heading gained the Nexus password, the hub's address and its pin, the sync status, and Connect, Disconnect, and Sync Now. `Core/Contract/bridge.ts` gained four channels for the arc: `sync:now`, `sync:captureLocal`, and the `pages:changed` and `sync:changed` pushes.
+
+- **Commits:** `6dcf34c07^..9be4a3f32`
+- **Diff:** Net +3501 | +4148 / -647
 
 #### PM-137 || One Drag Engine
 **DATE:** 09-12-2026

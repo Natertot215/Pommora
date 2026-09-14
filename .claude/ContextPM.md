@@ -2,16 +2,15 @@
 
 ### Current Focus
 
-**Pommora Sync has its identities.** Every install mints one Ed25519 key at first launch: the fingerprint of that key is the device's id, its public half and a name sit in the `device` field of `pommora.json`, and its private half sits keychain-encrypted in `secrets.json` beside it. `Sync/server.ts` is one Node file on built-ins that keeps which devices a Nexus admits, answering connect, devices, approve, and revoke to requests each signed by the device key, with no session and no account; `Core/Sync/` carries the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General's Nexus heading shows this device, the Nexus ID, the bound server, and the Nexus's device list with Approve and Revoke. What does not exist is everything above that line: no file content crosses, the phone has nothing on it, the Nexus password and content encryption are unwritten, the manifest rule deciding what travels is described rather than expressed as a predicate, and the server has run only on localhost. [[NexusSyncPM]] describes what stands.
+**Pommora Sync carries content.** A device encrypts each admitted file whole, ships it to a hub as a numbered change, and pulls the change log back through a long poll, so an edit on one Mac reaches another in about three seconds. The hub — the `Sync/` folder on Node's built-ins, with a change log, content-addressed ciphertext blobs, a per-Nexus key ring, one authority function, and optional TLS behind a pinned certificate — holds paths, versions, and ciphertext and never a body or a key. `Core/Sync/` carries the contract, the keys, the client's base record and push and pull loops, and the arrival path that lands a file under the writer's mtime, merges the `.nexus/` JSON key by key, and merges a landing into an open editor around the caret. Two instances on one Mac, bound to one hub over TLS, walked all twenty-two proof rows and the checklist mutations the bridge can drive — creation, bodies, properties, contexts, containers, views, schema, tiles, assets, trash, offline settings merges, an offline body conflict, and a revoke — each landing on the other side in about 2.7 seconds. The Windows machine is the first real second device and the phone is the open Prospect. [[NexusSyncPM]] describes what stands, and `// Planning`'s `Cross-Device Mutation Checklist.md` carries each mutation's own timing.
 
-**Next is the sync arc's content half.** The content sync rides the same server and identities the groundwork mints; `// Planning`'s `Cross-Device Mutation Checklist.md` is its test plan. Behind it sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` is the current state of the audit and shrinks as items close; its Where Brainwaves Go table orders the work: rule D-2, the external-edit reload policy, first; the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it; then building on the openings whose plumbing exists. The published audit page mirrors the report in Pommora's own theme. The Table and Cards renderers draw over one interaction layer, `Core/Views/Host/useViewInteractions.tsx`, and every reorder-by-displacement surface over one engine, `UIX/Interactions/engine.tsx`, so a List view supplies a policy object and its presentation and inherits every band, drop, menu, ghost, and drag behavior.
+**Two questions are Nathan's.** A capture's retention clock is its arrival time, so a bulk history upload is retained from the moment it lands rather than from when the losing edit was made; whether a client-supplied timestamp should travel instead is his call. The `captures` table has no reader, so with File History off a conflict's losing buffer sits in the database alone and no surface shows it; whether it earns one is the second. Behind those sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` shrinks as items close, and with the concurrency topic ruled its Where Brainwaves Go table orders the work around D-7, whether the design kit gets touch, with the two registry readers (R-17, R-18) and the watch-patch id narrowing (R-38) beside it. The published audit page mirrors the report in Pommora's own theme.
 
 The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 
 ### Immediate Work
 
-- [ ] Phase 2 of the cross-platform scaffolding — content syncing.
 - [ ] **MarkdownPM:** Support for alphabetical lists, persisted embedding heights on source change, and a few interactive bug fixes.  
 
 ### Pending Focuses
@@ -85,6 +84,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-138 || Sync Scaffolding - Part 2
+**DATE:** 09-13-2026 → 09-14
+
+Content crosses between devices on the identity layer Part 1 left: a device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back, with the hub's per-Nexus counter detecting conflicts and recency resolving them. The one-file roster server became the `Sync/` folder carrying the change log, ciphertext blobs, a key ring per Nexus, one authority function, and TLS behind a pinned certificate; `Core/Sync/` gained the keys, the client's base record and loops, and the arrival path. The `.nexus/` JSON files merge key by key and a landing reaches an open page through a three-way merge around the caret, so the audit's concurrency topic closed. The loser of a conflict is kept on both the device and the hub rather than overwritten.
+
 #### PM-137 || One Drag Engine
 **DATE:** 09-12-2026
 
@@ -98,17 +102,12 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-135 || Sync Scaffolding - Part 1
 **DATE:** 09-11-2026
 
-Every install mints one Ed25519 key at first launch, its fingerprint naming the device, with the public half and a name in `pommora.json` and the private half keychain-encrypted beside it. `Sync/server.ts` is one Node file on built-ins keeping which devices each Nexus admits over four verbs, and every request to it is signed by the device key rather than carried by a session or a token. `Core/Sync/` holds the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General gained a Nexus heading over them. Content itself does not cross yet; the next arc adds it against the same server and the same identities.
+Every install mints one Ed25519 key at first launch, its fingerprint naming the device, with the public half and a name in `pommora.json` and the private half keychain-encrypted beside it. `Sync/server.ts` is one Node file on built-ins keeping which devices each Nexus admits over four verbs, and every request to it is signed by the device key rather than carried by a session or a token. `Core/Sync/` holds the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General gained a Nexus heading over them. No content crossed on that layer; the content arc added it against the same identities.
 
 #### PM-134 || MarkdownPM Block Menu
 **DATE:** 09-09-2026
 
 MarkdownPM gained a command menu: `/` on an empty line opens an in-app pane of five sections and nineteen rows, filtered by title and label as the query is typed, picked by Return or a click, and undone in one step to the blank line. The model sits in `Core/Actions/blockMenu.ts`, the trigger reads the cached scan through the same `inSealedBlockAt` the embed seat reads, and the pane shares its geometry, key guard, and cursor with the `[[` autocomplete. The blank-line fix in `selectedLines` repaired the context menu's Heading and List rows on an empty line, and the divider, table, quote, footnote, and embed transforms now seat the caret consistently.
-
-#### PM-133 || The Engine Boundary
-**DATE:** 09-07-2026
-
-A Vitest walker over the import graph from `Core/Contract/serve.ts` fails on any `.tsx`, DOM global, or package outside `ulidx`/`yaml`/`zod`, and the Desktop node tsconfig makes a DOM reference in an engine file a type error. Every channel in `Core/Contract/bridge.ts` answers through the `Result` envelope, and Core's tests open in-memory stores through `Core/Testing/machines.ts`, so Core passes `vitest` with `Desktop/` renamed away.
 
 ### Guidelines
 
