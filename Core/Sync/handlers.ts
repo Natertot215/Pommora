@@ -239,14 +239,14 @@ const act = (route: 'approve' | 'revoke') =>
       return ok({
         device,
         binding: bindingFrom(binding, listing),
-        status: statusOf(work.trouble),
+        status: work.trouble === undefined ? currentStatus() : statusOf(work.trouble),
       })
     const outcome = await call(host, binding, route, { nexusId, deviceId })
     if (outcome.status !== 200 && outcome.status !== 0) return state(root, ctx)
     return ok({
       device,
       binding: bindingFrom(binding, outcome),
-      status: statusOf(work.trouble),
+      status: work.trouble === undefined ? currentStatus() : statusOf(work.trouble),
     })
   })
 

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { detail } from '@pommora/core/Testing/fixtures'
+import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import { ok } from '@pommora/core/Contract/result'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { cachePageDetail, clearCache, subscribeLanding } from './pageDetailCache'
@@ -22,6 +23,7 @@ const Probe = (): null => {
 let container: HTMLDivElement
 let root: Root
 let landed: (paths: string[]) => void
+let pushStatus: (status: SyncStatus) => void
 let replaceBody: ReturnType<typeof vi.fn<(path: string) => Promise<boolean>>>
 
 const mount = async (): Promise<void> => {
@@ -33,7 +35,7 @@ const mount = async (): Promise<void> => {
 beforeEach(() => {
   clearCache()
   replaceBody = vi.fn(async (_path: string) => true)
-  useSession.setState({ replaceBody })
+  useSession.setState({ replaceBody, syncStatus: null })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'host:platform': async () => ok('posix'),
     'assets:map': async () => ok(EMPTY_ASSET_MAP),
@@ -42,6 +44,10 @@ beforeEach(() => {
       return () => undefined
     },
     'page:updateBody': async () => ok({ hash: 'h', stale: true }),
+    'sync:changed': (cb: (status: SyncStatus) => void) => {
+      pushStatus = cb
+      return () => undefined
+    },
   })
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -83,5 +89,13 @@ describe('a page that changed outside the app', () => {
     schedulePageSave(PATH, 'typed again')
     await flushPageSave(PATH)
     expect(replaceBody).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a sync status the client pushes', () => {
+  it('reaches the store', async () => {
+    await mount()
+    await act(async () => pushStatus({ state: 'syncing' }))
+    expect(useSession.getState().syncStatus).toEqual({ state: 'syncing' })
   })
 })
