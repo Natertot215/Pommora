@@ -212,7 +212,10 @@ export interface Asks {
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
   'sync:state': { args: []; reply: Result<SyncState> }
   'sync:renameDevice': { args: [name: string]; reply: Result<SyncState> }
-  'sync:connect': { args: [address: string]; reply: Result<SyncState> }
+  'sync:connect': {
+    args: [address: string, password?: string, pin?: string]
+    reply: Result<SyncState>
+  }
   'sync:disconnect': { args: []; reply: Result<SyncState> }
   'sync:approve': { args: [deviceId: string]; reply: Result<SyncState> }
   'sync:revoke': { args: [deviceId: string]; reply: Result<SyncState> }
