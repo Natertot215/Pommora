@@ -43,7 +43,11 @@ export interface FakeHub {
   sent: TransportRequest[]
   info: InfoRecord | null
   devices: DeviceRecord[]
-  intercept: ((req: TransportRequest) => 'throw' | Omit<TransportReply, 'bytes'> | null) | null
+  intercept:
+    | ((
+        req: TransportRequest,
+      ) => 'throw' | Omit<TransportReply, 'bytes'> | Promise<Omit<TransportReply, 'bytes'>> | null)
+    | null
   transport(req: TransportRequest): Promise<TransportReply>
 }
 
@@ -209,7 +213,7 @@ export function fakeHub(device = 'hub'): FakeHub {
       hub.sent.push(req)
       const taken = hub.intercept?.(req) ?? null
       if (taken === 'throw') throw new Error('the transport refused')
-      if (taken !== null) return replyOf(taken)
+      if (taken !== null) return replyOf(await taken)
       const answer = await route(hub, req)
       return answer instanceof Uint8Array
         ? { status: 200, body: '', bytes: answer }

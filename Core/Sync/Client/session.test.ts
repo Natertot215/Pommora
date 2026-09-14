@@ -8,6 +8,7 @@ import { installStores, NO_STORES, type Stores } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { type FakeHub, hubHost, hubWrite } from '../../Testing/syncHub'
+import { TEST_KDF, testKeys } from '../../Testing/syncDevice'
 import type { Ring } from '../Keys/ring'
 import type { SyncStatus } from '../Contract/wire'
 import { readAllBases, readBase, upsertBase } from './base'
@@ -110,11 +111,15 @@ describe('startSession', () => {
     expect(currentSession()).not.toBeNull()
   })
 
-  it('serializes a push and a pull through one chain', async () => {
+  it('serializes every chained push and pull, the long poll aside', async () => {
     let live = 0
     let peak = 0
     const inner = ctx.transport
+    const longPoll = (req: TransportRequest): boolean =>
+      req.url.endsWith('/pull') &&
+      ((JSON.parse(String(req.body)) as { waitMs?: number }).waitMs ?? 0) > 0
     ctx.transport = async (req: TransportRequest): Promise<TransportReply> => {
+      if (longPoll(req)) return inner(req)
       live += 1
       peak = Math.max(peak, live)
       try {
@@ -193,6 +198,52 @@ describe('startSession', () => {
     const order = hub.sent.map((req) => new URL(req.url).pathname)
     expect(order.at(-1)).toBe('/pull')
     expect(order).toContain('/store')
+  })
+
+  it('pushes while a long poll is out', async () => {
+    const idle = { status: 200, body: JSON.stringify({ changes: [], cursor: 0, hasMore: false }) }
+    let outstanding = 0
+    let released = false
+    let release = (): void => {}
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    hub.intercept = (req) => {
+      if (!req.url.endsWith('/pull')) return null
+      const waitMs = (JSON.parse(String(req.body)) as { waitMs?: number }).waitMs ?? 0
+      if (waitMs === 0) return null
+      outstanding += 1
+      return new Promise((resolve) => {
+        release = () => {
+          released = true
+          resolve(idle)
+        }
+      })
+    }
+    while (outstanding === 0) await turn(20)
+    await write('Notes/Late.md', page('late'))
+    hub.sent.length = 0
+    self.failed.add('Notes/Late.md')
+
+    await syncNow()
+
+    expect(released).toBe(false)
+    expect(sent('/store').length).toBeGreaterThan(0)
+    expect(readBase('Notes/Late.md')?.version).toBe(hub.seq)
+    release()
+  })
+
+  it('reloads the ring once on an unknown key', async () => {
+    await startSession(ctx, root, NEXUS)
+    const rotated = await testKeys()
+    hub.info = { version: 2, protocol: 1, kdf: TEST_KDF, historyDays: 90, ring: rotated.entries }
+    await hubWrite(hub, rotated.ring, 'Notes/Rotated.md', page('rotated'))
+
+    await turn(200)
+
+    expect(await machine().readBytes(abs('Notes/Rotated.md'))).not.toBeNull()
+    expect(currentSession()?.ring.keys[0].keyId).toBe(rotated.ring.keys[0].keyId)
+    expect(statuses().at(-1)?.state).not.toBe('error')
   })
 
   it('stops and reports revoked when a pull answers revoked', async () => {

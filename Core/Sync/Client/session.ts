@@ -1,4 +1,5 @@
 import type { HostContext } from '../../Contract/handlers'
+import { errText } from '../../Contract/result'
 import { NEXUS_DIR } from '../../Paths/nexusPaths'
 import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
 import type { WatchScope } from '../../Paths/exclusion'
@@ -10,7 +11,7 @@ import type { Ring } from '../Keys/ring'
 import { readAllBases } from './base'
 import { call, type SyncHost, syncHost } from './call'
 import { loadRing } from './keyring'
-import { pullOnce } from './pull'
+import { applyPull, type PullOutcome, pullOnce, pullWait } from './pull'
 import { pushDirty, pushRename } from './push'
 import { reconcile, rescope } from './reconcile'
 import { currentStatus, setStatus } from './status'
@@ -31,6 +32,7 @@ const SETTINGS_REL = `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`
 const FIRST_RETRY_MS = 5_000
 const LAST_RETRY_MS = 60_000
 const LONGEST_BACKOFF_MS = 30_000
+const LONG_POLL_MS = 25_000
 
 let session: Session | null = null
 let retry: ReturnType<typeof setTimeout> | null = null
@@ -58,10 +60,20 @@ function working<T>(self: Session, work: () => Promise<T>): Promise<T> {
 
 const sleep = (ms: number): Promise<void> => new Promise((wake) => setTimeout(wake, ms))
 
+async function polled(self: Session): Promise<PullOutcome> {
+  try {
+    const waited = await pullWait(self, LONG_POLL_MS)
+    return waited.kind === 'reply' ? await run(() => applyPull(self, waited.reply)) : waited.outcome
+  } catch (e) {
+    setStatus(self.ctx, { state: 'error', why: errText(e) })
+    return 'error'
+  }
+}
+
 async function pulling(self: Session): Promise<void> {
   let failures = 0
   while (session === self) {
-    const outcome = await run(() => pullOnce(self))
+    const outcome = await polled(self)
     if (outcome === 'revoked') {
       stopSession()
       setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })

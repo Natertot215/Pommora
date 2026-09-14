@@ -2,11 +2,12 @@ import { join } from '../../Paths/posix'
 import { writeValue } from '../../Platform/localState'
 import { machine } from '../../Platform/machine'
 import { landDelete, landRename, landWrite, recordOf } from '../Arrival/land'
-import type { Change } from '../Contract/wire'
+import type { Change, ItemRecord, PullReply } from '../Contract/wire'
 import { decryptItem } from '../Keys/item'
+import type { Ring } from '../Keys/ring'
 import { isDirty, readBase } from './base'
 import { call, getBlob } from './call'
-import { forgetKeys, ringName } from './keyring'
+import { forgetKeys, loadRing, ringName } from './keyring'
 import { pushDirty } from './push'
 import type { Session } from './session'
 import { dirtyPending } from './tap'
@@ -23,12 +24,30 @@ const holds = (change: Change): boolean => {
   return base !== null && change.seq <= base.version
 }
 
+async function reloaded(session: Session): Promise<Ring | null> {
+  const outcome = await call(session.host, session.target, 'info', { nexusId: session.nexusId })
+  if (outcome.reply === null) return null
+  return loadRing(session.host, session.nexusId, outcome.reply.info, null)
+}
+
+async function opened(session: Session, record: ItemRecord, blob: Uint8Array): Promise<Uint8Array> {
+  const bytes = new Uint8Array(blob)
+  try {
+    return await decryptItem(session.ring, record.keyId, record.path, bytes)
+  } catch (e) {
+    if (!String(e).includes('unknown-key')) throw e
+    const ring = await reloaded(session)
+    if (ring === null) throw e
+    session.ring = ring
+    return decryptItem(ring, record.keyId, record.path, bytes)
+  }
+}
+
 export async function landRemote(session: Session, change: Change): Promise<'ok' | 'missing'> {
   const record = recordOf(change)
   const blob = await getBlob(session.host, session.target, session.nexusId, record.sha256)
   if (blob === null) return 'missing'
-  const plaintext = await decryptItem(session.ring, record.keyId, record.path, new Uint8Array(blob))
-  await landWrite(session.host, session.root, change, plaintext)
+  await landWrite(session.host, session.root, change, await opened(session, record, blob))
   return 'ok'
 }
 
@@ -52,7 +71,9 @@ async function landChange(session: Session, change: Change): Promise<'ok' | 'mis
   }
 }
 
-export async function pullOnce(session: Session, waitMs = 25_000): Promise<PullOutcome> {
+export type Waited = { kind: 'reply'; reply: PullReply } | { kind: 'done'; outcome: PullOutcome }
+
+export async function pullWait(session: Session, waitMs: number): Promise<Waited> {
   const { host, target, nexusId } = session
   const outcome = await call(
     host,
@@ -63,7 +84,7 @@ export async function pullOnce(session: Session, waitMs = 25_000): Promise<PullO
   )
   if (outcome.status === 409 && outcome.refusal?.error === 'resync') {
     advance(session, 0)
-    return 'resync'
+    return { kind: 'done', outcome: 'resync' }
   }
   if (outcome.reply === null) {
     if (
@@ -71,13 +92,22 @@ export async function pullOnce(session: Session, waitMs = 25_000): Promise<PullO
       (await host.secrets.get(ringName(nexusId))) !== null
     ) {
       await forgetKeys(host, nexusId)
-      return 'revoked'
+      return { kind: 'done', outcome: 'revoked' }
     }
-    return 'error'
+    return { kind: 'done', outcome: 'error' }
   }
-  for (const change of outcome.reply.changes) {
+  return { kind: 'reply', reply: outcome.reply }
+}
+
+export async function applyPull(session: Session, reply: PullReply): Promise<PullOutcome> {
+  for (const change of reply.changes) {
     if ((await landChange(session, change)) === 'missing') return 'resync'
     advance(session, change.seq)
   }
-  return outcome.reply.changes.length > 0 ? 'applied' : 'idle'
+  return reply.changes.length > 0 ? 'applied' : 'idle'
+}
+
+export async function pullOnce(session: Session, waitMs = 25_000): Promise<PullOutcome> {
+  const waited = await pullWait(session, waitMs)
+  return waited.kind === 'reply' ? applyPull(session, waited.reply) : waited.outcome
 }
