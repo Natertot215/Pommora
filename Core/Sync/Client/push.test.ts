@@ -94,6 +94,22 @@ describe('pushDirty', () => {
     expect(stores()).toHaveLength(1)
   })
 
+  it('rounds a fractional mtime down so the hub takes the record', async () => {
+    await write('Notes/One.md', page('one'))
+    await utimes(abs('Notes/One.md'), 1789402202.7095, 1789402202.7095)
+    expect((await machine().stat(abs('Notes/One.md')))?.mtimeMs).not.toBe(
+      Math.floor((await machine().stat(abs('Notes/One.md')))?.mtimeMs ?? 0),
+    )
+
+    await pushDirty(session, ['Notes/One.md'])
+
+    const change = stores()[0].changes[0]
+    if (change.kind !== 'write') throw new Error('expected a write')
+    expect(Number.isInteger(change.record.mtimeMs)).toBe(true)
+    expect(readBase('Notes/One.md')?.version).toBe(hub.seq)
+    expect(session.failed.size).toBe(0)
+  })
+
   it('never stores a page without an ID', async () => {
     await write('Notes/Bare.md', 'no frontmatter here')
     await pushDirty(session, ['Notes/Bare.md'])

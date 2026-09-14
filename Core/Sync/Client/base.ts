@@ -32,7 +32,7 @@ export async function readSnapshot(root: string, rel: string): Promise<Snapshot 
     const bytes = await machine().readBytes(abs)
     if (bytes === null) return null
     return {
-      mtimeMs: stat.mtimeMs,
+      mtimeMs: Math.floor(stat.mtimeMs),
       size: stat.size,
       hash: machine().sha256Hex(bytes),
       bytes,
