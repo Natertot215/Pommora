@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
+import { Transaction } from '@codemirror/state'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
@@ -7,16 +8,52 @@ import { usePreviewConnections } from '../Session/pageConnections'
 import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { navKey } from '../Navigation/navRecents'
-import { useBodyEpoch } from '../Session/pageDetailCache'
+import {
+  dropPageDetail,
+  fetchPageDetail,
+  readBodyBase,
+  setBodyBase,
+  subscribeLanding,
+  useBodyEpoch,
+} from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, fenceWarm, readCache } from '../Navigation/warmTabs'
 import { registerPageEditor } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { schedulePageSave } from '../Session/saveScheduler'
+import { changesTo, merge3 } from './merge3'
+import { syncLanding } from '../MarkdownPM/api'
 import { host } from '../Platform/dialer'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
+
+async function absorbLanding(
+  path: string,
+  view: EditorView | null,
+  setPageBody: (path: string, body: string) => void,
+  replaceBody: (path: string) => Promise<boolean>,
+): Promise<void> {
+  if (!view) {
+    await replaceBody(path)
+    return
+  }
+  const base = readBodyBase(path)?.text
+  dropPageDetail(path)
+  const fresh = await fetchPageDetail(path)
+  if (!fresh) return
+  const local = view.state.doc.toString()
+  const merged = merge3(base ?? local, local, fresh.body)
+  if (merged.conflicted) void host().ask('sync:captureLocal', path, local)
+  if (merged.text !== local) {
+    view.dispatch({
+      changes: changesTo(local, merged.text),
+      annotations: [syncLanding.of(true), Transaction.addToHistory.of(false)],
+    })
+    setPageBody(path, merged.text)
+  }
+  setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
+}
 
 export function PageView({
   tabId,
@@ -43,7 +80,15 @@ export function PageView({
   const setPageBody = useSession((s) => s.setPageBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingLive = useRef<[string, string] | null>(null)
-  const bodyEpoch = useBodyEpoch(slot?.status === 'ready' ? slot.detail.path : '')
+  const path = slot?.status === 'ready' ? slot.detail.path : ''
+  const bodyEpoch = useBodyEpoch(path)
+  const replaceBody = useSession((s) => s.replaceBody)
+  useEffect(() => {
+    if (!path || parked) return
+    return subscribeLanding(path, () => {
+      void absorbLanding(path, editorRef.current, setPageBody, replaceBody)
+    })
+  }, [path, parked, replaceBody, setPageBody])
   // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke must not write over it.
   useEffect(() => {
     clearTimeout(liveTimer.current)

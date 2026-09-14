@@ -223,6 +223,7 @@ export interface Asks {
   'sync:approve': { args: [deviceId: string]; reply: Result<SyncState> }
   'sync:revoke': { args: [deviceId: string]; reply: Result<SyncState> }
   'sync:now': { args: []; reply: Result<SyncState> }
+  'sync:captureLocal': { args: [relPath: string, text: string]; reply: Result<null> }
 
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
@@ -266,7 +267,6 @@ export interface Pushes {
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]
   'tiles:changed': TileHostRef
-  // Relative paths whose body or frontmatter landed from outside the app.
   'pages:changed': string[]
   'sync:changed': SyncStatus
   'win:fullscreen': boolean

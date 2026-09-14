@@ -1,5 +1,7 @@
 import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
 import { fail, ok, type Result } from '../Contract/result'
+import { isString } from '../Contract/validators'
+import { captureLoser } from './Arrival/captures'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
@@ -380,5 +382,12 @@ export const syncHandlers = {
   'sync:now': withRoot(async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
     await syncNow()
     return state(root, ctx)
+  }),
+
+  'sync:captureLocal': withRoot(async (root, _ctx, rel: unknown, text: unknown) => {
+    if (!isString(rel) || !isString(text))
+      return fail('operation-failed', 'A path and its text are required.')
+    await captureLoser(root, rel, new TextEncoder().encode(text), 'merge-lost')
+    return ok(null)
   }),
 } satisfies Partial<Handlers>

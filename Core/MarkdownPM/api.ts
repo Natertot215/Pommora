@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Facet } from '@codemirror/state'
+import { Annotation, Facet } from '@codemirror/state'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { Commands } from '@pommora/core/Actions/commands'
@@ -10,6 +10,8 @@ import type {
   CitationMenuAction,
   CitationMenuContext,
 } from '@pommora/core/MarkdownPM/Citations/citationMenu'
+
+export const syncLanding = Annotation.define<boolean>()
 
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string }
