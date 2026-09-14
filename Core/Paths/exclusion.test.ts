@@ -86,7 +86,7 @@ describe('sameScope', () => {
 
 describe('manifestAdmits', () => {
   const nexusId = 'NX1'
-  const admits = manifestAdmits(nexusId, scope())
+  const admits = manifestAdmits(scope())
 
   it('admits the trash, the config set, and a tile body', () => {
     expect(admits('.trash/Notes/2026__A.md.deleted/_record.json')).toBe(true)
@@ -118,10 +118,16 @@ describe('manifestAdmits', () => {
   })
 
   it('refuses an excluded folder and admits the asset root', () => {
-    const withExcluded = manifestAdmits(nexusId, scope(['Archive']))
+    const withExcluded = manifestAdmits(scope(['Archive']))
     expect(withExcluded('Archive')).toBe(false)
     expect(withExcluded('Archive/x.md')).toBe(false)
+    expect(withExcluded('.trash/Archive/2026__x.md.deleted/x.md')).toBe(false)
+    expect(withExcluded('.trash/Notes/2026__x.md.deleted/x.md')).toBe(true)
     expect(withExcluded('Notes/x.md')).toBe(true)
     expect(admits(ASSETS_DIR_REL)).toBe(true)
+  })
+
+  it('refuses a thumbnail cache under any nexus id', () => {
+    expect(admits(`${ASSETS_DIR_REL}/OTHER-ID/thumbnails/a.jpg`)).toBe(false)
   })
 })

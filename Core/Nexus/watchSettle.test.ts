@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { WatchScope } from '../Paths/exclusion'
 import type { WatchEvent } from './watchPatch'
-import { emitWatch, ignoredUnder, setWatchTap, syncIgnoredUnder, tileBodyOf } from './watchSettle'
+import { emitWatch, setWatchTap, syncIgnoredUnder, tileBodyOf } from './watchSettle'
 
 const root = '/nexus'
 const scope: WatchScope = { excluded: [], assetDir: ASSETS_DIR_REL }
@@ -13,12 +13,12 @@ afterEach(() => {
 })
 
 describe('syncIgnoredUnder', () => {
-  it('admits a tile body the tree ignores', () => {
-    const tree = ignoredUnder(root, scope)
+  it('reports a tile body, which tileBodyOf then names', () => {
     const sync = syncIgnoredUnder(root, scope)
+    const isTileBody = tileBodyOf(root)
     for (const rel of TILE_BODIES) {
-      expect(tree(`${root}/${rel}`)).toBe(true)
       expect(sync(`${root}/${rel}`)).toBe(false)
+      expect(isTileBody(`${root}/${rel}`)).toBe(true)
     }
   })
 

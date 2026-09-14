@@ -17,7 +17,7 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 import type { Db } from './driver'
-import { ignoredUnder } from '@pommora/core/Nexus/watchSettle'
+import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
 
 let root: string
 let dbPath: string
@@ -66,9 +66,9 @@ describe('openVersionsDb', () => {
     expect(others).toEqual([])
     expect(original).toMatch(/^versions\.corrupt-.*\.db$/)
     expect(await readFile(join(root, '.nexus', original), 'utf8')).toBe('not a database')
-    expect(ignoredUnder(root, { excluded: [], assetDir: '' })(join(root, '.nexus', original))).toBe(
-      true,
-    )
+    expect(
+      syncIgnoredUnder(root, { excluded: [], assetDir: '' })(join(root, '.nexus', original)),
+    ).toBe(true)
     expect(existsSync(`${dbPath}-wal`)).toBe(false)
     expect(existsSync(`${dbPath}-shm`)).toBe(false)
   })

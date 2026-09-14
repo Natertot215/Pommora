@@ -13,7 +13,7 @@ import {
   rmwJsonStrict,
 } from './atomicWrite'
 import { mintBundle, settleBundle, trashFileFlat } from '../Trash/bundle'
-import { isRecentWrite } from './writeEcho'
+import { isRecentWrite, setWriteTap } from './writeEcho'
 
 let dir: string
 beforeEach(async () => {
@@ -194,6 +194,16 @@ describe('trashFileFlat', () => {
     expect(dest).toContain('.trash')
     expect(await readFile(dest, 'utf8')).toBe('bye')
     await expect(stat(p)).rejects.toThrow()
+  })
+
+  it('records both ends of the move', async () => {
+    const p = join(dir, 'reported.md')
+    await atomicWriteFile(p, 'bye')
+    const seen: string[] = []
+    setWriteTap((w) => seen.push(w))
+    const dest = await trashFileFlat(dir, p)
+    setWriteTap(null)
+    expect(seen).toEqual([p, dest])
   })
 
   it('mirrors the folder chain the file was deleted from', async () => {
