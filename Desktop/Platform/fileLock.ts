@@ -4,12 +4,17 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 
 const fileChains = new Map<string, Promise<unknown>>()
 
-// The keys held by the call in flight. Nesting DIFFERENT keys stays legal — only re-taking one already held is the deadlock.
-const heldKeys = new AsyncLocalStorage<ReadonlySet<string>>()
+interface Held {
+  keys: ReadonlySet<string>
+  live: { done: boolean }
+}
+
+// The keys held by the call in flight. Nesting DIFFERENT keys stays legal — only re-taking one already held is the deadlock. A timer armed inside the lock inherits this store and outlives it, so a settled call no longer holds anything.
+const heldKeys = new AsyncLocalStorage<Held>()
 
 export function serializeOnFile<T>(path: string, fn: () => Promise<T>): Promise<T> {
   const held = heldKeys.getStore()
-  if (held?.has(path)) {
+  if (held && !held.live.done && held.keys.has(path)) {
     return Promise.reject(
       new Error(
         `Re-entrant file lock on ${path}. A write already holding this key cannot take it again — ` +
@@ -17,8 +22,12 @@ export function serializeOnFile<T>(path: string, fn: () => Promise<T>): Promise<
       ),
     )
   }
-  const next = new Set(held).add(path)
-  const guarded = (): Promise<T> => heldKeys.run(next, fn)
+  const live = { done: false }
+  const next: Held = { keys: new Set(held?.keys).add(path), live }
+  const guarded = (): Promise<T> =>
+    heldKeys.run(next, fn).finally(() => {
+      live.done = true
+    })
   const run = (fileChains.get(path) ?? Promise.resolve()).then(guarded, guarded)
   fileChains.set(
     path,
