@@ -117,9 +117,12 @@ export async function landRename(root: string, change: Change): Promise<void> {
   const from = join(root, fromRel)
   const to = join(root, change.path)
   await machine().lock(from, async () => {
-    if (await machine().stat(from)) {
-      const losing = await machine().readBytes(to)
-      if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
+    const source = await machine().stat(from)
+    if (source !== null) {
+      if (!source.isDirectory) {
+        const losing = await machine().readBytes(to)
+        if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
+      }
       await machine().mkdir(dirname(to))
       await machine().rename(from, to)
     }
