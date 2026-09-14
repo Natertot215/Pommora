@@ -23,6 +23,7 @@
     "Actions/**/*",
     "Web/**/*.ts",
     "Capture/**/*",
-    "Config/**/*"
+    "Config/**/*",
+    "Sync/**/*"
   ]
 }
