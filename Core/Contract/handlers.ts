@@ -16,6 +16,7 @@ interface PickOptions {
 // The host holds the private key: signing and renaming are its acts, and Core sees only the result.
 export interface HostDevice extends SyncDevice {
   sign(canonical: string): Promise<string>
+  agree(peerPublicKey: string): Promise<Uint8Array>
   rename(name: string): Promise<void>
 }
 

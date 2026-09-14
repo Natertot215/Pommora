@@ -25,11 +25,11 @@ export function appConfigPath(userDataDir: string): string {
 
 function readDevice(v: unknown): SyncDevice | undefined {
   if (typeof v !== 'object' || v === null) return undefined
-  const { id, publicKey, name } = v as Record<string, unknown>
+  const { id, publicKey, name, x25519 } = v as Record<string, unknown>
   if (typeof id !== 'string' || !id) return undefined
   if (typeof publicKey !== 'string' || !publicKey) return undefined
   if (typeof name !== 'string' || !name) return undefined
-  return { id, publicKey, name }
+  return { id, publicKey, name, ...(typeof x25519 === 'string' && x25519 !== '' && { x25519 }) }
 }
 
 export async function readAppConfig(userDataDir: string): Promise<AppConfig> {

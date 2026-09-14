@@ -7,6 +7,7 @@ import { readAppConfig, updateAppConfig } from './appConfig'
 import { getSecret, KEYCHAIN_UNAVAILABLE, secretsAvailable, setSecret } from './secrets'
 
 const SECRET = 'device-key'
+const AGREEMENT_SECRET = 'device-x25519'
 
 async function fingerprintOf(raw: ArrayBuffer): Promise<string> {
   const digest = await globalThis.crypto.subtle.digest('SHA-256', raw)
@@ -44,6 +45,31 @@ async function load(userDataDir: string): Promise<CryptoKey | null> {
   )
 }
 
+async function ensureAgreementKey(
+  userDataDir: string,
+  stored: SyncDevice,
+): Promise<{ x25519: string; key: CryptoKey }> {
+  const secret = stored.x25519 ? await getSecret(userDataDir, AGREEMENT_SECRET) : null
+  if (stored.x25519 && secret !== null) {
+    const key = await globalThis.crypto.subtle.importKey(
+      'pkcs8',
+      new Uint8Array(Buffer.from(secret, 'base64')),
+      'X25519',
+      false,
+      ['deriveBits'],
+    )
+    return { x25519: stored.x25519, key }
+  }
+  const pair = await globalThis.crypto.subtle.generateKey('X25519', true, ['deriveBits'])
+  if (!('privateKey' in pair)) throw new Error('X25519 generated no key pair.')
+  const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
+  const pkcs8 = await globalThis.crypto.subtle.exportKey('pkcs8', pair.privateKey)
+  const x25519 = Buffer.from(raw).toString('base64url')
+  await setSecret(userDataDir, AGREEMENT_SECRET, Buffer.from(pkcs8).toString('base64'))
+  await updateAppConfig(userDataDir, () => ({ device: { ...stored, x25519 } }))
+  return { x25519, key: pair.privateKey }
+}
+
 export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
   const stored = (await readAppConfig(userDataDir)).device
   const loaded = stored ? await load(userDataDir) : null
@@ -52,8 +78,10 @@ export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
   }
   const { device, key } =
     stored && loaded ? { device: stored, key: loaded } : await mint(userDataDir)
+  const agreement = await ensureAgreementKey(userDataDir, device)
   const host: HostDevice = {
     ...device,
+    x25519: agreement.x25519,
     async sign(canonical: string): Promise<string> {
       const signature = await globalThis.crypto.subtle.sign(
         'Ed25519',
@@ -62,9 +90,24 @@ export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
       )
       return Buffer.from(signature).toString('base64url')
     },
+    async agree(peerPublicKey: string): Promise<Uint8Array> {
+      const peer = await globalThis.crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(Buffer.from(peerPublicKey, 'base64url')),
+        'X25519',
+        false,
+        [],
+      )
+      const bits = await globalThis.crypto.subtle.deriveBits(
+        { name: 'X25519', public: peer },
+        agreement.key,
+        256,
+      )
+      return new Uint8Array(bits)
+    },
     async rename(name: string): Promise<void> {
       await updateAppConfig(userDataDir, () => ({
-        device: { id: host.id, publicKey: host.publicKey, name },
+        device: { id: host.id, publicKey: host.publicKey, name, x25519: host.x25519 },
       }))
       host.name = name
     },
