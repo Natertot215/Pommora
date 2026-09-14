@@ -30,6 +30,9 @@ export const ITEM_CAP = 50 * 1024 * 1024
 const pathOf = (change: StoreChange): string =>
   change.kind === 'write' || change.kind === 'capture' ? change.record.path : change.path
 
+const failedPaths = (change: StoreChange): string[] =>
+  change.kind === 'rename' ? [change.from, change.path] : [pathOf(change)]
+
 function troubled(session: Session, paths: string[], why: string): void {
   for (const path of paths) session.failed.add(path)
   setStatus(session.ctx, { state: 'error', why })
@@ -46,7 +49,8 @@ async function storeChanges(session: Session, changes: StoreChange[]): Promise<S
     let outcome = await call(session.host, session.target, 'store', body)
     if (outcome.status === 0) outcome = await call(session.host, session.target, 'store', body)
     if (outcome.reply === null) {
-      troubled(session, slice.map(pathOf), answered(outcome))
+      if (outcome.status === 400) setStatus(session.ctx, { state: 'error', why: answered(outcome) })
+      else troubled(session, slice.flatMap(failedPaths), answered(outcome))
       continue
     }
     outcomes.push(...outcome.reply.outcomes)
@@ -166,6 +170,10 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
       return
     }
     if (isMarkdownFile(rel) && (await stampedId(root, rel)) === null) return
+    if (rel.normalize('NFC') !== rel) {
+      setStatus(session.ctx, { state: 'error', why: `${rel} is not NFC and stays home.` })
+      return
+    }
     const item = await sealed(session, rel, snapshot)
     if (item === null) return
     snapshots.set(rel, snapshot)
@@ -190,7 +198,6 @@ export async function pushRename(session: Session, from: string, to: string): Pr
   const own = readBase(from)
   const rows =
     own !== null ? [own] : readAllBases().filter((row) => row.path.startsWith(`${from}/`))
-  if (rows.length === 0) return pushDirty(session, [to])
   const moved = rows.map((row) => ({ row, path: to + row.path.slice(from.length) }))
   const changes: StoreChange[] = moved.map(({ row, path }) => ({
     kind: 'rename',
@@ -206,6 +213,7 @@ export async function pushRename(session: Session, from: string, to: string): Pr
     if (outcome.ok) upsertBase({ ...entry.row, path: entry.path, version: outcome.version })
     else if (outcome.why === 'stale') await resolveStale(session, entry.path, outcome.head)
   }
+  return pushDirty(session, [to])
 }
 
 export async function resolveStale(

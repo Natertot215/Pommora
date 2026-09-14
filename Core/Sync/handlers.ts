@@ -3,6 +3,7 @@ import { fail, ok, type Result } from '../Contract/result'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
+import { deleteBase, readAllBases } from './Client/base'
 import { call, type CallOutcome, type SyncHost, type SyncTarget, syncHost } from './Client/call'
 import { startSession, stopSession, syncNow } from './Client/session'
 import { currentStatus, setStatus } from './Client/status'
@@ -355,6 +356,7 @@ export const syncHandlers = {
         await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
       const scope: SyncScope = { ...target, cursor: kept ? binding.cursor : 0 }
+      if (!kept) for (const row of readAllBases()) deleteBase(row.path)
       if (!writeValue('sync', scope)) return NO_STORE
       await startSession(ctx, root, nexusId)
       return state(root, ctx)
@@ -366,6 +368,7 @@ export const syncHandlers = {
       const r = await ready(root, ctx)
       if (!r.ok) return r
       stopSession(ctx)
+      for (const row of readAllBases()) deleteBase(row.path)
       forgetHeldRing(r.value.nexusId)
       return writeValue('sync', null) ? state(root, ctx) : NO_STORE
     },

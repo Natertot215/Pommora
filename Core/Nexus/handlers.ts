@@ -12,7 +12,7 @@ import { machine } from '../Platform/machine'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { readPermanentDelete } from '../Settings/settings'
-import { startSession } from '../Sync/Client/session'
+import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
@@ -56,6 +56,7 @@ export async function openNexusSequence(
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
   await replayPendingRename(root)
+  stopSession(ctx)
   ctx.openStores(root)
   if (root !== priorRoot) {
     void sweepFileHistory(root)
