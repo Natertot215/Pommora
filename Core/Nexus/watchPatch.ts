@@ -85,7 +85,7 @@ function findPage(tree: NexusTree, rel: string): PageNode | null {
   return container?.pages.find((p) => p.path === rel) ?? null
 }
 
-function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
+export function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
   for (const g of tree.contexts) {
     const hit = g.spaces.find((s) => s.path === dirRel)
     if (hit) return hit
