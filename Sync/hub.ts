@@ -189,10 +189,7 @@ export async function start(opts: {
   }
   const sweep = (): void => {
     try {
-      const rows = store.db
-        .prepare('SELECT nexus_id AS id, history_days AS days FROM nexus')
-        .all() as { id: string; days: number }[]
-      for (const row of rows) store.log.sweep(row.id, row.days, Date.now())
+      for (const row of store.nexus.retention()) store.log.sweep(row.id, row.days, Date.now())
     } catch (e) {
       console.error('Sync sweep failed:', e)
     }
