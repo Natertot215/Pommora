@@ -23,11 +23,13 @@ export const PATHS = {
 
 export const ROUTES = Object.keys(PATHS) as (keyof Wire.RouteTable)[]
 
+export const JSON_TIMEOUT_MS = 10_000
+
 export const META = {
-  connect: { requires: 'none', cap: 8192 },
-  devices: { requires: 'reader', cap: 8192 },
-  approve: { requires: 'editor', cap: 8192 },
-  revoke: { requires: 'owner', cap: 8192 },
+  connect: { requires: 'none', cap: 8192, timeoutMs: JSON_TIMEOUT_MS },
+  devices: { requires: 'reader', cap: 8192, timeoutMs: JSON_TIMEOUT_MS },
+  approve: { requires: 'editor', cap: 8192, timeoutMs: JSON_TIMEOUT_MS },
+  revoke: { requires: 'owner', cap: 8192, timeoutMs: JSON_TIMEOUT_MS },
 } as const satisfies { [K in keyof Wire.RouteTable]: Wire.RouteMeta }
 
 export const ROLE_ORDER = ['reader', 'editor', 'owner'] as const

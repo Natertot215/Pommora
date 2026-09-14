@@ -19,6 +19,7 @@ export type Role = 'owner' | 'editor' | 'reader'
 export interface RouteMeta {
   requires: Role | 'none'
   cap: number
+  timeoutMs: number
 }
 
 export type DeviceRecord = SyncDevice & { approved: boolean; role: Role }

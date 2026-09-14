@@ -1,5 +1,8 @@
 import { createHash, generateKeyPairSync, sign } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
+import { request as httpRequest } from 'node:http'
+import type { IncomingMessage } from 'node:http'
+import { request as httpsRequest } from 'node:https'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { start } from '../hub.ts'
@@ -9,13 +12,38 @@ let base = ''
 
 export async function boot(
   dataDir = mkdtempSync(join(tmpdir(), 'pommora-sync-')),
-): Promise<{ base: string; dataDir: string; close(): Promise<void> }> {
-  const running = await start({ dataDir, port: 0 })
-  base = `http://127.0.0.1:${running.port}`
-  return { base, dataDir, close: () => running.close() }
+  tls?: { cert: string; key: string },
+): Promise<{ base: string; dataDir: string; pin: string | null; close(): Promise<void> }> {
+  const running = await start({ dataDir, port: 0, tls })
+  base = `${tls ? 'https' : 'http'}://127.0.0.1:${running.port}`
+  return { base, dataDir, pin: running.pin, close: () => running.close() }
 }
 
-type Outcome = { status: number; body: unknown }
+type Outcome = { status: number; body: unknown; pin: string | null }
+
+function send(
+  url: string,
+  headers: Record<string, string>,
+  body: string,
+): Promise<{ status: number; text: string; pin: string | null }> {
+  const secure = url.startsWith('https:')
+  const options = { method: 'POST', headers, rejectUnauthorized: false }
+  return new Promise((resolve, reject) => {
+    const answer = (res: IncomingMessage): void => {
+      const socket = res.socket as { getPeerCertificate?: () => { fingerprint256?: string } }
+      const pin = secure ? (socket.getPeerCertificate?.().fingerprint256 ?? null) : null
+      let text = ''
+      res.setEncoding('utf8')
+      res.on('data', (chunk: string) => {
+        text += chunk
+      })
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, text, pin }))
+    }
+    const req = secure ? httpsRequest(url, options, answer) : httpRequest(url, options, answer)
+    req.on('error', reject)
+    req.end(body)
+  })
+}
 
 export function signer(name: string) {
   const pair = generateKeyPairSync('ed25519')
@@ -39,18 +67,21 @@ export function signer(name: string) {
         Buffer.from(canonical('POST', path, sha256Hex(raw), ts), 'utf8'),
         pair.privateKey,
       ).toString('base64url')
-    const response = await fetch(base + path, {
-      method: 'POST',
-      headers: {
+    const answer = await send(
+      base + path,
+      {
         'content-type': 'application/json',
         'x-pommora-device': id,
         'x-pommora-timestamp': String(ts),
         'x-pommora-signature': signature,
       },
-      body: json,
-    })
-    const text = await response.text()
-    return { status: response.status, body: text.length > 0 ? JSON.parse(text) : null }
+      json,
+    )
+    return {
+      status: answer.status,
+      body: answer.text.length > 0 ? JSON.parse(answer.text) : null,
+      pin: answer.pin,
+    }
   }
 
   return { id, publicKey, name, x25519, call }
