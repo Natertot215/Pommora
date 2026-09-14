@@ -28,7 +28,7 @@ import type { DeviceRecord, InfoRecord } from './Contract/wire'
 import { deriveWrappingKey } from './Keys/kdf'
 import { mintKey, wrapForDevice, wrapForPassword } from './Keys/ring'
 import { readAllBases, upsertBase } from './Client/base'
-import { stopSession } from './Client/session'
+import { currentSession, stopSession } from './Client/session'
 import { currentStatus } from './Client/status'
 import { syncHandlers } from './handlers'
 
@@ -581,6 +581,18 @@ describe('sync:revoke', () => {
     expect(fresh.map((e) => e.holder)).toEqual(['password', deviceA.id])
     expect(hub.info?.ring.some((e) => e.holder === deviceB.id)).toBe(false)
     expect(heldRing(NEXUS)?.keys).toHaveLength(2)
+  })
+
+  it('hands the rotated ring to the session already running', async () => {
+    const hub = newHub([record(deviceA, true), record(deviceB, true)])
+    await seedInfo(hub, [deviceA, deviceB])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+    expect(currentSession()).not.toBeNull()
+
+    await unwrap(syncHandlers['sync:revoke'](host(hubAnswer(hub)), deviceB.id))
+
+    const rotated = heldRing(NEXUS)?.keys.at(-1)?.keyId
+    expect(currentSession()?.ring.keys.map((key) => key.keyId)).toContain(rotated)
   })
 })
 

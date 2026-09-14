@@ -316,6 +316,37 @@ describe('startSession', () => {
     expect(currentSession()).toBeNull()
   })
 
+  it('learns a rotation made while it was down before its first decrypt', async () => {
+    await startSession(ctx, root, NEXUS)
+    await stopSession(ctx)
+    const rotated = await testKeys()
+    hub.info = { version: 2, protocol: 1, kdf: TEST_KDF, historyDays: 90, ring: rotated.entries }
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(currentSession()?.ring.keys.map((key) => key.keyId)).toEqual([
+      rotated.ring.keys[0].keyId,
+    ])
+  })
+
+  it('holds the paths of a tap push that threw until the loop re-pushes them', async () => {
+    await startSession(ctx, root, NEXUS)
+    await write('Notes/One.md', page('one'))
+    hub.sent.length = 0
+    const stat = vi.spyOn(machine(), 'stat').mockRejectedValueOnce(new Error('boom'))
+
+    recordWrite(abs('Notes/One.md'))
+    await turn(DEBOUNCE_MS + 400)
+
+    expect(
+      sent('/store')
+        .map((req) => String(req.body))
+        .join(),
+    ).toContain('Notes/One.md')
+    expect(currentSession()).not.toBeNull()
+    stat.mockRestore()
+  })
+
   it('runs no queued work after stop', async () => {
     await startSession(ctx, root, NEXUS)
     const self = currentSession()
