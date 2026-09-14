@@ -84,6 +84,46 @@ export interface RingBody {
   add: RingEntry[]
 }
 
+export interface ItemRecord {
+  path: string
+  mtimeMs: number
+  size: number
+  keyId: string
+  sha256: string
+}
+
+export type StoreChange =
+  | { kind: 'write'; base: number | null; record: ItemRecord }
+  | { kind: 'delete'; base: number; path: string }
+  | { kind: 'rename'; base: number; from: string; path: string }
+  | { kind: 'capture'; record: ItemRecord }
+
+export interface StoreBody {
+  nexusId: string
+  requestId: string
+  changes: StoreChange[]
+}
+
+export interface Change {
+  seq: number
+  kind: 'write' | 'delete' | 'rename'
+  path: string
+  from?: string
+  record?: ItemRecord
+  device: string
+  atMs: number
+}
+
+export type StoreOutcome =
+  | { path: string; ok: true; version: number }
+  | { path: string; ok: false; why: 'stale'; head: Change | null }
+  | { path: string; ok: false; why: 'missing-blob' }
+
+export interface StoreReply {
+  outcomes: StoreOutcome[]
+  seq: number
+}
+
 export interface RouteTable {
   connect: { method: 'POST'; path: '/connect'; body: ConnectBody; reply: ConnectReply }
   devices: { method: 'POST'; path: '/devices'; body: NexusBody; reply: DevicesReply }
@@ -91,6 +131,7 @@ export interface RouteTable {
   revoke: { method: 'POST'; path: '/revoke'; body: DeviceBody; reply: DevicesReply }
   info: { method: 'POST'; path: '/info'; body: InfoBody; reply: InfoReply }
   ring: { method: 'POST'; path: '/ring'; body: RingBody; reply: InfoReply }
+  store: { method: 'POST'; path: '/store'; body: StoreBody; reply: StoreReply }
 }
 
 export type SyncBinding = { address: string } & (
