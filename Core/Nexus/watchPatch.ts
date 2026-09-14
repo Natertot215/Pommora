@@ -57,7 +57,7 @@ export interface WatchEvent {
   absPath: string
 }
 
-type WatchClass =
+export type WatchClass =
   | { kind: 'page-upsert'; rel: string }
   | { kind: 'page-remove'; rel: string }
   | { kind: 'container-meta'; dirRel: string }

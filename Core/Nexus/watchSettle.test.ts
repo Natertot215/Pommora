@@ -1,15 +1,39 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { WatchScope } from '../Paths/exclusion'
+import type { NexusTree } from './tree'
+import { dropLiveTree, seedLiveTree } from './liveTree'
+import * as watchPatch from './watchPatch'
 import type { WatchEvent } from './watchPatch'
-import { emitWatch, setWatchTap, syncIgnoredUnder, tileBodyOf } from './watchSettle'
+import {
+  classifyBatch,
+  emitWatch,
+  pagesChangedIn,
+  setWatchTap,
+  syncIgnoredUnder,
+  tileBodyOf,
+  tilesChangedIn,
+  valueChangesOf,
+} from './watchSettle'
 
 const root = '/nexus'
 const scope: WatchScope = { excluded: [], assetDir: ASSETS_DIR_REL }
 const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
 
+const tree = {
+  nexus: { rootPath: root },
+  contexts: [],
+  collections: [
+    { kind: 'collection', path: 'Notes', pages: [{ id: 'pA', path: 'Notes/A.md' }], sets: [] },
+  ],
+} as unknown as NexusTree
+
+const at = (rel: string): WatchEvent => ({ event: 'change', absPath: `${root}/${rel}` })
+
 afterEach(() => {
   setWatchTap(null)
+  dropLiveTree()
+  vi.restoreAllMocks()
 })
 
 describe('syncIgnoredUnder', () => {
@@ -46,5 +70,30 @@ describe('emitWatch', () => {
     setWatchTap(null)
     emitWatch('unlink', `${root}/Notes/Page.md`)
     expect(seen).toEqual([{ event: 'change', absPath: `${root}/Notes/Page.md` }])
+  })
+})
+
+describe('classifyBatch', () => {
+  it('names a written page in pages:changed and its container in values:changed', () => {
+    seedLiveTree(tree)
+    const classified = classifyBatch([at('Notes/A.md'), at('Notes/A.md')], root, scope)
+    expect(pagesChangedIn(classified)).toEqual(['Notes/A.md'])
+    expect(valueChangesOf(classified, tree)).toEqual([{ rel: 'Notes', pageIds: ['pA'] }])
+  })
+
+  it('classifies each event once', () => {
+    seedLiveTree(tree)
+    const spy = vi.spyOn(watchPatch, 'classifyEvent')
+    const events = [at('Notes/A.md'), at('.nexus/homepage/_tiles.json')]
+    const classified = classifyBatch(events, root, scope)
+    pagesChangedIn(classified)
+    valueChangesOf(classified, tree)
+    tilesChangedIn(classified)
+    expect(spy).toHaveBeenCalledTimes(events.length)
+    expect(tilesChangedIn(classified)).toEqual([{ kind: 'homepage' }])
+  })
+
+  it('classifies nothing with no live tree', () => {
+    expect(classifyBatch([at('Notes/A.md')], root, scope)).toEqual([])
   })
 })
