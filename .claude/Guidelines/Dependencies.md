@@ -26,6 +26,7 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 - **ulidx** — monotonic ULID ids. **Decided.**
 - **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API. **Decided.**
 - **chokidar 5** — filesystem watcher (Phase 4 live refresh). **Decided.** (`@parcel/watcher` is faster on very large trees but adds a native-module rebuild — the failure class the SQLite driver was chosen to avoid; revisit only if watch perf at nexus scale becomes an issue.)
+- **@codemirror/merge** — the `diff` behind the three-way merge a landing makes in an open page, imported by `Core/Pages/merge3.ts` alone, which the engine and host graph tests keep out of the engine. **Decided.**
 - **SQLite FTS5** — full-text search; `unicode61` tokenizer with `remove_diacritics=2` + external-content mode over the `pages` table is the nexus-scale pattern (1k–10k pages). `MiniSearch` (in-memory) is fine to ~2k notes but balloons by 10k. **Not-yet-needed** (deferred global search; ships inside `node:sqlite` already). Needs a `pages` table and a body column, neither of which currently exists.
 
 #### Drag-and-Drop · Block Layout
@@ -36,7 +37,7 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 
 ### Server
 
-`Sync/server.ts` runs on Node's built-ins alone (`node:http`, `node:sqlite`, `node:crypto`), as plain `node` over the source with type stripping. No library enters it; a need that seems to want one is a design question first.
+`Sync/hub.ts` runs on Node's built-ins alone (`node:http`, `node:https`, `node:sqlite`, `node:crypto`), as plain `node` over the source with type stripping. No library enters it; a need that seems to want one is a design question first.
 
 ### Distribution — Packaging, Signing, Notarization
 
