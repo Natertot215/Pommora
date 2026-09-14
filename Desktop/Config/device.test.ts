@@ -4,7 +4,7 @@ import { join } from '@pommora/core/Paths/posix'
 import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as appConfig from './appConfig'
-import { readAppConfig } from './appConfig'
+import { readAppConfig, updateAppConfig } from './appConfig'
 import { ensureDevice } from './device'
 import { KEYCHAIN_UNAVAILABLE } from './secrets'
 
@@ -46,7 +46,41 @@ describe('ensureDevice', () => {
     expect(device.id).toMatch(/^[0-9a-f]{64}$/)
     expect(device.publicKey).toHaveLength(43)
     const stored = (await readAppConfig(dir)).device
-    expect(stored).toEqual({ id: device.id, publicKey: device.publicKey, name: device.name })
+    expect(stored).toMatchObject({ id: device.id, publicKey: device.publicKey, name: device.name })
+    expect(stored?.x25519).toEqual(expect.stringMatching(/^[\w-]{43}$/))
+  })
+
+  it('gives an existing device its agreement key without re-minting', async () => {
+    const first = await ensureDevice(dir)
+    await updateAppConfig(dir, () => ({
+      device: { id: first.id, publicKey: first.publicKey, name: first.name },
+    }))
+    expect((await readAppConfig(dir)).device?.x25519).toBeUndefined()
+    const second = await ensureDevice(dir)
+    expect(second.id).toBe(first.id)
+    expect(second.x25519).toHaveLength(43)
+    expect((await readAppConfig(dir)).device?.x25519).toBe(second.x25519)
+  })
+
+  it('agrees on one secret from either side', async () => {
+    const other = tempRoot('pom-dev-')
+    try {
+      const a = await ensureDevice(dir)
+      const b = await ensureDevice(other)
+      const secret = await a.agree(b.x25519 ?? '')
+      expect(secret).toHaveLength(32)
+      expect(await b.agree(a.x25519 ?? '')).toEqual(secret)
+    } finally {
+      rmSync(other, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps the agreement key across a rename', async () => {
+    const device = await ensureDevice(dir)
+    const before = device.x25519
+    await device.rename('Renamed')
+    expect((await readAppConfig(dir)).device).toMatchObject({ name: 'Renamed', x25519: before })
+    expect((await ensureDevice(dir)).x25519).toBe(before)
   })
 
   it('gives the device id as the SHA-256 of the raw public key', async () => {

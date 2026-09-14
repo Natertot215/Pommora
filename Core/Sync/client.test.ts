@@ -22,6 +22,7 @@ function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
       signed.push(canonical)
       return 'sig'
     },
+    agree: async () => new Uint8Array(32),
     rename: async () => {},
   }
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
