@@ -59,6 +59,7 @@ export interface BaseRecord {
 export interface SyncStore {
   readBase(path: string): BaseRecord | null
   readAllBases(): BaseRecord[]
+  readBasesUnder(prefix: string): BaseRecord[]
   upsertBase(record: BaseRecord): void
   renameBase(oldPath: string, newPath: string): void
   deleteBase(path: string): void

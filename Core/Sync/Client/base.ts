@@ -1,5 +1,4 @@
 import { splitFrontmatter } from '../../Files/pageFile'
-import { isMarkdownFile } from '../../Files/walk'
 import { contentId } from '../../Nexus/identityMark'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
@@ -17,6 +16,9 @@ export interface Snapshot {
 export const readBase = (rel: string): BaseRecord | null => syncStore()?.readBase(rel) ?? null
 
 export const readAllBases = (): BaseRecord[] => syncStore()?.readAllBases() ?? []
+
+export const readBasesUnder = (prefix: string): BaseRecord[] =>
+  syncStore()?.readBasesUnder(prefix) ?? []
 
 export const deleteBase = (rel: string): void => syncStore()?.deleteBase(rel)
 
@@ -69,9 +71,4 @@ export async function isDirty(root: string, rel: string): Promise<boolean> {
   return (await hashFile(join(root, rel))) !== base.hash
 }
 
-export async function stampedId(root: string, rel: string): Promise<string | null> {
-  if (!isMarkdownFile(rel)) return null
-  const bytes = await machine().readBytes(join(root, rel))
-  if (bytes === null) return null
-  return contentId(splitFrontmatter(new TextDecoder().decode(bytes))) ?? null
-}
+export const stampedId = (text: string): string | null => contentId(splitFrontmatter(text)) ?? null
