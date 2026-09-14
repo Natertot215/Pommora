@@ -25,6 +25,26 @@ describe('toggleInline', () => {
     const doc = 'a **bold** b'
     expect(apply(doc, toggleInline(doc, 5, 5, 'bold'))).toBe('a bold b')
   })
+  it('unwraps a selection that includes the revealed markers', () => {
+    expect(apply('a **bold** b', toggleInline('a **bold** b', 2, 10, 'bold'))).toBe('a bold b')
+    expect(apply('a *it* b', toggleInline('a *it* b', 2, 6, 'italic'))).toBe('a it b')
+  })
+  it('bold and italic replace each other instead of nesting', () => {
+    expect(apply('a **bold** b', toggleInline('a **bold** b', 4, 8, 'italic'))).toBe('a *bold* b')
+    expect(apply('a **bold** b', toggleInline('a **bold** b', 2, 10, 'italic'))).toBe('a *bold* b')
+    expect(apply('a **bold** b', toggleInline('a **bold** b', 5, 5, 'italic'))).toBe('a *bold* b')
+    expect(apply('a *it* b', toggleInline('a *it* b', 3, 5, 'bold'))).toBe('a **it** b')
+    expect(apply('a __b__ c', toggleInline('a __b__ c', 4, 5, 'italic'))).toBe('a *b* c')
+  })
+  it('a partial selection inside the other mark nests instead of swapping the whole span', () => {
+    const doc = 'a **one two** b'
+    expect(apply(doc, toggleInline(doc, 4, 7, 'italic'))).toBe('a ***one* two** b')
+  })
+  it('bold-italic drops only the pressed mark, and other marks still nest', () => {
+    expect(apply('a ***bi*** b', toggleInline('a ***bi*** b', 2, 10, 'bold'))).toBe('a *bi* b')
+    expect(apply('a ***bi*** b', toggleInline('a ***bi*** b', 5, 7, 'italic'))).toBe('a **bi** b')
+    expect(apply('a ~~s~~ b', toggleInline('a ~~s~~ b', 4, 5, 'bold'))).toBe('a ~~**s**~~ b')
+  })
   it('link wraps with an empty url ready for typing', () => {
     expect(apply('site', toggleInline('site', 0, 4, 'link'))).toBe('[site]()')
   })

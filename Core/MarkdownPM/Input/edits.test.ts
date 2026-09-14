@@ -207,6 +207,48 @@ describe('auto-pair + auto-delete', () => {
     }
     expect(autoPair(scanDoc('a)'), 1, 1, ')', { pairBrackets: false })).toBeNull()
   })
+  it('backspace inside a closer deletes one marker, not the pair it straddles', () => {
+    for (const [doc, c] of [
+      ['**bold**', 7],
+      ['***word***', 8],
+      ['***word***', 9],
+      ['~~s~~', 4],
+      ['==h==', 4],
+      ['__b__', 4],
+      ['"q""', 3],
+      ["don''", 4],
+    ] as const) {
+      expect(autoDelete(scanDoc(doc), c, c)).toBeNull()
+    }
+  })
+  it('backspace still deletes an empty symmetric pair one layer at a time', () => {
+    expect(apply('******', autoDelete(scanDoc('******'), 3, 3)!)).toBe('****')
+    expect(apply('a ** b', autoDelete(scanDoc('a ** b'), 3, 3)!)).toBe('a  b')
+    expect(apply('f()', autoDelete(scanDoc('f()'), 2, 2)!)).toBe('f')
+  })
+  it('the last * of a bold-italic closer steps over instead of stacking', () => {
+    const e = autoPair(scanDoc('***b***'), 6, 6, '*')!
+    expect(e.insert).toBe('')
+    expect(e.selection).toBe(7)
+  })
+  it('a doubled-only closer steps over from inside its content', () => {
+    for (const ch of ['~', '=']) {
+      const doc = `${ch}${ch}s${ch}${ch}`
+      const e = autoPair(scanDoc(doc), 3, 3, ch)!
+      expect(e.insert).toBe('')
+      expect(e.selection).toBe(4)
+    }
+  })
+  it('a marker typed before an existing opener never steps into it', () => {
+    expect(autoPair(scanDoc('a **b**'), 2, 2, '*')?.insert).not.toBe('')
+    expect(autoPair(scanDoc('a "b"'), 2, 2, '"')?.insert).not.toBe('')
+    expect(autoPair(scanDoc('*a**b**'), 2, 2, '*')?.insert).not.toBe('')
+  })
+  it('a closer steps over even after an earlier spaced marker on the line', () => {
+    const e = autoPair(scanDoc('5 * 3 is *fif*'), 13, 13, '*')!
+    expect(e.insert).toBe('')
+    expect(e.selection).toBe(14)
+  })
   it('typing the closing ** of bold steps over instead of stacking markers', () => {
     const e = autoPair(scanDoc('**bold**'), 7, 7, '*')!
     expect(e.insert).toBe('')
@@ -242,6 +284,8 @@ describe('close construct on Enter', () => {
     expect(closeConstructOnEnter(scanDoc('"hi"'), 3, 3)!.selection).toBe(4)
     expect(closeConstructOnEnter(scanDoc('*hi*'), 3, 3)!.selection).toBe(4)
     expect(closeConstructOnEnter(scanDoc('**hi**'), 4, 4)!.selection).toBe(6)
+    expect(closeConstructOnEnter(scanDoc('***hi***'), 5, 5)!.selection).toBe(8)
+    expect(closeConstructOnEnter(scanDoc('"a""b"'), 2, 2)!.selection).toBe(3)
   })
   it('does nothing when the char ahead is not a matching closer', () => {
     expect(closeConstructOnEnter(scanDoc('hello)'), 5, 5)).toBeNull()
