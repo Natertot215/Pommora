@@ -2,7 +2,11 @@ import type { DatabaseSync } from 'node:sqlite'
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 
 type NexusRow = { version: number; protocol: number; kdf: string; historyDays: number }
-type RingRow = { keyId: string; holder: string; wrapped: string; createdMs: number }
+
+export type RingOutcome =
+  | { kind: 'absent' }
+  | { kind: 'stale' | 'exists'; info: Wire.InfoRecord }
+  | { kind: 'ok'; info: Wire.InfoRecord }
 
 export function nexusStore(db: DatabaseSync) {
   const rowStatement = db.prepare(
@@ -16,8 +20,10 @@ export function nexusStore(db: DatabaseSync) {
     'INSERT INTO nexus (nexus_id, version, protocol, kdf, history_days, seq) VALUES (?, 1, ?, ?, ?, 0)',
   )
   const insertRing = db.prepare(
-    `INSERT OR REPLACE INTO ring (nexus_id, key_id, holder, wrapped, created_ms)
-     VALUES (?, ?, ?, ?, ?)`,
+    'INSERT INTO ring (nexus_id, key_id, holder, wrapped, created_ms) VALUES (?, ?, ?, ?, ?)',
+  )
+  const entryStatement = db.prepare(
+    'SELECT 1 FROM ring WHERE nexus_id = ? AND key_id = ? AND holder = ?',
   )
   const bumpVersion = db.prepare('UPDATE nexus SET version = version + 1 WHERE nexus_id = ?')
   const dropStatement = db.prepare('DELETE FROM ring WHERE nexus_id = ? AND holder = ?')
@@ -31,12 +37,7 @@ export function nexusStore(db: DatabaseSync) {
       protocol: 1,
       kdf: JSON.parse(row.kdf) as Wire.KdfParams,
       historyDays: row.historyDays,
-      ring: (ringStatement.all(nexusId) as RingRow[]).map((r) => ({
-        keyId: r.keyId,
-        holder: r.holder,
-        wrapped: r.wrapped,
-        createdMs: r.createdMs,
-      })),
+      ring: ringStatement.all(nexusId) as unknown as Wire.RingEntry[],
     }
   }
 
@@ -66,23 +67,23 @@ export function nexusStore(db: DatabaseSync) {
       return readInfo(nexusId)
     },
 
-    appendRing: (
-      nexusId: string,
-      base: number,
-      add: Wire.RingEntry[],
-    ): { ok: boolean; info: Wire.InfoRecord | null } => {
+    appendRing: (nexusId: string, base: number, add: Wire.RingEntry[]): RingOutcome => {
       db.exec('BEGIN')
       try {
-        const current = readInfo(nexusId)
-        if (current === null || current.version !== base) {
-          db.exec('ROLLBACK')
-          return { ok: false, info: current }
-        }
-        addEntries(nexusId, add)
-        bumpVersion.run(nexusId)
-        const after = readInfo(nexusId)
-        db.exec('COMMIT')
-        return { ok: true, info: after }
+        const outcome = ((): RingOutcome => {
+          const current = readInfo(nexusId)
+          if (current === null) return { kind: 'absent' }
+          if (current.version !== base) return { kind: 'stale', info: current }
+          const taken = add.some(
+            (entry) => entryStatement.get(nexusId, entry.keyId, entry.holder) !== undefined,
+          )
+          if (taken) return { kind: 'exists', info: current }
+          addEntries(nexusId, add)
+          bumpVersion.run(nexusId)
+          return { kind: 'ok', info: readInfo(nexusId) ?? current }
+        })()
+        db.exec(outcome.kind === 'ok' ? 'COMMIT' : 'ROLLBACK')
+        return outcome
       } catch (e) {
         db.exec('ROLLBACK')
         throw e

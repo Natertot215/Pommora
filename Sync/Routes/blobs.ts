@@ -3,7 +3,7 @@ import type { ServerResponse } from 'node:http'
 import type { Store } from '../Store/open.ts'
 import { refuse, type Reply } from '../wire.ts'
 
-export interface BlobParams {
+interface BlobParams {
   nexusId: string
   sha256: string
 }
