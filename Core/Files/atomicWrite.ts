@@ -23,6 +23,19 @@ export async function rewritePreservingTimes(filePath: string, data: string): Pr
   forgetParse(filePath)
 }
 
+// The only writer that skips the echo: a landing must classify as external so the tree reads it.
+export async function landBytes(
+  filePath: string,
+  bytes: Uint8Array,
+  mtimeMs: number,
+): Promise<void> {
+  await machine().writeBytes(filePath, bytes)
+  await machine()
+    .utimes(filePath, mtimeMs)
+    .catch(() => {})
+  forgetParse(filePath)
+}
+
 export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
   recordWrite(filePath)
   await machine().writeBytes(filePath, data)

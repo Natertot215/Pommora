@@ -37,8 +37,21 @@ export function tileBodyUnder(segs: string[], rel: string): boolean {
   )
 }
 
+let tap: ((ev: WatchEvent) => void) | null = null
+
+/** The sync client installs itself here to see every watched event, the tile bodies the tree drops included. */
+export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void {
+  tap = fn
+}
+
+export const watchTap = (): ((ev: WatchEvent) => void) | null => tap
+
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
-export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
+function ignoreUnder(
+  root: string,
+  scope: WatchScope,
+  tileBodies: boolean,
+): (path: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
@@ -47,9 +60,17 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     if (!rel || escapes(rel)) return false
     const segs = rel.split('/')
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
-    return segs.some(neverWatched) || tileBodyUnder(segs, rel) || isExcluded(segs)
+    return segs.some(neverWatched) || (tileBodies && tileBodyUnder(segs, rel)) || isExcluded(segs)
   }
 }
+
+/** What the tree drops. */
+export const ignoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
+  ignoreUnder(root, scope, true)
+
+/** What chokidar never reports, which is the tree's set minus the tile bodies sync carries. */
+export const syncIgnoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
+  ignoreUnder(root, scope, false)
 
 export function valueChangesOf(
   events: WatchEvent[],
