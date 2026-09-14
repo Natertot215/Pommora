@@ -12,13 +12,15 @@ import {
 } from '@pommora/core/Index/contentIndex'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import {
+  describeCaptureStore,
   describeContentIndexStore,
   describeKeyValueStore,
   describeSnapshotStore,
+  describeSyncStore,
 } from '@pommora/core/Testing/storesContract'
 import type { Db } from './driver'
 import { openNexusDb } from './open'
-import { contentIndexStore, keyValueStore, snapshotStore } from './stores'
+import { captureStore, contentIndexStore, keyValueStore, snapshotStore, syncStore } from './stores'
 import { openVersionsDb } from './versionsDb'
 
 let root: string
@@ -40,6 +42,8 @@ afterEach(async () => {
 describeKeyValueStore('SQLite key-value store', () => keyValueStore(db))
 describeContentIndexStore('SQLite content index', () => contentIndexStore(db))
 describeSnapshotStore('SQLite snapshots', () => snapshotStore(versionsDb))
+describeSyncStore('SQLite sync bases', () => syncStore(db))
+describeCaptureStore('SQLite captures', () => captureStore(versionsDb))
 
 describe('the content index over SQLite', () => {
   it('missing tables answer exactly like a null Db, and writers never throw', () => {
@@ -47,6 +51,8 @@ describe('the content index over SQLite', () => {
       keyValue: keyValueStore(db),
       contentIndex: contentIndexStore(db),
       snapshots: snapshotStore(versionsDb),
+      sync: syncStore(db),
+      captures: captureStore(versionsDb),
     })
     markIndexReady()
     db.exec(

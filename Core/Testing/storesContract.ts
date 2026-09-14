@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { KeyValueStore } from '../Platform/machine'
-import type { ContentIndexStore, SnapshotStore } from '../Platform/stores'
+import type {
+  BaseRecord,
+  CaptureStore,
+  ContentIndexStore,
+  SnapshotStore,
+  SyncStore,
+} from '../Platform/stores'
 
 export function describeKeyValueStore(name: string, make: () => KeyValueStore): void {
   describe(name, () => {
@@ -225,6 +231,69 @@ export function describeSnapshotStore(name: string, make: () => SnapshotStore): 
       store.addSnapshot('p2', 200, 'edit', 'b')
       expect(store.clearSnapshots()).toBe(2)
       expect(store.listSnapshots('p1')).toEqual([])
+    })
+  })
+}
+
+const base = (path: string, over: Partial<BaseRecord> = {}): BaseRecord => ({
+  path,
+  mtimeMs: 1_700_000_000_000,
+  size: 12,
+  hash: 'h',
+  blobSha: 'b',
+  version: 3,
+  baseBytes: null,
+  ...over,
+})
+
+export function describeSyncStore(name: string, make: () => SyncStore): void {
+  describe(name, () => {
+    let store: SyncStore
+    beforeEach(() => {
+      store = make()
+    })
+
+    it('round-trips a base record and lists every row', () => {
+      store.upsertBase(base('b.md'))
+      store.upsertBase(base('a.md', { version: 9 }))
+      expect(store.readBase('a.md')).toEqual(base('a.md', { version: 9 }))
+      expect(store.readBase('ghost.md')).toBeNull()
+      expect(store.readAllBases().map((r) => r.path)).toEqual(['a.md', 'b.md'])
+      store.upsertBase(base('a.md', { version: 10 }))
+      expect(store.readBase('a.md')?.version).toBe(10)
+    })
+
+    it('renames one path and deletes one path', () => {
+      store.upsertBase(base('a.md'))
+      store.upsertBase(base('b.md'))
+      store.renameBase('a.md', 'c.md')
+      expect(store.readBase('a.md')).toBeNull()
+      expect(store.readBase('c.md')?.hash).toBe('h')
+      store.deleteBase('b.md')
+      expect(store.readAllBases().map((r) => r.path)).toEqual(['c.md'])
+    })
+
+    it('keeps base bytes as bytes and null as null', () => {
+      const bytes = new Uint8Array([0x00, 0xff, 0x80])
+      store.upsertBase(base('a.md', { baseBytes: bytes }))
+      store.upsertBase(base('b.md'))
+      expect(store.readBase('a.md')?.baseBytes).toEqual(bytes)
+      expect(store.readBase('b.md')?.baseBytes).toBeNull()
+    })
+  })
+}
+
+export function describeCaptureStore(name: string, make: () => CaptureStore): void {
+  describe(name, () => {
+    let store: CaptureStore
+    beforeEach(() => {
+      store = make()
+    })
+
+    it('adds a capture and sweeps it past the cutoff', () => {
+      store.addCapture('a.md', 100, 'local-lost', new Uint8Array([0x61]))
+      expect(store.sweepCaptures(200)).toBe(1)
+      expect(store.sweepCaptures(200)).toBe(0)
     })
   })
 }

@@ -3,7 +3,7 @@ import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { openNexusDb } from './open'
 import { openVersionsDb } from './versionsDb'
 import type { Db } from './driver'
-import { contentIndexStore, keyValueStore, snapshotStore } from './stores'
+import { captureStore, contentIndexStore, keyValueStore, snapshotStore, syncStore } from './stores'
 
 let db: Db | null = null
 let versionsDb: Db | null = null
@@ -40,6 +40,8 @@ export function openSessionDb(root: string): void {
     keyValue: db && keyValueStore(db),
     contentIndex: db && contentIndexStore(db),
     snapshots: versionsDb && snapshotStore(versionsDb),
+    sync: db && syncStore(db),
+    captures: versionsDb && captureStore(versionsDb),
   })
 }
 
