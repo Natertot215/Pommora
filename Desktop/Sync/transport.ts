@@ -8,11 +8,17 @@ export function transport(req: TransportRequest): Promise<TransportReply> {
   const secure = url.protocol === 'https:'
   const request = secure ? httpsRequest : httpRequest
   return new Promise((resolve, reject) => {
+    if (req.pin !== undefined && !secure) {
+      reject(new Error('A pinned request needs an https: address.'))
+      return
+    }
     const r = request(
       url,
       {
         method: req.method,
         headers: req.headers,
+        // In the options the timeout covers the connect too; `setTimeout` arms only once connected.
+        timeout: req.timeoutMs ?? 10_000,
         ...(secure && { rejectUnauthorized: req.pin === undefined }),
       },
       (res) => {
@@ -23,13 +29,15 @@ export function transport(req: TransportRequest): Promise<TransportReply> {
           const buf = Buffer.concat(chunks)
           resolve({
             status: res.statusCode ?? 0,
-            body: buf.toString('utf8'),
-            bytes: new Uint8Array(buf),
+            get body() {
+              return buf.toString('utf8')
+            },
+            bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength),
           })
         })
       },
     )
-    r.setTimeout(req.timeoutMs ?? 10_000, () => r.destroy(new Error('The request timed out.')))
+    r.on('timeout', () => r.destroy(new Error('The request timed out.')))
     r.on('error', reject)
     if (req.pin !== undefined) {
       const check = (socket: TLSSocket): void => {
