@@ -217,6 +217,17 @@ describe('landRename', () => {
     expect(new TextDecoder().decode(losing)).toBe('mine\n')
   })
 
+  it('moves a folder onto an existing directory without reading it', async () => {
+    const bytes = utf8('child\n')
+    await landWrite(host, root, write('Notes/Ideas/One.md', bytes), bytes)
+    await mkdir(abs('Notes/Plans'), { recursive: true })
+
+    await landRename(root, rename('Notes/Ideas', 'Notes/Plans', 11))
+
+    expect(await readFile(abs('Notes/Plans/One.md'), 'utf8')).toBe('child\n')
+    expect(await machine().stat(abs('Notes/Ideas'))).toBeNull()
+  })
+
   it('moves every base row under a renamed folder', async () => {
     const bytes = utf8('child\n')
     await landWrite(host, root, write('Notes/Ideas/One.md', bytes), bytes)

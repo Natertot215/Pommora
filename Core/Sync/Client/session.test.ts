@@ -15,7 +15,7 @@ import { readAllBases, readBase, upsertBase } from './base'
 import { recordWrite } from '../../Files/writeEcho'
 import { ringName } from './keyring'
 import { currentSession, startSession, stopSession, syncNow } from './session'
-import { DEBOUNCE_MS } from './tap'
+import { DEBOUNCE_MS, dirtyPending } from './tap'
 
 const NEXUS = 'nx'
 const ADDRESS = 'http://127.0.0.1:7473'
@@ -314,6 +314,19 @@ describe('startSession', () => {
     await started
 
     expect(currentSession()).toBeNull()
+  })
+
+  it('starts from its cached ring when the hub is unreachable', async () => {
+    await startSession(ctx, root, NEXUS)
+    await stopSession(ctx)
+    hub.intercept = () => 'throw'
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(currentSession()).not.toBeNull()
+    expect(statuses().at(-1)?.state).not.toBe('off')
+    recordWrite(abs('Notes/One.md'))
+    expect([...dirtyPending()]).toEqual(['Notes/One.md'])
   })
 
   it('learns a rotation made while it was down before its first decrypt', async () => {
