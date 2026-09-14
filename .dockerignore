@@ -1,0 +1,9 @@
+*
+!Sync
+**/node_modules
+Sync/**/*.test.ts
+Sync/Testing/
+Sync/scripts/
+Sync/Dockerfile
+Sync/tsconfig.json
+Sync/vitest.config.ts

@@ -1,8 +1,8 @@
 FROM node:24.15-slim
 RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --chown=node:node Sync/ ./Sync/
-ENV POMMORA_SYNC_DATA=/data POMMORA_SYNC_HOST=0.0.0.0 NODE_ENV=production
+COPY Sync/ ./Sync/
+ENV POMMORA_SYNC_DATA=/data POMMORA_SYNC_HOST=0.0.0.0
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 EXPOSE 7473
