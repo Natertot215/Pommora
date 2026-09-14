@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/out", "!**/release", "!**/graphify-out", "!**/.claude"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/out",
+      "!**/release",
+      "!**/graphify-out",
+      "!**/.claude",
+      "!Dashboard/Ledger/loc-history.json"
+    ]
   },
   "formatter": {
     "enabled": true,
