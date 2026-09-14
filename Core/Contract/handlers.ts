@@ -23,12 +23,16 @@ export interface TransportRequest {
   url: string
   method: string
   headers: Record<string, string>
-  body?: string
+  body?: string | Uint8Array
+  timeoutMs?: number
+  /** A `fingerprint256` in Node's colon-hex form; present means the certificate is pinned to it. */
+  pin?: string
 }
 
 export interface TransportReply {
   status: number
   body: string
+  bytes: Uint8Array
 }
 
 /** What a host does that the engine cannot. Every path handed in is forward-slash. */

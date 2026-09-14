@@ -7,7 +7,7 @@ import { call, type SyncHost } from './client'
 const DEVICE_ID = 'fe1c'
 const PUBLIC_KEY = 'k'.repeat(43)
 
-function recorder(reply: TransportReply | Error): {
+function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
   host: SyncHost
   signed: string[]
   sent: TransportRequest[]
@@ -27,7 +27,7 @@ function recorder(reply: TransportReply | Error): {
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
     sent.push(req)
     if (reply instanceof Error) throw reply
-    return reply
+    return { ...reply, bytes: new TextEncoder().encode(reply.body) }
   }
   return { host: { device, transport }, signed, sent }
 }

@@ -34,12 +34,14 @@ const device: HostDevice = {
   },
 }
 
-type Answer = (req: TransportRequest) => TransportReply | Promise<TransportReply>
+type Reply = Omit<TransportReply, 'bytes'>
+type Answer = (req: TransportRequest) => Reply | Promise<Reply>
 
 function host(answer: Answer): HostContext {
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
     sent.push(req)
-    return answer(req)
+    const reply = await answer(req)
+    return { ...reply, bytes: new TextEncoder().encode(reply.body) }
   }
   return { device, transport } as HostContext
 }
@@ -245,7 +247,7 @@ describe('sync:renameDevice', () => {
     )
     expect(renamed).toBe('Studio')
     expect(state.device.name).toBe('Studio')
-    expect(JSON.parse(sent[0].body ?? '{}').name).toBe('Studio')
+    expect(JSON.parse(String(sent[0].body ?? '{}')).name).toBe('Studio')
     expect(sent[0].url).toBe(`${ADDRESS}/connect`)
   })
 
