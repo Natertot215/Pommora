@@ -1,6 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
+import { replyOf } from '../Testing/transportReplies'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type {
   HostContext,
@@ -41,8 +42,7 @@ type Answer = (req: TransportRequest) => Reply | Promise<Reply>
 function host(answer: Answer): HostContext {
   const transport = async (req: TransportRequest): Promise<TransportReply> => {
     sent.push(req)
-    const reply = await answer(req)
-    return { ...reply, bytes: new TextEncoder().encode(reply.body) }
+    return replyOf(await answer(req))
   }
   return { device, transport } as HostContext
 }

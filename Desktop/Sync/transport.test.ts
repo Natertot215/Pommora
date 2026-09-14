@@ -50,6 +50,18 @@ describe('transport', () => {
     ).rejects.toThrow()
   })
 
+  it('refuses a mismatched pin on a socket the agent reused', async () => {
+    const s = createHttpsServer({ cert, key })
+    let handshakes = 0
+    s.on('secureConnection', () => handshakes++)
+    const url = await listen(s, 'https')
+    await transport({ url, method: 'POST', headers: {}, body: SENT, pin: PIN })
+    await expect(
+      transport({ url, method: 'POST', headers: {}, body: SENT, pin: `AA:${PIN.slice(3)}` }),
+    ).rejects.toThrow()
+    expect(handshakes).toBe(1)
+  })
+
   it('reaches an http: address without a pin', async () => {
     const url = await listen(createHttpServer(), 'http')
     const reply = await transport({ url, method: 'POST', headers: {}, body: 'hello' })

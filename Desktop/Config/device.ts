@@ -14,23 +14,33 @@ async function fingerprintOf(raw: ArrayBuffer): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: CryptoKey }> {
-  if (!secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
-  const pair = await globalThis.crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
-  if (!('privateKey' in pair)) throw new Error('Ed25519 generated no key pair.')
+async function mintPair(
+  userDataDir: string,
+  algorithm: 'Ed25519' | 'X25519',
+  usages: Parameters<SubtleCrypto['generateKey']>[2],
+  secretName: string,
+): Promise<{ raw: ArrayBuffer; key: CryptoKey }> {
+  const pair = await globalThis.crypto.subtle.generateKey(algorithm, true, usages)
+  if (!('privateKey' in pair)) throw new Error(`${algorithm} generated no key pair.`)
   const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
   const pkcs8 = await globalThis.crypto.subtle.exportKey('pkcs8', pair.privateKey)
+  await setSecret(userDataDir, secretName, Buffer.from(pkcs8).toString('base64'))
+  return { raw, key: pair.privateKey }
+}
+
+async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: CryptoKey }> {
+  if (!secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
+  // The config gives up its device before the store takes the new private key, so a config never
+  // names a public key while the store holds a different private half: any crash mid-mint re-mints.
+  await updateAppConfig(userDataDir, () => ({ device: undefined }))
+  const { raw, key } = await mintPair(userDataDir, 'Ed25519', ['sign', 'verify'], SECRET)
   const device: SyncDevice = {
     id: await fingerprintOf(raw),
     publicKey: Buffer.from(raw).toString('base64url'),
     name: hostname().slice(0, 64),
   }
-  // The config gives up its device before the store takes the new private key, so a config never
-  // names a public key while the store holds a different private half: any crash mid-mint re-mints.
-  await updateAppConfig(userDataDir, () => ({ device: undefined }))
-  await setSecret(userDataDir, SECRET, Buffer.from(pkcs8).toString('base64'))
   await updateAppConfig(userDataDir, () => ({ device }))
-  return { device, key: pair.privateKey }
+  return { device, key }
 }
 
 async function load(userDataDir: string): Promise<CryptoKey | null> {
@@ -49,25 +59,23 @@ async function ensureAgreementKey(
   userDataDir: string,
   stored: SyncDevice,
 ): Promise<{ x25519: string; key: CryptoKey }> {
-  const secret = stored.x25519 ? await getSecret(userDataDir, AGREEMENT_SECRET) : null
-  if (stored.x25519 && secret !== null) {
-    const key = await globalThis.crypto.subtle.importKey(
-      'pkcs8',
-      new Uint8Array(Buffer.from(secret, 'base64')),
-      'X25519',
-      false,
-      ['deriveBits'],
-    )
-    return { x25519: stored.x25519, key }
+  if (stored.x25519) {
+    const secret = await getSecret(userDataDir, AGREEMENT_SECRET)
+    if (secret !== null) {
+      const key = await globalThis.crypto.subtle.importKey(
+        'pkcs8',
+        new Uint8Array(Buffer.from(secret, 'base64')),
+        'X25519',
+        false,
+        ['deriveBits'],
+      )
+      return { x25519: stored.x25519, key }
+    }
   }
-  const pair = await globalThis.crypto.subtle.generateKey('X25519', true, ['deriveBits'])
-  if (!('privateKey' in pair)) throw new Error('X25519 generated no key pair.')
-  const raw = await globalThis.crypto.subtle.exportKey('raw', pair.publicKey)
-  const pkcs8 = await globalThis.crypto.subtle.exportKey('pkcs8', pair.privateKey)
+  const { raw, key } = await mintPair(userDataDir, 'X25519', ['deriveBits'], AGREEMENT_SECRET)
   const x25519 = Buffer.from(raw).toString('base64url')
-  await setSecret(userDataDir, AGREEMENT_SECRET, Buffer.from(pkcs8).toString('base64'))
   await updateAppConfig(userDataDir, () => ({ device: { ...stored, x25519 } }))
-  return { x25519, key: pair.privateKey }
+  return { x25519, key }
 }
 
 export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
@@ -79,9 +87,9 @@ export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
   const { device, key } =
     stored && loaded ? { device: stored, key: loaded } : await mint(userDataDir)
   const agreement = await ensureAgreementKey(userDataDir, device)
+  const record: SyncDevice = { ...device, x25519: agreement.x25519 }
   const host: HostDevice = {
-    ...device,
-    x25519: agreement.x25519,
+    ...record,
     async sign(canonical: string): Promise<string> {
       const signature = await globalThis.crypto.subtle.sign(
         'Ed25519',
@@ -106,9 +114,7 @@ export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
       return new Uint8Array(bits)
     },
     async rename(name: string): Promise<void> {
-      await updateAppConfig(userDataDir, () => ({
-        device: { id: host.id, publicKey: host.publicKey, name, x25519: host.x25519 },
-      }))
+      await updateAppConfig(userDataDir, () => ({ device: { ...record, name } }))
       host.name = name
     },
   }
