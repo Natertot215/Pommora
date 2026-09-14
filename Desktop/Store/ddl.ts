@@ -1,5 +1,3 @@
-// Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file and starts clean rather than migrating in place. That costs a user every device-local row at once, so the content index has its own generation below and never reaches for that lever. The `sync` table is the device's base record per item and is rebuilt from the hub by the first-bind reconcile.
-
 import type { Db } from './driver'
 
 export const SCHEMA_VERSION = 1

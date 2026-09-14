@@ -8,7 +8,6 @@ export interface SyncHost {
   transport: HostContext['transport']
 }
 
-/** `error` is present only on a status of 0: a refusal before any reply was read, by the transport, the signer, or an unparseable body. */
 export interface CallOutcome<K extends keyof RouteTable> {
   status: number
   reply: RouteTable[K]['reply'] | null
