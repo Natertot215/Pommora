@@ -162,6 +162,8 @@ const refuse = async (r: unknown): Promise<{ code: string; message: string }> =>
 
 const urls = (): string[] => sent.map((r) => new URL(r.url).pathname)
 
+const turn = (ms = 10): Promise<void> => new Promise((wake) => setTimeout(wake, ms))
+
 beforeEach(async () => {
   sent = []
   renamed = null
@@ -177,7 +179,7 @@ beforeEach(async () => {
   seedLiveTree(makeTree())
 })
 afterEach(async () => {
-  stopSession({ push: () => {} })
+  await stopSession({ push: () => {} })
   await forgetKeys({ secrets: memorySecrets() } as unknown as SyncHost, NEXUS)
   dropLiveTree()
   closeSession()
@@ -364,6 +366,51 @@ describe('base rows', () => {
     await unwrap(
       syncHandlers['sync:connect'](host(hubAnswer(hub)), 'http://127.0.0.1:7474', PASSWORD),
     )
+
+    expect(readAllBases()).toEqual([])
+  })
+
+  it('wipes only after a push held open through the rebind has settled', async () => {
+    walkable = tempRoot('pom-sync-rebind-')
+    await mkdir(join(walkable, '.nexus'), { recursive: true })
+    await writeFile(join(walkable, '.nexus', 'nexus.json'), JSON.stringify({ id: NEXUS }))
+    await mkdir(join(walkable, 'Notes'))
+    await writeFile(
+      join(walkable, 'Notes', 'One.md'),
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDRW\n---\nbody`,
+    )
+    await openSession(walkable)
+    seedLiveTree(makeTree())
+
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    let release!: () => void
+    const held = new Promise<void>((wake) => {
+      release = wake
+    })
+    let stores = 0
+    const answer: Answer = (req) => {
+      const path = new URL(req.url).pathname
+      if (path.startsWith('/blob/')) return found({ sha256: 'b' })
+      if (path !== '/store') return hubAnswer(hub)(req)
+      stores += 1
+      return stores === 1
+        ? held.then(() =>
+            found({ outcomes: [{ path: 'Notes/One.md', ok: true, version: 1 }], seq: 1 }),
+          )
+        : found({ outcomes: [], seq: 0 })
+    }
+    const ctx = host(answer)
+
+    const first = syncHandlers['sync:connect'](ctx, ADDRESS, PASSWORD)
+    for (let tries = 0; tries < 200 && stores === 0; tries += 1) await turn()
+    expect(stores).toBe(1)
+
+    const rebinding = syncHandlers['sync:connect'](ctx, 'http://127.0.0.1:7474', PASSWORD)
+    await turn()
+    release()
+    await unwrap(rebinding)
+    await unwrap(first)
 
     expect(readAllBases()).toEqual([])
   })
