@@ -11,7 +11,6 @@ import { escapes } from './pathSafety'
 /** None is content, and a journal's churn must never cost a walk. */
 const STORE_FILE = /\.db(-wal|-shm)?$/
 
-/** What `write-file-atomic` appends to a temp beside its target. */
 const TEMP_SUFFIX = /\.\d+$/
 
 /** `.nexus` is the exception, since Contexts and settings live there. Shared so any lister of a watched directory skips exactly what it drops. */
@@ -24,7 +23,6 @@ export function neverWatched(seg: string): boolean {
   )
 }
 
-/** What sync carries: the trash whole, the config set, and tile bodies, minus the caches and journals a device regenerates for itself. It answers for a directory the way it answers for a file, which is what lets one walker take it as an admit policy. */
 export function manifestAdmits(
   nexusId: string,
   scope: WatchScope,
@@ -37,11 +35,10 @@ export function manifestAdmits(
     if (!rel || escapes(rel)) return false
     const segs = rel.split('/')
     const name = segs[segs.length - 1]
-    if (STORE_FILE.test(name)) return false
-    if (segs[0] === TRASH_DIR) return true
+    if (TEMP_SUFFIX.test(name) && siblings?.has(name.replace(TEMP_SUFFIX, ''))) return false
+    if (segs[0] === TRASH_DIR) return !segs.slice(1).some(neverWatched)
     if (rel === thumbs || rel.startsWith(`${thumbs}/`)) return false
     if (rel === PROPERTY_JOURNAL_REL || rel === CONTEXT_JOURNAL_REL) return false
-    if (TEMP_SUFFIX.test(name) && siblings?.has(name.replace(TEMP_SUFFIX, ''))) return false
     if (isAsset(segs)) return !segs.slice(assetDepth).some(neverWatched)
     return !segs.some(neverWatched) && !isExcluded(segs)
   }

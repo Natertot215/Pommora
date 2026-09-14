@@ -13,7 +13,7 @@ import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from '..
 import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
 import type { NexusTree, ValueChange } from './tree'
 import { getLiveTree } from './liveTree'
-import { classifyEvent, type WatchEvent } from './watchPatch'
+import { classifyEvent, type WatchEvent, type WatchEventName } from './watchPatch'
 import { pageIdIndex } from './valuesChanged'
 
 export function isStatePath(root: string, path: string): boolean {
@@ -39,12 +39,21 @@ export function tileBodyUnder(segs: string[], rel: string): boolean {
 
 let tap: ((ev: WatchEvent) => void) | null = null
 
-// The sync client installs itself here to see every watched event, the tile bodies the tree drops included.
 export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void {
   tap = fn
 }
 
-export const watchTap = (): ((ev: WatchEvent) => void) | null => tap
+export function emitWatch(event: WatchEventName, absPath: string): void {
+  if (tap) tap({ event, absPath })
+}
+
+export function tileBodyOf(root: string): (path: string) => boolean {
+  return (path) => {
+    const rel = relative(root, path)
+    if (!rel || escapes(rel)) return false
+    return tileBodyUnder(rel.split('/'), rel)
+  }
+}
 
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
 function ignoreUnder(
@@ -67,7 +76,6 @@ function ignoreUnder(
 export const ignoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
   ignoreUnder(root, scope, true)
 
-// What chokidar never reports, which is the tree's set minus the tile bodies sync carries.
 export const syncIgnoredUnder = (root: string, scope: WatchScope): ((path: string) => boolean) =>
   ignoreUnder(root, scope, false)
 

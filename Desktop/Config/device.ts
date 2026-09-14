@@ -30,8 +30,6 @@ async function mintPair(
 
 async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: CryptoKey }> {
   if (!secretsAvailable()) throw new Error(KEYCHAIN_UNAVAILABLE)
-  // The config gives up its device before the store takes the new private key, so a config never
-  // names a public key while the store holds a different private half: any crash mid-mint re-mints.
   await updateAppConfig(userDataDir, () => ({ device: undefined }))
   const { raw, key } = await mintPair(userDataDir, 'Ed25519', ['sign', 'verify'], SECRET)
   const device: SyncDevice = {

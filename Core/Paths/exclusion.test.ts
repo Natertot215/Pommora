@@ -90,6 +90,7 @@ describe('manifestAdmits', () => {
 
   it('admits the trash, the config set, and a tile body', () => {
     expect(admits('.trash/Notes/2026__A.md.deleted/_record.json')).toBe(true)
+    expect(admits('.trash/Notes/2026__A.md.deleted')).toBe(true)
     expect(admits('.nexus/assets/crops.json')).toBe(true)
     expect(admits('.nexus/settings.json')).toBe(true)
     expect(admits('.nexus/homepage/t1.md')).toBe(true)
@@ -107,6 +108,13 @@ describe('manifestAdmits', () => {
   it('refuses an atomic-write temp while its target is a sibling', () => {
     expect(admits('Notes/Page.md.123', new Set(['Page.md']))).toBe(false)
     expect(admits('Notes/Page.md.123', new Set())).toBe(true)
+  })
+
+  it('refuses inside the trash what it refuses outside it', () => {
+    const bundle = '.trash/Notes/2026__A.md.deleted'
+    expect(admits(`${bundle}/_record.json.123`, new Set(['_record.json']))).toBe(false)
+    expect(admits(`${bundle}/.DS_Store`)).toBe(false)
+    expect(admits(`${bundle}/nexus.db-wal`)).toBe(false)
   })
 
   it('refuses an excluded folder and admits the asset root', () => {
