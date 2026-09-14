@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL } from './nexusPaths'
+import { ASSETS_DIR_REL, thumbsRel } from './nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
+  manifestAdmits,
   sameScope,
   shouldSkipDir,
   type WatchScope,
@@ -80,5 +81,39 @@ describe('sameScope', () => {
     expect(sameScope(scope(['A'], 'Media'), scope(['B'], 'Media'))).toBe(false)
     expect(sameScope(scope(['A'], 'Media'), scope(['A'], 'Other'))).toBe(false)
     expect(sameScope(scope([], 'Media'), scope(['A'], 'Media'))).toBe(false)
+  })
+})
+
+describe('manifestAdmits', () => {
+  const nexusId = 'NX1'
+  const admits = manifestAdmits(nexusId, scope())
+
+  it('admits the trash, the config set, and a tile body', () => {
+    expect(admits('.trash/Notes/2026__A.md.deleted/_record.json')).toBe(true)
+    expect(admits('.nexus/assets/crops.json')).toBe(true)
+    expect(admits('.nexus/settings.json')).toBe(true)
+    expect(admits('.nexus/homepage/t1.md')).toBe(true)
+  })
+
+  it('refuses thumbnails, journals, databases, and foreign dot-entries', () => {
+    expect(admits(thumbsRel(nexusId))).toBe(false)
+    expect(admits(`${thumbsRel(nexusId)}/a.jpg`)).toBe(false)
+    expect(admits('.nexus/property-cascade.json')).toBe(false)
+    expect(admits('.nexus/context-rename.json')).toBe(false)
+    expect(admits('.nexus/nexus.db-wal')).toBe(false)
+    expect(admits('.obsidian/x')).toBe(false)
+  })
+
+  it('refuses an atomic-write temp while its target is a sibling', () => {
+    expect(admits('Notes/Page.md.123', new Set(['Page.md']))).toBe(false)
+    expect(admits('Notes/Page.md.123', new Set())).toBe(true)
+  })
+
+  it('refuses an excluded folder and admits the asset root', () => {
+    const withExcluded = manifestAdmits(nexusId, scope(['Archive']))
+    expect(withExcluded('Archive')).toBe(false)
+    expect(withExcluded('Archive/x.md')).toBe(false)
+    expect(withExcluded('Notes/x.md')).toBe(true)
+    expect(admits(ASSETS_DIR_REL)).toBe(true)
   })
 })

@@ -6,7 +6,7 @@ const scope = (excluded: string[] = []): WatchScope => ({ excluded, assetDir: AS
 import { rm, mkdir, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { corpusFiles, listMarkdownFiles } from './walk'
+import { corpusFiles, listMarkdownFiles, listPathsUnder } from './walk'
 import { installMachine, machine } from '../Platform/machine'
 
 const base = machine()
@@ -78,5 +78,24 @@ describe('corpusFiles', () => {
     expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual(['a.md', 'sub/b.md'])
     const opened = readSpy.mock.calls.map((c) => relative(root, String(c[0])))
     expect(opened).toEqual(['', 'sub'])
+  })
+})
+
+describe('listPathsUnder', () => {
+  it('returns each admitted path and never a pruned one', async () => {
+    await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
+    await writeFile(join(root, 'Hidden', 'deep', 'hh.md'), 'x', 'utf8')
+    readSpy.mockClear()
+    const seen = await listPathsUnder(root, root, (rel, kind, siblings) => {
+      if (rel === 'Hidden') return false
+      return kind === 'dir' || siblings.has(rel.split('/').pop() as string)
+    })
+    expect(seen.sort()).toEqual(['.nexus/c.md', '.trash/d.md', 'a.md', 'e.txt', 'sub/b.md'])
+    expect(readSpy.mock.calls.map((c) => relative(root, String(c[0]))).sort()).toEqual([
+      '',
+      '.nexus',
+      '.trash',
+      'sub',
+    ])
   })
 })
