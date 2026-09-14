@@ -17,7 +17,7 @@ const WINDOW_MS = 5 * 60_000
 
 type Signature = { device: string; ts: number; sig: string }
 
-export type Handler = (id: Identity, body: unknown) => Reply | Promise<Reply>
+type Handler = (id: Identity, body: unknown) => Reply | Promise<Reply>
 
 export type Routes<K extends keyof Wire.RouteTable> = Record<K, Handler>
 

@@ -1,8 +1,8 @@
 import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
-import { installStores, NO_STORES } from '../../Platform/stores'
+import { type CaptureStore, captureStore, installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { type FakeHub, hubDelete, hubRename, hubSession, hubWrite } from '../../Testing/syncHub'
@@ -114,7 +114,23 @@ describe('reconcile', () => {
     expect(stores()).toEqual([])
   })
 
-  it('lands a tombstone over a local file the hub deleted', async () => {
+  it('follows a rename chain to its last path', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    hubRename(hub, 'Notes/One.md', 'Notes/Two.md')
+    hubRename(hub, 'Notes/Two.md', 'Notes/Three.md')
+    await write('Notes/One.md', page('one'))
+
+    await reconcile(session)
+
+    expect(await here('Notes/One.md')).toBe(false)
+    expect(await here('Notes/Two.md')).toBe(false)
+    expect(await read('Notes/Three.md')).toBe(page('one'))
+    expect(paths()).toEqual(['Notes/Three.md'])
+    expect(stores()).toEqual([])
+  })
+
+  it('lands a tombstone over a local file the hub deleted and captures it', async () => {
+    const added = vi.spyOn(captureStore() as CaptureStore, 'addCapture')
     await hubWrite(hub, ring, 'Notes/One.md', page('one'))
     hubDelete(hub, 'Notes/One.md')
     await write('Notes/One.md', page('one'), REMOTE_MS - 60_000)
@@ -123,6 +139,9 @@ describe('reconcile', () => {
 
     expect(await here('Notes/One.md')).toBe(false)
     expect(paths()).toEqual([])
+    expect(added.mock.calls.map(([path, , reason]) => [path, reason])).toEqual([
+      ['Notes/One.md', 'tombstone-lost'],
+    ])
   })
 
   it('pushes a delete for a base row whose file is gone', async () => {

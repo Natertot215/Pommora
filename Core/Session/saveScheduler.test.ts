@@ -32,7 +32,7 @@ afterEach(() => {
 describe('schedulePageSave', () => {
   it('does not requeue a stale ack and calls the sink once', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    stub({ ok: true, value: { hash: machine().sha256Hex('disk'), stale: true } })
+    stub({ ok: true, value: { stale: true } })
     cachePageDetail(disk)
     const stale = vi.fn()
     setStaleSaveSink(stale)
@@ -40,7 +40,7 @@ describe('schedulePageSave', () => {
     await flushPageSave(PATH)
     await vi.advanceTimersByTimeAsync(2000)
     expect(updateBody).toHaveBeenCalledTimes(1)
-    expect(stale).toHaveBeenCalledExactlyOnceWith(PATH)
+    expect(stale).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
   })
 
   it('sends the write before any await so an unload flush escapes', async () => {
@@ -58,12 +58,12 @@ describe('schedulePageSave', () => {
   })
 
   it('answers stale when no base is held', async () => {
-    stub({ ok: true, value: { hash: machine().sha256Hex('disk'), stale: true } })
+    stub({ ok: true, value: { stale: true } })
     const stale = vi.fn()
     setStaleSaveSink(stale)
     schedulePageSave(PATH, 'typed')
     await flushPageSave(PATH)
     expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', '')
-    expect(stale).toHaveBeenCalledExactlyOnceWith(PATH)
+    expect(stale).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
   })
 })

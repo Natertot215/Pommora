@@ -158,7 +158,7 @@ describe('writeBody', () => {
   it('answers stale without recording a snapshot', async () => {
     const before = await readFile(file, 'utf8')
     const r = await writeBody(root, file, 'two', 'edit', machine().sha256Hex('elsewhere'))
-    expect(r).toEqual({ ok: true, value: { hash: machine().sha256Hex('one\n'), stale: true } })
+    expect(r).toEqual({ ok: true, value: { stale: true } })
     expect(await readFile(file, 'utf8')).toBe(before)
     expect(rows()).toHaveLength(0)
   })

@@ -100,6 +100,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const binding = state.binding
   const address = draft ?? binding?.address ?? ''
   const devices = binding?.state === 'approved' ? binding.devices : []
+  const secure = address.startsWith('https:')
   const needsPassword =
     binding === null || binding.state === 'pending' || state.status.reason === 'password'
 
@@ -109,7 +110,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
         'sync:connect',
         address,
         password || undefined,
-        address.startsWith('https:') ? pin || undefined : undefined,
+        secure ? pin || undefined : undefined,
       )
       setPassword('')
       return sent
@@ -117,26 +118,19 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
     if (ok) setDraft(null)
   }
 
-  const onSyncNow = (): Promise<boolean> =>
-    run(async () => {
-      const r = await host().ask('sync:now')
-      if (r.ok && r.value.status.state !== 'off') markSynced()
-      return r
-    })
-
-  const connect = (
-    <Button type="filled" label="Connect" disabled={busy} onClick={() => void onConnect()} />
-  )
-
   return (
     <>
       <SettingsFieldRow label="This Device">
         <InputField
           label="Device name"
-          edit={{
-            value: state.device.name,
-            onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
-          }}
+          edit={
+            busy
+              ? undefined
+              : {
+                  value: state.device.name,
+                  onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
+                }
+          }
         >
           {state.device.name}
         </InputField>
@@ -177,7 +171,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
           >
             {address === '' ? <span className={placeholder}>No server</span> : address}
           </InputField>
-          {address.startsWith('https:') && (
+          {secure && (
             <InputField
               label="Pin"
               edit={{ value: pin, onCommit: setPin, renames: 'row', emptyCommits: true }}
@@ -185,7 +179,14 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
               {pin === '' ? <span className={placeholder}>No pin</span> : pin}
             </InputField>
           )}
-          {(binding?.state !== 'approved' || needsPassword) && connect}
+          {(binding?.state !== 'approved' || state.status.reason === 'password') && (
+            <Button
+              type="filled"
+              label="Connect"
+              disabled={busy}
+              onClick={() => void onConnect()}
+            />
+          )}
           {binding !== null && (
             <>
               <Button type="base" label="Refresh" disabled={busy} onClick={() => refresh()} />
@@ -204,12 +205,17 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
           type="filled"
           label={syncLabel}
           disabled={busy || binding?.state !== 'approved'}
-          onClick={() => void onSyncNow()}
+          onClick={() =>
+            void run(async () => {
+              const r = await host().ask('sync:now')
+              if (r.ok && r.value.status.state !== 'off') markSynced()
+              return r
+            })
+          }
         />
       </SettingsFieldRow>
       {devices.map((device) => {
         const own = device.id === state.device.id
-        const revoking = device.approved
         return (
           <MenuRowView
             key={device.id}
@@ -217,19 +223,19 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
               kind: 'item',
               inert: true,
               label: device.name,
-              caption: `${fingerprint(device.id)} · ${revoking ? 'Approved' : 'Pending'}${device.x25519 ? ' · paired' : ''}`,
+              caption: `${fingerprint(device.id)} · ${device.approved ? 'Approved' : 'Pending'}${device.x25519 ? ' · paired' : ''}`,
               trailing: own
                 ? undefined
                 : {
                     kind: 'field',
                     children: (
                       <Button
-                        type={revoking ? 'destructive' : 'filled'}
-                        label={revoking ? 'Revoke' : 'Approve'}
+                        type={device.approved ? 'destructive' : 'filled'}
+                        label={device.approved ? 'Revoke' : 'Approve'}
                         disabled={busy}
                         onClick={() =>
                           void run(() =>
-                            revoking
+                            device.approved
                               ? host().ask('sync:revoke', device.id)
                               : host().ask('sync:approve', device.id),
                           )

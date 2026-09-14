@@ -112,7 +112,7 @@ describe('updatePageBody', () => {
     if (!c.ok) throw new Error('setup failed')
     const before = await readFile(c.value.path, 'utf8')
     const r = await updatePageBody(c.value.path, 'two', machine().sha256Hex('elsewhere'))
-    expect(r).toEqual({ ok: true, value: { stale: splitEnvelope(before).body } })
+    expect(r).toEqual({ ok: true, value: { stale: true } })
     expect(await readFile(c.value.path, 'utf8')).toBe(before)
   })
 

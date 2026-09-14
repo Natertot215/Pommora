@@ -1,12 +1,11 @@
 import { join } from '../../Paths/posix'
 import { writeValue } from '../../Platform/localState'
 import { machine } from '../../Platform/machine'
-import { captureLoser } from '../Arrival/captures'
 import { landDelete, landRename, landWrite, recordOf } from '../Arrival/land'
 import type { Change, PullReply } from '../Contract/wire'
 import { isDirty, readBase } from './base'
 import { call, getBlob } from './call'
-import { forgetKeys, openRecord, ringName } from './keyring'
+import { openRecord, ringName } from './keyring'
 import { pushDirty } from './push'
 import type { Session } from './session'
 import { dirtyPending } from './tap'
@@ -15,7 +14,7 @@ export const LONG_POLL_MS = 25_000
 
 export type PullOutcome = 'applied' | 'idle' | 'resync' | 'revoked' | 'error'
 
-function setCursor(session: Session, cursor: number): void {
+export function setCursor(session: Session, cursor: number): void {
   session.target = { ...session.target, cursor }
   writeValue('sync', session.target)
 }
@@ -43,9 +42,6 @@ async function landChange(session: Session, change: Change): Promise<'ok' | 'mis
     await pushDirty(session, [change.path])
     if (holds(change)) return 'ok'
     if (session.failed.has(change.path)) return 'held'
-    const local = await machine().readBytes(join(session.root, change.path))
-    if (local !== null && machine().sha256Hex(local) !== readBase(change.path)?.hash)
-      await captureLoser(session.root, change.path, local, 'local-lost')
   }
   switch (change.kind) {
     case 'write':
@@ -72,19 +68,12 @@ export async function pullWait(session: Session, waitMs: number): Promise<Waited
     { nexusId, cursor: target.cursor, waitMs },
     { timeoutMs: waitMs + 5_000 },
   )
-  if (outcome.status === 409 && outcome.refusal?.error === 'resync') {
-    setCursor(session, 0)
+  if (outcome.status === 409 && outcome.refusal?.error === 'resync')
     return { kind: 'done', outcome: 'resync' }
-  }
   if (outcome.reply === null) {
-    if (
-      outcome.refusal?.error === 'not-found' &&
-      (await host.secrets.get(ringName(nexusId))) !== null
-    ) {
-      await forgetKeys(host, nexusId)
-      return { kind: 'done', outcome: 'revoked' }
-    }
-    return { kind: 'done', outcome: 'error' }
+    const revoked =
+      outcome.refusal?.error === 'not-found' && (await host.secrets.get(ringName(nexusId))) !== null
+    return { kind: 'done', outcome: revoked ? 'revoked' : 'error' }
   }
   return { kind: 'reply', reply: outcome.reply }
 }

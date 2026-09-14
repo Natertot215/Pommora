@@ -5,9 +5,17 @@ import { tileHostAt } from '../../Nexus/watchPatch'
 import { tileBodyUnder } from '../../Nexus/watchSettle'
 import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
-import { syncStore } from '../../Platform/stores'
+import type { CaptureReason } from '../../Platform/stores'
 import { isPlainObject } from '../../Properties/propertyValue'
 import type { Change, ItemRecord } from '../Contract/wire'
+import {
+  deleteBase,
+  readBase,
+  readBasesUnder,
+  recordBase,
+  renameBase,
+  upsertBase,
+} from '../Client/base'
 import type { SyncHost } from '../Client/call'
 import { captureLoser } from './captures'
 import { type Json, isMergedJson, mergeDepthFor, mergeKeys } from './jsonMerge'
@@ -52,7 +60,7 @@ async function bytesToLand(
   if (!isMergedJson(change.path)) return plaintext
   const local = await machine().readBytes(abs)
   if (!local) return plaintext
-  const base = syncStore()?.readBase(change.path)?.baseBytes ?? null
+  const base = readBase(change.path)?.baseBytes ?? null
   if (base && machine().sha256Hex(local) === machine().sha256Hex(base)) return plaintext
   const b = base ? parseObject(base) : {}
   const l = parseObject(local)
@@ -72,6 +80,18 @@ function announceTile(host: SyncHost, rel: string): void {
   if (ref) host.push('tiles:changed', ref)
 }
 
+async function captureUnrecorded(
+  root: string,
+  rel: string,
+  landing: string | null,
+  reason: CaptureReason,
+): Promise<void> {
+  const local = await machine().readBytes(join(root, rel))
+  if (local === null) return
+  const hash = machine().sha256Hex(local)
+  if (hash !== readBase(rel)?.hash && hash !== landing) await captureLoser(root, rel, local, reason)
+}
+
 export async function landWrite(
   host: SyncHost,
   root: string,
@@ -80,33 +100,37 @@ export async function landWrite(
 ): Promise<void> {
   const record = recordOf(change)
   const abs = join(root, change.path)
+  const hash = machine().sha256Hex(plaintext)
   await machine().lock(abs, async () => {
     await machine().mkdir(dirname(abs))
     const bytes = await bytesToLand(host.device.id, abs, change, record, plaintext)
+    if (bytes === plaintext) await captureUnrecorded(root, change.path, hash, 'local-lost')
     await landBytes(abs, bytes, bytes === plaintext ? record.mtimeMs : Date.now())
-    syncStore()?.upsertBase({
-      path: change.path,
-      mtimeMs: record.mtimeMs,
-      size: plaintext.length,
-      hash: machine().sha256Hex(plaintext),
-      blobSha: record.sha256,
-      version: change.seq,
-      baseBytes: isMergedJson(change.path) ? plaintext : null,
-    })
+    recordBase(
+      change.path,
+      { mtimeMs: record.mtimeMs, size: plaintext.length, hash, bytes: plaintext },
+      change.seq,
+      record.sha256,
+    )
     announceTile(host, change.path)
   })
 }
 
-export async function landDelete(root: string, change: Change): Promise<void> {
+export async function landDelete(
+  root: string,
+  change: Change,
+  reason: CaptureReason = 'local-lost',
+): Promise<void> {
   const abs = join(root, change.path)
   await machine().lock(abs, async () => {
     if (await machine().stat(abs)) {
+      await captureUnrecorded(root, change.path, null, reason)
       await machine().remove(abs)
       const parent = dirname(abs)
       if (parent !== root && (await machine().readDir(parent)).length === 0)
         await machine().remove(parent)
     }
-    syncStore()?.deleteBase(change.path)
+    deleteBase(change.path)
   })
 }
 
@@ -126,12 +150,10 @@ export async function landRename(root: string, change: Change): Promise<void> {
       await machine().mkdir(dirname(to))
       await machine().rename(from, to)
     }
-    const store = syncStore()
-    if (!store) return
-    for (const row of store.readBasesUnder(fromRel))
-      store.renameBase(row.path, change.path + row.path.slice(fromRel.length))
-    store.renameBase(fromRel, change.path)
-    const moved = store.readBase(change.path)
-    if (moved) store.upsertBase({ ...moved, version: change.seq })
+    for (const row of readBasesUnder(fromRel))
+      renameBase(row.path, change.path + row.path.slice(fromRel.length))
+    renameBase(fromRel, change.path)
+    const moved = readBase(change.path)
+    if (moved) upsertBase({ ...moved, version: change.seq })
   })
 }

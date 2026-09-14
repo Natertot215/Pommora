@@ -46,6 +46,7 @@ import {
 import {
   bumpBodyEpoch,
   clearCache,
+  refreshCache,
   dropPageDetail,
   dropCacheDetail,
   cachePageDetail,
@@ -736,7 +737,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       switch (req.op) {
         case 'rename': {
           // The cascade rewrites bodies nexus-wide and editorState's key survives the rename, so a warm restore would revive the pre-cascade body.
-          clearCache()
+          refreshCache()
           keepSlots(() => false)
           const shown = get().selection
           if (shown.kind === 'page') void get().select(shown, { record: false })

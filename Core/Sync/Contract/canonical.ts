@@ -13,6 +13,10 @@ export const ROUTES = {
 
 export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`
 
+// The canonical string is the uppercased method, the path, the lowercase hex SHA-256 of the UTF-8
+// request body, or of the raw bytes on a byte route (of the empty string when there is none), and
+// the integer millisecond timestamp, joined by \n. The signature is Ed25519 over the UTF-8 canonical
+// string, base64url. The server refuses a timestamp more than five minutes from its clock.
 export function canonicalString(
   method: string,
   path: string,

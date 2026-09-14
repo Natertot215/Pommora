@@ -3,7 +3,7 @@ import { manifestAdmits, sameScope, type WatchScope } from '../../Paths/exclusio
 import type { Change } from '../Contract/wire'
 import { deleteBase, readAllBases, readBase } from './base'
 import { call } from './call'
-import { advance, landRemote } from './pull'
+import { landRemote, setCursor } from './pull'
 import { pushDirty, resolveStale } from './push'
 import type { Session } from './session'
 import { setStatus } from './status'
@@ -57,7 +57,7 @@ export async function reconcile(session: Session): Promise<void> {
       toPush.push(rel)
       continue
     }
-    await resolveStale(session, rel, head)
+    await resolveStale(session, rel, head, log.heads)
   }
   await pushDirty(session, toPush)
 
@@ -68,7 +68,7 @@ export async function reconcile(session: Session): Promise<void> {
     if ((await landRemote(session, head)) === 'missing')
       return setStatus(session.ctx, { state: 'error', why: `The hub holds no bytes for ${rel}.` })
   }
-  advance(session, log.top)
+  setCursor(session, log.top)
 }
 
 export async function rescope(session: Session, scope: WatchScope): Promise<void> {

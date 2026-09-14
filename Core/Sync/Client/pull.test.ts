@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs'
 import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
@@ -151,12 +152,30 @@ describe('pullOnce', () => {
     expect(new TextDecoder().decode(losing)).toBe('no identity, so no push')
   })
 
-  it('answers resync when the cursor is past the head', async () => {
+  it('captures a save that reaches the file while the landing fetches its blob', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const first = await hubWrite(hub, ring, 'Notes/One.md', page('base'), REMOTE_MS)
+    await hubWrite(hub, ring, 'Notes/One.md', page('remote'), REMOTE_MS)
+    seedBase('Notes/One.md', page('base'), first)
+    await write('Notes/One.md', page('base'), REMOTE_MS)
+    hub.intercept = (req) => {
+      if (req.method === 'GET') writeFileSync(abs('Notes/One.md'), page('saved'))
+      return null
+    }
+
+    expect(await pullOnce(session, 0)).toBe('applied')
+
+    expect(await read('Notes/One.md')).toBe(page('remote'))
+    const [path, , reason, losing] = added.mock.calls[0]
+    expect([path, reason]).toEqual(['Notes/One.md', 'local-lost'])
+    expect(new TextDecoder().decode(losing)).toBe(page('saved'))
+  })
+
+  it('answers resync when the cursor is past the head and leaves the cursor to reconcile', async () => {
     session.target = { ...session.target, cursor: 9 }
 
     expect(await pullOnce(session, 0)).toBe('resync')
-    expect(cursor()).toBe(0)
-    expect(session.target.cursor).toBe(0)
+    expect(session.target.cursor).toBe(9)
   })
 
   it('waits out the long poll before the transport times out', async () => {
@@ -164,13 +183,12 @@ describe('pullOnce', () => {
     expect(pulls()[0].timeoutMs).toBe(LONG_POLL_MS + 5_000)
   })
 
-  it('forgets its keys and answers revoked on not-found with a cached ring', async () => {
+  it('answers revoked on not-found with a cached ring', async () => {
     await secrets.set(ringName(session.nexusId), '[]')
     hub.intercept = (req) =>
       req.url.endsWith('/pull') ? { status: 404, body: '{"error":"not-found"}' } : null
 
     expect(await pullOnce(session, 0)).toBe('revoked')
-    expect(await secrets.get(ringName(session.nexusId))).toBeNull()
   })
 
   it('answers error on a refusal this device was never approved for', async () => {

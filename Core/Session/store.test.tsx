@@ -18,7 +18,7 @@ import {
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
-import { clearCache, readPageDetail } from './pageDetailCache'
+import { clearCache, readBodyBase, readPageDetail, setBodyBase } from './pageDetailCache'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -329,10 +329,12 @@ describe('store — page slots', () => {
       selection: pg('a'),
       pages: { a: ready('a'), b: ready('b') },
     })
+    setBodyBase('Notes/tile.md', { text: 'seen', hash: 'h' })
     await useSession
       .getState()
       .mutate({ op: 'rename', path: 'Notes/b.md', kind: 'page', newName: 'd' })
     const s = useSession.getState()
+    expect(readBodyBase('Notes/tile.md')).toEqual({ text: 'seen', hash: 'h' })
     expect(s.pages.b).toBeUndefined()
     expect(s.pages.a?.status).toBe('ready')
     expect(openPage()).toHaveBeenCalledWith('Notes/a.md')
