@@ -69,6 +69,7 @@ function buildEditorHost(
         pairBrackets: p.pairBrackets,
         pairMarkers: p.pairMarkers,
         pairQuotes: p.pairQuotes,
+        wrapSelections: p.wrapSelections,
         deletePairsTogether: p.deletePairsTogether,
         exitPairsOnEnter: p.exitPairsOnEnter,
         commands,

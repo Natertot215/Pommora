@@ -21,6 +21,7 @@ export interface Edit {
   to: number
   insert: string
   selection: number
+  head?: number
 }
 
 export const lineStartAt = (doc: string, pos: number): number =>
@@ -324,6 +325,36 @@ export function autoPair(
     if (aliasSpanAt(doc.slice(ls, lineEndAt(doc, c)), c - ls)) return null
   }
   return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
+}
+
+export const trimmedRange = (doc: string, from: number, to: number): [number, number] => {
+  let f = from
+  let t = to
+  while (f < t && /\s/.test(doc[f])) f++
+  while (t > f && /\s/.test(doc[t - 1])) t--
+  return f === t ? [from, to] : [f, t]
+}
+
+export function wrapSelection(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  inserted: string,
+  settings: Personalization = {},
+): Edit | null {
+  const pair = PAIRS[inserted]
+  if (!pair || selStart === selEnd || settings.wrapSelections !== true) return null
+  const [from, to] = trimmedRange(scan.text, selStart, selEnd)
+  if (settings[pair.group] === false || inCodeAt(scan, from) || inCodeAt(scan, to)) return null
+  const text = scan.text.slice(from, to)
+  if (pair.group === 'pairMarkers' && text.includes('\n')) return null
+  return {
+    from,
+    to,
+    insert: inserted + text + pair.close,
+    selection: from + 1,
+    head: to + 1,
+  }
 }
 
 export function autoDelete(

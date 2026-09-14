@@ -125,6 +125,7 @@ export interface Personalization {
   pairBrackets?: boolean
   pairMarkers?: boolean
   pairQuotes?: boolean
+  wrapSelections?: boolean
   deletePairsTogether?: boolean
   exitPairsOnEnter?: boolean
 }

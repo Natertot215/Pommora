@@ -7,7 +7,15 @@ import { customSelection } from '../selection'
 import { markdownDecorations } from '../decorations'
 import { formatKeymap } from '../Input/formatKeymap'
 import { cellCitations, citesChanged } from './cellCitations'
-import { autoPair, autoDelete, dashArrow, ellipsis, equations, type Edit } from '../Input/edits'
+import {
+  autoPair,
+  autoDelete,
+  dashArrow,
+  ellipsis,
+  equations,
+  wrapSelection,
+  type Edit,
+} from '../Input/edits'
 import { docScan } from '../docCache'
 import { AC_MAX, aliasRows, pageRow } from '../Autocomplete/autocomplete'
 import { refusedInAlias } from '../Guards/aliasGuard'
@@ -46,7 +54,7 @@ function applyEdit(view: EditorView, e: Edit | null, userEvent: string): boolean
   if (!e) return false
   view.dispatch({
     changes: { from: e.from, to: e.to, insert: e.insert },
-    selection: { anchor: e.selection },
+    selection: { anchor: e.selection, head: e.head },
     userEvent,
   })
   return true
@@ -187,10 +195,12 @@ export function CellEditor({
           keymap.of(defaultKeymap),
           EditorView.inputHandler.of((view, from, to, text) => {
             if (view.composing || view.compositionStarted) return false
-            if (text.length !== 1 || from !== to) return false
+            if (text.length !== 1) return false
             const scan = docScan(view.state.doc)
-            if (refusedInAlias(scan.text, from, text)) return true
             const settings = host.settings()
+            if (from !== to)
+              return applyEdit(view, wrapSelection(scan, from, to, text, settings), 'input')
+            if (refusedInAlias(scan.text, from, text)) return true
             return applyEdit(
               view,
               autoPair(scan, from, from, text, settings) ??

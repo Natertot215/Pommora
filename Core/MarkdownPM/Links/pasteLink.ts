@@ -10,6 +10,7 @@ import { linkDestinationAt } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
+import { trimmedRange } from '../Input/edits'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
@@ -32,7 +33,9 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   const settings = host.settings()
   const decision = decidePaste({
     clipboard: text,
-    selectionText: view.state.sliceDoc(sel.from, sel.to),
+    selectionText: view.state.sliceDoc(
+      ...trimmedRange(view.state.doc.toString(), sel.from, sel.to),
+    ),
     pasteIntoText: settings.pasteLinkIntoText === true,
     inverse,
     format: settings.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,
@@ -55,13 +58,14 @@ function insideCodeAtCaret(view: EditorView, pos: number): boolean {
 
 function writeLink(view: EditorView, link: LinkPaste): void {
   const sel = view.state.selection.main
-  const to = sel.from + link.text.length
+  const [from, selTo] = trimmedRange(view.state.doc.toString(), sel.from, sel.to)
+  const to = from + link.text.length
   view.dispatch({
-    changes: { from: sel.from, to: sel.to, insert: link.text },
+    changes: { from, to: selTo, insert: link.text },
     selection: { anchor: to },
     userEvent: 'input.paste',
     effects: link.wantsTitle
-      ? awaitTitle.of({ from: sel.from, to, url: link.target, text: link.text })
+      ? awaitTitle.of({ from, to, url: link.target, text: link.text })
       : undefined,
   })
   // Fire-and-forget: the anchor effect above picks the answer back up.

@@ -43,6 +43,7 @@ export type EditorSettings = Pick<
   | 'pairBrackets'
   | 'pairMarkers'
   | 'pairQuotes'
+  | 'wrapSelections'
   | 'deletePairsTogether'
   | 'exitPairsOnEnter'
 > & { commands: Commands }

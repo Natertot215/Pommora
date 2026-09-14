@@ -16,6 +16,7 @@ import {
   shiftEnterEdit,
   indentListOnTab,
   outdentListOnShiftTab,
+  wrapSelection,
   type Edit,
 } from './edits'
 import { renumberAfterNest, type ChangeSpec } from '../Engine/listDragModel'
@@ -36,7 +37,7 @@ function apply(view: EditorView, edit: Edit | null, recount: ChangeSpec[] = []):
   view.dispatch(
     {
       changes: { from: edit.from, to: edit.to, insert: edit.insert },
-      selection: { anchor: edit.selection },
+      selection: { anchor: edit.selection, head: edit.head },
       scrollIntoView: true,
       userEvent: 'input',
     },
@@ -141,11 +142,12 @@ export const markdownInput = [
   EditorView.inputHandler.of((view, from, to, text) => {
     // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
     if (view.composing || view.compositionStarted) return false
-    if (text.length !== 1 || from !== to) return false
+    if (text.length !== 1) return false
     const scan = docScan(view.state.doc)
+    const settings = settingsOf(view)
+    if (from !== to) return apply(view, wrapSelection(scan, from, to, text, settings))
     if (refusedInAlias(scan.text, from, text)) return true
     if (text === ']' && seedTypedCitation(view, from)) return true
-    const settings = settingsOf(view)
     return apply(
       view,
       calloutShorthand(scan.text, from, from, text, settings) ??
