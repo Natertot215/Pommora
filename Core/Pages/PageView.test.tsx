@@ -180,7 +180,7 @@ describe('a landing under the open page', () => {
     const view = await mount()
     setStaleSaveSink(notifyLanding)
     onDisk = `${BASE}\ndelta`
-    updateReply = { ok: true, value: { hash: machine().sha256Hex(onDisk), stale: true } }
+    updateReply = { ok: true, value: { stale: true } }
     await act(async () => {
       view.dispatch({ changes: { from: 5, insert: ' ONE' } })
     })

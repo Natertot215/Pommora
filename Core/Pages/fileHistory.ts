@@ -3,8 +3,7 @@ import { kindOf } from '../Nexus/identityMark'
 import { errText, fail, ok, type Result } from '../Contract/result'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { readTextOrNull } from '../Files/atomicWrite'
-import { splitEnvelope } from '../Files/pageFile'
-import { machine } from '../Platform/machine'
+import { bodyHash, splitEnvelope } from '../Files/pageFile'
 import {
   captureStore,
   type SnapshotSource,
@@ -21,8 +20,6 @@ export const SNAPSHOT_MAX_BYTES = 1_048_576
 const lastTs = new Map<string, number>()
 const lastWritten = new Map<string, string>()
 const timers = new Map<string, { source: SnapshotSource; timer: ReturnType<typeof setTimeout> }>()
-
-const bodyHash = (text: string): string => machine().sha256Hex(splitEnvelope(text).body)
 
 async function capture(
   root: string,
@@ -110,7 +107,7 @@ export async function writeBody(
 ): Promise<Result<BodyWrite>> {
   const r = await updatePageBody(absPath, body, baseHash)
   if (!r.ok) return r
-  if ('stale' in r.value) return ok({ hash: bodyHash(r.value.stale), stale: true })
+  if ('stale' in r.value) return ok({ stale: true })
   const { previous, written } = r.value
   const pageId = liveIdOf(root, absPath)
   const known = pageId ? lastWritten.get(pageId) : undefined

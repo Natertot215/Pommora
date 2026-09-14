@@ -7,7 +7,4 @@ export interface PageDetail {
   bodyHash: string
 }
 
-export interface BodyWrite {
-  hash: string
-  stale: boolean
-}
+export type BodyWrite = { stale: true } | { stale: false; hash: string }

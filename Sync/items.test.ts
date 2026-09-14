@@ -152,6 +152,23 @@ describe('the hub change log', () => {
     expect(outcome.head.path).toBe('Stale/x.md')
   })
 
+  it('carries the sealed path through a second rename and seals a write at its new path', async () => {
+    const written = await push([{ kind: 'write', base: null, record: record('Chain/a.md') }])
+    const first = (only(written.reply) as { version: number }).version
+    await push([{ kind: 'rename', base: first, from: 'Chain/a.md', path: 'Chain/b.md' }])
+    const moved = await push([
+      { kind: 'rename', base: first + 1, from: 'Chain/b.md', path: 'Chain/c.md' },
+    ])
+    const renamed = (only(moved.reply) as { version: number }).version
+    const [rename] = (await pull(renamed - 1)).changes
+    expect(rename).toMatchObject({ kind: 'rename', path: 'Chain/c.md', from: 'Chain/b.md' })
+    expect(rename.record?.path).toBe('Chain/a.md')
+    const rewritten = await push([{ kind: 'write', base: renamed, record: record('Chain/c.md') }])
+    const version = (only(rewritten.reply) as { version: number }).version
+    const [write] = (await pull(version - 1)).changes
+    expect(write.record?.path).toBe('Chain/c.md')
+  })
+
   it('stores a capture without advancing the sequence', async () => {
     const before = (await push([{ kind: 'write', base: null, record: record('Notes/kept.md') }]))
       .reply.seq

@@ -4,7 +4,7 @@ import { valueOr } from '@pommora/core/Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
-import { dropDetailsWhere, notifyLanding, readPageDetail } from './pageDetailCache'
+import { dropDetailsWhere, notifyLanding, readBodyBase, readPageDetail } from './pageDetailCache'
 import { setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
@@ -54,16 +54,15 @@ export function useBridgeSubscriptions(): void {
 
   const replaceBody = useSession((s) => s.replaceBody)
   useEffect(() => {
-    const absorb = (path: string, refused: boolean): void => {
-      if (notifyLanding(path)) return
-      const held = readPageDetail(path)
-      if (!held) return
-      if (refused) void dialer().ask('sync:captureLocal', path, held.body)
+    const absorb = (path: string, unsaved = readPageDetail(path)?.body): void => {
+      if (notifyLanding(path) || unsaved === undefined) return
+      if (unsaved !== readBodyBase(path)?.text)
+        void dialer().ask('sync:captureLocal', path, unsaved)
       void replaceBody(path)
     }
-    setStaleSaveSink((path) => absorb(path, true))
+    setStaleSaveSink(absorb)
     const off = dialer().on('pages:changed', (paths) => {
-      for (const path of paths) absorb(path, false)
+      for (const path of paths) absorb(path)
     })
     return () => {
       off()

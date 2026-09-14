@@ -181,6 +181,20 @@ describe('landDelete', () => {
     expect(await machine().stat(abs('Notes'))).not.toBeNull()
   })
 
+  it('captures local bytes the base row never recorded before removing them', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const bytes = utf8('synced\n')
+    await landWrite(host, root, write('Notes/A.md', bytes), bytes)
+    await writeFile(abs('Notes/A.md'), utf8('unpushed\n'))
+
+    await landDelete(root, tombstone('Notes/A.md'), 'tombstone-lost')
+
+    expect(await machine().stat(abs('Notes/A.md'))).toBeNull()
+    const [path, , reason, losing] = added.mock.calls[0]
+    expect([path, reason]).toEqual(['Notes/A.md', 'tombstone-lost'])
+    expect(new TextDecoder().decode(losing)).toBe('unpushed\n')
+  })
+
   it('removes an emptied parent directory after a tombstone and keeps the root', async () => {
     const bytes = utf8('only\n')
     await landWrite(host, root, write('Notes/Ideas/Solo.md', bytes), bytes)

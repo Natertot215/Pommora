@@ -21,8 +21,6 @@ export function isStatePath(root: string, path: string): boolean {
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.state
 }
 
-// Tile bodies load through tiles:get, never the tree walk — a debounced body write must not cost a re-walk. The host's document stays watched, and so does the folder entry itself, since chokidar never descends into an ignored directory.
-// Space hosts get the same treatment file-granularly: a tile `.md` inside a Space never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
 export function tileBodyUnder(segs: string[], rel: string): boolean {
   return (
     (segs[0] === NEXUS_DIR &&

@@ -45,7 +45,7 @@ beforeEach(() => {
       landed = cb
       return () => undefined
     },
-    'page:updateBody': async () => ok({ hash: 'h', stale: true }),
+    'page:updateBody': async () => ok({ stale: true }),
     'sync:captureLocal': captured,
     'sync:changed': (cb: (status: SyncStatus) => void) => {
       pushStatus = cb
@@ -93,6 +93,26 @@ describe('a page that changed outside the app', () => {
 
     expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
     expect(replaceBody).toHaveBeenCalledTimes(2)
+  })
+
+  it('captures a refused save whose page detail is no longer held', async () => {
+    await mount()
+    schedulePageSave(PATH, 'typed')
+    await act(async () => flushPageSave(PATH))
+
+    expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
+    expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
+  })
+
+  it('captures typing a landing replaces before its save went out', async () => {
+    await mount()
+    cachePageDetail(detail({ path: PATH }))
+    schedulePageSave(PATH, 'typed')
+
+    act(() => landed([PATH]))
+
+    expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
+    expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
   })
 
   it('routes a stale save the same way while mounted, and nothing once unmounted', async () => {

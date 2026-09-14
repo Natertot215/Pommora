@@ -26,7 +26,7 @@ import type {
 } from '../Sync/Contract/wire'
 import { replyOf } from './transportReplies'
 
-export interface HubItem {
+interface HubItem {
   version: number
   deleted: boolean
 }
@@ -73,12 +73,9 @@ function headOf(hub: FakeHub, path: string): Change | null {
   return null
 }
 
-const recordAt = (hub: FakeHub, seq: number): ItemRecord | null =>
-  hub.changes.find((change) => change.seq === seq)?.record ?? null
-
 const whole = (value: number): boolean => Number.isInteger(value) && value >= 0
 
-export const malformed = (body: StoreBody): boolean =>
+const malformed = (body: StoreBody): boolean =>
   body.changes.some(
     (change) =>
       (change.kind === 'write' || change.kind === 'capture') &&
@@ -134,7 +131,6 @@ function apply(hub: FakeHub, body: StoreBody): StoreReply {
       hub.changes.push({ seq, kind: 'delete', path, ...at })
       hub.items.set(path, { version: seq, deleted: true })
     } else {
-      const moved = live === null ? null : recordAt(hub, live.version)
       hub.items.delete(path)
       hub.items.delete(change.from)
       hub.items.set(path, { version: seq, deleted: false })
@@ -143,7 +139,7 @@ function apply(hub: FakeHub, body: StoreBody): StoreReply {
         kind: 'rename',
         path,
         from: change.from,
-        ...(moved !== null && { record: moved }),
+        record: hub.changes.find((row) => row.seq === change.base)?.record,
         ...at,
       })
     }

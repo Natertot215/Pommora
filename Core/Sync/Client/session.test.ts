@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext, TransportReply, TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
-import { writeValue } from '../../Platform/localState'
+import { readValue, writeValue } from '../../Platform/localState'
 import { installStores, NO_STORES, type Stores } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
@@ -376,6 +376,52 @@ describe('startSession', () => {
     expect(readBase('Notes/Late.md')).toBeNull()
   })
 
+  it('writes nothing when a long poll answers after its session stopped', async () => {
+    let answer = (_reply: { status: number; body: string }): void => {}
+    let outstanding = 0
+    hub.intercept = (req) => {
+      if (!req.url.endsWith('/pull')) return null
+      if (((JSON.parse(String(req.body)) as { waitMs?: number }).waitMs ?? 0) === 0) return null
+      outstanding += 1
+      return new Promise((resolve) => {
+        answer = resolve
+      })
+    }
+    await startSession(ctx, root, NEXUS)
+    await ctx.secrets.set(ringName(NEXUS), '[]')
+    while (outstanding === 0) await turn(20)
+    await stopSession({ push: () => {} })
+    const rebound = { address: 'http://127.0.0.1:7474', pin: null, cursor: 3 }
+    writeValue('sync', rebound)
+
+    answer({ status: 409, body: '{"error":"resync"}' })
+    await turn()
+
+    expect(readValue('sync')).toEqual(rebound)
+  })
+
+  it('keeps its keys when a stopped session hears revoked from its long poll', async () => {
+    let answer = (_reply: { status: number; body: string }): void => {}
+    let outstanding = 0
+    hub.intercept = (req) => {
+      if (!req.url.endsWith('/pull')) return null
+      if (((JSON.parse(String(req.body)) as { waitMs?: number }).waitMs ?? 0) === 0) return null
+      outstanding += 1
+      return new Promise((resolve) => {
+        answer = resolve
+      })
+    }
+    await startSession(ctx, root, NEXUS)
+    await ctx.secrets.set(ringName(NEXUS), '[]')
+    while (outstanding === 0) await turn(20)
+    await stopSession({ push: () => {} })
+
+    answer({ status: 404, body: '{"error":"not-found"}' })
+    await turn()
+
+    expect(await ctx.secrets.get(ringName(NEXUS))).toBe('[]')
+  })
+
   it('stops and reports revoked when a pull answers revoked', async () => {
     await startSession(ctx, root, NEXUS)
     await ctx.secrets.set(ringName(NEXUS), '[]')
@@ -385,6 +431,7 @@ describe('startSession', () => {
     await turn(120)
 
     expect(currentSession()).toBeNull()
+    expect(await ctx.secrets.get(ringName(NEXUS))).toBeNull()
     expect(statuses().at(-1)).toEqual({
       state: 'off',
       reason: 'revoked',

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
-import { installStores, NO_STORES } from '../../Platform/stores'
+import { type CaptureStore, captureStore, installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { type FakeHub, hubDelete, hubRename, hubSession, hubWrite } from '../../Testing/syncHub'
@@ -184,12 +184,16 @@ describe('pushDirty', () => {
   })
 
   it('re-stores a stale write whose local file is newer and captures the remote', async () => {
+    const added = vi.spyOn(captureStore() as CaptureStore, 'addCapture')
     const first = await remoteWrite('Notes/One.md', page('remote body'))
     seedBase('Notes/One.md', utf8(page('base body')), first - 1)
     await write('Notes/One.md', page('local body'), LOCAL_MS)
 
     await pushDirty(session, ['Notes/One.md'])
 
+    expect(
+      added.mock.calls.map(([path, , reason, bytes]) => [path, reason, decode(bytes)]),
+    ).toEqual([['Notes/One.md', 'remote-lost', page('remote body')]])
     expect(head('Notes/One.md')?.kind).toBe('write')
     expect(hub.items.get('Notes/One.md')?.version).toBe(hub.seq)
     expect(await read('Notes/One.md')).toBe(page('local body'))
@@ -197,12 +201,16 @@ describe('pushDirty', () => {
   })
 
   it('captures a stale write whose local file is older, ships the capture, and lands the remote', async () => {
+    const added = vi.spyOn(captureStore() as CaptureStore, 'addCapture')
     const first = await remoteWrite('Notes/One.md', page('remote body'))
     seedBase('Notes/One.md', utf8(page('base body')), first - 1)
     await write('Notes/One.md', page('local body'), OLD_MS)
 
     await pushDirty(session, ['Notes/One.md'])
 
+    expect(
+      added.mock.calls.map(([path, , reason, bytes]) => [path, reason, decode(bytes)]),
+    ).toEqual([['Notes/One.md', 'local-lost', page('local body')]])
     expect(hub.captures.map((record) => record.path)).toEqual(['Notes/One.md'])
     expect(await read('Notes/One.md')).toBe(page('remote body'))
     expect(readBase('Notes/One.md')?.version).toBe(first)

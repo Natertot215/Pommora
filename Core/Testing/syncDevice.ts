@@ -1,4 +1,4 @@
-import type { HostContext, HostDevice } from '../Contract/handlers'
+import type { HostDevice } from '../Contract/handlers'
 import type { KdfParams, RingEntry } from '../Sync/Contract/wire'
 import { deriveWrappingKey } from '../Sync/Keys/kdf'
 import {
@@ -94,5 +94,3 @@ export async function testKeys(): Promise<{ ring: Ring; entries: RingEntry[] }> 
   const entries = await wrapForPassword([mintKey()], kek)
   return { ring: await unwrapWithPassword(entries, kek), entries }
 }
-
-export const testHostSecrets = (secrets: TestSecrets): HostContext['secrets'] => secrets

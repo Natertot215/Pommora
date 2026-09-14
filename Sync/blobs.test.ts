@@ -45,8 +45,14 @@ describe('the hub blob routes', () => {
     expect((await owner.get(NEXUS, 'f'.repeat(64))).status).toBe(404)
   })
 
-  it('refuses bytes whose hash is not the path', async () => {
+  it('refuses a put whose signature is not over the path hash, before reading its bytes', async () => {
     const put = await owner.put(NEXUS, 'k1', Buffer.from('elsewhere'), blobPath(NEXUS, DIGEST))
+    expect(put.status).toBe(401)
+    expect(spoolFiles()).toEqual([])
+  })
+
+  it('refuses signed bytes whose hash is not the path', async () => {
+    const put = await owner.put(NEXUS, 'k1', Buffer.from('elsewhere'), undefined, MEBIBYTE)
     expect(put.status).toBe(400)
     expect(put.body).toEqual({ error: 'hash-mismatch' })
   })

@@ -27,6 +27,9 @@ export function splitEnvelope(content: string): PageEnvelope {
   return { frontmatter: m[1], body }
 }
 
+export const bodyHash = (content: string): string =>
+  machine().sha256Hex(splitEnvelope(content).body)
+
 /** Anything that isn't a YAML map — an array, a scalar, unrecoverable YAML — reads as an empty map, and the file is still a valid page. */
 export function splitFrontmatter(content: string): Record<string, unknown> {
   try {
@@ -152,14 +155,13 @@ export async function readPageDetail(rootPath: string, relPath: string): Promise
   const content = await machine().readText(absFile)
   if (content === null) throw new Error(`Page not found: ${relPath}`)
   const frontmatter = splitFrontmatter(content)
-  const body = splitEnvelope(content).body
   return {
     id: contentId(frontmatter) ?? adoptedId(relPath),
     title: basenameNoMd(basename(relPath)),
     path: relPath,
     frontmatter,
-    body,
-    bodyHash: machine().sha256Hex(body),
+    body: splitEnvelope(content).body,
+    bodyHash: bodyHash(content),
   }
 }
 

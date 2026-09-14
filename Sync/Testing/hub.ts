@@ -120,15 +120,21 @@ export function signer(name: string) {
     return send(base + path, 'POST', { 'content-type': 'application/json', ...headers }, raw)
   }
 
-  function put(nexusId: string, keyId: string, bytes: Buffer, at?: string): Promise<Outcome> {
-    const path = at ?? blobPath(nexusId, sha256Hex(bytes))
+  function put(
+    nexusId: string,
+    keyId: string,
+    bytes: Buffer,
+    at?: string,
+    sealed = bytes,
+  ): Promise<Outcome> {
+    const path = at ?? blobPath(nexusId, sha256Hex(sealed))
     return send(
       base + path,
       'PUT',
       {
         'content-type': 'application/octet-stream',
         'x-pommora-key': keyId,
-        ...signed('PUT', path, bytes, Date.now()),
+        ...signed('PUT', path, sealed, Date.now()),
       },
       bytes,
     )

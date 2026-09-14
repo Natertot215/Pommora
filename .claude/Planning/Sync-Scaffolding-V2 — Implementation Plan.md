@@ -28,7 +28,7 @@ The rulings that changed the design from the plan's letter, each written in chat
 - **The Nexus heading** is the executor's design under the brief, reviewed: captions ride their rows, the idle hint is the clock time of the last pass, the password field holds its text so it can be cleared and is emptied inside the connect closure, the pin rides only an `https:` address, Connect stays reachable on a password refusal, and a pushed approval refetches the binding.
 - **A timer armed inside a file lock inherited the lock's held key** through `AsyncLocalStorage`, which broke `exclusions:set` on a bound device; the lock frame now carries liveness per key and refuses a take only while that key's call is in flight.
 - **The hub certificate carries a named curve** (LibreSSL's explicit parameters made BoringSSL refuse every pinned handshake); `cert.sh` never overwrites an existing key. Docker was installed user-local (Lima, Colima, the static CLI under `~/.local`); the per-Dockerfile ignore list was inert under the classic builder and shipped the tests and a test private key, so the rules live in a root `.dockerignore`.
-- **Phase 10 was run by the orchestrator on two rigs** (this session's over `http`, the resumed overnight session's over pinned `https`) rather than a phase executor; the neutral Opus verifier was skipped and three Fable agents reviewed the whole diff, all on Nathan's instruction. No code comments were added in the arc; the comment rewrites the plan named became deletions.
+- **Phase 10 was run by the orchestrator on two rigs** (this session's over `http`, the resumed overnight session's over pinned `https`) rather than a phase executor; the neutral Opus verifier was skipped and three Fable agents reviewed the whole diff, all on Nathan's instruction. The arc added two code comments, the TLS notes in `Desktop/Sync/transport.ts`, and shortened one in `Core/Files/walk.ts`; the other comment rewrites the plan named became deletions.
 
 ### Open for Nathan
 
@@ -36,7 +36,9 @@ The rulings that changed the design from the plan's letter, each written in chat
 - `captures` has no reader: with File History off a losing buffer sits in the database unseen.
 - The reconnect backoff caps at 30 s, so a hub returning mid-sleep is noticed at the sleep's end (35 s in the proof); a shorter cap or a wake on `sync:now` alone.
 - `SyncStatus` and `Change` are flat shapes with optional members beside sibling unions; discriminated forms would remove the `record`/`from` throws and the `reason?`/`why?` reads.
-- `Core/Testing/syncHub.ts` is a hand-ported copy of the hub's `apply`; the client suites could boot `Sync/Testing/hub.ts` in-process.
+- `Core/Testing/syncHub.ts` is a hand-ported copy of the hub's `apply`, and its validation, device, and clock have drifted from the hub's; the client suites could boot `Sync/Testing/hub.ts` in-process, or the copy could call `openStore` and `log.applyStore` directly.
+- With no certificate in its data directory the hub serves plain HTTP on whatever address it binds, and the Dockerfile binds `0.0.0.0`; refusing to start off loopback without a certificate would close that.
+- The stale-head lookup scans the change log by path and source path with no index; `change(nexus_id, path, seq)` and `change(nexus_id, from_path, seq)` would make it a seek.
 - The change log is never compacted and `reconcile` replays it from zero on every join, resync, and rescope; the hub's `item` table could answer heads in O(files).
 - The AAD path binding is transit integrity, not blob-for-path confusion protection, since a device decrypts under whatever `record.path` the hub hands back.
 - Row 17's undo half and the heading's rows are manual checks; `nav:write` accepts a duplicate pinned entry.
