@@ -16,7 +16,7 @@ import type {
   SyncStatus,
 } from './Contract/wire'
 import { deriveWrappingKey, freshKdfParams } from './Keys/kdf'
-import { exportRaw, mintKey, wrapForDevice, wrapForPassword } from './Keys/ring'
+import { exportRaw, mintKey, unwrapWithPassword, wrapForDevice, wrapForPassword } from './Keys/ring'
 
 const DAY_MS = 86_400_000
 
@@ -115,8 +115,16 @@ async function rotateRing(
 ): Promise<string | undefined> {
   const info = await readInfo(host, address, nexusId)
   if (info === null) return 'The server holds no key record for this nexus.'
+  const kek = await deriveWrappingKey(password, info.kdf)
+  const proof = info.ring.filter((e) => e.holder === 'password')
+  try {
+    if (proof.length === 0) throw new Error('wrong-password')
+    await unwrapWithPassword(proof, kek)
+  } catch {
+    return 'The stored Nexus password does not open the ring.'
+  }
   const raw = mintKey()
-  const add: RingEntry[] = await wrapForPassword([raw], await deriveWrappingKey(password, info.kdf))
+  const add: RingEntry[] = await wrapForPassword([raw], kek)
   for (const d of devices) {
     if (d.approved && d.x25519)
       add.push(...(await wrapForDevice([raw], { deviceId: d.id, x25519: d.x25519 })))
