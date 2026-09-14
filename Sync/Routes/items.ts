@@ -1,0 +1,69 @@
+import type * as Wire from '@pommora/core/Sync/Contract/wire'
+import type { Identity, Routes } from '../authority.ts'
+import type { Store } from '../Store/open.ts'
+import { refuse, type Reply, text, whole } from '../wire.ts'
+
+const MAX_CHANGES = 1000
+const PATH_MAX = 1024
+const SHA256 = /^[0-9a-f]{64}$/
+
+function itemPath(value: unknown): value is string {
+  if (!text(value, PATH_MAX) || value.startsWith('/') || value.normalize('NFC') !== value) {
+    return false
+  }
+  return value
+    .split('/')
+    .every((segment) => segment.length > 0 && segment !== '.' && segment !== '..')
+}
+
+function itemRecord(value: unknown): Wire.ItemRecord | null {
+  const r = value as Partial<Wire.ItemRecord> | null
+  if (!r || typeof r !== 'object' || !itemPath(r.path)) return null
+  if (!whole(r.mtimeMs, Number.MAX_SAFE_INTEGER) || !whole(r.size, Number.MAX_SAFE_INTEGER)) {
+    return null
+  }
+  if (!text(r.keyId, 64) || !text(r.sha256, 64) || !SHA256.test(r.sha256)) return null
+  return { path: r.path, mtimeMs: r.mtimeMs, size: r.size, keyId: r.keyId, sha256: r.sha256 }
+}
+
+function storeChange(value: unknown): Wire.StoreChange | null {
+  const c = value as Partial<Wire.StoreChange> & { base?: unknown; from?: unknown }
+  if (!c || typeof c !== 'object') return null
+  const base = whole(c.base, Number.MAX_SAFE_INTEGER) ? c.base : null
+  if (c.base !== null && c.base !== undefined && base === null) return null
+  if (c.kind === 'write' || c.kind === 'capture') {
+    const record = itemRecord((c as { record?: unknown }).record)
+    if (!record) return null
+    return c.kind === 'capture' ? { kind: 'capture', record } : { kind: 'write', base, record }
+  }
+  if (base === null) return null
+  const path = (c as { path?: unknown }).path
+  if (!itemPath(path)) return null
+  if (c.kind === 'delete') return { kind: 'delete', base, path }
+  if (c.kind !== 'rename' || !itemPath(c.from) || c.from === path) return null
+  return { kind: 'rename', base, from: c.from, path }
+}
+
+export function itemRoutes(store: Store) {
+  return {
+    store: (id: Identity, body: unknown): Reply => {
+      const b = body as Partial<Wire.StoreBody> | null
+      if (!text(b?.requestId, 128) || !Array.isArray(b.changes)) return refuse(400, 'malformed')
+      if (b.changes.length < 1 || b.changes.length > MAX_CHANGES) return refuse(400, 'malformed')
+      const changes: Wire.StoreChange[] = []
+      for (const raw of b.changes) {
+        const change = storeChange(raw)
+        if (!change) return refuse(400, 'malformed')
+        changes.push(change)
+      }
+      const reply = store.log.applyStore(
+        id.nexusId,
+        id.device,
+        { nexusId: id.nexusId, requestId: b.requestId, changes },
+        Date.now(),
+      )
+      if (reply === null) return refuse(404, 'not-found')
+      return { status: 200, body: reply }
+    },
+  } satisfies Routes<'store'>
+}

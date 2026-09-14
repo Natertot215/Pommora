@@ -1,15 +1,9 @@
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import type { Identity, Routes } from '../authority.ts'
 import type { Store } from '../Store/open.ts'
-import { refuse, type Reply } from '../wire.ts'
+import { refuse, type Reply, text, whole } from '../wire.ts'
 
 const MAX_ENTRIES = 256
-
-const text = (value: unknown, max: number): value is string =>
-  typeof value === 'string' && value.length > 0 && value.length <= max
-
-const whole = (value: unknown, max: number): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max
 
 function ringEntry(value: unknown): Wire.RingEntry | null {
   const e = value as Partial<Wire.RingEntry> | null
