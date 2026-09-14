@@ -69,6 +69,9 @@ export function useBridgeSubscriptions(): void {
 
   useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
 
+  const applySyncStatus = useSession((s) => s.applySyncStatus)
+  useEffect(() => dialer().on('sync:changed', applySyncStatus), [applySyncStatus])
+
   useEffect(() => {
     void dialer()
       .ask('assets:map')

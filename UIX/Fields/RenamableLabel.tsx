@@ -7,6 +7,7 @@ export function RenamableLabel({
   emptyInitial,
   value,
   className,
+  type,
   autoSize,
   boxed,
   ariaLabel,
@@ -20,6 +21,7 @@ export function RenamableLabel({
   emptyInitial?: boolean
   value: string
   className: string
+  type?: 'text' | 'password'
   autoSize?: boolean
   boxed?: boolean
   ariaLabel?: string
@@ -35,6 +37,7 @@ export function RenamableLabel({
       value={value}
       initialText={emptyInitial ? '' : undefined}
       className={className}
+      type={type}
       autoSize={autoSize}
       boxed={boxed}
       ariaLabel={ariaLabel}
