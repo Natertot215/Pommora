@@ -33,5 +33,13 @@
     "nexusId": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "path": "/blob/01ARZ3NDEKTSV4RRFFQ69G5FAV/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "item": {
+    "keyId": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "keyHex": "1a1635b1827cd6fb790528269d9a0ccd1a378cbba1d479bbe2c1366364adb7ce",
+    "path": "Notes/Café.md",
+    "ivHex": "1e5786c36c3a29649b1b6f18",
+    "plaintext": "The body the hub never reads.\n",
+    "blobHex": "011e5786c36c3a29649b1b6f181578338976e8d120833c151030f72fe3d35793b2dab1b03a42c29534c10f4856c67384de16a039643ee8a2d2ab08"
   }
 }
