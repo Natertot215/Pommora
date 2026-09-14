@@ -28,6 +28,7 @@ const device: HostDevice = {
   publicKey: PUBLIC_KEY,
   name: 'Recorder',
   sign: async () => 'sig',
+  agree: async () => new Uint8Array(32),
   rename: async (name) => {
     renamed = name
     device.name = name

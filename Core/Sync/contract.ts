@@ -10,6 +10,8 @@ export interface SyncDevice {
   id: string
   publicKey: string
   name: string
+  /** The raw 32-byte X25519 public key, base64url. */
+  x25519?: string
 }
 
 export type DeviceRecord = SyncDevice & { approved: boolean }
