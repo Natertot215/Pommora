@@ -13,7 +13,7 @@ import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from '..
 import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
 import type { NexusTree, ValueChange } from './tree'
 import { getLiveTree } from './liveTree'
-import { classifyEvent, type WatchEvent, type WatchEventName } from './watchPatch'
+import { classifyEvent, type WatchClass, type WatchEvent, type WatchEventName } from './watchPatch'
 import { pageIdIndex } from './valuesChanged'
 
 export function isStatePath(root: string, path: string): boolean {
@@ -69,18 +69,16 @@ export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string
   }
 }
 
-export function valueChangesOf(
-  events: WatchEvent[],
-  root: string,
-  scope: WatchScope,
-  tree: NexusTree | null,
-): ValueChange[] {
+export function classifyBatch(events: WatchEvent[], root: string, scope: WatchScope): WatchClass[] {
   const held = getLiveTree()
   if (!held) return []
+  return events.map((ev) => classifyEvent(held, root, ev, scope))
+}
+
+export function valueChangesOf(classified: WatchClass[], tree: NexusTree | null): ValueChange[] {
   const byPath = pageIdIndex(tree)
   const byContainer = new Map<string, Set<string>>()
-  for (const ev of events) {
-    const c = classifyEvent(held, root, ev, scope)
+  for (const c of classified) {
     if (c.kind !== 'page-upsert') continue
     const container = relDirname(c.rel)
     const ids = byContainer.get(container) ?? new Set<string>()
@@ -91,17 +89,14 @@ export function valueChangesOf(
   return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
 }
 
-export function tilesChangedIn(
-  events: WatchEvent[],
-  root: string,
-  scope: WatchScope,
-): TileHostRef[] {
-  const held = getLiveTree()
-  if (!held) return []
+export function tilesChangedIn(classified: WatchClass[]): TileHostRef[] {
   const hosts = new Map<string, TileHostRef>()
-  for (const ev of events) {
-    const c = classifyEvent(held, root, ev, scope)
-    if (c.kind === 'tiles-leaf') hosts.set(tileHostKey(c.host), c.host)
-  }
+  for (const c of classified) if (c.kind === 'tiles-leaf') hosts.set(tileHostKey(c.host), c.host)
   return [...hosts.values()]
+}
+
+export function pagesChangedIn(classified: WatchClass[]): string[] {
+  const rels = new Set<string>()
+  for (const c of classified) if (c.kind === 'page-upsert') rels.add(c.rel)
+  return [...rels]
 }

@@ -4,8 +4,10 @@ import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
 import { sameScope, type WatchScope } from '@pommora/core/Paths/exclusion'
 import {
+  classifyBatch,
   emitWatch,
   isStatePath,
+  pagesChangedIn,
   syncIgnoredUnder,
   tileBodyOf,
   tilesChangedIn,
@@ -107,9 +109,12 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     // A session that switched mid-settle must not receive the OLD root's walked tree — a superseded walk still returns it to its awaiters.
     if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
-    const changed = valueChangesOf(events, root, scope, outcome === 'refresh' ? null : tree)
+    const classified = classifyBatch(events, root, scope)
+    const pages = pagesChangedIn(classified)
+    if (pages.length) pushToWindow(win, 'pages:changed', pages)
+    const changed = valueChangesOf(classified, outcome === 'refresh' ? null : tree)
     if (changed.length) pushToWindow(win, 'values:changed', changed)
-    for (const host of tilesChangedIn(events, root, scope)) pushToWindow(win, 'tiles:changed', host)
+    for (const host of tilesChangedIn(classified)) pushToWindow(win, 'tiles:changed', host)
     const assets = getHeldAssetMap(root)
     if (assetsBefore && assets && assets !== assetsBefore)
       pushToWindow(win, 'assets:changed', assets)

@@ -263,6 +263,8 @@ export interface Pushes {
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]
   'tiles:changed': TileHostRef
+  // Relative paths whose body or frontmatter landed from outside the app.
+  'pages:changed': string[]
   'sync:changed': SyncStatus
   'win:fullscreen': boolean
   // A guest's window.open, denied main-side so popups route through the one link adjudicator.
