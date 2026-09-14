@@ -358,7 +358,10 @@ export const syncHandlers = {
         await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
       const scope: SyncScope = { ...target, cursor: kept ? binding.cursor : 0 }
-      if (!kept) for (const row of readAllBases()) deleteBase(row.path)
+      if (!kept) {
+        await stopSession(ctx)
+        for (const row of readAllBases()) deleteBase(row.path)
+      }
       if (!writeValue('sync', scope)) return NO_STORE
       await startSession(ctx, root, nexusId)
       return state(root, ctx)
