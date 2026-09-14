@@ -3,7 +3,7 @@ import { fail, ok, type Result } from '../Contract/result'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
-import { call, type CallOutcome, type SyncHost, syncHost } from './Client/call'
+import { call, type CallOutcome, type SyncHost, type SyncTarget, syncHost } from './Client/call'
 import { forgetHeldRing, forgetKeys, loadRing, passwordName, ringName } from './Client/keyring'
 import type {
   DeviceRecord,
@@ -71,9 +71,10 @@ async function ready(root: string, ctx: HostContext): Promise<Result<Ready>> {
 }
 
 function bindingFrom(
-  address: string,
+  target: SyncTarget,
   outcome: CallOutcome<'devices' | 'approve' | 'revoke'>,
 ): SyncBinding {
+  const address = target.address
   if (Array.isArray(outcome.reply?.devices))
     return { address, state: 'approved', devices: outcome.reply.devices }
   if (outcome.status === 404) return { address, state: 'pending' }
@@ -91,10 +92,10 @@ const silence = (outcome: { error?: string }): Trouble => ({
 
 async function fetchInfo(
   host: SyncHost,
-  address: string,
+  target: SyncTarget,
   nexusId: string,
 ): Promise<InfoRecord | Trouble> {
-  const outcome = await call(host, address, 'info', { nexusId })
+  const outcome = await call(host, target, 'info', { nexusId })
   if (outcome.status === 0) return silence(outcome)
   return outcome.reply?.info ?? NO_RECORD
 }
@@ -103,12 +104,12 @@ const isInfo = (fetched: InfoRecord | Trouble): fetched is InfoRecord => 'ring' 
 
 async function appendRing(
   host: SyncHost,
-  address: string,
+  target: SyncTarget,
   nexusId: string,
   base: number,
   add: RingEntry[],
 ): Promise<InfoRecord | null> {
-  return (await call(host, address, 'ring', { nexusId, base, add })).reply?.info ?? null
+  return (await call(host, target, 'ring', { nexusId, base, add })).reply?.info ?? null
 }
 
 async function state(root: string, ctx: HostContext): Promise<Result<SyncState>> {
@@ -116,24 +117,24 @@ async function state(root: string, ctx: HostContext): Promise<Result<SyncState>>
   if (!r.ok) return r
   const { nexusId, device, host, binding } = r.value
   if (binding === null) return ok({ device, binding: null, status: OFF })
-  const outcome = await call(host, binding.address, 'devices', { nexusId })
+  const outcome = await call(host, binding, 'devices', { nexusId })
   const revoked = outcome.status === 404 && (await host.secrets.get(ringName(nexusId))) !== null
   if (revoked) await forgetKeys(host, nexusId)
   return ok({
     device,
-    binding: bindingFrom(binding.address, outcome),
+    binding: bindingFrom(binding, outcome),
     status: revoked ? { state: 'off', reason: 'revoked', why: 'This device was revoked.' } : OFF,
   })
 }
 
 async function shareRing(
   host: SyncHost,
-  address: string,
+  target: SyncTarget,
   nexusId: string,
   deviceId: string,
   devices: DeviceRecord[],
 ): Promise<KeyWork> {
-  const fetched = await fetchInfo(host, address, nexusId)
+  const fetched = await fetchInfo(host, target, nexusId)
   if (!isInfo(fetched)) return { trouble: fetched, stop: true }
   const ring = await loadRing(host, nexusId, fetched, null)
   if (ring === null)
@@ -144,8 +145,8 @@ async function shareRing(
       },
       stop: true,
     }
-  const target = devices.find((d) => d.id === deviceId)
-  if (!target?.x25519)
+  const holder = devices.find((d) => d.id === deviceId)
+  if (!holder?.x25519)
     return {
       trouble: {
         reason: 'password',
@@ -155,8 +156,8 @@ async function shareRing(
   const known = new Set(fetched.ring.filter((e) => e.holder === deviceId).map((e) => e.keyId))
   const raws = (await exportRaw(ring)).filter((raw) => !known.has(raw.keyId))
   if (raws.length === 0) return {}
-  const add = await wrapForDevice(raws, { deviceId, x25519: target.x25519 })
-  const appended = await appendRing(host, address, nexusId, fetched.version, add)
+  const add = await wrapForDevice(raws, { deviceId, x25519: holder.x25519 })
+  const appended = await appendRing(host, target, nexusId, fetched.version, add)
   return appended === null
     ? { trouble: { reason: 'server', why: 'The server refused the key hand-off.' }, stop: true }
     : {}
@@ -164,13 +165,13 @@ async function shareRing(
 
 async function rotateRing(
   host: SyncHost,
-  address: string,
+  target: SyncTarget,
   nexusId: string,
   password: string,
   deviceId: string,
   devices: DeviceRecord[],
 ): Promise<KeyWork> {
-  const fetched = await fetchInfo(host, address, nexusId)
+  const fetched = await fetchInfo(host, target, nexusId)
   if (!isInfo(fetched)) return { trouble: fetched, stop: true }
   const kek = await deriveWrappingKey(password, fetched.kdf)
   const proof = fetched.ring.filter((e) => e.holder === 'password')
@@ -193,7 +194,7 @@ async function rotateRing(
   for (const d of holders) {
     if (d.x25519) add.push(...(await wrapForDevice([raw], { deviceId: d.id, x25519: d.x25519 })))
   }
-  const appended = await appendRing(host, address, nexusId, fetched.version, add)
+  const appended = await appendRing(host, target, nexusId, fetched.version, add)
   if (appended === null)
     return { trouble: { reason: 'server', why: 'The server refused the new key.' }, stop: true }
   await loadRing(host, nexusId, appended, null)
@@ -221,25 +222,25 @@ const act = (route: 'approve' | 'revoke') =>
       if (password === null)
         return fail('operation-failed', 'The Nexus password is needed to rotate the ring.')
     }
-    const listing = await call(host, binding.address, 'devices', { nexusId })
+    const listing = await call(host, binding, 'devices', { nexusId })
     const devices = listing.reply?.devices
     if (devices === undefined)
-      return ok({ device, binding: bindingFrom(binding.address, listing), status: OFF })
+      return ok({ device, binding: bindingFrom(binding, listing), status: OFF })
     const work =
       password === null
-        ? await shareRing(host, binding.address, nexusId, deviceId, devices)
-        : await rotateRing(host, binding.address, nexusId, password, deviceId, devices)
+        ? await shareRing(host, binding, nexusId, deviceId, devices)
+        : await rotateRing(host, binding, nexusId, password, deviceId, devices)
     if (work.stop === true)
       return ok({
         device,
-        binding: bindingFrom(binding.address, listing),
+        binding: bindingFrom(binding, listing),
         status: statusOf(work.trouble),
       })
-    const outcome = await call(host, binding.address, route, { nexusId, deviceId })
+    const outcome = await call(host, binding, route, { nexusId, deviceId })
     if (outcome.status !== 200 && outcome.status !== 0) return state(root, ctx)
     return ok({
       device,
-      binding: bindingFrom(binding.address, outcome),
+      binding: bindingFrom(binding, outcome),
       status: statusOf(work.trouble),
     })
   })
@@ -261,7 +262,7 @@ export const syncHandlers = {
       await host.device.rename(name)
       if (binding === null) return state(root, ctx)
       // The name is server state on the device's one global row, so the bound server hears it too.
-      const outcome = await call(host, binding.address, 'connect', {
+      const outcome = await call(host, binding, 'connect', {
         nexusId,
         publicKey: device.publicKey,
         name,
@@ -296,7 +297,9 @@ export const syncHandlers = {
       const password = given(raw2)
       const pin = given(raw3)
       const { nexusId, device, host, binding } = r.value
-      const outcome = await call(host, address, 'connect', {
+      const kept = binding !== null && binding.address === address
+      const target = { address, pin: kept ? (pin ?? binding.pin) : pin }
+      const outcome = await call(host, target, 'connect', {
         nexusId,
         publicKey: device.publicKey,
         name: device.name,
@@ -307,7 +310,7 @@ export const syncHandlers = {
           'operation-failed',
           `The server refused or did not answer: ${outcome.error ?? outcome.status}.`,
         )
-      const asked = await call(host, address, 'info', { nexusId })
+      const asked = await call(host, target, 'info', { nexusId })
       if (asked.status === 0)
         return fail(
           'operation-failed',
@@ -332,7 +335,7 @@ export const syncHandlers = {
             x25519: host.device.x25519,
           })),
         ]
-        const created = await call(host, address, 'info', {
+        const created = await call(host, target, 'info', {
           nexusId,
           create: {
             protocol: 1,
@@ -349,12 +352,7 @@ export const syncHandlers = {
         await host.secrets.set(passwordName(nexusId), password)
         await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
-      const kept = binding !== null && binding.address === address
-      const scope: SyncScope = {
-        address,
-        pin: kept ? (pin ?? binding.pin) : pin,
-        cursor: kept ? binding.cursor : 0,
-      }
+      const scope: SyncScope = { ...target, cursor: kept ? binding.cursor : 0 }
       return writeValue('sync', scope) ? state(root, ctx) : NO_STORE
     },
   ),
