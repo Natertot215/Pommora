@@ -1,4 +1,9 @@
-import type { TransportReply, TransportRequest } from '../Contract/handlers'
+import type { HostContext, TransportReply, TransportRequest } from '../Contract/handlers'
+import { machine } from '../Platform/machine'
+import type { Session } from '../Sync/Client/session'
+import { encryptItem } from '../Sync/Keys/item'
+import { newest, type Ring } from '../Sync/Keys/ring'
+import { memorySecrets, testDevice, testRing, type TestSecrets } from './syncDevice'
 import type {
   Change,
   DeviceRecord,
@@ -6,6 +11,7 @@ import type {
   ItemRecord,
   PullReply,
   StoreBody,
+  StoreChange,
   StoreOutcome,
   StoreReply,
 } from '../Sync/Contract/wire'
@@ -192,3 +198,80 @@ export function fakeHub(device = 'hub'): FakeHub {
   }
   return hub
 }
+
+export interface HubSession {
+  session: Session
+  hub: FakeHub
+  ring: Ring
+  pushes: Array<[string, unknown]>
+  secrets: TestSecrets
+}
+
+export async function hubSession(
+  root: string,
+  opts: { nexusId?: string; device?: string; remote?: string } = {},
+): Promise<HubSession> {
+  const hub = fakeHub(opts.remote ?? 'bbbb')
+  const ring = await testRing()
+  const pushes: Array<[string, unknown]> = []
+  const secrets = memorySecrets()
+  const session: Session = {
+    host: {
+      device: await testDevice(opts.device ?? 'aaaa', 'Local'),
+      transport: hub.transport,
+      secrets,
+      push: () => {},
+    },
+    ctx: {
+      push: (k: string, payload: unknown) => pushes.push([k, payload]),
+    } as unknown as HostContext,
+    root,
+    nexusId: opts.nexusId ?? 'nx',
+    target: { address: 'http://127.0.0.1:7473', pin: null, cursor: 0 },
+    ring,
+    scope: { excluded: [], assetDir: '.nexus/assets' },
+    failed: new Set(),
+  }
+  return { session, hub, ring, pushes, secrets }
+}
+
+const seed = (hub: FakeHub, changes: StoreChange[]): number =>
+  apply(hub, { nexusId: '', requestId: `seed-${hub.seq + 1}`, changes }).seq
+
+export async function hubWrite(
+  hub: FakeHub,
+  ring: Ring,
+  rel: string,
+  text: string,
+  mtimeMs = hub.atMs,
+): Promise<number> {
+  const bytes = new TextEncoder().encode(text)
+  const key = newest(ring)
+  const blob = await encryptItem(key, rel, new Uint8Array(bytes))
+  const sha256 = machine().sha256Hex(blob)
+  hub.blobs.set(sha256, blob)
+  const live = hub.items.get(rel)
+  const was = hub.atMs
+  hub.atMs = mtimeMs
+  const seq = seed(hub, [
+    {
+      kind: 'write',
+      base: live !== undefined && !live.deleted ? live.version : null,
+      record: { path: rel, mtimeMs, size: bytes.length, keyId: key.keyId, sha256 },
+    },
+  ])
+  hub.atMs = was
+  return seq
+}
+
+const versionOf = (hub: FakeHub, path: string): number => {
+  const live = hub.items.get(path)
+  if (live === undefined) throw new Error(`no hub item at ${path}`)
+  return live.version
+}
+
+export const hubRename = (hub: FakeHub, from: string, to: string): number =>
+  seed(hub, [{ kind: 'rename', base: versionOf(hub, from), from, path: to }])
+
+export const hubDelete = (hub: FakeHub, path: string): number =>
+  seed(hub, [{ kind: 'delete', base: versionOf(hub, path), path }])
