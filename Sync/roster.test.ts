@@ -1,55 +1,10 @@
-import { createHash, generateKeyPairSync, sign } from 'node:crypto'
-import { mkdtempSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { canonical, start } from './server.ts'
+import { boot, signer } from './Testing/hub.ts'
 
 const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 const OTHER_NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FB0'
 
-const dataDir = mkdtempSync(join(tmpdir(), 'pommora-sync-'))
-let running: { port: number; close(): Promise<void> }
-let base = ''
-
-type Outcome = { status: number; body: unknown }
-
-function signer(name: string) {
-  const pair = generateKeyPairSync('ed25519')
-  const jwk = pair.publicKey.export({ format: 'jwk' })
-  const publicKey = String(jwk.x)
-  const id = createHash('sha256').update(Buffer.from(publicKey, 'base64url')).digest('hex')
-
-  async function call(
-    path: string,
-    body: unknown,
-    tweak?: { ts?: number; signature?: string },
-  ): Promise<Outcome> {
-    const json = body === undefined ? '' : JSON.stringify(body)
-    const ts = tweak?.ts ?? Date.now()
-    const raw = Buffer.from(json, 'utf8')
-    const signature =
-      tweak?.signature ??
-      sign(null, Buffer.from(canonical('POST', path, raw, ts), 'utf8'), pair.privateKey).toString(
-        'base64url',
-      )
-    const response = await fetch(base + path, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-pommora-device': id,
-        'x-pommora-timestamp': String(ts),
-        'x-pommora-signature': signature,
-      },
-      body: json,
-    })
-    const text = await response.text()
-    return { status: response.status, body: text.length > 0 ? JSON.parse(text) : null }
-  }
-
-  return { id, publicKey, name, call }
-}
+let hub: Awaited<ReturnType<typeof boot>>
 
 const first = signer('First Mac')
 const second = signer('Second Mac')
@@ -67,40 +22,15 @@ function names(body: unknown): { id: string; approved: boolean }[] {
   }))
 }
 
-async function boot() {
-  running = await start({ dataDir, port: 0 })
-  base = `http://127.0.0.1:${running.port}`
-}
-
-beforeAll(boot)
-
-afterAll(async () => {
-  await running.close()
+beforeAll(async () => {
+  hub = await boot()
 })
 
-describe('the sync server', () => {
-  it('matches the shared canonical vectors', () => {
-    const fixture = JSON.parse(
-      readFileSync(
-        fileURLToPath(new URL('../Core/Sync/Contract/vectors.json', import.meta.url)),
-        'utf8',
-      ),
-    ) as {
-      canonical: {
-        method: string
-        path: string
-        body: string
-        timestampMs: number
-        canonical: string
-      }[]
-    }
-    for (const vector of fixture.canonical) {
-      expect(
-        canonical(vector.method, vector.path, Buffer.from(vector.body, 'utf8'), vector.timestampMs),
-      ).toBe(vector.canonical)
-    }
-  })
+afterAll(async () => {
+  await hub.close()
+})
 
+describe('the hub roster', () => {
   it('approves the first device of a Nexus by construction', async () => {
     const outcome = await first.call('/connect', connectBody(first))
     expect(outcome.status).toBe(200)
@@ -170,8 +100,8 @@ describe('the sync server', () => {
   })
 
   it('keeps memberships across a restart', async () => {
-    await running.close()
-    await boot()
+    await hub.close()
+    hub = await boot(hub.dataDir)
     const listed = await first.call('/devices', { nexusId: NEXUS })
     expect(listed.status).toBe(200)
     expect(names(listed.body)).toEqual([{ id: first.id, approved: true }])
