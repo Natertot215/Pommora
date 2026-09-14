@@ -218,6 +218,7 @@ export async function resolveStale(
   session: Session,
   rel: string,
   head: Change | null,
+  heads: ReadonlyMap<string, Change> = new Map(),
 ): Promise<void> {
   const { host, root, target, nexusId } = session
   if (head === null) {
@@ -226,7 +227,7 @@ export async function resolveStale(
   }
   if (head.kind === 'rename' && head.path !== rel) {
     await landRename(root, head)
-    return resolveStale(session, head.path, head)
+    return resolveStale(session, head.path, heads.get(head.path) ?? head, heads)
   }
   const snapshot = await readSnapshot(root, rel)
   if (head.kind === 'delete') {
@@ -240,8 +241,7 @@ export async function resolveStale(
         base: null,
         record,
       }))
-    await captureLoser(root, rel, snapshot.bytes, 'tombstone-lost')
-    return landDelete(root, head)
+    return landDelete(root, head, 'tombstone-lost')
   }
   const record = recordOf(head)
   const blob = await getBlob(host, target, nexusId, record.sha256)
@@ -263,7 +263,6 @@ export async function resolveStale(
       record: item,
     }))
   }
-  await captureLoser(root, rel, snapshot.bytes, 'local-lost')
   await storeLocal(session, rel, snapshot, (item) => ({ kind: 'capture', record: item }))
   return landWrite(host, root, head, remote)
 }

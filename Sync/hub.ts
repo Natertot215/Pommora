@@ -134,11 +134,11 @@ async function bytes(
   }
   const keyId = header(req, 'x-pommora-key')
   if (keyId === null || keyId.length > KEY_ID_MAX) return refuse(400, 'malformed')
+  const bad = verify(id, method, path, params.sha256)
+  if (bad) return bad
   const spool = await spoolBody(req, BLOB_CAP, d.dataDir)
   if (spool === null) return refuse(413, 'too-large')
   try {
-    const bad = verify(id, method, path, spool.sha256Hex)
-    if (bad) return bad
     if (spool.sha256Hex !== params.sha256) return refuse(400, 'hash-mismatch')
     return d.blobs.put(params, keyId, spool)
   } finally {

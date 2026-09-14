@@ -50,13 +50,13 @@ export async function openNexusSequence(
 ): Promise<string> {
   // Re-adopting the already-open nexus is a re-point of a live session, not a genuine open.
   const priorRoot = sessionRoot()
+  await stopSession(ctx)
   if (priorRoot !== null) await retireFileHistory(priorRoot)
   await openSession(path)
   // openSession canonicalized the root; every step below keys off that string.
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
   await replayPendingRename(root)
-  await stopSession(ctx)
   ctx.openStores(root)
   if (root !== priorRoot) {
     void sweepFileHistory(root)

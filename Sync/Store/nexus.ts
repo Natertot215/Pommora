@@ -3,7 +3,7 @@ import type * as Wire from '@pommora/core/Sync/Contract/wire'
 
 type NexusRow = { version: number; protocol: number; kdf: string; historyDays: number }
 
-export type RingOutcome =
+type RingOutcome =
   | { kind: 'absent' }
   | { kind: 'stale' | 'exists'; info: Wire.InfoRecord }
   | { kind: 'ok'; info: Wire.InfoRecord }

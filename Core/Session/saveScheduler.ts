@@ -59,9 +59,9 @@ export function createBodyWriter(): BodyWriter {
 
 const pageWriter = createBodyWriter()
 
-let staleSink: ((path: string) => void) | null = null
+let staleSink: ((path: string, body: string) => void) | null = null
 
-export function setStaleSaveSink(fn: ((path: string) => void) | null): void {
+export function setStaleSaveSink(fn: ((path: string, body: string) => void) | null): void {
   staleSink = fn
 }
 
@@ -71,7 +71,7 @@ export function schedulePageSave(path: string, body: string): void {
     writeThroughBody(path, body)
     const r = await host().ask('page:updateBody', path, body, readBodyBase(path)?.hash ?? '')
     if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash })
-    else if (r.ok) staleSink?.(path)
+    else if (r.ok) staleSink?.(path, body)
     return r
   })
 }

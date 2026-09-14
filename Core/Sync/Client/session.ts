@@ -10,7 +10,7 @@ import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
 import { readAllBases } from './base'
 import { call, type SyncHost, syncHost } from './call'
-import { loadRing } from './keyring'
+import { forgetKeys, loadRing } from './keyring'
 import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait } from './pull'
 import { answered, pushDirty, pushRename } from './push'
 import { admittedPaths, reconcile, rescope } from './reconcile'
@@ -65,7 +65,9 @@ function working<T>(self: Session, work: () => Promise<T>): Promise<T | undefine
 }
 
 async function revoked(self: Session): Promise<void> {
+  if (session !== self) return
   await stopSession(self.ctx)
+  await forgetKeys(self.host, self.nexusId)
   setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
 }
 

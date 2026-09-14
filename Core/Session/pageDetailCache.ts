@@ -108,11 +108,15 @@ export function subscribeBodyEpoch(fn: () => void): () => void {
 export const useBodyEpoch = (path: string): number =>
   useSyncExternalStore(subscribeBodyEpoch, () => readBodyEpoch(path))
 
-export function clearCache(): void {
+export function refreshCache(): void {
   clearWarm()
   detailByPath.clear()
-  baseByPath.clear()
   inFlight.clear()
   bodyEpochs.clear()
   for (const fn of epochListeners) fn()
+}
+
+export function clearCache(): void {
+  refreshCache()
+  baseByPath.clear()
 }

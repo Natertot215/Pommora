@@ -98,11 +98,6 @@ export function logStore(db: DatabaseSync) {
     return row ? decode(row) : null
   }
 
-  const recordOf = (nexusId: string, seq: number): Wire.ItemRecord | null => {
-    const row = recordStatement.get(nexusId, seq) as { record: string | null } | undefined
-    return row?.record ? (JSON.parse(row.record) as Wire.ItemRecord) : null
-  }
-
   function apply(
     nexusId: string,
     device: string,
@@ -170,8 +165,7 @@ export function logStore(db: DatabaseSync) {
         insertChange.run(nexusId, seq, 'delete', path, null, null, device, atMs)
         upsertItem.run(nexusId, path, seq, 1)
       } else {
-        const moved = live && recordOf(nexusId, live.version)
-        const record = moved === null ? null : JSON.stringify(moved)
+        const { record } = recordStatement.get(nexusId, change.base) as { record: string }
         dropItem.run(nexusId, path)
         moveItem.run(path, seq, nexusId, change.from)
         insertChange.run(nexusId, seq, 'rename', path, change.from, record, device, atMs)
@@ -198,7 +192,6 @@ export function logStore(db: DatabaseSync) {
       return row ? Buffer.from(row.bytes) : null
     },
 
-    hasBlob,
     seqOf,
 
     readChanges: (nexusId: string, cursor: number, limit = 200): Wire.PullReply => {

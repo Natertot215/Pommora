@@ -1,4 +1,4 @@
-export const MAX_WAIT_MS = 25_000
+const MAX_WAIT_MS = 25_000
 
 interface Waiter {
   cursor: number
