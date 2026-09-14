@@ -6,7 +6,13 @@ import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { splitEnvelope } from '../Files/pageFile'
-import { installStores, NO_STORES, type SnapshotStore, snapshotStore } from '../Platform/stores'
+import {
+  type CaptureStore,
+  installStores,
+  NO_STORES,
+  type SnapshotStore,
+  snapshotStore,
+} from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
   SNAPSHOT_MAX_BYTES,
@@ -349,5 +355,15 @@ describe('sweepFileHistory', () => {
     await sweepFileHistory(root)
     expect(rows()).toEqual([])
     expect(rows(OTHER)).toHaveLength(1)
+  })
+
+  it('sweeps old captures beside old snapshots', async () => {
+    await settle({ historyDays: 7 })
+    const captures = mem.stores.captures as CaptureStore
+    captures.addCapture('Notes/A.md', Date.now(), 'remote-lost', new Uint8Array([1]))
+    vi.advanceTimersByTime(8 * DAY)
+    captures.addCapture('Notes/B.md', Date.now(), 'remote-lost', new Uint8Array([2]))
+    await sweepFileHistory(root)
+    expect(captures.sweepCaptures(Number.MAX_SAFE_INTEGER)).toBe(1)
   })
 })
