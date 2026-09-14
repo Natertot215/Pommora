@@ -219,6 +219,7 @@ export interface Asks {
   'sync:disconnect': { args: []; reply: Result<SyncState> }
   'sync:approve': { args: [deviceId: string]; reply: Result<SyncState> }
   'sync:revoke': { args: [deviceId: string]; reply: Result<SyncState> }
+  'sync:now': { args: []; reply: Result<SyncState> }
 
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
