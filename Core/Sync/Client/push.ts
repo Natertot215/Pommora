@@ -130,7 +130,7 @@ async function storeLocal(
     await settle(session, outcome, one, snapshot, item.blob)
 }
 
-export async function pushDirty(session: Session, rels: string[]): Promise<void> {
+export async function pushDirty(session: Session, rels: string[], sweep = false): Promise<void> {
   const { root } = session
   const admits = manifestAdmits(session.scope)
   const changes: StoreChange[] = []
@@ -159,7 +159,8 @@ export async function pushDirty(session: Session, rels: string[]): Promise<void>
       return
     }
     const row = readBase(rel)
-    if (row !== null && Math.floor(stat.mtimeMs) === row.mtimeMs && stat.size === row.size) return
+    if (sweep && row !== null && Math.floor(stat.mtimeMs) === row.mtimeMs && stat.size === row.size)
+      return
     if (stat.size > ITEM_CAP) {
       setStatus(session.ctx, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
       return

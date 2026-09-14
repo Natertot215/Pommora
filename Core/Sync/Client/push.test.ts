@@ -114,16 +114,28 @@ describe('pushDirty', () => {
     expect(session.failed.size).toBe(0)
   })
 
-  it('reads no bytes for a file whose stat matches its base', async () => {
+  it('reads no bytes for a file whose stat matches its base on the start sweep', async () => {
     await write('Notes/One.md', page('one'))
     await pushDirty(session, ['Notes/One.md'])
     const read = vi.spyOn(machine(), 'readBytes')
 
-    await pushDirty(session, ['Notes/One.md'])
+    await pushDirty(session, ['Notes/One.md'], true)
 
     expect(read).not.toHaveBeenCalled()
     expect(stores()).toHaveLength(1)
     read.mockRestore()
+  })
+
+  it('hashes a file rewritten under its own stat when it is not the start sweep', async () => {
+    await write('Notes/One.md', page('one'))
+    await pushDirty(session, ['Notes/One.md'])
+    expect(stores()).toHaveLength(1)
+
+    await write('Notes/One.md', page('two'))
+    await pushDirty(session, ['Notes/One.md'])
+
+    expect(stores()).toHaveLength(2)
+    expect(await read('Notes/One.md')).toBe(page('two'))
   })
 
   it('skips a non-NFC path and stores the rest of the batch', async () => {
