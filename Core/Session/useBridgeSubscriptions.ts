@@ -4,7 +4,8 @@ import { valueOr } from '@pommora/core/Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
-import { dropDetailsWhere } from './pageDetailCache'
+import { dropDetailsWhere, notifyLanding, readPageDetail } from './pageDetailCache'
+import { setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
@@ -50,6 +51,21 @@ export function useBridgeSubscriptions(): void {
       }),
     [bumpContainerValues],
   )
+
+  const replaceBody = useSession((s) => s.replaceBody)
+  useEffect(() => {
+    const absorb = (path: string): void => {
+      if (!notifyLanding(path) && readPageDetail(path)) void replaceBody(path)
+    }
+    setStaleSaveSink(absorb)
+    const off = dialer().on('pages:changed', (paths) => {
+      for (const path of paths) absorb(path)
+    })
+    return () => {
+      off()
+      setStaleSaveSink(null)
+    }
+  }, [replaceBody])
 
   useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
 
