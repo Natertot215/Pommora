@@ -4,6 +4,8 @@ import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { call, type CallOutcome, type SyncHost, type SyncTarget, syncHost } from './Client/call'
+import { startSession, stopSession, syncNow } from './Client/session'
+import { currentStatus, setStatus } from './Client/status'
 import { forgetHeldRing, forgetKeys, loadRing, passwordName, ringName } from './Client/keyring'
 import type {
   DeviceRecord,
@@ -116,15 +118,15 @@ async function state(root: string, ctx: HostContext): Promise<Result<SyncState>>
   const r = await ready(root, ctx)
   if (!r.ok) return r
   const { nexusId, device, host, binding } = r.value
-  if (binding === null) return ok({ device, binding: null, status: OFF })
+  if (binding === null) return ok({ device, binding: null, status: currentStatus() })
   const outcome = await call(host, binding, 'devices', { nexusId })
   const revoked = outcome.status === 404 && (await host.secrets.get(ringName(nexusId))) !== null
-  if (revoked) await forgetKeys(host, nexusId)
-  return ok({
-    device,
-    binding: bindingFrom(binding, outcome),
-    status: revoked ? { state: 'off', reason: 'revoked', why: 'This device was revoked.' } : OFF,
-  })
+  if (revoked) {
+    stopSession()
+    await forgetKeys(host, nexusId)
+    setStatus(ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
+  }
+  return ok({ device, binding: bindingFrom(binding, outcome), status: currentStatus() })
 }
 
 async function shareRing(
@@ -353,7 +355,9 @@ export const syncHandlers = {
         await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
       const scope: SyncScope = { ...target, cursor: kept ? binding.cursor : 0 }
-      return writeValue('sync', scope) ? state(root, ctx) : NO_STORE
+      if (!writeValue('sync', scope)) return NO_STORE
+      await startSession(ctx, root, nexusId)
+      return state(root, ctx)
     },
   ),
 
@@ -361,6 +365,7 @@ export const syncHandlers = {
     async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
       const r = await ready(root, ctx)
       if (!r.ok) return r
+      stopSession()
       forgetHeldRing(r.value.nexusId)
       return writeValue('sync', null) ? state(root, ctx) : NO_STORE
     },
@@ -368,4 +373,9 @@ export const syncHandlers = {
 
   'sync:approve': act('approve'),
   'sync:revoke': act('revoke'),
+
+  'sync:now': withRoot(async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
+    await syncNow()
+    return state(root, ctx)
+  }),
 } satisfies Partial<Handlers>

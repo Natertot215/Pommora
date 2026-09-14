@@ -1,0 +1,219 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { HostContext, TransportReply, TransportRequest } from '../../Contract/handlers'
+import { join } from '../../Paths/posix'
+import { machine } from '../../Platform/machine'
+import { writeValue } from '../../Platform/localState'
+import { installStores, NO_STORES, type Stores } from '../../Platform/stores'
+import { tempRoot } from '../../Testing/hostFs'
+import { memoryStores } from '../../Testing/memoryStores'
+import { type FakeHub, hubHost, hubWrite } from '../../Testing/syncHub'
+import type { Ring } from '../Keys/ring'
+import type { SyncStatus } from '../Contract/wire'
+import { readAllBases, readBase, upsertBase } from './base'
+import { recordWrite } from '../../Files/writeEcho'
+import { ringName } from './keyring'
+import { currentSession, startSession, stopSession, syncNow } from './session'
+import { DEBOUNCE_MS } from './tap'
+
+const NEXUS = 'nx'
+const ADDRESS = 'http://127.0.0.1:7473'
+const REMOTE_MS = Date.UTC(2026, 8, 1, 12)
+
+const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
+const page = (body: string): string => `---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\n\n${body}`
+
+let root: string
+let hub: FakeHub
+let ring: Ring
+let ctx: HostContext
+let pushes: Array<[string, unknown]>
+let stores: Stores
+
+const abs = (rel: string): string => join(root, rel)
+
+const write = async (rel: string, text: string): Promise<void> => {
+  await mkdir(join(root, rel).split('/').slice(0, -1).join('/'), { recursive: true })
+  await writeFile(abs(rel), utf8(text))
+}
+
+const statuses = (): SyncStatus[] =>
+  pushes.filter(([k]) => k === 'sync:changed').map(([, payload]) => payload as SyncStatus)
+
+const sent = (suffix: string): TransportRequest[] =>
+  hub.sent.filter((req) => req.url.endsWith(suffix))
+
+const turn = (ms = 60): Promise<void> => new Promise((wake) => setTimeout(wake, ms))
+
+beforeEach(async () => {
+  root = tempRoot('pom-session-')
+  await mkdir(join(root, '.nexus'), { recursive: true })
+  stores = memoryStores().stores
+  installStores(stores)
+  const made = await hubHost({ nexusId: NEXUS })
+  hub = made.hub
+  ring = made.ring
+  ctx = made.ctx
+  pushes = made.pushes
+  hub.atMs = REMOTE_MS
+  writeValue('sync', { address: ADDRESS, pin: null, cursor: 0 })
+})
+
+afterEach(async () => {
+  stopSession()
+  installStores(NO_STORES)
+  vi.useRealTimers()
+  await rm(root, { recursive: true, force: true })
+})
+
+describe('startSession', () => {
+  it('reports off with the database reason when no store is installed', async () => {
+    installStores({ ...stores, sync: null })
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(currentSession()).toBeNull()
+    expect(statuses().at(-1)).toEqual({
+      state: 'off',
+      reason: 'no-db',
+      why: "This nexus's database is unavailable; sync is off for this session.",
+    })
+  })
+
+  it('reconciles once when the base table is empty', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(await machine().readBytes(abs('Notes/One.md'))).not.toBeNull()
+    expect(readBase('Notes/One.md')?.version).toBe(1)
+    expect(currentSession()?.target.cursor).toBe(1)
+  })
+
+  it('starts once a pending device is approved', async () => {
+    const info = hub.info
+    hub.info = null
+    vi.useFakeTimers()
+
+    await startSession(ctx, root, NEXUS)
+    expect(statuses().at(-1)?.reason).toBe('pending')
+    expect(currentSession()).toBeNull()
+
+    await vi.advanceTimersByTimeAsync(5_001)
+    expect(statuses().at(-1)?.reason).toBe('pending')
+    expect(currentSession()).toBeNull()
+
+    hub.info = info
+    await vi.advanceTimersByTimeAsync(10_001)
+    vi.useRealTimers()
+    await turn(150)
+    expect(currentSession()).not.toBeNull()
+  })
+
+  it('serializes a push and a pull through one chain', async () => {
+    let live = 0
+    let peak = 0
+    const inner = ctx.transport
+    ctx.transport = async (req: TransportRequest): Promise<TransportReply> => {
+      live += 1
+      peak = Math.max(peak, live)
+      try {
+        return await inner(req)
+      } finally {
+        live -= 1
+      }
+    }
+    await write('Notes/One.md', page('one'))
+
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    self.failed.add('Notes/One.md')
+    await Promise.all([syncNow(), syncNow()])
+
+    expect(peak).toBe(1)
+  })
+
+  it('re-pushes a failed batch after the next answered pull', async () => {
+    await write('Notes/One.md', page('one'))
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    hub.sent.length = 0
+    self.failed.add('Notes/One.md')
+    upsertBase({
+      path: 'Notes/One.md',
+      mtimeMs: REMOTE_MS,
+      size: 1,
+      hash: 'stale',
+      blobSha: 'stale',
+      version: hub.seq,
+      baseBytes: null,
+    })
+
+    await turn(120)
+
+    expect(sent('/store').length).toBeGreaterThan(0)
+    expect(self.failed.size).toBe(0)
+  })
+
+  it('rescopes before pushing when the settings file is dirty', async () => {
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    upsertBase({
+      path: 'Private/Secret.md',
+      mtimeMs: REMOTE_MS,
+      size: 1,
+      hash: 'h',
+      blobSha: 'b',
+      version: 1,
+      baseBytes: null,
+    })
+    await write('.nexus/settings.json', JSON.stringify({ excluded_folders: ['Private'] }))
+
+    recordWrite(abs('.nexus/settings.json'))
+    await turn(DEBOUNCE_MS + 300)
+
+    expect(self.scope.excluded).toEqual(['Private'])
+    expect(readAllBases().map((row) => row.path)).not.toContain('Private/Secret.md')
+  })
+
+  it('pushes then pulls on syncNow, failed paths included', async () => {
+    await write('Notes/One.md', page('one'))
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    await write('Notes/Two.md', page('two'))
+    hub.sent.length = 0
+    self.failed.add('Notes/Two.md')
+
+    await syncNow()
+
+    const order = hub.sent.map((req) => new URL(req.url).pathname)
+    expect(order.at(-1)).toBe('/pull')
+    expect(order).toContain('/store')
+  })
+
+  it('stops and reports revoked when a pull answers revoked', async () => {
+    await startSession(ctx, root, NEXUS)
+    await ctx.secrets.set(ringName(NEXUS), '[]')
+    hub.intercept = (req) =>
+      req.url.endsWith('/pull') ? { status: 404, body: '{"error":"not-found"}' } : null
+
+    await turn(120)
+
+    expect(currentSession()).toBeNull()
+    expect(statuses().at(-1)).toEqual({
+      state: 'off',
+      reason: 'revoked',
+      why: 'This device was revoked.',
+    })
+  })
+
+  it('pushes sync:changed on every transition', async () => {
+    await startSession(ctx, root, NEXUS)
+    expect(statuses().map((status) => status.state)).toContain('syncing')
+    expect(statuses().map((status) => status.state)).toContain('idle')
+  })
+})

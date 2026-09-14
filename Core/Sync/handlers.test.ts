@@ -27,6 +27,8 @@ import { forgetKeys, heldRing, passwordName, ringName } from './Client/keyring'
 import type { DeviceRecord, InfoRecord } from './Contract/wire'
 import { deriveWrappingKey } from './Keys/kdf'
 import { mintKey, wrapForDevice, wrapForPassword } from './Keys/ring'
+import { stopSession } from './Client/session'
+import { currentStatus } from './Client/status'
 import { syncHandlers } from './handlers'
 
 const ADDRESS = 'http://127.0.0.1:7473'
@@ -107,6 +109,12 @@ function hubAnswer(hub: Hub): Answer {
           }
         }
         return found({ devices: hub.devices })
+      case '/pull':
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(found({ changes: [], cursor: 0, hasMore: false })), 20),
+        )
+      case '/store':
+        return found({ outcomes: [], seq: 0 })
       case '/ring':
         if (hub.info === null) return missing
         if (hub.info.version !== body.base) return { status: 409, body: '{"error":"stale"}' }
@@ -131,6 +139,7 @@ function host(answer: Answer, device?: HostDevice, secrets?: TestSecrets): HostC
     device: device ?? deviceA,
     secrets: secrets ?? secretsA,
     transport,
+    push: () => {},
   } as unknown as HostContext
 }
 
@@ -167,6 +176,7 @@ beforeEach(async () => {
   seedLiveTree(makeTree())
 })
 afterEach(async () => {
+  stopSession()
   await forgetKeys({ secrets: memorySecrets() } as unknown as SyncHost, NEXUS)
   dropLiveTree()
   closeSession()
@@ -332,6 +342,20 @@ describe('sync:connect', () => {
     )
     expect(state.binding.state).toBe('unreachable')
     expect(state.binding.why).toContain('200')
+  })
+})
+
+describe('sync:now', () => {
+  it('answers the loop status from sync:state', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    await unwrap(syncHandlers['sync:connect'](host(hubAnswer(hub)), ADDRESS, PASSWORD))
+
+    const state = await unwrap<{ status: { state: string } }>(
+      syncHandlers['sync:now'](host(hubAnswer(hub))),
+    )
+
+    expect(state.status.state).toBe(currentStatus().state)
   })
 })
 

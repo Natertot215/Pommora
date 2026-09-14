@@ -1,9 +1,18 @@
 import type { HostContext, TransportReply, TransportRequest } from '../Contract/handlers'
 import { machine } from '../Platform/machine'
+import { syncHost } from '../Sync/Client/call'
 import type { Session } from '../Sync/Client/session'
 import { encryptItem } from '../Sync/Keys/item'
 import { newest, type Ring } from '../Sync/Keys/ring'
-import { memorySecrets, testDevice, testRing, type TestSecrets } from './syncDevice'
+import { forgetHeldRing, passwordName } from '../Sync/Client/keyring'
+import {
+  memorySecrets,
+  TEST_KDF,
+  TEST_PASSWORD,
+  testDevice,
+  testKeys,
+  type TestSecrets,
+} from './syncDevice'
 import type {
   Change,
   DeviceRecord,
@@ -137,7 +146,15 @@ function readChanges(hub: FakeHub, cursor: number): PullReply {
   return { changes, cursor: changes.at(-1)?.seq ?? cursor, hasMore }
 }
 
-function route(hub: FakeHub, req: TransportRequest): Omit<TransportReply, 'bytes'> | Uint8Array {
+const IDLE_WAIT_MS = 20
+
+const later = <T>(value: T, ms: number): Promise<T> =>
+  new Promise((resolve) => setTimeout(() => resolve(value), ms))
+
+async function route(
+  hub: FakeHub,
+  req: TransportRequest,
+): Promise<Omit<TransportReply, 'bytes'> | Uint8Array> {
   const path = new URL(req.url).pathname
   if (path.startsWith('/blob/')) {
     const sha = path.split('/')[3]
@@ -158,9 +175,12 @@ function route(hub: FakeHub, req: TransportRequest): Omit<TransportReply, 'bytes
     }
     case '/pull': {
       const cursor = body.cursor ?? 0
-      return cursor > hub.seq
-        ? json(409, { error: 'resync', seq: hub.seq })
-        : json(200, readChanges(hub, cursor))
+      if (cursor > hub.seq) return json(409, { error: 'resync', seq: hub.seq })
+      const reply = readChanges(hub, cursor)
+      const waitMs = (body as { waitMs?: number }).waitMs ?? 0
+      return reply.changes.length === 0 && waitMs > 0
+        ? later(json(200, reply), Math.min(waitMs, IDLE_WAIT_MS))
+        : json(200, reply)
     }
     case '/info':
       return hub.info === null ? MISSING : json(200, { info: hub.info })
@@ -190,7 +210,7 @@ export function fakeHub(device = 'hub'): FakeHub {
       const taken = hub.intercept?.(req) ?? null
       if (taken === 'throw') throw new Error('the transport refused')
       if (taken !== null) return replyOf(taken)
-      const answer = route(hub, req)
+      const answer = await route(hub, req)
       return answer instanceof Uint8Array
         ? { status: 200, body: '', bytes: answer }
         : replyOf(answer)
@@ -199,40 +219,59 @@ export function fakeHub(device = 'hub'): FakeHub {
   return hub
 }
 
-export interface HubSession {
-  session: Session
+export interface HubHost {
   hub: FakeHub
   ring: Ring
+  ctx: HostContext
   pushes: Array<[string, unknown]>
   secrets: TestSecrets
+  nexusId: string
+}
+
+export async function hubHost(
+  opts: { nexusId?: string; device?: string; remote?: string } = {},
+): Promise<HubHost> {
+  const hub = fakeHub(opts.remote ?? 'bbbb')
+  const { ring, entries } = await testKeys()
+  const nexusId = opts.nexusId ?? 'nx'
+  hub.info = { version: 1, protocol: 1, kdf: TEST_KDF, historyDays: 90, ring: entries }
+  const pushes: Array<[string, unknown]> = []
+  const secrets = memorySecrets()
+  await secrets.set(passwordName(nexusId), TEST_PASSWORD)
+  forgetHeldRing(nexusId)
+  const ctx = {
+    device: await testDevice(opts.device ?? 'aaaa', 'Local'),
+    secrets,
+    transport: hub.transport,
+    push: (k: string, payload: unknown) => pushes.push([k, payload]),
+  } as unknown as HostContext
+  return { hub, ring, ctx, pushes, secrets, nexusId }
+}
+
+export interface HubSession extends HubHost {
+  session: Session
 }
 
 export async function hubSession(
   root: string,
   opts: { nexusId?: string; device?: string; remote?: string } = {},
 ): Promise<HubSession> {
-  const hub = fakeHub(opts.remote ?? 'bbbb')
-  const ring = await testRing()
-  const pushes: Array<[string, unknown]> = []
-  const secrets = memorySecrets()
-  const session: Session = {
-    host: {
-      device: await testDevice(opts.device ?? 'aaaa', 'Local'),
-      transport: hub.transport,
-      secrets,
-      push: () => {},
+  const made = await hubHost(opts)
+  const host = syncHost(made.ctx)
+  if (host === null) throw new Error('the test context holds no device')
+  return {
+    ...made,
+    session: {
+      host,
+      ctx: made.ctx,
+      root,
+      nexusId: made.nexusId,
+      target: { address: 'http://127.0.0.1:7473', pin: null, cursor: 0 },
+      ring: made.ring,
+      scope: { excluded: [], assetDir: '.nexus/assets' },
+      failed: new Set(),
     },
-    ctx: {
-      push: (k: string, payload: unknown) => pushes.push([k, payload]),
-    } as unknown as HostContext,
-    root,
-    nexusId: opts.nexusId ?? 'nx',
-    target: { address: 'http://127.0.0.1:7473', pin: null, cursor: 0 },
-    ring,
-    scope: { excluded: [], assetDir: '.nexus/assets' },
-    failed: new Set(),
   }
-  return { session, hub, ring, pushes, secrets }
 }
 
 const seed = (hub: FakeHub, changes: StoreChange[]): number =>
