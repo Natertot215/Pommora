@@ -1,6 +1,8 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
+import { writeJournal } from '../Contexts/contextJournal'
+import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -16,6 +18,7 @@ import { closeSession } from './session'
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
 const OTHER = '01KVGMT8BFP350FZZXAMG1QDRX'
+const THIRD_PAGE = '01KVGMT8BFP350FZZXAMG1QDRY'
 const ADDRESS = 'http://127.0.0.1:7473'
 
 let root: string
@@ -29,6 +32,21 @@ const isStore = (req: { url: string }): boolean => new URL(req.url).pathname ===
 
 async function settledSession(): Promise<void> {
   for (let tries = 0; tries < 50 && currentSession() === null; tries += 1) await turn()
+}
+
+async function secondNexus(
+  prefix: string,
+): Promise<{ second: string; later: ReturnType<typeof memoryStores> }> {
+  const second = tempRoot(prefix)
+  const tag = second.slice(second.lastIndexOf('/') + 1)
+  const later = memoryStores()
+  await mkdir(join(second, '.nexus'), { recursive: true })
+  await writeFile(
+    join(second, '.nexus', 'nexus.json'),
+    JSON.stringify({ id: OTHER, createdAt: '2026-09-01T12:00:00.000Z' }),
+  )
+  ctx.openStores = (at: string) => installStores(at.includes(tag) ? later.stores : stores.stores)
+  return { second, later }
 }
 
 beforeEach(async () => {
@@ -71,15 +89,7 @@ describe('openNexusSequence', () => {
   })
 
   it('drains an in-flight push before the stores swap', async () => {
-    const second = tempRoot('pom-open-swap-')
-    const tag = second.slice(second.lastIndexOf('/') + 1)
-    await mkdir(join(second, '.nexus'), { recursive: true })
-    await writeFile(
-      join(second, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: OTHER, createdAt: '2026-09-01T12:00:00.000Z' }),
-    )
-    const later = memoryStores()
-    ctx.openStores = (at: string) => installStores(at.includes(tag) ? later.stores : stores.stores)
+    const { second, later } = await secondNexus('pom-open-swap-')
 
     let release!: () => void
     const held = new Promise<void>((wake) => {
@@ -110,6 +120,37 @@ describe('openNexusSequence', () => {
 
       expect(stores.stores.sync?.readBase('Library/Notes.md')).not.toBeNull()
       expect(later.stores.sync?.readBase('Library/Notes.md')).toBeNull()
+    } finally {
+      await rm(second, { recursive: true, force: true })
+    }
+  })
+
+  it('replays a pending context rename against the Nexus being opened', async () => {
+    const { second } = await secondNexus('pom-open-replay-')
+    await mkdir(contextsDir(second), { recursive: true })
+    await writeFile(
+      contextsRegistryFile(second),
+      JSON.stringify({
+        contexts: [{ id: 'ctx_projects', title: 'Projects', singular: 'Project' }],
+      }),
+    )
+    await mkdir(join(second, 'Notes'))
+    await writeFile(
+      join(second, 'Notes', 'A.md'),
+      `---\nID: ${THIRD_PAGE}\n<Projects>:\n  - Pommora\n---\nbody`,
+    )
+    await writeJournal(second, {
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Ventures',
+      skipped: [],
+    })
+
+    try {
+      await openNexusSequence(ctx, root, false)
+      await openNexusSequence(ctx, second, false)
+
+      expect(await readFile(join(second, 'Notes', 'A.md'), 'utf8')).toContain('<Ventures>:')
     } finally {
       await rm(second, { recursive: true, force: true })
     }
