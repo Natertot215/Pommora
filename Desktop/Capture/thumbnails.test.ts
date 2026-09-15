@@ -27,6 +27,7 @@ describe('evictThumbnails', () => {
 
   it('deletes only the thumbnails not in the live set', async () => {
     const { id } = await ensureIdentity(root)
+    if (id === null) throw new Error('the identity did not mint')
     const dir = join(root, '.nexus', 'assets', id, 'thumbnails')
     await mkdir(dir, { recursive: true })
     for (const name of ['page-a.jpg', 'page-b.jpg', 'collection-c.jpg'])

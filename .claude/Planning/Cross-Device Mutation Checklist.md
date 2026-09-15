@@ -176,9 +176,9 @@ Every row here is per-machine state. A value crossing to B is a failure of the w
 
 | Store | Reason |
 | --- | --- |
-| `nexus.db` | The per-machine key-value store; excluded by name through `Core/Paths/exclusion.ts` `STORE_FILE`, and discardable on a schema bump without losing anything authored |
+| `nexus.db` | The per-machine key-value store, in the app's userData directory under `Nexuses/<nexusId>/` |
 | `nexus.db-wal`, `nexus.db-shm` | SQLite journals of a database that does not travel |
-| `versions.db` and its journals | File History snapshots and the `captures` table holding every conflict's losing bytes, per machine by the same rule |
+| `versions.db` and its journals | File History snapshots and the `captures` table holding every conflict's losing bytes, beside `nexus.db` |
 | `local_state` scope `folds` | Which headings a reader collapsed, per machine |
 | `local_state` scope `headingCols` | Which table heading columns a reader hid, per machine |
 | `local_state` scope `headingIcon` | Whether a page's heading icon is hidden, per machine |

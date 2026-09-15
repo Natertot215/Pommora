@@ -43,11 +43,11 @@ A new Settings > Nexus row, **View Local Data**, opens a window listing every ta
 #### Implementation Process
 
 - [ ] **Phase 1** — Relocate the Stores
-  - [ ] Task 1.1
-  - [ ] Task 1.2
-  - [ ] Task 1.3
-  - [ ] Task 1.4
-  - [ ] Closeout (commit) — `/closeout` scoped to this phase, handed this phase's Reconciliation entries
+  - [x] Task 1.1
+  - [x] Task 1.2
+  - [x] Task 1.3
+  - [x] Task 1.4
+  - [x] Closeout (commit) — `/closeout` scoped to this phase, handed this phase's Reconciliation entries
   - [ ] Task 1.5
   - [ ] Review Checkpoint
 - [ ] `[Stop: Nathan checks NexusOS after the move before Phase 2]`
@@ -1738,7 +1738,7 @@ import { host } from '../Platform/dialer'
 **Correctness**
 
 - [ ] Both databases for an opened Nexus sit at `<userData>/Nexuses/<nexusId>/`, and the Nexus folder gains no `.db`.
-- [ ] A moved Nexus keeps `local_state` and `sync`; a copy opened while the original exists keeps `local_state` and empties `sync` (`open.test.ts`).
+- [ ] A Nexus opened from any folder other than its stamped root, moved or copied, keeps `local_state` and empties `sync` (`open.test.ts`).
 - [ ] An empty base table starts sync from cursor 0 (`session.test.ts`).
 - [ ] A `null` store directory opens nothing (`sessionDb.test.ts`); a non-ULID id never reaches a path (`main.ts`).
 - [ ] A pending rename replays against its own Nexus (`handlers.test.ts`).
@@ -1813,4 +1813,6 @@ Each entry is rewritten by its phase's closeout, in that phase's commit.
 Written per the skill's report shape once the chain above is confirmed.
 
 ### Deviations
+
+- **D-1 — The Root Stamp Clears Sync on Any Other Folder:** Task 1.2 kept `sync` when the stamped root no longer existed. The Phase 1 review found that a synced copy, opened and then trashed or ejected, reads as a move: the original reopened with the copy's bases, and its first push sent the copy's missing pages as deletes and its stale files as writes. Ruled by Nathan: `elsewhere` treats an unresolvable stamp as another folder, so a move or rename also empties `sync` and runs one full reconcile, while `local_state` and the binding stay. `open.test.ts`'s moved-root test expects no `sync` rows.
 

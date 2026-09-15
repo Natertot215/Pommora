@@ -66,7 +66,7 @@ export interface HostContext {
     set(name: string, value: string | null): Promise<void>
   }
   transport(req: TransportRequest): Promise<TransportReply>
-  openStores(root: string): void
+  openStores(root: string, nexusId: string | null): void
   adopted(root: string, path: string): Promise<void>
   watch(root: string): Promise<void>
   applyZoom(): Promise<void>

@@ -17,25 +17,24 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 import type { Db } from './driver'
-import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
 
-let root: string
+let dir: string
 let dbPath: string
 beforeEach(async () => {
-  root = tempRoot('pom-versions-')
-  dbPath = join(root, '.nexus', VERSIONS_FILENAME)
+  dir = tempRoot('pom-versions-')
+  dbPath = join(dir, VERSIONS_FILENAME)
 })
 afterEach(async () => {
-  await rm(root, { recursive: true, force: true })
+  await rm(dir, { recursive: true, force: true })
 })
 
 const opened = (): Db => {
-  const db = openVersionsDb(root)
+  const db = openVersionsDb(dir)
   if (!db) throw new Error('the store did not open')
   return db
 }
 const corruptFiles = async (): Promise<string[]> =>
-  (await readdir(join(root, '.nexus'))).filter((f) => f.includes('.corrupt-')).sort()
+  (await readdir(dir)).filter((f) => f.includes('.corrupt-')).sort()
 
 describe('openVersionsDb', () => {
   it('creates the file and the table', () => {
@@ -55,7 +54,6 @@ describe('openVersionsDb', () => {
   })
 
   it('quarantines a garbage header and starts fresh', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(dbPath, 'not a database', 'utf8')
     await writeFile(`${dbPath}-wal`, 'w', 'utf8')
     await writeFile(`${dbPath}-shm`, 's', 'utf8')
@@ -65,10 +63,7 @@ describe('openVersionsDb', () => {
     const [original, ...others] = await corruptFiles()
     expect(others).toEqual([])
     expect(original).toMatch(/^versions\.corrupt-.*\.db$/)
-    expect(await readFile(join(root, '.nexus', original), 'utf8')).toBe('not a database')
-    expect(
-      syncIgnoredUnder(root, { excluded: [], assetDir: '' })(join(root, '.nexus', original)),
-    ).toBe(true)
+    expect(await readFile(join(dir, original), 'utf8')).toBe('not a database')
     expect(existsSync(`${dbPath}-wal`)).toBe(false)
     expect(existsSync(`${dbPath}-shm`)).toBe(false)
   })
@@ -86,7 +81,7 @@ describe('openVersionsDb', () => {
 
   it('leaves a store it cannot open where it is', async () => {
     await mkdir(dbPath, { recursive: true })
-    expect(openVersionsDb(root)).toBeNull()
+    expect(openVersionsDb(dir)).toBeNull()
     expect(existsSync(dbPath)).toBe(true)
     expect(await corruptFiles()).toEqual([])
   })

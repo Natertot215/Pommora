@@ -19,6 +19,7 @@ import { handlers } from '@pommora/core/Contract/serve'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { flushNavigation } from '@pommora/core/Navigation/navigationFile'
 import { adoptNexus, openNexusSequence } from '@pommora/core/Nexus/handlers'
+import { isUlid } from '@pommora/core/Nexus/ids'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { installMachine } from '@pommora/core/Platform/machine'
@@ -262,7 +263,11 @@ function hostContext(win: BrowserWindow | null): HostContext {
       set: (name, value) => setSecret(userData(), name, value),
     },
     transport,
-    openStores: openSessionDb,
+    openStores: (root, nexusId) =>
+      openSessionDb(
+        nexusId !== null && isUlid(nexusId) ? `${userData()}/Nexuses/${nexusId}` : null,
+        root,
+      ),
     async adopted(root, path) {
       if (mainWindow) {
         void startWatcher(root, mainWindow)

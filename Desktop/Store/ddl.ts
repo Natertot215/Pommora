@@ -1,6 +1,5 @@
 import type { Db } from './driver'
 
-export const SCHEMA_VERSION = 1
 export const INDEX_GENERATION = 3
 
 const DDL = `
@@ -54,8 +53,6 @@ export function applySchema(db: Db): void {
 }
 
 export function readMeta(db: Db, key: string): string | null {
-  const hasMeta = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").get()
-  if (!hasMeta) return null
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as
     | { value: string }
     | undefined

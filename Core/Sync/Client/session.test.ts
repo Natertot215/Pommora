@@ -68,17 +68,13 @@ afterEach(async () => {
 })
 
 describe('startSession', () => {
-  it('reports off with the database reason when no store is installed', async () => {
-    installStores({ ...stores, sync: null })
+  it('starts an empty base table from cursor zero even when the hub log goes unanswered', async () => {
+    writeValue('sync', { address: ADDRESS, pin: null, cursor: 7 })
+    hub.intercept = (req) => (req.url.endsWith('/pull') ? { status: 500, body: '' } : null)
 
     await startSession(ctx, root, NEXUS)
 
-    expect(currentSession()).toBeNull()
-    expect(statuses().at(-1)).toEqual({
-      state: 'off',
-      reason: 'no-db',
-      why: "This nexus's database is unavailable; sync is off for this session.",
-    })
+    expect(readValue<{ cursor: number }>('sync')?.cursor).toBe(0)
   })
 
   it('reconciles once when the base table is empty', async () => {

@@ -24,19 +24,22 @@ import { captureStore, contentIndexStore, keyValueStore, snapshotStore, syncStor
 import { openVersionsDb } from './versionsDb'
 
 let root: string
+let dir: string
 let db: Db
 let versionsDb: Db
 
 beforeEach(async () => {
   root = tempRoot('pom-stores-')
-  db = openNexusDb(root)!
-  versionsDb = openVersionsDb(root)!
+  dir = tempRoot('pom-stores-store-')
+  db = openNexusDb(dir, root)!
+  versionsDb = openVersionsDb(dir)!
 })
 afterEach(async () => {
   installStores(NO_STORES)
   db?.close()
   versionsDb?.close()
   await rm(root, { recursive: true, force: true })
+  await rm(dir, { recursive: true, force: true })
 })
 
 describeKeyValueStore('SQLite key-value store', () => keyValueStore(db))

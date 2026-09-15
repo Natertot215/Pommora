@@ -46,7 +46,7 @@
 
 - **B-1:** [confirmed] Star. Every device syncs with the hub and only the hub. Direct device-to-device transfer is a Prospect; no discovery, no NAT traversal, no relays.
 - **B-2:** [confirmed] End-to-end encryption is required: the hub holds ciphertext only and never sees the Nexus password or the content key. Transport is TLS on top.
-- **B-3:** [confirmed] The hub keeps ciphertext blobs in its SQLite; there is no readable folder on the hub. On every device nothing exists beyond the Nexus folder and the `nexus.db` and `versions.db` already inside it.
+- **B-3:** [confirmed] The hub keeps ciphertext blobs in its SQLite; there is no readable folder on the hub. On every device nothing exists beyond the Nexus folder and its `nexus.db` and `versions.db` in the app's userData directory.
 - **B-4:** [confirmed] One hub serves many Nexus', keyed by Nexus id, as the roster server already does.
 - **B-5:** [confirmed] Development and the first proof run entirely on Nathan's MacBook: the hub process plus two app instances each holding a copy of one Nexus (the two-instance recipe in [[Development-Environment]]). The Windows machine is the first real second device; the iPhone follows under the Mobile Prospect. A Dockerfile is the deploy artifact this arc leaves; running it anywhere is the Cloud Prospect.
 - **B-6:** [confirmed] A hub that is unreachable means nothing syncs until it returns, as with Obsidian Sync. The mitigation is an always-on machine, not topology; a hub runnable from the desktop app is a Prospect for the time before one exists.
@@ -97,7 +97,7 @@
 - **G-2:** [confirmed] A push is confirmed by content hash against the base, so an atomic rewrite that restored identical bytes never pushes. A landing is written through the raw write and records no echo, so the watcher treats it as external; the hash short-circuit is what stops it re-pushing.
 - **G-3:** [confirmed] One sync loop per device, so no item is pushed or landed twice at once; the desktop apply takes the page's file lock.
 - **G-4:** [confirmed] Arrival stamps the writer's mtime from the record onto the landed file through `machine().utimes`, so a landing carries the edit's time rather than its arrival time and the tiebreak in F-1 compares like with like.
-- **G-5:** [confirmed] When `nexus.db` is unavailable the session runs without a base record and sync is off for that session, reported in the Nexus heading; a later session rebuilds the base by the F-8 reconcile.
+- **G-5:** [confirmed] When `nexus.db` is unavailable the session runs without a base record and sync is off for that session; a later session rebuilds the base by the F-8 reconcile.
 #### H — Placement and Structure
 
 - **H-1:** [confirmed] `Sync/` stays the hub's workspace on Node built-ins, split by concern as it grows: `Sync/hub.ts` (entry, listen, TLS), `Sync/Store/` (SQLite: roster, log, blobs, versions), `Sync/Routes/` (one file per route group, matching the `RouteTable` type), `Sync/feed.ts`. `Core/Sync/` splits the same way: `Contract/` (types, route table), `Keys/`, `Client/` (signed call, the loop, the base record), `Arrival/` (landing, the two merges, versions capture), `handlers.ts`.

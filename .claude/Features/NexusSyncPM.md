@@ -6,7 +6,7 @@ Pommora carries a Nexus between devices itself. Every device holding a Nexus tal
 
 The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.json`, the identity file, orderings, and the asset directory are as much a part of a Nexus as the Markdown beside them, and a copy missing them is a copy missing its organization.
 
-What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level. Any `.db` file and its journals stay home, so `nexus.db` and `versions.db` are excluded by content rather than by convention, as this machine's own chrome and derived index. The navigation thumbnail folders stay home as a cache that regenerates from the images that do travel, while `crops.json` beside them is authored and travels. The two cascade journals stay home as crash-recovery records of a heal already finished elsewhere. Every other dot-entry, `.obsidian`, `.git`, and `.claude` among them, stays home as belonging to another application.
+What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level. Any `.db` file and its journals stay home. The navigation thumbnail folders stay home as a cache that regenerates from the images that do travel, while `crops.json` beside them is authored and travels. The two cascade journals stay home as crash-recovery records of a heal already finished elsewhere. Every other dot-entry, `.obsidian`, `.git`, and `.claude` among them, stays home as belonging to another application.
 
 Two files are admitted by the manifest and still refused at the push: one over fifty megabytes, and one whose path is not in NFC form. A Markdown file carrying no `ID` key waits until adoption stamps it, and `excluded_folders` in `settings.json` is part of the manifest, so an exclusion change reaches every device at once.
 
@@ -70,7 +70,7 @@ A change takes about 2.7 seconds to cross: the writing device's watcher settles,
 
 ### Status
 
-Sync reports one state per session — off, idle, syncing, or error — and an off state names what holds it off: a password is needed, the device is pending approval, it was revoked, the Nexus database is unavailable, or the hub refused. The Nexus heading in Settings › General binds to that state; [[ConfigurationPM]] is the roster of those rows.
+Sync reports one state per session — off, idle, syncing, or error — and an off state names what holds it off: a password is needed, the device is pending approval, it was revoked, or the hub refused. The Nexus heading in Settings › General binds to that state; [[ConfigurationPM]] is the roster of those rows.
 
 ### Beyond This
 

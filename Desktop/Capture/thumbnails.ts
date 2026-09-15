@@ -1,4 +1,4 @@
-// Written under the SYNCED thumbnails tree so a second machine gets real previews. Full-page capturePage then crop sidesteps the HiDPI rect-crop bug; JPEG has no alpha, dodging the transparent→black resize bug.
+// Full-page capturePage then crop sidesteps the HiDPI rect-crop bug; JPEG has no alpha, dodging the transparent→black resize bug.
 
 import { mkdir, readdir, rm } from 'node:fs/promises'
 import { dirname, join } from '@pommora/core/Paths/posix'
@@ -56,6 +56,8 @@ export async function captureThumbnail(
   scaleFactor: number,
 ): Promise<string | null> {
   if (rect.width < 1 || rect.height < 1) return null
+  const { id: nexusId } = await ensureIdentity(root)
+  if (nexusId === null) return null
   const img = await win.webContents.capturePage()
   if (img.isEmpty()) return null
   const sf = scaleFactor > 0 ? scaleFactor : 1
@@ -76,7 +78,6 @@ export async function captureThumbnail(
     height,
   )
   const buf = masked.resize({ width: THUMB_WIDTH, quality: 'good' }).toJPEG(78)
-  const { id: nexusId } = await ensureIdentity(root)
   const key = thumbKey(navKey)
   const rel = thumbRel(nexusId, key)
   await mkdir(dirname(join(root, rel)), { recursive: true })
@@ -87,6 +88,7 @@ export async function captureThumbnail(
 /** The caller passes every navKey that still exists (∪ recents and pins as a fault guard), so only orphans are dropped, never a live cover. */
 export async function evictThumbnails(root: string, liveKeys: string[]): Promise<void> {
   const { id: nexusId } = await ensureIdentity(root)
+  if (nexusId === null) return
   const dir = thumbsDir(root, nexusId)
   let names: string[]
   try {

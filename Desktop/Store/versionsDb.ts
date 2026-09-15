@@ -1,10 +1,9 @@
-import { existsSync, mkdirSync, renameSync } from 'node:fs'
+import { existsSync, renameSync } from 'node:fs'
 import { join } from '@pommora/core/Paths/posix'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@pommora/core/Contract/result'
 import { damagedStore, openDb, type Db } from './driver'
 import { fileStamp } from '@pommora/core/Trash/bundle'
-import { nexusDir } from '@pommora/core/Paths/paths'
 import type { CaptureReason, SnapshotRow, SnapshotSource } from '@pommora/core/Platform/stores'
 
 export const VERSIONS_FILENAME = 'versions.db'
@@ -34,7 +33,7 @@ function healthy(db: Db): boolean {
   }
 }
 
-/** A damaged store is set aside under a dated name that still ends in `.db`, so the watcher's store clause keeps covering it; nothing is deleted. */
+/** A damaged store is set aside under a dated name; nothing is deleted. */
 function quarantine(dbPath: string): void {
   try {
     renameSync(dbPath, dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`))
@@ -55,14 +54,12 @@ function withTable(db: Db | null): Db | null {
   }
 }
 
-export function openVersionsDb(nexusRoot: string): Db | null {
-  const dir = nexusDir(nexusRoot)
-  mkdirSync(dir, { recursive: true })
+export function openVersionsDb(dir: string): Db | null {
   const dbPath = join(dir, VERSIONS_FILENAME)
   if (existsSync(dbPath)) {
     const { db: existing, errcode } = openDb(dbPath)
     if (existing && healthy(existing)) return withTable(existing)
-    // Locked, mid-sync, or unreadable is left intact for the next launch, as nexus.db is; only a damaged file, or one that fails its check, is set aside.
+    // Locked or unreadable is left intact for the next launch, as nexus.db is; only a damaged file, or one that fails its check, is set aside.
     if (!existing && !damagedStore(errcode)) return null
     existing?.close()
     quarantine(dbPath)
