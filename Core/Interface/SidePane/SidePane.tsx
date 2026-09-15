@@ -3,13 +3,13 @@ import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { cx } from '@pommora/uix/Utilities/cx'
 import './side-pane.css'
 
-export function InspectorPane({ open }: { open: boolean }): React.JSX.Element {
+export function SidePane({ open }: { open: boolean }): React.JSX.Element {
   return (
     <GlassPane
-      className={cx('inspector-glass', paneSlide({ side: 'right', mode: 'overlay' }))}
+      className={cx('side-pane-glass', paneSlide({ side: 'right', mode: 'overlay' }))}
       aria-hidden={!open}
     >
-      <div className="inspector-body" />
+      <div className="side-pane-body" />
     </GlassPane>
   )
 }

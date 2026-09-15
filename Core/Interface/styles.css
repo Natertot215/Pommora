@@ -86,9 +86,9 @@ textarea,
   background: var(--main-bg);
   --content-inset: 24px;
   --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
-  --inspector-clearance: 0px;
+  --side-pane-clearance: 0px;
   --content-start: calc(var(--sidebar-clearance) + var(--content-edge));
-  --content-start-right: calc(var(--inspector-clearance) + var(--content-edge));
+  --content-start-right: calc(var(--side-pane-clearance) + var(--content-edge));
   --surface-lane: 8px;
   --expand-left: 96px;
 }
@@ -99,9 +99,9 @@ textarea,
   --sidebar-clearance: 0px;
   --io-l: 0;
 }
-.shell.inspector-open {
+.shell.side-pane-open {
   --io: 1;
-  --inspector-clearance: calc(var(--app-inset) + var(--inspector-width));
+  --side-pane-clearance: calc(var(--app-inset) + var(--side-pane-width));
 }
 .shell.is-resizing {
   transition: none;

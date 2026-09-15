@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from '../Session/store'
-import { INSPECTOR_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
+import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
 import { Surface } from './InterfaceScaffold'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
@@ -8,7 +8,7 @@ import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
 import { ContentView } from './ContentView'
 import { Toolbar } from './Toolbar/Toolbar'
-import { InspectorPane } from './SidePane/SidePane'
+import { SidePane } from './SidePane/SidePane'
 import { NavWindow } from './Windows/NavWindow'
 import { PageWindow } from './Windows/PageWindow'
 import { PageHistoryWindow } from './Windows/PageHistoryWindow'
@@ -36,8 +36,8 @@ export function App(): React.JSX.Element {
   const sidebarVisible = useSession((s) => s.sidebarVisible)
   const sidebarWidth = useSession((s) => s.sidebarWidth)
   const setSidebarWidth = useSession((s) => s.setSidebarWidth)
-  const inspectorWidth = useSession((s) => s.inspectorWidth)
-  const setInspectorWidth = useSession((s) => s.setInspectorWidth)
+  const sidePaneWidth = useSession((s) => s.sidePaneWidth)
+  const setSidePaneWidth = useSession((s) => s.setSidePaneWidth)
   const persistPaneWidths = useSession((s) => s.persistPaneWidths)
   const load = useSession((s) => s.load)
   const choose = useSession((s) => s.choose)
@@ -51,7 +51,7 @@ export function App(): React.JSX.Element {
   const commands = useSession((s) => s.commands)
   useNavThumbnails()
 
-  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [sidePaneOpen, setSidePaneOpen] = useState(false)
 
   const sidebarFrame = useResizeFrame({
     rect: { w: sidebarWidth },
@@ -60,14 +60,14 @@ export function App(): React.JSX.Element {
     equilateral: true,
     onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setSidebarWidth(next.w)),
   })
-  const inspectorFrame = useResizeFrame({
-    rect: { w: inspectorWidth },
-    min: { w: INSPECTOR_WIDTH.min },
-    max: { w: INSPECTOR_WIDTH.max },
+  const sidePaneFrame = useResizeFrame({
+    rect: { w: sidePaneWidth },
+    min: { w: SIDE_PANE_WIDTH.min },
+    max: { w: SIDE_PANE_WIDTH.max },
     equilateral: true,
-    onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setInspectorWidth(next.w)),
+    onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setSidePaneWidth(next.w)),
   })
-  const resizing = sidebarFrame.active !== null || inspectorFrame.active !== null
+  const resizing = sidebarFrame.active !== null || sidePaneFrame.active !== null
 
   useEffect(() => {
     void load()
@@ -104,13 +104,13 @@ export function App(): React.JSX.Element {
           (sidebarHidden ? ' sidebar-hidden' : '') +
           (ribbonVisible ? '' : ' ribbon-hidden') +
           (trafficLights ? '' : ' no-traffic-lights') +
-          (inspectorOpen ? ' inspector-open' : '') +
+          (sidePaneOpen ? ' side-pane-open' : '') +
           (resizing ? ' is-resizing' : '')
         }
         style={
           {
             '--sidebar-width': `${sidebarWidth}px`,
-            '--inspector-width': `${inspectorWidth}px`,
+            '--side-pane-width': `${sidePaneWidth}px`,
           } as CSSProperties
         }
         onDragOver={(e) => e.preventDefault()}
@@ -123,8 +123,8 @@ export function App(): React.JSX.Element {
         <div className="titlebar" />
         {status === 'ready' && (
           <Toolbar
-            inspectorOpen={inspectorOpen}
-            onToggleInspector={() => setInspectorOpen((v) => !v)}
+            sidePaneOpen={sidePaneOpen}
+            onToggleSidePane={() => setSidePaneOpen((v) => !v)}
           />
         )}
         <main className="content-pane">
@@ -175,7 +175,7 @@ export function App(): React.JSX.Element {
         >
           <Icon name="log-out" size="titleSmall" />
         </Button>
-        {status === 'ready' && <InspectorPane open={inspectorOpen} />}
+        {status === 'ready' && <SidePane open={sidePaneOpen} />}
         {status === 'ready' && <NavWindow />}
         {status === 'ready' && <PageWindow />}
         {status === 'ready' && <PageHistoryWindow />}
@@ -187,10 +187,10 @@ export function App(): React.JSX.Element {
         <ValuePickPresenter />
         <NotificationLabel />
         {status === 'ready' && <GlancePane />}
-        {status === 'ready' && inspectorOpen && (
+        {status === 'ready' && sidePaneOpen && (
           <div
-            className="resize-strip inspector-resize"
-            onPointerDown={inspectorFrame.start('w')}
+            className="resize-strip side-pane-resize"
+            onPointerDown={sidePaneFrame.start('w')}
             aria-hidden="true"
           />
         )}

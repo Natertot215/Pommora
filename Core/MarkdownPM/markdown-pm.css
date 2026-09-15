@@ -24,7 +24,7 @@
 .mdpm-editor {
   height: 100%;
   padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
-  padding-right: calc(var(--inspector-clearance) + var(--content-inset));
+  padding-right: calc(var(--side-pane-clearance) + var(--content-inset));
   transition:
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);

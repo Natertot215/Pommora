@@ -81,7 +81,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       { duration: ms(duration.base), easing: easing.baseEase },
     )
   }, [])
-  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [sidePaneOpen, setSidePaneOpen] = useState(false)
 
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   const closeOnSelect = useSession((s) => s.personalization.navCloseOnSelect !== false)
@@ -98,7 +98,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   useEffect(() => {
     if (!pageTarget) {
       searchRef.current?.focus()
-      setInspectorOpen(false)
+      setSidePaneOpen(false)
     }
   }, [pageTarget])
 
@@ -132,15 +132,15 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       closing={closing}
       onClose={closeNav}
       // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
-      onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeNav())}
+      onEscape={() => (sidePaneOpen ? setSidePaneOpen(false) : closeNav())}
       dragSurfaces={DRAG_SURFACES}
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}
       actions={
         <WindowActions
-          inspectorOpen={inspectorOpen}
-          onToggleInspector={() => setInspectorOpen((v) => !v)}
+          sidePaneOpen={sidePaneOpen}
+          onToggleSidePane={() => setSidePaneOpen((v) => !v)}
         />
       }
       left={{
@@ -166,14 +166,14 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         ),
       }}
       right={{
-        windowId: 'window-inspector',
+        windowId: 'window-side-pane',
         bounds: WINDOW_BASE_PANEL,
         mode: 'overlay',
-        open: inspectorOpen && pageTarget !== null,
-        className: 'navwindow-inspector',
+        open: sidePaneOpen && pageTarget !== null,
+        className: 'navwindow-side-pane',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && pageTarget && <PropertyPanel page={pageTarget} />}
+            {sidePaneOpen && pageTarget && <PropertyPanel page={pageTarget} />}
           </div>
         ),
       }}

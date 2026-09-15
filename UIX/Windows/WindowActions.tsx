@@ -2,11 +2,11 @@ import { Button } from '../Buttons/Button'
 
 // The surface's swallow math sizes itself for exactly this pair.
 export function WindowActions({
-  inspectorOpen,
-  onToggleInspector,
+  sidePaneOpen,
+  onToggleSidePane,
 }: {
-  inspectorOpen: boolean
-  onToggleInspector: () => void
+  sidePaneOpen: boolean
+  onToggleSidePane: () => void
 }): React.JSX.Element {
   return (
     <>
@@ -21,9 +21,9 @@ export function WindowActions({
         size="button-inline"
         icon="panel-right"
         iconSize="body"
-        title="Inspector"
-        aria-pressed={inspectorOpen}
-        onClick={onToggleInspector}
+        title="Side Pane"
+        aria-pressed={sidePaneOpen}
+        onClick={onToggleSidePane}
       />
     </>
   )

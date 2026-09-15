@@ -6,7 +6,7 @@ import { coerceInterfaceScale } from './personalization'
 export interface DevicePrefs {
   nativeMenus?: boolean
   interfaceScale?: number
-  panes?: { sidebar?: number; inspector?: number }
+  panes?: { sidebar?: number; sidePane?: number }
   disclosure?: Record<string, boolean>
   windows?: Record<string, { w: number; h: number }>
 }
