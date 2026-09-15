@@ -285,6 +285,34 @@ describe('classifyEvent', () => {
     expect(kind(ev('change', 'Notes', '_pageset.json'))).toBe('full-refresh')
   })
 
+  it('under .nexus only Contexts, identity and the registry re-walk — every other path is inert', async () => {
+    await refreshTree(root)
+    const tree = getLiveTree()
+    if (tree === null) throw new Error('no tree')
+    const kind = (e: WatchEvent): string => classifyEvent(tree, root, e, scope()).kind
+
+    for (const e of [
+      ev('add', '.nexus', 'interface', 'sidepane.json'),
+      ev('change', '.nexus', 'interface', 'sidepane.json'),
+      ev('addDir', '.nexus', 'interface'),
+      ev('unlinkDir', '.nexus', 'interface'),
+      ev('change', '.nexus', 'property-cascade.json'),
+      ev('change', '.nexus', 'context-rename.json'),
+      ev('add', '.nexus', 'unknown.json'),
+    ])
+      expect(kind(e)).toBe('ignored')
+
+    for (const e of [
+      ev('change', '.nexus', 'nexus.json'),
+      ev('change', '.nexus', 'properties.json'),
+      ev('change', '.nexus', 'contexts', 'contexts.json'),
+      ev('addDir', '.nexus', 'contexts', 'Areas', 'Fresh'),
+      ev('unlinkDir', '.nexus', 'contexts', 'Areas', 'Home'),
+      ev('unlink', '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
+    ])
+      expect(kind(e)).toBe('full-refresh')
+  })
+
   it('a raw nexus never classifies container-meta — the walk reads no sidecars there', async () => {
     const raw = tempRoot('pom-raw-')
     try {
