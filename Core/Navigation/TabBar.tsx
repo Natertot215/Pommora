@@ -9,7 +9,7 @@ import { segment } from '@pommora/uix/Elements/segment.css'
 import { SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
-import { suppressNextClick } from '@pommora/uix/Interactions/shared'
+import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import type { Tab, TabTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
@@ -79,6 +79,7 @@ function TabBarBody({
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
   const reorderPin = useSession((s) => s.reorderPin)
+  const beginGesture = usePointerGesture()
 
   const { liveEntries, renderEntries, firstLive, requestClose } = useTabClose(
     unpinnedEntries,
@@ -135,28 +136,18 @@ function TabBarBody({
 
   // A native CSS app-region never delivers hover, killing the + button's hover-reveal on the same pixels, so the bar drags the window itself via pointer deltas.
   const onBarDown = (e: React.PointerEvent<HTMLElement>): void => {
-    if (e.button !== 0 || (e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return
-    const el = e.currentTarget
-    const pid = e.pointerId
-    el.setPointerCapture(pid)
+    if ((e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return
     let last = { x: e.screenX, y: e.screenY }
-    let travel = 0
-    const move = (ev: PointerEvent): void => {
-      travel += Math.abs(ev.screenX - last.x) + Math.abs(ev.screenY - last.y)
-      host().tell('win:dragBy', ev.screenX - last.x, ev.screenY - last.y)
-      last = { x: ev.screenX, y: ev.screenY }
-    }
-    const end = (): void => {
-      if (el.hasPointerCapture(pid)) el.releasePointerCapture(pid)
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', end)
-      el.removeEventListener('pointercancel', end)
-      // A real drag releasing over a tab must not read as a click on it.
-      if (travel > 3) suppressNextClick()
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', end)
-    el.addEventListener('pointercancel', end)
+    beginGesture({
+      el: e.currentTarget,
+      event: e,
+      onActivate: () => true,
+      onDragMove: (ev) => {
+        host().tell('win:dragBy', ev.screenX - last.x, ev.screenY - last.y)
+        last = { x: ev.screenX, y: ev.screenY }
+      },
+      onDrop: () => {},
+    })
   }
   const onBarDoubleClick = (e: React.MouseEvent): void => {
     if ((e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return

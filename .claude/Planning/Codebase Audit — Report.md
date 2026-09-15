@@ -83,7 +83,7 @@ A file changing outside Pommora reaches the open page. A `pages:changed` push ca
 
 ##### 8. UIX: Bundle, Touch, Filing
 
-**Lenses and state:** Gates Mobile · touch, Foundation risk, Debt, Decision, Asymmetry, Duplication, Performance, Filing. **Effort:** Small to large. **Deletes:** 60 lines of small duplications, 490 relocated.
+**Lenses and state:** Gates Mobile · touch, Foundation risk, Debt, Decision, Asymmetry, Filing. **Effort:** Medium to large. **Deletes:** Nothing; 490 lines relocated.
 
 **Found.** The strongest-built part of the codebase, and the numbers aren't soft: one pointer harness every drag surface funnels through, one picker base, one menu vocabulary, zero raw colors, a hard import boundary that holds. One thing would resist a second host. Nothing in the kit ever asks what kind of pointer is driving it, in a kit whose reveal affordances are all hover-gated, so on a touch device a class of controls is simply absent. Alongside: the design kit carries Pommora's application vocabulary in four files, and the drawn caret is split across three packages with UIX styling CodeMirror's classes directly.
 
@@ -92,10 +92,8 @@ A file changing outside Pommora reaches the open page. A `pages:changed` push ca
 1. Add a coarse-pointer branch that pins hover reveals visible, a press-delay beside the travel threshold in the gesture harness, and a long-press route to dwell-to-create. *(L; after D-7)*
 2. Move the drawn caret into one `Core/Caret` with both geometry producers and both stylesheets; UIX keeps only the four caret tokens. *(M; ~490 lines relocated)*
 3. Move the property drop model to `Core/Properties` and the on-disk color key names beside the schemas that persist them; parameterize the three class-name queries. *(M; after D-9; ~78 lines relocated)*
-4. Generate the kebab token republish from the source list; one Bloom factory. *(S)*
-5. Put the tab bar's window drag on the shared harness. *(S; ~20 lines)*
 
-**Findings:** R-54, R-55, R-56, R-57, R-58.
+**Findings:** R-54, R-55, R-56.
 
 ##### 9. Shell Debt
 
@@ -175,8 +173,6 @@ Every open finding and where it lands. Kind: **FR** foundation risk, **D** decis
 | R-09 | 2     | FR   | Identity re-minting is adjudicated from non-syncing device state and from file birth time, then written into files that sync | `Core/Nexus/remint.ts, Core/Nexus/remintLedger.ts, Desktop/Store/open.ts`                                    |
 | R-54 | 8     | FR   | Zero coarse-pointer awareness in a kit whose reveal affordances are all hover-gated                                          | `UIX/Interactions/HoverRemove.tsx, UIX/Interactions/revealBar.ts, UIX/Interactions/OverScroll.tsx`           |
 | R-55 | 8     | Dt   | The drawn caret is split across three packages, and the design kit styles CodeMirror                                         | `UIX/Theme/nativeCaret.ts, UIX/Theme/caret.css, UIX/Theme/text-selection.css`                                |
-| R-57 | 8     | P    | Small UIX duplications: a hand-maintained kebab token republish and a second Bloom factory                                   | `UIX/Glass/glass-window.tsx, UIX/Glass/glass-surface.tsx`                                                    |
-| R-58 | 8     |      | The tab bar hand-rolls the harness for its window drag                                                                       | `Core/Navigation/TabBar.tsx`                                                                                 |
 | R-59 | 9     | D    | Two tab models in two folders, with types crossing both ways                                                                 | `Core/Navigation/tabsModel.ts, Core/Interface/Windows/windowTabs.ts, Core/Navigation/TabBar.tsx`             |
 | R-60 | 9     | Dt   | Four warm caches, one shared helper, two adopters                                                                            | `Core/Navigation/warmTabs.ts, Core/Interface/Windows/windowCache.ts, Core/Interface/Glance/GlancePane.tsx`   |
 | R-61 | 9     | Dt   | A new user-facing setting needs three edits, and only two are checked by the compiler                                        | `Core/Settings/personalization.ts, Core/Settings/codec.ts, Core/Settings/SettingsWindow.tsx`                 |

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
-import { bloomOpen } from '@pommora/uix/Animations/animations.css'
+import { pickerBloom } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
@@ -353,13 +353,13 @@ describe('pinned panes (Task 10)', () => {
 
   it('the live pane plays the enter bloom', () => {
     present(link())
-    expect(document.querySelector(`[data-picker-portal] .${bloomOpen}`)).not.toBeNull()
+    expect(document.querySelector(`[data-picker-portal] .${pickerBloom.open}`)).not.toBeNull()
   })
 
   it('a pinned pane appears without the enter bloom, so a lock cannot bloom in over the pane it replaced', () => {
     addPin()
     expect(document.querySelector('[data-picker-portal]')).not.toBeNull()
-    expect(document.querySelector(`[data-picker-portal] .${bloomOpen}`)).toBeNull()
+    expect(document.querySelector(`[data-picker-portal] .${pickerBloom.open}`)).toBeNull()
   })
 
   it('renders at its frozen anchor under the portal, not the inline branch', () => {
