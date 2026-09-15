@@ -35,7 +35,7 @@ Right-clicking any link, wherever it sits, opens one native menu built from one 
 
 | Action | Page Connection | Website Link |
 | --- | --- | --- |
-| **Open** | Open Preview · Open New Tab (reads *Open* where the page already holds a tab; each dropped where its own surface is already showing the page) | Open Preview · Open Browser (the in-app browser and the system one) |
+| **Open** | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab; each dropped where its own surface is already showing the page) | Preview · Open In Browser (the in-app browser and the system one) |
 | **Author** (editable surfaces) | Add Title / Edit Title · Edit Link | Rename · Edit Link |
 | **Copy** | Copy Link · Copy Path | Copy Link |
 | **Format** (editor only) | — | Format ▸ Full Link · Short Link · Page Title, rewriting the label alone |

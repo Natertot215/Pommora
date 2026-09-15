@@ -48,7 +48,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Hover Previews | `previewPersistence` | Whether a preview raises at all, and how long it lingers after hovering off. | Off · **1 Second** · 5 Seconds · 10 Seconds · Until Closed |
 | Dismiss Preview On Pointer Actions | `dismissPreviewOnPointer` | A click outside the live preview dismisses it; a locked preview stays. | On · **Off** |
 | Default Opening Behavior | `tabOpenBehavior` | What opening an entity does: overtake the active tab, or open a new one. | **Overtake** · New Tab |
-| Focus New Tabs | `tabTakeFocus` | A newly opened tab activates; off opens it in the background — including Open New Tab. | **On** · Off |
+| Focus New Tabs | `tabTakeFocus` | A newly opened tab activates; off opens it in the background — including New Tab. | **On** · Off |
 | Minimum Tab Width | `tabMinWidth` | The narrowest a tab shrinks before the strip scrolls. | 50–100px · **70px** |
 | Maximum Tab Width | `tabMaxWidth` | The widest a tab grows. | 150–350px · **250px** |
 | Active Tab Cache | `tabCache` | The most open tabs kept active before older ones fall to on-demand loading. | **5** · 10 · 15 · 20 Tabs |
