@@ -2,7 +2,7 @@
 
 ### Context
 
-`nexus.db` and `versions.db` open at `<root>/.nexus/`, so every copy of a Nexus folder (USB, backup, Finder duplicate) carries this machine's tabs, folds, index, sync binding and sync bases, while the binding's password and the device key stay behind in app storage. This plan moves both databases into Electron's app storage at `<userData>/Nexuses/<nexusId>/`, stamps the Nexus root inside `nexus.db` so a moved folder keeps its state and a copied folder drops its sync bases, and adds a read-only **View Local Data** window that shows `nexus.db` table by table. It touches `Desktop/Store/`, `Core/Nexus/identity.ts` and `handlers.ts`, `Core/Contract/` (`HostContext`, `bridge.ts`), `Core/Sync/Client/session.ts`, `Desktop/main.ts`, `Desktop/Capture/thumbnails.ts`, `Core/Session/layoutSlice.ts`, `Core/Settings/NexusRows.tsx`, a new `Core/Interface/Windows/LocalDataWindow.tsx`, and the documents that state the in-folder placement.
+`nexus.db` and `versions.db` open at `<root>/.nexus/`, so every copy of a Nexus folder (USB, backup, Finder duplicate) carries this machine's tabs, folds, index, sync binding and sync bases, while the binding's password and the device key stay behind in app storage. This plan moves both databases into Electron's app storage at `<userData>/Nexuses/<nexusId>/`, stamps the Nexus root inside `nexus.db` so a moved folder keeps its state and a copied folder drops its sync bases, and adds a read-only **View Local Data** window that shows `nexus.db` table by table. It touches `Desktop/Store/`, `Core/Nexus/identity.ts` and `handlers.ts`, `Core/Contract/` (`HostContext`, `bridge.ts`), `Core/Sync/Client/session.ts`, `Desktop/main.ts`, `Desktop/Capture/thumbnails.ts`, `Core/Session/layoutSlice.ts`, `Core/Settings/NexusRows.tsx`, a new `Core/Interface/Windows/DatabaseWindow.tsx`, and the documents that state the in-folder placement.
 
 It leaves alone: the `.db` exclusion in `Core/Paths/exclusion.ts` (kept as the rule that a live SQLite file a user places in their Nexus never syncs or attaches), the thumbnails under `.nexus/assets/<id>/thumbnails`, orphaned databases in app storage (no cleanup), damaged-file handling for `nexus.db` (a file that won't open stays where it is, as today), migration code (Nathan's NexusOS databases are moved by hand in Task 1.5), and `versions.db` in the viewer.
 
@@ -38,7 +38,7 @@ A new Settings > Nexus row, **View Local Data**, opens a window listing every ta
 - `npm run test` summary → 4846 tests in 398 files — moves by the tests each task names
 
 **START:** 2026-09-15T01:30:31Z
-**END:** <same command as the report is given>
+**END:** 2026-09-15T02:16:08Z
 
 #### Implementation Process
 
@@ -48,9 +48,9 @@ A new Settings > Nexus row, **View Local Data**, opens a window listing every ta
   - [x] Task 1.3
   - [x] Task 1.4
   - [x] Closeout (commit) — `/closeout` scoped to this phase, handed this phase's Reconciliation entries
-  - [ ] Task 1.5
-  - [ ] Review Checkpoint
-- [ ] `[Stop: Nathan checks NexusOS after the move before Phase 2]`
+  - [x] Task 1.5
+  - [x] Review Checkpoint
+- [x] `[Stop: Nathan checks NexusOS after the move before Phase 2]`
 - [ ] **Phase 2** — Local Data Channels
   - [ ] Task 2.1
   - [ ] Task 2.2
@@ -1046,15 +1046,15 @@ import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait, setCurso
 
 **VERIFY**
 
-- [ ] Step 5 counts match step 3.
-- [ ] The root stamp reads NexusOS's path after launch.
+- [x] Step 5 counts match step 3.
+- [x] The root stamp reads NexusOS's path after launch.
 
 #### Review Checkpoint
 
-- [ ] User confirms: NexusOS reopened with its tabs and heading folds as they were.
-- [ ] User confirms: Settings > Nexus shows the hub connection, and Sync Now runs.
-- [ ] User confirms: a page's File History still lists its earlier versions.
-- [ ] `ls ~/NexusOS/.nexus` shows no `.db` file after a few minutes of use.
+- [x] User confirms: NexusOS reopened with its tabs and heading folds as they were.
+- [x] User confirms: Settings > Nexus shows the hub connection, and Sync Now runs.
+- [x] User confirms: a page's File History still lists its earlier versions.
+- [x] `ls ~/NexusOS/.nexus` shows no `.db` file after a few minutes of use.
 
 ### Phase 2 — Local Data Channels
 
@@ -1386,9 +1386,9 @@ import { localRows, localTables } from './Store/localData'
 
 #### Task 3.2
 
-**TASK:** Build `LocalDataWindow`: a left rail listing `nexus.db`'s tables with row counts, and a virtualized read-only grid of the selected table in the app's table styling.
+**TASK:** Build `DatabaseWindow`: a left rail listing `nexus.db`'s tables with row counts, and a virtualized read-only grid of the selected table in the app's table styling.
 
-**FILES:** `Core/Interface/Windows/LocalDataWindow.tsx` (new), `Core/Interface/Windows/local-data-window.css` (new), `Core/Interface/App.tsx`, `Core/package.json`, `package-lock.json`
+**FILES:** `Core/Interface/Windows/DatabaseWindow.tsx` (new), `Core/Interface/Windows/database-window.css` (new), `Core/Interface/App.tsx`, `Core/package.json`, `package-lock.json`
 
 **DEPENDENCIES:** Tasks 2.2 and 3.1.
 
@@ -1425,7 +1425,7 @@ import { IterationWindow } from './Windows/IterationWindow'
 ```
 
 ```tsx
-// Core/Interface/Windows/LocalDataWindow.tsx
+// Core/Interface/Windows/DatabaseWindow.tsx
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
@@ -1438,7 +1438,7 @@ import type { LocalCell, LocalTable } from '../localData'
 import { host } from '../../Platform/dialer'
 import { useSession } from '../../Session/store'
 import { useWindowGeometry } from './useWindowGeometry'
-import './local-data-window.css'
+import './database-window.css'
 
 // Constants
 
@@ -1461,14 +1461,14 @@ const shown = (cell: LocalCell): string =>
 
 // Window
 
-export function LocalDataWindow(): React.JSX.Element | null {
+export function DatabaseWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.localDataOpen)
   const { mounted, closing } = useExitPresence(open)
   if (!mounted) return null
-  return <LocalDataBody closing={closing} />
+  return <DatabaseBody closing={closing} />
 }
 
-function LocalDataBody({ closing }: { closing: boolean }): React.JSX.Element {
+function DatabaseBody({ closing }: { closing: boolean }): React.JSX.Element {
   const closeLocalData = useSession((s) => s.closeLocalData)
   const geometry = useWindowGeometry('local-data')
   const [tables, setTables] = useState<LocalTable[]>([])
@@ -1555,20 +1555,20 @@ function TableRows({ table }: { table: LocalTable }): React.JSX.Element {
   } as React.CSSProperties
 
   return (
-    <div ref={scroller} className="window-body local-data-body">
-      <div className={cx('table local-data-table', text.body.standard)} style={grid}>
-        <div className="table-head local-data-head">
+    <div ref={scroller} className="window-body database-body">
+      <div className={cx('table database-table', text.body.standard)} style={grid}>
+        <div className="table-head database-head">
           {columns.map((column) => (
             <span key={column} className="col-header">
               {column}
             </span>
           ))}
         </div>
-        <div className="local-data-rows" style={{ height: virtualizer.getTotalSize() }}>
+        <div className="database-rows" style={{ height: virtualizer.getTotalSize() }}>
           {items.map((item) => (
             <div
               key={item.key}
-              className="data-row local-data-row"
+              className="data-row database-row"
               style={{ height: ROW_HEIGHT, transform: `translateY(${item.start}px)` }}
             >
               {rows[item.index].map((cell, i) => (
@@ -1586,17 +1586,17 @@ function TableRows({ table }: { table: LocalTable }): React.JSX.Element {
 ```
 
 ```css
-/* Core/Interface/Windows/local-data-window.css */
+/* Core/Interface/Windows/database-window.css */
 
 /* Body */
 
-.local-data-body {
+.database-body {
   overflow: auto;
 }
 
 /* Head */
 
-.table-head.local-data-head {
+.table-head.database-head {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -1606,10 +1606,10 @@ function TableRows({ table }: { table: LocalTable }): React.JSX.Element {
 
 /* Rows */
 
-.local-data-rows {
+.database-rows {
   position: relative;
 }
-.local-data-row {
+.database-row {
   position: absolute;
   top: 0;
   left: 0;
@@ -1621,10 +1621,10 @@ function TableRows({ table }: { table: LocalTable }): React.JSX.Element {
 // Core/Interface/App.tsx
 import { SettingsWindow } from '../Settings/SettingsWindow'
 import { IterationWindow } from './Windows/IterationWindow'
-import { LocalDataWindow } from './Windows/LocalDataWindow'
+import { DatabaseWindow } from './Windows/DatabaseWindow'
 …
         {status === 'ready' && <SettingsWindow />}
-        {status === 'ready' && <LocalDataWindow />}
+        {status === 'ready' && <DatabaseWindow />}
         {status === 'ready' && <IterationWindow />}
 ```
 
@@ -1632,7 +1632,7 @@ import { LocalDataWindow } from './Windows/LocalDataWindow'
 
 - [ ] Check the work for unnecessary code, styling an existing class or token already covers, and obvious mistakes.
 - [ ] Run the gates; all green.
-- [ ] `grep -rn "useVirtualizer" Core` → only `LocalDataWindow.tsx`.
+- [ ] `grep -rn "useVirtualizer" Core` → only `DatabaseWindow.tsx`.
 
 #### Task 3.3
 
@@ -1733,7 +1733,7 @@ import { host } from '../Platform/dialer'
 
 - [ ] No new store interface: `git diff <baseline>..HEAD -- Core/Platform/stores.ts Core/Testing/memoryStores.ts Core/Testing/storesContract.ts` → empty.
 - [ ] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` matches the tasks' FILES plus the Reconciliation documents.
-- [ ] New files carry section comments only: `grep -n "//\|/\*" Core/Interface/localData.ts Desktop/Store/localData.ts Core/Interface/Windows/LocalDataWindow.tsx Core/Interface/Windows/local-data-window.css` → section headers only.
+- [ ] New files carry section comments only: `grep -n "//\|/\*" Core/Interface/localData.ts Desktop/Store/localData.ts Core/Interface/Windows/DatabaseWindow.tsx Core/Interface/Windows/database-window.css` → section headers only.
 
 **Correctness**
 
@@ -1815,4 +1815,5 @@ Written per the skill's report shape once the chain above is confirmed.
 ### Deviations
 
 - **D-1 — The Root Stamp Clears Sync on Any Other Folder:** Task 1.2 kept `sync` when the stamped root no longer existed. The Phase 1 review found that a synced copy, opened and then trashed or ejected, reads as a move: the original reopened with the copy's bases, and its first push sent the copy's missing pages as deletes and its stale files as writes. Ruled by Nathan: `elsewhere` treats an unresolvable stamp as another folder, so a move or rename also empties `sync` and runs one full reconcile, while `local_state` and the binding stay. `open.test.ts`'s moved-root test expects no `sync` rows.
+- **D-2 — The Plan Closes After Phase 1:** Ruled by Nathan during Phase 2: the viewer is left for later, so Phases 2 and 3 didn't run, and the Phase 2 work in progress was discarded, since its channels have no consumer without the window. When the window is built, its component is `DatabaseWindow` in `DatabaseWindow.tsx`, and it doesn't get a stylesheet of its own. ContextPM's Next-Feature Candidates carries it.
 

@@ -36,6 +36,7 @@ Findings where the correct answer isn't established in the codebase — design a
 
 #### II. Next-Feature Candidates
 
+- [ ] **A Database window:** a read-only view of `nexus.db`, table by table with row counts, reached from Settings › Nexus. `// Planning`'s Local Data plan holds its channels, the window, and the Settings row as Phases 2 and 3.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for tile embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **A Shortcuts settings pane** over the one chord table in `Core/Actions/commands.ts`. It needs a named-key map (`toAccelerator` and `toKeyBinding` capitalize a key's first character only, so `arrowup` would reach Electron as `Arrowup`), a rule for two ids bound to one chord, and a `refreshMenu()` on a commands change if the menu bar is to pick up a rebind before the next adopt or launch.
