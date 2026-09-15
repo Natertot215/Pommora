@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { duration, easing, ms } from '@pommora/uix/Animations/motion'
@@ -7,7 +7,7 @@ import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { Subfield } from '../Subfield/Subfield'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
-import type { SubfieldPage } from '../Subfield/subfieldItems'
+import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { getContentViewRect } from '../ContentView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
@@ -23,8 +23,6 @@ import './page-window.css'
 const DRAG_SURFACES = '.page-window-body, .window-tabwrap, .tab-scroll, .tab-strip'
 
 const SLIDE_PX = 14
-
-const STATS_DEBOUNCE_MS = 120
 
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
@@ -53,32 +51,7 @@ function PageWindowBody({
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
 
-  const [bodyText, setBodyText] = useState('')
-  const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const seededPath = useRef<string | null>(null)
-  useEffect(() => {
-    setBodyText('')
-    clearTimeout(statsTimer.current)
-  }, [target.path])
-  useEffect(
-    () => () => {
-      clearTimeout(statsTimer.current)
-    },
-    [],
-  )
-  const onBodyText = (b: string): void => {
-    clearTimeout(statsTimer.current)
-    if (seededPath.current !== target.path) {
-      seededPath.current = target.path
-      setBodyText(b)
-      return
-    }
-    statsTimer.current = setTimeout(() => setBodyText(b), STATS_DEBOUNCE_MS)
-  }
-  const page = useMemo<SubfieldPage>(
-    () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: bodyText }),
-    [target.id, target.path, bodyText],
-  )
+  const { page, onBody } = useSubfieldPage(target)
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
 
   const connections = useWindowTabConnections(tree)
@@ -187,7 +160,7 @@ function PageWindowBody({
           editing={editing}
           onBeginEdit={() => setEditing(true)}
           connections={connections}
-          onBody={onBodyText}
+          onBody={onBody}
           warm={warmSeam}
         />
       </div>
