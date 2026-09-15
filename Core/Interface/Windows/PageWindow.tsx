@@ -79,7 +79,7 @@ function PageWindowBody({
     () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: bodyText }),
     [target.id, target.path, bodyText],
   )
-  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [sidePaneOpen, setSidePaneOpen] = useState(false)
 
   const connections = useWindowTabConnections(tree)
 
@@ -105,11 +105,11 @@ function PageWindowBody({
       ],
       timing,
     )
-    if (inspectorOpen)
+    if (sidePaneOpen)
       rootRef.current
-        ?.querySelector('.page-window-inspector')
+        ?.querySelector('.page-window-side-pane')
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
-  }, [target.path, windowSlide, inspectorOpen])
+  }, [target.path, windowSlide, sidePaneOpen])
 
   const warmSeam = useWindowWarm(bodyRef, target.path)
 
@@ -147,7 +147,7 @@ function PageWindowBody({
       className={cx('page-window', closing && EXIT_CLASS[exitReason])}
       closing={closing}
       onClose={() => closeWindow()}
-      onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeWindow())}
+      onEscape={() => (sidePaneOpen ? setSidePaneOpen(false) : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
       style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
@@ -160,19 +160,19 @@ function PageWindowBody({
       }
       actions={
         <WindowActions
-          inspectorOpen={inspectorOpen}
-          onToggleInspector={() => setInspectorOpen((v) => !v)}
+          sidePaneOpen={sidePaneOpen}
+          onToggleSidePane={() => setSidePaneOpen((v) => !v)}
         />
       }
       right={{
-        windowId: 'window-inspector',
+        windowId: 'window-side-pane',
         bounds: WINDOW_BASE_PANEL,
         mode: 'overlay',
-        open: inspectorOpen,
-        className: 'page-window-inspector',
+        open: sidePaneOpen,
+        className: 'page-window-side-pane',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && <PropertyPanel page={target} />}
+            {sidePaneOpen && <PropertyPanel page={target} />}
           </div>
         ),
       }}

@@ -147,7 +147,7 @@ describe('pickFileInto', () => {
   })
 })
 
-describe('fileValueMenu — the value menu the inspector panes pop', () => {
+describe('fileValueMenu — the value menu the side panes pop', () => {
   const chipAt = (i: number): Element => {
     const host = document.createElement('div')
     host.innerHTML = `<span data-segment-index="${i}"><b class="x">f</b></span>`

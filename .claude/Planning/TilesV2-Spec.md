@@ -2,9 +2,9 @@
 
 > **Status:** standing spec · Built by [[Tiles — Implementation Plan]] (PM-128) · Described in [[SurfacePM]]
 
-Tiles is one core Pommora system beside Views, Pages, Properties, and Connections: in-app windows, floating panes, and picker menus size through one box primitive, while Space and Homepage grids, MarkdownPM embeds, and the inspector's tabs share one tile mechanism. The Tiles arc built the substrate and stopped. This page holds the decisions that shaped it and what it promises to the work that comes after — the inspector, the panel kinds, the corpus hosts, the docked-window shape — so each of those arcs starts from the seams as they stand rather than re-deriving them.
+Tiles is one core Pommora system beside Views, Pages, Properties, and Connections: in-app windows, floating panes, and picker menus size through one box primitive, while Space and Homepage grids, MarkdownPM embeds, and the SidePane's tabs share one tile mechanism. The Tiles arc built the substrate and stopped. This page holds the decisions that shaped it and what it promises to the work that comes after — the SidePane, the panel kinds, the corpus hosts, the docked-window shape — so each of those arcs starts from the seams as they stand rather than re-deriving them.
 
-**Core value:** a new tile host or a new tile kind is one declaration, not a tour of switch sites, and every surface that sizes by drag reads as the same gesture. **Success criteria, met:** an inspector tab can mount a tile grid through the same host binding a Space uses, from a document stored in the Nexus; a backlinks or properties tile is one kind entry plus its body; `SurfacePM/` is gone and nothing outside MarkdownPM says "block"; one pointer engine drives every resize and move.
+**Core value:** a new tile host or a new tile kind is one declaration, not a tour of switch sites, and every surface that sizes by drag reads as the same gesture. **Success criteria, met:** an SidePane tab can mount a tile grid through the same host binding a Space uses, from a document stored in the Nexus; a backlinks or properties tile is one kind entry plus its body; `SurfacePM/` is gone and nothing outside MarkdownPM says "block"; one pointer engine drives every resize and move.
 
 ### The Substrate
 
@@ -18,39 +18,39 @@ The tile system is five layers, each with one job, and a consumer enters at the 
 | The host binding    | `Tiles/TileHost.tsx` · `Tiles/useTileDoc.ts` · `shared/tiles.ts` · `main/tiles.ts` · `main/tileDoc.ts` | A host ref resolves to a folder; the folder's `_tiles.json` is the document; the recipe declares the kinds; the document reloads live.                                                                                                                                                                                          |
 | The surfaces        | `Tiles/Surfaces/`                                                                                      | What a tile holds. The embed framework (`PageTile`) is one of them, and five hosts outside the grid render through it.                                                                                                                                                                                                          |
 
-Windows, the glance, the strips, the window side panels, and MarkdownPM's embed tile are boxes. A Space, the Homepage, and an inspector tab are trees. MarkdownPM's embeds stay CM6 widgets whose layout is the document: they share the chassis, the surfaces, the minimum, the zoom, the warm cache, and the box primitive, and that is the whole intersection. Two hand-rolled captures stay outside the engine on purpose: `TabBar`'s native-window drag, and the DnD engine's own capture, which is its own arc.
+Windows, the glance, the strips, the window side panels, and MarkdownPM's embed tile are boxes. A Space, the Homepage, and an SidePane tab are trees. MarkdownPM's embeds stay CM6 widgets whose layout is the document: they share the chassis, the surfaces, the minimum, the zoom, the warm cache, and the box primitive, and that is the whole intersection. Two hand-rolled captures stay outside the engine on purpose: `TabBar`'s native-window drag, and the DnD engine's own capture, which is its own arc.
 
 ### Vocabulary
 
 - **Tiles/** is a plain-noun sibling of `Views/`, `Windows/`, `Tables/`, `Cards/`. "Surface" is the glass material and Nathan's word for any UI surface, so it cannot name the module; "Canvas" implies free placement, which the model rejects.
 - **Block** is MarkdownPM's word for its CM6 blocks (`blockModel`, `blockHandles`, `blockDrag`, `blockMoveChanges`) and nothing else's. Storage and channels included: the channels are `tiles:*` and the document's entries are `tiles`.
-- A **pane** is a glass region of the shell or a window (inspector, sidebar, a window's side pane); a **tab** is one configured tile host inside the inspector; a **panel** is a menu surface — properties, backlinks — whether it stands alone or sits on a tile. "Surface" stays the glass material and a tile's content.
+- A **pane** is a glass region of the shell or a window (SidePane, sidebar, a window's side pane); a **tab** is one configured tile host inside the SidePane; a **panel** is a menu surface — properties, backlinks — whether it stands alone or sits on a tile. "Surface" stays the glass material and a tile's content.
 
 ### The Seams
 
 Each seam is a place a later arc adds one thing; the sites are named so the addition is an enumeration, not a search.
 
-**A host** (`TileHostRef` in `shared/tiles.ts`). The union enumerates its current consumers, the Homepage and Spaces. A new member is seven named sites: the union entry, `tileHostKey`, `coerceTileHost`, main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier (`watchPatch.ts`'s `tiles-leaf`). A host is a folder; that is the document's identity. The seam admits the inspector's tabs without pre-plumbing them: one page-wide tab every page shares with selection-aware tiles, and capped user-made tabs.
+**A host** (`TileHostRef` in `shared/tiles.ts`). The union enumerates its current consumers, the Homepage and Spaces. A new member is seven named sites: the union entry, `tileHostKey`, `coerceTileHost`, main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier (`watchPatch.ts`'s `tiles-leaf`). A host is a folder; that is the document's identity. The seam admits the SidePane's tabs without pre-plumbing them: one page-wide tab every page shares with selection-aware tiles, and capped user-made tabs.
 
-**An inspector tab.** Each tab is a folder under `.nexus/tiles/<tab>/`, holding its document and its bodies the way `.nexus/homepage/` does; nothing under `.nexus/tiles/` is corpus, so no walk rule is needed.
+**An SidePane tab.** Each tab is a folder under `.nexus/tiles/<tab>/`, holding its document and its bodies the way `.nexus/homepage/` does; nothing under `.nexus/tiles/` is corpus, so no walk rule is needed.
 
 **A kind** (the recipe). Three arms keyed by one `TileType`: `TILE_KINDS` in `shared/tiles.ts` (schema, `fileBacked`, `menuRows`), `TILE_SURFACES` in `Tiles/tileKinds.tsx` (render, `sourceInfo`), and `copyEntry` in `main/tiles.ts` for a kind with something to re-mint on copy — main holds it because `newId` lives there, and `shared/` compiles under the node project with no React. `knownTile` parses through the table's own schemas, so a kind absent from the shared table does not parse. The host's render, both menu presenters, the menu model, the Space seed, and main's lifecycle read the tables. The two menu presenters (`TileHandleMenu` in-app, `popNativeMenu` native) stay two presenters over the one `tileMenuModel`; the table feeds the model, never a presenter. A panel kind, a list kind, or webpage as a surface kind is one shared entry, one renderer entry, a `copyEntry` arm if it needs one, and its component.
 
 **The document** (`_tiles.json` in the host's folder). One locked read-modify-write through `writeTileDocAt`; reads are read-only by construction; corrupt bytes are quarantined by the writer under a `.bad-` name, never adjudicated by a read. Unknown entries and foreign keys ride through every read and write untouched. The watcher names the file and pushes `tiles:changed` for a change the app did not write itself; the open host flushes the save it owes, re-reads, and shows the file — most recent wins, and a completed local drag never silently reverts. A busy gesture holds the push from the press itself until the settle. The host lock has one writer, the host's document hook: a settings surface sets the store's value and the hook writes the document when it diverges.
 
-**The configuration** (`state.json`). The inspector's nexus-wide configuration, the page-wide tab and the custom tabs, has one reserved key, `INSPECTOR_STATE_KEY`, and one cap, `MAX_INSPECTOR_TABS` (six), both declared in `shared/tiles.ts` and unread. The guard belongs at the create channel when it exists; a foreign file over the cap reads inert rather than failing. The moment the key gains a writer, the watcher needs a `state-leaf` arm, since every change to that file is a full re-walk today.
+**The configuration** (`state.json`). The SidePane's nexus-wide configuration, the page-wide tab and the custom tabs, has one reserved key, `SIDE_PANE_STATE_KEY`, and one cap, `MAX_SIDE_PANE_TABS` (six), both declared in `shared/tiles.ts` and unread. The guard belongs at the create channel when it exists; a foreign file over the cap reads inert rather than failing. The moment the key gains a writer, the watcher needs a `state-leaf` arm, since every change to that file is a full re-walk today.
 
-**Warmth** (`Tiles/tileCache.ts`). Per-tab warmth for the inspector — folds, scrolls, editor state — is per-machine and in memory through the existing warm seam keyed by the tab's host chain, capped by the same `capSet` the active-tab cache uses and sized by the existing Active Tab Cache setting (`personalization.tabCache`). No second cache, no second setting, nothing persisted. This is the inspector arc's first task.
+**Warmth** (`Tiles/tileCache.ts`). Per-tab warmth for the SidePane — folds, scrolls, editor state — is per-machine and in memory through the existing warm seam keyed by the tab's host chain, capped by the same `capSet` the active-tab cache uses and sized by the existing Active Tab Cache setting (`personalization.tabCache`). No second cache, no second setting, nothing persisted. This is the SidePane arc's first task.
 
-### The Inspector
+### The SidePane
 
 The shape is decided; nothing of it is built.
 
-- `InspectorPane` hosts a tab strip and one `TileHost` per tab, on the `WindowTabStrip` precedent: the page-wide tab and the custom tabs. Selection-aware kinds read the store's selection themselves; the host binding does not thread it.
+- `SidePane` hosts a tab strip and one `TileHost` per tab, on the `WindowTabStrip` precedent: the page-wide tab and the custom tabs. Selection-aware kinds read the store's selection themselves; the host binding does not thread it.
 - Inside a 240–420px pane the grid is a vertical stack: bands of full-width tiles with absolute heights, north edges negotiating through the band pair. The model already handles it; the ratio row is available but rarely useful at that width.
 - The document is Nexus content, cross-device, never `local_state`. Custom tabs are user-created and capped; the page-wide tab is reserved.
 - A **panel** tile is a menu surface (`menu-base`) standing on a tile: a properties panel, a backlinks panel, a list. The recipe takes it as a kind whose surface is a menu. A backlinks kind reads the content index's `mentions` table, the seam Linked-From was gated on.
-- The Page Window's frontmatter inspector (`PagePanel`, properties only) and the shell inspector stay distinct until a properties kind exists; then the Page Window's could become a one-tile panel.
+- The Page Window's frontmatter SidePane (`PagePanel`, properties only) and the shell SidePane stay distinct until a properties kind exists; then the Page Window's could become a one-tile panel.
 
 ### Why the Document Is a File of Its Own
 
@@ -58,7 +58,7 @@ The document left the identity sidecar in July 2026 to retire a whole-file lost 
 
 ### Sequenced Work
 
-- The inspector itself: the tab strip, the reserved and custom tabs, the create and remove flow, the `state-leaf` watcher arm, per-tab warmth through the warm seam.
+- The SidePane itself: the tab strip, the reserved and custom tabs, the create and remove flow, the `state-leaf` watcher arm, per-tab warmth through the warm seam.
 - Panel kinds (properties, backlinks, list) and webpage as a surface kind (`type: 'webpage'`; the surface exists as MarkdownPM's embed).
 - Live body reload: markdown tile bodies sync with `.nexus/` but are not watched, so a synced body shows its old text until ⌘R while the layout beside it reloads live. One watcher arm plus a `replaceBody`-style push, the same mechanism the page editor's external-edit reload needs; it rides that arc.
 - A webpage embed tile sized taller than the current window renders at the window's fit cap, and a drag on its strip persists the capped height over the stored one. Seeding the press from the stored height keeps the store but makes the live drag stop tracking the pointer inside a short window; the ruling is whether the cap speaks only about display.
@@ -66,8 +66,8 @@ The document left the identity sidecar in July 2026 to retire a whole-file lost 
 
 ### Prospects
 
-- **Panels as docked windows.** Each inspector panel a `WindowBase` docked to the right edge, so window and panel are one thing sized by one primitive and docking is a clamp; move, undock, and a footer come free. The cost is that the shell's inspector is a `paneSlide` on `--io` with a content clearance the whole interface reads, and windows deliberately redeclare `--io` so the shell's cannot leak in. Sound once panels exist.
-- **The shell as a WindowBase shape.** Sidebar and inspector as the shell's left and right panels, unifying `paneSlide`, the strips, `--io`, and width persistence under one owner. The deepest collapse on offer; it touches every consumer of the two clearance variables.
+- **Panels as docked windows.** Each SidePane panel a `WindowBase` docked to the right edge, so window and panel are one thing sized by one primitive and docking is a clamp; move, undock, and a footer come free. The cost is that the shell's SidePane is a `paneSlide` on `--io` with a content clearance the whole interface reads, and windows deliberately redeclare `--io` so the shell's cannot leak in. Sound once panels exist.
+- **The shell as a WindowBase shape.** Sidebar and SidePane as the shell's left and right panels, unifying `paneSlide`, the strips, `--io`, and width persistence under one owner. The deepest collapse on offer; it touches every consumer of the two clearance variables.
 - **PickerMenu resizing** needs no plumbing: a centered picker resizes by mounting the frame's handles as its children.
 - Tile conversions both ways, the background Insert menu, embed banners, widget tiles, auto-grow markdown tiles, layout undo, root-level hosts — [[SurfacePM]]'s own Pending and Prospects.
 

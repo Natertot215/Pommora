@@ -28,7 +28,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 | **The next sitting** | Decisions             | **D-7, whether the design kit gets touch.** It gates the mobile companion's interaction layer, and every hover-revealed control built meanwhile lengthens the backlog behind it. |
 | **~5%**              | Behind-the-wall fixes | The ready watch-patch id narrowing (R-38). Small, mechanical, no ruling needed. |
 | **~55%**             | Ruled foundation work | The state-placement plan (ruled, still unbuilt).                                                                                                                  |
-| **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the inspector panel wired to a page selection; Agenda's surface.                                                                                                                    |
+| **~35%**             | Building              | Backlinks, the Context view, and Linked-From over the reverse query that now exists; the SidePanel wired to a page selection; Agenda's surface.                                                                                                                    |
 
 **Focus next:** rule **D-7** — the decision the mobile companion waits on — and run the cheap unblocked fixes alongside it. Ruled foundation work second; building last, on the openings whose plumbing is done.
 
@@ -49,7 +49,7 @@ Nathan's scarce resource is decisions; the implementation is Claude's. What rema
 
 - `Core/Views/Pipeline` and `Core/Views/Host`: finished work; the renderers draw presentation over one interaction layer.
 - `Core/Tiles`: the layout model is sync-ready; the surfaces have one hotspot.
-- `Core/Interface`, `Core/Settings`, `Core/Pages`, `Core/Assets`, `Core/Trash`, `Core/Web`: ordinary accumulation, no findings above hygiene except an empty inspector waiting for its panel.
+- `Core/Interface`, `Core/Settings`, `Core/Pages`, `Core/Assets`, `Core/Trash`, `Core/Web`: ordinary accumulation, no findings above hygiene except an empty SidePane waiting for its panel.
 
 **Cosmetic.** `UIX/Glass`, `UIX/Menus`, `UIX/Pickers`, `UIX/Cards`, `UIX/Fields`, `UIX/Labels`, `UIX/Controls`, `UIX/Elements`, `UIX/Animations`, `UIX/Windows`, `UIX/Table`, `UIX/Utilities`: one of each, adopted, no divergence. `Showcase`: out of scope by standing rule.
 
@@ -146,7 +146,7 @@ Ordered by how much later work each gates. D-1 (state placement) was ruled on 09
 #### Creative Openings
 
 - **Backlinks, a Context view, and Linked-From now have their query.** The content index carries Context membership as of 09-07-2026 and `queryMembers` answers "which pages hold Space X or Context C." All three pending features were waiting on exactly that; each is now a surface over an existing read.
-- **The main window's inspector is a live empty pane, and the panel built for it already works.** The inspector opens, slides, resizes, remembers its width, and shows nothing, while the property panel is already mounted in the Page Window and the NavWindow. Wiring it behind a page selection is a handful of lines against machinery that exists.
+- **The main window's SidePane is a live empty pane, and the panel built for it already works.** The SidePane opens, slides, resizes, remembers its width, and shows nothing, while the property panel is already mounted in the Page Window and the NavWindow. Wiring it behind a page selection is a handful of lines against machinery that exists.
 - **Agenda is threaded through the whole navigation layer with no surface at the end of it.** Tasks and Events are first-class in the data model, admitted into navigation references, and refused at every use. The plumbing is ahead of the surface, and the entity vocabulary now resolves to one source, which makes the surface the cheap part.
 - **A read-only mobile viewer is a bounded project against today's Core.** The interface a host implements is small and enumerated: 15 machine methods, 19 store methods across three optional stores that all degrade gracefully, 19 host-context members, 4 dialer members, about 60 lines of watcher wiring. The blockers aren't architectural; they're the state-placement plan and touch.
 

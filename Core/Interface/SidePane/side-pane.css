@@ -1,27 +1,27 @@
-.inspector-glass {
+.side-pane-glass {
   position: absolute;
   top: var(--app-inset);
   right: var(--app-inset);
   bottom: var(--app-inset);
-  width: var(--inspector-width);
-  z-index: var(--z-inspector);
+  width: var(--side-pane-width);
+  z-index: var(--z-side-pane);
   border-radius: var(--app-radius);
   overflow: hidden;
   --pane-inset: var(--app-inset);
   pointer-events: none;
   -webkit-app-region: no-drag;
 }
-.shell.inspector-open .inspector-glass {
+.shell.side-pane-open .side-pane-glass {
   pointer-events: auto;
 }
 
-.inspector-body {
+.side-pane-body {
   padding: var(--surface-inset);
 }
 
-.inspector-resize {
+.side-pane-resize {
   top: var(--app-inset);
   bottom: var(--app-inset);
-  right: calc(var(--app-inset) + var(--inspector-width) - 5px);
-  z-index: var(--z-inspector-resize);
+  right: calc(var(--app-inset) + var(--side-pane-width) - 5px);
+  z-index: var(--z-side-pane-resize);
 }

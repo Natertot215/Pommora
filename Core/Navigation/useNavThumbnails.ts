@@ -5,14 +5,14 @@ import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'
 import { host } from '../Platform/dialer'
 
-// The sidebar and inspector are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that chrome band.
+// The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that chrome band.
 function contentRect(pane: Element): ThumbRect {
   const p = pane.getBoundingClientRect()
   let { left, right } = p
   const sidebar = document.querySelector('.surface-glass')?.getBoundingClientRect()
   if (sidebar && sidebar.right > left && sidebar.right < right) left = sidebar.right
-  const inspector = document.querySelector('.inspector-glass')?.getBoundingClientRect()
-  if (inspector && inspector.left > left && inspector.left < right) right = inspector.left
+  const sidePane = document.querySelector('.side-pane-glass')?.getBoundingClientRect()
+  if (sidePane && sidePane.left > left && sidePane.left < right) right = sidePane.left
   const toolbar = document.querySelector('.app-toolbar')?.getBoundingClientRect()
   const maskTop = toolbar ? Math.max(0, toolbar.bottom - p.top) : 0
   const maskFill = pane.querySelector('.banner-img') ? 'banner' : 'window'

@@ -6,7 +6,7 @@
 
 #### Version 0.0.0 → 0.5.0 // React Rebuild
 
-The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it. The arc ran from a walking skeleton — one nexus walk over IPC into a Zustand store — through the headless data layer and desktop write path, the glass and drag design system, the MarkdownPM editor, the chrome and inspector, tables and Properties V2, the view-settings suite, the tile surfaces, auto-scroll and the navigation surface, the multi-tab nexus, and page previews. The unified Subfield and scan-promote closed the rebuild at v0.5.0. Locked decisions and full detail per milestone live in [[HistoryPM|]].
+The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it. The arc ran from a walking skeleton — one nexus walk over IPC into a Zustand store — through the headless data layer and desktop write path, the glass and drag design system, the MarkdownPM editor, the chrome and SidePane, tables and Properties V2, the view-settings suite, the tile surfaces, auto-scroll and the navigation surface, the multi-tab nexus, and page previews. The unified Subfield and scan-promote closed the rebuild at v0.5.0. Locked decisions and full detail per milestone live in [[HistoryPM|]].
 
 #### v0.5.x — The Baseline Hardened
 
@@ -24,9 +24,9 @@ The remaining renderers — **List · Gallery · Calendar · Timeline** — over
 
 Building Agenda from a settled identity model and an empty schema: Tasks and Events are `.md` under their kind keys, their singleton folders are registered, and admission already recognizes them. What it needs is the field vocabulary, the tree membership, a selection kind, a detail surface, and CRUD that converges onto the page writers rather than a second serializer; an EventKit bridge (opt-in, bidirectional) follows.
 
-#### v0.8.0 — Settings + Quick Capture + LLM Inspector + Search
+#### v0.8.0 — Settings + Quick Capture + LLM SidePane + Search
 
-The rest of the Settings editing UI — the window ships off the ribbon with its boolean toggles, leaving the pickers (accent, connection color, default icons) and the placement knobs without controls. Plus Quick Capture (specced, zero code), the Claude-chat inspector (the panel ships; its body is empty), and global `⌘K` search over an FTS index.
+The rest of the Settings editing UI — the window ships off the ribbon with its boolean toggles, leaving the pickers (accent, connection color, default icons) and the placement knobs without controls. Plus Quick Capture (specced, zero code), the Claude-chat SidePane (the panel ships; its body is empty), and global `⌘K` search over an FTS index.
 
 #### v0.9.0 — Tiles Completion + Context Surfaces
 
