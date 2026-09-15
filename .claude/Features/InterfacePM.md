@@ -33,7 +33,7 @@ A page row's menu is the **page menu** (`Core/Actions/pageMenu.ts`), the same ro
 
 | Group    | Rows                                                                                                     |
 | -------- | -------------------------------------------------------------------------------------------------------- |
-| Open     | Open Preview · Open New Tab (reads *Open* where the page already holds a tab)                            |
+| Open     | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab)                          |
 | Identity | Rename · Edit Icon                                                                                       |
 | Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                             |
 | Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path |

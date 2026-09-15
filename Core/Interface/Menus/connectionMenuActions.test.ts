@@ -24,7 +24,7 @@ beforeEach(() => {
 })
 
 describe('a connection opens its page the two ways every page menu offers', () => {
-  it('Open New Tab selects the page a link names into a tab of its own', async () => {
+  it('New Tab selects the page a link names into a tab of its own', async () => {
     const select = vi.fn(async () => {})
     useSession.setState({ select })
     connMenu.mockResolvedValue('title:newtab')
@@ -36,7 +36,7 @@ describe('a connection opens its page the two ways every page menu offers', () =
     )
   })
 
-  it('Open Preview floats it instead', async () => {
+  it('Preview floats it instead', async () => {
     const openWindow = vi.fn()
     useSession.setState({ openWindow })
     connMenu.mockResolvedValue('title:window')

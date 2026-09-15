@@ -3,11 +3,11 @@ import { type CellMenuContext, cellMenuContextFor, cellMenuModel } from './cellM
 import type { ResolvedColumn } from '../Views/viewRow'
 
 describe('cellMenuModel', () => {
-  it('title: Open Preview + stateful Open lead + Rename + Edit Icon + New Page pair + the send block + separator-gated Delete', () => {
+  it('title: Preview + stateful Open row + Rename + Edit Icon + New Page pair + the send block + separator-gated Delete', () => {
     const m = cellMenuModel({ kind: 'title' })
     expect(m.map((i) => [i.label, i.action])).toEqual([
-      ['Open Preview', 'title:window'],
-      ['Open New Tab', 'title:newtab'],
+      ['Preview', 'title:window'],
+      ['New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Edit Icon', 'title:icon'],
       ['New Page Above', 'title:newabove'],
@@ -17,7 +17,7 @@ describe('cellMenuModel', () => {
       ['View History', 'title:history'],
       ['Delete', 'title:delete'],
     ])
-    expect(cellMenuModel({ kind: 'title', alreadyOpen: true })[1].label).toBe('Open')
+    expect(cellMenuModel({ kind: 'title', alreadyOpen: true })[0].label).toBe('Open')
     expect(m.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
     expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
     expect(m.some((i) => i.submenu)).toBe(false)

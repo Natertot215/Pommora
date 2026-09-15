@@ -10,8 +10,8 @@ const rows = (ctx: Partial<ConnMenuContext> = {}): [string, string][] =>
 describe('a link naming a page', () => {
   it('offers the same actions in the editor and in a property cell, the ending aside', () => {
     expect(rows()).toEqual([
-      ['Open Preview', 'title:window'],
-      ['Open New Tab', 'title:newtab'],
+      ['Preview', 'title:window'],
+      ['New Tab', 'title:newtab'],
       ['Add Title', 'rename'],
       ['Edit Link', 'editLink'],
       ['Copy Link', 'title:copylink'],
@@ -55,15 +55,15 @@ describe('a link naming an address', () => {
 
   it('opens into either browser, and says which is which', () => {
     expect(ext().slice(0, 2)).toEqual([
-      ['Open Preview', 'link:window'],
-      ['Open Browser', 'link:browser'],
+      ['Preview', 'link:window'],
+      ['Open In Browser', 'link:browser'],
     ])
   })
 
   it('the editor keeps the address among the items that rewrite the link', () => {
     expect(ext()).toEqual([
-      ['Open Preview', 'link:window'],
-      ['Open Browser', 'link:browser'],
+      ['Preview', 'link:window'],
+      ['Open In Browser', 'link:browser'],
       ['Rename', 'rename'],
       ['Edit Link', 'editLink'],
       ['Copy Link', 'title:copylink'],
@@ -75,8 +75,8 @@ describe('a link naming an address', () => {
 
   it('a cell copies the address alongside the opens, and can only empty its value', () => {
     expect(ext({ surface: 'cell' })).toEqual([
-      ['Open Preview', 'link:window'],
-      ['Open Browser', 'link:browser'],
+      ['Preview', 'link:window'],
+      ['Open In Browser', 'link:browser'],
       ['Copy Link', 'title:copylink'],
       ['Rename', 'rename'],
       ['Edit Link', 'editLink'],
@@ -91,8 +91,8 @@ describe('a link naming an address', () => {
 
   it('a read-only surface is offered the address and nothing that rewrites the link', () => {
     expect(ext({ editable: false })).toEqual([
-      ['Open Preview', 'link:window'],
-      ['Open Browser', 'link:browser'],
+      ['Preview', 'link:window'],
+      ['Open In Browser', 'link:browser'],
       ['Copy Link', 'title:copylink'],
     ])
   })

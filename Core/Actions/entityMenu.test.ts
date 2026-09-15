@@ -15,8 +15,8 @@ describe('the sidebar entity menu', () => {
       [],
     )
     expect(items.map((i) => i.action)).toEqual([
-      'title:window',
       'title:newtab',
+      'title:window',
       'title:rename',
       'title:icon',
       'title:newabove',
@@ -27,7 +27,7 @@ describe('the sidebar entity menu', () => {
       'title:reveal',
       'title:delete',
     ])
-    expect(items[1].label).toBe('Open')
+    expect(items[0].label).toBe('Open')
   })
 
   it('a sidebar collection opens, creates, renames, deletes, locks, and reveals in four groups', () => {
@@ -36,7 +36,7 @@ describe('the sidebar entity menu', () => {
       creators,
     )
     expect(shape(items)).toEqual([
-      'Open New Tab',
+      'New Tab',
       '—',
       'New Page',
       '—',
