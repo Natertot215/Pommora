@@ -6,11 +6,14 @@
 
 **Two questions are Nathan's.** A capture's retention clock is its arrival time, so a bulk history upload is retained from the moment it lands rather than from when the losing edit was made; whether a client-supplied timestamp should travel instead is his call. The `captures` table has no reader, so with File History off, a conflict's losing buffer sits in the database alone and no surface shows it; whether it earns one is the second. Behind those sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` shrinks as items close, and with the concurrency topic ruled, its Where Brainwaves Go table orders the work around D-7, whether the design kit gets touched, with the two registry readers (R-17, R-18) and the watch-patch ID narrowing (R-38) beside it. The published audit page mirrors the report in Pommora's own theme.
 
-The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the SidePane's tab strip mounting `TileHost` per tab on documents under `.nexus/interface/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
+The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the SidePane's tab strip mounting `TileHost` per tab, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
 
-- [ ] 
+- [ ] **The SidePane's tab type system**, still in brainstorming. A tab carries a type; types divide into **standard** — shipped under reserved names, with `pages`, `CLI`, `search`, and an AI panel named so far, each able to carry its own pre-configured files and templates — and **custom**, which the user creates as tile surfaces on the existing `TileHost`. The configuration and the documents behind it live under `.nexus/interface/`; the pane's width stays per-machine in device preferences. What a standard type is mechanically is the open call the rest waits on: a built surface, a document seeded from a shipped template, or a declaration that names which of the two it is. Prior art points at a fourth reading — Obsidian Canvas keeps a freeform surface in a file and stores only its type and path on the tab — which would make a custom tab one standard type that renders a document rather than a second family.
+- [ ] **A `mergeDepthFor` entry for the SidePane's configuration** (`Core/Sync/Arrival/jsonMerge.ts`). Every `.json` under `.nexus/` is three-way merged, but a file with no entry merges at top-level-key granularity, where two devices each adding a tab leaves one of the two.
+
+The vocabulary pass is done: *Inspector* is *SidePane* through the app and its documentation, covering both the shell's pane and the floating windows' frontmatter panel. The watcher no longer re-walks the Nexus for an unrecognized file under `.nexus/` — Contexts, the identity file, and the property registry are the three paths that restructure the tree, and everything else classifies inert, so `.nexus/interface/` costs nothing as it grows. Its own classifier arm, which is what tells the interface a change landed, comes with the folder's shape.
 
 ### Pending Focuses
 
