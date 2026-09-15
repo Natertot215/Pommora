@@ -8,6 +8,7 @@ import { useEditorHost } from '../../Pages/editorHost'
 import { flushPageSave, schedulePageSave } from '../../Session/saveScheduler'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
 import { useEmbedScale, useSession } from '../../Session/store'
+import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import { ImagePicker } from '../../Assets/ImagePicker'
@@ -58,6 +59,7 @@ export function PageTile({
   ancestors?: readonly string[]
   chrome?: 'none' | 'page'
 }): React.JSX.Element {
+  const publishSelection = usePublishSelection(path)
   // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh slot before the remounting editor reads it.
   const epoch = useBodyEpoch(path)
   const [seed, setSeed] = useState(() => {
@@ -145,6 +147,7 @@ export function PageTile({
         }}
         host={host}
         connections={connections}
+        onSelection={publishSelection}
         readOnly={!editing}
         autoFocus
         scale={embedScale}

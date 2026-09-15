@@ -10,7 +10,7 @@ import { SpaceView } from '../Tiles/SpaceView'
 import { PageView } from '../Pages/PageView'
 import { NavView } from '../Navigation/NavView'
 import { Subfield } from './Subfield/Subfield'
-import type { SubfieldPage } from './Subfield/subfieldItems'
+import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
@@ -168,6 +168,8 @@ export function ContentView(): React.JSX.Element {
 function ContentFooter(): React.JSX.Element {
   const expanded = useSession((s) => s.subfieldExpanded)
   const setExpanded = useSession((s) => s.setSubfieldExpanded)
+  const kind = useSession((s) => s.selection.kind)
+  const count = useSession((s) => s.detailCount)
   const slot = useSession(shownPage)
   const page = useMemo<SubfieldPage | null>(
     () => (slot?.status === 'ready' ? { target: slot.target, body: slot.body } : null),
@@ -186,7 +188,7 @@ function ContentFooter(): React.JSX.Element {
       </button>
       <CitationsToggle page={page} />
       <div className="subfield-reveal">
-        <Subfield page={page} />
+        <Subfield page={page} count={count} lead={kind === 'none' ? <ViewTypeItem /> : undefined} />
       </div>
     </>
   )
