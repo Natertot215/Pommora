@@ -24,6 +24,8 @@
   -webkit-app-region: no-drag;
   transition:
     bottom var(--duration-base) var(--ease-base),
+    left var(--duration-base) var(--ease-base),
+    right var(--duration-base) var(--ease-base),
     opacity var(--duration-fast) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
 }

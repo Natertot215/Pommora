@@ -22,6 +22,8 @@ import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../../Navigation/NavGallery'
 import { useWindowGeometry } from './useWindowGeometry'
 import { Subfield } from '../Subfield/Subfield'
+import { CitationsToggle } from '../Subfield/CitationsToggle'
+import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import './nav-window.css'
 
@@ -128,6 +130,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const connections = useWindowTabConnections(tree)
   // Its own list, never the main pane's selection — the bar states what this window is showing.
   const shownCount = results ? results.length : resolvedPins.length + shownRecents.length
+  const { page: tabPage, onBody } = useSubfieldPage(pageTarget)
 
   return (
     <WindowBase
@@ -139,11 +142,14 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       onEscape={() => (sidePaneOpen ? setSidePaneOpen(false) : closeNav())}
       dragSurfaces={DRAG_SURFACES}
       footer={
-        pageTarget === null ? (
+        tabPage ? (
+          <Subfield page={tabPage} inert />
+        ) : (
           <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />
-        ) : undefined
+        )
       }
       footerLabel={footerLabel}
+      footerLead={<CitationsToggle page={tabPage} />}
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}
@@ -203,6 +209,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               editing={editing}
               onBeginEdit={() => setEditing(true)}
               connections={connections}
+              onBody={onBody}
               warm={warmSeam}
             />
           </div>

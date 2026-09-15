@@ -8,6 +8,8 @@
 
   --window-toolbar-h: 36px;
   --window-panel-inset: var(--app-inset);
+  /* How far the band's trailing edge sits off the window, so the bar and its chevron travel together. */
+  --window-band-trail: 0px;
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
@@ -245,6 +247,7 @@
 }
 
 .window-footer {
+  margin-right: var(--window-band-trail);
   transition:
     height var(--duration-base) var(--ease-base),
     margin-right var(--duration-base) var(--ease-base);
@@ -252,14 +255,15 @@
 .window.is-footer-open .window-footer {
   height: var(--window-footer-h);
 }
-.window.is-panel-right-open .window-footer {
-  margin-right: calc(var(--window-panel-r-w) + var(--window-panel-inset));
+.window.is-panel-right-open {
+  --window-band-trail: calc(var(--window-panel-r-w) + var(--window-panel-inset));
 }
 .window-footer-toggle {
-  right: 16px; /* KNOB — clears the se resize corner */
+  /* The 16px is a KNOB — the chevron's inset from the band's trailing edge, which clears the se resize corner where the band reaches the window. */
+  right: calc(16px + var(--window-band-trail));
   z-index: 4;
   width: 40px;
-  height: var(--window-footer-h);
+  height: calc(var(--window-footer-h) + 2px);
   padding: 0 6px 0 0;
 }
 .window.is-footer-open .window-footer-toggle {
