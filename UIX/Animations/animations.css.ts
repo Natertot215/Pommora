@@ -6,30 +6,24 @@ globalKeyframes('menu-bloom', {
   to: { opacity: 1, transform: 'scale(1)' },
 })
 
-export const menuBloom = style({
-  animation: `menu-bloom ${duration.slow} ${easing.bloom} both`,
-  transformOrigin: 'var(--menu-origin, top center)',
-})
-
 globalKeyframes('menu-bloom-out', {
   from: { opacity: 1, transform: 'scale(1)' },
   to: { opacity: 0, transform: 'scale(0.75)' },
 })
 
-export const menuBloomClosing = style({
-  animation: `menu-bloom-out ${duration.slow} ${easing.bloom} both`,
-  transformOrigin: 'var(--menu-origin, top center)',
+const bloom = (d: (typeof duration)[keyof typeof duration]) => ({
+  open: style({
+    animation: `menu-bloom ${d} ${easing.bloom} both`,
+    transformOrigin: 'var(--menu-origin, top center)',
+  }),
+  close: style({
+    animation: `menu-bloom-out ${d} ${easing.bloom} both`,
+    transformOrigin: 'var(--menu-origin, top center)',
+  }),
 })
 
-export const bloomOpen = style({
-  animation: `menu-bloom ${duration.menu} ${easing.bloom} both`,
-  transformOrigin: 'var(--menu-origin, top center)',
-})
-
-export const bloomClose = style({
-  animation: `menu-bloom-out ${duration.menu} ${easing.bloom} both`,
-  transformOrigin: 'var(--menu-origin, top center)',
-})
+export const menuBloom = bloom(duration.slow)
+export const pickerBloom = bloom(duration.menu)
 
 export const titleReveal = `${duration.menu} ${easing.bloom}`
 
