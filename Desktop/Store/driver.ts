@@ -4,8 +4,6 @@ import { errText } from '@pommora/core/Contract/result'
 
 export type Db = DatabaseSync
 
-export const DB_SIBLINGS = ['', '-wal', '-shm'] as const
-
 const SQLITE_CORRUPT = 11
 const SQLITE_NOTADB = 26
 

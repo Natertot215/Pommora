@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs'
 import { errText } from '@pommora/core/Contract/result'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { openNexusDb } from './open'
@@ -25,15 +26,16 @@ const openQuietly = (open: () => Db | null, note: string): Db | null => {
   }
 }
 
-/** Never throws: opening a nexus on read-only media must leave it browsable, not fail the adopt half-way through. */
-export function openSessionDb(root: string): void {
+/** Never throws: opening a nexus must leave it browsable, not fail the adopt half-way through. */
+export function openSessionDb(dir: string | null, root: string): void {
   closeSessionDb()
-  db = openQuietly(
-    () => openNexusDb(root),
-    'nexus.db: unavailable — operational state will not persist:',
-  )
+  if (dir === null) return
+  db = openQuietly(() => {
+    mkdirSync(dir, { recursive: true })
+    return openNexusDb(dir, root)
+  }, 'nexus.db: unavailable — operational state will not persist:')
   versionsDb = openQuietly(
-    () => openVersionsDb(root),
+    () => openVersionsDb(dir),
     'versions.db: unavailable — file history will not record:',
   )
   installStores({

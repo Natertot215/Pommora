@@ -4,14 +4,13 @@ import { NEXUS_DIR } from '../../Paths/nexusPaths'
 import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
 import type { WatchScope } from '../../Paths/exclusion'
 import { readValue } from '../../Platform/localState'
-import { syncStore } from '../../Platform/stores'
 import { readWatchScope } from '../../Settings/settings'
 import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
 import { readAllBases } from './base'
 import { call, type SyncHost, syncHost } from './call'
 import { forgetKeys, loadRing } from './keyring'
-import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait } from './pull'
+import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait, setCursor } from './pull'
 import { answered, pushDirty, pushRename } from './push'
 import { admittedPaths, reconcile, rescope } from './reconcile'
 import { currentStatus, setStatus } from './status'
@@ -150,8 +149,10 @@ async function begin(
       void working(self, () => pushRename(self, from, to))
     },
   })
-  if (readAllBases().length === 0) await working(self, () => reconcile(self))
-  else
+  if (readAllBases().length === 0) {
+    setCursor(self, 0)
+    await working(self, () => reconcile(self))
+  } else {
     await working(self, async () =>
       pushDirty(
         self,
@@ -159,6 +160,7 @@ async function begin(
         true,
       ),
     )
+  }
   void pulling(self)
 }
 
@@ -209,14 +211,6 @@ export async function startSession(ctx: HostContext, root: string, nexusId: stri
   }
   const binding = readValue<SyncScope>('sync')
   if (binding === null) return
-  if (syncStore() === null) {
-    setStatus(ctx, {
-      state: 'off',
-      reason: 'no-db',
-      why: "This nexus's database is unavailable; sync is off for this session.",
-    })
-    return
-  }
   await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS, token)
 }
 

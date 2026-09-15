@@ -12,11 +12,12 @@ export async function readIdentity(root: string): Promise<Result<Record<string, 
   return read.ok ? ok(retireAgendaKey(read.value)) : read
 }
 
-export async function ensureIdentity(root: string): Promise<{ id: string; created: boolean }> {
+export async function ensureIdentity(
+  root: string,
+): Promise<{ id: string | null; created: boolean }> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.identity)
   const read = await readJsonStrict(path)
-  // A nexus.json that exists but can't be read must not be re-minted over — the id it holds keys the asset folders. The session runs on a throwaway id, nothing is written, and the next open reads the real one.
-  if (!read.ok && read.error.code !== 'not-found') return { id: newId(), created: false }
+  if (!read.ok && read.error.code !== 'not-found') return { id: null, created: false }
   const existing = valueOr(read, null)
   const existingId = existing && asString(existing.id)
   if (existing && existingId) {

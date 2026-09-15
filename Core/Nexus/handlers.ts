@@ -28,9 +28,10 @@ import type { NexusState } from './tree'
 let adoptingDepth = 0
 export const adopting = (): boolean => adoptingDepth > 0
 
-async function prepareOpenedNexus(path: string): Promise<void> {
+async function prepareOpenedNexus(path: string): Promise<string | null> {
+  let nexusId: string | null = null
   try {
-    await ensureIdentity(path)
+    nexusId = (await ensureIdentity(path)).id
     await ensureConfigLayout(path)
     await ensureContextsRegistry(path)
   } catch (e) {
@@ -41,6 +42,7 @@ async function prepareOpenedNexus(path: string): Promise<void> {
   } catch (e) {
     console.error('Adopt/stamp pass failed:', e)
   }
+  return nexusId
 }
 
 export async function openNexusSequence(
@@ -55,9 +57,9 @@ export async function openNexusSequence(
   await openSession(path)
   // openSession canonicalized the root; every step below keys off that string.
   const root = sessionRoot() ?? path
-  await prepareOpenedNexus(root)
+  const nexusId = await prepareOpenedNexus(root)
+  ctx.openStores(root, nexusId)
   await replayPendingRename(root)
-  ctx.openStores(root)
   if (root !== priorRoot) {
     void sweepFileHistory(root)
     dropLiveTree()
