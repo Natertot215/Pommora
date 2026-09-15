@@ -8,7 +8,7 @@ import {
   type RefObject,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { bloomOpen, bloomClose } from '../Animations/animations.css'
+import { pickerBloom } from '../Animations/animations.css'
 import { useExitPresence } from '../Animations/useExitPresence'
 import { useHeld } from '../Animations/useExitPresence'
 import { GlassPane } from '../Glass/glass-pane'
@@ -342,7 +342,7 @@ export function PickerMenu({
         s.pane,
         !bareSurface && s.surface,
         contentClassName,
-        closing ? bloomClose : enter ? bloomOpen : undefined,
+        closing ? pickerBloom.close : enter ? pickerBloom.open : undefined,
       )}
       style={
         {
