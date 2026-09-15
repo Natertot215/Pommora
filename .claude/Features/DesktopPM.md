@@ -15,7 +15,7 @@ Two programs share one window. The **host** (`Desktop/main.ts`) is the one that 
 
 ### The Store
 
-`Desktop/Store` is the SQLite seam. `driver.ts` wraps `node:sqlite` — Electron's own runtime, so there is no native module to rebuild — and `ddl.ts` holds the schema. `sessionDb.ts` opens `nexus.db` beside the Nexus for this machine's chrome and the content index; `versionsDb.ts` opens `versions.db` for page file history. Both sit inside the Nexus and travel with a moved one; the sync manifest excludes them. `stores.test.ts` runs the key-value, content-index, and snapshot stores against the store contract suites in `Core/Testing`, holding the SQL to the behavior any host's implementation must meet.
+`Desktop/Store` is the SQLite seam. `driver.ts` wraps `node:sqlite` — Electron's own runtime, so there is no native module to rebuild — and `ddl.ts` holds the schema. `sessionDb.ts` opens `nexus.db` for this machine's chrome and the content index; `versionsDb.ts` opens `versions.db` for page file history. Both open from `<userData>/Nexuses/<nexusId>/`, and `nexus.db` records the Nexus root it last opened, so a Nexus opened from another folder, moved or copied, keeps its state and starts with an empty `sync` table. `stores.test.ts` runs the key-value, content-index, and snapshot stores against the store contract suites in `Core/Testing`, holding the SQL to the behavior any host's implementation must meet.
 
 ### The File Watcher
 

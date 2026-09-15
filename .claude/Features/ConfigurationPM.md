@@ -1,7 +1,7 @@
 ## Configuration
 
 
-Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in the Nexus's own database, which the sync manifest excludes. This document is the one roster of every knob; other documents name a setting by its label and point here.
+Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in that Nexus's database under the app's userData directory. This document is the one roster of every knob; other documents name a setting by its label and point here.
 
 ### Settings
 
@@ -225,7 +225,7 @@ Three more keys sit at the settings root beside `personalization`: `excluded_fol
 
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in the Nexus's own database as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
+Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in each Nexus's database in the same directory, as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
 
 ---
 
