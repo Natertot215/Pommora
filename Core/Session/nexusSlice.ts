@@ -16,7 +16,7 @@ import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
-import { clampWidth, INSPECTOR_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
+import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { flushAllPageSaves, flushAllSessionSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
@@ -164,8 +164,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             ...(panes?.sidebar !== undefined && {
               sidebarWidth: clampWidth(SIDEBAR_WIDTH, panes.sidebar),
             }),
-            ...(panes?.inspector !== undefined && {
-              inspectorWidth: clampWidth(INSPECTOR_WIDTH, panes.inspector),
+            ...(panes?.sidePane !== undefined && {
+              sidePaneWidth: clampWidth(SIDE_PANE_WIDTH, panes.sidePane),
             }),
           })
         }

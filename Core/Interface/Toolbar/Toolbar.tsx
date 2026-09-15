@@ -18,11 +18,11 @@ type TrioPanel = 'navigation' | 'settings'
 type TrioSegment = Segment & { panel?: TrioPanel }
 
 export function Toolbar({
-  inspectorOpen,
-  onToggleInspector,
+  sidePaneOpen,
+  onToggleSidePane,
 }: {
-  inspectorOpen: boolean
-  onToggleInspector: () => void
+  sidePaneOpen: boolean
+  onToggleSidePane: () => void
 }): React.JSX.Element {
   const [panel, setPanel] = useState<TrioPanel | null>(null)
   const [beaks, setBeaks] = useState<number[]>([])
@@ -91,7 +91,7 @@ export function Toolbar({
       onClick: () => toggle('settings'),
       active: panel === 'settings',
     },
-    { icon: 'panel-right', title: 'Inspector', onClick: onToggleInspector, active: inspectorOpen },
+    { icon: 'panel-right', title: 'Side Pane', onClick: onToggleSidePane, active: sidePaneOpen },
   ]
   const beakFor = (p: TrioPanel): number | undefined => beaks[trio.findIndex((s) => s.panel === p)]
 

@@ -8,8 +8,8 @@ export const stack = {
     titlebar: 2,
     sidebarToggle: 3,
     sidebarResize: 4,
-    inspector: 4,
-    inspectorResize: 5,
+    sidePane: 4,
+    sidePaneResize: 5,
     toolbar: 6,
   },
   /** Lifts over an element's own siblings, wherever it lives. */

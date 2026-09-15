@@ -91,7 +91,7 @@ describe('PropertyPanel', () => {
     expect(text()).toContain('Areas')
   })
 
-  it('the inspector (no onBack) seeds Context rows hidden (B8)', async () => {
+  it('the side pane (no onBack) seeds Context rows hidden (B8)', async () => {
     cachePageDetail(detail({ path: 'Col/Page.md' }))
     await renderPanel(<PropertyPanel page={PAGE} />)
     // The Add affordance is present, but the un-valued Areas row is not seeded shown.

@@ -87,7 +87,7 @@
   --banner-add-zone: 44px;
   --detail-divider-width: var(--width-175);
   padding: calc(var(--app-inset) + 1px + var(--toolbar-h))
-    calc(var(--inspector-clearance) + var(--content-inset)) 14px var(--content-start);
+    calc(var(--side-pane-clearance) + var(--content-inset)) 14px var(--content-start);
   border-bottom: var(--detail-divider-width) solid var(--border-base);
   transition:
     padding-left var(--duration-base) var(--ease-base),

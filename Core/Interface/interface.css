@@ -16,7 +16,7 @@
 
 .detail {
   height: 100%;
-  padding: 38px calc(var(--inspector-clearance) + var(--content-inset)) 28px
+  padding: 38px calc(var(--side-pane-clearance) + var(--content-inset)) 28px
     calc(var(--sidebar-clearance) + var(--content-inset));
   overflow-y: auto;
   transition:
@@ -43,7 +43,7 @@
   overflow-y: auto;
 }
 .detail-body {
-  padding: 38px calc(var(--inspector-clearance) + var(--content-inset)) 28px
+  padding: 38px calc(var(--side-pane-clearance) + var(--content-inset)) 28px
     calc(var(--sidebar-clearance) + var(--content-inset));
   transition:
     padding-left var(--duration-base) var(--ease-base),
@@ -61,12 +61,12 @@
 .detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.tile-host)) {
   padding-top: 8px;
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
-  padding-right: calc(var(--inspector-clearance) + var(--surface-lane));
+  padding-right: calc(var(--side-pane-clearance) + var(--surface-lane));
 }
 /* Tile handles supply the grip/chevron actions, so no reserved lane is needed. Driven by kind (is-surface), so a context with no live tile surface still insets tight. */
 .detail-scroll.is-surface .detail-body {
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
-  padding-right: calc(var(--inspector-clearance) + var(--surface-lane));
+  padding-right: calc(var(--side-pane-clearance) + var(--surface-lane));
 }
 /* KNOB: the banner→first-tile clearance. */
 .detail-scroll.has-header.is-surface .detail-body {

@@ -50,11 +50,11 @@ const withPrefs = (prefs: DevicePrefs | null) => async (): Promise<unknown> => o
 async function widthsAtReady(
   useSession: Session,
   tree: NexusTree,
-): Promise<{ sidebar: number; inspector: number } | null> {
-  let seen: { sidebar: number; inspector: number } | null = null
+): Promise<{ sidebar: number; sidePane: number } | null> {
+  let seen: { sidebar: number; sidePane: number } | null = null
   const stop = useSession.subscribe((s) => {
     if (seen === null && s.status === 'ready')
-      seen = { sidebar: s.sidebarWidth, inspector: s.inspectorWidth }
+      seen = { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth }
   })
   await useSession.getState().applyTree(tree)
   stop()
@@ -63,15 +63,15 @@ async function widthsAtReady(
 
 describe('the panes open at the widths this machine last left them', () => {
   it('carries both stored widths into the ready paint, not after it', async () => {
-    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, inspector: 400 } }))
-    expect(await widthsAtReady(useSession, treeAt('/a'))).toEqual({ sidebar: 300, inspector: 400 })
+    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, sidePane: 400 } }))
+    expect(await widthsAtReady(useSession, treeAt('/a'))).toEqual({ sidebar: 300, sidePane: 400 })
   })
 
   it('clamps a stored width to the pane bounds', async () => {
-    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 999, inspector: 10 } }))
+    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 999, sidePane: 10 } }))
     await useSession.getState().applyTree(treeAt('/a'))
     const s = useSession.getState()
-    expect([s.sidebarWidth, s.inspectorWidth]).toEqual([380, 240])
+    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([380, 240])
   })
 
   it('seeds only the width the prefs hold', async () => {
@@ -79,7 +79,7 @@ describe('the panes open at the widths this machine last left them', () => {
     await useSession.getState().applyTree(treeAt('/a'))
     const s = useSession.getState()
     expect(s.sidebarWidth).toBe(300)
-    expect(s.inspectorWidth).toBe(300)
+    expect(s.sidePaneWidth).toBe(300)
   })
 
   // The other half of the same rule: an absent key leaves whatever the slice already holds rather than driving it back to its default.
@@ -95,7 +95,7 @@ describe('the panes open at the widths this machine last left them', () => {
     await useSession.getState().applyTree(treeAt('/a'))
     const s = useSession.getState()
     expect(s.devicePrefs).toEqual({})
-    expect([s.sidebarWidth, s.inspectorWidth]).toEqual([240, 300])
+    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
   })
 
   it('leaves the defaults standing when no nexus is bound', async () => {
@@ -103,7 +103,7 @@ describe('the panes open at the widths this machine last left them', () => {
     await useSession.getState().applyTree(treeAt('/a'))
     const s = useSession.getState()
     expect(s.devicePrefs).toEqual({})
-    expect([s.sidebarWidth, s.inspectorWidth]).toEqual([240, 300])
+    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
   })
 })
 
@@ -128,11 +128,11 @@ describe('a pane drop writes back to the device store', () => {
     const { useSession, prefsSave } = await freshStore(withPrefs({}))
     await useSession.getState().applyTree(treeAt('/a'))
     useSession.getState().setSidebarWidth(300)
-    useSession.getState().setInspectorWidth(400)
+    useSession.getState().setSidePaneWidth(400)
     prefsSave.mockClear()
     useSession.getState().persistPaneWidths()
     expect(prefsSave).toHaveBeenCalledTimes(1)
-    expect(prefsSave).toHaveBeenCalledWith({ panes: { sidebar: 300, inspector: 400 } })
+    expect(prefsSave).toHaveBeenCalledWith({ panes: { sidebar: 300, sidePane: 400 } })
   })
 })
 
@@ -152,10 +152,10 @@ describe('a nexus switch keeps none of the old nexus', () => {
 
 describe('a nexus switch returns the panes to their defaults', () => {
   it('resetLayout drops both widths back to def', async () => {
-    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, inspector: 400 } }))
+    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, sidePane: 400 } }))
     await useSession.getState().applyTree(treeAt('/a'))
     useSession.getState().resetLayout()
     const s = useSession.getState()
-    expect([s.sidebarWidth, s.inspectorWidth]).toEqual([240, 300])
+    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
   })
 })

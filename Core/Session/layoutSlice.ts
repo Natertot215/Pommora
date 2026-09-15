@@ -12,8 +12,8 @@ export interface LayoutSlice {
   sidebarWidth: number
   setSidebarWidth: (w: number) => void
   persistPaneWidths: () => void
-  inspectorWidth: number
-  setInspectorWidth: (w: number) => void
+  sidePaneWidth: number
+  setSidePaneWidth: (w: number) => void
   subfieldExpanded: boolean
   setSubfieldExpanded: (expanded: boolean) => void
   navWindowMode: NavViewMode
@@ -33,7 +33,7 @@ export interface LayoutSlice {
 }
 
 export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240 }
-export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300 }
+export const SIDE_PANE_WIDTH = { min: 240, max: 420, def: 300 }
 type PaneWidth = typeof SIDEBAR_WIDTH
 
 export const clampWidth = (pane: PaneWidth, w: number): number =>
@@ -42,7 +42,7 @@ export const clampWidth = (pane: PaneWidth, w: number): number =>
 // devicePrefs is bound to a session root, so a pane width belongs to this Nexus and returns to its default when another one opens.
 const PER_NEXUS = {
   sidebarWidth: SIDEBAR_WIDTH.def,
-  inspectorWidth: INSPECTOR_WIDTH.def,
+  sidePaneWidth: SIDE_PANE_WIDTH.def,
   subfieldExpanded: true,
   navWindowMode: 'list',
   navViewMode: 'list',
@@ -67,10 +67,10 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
 
     setSidebarWidth: (w) => set({ sidebarWidth: clampWidth(SIDEBAR_WIDTH, w) }),
-    setInspectorWidth: (w) => set({ inspectorWidth: clampWidth(INSPECTOR_WIDTH, w) }),
+    setSidePaneWidth: (w) => set({ sidePaneWidth: clampWidth(SIDE_PANE_WIDTH, w) }),
     persistPaneWidths: () => {
       const s = get()
-      s.setDevicePref('panes', { sidebar: s.sidebarWidth, inspector: s.inspectorWidth })
+      s.setDevicePref('panes', { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth })
     },
 
     setSubfieldExpanded: (expanded) => {
