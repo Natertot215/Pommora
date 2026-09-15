@@ -104,6 +104,16 @@ export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
 
 const isContentName = (name: string): boolean => !name.startsWith('_') && isMarkdownFile(name)
 
+// Contexts and Spaces ARE the tree, and identity and the property registry are read onto it, so only these three can restructure it from under `.nexus`.
+const NEXUS_STRUCTURE: ReadonlySet<string> = new Set([
+  `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.identity}`,
+  `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.properties}`,
+])
+
+// Every other `.nexus` path is configuration that its own arm patches, or that the tree never reads — an unrecognized one is inert rather than a re-walk of the whole Nexus.
+const bearsStructure = (segs: string[], rel: string): boolean =>
+  segs[1] === CONTEXTS_DIRNAME || NEXUS_STRUCTURE.has(rel)
+
 export function classifyEvent(
   tree: NexusTree,
   root: string,
@@ -124,7 +134,6 @@ export function classifyEvent(
     return { kind: 'full-refresh' }
   if (segs[0] === NEXUS_DIR) {
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
-    if (segs.length === 2 && segs[1] === HOMEPAGE_HOST_DIRNAME) return { kind: 'ignored' }
     if (name === TILE_DOC_FILENAME) {
       const host = tileHostAt(tree, rel)
       return host ? { kind: 'tiles-leaf', host } : { kind: 'ignored' }
@@ -141,7 +150,7 @@ export function classifyEvent(
     ) {
       return { kind: 'space-meta', dirRel }
     }
-    return { kind: 'full-refresh' }
+    return bearsStructure(segs, rel) ? { kind: 'full-refresh' } : { kind: 'ignored' }
   }
   if (ev.event === 'addDir')
     return hiddenName(name) ? { kind: 'ignored' } : { kind: 'full-refresh' }
