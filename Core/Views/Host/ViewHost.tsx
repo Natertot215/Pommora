@@ -8,6 +8,7 @@ import { useActiveView } from './useActiveView'
 import { TableView } from '../Table/TableView'
 import { CardsView } from '../Cards/CardsView'
 import { useViewHost, type ViewHostApi } from './useViewHost'
+import { usePublishCount } from '../../Interface/Subfield/publish'
 
 const identity = (v: SavedView): SavedView => v
 const NO_SCHEMA: PropertyDefinition[] = []
@@ -20,8 +21,9 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   // Only the type and scale are needed to seat a renderer, and a minted default is a table whatever the schema — so the seat skips the schema walk the host performs.
   const view = useActiveView(source, NO_SCHEMA)
   const Renderer = VIEW_RENDERERS[view.type] ?? TableView
+  const tile = useViewTileScope()
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
-  const scale = useViewTileScope() ? 1 : coerceScale(view.view_scale, 1)
+  const scale = tile ? 1 : coerceScale(view.view_scale, 1)
   const upward = useRef<ViewHostApi['seam']>({
     foldOverrides: { current: identity },
     bandBucket: { current: (key) => key },
@@ -29,6 +31,8 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     onCreated: { current: () => {} },
   }).current
   const host = useViewHost(source, VIEW_KINDS[view.type].flat, upward)
+  // The resolved rows are already post-filter, so their total is the count; an embedded tile leaves the bar to the surface that owns it.
+  usePublishCount(!tile && host ? host.rowById.size : null)
   if (!host) return <div />
   return (
     <div style={scale === 1 ? undefined : { zoom: scale }}>

@@ -3,6 +3,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { Notification } from '../Interface/Notifications/notifications'
+import type { PageStats } from '@pommora/core/MarkdownPM/Engine/subfieldStats'
 import type { Slice } from './sessionState'
 
 interface MenuPending extends MenuOptions {
@@ -34,6 +35,12 @@ export interface ChromeSlice {
   notification: (Notification & { id: number }) | null
   notify: (n: Notification) => void
   dismissNotification: (id: number) => void
+  /** The Subfield sits beside the detail rather than inside it, so whatever is mounted there publishes how many rows it resolved. */
+  detailCount: number | null
+  setDetailCount: (count: number | null) => void
+  /** The focused editor's figures for its own highlight, so a page's counter measures the selection instead of the document. */
+  editorSelection: (PageStats & { path: string }) | null
+  setEditorSelection: (path: string, stats: PageStats | null) => void
   resetChrome: () => void
 }
 
@@ -74,9 +81,28 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   dismissNotification: (id) =>
     set((s) => (s.notification?.id === id ? { notification: null } : {})),
 
+  detailCount: null,
+  setDetailCount: (count) => set((s) => (s.detailCount === count ? {} : { detailCount: count })),
+
+  editorSelection: null,
+  // Path-guarded both ways: a blur clears only its own figures, so a rival editor's claim isn't undone by the clear that follows it.
+  setEditorSelection: (path, stats) =>
+    set((s) => {
+      const cur = s.editorSelection
+      if (!stats) return cur?.path === path ? { editorSelection: null } : {}
+      return { editorSelection: { path, ...stats } }
+    }),
+
   resetChrome: () => {
     get().pendingConfirm?.settle(false)
     get().pendingMenu?.settle(null)
-    set({ pendingConfirm: null, pendingMenu: null, pendingPick: null, notification: null })
+    set({
+      pendingConfirm: null,
+      pendingMenu: null,
+      pendingPick: null,
+      notification: null,
+      detailCount: null,
+      editorSelection: null,
+    })
   },
 })

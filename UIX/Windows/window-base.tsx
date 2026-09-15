@@ -157,14 +157,23 @@ export function WindowBase({
   )
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
-  const body = inflow ? (
-    <div className="window-row">
-      {left?.mode === 'inflow' && panel(left, 'left')}
+  // The band belongs to the detail, not to the frame: a panel runs the window's full height and the bar stops at its edge.
+  const detail = hasFooter ? (
+    <div className="window-detail">
       {children}
-      {right?.mode === 'inflow' && panel(right, 'right')}
+      <div className="window-footer">{footer}</div>
     </div>
   ) : (
     children
+  )
+  const body = inflow ? (
+    <div className="window-row">
+      {left?.mode === 'inflow' && panel(left, 'left')}
+      {detail}
+      {right?.mode === 'inflow' && panel(right, 'right')}
+    </div>
+  ) : (
+    detail
   )
 
   return (
@@ -232,7 +241,6 @@ export function WindowBase({
             <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="headline" />
           </button>
           {footerLead}
-          <div className="window-footer">{footer}</div>
         </>
       )}
       {left?.mode === 'overlay' && panel(left, 'left')}

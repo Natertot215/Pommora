@@ -3,6 +3,7 @@ import type { EditorView } from '@codemirror/view'
 import { Transaction } from '@codemirror/state'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
+import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { usePreviewConnections } from '../Session/pageConnections'
 import { IconChoice } from '../Assets/IconChoice'
@@ -79,6 +80,7 @@ export function PageView({
   const pendingLive = useRef<[string, string] | null>(null)
   const path = slot?.status === 'ready' ? slot.detail.path : ''
   const bodyEpoch = useBodyEpoch(path)
+  const publishSelection = usePublishSelection(path)
   useEffect(() => {
     if (!path || parked) return
     return subscribeLanding(path, () => {
@@ -182,6 +184,7 @@ export function PageView({
           schedulePageSave(pageDetail.path, body)
         }}
         connections={connections}
+        onSelection={publishSelection}
         embedAncestors={[pageDetail.path]}
         folds={{
           load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],

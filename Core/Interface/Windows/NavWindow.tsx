@@ -21,6 +21,8 @@ import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../../Navigation/NavGallery'
 import { useWindowGeometry } from './useWindowGeometry'
+import { Subfield } from '../Subfield/Subfield'
+import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import './nav-window.css'
 
 const RAIL = { min: 120, def: 200, max: 320 }
@@ -124,6 +126,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const pageScrollRef = useRef<HTMLDivElement>(null)
   const warmSeam = useWindowWarm(pageScrollRef, pageTarget?.path)
   const connections = useWindowTabConnections(tree)
+  // Its own list, never the main pane's selection — the bar states what this window is showing.
+  const shownCount = results ? results.length : resolvedPins.length + shownRecents.length
 
   return (
     <WindowBase
@@ -134,6 +138,12 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
       onEscape={() => (sidePaneOpen ? setSidePaneOpen(false) : closeNav())}
       dragSurfaces={DRAG_SURFACES}
+      footer={
+        pageTarget === null ? (
+          <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />
+        ) : undefined
+      }
+      footerLabel={footerLabel}
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}

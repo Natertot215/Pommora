@@ -1,7 +1,7 @@
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import { inlineSpans } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
-import { lineIndexAt, perText, scanOf, type DocScan } from './docScan'
+import { lineIndexAt, perText, scanDoc, scanOf, type DocScan } from './docScan'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
@@ -14,7 +14,7 @@ import {
 } from './detect'
 
 /** `lines` counts source lines the document holds; `words`/`characters` count the prose the editor draws. */
-interface PageStats {
+export interface PageStats {
   lines: number
   words: number
   characters: number
@@ -77,13 +77,18 @@ function tableProse(scan: DocScan): Map<number, string> {
   return drawn
 }
 
+// THE editor's own scan of this very text, rather than a second, narrower one that could answer a construct differently.
+export const computeStats = (body: string): PageStats => statsOf(body, scanOf)
+
 /** One answer per body string: the footer mounts two items needing the same figures on one render, and the prose pass walks the whole document. */
 export const pageStats = perText(computeStats)
 
-export function computeStats(body: string): PageStats {
+/** A highlight is a fresh string on every drag frame, so it scans outside the shared cache: that cache holds four documents and the editor reads its own document from it. */
+export const selectionStats = (text: string): PageStats => statsOf(text, scanDoc)
+
+function statsOf(body: string, read: (text: string) => DocScan): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
-  // THE editor's own scan of this very text, rather than a second, narrower one that could answer a construct differently.
-  const scan = scanOf(body)
+  const scan = read(body)
   const { lines, fences, citations: cited } = scan
   const drawn = tableProse(scan)
   const prose = stripInline(
