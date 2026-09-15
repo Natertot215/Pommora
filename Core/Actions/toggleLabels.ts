@@ -1,6 +1,6 @@
 // Wording only: which state a control is in stays with the menu or surface that knows.
 
-export const openLabel = (alreadyOpen?: boolean): string => (alreadyOpen ? 'Open' : 'Open New Tab')
+export const openLabel = (alreadyOpen?: boolean): string => (alreadyOpen ? 'Open' : 'New Tab')
 
 export const pinLabel = (pinned?: boolean): string => (pinned ? 'Unpin' : 'Pin')
 

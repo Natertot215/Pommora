@@ -20,7 +20,7 @@ export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {
   const items: ActionItem<TabMenuAction>[] = []
   if (ctx.isPage)
     items.push(
-      { label: 'Open Preview', action: 'window' },
+      { label: 'Preview', action: 'window' },
       ...pageMetaMenuSubset(pageSendActions(ctx), undefined, ctx).map((r, i) =>
         i === 0 ? { ...r, separatorBefore: true } : r,
       ),

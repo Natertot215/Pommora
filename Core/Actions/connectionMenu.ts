@@ -33,8 +33,8 @@ const CONN_COPY_ACTIONS = [
 type ConnSiteAction = 'link:window' | 'link:browser'
 
 const CONN_SITE_ROWS: readonly ActionItem<ConnSiteAction>[] = [
-  { label: 'Open Preview', action: 'link:window' },
-  { label: 'Open Browser', action: 'link:browser' },
+  { label: 'Preview', action: 'link:window' },
+  { label: 'Open In Browser', action: 'link:browser' },
 ]
 
 const CONN_URL_ACTIONS = [

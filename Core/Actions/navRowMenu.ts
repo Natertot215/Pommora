@@ -1,4 +1,4 @@
-import type { ActionItem } from './menuModel'
+import { type ActionItem, openOrder } from './menuModel'
 import {
   type PageMoveAction,
   type PageMenuContext,
@@ -29,8 +29,13 @@ type NavRowMenuAction =
 
 export function navRowMenuItems(ctx: NavRowMenuContext): ActionItem<NavRowMenuAction>[] {
   const items: ActionItem<NavRowMenuAction>[] = []
-  if (ctx.canOpenNewTab) items.push({ label: openLabel(ctx.alreadyOpen), action: 'open-new-tab' })
-  if (ctx.isPage) items.push({ label: 'Open Preview', action: 'open-window' })
+  items.push(
+    ...openOrder<NavRowMenuAction>(
+      ctx.alreadyOpen,
+      ctx.canOpenNewTab ? [{ label: openLabel(ctx.alreadyOpen), action: 'open-new-tab' }] : [],
+      ctx.isPage ? [{ label: 'Preview', action: 'open-window' }] : [],
+    ),
+  )
   const opens = items.length > 0
   // A recent is a stored ref, addressable only once the renderer has minted a live path.
   if (ctx.isPage && ctx.currentParentPath !== undefined)
