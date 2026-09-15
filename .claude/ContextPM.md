@@ -6,7 +6,7 @@
 
 **Two questions are Nathan's.** A capture's retention clock is its arrival time, so a bulk history upload is retained from the moment it lands rather than from when the losing edit was made; whether a client-supplied timestamp should travel instead is his call. The `captures` table has no reader, so with File History off, a conflict's losing buffer sits in the database alone and no surface shows it; whether it earns one is the second. Behind those sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` shrinks as items close, and with the concurrency topic ruled, its Where Brainwaves Go table orders the work around D-7, whether the design kit gets touched, with the two registry readers (R-17, R-18) and the watch-patch ID narrowing (R-38) beside it. The published audit page mirrors the report in Pommora's own theme.
 
-The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
+The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the SidePane's tab strip mounting `TileHost` per tab on documents under `.nexus/interface/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
 

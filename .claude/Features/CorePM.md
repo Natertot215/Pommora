@@ -151,7 +151,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Aliases | The names each page has been given, for the picker | Forgetting one from the picker |
 | Page snapshots (`versions.db`) | The text each page held before an edit, after a burst settled, or before a restore | The History Timeframe sweep at open; deleting a row from the History window; Clear History, which also gives the file's bytes back |
 | The record baseline | What the last open saw, for the deletion record | The next open |
-| Device preferences | Use Native Menus, Interface Scale, the Sidebar and Inspector widths, which sidebar sections are open, and the size each floating window was left at | Toggling, choosing, or dragging them; an out-of-range width self-corrects on read |
+| Device preferences | Use Native Menus, Interface Scale, the Sidebar and SidePane widths, which sidebar sections are open, and the size each floating window was left at | Toggling, choosing, or dragging them; an out-of-range width self-corrects on read |
 
 **Stays on this computer, outside every Nexus.** Belongs to the app rather than to any Nexus, so it holds no matter which one is open.
 
