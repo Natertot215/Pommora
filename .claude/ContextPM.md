@@ -8,10 +8,9 @@
 
 The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
-
 ### Immediate Work
 
-- [ ] **MarkdownPM:** Support for alphabetical lists, persisted embedding heights on source change, and a few interactive bug fixes. 
+- [ ] 
 
 ### Pending Focuses
 
@@ -75,7 +74,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **The in-app two-host lost update.** Two editors holding one page — the content pane and the Page Window, or a page and its embed — each save their own body with no lock between them, so the later keystroke writes over the earlier host's text. The watcher-driven reload through `replaceBody` is the mechanism that closes it.
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
 - [ ] **Five single-writer `writeJson` sites run unlocked.** `Nexus/identity.ts`, `Properties/journalSlot.ts`, `Trash/record.ts`, `Nexus/adopt.ts`, and `Contexts/contextsRegistry.ts` each has one writer today; the registry's seed-on-absent write is the one real double-seed window, benign under most-recent-wins.
-- [ ] **`page:open` does not raise the window.** A path opened from outside selects in place — opening is not focusing.
 - [ ] **A press on a second picker while one list is open reopens inside the first's bloom-out.** The stack dismisses the first on pointerdown, its shield drops at the start of the exit, and the release reaches the second trigger, so the second list draws before the first has finished leaving. Closing it costs the click-through an outside click keeps: either the shield stands through the exit or every dismissal swallows its release.
 - [ ] **The system menu's Format rows act on the page editor, not a focused table cell.** `host.menus.format.onAction` has one reader, `MarkdownEditor`, which applies the action to its own view; a cell reached by right-click takes the format chords but not the menu's rows. Routing the action to the view that holds focus, with a `pushState` from the cell, is the missing piece.
 - [ ] **`MenuDoorContext` does not cross `reactWidget`'s detached roots.** Latent rather than live: nothing rendered under an editor widget mounts a `PickerControl` today.
@@ -86,7 +84,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-138 || Sync Scaffolding - Part 2
 **DATE:** 09-13-2026 → 09-14
 
-Content crosses between devices on the identity layer Part 1 left: a device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back, with the hub's per-Nexus counter detecting conflicts and recency resolving them. The one-file roster server became the `Sync/` folder carrying the change log, ciphertext blobs, a key ring per Nexus, one authority function, and TLS behind a pinned certificate; `Core/Sync/` gained the keys, the client's base record and loops, and the arrival path. The `.nexus/` JSON files merge key by key and a landing reaches an open page through a three-way merge around the caret, so the audit's concurrency topic closed. The loser of a conflict is kept on both the device and the hub rather than overwritten.
+Content crosses between devices on the identity layer. Part 1 left: a device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back, with the hub's per-Nexus counter detecting conflicts and recency resolving them. The one-file roster server became the `Sync/` folder carrying the change log, ciphertext blobs, a key ring per Nexus, one authority function, and TLS behind a pinned certificate; `Core/Sync/` gained the keys, the client's base record and loops, and the arrival path. The `.nexus/` JSON files merge key by key and a landing reaches an open page through a three-way merge around the caret, so the audit's concurrency topic closed. The loser of a conflict is kept on both the device and the hub rather than overwritten.
 
 #### PM-137 || One Drag Engine
 **DATE:** 09-12-2026
