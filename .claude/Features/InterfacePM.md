@@ -60,7 +60,7 @@ Three routes lead in: a Collection whose **Open In** is the Page Window routes i
 
 #### The NavWindow
 
-The NavWindow is one kind of the same window: tab 1 is a perma-pinned, icon-only map tab whose content is the whole body — the Favorites rail, the search field, and the gallery — and page tabs open beside it from its rows when the routing override is on. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return. Opening it over a live Page Window morphs one into the other, a FLIP from the Page Window's rect, and the tab set persists across sessions. Its footer is the Subfield, stating the count of the list on show. What the NavWindow is *for* — recents, pins, favorites, search — is Navigation's.
+The NavWindow is one kind of the same window: tab 1 is a perma-pinned, icon-only map tab whose content is the whole body — the Favorites rail, the search field, and the gallery — and page tabs open beside it from its rows when the routing override is on. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return. Opening it over a live Page Window morphs one into the other, a FLIP from the Page Window's rect, and the tab set persists across sessions. Its footer is the Subfield, stating the count of the list on show or, on a page tab, that page's own figures. What the NavWindow is *for* — recents, pins, favorites, search — is Navigation's.
 
 #### The Settings Window
 
