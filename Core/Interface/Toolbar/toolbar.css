@@ -58,9 +58,25 @@
   --trio-radius: 12px;
 }
 .toolbar-trio-glass,
-.toolbar-trio--flat > div > span:last-child {
+.toolbar-trio-cover > div > span:not(:last-child),
+.toolbar-trio--flat > div > span:not(:last-child) {
   opacity: clamp(0, calc((0.3 - var(--io)) / 0.3), 1);
 }
+/* The trailing divider is the seat side-pane-only tabs take, so it arrives on the mirror of that curve as the trio is swallowed. Only the cover carries it: outside the pill's layout, the trio's measured width and its resting slide stay put. */
+.toolbar-trio-cover > div > span:last-child {
+  opacity: clamp(0, calc(var(--io) / 0.3), 1);
+}
+/* With the dividers gone, two buttons' inner padding stacks into one gap wider than it reads as, so the stacked sides tighten while the run's two outer edges keep their full measure. The discrete class drives it, not --io: padding-inline already transitions, and a target that moves every frame would retarget instead of ease. */
+.shell.side-pane-open .toolbar-trio button {
+  --btn-pad: 6px;
+}
+.shell.side-pane-open .toolbar-trio button:first-of-type {
+  padding-inline-start: 8px;
+}
+.shell.side-pane-open .toolbar-trio button:last-of-type {
+  padding-inline-end: 8px;
+}
+
 /* The glass layer's icons + dividers are duplicates of the cover's — hidden, layout kept so they still size the pill. */
 .toolbar-trio-glass button,
 .toolbar-trio-glass span {
