@@ -23,7 +23,7 @@ import tempfile
 from typing import NamedTuple
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACES = ["Core", "UIX", "Desktop"]
+WORKSPACES = ["Core", "UIX", "Desktop", "Sync", "Mobile"]
 
 # The pre-monorepo layout. Every area lists the old prefixes it was assembled from, so one map
 # measures every commit on the branch and the earlier samples stay comparable.
@@ -75,6 +75,8 @@ AREAS = [
     ),
     ("App Chrome", ["Core"], ["renderer"]),
     ("Desktop Shell", ["Desktop"], []),
+    ("Sync", ["Sync"], []),
+    ("Mobile", ["Mobile"], []),
 ]
 
 # Areas that changed name with the tree, so a stored sample keyed by the old name still reads.
@@ -82,6 +84,8 @@ RENAMED_FROM = {"Nexus & Data": "Main Process", "Pommora UIX": "Design System"}
 
 # Stack order and swatch, bottom of the chart first.
 ORDER = [
+    "Mobile",
+    "Sync",
     "Desktop Shell",
     "Views & Properties",
     "Nexus & Data",
@@ -92,6 +96,8 @@ ORDER = [
     "Shared Contract",
 ]
 COLORS = [
+    "#4B5A6B",
+    "#0F6E5C",
     "#0E7C86",
     "#1C7629",
     "#075CB2",
