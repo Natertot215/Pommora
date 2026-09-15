@@ -28,6 +28,7 @@ import {
   setEmbedZooms,
 } from './Embeds/embedWidget'
 import { embeddable } from './Engine/embedRanges'
+import { type PageStats, selectionStats } from './Engine/subfieldStats'
 import { customCaret } from './caret'
 import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
@@ -87,6 +88,8 @@ interface Props {
   warm?: WarmSeam
   active?: boolean
   register?: (view: EditorView | null) => void
+  /** The focused main range's figures, or null while the caret is collapsed or the surface is unfocused. */
+  onSelection?: (stats: PageStats | null) => void
 }
 
 export function MarkdownEditor({
@@ -106,6 +109,7 @@ export function MarkdownEditor({
   edgeFade = false,
   warm,
   register,
+  onSelection,
   active = true,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
@@ -117,6 +121,9 @@ export function MarkdownEditor({
   const viewRef = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const onSelectionRef = useRef(onSelection)
+  onSelectionRef.current = onSelection
+  const lastRangeRef = useRef<{ from: number; to: number } | null>(null)
   const hostRef = useRef(host)
   hostRef.current = host
   const connectionsRef = useRef(connections)
@@ -276,6 +283,19 @@ export function MarkdownEditor({
         const doc = docString(u.state.doc)
         if (u.docChanged) onChangeRef.current(doc)
 
+        // Measured here off the live doc, and only where the range moved: the host's copy of the body trails the keystroke, and a slice of it would describe the text from before.
+        if (onSelectionRef.current) {
+          const main = u.state.selection.main
+          const range = u.view.hasFocus && !main.empty ? { from: main.from, to: main.to } : null
+          const last = lastRangeRef.current
+          if (u.docChanged || range?.from !== last?.from || range?.to !== last?.to) {
+            lastRangeRef.current = range
+            onSelectionRef.current(
+              range ? selectionStats(u.state.sliceDoc(range.from, range.to)) : null,
+            )
+          }
+        }
+
         if (ownsEditorMenu(u.view)) {
           const sel = u.state.selection.main
           const fs = readFormatState(
@@ -370,6 +390,10 @@ export function MarkdownEditor({
     return () => {
       unsubMenu?.()
       releaseEditorMenu(view)
+      if (lastRangeRef.current) {
+        lastRangeRef.current = null
+        onSelectionRef.current?.(null)
+      }
       if (warm) {
         unregisterHeal?.()
         view.scrollDOM.removeEventListener('scroll', onWarmScroll)

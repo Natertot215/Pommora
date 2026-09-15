@@ -10,6 +10,7 @@ import { ImagePicker } from '../Assets/ImagePicker'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { moveByKey } from './navRecents'
 import { useNavData } from './useNavData'
+import { usePublishCount } from '../Interface/Subfield/publish'
 import { NavGallery } from './NavGallery'
 import { NavList } from './NavList'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
@@ -38,6 +39,7 @@ export function NavView(): React.JSX.Element {
     })
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
+  usePublishCount(results ? results.length : resolvedPins.length + resolvedRecents.length)
   const open = (target: NavRef): void => go(target)
   const openNew = (target: NavRef): void => go(target, undefined, { newTab: true })
 

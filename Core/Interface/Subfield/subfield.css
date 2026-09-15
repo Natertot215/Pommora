@@ -2,25 +2,28 @@
   height: var(--subfield-h);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  padding-left: var(--content-start);
-  padding-right: var(--content-start-right);
+  /* The band is the detail's width: a pane overlays it at full height, so the bar stops at each pane's edge rather than running beneath one and padding its contents clear. */
+  margin-left: var(--sidebar-clearance);
+  margin-right: var(--side-pane-clearance);
+  padding-left: var(--content-edge);
+  padding-right: var(--content-edge);
   color: var(--label-control);
   border-top: var(--width-175) solid var(--border-base);
   -webkit-app-region: no-drag;
   transition:
-    padding-left var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
+    margin-left var(--duration-base) var(--ease-base),
+    margin-right var(--duration-base) var(--ease-base);
 }
 .shell.is-resizing .subfield {
   transition: none;
 }
-
-.subfield.subfield-lead {
-  justify-content: flex-start;
-  gap: 0;
+/* Both gutters key to the shell's own panes, which a floating window has neither of — its bar keeps the plain edge alone. */
+.window .subfield {
+  --sidebar-clearance: 0px;
+  --side-pane-clearance: 0px;
 }
+
 .subfield-crumbs {
   overflow: hidden;
   font: inherit;
@@ -42,6 +45,8 @@
   align-items: center;
   gap: 12px;
   flex: none;
+  /* The trail renders nothing where a surface has no spine, so the trailing edge is claimed rather than inherited from a sibling that may not be there. */
+  margin-left: auto;
 }
 .subfield-stats {
   display: inline-flex;
@@ -65,7 +70,7 @@
 }
 
 .subfield-toggle {
-  right: 0;
+  right: var(--side-pane-clearance);
   z-index: 2;
   width: 44px;
   height: var(--subfield-h);
@@ -81,12 +86,12 @@
   transition: none;
 }
 
-/* The footnotes disclosure faces the bar's own chevron across the same band and wears its spacing, so the hover pill reads as the same control on the other side of the bar. */
+/* The footnotes disclosure faces the bar's own chevron across the same band and uses its spacing, so the hover pill reads as the same control on the other side of the bar. */
 .footnotes-toggle {
-  left: 0;
+  left: var(--sidebar-clearance);
   z-index: 2;
   height: var(--subfield-h);
-  padding: 0 0 0 var(--content-start);
+  padding: 0 0 0 var(--content-edge);
   justify-content: flex-start;
 }
 .content-view.subfield-open .footnotes-toggle {

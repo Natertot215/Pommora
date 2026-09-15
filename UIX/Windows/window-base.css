@@ -168,6 +168,14 @@
   flex: 1;
   min-height: 0;
 }
+/* The detail column and the band beneath it — a panel sits beside both, at the window's full height. */
+.window-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
 
 .window-panel.window-panel-right-overlay,
 .window-panel.window-panel-left-overlay {
@@ -239,13 +247,13 @@
 .window-footer {
   transition:
     height var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
+    margin-right var(--duration-base) var(--ease-base);
 }
 .window.is-footer-open .window-footer {
   height: var(--window-footer-h);
 }
 .window.is-panel-right-open .window-footer {
-  padding-right: calc(var(--window-panel-r-w) + var(--window-panel-inset));
+  margin-right: calc(var(--window-panel-r-w) + var(--window-panel-inset));
 }
 .window-footer-toggle {
   right: 16px; /* KNOB — clears the se resize corner */

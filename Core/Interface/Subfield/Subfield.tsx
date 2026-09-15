@@ -1,5 +1,6 @@
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
 import { subfieldCrumbs } from './crumbs'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -9,9 +10,18 @@ import './subfield.css'
 
 export function Subfield({
   page,
+  count = null,
+  lead,
+  selection: override,
   inert = false,
 }: {
   page: SubfieldPage | null
+  /** How many rows the surface resolved — what the counter states where a kind asks for one. */
+  count?: number | null
+  /** Stands where the breadcrumb would for a surface with no spine to draw. */
+  lead?: React.ReactNode
+  /** A floating window's bar describes its own contents rather than the main pane's selection. */
+  selection?: SelectionState
   /** A floating window's crumbs describe location without driving the main pane — no dimmed tail, nothing to click. */
   inert?: boolean
 }): React.JSX.Element {
@@ -20,26 +30,25 @@ export function Subfield({
   const navigateCrumb = useSession((s) => s.navigateCrumb)
   const crumbDepth = useSession((s) => s.crumbDepth)
 
-  const crumbSelection = page?.target ?? selection
+  const crumbSelection = override ?? page?.target ?? selection
   const rawCrumbs = subfieldCrumbs(tree, crumbSelection, inert ? null : crumbDepth, navigateCrumb)
   const crumbs = inert ? rawCrumbs.map((c) => ({ ...c, onSelect: undefined })) : rawCrumbs
   const items = DEFAULT_ITEMS[crumbSelection.kind] ?? []
 
   return (
-    // With no breadcrumb (NavView) the action has nothing to sit opposite, so it leads on the left instead of being pushed to the far edge.
-    <div
-      className={`subfield ${text.subline.emphasized}${crumbs.length === 0 ? ' subfield-lead' : ''}`}
-    >
-      <NavTrail
-        segments={crumbs}
-        chevronSize="control"
-        overScroll={false}
-        className="subfield-crumbs"
-        segmentClassName={cx('subfield-crumb', overScrollEllipsis)}
-      />
+    <div className={`subfield ${text.subline.emphasized}`}>
+      {lead ?? (
+        <NavTrail
+          segments={crumbs}
+          chevronSize="control"
+          overScroll={false}
+          className="subfield-crumbs"
+          segmentClassName={cx('subfield-crumb', overScrollEllipsis)}
+        />
+      )}
       <div className="subfield-items">
         {items.map((id) => (
-          <SubfieldItem key={id} id={id} page={page} />
+          <SubfieldItem key={id} id={id} page={page} count={count} />
         ))}
       </div>
     </div>

@@ -3,28 +3,28 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { type PageTarget, useSession } from '../../Session/store'
 import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'
 
-type SubfieldItemId = 'pageStats' | 'viewType'
+type SubfieldItemId = 'pageStats' | 'count'
 
 export interface SubfieldPage {
   target: PageTarget
   body: string
 }
-interface SubfieldItemProps {
-  page: SubfieldPage | null
-}
 
 export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
-  none: ['viewType'],
+  none: ['count'],
   homepage: [],
   context: [],
   space: [],
-  collection: [],
-  set: [],
+  collection: ['count'],
+  set: ['count'],
   page: ['pageStats'],
 }
 
-function PageStatsItem({ page }: SubfieldItemProps): React.JSX.Element {
-  const stats = pageStats(page?.body ?? '')
+/** A highlight retires the document's own figures: what is measured is what is selected, and the caret alone restores the whole page. */
+function PageStatsItem({ page }: { page: SubfieldPage | null }): React.JSX.Element {
+  const selection = useSession((s) => s.editorSelection)
+  const stats =
+    selection && selection.path === page?.target.path ? selection : pageStats(page?.body ?? '')
   return (
     <span className="subfield-stats" title="Lines · Words · Characters">
       {stats.lines.toLocaleString()}
@@ -36,8 +36,13 @@ function PageStatsItem({ page }: SubfieldItemProps): React.JSX.Element {
   )
 }
 
+function CountItem({ count }: { count: number | null }): React.JSX.Element | null {
+  if (count === null) return null
+  return <span title="Results">{count.toLocaleString()}</span>
+}
+
 /** Drives `navViewMode`, separate from NavWindow's own `navWindowMode`. */
-function ViewTypeItem(): React.JSX.Element {
+export function ViewTypeItem(): React.JSX.Element {
   const mode = useSession((s) => s.navViewMode)
   const setMode = useSession((s) => s.setNavViewMode)
   return (
@@ -57,11 +62,16 @@ function ViewTypeItem(): React.JSX.Element {
 export function SubfieldItem({
   id,
   page,
-}: { id: SubfieldItemId } & SubfieldItemProps): React.JSX.Element | null {
+  count,
+}: {
+  id: SubfieldItemId
+  page: SubfieldPage | null
+  count: number | null
+}): React.JSX.Element | null {
   switch (id) {
     case 'pageStats':
       return <PageStatsItem page={page} />
-    case 'viewType':
-      return <ViewTypeItem />
+    case 'count':
+      return <CountItem count={count} />
   }
 }
