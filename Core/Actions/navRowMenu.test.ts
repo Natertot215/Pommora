@@ -15,8 +15,8 @@ const base: NavRowMenuContext = {
 describe('the nav row menu', () => {
   it('opens, sends, pins, favorites, and removes, each group divided', () => {
     expect(shape({ ...base, currentParentPath: 'Notes' })).toEqual([
-      'Open New Tab',
-      'Open Preview',
+      'Preview',
+      'New Tab',
       '—',
       'Copy Link',
       'Copy Path',
@@ -31,15 +31,7 @@ describe('the nav row menu', () => {
   })
 
   it('a recent without a live path offers no send block', () => {
-    expect(shape(base)).toEqual([
-      'Open New Tab',
-      'Open Preview',
-      '—',
-      'Pin',
-      'Favorite',
-      '—',
-      'Remove',
-    ])
+    expect(shape(base)).toEqual(['Preview', 'New Tab', '—', 'Pin', 'Favorite', '—', 'Remove'])
   })
 
   it('a container row without an opener starts at Pin', () => {

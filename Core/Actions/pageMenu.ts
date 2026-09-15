@@ -1,4 +1,4 @@
-import type { ActionItem } from './menuModel'
+import { type ActionItem, openOrder } from './menuModel'
 import { type PropertyAction, type PropertyMenuRow, propertiesRow } from './propertyRows'
 import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
@@ -119,8 +119,11 @@ export function pageMetaMenuItems(
 ): ActionItem<PageMetaAction | PageMoveAction | PropertyAction>[] {
   const move = opts.move !== undefined && offersMove(opts.move)
   return [
-    ...(opts.window ? [{ label: 'Open Preview', action: 'title:window' as const }] : []),
-    { label: openLabel(alreadyOpen), action: 'title:newtab' },
+    ...openOrder<PageMetaAction>(
+      alreadyOpen,
+      [{ label: openLabel(alreadyOpen), action: 'title:newtab' }],
+      opts.window ? [{ label: 'Preview', action: 'title:window' }] : [],
+    ),
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Edit Icon', action: 'title:icon' },
     ...(opts.properties?.length ? [propertiesRow(opts.properties)] : []),

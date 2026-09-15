@@ -5,7 +5,7 @@ describe('cardMenuModel', () => {
   it('lists the page-meta actions with one New Page — the grid has no above', () => {
     const m = cardMenuModel({ addable: false })
     expect(m.map((i) => [i.label, i.action])).toEqual([
-      ['Open New Tab', 'title:newtab'],
+      ['New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Edit Icon', 'title:icon'],
       ['New Page', 'title:newbelow'],

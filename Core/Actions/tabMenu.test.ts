@@ -9,7 +9,7 @@ describe('the tab menu', () => {
     expect(
       shape(tabMenuItems({ pinned: false, isNewTab: false, isPage: true, moveTargets: [] })),
     ).toEqual([
-      'Open Preview',
+      'Preview',
       '—',
       'Copy Link',
       'Copy Path',

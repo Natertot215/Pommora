@@ -10,6 +10,14 @@ export interface ActionItem<A> {
   submenu?: ActionItem<A>[]
 }
 
+export function openOrder<A>(
+  alreadyOpen: boolean | undefined,
+  open: readonly ActionItem<A>[],
+  preview: readonly ActionItem<A>[],
+): ActionItem<A>[] {
+  return alreadyOpen ? [...open, ...preview] : [...preview, ...open]
+}
+
 export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>[] {
   return rows.length === 0 ? [] : [{ ...rows[0], separatorBefore: true }, ...rows.slice(1)]
 }
