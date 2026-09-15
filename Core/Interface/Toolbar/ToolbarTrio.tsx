@@ -20,7 +20,7 @@ export function ToolbarTrio({
         <Segmented glass radius="var(--trio-radius)" segments={segments} />
       </div>
       <div className="toolbar-trio-cover">
-        <Segmented radius="var(--trio-radius)" segments={segments} />
+        <Segmented radius="var(--trio-radius)" segments={segments} trailingDivider />
       </div>
     </div>
   )
