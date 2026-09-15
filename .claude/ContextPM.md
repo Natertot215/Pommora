@@ -10,11 +10,6 @@ The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the Side
 
 ### Immediate Work
 
-- [ ] **The SidePane's tab type system**, still in brainstorming. A tab carries a type; types divide into **standard** — shipped under reserved names, with `pages`, `CLI`, `search`, and an AI panel named so far, each able to carry its own pre-configured files and templates — and **custom**, which the user creates as tile surfaces on the existing `TileHost`. The configuration and the documents behind it live under `.nexus/interface/`; the pane's width stays per-machine in device preferences. What a standard type is mechanically is the open call the rest waits on: a built surface, a document seeded from a shipped template, or a declaration that names which of the two it is. Prior art points at a fourth reading — Obsidian Canvas keeps a freeform surface in a file and stores only its type and path on the tab — which would make a custom tab one standard type that renders a document rather than a second family.
-- [ ] **A `mergeDepthFor` entry for the SidePane's configuration** (`Core/Sync/Arrival/jsonMerge.ts`). Every `.json` under `.nexus/` is three-way merged, but a file with no entry merges at top-level-key granularity, where two devices each adding a tab leaves one of the two.
-
-The vocabulary pass is done: *Inspector* is *SidePane* through the app and its documentation, covering both the shell's pane and the floating windows' frontmatter panel. The watcher no longer re-walks the Nexus for an unrecognized file under `.nexus/` — Contexts, the identity file, and the property registry are the three paths that restructure the tree, and everything else classifies inert, so `.nexus/interface/` costs nothing as it grows. Its own classifier arm, which is what tells the interface a change landed, comes with the folder's shape.
-
 ### Pending Focuses
 
 #### One — Inline Page Properties
