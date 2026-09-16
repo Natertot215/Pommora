@@ -22,7 +22,7 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
 
 #### Baseline
 
-- Gates: green at `<commit>`.
+- Gates: green at `1d52ab413` (typecheck 0 · test 398 files, 4876 passed · lint 1202 files clean).
 - `grep -c "  it(" Core/Connections/connections.test.ts` → 6 — adds 8
 - `grep -c "  it(" Core/Connections/links.test.ts` → 33 — adds 4
 - `grep -c "  it(" Core/Connections/linkValue.test.ts` → 33 — adds 1
@@ -41,7 +41,7 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
 - `grep -rn "m\[1\]\|m\[2\]\|?\.\[2\]" Core/Connections Core/MarkdownPM/Autocomplete Core/Actions/pasteAsMenu.ts --include='*.ts' | grep -v test | wc -l` → 13 — every `pageLinkPattern`/`pageEmbedPattern` read retires; the markdown-link reads (`m[2]` on `markdownLinkRegex`) stay
 - `grep -rn "§" Core --include='*.ts' --include='*.tsx' --include='*.css' | wc -l` → 0 — grows (UIX and Desktop hold two `§` in comments; untouched)
 
-**START:** <output of `date -u +"%Y-%m-%dT%H:%M:%SZ"`, run as the first task begins>
+**START:** 2026-09-16T22:36:29Z
 **END:** <same command, run as the report is given>
 
 #### Implementation Process
