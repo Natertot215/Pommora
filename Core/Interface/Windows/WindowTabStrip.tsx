@@ -17,7 +17,7 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigati
 import { useSeat, useTabClose } from '../../Navigation/tabClose'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import type { PageTarget } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY, type PageTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
 import '../../Navigation/tab-base.css'
@@ -59,7 +59,7 @@ export function WindowTabStrip({
   const pageEntries = renderEntries.filter((e) => e.entry.tab.target.kind === 'page')
   const firstLivePage = pageEntries.findIndex((e) => !e.ghost)
 
-  const forced = useDragFamily() === 'tabs'
+  const forced = useDragFamily() === TAB_FAMILY
   const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0 || forced
   const titlePresence = useExitPresence(!showStrip)
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the live node would swap text mid-collapse without this hold.
@@ -132,7 +132,7 @@ export function WindowTabStrip({
             <SortableZone
               id="tabs-window"
               className={cx('tab-strip', (still || forced) && 'is-still')}
-              family="tabs"
+              family={TAB_FAMILY}
               items={pageEntries.filter((e) => !e.ghost).map((e) => e.entry.tab.id)}
               axis="x"
               onReorder={reorderWindowTabs}

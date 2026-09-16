@@ -5,7 +5,7 @@ import { duration, easing, ms } from '@pommora/uix/Animations/motion'
 import { text } from '@pommora/uix/Theme'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
-import type { NavRef } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY, type NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { moveByKey } from '../../Navigation/navRecents'
@@ -121,7 +121,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
-  const forced = useDragFamily() === 'tabs'
+  const forced = useDragFamily() === TAB_FAMILY
   const hasTabs = pageWindow?.kind === 'nav' && pageWindow.tabs.length > 1
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 

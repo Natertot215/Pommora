@@ -7,7 +7,12 @@ import { overlay, rowDragging } from '@pommora/uix/Menus/menu-base.css'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import { useEscort } from '@pommora/uix/Interactions/drag'
-import type { NavRef, PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'
+import {
+  TAB_FAMILY,
+  type NavRef,
+  type PageTarget,
+  type SelectTarget,
+} from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
 import { isOpenInTabs, liveTarget } from './tabsModel'
@@ -225,7 +230,7 @@ export function NavList({
         canReorderWithin={!!reorderable}
         crossZone={false}
         onDrop={commitReorder}
-        escort={escort && { via: escort, family: 'tabs', carry }}
+        escort={escort && { via: escort, family: TAB_FAMILY, carry }}
         ghostLabel={ghostOf}
       >
         <div className="nav-list">

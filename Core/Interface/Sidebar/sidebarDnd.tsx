@@ -8,8 +8,8 @@ import {
 } from 'react'
 import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
-import { useEscort } from '@pommora/uix/Interactions/drag'
-import { toBox, type Box } from '@pommora/uix/Interactions/shared'
+import { toBox, useEscort, type Box } from '@pommora/uix/Interactions/drag'
+import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import type { FolderPlacement } from '@pommora/core/Settings/personalization'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
@@ -203,8 +203,7 @@ export function SidebarDnd({
           : []
       return { measured, siblings, box }
     },
-    resolve: (id, point, s) =>
-      escort && !within(s.box, point) ? null : computeTarget(id, point.y, s),
+    resolve: (id, point, s) => (escort?.loose() ? null : computeTarget(id, point.y, s)),
     escort,
     escortSpec: (id, rect) => {
       const entry = index.byId.get(id)
@@ -212,7 +211,7 @@ export function SidebarDnd({
       return entry?.kind === 'page' && content
         ? {
             id,
-            family: 'tabs',
+            family: TAB_FAMILY,
             item: { kind: 'page', id, path: entry.path },
             rect,
             home: toBox(content),
@@ -256,9 +255,6 @@ export function SidebarDnd({
 
 const sameOrder = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
-
-const within = (b: Box, p: { x: number; y: number }): boolean =>
-  p.x >= b.left && p.x <= b.left + b.width && p.y >= b.top && p.y <= b.top + b.height
 
 // All top-level groups held in `.nexus/state.json`. Sets have their own reparent-aware branch in computeTarget and never reach here.
 function siblingGroup(draggedEntry: Entry, idx: Index): string[] {

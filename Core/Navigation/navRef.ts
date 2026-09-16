@@ -14,6 +14,7 @@ export type SelectionState =
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
+export const TAB_FAMILY = 'tabs'
 
 export type NavRef =
   | { kind: 'homepage' }

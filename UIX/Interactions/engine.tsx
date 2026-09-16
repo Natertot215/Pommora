@@ -3,12 +3,12 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
-  type CSSProperties,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -453,11 +453,10 @@ export function DragGroup({
       const b = bounds.current.get(d.pickZone)
       if (b && within(b, x, y, HYSTERESIS)) return d.pickZone
     }
-    const hit = zoneAt(
-      x,
-      y,
-      (zid) => zid !== d.zoneId && zones.current.get(zid)?.family === d.family,
-    )
+    const hit = zoneAt(x, y, (zid) => {
+      const z = zones.current.get(zid)
+      return zid !== d.zoneId && z?.family === d.family && !!(z.receive ?? onCommitRef.current)
+    })
     if (hit) return hit
     if (atHome(d, x, y)) return d.zoneId || null
     return strayRef.current === 'stick' ? d.pickZone : null
@@ -1022,7 +1021,6 @@ function ZoneBody({
   const floor = useContext(StateCtx)?.floor ?? null
   const auto = useId()
   const zoneId = id ?? auto
-  // Registered in an effect, after the item refs land: a render-time write would be undone by the outgoing zone's cleanup when one id remounts inside a single commit.
   useEffect(() => {
     api.setZone(zoneId, {
       ids: items,
@@ -1040,13 +1038,17 @@ function ZoneBody({
   })
   useEffect(() => () => api.releaseZone(zoneId), [zoneId])
   const zone = useMemo(() => ({ zoneId, disabled }), [zoneId, disabled])
+  const holdContainer = useCallback(
+    (el: HTMLElement | null) => api.registerContainer(zoneId, el),
+    [api, zoneId],
+  )
   return (
     <ZoneIdCtx.Provider value={zone}>
       {id == null ? (
         children
       ) : (
         <div
-          ref={(el) => api.registerContainer(zoneId, el)}
+          ref={holdContainer}
           className={className}
           style={floor === null ? undefined : ({ '--drag-floor': px(floor) } as CSSProperties)}
         >

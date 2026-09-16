@@ -1,7 +1,7 @@
 import './drop-chrome.css'
 import { moveItem } from '../Utilities/moveItem'
 
-export type { Carried, DragItem } from './shared'
+export { toBox, type Box, type Carried, type DragItem } from './shared'
 export {
   DragGroup,
   DropSlot,
