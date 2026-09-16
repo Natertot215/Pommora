@@ -8,6 +8,8 @@ import {
 } from 'react'
 import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
+import { useEscort } from '@pommora/uix/Interactions/drag'
+import { toBox, type Box } from '@pommora/uix/Interactions/shared'
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import type { FolderPlacement } from '@pommora/core/Settings/personalization'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
@@ -24,7 +26,7 @@ type Slot = {
   commit: MutateRequest
 }
 
-type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[] }
+type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[]; box: Box }
 
 type Value = {
   draggingId: string | null
@@ -175,12 +177,15 @@ export function SidebarDnd({
     })
   }
 
+  const escort = useEscort()
+
   const drag = useInsertionDrag<Slot, Snapshot>({
     // Measured once at drag activation, not per pointermove: no row displaces mid-drag, so frozen rects stay valid until a scroll or tree swap invalidates.
     take: (excludeId) => {
       const content = contentRef.current
       if (!content) return null
-      const contentTop = content.getBoundingClientRect().top
+      const box = toBox(content)
+      const contentTop = box.top
       const measured: MeasuredRow[] = []
       for (const [rowId, el] of rows.current) {
         if (rowId === excludeId) continue
@@ -196,9 +201,25 @@ export function SidebarDnd({
               return e !== undefined && e.kind === entry.kind && e.parentId === entry.parentId
             })
           : []
-      return { contentTop, measured, siblings }
+      return { contentTop, measured, siblings, box }
     },
-    resolve: (id, point, s) => computeTarget(id, point.y, s),
+    // A page row that has left the column draws no line; a row of any other kind stays the column's own.
+    resolve: (id, point, s) =>
+      escort && !within(s.box, point) ? null : computeTarget(id, point.y, s),
+    escort,
+    escortSpec: (id, rect) => {
+      const entry = index.byId.get(id)
+      const content = contentRef.current
+      return entry?.kind === 'page' && content
+        ? {
+            id,
+            family: 'tabs',
+            item: { kind: 'page', id, path: entry.path },
+            rect,
+            home: toBox(content),
+          }
+        : null
+    },
     commit: (_id, slot) => onCommit(slot.commit),
     lineFor: (slot) => ({
       top: slot.lineY,
@@ -236,6 +257,9 @@ export function SidebarDnd({
 
 const sameOrder = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
+
+const within = (b: Box, p: { x: number; y: number }): boolean =>
+  p.x >= b.left && p.x <= b.left + b.width && p.y >= b.top && p.y <= b.top + b.height
 
 // All top-level groups held in `.nexus/state.json`. Sets have their own reparent-aware branch in computeTarget and never reach here.
 function siblingGroup(draggedEntry: Entry, idx: Index): string[] {
