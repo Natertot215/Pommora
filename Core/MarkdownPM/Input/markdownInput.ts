@@ -22,6 +22,7 @@ import {
 import { renumberAfterNest, type ChangeSpec } from '../Engine/listDragModel'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
+import { headingHash } from '../Links/headingHash'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import type { DocScan } from '../Engine/docScan'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
@@ -150,7 +151,8 @@ export const markdownInput = [
     if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
-      calloutShorthand(scan.text, from, from, text, settings) ??
+      headingHash(scan, from, from, text) ??
+        calloutShorthand(scan.text, from, from, text, settings) ??
         canonicalizeCheckbox(scan.text, from, from, text) ??
         autoPair(scan, from, from, text, settings) ??
         dashArrow(scan, from, from, text, settings) ??

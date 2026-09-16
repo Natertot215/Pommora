@@ -3,7 +3,7 @@ import { EditorSelection, type EditorState, type Extension, type Line } from '@c
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
 import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
-import { tokenize, type Token } from '../Engine/tokens'
+import { aliasedToken, tokenize, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from '../Gestures/linkGestures'
 import { editorHost } from '../api'
@@ -19,7 +19,7 @@ export function wikiAuthorTarget(
     const [, titleEnd] = tk.resolveRange ?? tk.contentRange
     return { select: [titleEnd, titleEnd] }
   }
-  if (tk.resolveRange) return { select: [tk.contentRange[0], tk.contentRange[1]] }
+  if (aliasedToken(tk)) return { select: [tk.contentRange[0], tk.contentRange[1]] }
   // A pipe already sitting there is an Add Title that was abandoned — reuse it rather than stacking a second.
   const afterTitle = tk.contentRange[1]
   const seat: [number, number] = [afterTitle + 1, afterTitle + 1]

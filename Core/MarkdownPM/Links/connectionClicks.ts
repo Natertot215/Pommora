@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
-import { linkTokenAt } from '../Engine/tokens'
+import { aliasedToken, linkTokenAt } from '../Engine/tokens'
 import type { ConnectionsApi } from './connectionsApi'
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import { followTarget } from './linkClicks'
@@ -29,7 +29,7 @@ function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
     title: line.text.slice(rs, re),
     range: abs(tk.range),
     content: abs(tk.contentRange),
-    aliased: tk.resolveRange !== undefined,
+    aliased: aliasedToken(tk),
   }
 }
 
