@@ -13,6 +13,7 @@ import {
   newTabTab,
   openNewTab,
   openTab,
+  openTabAt,
   pinTabId,
   pushMru,
   reconcileTabs,
@@ -120,6 +121,29 @@ describe('tabsModel — openNewTab', () => {
     const r = openNewTab([navTab('n')], 'NEW')
     expect(r.tabs).toHaveLength(1)
     expect(r.activeTabId).toBe('n')
+  })
+})
+
+describe('tabsModel — openTabAt', () => {
+  it('splices a new page at the index and activates it', () => {
+    const tabs = [tab('t1', 'a'), tab('t2', 'b')]
+    const r = openTabAt(tabs, [], pt('c'), 1, 'NEW')
+    expect(r.tabs.map((t) => t.id)).toEqual(['t1', 'NEW', 't2'])
+    expect(r.activeTabId).toBe('NEW')
+  })
+
+  it('moves an already-open page to the index and activates it', () => {
+    const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
+    const r = openTabAt(tabs, [], pt('a'), 2, 'NEW')
+    expect(r.tabs.map((t) => t.id)).toEqual(['t2', 't1', 't3'])
+    expect(r.activeTabId).toBe('t1')
+  })
+
+  it('only focuses a pinned page, leaving the row untouched', () => {
+    const tabs = [tab('t1', 'a')]
+    const r = openTabAt(tabs, [tab(pinTabId(pt('p')), 'p')], pt('p'), 0, 'NEW')
+    expect(r.tabs).toBe(tabs)
+    expect(r.activeTabId).toBe('pin:page:p')
   })
 })
 
