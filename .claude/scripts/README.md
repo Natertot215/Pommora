@@ -65,10 +65,5 @@ git config core.hooksPath .claude/hooks
 
 The built pages under `Dashboard/dist` are published as two claude.ai artifacts — the Pommora
 Dashboard (the ledger) and the Pommora Showcase (the design system); `Dashboard/README.md` carries
-their URLs. The post-commit hook keeps the builds current on every commit; re-publishing them is a
-separate step, because no shell hook can reach the publish API. `../hooks/republish-dashboard.mjs` —
-a `PostToolUse` hook on the Bash tool, declared in `../settings.json` — bridges the gap during a
-Claude session: after a commit, it compares each build against the hash recorded at its last
-republish and asks Claude to republish the pages that moved, so the artifacts track the local build
-while work is underway. The records sit at `dashboard-published` and `showcase-published` inside the
-git dir. Commits made outside a session leave the artifacts to the next republish.
+their URLs. The post-commit hook keeps the builds current on every commit; publishing them is a
+separate, by-hand step from a session, taken when wanted.
