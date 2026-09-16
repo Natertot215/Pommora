@@ -25,6 +25,14 @@ describe('nameError — shared rules', () => {
   it('rejects a hidden prefix and a pipe', () => {
     for (const n of ['_Draft', '.hidden', 'A|B']) expect(nameError(n, 'page'), n).not.toBe(null)
   })
+
+  it('rejects `#` in a page name', () => {
+    expect(nameError('Q#3', 'page')).not.toBe(null)
+  })
+
+  it('rejects `§` in a directory name', () => {
+    expect(nameError('§4', 'directory')).not.toBe(null)
+  })
 })
 
 describe('nameError — role differences', () => {

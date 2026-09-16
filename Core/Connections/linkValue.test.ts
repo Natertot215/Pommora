@@ -7,6 +7,7 @@ import {
   linkEditText,
   linkNamesTitle,
   parseLink,
+  readLink,
   serializeLink,
   urlClickTarget,
   urlValueFromEdit,
@@ -185,6 +186,9 @@ describe('internal links', () => {
   it('names the page it points at, and nothing else', () => {
     expect(linkNamesTitle('[[Meeting Notes]]', 'meeting notes')).toBe(true)
     expect(linkNamesTitle('https://example.com/Meeting Notes', 'meeting notes')).toBe(false)
+  })
+  it('reads a heading link as the page alone, with no heading', () => {
+    expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page' })
   })
 })
 

@@ -1,7 +1,8 @@
-// `pageLinkPattern` has five other consumers (the rewrite, the editor's tokens, its autocomplete), so the ReDoS and length-cap assertions below guard all of them, not just this file.
+// `pageLinkPattern` has four other consumers (the rewrite, the editor's tokens, its autocomplete, and paste-as), so the ReDoS and length-cap assertions below guard all of them, not just this file.
 
 import { describe, it, expect } from 'vitest'
-import { extractMentions, mentionsTitle } from './scan'
+import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { extractHeadingMentions, extractMentions, mentionsTitle, sectionRunsIn } from './scan'
 
 describe('mentionsTitle', () => {
   it('matches a page link by its normalized title', () => {
@@ -79,5 +80,71 @@ describe('extractMentions MUST AGREE with mentionsTitle', () => {
       new Set(['alpha', 'beta', 'gamma']),
     )
     expect(extractMentions('nothing here')).toEqual(new Set())
+  })
+})
+
+describe('sectionRunsIn', () => {
+  it('matches a bare `§Heading` run against the outline', () => {
+    const text = 'see §Setup here'
+    const runs = sectionRunsIn(text, ['Setup'], codeMask(text))
+    expect(runs).toEqual([{ from: text.indexOf('§'), to: text.indexOf('§') + 6, heading: 'Setup' }])
+  })
+
+  it('never matches past the run into a longer word', () => {
+    const text = 'see §Overviewing here'
+    expect(sectionRunsIn(text, ['Overview'], codeMask(text))).toEqual([])
+  })
+
+  it('ends the run at punctuation, not just at a word boundary', () => {
+    const text = '§Setup.'
+    const runs = sectionRunsIn(text, ['Setup'], codeMask(text))
+    expect(runs).toEqual([{ from: 0, to: 6, heading: 'Setup' }])
+  })
+
+  it('never matches a `§` inside a code span', () => {
+    const text = 'a `§Setup` sample'
+    expect(sectionRunsIn(text, ['Setup'], codeMask(text))).toEqual([])
+  })
+
+  it('picks the longer heading when one prefixes another', () => {
+    const text = '§Setup Guide'
+    const runs = sectionRunsIn(text, ['Setup', 'Setup Guide'], codeMask(text))
+    expect(runs).toEqual([{ from: 0, to: text.length, heading: 'Setup Guide' }])
+  })
+
+  it('never matches a `§` sitting inside a wikilink', () => {
+    const text = '[[Page§X]]'
+    expect(sectionRunsIn(text, ['X'], codeMask(text))).toEqual([])
+  })
+})
+
+describe('extractHeadingMentions', () => {
+  it('reads a page-and-heading link into both extractors', () => {
+    expect(extractMentions('[[Page#H]]')).toEqual(new Set(['page']))
+    expect(extractHeadingMentions('[[Page#H]]', '')).toEqual([{ title: 'page', heading: 'h' }])
+  })
+
+  it('reads a bare fragment as the containing page, in both extractors', () => {
+    expect(extractHeadingMentions('[[#H]]', 'Own')).toEqual([{ title: 'own', heading: 'h' }])
+    expect(extractMentions('[[#H]]', 'Own')).toEqual(new Set(['own']))
+  })
+
+  it('reads a markdown link’s fragment the same way', () => {
+    expect(extractHeadingMentions('[Alias](Page#H)', '')).toEqual([{ title: 'page', heading: 'h' }])
+  })
+
+  it('reads a bare `§` run against the outline as a self-mention', () => {
+    expect(extractHeadingMentions('§Setup', 'Own', ['Setup'])).toEqual([
+      { title: 'own', heading: 'setup' },
+    ])
+  })
+
+  it('reads an empty heading as no heading mention', () => {
+    expect(extractHeadingMentions('[[Page#]]', '')).toEqual([])
+  })
+
+  it('reads an empty link as no mention at all', () => {
+    expect(extractHeadingMentions('[[]]', 'Own')).toEqual([])
+    expect(extractMentions('[[]]', 'Own')).toEqual(new Set())
   })
 })
