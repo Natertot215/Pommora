@@ -9,6 +9,7 @@ import { connectionsFor } from '../Nexus/treeIndex'
 export function useWindowTabConnections(tree: NexusTree | null): ConnectionsApi | undefined {
   const select = useSession((s) => s.select)
   const openWindowTab = useSession((s) => s.openWindowTab)
+  const headings = useSession((s) => s.headings)
   return useMemo(
     () =>
       connectionsFor(tree, {
@@ -16,8 +17,9 @@ export function useWindowTabConnections(tree: NexusTree | null): ConnectionsApi 
         bypass: (page) =>
           void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
         menu: showConnectionMenu,
+        headingsOf: (path) => headings[path],
       }),
-    [tree, openWindowTab, select],
+    [tree, openWindowTab, select, headings],
   )
 }
 
@@ -27,6 +29,7 @@ export function usePreviewConnections(tree: NexusTree | null): ConnectionsApi | 
   const openWindow = useSession((s) => s.openWindow)
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
+  const headings = useSession((s) => s.headings)
   return useMemo(
     () =>
       connectionsFor(tree, {
@@ -37,7 +40,8 @@ export function usePreviewConnections(tree: NexusTree | null): ConnectionsApi | 
         bypass: (page) =>
           void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
         menu: showConnectionMenu,
+        headingsOf: (path) => headings[path],
       }),
-    [tree, select, openWindow, openInWindow],
+    [tree, select, openWindow, openInWindow, headings],
   )
 }

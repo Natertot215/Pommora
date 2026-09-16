@@ -24,6 +24,8 @@ afterEach(() => {
 const STAT = { mtimeMs: 1000, size: 10 }
 const TAGGED = {
   mentions: ['beta'],
+  headings: [],
+  headingMentions: [],
   values: { Status: 'Open', '<Projects>': ['Pommora'] },
   memberships: [{ key: '<Projects>', title: 'pommora' }],
 }
@@ -34,6 +36,8 @@ describe('the content index', () => {
       'Notes/A.md',
       {
         mentions: ['beta'],
+        headings: [],
+        headingMentions: [],
         values: { Status: 'Open', '<Projects>': ['Pommora'] },
         memberships: [{ key: '<Projects>', title: 'pommora' }],
       },
@@ -43,6 +47,8 @@ describe('the content index', () => {
       'Loose/B.md',
       {
         mentions: ['beta', 'gamma'],
+        headings: [],
+        headingMentions: [],
         values: { '<Projects>': ['Pommora', 'Sapphire'] },
         memberships: [
           { key: '<Projects>', title: 'pommora' },
@@ -65,6 +71,8 @@ describe('the content index', () => {
       'Notes/A.md',
       {
         mentions: ['beta'],
+        headings: [],
+        headingMentions: [],
         values: { Status: 'Open' },
         memberships: [{ key: '<Projects>', title: 'pommora' }],
       },
@@ -72,7 +80,7 @@ describe('the content index', () => {
     )
     upsertPageIndex(
       'Notes/A.md',
-      { mentions: ['gamma'], values: {}, memberships: [] },
+      { mentions: ['gamma'], headings: [], headingMentions: [], values: {}, memberships: [] },
       { mtimeMs: 2000, size: 12 },
     )
     expect(queryMentions('beta')).toEqual([])
@@ -83,7 +91,11 @@ describe('the content index', () => {
   })
 
   it('no mentions is an empty array; NO INDEX is null — the two never conflate', () => {
-    upsertPageIndex('Notes/A.md', { mentions: [], values: {}, memberships: [] }, STAT)
+    upsertPageIndex(
+      'Notes/A.md',
+      { mentions: [], headings: [], headingMentions: [], values: {}, memberships: [] },
+      STAT,
+    )
     expect(queryMentions('beta')).toEqual([])
     installStores(NO_STORES)
     expect(queryMentions('beta')).toBeNull()
@@ -95,14 +107,22 @@ describe('the content index', () => {
   it('queries answer null until a seed stamps the handle ready — empty tables never masquerade', async () => {
     installStores(NO_STORES)
     installStores(memoryStores().stores)
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {}, memberships: [] }, STAT)
+    upsertPageIndex(
+      'Notes/A.md',
+      { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      STAT,
+    )
     expect(queryMentions('beta')).toBeNull()
     markIndexReady()
     expect(queryMentions('beta')).toEqual(['Notes/A.md'])
   })
 
   it('a prefix rename survives an astral folder name (SQL-side character arithmetic)', () => {
-    upsertPageIndex('Projects 🚀/A.md', { mentions: ['beta'], values: {}, memberships: [] }, STAT)
+    upsertPageIndex(
+      'Projects 🚀/A.md',
+      { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      STAT,
+    )
     renamePathPrefixIndex('Projects 🚀', 'Launchpad')
     expect(queryMentions('beta')).toEqual(['Launchpad/A.md'])
   })

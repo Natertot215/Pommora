@@ -1,4 +1,5 @@
 import type { KeyValueStore } from './machine'
+import type { HeadingMention } from '../Connections/scan'
 
 export interface Membership {
   key: string
@@ -7,6 +8,8 @@ export interface Membership {
 
 export interface PageIndexEntry {
   mentions: string[]
+  headings: string[]
+  headingMentions: HeadingMention[]
   values: Record<string, unknown>
   memberships: Membership[]
 }
@@ -23,6 +26,8 @@ export interface ContentIndexStore {
   removePathPrefixIndex(dir: string): void
   renamePathPrefixIndex(oldDir: string, newDir: string): void
   queryMentions(normalizedTitle: string): string[]
+  queryHeadingMentions(normalizedTitle: string, normalizedHeading: string): string[]
+  readHeadings(paths?: string[]): Record<string, string[]>
   queryKeyHolders(key: string): string[]
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null

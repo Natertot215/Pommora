@@ -131,6 +131,7 @@ export function stubEditorBridge(extra: Record<string, unknown> = {}): void {
       ok: true,
       value: { id: 'x', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'inner' },
     }),
+    'index:headings': async () => ({ ok: true, value: {} }),
     ...extra,
   })
 }

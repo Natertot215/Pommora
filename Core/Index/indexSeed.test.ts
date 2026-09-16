@@ -5,7 +5,14 @@ import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { queryKeyHolders, queryMembers, queryMentions, readIndexedStats } from './contentIndex'
+import {
+  queryHeadingMentions,
+  queryKeyHolders,
+  queryMembers,
+  queryMentions,
+  readHeadings,
+  readIndexedStats,
+} from './contentIndex'
 import { corpusFiles } from '../Files/walk'
 import { sweepAdmitsBody } from '../Files/pageFile'
 import { seedContentIndex } from './indexSeed'
@@ -104,6 +111,22 @@ describe('seedContentIndex', () => {
     expect(queryMembers('<Projects>')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(queryMembers('<Areas>', '2024')).toEqual(['Notes/A.md'])
     expect(queryMembers('<Areas>', 'pommora')).toEqual([])
+  })
+
+  it('records a page’s heading keys and its heading links to another page', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\n---\n\n## Setup\n\nlinks [[B#Intro]]\n`,
+    )
+    await seedContentIndex(root)
+    expect(readHeadings()).toMatchObject({ 'Notes/A.md': ['setup'] })
+    expect(queryHeadingMentions('b', 'intro')).toEqual(['Notes/A.md'])
+  })
+
+  it('records a bare `[[#Heading]]` as a heading mention naming its own page', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n[[#Setup]]\n`)
+    await seedContentIndex(root)
+    expect(queryHeadingMentions('a', 'setup')).toEqual(['Notes/A.md'])
   })
 
   it('with no database the seed stands down and queries stay null', async () => {

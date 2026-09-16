@@ -35,6 +35,7 @@ beforeEach(() => {
     'tabs:load': vi.fn(async () => ({ ok: true, value: null })),
     'theme:systemAccent': vi.fn(async () => ok('#000000')),
     'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
+    'index:headings': vi.fn(async () => ({ ok: true, value: {} })),
     mutate: vi.fn(async () => ({ ok: true, value: {} })),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
@@ -680,5 +681,30 @@ describe('store — the mutate rail patches the tree before main confirms', () =
       .mutate({ op: 'setActiveView', path: 'Notes', kind: 'collection', viewId: 'view_b' })
     expect(done).toBe(true)
     expect(useSession.getState().tree?.collections[0]?.activeView).toBe('view_b')
+  })
+})
+
+describe('store — the headings map (Task 2.3)', () => {
+  it('a full load replaces the map; a partial load keeps unrelated keys', async () => {
+    channels['index:headings'] = vi.fn(async () => ({
+      ok: true,
+      value: { 'Notes/A.md': ['setup'] },
+    }))
+    await useSession.getState().loadHeadings()
+    expect(useSession.getState().headings).toEqual({ 'Notes/A.md': ['setup'] })
+
+    channels['index:headings'] = vi.fn(async () => ({
+      ok: true,
+      value: { 'Notes/B.md': ['intro'] },
+    }))
+    await useSession.getState().loadHeadings(['Notes/B.md'])
+    expect(useSession.getState().headings).toEqual({
+      'Notes/A.md': ['setup'],
+      'Notes/B.md': ['intro'],
+    })
+
+    channels['index:headings'] = vi.fn(async () => ({ ok: true, value: { 'Notes/C.md': ['x'] } }))
+    await useSession.getState().loadHeadings()
+    expect(useSession.getState().headings).toEqual({ 'Notes/C.md': ['x'] })
   })
 })

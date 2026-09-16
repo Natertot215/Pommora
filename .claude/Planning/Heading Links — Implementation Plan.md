@@ -54,11 +54,11 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
   - [x] Task 1.5 — The name rule bans `#` and `§`
   - [x] Task 1.6 — Consumers read named groups
   - [x] Review Checkpoint
-- [ ] **Phase 2** — The index records headings and heading links
-  - [ ] Task 2.1 — Two tables, the store contract, both backends
-  - [ ] Task 2.2 — The seed extracts headings and heading mentions
-  - [ ] Task 2.3 — `index:headings` reaches the renderer; `headingsOf` joins the connections api
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — The index records headings and heading links
+  - [x] Task 2.1 — Two tables, the store contract, both backends
+  - [x] Task 2.2 — The seed extracts headings and heading mentions
+  - [x] Task 2.3 — `index:headings` reaches the renderer; `headingsOf` joins the connections api
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Rendering and the settings
   - [ ] Task 3.1 — Three personalization keys, three rows, `EditorSettings`
   - [ ] Task 3.2 — Tokens carry the fragment; `docOutline`
@@ -2788,4 +2788,7 @@ Per the skill's §5.5, written when the chain is confirmed.
 
 - **Task 1.4, `escapedPipe`:** the AFTER block tests `alias === undefined`; with named groups an empty typed alias (`[[Old|]]`) arrives as `''`, which would re-emit `[[New|]]` and break the existing byte-for-byte pin. Written as the falsy test the NOW code used, so `[[Old|]]` → `[[New]]` as before.
 - **Task 1.2, `links.test.ts`:** the codec round-trip corpus held `'a#b?c&d+e'`; `#` is now the fragment separator and no longer a legal title, so the fixture reads `'a?b&c+d'`.
+- **Task 2.2, engine externals:** the plan said importing `headingOutline` into `Core/Index` moves no gate. `headingScan.ts` reaches `detect.ts`, which imports the micromark parser, so `engineGraph.test.ts` and `hostGraph.test.ts` went red on their externals allowlist (`ulidx`, `yaml`, `zod`). The allowlist now also names `mdast`, `mdast-util-from-markdown`, `mdast-util-gfm`, and `micromark-extension-gfm`; the same suites' React/`.tsx`/`.css.ts` assertions stay green, so main still holds no renderer code. The pull is incidental to `detect.ts`'s module graph, not to heading scanning; splitting the heading helpers into a leaf would undo it and is not in this plan.
+- **Task 2.1, `readHeadings`:** Biome refuses `(out[path] ??= []).push(heading)` (`noAssignInExpressions`); written as two statements in both backends.
+- **Task 2.3, test stubs:** every `stubDialer` test that reaches `applyTree` or `pages:changed` (`store.test.tsx`, `useBridgeSubscriptions.test.tsx`, `devicePrefsSeed.test.ts`) gained an `'index:headings'` channel, and `contentIndex.test.ts` and `open.test.ts` fixtures gained the two new entry fields.
 - **Task 1.3, `scan.test.ts` header:** the consumer count was already off before this phase (four, not five, outside `connections.ts` and `scan.ts`); it now reads four and names paste-as.
