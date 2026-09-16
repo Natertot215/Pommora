@@ -141,6 +141,7 @@
 
 .window-tabwrap {
   position: relative;
+  z-index: 1;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -149,6 +150,7 @@
 .page-window .window-tabwrap {
   align-self: flex-start;
   height: var(--window-toolbar-h);
+  pointer-events: auto;
   padding-left: var(--window-tab-clear-l);
   padding-right: var(--window-tab-clear-r);
 }

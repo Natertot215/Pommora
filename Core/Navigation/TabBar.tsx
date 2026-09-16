@@ -16,7 +16,12 @@ import {
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import type { PageTarget, Tab, TabTarget } from '@pommora/core/Navigation/navRef'
+import {
+  TAB_FAMILY,
+  type PageTarget,
+  type Tab,
+  type TabTarget,
+} from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
@@ -61,7 +66,7 @@ export function TabBar(): React.JSX.Element | null {
     [index, tabs],
   )
 
-  const forced = useDragFamily() === 'tabs'
+  const forced = useDragFamily() === TAB_FAMILY
   if (
     !forced &&
     pinnedEntries.length === 0 &&
@@ -231,7 +236,7 @@ function TabBarBody({
         <SortableZone
           id="tabs-main"
           className={cx('tab-strip', (still || forced) && 'is-still')}
-          family="tabs"
+          family={TAB_FAMILY}
           items={liveEntries.map((e) => e.tab.id)}
           axis="x"
           onReorder={reorderTabs}

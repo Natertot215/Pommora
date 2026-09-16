@@ -14,14 +14,7 @@ import { currentZoom } from '../Utilities/zoom'
 
 type Slot = { lineY: number; left: number; width: number; group: string; beforeId: string | null }
 type TableRow = MeasuredRow & { left: number; contentRight: number; group: string }
-type Snapshot = {
-  rows: TableRow[]
-  boxTop: number
-  boxLeft: number
-  boxRight: number
-  boxBottom: number
-  zoom: number
-}
+type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number; zoom: number }
 
 type Value = {
   draggingId: string | null
@@ -79,23 +72,12 @@ export function TableRowDnd({
         })
       }
       measured.sort((a, b) => a.top - b.top)
-      return {
-        rows: measured,
-        boxTop: boxRect.top,
-        boxLeft: boxRect.left,
-        boxRight: boxRect.right,
-        boxBottom: boxRect.bottom,
-        zoom: currentZoom(box),
-      }
+      return { rows: measured, boxTop: boxRect.top, boxLeft: boxRect.left, zoom: currentZoom(box) }
     },
     resolve: (id, point, s) => {
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
-      if (
-        escort &&
-        (point.x < s.boxLeft || point.x > s.boxRight || point.y < s.boxTop || point.y > s.boxBottom)
-      )
-        return null
+      if (escort?.via.loose()) return null
       const near = nearestByTop(s.rows, point.y)
       const group = near.group
       const crossing = group !== activeGroup
@@ -140,8 +122,15 @@ export function TableRowDnd({
   }
 
   const value = useMemo<Value>(
-    () => ({ draggingId: drag.dragging, registerRow, begin: drag.begin }),
-    [drag.dragging, drag.begin],
+    () => ({
+      draggingId: drag.dragging,
+      registerRow,
+      begin: (id, e) => {
+        if (!canReorderWithin && !crossZone && escort?.carry(id) == null) return
+        drag.begin(id, e)
+      },
+    }),
+    [drag.dragging, drag.begin, canReorderWithin, crossZone, escort],
   )
 
   return (

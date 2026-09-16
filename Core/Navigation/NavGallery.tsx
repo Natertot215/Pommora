@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardTrail,
 } from '@pommora/uix/Cards/Card'
-import type { NavRef, PageTarget } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY, type NavRef, type PageTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { navKey } from './navRecents'
 import { pageTargetFromNav, type ResolvedNav } from './navResolve'
@@ -55,7 +55,7 @@ export function NavGallery({
       </div>
     ) : null
   }
-  const zone = { family: 'tabs', carry, renderOverlay }
+  const zone = { family: TAB_FAMILY, carry, renderOverlay }
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()
