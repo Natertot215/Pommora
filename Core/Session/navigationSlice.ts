@@ -416,8 +416,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     // A drop is a placement, not a navigation: no recent, no slide.
     openTabAt: (target, index) => {
       const s = get()
-      const res = openTabAtModel(s.tabs, s.pinnedTabs, target, index, makeTabId())
-      applyTabResult({ ...res, mru: pushMru(s.tabMru, res.activeTabId) })
+      const next = openTabAtModel(s.tabs, s.pinnedTabs, target, index, makeTabId())
+      if (next === s.tabs) return
+      set({ tabs: next })
+      persistTabs()
     },
     closeTab: (id) => {
       const s = get()
