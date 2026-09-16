@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, useEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
@@ -14,7 +14,7 @@ import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
-import { useTabClose } from '../../Navigation/tabClose'
+import { useSeat, useTabClose } from '../../Navigation/tabClose'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import type { PageTarget } from '@pommora/core/Navigation/navRef'
@@ -80,14 +80,8 @@ export function WindowTabStrip({
     const tab = entryOf(id)?.tab
     return tab?.target.kind === 'page' ? tab.target : null
   }
-  const placing = useRef(false)
-  useLayoutEffect(() => {
-    placing.current = false
-  })
-  const receive = (item: Carried, at: number): void => {
-    placing.current = true
-    openWindowTab(item as PageTarget, at)
-  }
+  const { still, seat } = useSeat(openWindowTab)
+  const receive = (item: Carried, at: number): void => seat(item as PageTarget, at)
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
@@ -137,7 +131,7 @@ export function WindowTabStrip({
           >
             <SortableZone
               id="tabs-window"
-              className={cx('tab-strip', (placing.current || forced) && 'is-still')}
+              className={cx('tab-strip', (still || forced) && 'is-still')}
               family="tabs"
               items={pageEntries.filter((e) => !e.ghost).map((e) => e.entry.tab.id)}
               axis="x"

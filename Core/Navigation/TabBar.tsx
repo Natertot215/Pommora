@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -24,7 +24,7 @@ import { resolveWith, type ResolvedNav } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
-import { useTabClose } from './tabClose'
+import { useSeat, useTabClose } from './tabClose'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
@@ -109,14 +109,8 @@ function TabBarBody({
     const tab = entryOf(id)?.tab
     return tab?.target.kind === 'page' ? tab.target : null
   }
-  const placing = useRef(false)
-  useLayoutEffect(() => {
-    placing.current = false
-  })
-  const receive = (item: Carried, index: number): void => {
-    placing.current = true
-    openTabAt(item as PageTarget, index)
-  }
+  const { still, seat } = useSeat(openTabAt)
+  const receive = (item: Carried, index: number): void => seat(item as PageTarget, index)
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
@@ -236,7 +230,7 @@ function TabBarBody({
       <div className="tab-scroll over-scroll-x" ref={stripRef}>
         <SortableZone
           id="tabs-main"
-          className={cx('tab-strip', (placing.current || forced) && 'is-still')}
+          className={cx('tab-strip', (still || forced) && 'is-still')}
           family="tabs"
           items={liveEntries.map((e) => e.tab.id)}
           axis="x"
