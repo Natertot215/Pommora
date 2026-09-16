@@ -64,6 +64,17 @@ export function queryMentions(normalizedTitle: string): string[] | null {
   return queryPaths((db) => db.queryMentions(normalizedTitle))
 }
 
+export function queryHeadingMentions(
+  normalizedTitle: string,
+  normalizedHeading: string,
+): string[] | null {
+  return queryPaths((db) => db.queryHeadingMentions(normalizedTitle, normalizedHeading))
+}
+
+export function readHeadings(paths?: string[]): Record<string, string[]> | null {
+  return queried((db) => db.readHeadings(paths))
+}
+
 export function queryKeyHolders(key: string): string[] | null {
   return queryPaths((db) => db.queryKeyHolders(key))
 }

@@ -57,6 +57,13 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     clearPath(db, path)
     const insMention = db.prepare('INSERT OR REPLACE INTO mentions (path, title) VALUES (?, ?)')
     for (const title of entry.mentions) insMention.run(path, title)
+    const insHeading = db.prepare('INSERT OR REPLACE INTO headings (path, heading) VALUES (?, ?)')
+    for (const heading of entry.headings) insHeading.run(path, heading)
+    const insHeadingMention = db.prepare(
+      'INSERT OR REPLACE INTO heading_mentions (path, title, heading) VALUES (?, ?, ?)',
+    )
+    for (const { title, heading } of entry.headingMentions)
+      insHeadingMention.run(path, title, heading)
     const insValue = db.prepare(
       'INSERT OR REPLACE INTO page_values (path, key, value) VALUES (?, ?, ?)',
     )
@@ -97,6 +104,32 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   },
   queryMentions(normalizedTitle) {
     return paths(db, 'SELECT path FROM mentions WHERE title = ? ORDER BY path', normalizedTitle)
+  },
+  queryHeadingMentions(normalizedTitle, normalizedHeading) {
+    return paths(
+      db,
+      'SELECT path FROM heading_mentions WHERE title = ? AND heading = ? ORDER BY path',
+      normalizedTitle,
+      normalizedHeading,
+    )
+  },
+  readHeadings(paths) {
+    const rows = (
+      paths
+        ? db
+            .prepare(
+              `SELECT path, heading FROM headings WHERE path IN (${paths.map(() => '?').join(',')})`,
+            )
+            .all(...paths)
+        : db.prepare('SELECT path, heading FROM headings').all()
+    ) as { path: string; heading: string }[]
+    const out: Record<string, string[]> = {}
+    for (const p of paths ?? []) out[p] = []
+    for (const { path, heading } of rows) {
+      out[path] ??= []
+      out[path].push(heading)
+    }
+    return out
   },
   queryKeyHolders(key) {
     return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)

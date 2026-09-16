@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 3
+export const INDEX_GENERATION = 4
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -19,6 +19,18 @@ const DDL = `
     PRIMARY KEY (path, title)
   );
   CREATE INDEX IF NOT EXISTS mentions_by_title ON mentions (title);
+  CREATE TABLE IF NOT EXISTS headings (
+    path TEXT NOT NULL,
+    heading TEXT NOT NULL,
+    PRIMARY KEY (path, heading)
+  );
+  CREATE TABLE IF NOT EXISTS heading_mentions (
+    path TEXT NOT NULL,
+    title TEXT NOT NULL,
+    heading TEXT NOT NULL,
+    PRIMARY KEY (path, title, heading)
+  );
+  CREATE INDEX IF NOT EXISTS heading_mentions_by_target ON heading_mentions (title, heading);
   CREATE TABLE IF NOT EXISTS page_values (
     path TEXT NOT NULL,
     key TEXT NOT NULL,
@@ -63,7 +75,14 @@ export function writeMeta(db: Db, key: string, value: string): void {
   db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
 }
 
-export const INDEX_TABLES = ['mentions', 'page_values', 'memberships', 'indexed_files'] as const
+export const INDEX_TABLES = [
+  'mentions',
+  'headings',
+  'heading_mentions',
+  'page_values',
+  'memberships',
+  'indexed_files',
+] as const
 
 export function truncateIndex(db: Db): void {
   db.exec(INDEX_TABLES.map((table) => `DELETE FROM ${table};`).join(' '))

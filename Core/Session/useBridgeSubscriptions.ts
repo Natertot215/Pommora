@@ -63,6 +63,7 @@ export function useBridgeSubscriptions(): void {
     setStaleSaveSink(absorb)
     const off = dialer().on('pages:changed', (paths) => {
       for (const path of paths) absorb(path)
+      void useSession.getState().loadHeadings(paths)
     })
     return () => {
       off()

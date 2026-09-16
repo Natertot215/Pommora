@@ -26,9 +26,11 @@ export interface NexusSlice {
   tree: NexusTree | null
   error?: PommoraError
   syncStatus: SyncStatus | null
+  headings: Record<string, string[]>
   load: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
   applyTree: (tree: NexusTree) => Promise<void>
+  loadHeadings: (paths?: string[]) => Promise<void>
   choose: () => Promise<void>
   openDropped: (file: File) => Promise<void>
   mutate: (
@@ -42,10 +44,13 @@ export interface NexusSlice {
 let systemAccentCache: string | null | undefined
 // Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
 let devicePrefsLoaded = false
+let headingsLoaded = false
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const resetNexusSession = (): void => {
     devicePrefsLoaded = false
+    headingsLoaded = false
+    set({ headings: {} })
     // Every key here is per machine PER NEXUS, so a refused re-fetch must leave nothing of the old one behind for the next setDevicePref to write into this Nexus's own store.
     set({ devicePrefs: {} })
     const s = get()
@@ -83,8 +88,15 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     tree: null,
     error: undefined,
     syncStatus: null,
+    headings: {},
 
     applySyncStatus: (status) => set({ syncStatus: status }),
+
+    loadHeadings: async (paths) => {
+      const res = await host().ask('index:headings', paths)
+      if (!res.ok) return
+      set((s) => ({ headings: paths ? { ...s.headings, ...res.value } : res.value }))
+    },
 
     load: async () => {
       // Only the first load shows it; a refetch keeps the tree mounted so selection survives.
@@ -171,6 +183,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         }
       }
       set({ status: 'ready', tree })
+      if (!headingsLoaded) {
+        headingsLoaded = true
+        void get().loadHeadings()
+      }
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
       get().reconcileWindow(index)
