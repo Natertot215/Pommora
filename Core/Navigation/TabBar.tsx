@@ -62,7 +62,7 @@ export function TabBar(): React.JSX.Element | null {
   )
 
   const forced = useDragFamily() === 'tabs'
-  // Blank ONLY for the pure empty state (a lone NavView, no pins) with no tab loose that needs a row to land in; otherwise the bar shows so the + stays reachable, even at a single real tab.
+  // Blank ONLY for the pure empty state (a lone NavView, no pins, no loose tab needing a row); otherwise the bar shows so the + stays reachable, even at a single real tab.
   if (
     !forced &&
     pinnedEntries.length === 0 &&
@@ -106,7 +106,6 @@ function TabBarBody({
   const pinKeyOf = (id: string): string =>
     pinnedEntries.find((e) => e.tab.id === id)?.res?.key ?? ''
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? 'New Tab'
-  // Only a page leaves the row.
   const carry = (id: string): PageTarget | null => {
     const tab = entryOf(id)?.tab
     return tab?.target.kind === 'page' ? tab.target : null

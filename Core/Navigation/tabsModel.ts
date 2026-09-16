@@ -90,7 +90,6 @@ export function sameTabs(a: Tab[], b: Tab[]): boolean {
   )
 }
 
-/** The tabs showing one entity; the scratch tab matches nothing. */
 const showing =
   (target: SelectTarget | NavRef) =>
   (t: Tab): boolean =>
@@ -179,7 +178,7 @@ export function openNewTab(tabs: Tab[], newId: string): OpenResult {
   return { tabs: [...tabs, newTabTab(newId)], activeTabId: newId }
 }
 
-/** A drop lands a page at `index` among the unpinned tabs: an open tab moves there, a pinned one only comes forward, a new one is spliced in. `index` is an insertion point counted with the moving tab still in place. */
+/** `index` is an insertion point among the unpinned tabs, counted with the moving tab still in place. */
 export function openTabAt(
   tabs: Tab[],
   pinned: Tab[],

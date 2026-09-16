@@ -13,7 +13,6 @@ export type SelectionState =
 
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
-/** What a tab row receives: only a page becomes a tab. */
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
 export type NavRef =
