@@ -35,6 +35,8 @@ export type EditorSettings = Pick<
   | 'jumpToCitation'
   | 'pasteLinkIntoText'
   | 'defaultLinkFormat'
+  | 'headingLinkStyle'
+  | 'inPageHeadingResolution'
   | 'transformDashes'
   | 'transformArrows'
   | 'transformEquations'

@@ -24,8 +24,13 @@ export interface Token {
   range: [number, number]
   contentRange: [number, number]
   resolveRange?: [number, number]
+  fragment?: [number, number]
   markerRanges: [number, number][]
 }
+
+// The page half alone resolves; a heading token carries `resolveRange` too and is not aliased by that alone.
+export const aliasedToken = (tk: Token): boolean =>
+  tk.resolveRange !== undefined && tk.contentRange[0] !== tk.resolveRange[0]
 
 export function linkTarget(text: string, tk: Token): string {
   const [, close] = tk.markerRanges
@@ -39,6 +44,7 @@ export function shiftToken(tk: Token, by: number): Token {
     range: move(tk.range),
     contentRange: move(tk.contentRange),
     ...(tk.resolveRange ? { resolveRange: move(tk.resolveRange) } : {}),
+    ...(tk.fragment ? { fragment: move(tk.fragment) } : {}),
     markerRanges: tk.markerRanges.map(move),
   }
 }
@@ -176,12 +182,16 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
     const [fs, fe] = s.full
     // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
     const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
-    const shown = alias ?? s.title
+    const fragment = s.heading && s.heading[1] > s.heading[0] ? s.heading : null
+    const target: [number, number] = [s.title[0], s.heading ? s.heading[1] : s.title[1]]
+    const shown = alias ?? target
     tokens.push({
       kind: 'wikiLink',
       range: [fs, fe],
       contentRange: shown,
-      ...(alias ? { resolveRange: s.title } : {}),
+      // The page half alone resolves; the heading is judged against that page's outline where the token is drawn.
+      ...(alias || s.heading ? { resolveRange: s.title } : {}),
+      ...(fragment ? { fragment } : {}),
       // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
       markerRanges: [
         [fs, shown[0]],

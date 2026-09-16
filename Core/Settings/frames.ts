@@ -4,10 +4,14 @@ import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
 import {
   DEFAULT_TIME_FORMAT,
+  HEADING_LINK_STYLE_LABELS,
+  HEADING_LINK_STYLES,
   HISTORY_DAY_STEPS,
   HISTORY_DAYS,
   HISTORY_INTERVAL,
   HISTORY_INTERVAL_STEPS,
+  IN_PAGE_HEADING_RESOLUTION_LABELS,
+  IN_PAGE_HEADING_RESOLUTIONS,
   TAB_CACHE,
   TAB_CACHE_STEPS,
   TAB_MAX_WIDTH,
@@ -20,6 +24,8 @@ import {
   EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
   WEB_ZOOM_DEFAULT,
+  type HeadingLinkStyle,
+  type InPageHeadingResolution,
   type Personalization,
   type PickerSelection,
   type PreviewPersistence,
@@ -101,6 +107,8 @@ export type Row =
   | PickerControlRow<PickerSelection>
   | PickerControlRow<PreviewPersistence>
   | PickerControlRow<TabOpenBehavior>
+  | PickerControlRow<HeadingLinkStyle>
+  | PickerControlRow<InPageHeadingResolution>
   | (RowText & {
       kind: 'nexus'
     })
@@ -168,6 +176,14 @@ const dateFormatOptions: readonly PickerOption<DateFormat>[] = DATE_FORMATS.map(
 const timeFormatOptions: readonly PickerOption<TimeFormatSetting>[] = TIME_FORMAT_SETTINGS.map(
   (value) => ({ value, label: TIME_FORMAT_LABELS[value] }),
 )
+const headingLinkStyleOptions: readonly PickerOption<HeadingLinkStyle>[] = HEADING_LINK_STYLES.map(
+  (value) => ({ value, label: HEADING_LINK_STYLE_LABELS[value] }),
+)
+const inPageHeadingResolutionOptions: readonly PickerOption<InPageHeadingResolution>[] =
+  IN_PAGE_HEADING_RESOLUTIONS.map((value) => ({
+    value,
+    label: IN_PAGE_HEADING_RESOLUTION_LABELS[value],
+  }))
 
 const roster = <const T extends readonly Frame[]>(
   leaves: T,
@@ -722,6 +738,21 @@ export const FRAMES = roster([
             key: 'plainUnresolvedLinks',
             label: 'Display Unresolved Links As Plain Syntax',
             hint: 'A link leading nowhere reads as the prose it is written as, instead of dimmed with its syntax showing.',
+          },
+          {
+            kind: 'picker',
+            key: 'headingLinkStyle',
+            label: 'Heading Link Style',
+            options: headingLinkStyleOptions,
+            fallback: 'page-heading',
+          },
+          { kind: 'toggle', key: 'hideHeadingSymbol', label: 'Hide Heading Symbol (§)' },
+          {
+            kind: 'picker',
+            key: 'inPageHeadingResolution',
+            label: 'In-Page Heading Resolution',
+            options: inPageHeadingResolutionOptions,
+            fallback: 'explicit',
           },
         ],
       },

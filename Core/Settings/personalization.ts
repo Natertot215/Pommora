@@ -10,6 +10,19 @@ import type {
 } from '@pommora/uix/Theme/colors'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
+export const HEADING_LINK_STYLES = ['page-heading', 'heading-only'] as const
+export type HeadingLinkStyle = (typeof HEADING_LINK_STYLES)[number]
+export const HEADING_LINK_STYLE_LABELS: Record<HeadingLinkStyle, string> = {
+  'page-heading': 'Page & Heading',
+  'heading-only': 'Heading Only',
+}
+export const IN_PAGE_HEADING_RESOLUTIONS = ['explicit', 'automatic'] as const
+export type InPageHeadingResolution = (typeof IN_PAGE_HEADING_RESOLUTIONS)[number]
+export const IN_PAGE_HEADING_RESOLUTION_LABELS: Record<InPageHeadingResolution, string> = {
+  explicit: 'Explicit',
+  automatic: 'Automatic',
+}
+
 export const TIME_FORMAT_SETTINGS = ['twelveHour', 'twentyFourHour'] as const
 export type TimeFormatSetting = (typeof TIME_FORMAT_SETTINGS)[number]
 export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
@@ -95,6 +108,9 @@ export interface Personalization {
   pickerSelection?: PickerSelection
   connectionsOpenInPreview?: boolean
   plainUnresolvedLinks?: boolean
+  headingLinkStyle?: HeadingLinkStyle
+  hideHeadingSymbol?: boolean
+  inPageHeadingResolution?: InPageHeadingResolution
   ribbonOrder?: string[]
   previewPersistence?: PreviewPersistence
   dismissPreviewOnPointer?: boolean

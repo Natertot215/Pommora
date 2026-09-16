@@ -61,6 +61,8 @@ function buildEditorHost(
         jumpToCitation: p.jumpToCitation,
         pasteLinkIntoText: p.pasteLinkIntoText,
         defaultLinkFormat: p.defaultLinkFormat,
+        headingLinkStyle: p.headingLinkStyle,
+        inPageHeadingResolution: p.inPageHeadingResolution,
         transformDashes: p.transformDashes,
         transformArrows: p.transformArrows,
         transformEquations: p.transformEquations,
@@ -139,10 +141,22 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
   connRef.current = connections
   const shown = useSession((s) => citationsVisible(s, pageId))
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
+  const headingLinkStyle = useSession((s) => s.personalization.headingLinkStyle)
+  const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
   const aliases = useSession((s) => s.pageAliases)
   const commands = useSession((s) => s.commands)
   return useMemo(
     () => buildEditorHost({ pageId, inert }, connRef),
-    [pageId, connections, inert, shown, cbLineCount, aliases, commands],
+    [
+      pageId,
+      connections,
+      inert,
+      shown,
+      cbLineCount,
+      headingLinkStyle,
+      inPageHeadingResolution,
+      aliases,
+      commands,
+    ],
   )
 }

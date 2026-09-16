@@ -154,6 +154,11 @@ export function MarkdownEditor({
     viewRef.current?.requestMeasure()
   }, [cbLineCount])
 
+  const { headingLinkStyle, inPageHeadingResolution } = host.settings()
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
+  }, [headingLinkStyle, inPageHeadingResolution])
+
   useEffect(() => {
     const view = viewRef.current
     if (view) rerenderWebTiles(view)

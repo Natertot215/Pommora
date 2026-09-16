@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { tokenize, activeTokenIndices, linkTokenAt, shiftToken, type Token } from './tokens'
+import {
+  tokenize,
+  activeTokenIndices,
+  aliasedToken,
+  linkTokenAt,
+  shiftToken,
+  type Token,
+} from './tokens'
 import { scanOf } from './docScan'
 
 const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
@@ -132,6 +139,41 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
       (raw.resolveRange as [number, number])[1] + 10,
     ])
     expect(moved.markerRanges).toEqual(raw.markerRanges.map(([s, e]) => [s + 10, e + 10]))
+  })
+})
+
+describe('a heading link separates its page half, its fragment, and what it resolves', () => {
+  it('[[Page#H]] carries resolveRange on the page, fragment on the heading, and content across both', () => {
+    const t = '[[Page#H]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    expect(slice(t, w.resolveRange as [number, number])).toBe('Page')
+    expect(slice(t, w.fragment as [number, number])).toBe('H')
+    expect(slice(t, w.contentRange)).toBe('Page#H')
+    expect(aliasedToken(w)).toBe(false)
+  })
+
+  it('[[#H]] resolves an empty page span and carries the heading as its fragment', () => {
+    const t = '[[#H]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    const [rs, re] = w.resolveRange as [number, number]
+    expect(re - rs).toBe(0)
+    expect(slice(t, w.fragment as [number, number])).toBe('H')
+  })
+
+  it('[[Page#H|a]] shows the alias, resolves the page, and still carries the heading as its fragment', () => {
+    const t = '[[Page#H|a]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    expect(slice(t, w.contentRange)).toBe('a')
+    expect(slice(t, w.resolveRange as [number, number])).toBe('Page')
+    expect(slice(t, w.fragment as [number, number])).toBe('H')
+    expect(aliasedToken(w)).toBe(true)
+  })
+
+  it('[[Page#]] carries no fragment and its content spans the whole written page#', () => {
+    const t = '[[Page#]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    expect(w.fragment).toBeUndefined()
+    expect(slice(t, w.contentRange)).toBe('Page#')
   })
 })
 

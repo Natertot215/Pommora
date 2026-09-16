@@ -34,6 +34,7 @@ afterEach(async () => {
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
+  headingsOf: () => ['setup'],
 }
 const TARGET = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' }
 
@@ -94,6 +95,20 @@ describe('the connection dwell', () => {
     expect(cancel).toHaveBeenCalled()
     over(span)
     expect(arm).toHaveBeenCalledTimes(2)
+  })
+
+  it('hovering the heading span arms the glance the same as the page span', async () => {
+    const view = await mountEditor({
+      initialBody: '[[Alpha#Setup]]',
+      connections: conn,
+      host: { glance },
+    })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
+    expect(heading).toBeTruthy()
+    over(heading)
+    expect(arm).toHaveBeenCalledTimes(1)
+    expect(arm).toHaveBeenCalledWith(TARGET, heading)
   })
 
   it('a host without a glance arms nothing', async () => {
