@@ -20,7 +20,7 @@ Published at https://claude.ai/code/artifact/684b7af1-55b2-49cf-b2fa-1b3a6b15dd9
 
 ## Publishing
 
-No shell hook can reach the Artifact API, so publishing is the session's step: `.claude/hooks/republish-dashboard.mjs` compares each build and the ledger's data file against the hash recorded at its last publish, and asks Claude to republish a page whose build moved or rewrite the `ledger/history` document when only the data did. Commits made outside a session leave the artifacts to the next one.
+The pages are published as Claude artifacts by hand from a session, whenever a session chooses to.
 
 ## Assets
 
