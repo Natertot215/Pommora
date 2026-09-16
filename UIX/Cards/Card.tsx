@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { cx } from '../Utilities/cx'
 import { text } from '../Theme/typography.css'
 import { OverScroll } from '../Interactions/OverScroll'
-import { useDropSlot, type DragItem } from '../Interactions/drag'
-import { stack } from '../Theme/stack'
+import type { DragItem } from '../Interactions/drag'
 import { NavTrail, type TrailSegment } from '../Elements/NavTrail'
 import './cards.css'
 
@@ -85,26 +83,6 @@ export function CardTitle({
     <span {...rest} className={cls}>
       {children}
     </span>
-  )
-}
-
-/** The landing slot painted while a card is in flight, wherever in the group it would land. */
-export function CardDropSlot(): React.JSX.Element | null {
-  const slot = useDropSlot()
-  if (!slot) return null
-  return createPortal(
-    <div
-      className="drop-slot"
-      style={{
-        position: 'fixed',
-        left: slot.left,
-        top: slot.top,
-        width: slot.width,
-        height: slot.height,
-        zIndex: stack.top.dropPreview,
-      }}
-    />,
-    document.body,
   )
 }
 

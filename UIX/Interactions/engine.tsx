@@ -20,15 +20,18 @@ import { clamp } from '../Utilities/clamp'
 import { currentZoom } from '../Utilities/zoom'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
+import { nudgeDragRemeasure } from './dragDisclose'
 import { usePointerGesture } from './gesture'
 import { ARROW_DIRS, keyboardNext } from './keyboard'
 import {
   ACTIVATION,
+  BREAKOUT,
   HYSTERESIS,
   SETTLE_FALLBACK,
   px,
   toBox,
   type Box,
+  type Carried,
   type DragItem,
   type DropState,
 } from './shared'
@@ -40,6 +43,10 @@ const INTERACTIVE_ACTIVATION = 12
 const INTERACTIVE = '[data-drag-slop], button, input, textarea, select, a[href], [contenteditable]'
 
 type Point = { x: number; y: number }
+type Axis = 'x' | 'y'
+type Size = { width: number; height: number }
+type Rect = Size & { left: number; top: number }
+type Overlay = (id: string, rect: Box) => ReactNode
 
 type ZoneReg = {
   ids: string[]
@@ -47,8 +54,18 @@ type ZoneReg = {
   container: HTMLElement | null
   onReorder?: (activeId: string, overId: string) => void
   disabled: boolean
-  axis?: 'x' | 'y'
+  axis?: Axis
   getItemLabel?: (id: string) => string
+  /** Zones of one family hand items to each other; a zone with no family keeps its items. A zone is a target only when it owns a container. */
+  family?: string
+  /** A fixed zone's items may leave, but its own order never previews a move. */
+  fixed: boolean
+  /** What an item carries out; null keeps that item home. Absent, the item carries its id. */
+  carry?: (id: string) => Carried | null
+  receive?: (item: Carried, index: number) => void
+  /** The source lets go of an item another zone has received. */
+  release?: (id: string) => void
+  renderOverlay?: Overlay
 }
 type ZoneProps = Omit<ZoneReg, 'els' | 'container'>
 
@@ -58,7 +75,10 @@ type Frozen = {
   rects: Box[]
   ref: HTMLElement | null
   origin: Point
+  /** The first item's corner, or the origin when the zone is empty: where an axis zone's run begins. */
+  start: Point
   pitch: number
+  gap: number
   tail: Point
 }
 
@@ -74,14 +94,20 @@ type DragScratch = {
   lastY: number
   active: boolean
   activeIdx: number
-  axis?: 'x' | 'y'
+  axis?: Axis
   zoom: number
   compX: number
   compY: number
   pickZone: string
   pick: number
-  // What resolveIndex allows, or null where it refuses the pick — a refused landing previews and lands back in the lifted slot.
+  // What resolveIndex allows, or null where the pick is refused or there is none — either previews and lands back in the lifted slot.
   mapped: number | null
+  family: string | null
+  item: Carried | null
+  /** Past the breakout: the axis lock is off and the family's zones are in play. */
+  loose: boolean
+  home: Rect | null
+  overlay: Overlay | null
   kdown: ((e: KeyboardEvent) => void) | null
   liftKey: KeyboardEvent | null
 }
@@ -102,19 +128,42 @@ const blankDrag = (): DragScratch => ({
   pickZone: '',
   pick: -1,
   mapped: null,
+  family: null,
+  item: null,
+  loose: false,
+  home: null,
+  overlay: null,
   kdown: null,
   liftKey: null,
 })
 
-// The gesture's travel, with the zone's axis lock applied.
+// The gesture's travel; the zone's axis lock holds until the item is loose.
 const travel = (d: DragScratch, x: number, y: number): Point => ({
-  x: d.axis === 'y' ? 0 : x - d.startX,
-  y: d.axis === 'x' ? 0 : y - d.startY,
+  x: d.axis === 'y' && !d.loose ? 0 : x - d.startX,
+  y: d.axis === 'x' && !d.loose ? 0 : y - d.startY,
 })
 
-// Where the gesture would land right now.
+// Where the gesture would land right now: a refused or absent pick lands back in the lifted slot.
 const landingOf = (d: DragScratch): [string, number] =>
   d.mapped === null ? [d.zoneId, d.activeIdx] : [d.pickZone, d.mapped]
+
+const within = (r: Rect, x: number, y: number, pad: number): boolean =>
+  x >= r.left - pad &&
+  x <= r.left + r.width + pad &&
+  y >= r.top - pad &&
+  y <= r.top + r.height + pad
+
+const along = (b: Box, axis: Axis): number => (axis === 'x' ? b.left : b.top)
+const extent = (s: Size, axis: Axis): number => (axis === 'x' ? s.width : s.height)
+
+function unionOf(rects: Box[]): Rect | null {
+  if (rects.length === 0) return null
+  const left = Math.min(...rects.map((b) => b.left))
+  const top = Math.min(...rects.map((b) => b.top))
+  const right = Math.max(...rects.map((b) => b.left + b.width))
+  const bottom = Math.max(...rects.map((b) => b.top + b.height))
+  return { left, top, width: right - left, height: bottom - top }
+}
 
 // ── Zone registry ───────────────────────────────────────────────────────────
 
@@ -123,7 +172,7 @@ type ZoneMap = Map<string, ZoneReg>
 function ensureZone(zones: ZoneMap, zoneId: string): ZoneReg {
   let z = zones.get(zoneId)
   if (!z) {
-    z = { ids: [], els: new Map(), container: null, disabled: false }
+    z = { ids: [], els: new Map(), container: null, disabled: false, fixed: false }
     zones.set(zoneId, z)
   }
   return z
@@ -154,15 +203,22 @@ function freezeZone(z: ZoneReg, activeHeight: number, width: number): Frozen {
   const ref = z.container ?? (ids.length ? (z.els.get(ids[0])?.parentElement ?? null) : null)
   const r = ref?.getBoundingClientRect()
   const origin = { x: r?.left ?? 0, y: r?.top ?? 0 }
+  const start = rects[0] ? { x: rects[0].left, y: rects[0].top } : origin
   const pitch = pitchOf(rects, activeHeight)
-  return {
-    ids,
-    rects,
-    ref,
-    origin,
-    pitch,
-    tail: rects.length ? cellAt(rects, rects.length, pitch, width) : origin,
-  }
+  const axis = z.axis
+  const gap =
+    axis && rects.length > 1
+      ? along(rects[1], axis) - along(rects[0], axis) - extent(rects[0], axis)
+      : 0
+  const last = rects[rects.length - 1]
+  const tail = !last
+    ? origin
+    : !axis
+      ? cellAt(rects, rects.length, pitch, width)
+      : axis === 'x'
+        ? { x: last.left + last.width + gap, y: start.y }
+        : { x: start.x, y: last.top + last.height + gap }
+  return { ids, rects, ref, origin, start, pitch, gap, tail }
 }
 
 function shiftFrozen(f: Frozen, dx: number, dy: number): void {
@@ -174,12 +230,13 @@ function shiftFrozen(f: Frozen, dx: number, dy: number): void {
     cy: b.cy + dy,
   }))
   f.origin = { x: f.origin.x + dx, y: f.origin.y + dy }
+  f.start = { x: f.start.x + dx, y: f.start.y + dy }
   f.tail = { x: f.tail.x + dx, y: f.tail.y + dy }
 }
 
 // ── Grid model ──────────────────────────────────────────────────────────────
 
-// Walked by grid columns past the last card; a linear extrapolation would wrap a half-full row.
+// A grid zone's cells past the last card are walked by its columns; a linear extrapolation would wrap a half-full row.
 function cellAt(rects: Box[], slot: number, pitch: number, containerWidth: number): Point {
   if (slot < rects.length) return { x: rects[slot].left, y: rects[slot].top }
   // Auto-fill keeps empty tracks, so the column count comes from width, not from the cards present.
@@ -205,7 +262,15 @@ function cellAt(rects: Box[], slot: number, pitch: number, containerWidth: numbe
 
 // ── Placement ───────────────────────────────────────────────────────────────
 
-/** The cell an item lands in: the zone's order minus the active item, which is spliced back in at `over` when this is the over-zone. `-1` stands for an active item belonging to another zone. */
+/** The post-move order: the zone's items minus the active one, which is spliced back in at `over`. `-1` stands for an active item belonging to another zone. */
+function orderOf(count: number, activeIdx: number, over: number): number[] {
+  const order: number[] = []
+  for (let i = 0; i < count; i++) if (i !== activeIdx) order.push(i)
+  if (over >= 0) order.splice(clamp(over, 0, order.length), 0, activeIdx)
+  return order
+}
+
+/** The grid cell an item lands in. */
 export function placeCell(
   rects: Box[],
   activeIdx: number,
@@ -214,10 +279,27 @@ export function placeCell(
   pitch: number,
   width: number,
 ): Point {
-  const order: number[] = []
-  for (let i = 0; i < rects.length; i++) if (i !== activeIdx) order.push(i)
-  if (over >= 0) order.splice(clamp(over, 0, order.length), 0, activeIdx)
+  const order = orderOf(rects.length, activeIdx, over)
   return cellAt(rects, Math.max(0, order.indexOf(index)), pitch, width)
+}
+
+/** An axis zone's cells run by offset: each item sits after the sizes of those before it, so unequal widths part by exactly the size of the item coming in. */
+export function placeAxis(
+  rects: Box[],
+  axis: Axis,
+  gap: number,
+  start: Point,
+  activeIdx: number,
+  over: number,
+  index: number,
+  activeSize: number,
+): Point {
+  let at = 0
+  for (const i of orderOf(rects.length, activeIdx, over)) {
+    if (i === index) break
+    at += (i === activeIdx ? activeSize : extent(rects[i], axis)) + gap
+  }
+  return axis === 'x' ? { x: start.x + at, y: start.y } : { x: start.x, y: start.y + at }
 }
 
 const STILL = 'translate3d(0,0,0)'
@@ -230,50 +312,77 @@ const placeTransform = (target: Point, base: Box, zoom: number): string =>
 // ── Context ─────────────────────────────────────────────────────────────────
 
 type ItemState = { transform: string | undefined; hidden: boolean; animate: boolean }
-type EngineValue = {
-  activeId: string | null
-  dropState: DropState
-  /** The lifted item's height in a container's own px while a drag is in flight: the floor an empty zone grows to hold it. */
-  floor: number | null
+type Active = { id: string; zoneId: string }
+
+/** `home` is the escort's own surface: the item is loose once the pointer leaves it. */
+export type EscortSpec = { id: string; family: string; item: Carried; rect: Box; home: Box }
+/** A lift for a surface that already owns the pointer: it feeds the engine its point and takes the landing back. */
+export type Escort = {
+  lift: (spec: EscortSpec) => boolean
+  move: (x: number, y: number) => void
+  drop: () => boolean
+  abort: () => void
+  /** Past its own surface's edge — the caller's cue to stop scrolling that surface. */
+  loose: () => boolean
+}
+
+// Registration and lifts never change; the landing does, and only its readers re-render on it.
+type EngineApi = {
   setZone: (zoneId: string, props: ZoneProps) => void
   releaseZone: (zoneId: string) => void
   registerContainer: (zoneId: string, el: HTMLElement | null) => void
   registerItem: (zoneId: string, id: string, el: HTMLElement | null) => void
   begin: (zoneId: string, id: string, e: ReactPointerEvent) => void
   liftKeyboard: (zoneId: string, id: string, liftKey: KeyboardEvent) => void
-  itemState: (zoneId: string, id: string) => ItemState
-  dropBox: () => Box | null
+  escort: Escort
 }
-const EngineCtx = createContext<EngineValue | null>(null)
+type EngineState = {
+  active: Active | null
+  dropState: DropState
+  /** The loose item's family — a target that exists only for one mounts on this. */
+  family: string | null
+  /** The lifted item's height in a container's own px while a drag is in flight: the floor an empty zone grows to hold it. */
+  floor: number | null
+  itemState: (zoneId: string, id: string) => ItemState
+  dropBox: (foreignOnly: boolean, inZone?: string) => Box | null
+}
+const ApiCtx = createContext<EngineApi | null>(null)
+const StateCtx = createContext<EngineState | null>(null)
 const ZoneIdCtx = createContext<{ zoneId: string; disabled: boolean } | null>(null)
 
 type DragGroupProps = {
-  onCommit?: (activeId: string, toZone: string, toIndex: number) => void
-  crossZone?: boolean
+  onCommit?: (activeId: string, toZone: string, toIndex: number, fromZone: string) => void
+  /** What a loose item does over no zone at all: keep its last zone, or return to its lifted slot. */
+  stray?: 'stick' | 'return'
+  /** The source zone keeps the lifted item's slot open while the landing is elsewhere. */
+  holdGap?: boolean
   /** Null refuses the landing. Must be idempotent: an index it returned maps to itself. */
   resolveIndex?: (zoneId: string, index: number, activeId: string) => number | null
-  /** A tile embed's body clips and places by transform, so only a body portal escapes it. */
-  renderOverlay?: (activeId: string, rect: Box) => ReactNode
+  /** A clipping body places by transform, so only a body portal escapes it; a zone's own overlay wins over this one. */
+  renderOverlay?: Overlay
   children: ReactNode
 }
 
 export function DragGroup({
   onCommit,
-  crossZone = false,
+  stray = 'stick',
+  holdGap = false,
   resolveIndex,
   renderOverlay,
   children,
 }: DragGroupProps): React.JSX.Element {
   const onCommitRef = useRef(onCommit)
   onCommitRef.current = onCommit
-  const crossZoneRef = useRef(crossZone)
-  crossZoneRef.current = crossZone
+  const strayRef = useRef(stray)
+  strayRef.current = stray
+  const holdGapRef = useRef(holdGap)
+  holdGapRef.current = holdGap
   const resolveRef = useRef(resolveIndex)
   resolveRef.current = resolveIndex
   const resolveAt = (zoneId: string, index: number): number | null =>
     resolveRef.current ? resolveRef.current(zoneId, index, drag.current.id) : index
-  const overlayOn = useRef(renderOverlay != null)
-  overlayOn.current = renderOverlay != null
+  const overlayRef = useRef(renderOverlay)
+  overlayRef.current = renderOverlay
 
   const zones = useRef<ZoneMap>(new Map())
   const frozen = useRef(new Map<string, Frozen>())
@@ -284,11 +393,12 @@ export function DragGroup({
   const timer = useRef<number | null>(null)
   const stopScroll = useRef<(() => void) | null>(null)
 
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const [active, setActive] = useState<Active | null>(null)
   const [activeRect, setActiveRect] = useState<Box | null>(null)
   const [landing, setLanding] = useState<[string, number] | null>(null)
   const [dropState, setDropState] = useState<DropState>('idle')
   const [keyboard, setKeyboard] = useState(false)
+  const [loose, setLoose] = useState(false)
   const beginGesture = usePointerGesture()
 
   const setZone = (zoneId: string, props: ZoneProps): void => {
@@ -297,8 +407,13 @@ export function DragGroup({
   const releaseZone = (zoneId: string): void => {
     zones.current.delete(zoneId)
   }
+  // A container that mounts because a drag is in flight measures at once, and the drag's own remeasure runs so an escorted list retakes the rows it shifted.
   const registerContainer = (zoneId: string, el: HTMLElement | null): void => {
     ensureZone(zones.current, zoneId).container = el
+    if (el && drag.current.active) {
+      syncBounds()
+      nudgeDragRemeasure()
+    }
   }
   const registerItem = (zoneId: string, id: string, el: HTMLElement | null): void => {
     const z = ensureZone(zones.current, zoneId)
@@ -335,21 +450,72 @@ export function DragGroup({
       if (zid === d.zoneId) {
         d.compX -= shx
         d.compY -= shy
+        if (d.home) d.home = { ...d.home, left: d.home.left + shx, top: d.home.top + shy }
       }
     }
     syncBounds()
   }
-  const zoneAt = (x: number, y: number): string | null => {
-    for (const [zid, b] of bounds.current)
-      if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) return zid
-    return null
+  // The topmost hit wins: a zone registered later (a floating window's strip) sits over one registered earlier.
+  const zoneAt = (x: number, y: number, admit: (zid: string) => boolean): string | null => {
+    let hit: string | null = null
+    for (const [zid, b] of bounds.current) if (admit(zid) && within(b, x, y, 0)) hit = zid
+    return hit
+  }
+  // The source's own edges, read live where it owns a container.
+  const homeOf = (d: DragScratch): Rect | null => bounds.current.get(d.zoneId) ?? d.home
+  // An axis row is left by a tug across it — the breakout on the cross axis alone, so overshooting its ends still lands at them; a free zone is left at its edge.
+  const atHome = (d: DragScratch, x: number, y: number): boolean => {
+    const home = homeOf(d)
+    if (!home) return false
+    if (d.axis === 'x') return y >= home.top - BREAKOUT && y <= home.top + home.height + BREAKOUT
+    if (d.axis === 'y') return x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
+    return within(home, x, y, 0)
+  }
+  // The zone in play for a loose item: a foreign pick holds through the hysteresis band on its edge, the family's targets are hit-tested, the source counts within its own edges (plus the breakout on an axis-locked row), and past all of those the group's stray rule decides.
+  const zoneFor = (d: DragScratch, x: number, y: number): string | null => {
+    if (!d.loose) return d.zoneId
+    if (d.pickZone !== d.zoneId) {
+      const b = bounds.current.get(d.pickZone)
+      if (b && within(b, x, y, HYSTERESIS)) return d.pickZone
+    }
+    const hit = zoneAt(
+      x,
+      y,
+      (zid) => zid !== d.zoneId && zones.current.get(zid)?.family === d.family,
+    )
+    if (hit) return hit
+    // An escort has no zone of its own to come home to.
+    if (atHome(d, x, y)) return d.zoneId || null
+    return strayRef.current === 'stick' ? d.pickZone : null
+  }
+  // A foreign item takes the shape of the zone it enters: its last item's, or the container's cross size when the zone is empty.
+  const foreignSize = (zid: string): Size => {
+    const f = frozen.current.get(zid)
+    const last = f?.rects[f.rects.length - 1]
+    if (last) return { width: last.width, height: last.height }
+    const b = bounds.current.get(zid)
+    const r = drag.current.rect
+    return {
+      width: Math.min(r?.width ?? 0, b?.width ?? Infinity),
+      height: b?.height ?? r?.height ?? 0,
+    }
+  }
+  const sizeIn = (zid: string): Size => {
+    const d = drag.current
+    return zid === d.zoneId && d.rect ? d.rect : foreignSize(zid)
+  }
+  const cellOf = (zid: string, f: Frozen, a: number, over: number, index: number): Point => {
+    const axis = zones.current.get(zid)?.axis
+    return axis
+      ? placeAxis(f.rects, axis, f.gap, f.start, a, over, index, extent(sizeIn(zid), axis))
+      : placeCell(f.rects, a, over, index, f.pitch, widthOf(zid))
   }
   const targetCell = (zoneId: string, idx: number): Point | null => {
     const f = frozen.current.get(zoneId)
     if (!f) return null
     if (f.rects.length === 0) return f.tail
     const a = zoneId === drag.current.zoneId ? drag.current.activeIdx : -1
-    return placeCell(f.rects, a, idx, a, f.pitch, widthOf(zoneId))
+    return cellOf(zoneId, f, a, idx, a)
   }
 
   // ── Lift / move / drop ────────────────────────────────────────────────────
@@ -365,6 +531,7 @@ export function DragGroup({
     const rect = f.rects[idx]
     if (!rect) return null
     frozen.current.set(zoneId, f)
+    const item = z.family === undefined ? null : z.carry ? z.carry(id) : id
     const d = drag.current
     d.id = id
     d.zoneId = zoneId
@@ -378,7 +545,12 @@ export function DragGroup({
     d.pickZone = zoneId
     d.pick = idx
     d.mapped = idx
-    setActiveId(id)
+    d.family = item === null ? null : (z.family ?? null)
+    d.item = item
+    d.loose = false
+    d.home = item === null ? null : (bounds.current.get(zoneId) ?? unionOf(f.rects))
+    d.overlay = z.renderOverlay ?? overlayRef.current ?? null
+    setActive({ id, zoneId })
     setActiveRect(d.rect)
     setLanding([zoneId, idx])
     setDropState('dragging')
@@ -388,28 +560,49 @@ export function DragGroup({
   const track = (cx: number, cy: number): void => {
     const d = drag.current
     if (!d.active || !d.rect) return
+    if (d.family !== null && !d.loose && !atHome(d, cx, cy)) {
+      d.loose = true
+      setLoose(true)
+      // A surface must not scroll itself under an item that has left it; a sticking group (Cards) keeps scrolling for the band below the fold.
+      if (d.axis || strayRef.current === 'return') {
+        stopScroll.current?.()
+        stopScroll.current = null
+      }
+    }
     const { x: dx, y: dy } = travel(d, cx, cy)
     // Written straight to the element: a delta in context would re-render every item per pointermove. useDragItem omits `transform` so React never clobbers this write.
     if (overlayEl.current) overlayEl.current.style.transform = translate(dx, dy)
-    else if (d.el && !overlayOn.current)
+    else if (d.el && !d.overlay)
       d.el.style.transform = translate((dx + d.compX) / d.zoom, (dy + d.compY) / d.zoom)
 
     const from = d.pickZone
-    const zid = crossZoneRef.current ? (zoneAt(cx, cy) ?? from) : d.zoneId
+    const zid = d.family === null ? d.zoneId : zoneFor(d, cx, cy)
+    if (zid === null) {
+      if (d.mapped !== null || from !== d.zoneId) {
+        d.pickZone = d.zoneId
+        d.pick = d.activeIdx
+        d.mapped = null
+        setLanding(landingOf(d))
+      }
+      return
+    }
     const f = freeze(zid)
     if (!f) return
+    const z = zones.current.get(zid)
     const projX = d.rect.cx + dx
     const projY = d.rect.cy + dy
-    const half = { x: d.rect.width / 2, y: d.rect.height / 2 }
-    // A foreign zone's candidates are its rects plus one trailing cell, so a card can land past the last one.
-    const count = f.rects.length + (zid === d.zoneId ? 0 : 1)
+    const own = zid === d.zoneId
+    const size = sizeIn(zid)
+    const half = { x: size.width / 2, y: size.height / 2 }
+    // A foreign zone's candidates are its rects plus one trailing cell, so an item can land past the last one.
+    const count = f.rects.length + (own ? 0 : 1)
     const last = f.rects[f.rects.length - 1]
     const distTo = (i: number): number => {
       const b = f.rects[i]
       if (b) return Math.hypot(b.cx - projX, b.cy - projY)
-      // The tail wraps to a new row when the last row is full, so past the last card's edge on its own row counts as after it too.
       const toTail = Math.hypot(f.tail.x + half.x - projX, f.tail.y + half.y - projY)
-      return last
+      // A grid's tail wraps to a new row when the last row is full, so past the last card's edge on its own row counts as after it too.
+      return last && !z?.axis
         ? Math.min(toTail, Math.hypot(last.left + last.width + half.x - projX, last.cy - projY))
         : toTail
     }
@@ -424,7 +617,7 @@ export function DragGroup({
     }
     // A new candidate has to beat the standing one; on a zone switch the argmin wins outright.
     if (zid === from && pick !== d.pick && distTo(d.pick) - nearest <= HYSTERESIS) pick = d.pick
-    const mapped = resolveAt(zid, pick)
+    const mapped = own && z?.fixed ? d.activeIdx : resolveAt(zid, pick)
     d.pickZone = zid
     d.pick = pick
     if (mapped !== d.mapped || zid !== from) {
@@ -447,25 +640,33 @@ export function DragGroup({
     drag.current.active = false
     frozen.current.clear()
     bounds.current.clear()
-    setActiveId(null)
+    setActive(null)
     setActiveRect(null)
     setLanding(null)
     setDropState('idle')
     setKeyboard(false)
+    setLoose(false)
   }
 
-  /** The one landing: settling back into the lifted slot commits nothing. */
+  /** The one landing: settling back into the lifted slot commits nothing. Everything the commit needs is taken now — a zone can unmount, and a new lift can replace the scratch, before the glide ends. */
   const land = (zoneId: string, idx: number, focus: HTMLElement | null): void => {
     const d = drag.current
-    const label = labelOf(d.zoneId, d.id)
-    const moved = zoneId !== d.zoneId || idx !== d.activeIdx
-    const onReorder = zones.current.get(zoneId)?.onReorder
+    const { id, zoneId: from, item } = d
+    const label = labelOf(from, id)
+    const moved = zoneId !== from || idx !== d.activeIdx
+    const target = zones.current.get(zoneId)
+    const onReorder = target?.onReorder
+    const receive = target?.receive
+    const release = zones.current.get(from)?.release
     const overId = frozen.current.get(zoneId)?.ids[idx]
     settle(zoneId, idx, () => {
       if (!moved) announce(`${label} returned to its original position.`)
       else {
-        if (zoneId === d.zoneId && overId) onReorder?.(d.id, overId)
-        onCommitRef.current?.(d.id, zoneId, idx)
+        if (zoneId !== from) {
+          receive?.(item, idx)
+          release?.(id)
+        } else if (overId) onReorder?.(id, overId)
+        onCommitRef.current?.(id, zoneId, idx, from)
         announce(`Dropped ${label} at position ${idx + 1}.`)
       }
       if (focus) requestAnimationFrame(() => focus.focus())
@@ -537,9 +738,60 @@ export function DragGroup({
         settle(d.zoneId, d.activeIdx)
       },
       onWindowScroll: onScrolled,
-      onDisclose: crossZoneRef.current ? onScrolled : undefined,
+      onDisclose: z.family === undefined ? undefined : onScrolled,
       teardown: detach,
     })
+  }
+
+  // The escort's item has nothing of its own on screen: no element to move, no glide to wait on, so a landing commits at once.
+  const escort: Escort = {
+    lift: (spec) => {
+      if (drag.current.active) return false
+      pending.current?.()
+      syncBounds()
+      frozen.current.clear()
+      drag.current = {
+        ...blankDrag(),
+        id: spec.id,
+        active: true,
+        rect: { ...spec.rect },
+        startX: spec.rect.cx,
+        startY: spec.rect.cy,
+        lastX: spec.rect.cx,
+        lastY: spec.rect.cy,
+        family: spec.family,
+        item: spec.item,
+        home: spec.home,
+      }
+      setActive({ id: spec.id, zoneId: '' })
+      setActiveRect(drag.current.rect)
+      setLanding(null)
+      setDropState('dragging')
+      return true
+    },
+    move: (x, y) => {
+      const d = drag.current
+      if (!d.active) return
+      d.lastX = x
+      d.lastY = y
+      track(x, y)
+    },
+    drop: () => {
+      const d = drag.current
+      if (!d.active) return false
+      const { id, item, mapped } = d
+      const [zone, idx] = landingOf(d)
+      const receive = zones.current.get(zone)?.receive
+      reset()
+      if (mapped === null) return false
+      receive?.(item, idx)
+      onCommitRef.current?.(id, zone, idx, '')
+      return true
+    },
+    abort: () => {
+      if (drag.current.active) reset()
+    },
+    loose: () => drag.current.active && drag.current.loose,
   }
 
   // ── Keyboard ──────────────────────────────────────────────────────────────
@@ -645,7 +897,7 @@ export function DragGroup({
   }, [])
 
   const overlay =
-    renderOverlay && activeId && activeRect && dropState !== 'idle' && !keyboard
+    active && activeRect && dropState !== 'idle' && !keyboard && drag.current.overlay
       ? createPortal(
           <div
             ref={holdOverlay}
@@ -656,10 +908,10 @@ export function DragGroup({
               width: activeRect.width,
               height: activeRect.height,
               pointerEvents: 'none',
-              zIndex: stack.top.floating,
+              zIndex: stack.top.dragOverlay,
             }}
           >
-            {renderOverlay(activeId, activeRect)}
+            {drag.current.overlay(active.id, activeRect)}
           </div>,
           document.body,
         )
@@ -675,9 +927,9 @@ export function DragGroup({
       hidden: false,
       animate: transitioning,
     })
-    if (!activeId) return atRest(false)
-    if (id === activeId) {
-      if (overlayOn.current && !keyboard) return { transform: STILL, hidden: true, animate: false }
+    if (!active) return atRest(false)
+    if (id === active.id && zoneId === active.zoneId) {
+      if (d.overlay && !keyboard) return { transform: STILL, hidden: true, animate: false }
       // Omitted during a live pointer drag so a re-render can't clobber track()'s imperative write.
       if (dropState === 'dragging' && !keyboard)
         return { transform: undefined, hidden: false, animate: false }
@@ -689,14 +941,10 @@ export function DragGroup({
     const f = frozen.current.get(zoneId)
     const index = f ? f.ids.indexOf(id) : -1
     if (!f || index === -1) return atRest(animate)
-    const target = placeCell(
-      f.rects,
-      zoneId === d.zoneId ? d.activeIdx : -1,
-      landing && landing[0] === zoneId ? landing[1] : -1,
-      index,
-      f.pitch,
-      widthOf(zoneId),
-    )
+    const own = zoneId === d.zoneId
+    const over =
+      landing && landing[0] === zoneId ? landing[1] : own && holdGapRef.current ? d.activeIdx : -1
+    const target = cellOf(zoneId, f, own ? d.activeIdx : -1, over, index)
     return { transform: placeTransform(target, f.rects[index], d.zoom), hidden: false, animate }
   }
 
@@ -707,12 +955,17 @@ export function DragGroup({
     setLanding((l) => l && [...l])
   }, [dropState])
 
-  const dropBox = (): Box | null => {
+  // The slot takes the shape of what will sit there: a grid cell's, an axis zone's own item shape for a foreign arrival, the lifted item's for its own row.
+  const dropBox = (foreignOnly: boolean, inZone?: string): Box | null => {
     if (!activeRect || !landing || landing[1] < 0) return null
-    const target = targetCell(...landing)
+    const [zid, idx] = landing
+    const own = zid === drag.current.zoneId
+    if ((foreignOnly && own) || (inZone !== undefined && inZone !== zid)) return null
+    const target = targetCell(zid, idx)
     if (!target) return null
-    // The slot takes the size of the cell it lands in; past the last cell it has only the lifted item's.
-    const { width, height } = frozen.current.get(landing[0])?.rects[landing[1]] ?? activeRect
+    const { width, height } = zones.current.get(zid)?.axis
+      ? sizeIn(zid)
+      : (frozen.current.get(zid)?.rects[idx] ?? activeRect)
     return {
       left: target.x,
       top: target.y,
@@ -723,73 +976,99 @@ export function DragGroup({
     }
   }
 
-  const value = useMemo<EngineValue>(
+  const api = useMemo<EngineApi>(
+    () => ({ setZone, releaseZone, registerContainer, registerItem, begin, liftKeyboard, escort }),
+    [],
+  )
+  const state = useMemo<EngineState>(
     () => ({
-      activeId,
+      active,
       dropState,
+      family: loose ? drag.current.family : null,
       floor: activeRect && dropState !== 'idle' ? activeRect.height / drag.current.zoom : null,
-      setZone,
-      releaseZone,
-      registerContainer,
-      registerItem,
-      begin,
-      liftKeyboard,
       itemState,
       dropBox,
     }),
-    [activeId, activeRect, landing, dropState, keyboard],
+    [active, activeRect, landing, dropState, keyboard, loose],
   )
 
   return (
-    <EngineCtx.Provider value={value}>
-      {children}
-      {overlay}
-    </EngineCtx.Provider>
+    <ApiCtx.Provider value={api}>
+      <StateCtx.Provider value={state}>
+        {children}
+        {overlay}
+      </StateCtx.Provider>
+    </ApiCtx.Provider>
   )
 }
 
 type SortableZoneProps = {
-  /** An addressable zone owns an element, so an empty band is still a drop target. */
+  /** An addressable zone owns an element, so an empty band is still a drop target and a family's target. */
   id?: string
   items: string[]
   onReorder?: (activeId: string, overId: string) => void
   disabled?: boolean
-  axis?: 'x' | 'y'
+  axis?: Axis
   getItemLabel?: (id: string) => string
+  family?: string
+  fixed?: boolean
+  carry?: (id: string) => Carried | null
+  receive?: (item: Carried, index: number) => void
+  release?: (id: string) => void
+  renderOverlay?: Overlay
   className?: string
   children: ReactNode
 }
 
 export function SortableZone(props: SortableZoneProps): React.JSX.Element {
-  const engine = useContext(EngineCtx)
-  // A standalone surface carries its own provider, so a single-zone host mounts a zone and nothing else.
-  if (!engine)
+  const api = useContext(ApiCtx)
+  // A surface outside any group carries its own, so a single-zone host mounts a zone and nothing else.
+  if (!api)
     return (
       <DragGroup>
         <SortableZone {...props} />
       </DragGroup>
     )
-  return <ZoneBody engine={engine} {...props} />
+  return <ZoneBody api={api} {...props} />
 }
 
 function ZoneBody({
-  engine,
+  api,
   id,
   items,
   onReorder,
   disabled = false,
   axis,
   getItemLabel,
+  family,
+  fixed = false,
+  carry,
+  receive,
+  release,
+  renderOverlay,
   className,
   children,
-}: SortableZoneProps & { engine: EngineValue }): React.JSX.Element {
+}: SortableZoneProps & { api: EngineApi }): React.JSX.Element {
+  const floor = useContext(StateCtx)?.floor ?? null
   const auto = useId()
   const zoneId = id ?? auto
   // Registered in an effect, after the item refs land: a render-time write would be undone by the outgoing zone's cleanup when one id remounts inside a single commit.
   useEffect(() => {
-    engine.setZone(zoneId, { ids: items, onReorder, disabled, axis, getItemLabel })
+    api.setZone(zoneId, {
+      ids: items,
+      onReorder,
+      disabled,
+      axis,
+      getItemLabel,
+      family,
+      fixed,
+      carry,
+      receive,
+      release,
+      renderOverlay,
+    })
   })
-  useEffect(() => () => engine.releaseZone(zoneId), [zoneId])
+  useEffect(() => () => api.releaseZone(zoneId), [zoneId])
   const zone = useMemo(() => ({ zoneId, disabled }), [zoneId, disabled])
   return (
     <ZoneIdCtx.Provider value={zone}>
@@ -797,13 +1076,9 @@ function ZoneBody({
         children
       ) : (
         <div
-          ref={(el) => engine.registerContainer(zoneId, el)}
+          ref={(el) => api.registerContainer(zoneId, el)}
           className={className}
-          style={
-            engine.floor === null
-              ? undefined
-              : ({ '--drag-floor': px(engine.floor) } as CSSProperties)
-          }
+          style={floor === null ? undefined : ({ '--drag-floor': px(floor) } as CSSProperties)}
         >
           {children}
         </div>
@@ -812,20 +1087,52 @@ function ZoneBody({
   )
 }
 
-export function useDropSlot(): Box | null {
-  const engine = useContext(EngineCtx)
-  return engine && engine.dropState === 'dragging' ? engine.dropBox() : null
+/** The box the lifted item would land in. Inside a zone, only that zone's landings; outside one, any zone's. */
+export function useDropSlot(foreignOnly = false): Box | null {
+  const s = useContext(StateCtx)
+  const zone = useContext(ZoneIdCtx)
+  return s && s.dropState === 'dragging' ? s.dropBox(foreignOnly, zone?.zoneId) : null
+}
+
+/** The landing slot painted while an item is in flight; `foreignOnly` leaves a zone's own reorder unmarked. */
+export function DropSlot({ foreignOnly }: { foreignOnly?: boolean }): React.JSX.Element | null {
+  const slot = useDropSlot(foreignOnly)
+  if (!slot) return null
+  return createPortal(
+    <div
+      className="drop-slot"
+      style={{
+        position: 'fixed',
+        left: slot.left,
+        top: slot.top,
+        width: slot.width,
+        height: slot.height,
+        zIndex: stack.top.dragSlot,
+      }}
+    />,
+    document.body,
+  )
+}
+
+/** The family of the loose item in flight, for a target that only exists while one is. */
+export function useDragFamily(): string | null {
+  return useContext(StateCtx)?.family ?? null
+}
+
+export function useEscort(): Escort | null {
+  return useContext(ApiCtx)?.escort ?? null
 }
 
 export function useDragItem(id: string): DragItem {
-  const engine = useContext(EngineCtx)
+  const api = useContext(ApiCtx)
+  const state = useContext(StateCtx)
   const zone = useContext(ZoneIdCtx)
-  if (!engine || zone === null) throw new Error('useDragItem must be used inside a <SortableZone>')
+  if (!api || !state || !zone) throw new Error('useDragItem must be used inside a <SortableZone>')
   const { zoneId, disabled } = zone
-  const { transform, hidden, animate } = engine.itemState(zoneId, id)
-  const isDragging = engine.activeId === id
+  const { transform, hidden, animate } = state.itemState(zoneId, id)
+  const isDragging = state.active?.id === id && state.active.zoneId === zoneId
   return {
-    setNodeRef: (el) => engine.registerItem(zoneId, id, el),
+    setNodeRef: (el) => api.registerItem(zoneId, id, el),
     style: {
       transform,
       // At rest the inline transition clears entirely: an inline value (even 'none') replaces the element's whole stylesheet transition list and kills its own color/size motion. Safe because the zone contract forbids an item's stylesheet from transitioning `transform`.
@@ -834,19 +1141,19 @@ export function useDragItem(id: string): DragItem {
         : undefined,
       visibility: hidden ? 'hidden' : undefined,
       // The lifted item must not answer the disclose hit-test it is riding over.
-      pointerEvents: isDragging && !hidden && engine.dropState === 'dragging' ? 'none' : undefined,
+      pointerEvents: isDragging && !hidden && state.dropState === 'dragging' ? 'none' : undefined,
       zIndex: isDragging ? stack.local.lifted : undefined,
       position: 'relative',
       touchAction: 'none',
     },
     handle: {
-      onPointerDown: (e: ReactPointerEvent) => engine.begin(zoneId, id, e),
+      onPointerDown: (e: ReactPointerEvent) => api.begin(zoneId, id, e),
       onKeyDown: (e: ReactKeyboardEvent) => {
         // A focusable descendant's Space or Enter is its own, never a lift.
         if (e.target !== e.currentTarget) return
         if ((e.key === ' ' || e.key === 'Enter') && !isDragging && !disabled) {
           e.preventDefault()
-          engine.liftKeyboard(zoneId, id, e.nativeEvent)
+          api.liftKeyboard(zoneId, id, e.nativeEvent)
         }
       },
       role: 'button',

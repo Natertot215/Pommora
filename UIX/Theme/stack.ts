@@ -19,8 +19,9 @@ export const stack = {
   },
   /** Fixed and body-portalled surfaces, which all resolve in the root context. */
   top: {
-    dropPreview: 999,
     floating: 1000,
+    dragSlot: 1010,
+    dragOverlay: 1020,
     menu: 1100,
     caret: 2147483647,
   },
