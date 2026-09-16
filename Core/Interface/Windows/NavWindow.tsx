@@ -17,6 +17,7 @@ import { NavList } from '../../Navigation/NavList'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { consumeWindowMorph } from './windowMorph'
+import { useDragFamily } from '@pommora/uix/Interactions/drag'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../../Navigation/NavGallery'
@@ -120,6 +121,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
+  const forced = useDragFamily() === 'tabs'
   const hasTabs = pageWindow?.kind === 'nav' && pageWindow.tabs.length > 1
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
@@ -195,7 +197,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
     >
       <div className="navwindow-content">
-        <div className={cx('navwindow-tabs', hasTabs && 'has-tabs')}>
+        <div
+          className={cx(
+            'navwindow-tabs',
+            (hasTabs || forced) && 'has-tabs',
+            forced && !hasTabs && 'is-forced',
+          )}
+        >
           <WindowTabStrip index={resolveIndex} title={null} />
         </div>
         {pageTarget ? (
