@@ -90,12 +90,14 @@ export function sameTabs(a: Tab[], b: Tab[]): boolean {
   )
 }
 
+/** The tabs showing one entity; the scratch tab matches nothing. */
+const showing =
+  (target: SelectTarget | NavRef) =>
+  (t: Tab): boolean =>
+    t.target.kind !== 'newtab' && navKey(t.target) === navKey(target)
+
 export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget): boolean {
-  const key = navKey(target)
-  return (
-    tabs.some((t) => t.target.kind !== 'newtab' && navKey(t.target) === key) ||
-    pinned.some((p) => navKey(p) === key)
-  )
+  return tabs.some(showing(target)) || pinned.some((p) => navKey(p) === navKey(target))
 }
 
 export function contextTargetToSelect(t: {
@@ -148,9 +150,8 @@ export function openTab(
   opts: { newTab?: boolean },
   newId: string,
 ): OpenResult {
-  const key = navKey(target)
   const all = [...pinned, ...tabs]
-  const existing = all.find((t) => t.target.kind !== 'newtab' && navKey(t.target) === key)
+  const existing = all.find(showing(target))
   if (existing) return { tabs, activeTabId: existing.id }
 
   const active = all.find((t) => t.id === activeTabId)
@@ -176,6 +177,28 @@ export function openNewTab(tabs: Tab[], newId: string): OpenResult {
   const existing = tabs.find((t) => t.target.kind === 'newtab')
   if (existing) return { tabs, activeTabId: existing.id }
   return { tabs: [...tabs, newTabTab(newId)], activeTabId: newId }
+}
+
+/** A drop lands a page at `index` among the unpinned tabs: an open tab moves there, a pinned one only comes forward, a new one is spliced in. `index` is an insertion point counted with the moving tab still in place. */
+export function openTabAt(
+  tabs: Tab[],
+  pinned: Tab[],
+  target: SelectTarget,
+  index: number,
+  newId: string,
+): OpenResult {
+  const pin = pinned.find(showing(target))
+  if (pin) return { tabs, activeTabId: pin.id }
+  const from = tabs.findIndex(showing(target))
+  if (from !== -1) {
+    const to = clamp(index > from ? index - 1 : index, 0, tabs.length - 1)
+    return { tabs: from === to ? tabs : moveItem(tabs, from, to), activeTabId: tabs[from].id }
+  }
+  const at = clamp(index, 0, tabs.length)
+  return {
+    tabs: [...tabs.slice(0, at), tabFor(newId, target), ...tabs.slice(at)],
+    activeTabId: newId,
+  }
 }
 
 export function pushMru(mru: string[], id: string): string[] {

@@ -36,6 +36,7 @@ import {
   newTabTab,
   openNewTab as openNewTabModel,
   openTab as openTabModel,
+  openTabAt as openTabAtModel,
   pinTabId,
   pushMru,
   reconcileTabs,
@@ -88,6 +89,7 @@ export interface NavigationSlice {
   tabMru: string[]
   activateTab: (id: string) => void
   openNewTab: () => void
+  openTabAt: (target: SelectTarget, index: number) => void
   closeTab: (id: string) => void
   reorderTabs: (activeId: string, overId: string) => void
   pinTab: (id: string) => void
@@ -410,6 +412,12 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       })
       syncActiveDetail()
       persistTabs()
+    },
+    // A drop is a placement, not a navigation: no recent, no slide.
+    openTabAt: (target, index) => {
+      const s = get()
+      const res = openTabAtModel(s.tabs, s.pinnedTabs, target, index, makeTabId())
+      applyTabResult({ ...res, mru: pushMru(s.tabMru, res.activeTabId) })
     },
     closeTab: (id) => {
       const s = get()
