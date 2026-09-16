@@ -33,7 +33,7 @@
   padding-right: 16px;
 }
 @starting-style {
-  .tab {
+  .tab-strip:not(.is-still) > .tab {
     min-width: 0;
     max-width: 0;
     padding: 0;
@@ -56,6 +56,19 @@
 }
 .tab.is-dragging {
   opacity: var(--state-ghost);
+}
+
+/* A tab in flight: the overlay clone fills the lifted rect and reads as lifted. */
+.tab-overlay {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.tab-overlay > .tab {
+  flex: 1 1 auto;
+  max-width: none;
+  background: var(--state-hover);
 }
 
 .tab-seg {
