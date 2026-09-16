@@ -29,7 +29,6 @@ interface Entry {
   res: ResolvedNav | null
 }
 
-// Ghost-closing keeps the strip mounted so the last collapse plays before the title returns; a tabs drag keeps it so a loose tab has a row to land in.
 export function WindowTabStrip({
   index,
   title,

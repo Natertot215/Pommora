@@ -180,11 +180,11 @@ export function NavList({
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav): void => setMenu({ item: it })
   const pinRows = reorderable ? (pins ?? []) : []
-  const rows = reorderable ? [...pinRows, ...items] : items
+  const rows = [...pinRows, ...items]
   // Identity-stable so a parent re-render mid-drag can't false-dirty the drag's row snapshot.
   const dndRows = useMemo(
     () => [
-      ...(reorderable ? (pins ?? []).map((p) => ({ id: p.key, groupKey: 'pins' })) : []),
+      ...pinRows.map((p) => ({ id: p.key, groupKey: 'pins' })),
       ...items.map((r) => ({ id: r.key, groupKey: 'recents' })),
     ],
     [reorderable, pins, items],

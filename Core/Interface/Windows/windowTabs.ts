@@ -18,7 +18,6 @@ export interface WindowState {
 
 const targetPageId = (t: WindowTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
-/** `at` counts page tabs only, as the strip shows them; the map sentinel keeps its seat ahead of them. */
 export function openTabIn(
   win: WindowState,
   makeId: () => string,

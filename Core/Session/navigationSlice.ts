@@ -413,7 +413,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       syncActiveDetail()
       persistTabs()
     },
-    // A drop is a placement, not a navigation: no recent, no slide.
     openTabAt: (target, index) => {
       const s = get()
       const next = openTabAtModel(s.tabs, s.pinnedTabs, target, index, makeTabId())

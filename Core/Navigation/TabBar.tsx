@@ -62,7 +62,6 @@ export function TabBar(): React.JSX.Element | null {
   )
 
   const forced = useDragFamily() === 'tabs'
-  // Blank ONLY for the pure empty state (a lone NavView, no pins, no loose tab needing a row); otherwise the bar shows so the + stays reachable, even at a single real tab.
   if (
     !forced &&
     pinnedEntries.length === 0 &&
@@ -110,7 +109,6 @@ function TabBarBody({
     const tab = entryOf(id)?.tab
     return tab?.target.kind === 'page' ? tab.target : null
   }
-  // The commit that seats a received tab renders the strip still: the row already parted for it, so no grow-in.
   const placing = useRef(false)
   useLayoutEffect(() => {
     placing.current = false

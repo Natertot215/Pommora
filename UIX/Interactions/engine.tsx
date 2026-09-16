@@ -227,7 +227,6 @@ function shiftFrozen(f: Frozen, dx: number, dy: number): void {
 
 // ── Grid model ──────────────────────────────────────────────────────────────
 
-// A grid zone's cells past the last card are walked by its columns; a linear extrapolation would wrap a half-full row.
 function cellAt(rects: Box[], slot: number, pitch: number, containerWidth: number): Point {
   if (slot < rects.length) return { x: rects[slot].left, y: rects[slot].top }
   // Auto-fill keeps empty tracks, so the column count comes from width, not from the cards present.
@@ -253,7 +252,6 @@ function cellAt(rects: Box[], slot: number, pitch: number, containerWidth: numbe
 
 // ── Placement ───────────────────────────────────────────────────────────────
 
-/** The post-move order: the zone's items minus the active one, which is spliced back in at `over`. `-1` stands for an active item belonging to another zone. */
 function orderOf(count: number, activeIdx: number, over: number): number[] {
   const order: number[] = []
   for (let i = 0; i < count; i++) if (i !== activeIdx) order.push(i)
@@ -303,19 +301,16 @@ const placeTransform = (target: Point, base: Box, zoom: number): string =>
 type ItemState = { transform: string | undefined; hidden: boolean; animate: boolean }
 type Active = { id: string; zoneId: string }
 
-/** `home` is the escort's own surface: the item is loose once the pointer leaves it. */
+/** `home` is the escort's own surface; the item is loose once the pointer leaves it. */
 export type EscortSpec = { id: string; family: string; item: Carried; rect: Box; home: Box }
-/** A lift for a surface that already owns the pointer. */
 export type Escort = {
   lift: (spec: EscortSpec) => boolean
   move: (x: number, y: number) => void
   drop: () => boolean
   abort: () => void
-  /** Past its own surface's edge — the caller's cue to stop scrolling that surface. */
   loose: () => boolean
 }
 
-// Registration and lifts never change; the landing does, and only its readers re-render on it.
 type EngineApi = {
   setZone: (zoneId: string, props: ZoneProps) => void
   releaseZone: (zoneId: string) => void
@@ -329,7 +324,6 @@ type EngineState = {
   active: Active | null
   dropState: DropState
   family: string | null
-  /** The lifted item's height in a container's own px while a drag is in flight: the floor an empty zone grows to hold it. */
   floor: number | null
   itemState: (zoneId: string, id: string) => ItemState
   dropBox: (foreignOnly: boolean, inZone?: string) => Box | null
@@ -340,13 +334,12 @@ const ZoneIdCtx = createContext<{ zoneId: string; disabled: boolean } | null>(nu
 
 type DragGroupProps = {
   onCommit?: (activeId: string, toZone: string, toIndex: number, fromZone: string) => void
-  /** What a loose item does over no zone at all: keep its last zone, or return to its lifted slot. */
+  /** Over no zone, a loose item keeps its last zone or returns to its lifted slot. */
   stray?: 'stick' | 'return'
   /** The source zone keeps the lifted item's slot open while the landing is elsewhere. */
   holdGap?: boolean
   /** Null refuses the landing. Must be idempotent: an index it returned maps to itself. */
   resolveIndex?: (zoneId: string, index: number, activeId: string) => number | null
-  /** A clipping body places by transform, so only a body portal escapes it; a zone's own overlay wins over this one. */
   renderOverlay?: Overlay
   children: ReactNode
 }
@@ -442,15 +435,13 @@ export function DragGroup({
     }
     syncBounds()
   }
-  // The topmost hit wins: a zone registered later (a floating window's strip) sits over one registered earlier.
   const zoneAt = (x: number, y: number, admit: (zid: string) => boolean): string | null => {
     let hit: string | null = null
     for (const [zid, b] of bounds.current) if (admit(zid) && within(b, x, y, 0)) hit = zid
     return hit
   }
-  const homeOf = (d: DragScratch): Rect | null => bounds.current.get(d.zoneId) ?? d.home
   const atHome = (d: DragScratch, x: number, y: number): boolean => {
-    const home = homeOf(d)
+    const home = bounds.current.get(d.zoneId) ?? d.home
     if (!home) return false
     if (d.axis === 'x') return y >= home.top - BREAKOUT && y <= home.top + home.height + BREAKOUT
     if (d.axis === 'y') return x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
@@ -468,7 +459,6 @@ export function DragGroup({
       (zid) => zid !== d.zoneId && zones.current.get(zid)?.family === d.family,
     )
     if (hit) return hit
-    // An escort has no zone of its own to come home to.
     if (atHome(d, x, y)) return d.zoneId || null
     return strayRef.current === 'stick' ? d.pickZone : null
   }
@@ -546,7 +536,6 @@ export function DragGroup({
     if (d.family !== null && !d.loose && !atHome(d, cx, cy)) {
       d.loose = true
       setLoose(true)
-      // A surface must not scroll itself under an item that has left it; a sticking group (Cards) keeps scrolling for the band below the fold.
       if (d.axis || strayRef.current === 'return') {
         stopScroll.current?.()
         stopScroll.current = null
@@ -577,14 +566,12 @@ export function DragGroup({
     const own = zid === d.zoneId
     const size = sizeIn(zid)
     const half = { x: size.width / 2, y: size.height / 2 }
-    // A foreign zone's candidates are its rects plus one trailing cell, so an item can land past the last one.
     const count = f.rects.length + (own ? 0 : 1)
     const last = f.rects[f.rects.length - 1]
     const distTo = (i: number): number => {
       const b = f.rects[i]
       if (b) return Math.hypot(b.cx - projX, b.cy - projY)
       const toTail = Math.hypot(f.tail.x + half.x - projX, f.tail.y + half.y - projY)
-      // A grid's tail wraps to a new row when the last row is full, so past the last card's edge on its own row counts as after it too.
       return last && !z?.axis
         ? Math.min(toTail, Math.hypot(last.left + last.width + half.x - projX, last.cy - projY))
         : toTail
@@ -631,7 +618,6 @@ export function DragGroup({
     setLoose(false)
   }
 
-  /** The one landing: settling back into the lifted slot commits nothing. Everything the commit needs is taken now — a zone can unmount, and a new lift can replace the scratch, before the glide ends. */
   const land = (zoneId: string, idx: number, focus: HTMLElement | null): void => {
     const d = drag.current
     const { id, zoneId: from, item } = d
@@ -726,7 +712,6 @@ export function DragGroup({
     })
   }
 
-  // The escort's item has nothing of its own on screen, so a landing commits at once with no glide to wait on.
   const escort: Escort = {
     lift: (spec) => {
       if (drag.current.active) return false
@@ -992,14 +977,13 @@ type SortableZoneProps = {
   disabled?: boolean
   axis?: Axis
   getItemLabel?: (id: string) => string
-  /** Zones of one family hand items to each other; a zone with no family keeps its items, and only a zone with an `id` is a target. */
+  /** Zones of one family exchange items; only a zone with an `id` receives. */
   family?: string
-  /** A fixed zone's items may leave, but its own order never previews a move. */
+  /** Items may leave a fixed zone, but its own order never previews a move. */
   fixed?: boolean
-  /** What an item carries out; null keeps that item home. Absent, the item carries its id. */
+  /** Null keeps that item home; absent, the item carries its id. */
   carry?: (id: string) => Carried | null
   receive?: (item: Carried, index: number) => void
-  /** The source lets go of an item another zone has received. */
   release?: (id: string) => void
   renderOverlay?: Overlay
   className?: string
@@ -1073,14 +1057,13 @@ function ZoneBody({
   )
 }
 
-/** The box the lifted item would land in. Inside a zone, only that zone's landings; outside one, any zone's. */
+/** Inside a zone, only that zone's landings; outside one, any zone's; `foreignOnly` skips the item's own zone. */
 export function useDropSlot(foreignOnly = false): Box | null {
   const s = useContext(StateCtx)
   const zone = useContext(ZoneIdCtx)
   return s && s.dropState === 'dragging' ? s.dropBox(foreignOnly, zone?.zoneId) : null
 }
 
-/** The landing slot painted while an item is in flight; `foreignOnly` leaves a zone's own reorder unmarked. */
 export function DropSlot({ foreignOnly }: { foreignOnly?: boolean }): React.JSX.Element | null {
   const slot = useDropSlot(foreignOnly)
   if (!slot) return null
@@ -1100,7 +1083,7 @@ export function DropSlot({ foreignOnly }: { foreignOnly?: boolean }): React.JSX.
   )
 }
 
-/** The loose item's family — null until an item has left its own zone. */
+/** Null until an item has left its own zone. */
 export function useDragFamily(): string | null {
   return useContext(StateCtx)?.family ?? null
 }
