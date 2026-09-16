@@ -39,4 +39,7 @@
   color: var(--label-primary);
   pointer-events: none;
   z-index: var(--z-floating);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
