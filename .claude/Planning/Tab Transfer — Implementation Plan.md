@@ -31,14 +31,14 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
 #### Implementation Process
 
 - [ ] **Phase 1** — The engine hands items across a family `[Parallel with Phase 2]`
-  - [ ] Task 1.1 — Shared tokens and the engine
-  - [ ] Task 1.2 — DropSlot, the z ladder, Cards on the family gate
-  - [ ] Task 1.3 — The row escort in the insertion lifecycle
-  - [ ] Task 1.4 — Engine tests
+  - [x] Task 1.1 — Shared tokens and the engine
+  - [x] Task 1.2 — DropSlot, the z ladder, Cards on the family gate
+  - [x] Task 1.3 — The row escort in the insertion lifecycle
+  - [x] Task 1.4 — Engine tests
   - [ ] Review Checkpoint
-- [ ] **Phase 2** — Open at an index `[Parallel with Phase 1]`
-  - [ ] Task 2.1 — `openTabAt`
-  - [ ] Task 2.2 — `openTabIn` at an index
+- [x] **Phase 2** — Open at an index `[Parallel with Phase 1]`
+  - [x] Task 2.1 — `openTabAt`
+  - [x] Task 2.2 — `openTabIn` at an index
 - [ ] **Phase 3** — The rows become targets
   - [ ] Task 3.1 — The carried type and the shell group
   - [ ] Task 3.2 — The main bar's strip
@@ -3051,4 +3051,6 @@ Per the skill's report shape, written when the chain is confirmed.
 
 ### Deviations
 
-- (none yet)
+- **Task 1.4's harness head landed in Task 1.1/1.2's commit** (`d503c3deb`). The old `Board` passed `crossZone`, an excess prop under the new `DragGroupProps`, and declared no `family`, so the gates could not go green at Task 1.2 with the old harness; the head is the plan's own AFTER text one commit early. Lines from `afterEach` down were untouched until Task 1.4.
+- **`dragTo` split into `dragHold` + `release`** in `engine.test.tsx`. `dragTo` fires pointerup, and `useDropSlot` paints only while `dropState === 'dragging'`, so the two axis-slot cases read a null slot as written. `dragTo` now delegates to the pair, the 19 existing callers are unchanged, and the two cases call `dragHold`, keep every assertion, and add one `await release(x, y)` before their `settle()`.
+- **Biome wrapping in Phase 2.** `openTabAt`'s return and `windowTabs.ts`'s clamp and ternary wrapped past the print width; `tabsModel.test.ts`'s new block is titled `tabsModel — openTabAt` to match its siblings. No semantic difference.
