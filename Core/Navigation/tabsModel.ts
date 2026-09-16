@@ -178,7 +178,6 @@ export function openNewTab(tabs: Tab[], newId: string): OpenResult {
   return { tabs: [...tabs, newTabTab(newId)], activeTabId: newId }
 }
 
-/** `index` is an insertion point among the unpinned tabs, counted with the moving tab still in place. */
 export function openTabAt(
   tabs: Tab[],
   pinned: Tab[],

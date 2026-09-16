@@ -45,17 +45,14 @@ export function TableRowDnd({
   canReorderWithin: boolean
   /** Whether a drop onto another group is offered at all — the caller decides whether it relocates the page or rewrites its group value. */
   crossZone: boolean
-  /** `beforeId` is null at the target group's end. The caller routes a same-group drop to a reorder and a cross-group one to a relocate or a reassign; a row the escort lands elsewhere never reaches here. */
+  /** `beforeId` is null at the target group's end. The caller routes a same-group drop to a reorder and a cross-group one to a relocate or a reassign. */
   onDrop: (activeId: string, toGroup: string, beforeId: string | null) => void
-  /** Rows that may leave for a family zone: with an escort, a point outside the rows' box resolves to nothing, so a row carried away draws no line. */
   escort?: { via: Escort; family: string; carry: (id: string) => Carried | null } | null
-  /** A ghost follows the row when a label is given. */
   ghostLabel?: (id: string) => ReactNode
   children: ReactNode
 }): React.JSX.Element {
   const els = useRef(new Map<string, HTMLElement>())
   const content = useRef<HTMLDivElement | null>(null)
-  const bounded = escort != null
 
   const drag = useInsertionDrag<Slot, Snapshot>({
     take: (excludeId) => {
@@ -95,7 +92,7 @@ export function TableRowDnd({
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
       if (
-        bounded &&
+        escort &&
         (point.x < s.boxLeft || point.x > s.boxRight || point.y < s.boxTop || point.y > s.boxBottom)
       )
         return null
