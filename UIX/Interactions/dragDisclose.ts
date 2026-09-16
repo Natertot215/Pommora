@@ -21,7 +21,7 @@ function clearHover(): void {
 const SETTLE_MS = 250 // the disclosure animation, plus slack for start-of-frame skew
 
 // Every frame until settle: a once-then-settle pair let a move re-take the snapshot mid-animation and clear its dirty flag.
-function scheduleRemeasure(): void {
+export function nudgeDragRemeasure(): void {
   if (!remeasure) return
   if (remeasureRaf != null) cancelAnimationFrame(remeasureRaf)
   const settle = performance.now() + SETTLE_MS
@@ -50,7 +50,7 @@ function onMove(e: PointerEvent): void {
       const expand = targets.get(target)
       clearHover()
       expand?.()
-      scheduleRemeasure()
+      nudgeDragRemeasure()
     }, DWELL_MS)
 }
 
