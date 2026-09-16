@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-15-2026 → 09-16      | PM-139 | Tab Cross-Drag                                       |
 | 09-13-2026 → 09-14      | PM-138 | Sync Scaffolding - Part 2                            |
 | 09-12-2026              | PM-137 | One Drag Engine                                      |
 | 09-11-2026              | PM-136 | One View Mechanism                                   |
@@ -141,6 +142,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-139 || Tab Cross-Drag
+**DATE:** 09-15-2026 → 09-16
+
+`UIX/Interactions/engine.tsx` gained a per-zone `family` in place of the group-wide `crossZone` switch: a zone's `carry` names what an item takes across, the target's `receive` seats it at the landing index, and the source's `release` lets it go, with an axis-locked row letting an item loose on a 24px cross-axis tug, a free zone at its edge, `stray="return"` snapping an item home over nothing, and `holdGap` keeping the source slot open. Axis zones place by running offset, so unequal tabs part by the lifted item's width. `insertionDrag.tsx` gained an escort that hands a loose row to the engine once it leaves its surface, which `tableDnd.tsx` and `sidebarDnd.tsx` use; `App.tsx` mounts one shell `DragGroup` with a `DropSlot foreignOnly`, and `TabBar.tsx`, `WindowTabStrip.tsx`, `NavGallery.tsx`, `NavList.tsx`, and the sidebar declare the `tabs` family. `openTabAt` and `openTabIn` seat a page at an index without activating it, and `useSeat` in `tabClose.ts` holds a received tab's row still through its commit. The Page Window's tab strip took `pointer-events: auto` and a `z-index` in `window-base.css`, since the body's over-scroll mask had painted over it; `CardDropSlot`, `dropPreview`, and the engine's `crossZone` retired.
+
+- **Commits:** `c588afcd3^..d6a0d1f0e`
+- **Diff:** Net +457 | +919 / −462
 
 #### PM-138 || Sync Scaffolding - Part 2
 **DATE:** 09-13-2026 → 09-14
