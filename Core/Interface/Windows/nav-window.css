@@ -38,6 +38,10 @@
 .navwindow-tabs.has-tabs {
   height: var(--navwindow-tabs-h);
 }
+/* A row opened for a loose tab measures at once; it eases shut again only if nothing lands. */
+.navwindow-tabs.is-forced {
+  transition: none;
+}
 
 .navwindow-content {
   display: flex;
