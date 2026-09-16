@@ -26,7 +26,7 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
 - `grep -rn "CardDropSlot\|dropPreview" UIX Core | wc -l` → 9 — retires to 0
 
 **START:** 2026-09-16T01:56:44Z
-**END:** <same, as the report is given>
+**END:** 2026-09-16T04:20:21Z
 
 #### Implementation Process
 
@@ -35,7 +35,7 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
   - [x] Task 1.2 — DropSlot, the z ladder, Cards on the family gate
   - [x] Task 1.3 — The row escort in the insertion lifecycle
   - [x] Task 1.4 — Engine tests
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [x] **Phase 2** — Open at an index `[Parallel with Phase 1]`
   - [x] Task 2.1 — `openTabAt`
   - [x] Task 2.2 — `openTabIn` at an index
@@ -43,13 +43,13 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
   - [x] Task 3.1 — The carried type and the shell group
   - [x] Task 3.2 — The main bar's strip
   - [x] Task 3.3 — The window strip and the NavWindow
-  - [ ] Review Checkpoint
-- [ ] **Phase 4** — The nav surfaces become sources
+  - [x] Review Checkpoint
+- [x] **Phase 4** — The nav surfaces become sources
   - [x] Task 4.1 — Gallery cards, including search results
   - [x] Task 4.2 — List rows through the escort
   - [x] Task 4.3 — Sidebar page rows through the escort
-  - [ ] Task 4.4 — Documents
-- [ ] `[Stop: Nathan walks the manual checks]`
+  - [x] Task 4.4 — Documents
+- [x] `[Stop: Nathan walks the manual checks]` (walked over CDP on the live app by Nathan's direction; the list and its expectations are in the closeout report)
 
 ---
 
@@ -69,7 +69,7 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
 
 **CHANGE**
 
-- [ ] `shared.ts`: after `HYSTERESIS`, add:
+- [x] `shared.ts`: after `HYSTERESIS`, add:
 
 ```ts
 export const BREAKOUT = 24 // px past an axis-locked zone's edges before its item is loose; a free zone lets go at its edge
@@ -77,8 +77,8 @@ export const BREAKOUT = 24 // px past an axis-locked zone's edges before its ite
 export type Carried = unknown
 ```
 
-- [ ] `dragDisclose.ts`: the module-private `scheduleRemeasure` becomes `export function nudgeDragRemeasure(): void` (same body; its one internal call site renamed). A container that mounts mid-drag calls it so an escorted list retakes its rows and an engine drag resyncs.
-- [ ] Replace `engine.tsx` with the following.
+- [x] `dragDisclose.ts`: the module-private `scheduleRemeasure` becomes `export function nudgeDragRemeasure(): void` (same body; its one internal call site renamed). A container that mounts mid-drag calls it so an escorted list retakes its rows and an engine drag resyncs.
+- [x] Replace `engine.tsx` with the following.
 
 **AFTER**
 
@@ -1252,9 +1252,9 @@ export function useDragItem(id: string): DragItem {
 
 **VERIFY**
 
-- [ ] Check the work for unnecessary code or obvious mistakes; every family branch is behind `d.family !== null` or `d.loose`.
-- [ ] `grep -n "crossZone\|overlayOn" UIX/Interactions/engine.tsx` → 0.
-- [ ] Gates green once Task 1.2 lands.
+- [x] Check the work for unnecessary code or obvious mistakes; every family branch is behind `d.family !== null` or `d.loose`.
+- [x] `grep -n "crossZone\|overlayOn" UIX/Interactions/engine.tsx` → 0.
+- [x] Gates green once Task 1.2 lands.
 
 #### Task 1.2
 
@@ -1288,11 +1288,11 @@ export { DragGroup, SortableZone, useDragItem, useDropSlot } from './engine'
 
 **CHANGE**
 
-- [ ] `stack.ts` `top`: replace `dropPreview: 999,` with the two entries below (the overlay above the slot, both above a floating window, both under a menu).
-- [ ] `drag.tsx`: replace the file with the block below.
-- [ ] `Card.tsx`: delete the `createPortal` and `stack` imports, change line 6 to `import type { DragItem } from '../Interactions/drag'`, delete `CardDropSlot` and its docblock.
-- [ ] `CardsView.tsx`: replace `CardDropSlot` with `DropSlot` in the import (moved to the `drag` import) and at both sites; delete the `crossZone` prop; the band zone gains `family={canReassign || canRelocate ? 'cards' : undefined}`. The set-cards slot sits inside its zone, so it paints that zone's landings only, whichever group the zone joins.
-- [ ] `NavGallery.tsx`: the same import move; both `<CardDropSlot />` become `<DropSlot />` and stay — inside their zones they paint the gallery's own reorder as today.
+- [x] `stack.ts` `top`: replace `dropPreview: 999,` with the two entries below (the overlay above the slot, both above a floating window, both under a menu).
+- [x] `drag.tsx`: replace the file with the block below.
+- [x] `Card.tsx`: delete the `createPortal` and `stack` imports, change line 6 to `import type { DragItem } from '../Interactions/drag'`, delete `CardDropSlot` and its docblock.
+- [x] `CardsView.tsx`: replace `CardDropSlot` with `DropSlot` in the import (moved to the `drag` import) and at both sites; delete the `crossZone` prop; the band zone gains `family={canReassign || canRelocate ? 'cards' : undefined}`. The set-cards slot sits inside its zone, so it paints that zone's landings only, whichever group the zone joins.
+- [x] `NavGallery.tsx`: the same import move; both `<CardDropSlot />` become `<DropSlot />` and stay — inside their zones they paint the gallery's own reorder as today.
 
 **AFTER**
 
@@ -1357,8 +1357,8 @@ export function reorder<T extends { id: string }>(
 
 **VERIFY**
 
-- [ ] Gates green; `cardDrops.test.tsx` passes both assertions.
-- [ ] `grep -rn "CardDropSlot\|dropPreview" UIX Core` → 0; `grep -rn "crossZone" UIX/Interactions/engine.tsx Core/Views/Cards` → 0; `grep -c "<DropSlot" Core/Navigation/NavGallery.tsx` → 2.
+- [x] Gates green; `cardDrops.test.tsx` passes both assertions.
+- [x] `grep -rn "CardDropSlot\|dropPreview" UIX Core` → 0; `grep -rn "crossZone" UIX/Interactions/engine.tsx Core/Views/Cards` → 0; `grep -c "<DropSlot" Core/Navigation/NavGallery.tsx` → 2.
 
 #### Task 1.3
 
@@ -1381,7 +1381,7 @@ interface InsertionDragSpec<Slot, Snap> {
 
 **CHANGE**
 
-- [ ] Add the three spec fields; thread the escort through activate, move, drop, and abort (each engine method guards its own inactivity, so no flag is kept here); let the ghost take `ghostLabel`.
+- [x] Add the three spec fields; thread the escort through activate, move, drop, and abort (each engine method guards its own inactivity, so no flag is kept here); let the ghost take `ghostLabel`.
 
 **AFTER**
 
@@ -1492,7 +1492,7 @@ interface InsertionDragSpec<Slot, Snap> {
 
 **VERIFY**
 
-- [ ] Gates green; `tableDnd.test.tsx` and the sidebar tests unchanged and passing.
+- [x] Gates green; `tableDnd.test.tsx` and the sidebar tests unchanged and passing.
 
 #### Task 1.4
 
@@ -1504,7 +1504,7 @@ interface InsertionDragSpec<Slot, Snap> {
 
 **CHANGE**
 
-- [ ] Rewrite the harness head and append the cases below. The existing 19 cases stay verbatim.
+- [x] Rewrite the harness head and append the cases below. The existing 19 cases stay verbatim.
 
 **AFTER**
 
@@ -1825,8 +1825,8 @@ describe('placeAxis — the running-offset core', () => {
 
 **VERIFY**
 
-- [ ] `npm run test -- UIX/Interactions/engine.test.tsx` → 35 passing (19 + 14 + 2); the existing 19 keep their three-argument commit assertions because `Board` splits the fourth into `fromSpy`.
-- [ ] Each new case goes red when its engine change is reverted (spot-check `holdGap` and `stray`).
+- [x] `npm run test -- UIX/Interactions/engine.test.tsx` → 35 passing (19 + 14 + 2); the existing 19 keep their three-argument commit assertions because `Board` splits the fourth into `fromSpy`.
+- [x] Each new case goes red when its engine change is reverted (spot-check `holdGap` and `stray`).
 
 #### Review Checkpoint
 
@@ -1855,7 +1855,7 @@ export function openNewTab(tabs: Tab[], newId: string): OpenResult { … }
 
 **CHANGE**
 
-- [ ] `tabsModel.ts`: hoist the "same entity" predicate that `isOpenInTabs` and `openTab` each spell out, and use it in both plus the new function:
+- [x] `tabsModel.ts`: hoist the "same entity" predicate that `isOpenInTabs` and `openTab` each spell out, and use it in both plus the new function:
 
 ```ts
 /** The tabs showing one entity; the scratch tab matches nothing. */
@@ -1867,7 +1867,7 @@ const showing =
 
 `isOpenInTabs`: `tabs.some(showing(target)) || pinned.some((p) => navKey(p) === navKey(target))`. `openTab`: `const existing = all.find(showing(target))` (its `key` local goes).
 
-- [ ] After `openNewTab`:
+- [x] After `openNewTab`:
 
 ```ts
 /** A drop lands a page at `index` among the unpinned tabs: an open tab moves there, a pinned one only comes forward, a new one is spliced in. `index` is an insertion point counted with the moving tab still in place. */
@@ -1890,7 +1890,7 @@ export function openTabAt(
 }
 ```
 
-- [ ] `navigationSlice.ts`: import `openTabAt as openTabAtModel`; interface line after `openNewTab`: `openTabAt: (target: SelectTarget, index: number) => void`; action after `openNewTab`:
+- [x] `navigationSlice.ts`: import `openTabAt as openTabAtModel`; interface line after `openNewTab`: `openTabAt: (target: SelectTarget, index: number) => void`; action after `openNewTab`:
 
 ```ts
     // A drop is a placement, not a navigation: no recent, no slide.
@@ -1901,12 +1901,12 @@ export function openTabAt(
     },
 ```
 
-- [ ] `tabsModel.test.ts`, a new `describe('openTabAt', …)` with three cases: a new page splices at the index and activates; an open page moves to the index (insertion semantics: index 2 from 0 lands at 1) and activates; a pinned page returns `tabs` by reference with the pin active.
+- [x] `tabsModel.test.ts`, a new `describe('openTabAt', …)` with three cases: a new page splices at the index and activates; an open page moves to the index (insertion semantics: index 2 from 0 lands at 1) and activates; a pinned page returns `tabs` by reference with the pin active.
 
 **VERIFY**
 
-- [ ] Gates green; `tabsModel.test.ts` gains three cases.
-- [ ] `grep -n "insertUnpinned(" Core/Session/navigationSlice.ts` → one caller (`unpinTab`).
+- [x] Gates green; `tabsModel.test.ts` gains three cases.
+- [x] `grep -n "insertUnpinned(" Core/Session/navigationSlice.ts` → one caller (`unpinTab`).
 
 #### Task 2.2
 
@@ -1934,7 +1934,7 @@ export function openTabIn(
 
 **CHANGE**
 
-- [ ] `windowTabs.ts`: add `import { clamp } from '@pommora/uix/Utilities/clamp'` and replace `openTabIn`:
+- [x] `windowTabs.ts`: add `import { clamp } from '@pommora/uix/Utilities/clamp'` and replace `openTabIn`:
 
 ```ts
 /** `at` counts page tabs only, as the strip shows them; the map sentinel keeps its seat ahead of them. */
@@ -1962,13 +1962,13 @@ export function openTabIn(
 }
 ```
 
-- [ ] `windowSlice.ts`: interface `openWindowTab: (target: WindowTarget, at?: number) => void`; action head `openWindowTab: (target, at) => {` and `const next = openTabIn(cur, makeTabId, target, at)`.
-- [ ] `windowTabs.test.ts`: two cases — a nav-kind window `[sentinel, x, y]` opening `z` at `at = 1` yields `[sentinel, x, z, y]` with `z` active; opening `x` at `at = 2` yields `[sentinel, y, x]`.
+- [x] `windowSlice.ts`: interface `openWindowTab: (target: WindowTarget, at?: number) => void`; action head `openWindowTab: (target, at) => {` and `const next = openTabIn(cur, makeTabId, target, at)`.
+- [x] `windowTabs.test.ts`: two cases — a nav-kind window `[sentinel, x, y]` opening `z` at `at = 1` yields `[sentinel, x, z, y]` with `z` active; opening `x` at `at = 2` yields `[sentinel, y, x]`.
 
 **VERIFY**
 
-- [ ] Gates green; `windowTabs.test.ts` gains two cases, all existing pass.
-- [ ] `grep -rn "openWindowTab(" Core --include='*.ts' --include='*.tsx' | grep -v test` — every existing call passes one argument.
+- [x] Gates green; `windowTabs.test.ts` gains two cases, all existing pass.
+- [x] `grep -rn "openWindowTab(" Core --include='*.ts' --include='*.tsx' | grep -v test` — every existing call passes one argument.
 
 ---
 
@@ -1991,14 +1991,14 @@ export function openTabIn(
 
 **CHANGE**
 
-- [ ] `navRef.ts`, after `SelectTarget`:
+- [x] `navRef.ts`, after `SelectTarget`:
 
 ```ts
 /** What a tab row receives: only a page becomes a tab. */
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 ```
 
-- [ ] `App.tsx`: add `import { DragGroup, DropSlot } from '@pommora/uix/Interactions/drag'`; wrap the shell div's children: the first child line becomes `<DragGroup stray="return" holdGap>` followed by `<DropSlot foreignOnly />` and `<div className="titlebar" />`, and `</DragGroup>` closes before the shell's `</div>`. The one slot paints wherever a tabs-family item would land in another zone.
+- [x] `App.tsx`: add `import { DragGroup, DropSlot } from '@pommora/uix/Interactions/drag'`; wrap the shell div's children: the first child line becomes `<DragGroup stray="return" holdGap>` followed by `<DropSlot foreignOnly />` and `<div className="titlebar" />`, and `</DragGroup>` closes before the shell's `</div>`. The one slot paints wherever a tabs-family item would land in another zone.
 
 **AFTER**
 
@@ -2015,8 +2015,8 @@ export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
 **VERIFY**
 
-- [ ] Gates green.
-- [ ] Nathan: ribbon reorder and a ViewTile pill reorder still work.
+- [x] Gates green.
+- [x] Nathan: ribbon reorder and a ViewTile pill reorder still work.
 
 #### Task 3.2
 
@@ -2062,8 +2062,8 @@ import { cycle } from './tabsModel'
 
 **CHANGE**
 
-- [ ] Imports: `useLayoutEffect` from react; `SortableZone, useDragFamily, useDragItem, type Carried, type DragItem` from drag; `type PageTarget` beside `Tab, TabTarget`.
-- [ ] Gate:
+- [x] Imports: `useLayoutEffect` from react; `SortableZone, useDragFamily, useDragItem, type Carried, type DragItem` from drag; `type PageTarget` beside `Tab, TabTarget`.
+- [x] Gate:
 
 ```tsx
   const forced = useDragFamily() === 'tabs'
@@ -2077,7 +2077,7 @@ import { cycle } from './tabsModel'
   return <TabBarBody pinnedEntries={pinnedEntries} unpinnedEntries={unpinnedEntries} forced={forced} />
 ```
 
-- [ ] `TabBarBody` takes `forced: boolean`. Replace the region from `const reorderPin = …` through the `useTabClose(…)` call with:
+- [x] `TabBarBody` takes `forced: boolean`. Replace the region from `const reorderPin = …` through the `useTabClose(…)` call with:
 
 ```tsx
   const reorderPin = useSession((s) => s.reorderPin)
@@ -2124,7 +2124,7 @@ import { cycle } from './tabsModel'
   }
 ```
 
-- [ ] Zones:
+- [x] Zones:
 
 ```tsx
       {pinnedEntries.length > 0 && (
@@ -2171,8 +2171,8 @@ import { cycle } from './tabsModel'
       </div>
 ```
 
-- [ ] `PinnedTab`: `const drag = useDragItem(entry.tab.id)`.
-- [ ] `tab-base.css`: the `@starting-style` rule's selector becomes `.tab-strip:not(.is-still) > .tab` (a still strip — one that mounted for a loose tab, or one seating a received tab — grows nothing in; the overlay's tab sits outside any strip and never grows in), and after `.tab.is-dragging` add:
+- [x] `PinnedTab`: `const drag = useDragItem(entry.tab.id)`.
+- [x] `tab-base.css`: the `@starting-style` rule's selector becomes `.tab-strip:not(.is-still) > .tab` (a still strip — one that mounted for a loose tab, or one seating a received tab — grows nothing in; the overlay's tab sits outside any strip and never grows in), and after `.tab.is-dragging` add:
 
 ```css
 /* A tab in flight: the overlay clone fills the lifted rect and reads as lifted. */
@@ -2191,9 +2191,9 @@ import { cycle } from './tabsModel'
 
 **VERIFY**
 
-- [ ] Gates green.
+- [x] Gates green.
 - [x] `grep -c "res?.key ?? ''" Core/Navigation/TabBar.tsx` → 1 (was 2; `pinKeyOf` is the one spelling).
-- [ ] Nathan: in-row reorder feels as before; a horizontal drag never leaves the row; a 24px vertical tug lifts the tab free as a floating clone, and a release over nothing snaps it home with the gap still there.
+- [x] Nathan: in-row reorder feels as before; a horizontal drag never leaves the row; a 24px vertical tug lifts the tab free as a floating clone, and a release over nothing snaps it home with the gap still there.
 
 #### Task 3.3
 
@@ -2207,8 +2207,8 @@ import { cycle } from './tabsModel'
 
 **CHANGE**
 
-- [ ] Replace `WindowTabStrip.tsx` with the block below. The map sentinel sits in `.window-tabwrap` (a flex row) ahead of `.tab-scroll`, so the zone container holds page tabs only and an empty one still spans the row.
-- [ ] `NavWindow.tsx`: import `useDragFamily` from drag; replace the `hasTabs` line and the row's class:
+- [x] Replace `WindowTabStrip.tsx` with the block below. The map sentinel sits in `.window-tabwrap` (a flex row) ahead of `.tab-scroll`, so the zone container holds page tabs only and an empty one still spans the row.
+- [x] `NavWindow.tsx`: import `useDragFamily` from drag; replace the `hasTabs` line and the row's class:
 
 ```tsx
   const forced = useDragFamily() === 'tabs'
@@ -2223,7 +2223,7 @@ import { cycle } from './tabsModel'
         >
 ```
 
-- [ ] `nav-window.css`, after `.navwindow-tabs.has-tabs { … }`:
+- [x] `nav-window.css`, after `.navwindow-tabs.has-tabs { … }`:
 
 ```css
 /* A row opened for a loose tab measures at once; it eases shut again only if nothing lands. */
@@ -2492,13 +2492,13 @@ function WindowTabItem({
 
 **VERIFY**
 
-- [ ] Gates green.
-- [ ] Nathan: main → window (Page Window and NavWindow) and window → main land at the pointed slot with displacement and the accent slot; the source gap holds while hovering the other row and collapses on drop; a single-tab Page Window grows its strip while a main tab is loose and the NavWindow opens its row; the moved tab arrives in one motion; a collection tab or the New Tab tab cannot leave; a page already open in the main bar moves without activating; the last window tab dragged out closes the window; the map tab never lifts.
+- [x] Gates green.
+- [x] Nathan: main → window (Page Window and NavWindow) and window → main land at the pointed slot with displacement and the accent slot; the source gap holds while hovering the other row and collapses on drop; a single-tab Page Window grows its strip while a main tab is loose and the NavWindow opens its row; the moved tab arrives in one motion; a collection tab or the New Tab tab cannot leave; a page already open in the main bar moves without activating; the last window tab dragged out closes the window; the map tab never lifts.
 
 #### Review Checkpoint
 
-- [ ] Every 3.2/3.3 hand-check confirmed by Nathan.
-- [ ] `npm run test` green; `git diff --stat dd605692d..HEAD` shows no file outside the phases' FILES.
+- [x] Every 3.2/3.3 hand-check confirmed by Nathan.
+- [x] `npm run test` green; `git diff --stat dd605692d..HEAD` shows no file outside the phases' FILES.
 
 ---
 
@@ -2537,8 +2537,8 @@ function WindowTabItem({
 
 **CHANGE**
 
-- [ ] Imports: `DropSlot, SortableZone, useDragItem, type DragItem` from drag; `import type { NavRef, PageTarget } from '@pommora/core/Navigation/navRef'`.
-- [ ] In `NavGallery`, after `nexusId`:
+- [x] Imports: `DropSlot, SortableZone, useDragItem, type DragItem` from drag; `import type { NavRef, PageTarget } from '@pommora/core/Navigation/navRef'`.
+- [x] In `NavGallery`, after `nexusId`:
 
 ```tsx
   const tree = useSession((s) => s.tree)
@@ -2562,7 +2562,7 @@ function WindowTabItem({
   const zone = { family: 'tabs', carry, renderOverlay } as const
 ```
 
-- [ ] The grid:
+- [x] The grid:
 
 ```tsx
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
@@ -2587,8 +2587,8 @@ function WindowTabItem({
 
 **VERIFY**
 
-- [ ] Gates green.
-- [ ] Nathan: a gallery card (recent, pin, search hit) dragged into either row opens the page there at the pointed slot; the gallery's own order is untouched; releasing a card off the gallery does nothing; in-gallery reorder of recents and pins still works; a search result never previews a reorder; a task or event card cannot leave.
+- [x] Gates green.
+- [x] Nathan: a gallery card (recent, pin, search hit) dragged into either row opens the page there at the pointed slot; the gallery's own order is untouched; releasing a card off the gallery does nothing; in-gallery reorder of recents and pins still works; a search result never previews a reorder; a task or event card cannot leave.
 
 #### Task 4.2
 
@@ -2602,7 +2602,7 @@ function WindowTabItem({
 
 **CHANGE**
 
-- [ ] Replace `tableDnd.tsx` with:
+- [x] Replace `tableDnd.tsx` with:
 
 ```tsx
 import {
@@ -2781,7 +2781,7 @@ export function useTableRowDrag(id: string): {
 }
 ```
 
-- [ ] `NavList.tsx`: imports gain `useEscort` from `@pommora/uix/Interactions/drag`; `pageTargetFromNav` is already imported. Replace `NavRow`, `DraggableRow`, and `NavList` with:
+- [x] `NavList.tsx`: imports gain `useEscort` from `@pommora/uix/Interactions/drag`; `pageTargetFromNav` is already imported. Replace `NavRow`, `DraggableRow`, and `NavList` with:
 
 ```tsx
 function NavRow({
@@ -2902,14 +2902,14 @@ export function NavList({
 }
 ```
 
-- [ ] `NavList`'s `PageTarget` import: `import type { NavRef, PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'`.
-- [ ] `.drag-ghost` needs the icon beside the title: in `UIX/Interactions/drop-chrome.css` add `display: inline-flex; align-items: center; gap: 6px;` to `.drag-ghost` (the sidebar's string label is unaffected).
+- [x] `NavList`'s `PageTarget` import: `import type { NavRef, PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'`.
+- [x] `.drag-ghost` needs the icon beside the title: in `UIX/Interactions/drop-chrome.css` add `display: inline-flex; align-items: center; gap: 6px;` to `.drag-ghost` (the sidebar's string label is unaffected).
 
 **VERIFY**
 
-- [ ] Gates green; `tableDnd.test.tsx` passes unchanged.
-- [ ] `git diff dd605692d..HEAD -- Core/Views/Table/TableView.tsx` → empty.
-- [ ] Nathan: a list row (recents, pins, Favorites rail, in NavWindow and NavView) reorders with the line inside its list and the ghost beside the cursor; dragged out, the line disappears, the ghost follows, a tab row displaces and shows the slot, and the drop opens the page; releasing between the list and a row does nothing; a Favorites row never reorders; the list stops scrolling once the row has left it.
+- [x] Gates green; `tableDnd.test.tsx` passes unchanged.
+- [x] `git diff dd605692d..HEAD -- Core/Views/Table/TableView.tsx` → empty.
+- [x] Nathan: a list row (recents, pins, Favorites rail, in NavWindow and NavView) reorders with the line inside its list and the ghost beside the cursor; dragged out, the line disappears, the ghost follows, a tab row displaces and shows the slot, and the drop opens the page; releasing between the list and a row does nothing; a Favorites row never reorders; the list stops scrolling once the row has left it.
 
 #### Task 4.3
 
@@ -2930,10 +2930,10 @@ type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: Measure
 
 **CHANGE**
 
-- [ ] Imports: `useEscort` from `@pommora/uix/Interactions/drag`; `toBox, type Box` from `@pommora/uix/Interactions/shared`.
-- [ ] `Snapshot` gains `box: Box`; `take` measures it once (`const box = toBox(content)`, `contentTop: box.top`).
-- [ ] Inside `SidebarDnd`, before the `useInsertionDrag` call: `const escort = useEscort()`.
-- [ ] The spec gains, beside `resolve`:
+- [x] Imports: `useEscort` from `@pommora/uix/Interactions/drag`; `toBox, type Box` from `@pommora/uix/Interactions/shared`.
+- [x] `Snapshot` gains `box: Box`; `take` measures it once (`const box = toBox(content)`, `contentTop: box.top`).
+- [x] Inside `SidebarDnd`, before the `useInsertionDrag` call: `const escort = useEscort()`.
+- [x] The spec gains, beside `resolve`:
 
 ```ts
     // A page row that has left the column draws no line; a row of any other kind stays the column's own.
@@ -2960,8 +2960,8 @@ const within = (b: Box, p: { x: number; y: number }): boolean =>
 
 **VERIFY**
 
-- [ ] Gates green; `sidebarDnd.test.tsx` unchanged and passing.
-- [ ] Nathan: a sidebar page row dragged into the main bar or a window strip opens the page there at the pointed slot with the ghost following; the sidebar's line vanishes once the row leaves the column and the column stops scrolling; a Set or Collection row never leaves; releasing the row over the main pane does nothing; in-sidebar reorder and reparent feel as before.
+- [x] Gates green; `sidebarDnd.test.tsx` unchanged and passing.
+- [x] Nathan: a sidebar page row dragged into the main bar or a window strip opens the page there at the pointed slot with the ghost following; the sidebar's line vanishes once the row leaves the column and the column stops scrolling; a Set or Collection row never leaves; releasing the row over the main pane does nothing; in-sidebar reorder and reparent feel as before.
 
 #### Task 4.4
 
@@ -2971,14 +2971,14 @@ const within = (b: Box, p: { x: number; y: number }): boolean =>
 
 **CHANGE**
 
-- [ ] Load `writing-standards` before the first edit.
-- [ ] `PommoraDND.md` — The Seam: `SortableZone`'s bullet names `family`, `fixed`, `carry`/`receive`/`release`, and a zone-level `renderOverlay`; `DragGroup`'s bullet reports `(activeId, toZone, toIndex, fromZone)` and names `stray` and `holdGap`; add bullets for `DropSlot`, `useDragFamily`, and `useEscort`. Displacement: the family gate (a zone is a target only when it owns a container), the 24px breakout and the axis lock it releases, the return-home rule and the stray knob, the running-offset placement for axis zones and the foreign arrival taking the zone's own item shape, zone-level overlays, the zone-qualified active item, and autoscroll stopping once loose. Insertion Line: the escort paragraph — a row keeps its line and ghost while over its list and hands its point to the engine once it reaches a family zone. Constraints: "an `axis` lock per zone" becomes "an `axis` lock per zone that a family drag releases past the breakout".
-- [ ] `NavigationPM.md` — NavWindow paragraph: cards and rows drag into either tab row to open there. Toolbar Tabs "Interaction": within-row drag reorders, pinned among pinned and unpinned among unpinned; a page tab tugged 24px off its row floats to the floating window's strip and back, landing where it points, and the scratch tab, a collection, a space, and the Homepage stay in their row; a moved tab starts a fresh history and rebuilds cold. Prospects: "Drag-to-pin across the tab divider, and dragging a tab out into its own OS window."
-- [ ] `InterfacePM.md` — The Sidebar, Drag and Drop: a page row also drags into the main tab bar or a floating window's strip to open there, and nothing drags into the sidebar. Page Window: "Tabs drag-reorder" becomes "Tabs drag-reorder, and a page tab moves between this strip and the main tab bar"; NavWindow: page tabs open beside the map tab from its rows when the routing override is on, or from a card, row, or main-bar tab dropped onto the strip; the map tab is neither lifted nor landed on.
+- [x] Load `writing-standards` before the first edit.
+- [x] `PommoraDND.md` — The Seam: `SortableZone`'s bullet names `family`, `fixed`, `carry`/`receive`/`release`, and a zone-level `renderOverlay`; `DragGroup`'s bullet reports `(activeId, toZone, toIndex, fromZone)` and names `stray` and `holdGap`; add bullets for `DropSlot`, `useDragFamily`, and `useEscort`. Displacement: the family gate (a zone is a target only when it owns a container), the 24px breakout and the axis lock it releases, the return-home rule and the stray knob, the running-offset placement for axis zones and the foreign arrival taking the zone's own item shape, zone-level overlays, the zone-qualified active item, and autoscroll stopping once loose. Insertion Line: the escort paragraph — a row keeps its line and ghost while over its list and hands its point to the engine once it reaches a family zone. Constraints: "an `axis` lock per zone" becomes "an `axis` lock per zone that a family drag releases past the breakout".
+- [x] `NavigationPM.md` — NavWindow paragraph: cards and rows drag into either tab row to open there. Toolbar Tabs "Interaction": within-row drag reorders, pinned among pinned and unpinned among unpinned; a page tab tugged 24px off its row floats to the floating window's strip and back, landing where it points, and the scratch tab, a collection, a space, and the Homepage stay in their row; a moved tab starts a fresh history and rebuilds cold. Prospects: "Drag-to-pin across the tab divider, and dragging a tab out into its own OS window."
+- [x] `InterfacePM.md` — The Sidebar, Drag and Drop: a page row also drags into the main tab bar or a floating window's strip to open there, and nothing drags into the sidebar. Page Window: "Tabs drag-reorder" becomes "Tabs drag-reorder, and a page tab moves between this strip and the main tab bar"; NavWindow: page tabs open beside the map tab from its rows when the routing override is on, or from a card, row, or main-bar tab dropped onto the strip; the map tab is neither lifted nor landed on.
 
 **VERIFY**
 
-- [ ] Each rewritten paragraph read once in place; no "now"/"previously" framing.
+- [x] Each rewritten paragraph read once in place; no "now"/"previously" framing.
 
 ---
 
@@ -2986,44 +2986,44 @@ const within = (b: Box, p: { x: number; y: number }): boolean =>
 
 **Conformance**
 
-- [ ] `grep -rn "crossZone" UIX/Interactions/engine.tsx Core/Views/Cards` → 0; one slot painter (`DropSlot`), mounted once in the shell group and once per private group; grid placement and axis placement each defined once.
-- [ ] `git diff --name-only dd605692d..HEAD` is the union of every task's FILES plus this plan.
+- [x] `grep -rn "crossZone" UIX/Interactions/engine.tsx Core/Views/Cards` → 0; one slot painter (`DropSlot`), mounted once in the shell group and once per private group; grid placement and axis placement each defined once.
+- [x] `git diff --name-only dd605692d..HEAD` is the union of every task's FILES plus this plan, plus the files the Deviations name.
 
 **Correctness**
 
-- [ ] A page tab moves main ↔ window (Page Window and NavWindow) at the pointed index, with displacement and the slot, and never on a horizontal drag.
-- [ ] Non-page tabs never leave; the pinned zone never receives; a release over nothing commits nothing.
-- [ ] Gallery cards, list rows, and sidebar page rows open the page in either row at the pointed index; their own lists are unchanged; tables and the sidebar's own reorder are unchanged.
-- [ ] Cards view, ribbon, ViewTile pills, sidebar drag behave as before.
+- [x] A page tab moves main ↔ window (Page Window and NavWindow) at the pointed index, with displacement and the slot, and never on a horizontal drag.
+- [x] Non-page tabs never leave; the pinned zone never receives; a release over nothing commits nothing.
+- [x] Gallery cards, list rows, and sidebar page rows open the page in either row at the pointed index; their own lists are unchanged; tables and the sidebar's own reorder are unchanged.
+- [x] Cards view, ribbon, ViewTile pills, sidebar drag behave as before.
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `dd605692d..HEAD`.
+- [x] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `dd605692d..HEAD`.
 
 **Confirmation**
 
-- [ ] Every VERIFY result read; the new engine and model tests go red with their change reverted.
-- [ ] Nathan's hand-checks in 3.2, 3.3, 4.1, 4.2, 4.3 carry his word.
+- [x] Every VERIFY result read; the new engine and model tests go red with their change reverted.
+- [x] Nathan's hand-checks in 3.2 and 3.3 carry his word; 4.1, 4.2, 4.3 were walked over CDP on the live app at his direction.
 
 **Continuity**
 
-- [ ] Reconciliation complete; `ContextPM.md` and `HandoffPM.md` read true; Deviations each fixed or ruled on.
+- [x] Reconciliation complete; `ContextPM.md` and `HandoffPM.md` read true; Deviations each fixed or ruled on.
 
 **Confidence**
 
-- [ ] Gates green from clean on `dd605692d..HEAD`; Baseline counts moved as planned.
-- [ ] Diff size reported (+/- lines, comments and tests excluded).
+- [x] Gates green from clean on `dd605692d..HEAD`; Baseline counts moved as planned.
+- [x] Diff size reported (+/- lines, comments and tests excluded).
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Ambiguity met during execution took the simplest reading and was recorded. Edits found in adjacent files that no task made belong to Nathan — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `dd605692d..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched as one pair over the whole range by Nathan's direction: an Opus simplification pass, a Fable simplification pass, a Fable adversarial review
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `dd605692d..HEAD` (the orchestrator's own diff read)
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -3043,6 +3043,8 @@ Per the skill's report shape, written when the chain is confirmed.
 
 ### Open Items
 
+- **A one-tab Page Window has no strip to drag from.** The title stands in for the strip at one tab, so that tab leaves by the window's own close; the strip grows only while a foreign tab is loose over it.
+- **The NavWindow covers the NavView beneath it.** A card in the main pane's NavView under the floating window is the window's to press, so a NavView card reaches the NavWindow's row only from the pane's uncovered region.
 - **Warm state and history do not travel.** A moved tab rebuilds cold in its new row and starts a fresh history; the two caches are separate. Recorded in NavigationPM as a fact.
 - **Keyboard lifts stay in-zone.** A Space-lifted tab cannot cross rows; the documented limitation stands.
 - **No autoscroll while loose, and loose is for the gesture.** A tab tugged off its row stops that row's autoscroll and keeps its free travel even after coming back over it; a re-lock mid-gesture reads as a snap.
@@ -3058,3 +3060,7 @@ Per the skill's report shape, written when the chain is confirmed.
 - **Task 3.2's VERIFY grep read 0 where the AFTER block itself spells the expression once** (`pinKeyOf`). The count went 2 → 1; the VERIFY line now states that.
 - **The NavWindow's empty strip had no height.** Task 3.3's AFTER opened the row for a loose tab, but `.tab-scroll` and `.tab-strip` size by `height: 100%` and nothing above them in the NavWindow was definite, so the empty target measured 0px and the hit-test never found it (found at the Phase 3 checkpoint; the Page Window's tabwrap already carries a height). `nav-window.css` gives `.navwindow-tabs .window-tabwrap` `height: 100%`.
 - **A drop never activates the seated tab.** Nathan's Phase 3 checkpoint ruling replaced the focus-on-drop reading: `openTabAt` returns the row alone and the slice writes tabs only, `openTabIn` keeps the active tab when given an index and the window slice commits without a slide; the five Phase 2 tests assert the new behavior.
+- **`Core/Navigation/tabClose.ts` gained `useSeat`.** The seat-still mechanism (a ref cleared in a layout effect and the `is-still` class) was spelled in both strips; the final simplification pass folded it into one hook beside `useTabClose`.
+- **`UIX/Windows/window-base.css` joined the range.** The Page Window's strip sits in a `pointer-events: none` toolbar under a body whose over-scroll mask paints above it, so presses on its tabs moved the window; found at the CDP walkthrough, older than this plan, and blocking a Completion Criterion. The tabwrap takes `pointer-events: auto` and `z-index: 1`.
+- **The adversarial review's accepted findings** (commit `d6a0d1f0e`): the hit-test admits a family zone only when it has a `receive` or the group commits (the gallery's source-only zones are no longer landings); the zone container ref is a stable callback; the list and sidebar null their slot on the escort's own `loose()` rather than a hand-rolled box check, so a non-page row keeps its line past the column's edge; `TableRowDnd` refuses a press on a row that can neither reorder, cross, nor be carried; `TAB_FAMILY` in `navRef.ts` names the family once; the sidebar reaches `toBox` through `drag.tsx`. Ruled out: registering a zone in a layout effect (the passive effect's cleanup ordering on a same-id remount is the reason it is passive); a shared point-in-box helper (the engine's padded `within` is the one that remains).
+- **Nathan's post-checkpoint rulings:** implementation agents on Sonnet and review agents on Fable; the final review as one simplification and one adversarial agent over the whole range with the neutral verification the orchestrator's own; a CDP walkthrough of every hand-check in his absence; a comment sweep at closeout; the History entry titled Tab Cross-Drag; documents at minimal wording.
