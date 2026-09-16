@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 
 const EXIT_MS = ms(duration.base) + ms(duration.fast)
@@ -45,5 +45,22 @@ export function useTabClose<E extends { tab: { id: string } }>(
     firstLive: renderEntries.findIndex((e) => !e.ghost),
     ghostCount: ghosts.size,
     requestClose,
+  }
+}
+
+export function useSeat<T>(open: (item: T, index: number) => void): {
+  still: boolean
+  seat: (item: T, index: number) => void
+} {
+  const placing = useRef(false)
+  useLayoutEffect(() => {
+    placing.current = false
+  })
+  return {
+    still: placing.current,
+    seat: (item, index) => {
+      placing.current = true
+      open(item, index)
+    },
   }
 }
