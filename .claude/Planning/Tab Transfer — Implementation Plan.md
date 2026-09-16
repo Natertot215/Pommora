@@ -30,7 +30,7 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
 
 #### Implementation Process
 
-- [ ] **Phase 1** — The engine hands items across a family `[Parallel with Phase 2]`
+- [x] **Phase 1** — The engine hands items across a family `[Parallel with Phase 2]`
   - [x] Task 1.1 — Shared tokens and the engine
   - [x] Task 1.2 — DropSlot, the z ladder, Cards on the family gate
   - [x] Task 1.3 — The row escort in the insertion lifecycle
@@ -1830,8 +1830,8 @@ describe('placeAxis — the running-offset core', () => {
 
 #### Review Checkpoint
 
-- [ ] `npm run test -- UIX/Interactions` green with the counts above.
-- [ ] Nathan: Cards view reorder and cross-band moves, a ribbon icon reorder, a ViewTile pill reorder, main-bar and window tab reorders all feel as before.
+- [x] `npm run test -- UIX/Interactions` green with the counts above.
+- [x] Nathan: Cards view reorder and cross-band moves, a ribbon icon reorder, a ViewTile pill reorder, main-bar and window tab reorders all feel as before.
 
 ---
 
