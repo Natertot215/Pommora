@@ -41,7 +41,6 @@ export function NavGallery({
   const tree = useSession((s) => s.tree)
   const find = (key: string): ResolvedNav | undefined =>
     pins.find((p) => p.key === key) ?? items.find((r) => r.key === key)
-  // Only a page can become a tab; the gallery itself lets nothing go.
   const carry = (key: string): PageTarget | null => {
     const it = find(key)
     return (it && pageTargetFromNav(it, tree)) ?? null
@@ -56,7 +55,7 @@ export function NavGallery({
       </div>
     ) : null
   }
-  const zone = { family: 'tabs', carry, renderOverlay } as const
+  const zone = { family: 'tabs', carry, renderOverlay }
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()

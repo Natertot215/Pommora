@@ -58,7 +58,6 @@
   opacity: var(--state-ghost);
 }
 
-/* A tab in flight: the overlay clone fills the lifted rect and reads as lifted. */
 .tab-overlay {
   display: flex;
   align-items: center;

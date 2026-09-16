@@ -19,7 +19,6 @@ import { type Box, SETTLE_FALLBACK } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
-// An empty zone above two banded zones of 200px, an empty one below them, a wide one, a family-less one, and a 3-tab row of 200/120/120 at y 1000; each card a 100px row.
 const ZONES: Record<string, string[]> = {
   E: [],
   A: ['a1', 'a2'],

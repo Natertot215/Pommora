@@ -30,13 +30,12 @@ export function openTabIn(
   const slot = at === undefined ? undefined : clamp(at + base, base, win.tabs.length)
   const from = win.tabs.findIndex((t) => targetPageId(t.target) === target.id)
   if (from !== -1) {
-    const existing = win.tabs[from]
-    const to =
-      slot === undefined ? from : clamp(slot > from ? slot - 1 : slot, base, win.tabs.length - 1)
-    const tabs = from === to ? win.tabs : moveItem(win.tabs, from, to)
-    if (slot !== undefined) return tabs === win.tabs ? win : { ...win, tabs }
-    if (existing.id === win.activeTabId) return win
-    return { ...win, tabs, activeTabId: existing.id }
+    if (slot === undefined) {
+      const existing = win.tabs[from]
+      return existing.id === win.activeTabId ? win : { ...win, activeTabId: existing.id }
+    }
+    const to = clamp(slot > from ? slot - 1 : slot, base, win.tabs.length - 1)
+    return to === from ? win : { ...win, tabs: moveItem(win.tabs, from, to) }
   }
   const tab: WindowTab = { id: makeId(), target: { kind: 'page', ...target } }
   if (slot !== undefined)
