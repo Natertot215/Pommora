@@ -46,6 +46,7 @@ beforeEach(() => {
       return () => undefined
     },
     'page:updateBody': async () => ok({ stale: true }),
+    'index:headings': async () => ok({}),
     'sync:captureLocal': captured,
     'sync:changed': (cb: (status: SyncStatus) => void) => {
       pushStatus = cb

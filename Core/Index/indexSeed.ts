@@ -1,8 +1,9 @@
 import { join, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
-import { extractMentions, frontmatterMentions } from '../Connections/scan'
-import { normalizeTitle } from '../Connections/connections'
+import { extractHeadingMentions, extractMentions, frontmatterMentions } from '../Connections/scan'
+import { normalizeTitle, titleFromPath } from '../Connections/connections'
+import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { parseContextKey } from '../Contexts/contexts'
 import { sweepAdmitsBody } from '../Files/pageFile'
 import {
@@ -30,14 +31,29 @@ import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
 
 import { readWatchScope } from '../Settings/settings'
 
-const NO_ROWS: PageIndexEntry = { mentions: [], values: {}, memberships: [] }
+const NO_ROWS: PageIndexEntry = {
+  mentions: [],
+  headings: [],
+  headingMentions: [],
+  values: {},
+  memberships: [],
+}
 
-function extractPageIndex(content: string): PageIndexEntry {
+function extractPageIndex(rel: string, content: string): PageIndexEntry {
   if (!sweepAdmitsBody(content)) return NO_ROWS
   const values = frontmatterValues(content)
-  const mentions = extractMentions(splitEnvelope(content).body)
+  const own = titleFromPath(rel)
+  const { body } = splitEnvelope(content)
+  const outline = headingOutline(body).map((h) => h.text)
+  const mentions = extractMentions(body, own)
   for (const title of frontmatterMentions(values)) mentions.add(title)
-  return { mentions: [...mentions], values, memberships: extractMemberships(values) }
+  return {
+    mentions: [...mentions],
+    headings: [...new Set(outline.map(normalizeTitle))].filter(Boolean),
+    headingMentions: extractHeadingMentions(body, own, outline),
+    values,
+    memberships: extractMemberships(values),
+  }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
@@ -92,7 +108,7 @@ export const rereadSinceSeed = (): readonly string[] =>
   contentIndexStore() === reread.db && !reread.cold ? reread.rels : []
 
 function recordPage(rel: string, content: string, stat: IndexedStat): void {
-  upsertPageIndex(rel, extractPageIndex(content), stat)
+  upsertPageIndex(rel, extractPageIndex(rel, content), stat)
 }
 
 export async function indexWrittenPage(root: string, abs: string): Promise<void> {

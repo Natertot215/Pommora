@@ -33,6 +33,14 @@ const graph = engineGraph(hostCoreImports())
 describe('the host graph from the Desktop Core imports', () => {
   it('the host embeds only engine code', () => {
     expect(graph.files.filter((f) => f.endsWith('.tsx') || f.endsWith('.css.ts'))).toEqual([])
-    expect(graph.externals).toEqual(['ulidx', 'yaml', 'zod'])
+    expect(graph.externals).toEqual([
+      'mdast',
+      'mdast-util-from-markdown',
+      'mdast-util-gfm',
+      'micromark-extension-gfm',
+      'ulidx',
+      'yaml',
+      'zod',
+    ])
   })
 })

@@ -3,6 +3,8 @@ import { errText, fail, ok, type Result } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
+import { readHeadings } from '../Index/contentIndex'
+import { isStringArray } from '../Contract/validators'
 import { targetTaken } from '../Files/atomicWrite'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { basename, dirname, join } from '../Paths/posix'
@@ -149,6 +151,10 @@ export const nexusHandlers = {
     pushConfirmed(ctx, getLiveTree())
     return ok(null)
   }),
+
+  'index:headings': withRoot(async (_root, _ctx, paths: unknown) =>
+    ok(readHeadings(isStringArray(paths) ? paths : undefined) ?? {}),
+  ),
 
   'path:reveal': async (ctx, p: unknown) => {
     const root = sessionRoot()

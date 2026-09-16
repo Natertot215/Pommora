@@ -9,7 +9,15 @@ describe('the engine graph from serve.ts', () => {
   })
 
   it('depends on nothing outside the engine allowlist', () => {
-    expect(graph.externals).toEqual(['ulidx', 'yaml', 'zod'])
+    expect(graph.externals).toEqual([
+      'mdast',
+      'mdast-util-from-markdown',
+      'mdast-util-gfm',
+      'micromark-extension-gfm',
+      'ulidx',
+      'yaml',
+      'zod',
+    ])
   })
 
   it('reaches exactly the pure UIX leaves', () => {

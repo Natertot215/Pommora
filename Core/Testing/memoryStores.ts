@@ -14,6 +14,8 @@ import type {
 
 interface MemoryIndex {
   mentions: Map<string, { path: string; title: string }>
+  headings: Map<string, { path: string; heading: string }>
+  headingMentions: Map<string, { path: string; title: string; heading: string }>
   values: Map<string, { path: string; key: string; value: string }>
   memberships: Map<string, { path: string; key: string; title: string }>
   stats: Map<string, IndexedStat>
@@ -42,7 +44,13 @@ const underPrefix = (path: string, dir: string): boolean => path.startsWith(`${d
 
 const contentIndex = (index: MemoryIndex): ContentIndexStore => {
   const clearPath = (path: string): void => {
-    for (const table of [index.mentions, index.values, index.memberships])
+    for (const table of [
+      index.mentions,
+      index.headings,
+      index.headingMentions,
+      index.values,
+      index.memberships,
+    ])
       for (const [key, row] of table) if (row.path === path) table.delete(key)
     index.stats.delete(path)
   }
@@ -51,6 +59,9 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     upsertPageIndex(path, entry, stat) {
       clearPath(path)
       for (const title of entry.mentions) index.mentions.set(k(path, title), { path, title })
+      for (const heading of entry.headings) index.headings.set(k(path, heading), { path, heading })
+      for (const { title, heading } of entry.headingMentions)
+        index.headingMentions.set(k(path, title, heading), { path, title, heading })
       for (const [key, value] of Object.entries(entry.values))
         index.values.set(k(path, key), { path, key, value: JSON.stringify(value) ?? 'null' })
       for (const { key, title } of entry.memberships)
@@ -63,6 +74,14 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     renamePathIndex(oldPath, newPath) {
       for (const row of [...index.mentions.values()].filter((r) => r.path === oldPath))
         index.mentions.set(k(newPath, row.title), { path: newPath, title: row.title })
+      for (const row of [...index.headings.values()].filter((r) => r.path === oldPath))
+        index.headings.set(k(newPath, row.heading), { path: newPath, heading: row.heading })
+      for (const row of [...index.headingMentions.values()].filter((r) => r.path === oldPath))
+        index.headingMentions.set(k(newPath, row.title, row.heading), {
+          path: newPath,
+          title: row.title,
+          heading: row.heading,
+        })
       for (const row of [...index.values.values()].filter((r) => r.path === oldPath))
         index.values.set(k(newPath, row.key), { path: newPath, key: row.key, value: row.value })
       for (const row of [...index.memberships.values()].filter((r) => r.path === oldPath))
@@ -76,7 +95,13 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       if (oldPath !== newPath) clearPath(oldPath)
     },
     removePathPrefixIndex(dir) {
-      for (const table of [index.mentions, index.values, index.memberships])
+      for (const table of [
+        index.mentions,
+        index.headings,
+        index.headingMentions,
+        index.values,
+        index.memberships,
+      ])
         for (const [key, row] of table) if (underPrefix(row.path, dir)) table.delete(key)
       for (const path of [...index.stats.keys()])
         if (underPrefix(path, dir)) index.stats.delete(path)
@@ -88,6 +113,22 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         index.mentions.delete(key)
         const path = move(row.path)
         index.mentions.set(k(path, row.title), { path, title: row.title })
+      }
+      for (const [key, row] of [...index.headings]) {
+        if (!underPrefix(row.path, oldDir)) continue
+        index.headings.delete(key)
+        const path = move(row.path)
+        index.headings.set(k(path, row.heading), { path, heading: row.heading })
+      }
+      for (const [key, row] of [...index.headingMentions]) {
+        if (!underPrefix(row.path, oldDir)) continue
+        index.headingMentions.delete(key)
+        const path = move(row.path)
+        index.headingMentions.set(k(path, row.title, row.heading), {
+          path,
+          title: row.title,
+          heading: row.heading,
+        })
       }
       for (const [key, row] of [...index.values]) {
         if (!underPrefix(row.path, oldDir)) continue
@@ -111,6 +152,23 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       return sortedPaths(
         [...index.mentions.values()].filter((r) => r.title === normalizedTitle).map((r) => r.path),
       )
+    },
+    queryHeadingMentions(normalizedTitle, normalizedHeading) {
+      return sortedPaths(
+        [...index.headingMentions.values()]
+          .filter((r) => r.title === normalizedTitle && r.heading === normalizedHeading)
+          .map((r) => r.path),
+      )
+    },
+    readHeadings(paths) {
+      const out: Record<string, string[]> = {}
+      for (const p of paths ?? []) out[p] = []
+      for (const { path, heading } of index.headings.values()) {
+        if (paths && !paths.includes(path)) continue
+        out[path] ??= []
+        out[path].push(heading)
+      }
+      return out
     },
     queryKeyHolders(key) {
       return sortedPaths([...index.values.values()].filter((r) => r.key === key).map((r) => r.path))
@@ -227,6 +285,8 @@ const captures = (): CaptureStore => {
 export function memoryStores(): { stores: Stores; index: MemoryIndex } {
   const index: MemoryIndex = {
     mentions: new Map(),
+    headings: new Map(),
+    headingMentions: new Map(),
     values: new Map(),
     memberships: new Map(),
     stats: new Map(),

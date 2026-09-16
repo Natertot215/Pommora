@@ -33,6 +33,7 @@ export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage) => void
   menu?: (target: ConnMenuTarget) => void
   bypass?: (page: ConnPage) => void
+  headingsOf?: (path: string) => string[] | undefined
 }
 
 export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }

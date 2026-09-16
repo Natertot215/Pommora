@@ -56,6 +56,8 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Notes/A.md',
         {
           mentions: ['beta'],
+          headings: [],
+          headingMentions: [],
           values: { Status: 'Open', '<Projects>': ['Pommora'] },
           memberships: [{ key: '<Projects>', title: 'pommora' }],
         },
@@ -65,6 +67,8 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Loose/B.md',
         {
           mentions: ['beta', 'gamma'],
+          headings: [],
+          headingMentions: [],
           values: { '<Projects>': ['Pommora', 'Sapphire'] },
           memberships: [
             { key: '<Projects>', title: 'pommora' },
@@ -85,12 +89,18 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('a re-upsert replaces the page rows rather than accreting them', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { mentions: ['beta'], values: { Status: 'Open' }, memberships: [] },
+        {
+          mentions: ['beta'],
+          headings: [],
+          headingMentions: [],
+          values: { Status: 'Open' },
+          memberships: [],
+        },
         STAT,
       )
       store.upsertPageIndex(
         'Notes/A.md',
-        { mentions: ['gamma'], values: {}, memberships: [] },
+        { mentions: ['gamma'], headings: [], headingMentions: [], values: {}, memberships: [] },
         { mtimeMs: 2000, size: 12 },
       )
       expect(store.queryMentions('beta')).toEqual([])
@@ -102,7 +112,13 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('serializes a null value rather than dropping the key', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { mentions: [], values: { Blank: null }, memberships: [] },
+        {
+          mentions: [],
+          headings: [],
+          headingMentions: [],
+          values: { Blank: null },
+          memberships: [],
+        },
         STAT,
       )
       expect(store.queryKeyHolders('Blank')).toEqual(['Notes/A.md'])
@@ -113,6 +129,8 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Notes/A.md',
         {
           mentions: ['beta'],
+          headings: [],
+          headingMentions: [],
           values: { Status: 'Open' },
           memberships: [{ key: '<Projects>', title: 'pommora' }],
         },
@@ -130,6 +148,8 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Notes/A.md',
         {
           mentions: ['beta'],
+          headings: [],
+          headingMentions: [],
           values: { Status: 'Open' },
           memberships: [{ key: '<Projects>', title: 'pommora' }],
         },
@@ -143,15 +163,35 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readIndexedStat('Notes/Alpha.md')).toEqual(STAT)
     })
 
+    it('round-trips headings and heading mentions, then carries them across a rename', () => {
+      store.upsertPageIndex(
+        'Notes/A.md',
+        {
+          mentions: [],
+          headings: ['setup'],
+          headingMentions: [{ title: 'beta', heading: 'setup' }],
+          values: {},
+          memberships: [],
+        },
+        STAT,
+      )
+      expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup'] })
+      expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': ['setup'] })
+      expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/A.md'])
+      store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
+      expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': ['setup'] })
+      expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/Alpha.md'])
+    })
+
     it('prefix-renames descendants, exact on a % folder name', () => {
       store.upsertPageIndex(
         '50% Off/A.md',
-        { mentions: ['beta'], values: {}, memberships: [] },
+        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
         STAT,
       )
       store.upsertPageIndex(
         '50% Off More/B.md',
-        { mentions: ['beta'], values: {}, memberships: [] },
+        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
         STAT,
       )
       store.renamePathPrefixIndex('50% Off', 'Sale')
@@ -161,7 +201,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('prefix-renames across an astral folder name', () => {
       store.upsertPageIndex(
         'Projects 🚀/A.md',
-        { mentions: ['beta'], values: {}, memberships: [] },
+        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
         STAT,
       )
       store.renamePathPrefixIndex('Projects 🚀', 'Launchpad')
@@ -171,12 +211,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('removes a prefix, exact on a % folder name', () => {
       store.upsertPageIndex(
         '50% Off/A.md',
-        { mentions: ['beta'], values: {}, memberships: [] },
+        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
         STAT,
       )
       store.upsertPageIndex(
         '50% Off More/B.md',
-        { mentions: ['beta'], values: {}, memberships: [] },
+        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
         STAT,
       )
       store.removePathPrefixIndex('50% Off')

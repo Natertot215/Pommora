@@ -38,6 +38,7 @@ async function freshStore(answer: () => Promise<unknown>): Promise<{
     'devicePrefs:save': prefsSave,
     'nav:write': vi.fn(async () => ok(null)),
     'tabs:save': vi.fn(async () => ok(null)),
+    'index:headings': vi.fn(async () => ok({})),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   const { useSession } = await import('./store')

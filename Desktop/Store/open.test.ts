@@ -198,7 +198,11 @@ describe('upgrade in place', () => {
     openSessionDb(dir, root)
     markIndexReady()
     expect(readScope('folds')).toEqual({ p1: ['x'] })
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {}, memberships: [] }, STAT)
+    upsertPageIndex(
+      'Notes/A.md',
+      { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      STAT,
+    )
     expect(queryMentions('beta')).toEqual(['Notes/A.md'])
     expect(readScope('folds')).toEqual({ p1: ['x'] })
     closeSessionDb()
