@@ -194,6 +194,11 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       }
       const next = openTabIn(cur, makeTabId, target, at)
       if (next === cur) return
+      // A seated tab leaves the active one in place, so nothing slides.
+      if (at !== undefined) {
+        commitWindow(next)
+        return
+      }
       const spawned = next.tabs.length > cur.tabs.length
       commitWindow(next, {
         windowSlide: spawned

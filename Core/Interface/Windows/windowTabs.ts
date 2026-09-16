@@ -34,15 +34,14 @@ export function openTabIn(
     const to =
       slot === undefined ? from : clamp(slot > from ? slot - 1 : slot, base, win.tabs.length - 1)
     const tabs = from === to ? win.tabs : moveItem(win.tabs, from, to)
-    if (tabs === win.tabs && existing.id === win.activeTabId) return win
+    if (slot !== undefined) return tabs === win.tabs ? win : { ...win, tabs }
+    if (existing.id === win.activeTabId) return win
     return { ...win, tabs, activeTabId: existing.id }
   }
   const tab: WindowTab = { id: makeId(), target: { kind: 'page', ...target } }
-  const tabs =
-    slot === undefined
-      ? [...win.tabs, tab]
-      : [...win.tabs.slice(0, slot), tab, ...win.tabs.slice(slot)]
-  return { ...win, tabs, activeTabId: tab.id }
+  if (slot !== undefined)
+    return { ...win, tabs: [...win.tabs.slice(0, slot), tab, ...win.tabs.slice(slot)] }
+  return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
 }
 
 export function reorderTabIn(win: WindowState, activeId: string, overId: string): WindowState {

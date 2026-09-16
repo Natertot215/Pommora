@@ -186,19 +186,15 @@ export function openTabAt(
   target: SelectTarget,
   index: number,
   newId: string,
-): OpenResult {
-  const pin = pinned.find(showing(target))
-  if (pin) return { tabs, activeTabId: pin.id }
+): Tab[] {
+  if (pinned.some(showing(target))) return tabs
   const from = tabs.findIndex(showing(target))
   if (from !== -1) {
     const to = clamp(index > from ? index - 1 : index, 0, tabs.length - 1)
-    return { tabs: from === to ? tabs : moveItem(tabs, from, to), activeTabId: tabs[from].id }
+    return from === to ? tabs : moveItem(tabs, from, to)
   }
   const at = clamp(index, 0, tabs.length)
-  return {
-    tabs: [...tabs.slice(0, at), tabFor(newId, target), ...tabs.slice(at)],
-    activeTabId: newId,
-  }
+  return [...tabs.slice(0, at), tabFor(newId, target), ...tabs.slice(at)]
 }
 
 export function pushMru(mru: string[], id: string): string[] {
