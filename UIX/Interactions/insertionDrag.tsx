@@ -24,10 +24,8 @@ interface InsertionDragSpec<Slot, Snap> {
   lineFor?: (slot: Slot, snap: Snap) => CSSProperties | null
   lineClassName?: string
   label: (id: string) => string
-  /** What the ghost shows; `label` stays the spoken name. */
   ghostLabel?: (id: string) => ReactNode
   ghost?: 'offset' | 'grab' | 'none'
-  /** A second surface the row may land in; `escortSpec` says what a row carries, null keeping it home. */
   escort?: Escort | null
   escortSpec?: (id: string, rect: Box) => EscortSpec | null
   rowEl: (id: string) => HTMLElement | null | undefined
@@ -144,7 +142,6 @@ export function useInsertionDrag<Slot, Snap>(
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         const escort = specRef.current.escort
         escort?.move(ev.clientX, ev.clientY)
-        // A list must not scroll itself under a row that has left it.
         if (escort?.loose()) {
           stopScroll.current?.()
           stopScroll.current = null
