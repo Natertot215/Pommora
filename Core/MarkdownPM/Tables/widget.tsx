@@ -225,10 +225,18 @@ class TableWidget extends ReactWidget {
       const change = cellCommitChange(docScan(view.state.doc), this.tableIndex, row, col, text)
       if (change) view.dispatch({ changes: change, annotations: tableSelfEdit.of(true) })
     }
+    // The widget replaces exactly the table's lines, so its own edges draw the caret in the gutter; the exit lands one line past the edge, making that line when the table bounds the document.
     const exit = (dir: 'before' | 'after'): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (!region) return
-      focusAt(view, dir === 'before' ? region.from : region.to)
+      if (dir === 'after') {
+        if (region.to === view.state.doc.length)
+          view.dispatch({ changes: { from: region.to, insert: '\n' } })
+        focusAt(view, region.to + 1)
+      } else if (region.from === 0) {
+        view.dispatch({ changes: { from: 0, insert: '\n' } })
+        focusAt(view, 0)
+      } else focusAt(view, region.from - 1)
     }
     const structural = (transform: (m: TableModel) => TableModel): boolean => {
       const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, transform)
