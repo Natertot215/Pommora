@@ -20,7 +20,6 @@ import { entityIcon } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
   CardBody,
-  CardDropSlot,
   CardPlaceholder,
   CardRoot,
   CardText,
@@ -31,6 +30,7 @@ import {
 import {
   DragGroup,
   type DragItem,
+  DropSlot,
   reorder,
   SortableZone,
   useDragItem,
@@ -477,7 +477,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               onReorder={reorderSets}
               getItemLabel={(id) => sets.find((s) => s.id === id)?.title ?? id}
             >
-              <CardDropSlot />
+              <DropSlot />
               {sets.map((s) => (
                 <DraggableSetCard key={s.id} set={s} defaultIcons={defaultIcons} api={cardApi} />
               ))}
@@ -486,7 +486,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         )}
         <DragGroup
           onCommit={onCardDrop}
-          crossZone={canReassign || canRelocate}
           resolveIndex={interactions.structuralSlot}
           renderOverlay={(id, rect) => {
             const r = rowById.get(id)
@@ -528,7 +527,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             )
           }}
         >
-          <CardDropSlot />
+          <DropSlot />
           <BandDnd
             bands={interactions.bands}
             labelFor={bandLabel}
@@ -554,6 +553,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 >
                   <SortableZone
                     id={g.key}
+                    family={canReassign || canRelocate ? 'cards' : undefined}
                     items={g.items.map((r) => r.id)}
                     getItemLabel={(id) => rowById.get(id)?.title ?? 'card'}
                     className="cards-grid card-grid is-fill"

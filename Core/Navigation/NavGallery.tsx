@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
+import { DropSlot, SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
 import {
   CardBody,
-  CardDropSlot,
   CardPlaceholder,
   CardRoot,
   CardText,
@@ -61,7 +60,7 @@ export function NavGallery({
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} onReorder={reorderPin}>
-            <CardDropSlot />
+            <DropSlot />
             {pins.map(card)}
           </SortableZone>
         )}
@@ -77,7 +76,7 @@ export function NavGallery({
           ))
         ) : (
           <SortableZone items={items.map((r) => r.key)} onReorder={onReorderRecent}>
-            <CardDropSlot />
+            <DropSlot />
             {items.map(card)}
           </SortableZone>
         )}

@@ -41,6 +41,9 @@ export function suppressReleaseClick(): void {
   document.addEventListener('pointerdown', onDown, { capture: true, once: true })
 }
 export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch
+export const BREAKOUT = 24 // px past an axis-locked zone's edges before its item is loose; a free zone lets go at its edge
+/** What an item carries into another zone; the two zones agree on its shape. */
+export type Carried = unknown
 export const SETTLE_FALLBACK = 80 // ms slack past the transition, covering the paint-start delay
 
 export function toBox(el: HTMLElement): Box {

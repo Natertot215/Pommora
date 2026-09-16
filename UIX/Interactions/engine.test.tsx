@@ -2,21 +2,48 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { DragGroup, placeCell, SortableZone, useDragItem, useDropSlot } from './engine'
+import {
+  DragGroup,
+  placeAxis,
+  placeCell,
+  SortableZone,
+  useDragFamily,
+  useDragItem,
+  useDropSlot,
+  useEscort,
+  type Escort,
+} from './engine'
 import { firePointer, pressEscape, stubPointerCapture, stubRect } from './pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { type Box, SETTLE_FALLBACK } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
-// An empty zone above two banded zones of 200px, an empty one below them, and a wide one; each card a 100px row.
-const ZONES: Record<string, string[]> = { E: [], A: ['a1', 'a2'], B: ['b1'], C: [], D: ['d1'] }
-const BAND: Record<string, number> = { E: -200, A: 0, B: 200, C: 400, D: 600 }
+// An empty zone above two banded zones of 200px, an empty one below them, a wide one, a family-less one, and a 3-tab row of 200/120/120 at y 1000; each card a 100px row.
+const ZONES: Record<string, string[]> = {
+  E: [],
+  A: ['a1', 'a2'],
+  B: ['b1'],
+  C: [],
+  D: ['d1'],
+  F: ['f1'],
+  X: ['x1', 'x2', 'x3'],
+}
+const BAND: Record<string, number> = { E: -200, A: 0, B: 200, C: 400, D: 600, F: 800, X: 1000 }
+const TAB_W = [200, 120, 120]
 
 let commitSpy: ReturnType<typeof vi.fn<(activeId: string, zone: string, index: number) => void>>
+let fromSpy: ReturnType<typeof vi.fn<(from: string) => void>>
 let reorderSpy: ReturnType<typeof vi.fn<(activeId: string, overId: string) => void>>
+let receiveSpy: ReturnType<typeof vi.fn<(item: unknown, index: number) => void>>
 let resolve: (zoneId: string, index: number, activeId: string) => number | null
 let withOverlay = false
+let zoneOverlay = false
+let stray: 'stick' | 'return' = 'stick'
+let holdGap = false
+let carryA: ((id: string) => unknown) | undefined
+let hidden = new Set<string>()
+let escortRef: Escort | null = null
 
 function Item({ id }: { id: string }): React.JSX.Element {
   const { setNodeRef, style, handle } = useDragItem(id)
@@ -26,32 +53,54 @@ function Item({ id }: { id: string }): React.JSX.Element {
 function Slot(): React.JSX.Element | null {
   const slot = useDropSlot()
   return slot ? (
-    <i data-slot style={{ top: slot.top, width: slot.width, height: slot.height }} />
+    <i
+      data-slot
+      style={{ top: slot.top, left: slot.left, width: slot.width, height: slot.height }}
+    />
   ) : null
+}
+
+function Probe(): React.JSX.Element {
+  escortRef = useEscort()
+  return <b data-family={useDragFamily() ?? ''} />
 }
 
 function Board(): React.JSX.Element {
   return (
     <DragGroup
-      crossZone
-      onCommit={(activeId, zone, index) => commitSpy(activeId, zone, index)}
+      stray={stray}
+      holdGap={holdGap}
+      onCommit={(activeId, zone, index, from) => {
+        commitSpy(activeId, zone, index)
+        fromSpy(from)
+      }}
       resolveIndex={(zone, index, activeId) => resolve(zone, index, activeId)}
       renderOverlay={withOverlay ? (activeId) => <span data-overlay={activeId} /> : undefined}
     >
-      {Object.entries(ZONES).map(([zid, ids]) => (
-        <SortableZone
-          key={zid}
-          id={zid}
-          items={ids}
-          className={`zone-${zid}`}
-          onReorder={(activeId, overId) => reorderSpy(activeId, overId)}
-        >
-          {ids.map((id) => (
-            <Item key={id} id={id} />
-          ))}
-        </SortableZone>
-      ))}
+      {Object.entries(ZONES)
+        .filter(([zid]) => !hidden.has(zid))
+        .map(([zid, ids]) => (
+          <SortableZone
+            key={zid}
+            id={zid}
+            items={ids}
+            className={`zone-${zid}`}
+            family={zid === 'F' ? undefined : 'board'}
+            axis={zid === 'X' ? 'x' : undefined}
+            carry={zid === 'A' ? carryA : undefined}
+            receive={zid === 'B' ? (item, index) => receiveSpy(item, index) : undefined}
+            renderOverlay={
+              zoneOverlay && zid === 'A' ? (id) => <span data-zone-overlay={id} /> : undefined
+            }
+            onReorder={(activeId, overId) => reorderSpy(activeId, overId)}
+          >
+            {ids.map((id) => (
+              <Item key={id} id={id} />
+            ))}
+          </SortableZone>
+        ))}
       <Slot />
+      <Probe />
     </DragGroup>
   )
 }
@@ -61,9 +110,16 @@ let root: Root
 
 beforeEach(async () => {
   commitSpy = vi.fn()
+  fromSpy = vi.fn()
   reorderSpy = vi.fn()
+  receiveSpy = vi.fn()
   resolve = (_zone, index) => index
   withOverlay = false
+  zoneOverlay = false
+  stray = 'stick'
+  holdGap = false
+  carryA = undefined
+  hidden = new Set()
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -73,15 +129,20 @@ beforeEach(async () => {
 const mount = async (): Promise<void> => {
   await act(async () => root.render(<Board />))
   for (const [zid, ids] of Object.entries(ZONES)) {
+    if (hidden.has(zid)) continue
     const top = BAND[zid]
-    const wide = zid === 'D'
+    const wide = zid === 'D' || zid === 'X'
     stubRect(host.querySelector(`.zone-${zid}`) as Element, {
       top,
-      bottom: top + 200,
+      bottom: top + (zid === 'X' ? 100 : 200),
       right: wide ? 1000 : 200,
     })
     ids.forEach((id, i) => {
-      stubRect(item(id), { top: top + i * 100, bottom: top + i * 100 + 100, left: 0, right: 200 })
+      const el = host.querySelector(`.zone-${zid} [data-id="${id}"]`) as Element
+      if (zid === 'X') {
+        const left = TAB_W.slice(0, i).reduce((a, b) => a + b, 0)
+        stubRect(el, { top, bottom: top + 100, left, right: left + TAB_W[i] })
+      } else stubRect(el, { top: top + i * 100, bottom: top + i * 100 + 100, left: 0, right: 200 })
     })
   }
 }
