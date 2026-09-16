@@ -44,12 +44,36 @@ export function decodeLinkTarget(target: string): string {
   }
 }
 
-// Read on the raw target: a URL's scheme and separators are literal, while an encoded page title spells them out.
-export function targetTitle(rawTarget: string): string | null {
+const splitTarget = (raw: string): { page: string; fragment: string } => {
+  const i = raw.indexOf('#')
+  return i === -1
+    ? { page: raw, fragment: '' }
+    : { page: raw.slice(0, i), fragment: raw.slice(i + 1) }
+}
+
+const pageTarget = (rawTarget: string): { page: string; fragment: string } | null => {
   const raw = rawTarget.trim()
-  if (!raw || raw.includes('/') || HAS_SCHEME.test(raw)) return null
-  const decoded = decodeLinkTarget(raw).trim()
-  return decoded ? decoded.replace(/\.md$/i, '') : null
+  return !raw || raw.includes('/') || HAS_SCHEME.test(raw) ? null : splitTarget(raw)
+}
+
+// Read on the raw target: a URL's scheme and separators are literal, while an encoded page title spells them out. The `#` is split before decoding so an encoded `%23` stays inside the title.
+export function targetTitle(rawTarget: string): string | null {
+  const t = pageTarget(rawTarget)
+  if (!t) return null
+  const decoded = decodeLinkTarget(t.page).trim()
+  if (!decoded) return t.fragment ? '' : null
+  return decoded.replace(/\.md$/i, '')
+}
+
+export function targetFragment(rawTarget: string): string {
+  const t = pageTarget(rawTarget)
+  return t ? decodeLinkTarget(t.fragment).trim() : ''
+}
+
+export function encodePageTarget(title: string, heading?: string): string {
+  return heading
+    ? `${encodeLinkTarget(title)}#${encodeLinkTarget(heading)}`
+    : encodeLinkTarget(title)
 }
 
 export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {

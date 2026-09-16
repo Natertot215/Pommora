@@ -46,14 +46,14 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
 
 #### Implementation Process
 
-- [ ] **Phase 1** — The grammar splits page from fragment
-  - [ ] Task 1.1 — `pageLinkPattern`, `linkSpans`, `parseConnectionText`, `connectionText`, `embeddableTitle`, `pageEmbedPattern`
-  - [ ] Task 1.2 — `targetTitle` keeps the page, `targetFragment` reads the rest
-  - [ ] Task 1.3 — `extractMentions` learns the page; `extractHeadingMentions` and `sectionRunsIn`
-  - [ ] Task 1.4 — `rewriteConnections` keeps fragments; `rewriteHeadingConnections` is the heading primitive
-  - [ ] Task 1.5 — The name rule bans `#` and `§`
-  - [ ] Task 1.6 — Consumers read named groups
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — The grammar splits page from fragment
+  - [x] Task 1.1 — `pageLinkPattern`, `linkSpans`, `parseConnectionText`, `connectionText`, `embeddableTitle`, `pageEmbedPattern`
+  - [x] Task 1.2 — `targetTitle` keeps the page, `targetFragment` reads the rest
+  - [x] Task 1.3 — `extractMentions` learns the page; `extractHeadingMentions` and `sectionRunsIn`
+  - [x] Task 1.4 — `rewriteConnections` keeps fragments; `rewriteHeadingConnections` is the heading primitive
+  - [x] Task 1.5 — The name rule bans `#` and `§`
+  - [x] Task 1.6 — Consumers read named groups
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — The index records headings and heading links
   - [ ] Task 2.1 — Two tables, the store contract, both backends
   - [ ] Task 2.2 — The seed extracts headings and heading mentions
@@ -690,7 +690,9 @@ export function rewriteHeadingConnections(
 **VERIFY**
 
 - [ ] Check the work for unnecessary code or obvious mistakes.
-- [ ] `grep -rn "pageLinkPattern()\|pageEmbedPattern()" Core --include='*.ts' --include='*.tsx' | grep -v test` lists every consumer; each line either uses `linkSpans`, `groups`, or the generic `m[1]` embed accept. Record the list.
+- [x] `grep -rn "pageLinkPattern()\|pageEmbedPattern()" Core --include='*.ts' --include='*.tsx' | grep -v test` lists every consumer; each line either uses `linkSpans`, `groups`, or the generic `m[1]` embed accept. Record the list.
+  - Task 1.1 left `npm run typecheck` green: every `parseConnectionText` reader (`navigationFile.ts`, `linkValue.ts`, `Properties/value.ts`, `assetRoots.ts`, `assetUrl.ts`, `assetMigrate.ts`) reads `.title` or null-checks, `connectionText`'s third parameter is optional, and `LinkSpans.heading` is additive.
+  - Consumers: `scan.ts` (named groups), `rewrite.ts` (`groupsOf`/`offsetOf`), `pasteAsMenu.ts` (`groups.page`, refuses a written heading), `useConnectionAutocomplete.ts` (`groups.alias`), `tokens.ts` `wikiLinkTokens` (`linkSpans`), `tokens.ts` embed spec (generic `m[1]` = `page`), `detect.ts` `loneEmbedRe` (untouched; `embeddable()` refuses `#`), `adoptFile.ts` (untouched).
 - [ ] Gates green across the repo.
 
 #### Review Checkpoint
@@ -2784,4 +2786,6 @@ Per the skill's §5.5, written when the chain is confirmed.
 
 ### Deviations
 
-- (none yet)
+- **Task 1.4, `escapedPipe`:** the AFTER block tests `alias === undefined`; with named groups an empty typed alias (`[[Old|]]`) arrives as `''`, which would re-emit `[[New|]]` and break the existing byte-for-byte pin. Written as the falsy test the NOW code used, so `[[Old|]]` → `[[New]]` as before.
+- **Task 1.2, `links.test.ts`:** the codec round-trip corpus held `'a#b?c&d+e'`; `#` is now the fragment separator and no longer a legal title, so the fixture reads `'a?b&c+d'`.
+- **Task 1.3, `scan.test.ts` header:** the consumer count was already off before this phase (four, not five, outside `connections.ts` and `scan.ts`); it now reads four and names paste-as.

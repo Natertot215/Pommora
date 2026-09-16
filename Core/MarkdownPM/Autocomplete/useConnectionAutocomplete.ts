@@ -102,7 +102,7 @@ export function useConnectionAutocomplete(
     // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless deliberately re-emitted.
     const worn =
       ac.form === 'link'
-        ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
+        ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.groups?.alias
         : undefined
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =

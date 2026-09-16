@@ -8,6 +8,7 @@ import {
   normalizeLinkUrl,
   isValidLink,
   isHttpLink,
+  targetFragment,
   targetTitle,
 } from './links'
 
@@ -163,6 +164,24 @@ describe('targetTitle — what a markdown link names', () => {
     expect(targetTitle('mailto:a@b.com')).toBeNull()
     expect(targetTitle('')).toBeNull()
   })
+
+  it('splits the page from a heading fragment', () => {
+    expect(targetTitle('Page#Setup')).toBe('Page')
+  })
+
+  it('decodes the fragment half independently of the page', () => {
+    expect(targetFragment('Page#My%20Heading')).toBe('My Heading')
+  })
+
+  it('reads a bare fragment as the containing page', () => {
+    expect(targetTitle('#Setup')).toBe('')
+    expect(targetFragment('#Setup')).toBe('Setup')
+  })
+
+  it('splits at the first literal `#`, not an encoded one', () => {
+    expect(targetTitle('A%23B')).toBe('A#B')
+    expect(targetFragment('A%23B')).toBe('')
+  })
 })
 
 describe('the codec reads back everything it writes', () => {
@@ -176,7 +195,7 @@ describe('the codec reads back everything it writes', () => {
     'Q3 — Plan',
     'Node.js',
     'Already%20Encoded',
-    'a#b?c&d+e',
+    'a?b&c+d',
   ]
 
   it('round-trips, and every one still names its page', () => {
