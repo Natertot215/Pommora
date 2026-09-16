@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardTrail,
 } from '@pommora/uix/Cards/Card'
-import type { NavRef } from '@pommora/core/Navigation/navRef'
+import type { NavRef, PageTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { navKey } from './navRecents'
 import { pageTargetFromNav, type ResolvedNav } from './navResolve'
@@ -38,6 +38,25 @@ export function NavGallery({
 }): React.JSX.Element {
   const reorderPin = useSession((s) => s.reorderPin)
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
+  const tree = useSession((s) => s.tree)
+  const find = (key: string): ResolvedNav | undefined =>
+    pins.find((p) => p.key === key) ?? items.find((r) => r.key === key)
+  // Only a page can become a tab; the gallery itself lets nothing go.
+  const carry = (key: string): PageTarget | null => {
+    const it = find(key)
+    return (it && pageTargetFromNav(it, tree)) ?? null
+  }
+  const renderOverlay = (key: string): React.ReactNode => {
+    const it = find(key)
+    return it ? (
+      <div className="nav-gallery">
+        <div className="card-grid">
+          <GalleryCard it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
+        </div>
+      </div>
+    ) : null
+  }
+  const zone = { family: 'tabs', carry, renderOverlay } as const
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()
@@ -59,23 +78,17 @@ export function NavGallery({
     >
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
         {pins.length > 0 && (
-          <SortableZone items={pins.map((p) => p.key)} onReorder={reorderPin}>
+          <SortableZone items={pins.map((p) => p.key)} onReorder={reorderPin} {...zone}>
             <DropSlot />
             {pins.map(card)}
           </SortableZone>
         )}
         {frozenLayout ? (
-          items.map((it) => (
-            <GalleryCard
-              key={it.key}
-              it={it}
-              nexusId={nexusId}
-              onSelect={onSelect}
-              onMenu={openMenu}
-            />
-          ))
+          <SortableZone items={items.map((r) => r.key)} fixed {...zone}>
+            {items.map(card)}
+          </SortableZone>
         ) : (
-          <SortableZone items={items.map((r) => r.key)} onReorder={onReorderRecent}>
+          <SortableZone items={items.map((r) => r.key)} onReorder={onReorderRecent} {...zone}>
             <DropSlot />
             {items.map(card)}
           </SortableZone>
