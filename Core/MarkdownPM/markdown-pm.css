@@ -338,11 +338,13 @@
   display: inline-flex;
   align-items: center;
   gap: var(--heading-join-gap);
-  margin: 0 var(--heading-join-gap);
+  margin-right: var(--heading-join-gap);
   vertical-align: -0.1em;
 }
 .md-heading-divider {
   height: var(--heading-divider-h);
+  margin-left: var(--heading-join-gap);
+  background: var(--label-secondary);
 }
 .md-heading-symbol {
   color: var(--connection);
