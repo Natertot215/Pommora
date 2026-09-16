@@ -1,4 +1,5 @@
 import type { WindowTabTarget } from '@pommora/core/Navigation/navRef'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
@@ -17,17 +18,31 @@ export interface WindowState {
 
 const targetPageId = (t: WindowTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
+/** `at` counts page tabs only, as the strip shows them; the map sentinel keeps its seat ahead of them. */
 export function openTabIn(
   win: WindowState,
   makeId: () => string,
   target: { id: string; path: string },
+  at?: number,
 ): WindowState {
-  const existing = win.tabs.find((t) => targetPageId(t.target) === target.id)
-  if (existing) {
-    return existing.id === win.activeTabId ? win : { ...win, activeTabId: existing.id }
+  const first = win.tabs.findIndex((t) => t.target.kind !== 'navwindow')
+  const base = first === -1 ? win.tabs.length : first
+  const slot = at === undefined ? undefined : clamp(at + base, base, win.tabs.length)
+  const from = win.tabs.findIndex((t) => targetPageId(t.target) === target.id)
+  if (from !== -1) {
+    const existing = win.tabs[from]
+    const to =
+      slot === undefined ? from : clamp(slot > from ? slot - 1 : slot, base, win.tabs.length - 1)
+    const tabs = from === to ? win.tabs : moveItem(win.tabs, from, to)
+    if (tabs === win.tabs && existing.id === win.activeTabId) return win
+    return { ...win, tabs, activeTabId: existing.id }
   }
   const tab: WindowTab = { id: makeId(), target: { kind: 'page', ...target } }
-  return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
+  const tabs =
+    slot === undefined
+      ? [...win.tabs, tab]
+      : [...win.tabs.slice(0, slot), tab, ...win.tabs.slice(slot)]
+  return { ...win, tabs, activeTabId: tab.id }
 }
 
 export function reorderTabIn(win: WindowState, activeId: string, overId: string): WindowState {
