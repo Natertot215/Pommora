@@ -176,7 +176,7 @@ export function NavList({
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)
   const tree = useSession((s) => s.tree)
-  const engine = useEscort()
+  const escort = useEscort()
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav): void => setMenu({ item: it })
   const pinRows = reorderable ? (pins ?? []) : []
@@ -203,7 +203,6 @@ export function NavList({
     if (groupKey === 'pins') reorderPin(activeId, over)
     else onReorderRecent?.(activeId, over)
   }
-  // A page row rides the engine's escort into a tab row; the list itself lets nothing go.
   const carry = (key: string): PageTarget | null => {
     const it = rows.find((r) => r.key === key)
     return (it && pageTargetFromNav(it, tree)) ?? null
@@ -226,7 +225,7 @@ export function NavList({
         canReorderWithin={!!reorderable}
         crossZone={false}
         onDrop={commitReorder}
-        escort={engine && { via: engine, family: 'tabs', carry }}
+        escort={escort && { via: escort, family: 'tabs', carry }}
         ghostLabel={ghostOf}
       >
         <div className="nav-list">

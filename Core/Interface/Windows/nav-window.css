@@ -41,7 +41,7 @@
 .navwindow-tabs .window-tabwrap {
   height: 100%;
 }
-/* A row opened for a loose tab measures at once; it eases shut again only if nothing lands. */
+/* A row opened for a loose tab must measure at once, so it opens without the ease. */
 .navwindow-tabs.is-forced {
   transition: none;
 }

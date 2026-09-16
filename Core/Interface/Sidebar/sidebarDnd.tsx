@@ -26,7 +26,7 @@ type Slot = {
   commit: MutateRequest
 }
 
-type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[]; box: Box }
+type Snapshot = { measured: MeasuredRow[]; siblings: MeasuredRow[]; box: Box }
 
 type Value = {
   draggingId: string | null
@@ -56,7 +56,8 @@ export function SidebarDnd({
   const computeTarget = (id: string, clientY: number, s: Snapshot): Slot | null => {
     const draggedEntry = index.byId.get(id)
     if (!draggedEntry) return null
-    const { contentTop, measured } = s
+    const { measured, box } = s
+    const contentTop = box.top
     if (measured.length === 0) return null
     // A slot that reproduces where the row already sits is declined — the line promises a move.
     const unless = (noop: boolean, slot: Slot): Slot | null => (noop ? null : slot)
@@ -185,7 +186,6 @@ export function SidebarDnd({
       const content = contentRef.current
       if (!content) return null
       const box = toBox(content)
-      const contentTop = box.top
       const measured: MeasuredRow[] = []
       for (const [rowId, el] of rows.current) {
         if (rowId === excludeId) continue
@@ -201,9 +201,8 @@ export function SidebarDnd({
               return e !== undefined && e.kind === entry.kind && e.parentId === entry.parentId
             })
           : []
-      return { contentTop, measured, siblings, box }
+      return { measured, siblings, box }
     },
-    // A page row that has left the column draws no line; a row of any other kind stays the column's own.
     resolve: (id, point, s) =>
       escort && !within(s.box, point) ? null : computeTarget(id, point.y, s),
     escort,

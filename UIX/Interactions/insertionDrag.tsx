@@ -27,7 +27,7 @@ interface InsertionDragSpec<Slot, Snap> {
   /** What the ghost shows; `label` stays the spoken name. */
   ghostLabel?: (id: string) => ReactNode
   ghost?: 'offset' | 'grab' | 'none'
-  /** A second surface the row may land in, reached without a second gesture; `escortSpec` says what a row carries, null keeping it home. */
+  /** A second surface the row may land in; `escortSpec` says what a row carries, null keeping it home. */
   escort?: Escort | null
   escortSpec?: (id: string, rect: Box) => EscortSpec | null
   rowEl: (id: string) => HTMLElement | null | undefined
@@ -154,7 +154,6 @@ export function useInsertionDrag<Slot, Snap>(
       scrollTarget: cfg.scrollTarget,
       onWindowScroll: invalidate,
       onDrop: () => {
-        // The escort answers first: a landing in its zone is the whole drop.
         if (specRef.current.escort?.drop()) {
           reset()
           return

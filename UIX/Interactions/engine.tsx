@@ -56,14 +56,10 @@ type ZoneReg = {
   disabled: boolean
   axis?: Axis
   getItemLabel?: (id: string) => string
-  /** Zones of one family hand items to each other; a zone with no family keeps its items. A zone is a target only when it owns a container. */
   family?: string
-  /** A fixed zone's items may leave, but its own order never previews a move. */
   fixed: boolean
-  /** What an item carries out; null keeps that item home. Absent, the item carries its id. */
   carry?: (id: string) => Carried | null
   receive?: (item: Carried, index: number) => void
-  /** The source lets go of an item another zone has received. */
   release?: (id: string) => void
   renderOverlay?: Overlay
 }
@@ -75,7 +71,6 @@ type Frozen = {
   rects: Box[]
   ref: HTMLElement | null
   origin: Point
-  /** The first item's corner, or the origin when the zone is empty: where an axis zone's run begins. */
   start: Point
   pitch: number
   gap: number
@@ -100,11 +95,9 @@ type DragScratch = {
   compY: number
   pickZone: string
   pick: number
-  // What resolveIndex allows, or null where the pick is refused or there is none — either previews and lands back in the lifted slot.
   mapped: number | null
   family: string | null
   item: Carried | null
-  /** Past the breakout: the axis lock is off and the family's zones are in play. */
   loose: boolean
   home: Rect | null
   overlay: Overlay | null
@@ -137,13 +130,11 @@ const blankDrag = (): DragScratch => ({
   liftKey: null,
 })
 
-// The gesture's travel; the zone's axis lock holds until the item is loose.
 const travel = (d: DragScratch, x: number, y: number): Point => ({
   x: d.axis === 'y' && !d.loose ? 0 : x - d.startX,
   y: d.axis === 'x' && !d.loose ? 0 : y - d.startY,
 })
 
-// Where the gesture would land right now: a refused or absent pick lands back in the lifted slot.
 const landingOf = (d: DragScratch): [string, number] =>
   d.mapped === null ? [d.zoneId, d.activeIdx] : [d.pickZone, d.mapped]
 
@@ -270,7 +261,6 @@ function orderOf(count: number, activeIdx: number, over: number): number[] {
   return order
 }
 
-/** The grid cell an item lands in. */
 export function placeCell(
   rects: Box[],
   activeIdx: number,
@@ -283,7 +273,6 @@ export function placeCell(
   return cellAt(rects, Math.max(0, order.indexOf(index)), pitch, width)
 }
 
-/** An axis zone's cells run by offset: each item sits after the sizes of those before it, so unequal widths part by exactly the size of the item coming in. */
 export function placeAxis(
   rects: Box[],
   axis: Axis,
@@ -316,7 +305,7 @@ type Active = { id: string; zoneId: string }
 
 /** `home` is the escort's own surface: the item is loose once the pointer leaves it. */
 export type EscortSpec = { id: string; family: string; item: Carried; rect: Box; home: Box }
-/** A lift for a surface that already owns the pointer: it feeds the engine its point and takes the landing back. */
+/** A lift for a surface that already owns the pointer. */
 export type Escort = {
   lift: (spec: EscortSpec) => boolean
   move: (x: number, y: number) => void
@@ -339,7 +328,6 @@ type EngineApi = {
 type EngineState = {
   active: Active | null
   dropState: DropState
-  /** The loose item's family — a target that exists only for one mounts on this. */
   family: string | null
   /** The lifted item's height in a container's own px while a drag is in flight: the floor an empty zone grows to hold it. */
   floor: number | null
@@ -407,7 +395,6 @@ export function DragGroup({
   const releaseZone = (zoneId: string): void => {
     zones.current.delete(zoneId)
   }
-  // A container that mounts because a drag is in flight measures at once, and the drag's own remeasure runs so an escorted list retakes the rows it shifted.
   const registerContainer = (zoneId: string, el: HTMLElement | null): void => {
     ensureZone(zones.current, zoneId).container = el
     if (el && drag.current.active) {
@@ -461,9 +448,7 @@ export function DragGroup({
     for (const [zid, b] of bounds.current) if (admit(zid) && within(b, x, y, 0)) hit = zid
     return hit
   }
-  // The source's own edges, read live where it owns a container.
   const homeOf = (d: DragScratch): Rect | null => bounds.current.get(d.zoneId) ?? d.home
-  // An axis row is left by a tug across it — the breakout on the cross axis alone, so overshooting its ends still lands at them; a free zone is left at its edge.
   const atHome = (d: DragScratch, x: number, y: number): boolean => {
     const home = homeOf(d)
     if (!home) return false
@@ -471,7 +456,6 @@ export function DragGroup({
     if (d.axis === 'y') return x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
     return within(home, x, y, 0)
   }
-  // The zone in play for a loose item: a foreign pick holds through the hysteresis band on its edge, the family's targets are hit-tested, the source counts within its own edges (plus the breakout on an axis-locked row), and past all of those the group's stray rule decides.
   const zoneFor = (d: DragScratch, x: number, y: number): string | null => {
     if (!d.loose) return d.zoneId
     if (d.pickZone !== d.zoneId) {
@@ -488,7 +472,6 @@ export function DragGroup({
     if (atHome(d, x, y)) return d.zoneId || null
     return strayRef.current === 'stick' ? d.pickZone : null
   }
-  // A foreign item takes the shape of the zone it enters: its last item's, or the container's cross size when the zone is empty.
   const foreignSize = (zid: string): Size => {
     const f = frozen.current.get(zid)
     const last = f?.rects[f.rects.length - 1]
@@ -743,7 +726,7 @@ export function DragGroup({
     })
   }
 
-  // The escort's item has nothing of its own on screen: no element to move, no glide to wait on, so a landing commits at once.
+  // The escort's item has nothing of its own on screen, so a landing commits at once with no glide to wait on.
   const escort: Escort = {
     lift: (spec) => {
       if (drag.current.active) return false
@@ -955,7 +938,6 @@ export function DragGroup({
     setLanding((l) => l && [...l])
   }, [dropState])
 
-  // The slot takes the shape of what will sit there: a grid cell's, an axis zone's own item shape for a foreign arrival, the lifted item's for its own row.
   const dropBox = (foreignOnly: boolean, inZone?: string): Box | null => {
     if (!activeRect || !landing || landing[1] < 0) return null
     const [zid, idx] = landing
@@ -1003,17 +985,21 @@ export function DragGroup({
 }
 
 type SortableZoneProps = {
-  /** An addressable zone owns an element, so an empty band is still a drop target and a family's target. */
+  /** An addressable zone owns an element, so an empty band is still a drop target. */
   id?: string
   items: string[]
   onReorder?: (activeId: string, overId: string) => void
   disabled?: boolean
   axis?: Axis
   getItemLabel?: (id: string) => string
+  /** Zones of one family hand items to each other; a zone with no family keeps its items, and only a zone with an `id` is a target. */
   family?: string
+  /** A fixed zone's items may leave, but its own order never previews a move. */
   fixed?: boolean
+  /** What an item carries out; null keeps that item home. Absent, the item carries its id. */
   carry?: (id: string) => Carried | null
   receive?: (item: Carried, index: number) => void
+  /** The source lets go of an item another zone has received. */
   release?: (id: string) => void
   renderOverlay?: Overlay
   className?: string
@@ -1022,7 +1008,7 @@ type SortableZoneProps = {
 
 export function SortableZone(props: SortableZoneProps): React.JSX.Element {
   const api = useContext(ApiCtx)
-  // A surface outside any group carries its own, so a single-zone host mounts a zone and nothing else.
+  // A standalone surface carries its own provider, so a single-zone host mounts a zone and nothing else.
   if (!api)
     return (
       <DragGroup>
@@ -1114,7 +1100,7 @@ export function DropSlot({ foreignOnly }: { foreignOnly?: boolean }): React.JSX.
   )
 }
 
-/** The family of the loose item in flight, for a target that only exists while one is. */
+/** The loose item's family — null until an item has left its own zone. */
 export function useDragFamily(): string | null {
   return useContext(StateCtx)?.family ?? null
 }
