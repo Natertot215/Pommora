@@ -20,6 +20,7 @@ afterEach(async () => {
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
+  headingsOf: () => ['setup'],
 }
 
 describe('an aliased connection reads as its alias', () => {
@@ -51,5 +52,56 @@ describe('an aliased connection reads as its alias', () => {
     const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
     expect(span?.textContent).toBe('Alpha')
     expect(view.dom.textContent).toBe('Alpha')
+  })
+})
+
+describe('a heading link reads per the two heading settings', () => {
+  it('[[Alpha#Setup]] renders the page, a join, and the heading at rest', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha#Setup]]', connections: conn })
+    expect(view.dom.textContent).toContain('Alpha')
+    const join = view.dom.querySelector('.md-heading-join')
+    expect(join?.querySelector('.md-heading-divider')).not.toBeNull()
+    expect(join?.querySelector('.md-heading-symbol')).not.toBeNull()
+    const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
+    expect(heading?.textContent).toBe('Setup')
+  })
+
+  it('heading-only style drops the page text and the divider', async () => {
+    const view = await mountEditor({
+      initialBody: '[[Alpha#Setup]]',
+      connections: conn,
+      host: { settings: { headingLinkStyle: 'heading-only' } },
+    })
+    expect(view.dom.textContent).not.toContain('Alpha')
+    const join = view.dom.querySelector('.md-heading-join')
+    expect(join?.querySelector('.md-heading-divider')).toBeNull()
+  })
+
+  it('hiding the heading symbol keeps the span but the stylesheet hides it', async () => {
+    document.documentElement.classList.add('hide-heading-symbol')
+    try {
+      const view = await mountEditor({ initialBody: '[[Alpha#Setup]]', connections: conn })
+      const sym = view.dom.querySelector('.md-heading-symbol')
+      expect(sym).not.toBeNull()
+    } finally {
+      document.documentElement.classList.remove('hide-heading-symbol')
+    }
+  })
+
+  it('[[#Setup]] on the same page renders the heading alone, with no divider', async () => {
+    const view = await mountEditor({
+      initialBody: '## Setup\n\n[[#Setup]]',
+      connections: conn,
+    })
+    const join = view.dom.querySelector('.md-heading-join')
+    expect(join?.querySelector('.md-heading-divider')).toBeNull()
+    const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
+    expect(heading?.textContent).toBe('Setup')
+  })
+
+  it('a heading that no longer exists carries md-connection-heading-missing', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha#Gone]]', connections: conn })
+    const heading = view.dom.querySelector('.md-connection-heading-missing')
+    expect(heading?.textContent).toBe('Gone')
   })
 })

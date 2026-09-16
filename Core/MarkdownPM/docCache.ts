@@ -2,6 +2,8 @@
 import type { Text } from '@codemirror/state'
 import { docLineIntents } from './Engine/intents'
 import { scanOf } from './Engine/docScan'
+import { headingOutline } from './Engine/headingScan'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
 import type { Token } from './Engine/tokens'
 
 /** Keyed on the immutable `Text`, so an old version's entry collects with the history rather than being invalidated. */
@@ -22,6 +24,10 @@ export const docString = perDoc((doc) => doc.toString())
 export const docScan = perDoc((doc) => scanOf(docString(doc)))
 
 export const docLineIntentsOf = perDoc((doc) => docLineIntents(docScan(doc)))
+
+export const docOutline = perDoc((doc) => headingOutline(docString(doc)))
+
+export const docHeadingKeys = perDoc((doc) => docOutline(doc).map((h) => normalizeTitle(h.text)))
 
 // Two slots, most-recent first: a span set is returned to as readily as it's left (scrolling back up, folding within one version).
 type Slot = { key: string; tokens: Token[] }

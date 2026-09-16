@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { readPersonalization } from './codec'
 import {
   PREVIEW_PERSISTENCE_DEFAULT,
   coerceInterfaceScale,
@@ -47,5 +48,29 @@ describe('previewLingerMs', () => {
 
   it('undefined resolves to the 1s default grace', () => {
     expect(previewLingerMs(undefined)).toBe(1000)
+  })
+})
+
+describe('readPersonalization heading link settings', () => {
+  it('passes each valid headingLinkStyle and inPageHeadingResolution value through', () => {
+    expect(readPersonalization({ headingLinkStyle: 'heading-only' }).headingLinkStyle).toBe(
+      'heading-only',
+    )
+    expect(readPersonalization({ headingLinkStyle: 'page-heading' }).headingLinkStyle).toBe(
+      'page-heading',
+    )
+    expect(
+      readPersonalization({ inPageHeadingResolution: 'automatic' }).inPageHeadingResolution,
+    ).toBe('automatic')
+    expect(
+      readPersonalization({ inPageHeadingResolution: 'explicit' }).inPageHeadingResolution,
+    ).toBe('explicit')
+  })
+
+  it('drops junk values as undefined', () => {
+    expect(readPersonalization({ headingLinkStyle: 'garbage' }).headingLinkStyle).toBeUndefined()
+    expect(
+      readPersonalization({ inPageHeadingResolution: 'garbage' }).inPageHeadingResolution,
+    ).toBeUndefined()
   })
 })

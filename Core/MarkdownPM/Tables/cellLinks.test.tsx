@@ -24,6 +24,7 @@ const opened = vi.fn()
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
   open: (p: ConnPage) => opened(p.id),
+  headingsOf: (path) => (path === 'N/Quarterly Plan.md' ? ['setup'] : undefined),
 }
 
 const model: TableModel = {
@@ -107,6 +108,32 @@ describe('a connection in a resting cell behaves like one in the body', () => {
     })
     expect(opened).not.toHaveBeenCalled()
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
+  })
+})
+
+describe('a heading link in a resting cell renders its three parts', () => {
+  const headingModel: TableModel = {
+    columns: [{ align: null, dashes: 3 }],
+    header: ['A'],
+    rows: [['[[Quarterly Plan#Setup]]']],
+  }
+
+  async function mountHeading(): Promise<void> {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(createElement(MarkdownTable, { ...props, model: headingModel })),
+    )
+  }
+
+  it('renders the page, the heading symbol, and the heading text, and resolves to the page', async () => {
+    await mountHeading()
+    const link = container.querySelector('.md-connection-resolved') as HTMLElement
+    expect(link.textContent).toBe('Quarterly Plan § Setup')
+    expect(link.dataset.connTitle).toBe('Quarterly Plan')
+    await clickLink()
+    expect(opened).toHaveBeenCalledWith('p1')
   })
 })
 

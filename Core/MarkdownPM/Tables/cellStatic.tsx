@@ -1,6 +1,6 @@
 import { Fragment, memo, useRef } from 'react'
 import { isCmd } from '@pommora/uix/Interactions/chords'
-import { linkTarget, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
+import { aliasedToken, linkTarget, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import { CONTENT_CLASS } from '../Engine/intents'
 import {
@@ -9,7 +9,7 @@ import {
   type ConnMenuTarget,
   type MdTarget,
 } from '../Links/connectionsApi'
-import { titleOf } from '@pommora/core/Connections/connections'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { linkActionText, linkHalves } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
 import { dwellTarget, followTarget } from '../Links/linkClicks'
@@ -36,7 +36,8 @@ export function renderCellContent(
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
     if (tk.kind === 'wikiLink') {
       const [rs, re] = tk.resolveRange ?? tk.contentRange
-      const status = conn?.resolve(text.slice(rs, re)).status
+      const bare = rs === re
+      const status = bare ? 'resolved' : conn?.resolve(text.slice(rs, re)).status
       if (!status) out.push(text.slice(s, e))
       else if (status === 'phantom')
         out.push(
@@ -50,7 +51,14 @@ export function renderCellContent(
             </span>
           </Fragment>,
         )
-      else
+      else {
+        const frag = tk.fragment
+        const page = conn?.resolve(text.slice(rs, re)).page
+        const missing =
+          frag &&
+          page &&
+          conn?.headingsOf?.(page.path)?.includes(normalizeTitle(text.slice(frag[0], frag[1]))) ===
+            false
         out.push(
           <span
             key={key++}
@@ -58,9 +66,20 @@ export function renderCellContent(
             data-conn-title={text.slice(rs, re)}
             data-link-span={`${s},${e}`}
           >
-            {content}
+            {frag ? (
+              <>
+                {text.slice(rs, re)}
+                <span className="md-heading-symbol"> § </span>
+                <span className={missing ? 'md-connection-heading-missing' : undefined}>
+                  {text.slice(frag[0], frag[1])}
+                </span>
+              </>
+            ) : (
+              content
+            )}
           </span>,
         )
+      }
     } else if (tk.kind === 'link') {
       const url = linkTarget(text, tk)
       // Without the shared resolver a cell would call an encoded internal target broken and color the same link two ways.
@@ -290,13 +309,13 @@ function menuTarget(
 ): ConnMenuTarget | null {
   if (tk.kind === 'wikiLink') {
     const [rs, re] = tk.resolveRange ?? tk.contentRange
-    const res = api.resolve(titleOf(text.slice(rs, re)))
+    const res = api.resolve(text.slice(rs, re))
     if (res.status !== 'resolved' || !res.page) return null
     return {
       kind: 'page',
       page: res.page,
       editable: true,
-      hasAlias: tk.resolveRange !== undefined,
+      hasAlias: aliasedToken(tk),
       apply: (action) => {
         const now = still()
         if (!now) return

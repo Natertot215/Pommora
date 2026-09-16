@@ -9,8 +9,22 @@ import {
 } from '@codemirror/view'
 import type { Extension, Range, Text } from '@codemirror/state'
 
-import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from './Engine/tokens'
-import { docLineIntentsOf, docScan, docSpanTokens, docString, perDoc } from './docCache'
+import {
+  tokenize,
+  activeTokenIndices,
+  aliasedToken,
+  linkTarget,
+  shiftToken,
+  type Token,
+} from './Engine/tokens'
+import {
+  docHeadingKeys,
+  docLineIntentsOf,
+  docScan,
+  docSpanTokens,
+  docString,
+  perDoc,
+} from './docCache'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './Engine/embedRanges'
 import { resolutionNudge } from './Embeds/embedWidget'
@@ -25,7 +39,8 @@ import {
 import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
-import type { LinkStatus } from '@pommora/core/Connections/connections'
+import { normalizeTitle, type LinkStatus } from '@pommora/core/Connections/connections'
+import { segment } from '@pommora/uix/Elements/segment.css'
 import { editorHost } from './api'
 
 export const MD_LINK_CLASS = 'md-link'
@@ -49,6 +64,32 @@ class ConnGlyphWidget extends WidgetType {
 
 function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
   return Decoration.widget({ widget: new ConnGlyphWidget(status), side: -1 }).range(at)
+}
+
+class HeadingJoinWidget extends WidgetType {
+  constructor(readonly divider: boolean) {
+    super()
+  }
+  eq(other: HeadingJoinWidget): boolean {
+    return other.divider === this.divider
+  }
+  toDOM(): HTMLElement {
+    const el = document.createElement('span')
+    el.className = 'md-heading-join'
+    if (this.divider) {
+      const bar = document.createElement('span')
+      bar.className = `${segment} md-heading-divider`
+      el.append(bar)
+    }
+    const sym = document.createElement('span')
+    sym.className = 'md-heading-symbol'
+    sym.textContent = '§'
+    el.append(sym)
+    return el
+  }
+  ignoreEvent(): boolean {
+    return false
+  }
 }
 
 class HrWidget extends WidgetType {
@@ -439,18 +480,50 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
     }
   })
   if (conn) {
+    const { headingLinkStyle } = view.state.facet(editorHost).settings()
+    const ownKeys = docHeadingKeys(view.state.doc)
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
+      const alias = aliasedToken(tk)
       const [rs, re] = tk.resolveRange ?? tk.contentRange
-      const status = conn.resolve(text.slice(rs, re)).status
+      const bare = rs === re
+      const res = bare ? null : conn.resolve(text.slice(rs, re))
+      const status = bare ? (tk.fragment ? 'resolved' : 'phantom') : res!.status
       const open = active.has(i)
-      const pipe =
-        tk.resolveRange ?? (text[tk.contentRange[1]] === '|' ? tk.contentRange : undefined)
+      const pipe = alias
+        ? tk.resolveRange
+        : text[tk.contentRange[1]] === '|'
+          ? tk.contentRange
+          : undefined
       // Follows the PIPE, not a title that happens to match: an alias for a page that doesn't exist yet still reads as a link.
       if (open && (pipe || status === 'resolved')) {
         ranges.push(connGlyph(status, tk.range[0] + 2))
         if (pipe)
           ranges.push(Decoration.mark({ class: 'md-connection-target' }).range(pipe[0], pipe[1]))
+      }
+      if (tk.fragment && !open && !alias) {
+        const [hs, he] = tk.fragment
+        const key = normalizeTitle(text.slice(hs, he))
+        const known = bare ? ownKeys : res?.page ? conn.headingsOf?.(res.page.path) : undefined
+        const missing = known !== undefined && !known.includes(key)
+        const showPage = headingLinkStyle !== 'heading-only' && !bare
+        if (!bare)
+          ranges.push(
+            (showPage ? Decoration.mark({ class: 'md-connection-resolved' }) : hideMarker).range(
+              rs,
+              re,
+            ),
+          )
+        ranges.push(
+          Decoration.replace({ widget: new HeadingJoinWidget(showPage) }).range(hs - 1, hs),
+        )
+        ranges.push(
+          Decoration.mark({
+            class: `md-connection-resolved md-connection-heading${missing ? ' md-connection-heading-missing' : ''}`,
+          }).range(hs, he),
+        )
+        for (const [s, e] of tk.markerRanges) ranges.push(hideMarker.range(s, e))
+        return
       }
       if (status === 'phantom') {
         // Typing is what earns the connection color, not the caret's position, so the field tracks the gesture.
