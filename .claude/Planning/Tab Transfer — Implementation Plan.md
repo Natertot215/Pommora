@@ -39,10 +39,10 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
 - [x] **Phase 2** — Open at an index `[Parallel with Phase 1]`
   - [x] Task 2.1 — `openTabAt`
   - [x] Task 2.2 — `openTabIn` at an index
-- [ ] **Phase 3** — The rows become targets
-  - [ ] Task 3.1 — The carried type and the shell group
-  - [ ] Task 3.2 — The main bar's strip
-  - [ ] Task 3.3 — The window strip and the NavWindow
+- [x] **Phase 3** — The rows become targets
+  - [x] Task 3.1 — The carried type and the shell group
+  - [x] Task 3.2 — The main bar's strip
+  - [x] Task 3.3 — The window strip and the NavWindow
   - [ ] Review Checkpoint
 - [ ] **Phase 4** — The nav surfaces become sources
   - [ ] Task 4.1 — Gallery cards, including search results
@@ -2192,7 +2192,7 @@ import { cycle } from './tabsModel'
 **VERIFY**
 
 - [ ] Gates green.
-- [ ] `grep -n "res?.key ?? ''" Core/Navigation/TabBar.tsx` → 0.
+- [x] `grep -c "res?.key ?? ''" Core/Navigation/TabBar.tsx` → 1 (was 2; `pinKeyOf` is the one spelling).
 - [ ] Nathan: in-row reorder feels as before; a horizontal drag never leaves the row; a 24px vertical tug lifts the tab free as a floating clone, and a release over nothing snaps it home with the gap still there.
 
 #### Task 3.3
@@ -3055,3 +3055,4 @@ Per the skill's report shape, written when the chain is confirmed.
 - **`dragTo` split into `dragHold` + `release`** in `engine.test.tsx`. `dragTo` fires pointerup, and `useDropSlot` paints only while `dropState === 'dragging'`, so the two axis-slot cases read a null slot as written. `dragTo` now delegates to the pair, the 19 existing callers are unchanged, and the two cases call `dragHold`, keep every assertion, and add one `await release(x, y)` before their `settle()`.
 - **Biome wrapping in Phase 2.** `openTabAt`'s return and `windowTabs.ts`'s clamp and ternary wrapped past the print width; `tabsModel.test.ts`'s new block is titled `tabsModel — openTabAt` to match its siblings. No semantic difference.
 - **Out-of-plan commits `6f4a901a9` and `a7f8e307c`.** Nathan asked mid-run for the dashboard republish prompt (`republish-dashboard.mjs`, its `PostToolUse` entry, and the docs describing it) to be retired; the git post-commit script keeps building. Those files appear in `dd605692d..HEAD` by his direction, not this plan.
+- **Task 3.2's VERIFY grep read 0 where the AFTER block itself spells the expression once** (`pinKeyOf`). The count went 2 → 1; the VERIFY line now states that.
