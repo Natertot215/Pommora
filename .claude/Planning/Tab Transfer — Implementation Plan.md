@@ -45,9 +45,9 @@ A page tab can be pulled out of its row with a deliberate vertical tug, floated 
   - [x] Task 3.3 — The window strip and the NavWindow
   - [ ] Review Checkpoint
 - [ ] **Phase 4** — The nav surfaces become sources
-  - [ ] Task 4.1 — Gallery cards, including search results
-  - [ ] Task 4.2 — List rows through the escort
-  - [ ] Task 4.3 — Sidebar page rows through the escort
+  - [x] Task 4.1 — Gallery cards, including search results
+  - [x] Task 4.2 — List rows through the escort
+  - [x] Task 4.3 — Sidebar page rows through the escort
   - [ ] Task 4.4 — Documents
 - [ ] `[Stop: Nathan walks the manual checks]`
 

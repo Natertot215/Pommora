@@ -194,7 +194,6 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       }
       const next = openTabIn(cur, makeTabId, target, at)
       if (next === cur) return
-      // A seated tab leaves the active one in place, so nothing slides.
       if (at !== undefined) {
         commitWindow(next)
         return
