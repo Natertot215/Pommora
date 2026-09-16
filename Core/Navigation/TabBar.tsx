@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -6,11 +6,17 @@ import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
 import { text } from '@pommora/uix/Theme'
 import { segment } from '@pommora/uix/Elements/segment.css'
-import { SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
+import {
+  SortableZone,
+  useDragFamily,
+  useDragItem,
+  type Carried,
+  type DragItem,
+} from '@pommora/uix/Interactions/drag'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import type { Tab, TabTarget } from '@pommora/core/Navigation/navRef'
+import type { PageTarget, Tab, TabTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
@@ -55,18 +61,27 @@ export function TabBar(): React.JSX.Element | null {
     [index, tabs],
   )
 
-  // Blank ONLY for the pure empty state (a lone NavView, no pins); otherwise the bar shows so the + stays reachable, even at a single real tab.
-  if (pinnedEntries.length === 0 && unpinnedEntries.every((e) => e.tab.target.kind === 'newtab'))
+  const forced = useDragFamily() === 'tabs'
+  // Blank ONLY for the pure empty state (a lone NavView, no pins) with no tab loose that needs a row to land in; otherwise the bar shows so the + stays reachable, even at a single real tab.
+  if (
+    !forced &&
+    pinnedEntries.length === 0 &&
+    unpinnedEntries.every((e) => e.tab.target.kind === 'newtab')
+  )
     return null
-  return <TabBarBody pinnedEntries={pinnedEntries} unpinnedEntries={unpinnedEntries} />
+  return (
+    <TabBarBody pinnedEntries={pinnedEntries} unpinnedEntries={unpinnedEntries} forced={forced} />
+  )
 }
 
 function TabBarBody({
   pinnedEntries,
   unpinnedEntries,
+  forced,
 }: {
   pinnedEntries: TabEntry[]
   unpinnedEntries: TabEntry[]
+  forced: boolean
 }): React.JSX.Element {
   const activeTabId = useSession((s) => s.activeTabId)
   const commands = useSession((s) => s.commands)
@@ -79,12 +94,47 @@ function TabBarBody({
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
   const reorderPin = useSession((s) => s.reorderPin)
+  const openTabAt = useSession((s) => s.openTabAt)
   const beginGesture = usePointerGesture()
 
   const { liveEntries, renderEntries, firstLive, requestClose } = useTabClose(
     unpinnedEntries,
     closeTab,
   )
+
+  const entryOf = (id: string): TabEntry | undefined => liveEntries.find((e) => e.tab.id === id)
+  const pinKeyOf = (id: string): string =>
+    pinnedEntries.find((e) => e.tab.id === id)?.res?.key ?? ''
+  const labelOf = (id: string): string => entryOf(id)?.res?.title ?? 'New Tab'
+  // Only a page leaves the row.
+  const carry = (id: string): PageTarget | null => {
+    const tab = entryOf(id)?.tab
+    return tab?.target.kind === 'page' ? tab.target : null
+  }
+  // The commit that seats a received tab renders the strip still: the row already parted for it, so no grow-in.
+  const placing = useRef(false)
+  useLayoutEffect(() => {
+    placing.current = false
+  })
+  const receive = (item: Carried, index: number): void => {
+    placing.current = true
+    openTabAt(item as PageTarget, index)
+  }
+  const renderOverlay = (id: string): React.ReactNode => {
+    const entry = entryOf(id)
+    return entry ? (
+      <div className="tab-overlay tabs-standard">
+        <UnpinnedTab
+          entry={entry}
+          active={entry.tab.id === activeTabId}
+          closing={false}
+          onActivate={() => {}}
+          onClose={() => {}}
+          onMenu={() => {}}
+        />
+      </div>
+    ) : null
+  }
 
   // The cycle runs over the full visual order, intercepted only while the bar shows.
   const orderedIds = useMemo(
@@ -164,9 +214,9 @@ function TabBarBody({
     >
       {pinnedEntries.length > 0 && (
         <SortableZone
-          items={pinnedEntries.map((e) => e.res?.key ?? '')}
+          items={pinnedEntries.map((e) => e.tab.id)}
           axis="x"
-          onReorder={reorderPin}
+          onReorder={(a, b) => reorderPin(pinKeyOf(a), pinKeyOf(b))}
         >
           <div className="tab-pinned-zone">
             {pinnedEntries.map((e, i) => (
@@ -187,28 +237,38 @@ function TabBarBody({
         <span className={cx(segment, 'tab-divider')} />
       )}
       <div className="tab-scroll over-scroll-x" ref={stripRef}>
-        <SortableZone items={liveEntries.map((e) => e.tab.id)} axis="x" onReorder={reorderTabs}>
-          <div className="tab-strip">
-            {renderEntries.map(({ entry, ghost }, i) => (
-              <Fragment key={entry.tab.id}>
-                {i > 0 && (
-                  <span
-                    className={cx(segment, 'tab-seg', (ghost || i === firstLive) && 'is-closing')}
-                    aria-hidden
-                  />
-                )}
-                {/* Same component type as a live tab — a type swap would remount the DOM node, losing the exit slide. */}
-                <DraggableUnpinnedTab
-                  entry={entry}
-                  active={!ghost && entry.tab.id === activeTabId}
-                  closing={ghost}
-                  onActivate={() => activateTab(entry.tab.id)}
-                  onClose={() => requestClose(entry.tab.id)}
-                  onMenu={runTabMenu(entry.tab.id, false, entry.tab.target)}
+        <SortableZone
+          id="tabs-main"
+          className={cx('tab-strip', (placing.current || forced) && 'is-still')}
+          family="tabs"
+          items={liveEntries.map((e) => e.tab.id)}
+          axis="x"
+          onReorder={reorderTabs}
+          getItemLabel={labelOf}
+          carry={carry}
+          receive={receive}
+          release={closeTab}
+          renderOverlay={renderOverlay}
+        >
+          {renderEntries.map(({ entry, ghost }, i) => (
+            <Fragment key={entry.tab.id}>
+              {i > 0 && (
+                <span
+                  className={cx(segment, 'tab-seg', (ghost || i === firstLive) && 'is-closing')}
+                  aria-hidden
                 />
-              </Fragment>
-            ))}
-          </div>
+              )}
+              {/* Same component type as a live tab — a type swap would remount the DOM node, losing the exit slide. */}
+              <DraggableUnpinnedTab
+                entry={entry}
+                active={!ghost && entry.tab.id === activeTabId}
+                closing={ghost}
+                onActivate={() => activateTab(entry.tab.id)}
+                onClose={() => requestClose(entry.tab.id)}
+                onMenu={runTabMenu(entry.tab.id, false, entry.tab.target)}
+              />
+            </Fragment>
+          ))}
         </SortableZone>
       </div>
       <Button
@@ -247,7 +307,7 @@ function PinnedTab({
   onActivate: () => void
   onMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
-  const drag = useDragItem(entry.res?.key ?? '')
+  const drag = useDragItem(entry.tab.id)
   if (!entry.res) return null
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
