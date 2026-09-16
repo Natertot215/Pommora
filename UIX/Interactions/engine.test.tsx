@@ -155,7 +155,7 @@ afterEach(() => {
 
 const item = (id: string): HTMLElement => host.querySelector(`[data-id="${id}"]`) as HTMLElement
 
-const dragTo = async (id: string, x: number, y: number): Promise<void> => {
+const dragHold = async (id: string, x: number, y: number): Promise<void> => {
   const r = item(id).getBoundingClientRect()
   await act(async () => {
     firePointer(item(id), 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
@@ -163,9 +163,17 @@ const dragTo = async (id: string, x: number, y: number): Promise<void> => {
   await act(async () => {
     firePointer(window, 'pointermove', { x, y })
   })
+}
+
+const release = async (x: number, y: number): Promise<void> => {
   await act(async () => {
     firePointer(window, 'pointerup', { x, y })
   })
+}
+
+const dragTo = async (id: string, x: number, y: number): Promise<void> => {
+  await dragHold(id, x, y)
+  await release(x, y)
 }
 
 const settle = (): Promise<void> =>
@@ -402,5 +410,176 @@ describe('placeCell — the displacement core', () => {
     expect(placeCell(g, -1, 0, 0, 100, 200)).toEqual({ x: 100, y: 0 })
     expect(placeCell(g, -1, 4, 3, 100, 200)).toEqual({ x: 100, y: 100 })
     expect(placeCell(g, -1, 0, 3, 100, 200)).toEqual({ x: 0, y: 200 })
+  })
+})
+
+describe('the drag engine across a family', () => {
+  it('keeps an item home when its zone has no family', async () => {
+    await dropAt('f1', 100, 210)
+    expect(commitSpy).not.toHaveBeenCalled()
+    expect(receiveSpy).not.toHaveBeenCalled()
+  })
+
+  it('keeps an item home when carry declines it', async () => {
+    carryA = () => null
+    await mount()
+    await dropAt('a1', 100, 210)
+    expect(receiveSpy).not.toHaveBeenCalled()
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'A', 1)
+  })
+
+  it('returns to its slot when released over nothing', async () => {
+    stray = 'return'
+    await mount()
+    await dropAt('a1', 300, 250)
+    expect(commitSpy).not.toHaveBeenCalled()
+    expect(reorderSpy).not.toHaveBeenCalled()
+  })
+
+  it('holds the source gap open while the landing is foreign', async () => {
+    holdGap = true
+    await mount()
+    await dragTo('a1', 100, 210)
+    expect(item('a2').style.transform).toBe('translate3d(0.0px, 0.0px, 0)')
+    await settle()
+  })
+
+  it('closes the source gap without holdGap', async () => {
+    await dragTo('a1', 100, 210)
+    expect(item('a2').style.transform).toBe('translate3d(0.0px, -100.0px, 0)')
+    await settle()
+  })
+
+  it('hands the carried item to the zone it lands in', async () => {
+    carryA = (id) => ({ id, from: 'A' })
+    await mount()
+    await dropAt('a1', 100, 210)
+    expect(receiveSpy).toHaveBeenCalledExactlyOnceWith({ id: 'a1', from: 'A' }, 0)
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 0)
+    expect(fromSpy).toHaveBeenCalledExactlyOnceWith('A')
+  })
+
+  it('still receives when the landing zone unmounts during the drop animation', async () => {
+    await dragTo('a1', 100, 210)
+    hidden = new Set(['B'])
+    await act(async () => root.render(<Board />))
+    await settle()
+    expect(receiveSpy).toHaveBeenCalledExactlyOnceWith('a1', 0)
+  })
+
+  it('marks only the lifted zone item as dragging when two zones share an id', async () => {
+    ZONES.D = ['d1', 'a1']
+    await mount()
+    const twins = host.querySelectorAll('[data-id="a1"]')
+    const r = twins[0].getBoundingClientRect()
+    await act(async () => {
+      firePointer(twins[0], 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 150 })
+    })
+    expect(twins[0].getAttribute('aria-pressed')).toBe('true')
+    expect(twins[1].getAttribute('aria-pressed')).toBeNull()
+    pressEscape()
+    ZONES.D = ['d1']
+  })
+
+  it('reports the family once the item is loose and nothing after', async () => {
+    await dragTo('a1', 100, 150)
+    expect(host.querySelector('[data-family]')?.getAttribute('data-family')).toBe('')
+    await settle()
+    await dragTo('a1', 100, 210)
+    expect(host.querySelector('[data-family]')?.getAttribute('data-family')).toBe('board')
+    await settle()
+    expect(host.querySelector('[data-family]')?.getAttribute('data-family')).toBe('')
+  })
+
+  it('uses the zone overlay over the group overlay', async () => {
+    withOverlay = true
+    zoneOverlay = true
+    await mount()
+    await dragTo('a1', 100, 130)
+    expect(document.querySelector('[data-zone-overlay="a1"]')).not.toBeNull()
+    expect(document.querySelector('[data-overlay="a1"]')).toBeNull()
+    await settle()
+  })
+
+  it('parts an axis row by the width of the item coming in', async () => {
+    await dragHold('x1', 260, 1050)
+    expect(item('x2').style.transform).toBe('translate3d(-200.0px, 0.0px, 0)')
+    const slot = host.querySelector('[data-slot]') as HTMLElement
+    expect(slot.style.left).toBe('120px')
+    await release(260, 1050)
+    await settle()
+  })
+
+  it('keeps an axis row item in its row when it overshoots the row end', async () => {
+    stray = 'return'
+    await mount()
+    await dropAt('x1', 900, 1050)
+    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith('x1', 'x3')
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('x1', 'X', 2)
+  })
+
+  it('lands a foreign item past the last item of an axis row at the row own size', async () => {
+    await dragHold('a1', 500, 1050)
+    const slot = host.querySelector('[data-slot]') as HTMLElement
+    expect(slot.style.left).toBe('440px')
+    expect(slot.style.width).toBe('120px')
+    await release(500, 1050)
+    await settle()
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'X', 3)
+  })
+
+  it('escorts a foreign row into a zone and lands nowhere outside every zone', async () => {
+    const rect: Box = { left: 0, top: -1000, width: 200, height: 24, cx: 100, cy: -988 }
+    const spec = { id: 'row', family: 'board', item: { id: 'row' }, rect, home: rect }
+    await act(async () => {
+      escortRef?.lift(spec)
+    })
+    await act(async () => escortRef?.move(100, 210))
+    expect(escortRef?.loose()).toBe(true)
+    let landed = false
+    await act(async () => {
+      landed = escortRef?.drop() ?? false
+    })
+    expect(landed).toBe(true)
+    expect(receiveSpy).toHaveBeenCalledExactlyOnceWith({ id: 'row' }, 0)
+    await act(async () => {
+      escortRef?.lift(spec)
+    })
+    await act(async () => escortRef?.move(100, 210))
+    await act(async () => escortRef?.move(100, -990))
+    await act(async () => {
+      landed = escortRef?.drop() ?? false
+    })
+    expect(landed).toBe(false)
+    expect(receiveSpy).toHaveBeenCalledOnce()
+    stray = 'return'
+    await mount()
+    await act(async () => {
+      escortRef?.lift(spec)
+    })
+    await act(async () => escortRef?.move(300, 250))
+    await act(async () => {
+      landed = escortRef?.drop() ?? false
+    })
+    expect(landed).toBe(false)
+  })
+})
+
+describe('placeAxis — the running-offset core', () => {
+  const row: Box[] = [
+    { left: 0, top: 0, width: 200, height: 30, cx: 100, cy: 15 },
+    { left: 200, top: 0, width: 120, height: 30, cx: 260, cy: 15 },
+    { left: 320, top: 0, width: 120, height: 30, cx: 380, cy: 15 },
+  ]
+  it('moves the passed-over item back by the lifted width', () => {
+    expect(placeAxis(row, 'x', 0, { x: 0, y: 0 }, 0, 1, 1, 200)).toEqual({ x: 0, y: 0 })
+    expect(placeAxis(row, 'x', 0, { x: 0, y: 0 }, 0, 1, 0, 200)).toEqual({ x: 120, y: 0 })
+  })
+  it('opens a slot the size of a foreign item', () => {
+    expect(placeAxis(row, 'x', 4, { x: 0, y: 0 }, -1, 1, 1, 80)).toEqual({ x: 288, y: 0 })
+    expect(placeAxis(row, 'x', 4, { x: 0, y: 0 }, -1, 1, -1, 80)).toEqual({ x: 204, y: 0 })
   })
 })
