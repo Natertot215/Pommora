@@ -9,7 +9,8 @@ import {
 } from 'react'
 import { usePointerGesture } from './gesture'
 import { useDragSnapshot } from './snapshot'
-import { EDITABLE_TARGETS, GHOST_OFFSET } from './shared'
+import { EDITABLE_TARGETS, GHOST_OFFSET, toBox, type Box } from './shared'
+import type { Escort, EscortSpec } from './engine'
 import { DragGhost } from './DragGhost'
 import { DropLine } from './DropLine'
 import { armAutoScroll } from './autoscroll'
@@ -23,7 +24,12 @@ interface InsertionDragSpec<Slot, Snap> {
   lineFor?: (slot: Slot, snap: Snap) => CSSProperties | null
   lineClassName?: string
   label: (id: string) => string
+  /** What the ghost shows; `label` stays the spoken name. */
+  ghostLabel?: (id: string) => ReactNode
   ghost?: 'offset' | 'grab' | 'none'
+  /** A second surface the row may land in, reached without a second gesture; `escortSpec` says what a row carries, null keeping it home. */
+  escort?: Escort | null
+  escortSpec?: (id: string, rect: Box) => EscortSpec | null
   rowEl: (id: string) => HTMLElement | null | undefined
   scrollTarget: () => Element | null
   armFrom?: () => HTMLElement | null
@@ -129,16 +135,30 @@ export function useInsertionDrag<Slot, Snap>(
         announce(`Picked up ${dragged.current.label}.`)
         // No re-resolve callback: the loop's scrollBy raises the window scroll `onWindowScroll` already answers.
         stopScroll.current = armAutoScroll(cfg.armFrom?.() ?? el, () => lastPoint.current)
+        const spec = cfg.escortSpec?.(id, toBox(el))
+        if (spec) cfg.escort?.lift(spec)
         resolveSlot()
         return true
       },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
+        const escort = specRef.current.escort
+        escort?.move(ev.clientX, ev.clientY)
+        // A list must not scroll itself under a row that has left it.
+        if (escort?.loose()) {
+          stopScroll.current?.()
+          stopScroll.current = null
+        }
         resolveSlot()
       },
       scrollTarget: cfg.scrollTarget,
       onWindowScroll: invalidate,
       onDrop: () => {
+        // The escort answers first: a landing in its zone is the whole drop.
+        if (specRef.current.escort?.drop()) {
+          reset()
+          return
+        }
         if (snap.isDirty()) resolveSlot()
         const d = dragged.current
         const slot = live.current
@@ -149,7 +169,10 @@ export function useInsertionDrag<Slot, Snap>(
         }
         reset()
       },
-      onAbort: reset,
+      onAbort: () => {
+        specRef.current.escort?.abort()
+        reset()
+      },
       teardown: () => {
         stopScroll.current?.()
         stopScroll.current = null
@@ -176,8 +199,12 @@ export function useInsertionDrag<Slot, Snap>(
     slot: drag?.slot ?? null,
     line: drag?.line != null ? <DropLine style={drag.line} className={spec.lineClassName} /> : null,
     ghost:
-      drag?.ghost != null ? (
-        <DragGhost x={drag.ghost.x} y={drag.ghost.y} label={dragged.current?.label ?? ''} />
+      drag?.ghost != null && dragged.current ? (
+        <DragGhost
+          x={drag.ghost.x}
+          y={drag.ghost.y}
+          label={specRef.current.ghostLabel?.(dragged.current.id) ?? dragged.current.label}
+        />
       ) : null,
   }
 }
