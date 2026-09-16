@@ -482,6 +482,10 @@
   word-break: normal;
 }
 
+.md-list-gap {
+  font-size: 0;
+}
+
 .md-list-glyph {
   cursor: grab;
   user-select: none;
