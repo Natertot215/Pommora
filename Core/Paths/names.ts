@@ -23,7 +23,7 @@ export function nameError(name: string, role: NameRole): string | null {
   if (name !== trimmed) return `"${name}" can't begin or end with a space.`
   // The walk hides these, so a file named this way could never be shown again.
   if (hiddenName(name)) return `"${name}" can't begin with a dot or underscore.`
-  if (name.includes('|')) return `"${name}" can't contain "|".`
+  if (/[|#§]/.test(name)) return `"${name}" can't contain "|", "#", or "§".`
   if (role === 'page' && /\.md$/i.test(name)) return `"${name}" can't end in ".md".`
   if (role === 'directory' && name.includes('.')) return `"${name}" can't contain a period.`
   if (machine().platform === 'windows') {

@@ -27,7 +27,7 @@ type PasteAsTarget = { kind: 'url'; url: string } | { kind: 'page'; title: strin
 
 function wholeWikiLink(s: string): string | null {
   const m = pageLinkPattern().exec(s)
-  return m && m[0] === s ? m[1] : null
+  return m && m[0] === s && m.groups?.heading === undefined ? (m.groups?.page ?? null) : null
 }
 
 export function pasteAsTarget(clipboard: string): PasteAsTarget {
