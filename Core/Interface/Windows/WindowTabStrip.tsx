@@ -1,8 +1,14 @@
-import { Fragment, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
-import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import {
+  SortableZone,
+  useDragFamily,
+  useDragItem,
+  type Carried,
+  type DragItem,
+} from '@pommora/uix/Interactions/drag'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
@@ -11,6 +17,7 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigati
 import { useTabClose } from '../../Navigation/tabClose'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
+import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
 import '../../Navigation/tab-base.css'
@@ -22,7 +29,7 @@ interface Entry {
   res: ResolvedNav | null
 }
 
-// Ghost-closing keeps the strip mounted so the last collapse plays before the title returns.
+// The strip stays mounted through a ghost close so the last collapse plays before the title returns, and through a tabs drag so a loose tab has a row to land in.
 export function WindowTabStrip({
   index,
   title,
@@ -34,8 +41,10 @@ export function WindowTabStrip({
   const activateWindowTab = useSession((s) => s.activateWindowTab)
   const closeWindowTab = useSession((s) => s.closeWindowTab)
   const reorderWindowTabs = useSession((s) => s.reorderWindowTabs)
+  const openWindowTab = useSession((s) => s.openWindowTab)
   const tabs = pageWindow?.tabs
   const activeTabId = pageWindow?.activeTabId
+  const navKind = pageWindow?.kind === 'nav'
 
   const entries = useMemo<Entry[]>(
     () =>
@@ -46,12 +55,13 @@ export function WindowTabStrip({
     [tabs, index],
   )
 
-  const { renderEntries, firstLive, ghostCount, requestClose } = useTabClose(
-    entries,
-    closeWindowTab,
-  )
+  const { renderEntries, ghostCount, requestClose } = useTabClose(entries, closeWindowTab)
+  const sentinel = renderEntries.find((e) => e.entry.tab.target.kind === 'navwindow')
+  const pageEntries = renderEntries.filter((e) => e.entry.tab.target.kind === 'page')
+  const firstLivePage = pageEntries.findIndex((e) => !e.ghost)
 
-  const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0
+  const forced = useDragFamily() === 'tabs'
+  const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0 || forced
   const titlePresence = useExitPresence(!showStrip)
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the live node would swap text mid-collapse without this hold.
   const heldTitle = useHeld(title, !showStrip)
@@ -63,6 +73,37 @@ export function WindowTabStrip({
       ?.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(activeTabId)}"]`)
       ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
   }, [activeTabId])
+
+  const entryOf = (id: string): Entry | undefined =>
+    pageEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
+  const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
+  const carry = (id: string): PageTarget | null => {
+    const tab = entryOf(id)?.tab
+    return tab?.target.kind === 'page' ? tab.target : null
+  }
+  const placing = useRef(false)
+  useLayoutEffect(() => {
+    placing.current = false
+  })
+  const receive = (item: Carried, at: number): void => {
+    placing.current = true
+    openWindowTab(item as PageTarget, at)
+  }
+  const renderOverlay = (id: string): React.ReactNode => {
+    const entry = entryOf(id)
+    return entry ? (
+      <div className="tab-overlay tabs-compact">
+        <WindowTabItem
+          entry={entry}
+          navKind={navKind}
+          active={entry.tab.id === activeTabId}
+          closing={false}
+          onActivate={() => {}}
+          onClose={() => {}}
+        />
+      </div>
+    ) : null
+  }
 
   return (
     <>
@@ -78,35 +119,57 @@ export function WindowTabStrip({
         </div>
       )}
       <div className="window-tabwrap tabs-compact">
+        {showStrip && sentinel && (
+          <WindowTabItem
+            entry={sentinel.entry}
+            navKind={navKind}
+            active={sentinel.entry.tab.id === activeTabId}
+            closing={false}
+            onActivate={() => activateWindowTab(sentinel.entry.tab.id)}
+            onClose={() => {}}
+          />
+        )}
         {showStrip && (
-          <div className="tab-scroll over-scroll-x" ref={scrollRef}>
+          <div
+            className="tab-scroll over-scroll-x"
+            role="tablist"
+            aria-label="Preview tabs"
+            ref={scrollRef}
+          >
             <SortableZone
-              items={renderEntries
-                .filter((e) => !e.ghost && e.entry.tab.target.kind === 'page')
-                .map((e) => e.entry.tab.id)}
+              id="tabs-window"
+              className={cx('tab-strip', (placing.current || forced) && 'is-still')}
+              family="tabs"
+              items={pageEntries.filter((e) => !e.ghost).map((e) => e.entry.tab.id)}
               axis="x"
               onReorder={reorderWindowTabs}
+              getItemLabel={labelOf}
+              carry={carry}
+              receive={receive}
+              release={closeWindowTab}
+              renderOverlay={renderOverlay}
             >
-              <div className="tab-strip" role="tablist" aria-label="Preview tabs">
-                {renderEntries.map(({ entry, ghost }, i) => (
-                  <Fragment key={entry.tab.id}>
-                    {i > 0 && (
-                      <span
-                        className={cx('tab-seg', (ghost || i === firstLive) && 'is-closing')}
-                        aria-hidden
-                      />
-                    )}
-                    <WindowTabItem
-                      entry={entry}
-                      navKind={pageWindow?.kind === 'nav'}
-                      active={!ghost && entry.tab.id === activeTabId}
-                      closing={ghost}
-                      onActivate={() => activateWindowTab(entry.tab.id)}
-                      onClose={() => requestClose(entry.tab.id)}
+              {pageEntries.map(({ entry, ghost }, i) => (
+                <Fragment key={entry.tab.id}>
+                  {(i > 0 || sentinel) && (
+                    <span
+                      className={cx(
+                        'tab-seg',
+                        (ghost || (i > 0 && i === firstLivePage)) && 'is-closing',
+                      )}
+                      aria-hidden
                     />
-                  </Fragment>
-                ))}
-              </div>
+                  )}
+                  <DraggableWindowTab
+                    entry={entry}
+                    navKind={navKind}
+                    active={!ghost && entry.tab.id === activeTabId}
+                    closing={ghost}
+                    onActivate={() => activateWindowTab(entry.tab.id)}
+                    onClose={() => requestClose(entry.tab.id)}
+                  />
+                </Fragment>
+              ))}
             </SortableZone>
           </div>
         )}
@@ -115,11 +178,24 @@ export function WindowTabStrip({
   )
 }
 
+function DraggableWindowTab(props: {
+  entry: Entry
+  navKind: boolean
+  active: boolean
+  closing: boolean
+  onActivate: () => void
+  onClose: () => void
+}): React.JSX.Element {
+  const drag = useDragItem(props.entry.tab.id)
+  return <WindowTabItem {...props} drag={drag} />
+}
+
 function WindowTabItem({
   entry,
   navKind,
   active,
   closing,
+  drag,
   onActivate,
   onClose,
 }: {
@@ -127,6 +203,7 @@ function WindowTabItem({
   navKind: boolean
   active: boolean
   closing: boolean
+  drag?: DragItem
   onActivate: () => void
   onClose: () => void
 }): React.JSX.Element {
@@ -137,13 +214,12 @@ function WindowTabItem({
     navKind && entry.res?.icon === 'map'
       ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS.page }
       : entry.res
-  const drag = useDragItem(entry.tab.id)
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
     <div
-      ref={drag.setNodeRef}
-      style={drag.style}
-      {...drag.handle}
+      ref={drag?.setNodeRef}
+      style={drag?.style}
+      {...drag?.handle}
       data-tab-id={entry.tab.id}
       className={cx(
         'tab',
@@ -152,7 +228,7 @@ function WindowTabItem({
         active && 'is-active',
         closing && 'is-closing',
         isMap && 'tab-map',
-        drag.isDragging && 'is-dragging',
+        drag?.isDragging && 'is-dragging',
       )}
       title={label}
       role="tab"
@@ -160,7 +236,7 @@ function WindowTabItem({
       // Roving tabindex: the strip is ONE tab stop, the active tab holds it.
       tabIndex={active ? 0 : -1}
       onClick={() => {
-        if (!drag.isDragging) onActivate()
+        if (!drag?.isDragging) onActivate()
       }}
     >
       {res ? (
