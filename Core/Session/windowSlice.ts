@@ -32,7 +32,7 @@ export interface WindowSlice {
   openHistory: (target: WindowTarget) => void
   closeHistory: () => void
   openNavWindow: () => void
-  openWindowTab: (target: WindowTarget) => void
+  openWindowTab: (target: WindowTarget, at?: number) => void
   activateWindowTab: (id: string) => void
   reorderWindowTabs: (activeId: string, overId: string) => void
   closeWindowTab: (id: string, exit?: 'dismiss' | 'engulf') => void
@@ -186,13 +186,13 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       set({ pageWindow: next, windowExit: morphing ? 'morph' : 'dismiss' })
       mirrorWindows()
     },
-    openWindowTab: (target) => {
+    openWindowTab: (target, at) => {
       const cur = get().pageWindow
       if (!cur) {
         get().openWindow(target)
         return
       }
-      const next = openTabIn(cur, makeTabId, target)
+      const next = openTabIn(cur, makeTabId, target, at)
       if (next === cur) return
       const spawned = next.tabs.length > cur.tabs.length
       commitWindow(next, {

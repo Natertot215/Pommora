@@ -220,6 +220,35 @@ describe('windowTabs — the nav kind (H-2)', () => {
     const p2 = useSession.getState().pageWindow!
     expect(p2.tabs.map((t) => t.target.kind)).toEqual(['navwindow'])
   })
+
+  it('an indexed open splices among the page tabs, past the map sentinel', () => {
+    useSession.getState().openNavWindow()
+    useSession.getState().openWindowTab(page('x'))
+    useSession.getState().openWindowTab(page('y'))
+    useSession.getState().openWindowTab(page('z'), 1)
+    const p = useSession.getState().pageWindow!
+    expect(p.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : 'map'))).toEqual([
+      'map',
+      'x',
+      'z',
+      'y',
+    ])
+    expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'z' })
+  })
+
+  it('an indexed open of a tab already there moves it to that spot', () => {
+    useSession.getState().openNavWindow()
+    useSession.getState().openWindowTab(page('x'))
+    useSession.getState().openWindowTab(page('y'))
+    useSession.getState().openWindowTab(page('x'), 2)
+    const p = useSession.getState().pageWindow!
+    expect(p.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : 'map'))).toEqual([
+      'map',
+      'y',
+      'x',
+    ])
+    expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'x' })
+  })
 })
 
 describe('windowTabs — warmth (H-8)', () => {
