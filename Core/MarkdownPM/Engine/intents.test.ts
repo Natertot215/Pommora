@@ -214,7 +214,7 @@ describe('decoration intents', () => {
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
-  it('ordered list → number kept as literal source (recolor mark), no widget', () => {
+  it('ordered list → number kept as literal source (recolor mark), gap kept, no widget', () => {
     const t = '3. third'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(
@@ -227,15 +227,29 @@ describe('decoration intents', () => {
       ),
     ).toBe(true)
     expect(
+      intents.some((d) => d.kind === 'class' && d.className === 'md-list-gap' && d.from === 2),
+    ).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.from <= 2 && d.to > 2)).toBe(false)
+    expect(
       intents.some((d) => d.kind === 'line' && d.className === 'md-list-item md-list-ordered'),
     ).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
   it.each([
+    ['ordered', '3. ', 2],
+    ['arrow', '→ ', 1],
+    ['plus', '+ ', 1],
+  ])('%s item with no text → the whole gap is hidden, leaving the caret a boundary', (_n, t, gap) => {
+    const intents = decorationsFor(t, tokenize(t), new Set(), 99)
+    expect(intents.some((d) => d.kind === 'class' && d.className === 'md-list-gap')).toBe(false)
+    expect(intents.some((d) => d.kind === 'hide' && d.from === gap && d.to === t.length)).toBe(true)
+  })
+
+  it.each([
     ['arrow', '→ step'],
     ['plus', '+ step'],
-  ])('%s list → marker kept as literal source (recolor + drag-handle class), gap hidden, no widget', (_n, t) => {
+  ])('%s list → marker kept as literal source (recolor + drag-handle class), gap kept, no widget', (_n, t) => {
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(
       intents.some(
@@ -246,7 +260,10 @@ describe('decoration intents', () => {
           d.to === 1,
       ),
     ).toBe(true)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 1 && d.to === 2)).toBe(true)
+    expect(
+      intents.some((d) => d.kind === 'class' && d.className === 'md-list-gap' && d.from === 1),
+    ).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.from <= 1 && d.to > 1)).toBe(false)
     expect(intents.some((d) => d.kind === 'line' && d.className === 'md-list-item')).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })

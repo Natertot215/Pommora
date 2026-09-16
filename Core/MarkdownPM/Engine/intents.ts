@@ -28,6 +28,17 @@ function calloutNestedQuote(
 
 export const GLYPH_CLASS = 'md-list-glyph'
 
+// A marker whose text stays on screen needs one real space after it, or the reader's first word joins it into `2.Preserve` and the platform checker underlines the pair. The space is drawn at zero width; the visible gap is the glyph's own padding.
+// An item with nothing after the gap has no word to join, and the collapsed space would be the only thing the caret could sit against, so the whole gap goes.
+function pushMarkerGap(intents: DecoIntent[], from: number, to: number, le: number): void {
+  if (to >= le) {
+    intents.push({ kind: 'hide', from, to })
+    return
+  }
+  intents.push({ kind: 'class', from, to: from + 1, className: 'md-list-gap' })
+  if (to > from + 1) intents.push({ kind: 'hide', from: from + 1, to })
+}
+
 const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
 
 export type WidgetSpec =
@@ -435,11 +446,7 @@ function pushConstruct(
       to: innerStart + lm.markerEnd,
       className: `md-list-arrow md-control ${GLYPH_CLASS}`,
     })
-    intents.push({
-      kind: 'hide',
-      from: innerStart + lm.markerEnd,
-      to: innerStart + lm.contentStart,
-    })
+    pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm
   } else if (lm && isSequenced(lm.kind)) {
     // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
@@ -457,11 +464,7 @@ function pushConstruct(
       to: innerStart + lm.markerEnd,
       className: `md-list-number md-control ${GLYPH_CLASS}`,
     })
-    intents.push({
-      kind: 'hide',
-      from: innerStart + lm.markerEnd,
-      to: innerStart + lm.contentStart,
-    })
+    pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm
   } else if (isThematicBreakLine(inner) && !caretOnLine) {
     intents.push({
