@@ -6,7 +6,8 @@ import { MenuItem } from '@pommora/uix/Menus'
 import { overlay, rowDragging } from '@pommora/uix/Menus/menu-base.css'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
-import type { NavRef, SelectTarget } from '@pommora/core/Navigation/navRef'
+import { useEscort } from '@pommora/uix/Interactions/drag'
+import type { NavRef, PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
 import { isOpenInTabs, liveTarget } from './tabsModel'
@@ -124,27 +125,24 @@ export function NavPinButton({
   )
 }
 
-type RowDrag = ReturnType<typeof useTableRowDrag>
-
 function NavRow({
   it,
-  drag,
   onSelect,
   onMenu,
 }: {
   it: ResolvedNav
-  drag?: RowDrag
   onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
+  const drag = useTableRowDrag(it.key)
   return (
     <MenuItem
-      ref={drag?.ref}
-      className={cx(drag?.isDragging && rowDragging)}
+      ref={drag.ref}
+      className={cx(drag.isDragging && rowDragging)}
       leading={<EntityIcon item={it} size="headline" />}
       detail={<NavTrail segments={it.path} iconSize="control" />}
       overlay={<NavPinButton it={it} className={cx(overlay, 'nav-pin')} />}
-      onPointerDown={drag?.handle.onPointerDown}
+      onPointerDown={drag.handle.onPointerDown}
       onClick={() => onSelect(it.target)}
       onMouseEnter={(e) => {
         const t = pageTargetFromNav(it, useSession.getState().tree)
@@ -159,15 +157,6 @@ function NavRow({
       {it.title}
     </MenuItem>
   )
-}
-
-function DraggableRow(props: {
-  it: ResolvedNav
-  onSelect: (t: NavRef) => void
-  onMenu: (it: ResolvedNav) => void
-}): React.JSX.Element {
-  const drag = useTableRowDrag(props.it.key)
-  return <NavRow {...props} drag={drag} />
 }
 
 export function NavList({
@@ -186,25 +175,24 @@ export function NavList({
   onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)
+  const tree = useSession((s) => s.tree)
+  const engine = useEscort()
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav): void => setMenu({ item: it })
   const pinRows = reorderable ? (pins ?? []) : []
+  const rows = reorderable ? [...pinRows, ...items] : items
   // Identity-stable so a parent re-render mid-drag can't false-dirty the drag's row snapshot.
   const dndRows = useMemo(
-    () =>
-      reorderable
-        ? [
-            ...(pins ?? []).map((p) => ({ id: p.key, groupKey: 'pins' })),
-            ...items.map((r) => ({ id: r.key, groupKey: 'recents' })),
-          ]
-        : [],
+    () => [
+      ...(reorderable ? (pins ?? []).map((p) => ({ id: p.key, groupKey: 'pins' })) : []),
+      ...items.map((r) => ({ id: r.key, groupKey: 'recents' })),
+    ],
     [reorderable, pins, items],
   )
-  if (items.length === 0 && pinRows.length === 0) return null
-  const recents = reorderable ? items : []
+  if (rows.length === 0) return null
 
   const commitReorder = (activeId: string, groupKey: string, beforeId: string | null): void => {
-    const group = groupKey === 'pins' ? pinRows : recents
+    const group = groupKey === 'pins' ? pinRows : items
     const next = nextOrder(
       group.map((g) => g.key),
       activeId,
@@ -215,33 +203,38 @@ export function NavList({
     if (groupKey === 'pins') reorderPin(activeId, over)
     else onReorderRecent?.(activeId, over)
   }
+  // A page row rides the engine's escort into a tab row; the list itself lets nothing go.
+  const carry = (key: string): PageTarget | null => {
+    const it = rows.find((r) => r.key === key)
+    return (it && pageTargetFromNav(it, tree)) ?? null
+  }
+  const ghostOf = (key: string): React.ReactNode => {
+    const it = rows.find((r) => r.key === key)
+    return it ? (
+      <>
+        <EntityIcon item={it} size="body" />
+        {it.title}
+      </>
+    ) : null
+  }
 
-  const list = (
-    <div className="nav-list">
-      {(reorderable ? [...pinRows, ...recents] : items).map((it) =>
-        reorderable ? (
-          <DraggableRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
-        ) : (
-          <NavRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
-        ),
-      )}
-    </div>
-  )
   return (
     <>
-      {reorderable ? (
-        <TableRowDnd
-          rows={dndRows}
-          disabled={false}
-          canReorderWithin
-          crossZone={false}
-          onDrop={commitReorder}
-        >
-          {list}
-        </TableRowDnd>
-      ) : (
-        list
-      )}
+      <TableRowDnd
+        rows={dndRows}
+        disabled={false}
+        canReorderWithin={!!reorderable}
+        crossZone={false}
+        onDrop={commitReorder}
+        escort={engine && { via: engine, family: 'tabs', carry }}
+        ghostLabel={ghostOf}
+      >
+        <div className="nav-list">
+          {rows.map((it) => (
+            <NavRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
+          ))}
+        </div>
+      </TableRowDnd>
       {menu && (
         <NavRowMenu item={menu.item} onClose={() => setMenu(null)} onOpenNewTab={onOpenNewTab} />
       )}

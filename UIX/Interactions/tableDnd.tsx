@@ -7,13 +7,21 @@ import {
   type ReactNode,
 } from 'react'
 import { nearestByTop, useInsertionDrag } from './insertionDrag'
+import type { Escort } from './engine'
 import { type MeasuredRow, nextOrder, slotInGroup } from './reorderModel'
-import { DROP_LINE_INSET } from './shared'
+import { DROP_LINE_INSET, toBox, type Carried } from './shared'
 import { currentZoom } from '../Utilities/zoom'
 
 type Slot = { lineY: number; left: number; width: number; group: string; beforeId: string | null }
 type TableRow = MeasuredRow & { left: number; contentRight: number; group: string }
-type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number; zoom: number }
+type Snapshot = {
+  rows: TableRow[]
+  boxTop: number
+  boxLeft: number
+  boxRight: number
+  boxBottom: number
+  zoom: number
+}
 
 type Value = {
   draggingId: string | null
@@ -28,6 +36,8 @@ export function TableRowDnd({
   canReorderWithin,
   crossZone,
   onDrop,
+  escort,
+  ghostLabel,
   children,
 }: {
   rows: { id: string; groupKey: string }[]
@@ -35,12 +45,17 @@ export function TableRowDnd({
   canReorderWithin: boolean
   /** Whether a drop onto another group is offered at all — the caller decides whether it relocates the page or rewrites its group value. */
   crossZone: boolean
-  /** `beforeId` is null at the target group's end. The caller routes a same-group drop to a reorder and a cross-group one to a relocate or a reassign. */
+  /** `beforeId` is null at the target group's end. The caller routes a same-group drop to a reorder and a cross-group one to a relocate or a reassign; a row the escort lands elsewhere never reaches here. */
   onDrop: (activeId: string, toGroup: string, beforeId: string | null) => void
+  /** Rows that may leave for a family zone: with an escort, a point outside the rows' box resolves to nothing, so a row carried away draws no line. */
+  escort?: { via: Escort; family: string; carry: (id: string) => Carried | null } | null
+  /** A ghost follows the row when a label is given. */
+  ghostLabel?: (id: string) => ReactNode
   children: ReactNode
 }): React.JSX.Element {
   const els = useRef(new Map<string, HTMLElement>())
   const content = useRef<HTMLDivElement | null>(null)
+  const bounded = escort != null
 
   const drag = useInsertionDrag<Slot, Snapshot>({
     take: (excludeId) => {
@@ -67,11 +82,23 @@ export function TableRowDnd({
         })
       }
       measured.sort((a, b) => a.top - b.top)
-      return { rows: measured, boxTop: boxRect.top, boxLeft: boxRect.left, zoom: currentZoom(box) }
+      return {
+        rows: measured,
+        boxTop: boxRect.top,
+        boxLeft: boxRect.left,
+        boxRight: boxRect.right,
+        boxBottom: boxRect.bottom,
+        zoom: currentZoom(box),
+      }
     },
     resolve: (id, point, s) => {
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
+      if (
+        bounded &&
+        (point.x < s.boxLeft || point.x > s.boxRight || point.y < s.boxTop || point.y > s.boxBottom)
+      )
+        return null
       const near = nearestByTop(s.rows, point.y)
       const group = near.group
       const crossing = group !== activeGroup
@@ -93,7 +120,16 @@ export function TableRowDnd({
     commit: (id, slot) => onDrop(id, slot.group, slot.beforeId),
     lineFor: (slot) => ({ top: slot.lineY, left: slot.left, width: slot.width, right: 'auto' }),
     label: () => 'row',
-    ghost: 'none',
+    ghostLabel,
+    ghost: ghostLabel ? 'grab' : 'none',
+    escort: escort?.via,
+    escortSpec: (id, rect) => {
+      const item = escort?.carry(id)
+      const box = content.current
+      return escort && item != null && box
+        ? { id, family: escort.family, item, rect, home: toBox(box) }
+        : null
+    },
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => content.current,
     disabled: () => disabled,
@@ -117,6 +153,7 @@ export function TableRowDnd({
         {children}
         {drag.line}
       </div>
+      {drag.ghost}
     </Ctx.Provider>
   )
 }
