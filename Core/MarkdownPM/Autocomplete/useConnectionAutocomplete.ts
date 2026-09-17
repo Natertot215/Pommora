@@ -4,6 +4,7 @@ import {
   autocompleteQuery,
   commitEdit,
   headingRows,
+  openHeadingRows,
   type AcRow,
   type AcQuery,
   type AutocompleteQuery,
@@ -87,6 +88,9 @@ interface ConnectionAutocomplete {
   acCtl: RefObject<AcCtl>
   viaChevron: boolean
   loading: boolean
+  headingRows: AcRow[]
+  collapsed: ReadonlySet<string>
+  toggleHeading: (value: string) => void
 }
 
 export function useConnectionAutocomplete(
@@ -98,6 +102,7 @@ export function useConnectionAutocomplete(
   const [ac, setAc] = useState<AcState | null>(null)
   const [outline, setOutline] = useState<OutlineHeading[] | null>(null)
   const [viaChevron, setViaChevron] = useState(false)
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
   const candidatesForRef = useRef(candidatesFor)
@@ -111,6 +116,7 @@ export function useConnectionAutocomplete(
     if (!heading) {
       setOutline(null)
       setViaChevron(false)
+      setCollapsed(new Set())
       return
     }
     let live = true
@@ -123,15 +129,19 @@ export function useConnectionAutocomplete(
   }, [heading, title])
 
   // The host re-identifies when an alias is forgotten, which is what shrinks the list under an unchanged query.
+  const allHeadingRows = useMemo(
+    () => (heading && query !== null ? headingRows(outline ?? [], query) : []),
+    [heading, outline, query],
+  )
   const candidates = useMemo(() => {
     if (query === null) return []
-    if (heading) return headingRows(outline ?? [], query)
+    if (heading) return query === '' ? openHeadingRows(allHeadingRows, collapsed) : allHeadingRows
     if (query === '' && form === 'link') return []
     const found = candidatesForRef.current({ query, form, title })
     const exact = found.length === 1 && normalizeTitle(found[0].label) === normalizeTitle(query)
     if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
-  }, [query, form, title, host, heading, outline, backedTo])
+  }, [query, form, title, host, heading, allHeadingRows, collapsed, backedTo])
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)
@@ -208,6 +218,14 @@ export function useConnectionAutocomplete(
     acCtl: ctl,
     viaChevron,
     loading: heading && outline === null,
+    headingRows: allHeadingRows,
+    collapsed,
+    toggleHeading: (value) =>
+      setCollapsed((prev) => {
+        const next = new Set(prev)
+        if (!next.delete(value)) next.add(value)
+        return next
+      }),
   }
 }
 

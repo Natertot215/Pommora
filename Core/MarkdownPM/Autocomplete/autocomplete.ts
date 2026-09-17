@@ -129,6 +129,19 @@ export function headingRows(outline: readonly OutlineHeading[], query: string): 
     .map((h) => ({ value: h.text, label: h.text, isPage: false, location: [], level: h.level }))
 }
 
+// The rows a collapsed heading hides: everything deeper than it, up to the next heading at its level or above.
+export function openHeadingRows(rows: readonly AcRow[], collapsed: ReadonlySet<string>): AcRow[] {
+  const out: AcRow[] = []
+  let hiddenBelow: number | null = null
+  for (const row of rows) {
+    const level = row.level ?? 1
+    if (hiddenBelow !== null && level > hiddenBelow) continue
+    hiddenBelow = collapsed.has(row.value) ? level : null
+    out.push(row)
+  }
+  return out
+}
+
 export function aliasRows(
   conn: PageIndex,
   aliases: EditorHost['aliases'],
