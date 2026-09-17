@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { docOutline, docString } from './docCache'
+import { travelToHeading } from './travel'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
@@ -91,6 +92,9 @@ interface Props {
   register?: (view: EditorView | null) => void
   /** The focused main range's figures, or null while the caret is collapsed or the surface is unfocused. */
   onSelection?: (stats: PageStats | null) => void
+  /** A heading to travel to once folds settle, or on a later value while the editor stays mounted. */
+  arrive?: string
+  onArrived?: () => void
 }
 
 export function MarkdownEditor({
@@ -112,6 +116,8 @@ export function MarkdownEditor({
   register,
   onSelection,
   active = true,
+  arrive,
+  onArrived,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   const lastReadOnly = useRef(readOnly)
@@ -143,6 +149,10 @@ export function MarkdownEditor({
   activeRef.current = active
   const registerRef = useRef(register)
   registerRef.current = register
+  const arriveRef = useRef(arrive)
+  arriveRef.current = arrive
+  const onArrivedRef = useRef(onArrived)
+  onArrivedRef.current = onArrived
   const lastFormatRef = useRef<FormatState | null>(null)
 
   // Decorations rebuild only on editor updates, so a real tree change dispatches an empty transaction.
@@ -164,6 +174,19 @@ export function MarkdownEditor({
     const view = viewRef.current
     if (view) rerenderWebTiles(view)
   }, [active])
+
+  // The mount-time travel already consumed the first value; a later one arrives while the editor stays mounted.
+  const firstArrive = useRef(true)
+  useEffect(() => {
+    if (firstArrive.current) {
+      firstArrive.current = false
+      return
+    }
+    const view = viewRef.current
+    if (!view || !arrive) return
+    travelToHeading(view, arrive)
+    onArrived?.()
+  }, [arrive])
 
   const citesShown = host.citations.shown()
   const citesShownRef = useRef(citesShown)
@@ -387,6 +410,14 @@ export function MarkdownEditor({
       // != null, not truthy — a saved top-of-page (0) must still override CM's own restore scroll.
       if (saved?.scrollTop != null) view.scrollDOM.scrollTop = saved.scrollTop
     }
+    const land = (): void => {
+      restoreScroll()
+      const a = arriveRef.current
+      if (a) {
+        travelToHeading(view, a, 0)
+        onArrivedRef.current?.()
+      }
+    }
     const foldsLoad = foldsRef.current?.load()
     const heightsLoad = embedHeightsRef.current?.load()
     const zoomsLoad = embedZoomsRef.current?.load()
@@ -406,10 +437,10 @@ export function MarkdownEditor({
             refreshTileZooms(view, false)
           }
           if (cols.status === 'fulfilled' && cols.value) applySavedHeadingCols(view, cols.value)
-          restoreScroll()
+          land()
         },
       )
-    else requestAnimationFrame(restoreScroll)
+    else requestAnimationFrame(land)
     const unsubMenu = hostRef.current.menus.format?.onAction((action) => {
       if (ownsEditorMenu(view)) applyEditorAction(view, action)
     })

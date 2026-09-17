@@ -1,5 +1,9 @@
 import { EditorView } from '@codemirror/view'
-import { pageEmbedText } from '@pommora/core/Connections/connections'
+import {
+  connectionText,
+  embeddableTitle,
+  pageEmbedText,
+} from '@pommora/core/Connections/connections'
 import type { GripMenuContext, ListKind, PickNode } from '@pommora/core/Actions/gripMenu'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
 import { headingParts } from '../Engine/detect'
@@ -87,7 +91,10 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const level = headingParts(opened.text)?.hashes.length
   if (level === undefined) return
   const host = view.state.facet(editorHost)
-  void host.menus.grip({ kind: 'heading', level }).then((action) => {
+  const title = host.pageTitle()
+  const heading = headingParts(opened.text)?.content.trim() ?? ''
+  const linkable = title !== null && embeddableTitle(heading)
+  void host.menus.grip({ kind: 'heading', level, linkable }).then((action) => {
     if (!action) return
     // Re-found and matched against what the menu was built from — a native menu can stay open while an undo moves the document.
     const doc = docString(view.state.doc)
@@ -96,6 +103,8 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
     if (!parts || line.text !== opened.text) return
     const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
     if (action === 'rename') focusRange(view, contentStart, line.to)
+    else if (action === 'copyLink' && title !== null)
+      void host.clipboard.write(connectionText(title, undefined, parts.content.trim()))
     else if (action === 'delete') {
       const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
       view.dispatch({

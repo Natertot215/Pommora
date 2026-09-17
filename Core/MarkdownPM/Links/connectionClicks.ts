@@ -13,6 +13,8 @@ type GetApi = () => ConnectionsApi | undefined
 
 interface WikiHit {
   title: string
+  heading: string | null
+  self: boolean
   range: [number, number]
   content: [number, number]
   aliased: boolean
@@ -27,6 +29,8 @@ function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   const abs = ([s, e]: [number, number]): [number, number] => [line.from + s, line.from + e]
   return {
     title: line.text.slice(rs, re),
+    heading: tk.fragment ? line.text.slice(tk.fragment[0], tk.fragment[1]) : null,
+    self: rs === re,
     range: abs(tk.range),
     content: abs(tk.contentRange),
     aliased: aliasedToken(tk),
@@ -48,7 +52,8 @@ function connHitAt(
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
-  const res = api.resolve(hit.title)
+  // A bare fragment names the page's own heading and never carries a page — it reads as resolved regardless of the map.
+  const res = hit.self ? { status: 'resolved' as const, page: null } : api.resolve(hit.title)
   const el = (event.target as HTMLElement).closest?.(
     '.md-connection-resolved, .md-connection-ambiguous',
   )
@@ -67,19 +72,38 @@ export function connectionClicks(getApi: GetApi): Extension {
   return pointerHandlers<ConnHit>({
     hoverGate: '.md-connection-resolved',
     hitAt: (view, event) => connHitAt(getApi(), view, event),
-    follow: ({ page }, view, event) =>
-      page
+    follow: ({ hit, page, onText }, view, event) =>
+      hit.self && onText
         ? followTarget(
-            { kind: 'page', page },
+            { kind: 'self', heading: hit.heading ?? '' },
             '',
             getApi(),
             isCmd(event),
             event.target as Element,
             view.state.facet(editorHost),
+            view,
+            hit.range[0],
           )
+        : page
+          ? followTarget(
+              { kind: 'page', page, heading: hit.heading ?? undefined },
+              '',
+              getApi(),
+              isCmd(event),
+              event.target as Element,
+              view.state.facet(editorHost),
+              view,
+              hit.range[0],
+            )
+          : null,
+    dwell: ({ hit, page }, el, glance) =>
+      page
+        ? () =>
+            glance.arm(
+              { kind: 'page', id: page.id, path: page.path, heading: hit.heading ?? undefined },
+              el,
+            )
         : null,
-    dwell: ({ page }, el, glance) =>
-      page ? () => glance.arm({ kind: 'page', id: page.id, path: page.path }, el) : null,
     menu: ({ hit, page }, view) => {
       const menu = getApi()?.menu
       if (!page || !menu) return null
@@ -87,6 +111,7 @@ export function connectionClicks(getApi: GetApi): Extension {
         menu({
           kind: 'page',
           page,
+          heading: hit.heading ?? undefined,
           // Editability is read here rather than threaded through the host: `readOnly` is live inside the editor and flips at runtime through a Compartment, so a captured value would go stale.
           editable: !view.state.readOnly,
           hasAlias: hit.aliased,

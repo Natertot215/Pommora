@@ -8,9 +8,10 @@ import {
   type ConnMenuContext,
 } from '@pommora/core/Actions/connectionMenu'
 import { isValidLink } from '@pommora/core/Connections/links'
+import { connectionText } from '@pommora/core/Connections/connections'
 import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
-import { pageLinkText, pagePathText } from '@pommora/core/Actions/pageMenu'
+import { pagePathText } from '@pommora/core/Actions/pageMenu'
 import { openInAppBrowser } from '@pommora/core/Interface/Windows/WebWindow'
 import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -69,7 +70,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
         void useSession.getState().select(ref, { newTab: true })
         return
       case 'title:copylink':
-        void host().ask('clipboard:write', pageLinkText(page.title))
+        void host().ask('clipboard:write', connectionText(page.title, undefined, target.heading))
         return
       case 'title:copypath':
         void host().ask('clipboard:write', pagePathText(page.path))

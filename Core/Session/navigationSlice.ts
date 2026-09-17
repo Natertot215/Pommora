@@ -119,6 +119,15 @@ export interface NavigationSlice {
   restoreNavigation: (nav: NavigationState | null, stored: StoredTabSet | null) => void
   patchPagesFor: (req: MutateRequest) => void
   resetNavigation: () => void
+  pendingTravel: PendingTravel | null
+  setPendingTravel: (pendingTravel: PendingTravel) => void
+  clearPendingTravel: () => void
+}
+
+export interface PendingTravel {
+  route: 'tab' | 'window'
+  path: string
+  heading: string
 }
 
 interface NavSlide {
@@ -192,6 +201,7 @@ const PER_NEXUS = {
   favorites: [],
   recents: [],
   navBanner: undefined,
+  pendingTravel: null,
 } satisfies Partial<NavigationSlice>
 
 export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
@@ -780,5 +790,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       set(PER_NEXUS)
       clearCache()
     },
+    setPendingTravel: (pendingTravel) => set({ pendingTravel }),
+    clearPendingTravel: () => set({ pendingTravel: null }),
   }
 }

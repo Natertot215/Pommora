@@ -7,6 +7,7 @@ import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from '.
 import { MD_LINK_CLASS } from '../decorations'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
+import { travelToHeading } from '../travel'
 import { type EditorHost, editorHost } from '../api'
 
 type GetApi = () => ConnectionsApi | undefined
@@ -48,12 +49,15 @@ export function followTarget(
   bypass: boolean,
   el: Element,
   host: EditorHost,
+  view: EditorView | null,
+  at: number,
 ): (() => void) | null {
   if (target.kind === 'invalid' || host.glance?.contains(el)) return null
+  if (target.kind === 'self') return view ? () => travelToHeading(view, target.heading, at) : null
   if (target.kind === 'page') {
     if (!api) return null
     const page = target.page
-    return () => openPage(api, page, bypass)
+    return () => openPage(api, page, bypass, target.heading)
   }
   return () => host.openLink(url)
 }
@@ -68,7 +72,7 @@ export function dwellTarget(
   if (target.kind === 'invalid') return null
   if (target.kind === 'page') {
     const { id, path } = target.page
-    return () => glance.arm({ kind: 'page', id, path }, el)
+    return () => glance.arm({ kind: 'page', id, path, heading: target.heading }, el)
   }
   const web = normalizeLinkUrl(url)
   return hasWebScheme(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
@@ -89,17 +93,26 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
             isCmd(event),
             event.target as Element,
             view.state.facet(editorHost),
+            view,
+            hit.range[0],
           )
         : null,
     dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, hit.url, glance, el) : null),
     menu: (hit, view) => {
       const menu = getApi()?.menu
-      if (!menu || !hit.onText || hit.target.kind === 'invalid') return null
+      if (!menu || !hit.onText || hit.target.kind === 'invalid' || hit.target.kind === 'self')
+        return null
       const target = hit.target
       return () =>
         menu(
           target.kind === 'page'
-            ? { kind: 'page', page: target.page, editable: false, hasAlias: false }
+            ? {
+                kind: 'page',
+                page: target.page,
+                heading: target.heading,
+                editable: false,
+                hasAlias: false,
+              }
             : {
                 kind: 'url',
                 url: hit.url,

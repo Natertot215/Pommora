@@ -46,6 +46,12 @@ function PageWindowBody({
   const embedScale = useEmbedScale()
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
+  const pendingTravel = useSession((s) => s.pendingTravel)
+  const clearPendingTravel = useSession((s) => s.clearPendingTravel)
+  const arrive =
+    pendingTravel?.route === 'window' && pendingTravel.path === target.path
+      ? pendingTravel.heading
+      : undefined
   const rootRef = useRef<HTMLDivElement>(null)
 
   const [editing, setEditing] = useState(false)
@@ -162,6 +168,8 @@ function PageWindowBody({
           connections={connections}
           onBody={onBody}
           warm={warmSeam}
+          arrive={arrive}
+          onArrived={clearPendingTravel}
         />
       </div>
     </WindowBase>

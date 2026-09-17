@@ -408,7 +408,7 @@ export function GlancePane(): React.JSX.Element {
 
   // The tile render and the fold toggle are pure, so the live pane and every pin share them; the live path keeps its own warmSeam memo (no fresh seam per render).
   const renderPageTile = (
-    t: { id: string; path: string },
+    t: { id: string; path: string; heading?: string },
     seam: WarmSeam | undefined,
   ): React.JSX.Element => (
     <PageTile
@@ -420,6 +420,7 @@ export function GlancePane(): React.JSX.Element {
       connections={resolveOnly}
       warm={seam}
       ancestors={GLANCE_ANCESTORS}
+      arrive={t.heading}
     />
   )
   const onFoldClick = (e: React.MouseEvent): void => {

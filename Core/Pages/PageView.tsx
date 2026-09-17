@@ -72,6 +72,8 @@ export function PageView({
   useEffect(() => {
     mountedGen.current = cacheGeneration()
   })
+  const pendingTravel = useSession((s) => s.pendingTravel)
+  const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const tree = useSession((s) => s.tree)
@@ -79,6 +81,10 @@ export function PageView({
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingLive = useRef<[string, string] | null>(null)
   const path = slot?.status === 'ready' ? slot.detail.path : ''
+  const arrive =
+    pendingTravel?.route === 'tab' && pendingTravel.path === path
+      ? pendingTravel.heading
+      : undefined
   const bodyEpoch = useBodyEpoch(path)
   const publishSelection = usePublishSelection(path)
   useEffect(() => {
@@ -228,6 +234,8 @@ export function PageView({
           },
         }}
         active={!parked}
+        arrive={arrive}
+        onArrived={clearPendingTravel}
       />
       <IconChoice
         open={iconPickerOpen}

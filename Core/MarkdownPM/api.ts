@@ -15,7 +15,7 @@ import type {
 export const syncLanding = Annotation.define<boolean>()
 
 export type GlanceTarget =
-  | { kind: 'page'; id: string; path: string }
+  | { kind: 'page'; id: string; path: string; heading?: string }
   | { kind: 'site'; url: string }
 
 export interface EditorPref<T> {
@@ -103,6 +103,8 @@ export interface EditorHost {
   // A page's body as the session holds it: the open tab's live text when warm, else read from disk.
   warmBody(page: ConnPage): string | null
   fetchBody(page: ConnPage): Promise<string | null>
+  // The live tree's title for the surface's own page, read fresh rather than from a capped cache; null off a page identity.
+  pageTitle(): string | null
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })
