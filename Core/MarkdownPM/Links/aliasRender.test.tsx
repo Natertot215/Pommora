@@ -98,3 +98,35 @@ describe('a heading link reads per the two heading settings', () => {
     expect(heading?.textContent).toBe('Gone')
   })
 })
+
+describe('a bare §Heading in prose resolves under Automatic', () => {
+  it('renders §Setup as a section run under Automatic', async () => {
+    const view = await mountEditor({
+      initialBody: '## Setup\nsee §Setup.',
+      connections: conn,
+      host: { settings: { inPageHeadingResolution: 'automatic' } },
+    })
+    const run = view.dom.querySelector('.md-section-run') as HTMLElement
+    expect(run?.textContent).toBe('§Setup')
+  })
+
+  it('renders §Setup as plain prose under Explicit', async () => {
+    const view = await mountEditor({
+      initialBody: '## Setup\nsee §Setup.',
+      connections: conn,
+      host: { settings: { inPageHeadingResolution: 'explicit' } },
+    })
+    expect(view.dom.querySelector('.md-section-run')).toBeNull()
+    expect(view.dom.textContent).toContain('§Setup')
+  })
+
+  it('leaves §Setups as plain prose under Automatic', async () => {
+    const view = await mountEditor({
+      initialBody: '## Setup\nsee §Setups.',
+      connections: conn,
+      host: { settings: { inPageHeadingResolution: 'automatic' } },
+    })
+    expect(view.dom.querySelector('.md-section-run')).toBeNull()
+    expect(view.dom.textContent).toContain('§Setups')
+  })
+})

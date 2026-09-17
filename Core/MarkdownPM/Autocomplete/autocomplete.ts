@@ -6,7 +6,7 @@ import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 
-type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading'
+type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading' | 'section'
 
 export interface AutocompleteQuery {
   query: string
@@ -47,12 +47,30 @@ export function autocompleteQuery(
   scan: DocScan,
   caret: number,
   allowEmbeds = false,
+  armed?: number,
 ): AutocompleteQuery | null {
   if (inCodeAt(scan, caret)) return null
   const i = lineIndexAt(scan, caret)
   const line = scan.lines[i]
   const lineStart = scan.lineStarts[i]
   const rel = caret - lineStart
+  if (armed !== undefined) {
+    const armedRel = armed - lineStart
+    if (
+      armedRel >= 0 &&
+      armedRel < line.length &&
+      caret >= armed + 1 &&
+      !linkAt(line, rel) &&
+      !/\s/.test(line.slice(armedRel + 1, rel))
+    )
+      return {
+        query: line.slice(armedRel + 1, rel),
+        from: armed + 1,
+        to: caret,
+        form: 'section',
+        title: '',
+      }
+  }
   const s = linkAt(line, rel)
   if (s) {
     const title = line.slice(s.title[0], s.title[1])
@@ -171,6 +189,7 @@ function formSyntax(value: string, form: ConnectionForm, alias?: string): string
   switch (form) {
     case 'alias':
     case 'heading':
+    case 'section':
       return value
     case 'target':
       return encodeLinkTarget(value)
@@ -231,6 +250,9 @@ export function commitEdit(
     }
   }
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
+  // Bare text, no wrapping syntax to land inside of — the anchor sits right after the heading itself.
+  if (ac.form === 'section')
+    return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
   if (ac.form === 'alias' || ac.form === 'heading')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {

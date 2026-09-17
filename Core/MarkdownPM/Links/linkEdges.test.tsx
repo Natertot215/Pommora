@@ -168,3 +168,46 @@ describe('a same-page heading link travels instead of opening', () => {
     expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 10)
   })
 })
+
+describe('a bare §Heading run carries no menu and no glance, just travel', () => {
+  const arm = vi.fn()
+
+  const mountAutomatic = () =>
+    mountEditor({
+      initialBody: '## Setup\nsee §Setup.',
+      connections: conn,
+      host: {
+        settings: { inPageHeadingResolution: 'automatic' },
+        glance: { arm, cancel: () => {}, close: () => {}, contains: () => false },
+      },
+    })
+
+  it('a click on the run travels to the heading', async () => {
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountAutomatic()
+    await act(async () => view.focus())
+    const span = view.dom.querySelector('.md-section-run') as HTMLElement
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(14)
+    span.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 13)
+  })
+
+  it('hovering the run arms nothing', async () => {
+    arm.mockClear()
+    const view = await mountAutomatic()
+    const span = view.dom.querySelector('.md-section-run') as HTMLElement
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(14)
+    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    expect(arm).not.toHaveBeenCalled()
+  })
+
+  it('right-click on the run falls through to the native editor menu', async () => {
+    const view = await mountAutomatic()
+    const span = view.dom.querySelector('.md-section-run') as HTMLElement
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(14)
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    span.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+  })
+})

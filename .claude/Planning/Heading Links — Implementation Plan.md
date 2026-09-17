@@ -88,11 +88,11 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
   - [x] Task 6.4 — The external diff
   - [x] Review Checkpoint
 - [x] `[Stop: Nathan renames a heading with links on two pages and in Obsidian]` — folded into the live walk after Phase 8.
-- [ ] **Phase 7** — In-Page Heading Resolution
-  - [ ] Task 7.1 — Section runs
-  - [ ] Task 7.2 — The bare run draws and travels
-  - [ ] Task 7.3 — The `§` picker on the keystroke
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — In-Page Heading Resolution
+  - [x] Task 7.1 — Section runs
+  - [x] Task 7.2 — The bare run draws and travels
+  - [x] Task 7.3 — The `§` picker on the keystroke
+  - [x] Review Checkpoint
 - [ ] **Phase 8** — Documentation
   - [ ] Task 8.1 — ConnectionsPM, MarkdownPM, ConfigurationPM, Editor-Internals, CLAUDE.md
 
@@ -2803,4 +2803,6 @@ Per the skill's §5.5, written when the chain is confirmed.
 - **Task 6.2, undo and redo:** CodeMirror's `undo` dispatches with `filter: false`, so the guard never stamps an undo; the listener reads `headingRenameOf(tr)` on an `undo`/`redo` user event so a settled rename undone later fires the consult back (B-5's stated symmetry holds through the listener rather than the filter).
 - **Task 6.3, page id to path:** `Nexus/treeIndex.ts` reaches renderer code, so the handler resolves through `livePathOf` from `Nexus/valuesChanged.ts` and `titleFromPath`; `readSettings` lives in `Core/Settings/codec.ts`, imported by `watchPatch.ts` and `cascade.ts`.
 - **Footnotes (Nathan, 09-16-2026):** a lone `[[#Heading]]` or `[[Page#Heading]]` in a citation's body carries its heading through `loneTarget`, so the marker travels to the heading or opens the page there rather than falling to the citation row.
+- **Task 7.2, the click test:** no `connectionClicks.test.tsx` exists; the run's click, hover, and right-click cases sit in `Links/linkEdges.test.tsx` beside the `[[#Setup]]` travel cases.
+- **Task 7.3, the pane:** the `section` form rides the heading form's outline read, rows, open gate, and exact-match close; only the alias slide is gated to the heading form proper. The suite under a load average above 18 (a VM pinning a core) times out `citationBreakage` and `embedAbsorb` sweeps at 5 s and cascades two mount errors from the skipped cleanup; both files pass alone and the whole suite passes under `--testTimeout=30000`, so the gate is read there.
 - **Task 1.3, `scan.test.ts` header:** the consumer count was already off before this phase (four, not five, outside `connections.ts` and `scan.ts`); it now reads four and names paste-as.

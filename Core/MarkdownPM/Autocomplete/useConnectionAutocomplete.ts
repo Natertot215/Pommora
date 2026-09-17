@@ -111,7 +111,8 @@ export function useConnectionAutocomplete(
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
   const title = ac?.title
-  const heading = form === 'heading'
+  // A section run reads its outline and rows the same way a heading form does; it never opens an alias slide or a chevron slide.
+  const heading = form === 'heading' || form === 'section'
   // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
   const target = useMemo(() => (heading ? targetOf(title ?? '') : null), [heading, title])
   const outline = target ? (target.outline ?? fetched) : null
@@ -168,7 +169,7 @@ export function useConnectionAutocomplete(
     const pageId = heading ? target?.pageId : row.pageId
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
-      (ac.form === 'link' || heading) &&
+      (ac.form === 'link' || ac.form === 'heading') &&
       !opts.openHeading &&
       settings.aliasPickerOnCommit !== false &&
       host.aliases.list(pageId ?? '').length > 0
@@ -269,11 +270,12 @@ export function detectConnectionQuery(
   view: EditorView,
   setAc: (s: AcState | null) => void,
   allowEmbeds = false,
+  armed?: number,
 ): void {
   const sel = view.state.selection.main
   let next: AcState | null = null
   if (sel.empty) {
-    const q = autocompleteQuery(docScan(view.state.doc), sel.head, allowEmbeds)
+    const q = autocompleteQuery(docScan(view.state.doc), sel.head, allowEmbeds, armed)
     if (q) {
       const g = caretGeometry(view, sel.head)
       if (g) next = { ...q, ...g }

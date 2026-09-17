@@ -9,8 +9,8 @@ import {
 import { tokenize } from '../Engine/tokens'
 import { scanOf } from '../Engine/docScan'
 
-const autocompleteQuery = (doc: string, caret: number, allowEmbeds = false) =>
-  queryOf(scanOf(doc), caret, allowEmbeds)
+const autocompleteQuery = (doc: string, caret: number, allowEmbeds = false, armed?: number) =>
+  queryOf(scanOf(doc), caret, allowEmbeds, armed)
 
 const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
 
@@ -297,6 +297,21 @@ describe('the heading form opens after a typed #', () => {
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#Setup]] b')
     expect(text.slice(edit.anchor)).toBe(' b')
+  })
+})
+
+describe('a typed § arms the section form', () => {
+  it('returns form: section for an armed §, keyed from just past it', () => {
+    const doc = 'see §Set end'
+    const armed = doc.indexOf('§')
+    const r = autocompleteQuery(doc, armed + 4, false, armed)!
+    expect(r.form).toBe('section')
+    expect(r.query).toBe('Set')
+    expect(r.from).toBe(armed + 1)
+  })
+
+  it('is null when nothing is armed', () => {
+    expect(autocompleteQuery('see §Set end', 8)).toBeNull()
   })
 })
 
