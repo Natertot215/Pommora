@@ -1,8 +1,9 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { docHeadingKeys, docOutline, docString } from './docCache'
+import { docHeadingKeys, docOutline, docScan, docString } from './docCache'
+import { inCodeAt } from './Engine/docScan'
 import { travelToHeading } from './travel'
 import { headingParts } from './Engine/detect'
-import { normalizeTitle } from '@pommora/core/Connections/connections'
+import { linkAt, normalizeTitle } from '@pommora/core/Connections/connections'
 import { rewriteHeadingConnections } from '@pommora/core/Connections/rewrite'
 import { changesTo } from '../Pages/merge3'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
@@ -164,6 +165,8 @@ export function MarkdownEditor({
   onHeadingRenameRef.current = onHeadingRename
   const pendingRenameRef = useRef<{ old: string; line: number; trail: Set<string> } | null>(null)
   const lastFormatRef = useRef<FormatState | null>(null)
+  // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
+  const sectionArmedRef = useRef<number | null>(null)
 
   // Decorations rebuild only on editor updates, so a real tree change dispatches an empty transaction.
   useEffect(() => {
@@ -246,6 +249,13 @@ export function MarkdownEditor({
     targetOf,
   )
   const block = useBlockMenu(viewRef)
+
+  // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
+  const acFormRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (ac?.form !== 'section' && acFormRef.current === 'section') sectionArmedRef.current = null
+    acFormRef.current = ac?.form ?? null
+  }, [ac])
 
   useEffect(() => {
     const acCtls = [acCtl, block.ctl]
@@ -377,6 +387,24 @@ export function MarkdownEditor({
 
         const lineNo = u.state.doc.lineAt(u.state.selection.main.head).number
         for (const tr of u.transactions) {
+          if (
+            tr.isUserEvent('input.type') &&
+            hostRef.current.settings().inPageHeadingResolution === 'automatic'
+          ) {
+            let at: number | null = null
+            let seen = 0
+            tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+              seen++
+              if (fromA === toA && toB - fromB === 1 && tr.newDoc.sliceString(fromB, toB) === '§')
+                at = fromB
+            })
+            if (seen === 1 && at !== null) {
+              const line = tr.newDoc.lineAt(at)
+              const rel = at - line.from
+              if (!linkAt(line.text, rel) && !inCodeAt(docScan(tr.newDoc), at))
+                sectionArmedRef.current = at
+            }
+          }
           const renames = tr.effects.filter((e) => e.is(headingRenamed)).map((e) => e.value)
           // Undo and redo bypass transaction filters, so the guard never stamps them; the rename is read off the transaction itself.
           if (renames.length === 0 && (tr.isUserEvent('undo') || tr.isUserEvent('redo'))) {
@@ -418,9 +446,16 @@ export function MarkdownEditor({
           }
         }
 
+        const armed = sectionArmedRef.current
+        if (
+          armed !== null &&
+          (armed > u.state.doc.length || u.state.doc.lineAt(armed).number !== lineNo)
+        )
+          sectionArmedRef.current = null
+
         // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly) {
-          detectConnectionQuery(u.view, setAc, true)
+          detectConnectionQuery(u.view, setAc, true, sectionArmedRef.current ?? undefined)
           detectBlockQuery(u.view, block.setState, u.docChanged)
         }
       }),

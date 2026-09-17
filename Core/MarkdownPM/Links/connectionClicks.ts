@@ -42,30 +42,49 @@ interface ConnHit extends PointerTarget {
   page: ConnPage | null
 }
 
+// A bare `§Heading` run in prose: no page, no menu, no glance — the run's own text is the target.
+function sectionRunAt(view: EditorView, event: MouseEvent): WikiHit | null {
+  const span = (event.target as HTMLElement).closest?.('.md-section-run')
+  if (!span) return null
+  const text = span.textContent ?? ''
+  const from = view.posAtDOM(span)
+  return {
+    title: '',
+    heading: text.slice(1),
+    self: true,
+    range: [from, from + text.length],
+    content: [from, from + text.length],
+    aliased: false,
+  }
+}
+
 function connHitAt(
   api: ConnectionsApi | undefined,
   view: EditorView,
   event: MouseEvent,
 ): ConnHit | null {
-  if (!api) return null
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
-  const hit = wikiLinkAt(view, pos)
-  if (!hit) return null
-  // A bare fragment names the page's own heading and never carries a page — it reads as resolved regardless of the map.
-  const res = hit.self ? { status: 'resolved' as const, page: null } : api.resolve(hit.title)
-  const el = (event.target as HTMLElement).closest?.(
-    '.md-connection-resolved, .md-connection-ambiguous',
-  )
-  const onText = el != null && pos >= hit.content[0] && pos <= hit.content[1]
-  return {
-    hit,
-    page: onText && res.status === 'resolved' && res.page ? res.page : null,
-    range: hit.range,
-    onText,
-    hidesSyntax: res.status !== 'phantom',
-    pos,
+  const hit = (api && wikiLinkAt(view, pos)) || null
+  if (hit) {
+    // A bare fragment names the page's own heading and never carries a page — it reads as resolved regardless of the map.
+    const res = hit.self ? { status: 'resolved' as const, page: null } : api!.resolve(hit.title)
+    const el = (event.target as HTMLElement).closest?.(
+      '.md-connection-resolved, .md-connection-ambiguous',
+    )
+    const onText = el != null && pos >= hit.content[0] && pos <= hit.content[1]
+    return {
+      hit,
+      page: onText && res.status === 'resolved' && res.page ? res.page : null,
+      range: hit.range,
+      onText,
+      hidesSyntax: res.status !== 'phantom',
+      pos,
+    }
   }
+  const run = sectionRunAt(view, event)
+  if (!run) return null
+  return { hit: run, page: null, range: run.range, onText: true, hidesSyntax: true, pos }
 }
 
 export function connectionClicks(getApi: GetApi): Extension {
