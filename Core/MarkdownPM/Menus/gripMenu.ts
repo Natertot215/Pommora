@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import {
   connectionText,
-  embeddableTitle,
+  expressibleHeading,
   pageEmbedText,
 } from '@pommora/core/Connections/connections'
 import type { GripMenuContext, ListKind, PickNode } from '@pommora/core/Actions/gripMenu'
@@ -93,7 +93,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const level = openedParts.hashes.length
   const host = view.state.facet(editorHost)
   const title = host.pageTitle()
-  const linkable = title !== null && embeddableTitle(openedParts.content.trim())
+  const linkable = title !== null && expressibleHeading(openedParts.content.trim())
   void host.menus.grip({ kind: 'heading', level, linkable }).then((action) => {
     if (!action) return
     // Re-found and matched against what the menu was built from — a native menu can stay open while an undo moves the document.
