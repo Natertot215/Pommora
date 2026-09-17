@@ -44,16 +44,13 @@ export function decodeLinkTarget(target: string): string {
   }
 }
 
-const splitTarget = (raw: string): { page: string; fragment: string } => {
+const pageTarget = (rawTarget: string): { page: string; fragment: string } | null => {
+  const raw = rawTarget.trim()
+  if (!raw || raw.includes('/') || HAS_SCHEME.test(raw)) return null
   const i = raw.indexOf('#')
   return i === -1
     ? { page: raw, fragment: '' }
     : { page: raw.slice(0, i), fragment: raw.slice(i + 1) }
-}
-
-const pageTarget = (rawTarget: string): { page: string; fragment: string } | null => {
-  const raw = rawTarget.trim()
-  return !raw || raw.includes('/') || HAS_SCHEME.test(raw) ? null : splitTarget(raw)
 }
 
 // Read on the raw target: a URL's scheme and separators are literal, while an encoded page title spells them out. The `#` is split before decoding so an encoded `%23` stays inside the title.
