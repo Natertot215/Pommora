@@ -72,7 +72,7 @@ function connHitAt(
       ? { status: hit.heading ? 'resolved' : 'phantom' }
       : api.resolve(hit.title)
     const el = (event.target as HTMLElement).closest?.(
-      '.md-connection-resolved, .md-connection-ambiguous',
+      '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol',
     )
     const onText = el != null && pos >= hit.content[0] && pos <= hit.content[1]
     return {

@@ -48,6 +48,8 @@ import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { editorHost } from '../api'
+import { travelToHeading } from '../travel'
+import type { HeadingLinkStyle } from '../../Settings/personalization'
 
 type ConnGetter = () => ConnectionsApi | undefined
 const tableConnections = Facet.define<ConnGetter, ConnGetter>({
@@ -199,6 +201,7 @@ class TableWidget extends ReactWidget {
     readonly headingColumn: boolean,
     /** A cell's marker draws a number its own text never holds, and this equality gates above the cell memo. */
     readonly cites: string,
+    readonly linkStyle: HeadingLinkStyle | undefined,
     readonly height: HeightBox = { px: -1 },
   ) {
     super()
@@ -213,7 +216,8 @@ class TableWidget extends ReactWidget {
       other.text === this.text &&
       other.tableIndex === this.tableIndex &&
       other.headingColumn === this.headingColumn &&
-      other.cites === this.cites
+      other.cites === this.cites &&
+      other.linkStyle === this.linkStyle
     )
   }
 
@@ -337,6 +341,10 @@ class TableWidget extends ReactWidget {
         onRedo={() => redo(view)}
         connections={view.state.facet(tableConnections)}
         readOnly={() => view.state.readOnly}
+        linkStyle={this.linkStyle}
+        travel={(heading) =>
+          travelToHeading(view, heading, docScan(view.state.doc).tables[this.tableIndex]?.from ?? 0)
+        }
       />,
     )
   }
@@ -391,12 +399,13 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
   const ranges: Range<Decoration>[] = []
   const scan = docScan(doc)
   const cites = citeKey(scan)
+  const linkStyle = state.facet(editorHost)?.settings().headingLinkStyle
   scan.tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
     ranges.push(
       Decoration.replace({
-        widget: new TableWidget(text, model, i, headingCols.has(i), cites, boxes[i]),
+        widget: new TableWidget(text, model, i, headingCols.has(i), cites, linkStyle, boxes[i]),
         block: true,
       }).range(region.from, region.to),
     )
@@ -458,7 +467,15 @@ function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): D
   return swapTableWidget(deco, index, (w) =>
     w.text === text && w.cites === cites
       ? null
-      : new TableWidget(text, modelFromRegion(region), index, w.headingColumn, cites, w.height),
+      : new TableWidget(
+          text,
+          modelFromRegion(region),
+          index,
+          w.headingColumn,
+          cites,
+          w.linkStyle,
+          w.height,
+        ),
   )
 }
 
@@ -484,7 +501,7 @@ const widgetField = StateField.define<DecorationSet>({
         const region = docScan(tr.state.doc).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
-        return new TableWidget(text, model, idx, on, w.cites, w.height)
+        return new TableWidget(text, model, idx, on, w.cites, w.linkStyle, w.height)
       })
     }
     if (toggled) return toggledSet

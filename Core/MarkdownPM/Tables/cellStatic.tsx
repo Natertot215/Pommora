@@ -162,6 +162,8 @@ function StaticCellImpl({
   ordinalOf,
   connections,
   readOnly,
+  linkStyle,
+  travel,
   onActivate,
   onCommit,
   onSelect,
@@ -173,6 +175,8 @@ function StaticCellImpl({
   cites?: string
   ordinalOf?: (label: string) => number | null
   connections?: () => ConnectionsApi | undefined
+  linkStyle?: HeadingLinkStyle
+  travel?: (heading: string) => void
   readOnly?: () => boolean
   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
   onCommit: (text: string) => void
@@ -188,10 +192,12 @@ function StaticCellImpl({
     cellLinkTarget(text, e.target, connections?.())
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
+    if (!found) return null
+    const target = found.target
     const go =
-      found &&
-      // A cell has no view to travel through, so a bare fragment's own follow answers null.
-      followTarget(found.target, found.url, connections?.(), isCmd(e), found.el, host, null, 0)
+      target.kind === 'self'
+        ? travel && (() => travel(target.heading))
+        : followTarget(target, found.url, connections?.(), isCmd(e), found.el, host, null, 0)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -283,7 +289,7 @@ function StaticCellImpl({
         if (e.button === 0) claimCite(e) ?? claimLink(e)
       }}
     >
-      {renderCellContent(text, connections, ordinalOf, host.settings().headingLinkStyle)}
+      {renderCellContent(text, connections, ordinalOf, linkStyle)}
     </div>
   )
 }
@@ -368,4 +374,7 @@ function menuTarget(
 }
 
 /** Comparing text and the footnote numbering rather than every prop keeps one cell's keystroke off every other cell. */
-export const StaticCell = memo(StaticCellImpl, (a, b) => a.text === b.text && a.cites === b.cites)
+export const StaticCell = memo(
+  StaticCellImpl,
+  (a, b) => a.text === b.text && a.cites === b.cites && a.linkStyle === b.linkStyle,
+)

@@ -104,7 +104,14 @@ function PageHistoryBody({
     }
   }, [shown, reload, target.id, livePath])
 
-  const resolveOnly = useMemo(() => connectionsFor(tree, { open: () => {} }), [tree])
+  const resolveOnly = useMemo(
+    () =>
+      connectionsFor(tree, {
+        open: () => {},
+        headingsOf: (p) => useSession.getState().headings[p],
+      }),
+    [tree],
+  )
   const editorHost = useEditorHost({ connections: resolveOnly, inert: true })
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 

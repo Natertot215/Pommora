@@ -1,10 +1,10 @@
 import { EditorState, type Extension, StateEffect, type Transaction } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { rewriteHeadingConnections } from '@pommora/core/Connections/rewrite'
 import { headingParts } from '../Engine/detect'
 import { editorHost, syncLanding } from '../api'
-import { docHeadingKeys, docString } from '../docCache'
+import { docHeadingKeys, docOutline, docString } from '../docCache'
 import { changesTo } from '../../Pages/merge3'
 import { carriedAnnotations } from './calloutGuard'
 
@@ -36,6 +36,22 @@ function headingRenameOf(tr: Transaction): HeadingRename | null {
   return seen === 1 ? found : null
 }
 
+// Where the old text stands on more than one line, only the links nearest the renamed line move; the rest keep the survivor.
+function ownedRange(tr: Transaction, rename: HeadingRename): [number, number] {
+  const oldKey = normalizeTitle(rename.old)
+  const renamedFrom = tr.newDoc.line(rename.line).from
+  const others = docOutline(tr.startState.doc)
+    .filter((h) => normalizeTitle(h.text) === oldKey)
+    .map((h) => tr.changes.mapPos(h.from))
+    .filter((from) => from !== renamedFrom)
+  const prev = Math.max(-1, ...others.filter((f) => f < renamedFrom))
+  const next = Math.min(tr.newDoc.length + 1, ...others.filter((f) => f > renamedFrom))
+  return [
+    prev < 0 ? 0 : Math.ceil((prev + renamedFrom) / 2),
+    next > tr.newDoc.length ? tr.newDoc.length : Math.floor((renamedFrom + next) / 2),
+  ]
+}
+
 export const headingRenameGuard: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.annotation(syncLanding)) return tr
   const rename = headingRenameOf(tr)
@@ -48,39 +64,31 @@ export const headingRenameGuard: Extension = EditorState.transactionFilter.of((t
     scrollIntoView: tr.scrollIntoView,
   }
   if (!rename.next) return stamped
-  const after = docString(tr.newDoc)
   const host = tr.startState.facet(editorHost)
   const own = host.pageTitle() ?? ''
   const runs = host.settings().inPageHeadingResolution === 'automatic'
-  const rewritten = rewriteHeadingConnections(after, own, rename.old, rename.next, own, runs)
+  const after = docString(tr.newDoc)
+  const [a, b] = ownedRange(tr, rename)
+  const rewritten =
+    after.slice(0, a) +
+    rewriteHeadingConnections(after.slice(a, b), own, rename.old, rename.next, own, runs) +
+    after.slice(b)
   if (rewritten === after) return stamped
   return [stamped, { changes: changesTo(after, rewritten), sequential: true }]
 })
 
-// A rename settles when the caret leaves the heading line or the editor blurs: every text the line passed through rewrites to the final one in one deferred dispatch, and the host hears the settled pair. Undo and redo bypass transaction filters, so their rename is read off the transaction itself.
+// A rename settles when the caret leaves the heading line or the editor blurs: every text the line passed through rewrites to the final one in one deferred dispatch, and the host hears the settled pair. A second line's rename settles the held one first. Undo and redo bypass transaction filters, so their rename is read off the transaction itself.
 export function headingRenameSettle(
   onRename: () => ((old: string, next: string) => void) | undefined,
 ): Extension {
-  let pending: { old: string; line: number; trail: Set<string> } | null = null
-  return EditorView.updateListener.of((u) => {
-    if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
-    for (const tr of u.transactions) {
-      const renames = tr.effects.filter((e) => e.is(headingRenamed)).map((e) => e.value)
-      if (renames.length === 0 && (tr.isUserEvent('undo') || tr.isUserEvent('redo'))) {
-        const rename = headingRenameOf(tr)
-        if (rename) renames.push(rename)
-      }
-      for (const rename of renames) {
-        pending ??= { old: rename.old, line: rename.line, trail: new Set() }
-        pending.trail.add(rename.old).add(rename.next)
-      }
-    }
-    if (!pending) return
-    const lineNo = u.state.doc.lineAt(u.state.selection.main.head).number
-    if (pending.line === lineNo && !(u.focusChanged && !u.view.hasFocus)) return
-    const held = pending
-    pending = null
-    const text = held.line <= u.state.doc.lines ? u.state.doc.line(held.line).text : ''
+  interface Pending {
+    old: string
+    pos: number
+    trail: Set<string>
+  }
+  let pending: Pending | null = null
+  const settle = (u: ViewUpdate, held: Pending): void => {
+    const text = held.pos <= u.state.doc.length ? u.state.doc.lineAt(held.pos).text : ''
     const final = headingParts(text)?.content.trim() ?? ''
     if (
       !final ||
@@ -100,5 +108,32 @@ export function headingRenameSettle(
     if (body !== doc)
       setTimeout(() => u.view.dispatch({ changes: changesTo(doc, body), userEvent: 'input' }), 0)
     onRename()?.(held.old, final)
+  }
+  return EditorView.updateListener.of((u) => {
+    if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
+    if (pending) pending.pos = u.changes.mapPos(pending.pos, 1)
+    for (const tr of u.transactions) {
+      const renames = tr.effects.filter((e) => e.is(headingRenamed)).map((e) => e.value)
+      if (renames.length === 0 && (tr.isUserEvent('undo') || tr.isUserEvent('redo'))) {
+        const rename = headingRenameOf(tr)
+        if (rename) renames.push(rename)
+      }
+      for (const rename of renames) {
+        const pos = u.state.doc.line(rename.line).from
+        if (pending && u.state.doc.lineAt(pending.pos).from !== pos) {
+          settle(u, pending)
+          pending = null
+        }
+        pending ??= { old: rename.old, pos, trail: new Set() }
+        pending.trail.add(rename.old).add(rename.next)
+      }
+    }
+    if (!pending) return
+    const onLine =
+      u.state.doc.lineAt(u.state.selection.main.head).from === u.state.doc.lineAt(pending.pos).from
+    if (onLine && !(u.focusChanged && !u.view.hasFocus)) return
+    const held = pending
+    pending = null
+    settle(u, held)
   })
 }

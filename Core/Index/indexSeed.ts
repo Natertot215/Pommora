@@ -18,7 +18,6 @@ import {
   renamePathPrefixIndex,
   upsertPageIndex,
 } from './contentIndex'
-import { renameHeadingCascade } from '../Nexus/cascade'
 import {
   type ContentIndexStore,
   contentIndexStore,
@@ -116,9 +115,19 @@ function recordPage(rel: string, content: string, stat: IndexedStat): PageIndexE
   return entry
 }
 
-export async function indexWrittenPage(root: string, abs: string): Promise<void> {
+export interface HeadingRenameSeen {
+  title: string
+  old: string
+  next: string
+}
+
+// Re-indexes a written page and reports a heading rename it reads: one linked heading gone and one fresh heading standing in its place, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+export async function indexWrittenPage(
+  root: string,
+  abs: string,
+): Promise<HeadingRenameSeen | null> {
   const rel = relCorpusPath(root, abs)
-  if (!rel || !isMarkdownFile(rel)) return
+  if (!rel || !isMarkdownFile(rel)) return null
   const st = await machine()
     .stat(abs)
     .catch(() => null)
@@ -126,22 +135,28 @@ export async function indexWrittenPage(root: string, abs: string): Promise<void>
   // Vanished between the write and this read — drop the rows; the reconcile confirms.
   if (!st || content === null) {
     removePathIndex(rel)
-    return
+    return null
   }
   const title = titleFromPath(rel)
   const titleKey = normalizeTitle(title)
-  const before = new Set(readHeadings([rel])?.[rel] ?? [])
+  const before = readHeadings([rel])?.[rel] ?? []
   const entry = recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
-  const after = new Set(entry.headings)
-  const gone = [...before].filter(
-    (k) => !after.has(k) && (queryHeadingMentions(titleKey, k)?.length ?? 0) > 0,
+  const after = entry.headings
+  if (after.length !== before.length) return null
+  const gone = before.filter(
+    (k) => !after.includes(k) && (queryHeadingMentions(titleKey, k)?.length ?? 0) > 0,
   )
-  const fresh = headingOutline(splitEnvelope(content).body)
-    .map((h) => h.text)
-    .filter((t) => !before.has(normalizeTitle(t)))
-  // One linked heading gone and one new heading in its place reads as a rename; anything murkier is left to the fourth state.
-  if (gone.length === 1 && fresh.length === 1)
-    void renameHeadingCascade(root, title, gone[0], fresh[0], null)
+  const fresh = after.filter((k) => !before.includes(k))
+  if (
+    gone.length !== 1 ||
+    fresh.length !== 1 ||
+    before.indexOf(gone[0]) !== after.indexOf(fresh[0])
+  )
+    return null
+  const next = headingOutline(splitEnvelope(content).body).find(
+    (h) => normalizeTitle(h.text) === fresh[0],
+  )
+  return next ? { title, old: gone[0], next: next.text } : null
 }
 
 export function deindexPath(root: string, abs: string): void {

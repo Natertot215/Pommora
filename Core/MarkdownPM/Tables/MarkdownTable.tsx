@@ -9,6 +9,7 @@ import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { CellEditor } from './CellEditor'
 import { StaticCell } from './cellStatic'
+import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engine/Tables/clipboard'
 import { foldLabel } from '../Engine/detect'
@@ -91,6 +92,8 @@ function slotAt(axis: Axis, geom: Geom, rel: number): number {
 
 export function MarkdownTable({
   host,
+  linkStyle,
+  travel,
   model,
   cites,
   headingColumn = false,
@@ -133,6 +136,8 @@ export function MarkdownTable({
   onRedo: () => void
   connections?: () => ConnectionsApi | undefined
   readOnly?: () => boolean
+  linkStyle?: HeadingLinkStyle
+  travel?: (heading: string) => void
 }): React.JSX.Element {
   const total =
     model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0) || model.columns.length
@@ -481,6 +486,8 @@ export function MarkdownTable({
         ordinalOf={ordinalOf}
         connections={connections}
         readOnly={readOnly}
+        linkStyle={linkStyle}
+        travel={travel}
         onCite={onCite}
         onActivate={(coords, sweep) => {
           host.glance?.close()

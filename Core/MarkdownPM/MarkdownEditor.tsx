@@ -429,7 +429,7 @@ export function MarkdownEditor({
       if (saved?.scrollTop != null) view.scrollDOM.scrollTop = saved.scrollTop
       const a = arriveRef.current
       if (a) {
-        travelToHeading(view, a, 0)
+        travelToHeading(view, a, saved?.scrollTop != null ? undefined : 0)
         onArrivedRef.current?.()
       }
     }

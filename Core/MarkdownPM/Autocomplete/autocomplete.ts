@@ -1,4 +1,9 @@
-import { linkAt, normalizeTitle, pageEmbedText } from '@pommora/core/Connections/connections'
+import {
+  expressibleHeading,
+  linkAt,
+  normalizeTitle,
+  pageEmbedText,
+} from '@pommora/core/Connections/connections'
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt, lineIndexAt } from '../Engine/docScan'
@@ -140,7 +145,7 @@ export function headingRows(outline: readonly OutlineHeading[], query: string): 
   return outline
     .filter((h) => {
       const key = normalizeTitle(h.text)
-      if (!key.startsWith(q) || seen.has(key)) return false
+      if (!key.startsWith(q) || seen.has(key) || !expressibleHeading(h.text)) return false
       seen.add(key)
       return true
     })

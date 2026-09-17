@@ -332,7 +332,14 @@ export function GlancePane(): React.JSX.Element {
   }, [persistence, dismiss])
 
   const tree = useSession((s) => s.tree)
-  const resolveOnly = useMemo(() => connectionsFor(tree, { open: () => {} }), [tree])
+  const resolveOnly = useMemo(
+    () =>
+      connectionsFor(tree, {
+        open: () => {},
+        headingsOf: (p) => useSession.getState().headings[p],
+      }),
+    [tree],
+  )
 
   const focusBefore = useRef<Element | null>(null)
 

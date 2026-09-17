@@ -32,8 +32,13 @@ export async function renameHeading(pageId: string, old: string, next: string): 
   await host().ask('connections:headingRenamed', pageId, old, next)
   const keys = valueOr(await host().ask('folds:get'), {})[pageId]
   if (!keys?.length) return
+  // A duplicate's key is `${text} ${n}`; a longer heading that happens to start with the text is its own.
   const shifted = keys.map((k) =>
-    k === old ? next : k.startsWith(`${old} `) ? `${next}${k.slice(old.length)}` : k,
+    k === old
+      ? next
+      : /^ \d+$/.test(k.slice(old.length)) && k.startsWith(old)
+        ? `${next}${k.slice(old.length)}`
+        : k,
   )
   if (shifted.some((k, i) => k !== keys[i])) await host().ask('folds:set', pageId, shifted)
 }

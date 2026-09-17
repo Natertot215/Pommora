@@ -15,6 +15,7 @@ import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { isMarkdownFile } from '../Files/walk'
 import { removePathIndex } from '../Index/contentIndex'
 import { indexWrittenPage } from '../Index/indexSeed'
+import { renameHeadingCascade } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
@@ -215,6 +216,14 @@ const replaceNode = (root: string, rel: string, next: TreeEntity): 'ok' | 'refre
 const removePage = (root: string, rel: string): 'ok' | 'refresh' =>
   applyPatch(root, (t) => (findPage(t, rel) ? removeNodeInTree(t, rel) : t))
 
+// A rename a landed file shows (an Obsidian or sync edit) takes the same cascade the editor's settle takes; the editor's own save reports none, its settle having spoken.
+const cascadeSeen = async (
+  root: string,
+  seen: Awaited<ReturnType<typeof indexWrittenPage>>,
+): Promise<void> => {
+  if (seen) await renameHeadingCascade(root, seen.title, seen.old, seen.next, null)
+}
+
 async function applyOne(
   root: string,
   c: WatchClass,
@@ -227,13 +236,13 @@ async function applyOne(
       patchHeldAssetMap(root, c.rel, c.event)
       return 'ok'
     case 'index-only':
-      await indexWrittenPage(root, join(root, c.rel))
+      await cascadeSeen(root, await indexWrittenPage(root, join(root, c.rel)))
       return 'ok'
     case 'page-remove':
       removePathIndex(c.rel)
       return removePage(root, c.rel)
     case 'page-upsert': {
-      await indexWrittenPage(root, join(root, c.rel))
+      await cascadeSeen(root, await indexWrittenPage(root, join(root, c.rel)))
       const outcome = await patchPageFromDisk(root, c.rel)
       noteExternalEdit(root, join(root, c.rel))
       return outcome

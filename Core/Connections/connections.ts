@@ -103,6 +103,11 @@ export function connectionText(title: string, alias?: string, heading?: string):
   return named ? `[[${target}|${named}]]` : `[[${target}]]`
 }
 
+// A heading the link grammar can write: no pipe, hash, or newline, and no `]]` or a trailing `]` that would close the link early.
+export function expressibleHeading(heading: string): boolean {
+  return !/[|#\r\n]/.test(heading) && !heading.includes(']]') && !heading.endsWith(']')
+}
+
 export function embeddableTitle(title: string): boolean {
   return !/[\]|#\r\n]/.test(title)
 }
