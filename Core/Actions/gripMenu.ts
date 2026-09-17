@@ -37,6 +37,7 @@ export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
   { level: 3, label: 'Heading 3' },
   { level: 4, label: 'Heading 4' },
   { level: 5, label: 'Heading 5' },
+  { level: 6, label: 'Heading 6' },
 ]
 
 const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [

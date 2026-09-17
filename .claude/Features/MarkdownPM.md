@@ -19,7 +19,7 @@ The editor takes everything it cannot know from an **EditorHost** — one object
 Markdown syntax in the editor is dynamic. A construct's markers — the asterisks around bold text, the hashes before a heading, the dashes of a list — appear as literal, editable text while the caret is inside it, and are hidden or replaced by styling the moment it leaves. Writing feels like editing source on the line you're on and reading a rendered page everywhere else. Each construct is recognized by `Engine/`, given its marks by the tokenizer, and drawn by the decoration layer, which emits both what is shown and which spans the caret must skip from one intent stream so the two can never disagree. The chrome the editor draws — the horizontal rule, the quote card, code fills, list glyphs — exists only on screen, while reveal is line-scoped for inline marks, headings, and the thematic break, and marker-local for list glyphs; the box constructs (blockquote and callout) keep their chrome visible at all times.
 
 - **Inline Marks** — bold, italic, strikethrough, highlight, inline code, links, and Connections. Each reveals with the caret, scales with the heading it sits in, and is suppressed inside code. All of them are reachable from the context menu's Format submenu and their ⌘ shortcuts, and each auto-pairs as you type. Bold pressed over an italic span, or italic over a bold one, replaces its markers rather than nesting. A selection's leading and trailing whitespace stays outside whatever wraps it, whether a shortcut, a typed pair, or a pasted link.
-- **Headings** — H1 through H6, sized on the em scale; the menus offer Paragraph and H1–H5. A heading folds from a chevron in the gutter. One with nothing beneath it carries no chevron but still appears in the page outline, and fold state is remembered per machine.
+- **Headings** — H1 through H6, sized on the em scale; the menus offer Paragraph and H1–H6. A heading folds from a chevron in the gutter. One with nothing beneath it carries no chevron but still appears in the page outline, and fold state is remembered per machine.
 - **Lists** — bullets (`-`, drawn as `•`), `+`, arrows (typed `->`, drawn `→`), numbered lists, alphabetical lists (`A.` through `Z.`, restarting at `A`), and GFM checklists all share one indent zone and one set of behaviors. Dragging an item by its glyph moves it together with its nested block and renumbers as it lands, deleting an item closes the numbering gap in the same stroke, and Tab or Shift+Tab recounts both runs an item moves between, so a nested run always counts from its first number or letter. The grip menu's **Type ▸** switches a whole block between the five kinds, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one. With **Mute Checked Items** on, a checked task reads as done — dimmed and struck through — while the file keeps its plain `- [x]`.
 - **Outliner Rails** — an optional hairline guide down each nested list run, one per ancestor level, turned on with **Outliner Lines**. It covers dash bullets, checklists, and alphabetical lists.
 - **Code** — inline code and fenced blocks share the mono family and little else: inline code uses the code color over a tinted fill, a fenced block a neutral one. A fence's info word sets its language. Any of the thirty-eight languages in the roster gets a syntax-colored parse; a bare fence stays plain. The backticks always show, but a typed block hides its info word behind the language's name and mark at the top-right, revealing the raw word again while the caret is on the fence line. That tag is also the block's copy control. **Show Line Count In Code Blocks** numbers the content lines.
@@ -79,7 +79,7 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 | Block | Rows |
 | -------------------------------------- | -------------------------------------------------------------- |
 | Plain (paragraph, quote, callout, code) | Delete |
-| Heading | Rename · Copy Link · Size ▸ (Paragraph, H1–H5) · Delete — removes the heading line and keeps its body |
+| Heading | Rename · Copy Link · Size ▸ (Paragraph, H1–H6) · Delete — removes the heading line and keeps its body |
 | List | Type ▸ (Numbered, Alphabetical, Bulleted, Checklist, Arrowed) · Delete |
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
@@ -94,7 +94,7 @@ Right-clicking text in the editor opens the operating system's own menu rather t
 - **Insert Link** — appears when the selection is itself an address, and points it at itself in place.
 - **Format ▸** — the inline marks, plus Connection and Link.
 - **Embed ▸** — Webpage or Internal Page.
-- **Heading ▸** — Paragraph and H1–H5. **Lists ▸** — Bullet List, Numbered List, Alphabetical List, Task List.
+- **Heading ▸** — Paragraph and H1–H6. **Lists ▸** — Bullet List, Numbered List, Alphabetical List, Task List.
 - **Paste As ▸** — what the clipboard could become rather than what a plain paste would make of it.
 
 An address offers the three link forms, Plain Text, and Embedded Link on a blank line; a copied connection or markdown link offers Connection, Markdown Link, and Embedded Page; any text offers Footnote wherever a marker can bind.
