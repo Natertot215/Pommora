@@ -18,7 +18,7 @@ import {
   useBodyEpoch,
 } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, fenceWarm, readCache } from '../Navigation/warmTabs'
-import { registerPageEditor } from './pageEditor'
+import { registerPageEditor, renameHeading } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { schedulePageSave } from '../Session/saveScheduler'
@@ -191,6 +191,7 @@ export function PageView({
         }}
         connections={connections}
         onSelection={publishSelection}
+        onHeadingRename={(old, next) => void renameHeading(pageDetail.id, old, next)}
         embedAncestors={[pageDetail.path]}
         folds={{
           load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],

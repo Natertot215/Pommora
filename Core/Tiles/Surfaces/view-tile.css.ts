@@ -68,7 +68,7 @@ export const titleSpaceHidden = style({
 })
 export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
-export const titleIcon = style({ color: c.label.secondary })
+export const titleIcon = style({ color: c.label.control })
 
 export const titleText = style({
   flex: '1 1 auto',

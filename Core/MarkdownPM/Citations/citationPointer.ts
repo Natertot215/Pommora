@@ -18,14 +18,15 @@ const CITE_ROW_GLYPH = '.md-citation-number'
 
 export function loneTarget(
   content: string,
-): { kind: 'link'; url: string } | { kind: 'connection'; title: string } | null {
+): { kind: 'link'; url: string } | { kind: 'connection'; title: string; heading?: string } | null {
   const text = content.trim()
   if (text === '') return null
   const tk = tokenize(text).find((t) => t.range[0] === 0 && t.range[1] === text.length)
   if (!tk) return null
   if (tk.kind === 'wikiLink') {
     const [s, e] = tk.resolveRange ?? tk.contentRange
-    return { kind: 'connection', title: text.slice(s, e) }
+    const heading = tk.fragment ? text.slice(tk.fragment[0], tk.fragment[1]) : undefined
+    return { kind: 'connection', title: text.slice(s, e), ...(heading ? { heading } : {}) }
   }
   if (tk.kind !== 'link') return null
   const url = linkTarget(text, tk)
@@ -80,11 +81,13 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
       const api = getApi()
       const el = event.target as Element
       if (hit.lone?.kind === 'connection' && api) {
-        const res = api.resolve(hit.lone.title)
+        const { title, heading } = hit.lone
+        const res = api.resolve(title)
+        // A bare fragment names this page's own heading, so the marker travels there rather than to the citation.
         const go =
-          res.status === 'resolved' && res.page
+          title === '' && heading
             ? followTarget(
-                { kind: 'page', page: res.page },
+                { kind: 'self', heading },
                 '',
                 api,
                 isCmd(event),
@@ -93,7 +96,18 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
                 view,
                 hit.range[0],
               )
-            : null
+            : res.status === 'resolved' && res.page
+              ? followTarget(
+                  { kind: 'page', page: res.page, heading },
+                  '',
+                  api,
+                  isCmd(event),
+                  el,
+                  view.state.facet(editorHost),
+                  view,
+                  hit.range[0],
+                )
+              : null
         if (go) return go()
       }
       if (hit.lone?.kind === 'link') {

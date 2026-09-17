@@ -8,6 +8,8 @@ import { parseContextKey } from '../Contexts/contexts'
 import { sweepAdmitsBody } from '../Files/pageFile'
 import {
   markIndexReady,
+  queryHeadingMentions,
+  readHeadings,
   readIndexedStat,
   readIndexedStats,
   removePathIndex,
@@ -16,6 +18,7 @@ import {
   renamePathPrefixIndex,
   upsertPageIndex,
 } from './contentIndex'
+import { renameHeadingCascade } from '../Nexus/cascade'
 import {
   type ContentIndexStore,
   contentIndexStore,
@@ -107,8 +110,10 @@ let reread: { db: ContentIndexStore | null; rels: string[]; cold: boolean } = {
 export const rereadSinceSeed = (): readonly string[] =>
   contentIndexStore() === reread.db && !reread.cold ? reread.rels : []
 
-function recordPage(rel: string, content: string, stat: IndexedStat): void {
-  upsertPageIndex(rel, extractPageIndex(rel, content), stat)
+function recordPage(rel: string, content: string, stat: IndexedStat): PageIndexEntry {
+  const entry = extractPageIndex(rel, content)
+  upsertPageIndex(rel, entry, stat)
+  return entry
 }
 
 export async function indexWrittenPage(root: string, abs: string): Promise<void> {
@@ -119,8 +124,24 @@ export async function indexWrittenPage(root: string, abs: string): Promise<void>
     .catch(() => null)
   const content = st && (await readTextOrNull(abs))
   // Vanished between the write and this read — drop the rows; the reconcile confirms.
-  if (st && content !== null) recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
-  else removePathIndex(rel)
+  if (!st || content === null) {
+    removePathIndex(rel)
+    return
+  }
+  const title = titleFromPath(rel)
+  const titleKey = normalizeTitle(title)
+  const before = new Set(readHeadings([rel])?.[rel] ?? [])
+  const entry = recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
+  const after = new Set(entry.headings)
+  const gone = [...before].filter(
+    (k) => !after.has(k) && (queryHeadingMentions(titleKey, k)?.length ?? 0) > 0,
+  )
+  const fresh = headingOutline(splitEnvelope(content).body)
+    .map((h) => h.text)
+    .filter((t) => !before.has(normalizeTitle(t)))
+  // One linked heading gone and one new heading in its place reads as a rename; anything murkier is left to the fourth state.
+  if (gone.length === 1 && fresh.length === 1)
+    void renameHeadingCascade(root, title, gone[0], fresh[0], null)
 }
 
 export function deindexPath(root: string, abs: string): void {

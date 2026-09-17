@@ -36,7 +36,7 @@ import {
   resolveAssignedSchema,
   resolveEntityContexts,
 } from './readNexus'
-import { readSettingsLeaves, scopeOf, type SettingsLeaves } from '../Settings/codec'
+import { readSettings, type SettingsLeaves, scopeOf } from '../Settings/codec'
 import { coerceOpenIn } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import {
@@ -354,9 +354,6 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
   if (links) next.contextValues = links
   return replaceNode(root, dirRel, next)
 }
-
-const readSettings = async (root: string): Promise<SettingsLeaves> =>
-  readSettingsLeaves((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {})
 
 async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {
   const leaves = await readSettings(root)

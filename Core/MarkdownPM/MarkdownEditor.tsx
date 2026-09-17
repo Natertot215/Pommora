@@ -1,6 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { docOutline, docString } from './docCache'
+import { docHeadingKeys, docOutline, docString } from './docCache'
 import { travelToHeading } from './travel'
+import { headingParts } from './Engine/detect'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
+import { rewriteHeadingConnections } from '@pommora/core/Connections/rewrite'
+import { changesTo } from '../Pages/merge3'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
@@ -37,6 +41,7 @@ import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutAtomic } from './Guards/calloutAtomic'
 import { calloutGuard } from './Guards/calloutGuard'
+import { headingRenamed, headingRenameGuard, headingRenameOf } from './Guards/headingRenameGuard'
 import { citationGuard } from './Guards/citationGuard'
 import { citationHost, citationOrder, citationSeatAt } from './Citations/citationActions'
 import { citationPointer, citationRowMenu, citationRowPointer } from './Citations/citationPointer'
@@ -95,6 +100,7 @@ interface Props {
   /** A heading to travel to once folds settle, or on a later value while the editor stays mounted. */
   arrive?: string
   onArrived?: () => void
+  onHeadingRename?: (old: string, next: string) => void
 }
 
 export function MarkdownEditor({
@@ -118,6 +124,7 @@ export function MarkdownEditor({
   active = true,
   arrive,
   onArrived,
+  onHeadingRename,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   const lastReadOnly = useRef(readOnly)
@@ -153,6 +160,9 @@ export function MarkdownEditor({
   arriveRef.current = arrive
   const onArrivedRef = useRef(onArrived)
   onArrivedRef.current = onArrived
+  const onHeadingRenameRef = useRef(onHeadingRename)
+  onHeadingRenameRef.current = onHeadingRename
+  const pendingRenameRef = useRef<{ old: string; line: number; trail: Set<string> } | null>(null)
   const lastFormatRef = useRef<FormatState | null>(null)
 
   // Decorations rebuild only on editor updates, so a real tree change dispatches an empty transaction.
@@ -296,6 +306,7 @@ export function MarkdownEditor({
       customSelection,
       calloutAtomic,
       calloutGuard,
+      headingRenameGuard,
       citationGuard,
       connectionClicks(() => connectionsRef.current),
       citationHost.of({
@@ -361,6 +372,49 @@ export function MarkdownEditor({
           if (changed) {
             lastFormatRef.current = fs
             hostRef.current.menus.format?.pushState(fs)
+          }
+        }
+
+        const lineNo = u.state.doc.lineAt(u.state.selection.main.head).number
+        for (const tr of u.transactions) {
+          const renames = tr.effects.filter((e) => e.is(headingRenamed)).map((e) => e.value)
+          // Undo and redo bypass transaction filters, so the guard never stamps them; the rename is read off the transaction itself.
+          if (renames.length === 0 && (tr.isUserEvent('undo') || tr.isUserEvent('redo'))) {
+            const rename = headingRenameOf(tr)
+            if (rename) renames.push(rename)
+          }
+          for (const rename of renames) {
+            const held = pendingRenameRef.current ?? {
+              old: rename.old,
+              line: rename.line,
+              trail: new Set<string>(),
+            }
+            held.trail.add(rename.old).add(rename.next)
+            pendingRenameRef.current = held
+          }
+        }
+        const held = pendingRenameRef.current
+        if (held && (held.line !== lineNo || (u.focusChanged && !u.view.hasFocus))) {
+          pendingRenameRef.current = null
+          const text = held.line <= u.state.doc.lines ? u.state.doc.line(held.line).text : ''
+          const final = headingParts(text)?.content.trim() ?? ''
+          const own = hostRef.current.pageTitle() ?? ''
+          if (
+            final &&
+            final !== held.old &&
+            !docHeadingKeys(u.state.doc).includes(normalizeTitle(held.old))
+          ) {
+            let body = doc
+            for (const stale of held.trail)
+              if (stale && stale !== final)
+                body = rewriteHeadingConnections(body, own, stale, final, own)
+            // Deferred as the alias slot's own leave dispatch defers: a dispatch inside an update listener re-enters the view.
+            if (body !== doc)
+              setTimeout(
+                () => u.view.dispatch({ changes: changesTo(doc, body), userEvent: 'input' }),
+                0,
+              )
+            onHeadingRenameRef.current?.(held.old, final)
           }
         }
 

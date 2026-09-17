@@ -16,6 +16,7 @@ import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { readPermanentDelete } from '../Settings/settings'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
+import { renameHeadingCascade } from './cascade'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
@@ -25,6 +26,8 @@ import { confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot } from './session'
 import type { NexusState } from './tree'
+import { livePathOf } from './valuesChanged'
+import { titleFromPath } from '../Connections/connections'
 
 // Renderer-initiated sidecar saves are dropped while the session root swaps, so a mid-adopt save can't land in the NEW nexus's sidecars. A count: the open path runs more than one pass.
 let adoptingDepth = 0
@@ -155,6 +158,12 @@ export const nexusHandlers = {
   'index:headings': withRoot(async (_root, _ctx, paths: unknown) =>
     ok(readHeadings(isStringArray(paths) ? paths : undefined) ?? {}),
   ),
+
+  'connections:headingRenamed': withRoot(async (root, _ctx, pageId, oldHeading, newHeading) => {
+    const rel = livePathOf(root, pageId)
+    if (!rel) return ok({ touched: [] })
+    return renameHeadingCascade(root, titleFromPath(rel), oldHeading, newHeading, rel)
+  }),
 
   'path:reveal': async (ctx, p: unknown) => {
     const root = sessionRoot()
