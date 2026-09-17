@@ -2,27 +2,15 @@
 
 ### Current Focus
 
-**Tabs cross rows.** A page tab tugged off the main bar or a floating window's strip floats across to the other row and seats at the pointed slot, and a gallery card, list row, or sidebar page row dropped on either row opens its page there; a seated tab is never activated, the source row holds its gap while the tab hovers elsewhere, and a release over nothing snaps it home. The engine's `family` gate carries it, the insertion lifecycle escorts rows into the engine, and [[PommoraDND]] describes the mechanism. A one-tab Page Window shows its title rather than a strip, so its last tab leaves by the window's own close; a moved tab rebuilds cold with fresh history; and a keyboard lift stays in its row.
+**Tabs cross rows.** A page tab tugged off the main bar or a floating window's strip floats across to the other row, and seats at the pointed slot, and a gallery card, list row, or sidebar page row dropped on either row opens its page there; a seated tab is never activated, the source row holds its gap while the tab hovers elsewhere, and a release over nothing snaps it home. The engine's `family` gate carries it, the insertion lifecycle escorts rows into the engine, and [[PommoraDND]] describes the mechanism. A one-tab Page Window shows its title rather than a strip, so its last tab leaves by the window's own close; a moved tab rebuilds cold with fresh history; and a keyboard lift stays in its row.
 
 **Pommora Sync carries content.** A device encrypts each admitted file whole, ships it to a hub as a numbered change, and pulls the change log back through a long poll, so an edit on one Mac reaches another in about three seconds. The hub — the `Sync/` folder on Node's built-ins, with a change log, content-addressed ciphertext blobs, a per-Nexus key ring, one authority function, and optional TLS behind a pinned certificate — holds paths, versions, and ciphertext and never a body or a key. `Core/Sync/` carries the contract, the keys, the client's base record and push-and-pull loops, and the arrival path that lands a file under the writer's mtime, merges the `.nexus/` JSON key by key, and merges a landing into an open editor around the caret. Two instances on one Mac, bound to one hub over TLS, walked all twenty-two proof rows and the checklist mutations the bridge can drive — creation, bodies, properties, contexts, containers, views, schema, tiles, assets, trash, offline settings merges, an offline body conflict, and a revoke — each landing on the other side in about 2.7 seconds. The Windows machine is the first real second device, and the phone is the open Prospect. [[NexusSyncPM]] describes what stands, and `// Planning`'s `Cross-Device Mutation Checklist.md` carries each mutation's own timing.
 
 **Two questions are Nathan's.** A capture's retention clock is its arrival time, so a bulk history upload is retained from the moment it lands rather than from when the losing edit was made; whether a client-supplied timestamp should travel instead is his call. The `captures` table has no reader, so with File History off, a conflict's losing buffer sits in the database alone and no surface shows it; whether it earns one is the second. Behind those sits the Codebase Audit's remaining ledger: `// Planning`'s `Codebase Audit — Report.md` shrinks as items close, and with the concurrency topic ruled, its Where Brainwaves Go table orders the work around D-7, whether the design kit gets touched, with the two registry readers (R-17, R-18) and the watch-patch ID narrowing (R-38) beside it. The published audit page mirrors the report in Pommora's own theme.
 
-The standing spec for what comes after is `// Planning`'s TilesV2-Spec: the SidePane's tab strip mounting `TileHost` per tab, and the panel kinds (properties, backlinks, list) those tabs would hold.
-
 ### Immediate Work
 
 ### Pending Focuses
-
-#### One — Inline Page Properties
-
-- [ ] **A property surface attached to the page itself**, rather than only inside the Settings dropdown's Properties leaf, so a page's values are visible and editable where the page is. The frame, the sources, and the decisions taken so far are in `// Planning`'s Decision Log; it runs parallel to the two arcs below and shares no files with them.
-
-#### Two — The Codebase Cleanup
-
-The behavioral half — correctness, performance, and the structural moves inside the processes. Each is a session of its own, each verified by something a typecheck cannot supply, and none of it is visible from the interface.
-
-- [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy CRUD modules, where later ones were written inline, and each arm moves when its file is next touched.
 
 #### II. Open Calls
 
@@ -32,7 +20,6 @@ Findings where the correct answer isn't established in the codebase — design a
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 - [ ] **Escape follows open order, not focus.** The dismissal stack pushes on open and never re-inserts, so raising a floating window on click (Escape then closing the focused window) needs an open-sequence number on each entry; the same machinery would keep a pinned glance's entry in place across a tab round-trip, where today it remounts on top of a window opened after it.
 - [ ] **`showError` versus `notifyError`.** Two error surfaces stand side by side and neither was made the other's; the store's `mutate` reports a failed write through `error:show`, and the notification label is its own path. One of them is the app's answer for a failed act.
-
 
 #### II. Next-Feature Candidates
 
