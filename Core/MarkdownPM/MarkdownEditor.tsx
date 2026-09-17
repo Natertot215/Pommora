@@ -179,7 +179,7 @@ export function MarkdownEditor({
 
   const targetOf = (title: string): HeadingTarget =>
     title
-      ? headingTargetOf(connectionsRef.current, title)
+      ? headingTargetOf(hostRef.current, connectionsRef.current, title)
       : { outline: viewRef.current ? docOutline(viewRef.current.state.doc) : [] }
 
   const {

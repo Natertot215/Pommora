@@ -70,6 +70,13 @@ export function AutocompletePane({
   const headingSlide = v.ac.form === 'heading' && v.viaChevron
   const sliding = (v.ac.form === 'alias' && cameFrom.current.length > 0) || headingSlide
 
+  const matched = (row: AcRow): React.JSX.Element => (
+    <>
+      <span className="mdpm-autocomplete-match">{row.label.slice(0, matchLen)}</span>
+      {row.label.slice(matchLen)}
+    </>
+  )
+
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
       {rows.map((row, i) => (
@@ -121,8 +128,7 @@ export function AutocompletePane({
             onPick(row)
           }}
         >
-          <span className="mdpm-autocomplete-match">{row.label.slice(0, matchLen)}</span>
-          {row.label.slice(matchLen)}
+          {matched(row)}
         </MenuItem>
       ))}
     </MenuScrollFrame>
@@ -131,7 +137,7 @@ export function AutocompletePane({
   const headingRow = (row: AcRow, i: number, children?: React.ReactNode): React.JSX.Element => (
     <DisclosureRow
       key={row.value}
-      title={row.label}
+      title={matched(row)}
       icon={null}
       className={itemEmphasized}
       dropOutline={children ? 'chevron' : 'spacer'}

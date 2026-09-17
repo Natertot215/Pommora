@@ -221,6 +221,15 @@ export function commitEdit(
       opensAlias: true,
     }
   }
+  // The heading span is the only text the query owns, so the slot opens by appending the pipe to the heading.
+  if (ac.form === 'heading' && opts.openAlias) {
+    const text = `${row.value}|`
+    return {
+      changes: [{ from: ac.from, to: ac.to, insert: text }],
+      anchor: ac.from + text.length,
+      opensAlias: true,
+    }
+  }
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
   if (ac.form === 'alias' || ac.form === 'heading')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }

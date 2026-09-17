@@ -32,7 +32,7 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
     const { page, heading, alias } = groupsOf(args)
     if (inCode(offsetOf(args)) || normalizeTitle(titleOf(page)) !== oldKey) return match
     // A table cell's pipe-escape is re-emitted exactly as it arrived: dropping it would write a bare `|` into a cell and split the row into an extra column.
-    const fragment = heading === undefined ? '' : `#${heading}`
+    const fragment = heading === undefined ? '' : `#${titleOf(heading)}`
     return `[[${newTitle}${fragment}${escapedPipe(heading ?? page, alias)}]]`
   })
   // The embed pass sees POST-link-pass offsets — its mask must be built over the same string, or any length-changing link rewrite above shifts every later offset off the original mask.

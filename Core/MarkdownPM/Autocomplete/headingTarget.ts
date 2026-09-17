@@ -1,22 +1,26 @@
 import type { PageIndex } from '@pommora/core/Connections/pageIndex'
 import { headingOutline, type OutlineHeading } from '../Engine/headingScan'
-import { fetchPageDetail } from '../../Session/pageDetailCache'
-import { useSession } from '../../Session/store'
+import type { EditorHost } from '../api'
 
 export interface HeadingTarget {
   pageId?: string
-  outline: OutlineHeading[] | Promise<OutlineHeading[]>
+  outline?: OutlineHeading[]
+  fetch?: () => Promise<OutlineHeading[]>
 }
 
-// The target page's outline, built once per pane opening: from the open tab's live body when it has one, else from disk, so a heading typed moments ago is offered.
-export function headingTargetOf(conn: PageIndex | undefined, title: string): HeadingTarget {
+// The target page's outline, built once per pane opening: the warm body answers at once, so a heading typed moments ago is offered; a cold page answers through `fetch`.
+export function headingTargetOf(
+  host: EditorHost,
+  conn: PageIndex | undefined,
+  title: string,
+): HeadingTarget {
   const res = conn?.resolve(title)
   if (res?.status !== 'resolved' || !res.page) return { outline: [] }
   const page = res.page
-  const slot = useSession.getState().pages[page.id]
-  const outline =
-    slot?.status === 'ready'
-      ? headingOutline(slot.body)
-      : fetchPageDetail(page.path).then((d) => (d ? headingOutline(d.body) : []))
-  return { pageId: page.id, outline }
+  const warm = host.warmBody(page)
+  if (warm !== null) return { pageId: page.id, outline: headingOutline(warm) }
+  return {
+    pageId: page.id,
+    fetch: () => host.fetchBody(page).then((body) => (body ? headingOutline(body) : [])),
+  }
 }

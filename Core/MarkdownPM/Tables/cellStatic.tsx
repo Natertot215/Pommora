@@ -4,7 +4,7 @@ import { aliasedToken, linkTarget, linkTokenAt, tokenize, type Token } from '../
 import { MD_LINK_CLASS } from '../decorations'
 import { CONTENT_CLASS } from '../Engine/intents'
 import {
-  headingMissing,
+  wikiLinkView,
   resolveMdTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
@@ -15,11 +15,14 @@ import { wikiAuthorTarget } from '../Links/linkEdit'
 import { dwellTarget, followTarget } from '../Links/linkClicks'
 import { CITE_GLYPH } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
+import type { HeadingLinkStyle } from '../../Settings/personalization'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
   ordinalOf?: (label: string) => number | null,
+  headingLinkStyle?: HeadingLinkStyle,
 ): React.ReactNode {
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
   if (!/[*_~`[$]/.test(text)) return text
@@ -36,11 +39,10 @@ export function renderCellContent(
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
     if (tk.kind === 'wikiLink') {
       const [rs, re] = tk.resolveRange ?? tk.contentRange
-      const bare = rs === re
-      const res = bare ? undefined : conn?.resolve(text.slice(rs, re))
-      const status = bare ? (tk.fragment ? 'resolved' : 'phantom') : res?.status
-      if (!status) out.push(text.slice(s, e))
-      else if (status === 'phantom')
+      // A cell holds no page identity, so a bare fragment reads as present.
+      const view = conn && wikiLinkView(conn, text, tk, undefined)
+      if (!view) out.push(text.slice(s, e))
+      else if (view.status === 'phantom')
         out.push(
           <Fragment key={key++}>
             <span className="md-phantom-syntax md-unresolved-fixed">
@@ -53,23 +55,27 @@ export function renderCellContent(
           </Fragment>,
         )
       else {
-        const frag = tk.fragment
-        const missing =
-          frag && res?.page
-            ? headingMissing(conn?.headingsOf?.(res.page.path), text.slice(frag[0], frag[1]))
-            : false
+        const frag = view.status === 'resolved' ? tk.fragment : undefined
+        const showPage = headingLinkStyle !== 'heading-only' && !view.bare
         out.push(
           <span
             key={key++}
-            className={`md-connection-${status}`}
+            className={`md-connection-${view.status}`}
             data-conn-title={text.slice(rs, re)}
             data-link-span={`${s},${e}`}
           >
             {frag ? (
               <>
-                {text.slice(rs, re)}
-                <span className="md-heading-symbol md-heading-symbol-spaced">§</span>
-                <span className={missing ? 'md-connection-heading-missing' : undefined}>
+                {showPage && text.slice(rs, re)}
+                <span className={cx('md-heading-symbol', showPage && 'md-heading-symbol-spaced')}>
+                  §
+                </span>
+                <span
+                  className={cx(
+                    'md-connection-heading',
+                    view.missing && 'md-connection-heading-missing',
+                  )}
+                >
                   {text.slice(frag[0], frag[1])}
                 </span>
               </>
@@ -268,7 +274,7 @@ function StaticCellImpl({
         if (e.button === 0) claimCite(e) ?? claimLink(e)
       }}
     >
-      {renderCellContent(text, connections, ordinalOf)}
+      {renderCellContent(text, connections, ordinalOf, host.settings().headingLinkStyle)}
     </div>
   )
 }

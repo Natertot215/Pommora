@@ -1,3 +1,5 @@
+import type { LinkStatus } from '@pommora/core/Connections/connections'
+import type { Token } from '../Engine/tokens'
 import type {
   ConnCellApply,
   ConnEditAction,
@@ -49,9 +51,31 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
   return isValidLink(rawTarget) ? { kind: 'external' } : { kind: 'invalid' }
 }
 
-// A page absent from the map reads as unknown and its heading as present; only a known page missing the heading is missing.
-export const headingMissing = (known: readonly string[] | undefined, heading: string): boolean =>
-  known !== undefined && !known.includes(normalizeTitle(heading))
+export interface WikiLinkView {
+  status: LinkStatus
+  page: ConnPage | null
+  bare: boolean
+  missing: boolean
+}
+
+// How a wikilink token reads: the page half resolves, and a fragment is missing only when the page's heading keys are known and lack it. A page absent from the map reads as present. A bare fragment resolves against the document's own keys, which a surface without page identity leaves undefined.
+export function wikiLinkView(
+  conn: ConnectionsApi,
+  text: string,
+  tk: Token,
+  ownKeys: readonly string[] | undefined,
+): WikiLinkView {
+  const [rs, re] = tk.resolveRange ?? tk.contentRange
+  const bare = rs === re
+  const res = bare ? null : conn.resolve(text.slice(rs, re))
+  const page = res?.page ?? null
+  const known = bare ? ownKeys : page ? conn.headingsOf?.(page.path) : undefined
+  const missing =
+    tk.fragment !== undefined &&
+    known !== undefined &&
+    !known.includes(normalizeTitle(text.slice(tk.fragment[0], tk.fragment[1])))
+  return { status: res ? res.status : tk.fragment ? 'resolved' : 'phantom', page, bare, missing }
+}
 
 export function openPage(api: ConnectionsApi, page: ConnPage, bypass: boolean): void {
   if (bypass && api.bypass) api.bypass(page)

@@ -1,3 +1,4 @@
+import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { ReactNode } from 'react'
 import { Annotation, Facet } from '@codemirror/state'
 import type { Personalization } from '@pommora/core/Settings/personalization'
@@ -99,6 +100,9 @@ export interface EditorHost {
   renderTile(tile: TileMount): ReactNode
   pickTree(): PickNode[]
   openLink(url: string): void
+  // A page's body as the session holds it: the open tab's live text when warm, else read from disk.
+  warmBody(page: ConnPage): string | null
+  fetchBody(page: ConnPage): Promise<string | null>
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })

@@ -61,7 +61,7 @@ export function extractMentions(body: string, ownTitle = ''): Set<string> {
     const g = m.groups
     if (!g || (m.index !== undefined && inCode(m.index))) continue
     // `[[]]` matches with an empty page and no heading; it names nothing, and never the page itself.
-    if (g.page === '' && g.heading === undefined) continue
+    if (g.page === '' && !g.heading) continue
     add(g.heading === undefined ? titleOf(g.page) : g.page)
   }
   for (const m of body.matchAll(pageEmbedPattern())) {
@@ -120,7 +120,8 @@ export function frontmatterMentions(values: Record<string, unknown>): Set<string
   for (const value of Object.values(values)) {
     if (typeof value !== 'string') continue
     const target = readLink(value)
-    if (target.kind === 'page') out.add(normalizeTitle(target.title))
+    const key = target.kind === 'page' ? normalizeTitle(target.title) : ''
+    if (key) out.add(key)
   }
   return out
 }

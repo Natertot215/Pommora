@@ -101,10 +101,9 @@ export function useConnectionAutocomplete(
   targetOf: (title: string) => HeadingTarget,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
-  const [outline, setOutline] = useState<OutlineHeading[] | null>(null)
+  const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
   const [viaChevron, setViaChevron] = useState(false)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
-  const targetPage = useRef<string | undefined>(undefined)
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
   const candidatesForRef = useRef(candidatesFor)
@@ -113,24 +112,26 @@ export function useConnectionAutocomplete(
   const form = ac?.form ?? 'link'
   const title = ac?.title
   const heading = form === 'heading'
+  // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
+  const target = useMemo(() => (heading ? targetOf(title ?? '') : null), [heading, title])
+  const outline = target ? (target.outline ?? fetched) : null
   const loading = heading && outline === null
 
   useEffect(() => {
-    if (!heading) {
-      setOutline(null)
-      setViaChevron(false)
-      setCollapsed(new Set())
-      return
-    }
+    setFetched(null)
+    if (!target?.fetch) return
     let live = true
-    const target = targetOf(title ?? '')
-    targetPage.current = target.pageId
-    if (Array.isArray(target.outline)) setOutline(target.outline)
-    else void target.outline.then((rows) => live && setOutline(rows))
+    void target.fetch().then((rows) => live && setFetched(rows))
     return () => {
       live = false
     }
-  }, [heading, title])
+  }, [target])
+
+  useEffect(() => {
+    if (heading) return
+    setViaChevron(false)
+    setCollapsed(new Set())
+  }, [heading])
 
   // The host re-identifies when an alias is forgotten, which is what shrinks the list under an unchanged query.
   const allHeadingRows = useMemo(
@@ -164,7 +165,7 @@ export function useConnectionAutocomplete(
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.groups?.alias
         : undefined
-    const pageId = heading ? targetPage.current : row.pageId
+    const pageId = heading ? target?.pageId : row.pageId
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || heading) &&
@@ -187,7 +188,9 @@ export function useConnectionAutocomplete(
     view.focus()
   }
 
-  const { index, ctl } = useMenuCtl(candidates.length, ac?.query, {
+  // A collapse reshapes the list, so the highlight starts over rather than landing on whatever the old index now names.
+  const resetKey = heading ? `${query}\u0000${[...collapsed].join('\u0000')}` : query
+  const { index, ctl } = useMenuCtl(candidates.length, resetKey, {
     open: ac !== null && (candidates.length > 0 || loading),
     pick: (i) => {
       const r = candidates[i]

@@ -38,7 +38,7 @@ import {
 } from './Engine/intents'
 import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
 import { blockQueryAt } from './Menus/blockQuery'
-import { headingMissing, resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
+import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { editorHost } from './api'
 
@@ -478,12 +478,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)
       const [rs, re] = tk.resolveRange ?? tk.contentRange
-      const bare = rs === re
-      const res = bare ? null : conn.resolve(text.slice(rs, re))
-      const status = res ? res.status : tk.fragment ? 'resolved' : 'phantom'
+      const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
       const open = active.has(i)
+      // Revealed, an alias shows its whole target, page and heading both.
       const pipe = alias
-        ? tk.resolveRange
+        ? ([rs, tk.fragment?.[1] ?? re] as [number, number])
         : text[tk.contentRange[1]] === '|'
           ? tk.contentRange
           : undefined
@@ -493,10 +492,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
         if (pipe)
           ranges.push(Decoration.mark({ class: 'md-connection-target' }).range(pipe[0], pipe[1]))
       }
-      if (tk.fragment && !open && !alias) {
+      if (tk.fragment && !open && !alias && status === 'resolved') {
         const [hs, he] = tk.fragment
-        const known = bare ? ownKeys : res?.page ? conn.headingsOf?.(res.page.path) : undefined
-        const missing = headingMissing(known, text.slice(hs, he))
         const showPage = headingLinkStyle !== 'heading-only' && !bare
         if (!bare)
           ranges.push(
