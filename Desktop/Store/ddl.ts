@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 4
+export const INDEX_GENERATION = 5
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -22,6 +22,7 @@ const DDL = `
   CREATE TABLE IF NOT EXISTS headings (
     path TEXT NOT NULL,
     heading TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
     PRIMARY KEY (path, heading)
   );
   CREATE TABLE IF NOT EXISTS heading_mentions (
@@ -86,4 +87,10 @@ export const INDEX_TABLES = [
 
 export function truncateIndex(db: Db): void {
   db.exec(INDEX_TABLES.map((table) => `DELETE FROM ${table};`).join(' '))
+}
+
+// A generation step drops the index tables outright, so a table whose shape changed is recreated rather than kept as it was.
+export function rebuildIndex(db: Db): void {
+  db.exec(INDEX_TABLES.map((table) => `DROP TABLE IF EXISTS ${table};`).join(' '))
+  applySchema(db)
 }

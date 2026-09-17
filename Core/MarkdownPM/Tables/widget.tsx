@@ -48,6 +48,7 @@ import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { editorHost } from '../api'
+import { resolutionNudge } from '../Embeds/embedWidget'
 import { travelToHeading } from '../travel'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
@@ -505,7 +506,7 @@ const widgetField = StateField.define<DecorationSet>({
       })
     }
     if (toggled) return toggledSet
-    if (tr.effects.some((e) => e.is(setHeadingColsEffect)))
+    if (tr.effects.some((e) => e.is(setHeadingColsEffect) || e.is(resolutionNudge)))
       return buildWidgetDecorations(tr.state, deco)
     // Map the widgets forward and STOP: rebuilding per keystroke makes CM re-measure against React content that hasn't rendered. `refreshTableEffect` does it when the cell demotes.
     if (tr.annotation(tableSelfEdit)) return deco.map(tr.changes)

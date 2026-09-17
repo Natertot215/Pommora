@@ -1,7 +1,7 @@
 import { realpathSync } from 'node:fs'
 import { join } from '@pommora/core/Paths/posix'
 import { openDb, type Db } from './driver'
-import { applySchema, INDEX_GENERATION, readMeta, truncateIndex, writeMeta } from './ddl'
+import { applySchema, INDEX_GENERATION, readMeta, rebuildIndex, writeMeta } from './ddl'
 
 export const DB_FILENAME = 'nexus.db'
 
@@ -24,7 +24,7 @@ export function openNexusDb(dir: string, root: string): Db | null {
   try {
     applySchema(db)
     if (readMeta(db, 'index_generation') !== String(INDEX_GENERATION)) {
-      truncateIndex(db)
+      rebuildIndex(db)
       writeMeta(db, 'index_generation', String(INDEX_GENERATION))
     }
     const stamped = readMeta(db, 'root')
