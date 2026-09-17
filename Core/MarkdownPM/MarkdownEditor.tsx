@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { docString } from './docCache'
+import { docOutline, docString } from './docCache'
+import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
@@ -176,23 +177,30 @@ export function MarkdownEditor({
     followed.current = true
   }, [citesShown])
 
-  const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
-    viewRef,
-    host,
-    (q) => {
-      const conn = connectionsRef.current
-      if (!conn) return []
-      if (q.form === 'alias') return aliasRows(conn, hostRef.current.aliases, q.title, q.query)
-      const embed = q.form === 'embed'
-      let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
-      if (embed) {
-        const state = viewRef.current?.state
-        const taken = state ? embedExclusions(state) : new Set<string>()
-        pool = pool.filter((p) => embeddable(p.title, taken))
-      }
-      return pool.slice(0, AC_MAX).map(pageRow)
-    },
-  )
+  const targetOf = (title: string): HeadingTarget =>
+    title
+      ? headingTargetOf(connectionsRef.current, title)
+      : { outline: viewRef.current ? docOutline(viewRef.current.state.doc) : [] }
+
+  const { ac, setAc, candidates, acIndex, commit, acCtl, viaChevron, loading } =
+    useConnectionAutocomplete(
+      viewRef,
+      host,
+      (q) => {
+        const conn = connectionsRef.current
+        if (!conn) return []
+        if (q.form === 'alias') return aliasRows(conn, hostRef.current.aliases, q.title, q.query)
+        const embed = q.form === 'embed'
+        let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
+        if (embed) {
+          const state = viewRef.current?.state
+          const taken = state ? embedExclusions(state) : new Set<string>()
+          pool = pool.filter((p) => embeddable(p.title, taken))
+        }
+        return pool.slice(0, AC_MAX).map(pageRow)
+      },
+      targetOf,
+    )
   const block = useBlockMenu(viewRef)
 
   useEffect(() => {
@@ -213,6 +221,8 @@ export function MarkdownEditor({
           { key: 'ArrowUp', run: whenAcOpen(acCtls, (c) => c.move(-1)) },
           { key: 'Enter', run: whenAcOpen(acCtls, (c) => c.pick()) },
           { key: 'Escape', run: whenAcOpen(acCtls, (c) => c.close()) },
+          { key: 'ArrowRight', run: whenAcOpen(acCtls, (c) => c.aside?.(1) ?? false) },
+          { key: 'ArrowLeft', run: whenAcOpen(acCtls, (c) => c.aside?.(-1) ?? false) },
         ]),
       ),
       markdownInput,
@@ -458,7 +468,18 @@ export function MarkdownEditor({
     >
       {header}
       <div ref={editorRef} className="mdpm-editor" />
-      <AutocompletePane ac={ac} candidates={candidates} index={acIndex} onPick={commit} />
+      <AutocompletePane
+        ac={ac}
+        candidates={candidates}
+        index={acIndex}
+        onPick={commit}
+        viaChevron={viaChevron}
+        loading={loading}
+        onAside={(row) => commit(row, { openHeading: true })}
+        onBack={() => {
+          acCtl.current.aside?.(-1)
+        }}
+      />
       <BlockMenu
         open={block.open}
         state={block.state}

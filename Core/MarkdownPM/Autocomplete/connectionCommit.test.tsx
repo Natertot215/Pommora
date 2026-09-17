@@ -4,6 +4,7 @@ import { act } from 'react'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge, seedHost } from '../editorHarness'
+import { useSession } from '../../Session/store'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -105,5 +106,109 @@ describe('retargeting an aliased connection obeys the strip setting', () => {
     seedHost({ settings: { removeTitleOnLinkChange: false } })
     const { doc } = await pickFirst('[[Alp|the one]]', 4)
     expect(doc).toBe('[[Alpha|the one]]')
+  })
+})
+
+describe('the chevron slides in a page’s headings', () => {
+  const headingConn: ConnectionsApi = {
+    ...buildPageIndex([
+      { id: 'pNotes', title: 'Notes', path: 'Notes.md' },
+      { id: 'pBlank', title: 'Blank', path: 'Blank.md' },
+    ]),
+    open: () => {},
+  }
+
+  afterEach(() => {
+    useSession.setState({ pages: {} } as never)
+  })
+
+  const seatReady = (id: string, body: string): void => {
+    useSession.setState({
+      pages: { [id]: { status: 'ready', target: {} as never, detail: {} as never, body } },
+    } as never)
+  }
+
+  it('the arrow-right chevron opens the fragment and lists the page’s headings', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[[Notes#]]')
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
+
+  it('Return on a heading row finishes the link past the closer', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[[Notes#Setup]]')
+  })
+
+  it('arrow-left backs the fragment out again', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[[Notes#]]')
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[[Notes]]')
+  })
+
+  it('a bare # lists the current document’s own headings', async () => {
+    const body = '## Setup\n\n[[#]]'
+    const view = await mountEditor({ initialBody: body, connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: body.lastIndexOf('#') + 1 } })
+    })
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
+
+  it('a heading fragment on a page with none closes the pane', async () => {
+    seatReady('pBlank', 'no headings here')
+    const body = '[[Blank#]]'
+    const view = await mountEditor({ initialBody: body, connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: body.indexOf('#') + 1 } })
+    })
+    expect(document.querySelectorAll('.mdpm-autocomplete-slot [class*="item"]')).toHaveLength(0)
   })
 })

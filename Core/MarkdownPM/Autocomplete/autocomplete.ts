@@ -3,9 +3,10 @@ import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/C
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt, lineIndexAt } from '../Engine/docScan'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
+import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 
-type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'
+type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading'
 
 export interface AutocompleteQuery {
   query: string
@@ -24,6 +25,7 @@ export interface AcRow {
   pageId?: string
   isPage: boolean
   location: TrailSegment[]
+  level?: number
   forget?: () => void
 }
 
@@ -57,6 +59,14 @@ export function autocompleteQuery(
     // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.
     if (rel >= s.title[0] && rel <= s.title[1])
       return { query: title, from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
+    if (s.heading && rel >= s.heading[0] && rel <= s.heading[1])
+      return {
+        query: line.slice(s.heading[0], s.heading[1]),
+        from: lineStart + s.heading[0],
+        to: lineStart + s.heading[1],
+        form: 'heading',
+        title,
+      }
     if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
       return {
         query: line.slice(s.alias[0], s.alias[1]),
@@ -106,6 +116,19 @@ export const pageRow = (p: ConnPage): AcRow => ({
     .map((title) => ({ title })),
 })
 
+export function headingRows(outline: readonly OutlineHeading[], query: string): AcRow[] {
+  const q = normalizeTitle(query)
+  const seen = new Set<string>()
+  return outline
+    .filter((h) => {
+      const key = normalizeTitle(h.text)
+      if (!key.startsWith(q) || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .map((h) => ({ value: h.text, label: h.text, isPage: false, location: [], level: h.level }))
+}
+
 export function aliasRows(
   conn: PageIndex,
   aliases: EditorHost['aliases'],
@@ -134,6 +157,7 @@ export function aliasRows(
 function formSyntax(value: string, form: ConnectionForm, alias?: string): string {
   switch (form) {
     case 'alias':
+    case 'heading':
       return value
     case 'target':
       return encodeLinkTarget(value)
@@ -157,14 +181,24 @@ export function connectionInsert(
 interface CommitEdit {
   changes: { from: number; to: number; insert: string }[]
   opensAlias?: boolean
+  opensHeading?: boolean
   anchor: number
 }
 
 export function commitEdit(
   ac: AutocompleteQuery,
   row: AcRow,
-  opts: { keepAlias?: string; openAlias?: boolean } = {},
+  opts: { keepAlias?: string; openAlias?: boolean; openHeading?: boolean } = {},
 ): CommitEdit {
+  // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
+  if (ac.form === 'link' && opts.openHeading) {
+    const text = `[[${row.value}#]]`
+    return {
+      changes: [{ from: ac.from, to: ac.to, insert: text }],
+      anchor: ac.from + text.length - 2,
+      opensHeading: true,
+    }
+  }
   // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
   if (ac.form === 'link' && opts.openAlias) {
     const text = `[[${row.value}|]]`
@@ -175,7 +209,7 @@ export function commitEdit(
     }
   }
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
-  if (ac.form === 'alias')
+  if (ac.form === 'alias' || ac.form === 'heading')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {
     const retarget = { from: ac.from, to: ac.to, insert }
