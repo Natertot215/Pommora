@@ -47,6 +47,8 @@ function wireCaps(): void {
     (e) => {
       const cap = capUnder(e.target)
       if (!cap) return
+      const lane = cap.parentElement?.closest<HTMLElement>('.over-scroll-x')
+      if (lane && lane.scrollWidth > lane.clientWidth) return
       const max = cap.scrollWidth - cap.clientWidth
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
       const next = clamp(cap.scrollLeft + delta, 0, max)

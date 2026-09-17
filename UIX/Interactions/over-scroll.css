@@ -65,6 +65,7 @@
 
 /* Here the fade IS the truncation signal, read at the scale of a word. */
 .over-scroll-x {
+  container-type: scroll-state;
   --os-fade-default: 16px;
   --os-dir: to right;
   animation-timeline: scroll(self inline);
@@ -84,6 +85,17 @@
 .over-scroll-host:hover .over-scroll-cap {
   overflow-x: auto;
   text-overflow: clip;
+}
+/* A lane that overflows keeps the wheel, so its labels stay at rest. */
+@container scroll-state(scrollable: x) {
+  .over-scroll-cap:hover,
+  .over-scroll-host:hover .over-scroll-cap {
+    overflow-x: hidden;
+  }
+  .over-scroll-ellipsis:hover,
+  .over-scroll-host:hover .over-scroll-ellipsis {
+    text-overflow: ellipsis;
+  }
 }
 
 /* Hold the leading fade until a full fade-width has scrolled past: a first line at rest shouldn't fade. */
