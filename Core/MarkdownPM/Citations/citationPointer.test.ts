@@ -13,6 +13,15 @@ describe('what a citation leads to, when it leads anywhere', () => {
     })
   })
 
+  it('a heading link carries its heading, and a bare fragment names this page', () => {
+    expect(loneTarget('[[Some Page#Setup]]')).toEqual({
+      kind: 'connection',
+      title: 'Some Page',
+      heading: 'Setup',
+    })
+    expect(loneTarget('[[#Setup]]')).toEqual({ kind: 'connection', title: '', heading: 'Setup' })
+  })
+
   it('a lone markdown link is followed', () => {
     expect(loneTarget('[label](https://example.com)')).toEqual({
       kind: 'link',

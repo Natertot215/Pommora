@@ -37,6 +37,10 @@ export interface Asks {
   'nexus:openPath': { args: [path: string]; reply: Result<boolean> }
   'nexus:rename': { args: [newName: string]; reply: Result<null> }
   'index:headings': { args: [paths?: string[]]; reply: Result<Record<string, string[]>> }
+  'connections:headingRenamed': {
+    args: [pageId: string, oldHeading: string, newHeading: string]
+    reply: Result<{ touched: string[] }>
+  }
   'clipboard:write': { args: [text: string]; reply: Result<null> }
   // A chord matched on keydown has no `clipboardData` of its own; read is its door to a paste.
   'clipboard:read': { args: []; reply: Result<string> }

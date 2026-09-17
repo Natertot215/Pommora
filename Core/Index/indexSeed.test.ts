@@ -14,8 +14,10 @@ import {
   readIndexedStats,
 } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
-import { sweepAdmitsBody } from '../Files/pageFile'
-import { seedContentIndex } from './indexSeed'
+import { sweepAdmitsBody, splitEnvelope } from '../Files/pageFile'
+import { readFile } from 'node:fs/promises'
+import { indexWrittenPage, seedContentIndex } from './indexSeed'
+import { newContentId } from '../Nexus/ids'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
@@ -127,6 +129,33 @@ describe('seedContentIndex', () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n[[#Setup]]\n`)
     await seedContentIndex(root)
     expect(queryHeadingMentions('a', 'setup')).toEqual(['Notes/A.md'])
+  })
+
+  it('recognizes an external heading rename and cascades it (B and A’s own bare link both follow)', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n[[#Setup]]\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${newContentId('page')}\n---\n\n[[A#Setup]]\n`)
+    await seedContentIndex(root)
+    // An external editor rewrites only the heading line — the raw file's link still reads the old heading, exactly as an outside writer leaves it.
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n[[#Setup]]\n`)
+    await indexWrittenPage(root, abs('Notes', 'A.md'))
+    await new Promise((r) => setTimeout(r, 30))
+    expect(splitEnvelope(await readFile(abs('Notes', 'A.md'), 'utf8')).body).toBe(
+      '## Intro\n\n[[#Intro]]\n',
+    )
+    expect(splitEnvelope(await readFile(abs('Notes', 'B.md'), 'utf8')).body).toBe('[[A#Intro]]\n')
+  })
+
+  it('leaves a page alone when two new headings appear at once (murkier than a rename)', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n[[#Setup]]\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${newContentId('page')}\n---\n\n[[A#Setup]]\n`)
+    await seedContentIndex(root)
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\n---\n\n## One\n\n## Two\n\n[[#Setup]]\n`,
+    )
+    await indexWrittenPage(root, abs('Notes', 'A.md'))
+    await new Promise((r) => setTimeout(r, 30))
+    expect(splitEnvelope(await readFile(abs('Notes', 'B.md'), 'utf8')).body).toBe('[[A#Setup]]\n')
   })
 
   it('with no database the seed stands down and queries stay null', async () => {
