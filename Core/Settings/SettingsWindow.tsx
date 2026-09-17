@@ -1,4 +1,6 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { applyPersonalizationKey } from './applyPersonalization'
+import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
 import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
@@ -268,19 +270,21 @@ function PickerControlRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element 
 }
 
 function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
-  const value = useSession((s) => s.personalization[row.key] ?? 0)
+  const value = useSession((s) => s.personalization[row.key] ?? row.fallback)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
     <MenuRowView
       row={settingsRow(row, {
         kind: 'slider',
         value,
-        min: 0,
+        min: row.min,
         max: row.max,
-        step: 1,
+        step: row.step,
         ariaLabel: row.label,
         format: row.format,
-        onCommit: (v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined),
+        readoutClassName: pickerValue,
+        onInput: (v) => applyPersonalizationKey(row.key, v),
+        onCommit: (v) => setPersonalization(row.key, v === row.fallback ? undefined : v),
       })}
     />
   )

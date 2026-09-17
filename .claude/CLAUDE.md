@@ -58,7 +58,6 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 
 #### Important Information
 
-- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. Its commits are archived on its own branch; `git log` reaches them directly.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project — subordinate to the daily Pommora grind — that functions as the interim bridge bringing similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
 - **NexusOS** is both an Obsidian vault *and* a Pommora Nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian fixtures until Pommora is completed.
 - **Mobile Companion:** A mobile companion app is a near-term focus; it’s been discussed yet hasn’t been formally planned.

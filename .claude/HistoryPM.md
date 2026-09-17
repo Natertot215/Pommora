@@ -2,7 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 09-16-2026 → 09-17      | PM-140 | MarkdownPM Heading Links                             |
+| 09-16-2026              | PM-140 | MarkdownPM Heading Links                             |
 | 09-15-2026 → 09-16      | PM-139 | Tab Cross-Drag                                       |
 | 09-13-2026 → 09-14      | PM-138 | Sync Scaffolding - Part 2                            |
 | 09-12-2026              | PM-137 | One Drag Engine                                      |
@@ -119,7 +119,7 @@
 | 07-02-2026              | PM-026 | The CalendarPicker                                   |
 | 07-02-2026              | PM-025 | Banner Icons And The Notched Pane                    |
 | 07-02-2026              | PM-024 | The Chip Hover-× Melt                                |
-| 07-02-2026              | PM-023 | The Hot Paths And The SidePane Teardown             |
+| 07-02-2026              | PM-023 | The Hot Paths And The SidePane Teardown              |
 | 07-02-2026              | PM-022 | Group Bands Become Draggable                         |
 | 07-01-2026              | PM-021 | Tables Interactive — Cells, Styles, And Overflow     |
 | 07-01-2026              | PM-020 | MarkdownPM Hardened Across Every Module              |
@@ -131,7 +131,7 @@
 | 06-27-2026 → 06-28      | PM-014 | The SavedView Engine                                 |
 | 06-27-2026              | PM-013 | MarkdownPM Callouts                                  |
 | 06-26-2026              | PM-012 | The Drawn Caret, List Drag, And Back/Forward         |
-| 06-25-2026 → 06-26      | PM-011 | Window Chrome — Toolbar, SidePane, Subfield         |
+| 06-25-2026 → 06-26      | PM-011 | Window Chrome — Toolbar, SidePane, Subfield          |
 | 06-24-2026 → 06-25      | PM-010 | The Two-Tier Collapse Reaches React                  |
 | 06-22-2026 → 06-23      | PM-009 | GFM Tables Inside The Editor                         |
 | 06-20-2026 → 06-22      | PM-008 | MarkdownPM — The Dynamic-Syntax Editor               |
@@ -145,9 +145,9 @@
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
 #### PM-140 || MarkdownPM Heading Links
-**DATE:** 09-16-2026 → 09-17
+**DATE:** 09-16-2026
 
-`Core/Connections/connections.ts` and `links.ts` split a connection into a page half and a heading fragment, so `[[Page#Heading]]`, `[[#Heading]]`, and the markdown forms parse, index, rewrite, and resolve as one grammar; the name rule refuses `#` and `§`. The content index gained `headings(path, heading, ordinal)` and `heading_mentions`, served to the renderer through `index:headings`, and `wikiLinkView` reads a missing heading as a state of the fragment span while `LinkStatus` stayed three-valued. `decorations.ts` draws `Page § Heading` or `§Heading` per **Heading Link Style**, the autocomplete gained a heading form with a chevron slide and collapsible rows, `pendingTravel` and the `arrive` prop land a click on its heading across the tab, the Page Window, and the glance, and the heading grip and connection menu copy the fragment form. `headingRenameGuard.ts` rewrites a page's own links inside the transaction that edits a heading line and its settle asks `connections:headingRenamed` once, `renameHeadingCascade` sweeps the files `heading_mentions` names, and the watcher reads an outside rename positionally and takes the same cascade. **In-Page Heading Resolution** resolves a bare `§Heading` in prose against `docSectionHeadings` under Automatic, drawn and followed as a same-page link.
+Linking specific headings was implemented th`Core/Connections/connections.ts` and `links.ts` splitting a connection into a page half and a heading fragment, so `[[Page#Heading]]`, `[[#Heading]]`, and the markdown forms parse, index, rewrite, and resolve as one grammar; the name rule refuses `#` and `§`. The content index gained `headings(path, heading, ordinal)` and `heading_mentions`, served to the renderer through `index:headings`, and `wikiLinkView` reads a missing heading as a state of the fragment span while `LinkStatus` stayed three-valued. `decorations.ts` draws `Page § Heading` or `§Heading` per **Heading Link Style**, the autocomplete gained a heading form with a chevron slide and collapsible rows, `pendingTravel` and the `arrive` prop land a click on its heading across the tab, the Page Window, and the glance, and the heading grip and connection menu copy the fragment form. `headingRenameGuard.ts` rewrites a page's own links inside the transaction that edits a heading line and its settle asks `connections:headingRenamed` once, `renameHeadingCascade` sweeps the files `heading_mentions` names, and the watcher reads an outside rename positionally and takes the same cascade. **In-Page Heading Resolution** resolves a bare `§Heading` in prose against `docSectionHeadings` under Automatic, drawn and followed as a same-page link.
 
 - **Commits:** `702ce3dbc^..f119022ea`
 - **Diff:** Net +1565 | +1894 / −329

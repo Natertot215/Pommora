@@ -51,6 +51,7 @@ export function Slider({
   }
   return (
     <>
+      {format && <span className={cx(s.readout, readoutClassName)}>{format(v)}</span>}
       <div
         ref={stripRef}
         className={s.strip}
@@ -102,7 +103,6 @@ export function Slider({
           </GlassSegment>
         </div>
       </div>
-      {format && <span className={cx(s.readout, readoutClassName)}>{format(v)}</span>}
     </>
   )
 }
