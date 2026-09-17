@@ -14,7 +14,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `ID` key. Pages use MarkdownPM as their editor surface, which includes inline connections to other pages.
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped; located within `/Tasks`) and **Events** (calendar-shaped; located within `/Events`) — each as Markdown files distinguished via their id's kind mark and validated against their folder placement.
 - **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; written as bare `Property`: so any application that reads frontmatter reads them.
-- **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. 
+- **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page, or a heading within one, as the Content ↔ Content matrix. 
 
 **Files are canonical for content.** Pages, Tasks, and Events are all Markdown files carrying one `ID` key, the kind marked inside the ULID itself. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — contradictions are ignored.
 

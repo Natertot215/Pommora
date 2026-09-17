@@ -141,6 +141,8 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a code block's content lines. | On · **Off** |
 | Mute Checked Items | `muteCheckedItems` | A checked task reads as done — dimmed and struck through. Drawn, never written. | On · **Off** |
 | Display Unresolved Links As Plain Syntax | `plainUnresolvedLinks` | A link leading nowhere reads as the prose it is written as rather than muted with its syntax showing. Page prose only. | On · **Off** |
+| Heading Link Style | `headingLinkStyle` | How a link naming a heading reads — the page and the heading together, or the heading alone. A link to a heading on its own page reads as the heading either way. | **Page & Heading** · Heading Only |
+| In-Page Heading Resolution | `inPageHeadingResolution` | What reaches a heading on the page being written — link syntax alone, or a bare `§Heading` in prose as well. | **Explicit** · Automatic |
 
 #### Automations
 
