@@ -14,6 +14,7 @@ import {
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
 import { removeButton, revealFromHost } from '@pommora/uix/Interactions/hover-remove.css'
+import { side } from '@pommora/uix/Menus/menu-base.css'
 import { useKeepInView } from './useKeepInView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
@@ -28,9 +29,14 @@ interface Props {
   onPick: (row: AcRow) => void
   viaChevron?: boolean
   loading?: boolean
+  headingRows?: AcRow[]
+  collapsed?: ReadonlySet<string>
+  onToggleHeading?: (value: string) => void
   onAside?: (row: AcRow) => void
   onBack?: () => void
 }
+
+const NONE: ReadonlySet<string> = new Set()
 
 const CLOSED: AcState = { query: '', from: 0, to: 0, form: 'link', ...CLOSED_GEOMETRY }
 
@@ -41,13 +47,16 @@ export function AutocompletePane({
   onPick,
   viaChevron = false,
   loading = false,
+  headingRows = [],
+  collapsed = NONE,
+  onToggleHeading = () => {},
   onAside = () => {},
   onBack = () => {},
 }: Props): React.JSX.Element {
   const live = ac !== null && (candidates.length > 0 || loading)
   // The last live geometry stays through the closing animation.
-  const last = useRef({ ac: CLOSED, candidates, index, viaChevron: false })
-  if (live) last.current = { ac, candidates, index, viaChevron }
+  const last = useRef({ ac: CLOSED, candidates, index, viaChevron: false, headingRows, collapsed })
+  if (live) last.current = { ac, candidates, index, viaChevron, headingRows, collapsed }
 
   const v = last.current
   const matchLen = v.ac.query.length
@@ -95,14 +104,14 @@ export function AutocompletePane({
             ) : row.isPage ? (
               <button
                 type="button"
-                className={cx(removeButton, revealFromHost, 'mdpm-ac-aside')}
+                className={cx(removeButton, revealFromHost, side, 'mdpm-ac-aside')}
                 aria-label={`Headings of ${row.label}`}
                 onMouseDown={(e) => {
                   e.preventDefault()
                   onAside(row)
                 }}
               >
-                <Icon name="chevron-right" size="footnote" />
+                <Icon name="chevron-right" />
               </button>
             ) : undefined
           }
@@ -126,8 +135,8 @@ export function AutocompletePane({
       icon={null}
       className={itemEmphasized}
       dropOutline={children ? 'chevron' : 'spacer'}
-      open
-      onToggle={() => {}}
+      open={!v.collapsed.has(row.value)}
+      onToggle={() => onToggleHeading(row.value)}
       selected={i === v.index}
       wrap={(node) => (
         // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown so the caret never leaves the editor, the way every autocomplete row does
@@ -135,6 +144,8 @@ export function AutocompletePane({
           ref={i === v.index ? keepInView : undefined}
           onMouseDown={(e) => {
             e.preventDefault()
+            // The chevron toggles on click; a mousedown there must not commit the row.
+            if ((e.target as HTMLElement).closest?.('[data-drop-outline]')) return
             onPick(row)
           }}
         >
@@ -146,15 +157,19 @@ export function AutocompletePane({
     </DisclosureRow>
   )
 
-  const nested = (rows: AcRow[]): React.JSX.Element[] => {
-    const at = new Map(rows.map((r, i) => [r.value, i]))
+  // The tree is shaped by every heading; a row hidden under a collapsed one is absent from the candidates and draws nothing.
+  const nested = (): React.JSX.Element[] => {
+    const at = new Map(v.candidates.map((r, i) => [r.value, i]))
     const walk = (nodes: OutlineNode[]): React.JSX.Element[] =>
-      nodes.map((n) => {
-        const i = at.get(n.text) ?? 0
-        return headingRow(rows[i], i, n.children.length ? walk(n.children) : undefined)
+      nodes.flatMap((n) => {
+        const i = at.get(n.text)
+        if (i === undefined) return []
+        return headingRow(v.candidates[i], i, n.children.length ? walk(n.children) : undefined)
       })
     return walk(
-      outlineTree(rows.map((r) => ({ from: 0, key: r.value, text: r.label, level: r.level ?? 1 }))),
+      outlineTree(
+        v.headingRows.map((r) => ({ from: 0, key: r.value, text: r.label, level: r.level ?? 1 })),
+      ),
     )
   }
 
@@ -166,7 +181,7 @@ export function AutocompletePane({
         headingSlide ? <MenuTopRow label="Links" current={v.ac.title} onBack={onBack} /> : undefined
       }
     >
-      {loading ? null : v.ac.query !== '' ? rows.map((r, i) => headingRow(r, i)) : nested(rows)}
+      {loading ? null : v.ac.query !== '' ? rows.map((r, i) => headingRow(r, i)) : nested()}
     </MenuScrollFrame>
   )
 
