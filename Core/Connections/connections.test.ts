@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   aliasSpanAt,
+  emptyAliasPipeAt,
   connectionText,
   embeddableTitle,
   normalizeTitle,
@@ -57,8 +58,8 @@ describe('parseConnectionText', () => {
   it('reads an empty heading as absent', () => {
     expect(parseConnectionText('[[Page#]]')).toEqual({ title: 'Page' })
   })
-  it('reads a bare `#` as an empty page with no heading', () => {
-    expect(parseConnectionText('[[#]]')).toEqual({ title: '' })
+  it('reads a bare `#` as nothing, a link still being written', () => {
+    expect(parseConnectionText('[[#]]')).toBeNull()
   })
   it('is null with neither a title nor a heading', () => {
     expect(parseConnectionText('[[]]')).toBeNull()
@@ -77,5 +78,12 @@ describe('connectionText and embeddableTitle', () => {
   it('writes a bare-fragment target with an empty title, and refuses `#` in an embed title', () => {
     expect(connectionText('', undefined, 'H')).toBe('[[#H]]')
     expect(embeddableTitle('C#')).toBe(false)
+  })
+})
+
+describe('emptyAliasPipeAt', () => {
+  it('finds the pipe after a heading, not the page half', () => {
+    expect(emptyAliasPipeAt('[[P#H|]]', 6)).toBe(5)
+    expect(emptyAliasPipeAt('[[P|]]', 4)).toBe(3)
   })
 })

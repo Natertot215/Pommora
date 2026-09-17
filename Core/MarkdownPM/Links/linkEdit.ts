@@ -1,6 +1,11 @@
 import { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
-import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
+import {
+  aliasSpanAt,
+  emptyAliasPipeAt,
+  emptyHeadingHashAt,
+  linkAt,
+} from '@pommora/core/Connections/connections'
 import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { aliasedToken, tokenize, type Token } from '../Engine/tokens'
@@ -72,12 +77,6 @@ function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
   return { line, rel: pos - line.from }
 }
 
-function emptyPipeNear(state: EditorState, at: number): number | null {
-  const { line, rel } = lineNear(state, at)
-  const pipe = emptyAliasPipeAt(line.text, rel)
-  return pipe === null ? null : line.from + pipe
-}
-
 /** Authoring is the only moment the memory is written: a body scan can't honor a real forget. */
 function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
   if (!api) return
@@ -93,27 +92,41 @@ function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at
 }
 
 function collapseAt(view: EditorView, at: number): void {
-  if (view.state.doc.sliceString(at, at + 1) !== '|') return
+  if (!/[|#]/.test(view.state.doc.sliceString(at, at + 1))) return
   view.dispatch({ changes: { from: at, to: at + 1 } })
 }
 
-function aliasStartNear(state: EditorState, at: number): number | null {
-  const { line, rel } = lineNear(state, at)
-  const span = aliasSpanAt(line.text, rel)
-  return span ? line.from + span[0] : null
+// The slot the caret sits in, alias or heading, by its start: leaving one fires that slot's collapse or the alias memory, never the other slot's.
+interface Slot {
+  start: number
+  kind: 'alias' | 'heading'
 }
 
-/** An empty alias takes its pipe with it, matching the nexus-wide rule that an emptied value drops its key. */
-function leaveAlias(
+function slotNear(state: EditorState, at: number): Slot | null {
+  const { line, rel } = lineNear(state, at)
+  const alias = aliasSpanAt(line.text, rel)
+  if (alias) return { start: line.from + alias[0], kind: 'alias' }
+  const h = linkAt(line.text, rel)?.heading
+  return h && rel >= h[0] && rel <= h[1] ? { start: line.from + h[0], kind: 'heading' } : null
+}
+
+/** An empty alias takes its pipe with it, and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key. */
+function leaveSlot(
   view: EditorView,
   api: ConnectionsApi | undefined,
   at: number,
+  kind: Slot['kind'],
   defer: boolean,
 ): void {
-  const pipe = emptyPipeNear(view.state, at)
-  if (pipe === null) rememberAliasNear(view, api, at)
-  else if (defer) setTimeout(() => collapseAt(view, pipe), 0)
-  else collapseAt(view, pipe)
+  const { line, rel } = lineNear(view.state, at)
+  const marker = (kind === 'alias' ? emptyAliasPipeAt : emptyHeadingHashAt)(line.text, rel)
+  if (marker === null) {
+    if (kind === 'alias') rememberAliasNear(view, api, at)
+    return
+  }
+  const slot = line.from + marker
+  if (defer) setTimeout(() => collapseAt(view, slot), 0)
+  else collapseAt(view, slot)
 }
 
 /** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret. Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
@@ -123,7 +136,8 @@ export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extensio
       blur(_event, view) {
         // The same predicate the listener uses, or blurring anywhere inside a link would remember an alias nobody authored.
         const at = view.state.selection.main.head
-        if (aliasStartNear(view.state, at) !== null) leaveAlias(view, getApi(), at, false)
+        const slot = slotNear(view.state, at)
+        if (slot) leaveSlot(view, getApi(), at, slot.kind, false)
         return false
       },
     }),
@@ -131,10 +145,11 @@ export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extensio
       if (!u.selectionSet) return
       // The NEW document at the OLD caret, mapped forward — reading the old offset against the new text makes typing look like leaving.
       const was = u.changes.mapPos(u.startState.selection.main.head)
-      const left = aliasStartNear(u.state, was)
+      const left = slotNear(u.state, was)
       if (left === null) return
-      if (u.view.hasFocus && aliasStartNear(u.state, u.state.selection.main.head) === left) return
-      leaveAlias(u.view, getApi(), was, true)
+      if (u.view.hasFocus && slotNear(u.state, u.state.selection.main.head)?.start === left.start)
+        return
+      leaveSlot(u.view, getApi(), was, left.kind, true)
     }),
   ]
 }

@@ -2,7 +2,13 @@
 
 import { describe, it, expect } from 'vitest'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
-import { extractHeadingMentions, extractMentions, mentionsTitle, sectionRunsIn } from './scan'
+import {
+  extractHeadingMentions,
+  extractMentions,
+  frontmatterMentions,
+  mentionsTitle,
+  sectionRunsIn,
+} from './scan'
 
 describe('mentionsTitle', () => {
   it('matches a page link by its normalized title', () => {
@@ -146,5 +152,12 @@ describe('extractHeadingMentions', () => {
   it('reads an empty link as no mention at all', () => {
     expect(extractHeadingMentions('[[]]', 'Own')).toEqual([])
     expect(extractMentions('[[]]', 'Own')).toEqual(new Set())
+  })
+})
+
+describe('an empty fragment', () => {
+  it('[[#]] indexes nothing, and a property holding a bare fragment writes no empty key', () => {
+    expect([...extractMentions('[[#]]', 'Own')]).toEqual([])
+    expect([...frontmatterMentions({ a: '[[#H]]' })]).toEqual([])
   })
 })

@@ -183,7 +183,7 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
     // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
     const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
     const fragment = s.heading && s.heading[1] > s.heading[0] ? s.heading : null
-    const target: [number, number] = [s.title[0], s.heading ? s.heading[1] : s.title[1]]
+    const target: [number, number] = [s.title[0], fragment ? fragment[1] : s.title[1]]
     const shown = alias ?? target
     tokens.push({
       kind: 'wikiLink',

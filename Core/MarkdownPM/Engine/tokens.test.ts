@@ -169,11 +169,11 @@ describe('a heading link separates its page half, its fragment, and what it reso
     expect(aliasedToken(w)).toBe(true)
   })
 
-  it('[[Page#]] carries no fragment and its content spans the whole written page#', () => {
+  it('[[Page#]] carries no fragment and reads as the page alone', () => {
     const t = '[[Page#]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(w.fragment).toBeUndefined()
-    expect(slice(t, w.contentRange)).toBe('Page#')
+    expect(slice(t, w.contentRange)).toBe('Page')
   })
 })
 

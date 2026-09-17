@@ -156,6 +156,12 @@ describe('a page rename keeps every fragment', () => {
   })
 })
 
+describe('a page rename inside a table cell', () => {
+  it('re-emits the cell pipe-escape once on a heading link', () => {
+    expect(rewriteConnections('| [[Old#H\\|a]] |', 'Old', 'New')).toBe('| [[New#H\\|a]] |')
+  })
+})
+
 describe('rewriteHeadingConnections', () => {
   it('rewrites a wikilink, an aliased wikilink, and a markdown link naming the heading', () => {
     expect(rewriteHeadingConnections('[[P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')

@@ -86,6 +86,12 @@ describe('a heading link reads per the two heading settings', () => {
     expect(heading?.textContent).toBe('Setup')
   })
 
+  it('a heading on a page that does not resolve renders as the phantom it is', async () => {
+    const view = await mountEditor({ initialBody: '[[Nope#Setup]]', connections: conn })
+    expect(view.dom.querySelector('.md-connection-phantom')).not.toBeNull()
+    expect(view.dom.querySelector('.md-heading-symbol')).toBeNull()
+  })
+
   it('a heading that no longer exists carries md-connection-heading-missing', async () => {
     const view = await mountEditor({ initialBody: '[[Alpha#Gone]]', connections: conn })
     const heading = view.dom.querySelector('.md-connection-heading-missing')

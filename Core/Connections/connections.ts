@@ -62,7 +62,13 @@ export function aliasSpanAt(line: string, rel: number): [number, number] | null 
 
 export function emptyAliasPipeAt(line: string, rel: number): number | null {
   const s = linkAt(line, rel)
-  return s?.alias && s.alias[0] === s.alias[1] ? s.title[1] : null
+  return s?.alias && s.alias[0] === s.alias[1] ? (s.heading ?? s.title)[1] : null
+}
+
+// The `#` of an empty heading slot, `[[Page#]]`: like an empty pipe, it goes when the caret leaves it.
+export function emptyHeadingHashAt(line: string, rel: number): number | null {
+  const s = linkAt(line, rel)
+  return s?.heading && s.heading[0] === s.heading[1] && !s.alias ? s.heading[0] - 1 : null
 }
 
 const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')
@@ -80,7 +86,7 @@ export function parseConnectionText(raw: string): ConnectionParts | null {
   const written = g.heading !== undefined
   const title = (written ? g.page : titleOf(g.page)).trim()
   const heading = written ? titleOf(g.heading).trim() : ''
-  if (!title && !written) return null
+  if (!title && !heading) return null
   return {
     title,
     ...(heading ? { heading } : {}),
