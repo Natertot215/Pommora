@@ -3,7 +3,7 @@ import { rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from '../Properties/properties'
-import { renameCascade } from './cascade'
+import { renameCascade, renameHeadingCascade } from './cascade'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { createPage } from './page'
 import { createProperty } from '../Properties/registryProperty'
@@ -171,5 +171,51 @@ describe('renameCascade over frontmatter', () => {
 
     await renameCascade(root, 'Target', 'New Target')
     expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
+  })
+})
+
+describe('renameHeadingCascade', () => {
+  const seedAB = async (): Promise<{ a: string; b: string }> => {
+    const a = await createPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
+    const b = await createPage(dir, 'B', { body: '[[A#Setup]]' })
+    if (!a.ok || !b.ok) throw new Error('setup failed')
+    return { a: a.value.path, b: b.value.path }
+  }
+
+  it('rewrites the other page and leaves the one the caller already rewrote (skipRel)', async () => {
+    const { a, b } = await seedAB()
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const skipRel = a.slice(root.length + 1)
+    const r = await renameHeadingCascade(root, 'A', 'Setup', 'Intro', skipRel)
+    installStores(NO_STORES)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.touched).toEqual([b])
+    expect(await bodyOf(b)).toBe('[[A#Intro]]')
+    expect(await bodyOf(a)).toBe('## Setup\n[[#Setup]]')
+  })
+
+  it('rewrites both pages when no rel is skipped', async () => {
+    const { a, b } = await seedAB()
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const r = await renameHeadingCascade(root, 'A', 'Setup', 'Intro', null)
+    installStores(NO_STORES)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.touched.sort()).toEqual([a, b].sort())
+    // The cascade rewrites LINKS naming the heading, never the heading line itself — that's the editor guard's job, inside the transaction that typed the rename.
+    expect(await bodyOf(a)).toBe('## Setup\n[[#Intro]]')
+    expect(await bodyOf(b)).toBe('[[A#Intro]]')
+  })
+
+  it('touches nothing when the index is not seeded', async () => {
+    const { a, b } = await seedAB()
+    const r = await renameHeadingCascade(root, 'A', 'Setup', 'Intro', null)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.touched).toEqual([])
+    expect(await bodyOf(a)).toBe('## Setup\n[[#Setup]]')
+    expect(await bodyOf(b)).toBe('[[A#Setup]]')
   })
 })

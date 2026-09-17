@@ -7,6 +7,7 @@ import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import { flushPageSave, schedulePageSave } from '../../Session/saveScheduler'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
+import { renameHeading } from '../../Pages/pageEditor'
 import { useEmbedScale, useSession } from '../../Session/store'
 import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
@@ -160,6 +161,7 @@ export function PageTile({
         embedAncestors={[...(ancestors ?? []), path]}
         arrive={arrive}
         onArrived={onArrived}
+        onHeadingRename={(old, next) => entry?.id && void renameHeading(entry.id, old, next)}
       />
     </div>
   )

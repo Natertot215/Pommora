@@ -8,6 +8,8 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { asString } from '../Nexus/coerce'
 import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Paths/nexusPaths'
 import { normalizeSeg, rootSegs, type WatchScope } from '../Paths/exclusion'
+import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
 import {
   EMBED_SCALE_DEFAULT,
   ENTITY_ICON_KINDS,
@@ -211,3 +213,6 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
 export function scopeOf(leaves: Pick<SettingsLeaves, 'excluded' | 'assetDirectory'>): WatchScope {
   return { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
 }
+
+export const readSettings = async (root: string): Promise<SettingsLeaves> =>
+  readSettingsLeaves((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {})

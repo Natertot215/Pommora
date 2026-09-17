@@ -61,7 +61,7 @@ function joinExtension(
   return null
 }
 
-function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
+export function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
   const out: Annotation<unknown>[] = []
   const userEvent = tr.annotation(Transaction.userEvent)
   if (userEvent !== undefined) out.push(Transaction.userEvent.of(userEvent))
