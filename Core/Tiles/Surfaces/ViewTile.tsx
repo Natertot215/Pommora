@@ -421,6 +421,7 @@ export function ViewTile({
                   ref={titleIconRef}
                   name={viewGlyph(view)}
                   className={cx(
+                    s.titleIcon,
                     `md-h${titleLevel}`,
                     'title-icon-reveal',
                     !iconShown && 'is-hidden',
