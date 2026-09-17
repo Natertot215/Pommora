@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import type { EditorView } from '@codemirror/view'
+import type { EditorView, ViewUpdate } from '@codemirror/view'
 import {
   autocompleteQuery,
   commitEdit,
@@ -12,11 +12,12 @@ import {
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docScan } from '../docCache'
-import { normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
+import { inCodeAt } from '../Engine/docScan'
+import { linkAt, normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
 import { restedOnLink } from '../Gestures/linkGestures'
 import type { HeadingTarget } from './headingTarget'
 import type { OutlineHeading } from '../Engine/headingScan'
-import type { EditorHost } from '../api'
+import { type EditorHost, editorHost } from '../api'
 
 export interface CaretGeometry {
   caretX: number
@@ -282,4 +283,29 @@ export function detectConnectionQuery(
     }
   }
   setAc(next)
+}
+
+// Under Automatic, a `§` typed alone in prose, outside a link and code, arms the section form at its position; the arm lapses once the caret leaves that line.
+export function sectionArmAfter(u: ViewUpdate, armed: number | null): number | null {
+  let next = armed
+  for (const tr of u.transactions) {
+    if (
+      !tr.isUserEvent('input.type') ||
+      u.state.facet(editorHost).settings().inPageHeadingResolution !== 'automatic'
+    )
+      continue
+    let at: number | null = null
+    let seen = 0
+    tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+      seen++
+      if (fromA === toA && toB - fromB === 1 && tr.newDoc.sliceString(fromB, toB) === '§')
+        at = fromB
+    })
+    if (seen !== 1 || at === null) continue
+    const line = tr.newDoc.lineAt(at)
+    if (!linkAt(line.text, at - line.from) && !inCodeAt(docScan(tr.newDoc), at)) next = at
+  }
+  if (next === null) return null
+  const caretLine = u.state.doc.lineAt(u.state.selection.main.head).number
+  return next > u.state.doc.length || u.state.doc.lineAt(next).number !== caretLine ? null : next
 }

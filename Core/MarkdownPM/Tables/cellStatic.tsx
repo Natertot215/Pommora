@@ -1,6 +1,13 @@
 import { Fragment, memo, useRef } from 'react'
 import { isCmd } from '@pommora/uix/Interactions/chords'
-import { aliasedToken, linkTarget, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
+import {
+  aliasedToken,
+  headingOf,
+  linkTarget,
+  linkTokenAt,
+  tokenize,
+  type Token,
+} from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import { CONTENT_CLASS } from '../Engine/intents'
 import {
@@ -295,9 +302,8 @@ function cellLinkTarget(
     const [rs, re] = tk.resolveRange ?? tk.contentRange
     const res = api.resolve(text.slice(rs, re))
     const url = text.slice(...tk.range)
-    const heading = tk.fragment ? text.slice(tk.fragment[0], tk.fragment[1]) : undefined
     return res.status === 'resolved' && res.page
-      ? { el, target: { kind: 'page', page: res.page, heading }, url }
+      ? { el, target: { kind: 'page', page: res.page, heading: headingOf(text, tk) }, url }
       : null
   }
   const url = linkTarget(text, tk)
@@ -322,7 +328,7 @@ function menuTarget(
     return {
       kind: 'page',
       page: res.page,
-      heading: tk.fragment ? text.slice(tk.fragment[0], tk.fragment[1]) : undefined,
+      heading: headingOf(text, tk),
       editable: true,
       hasAlias: aliasedToken(tk),
       apply: (action) => {

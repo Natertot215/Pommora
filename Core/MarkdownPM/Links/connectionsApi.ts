@@ -1,5 +1,5 @@
 import type { LinkStatus } from '@pommora/core/Connections/connections'
-import type { Token } from '../Engine/tokens'
+import { headingOf, type Token } from '../Engine/tokens'
 import type {
   ConnCellApply,
   ConnEditAction,
@@ -78,11 +78,10 @@ export function wikiLinkView(
   const res = bare ? null : conn.resolve(text.slice(rs, re))
   const page = res?.page ?? null
   const known = bare ? ownKeys : page ? conn.headingsOf?.(page.path) : undefined
+  const heading = headingOf(text, tk)
   const missing =
-    tk.fragment !== undefined &&
-    known !== undefined &&
-    !known.includes(normalizeTitle(text.slice(tk.fragment[0], tk.fragment[1])))
-  return { status: res ? res.status : tk.fragment ? 'resolved' : 'phantom', page, bare, missing }
+    heading !== undefined && known !== undefined && !known.includes(normalizeTitle(heading))
+  return { status: res ? res.status : heading ? 'resolved' : 'phantom', page, bare, missing }
 }
 
 export function openPage(
