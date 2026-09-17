@@ -121,6 +121,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Editor Scale | `editorScale` | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% (**100%**) |
+| Heading 1–6 Size | `heading1Size` … `heading6Size` | Each heading level's size in em of the page text; the space above a heading follows its size. | 0.50em–2.50em (**1.80 · 1.60 · 1.40 · 1.20 · 1.10 · 1.00**) |
 | Outliner Lines | `outlinerLines` | Draws indent rails on nested lists in the editor. | On · **Off** |
 | Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
 | Arrows | `transformArrows` | `->`, `<-`, `<->`, `>>`, and `<<` become `→`, `←`, `↔`, `»`, and `«`; an arrow list's marker converts either way. | **On** · Off |
