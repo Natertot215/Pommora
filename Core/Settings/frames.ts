@@ -6,6 +6,10 @@ import {
   DEFAULT_TIME_FORMAT,
   HEADING_LINK_STYLE_LABELS,
   HEADING_LINK_STYLES,
+  HEADING_SIZE_DEFAULTS,
+  HEADING_SIZE_KEYS,
+  HEADING_SIZE_MAX,
+  HEADING_SIZE_MIN,
   HISTORY_DAY_STEPS,
   HISTORY_DAYS,
   HISTORY_INTERVAL,
@@ -77,7 +81,10 @@ export type Row =
   | (RowText & {
       kind: 'slider'
       key: KeyOf<number>
+      min: number
       max: number
+      step: number
+      fallback: number
       format: (v: number) => string
     })
   | (RowText & {
@@ -598,6 +605,20 @@ export const FRAMES = roster([
             hint: 'Show indent rails on nested lists in the editor.',
           },
         ],
+      },
+      {
+        title: 'Headings',
+        rows: HEADING_SIZE_KEYS.map((key, i) => ({
+          kind: 'slider',
+          key,
+          label: `Heading ${i + 1} Size`,
+          hint: `Default: ${HEADING_SIZE_DEFAULTS[key].toFixed(2)}em`,
+          min: HEADING_SIZE_MIN,
+          max: HEADING_SIZE_MAX,
+          step: 0.05,
+          fallback: HEADING_SIZE_DEFAULTS[key],
+          format: (v) => `${v.toFixed(2)}em`,
+        })),
       },
       {
         title: 'Transformations',

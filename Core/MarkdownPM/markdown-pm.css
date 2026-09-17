@@ -6,6 +6,12 @@
 
 :root {
   --editor-scale: 1;
+  --h1-size: 1.8em;
+  --h2-size: 1.6em;
+  --h3-size: 1.4em;
+  --h4-size: 1.2em;
+  --h5-size: 1.1em;
+  --h6-size: 1em;
   --page-detail-scale: var(--editor-scale);
   --md-box-radius: 6px;
   --md-box-gap-base: 6px; /* KNOB — the gap at 100% zoom */
@@ -15,6 +21,7 @@
   --glyph-scale: calc(var(--page-detail-scale) * var(--tile-zoom, 1));
   --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
   --fold-chevron-size: calc(var(--text-headline-size) * var(--glyph-scale));
+  --heading-space: 0.325; /* KNOB: the space above a heading, as a share of its size */
   --heading-join-gap: 0.2em; /* KNOB */
   --heading-symbol-shift: -0.06em; /* KNOB */
   position: relative;
@@ -230,22 +237,22 @@
   padding-left: 0;
 }
 .mdpm-editor .cm-line:has(.md-h1) {
-  padding-top: 0.7em;
+  padding-top: calc(var(--h1-size) * var(--heading-space));
 }
 .mdpm-editor .cm-line:has(.md-h2) {
-  padding-top: 0.6em;
+  padding-top: calc(var(--h2-size) * var(--heading-space));
 }
 .mdpm-editor .cm-line:has(.md-h3) {
-  padding-top: 0.5em;
+  padding-top: calc(var(--h3-size) * var(--heading-space));
 }
 .mdpm-editor .cm-line:has(.md-h4) {
-  padding-top: 0.3em;
+  padding-top: calc(var(--h4-size) * var(--heading-space));
 }
 .mdpm-editor .cm-line:has(.md-h5) {
-  padding-top: 0.25em;
+  padding-top: calc(var(--h5-size) * var(--heading-space));
 }
 .mdpm-editor .cm-line:has(.md-h6) {
-  padding-top: 0.15em;
+  padding-top: calc(var(--h6-size) * var(--heading-space));
 }
 .mdpm-editor
   .cm-content
@@ -578,7 +585,7 @@
   white-space: nowrap;
 }
 
-/* KNOB: the six heading sizes below. */
+/* The six heading sizes are the Heading Size settings, declared once at :root; the space above a heading follows its size. */
 .md-h1,
 .md-h2,
 .md-h3,
@@ -588,22 +595,22 @@
   font-weight: var(--weight-bold);
 }
 .md-h1 {
-  font-size: 1.8em;
+  font-size: var(--h1-size);
 }
 .md-h2 {
-  font-size: 1.6em;
+  font-size: var(--h2-size);
 }
 .md-h3 {
-  font-size: 1.4em;
+  font-size: var(--h3-size);
 }
 .md-h4 {
-  font-size: 1.2em;
+  font-size: var(--h4-size);
 }
 .md-h5 {
-  font-size: 1.075em;
+  font-size: var(--h5-size);
 }
 .md-h6 {
-  font-size: 1em;
+  font-size: var(--h6-size);
 }
 .md-heading-marker {
   color: var(--label-secondary);

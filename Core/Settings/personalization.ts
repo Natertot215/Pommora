@@ -130,6 +130,12 @@ export interface Personalization {
   embedScale?: number
   /** A tile states its own size through Embed Scale, so this stops at a tile's edge. */
   editorScale?: number
+  heading1Size?: number
+  heading2Size?: number
+  heading3Size?: number
+  heading4Size?: number
+  heading5Size?: number
+  heading6Size?: number
   citationsShown?: boolean
   jumpToCitation?: boolean
   transformDashes?: boolean
@@ -153,6 +159,31 @@ export const EDITOR_SCALE_DEFAULT = 1
 export function coerceScale(v: unknown, fallback: number): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
   return clamp(v, SCALE_MIN, SCALE_MAX)
+}
+
+/** Each heading level's size in em of the page text; the fallback is the stylesheet's own. */
+export const HEADING_SIZE_KEYS = [
+  'heading1Size',
+  'heading2Size',
+  'heading3Size',
+  'heading4Size',
+  'heading5Size',
+  'heading6Size',
+] as const
+export type HeadingSizeKey = (typeof HEADING_SIZE_KEYS)[number]
+export const HEADING_SIZE_DEFAULTS: Record<HeadingSizeKey, number> = {
+  heading1Size: 1.8,
+  heading2Size: 1.6,
+  heading3Size: 1.4,
+  heading4Size: 1.2,
+  heading5Size: 1.1,
+  heading6Size: 1,
+}
+export const HEADING_SIZE_MIN = 0.5
+export const HEADING_SIZE_MAX = 2.5
+export function coerceHeadingSize(v: unknown, fallback: number): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
+  return clamp(v, HEADING_SIZE_MIN, HEADING_SIZE_MAX)
 }
 
 /** Resize is a viewport, never a scale — a view embed normalizes its table's body text to the editor's before taking the same zoom a page embed does. */
