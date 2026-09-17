@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readPersonalization } from './codec'
 import {
   PREVIEW_PERSISTENCE_DEFAULT,
+  coerceHeadingSize,
   coerceInterfaceScale,
   coercePreviewPersistence,
   previewLingerMs,
@@ -72,5 +73,22 @@ describe('readPersonalization heading link settings', () => {
     expect(
       readPersonalization({ inPageHeadingResolution: 'garbage' }).inPageHeadingResolution,
     ).toBeUndefined()
+  })
+})
+
+describe('coerceHeadingSize', () => {
+  it('clamps to the slider range and falls back on junk', () => {
+    expect(coerceHeadingSize(1.6, 1.8)).toBe(1.6)
+    expect(coerceHeadingSize(9, 1.8)).toBe(2.5)
+    expect(coerceHeadingSize(0.1, 1.8)).toBe(0.5)
+    expect(coerceHeadingSize('big', 1.8)).toBe(1.8)
+  })
+
+  it('reads only a stored number per level, clamped', () => {
+    const p = readPersonalization({ heading2Size: 2, heading6Size: 7, heading3Size: 'x' })
+    expect(p.heading2Size).toBe(2)
+    expect(p.heading6Size).toBe(2.5)
+    expect(p.heading3Size).toBeUndefined()
+    expect(p.heading1Size).toBeUndefined()
   })
 })

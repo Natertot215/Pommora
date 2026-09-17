@@ -1,7 +1,10 @@
 import {
   EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
+  HEADING_SIZE_DEFAULTS,
+  HEADING_SIZE_KEYS,
   type Personalization,
+  coerceHeadingSize,
   coerceScale,
   embedZoom,
   viewEmbedZoom,
@@ -33,6 +36,15 @@ const checkboxVars: VarWriter = (value) => {
   return { '--checkbox-base': base, '--checkbox-border': outline ?? null }
 }
 
+// Unset REMOVES the var so the stylesheet's own size answers; a stored size lands in em of the page text.
+const headingVars: Partial<Record<keyof Personalization, VarWriter>> = {}
+HEADING_SIZE_KEYS.forEach((key, i) => {
+  headingVars[key] = (v) => ({
+    [`--h${i + 1}-size`]:
+      v == null ? null : `${coerceHeadingSize(v, HEADING_SIZE_DEFAULTS[key])}em`,
+  })
+})
+
 const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   embedScale: (v) => {
     const scale = coerceScale(v, EMBED_SCALE_DEFAULT)
@@ -48,6 +60,7 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   highlightColor: (v) => ({ '--highlight': settingColorCss(v, 'var(--accent)') }),
   // Cleared REMOVES `--code` rather than restating the theme's red: the stylesheet declares it at :root, so an absent inline var is what lets the theme keep answering as it moves.
   codeColor: (v) => ({ '--code': settingColorCss(v, null) }),
+  ...headingVars,
   tabMinWidth: (v) => ({ '--tab-min-user': v == null ? null : `${v}px` }),
   tabMaxWidth: (v) => ({ '--tab-max-user': v == null ? null : `${v}px` }),
 }

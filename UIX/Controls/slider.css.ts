@@ -26,4 +26,4 @@ export const knobFill = style({
   background: 'var(--label-control)',
 })
 
-export const readout = style({ flexShrink: 0 })
+export const readout = style({ flexShrink: 0, fontVariantNumeric: 'tabular-nums' })

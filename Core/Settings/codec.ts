@@ -29,6 +29,10 @@ import {
   type FolderPlacement,
   type Personalization,
   type SidebarMode,
+  HEADING_SIZE_DEFAULTS,
+  HEADING_SIZE_KEYS,
+  type HeadingSizeKey,
+  coerceHeadingSize,
 } from './personalization'
 
 type Json = Record<string, unknown>
@@ -48,6 +52,10 @@ export function readPersonalization(raw: unknown): Personalization {
   // An unwritten key stays unwritten — only a stored number clamps to the ramp.
   const scale = (v: unknown, fallback: number): number | undefined =>
     typeof v === 'number' ? coerceScale(v, fallback) : undefined
+  const headingSizes: Partial<Record<HeadingSizeKey, number>> = {}
+  for (const key of HEADING_SIZE_KEYS)
+    if (typeof p[key] === 'number')
+      headingSizes[key] = coerceHeadingSize(p[key], HEADING_SIZE_DEFAULTS[key])
   const ribbonOrder = Array.isArray(p.ribbonOrder)
     ? p.ribbonOrder.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
@@ -114,6 +122,7 @@ export function readPersonalization(raw: unknown): Personalization {
     webZoomFactor: scale(p.webZoomFactor, WEB_ZOOM_DEFAULT),
     embedScale: scale(p.embedScale, EMBED_SCALE_DEFAULT),
     editorScale: scale(p.editorScale, EDITOR_SCALE_DEFAULT),
+    ...headingSizes,
     citationsShown: bool(p.citationsShown),
     jumpToCitation: bool(p.jumpToCitation),
     transformDashes: bool(p.transformDashes),
