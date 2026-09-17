@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { autocompleteQuery as queryOf, commitEdit, connectionInsert } from './autocomplete'
+import {
+  autocompleteQuery as queryOf,
+  commitEdit,
+  connectionInsert,
+  headingRows,
+} from './autocomplete'
 import { tokenize } from '../Engine/tokens'
 import { scanOf } from '../Engine/docScan'
 
@@ -240,5 +245,56 @@ describe('an empty alias asks for the picker by its shape alone', () => {
   it('and a space between them is a written alias, not an empty one', () => {
     const doc = 'a [[Alpha| ]] b'
     expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
+  })
+})
+
+describe('the heading form opens after a typed #', () => {
+  it('an empty fragment after the page names it and asks nothing yet', () => {
+    const doc = 'see [[Page#]] end'
+    const r = autocompleteQuery(doc, doc.indexOf('#') + 1)!
+    expect(r.form).toBe('heading')
+    expect(r.title).toBe('Page')
+    expect(r.query).toBe('')
+  })
+
+  it('a bare fragment names no page at all', () => {
+    const doc = 'see [[#Se]] end'
+    const r = autocompleteQuery(doc, doc.indexOf('Se') + 1)!
+    expect(r.form).toBe('heading')
+    expect(r.title).toBe('')
+    expect(r.query).toBe('Se')
+  })
+
+  it('headingRows filters by prefix and dedupes repeated text', () => {
+    const outline = [
+      { from: 0, level: 1, text: 'Setup', key: 'Setup' },
+      { from: 10, level: 2, text: 'Setup 2', key: 'Setup 2' },
+      { from: 20, level: 1, text: 'Other', key: 'Other' },
+    ]
+    expect(headingRows(outline, 'Set').map((r) => r.label)).toEqual(['Setup', 'Setup 2'])
+    expect(headingRows(outline, '').map((r) => r.label)).toEqual(['Setup', 'Setup 2', 'Other'])
+  })
+
+  it('the chevron commit writes an empty fragment and anchors before the closer', () => {
+    const doc = 'a [[Pag]] b'
+    const ac = autocompleteQuery(doc, doc.indexOf('Pag') + 1)!
+    const row = { value: 'Page', label: 'Page', isPage: true, location: [] }
+    const edit = commitEdit(ac, row, { openHeading: true })
+    const text =
+      doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    expect(text).toBe('a [[Page#]] b')
+    expect(edit.opensHeading).toBe(true)
+    expect(text.slice(edit.anchor)).toBe(']] b')
+  })
+
+  it('a heading commit finishes the link past the closer', () => {
+    const doc = 'a [[Page#Se]] b'
+    const ac = autocompleteQuery(doc, doc.indexOf('Se') + 1)!
+    const row = { value: 'Setup', label: 'Setup', isPage: false, location: [] }
+    const edit = commitEdit(ac, row)
+    const text =
+      doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    expect(text).toBe('a [[Page#Setup]] b')
+    expect(text.slice(edit.anchor)).toBe(' b')
   })
 })

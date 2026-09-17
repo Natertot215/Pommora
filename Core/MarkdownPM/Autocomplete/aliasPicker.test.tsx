@@ -159,6 +159,61 @@ describe('the forget × is inert until it is revealed', () => {
   })
 })
 
+describe('the heading slide’s top row marks how it arrived', () => {
+  let host: HTMLDivElement | null = null
+  let root: Root | null = null
+
+  afterEach(async () => {
+    await act(async () => root?.unmount())
+    host?.remove()
+    root = null
+    host = null
+  })
+
+  const headingAc = {
+    query: '',
+    from: 0,
+    to: 0,
+    form: 'heading' as const,
+    title: 'Notes',
+    caretX: 0,
+    caretTop: 0,
+    caretBottom: 16,
+    bounds: { left: 0, right: 1024 },
+  }
+  const rows = [{ value: 'Setup', label: 'Setup', isPage: false, location: [], level: 1 }]
+
+  const mount = async (viaChevron: boolean): Promise<void> => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => {
+      root?.render(
+        <AutocompletePane
+          ac={headingAc}
+          candidates={rows}
+          index={0}
+          onPick={() => {}}
+          viaChevron={viaChevron}
+        />,
+      )
+    })
+  }
+
+  it('the chevron slide shows a Links · Title top row', async () => {
+    await mount(true)
+    const pane = document.querySelector('.mdpm-ac') as HTMLElement
+    expect(pane.textContent).toContain('Links')
+    expect(pane.textContent).toContain('Notes')
+  })
+
+  it('a hand-typed # shows no top row', async () => {
+    await mount(false)
+    const pane = document.querySelector('.mdpm-ac') as HTMLElement
+    expect(pane.textContent).not.toContain('Links')
+  })
+})
+
 describe('linkAt is the one answer to which link holds an offset', () => {
   const line = 'see [[Q3 Plan|the plan]] and [[Other]] end'
 

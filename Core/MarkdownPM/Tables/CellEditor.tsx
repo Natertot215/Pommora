@@ -17,6 +17,7 @@ import {
   type Edit,
 } from '../Input/edits'
 import { docScan } from '../docCache'
+import { headingTargetOf } from '../Autocomplete/headingTarget'
 import { AC_MAX, aliasRows, pageRow } from '../Autocomplete/autocomplete'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { aliasOnLeave } from '../Links/linkEdit'
@@ -115,6 +116,8 @@ export function CellEditor({
         ? aliasRows(conn, host.aliases, q.title, q.query)
         : conn.candidates(q.query, AC_MAX).map(pageRow)
     },
+    // A cell holds no bare fragment, so an empty title lists nothing.
+    (title) => (title ? headingTargetOf(connections?.(), title) : { outline: [] }),
   )
 
   useEffect(() => {
