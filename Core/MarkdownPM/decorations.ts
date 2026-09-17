@@ -40,7 +40,6 @@ import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
 import { normalizeTitle, type LinkStatus } from '@pommora/core/Connections/connections'
-import { segment } from '@pommora/uix/Elements/segment.css'
 import { editorHost } from './api'
 
 export const MD_LINK_CLASS = 'md-link'
@@ -66,25 +65,18 @@ function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
   return Decoration.widget({ widget: new ConnGlyphWidget(status), side: -1 }).range(at)
 }
 
+// The `§` is the separator itself: spaced on both sides after a page half, flush against the heading when it stands alone.
 class HeadingJoinWidget extends WidgetType {
-  constructor(readonly divider: boolean) {
+  constructor(readonly spaced: boolean) {
     super()
   }
   eq(other: HeadingJoinWidget): boolean {
-    return other.divider === this.divider
+    return other.spaced === this.spaced
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = 'md-heading-join'
-    if (this.divider) {
-      const bar = document.createElement('span')
-      bar.className = `${segment} md-heading-divider`
-      el.append(bar)
-    }
-    const sym = document.createElement('span')
-    sym.className = 'md-heading-symbol'
-    sym.textContent = '§'
-    el.append(sym)
+    el.className = `md-heading-symbol${this.spaced ? ' md-heading-symbol-spaced' : ''}`
+    el.textContent = '§'
     return el
   }
   ignoreEvent(): boolean {

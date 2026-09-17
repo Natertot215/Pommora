@@ -746,7 +746,6 @@ export const FRAMES = roster([
             options: headingLinkStyleOptions,
             fallback: 'page-heading',
           },
-          { kind: 'toggle', key: 'hideHeadingSymbol', label: 'Hide Heading Symbol (§)' },
           {
             kind: 'picker',
             key: 'inPageHeadingResolution',

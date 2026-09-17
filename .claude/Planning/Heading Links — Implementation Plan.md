@@ -67,12 +67,12 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
   - [x] Task 3.5 — Resting cells and the click selectors
   - [x] Task 3.6 — `§` becomes `#` inside a link
   - [x] Review Checkpoint
-- [ ] `[Stop: Nathan eyeballs the display under each setting and adjusts the divider]`
-- [ ] **Phase 4** — The heading pane
-  - [ ] Task 4.1 — The heading form and its rows
-  - [ ] Task 4.2 — Heading rows as pane state; the chevron commit; `→` and `←`
-  - [ ] Task 4.3 — The pane draws the outline and the top row
-  - [ ] Review Checkpoint
+- [x] `[Stop: Nathan eyeballs the display under each setting and adjusts the divider]` — confirmed 09-16-2026; the join's leading gap moved onto the divider and the divider reads `--label-secondary`.
+- [x] **Phase 4** — The heading pane
+  - [x] Task 4.1 — The heading form and its rows
+  - [x] Task 4.2 — Heading rows as pane state; the chevron commit; `→` and `←`
+  - [x] Task 4.3 — The pane draws the outline and the top row
+  - [x] Review Checkpoint
 - [ ] `[Stop: Nathan drives the pane]`
 - [ ] **Phase 5** — Following and Copy Link
   - [ ] Task 5.1 — The pending travel, the travel helpers, and the `arrive` prop
@@ -2793,4 +2793,8 @@ Per the skill's §5.5, written when the chain is confirmed.
 - **Task 2.3, test stubs:** every `stubDialer` test that reaches `applyTree` or `pages:changed` (`store.test.tsx`, `useBridgeSubscriptions.test.tsx`, `devicePrefsSeed.test.ts`) gained an `'index:headings'` channel, and `contentIndex.test.ts` and `open.test.ts` fixtures gained the two new entry fields.
 - **Task 3.5, `titleOf`:** the CHANGE text names `cellLinkTarget` as the site that dropped `titleOf`; in the tree that call sat in `cellStatic.tsx`'s `menuTarget`, which is where it was dropped. The cell test lives in `Tables/cellLinks.test.tsx`, the sibling that already covers resting wikilink cells.
 - **Task 3.1, `frames.ts`:** the two pickers' options are hoisted constants beside `dateFormatOptions`, the file's convention, rather than inline maps.
+- **Phase 3 stop, the display (Nathan's ruling, 09-16-2026):** the divider is gone and the `§` is the separator itself: `Page § Heading` under Page & Heading, `§Heading` under Heading Only, with `--heading-join-gap` and `--heading-symbol-shift` as the KNOBs. **Hide Heading Symbol** is removed from the settings, the codec, the root classes, and the log's C-1 reads accordingly at reconciliation; `personalization.test.ts` adds 1, not 2, and `aliasRender.test.tsx` adds 4, not 5.
+- **Task 4.2, `←` back:** deleting the `#` leaves `[[Title]]`, an exact title, which the page list's exact-match rule would close; the hook holds the page list open on the title it slid back to until the query moves or the pane closes.
+- **Task 4.2, `targetOf`:** the editor and the cell editor shared one body, so it lives once as `Autocomplete/headingTarget.ts`'s `headingTargetOf`; the editor adds the empty-title `docOutline` case, the cell answers nothing.
+- **Task 4.3, the chevron reveal:** `.mdpm-ac-forget` has no rule in `markdown-pm.css`; its reveal is UIX's `removeButton` + `revealFromHost` on the `hoverRemoveHost` row, and the chevron button uses those same classes, so the stylesheet gains no rule.
 - **Task 1.3, `scan.test.ts` header:** the consumer count was already off before this phase (four, not five, outside `connections.ts` and `scan.ts`); it now reads four and names paste-as.

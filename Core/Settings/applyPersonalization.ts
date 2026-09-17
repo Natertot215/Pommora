@@ -57,7 +57,6 @@ const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
   outlinerLines: 'outline-lines',
   codeblockLineCount: 'codeblock-line-count',
   plainUnresolvedLinks: 'plain-unresolved',
-  hideHeadingSymbol: 'hide-heading-symbol',
   nativeHighlight: 'native-highlight',
   muteCheckedItems: 'mute-checked',
 }

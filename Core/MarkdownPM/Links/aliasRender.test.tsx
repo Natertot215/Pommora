@@ -56,45 +56,32 @@ describe('an aliased connection reads as its alias', () => {
 })
 
 describe('a heading link reads per the two heading settings', () => {
-  it('[[Alpha#Setup]] renders the page, a join, and the heading at rest', async () => {
+  it('[[Alpha#Setup]] renders the page, a spaced §, and the heading at rest', async () => {
     const view = await mountEditor({ initialBody: '[[Alpha#Setup]]', connections: conn })
     expect(view.dom.textContent).toContain('Alpha')
-    const join = view.dom.querySelector('.md-heading-join')
-    expect(join?.querySelector('.md-heading-divider')).not.toBeNull()
-    expect(join?.querySelector('.md-heading-symbol')).not.toBeNull()
+    const sym = view.dom.querySelector('.md-heading-symbol')
+    expect(sym?.textContent).toBe('§')
+    expect(sym?.classList.contains('md-heading-symbol-spaced')).toBe(true)
     const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
     expect(heading?.textContent).toBe('Setup')
   })
 
-  it('heading-only style drops the page text and the divider', async () => {
+  it('heading-only style drops the page text and the spacing', async () => {
     const view = await mountEditor({
       initialBody: '[[Alpha#Setup]]',
       connections: conn,
       host: { settings: { headingLinkStyle: 'heading-only' } },
     })
     expect(view.dom.textContent).not.toContain('Alpha')
-    const join = view.dom.querySelector('.md-heading-join')
-    expect(join?.querySelector('.md-heading-divider')).toBeNull()
+    expect(view.dom.querySelector('.md-heading-symbol-spaced')).toBeNull()
   })
 
-  it('hiding the heading symbol keeps the span but the stylesheet hides it', async () => {
-    document.documentElement.classList.add('hide-heading-symbol')
-    try {
-      const view = await mountEditor({ initialBody: '[[Alpha#Setup]]', connections: conn })
-      const sym = view.dom.querySelector('.md-heading-symbol')
-      expect(sym).not.toBeNull()
-    } finally {
-      document.documentElement.classList.remove('hide-heading-symbol')
-    }
-  })
-
-  it('[[#Setup]] on the same page renders the heading alone, with no divider', async () => {
+  it('[[#Setup]] on the same page renders the heading alone, § flush', async () => {
     const view = await mountEditor({
       initialBody: '## Setup\n\n[[#Setup]]',
       connections: conn,
     })
-    const join = view.dom.querySelector('.md-heading-join')
-    expect(join?.querySelector('.md-heading-divider')).toBeNull()
+    expect(view.dom.querySelector('.md-heading-symbol-spaced')).toBeNull()
     const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
     expect(heading?.textContent).toBe('Setup')
   })
