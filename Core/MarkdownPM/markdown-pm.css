@@ -101,7 +101,8 @@
 }
 .mdpm-divider {
   height: 0;
-  margin: 0 var(--content-inset) 0 calc(var(--sidebar-clearance) + var(--content-inset));
+  margin: 0 calc(var(--side-pane-clearance) + var(--content-inset)) 0
+    calc(var(--sidebar-clearance) + var(--content-inset));
 }
 .mdpm-editor .cm-line.md-citation-divider {
   position: relative;
