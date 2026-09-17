@@ -8,7 +8,7 @@ import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { mapWarmSeam, type WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, useSession } from '../Session/store'
-import { readPageDetail } from '../Session/pageDetailCache'
+import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { cancelGlance, closeGlance, insideGlance } from '../Interface/Glance/glanceAction'
@@ -132,6 +132,14 @@ function buildEditorHost(
       ),
     pickTree: () => state().tree?.collections.map(pickNode) ?? [],
     openLink: openWebLink,
+    warmBody: (page) => {
+      const slot = state().pages[page.id]
+      return slot?.status === 'ready' ? slot.body : null
+    },
+    fetchBody: (page) =>
+      fetchPageDetail(page.path)
+        .then((d) => d?.body ?? null)
+        .catch(() => null),
   }
 }
 

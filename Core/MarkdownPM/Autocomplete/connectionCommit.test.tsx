@@ -4,7 +4,6 @@ import { act } from 'react'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge, seedHost } from '../editorHarness'
-import { useSession } from '../../Session/store'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -118,14 +117,8 @@ describe('the chevron slides in a page’s headings', () => {
     open: () => {},
   }
 
-  afterEach(() => {
-    useSession.setState({ pages: {} } as never)
-  })
-
   const seatReady = (id: string, body: string): void => {
-    useSession.setState({
-      pages: { [id]: { status: 'ready', target: {} as never, detail: {} as never, body } },
-    } as never)
+    seedHost({ bodies: { [id]: body } })
   }
 
   it('the arrow-right chevron opens the fragment and lists the page’s headings', async () => {
@@ -165,6 +158,46 @@ describe('the chevron slides in a page’s headings', () => {
       )
     })
     expect(view.state.doc.toString()).toBe('[[Notes#Setup]]')
+  })
+
+  it('the alias slide follows a heading commit when the page has aliases', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    seedHost({ bodies: { pNotes: '## Setup\n\nbody' }, aliases: { pNotes: ['the notes'] } })
+    const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    for (const key of ['ArrowRight', 'Enter'])
+      await act(async () => {
+        view.contentDOM.dispatchEvent(
+          new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+        )
+      })
+    expect(view.state.doc.toString()).toBe('[[Notes#Setup|]]')
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('the notes')
+  })
+
+  it('an abandoned heading slot drops its # when the caret leaves', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    const view = await mountEditor({ initialBody: '[[Not]] tail', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[[Notes#]] tail')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('[[Notes]] tail')
   })
 
   it('arrow-left backs the fragment out again', async () => {

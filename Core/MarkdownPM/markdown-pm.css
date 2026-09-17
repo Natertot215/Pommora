@@ -344,7 +344,6 @@
 }
 .md-connection-heading-missing {
   color: var(--label-tertiary);
-  cursor: default;
 }
 
 .md-connection-typing {

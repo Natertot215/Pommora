@@ -128,7 +128,7 @@ export function CellEditor({
         ? aliasRows(conn, host.aliases, q.title, q.query)
         : conn.candidates(q.query, AC_MAX).map(pageRow)
     },
-    (title) => headingTargetOf(connections?.(), title),
+    (title) => headingTargetOf(host, connections?.(), title),
   )
 
   useEffect(() => {
