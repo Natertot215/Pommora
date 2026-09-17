@@ -1,6 +1,5 @@
 ## Core
 
-
 The Nexus on disk, the data layer that reads and writes it, and the rules that hold across every entity. Per-domain depth lives in each domain's own document; this one is the map. The PRD carries the product-level storage model, and [[DesktopPM]] what is true only of the desktop app.
 
 ### The Nexus Layout
