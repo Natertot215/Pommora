@@ -73,7 +73,7 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
   - [x] Task 4.2 — Heading rows as pane state; the chevron commit; `→` and `←`
   - [x] Task 4.3 — The pane draws the outline and the top row
   - [x] Review Checkpoint
-- [ ] `[Stop: Nathan drives the pane]`
+- [x] `[Stop: Nathan drives the pane]` — driven 09-16-2026 through the chevron, collapse, caret, and § rulings above; the remaining stops fold into one live walk after Phase 8 at Nathan's direction.
 - [ ] **Phase 5** — Following and Copy Link
   - [ ] Task 5.1 — The pending travel, the travel helpers, and the `arrive` prop
   - [ ] Task 5.2 — The click carries the heading
