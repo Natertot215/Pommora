@@ -80,7 +80,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     for (const title of ['Headings', 'Lists', 'Link', 'Insert', 'Embed'])
       expect(text).toContain(title)
     expect(text).toContain('Footnote')
-    expect(rows()).toHaveLength(20)
+    expect(rows()).toHaveLength(21)
     expect(marks()).toEqual([])
   })
 
@@ -90,7 +90,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     const text = pane()?.textContent ?? ''
     expect(text).toContain('Headings')
     for (const title of ['Lists', 'Link', 'Insert', 'Embed']) expect(text).not.toContain(title)
-    expect(rows()).toHaveLength(5)
+    expect(rows()).toHaveLength(6)
   })
 
   it('keeps every row of a section whose title answers the query', async () => {
@@ -242,7 +242,7 @@ describe('the query is emphasized wherever it matched', () => {
   it('marks each row when the title and the rows matched alike', async () => {
     const view = await open('')
     await type(view, '/hea')
-    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
+    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
   })
 
   it('marks nothing when the rows matched only through their section', async () => {
@@ -276,7 +276,7 @@ describe('the block menu opens with no row highlighted', () => {
   it('draws nothing as selected until an arrow moves the cursor', async () => {
     const view = await open('')
     await type(view, '/')
-    expect(rows()).toHaveLength(20)
+    expect(rows()).toHaveLength(21)
     expect(highlighted()).toHaveLength(0)
   })
 

@@ -13,6 +13,7 @@ describe('the block menu catalog', () => {
       'Heading 3',
       'Heading 4',
       'Heading 5',
+      'Heading 6',
     ])
     expect(seated[1].rows.map((r) => r.label)).toEqual([
       'Bullet List',
@@ -37,9 +38,9 @@ describe('the block menu catalog', () => {
   })
 
   it('offers Footnote only where a marker can bind', () => {
-    expect(seated.flatMap((s) => s.rows)).toHaveLength(20)
+    expect(seated.flatMap((s) => s.rows)).toHaveLength(21)
     const unseated = blockMenuSections(false)
-    expect(unseated.flatMap((s) => s.rows)).toHaveLength(19)
+    expect(unseated.flatMap((s) => s.rows)).toHaveLength(20)
     expect(unseated.flatMap((s) => s.rows).map((r) => r.label)).not.toContain('Footnote')
   })
 
@@ -55,7 +56,7 @@ describe('the block menu filter', () => {
     const hea = filterBlockMenu(seated, 'hea')
     expect(hea.map((s) => s.title)).toEqual(['Headings'])
     expect(hea[0].at).toBe(0)
-    expect(hea[0].rows).toHaveLength(5)
+    expect(hea[0].rows).toHaveLength(6)
     expect(hea[0].rows.every((r) => r.at === 0)).toBe(true)
     expect(filterBlockMenu(seated, 'HEA')).toEqual(hea)
   })
@@ -118,7 +119,7 @@ describe('the block menu filter', () => {
     const all = filterBlockMenu(seated, '')
     expect(all.map((s) => s.title)).toEqual(seated.map((s) => s.title))
     expect(all.every((s) => s.at === 0)).toBe(true)
-    expect(all.flatMap((s) => s.rows)).toHaveLength(20)
+    expect(all.flatMap((s) => s.rows)).toHaveLength(21)
     expect(all.flatMap((s) => s.rows).every((r) => r.at === 0)).toBe(true)
   })
 })
