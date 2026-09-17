@@ -132,6 +132,27 @@ describe('the editor reports a settled heading rename', () => {
     expect(view.state.doc.toString()).toBe('## Intro\n[[#Intro]]')
   })
 
+  it('a settled retype rewrites a bare §run too under Automatic', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## Setup\nsee §Setup and [[#Setup]]',
+      onHeadingRename,
+      host: { settings: { inPageHeadingResolution: 'automatic' } },
+    })
+    await act(async () => {
+      view.dispatch({ changes: { from: 3, to: 8, insert: '' } })
+    })
+    await act(async () => {
+      view.dispatch({ changes: { from: 3, to: 3, insert: 'Intro' } })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('## Intro\nsee §Intro and [[#Intro]]')
+    expect(onHeadingRename).toHaveBeenCalledWith('Setup', 'Intro')
+  })
+
   it('renaming one of two identical headings fires nothing (the survivor keeps the links)', async () => {
     const onHeadingRename = vi.fn()
     const view = await mountEditor({

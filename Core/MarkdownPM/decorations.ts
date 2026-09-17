@@ -483,8 +483,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
       const open = active.has(i)
       // Revealed, an alias shows its whole target, page and heading both.
-      const pipe = alias
-        ? ([rs, tk.fragment?.[1] ?? re] as [number, number])
+      const pipe: [number, number] | undefined = alias
+        ? [rs, tk.fragment?.[1] ?? re]
         : text[tk.contentRange[1]] === '|'
           ? tk.contentRange
           : undefined

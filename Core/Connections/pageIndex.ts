@@ -8,7 +8,7 @@ export interface ConnPage {
   icon?: string
 }
 
-interface ConnResolution {
+export interface ConnResolution {
   status: LinkStatus
   page?: ConnPage
 }
