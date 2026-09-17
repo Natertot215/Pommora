@@ -2,16 +2,16 @@
 
 ### Context
 
-Connections reach a Page and nothing inside it: the wikilink grammar in `Core/Connections/connections.ts` admits `#` as a title character, so `[[Page#Heading]]` today parses as one page titled `Page#Heading`, resolves as a phantom, and drops out of the rename cascade. This plan implements the decision log at `.claude/Planning/Heading Links — Decision Log.md`: the grammar splits page from fragment once and every consumer inherits it; the content index records each page's heading keys and each heading link; the editor renders `Page ┃ §Heading` per two settings and marks a heading that no longer exists; the autocomplete lists a page's headings after `#` or `§`, with a chevron slide from a page row; a click opens the page and travels to the heading, on the main tab, the Page Window, and the glance pane; the heading grip gains Copy Link; a heading rename rewrites its inbound links, same-page inside the editor transaction and cross-page through main; and an Automatic mode resolves a bare `§Heading` in prose. It touches `Core/Connections`, `Core/Index`, `Desktop/Store`, `Core/Contract`, `Core/MarkdownPM` (Engine, decorations, Autocomplete, Links, Guards, Menus, docCache), `Core/Session`, `Core/Pages`, `Core/Tiles/Surfaces/PageTile.tsx`, `Core/Interface/Glance`, `Core/Settings`, `Core/Actions/gripMenu.ts`, and the four documents that describe them. It leaves embeds inert to fragments, Link property values page-only, block anchors and nested heading paths as prospects, and the pixel treatment of the divider to a Figma pass Nathan takes at the first stop.
+Connections reach a Page and nothing inside it: the wikilink grammar in `Core/Connections/connections.ts` admits `#` as a title character, so `[[Page#Heading]]` today parses as one page titled `Page#Heading`, resolves as a phantom, and drops out of the rename cascade. This plan implements the decision log at `.claude/Planning/Heading Links — Decision Log.md`: the grammar splits page from fragment once and every consumer inherits it; the content index records each page's heading keys and each heading link; the editor renders `Page § Heading` per Heading Link Style and marks a heading that no longer exists; the autocomplete lists a page's headings after `#` or `§`, with a chevron slide from a page row; a click opens the page and travels to the heading, on the main tab, the Page Window, and the glance pane; the heading grip gains Copy Link; a heading rename rewrites its inbound links, same-page inside the editor transaction and cross-page through main; and an Automatic mode resolves a bare `§Heading` in prose. It touches `Core/Connections`, `Core/Index`, `Desktop/Store`, `Core/Contract`, `Core/MarkdownPM` (Engine, decorations, Autocomplete, Links, Guards, Menus, docCache), `Core/Session`, `Core/Pages`, `Core/Tiles/Surfaces/PageTile.tsx`, `Core/Interface/Glance`, `Core/Settings`, `Core/Actions/gripMenu.ts`, and the four documents that describe them. It leaves embeds inert to fragments, Link property values page-only, block anchors and nested heading paths as prospects, and the `§`'s spacing and shift to two stylesheet knobs set at the first stop.
 
 ### Summary
 
-After this plan, typing `[[Notes#` in a page lists the headings of the page called Notes, and picking one writes a link that reads as the page name, a thin divider, and `§Setup`. Clicking it opens Notes and scrolls to that heading, opening any folded section on the way; hovering shows the glance pane already scrolled there. A page's own headings can be linked with `[[#Setup]]`, which shows only the heading. Renaming a heading that other pages link to rewrites those links, so the connection survives; a heading that no longer exists reads muted so the reader knows. The heading menu gains Copy Link, two settings choose how a heading link reads, and a third, off by default, lets a bare `§Setup` in prose act as a link to the heading on the same page.
+After this plan, typing `[[Notes#` in a page lists the headings of the page called Notes, and picking one writes a link that reads as the page name, a `§`, and `Setup`. Clicking it opens Notes and scrolls to that heading, opening any folded section on the way; hovering shows the glance pane already scrolled there. A page's own headings can be linked with `[[#Setup]]`, which shows only the heading. Renaming a heading that other pages link to rewrites those links, so the connection survives; a heading that no longer exists reads muted so the reader knows. The heading menu gains Copy Link, one setting chooses how a heading link reads, and another, off by default, lets a bare `§Setup` in prose act as a link to the heading on the same page.
 
 #### Constraints
 
 - Gates, from the repo root with `set -o pipefail`: `npm run typecheck` · `npm run test` · `npm run lint` — each exits 0; read each tail. Biome formats on write (single quotes, no semicolons); an Edit failing on whitespace means re-read and retry; a shell-driven edit is repaired by `npm run format`. Comments are `//` line comments, only where a boundary needs stating.
-- Settled rulings (never re-litigate): the fragment is the literal heading text after `#`, no slug; `§` typed inside `[[ ]]` becomes `#` on the keystroke and the file only ever holds `#`; `#` and `§` leave every name; `[[#Heading]]` names the page's own heading and renders the heading alone under either style; an alias overrides both halves; the divider is `UIX/Elements/segment.css`'s hairline; the three settings sit under Pages & Writing › Links; duplicates resolve to the nearest heading (same page: nearest the link; cross-page: nearest the target's warm scroll position, else first top-to-bottom), read target-side at travel time; the chevron slide shows a `‹ Links · Page` top row only in that flow, and a typed `#` opens the bare list; a page with no headings or a filter with no match closes the pane; the cascade rewrites only linked headings, same-page inside the editor transaction, cross-page after the edit settles; a rename whose old text survives on the page cascades nothing cross-page; the fourth state is a state of the fragment span, never a fourth `LinkStatus`; embeds stay inert and answer in three statuses; assets named with `#` are refused at adoption; Explicit is the default of In-Page Heading Resolution and a bare `§Heading` stays bare in the file; a bare run has no menu and no glance.
+- Settled rulings (never re-litigate): the fragment is the literal heading text after `#`, no slug; `§` typed inside `[[ ]]` becomes `#` on the keystroke and the file only ever holds `#`; `#` and `§` leave every name; `[[#Heading]]` names the page's own heading and renders the heading alone under either style; an alias overrides both halves; the `§` is the separator itself; the two settings sit under Pages & Writing › Links; duplicates resolve to the nearest heading (same page: nearest the link; cross-page: nearest the target's warm scroll position, else first top-to-bottom), read target-side at travel time; the chevron slide shows a `‹ Links · Page` top row only in that flow, and a typed `#` opens the bare list; a page with no headings or a filter with no match closes the pane; the cascade rewrites only linked headings, same-page inside the editor transaction, cross-page after the edit settles; a rename whose old text survives on the page cascades nothing cross-page; the fourth state is a state of the fragment span, never a fourth `LinkStatus`; embeds stay inert and answer in three statuses; assets named with `#` are refused at adoption; Explicit is the default of In-Page Heading Resolution and a bare `§Heading` stays bare in the file; a bare run has no menu and no glance.
 - Frozen interfaces: `LinkStatus` stays `'resolved' | 'phantom' | 'ambiguous'`; `PageIndex.resolve` keeps answering for pages; `mentions(path, title)` keeps its shape and `queryMentions(title)` its contract; `registerPageEditor` stays a singleton; `pageEmbedPattern`'s embed stays a token to the tile field.
 - The host owns the machine: Core reaches it only through `Core/Platform`; every new channel is declared once in `Core/Contract/bridge.ts` and answers a `Result`.
 - Never expensive work on a high-frequency trigger: the decoration pass reads `docOutline` and `conn.headingsOf`, never a fresh `headingOutline` per link; the rename guard reads two lines per transaction, never two documents; the settle detector asks main once per settled rename; no per-caret channel call.
@@ -42,7 +42,7 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
 - `grep -rn "§" Core --include='*.ts' --include='*.tsx' --include='*.css' | wc -l` → 0 — grows (UIX and Desktop hold two `§` in comments; untouched)
 
 **START:** 2026-09-16T22:36:29Z
-**END:** <same command, run as the report is given>
+**END:** 2026-09-17T04:40:05Z
 
 #### Implementation Process
 
@@ -2721,13 +2721,13 @@ export async function indexWrittenPage(root: string, abs: string): Promise<void>
 
 **Conformance**
 
-- [ ] No duplicated mechanism: `grep -rn "indexOf('#')" Core --include='*.ts'` finds only `links.ts` and `rewrite.ts`; `grep -rn "§" Core --include='*.ts' --include='*.tsx'` finds only `sections.ts`, `headingHash.ts`, `decorations.ts`, `connections.ts`, `names.ts`, the settings label, and tests.
+- [ ] No duplicated mechanism: `grep -rn "indexOf('#')" Core --include='*.ts'` finds only `links.ts` and `rewrite.ts`; `grep -rn "§" Core --include='*.ts' --include='*.tsx'` finds only `scan.ts`, `rewrite.ts`, `names.ts`, `headingHash.ts`, `decorations.ts`, `cellStatic.tsx`, `connectionClicks.ts`, `useConnectionAutocomplete.ts`, `MarkdownEditor.tsx`, and tests.
 - [ ] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` matches the FILES lists plus Biome-touched formatting.
 - [ ] No new settings row carries a `hint`.
 
 **Correctness**
 
-- [ ] `[[Page#Heading]]`, `[[#Heading]]`, `[[Page#Heading|alias]]`, `[Alias](Page#Heading)`, `[Alias](#Heading)` each render per the settings and travel on click.
+- [ ] `[[Page#Heading]]`, `[[#Heading]]`, `[[Page#Heading|alias]]`, `[Alias](Page#Heading)`, `[Alias](#Heading)` each resolve their fragment and travel on click, the wikilink forms rendering per the setting and the markdown forms drawing their label.
 - [ ] A page rename keeps every fragment; a linked heading's rename rewrites same-page links in one undo step and cross-page links after settle; an Obsidian rename follows.
 - [ ] A heading link whose heading is gone reads muted, cross-page included, once the index has seeded.
 - [ ] End to end: open NexusOS, type `[[Notes#`, pick a heading, click the link, land on it, rename the heading, watch the link follow, undo, watch it return.
@@ -2748,18 +2748,18 @@ export async function indexWrittenPage(root: string, abs: string): Promise<void>
 **Confidence**
 
 - [ ] Gates green from clean on `<baseline>..HEAD`; Baseline counts moved as planned.
-- [ ] Diff size as the plan implied: on the order of +1400/−150, comments and tests excluded.
+- [x] Diff size: +1894/−329, comments and tests excluded, the plan's +1400/−150 grown by the bare `§` run, the citation carry, the heading ordinal and its generation step, and three review passes.
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to the user — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6 · Phase 7 · Phase 8
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `<baseline commit>..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Review dispatched: one Fable simplifier and one Fable adversarial reviewer over the full range, at Nathan's direction, after a first pair over Phases 1–4
+- [x] All findings fixed or ruled on
+- [x] Neutral verification (Opus) passed on `1d52ab413..d7c25ae94`; its two log misses (E-3, B-1) and the stale plan prose are reconciled in the closing commit
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -2780,9 +2780,9 @@ Per the skill's §5.5, written when the chain is confirmed.
 
 ### Open Items
 
-- The divider's pixel treatment (decision log C-6): the first pass is Task 3.4's two KNOBs; Nathan adjusts at the stop after Phase 3.
-- Settings hint copy for the three rows: Nathan's, in flight.
+- Settings hint copy for the two rows: Nathan's, in flight.
 - History entry: not written unless Nathan asks at closeout.
+- The headings map loads once per nexus: pages an excluded-folder change admits read as unknown, never missing, until they next change; the fix is a full reload after the two settings handlers that re-seed, which needs a push the renderer can tell from a tree reconcile.
 
 ### Deviations
 
@@ -2793,7 +2793,7 @@ Per the skill's §5.5, written when the chain is confirmed.
 - **Task 2.3, test stubs:** every `stubDialer` test that reaches `applyTree` or `pages:changed` (`store.test.tsx`, `useBridgeSubscriptions.test.tsx`, `devicePrefsSeed.test.ts`) gained an `'index:headings'` channel, and `contentIndex.test.ts` and `open.test.ts` fixtures gained the two new entry fields.
 - **Task 3.5, `titleOf`:** the CHANGE text names `cellLinkTarget` as the site that dropped `titleOf`; in the tree that call sat in `cellStatic.tsx`'s `menuTarget`, which is where it was dropped. The cell test lives in `Tables/cellLinks.test.tsx`, the sibling that already covers resting wikilink cells.
 - **Task 3.1, `frames.ts`:** the two pickers' options are hoisted constants beside `dateFormatOptions`, the file's convention, rather than inline maps.
-- **Phase 3 stop, the display (Nathan's ruling, 09-16-2026):** the divider is gone and the `§` is the separator itself: `Page § Heading` under Page & Heading, `§Heading` under Heading Only, with `--heading-join-gap` and `--heading-symbol-shift` as the KNOBs. **Hide Heading Symbol** is removed from the settings, the codec, the root classes, and the log's C-1 reads accordingly at reconciliation; `personalization.test.ts` adds 1, not 2, and `aliasRender.test.tsx` adds 4, not 5.
+- **Phase 3 stop, the display (Nathan's ruling, 09-16-2026):** the divider is gone and the `§` is the separator itself: `Page § Heading` under Page & Heading, `§Heading` under Heading Only, with `--heading-join-gap` and `--heading-symbol-shift` as the KNOBs. **Hide Heading Symbol** is removed from the settings, the codec, the root classes, and the log's C-1 reads accordingly at reconciliation; `personalization.test.ts` still adds 2 (both cases cover the two settings that remain) and `aliasRender.test.tsx` adds 4 here, 9 by the end.
 - **Task 4.2, `←` back:** deleting the `#` leaves `[[Title]]`, an exact title, which the page list's exact-match rule would close; the hook holds the page list open on the title it slid back to until the query moves or the pane closes.
 - **Task 4.2, `targetOf`:** the editor and the cell editor shared one body, so it lives once as `Autocomplete/headingTarget.ts`'s `headingTargetOf`; the editor adds the empty-title `docOutline` case, the cell answers nothing.
 - **Task 4.3, the chevron reveal:** `.mdpm-ac-forget` has no rule in `markdown-pm.css`; its reveal is UIX's `removeButton` + `revealFromHost` on the `hoverRemoveHost` row, and the chevron button uses those same classes, so the stylesheet gains no rule.
@@ -2806,4 +2806,5 @@ Per the skill's §5.5, written when the chain is confirmed.
 - **Task 7.2, the click test:** no `connectionClicks.test.tsx` exists; the run's click, hover, and right-click cases sit in `Links/linkEdges.test.tsx` beside the `[[#Setup]]` travel cases.
 - **Task 7.3, the pane:** the `section` form rides the heading form's outline read, rows, open gate, and exact-match close; only the alias slide is gated to the heading form proper. The suite under a load average above 18 (a VM pinning a core) times out `citationBreakage` and `embedAbsorb` sweeps at 5 s and cascades two mount errors from the skipped cleanup; both files pass alone and the whole suite passes under `--testTimeout=30000`, so the gate is read there.
 - **Task 8.1, the cut:** Nathan trimmed the documentation mid-session and the shorter cuts stand: §Resolution carries the missing heading as one clause, §The Rename Cascade and §Rendering each gain two sentences rather than paragraphs, §Autocomplete's heading bullet is his own wording, and §In-Page Heading Resolution is four sentences.
+- **Closeout (09-17-2026):** a Fable simplifier hoisted the rename settle (`headingRenameSettle`) and the `§` arming (`sectionArmAfter`) out of the editor's listener, folded the fragment read into `headingOf`, and dropped `encodePageTarget`, which nothing read. A Fable adversarial review found the cascade's two real holes, both fixed: a second line's rename now settles the held one first and the pending record follows its line through edits; the index re-scan reports a rename only when one linked heading gives way to one fresh heading at its ordinal (the `headings` table gained `ordinal`, `INDEX_GENERATION` is 5, and a generation step now recreates the index tables rather than emptying them, since `CREATE TABLE IF NOT EXISTS` keeps an old shape); the watcher alone cascades an external rename, so an editor's own save never races its settle and `Index` no longer imports `Nexus`; a duplicate heading's rename moves only the links nearest it; the fold rekey matches a numbered duplicate and not a longer sibling; a click on the `§` follows the link; a bare fragment in a cell travels through the widget's view; a Heading Link Style flip reaches cells on screen; the glance and history render a missing heading; the mount travel reads the warm position; one `expressibleHeading` rule gates Copy Link and the pane's rows. The live walk over CDP against NexusOS (43 checks, 42 passing, the last a stale settings key removed by hand) found two more: a `[[#]]` being written emitted an empty mark that crashed CodeMirror's decoration plugin for the life of the editor, and a caret placed in a link to a cold page flashed an empty pane; both fixed and pinned. Ruled: `→` after Back re-slides; the pane's collapse state stays its own set; the watcher's two-second write-echo window swallows an external edit that lands within two seconds of the app's own save of that file, a standing limit outside this work. Nathan's own edit to `Core/Tiles/Surfaces/view-tile.css.ts` rode inside `ace1fc87a` and he reverted it in `18949cb18`.
 - **Task 1.3, `scan.test.ts` header:** the consumer count was already off before this phase (four, not five, outside `connections.ts` and `scan.ts`); it now reads four and names paste-as.
