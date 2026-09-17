@@ -68,6 +68,42 @@ describe('the editor reports a settled heading rename', () => {
     expect(onHeadingRename).toHaveBeenCalledTimes(2)
   })
 
+  it('a rename on a second line settles the first before it opens', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({ initialBody: '## A\n[[#A]]\n## B\n[[#B]]', onHeadingRename })
+    await act(async () => {
+      view.dispatch({ changes: { from: 4, to: 4, insert: 'x' }, userEvent: 'input.type' })
+    })
+    await act(async () => {
+      view.dispatch({ changes: { from: 18, to: 18, insert: 'y' }, userEvent: 'input.type' })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(onHeadingRename).toHaveBeenCalledWith('A', 'Ax')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(onHeadingRename).toHaveBeenLastCalledWith('B', 'By')
+    expect(view.state.doc.toString()).toBe('## Ax\n[[#Ax]]\n## By\n[[#By]]')
+  })
+
+  it('Enter at the start of a pending heading line still settles it', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({ initialBody: '## Setup\ntext', onHeadingRename })
+    await act(async () => {
+      view.dispatch({ changes: { from: 8, to: 8, insert: 'x' }, userEvent: 'input.type' })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 0, to: 0, insert: '\n' },
+        selection: { anchor: 0 },
+        userEvent: 'input.type',
+      })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(onHeadingRename).toHaveBeenCalledWith('Setup', 'Setupx')
+  })
+
   it('blurring settles a pending rename too', async () => {
     const onHeadingRename = vi.fn()
     const view = await mountEditor({

@@ -17,6 +17,7 @@ import { corpusFiles } from '../Files/walk'
 import { sweepAdmitsBody, splitEnvelope } from '../Files/pageFile'
 import { readFile } from 'node:fs/promises'
 import { indexWrittenPage, seedContentIndex } from './indexSeed'
+import { renameHeadingCascade } from '../Nexus/cascade'
 import { newContentId } from '../Nexus/ids'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
@@ -137,8 +138,11 @@ describe('seedContentIndex', () => {
     await seedContentIndex(root)
     // An external editor rewrites only the heading line — the raw file's link still reads the old heading, exactly as an outside writer leaves it.
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n[[#Setup]]\n`)
-    await indexWrittenPage(root, abs('Notes', 'A.md'))
-    await new Promise((r) => setTimeout(r, 30))
+    const seen = await indexWrittenPage(root, abs('Notes', 'A.md'))
+    expect(seen).toEqual({ title: 'A', old: 'setup', next: 'Intro' })
+    await renameHeadingCascade(root, seen!.title, seen!.old, seen!.next, null)
+    // The cascade's own writes re-enter the re-scan with nothing gone, so nothing loops.
+    expect(await indexWrittenPage(root, abs('Notes', 'B.md'))).toBeNull()
     expect(splitEnvelope(await readFile(abs('Notes', 'A.md'), 'utf8')).body).toBe(
       '## Intro\n\n[[#Intro]]\n',
     )
@@ -153,9 +157,18 @@ describe('seedContentIndex', () => {
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\n---\n\n## One\n\n## Two\n\n[[#Setup]]\n`,
     )
-    await indexWrittenPage(root, abs('Notes', 'A.md'))
-    await new Promise((r) => setTimeout(r, 30))
-    expect(splitEnvelope(await readFile(abs('Notes', 'B.md'), 'utf8')).body).toBe('[[A#Setup]]\n')
+    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toBeNull()
+  })
+
+  it('a linked heading replaced by a section elsewhere is not a rename', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n## Keep\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${newContentId('page')}\n---\n\n[[A#Setup]]\n`)
+    await seedContentIndex(root)
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\n---\n\n## Keep\n\n## Meeting Notes\n`,
+    )
+    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toBeNull()
   })
 
   it('with no database the seed stands down and queries stay null', async () => {

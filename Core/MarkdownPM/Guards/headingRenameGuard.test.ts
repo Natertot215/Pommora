@@ -37,6 +37,12 @@ describe('headingRenameGuard', () => {
     expect(effects[0].value).toEqual({ old: 'Setup', next: 'Setupx', line: 1 })
   })
 
+  it('renaming one of two identical headings moves only the links nearest it', () => {
+    const v = new MiniView('## Setup\n[[#Setup]]\n## Setup\n[[#Setup]]')
+    v.dispatch(v.state.update({ changes: { from: 28, to: 28, insert: 'x' } }))
+    expect(v.state.doc.toString()).toBe('## Setup\n[[#Setup]]\n## Setupx\n[[#Setupx]]')
+  })
+
   it('one undo restores the original document', () => {
     const doc = '## Setup\n[[#Setup]] §Setup'
     const view = new MiniView(doc)

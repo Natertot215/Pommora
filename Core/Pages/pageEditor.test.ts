@@ -10,14 +10,14 @@ describe('renameHeading', () => {
     const foldsSet = vi.fn(async () => ok(null))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'connections:headingRenamed': cascade,
-      'folds:get': async () => ok({ p1: ['Setup', 'Setup 2', 'Other'] }),
+      'folds:get': async () => ok({ p1: ['Setup', 'Setup 2', 'Setup Notes', 'Other'] }),
       'folds:set': foldsSet,
     })
 
     await renameHeading('p1', 'Setup', 'Intro')
 
     expect(cascade).toHaveBeenCalledWith('p1', 'Setup', 'Intro')
-    expect(foldsSet).toHaveBeenCalledWith('p1', ['Intro', 'Intro 2', 'Other'])
+    expect(foldsSet).toHaveBeenCalledWith('p1', ['Intro', 'Intro 2', 'Setup Notes', 'Other'])
   })
 
   it('does nothing to folds when the page has none', async () => {
