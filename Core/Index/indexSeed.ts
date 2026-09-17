@@ -121,7 +121,7 @@ export interface HeadingRenameSeen {
   next: string
 }
 
-// Re-indexes a written page and reports a heading rename it reads: one linked heading gone and one fresh heading standing in its place, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+// Re-indexes a written page and reports a heading rename it reads: one linked heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
 export async function indexWrittenPage(
   root: string,
   abs: string,

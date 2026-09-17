@@ -14,7 +14,7 @@ import type {
 
 interface MemoryIndex {
   mentions: Map<string, { path: string; title: string }>
-  headings: Map<string, { path: string; heading: string }>
+  headings: Map<string, { path: string; heading: string; ordinal: number }>
   headingMentions: Map<string, { path: string; title: string; heading: string }>
   values: Map<string, { path: string; key: string; value: string }>
   memberships: Map<string, { path: string; key: string; title: string }>
@@ -59,7 +59,9 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     upsertPageIndex(path, entry, stat) {
       clearPath(path)
       for (const title of entry.mentions) index.mentions.set(k(path, title), { path, title })
-      for (const heading of entry.headings) index.headings.set(k(path, heading), { path, heading })
+      entry.headings.forEach((heading, ordinal) => {
+        index.headings.set(k(path, heading), { path, heading, ordinal })
+      })
       for (const { title, heading } of entry.headingMentions)
         index.headingMentions.set(k(path, title, heading), { path, title, heading })
       for (const [key, value] of Object.entries(entry.values))
@@ -75,7 +77,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       for (const row of [...index.mentions.values()].filter((r) => r.path === oldPath))
         index.mentions.set(k(newPath, row.title), { path: newPath, title: row.title })
       for (const row of [...index.headings.values()].filter((r) => r.path === oldPath))
-        index.headings.set(k(newPath, row.heading), { path: newPath, heading: row.heading })
+        index.headings.set(k(newPath, row.heading), { ...row, path: newPath })
       for (const row of [...index.headingMentions.values()].filter((r) => r.path === oldPath))
         index.headingMentions.set(k(newPath, row.title, row.heading), {
           path: newPath,
@@ -118,7 +120,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         if (!underPrefix(row.path, oldDir)) continue
         index.headings.delete(key)
         const path = move(row.path)
-        index.headings.set(k(path, row.heading), { path, heading: row.heading })
+        index.headings.set(k(path, row.heading), { ...row, path })
       }
       for (const [key, row] of [...index.headingMentions]) {
         if (!underPrefix(row.path, oldDir)) continue
@@ -163,7 +165,8 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     readHeadings(paths) {
       const out: Record<string, string[]> = {}
       for (const p of paths ?? []) out[p] = []
-      for (const { path, heading } of index.headings.values()) {
+      const rows = [...index.headings.values()].sort((a, b) => a.ordinal - b.ordinal)
+      for (const { path, heading } of rows) {
         if (paths && !paths.includes(path)) continue
         out[path] ??= []
         out[path].push(heading)

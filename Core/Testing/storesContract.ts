@@ -168,18 +168,18 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Notes/A.md',
         {
           mentions: [],
-          headings: ['setup'],
+          headings: ['setup', 'intro'],
           headingMentions: [{ title: 'beta', heading: 'setup' }],
           values: {},
           memberships: [],
         },
         STAT,
       )
-      expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup'] })
-      expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': ['setup'] })
+      expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
+      expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/A.md'])
       store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
-      expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': ['setup'] })
+      expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': ['setup', 'intro'] })
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/Alpha.md'])
     })
 

@@ -117,7 +117,8 @@ export function useConnectionAutocomplete(
   // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
   const target = useMemo(() => (heading ? targetOf(title ?? '') : null), [heading, title])
   const outline = target ? (target.outline ?? fetched) : null
-  const loading = heading && outline === null
+  // A freshly typed `#` shows the empty frame while a cold page's rows load; a typed prefix, or a caret placed in a finished link, waits for the rows so nothing flashes.
+  const loading = heading && outline === null && query === ''
 
   useEffect(() => {
     setFetched(null)
