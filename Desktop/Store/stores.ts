@@ -57,8 +57,12 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     clearPath(db, path)
     const insMention = db.prepare('INSERT OR REPLACE INTO mentions (path, title) VALUES (?, ?)')
     for (const title of entry.mentions) insMention.run(path, title)
-    const insHeading = db.prepare('INSERT OR REPLACE INTO headings (path, heading) VALUES (?, ?)')
-    for (const heading of entry.headings) insHeading.run(path, heading)
+    const insHeading = db.prepare(
+      'INSERT OR REPLACE INTO headings (path, heading, ordinal) VALUES (?, ?, ?)',
+    )
+    entry.headings.forEach((heading, ordinal) => {
+      insHeading.run(path, heading, ordinal)
+    })
     const insHeadingMention = db.prepare(
       'INSERT OR REPLACE INTO heading_mentions (path, title, heading) VALUES (?, ?, ?)',
     )
@@ -118,10 +122,10 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       paths
         ? db
             .prepare(
-              `SELECT path, heading FROM headings WHERE path IN (${paths.map(() => '?').join(',')})`,
+              `SELECT path, heading FROM headings WHERE path IN (${paths.map(() => '?').join(',')}) ORDER BY path, ordinal`,
             )
             .all(...paths)
-        : db.prepare('SELECT path, heading FROM headings').all()
+        : db.prepare('SELECT path, heading FROM headings ORDER BY path, ordinal').all()
     ) as { path: string; heading: string }[]
     const out: Record<string, string[]> = {}
     for (const p of paths ?? []) out[p] = []

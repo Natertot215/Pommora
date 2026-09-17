@@ -482,6 +482,12 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
       const open = active.has(i)
+      // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.
+      if (tk.contentRange[0] === tk.contentRange[1]) {
+        const dim = Decoration.mark({ class: 'md-phantom-syntax' })
+        for (const [s, e] of tk.markerRanges) if (e > s) ranges.push(dim.range(s, e))
+        return
+      }
       // Revealed, an alias shows its whole target, page and heading both.
       const pipe: [number, number] | undefined = alias
         ? [rs, tk.fragment?.[1] ?? re]

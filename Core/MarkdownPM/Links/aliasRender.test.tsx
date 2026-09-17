@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
@@ -84,6 +84,19 @@ describe('a heading link reads per the two heading settings', () => {
     expect(view.dom.querySelector('.md-heading-symbol-spaced')).toBeNull()
     const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
     expect(heading?.textContent).toBe('Setup')
+  })
+
+  it('[[#] being written marks only its syntax and never crashes the decoration build', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const view = await mountEditor({
+      initialBody: '## Setup\n\n[[#]] and [[Alpha#Setup]]',
+      connections: conn,
+    })
+    expect(
+      err.mock.calls.map((c) => c.map(String).join(' ')).filter((s) => /crashed/.test(s)),
+    ).toEqual([])
+    err.mockRestore()
+    expect(view.dom.querySelector('.md-heading-symbol')).not.toBeNull()
   })
 
   it('a heading on a page that does not resolve renders as the phantom it is', async () => {
