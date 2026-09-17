@@ -4,6 +4,7 @@ import {
   commitEdit,
   connectionInsert,
   headingRows,
+  openHeadingRows,
 } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
 import { scanOf } from '../Engine/docScan'
@@ -296,5 +297,32 @@ describe('the heading form opens after a typed #', () => {
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#Setup]] b')
     expect(text.slice(edit.anchor)).toBe(' b')
+  })
+})
+
+describe('openHeadingRows', () => {
+  const row = (value: string, level: number) => ({
+    value,
+    label: value,
+    isPage: false,
+    location: [],
+    level,
+  })
+  it('hides everything deeper than a collapsed heading, up to its next sibling', () => {
+    const rows = [row('A', 2), row('A1', 3), row('A1a', 4), row('B', 2), row('B1', 3)]
+    expect(openHeadingRows(rows, new Set(['A'])).map((r) => r.value)).toEqual(['A', 'B', 'B1'])
+    expect(openHeadingRows(rows, new Set(['A1'])).map((r) => r.value)).toEqual([
+      'A',
+      'A1',
+      'B',
+      'B1',
+    ])
+    expect(openHeadingRows(rows, new Set()).map((r) => r.value)).toEqual([
+      'A',
+      'A1',
+      'A1a',
+      'B',
+      'B1',
+    ])
   })
 })

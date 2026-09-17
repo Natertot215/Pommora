@@ -182,25 +182,36 @@ export function MarkdownEditor({
       ? headingTargetOf(connectionsRef.current, title)
       : { outline: viewRef.current ? docOutline(viewRef.current.state.doc) : [] }
 
-  const { ac, setAc, candidates, acIndex, commit, acCtl, viaChevron, loading } =
-    useConnectionAutocomplete(
-      viewRef,
-      host,
-      (q) => {
-        const conn = connectionsRef.current
-        if (!conn) return []
-        if (q.form === 'alias') return aliasRows(conn, hostRef.current.aliases, q.title, q.query)
-        const embed = q.form === 'embed'
-        let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
-        if (embed) {
-          const state = viewRef.current?.state
-          const taken = state ? embedExclusions(state) : new Set<string>()
-          pool = pool.filter((p) => embeddable(p.title, taken))
-        }
-        return pool.slice(0, AC_MAX).map(pageRow)
-      },
-      targetOf,
-    )
+  const {
+    ac,
+    setAc,
+    candidates,
+    acIndex,
+    commit,
+    acCtl,
+    viaChevron,
+    loading,
+    headingRows,
+    collapsed,
+    toggleHeading,
+  } = useConnectionAutocomplete(
+    viewRef,
+    host,
+    (q) => {
+      const conn = connectionsRef.current
+      if (!conn) return []
+      if (q.form === 'alias') return aliasRows(conn, hostRef.current.aliases, q.title, q.query)
+      const embed = q.form === 'embed'
+      let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
+      if (embed) {
+        const state = viewRef.current?.state
+        const taken = state ? embedExclusions(state) : new Set<string>()
+        pool = pool.filter((p) => embeddable(p.title, taken))
+      }
+      return pool.slice(0, AC_MAX).map(pageRow)
+    },
+    targetOf,
+  )
   const block = useBlockMenu(viewRef)
 
   useEffect(() => {
@@ -475,6 +486,9 @@ export function MarkdownEditor({
         onPick={commit}
         viaChevron={viaChevron}
         loading={loading}
+        headingRows={headingRows}
+        collapsed={collapsed}
+        onToggleHeading={toggleHeading}
         onAside={(row) => commit(row, { openHeading: true })}
         onBack={() => {
           acCtl.current.aside?.(-1)
