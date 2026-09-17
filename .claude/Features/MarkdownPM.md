@@ -26,7 +26,7 @@ Markdown syntax in the editor is dynamic. A construct's markers — the asterisk
 - **Blockquote** — an always-visible rounded card with an accent bar down its side. Other block constructs nest inside it at any depth. A `>` counts as a marker only when whitespace or the line's end follows it, so `>a` stays ordinary prose.
 - **Callout** — a `> [!callout]` blockquote rendered as a bordered box spanning the gutter width, typed with the `||` shorthand. Each head is detected on its own, so adjacent or pasted callouts never merge, and an invalid tag falls back to a plain quote. The hidden head can't be reached by the caret, and Shift+Enter keeps you inside the box.
 - **Horizontal Lines** — `---` draws as a full-width rule whenever the caret is off its line. It is never read as a setext heading.
-- **Connections** — `[[Title]]` and `[Alias](Title)` render as colored inline text in one of three states, with an autocomplete that opens on `[[` and a right-click menu of their own. How they resolve, how they're styled, what the menu offers, and how renames cascade all belong to Connections.
+- **Connections** — `[[Title]]`, `[[Title#Heading]]`, and `[Alias](Title)` render as colored inline text keyed to how their target resolves, with an autocomplete that opens on `[[` and a right-click menu of their own. With **In-Page Heading Resolution** set to Automatic, a bare `§Heading` in prose reaches a heading on the same page without link syntax. How they resolve, how they're styled, what the menu offers, and how renames cascade all belong to Connections.
 - **Pasted Links** — an address with an explicit scheme, pasted anywhere in the editor, is written as a link rather than as bare text, in one of three forms: the whole address, its bare domain, or the site's page title. **Default Format** picks the form and **Paste Link Into Text** decides whether pasting over a selection wraps that text instead of replacing it. Inside a code span, a fence, or another link's `( )`, the address lands as the literal text those places are made of. ⌘⇧V does the opposite of whatever ⌘V would have done.
 - **The Caret** — a drawn caret with a smooth symmetric fade and a custom I-beam cursor, shared by every text surface in the app.
 
@@ -79,7 +79,7 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 | Block | Rows |
 | -------------------------------------- | -------------------------------------------------------------- |
 | Plain (paragraph, quote, callout, code) | Delete |
-| Heading | Rename · Size ▸ (Paragraph, H1–H5) · Delete — removes the heading line and keeps its body |
+| Heading | Rename · Copy Link · Size ▸ (Paragraph, H1–H5) · Delete — removes the heading line and keeps its body |
 | List | Type ▸ (Numbered, Alphabetical, Bulleted, Checklist, Arrowed) · Delete |
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
