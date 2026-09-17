@@ -37,6 +37,9 @@ export function linkTarget(text: string, tk: Token): string {
   return text.slice(close[0] + 2, close[1] - 1)
 }
 
+export const headingOf = (text: string, tk: Token): string | undefined =>
+  tk.fragment && text.slice(tk.fragment[0], tk.fragment[1])
+
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: [number, number]): [number, number] => [s + by, e + by]
   return {

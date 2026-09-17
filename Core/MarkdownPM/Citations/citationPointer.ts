@@ -1,9 +1,9 @@
 import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { EditorView } from '@codemirror/view'
-import { resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'
+import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../Links/connectionsApi'
 import { type MarkerRef, citationFor, lineEndOf, markersFor } from '../Engine/detect'
-import { linkTarget, tokenize } from '../Engine/tokens'
+import { headingOf, linkTarget, tokenize } from '../Engine/tokens'
 import { docScan, docString, perDoc } from '../docCache'
 import { followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
@@ -25,8 +25,7 @@ export function loneTarget(
   if (!tk) return null
   if (tk.kind === 'wikiLink') {
     const [s, e] = tk.resolveRange ?? tk.contentRange
-    const heading = tk.fragment ? text.slice(tk.fragment[0], tk.fragment[1]) : undefined
-    return { kind: 'connection', title: text.slice(s, e), ...(heading ? { heading } : {}) }
+    return { kind: 'connection', title: text.slice(s, e), heading: headingOf(text, tk) }
   }
   if (tk.kind !== 'link') return null
   const url = linkTarget(text, tk)
@@ -84,30 +83,24 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
         const { title, heading } = hit.lone
         const res = api.resolve(title)
         // A bare fragment names this page's own heading, so the marker travels there rather than to the citation.
-        const go =
+        const target: MdTarget | null =
           title === '' && heading
-            ? followTarget(
-                { kind: 'self', heading },
-                '',
-                api,
-                isCmd(event),
-                el,
-                view.state.facet(editorHost),
-                view,
-                hit.range[0],
-              )
+            ? { kind: 'self', heading }
             : res.status === 'resolved' && res.page
-              ? followTarget(
-                  { kind: 'page', page: res.page, heading },
-                  '',
-                  api,
-                  isCmd(event),
-                  el,
-                  view.state.facet(editorHost),
-                  view,
-                  hit.range[0],
-                )
+              ? { kind: 'page', page: res.page, heading }
               : null
+        const go =
+          target &&
+          followTarget(
+            target,
+            '',
+            api,
+            isCmd(event),
+            el,
+            view.state.facet(editorHost),
+            view,
+            hit.range[0],
+          )
         if (go) return go()
       }
       if (hit.lone?.kind === 'link') {

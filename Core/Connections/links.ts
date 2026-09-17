@@ -67,12 +67,6 @@ export function targetFragment(rawTarget: string): string {
   return t ? decodeLinkTarget(t.fragment).trim() : ''
 }
 
-export function encodePageTarget(title: string, heading?: string): string {
-  return heading
-    ? `${encodeLinkTarget(title)}#${encodeLinkTarget(heading)}`
-    : encodeLinkTarget(title)
-}
-
 export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {
   const named = targetTitle(rawTarget)
   return named !== null && normalizeTitle(named) === normalizedKey

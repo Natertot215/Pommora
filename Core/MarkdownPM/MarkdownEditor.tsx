@@ -1,11 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { docHeadingKeys, docOutline, docScan, docString } from './docCache'
-import { inCodeAt } from './Engine/docScan'
+import { docOutline, docString } from './docCache'
 import { travelToHeading } from './travel'
-import { headingParts } from './Engine/detect'
-import { linkAt, normalizeTitle } from '@pommora/core/Connections/connections'
-import { rewriteHeadingConnections } from '@pommora/core/Connections/rewrite'
-import { changesTo } from '../Pages/merge3'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
@@ -42,7 +37,7 @@ import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutAtomic } from './Guards/calloutAtomic'
 import { calloutGuard } from './Guards/calloutGuard'
-import { headingRenamed, headingRenameGuard, headingRenameOf } from './Guards/headingRenameGuard'
+import { headingRenameGuard, headingRenameSettle } from './Guards/headingRenameGuard'
 import { citationGuard } from './Guards/citationGuard'
 import { citationHost, citationOrder, citationSeatAt } from './Citations/citationActions'
 import { citationPointer, citationRowMenu, citationRowPointer } from './Citations/citationPointer'
@@ -62,6 +57,7 @@ import { AC_MAX, aliasRows, pageRow } from './Autocomplete/autocomplete'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
+  sectionArmAfter,
   whenAcOpen,
 } from './Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
@@ -163,7 +159,6 @@ export function MarkdownEditor({
   onArrivedRef.current = onArrived
   const onHeadingRenameRef = useRef(onHeadingRename)
   onHeadingRenameRef.current = onHeadingRename
-  const pendingRenameRef = useRef<{ old: string; line: number; trail: Set<string> } | null>(null)
   const lastFormatRef = useRef<FormatState | null>(null)
   // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
   const sectionArmedRef = useRef<number | null>(null)
@@ -317,6 +312,7 @@ export function MarkdownEditor({
       calloutAtomic,
       calloutGuard,
       headingRenameGuard,
+      headingRenameSettle(() => onHeadingRenameRef.current),
       citationGuard,
       connectionClicks(() => connectionsRef.current),
       citationHost.of({
@@ -385,74 +381,7 @@ export function MarkdownEditor({
           }
         }
 
-        const lineNo = u.state.doc.lineAt(u.state.selection.main.head).number
-        for (const tr of u.transactions) {
-          if (
-            tr.isUserEvent('input.type') &&
-            hostRef.current.settings().inPageHeadingResolution === 'automatic'
-          ) {
-            let at: number | null = null
-            let seen = 0
-            tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
-              seen++
-              if (fromA === toA && toB - fromB === 1 && tr.newDoc.sliceString(fromB, toB) === '§')
-                at = fromB
-            })
-            if (seen === 1 && at !== null) {
-              const line = tr.newDoc.lineAt(at)
-              const rel = at - line.from
-              if (!linkAt(line.text, rel) && !inCodeAt(docScan(tr.newDoc), at))
-                sectionArmedRef.current = at
-            }
-          }
-          const renames = tr.effects.filter((e) => e.is(headingRenamed)).map((e) => e.value)
-          // Undo and redo bypass transaction filters, so the guard never stamps them; the rename is read off the transaction itself.
-          if (renames.length === 0 && (tr.isUserEvent('undo') || tr.isUserEvent('redo'))) {
-            const rename = headingRenameOf(tr)
-            if (rename) renames.push(rename)
-          }
-          for (const rename of renames) {
-            const held = pendingRenameRef.current ?? {
-              old: rename.old,
-              line: rename.line,
-              trail: new Set<string>(),
-            }
-            held.trail.add(rename.old).add(rename.next)
-            pendingRenameRef.current = held
-          }
-        }
-        const held = pendingRenameRef.current
-        if (held && (held.line !== lineNo || (u.focusChanged && !u.view.hasFocus))) {
-          pendingRenameRef.current = null
-          const text = held.line <= u.state.doc.lines ? u.state.doc.line(held.line).text : ''
-          const final = headingParts(text)?.content.trim() ?? ''
-          const own = hostRef.current.pageTitle() ?? ''
-          if (
-            final &&
-            final !== held.old &&
-            !docHeadingKeys(u.state.doc).includes(normalizeTitle(held.old))
-          ) {
-            let body = doc
-            for (const stale of held.trail)
-              if (stale && stale !== final)
-                body = rewriteHeadingConnections(body, own, stale, final, own)
-            // Deferred as the alias slot's own leave dispatch defers: a dispatch inside an update listener re-enters the view.
-            if (body !== doc)
-              setTimeout(
-                () => u.view.dispatch({ changes: changesTo(doc, body), userEvent: 'input' }),
-                0,
-              )
-            onHeadingRenameRef.current?.(held.old, final)
-          }
-        }
-
-        const armed = sectionArmedRef.current
-        if (
-          armed !== null &&
-          (armed > u.state.doc.length || u.state.doc.lineAt(armed).number !== lineNo)
-        )
-          sectionArmedRef.current = null
-
+        sectionArmedRef.current = sectionArmAfter(u, sectionArmedRef.current)
         // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly) {
           detectConnectionQuery(u.view, setAc, true, sectionArmedRef.current ?? undefined)
@@ -495,12 +424,9 @@ export function MarkdownEditor({
     if (autoFocus && !lastReadOnly.current) view.focus()
     applyCitationsVisibility(view, citesShownRef.current, false)
     // The warm scroll restores AFTER folds settle: folding changes content height, so restoring first lands on a pre-fold offset.
-    const restoreScroll = (): void => {
+    const land = (): void => {
       // != null, not truthy — a saved top-of-page (0) must still override CM's own restore scroll.
       if (saved?.scrollTop != null) view.scrollDOM.scrollTop = saved.scrollTop
-    }
-    const land = (): void => {
-      restoreScroll()
       const a = arriveRef.current
       if (a) {
         travelToHeading(view, a, 0)

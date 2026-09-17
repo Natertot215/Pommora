@@ -88,12 +88,12 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
 
 function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const opened = view.state.doc.lineAt(view.posAtDOM(headingEl))
-  const level = headingParts(opened.text)?.hashes.length
-  if (level === undefined) return
+  const openedParts = headingParts(opened.text)
+  if (!openedParts) return
+  const level = openedParts.hashes.length
   const host = view.state.facet(editorHost)
   const title = host.pageTitle()
-  const heading = headingParts(opened.text)?.content.trim() ?? ''
-  const linkable = title !== null && embeddableTitle(heading)
+  const linkable = title !== null && embeddableTitle(openedParts.content.trim())
   void host.menus.grip({ kind: 'heading', level, linkable }).then((action) => {
     if (!action) return
     // Re-found and matched against what the menu was built from — a native menu can stay open while an undo moves the document.
