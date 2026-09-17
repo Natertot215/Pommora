@@ -38,8 +38,8 @@ import {
 } from './Engine/intents'
 import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
 import { blockQueryAt } from './Menus/blockQuery'
-import { resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
-import { normalizeTitle, type LinkStatus } from '@pommora/core/Connections/connections'
+import { headingMissing, resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
+import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { editorHost } from './api'
 
 export const MD_LINK_CLASS = 'md-link'
@@ -480,7 +480,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const bare = rs === re
       const res = bare ? null : conn.resolve(text.slice(rs, re))
-      const status = bare ? (tk.fragment ? 'resolved' : 'phantom') : res!.status
+      const status = res ? res.status : tk.fragment ? 'resolved' : 'phantom'
       const open = active.has(i)
       const pipe = alias
         ? tk.resolveRange
@@ -495,9 +495,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       }
       if (tk.fragment && !open && !alias) {
         const [hs, he] = tk.fragment
-        const key = normalizeTitle(text.slice(hs, he))
         const known = bare ? ownKeys : res?.page ? conn.headingsOf?.(res.page.path) : undefined
-        const missing = known !== undefined && !known.includes(key)
+        const missing = headingMissing(known, text.slice(hs, he))
         const showPage = headingLinkStyle !== 'heading-only' && !bare
         if (!bare)
           ranges.push(

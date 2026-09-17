@@ -10,6 +10,7 @@ import {
   type AutocompleteQuery,
 } from './autocomplete'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docScan } from '../docCache'
 import { normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
 import { restedOnLink } from '../Gestures/linkGestures'
@@ -103,6 +104,7 @@ export function useConnectionAutocomplete(
   const [outline, setOutline] = useState<OutlineHeading[] | null>(null)
   const [viaChevron, setViaChevron] = useState(false)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  const targetPage = useRef<string | undefined>(undefined)
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
   const candidatesForRef = useRef(candidatesFor)
@@ -111,6 +113,7 @@ export function useConnectionAutocomplete(
   const form = ac?.form ?? 'link'
   const title = ac?.title
   const heading = form === 'heading'
+  const loading = heading && outline === null
 
   useEffect(() => {
     if (!heading) {
@@ -120,9 +123,10 @@ export function useConnectionAutocomplete(
       return
     }
     let live = true
-    const got = targetOf(title ?? '').outline
-    if (Array.isArray(got)) setOutline(got)
-    else void got.then((rows) => live && setOutline(rows))
+    const target = targetOf(title ?? '')
+    targetPage.current = target.pageId
+    if (Array.isArray(target.outline)) setOutline(target.outline)
+    else void target.outline.then((rows) => live && setOutline(rows))
     return () => {
       live = false
     }
@@ -133,11 +137,15 @@ export function useConnectionAutocomplete(
     () => (heading && query !== null ? headingRows(outline ?? [], query) : []),
     [heading, outline, query],
   )
+  // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
   const candidates = useMemo(() => {
     if (query === null) return []
-    if (heading) return query === '' ? openHeadingRows(allHeadingRows, collapsed) : allHeadingRows
     if (query === '' && form === 'link') return []
-    const found = candidatesForRef.current({ query, form, title })
+    const found = heading
+      ? query === ''
+        ? openHeadingRows(allHeadingRows, collapsed)
+        : allHeadingRows
+      : candidatesForRef.current({ query, form, title })
     const exact = found.length === 1 && normalizeTitle(found[0].label) === normalizeTitle(query)
     if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
@@ -156,7 +164,7 @@ export function useConnectionAutocomplete(
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.groups?.alias
         : undefined
-    const pageId = heading ? targetOf(ac.title ?? '').pageId : row.pageId
+    const pageId = heading ? targetPage.current : row.pageId
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || heading) &&
@@ -180,8 +188,7 @@ export function useConnectionAutocomplete(
   }
 
   const { index, ctl } = useMenuCtl(candidates.length, ac?.query, {
-    open:
-      ac !== null && (heading ? outline === null || candidates.length > 0 : candidates.length > 0),
+    open: ac !== null && (candidates.length > 0 || loading),
     pick: (i) => {
       const r = candidates[i]
       if (r) commit(r)
@@ -217,15 +224,10 @@ export function useConnectionAutocomplete(
     commit,
     acCtl: ctl,
     viaChevron,
-    loading: heading && outline === null,
+    loading,
     headingRows: allHeadingRows,
     collapsed,
-    toggleHeading: (value) =>
-      setCollapsed((prev) => {
-        const next = new Set(prev)
-        if (!next.delete(value)) next.add(value)
-        return next
-      }),
+    toggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
   }
 }
 

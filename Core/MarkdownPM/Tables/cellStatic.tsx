@@ -4,12 +4,12 @@ import { aliasedToken, linkTarget, linkTokenAt, tokenize, type Token } from '../
 import { MD_LINK_CLASS } from '../decorations'
 import { CONTENT_CLASS } from '../Engine/intents'
 import {
+  headingMissing,
   resolveMdTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
   type MdTarget,
 } from '../Links/connectionsApi'
-import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { linkActionText, linkHalves } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
 import { dwellTarget, followTarget } from '../Links/linkClicks'
@@ -37,7 +37,8 @@ export function renderCellContent(
     if (tk.kind === 'wikiLink') {
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const bare = rs === re
-      const status = bare ? 'resolved' : conn?.resolve(text.slice(rs, re)).status
+      const res = bare ? undefined : conn?.resolve(text.slice(rs, re))
+      const status = bare ? (tk.fragment ? 'resolved' : 'phantom') : res?.status
       if (!status) out.push(text.slice(s, e))
       else if (status === 'phantom')
         out.push(
@@ -53,12 +54,10 @@ export function renderCellContent(
         )
       else {
         const frag = tk.fragment
-        const page = conn?.resolve(text.slice(rs, re)).page
         const missing =
-          frag &&
-          page &&
-          conn?.headingsOf?.(page.path)?.includes(normalizeTitle(text.slice(frag[0], frag[1]))) ===
-            false
+          frag && res?.page
+            ? headingMissing(conn?.headingsOf?.(res.page.path), text.slice(frag[0], frag[1]))
+            : false
         out.push(
           <span
             key={key++}
@@ -69,7 +68,7 @@ export function renderCellContent(
             {frag ? (
               <>
                 {text.slice(rs, re)}
-                <span className="md-heading-symbol"> § </span>
+                <span className="md-heading-symbol md-heading-symbol-spaced">§</span>
                 <span className={missing ? 'md-connection-heading-missing' : undefined}>
                   {text.slice(frag[0], frag[1])}
                 </span>

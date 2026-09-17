@@ -106,7 +106,19 @@ export function CellEditor({
   const formatGate = useRef(new Compartment())
   const lastCommands = useRef(host.settings().commands)
 
-  const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
+  const {
+    ac,
+    setAc,
+    candidates,
+    acIndex,
+    commit,
+    acCtl,
+    viaChevron,
+    loading,
+    headingRows,
+    collapsed,
+    toggleHeading,
+  } = useConnectionAutocomplete(
     viewRef,
     host,
     (q) => {
@@ -116,8 +128,7 @@ export function CellEditor({
         ? aliasRows(conn, host.aliases, q.title, q.query)
         : conn.candidates(q.query, AC_MAX).map(pageRow)
     },
-    // A cell holds no bare fragment, so an empty title lists nothing.
-    (title) => (title ? headingTargetOf(connections?.(), title) : { outline: [] }),
+    (title) => headingTargetOf(connections?.(), title),
   )
 
   useEffect(() => {
@@ -283,7 +294,21 @@ export function CellEditor({
   return (
     <>
       <div ref={mountRef} className="mdpm-tbl-cell-editor" />
-      <AutocompletePane ac={ac} candidates={candidates} index={acIndex} onPick={commit} />
+      <AutocompletePane
+        ac={ac}
+        candidates={candidates}
+        index={acIndex}
+        onPick={commit}
+        viaChevron={viaChevron}
+        loading={loading}
+        headingRows={headingRows}
+        collapsed={collapsed}
+        onToggleHeading={toggleHeading}
+        onAside={(row) => commit(row, { openHeading: true })}
+        onBack={() => {
+          acCtl.current.aside?.(-1)
+        }}
+      />
     </>
   )
 }

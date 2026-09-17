@@ -4,6 +4,7 @@ import type {
   ConnSurface,
   ConnUrlAction,
 } from '@pommora/core/Actions/connectionMenu'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 
@@ -47,6 +48,10 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
   }
   return isValidLink(rawTarget) ? { kind: 'external' } : { kind: 'invalid' }
 }
+
+// A page absent from the map reads as unknown and its heading as present; only a known page missing the heading is missing.
+export const headingMissing = (known: readonly string[] | undefined, heading: string): boolean =>
+  known !== undefined && !known.includes(normalizeTitle(heading))
 
 export function openPage(api: ConnectionsApi, page: ConnPage, bypass: boolean): void {
   if (bypass && api.bypass) api.bypass(page)

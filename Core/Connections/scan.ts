@@ -13,6 +13,11 @@ export interface SectionRun {
 
 const wordChar = /[\p{L}\p{N}_]/u
 
+function titleKey(raw: string | null, own: string): string {
+  if (raw === null) return ''
+  return raw === '' ? own : normalizeTitle(raw)
+}
+
 // A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code or inside a wikilink are never runs.
 export function sectionRunsIn(
   text: string,
@@ -49,7 +54,7 @@ export function extractMentions(body: string, ownTitle = ''): Set<string> {
   const inCode = codeMask(body)
   const own = normalizeTitle(ownTitle)
   const add = (raw: string | null): void => {
-    const key = raw === '' ? own : raw === null ? '' : normalizeTitle(raw)
+    const key = titleKey(raw, own)
     if (key) out.add(key)
   }
   for (const m of body.matchAll(pageLinkPattern())) {
@@ -89,7 +94,7 @@ export function extractHeadingMentions(
   const seen = new Set<string>()
   const out: HeadingMention[] = []
   const add = (rawTitle: string | null, rawHeading: string): void => {
-    const title = rawTitle === '' ? own : rawTitle === null ? '' : normalizeTitle(rawTitle)
+    const title = titleKey(rawTitle, own)
     const heading = normalizeTitle(rawHeading)
     if (!title || !heading || seen.has(`${title}#${heading}`)) return
     seen.add(`${title}#${heading}`)

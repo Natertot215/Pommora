@@ -189,7 +189,6 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
       kind: 'wikiLink',
       range: [fs, fe],
       contentRange: shown,
-      // The page half alone resolves; the heading is judged against that page's outline where the token is drawn.
       ...(alias || s.heading ? { resolveRange: s.title } : {}),
       ...(fragment ? { fragment } : {}),
       // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
