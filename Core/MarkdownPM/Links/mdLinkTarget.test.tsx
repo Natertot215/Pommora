@@ -56,6 +56,13 @@ afterEach(async () => {
 })
 
 describe('what a markdown link’s target names', () => {
+  it('carries a heading fragment, and reads a bare fragment as the page itself', () => {
+    const t = resolveMdTarget(conn, 'Work%20Notes#Setup')
+    expect(t.kind === 'page' && t.page.id).toBe('p1')
+    expect(t.kind === 'page' && t.heading).toBe('Setup')
+    expect(resolveMdTarget(conn, '#Setup')).toEqual({ kind: 'self', heading: 'Setup' })
+  })
+
   it('reads an encoded page title as that page', () => {
     const t = resolveMdTarget(conn, encodeLinkTarget('Work Notes'))
     expect(t.kind === 'page' && t.page.id).toBe('p1')

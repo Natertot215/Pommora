@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
-import { travelTo } from './travel'
+import { nearestHeading, travelTo } from './travel'
 import { foldedRegions, toggleFoldAt } from './folding'
 
 class ResizeObserverStub {
@@ -59,5 +59,16 @@ describe('travel goes somewhere without editing or moving the caret', () => {
       travelTo(view, DOC.indexOf('body two'))
     })
     expect(foldedRegions(view.state).map((r) => r.key)).toEqual(['One'])
+  })
+})
+
+describe('nearestHeading picks the closer of two matches', () => {
+  it('4 → 5', () => {
+    const outline = [
+      { from: 4, level: 1, text: 'Setup', key: 'Setup' },
+      { from: 5, level: 1, text: 'Setup', key: 'Setup-2' },
+    ]
+    expect(nearestHeading(outline, 'Setup', 5)).toBe(5)
+    expect(nearestHeading(outline, 'Setup', 4)).toBe(4)
   })
 })

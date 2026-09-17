@@ -74,13 +74,13 @@ After this plan, typing `[[Notes#` in a page lists the headings of the page call
   - [x] Task 4.3 — The pane draws the outline and the top row
   - [x] Review Checkpoint
 - [x] `[Stop: Nathan drives the pane]` — driven 09-16-2026 through the chevron, collapse, caret, and § rulings above; the remaining stops fold into one live walk after Phase 8 at Nathan's direction.
-- [ ] **Phase 5** — Following and Copy Link
-  - [ ] Task 5.1 — The pending travel, the travel helpers, and the `arrive` prop
-  - [ ] Task 5.2 — The click carries the heading
-  - [ ] Task 5.3 — The glance travels
-  - [ ] Task 5.4 — Copy Link on the heading grip
-  - [ ] Review Checkpoint
-- [ ] `[Stop: Nathan clicks around, tab, window, glance]`
+- [x] **Phase 5** — Following and Copy Link
+  - [x] Task 5.1 — The pending travel, the travel helpers, and the `arrive` prop
+  - [x] Task 5.2 — The click carries the heading
+  - [x] Task 5.3 — The glance travels
+  - [x] Task 5.4 — Copy Link on the heading grip
+  - [x] Review Checkpoint
+- [x] `[Stop: Nathan clicks around, tab, window, glance]` — folded into the live walk after Phase 8.
 - [ ] **Phase 6** — The rename cascade
   - [ ] Task 6.1 — The same-page rewrite rides the editing transaction
   - [ ] Task 6.2 — The settle detector and the fold rekey
@@ -2798,4 +2798,5 @@ Per the skill's §5.5, written when the chain is confirmed.
 - **Task 4.2, `targetOf`:** the editor and the cell editor shared one body, so it lives once as `Autocomplete/headingTarget.ts`'s `headingTargetOf`; the editor adds the empty-title `docOutline` case, the cell answers nothing.
 - **Task 4.3, the chevron reveal:** `.mdpm-ac-forget` has no rule in `markdown-pm.css`; its reveal is UIX's `removeButton` + `revealFromHost` on the `hoverRemoveHost` row, and the chevron button uses those same classes, so the stylesheet gains no rule.
 - **Phases 1–4 review pass (09-16-2026, Fable simplifier then Fable adversarial, at Nathan's direction):** every finding fixed except two ruled and one held. Fixed: a heading link on a phantom or ambiguous page now falls to the phantom path (`wikiLinkView` gates the fragment branch on a resolved page); `rewriteConnections` re-emits a cell's pipe-escape once on a heading link; `[[Page#]]` reads as the page alone and `[[#]]` parses and indexes as nothing, a property holding a bare fragment writes no empty key; an abandoned heading slot drops its `#` when the caret leaves it, through the alias slot's own leave path (`emptyHeadingHashAt`, `slotNear` by kind), which also surfaced that `emptyAliasPipeAt` pointed at the page's end rather than the heading's; the alias slide follows a heading commit; a warm outline is read in render so a finished heading link never mounts an empty pane; `EditorHost` gains `warmBody` and `fetchBody` so MarkdownPM stops importing `Session/`; the cell honors Heading Link Style and spaces the `§` through the join knob; `§` becomes `#` in the title half only, never in an alias, an embed, or a heading; heading rows bold the typed prefix; a collapse resets the highlight; the missing heading keeps the pointer cursor since a click opens the page; one `wikiLinkView` serves both renderers. Ruled: `→` after Back re-slides, since the list is open on the row Back returned to; the pane's collapse state stays its own set rather than `useDisclosureSet`, since it must reset per opening and per page. Held for Nathan: the headings map loads once per nexus, so pages an excluded-folder change admits read as unknown (never missing) until they change; a full reload on every tree push is the plan's own prohibition.
+- **Task 5.2, `[x](#Setup)`:** a markdown link with a bare fragment resolves as `self` and paints as a connection in the body and the cell, as `[[#Setup]]` does; its menu and glance are none, as the wikilink form's are. `Core/MarkdownPM/Citations/citationPointer.ts`'s two `followTarget` calls pass the view and the hit's start like the link paths. `connectionHover.test.tsx`'s heading-span dwell now expects the heading on the arm, which is the point of 5.3.
 - **Task 1.3, `scan.test.ts` header:** the consumer count was already off before this phase (four, not five, outside `connections.ts` and `scan.ts`); it now reads four and names paste-as.

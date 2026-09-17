@@ -97,7 +97,7 @@ describe('the connection dwell', () => {
     expect(arm).toHaveBeenCalledTimes(2)
   })
 
-  it('hovering the heading span arms the glance the same as the page span', async () => {
+  it('hovering the heading span arms the glance at the page, scrolled to the heading', async () => {
     const view = await mountEditor({
       initialBody: '[[Alpha#Setup]]',
       connections: conn,
@@ -108,7 +108,7 @@ describe('the connection dwell', () => {
     expect(heading).toBeTruthy()
     over(heading)
     expect(arm).toHaveBeenCalledTimes(1)
-    expect(arm).toHaveBeenCalledWith(TARGET, heading)
+    expect(arm).toHaveBeenCalledWith({ ...TARGET, heading: 'Setup' }, heading)
   })
 
   it('a host without a glance arms nothing', async () => {

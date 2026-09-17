@@ -90,11 +90,11 @@ export function renderCellContent(
       // Without the shared resolver a cell would call an encoded internal target broken and color the same link two ways.
       const target = resolveMdTarget(conn, url)
       out.push(
-        target.kind === 'page' ? (
+        target.kind === 'page' || target.kind === 'self' ? (
           <span
             key={key++}
             className="md-connection-resolved"
-            data-conn-title={target.page.title}
+            data-conn-title={target.kind === 'page' ? target.page.title : undefined}
             data-link-span={`${s},${e}`}
           >
             {content}
@@ -182,7 +182,9 @@ function StaticCellImpl({
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
     const go =
-      found && followTarget(found.target, found.url, connections?.(), isCmd(e), found.el, host)
+      found &&
+      // A cell has no view to travel through, so a bare fragment's own follow answers null.
+      followTarget(found.target, found.url, connections?.(), isCmd(e), found.el, host, null, 0)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -293,8 +295,9 @@ function cellLinkTarget(
     const [rs, re] = tk.resolveRange ?? tk.contentRange
     const res = api.resolve(text.slice(rs, re))
     const url = text.slice(...tk.range)
+    const heading = tk.fragment ? text.slice(tk.fragment[0], tk.fragment[1]) : undefined
     return res.status === 'resolved' && res.page
-      ? { el, target: { kind: 'page', page: res.page }, url }
+      ? { el, target: { kind: 'page', page: res.page, heading }, url }
       : null
   }
   const url = linkTarget(text, tk)
@@ -319,6 +322,7 @@ function menuTarget(
     return {
       kind: 'page',
       page: res.page,
+      heading: tk.fragment ? text.slice(tk.fragment[0], tk.fragment[1]) : undefined,
       editable: true,
       hasAlias: aliasedToken(tk),
       apply: (action) => {
@@ -333,8 +337,14 @@ function menuTarget(
   const url = linkTarget(text, tk)
   const target = resolveMdTarget(api, url)
   if (target.kind === 'page')
-    return { kind: 'page', page: target.page, editable: false, hasAlias: false }
-  if (target.kind === 'invalid') return null
+    return {
+      kind: 'page',
+      page: target.page,
+      heading: target.heading,
+      editable: false,
+      hasAlias: false,
+    }
+  if (target.kind === 'invalid' || target.kind === 'self') return null
   return {
     kind: 'url',
     url,

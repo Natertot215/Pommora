@@ -5,6 +5,12 @@ import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { travelToHeading } from '../travel'
+
+vi.mock('../travel', async (orig) => ({
+  ...(await orig<typeof import('../travel')>()),
+  travelToHeading: vi.fn(),
+}))
 
 class ResizeObserverStub {
   observe(): void {}
@@ -139,5 +145,26 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
     vi.spyOn(view, 'posAtCoords').mockReturnValue(8)
     view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
     expect(view.state.selection.main.head).toBe(10)
+  })
+})
+
+describe('a same-page heading link travels instead of opening', () => {
+  it('a click on [[#Setup]] travels to the heading from the link’s own position', async () => {
+    opened.mockClear()
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountEditor({ initialBody: '## Setup\n\n[[#Setup]]', connections: conn })
+    await act(async () => view.focus())
+    clickAt(view, 14)
+    expect(opened).not.toHaveBeenCalled()
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 10)
+  })
+
+  it('a click on [x](#Setup) travels the same way', async () => {
+    opened.mockClear()
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountEditor({ initialBody: '## Setup\n\n[x](#Setup)', connections: conn })
+    await act(async () => view.focus())
+    clickAt(view, 11)
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 10)
   })
 })

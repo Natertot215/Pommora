@@ -441,7 +441,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
     const bracketEnd = close[0] + 1
     const target = resolveMdTarget(conn, linkTarget(text, tk))
     const valid = target.kind !== 'invalid'
-    const internal = target.kind === 'page'
+    const internal = target.kind === 'page' || target.kind === 'self'
     const isActive = active.has(i)
     ranges.push(
       Decoration.mark({

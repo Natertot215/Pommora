@@ -1,6 +1,9 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { EditorView } from '@codemirror/view'
 import { SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
+import { docOutline } from './docCache'
+import type { OutlineHeading } from './Engine/headingScan'
 import { FOLD_SETTLE_MS, expandFoldsAt } from './folding'
 
 const REVEAL_MARGIN = 12
@@ -31,4 +34,29 @@ export function travelTo(view: EditorView, pos: number): void {
   // A folded section has no height, so travelling before it opens measures the collapsed document.
   if (expandFoldsAt(view, target)) setTimeout(travel, FOLD_SETTLE_MS)
   else travel()
+}
+
+export function nearestHeading(
+  outline: readonly OutlineHeading[],
+  heading: string,
+  near: number,
+): number | null {
+  const key = normalizeTitle(heading)
+  let best: number | null = null
+  for (const h of outline) {
+    if (normalizeTitle(h.text) !== key) continue
+    if (best === null || Math.abs(h.from - near) < Math.abs(best - near)) best = h.from
+  }
+  return best
+}
+
+// Heights are relative to `documentTop`, so the scroller's top edge is converted before the block is read.
+export function travelToHeading(view: EditorView, heading: string, near?: number): void {
+  const top = view.scrollDOM.getBoundingClientRect().top - view.documentTop
+  const at = nearestHeading(
+    docOutline(view.state.doc),
+    heading,
+    near ?? view.lineBlockAtHeight(top).from,
+  )
+  if (at !== null) travelTo(view, at)
 }

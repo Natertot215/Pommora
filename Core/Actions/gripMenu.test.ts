@@ -7,14 +7,19 @@ const STEPS = [
 ]
 
 describe('the block grip menu', () => {
-  it('a heading offers Rename, a Size set with its level in force, and a divided Delete', () => {
-    const items = gripMenuItems({ kind: 'heading', level: 2 })
-    expect(items.map((i) => i.label)).toEqual(['Rename', 'Size', 'Delete'])
-    expect(items[1].submenu?.find((r) => r.checked)).toMatchObject({
+  it('a linkable heading offers Rename, Copy Link, a Size set with its level in force, and a divided Delete', () => {
+    const items = gripMenuItems({ kind: 'heading', level: 2, linkable: true })
+    expect(items.map((i) => i.label)).toEqual(['Rename', 'Copy Link', 'Size', 'Delete'])
+    expect(items[2].submenu?.find((r) => r.checked)).toMatchObject({
       label: 'Heading 2',
       action: 'size:2',
     })
-    expect(items[2].separatorBefore).toBe(true)
+    expect(items[3].separatorBefore).toBe(true)
+  })
+
+  it('a heading that cannot be linked omits Copy Link', () => {
+    const items = gripMenuItems({ kind: 'heading', level: 2, linkable: false })
+    expect(items.map((i) => i.label)).toEqual(['Rename', 'Size', 'Delete'])
   })
 
   it('an embed drills its source tree to page leaves and scales only once claimed', () => {
