@@ -7,7 +7,7 @@ import type {
   ConnUrlAction,
 } from '@pommora/core/Actions/connectionMenu'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
-import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
+import { isValidLink, targetFragment, targetTitle } from '@pommora/core/Connections/links'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
@@ -19,6 +19,7 @@ export type ConnMenuTarget = {
   | {
       kind: 'page'
       page: ConnPage
+      heading?: string
       editable: boolean
       hasAlias: boolean
       apply?: (action: ConnEditAction) => void
@@ -33,20 +34,27 @@ export type ConnMenuTarget = {
 )
 
 export interface ConnectionsApi extends PageIndex {
-  open: (page: ConnPage) => void
+  open: (page: ConnPage, heading?: string) => void
   menu?: (target: ConnMenuTarget) => void
-  bypass?: (page: ConnPage) => void
+  bypass?: (page: ConnPage, heading?: string) => void
   headingsOf?: (path: string) => string[] | undefined
 }
 
-export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }
+export type MdTarget =
+  | { kind: 'page'; page: ConnPage; heading?: string }
+  | { kind: 'self'; heading: string }
+  | { kind: 'external' }
+  | { kind: 'invalid' }
 
 /** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
 export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
   const title = targetTitle(rawTarget)
+  const heading = targetFragment(rawTarget)
+  if (title === '' && heading) return { kind: 'self', heading }
   if (index && title) {
     const res = index.resolve(title)
-    if (res.status === 'resolved' && res.page) return { kind: 'page', page: res.page }
+    if (res.status === 'resolved' && res.page)
+      return heading ? { kind: 'page', page: res.page, heading } : { kind: 'page', page: res.page }
   }
   return isValidLink(rawTarget) ? { kind: 'external' } : { kind: 'invalid' }
 }
@@ -77,7 +85,12 @@ export function wikiLinkView(
   return { status: res ? res.status : tk.fragment ? 'resolved' : 'phantom', page, bare, missing }
 }
 
-export function openPage(api: ConnectionsApi, page: ConnPage, bypass: boolean): void {
-  if (bypass && api.bypass) api.bypass(page)
-  else api.open(page)
+export function openPage(
+  api: ConnectionsApi,
+  page: ConnPage,
+  bypass: boolean,
+  heading?: string,
+): void {
+  if (bypass && api.bypass) api.bypass(page, heading)
+  else api.open(page, heading)
 }

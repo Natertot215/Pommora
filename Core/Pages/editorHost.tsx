@@ -8,6 +8,7 @@ import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { mapWarmSeam, type WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, useSession } from '../Session/store'
+import { pagesByIdOf } from '../Nexus/treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
@@ -140,6 +141,10 @@ function buildEditorHost(
       fetchPageDetail(page.path)
         .then((d) => d?.body ?? null)
         .catch(() => null),
+    pageTitle: () => {
+      const tree = state().tree
+      return (pageId && tree && pagesByIdOf(tree).get(pageId)?.title) ?? null
+    },
   }
 }
 

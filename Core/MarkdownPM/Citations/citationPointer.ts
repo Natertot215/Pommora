@@ -90,6 +90,8 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
                 isCmd(event),
                 el,
                 view.state.facet(editorHost),
+                view,
+                hit.range[0],
               )
             : null
         if (go) return go()
@@ -102,6 +104,8 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
           isCmd(event),
           el,
           view.state.facet(editorHost),
+          view,
+          hit.range[0],
         )
         if (go) return go()
       }

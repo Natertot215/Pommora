@@ -10,16 +10,22 @@ export function useWindowTabConnections(tree: NexusTree | null): ConnectionsApi 
   const select = useSession((s) => s.select)
   const openWindowTab = useSession((s) => s.openWindowTab)
   const headings = useSession((s) => s.headings)
+  const setPendingTravel = useSession((s) => s.setPendingTravel)
   return useMemo(
     () =>
       connectionsFor(tree, {
-        open: (page) => openWindowTab({ id: page.id, path: page.path }),
-        bypass: (page) =>
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
+        open: (page, heading) => {
+          if (heading) setPendingTravel({ route: 'window', path: page.path, heading })
+          openWindowTab({ id: page.id, path: page.path })
+        },
+        bypass: (page, heading) => {
+          if (heading) setPendingTravel({ route: 'tab', path: page.path, heading })
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
+        },
         menu: showConnectionMenu,
         headingsOf: (path) => headings[path],
       }),
-    [tree, openWindowTab, select, headings],
+    [tree, openWindowTab, select, headings, setPendingTravel],
   )
 }
 
@@ -30,18 +36,23 @@ export function usePreviewConnections(tree: NexusTree | null): ConnectionsApi | 
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const headings = useSession((s) => s.headings)
+  const setPendingTravel = useSession((s) => s.setPendingTravel)
   return useMemo(
     () =>
       connectionsFor(tree, {
-        open: (page) =>
-          openInWindow
-            ? openWindow({ id: page.id, path: page.path })
-            : void select({ kind: 'page', id: page.id, path: page.path }),
-        bypass: (page) =>
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
+        open: (page, heading) => {
+          if (heading)
+            setPendingTravel({ route: openInWindow ? 'window' : 'tab', path: page.path, heading })
+          if (openInWindow) openWindow({ id: page.id, path: page.path })
+          else void select({ kind: 'page', id: page.id, path: page.path })
+        },
+        bypass: (page, heading) => {
+          if (heading) setPendingTravel({ route: 'tab', path: page.path, heading })
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
+        },
         menu: showConnectionMenu,
         headingsOf: (path) => headings[path],
       }),
-    [tree, select, openWindow, openInWindow, headings],
+    [tree, select, openWindow, openInWindow, headings, setPendingTravel],
   )
 }

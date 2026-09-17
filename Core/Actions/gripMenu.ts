@@ -17,7 +17,7 @@ export type GripMenuContext =
   | { kind: 'embed'; tree: PickNode[]; zoomSteps: readonly ZoomOption[]; zoom: number | null }
   | { kind: 'webpage'; zoomSteps: readonly ZoomOption[]; zoom: number | null }
   | { kind: 'list'; current: ListKind | null }
-  | { kind: 'heading'; level: number }
+  | { kind: 'heading'; level: number; linkable: boolean }
   | { kind: 'plain' }
 
 export type GripMenuAction =
@@ -26,6 +26,7 @@ export type GripMenuAction =
   | `zoom:${number}`
   | `listKind:${ListKind}`
   | 'rename'
+  | 'copyLink'
   | `size:${number}`
   | 'delete'
 
@@ -93,6 +94,7 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
     case 'heading':
       return [
         { label: 'Rename', action: 'rename' },
+        ...(ctx.linkable ? [{ label: 'Copy Link', action: 'copyLink' as const }] : []),
         {
           label: 'Size',
           action: 'size:0',

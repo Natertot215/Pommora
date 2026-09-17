@@ -48,6 +48,8 @@ export function PageTile({
   warm,
   ancestors,
   chrome = 'none',
+  arrive,
+  onArrived,
 }: {
   path: string
   editing: boolean
@@ -58,6 +60,8 @@ export function PageTile({
   warm?: WarmSeam
   ancestors?: readonly string[]
   chrome?: 'none' | 'page'
+  arrive?: string
+  onArrived?: () => void
 }): React.JSX.Element {
   const publishSelection = usePublishSelection(path)
   // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh slot before the remounting editor reads it.
@@ -154,6 +158,8 @@ export function PageTile({
         edgeFade
         warm={warm}
         embedAncestors={[...(ancestors ?? []), path]}
+        arrive={arrive}
+        onArrived={onArrived}
       />
     </div>
   )

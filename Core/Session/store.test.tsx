@@ -708,3 +708,16 @@ describe('store — the headings map (Task 2.3)', () => {
     expect(useSession.getState().headings).toEqual({ 'Notes/C.md': ['x'] })
   })
 })
+
+describe('store — pending travel (Task 5.1)', () => {
+  it('setPendingTravel holds the record; clearPendingTravel nulls it', () => {
+    useSession.getState().setPendingTravel({ route: 'tab', path: 'Notes/A.md', heading: 'Setup' })
+    expect(useSession.getState().pendingTravel).toEqual({
+      route: 'tab',
+      path: 'Notes/A.md',
+      heading: 'Setup',
+    })
+    useSession.getState().clearPendingTravel()
+    expect(useSession.getState().pendingTravel).toBeNull()
+  })
+})
