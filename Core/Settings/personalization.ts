@@ -109,7 +109,6 @@ export interface Personalization {
   connectionsOpenInPreview?: boolean
   plainUnresolvedLinks?: boolean
   headingLinkStyle?: HeadingLinkStyle
-  hideHeadingSymbol?: boolean
   inPageHeadingResolution?: InPageHeadingResolution
   ribbonOrder?: string[]
   previewPersistence?: PreviewPersistence
