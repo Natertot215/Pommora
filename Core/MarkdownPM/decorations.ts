@@ -21,10 +21,12 @@ import {
   docHeadingKeys,
   docLineIntentsOf,
   docScan,
+  docSectionHeadings,
   docSpanTokens,
   docString,
   perDoc,
 } from './docCache'
+import { sectionRunsIn } from '@pommora/core/Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './Engine/embedRanges'
 import { resolutionNudge } from './Embeds/embedWidget'
@@ -36,7 +38,7 @@ import {
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
-import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
+import { type DocScan, codeBlockTextAt, inCodeAt, lineIndexAt } from './Engine/docScan'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
@@ -535,6 +537,18 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
+  }
+  if (view.state.facet(editorHost).settings().inPageHeadingResolution === 'automatic') {
+    const sectionHeadings = docSectionHeadings(view.state.doc)
+    const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
+    for (const { from: a, to: b } of view.visibleRanges)
+      for (const run of sectionRunsIn(
+        text.slice(a, b),
+        sectionHeadings,
+        (o) => inCodeAt(scan, a + o),
+        true,
+      ))
+        ranges.push(sectionMark.range(a + run.from, a + run.to))
   }
   if (sel.empty) {
     const q = blockQueryAt(scan, sel.head)

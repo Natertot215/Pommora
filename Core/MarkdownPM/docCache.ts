@@ -29,6 +29,12 @@ export const docOutline = perDoc((doc) => headingOutline(docString(doc)))
 
 export const docHeadingKeys = perDoc((doc) => docOutline(doc).map((h) => normalizeTitle(h.text)))
 
+export const docSectionHeadings = perDoc((doc) =>
+  docOutline(doc)
+    .map((h) => h.text)
+    .sort((a, b) => b.length - a.length),
+)
+
 // Two slots, most-recent first: a span set is returned to as readily as it's left (scrolling back up, folding within one version).
 type Slot = { key: string; tokens: Token[] }
 const spanTokens = new WeakMap<Text, [Slot] | [Slot, Slot]>()
