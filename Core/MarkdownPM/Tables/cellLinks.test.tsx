@@ -130,7 +130,7 @@ describe('a heading link in a resting cell renders its three parts', () => {
   it('renders the page, the heading symbol, and the heading text, and resolves to the page', async () => {
     await mountHeading()
     const link = container.querySelector('.md-connection-resolved') as HTMLElement
-    expect(link.textContent).toBe('Quarterly Plan § Setup')
+    expect(link.textContent).toBe('Quarterly Plan§Setup')
     expect(link.dataset.connTitle).toBe('Quarterly Plan')
     await clickLink()
     expect(opened).toHaveBeenCalledWith('p1')
