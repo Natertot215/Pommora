@@ -91,7 +91,6 @@ export function readPersonalization(raw: unknown): Personalization {
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
     headingLinkStyle: HEADING_LINK_STYLES.find((d) => d === p.headingLinkStyle),
-    hideHeadingSymbol: bool(p.hideHeadingSymbol),
     inPageHeadingResolution: IN_PAGE_HEADING_RESOLUTIONS.find(
       (d) => d === p.inPageHeadingResolution,
     ),
