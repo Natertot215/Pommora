@@ -64,10 +64,10 @@ This replaces the three storage tables with one that records the kind of each re
   - [x] Task 2.5 — The producer
   - [x] Task 2.6 — The contract suite and the index tests
   - [x] Review Checkpoint
-- [ ] `[Stop: Nathan renames a page whose links include a footnote link and a name shared with a Space, and confirms every link rewrote]`
-- [ ] **Phase 3** — Reconciliation
-  - [ ] Task 3.1 — The feature documents
-  - [ ] Task 3.2 — The pending plans
+- [x] `[Stop: Nathan renames a page whose links include a footnote link and a name shared with a Space, and confirms every link rewrote]`
+- [x] **Phase 3** — Reconciliation
+  - [x] Task 3.1 — The feature documents
+  - [x] Task 3.2 — The pending plans
 
 ### Phase 1 — The Unified Walker
 
@@ -404,7 +404,7 @@ export const scanOf = perText(scanDoc)
 - [x] Gates green from clean across Phase 1's range, each tail read.
 - [x] `Core/Contract/engineGraph.test.ts` is green and its four-leaf list is unedited. Phase 2 adds a host-side importer of `docScan`, and this phase is what keeps that from widening the engine's declared UIX surface.
 - [x] No test file changes beyond the `scanOf` import line: `git diff` over the range shows `Core/Connections/scan.test.ts` untouched.
-- [ ] A page rename still rewrites body links, embeds, and heading-naming links, exercised in the running app rather than asserted — the walker is now the single source for all three.
+- [x] A page rename still rewrites body links, embeds, and heading-naming links, exercised in the running app rather than asserted — the walker is now the single source for all three.
 - [x] Diff size reported, comments excluded.
 
 ### Phase 2 — The Matrix Table
@@ -1408,7 +1408,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 
 - [x] Gates green from clean across Phase 2's range, each tail read.
 - [x] The five kinds each appear in `matrix_nodes` against a real seeded nexus, confirmed by querying the database rather than by reading the producer.
-- [ ] Deleting a Space produces a complete Trash record, not a `partial` one, on a nexus where an unrelated page writes that Space's name in its body. This is the check that catches a reversed `space` binding, which no unit test catches on its own because the fixtures and the memory store would be wrong together.
+- [x] Deleting a Space produces a complete Trash record, not a `partial` one, on a nexus where an unrelated page writes that Space's name in its body. This is the check that catches a reversed `space` binding, which no unit test catches on its own because the fixtures and the memory store would be wrong together.
 - [x] The citation boundary agrees with the editor's: a `[^1]:` line inside a table classifies the same way in both.
 - [x] `SELECT COUNT(*) FROM (SELECT DISTINCT path, target FROM matrix_nodes WHERE kind <> 'space')` and `SELECT COUNT(*) FROM matrix_nodes WHERE kind = 'space'` each match the pre-merge `mentions` and `memberships` row counts over the same nexus, allowing for the `§`-run self-mention delta. A raw total proves nothing here — a heading-only link collapses two rows into one, a page carrying both a link and an embed to one target splits one into two, a body link plus a frontmatter Link splits one into two, and every footnote link adds one.
 - [x] Seed timing measured on a real nexus and reported against the pre-merge figure, with a temporary `console.time` around `seedContentIndex` removed before the phase commits. The table parse is a known cost of the ratified design; the number is recorded, not litigated.
@@ -1428,18 +1428,18 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 
 **CHANGE**
 
-- [ ] `CorePM.md` §The Device-Local Database — the content index parenthetical reads `(mentions, page_values, memberships, indexed_files)`, which omits `headings` and `heading_mentions` and is stale before this plan touches it. Rewrite to the post-merge four and to what `matrix_nodes` records: which pages relate to which titles, by what kind of relationship, and how often.
-- [ ] `CorePM.md` state table, Content index row — replace the three-way "mentions / governed values / Spaces it tags" split with the one keyed relation.
-- [ ] `CorePM.md` §Pending, Index consumers — "the FTS table is the one piece of schema still unwritten" goes false. Rewrite so backlinks reads as having its substrate and FTS reads as the remaining unwritten schema.
-- [ ] `ConnectionsPM.md` — the cascade sentence naming "every file the content index says mentions the title", and the Backlinks pending entry's "the content index already records mentions". Replace the retiring vocabulary; the Backlinks entry is the natural home for the kind-weighted statement.
-- [ ] `FrameworkPM.md` — the `nexus.db` sentence carries the same two claims as `CorePM.md` §Pending and already omits the membership half. Rewrite both.
-- [ ] Apply the most surgical edit in each case. Remove a claim that is simply false rather than amending it; do not frame any rewrite as a discovery.
+- [x] `CorePM.md` §The Device-Local Database — the content index parenthetical reads `(mentions, page_values, memberships, indexed_files)`, which omits `headings` and `heading_mentions` and is stale before this plan touches it. Rewrite to the post-merge four and to what `matrix_nodes` records: which pages relate to which titles, by what kind of relationship, and how often.
+- [x] `CorePM.md` state table, Content index row — replace the three-way "mentions / governed values / Spaces it tags" split with the one keyed relation.
+- [x] `CorePM.md` §Pending, Index consumers — "the FTS table is the one piece of schema still unwritten" goes false. Rewrite so backlinks reads as having its substrate and FTS reads as the remaining unwritten schema.
+- [x] `ConnectionsPM.md` — the cascade sentence naming "every file the content index says mentions the title", and the Backlinks pending entry's "the content index already records mentions". Replace the retiring vocabulary; the Backlinks entry is the natural home for the kind-weighted statement.
+- [x] `FrameworkPM.md` — the `nexus.db` sentence carries the same two claims as `CorePM.md` §Pending and already omits the membership half. Rewrite both.
+- [x] Apply the most surgical edit in each case. Remove a claim that is simply false rather than amending it; do not frame any rewrite as a discovery.
 
 **VERIFY**
 
-- [ ] `grep -rn "heading_mentions\|memberships\|FTS table is the one piece" .claude/Features .claude/FrameworkPM.md` returns no result that describes current state.
-- [ ] Each edited paragraph reads coherently start to finish, not only at the edited sentence.
-- [ ] No added amendment, supersede, or correction framing.
+- [x] `grep -rn "heading_mentions\|memberships\|FTS table is the one piece" .claude/Features .claude/FrameworkPM.md` returns no result that describes current state.
+- [x] Each edited paragraph reads coherently start to finish, not only at the edited sentence.
+- [x] No added amendment, supersede, or correction framing.
 
 #### Task 3.2
 
@@ -1449,14 +1449,14 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 
 **CHANGE**
 
-- [ ] `Local Data — Implementation Plan.md` Phase 2 carries a test literal asserting the exact table list, including `'memberships'` and `'mentions'`. Its Phases 2 and 3 are unshipped — `Desktop/Store/localData.ts` and `Core/Interface/Windows/DatabaseWindow.tsx` do not exist — so the literal must be rewritten or the Database window ships red when that plan resumes. The literal also omits `headings`, which was stale before this plan touched it, so a name swap alone leaves it wrong. The correct sorted list is `headings, indexed_files, local_state, matrix_nodes, meta, page_values, sync`.
-- [ ] `Heading Links — Implementation Plan.md` names `mentions(path, title)` and `queryMentions(title)` frozen interfaces. Record the override: the storage moved by ratified decision, `queryMentions`' contract held, and B-1's guarantee that a heading consult never takes the corpus fallback is preserved.
-- [ ] `Heading Links — Decision Log.md` is left alone. It records what was decided and when, which stays true whatever the storage does later; a decision log is history, not a description of current state.
+- [x] `Local Data — Implementation Plan.md` Phase 2 carries a test literal asserting the exact table list, including `'memberships'` and `'mentions'`. Its Phases 2 and 3 are unshipped — `Desktop/Store/localData.ts` and `Core/Interface/Windows/DatabaseWindow.tsx` do not exist — so the literal must be rewritten or the Database window ships red when that plan resumes. The literal also omits `headings`, which was stale before this plan touched it, so a name swap alone leaves it wrong. The correct sorted list is `headings, indexed_files, local_state, matrix_nodes, meta, page_values, sync`.
+- [x] `Heading Links — Implementation Plan.md` names `mentions(path, title)` and `queryMentions(title)` frozen interfaces. Record the override: the storage moved by ratified decision, `queryMentions`' contract held, and B-1's guarantee that a heading consult never takes the corpus fallback is preserved.
+- [x] `Heading Links — Decision Log.md` is left alone. It records what was decided and when, which stays true whatever the storage does later; a decision log is history, not a description of current state.
 
 **VERIFY**
 
-- [ ] `grep -n "'mentions'\|'memberships'" ".claude/Planning/Local Data — Implementation Plan.md"` returns no result inside the Phase 2 table literal.
-- [ ] The Heading Links note states what changed and what held, without re-arguing the decision.
+- [x] `grep -n "'mentions'\|'memberships'" ".claude/Planning/Local Data — Implementation Plan.md"` returns no result inside the Phase 2 table literal.
+- [x] The Heading Links note states what changed and what held, without re-arguing the decision.
 
 ### Completion Criteria
 

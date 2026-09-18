@@ -14,7 +14,7 @@ Since the baseline: Cards as the second renderer with its interaction hardening 
 
 #### UPCOMING VERSIONS
 
-The near-term structural queue rides `ContextPM.md`'s Pending Focuses rather than a version number; feature clusters resume below once those land. The cross-cluster prerequisite is in place: `nexus.db` carries the content index — which pages mention which titles, and which property keys and values each carries — seeded at open and kept current by every writer, alongside a main-owned live tree that retires the write-path re-walk. Linked-From, backlinks, ContextView, and full-text search build on it; the FTS table is the one piece of schema still unwritten.
+The near-term structural queue rides `ContextPM.md`'s Pending Focuses rather than a version number; feature clusters resume below once those land. The cross-cluster prerequisite is in place: `nexus.db` carries the content index — which pages relate to which titles, by what kind and how often, and which property keys and values each carries — seeded at open and kept current by every writer, alongside a main-owned live tree that retires the write-path re-walk. Linked-From, backlinks, and ContextView have their substrate in it, each a read over the relationship rows; full-text search waits on the FTS table, which remains unwritten.
 
 #### v0.6.0 — The View Renderers
 
