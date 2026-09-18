@@ -1,4 +1,4 @@
-import { codeMaskOf, isInsideInlineCode } from './markdownCode'
+import { codeMaskOf, isInsideInlineCode, type CodeMask } from './markdownCode'
 import {
   isThematicBreakLine,
   isHeadingLine,
@@ -24,6 +24,7 @@ export function quotePrefixWidth(line: string, levels: number): number {
 
 /** Every whole-document derivation the editor reads. Pure on `text`, so per-keystroke callers cache one per doc VERSION. */
 export interface DocScan extends DocLines, DocLineScan {
+  inCode: CodeMask
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
   tables: TableRegion[]
@@ -42,6 +43,7 @@ export function scanDoc(text: string): DocScan {
   const tables = tableRegions(d, inCode)
   return {
     ...d,
+    inCode,
     fences,
     callouts: calloutLines(lines, fences),
     tables,

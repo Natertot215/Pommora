@@ -55,29 +55,23 @@ const clearPath = (db: Db, path: string): void => {
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
   upsertPageIndex(path, entry, stat) {
     clearPath(db, path)
-    const insMention = db.prepare('INSERT OR REPLACE INTO mentions (path, title) VALUES (?, ?)')
-    for (const title of entry.mentions) insMention.run(path, title)
+    const insNode = db.prepare(
+      'INSERT OR REPLACE INTO matrix_nodes (path, kind, target, qualifier, count) VALUES (?, ?, ?, ?, ?)',
+    )
+    for (const { kind, target, qualifier, count } of entry.matrix)
+      insNode.run(path, kind, target, qualifier, count)
     const insHeading = db.prepare(
       'INSERT OR REPLACE INTO headings (path, heading, ordinal) VALUES (?, ?, ?)',
     )
     entry.headings.forEach((heading, ordinal) => {
       insHeading.run(path, heading, ordinal)
     })
-    const insHeadingMention = db.prepare(
-      'INSERT OR REPLACE INTO heading_mentions (path, title, heading) VALUES (?, ?, ?)',
-    )
-    for (const { title, heading } of entry.headingMentions)
-      insHeadingMention.run(path, title, heading)
     const insValue = db.prepare(
       'INSERT OR REPLACE INTO page_values (path, key, value) VALUES (?, ?, ?)',
     )
     for (const [key, value] of Object.entries(entry.values)) {
       insValue.run(path, key, JSON.stringify(value) ?? 'null')
     }
-    const insMember = db.prepare(
-      'INSERT OR REPLACE INTO memberships (path, key, title) VALUES (?, ?, ?)',
-    )
-    for (const { key, title } of entry.memberships) insMember.run(path, key, title)
     // The gate row lands LAST, so a write that dies part-way leaves no stat and the next seed re-reads the file.
     db.prepare('INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)').run(
       path,
@@ -106,13 +100,18 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       ).run(newDir, oldDir, oldDir, oldDir)
     }
   },
+  // Qualifier-agnostic by construction: a page that links only `[[Alpha#Intro]]` names Alpha, and a predicate narrowing to the unqualified row would drop it from the rename cascade silently. DISTINCT because one page reaches one target through several kinds and qualifiers.
   queryMentions(normalizedTitle) {
-    return paths(db, 'SELECT path FROM mentions WHERE title = ? ORDER BY path', normalizedTitle)
+    return paths(
+      db,
+      "SELECT DISTINCT path FROM matrix_nodes WHERE target = ? AND kind <> 'space' ORDER BY path",
+      normalizedTitle,
+    )
   },
   queryHeadingMentions(normalizedTitle, normalizedHeading) {
     return paths(
       db,
-      'SELECT path FROM heading_mentions WHERE title = ? AND heading = ? ORDER BY path',
+      "SELECT DISTINCT path FROM matrix_nodes WHERE target = ? AND qualifier = ? AND kind <> 'space' ORDER BY path",
       normalizedTitle,
       normalizedHeading,
     )
@@ -138,10 +137,11 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   queryKeyHolders(key) {
     return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)
   },
+  // `key` is the Context key and lands in `qualifier`; `title` is the Space title and lands in `target`.
   queryMembers(key, title) {
     return paths(
       db,
-      'SELECT path FROM memberships WHERE key = ? AND title = ? ORDER BY path',
+      "SELECT DISTINCT path FROM matrix_nodes WHERE kind = 'space' AND qualifier = ? AND target = ? ORDER BY path",
       key,
       title,
     )

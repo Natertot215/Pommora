@@ -98,40 +98,10 @@ export function* linksIn(
     yield { syntax: 'section', target: own, qualifier: normalizeTitle(run.heading), at: run.from }
 }
 
-export function extractMentions(body: string, ownTitle = ''): Set<string> {
-  const out = new Set<string>()
-  for (const hit of linksIn(body, ownTitle)) out.add(hit.target)
-  return out
-}
-
 export function mentionsTitle(body: string, normalizedKey: string): boolean {
   if (normalizedKey === '') return false
   for (const hit of linksIn(body)) if (hit.target === normalizedKey) return true
   return false
-}
-
-export interface HeadingMention {
-  title: string
-  heading: string
-}
-
-/** Every link that names a heading, keyed the way the index stores it; a bare fragment or a bare `§` run names the containing page. */
-export function extractHeadingMentions(
-  body: string,
-  ownTitle: string,
-  outline: readonly string[] = [],
-): HeadingMention[] {
-  const seen = new Set<string>()
-  const out: HeadingMention[] = []
-  for (const hit of linksIn(body, ownTitle, outline)) {
-    // An embed always yields an empty qualifier, so this one test rejects both.
-    if (hit.qualifier === '') continue
-    const key = `${hit.target}#${hit.qualifier}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    out.push({ title: hit.target, heading: hit.qualifier })
-  }
-  return out
 }
 
 /** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
