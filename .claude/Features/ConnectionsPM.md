@@ -21,7 +21,7 @@ Every title the scanner finds is looked up in an in-memory map built from the pa
 
 ### The Rename Cascade
 
-A connection resolves by title, so renaming a page rewrites every body that names the old title, each fragment re-emitted as written. `Core/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index says mentions the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone. Anything inside a code span or fence is a sample and is never rewritten.
+A connection resolves by title, so renaming a page rewrites every body that names the old title, each fragment re-emitted as written. `Core/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index relates to the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone. Anything inside a code span or fence is a sample and is never rewritten.
 
 Renaming a heading rewrites the links that name it the same way: the page's own inside the editing transaction, one undo step with the rename, and every other file the index names once the edit settles, the page's fold keys following. A rename landing from outside Pommora is read by the index re-scan and takes the same path; where one of two identical headings is renamed, links keep the one still standing.
 
@@ -73,6 +73,6 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 #### Prospects
 
 - **Duplicate disambiguation** — id-scoping so a connection to an ambiguous title can pick its target inline.
-- **Backlinks** — a surface listing every Page that links to the current one. The content index already records mentions; the surface doesn't exist.
+- **Backlinks** — a surface listing every Page that links to the current one. The content index records each relationship with its kind — body link, citation, embed, or frontmatter value — and its occurrence count, so the surface is a read over those rows; the surface doesn't exist.
 - **Alias management** — curating a Page's remembered aliases in one place rather than forgetting them one at a time.
 - **Wider targets** — Tasks and Events, and block anchors (`#^`).
