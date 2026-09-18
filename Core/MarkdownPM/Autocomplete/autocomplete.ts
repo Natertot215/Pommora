@@ -66,7 +66,7 @@ export function autocompleteQuery(
       armedRel < line.length &&
       caret >= armed + 1 &&
       !linkAt(line, rel) &&
-      !/\s/.test(line.slice(armedRel + 1, rel))
+      !/^\s/.test(line.slice(armedRel + 1, rel))
     )
       return {
         query: line.slice(armedRel + 1, rel),

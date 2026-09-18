@@ -40,12 +40,41 @@ describe('a list marker holds no seats the reader cannot see', () => {
     expect(stepLeft(view, 2)).toBe(1)
   })
 
+  it('a pointer seat at a number’s end lands past the gap, so a token opening the content reveals', async () => {
+    const view = await mount('1. **foo**')
+    view.focus()
+    view.dispatch({ selection: EditorSelection.cursor(2), userEvent: 'select.pointer' })
+    expect(view.state.selection.main.head).toBe(3)
+    view.dispatch({ selection: EditorSelection.cursor(0), userEvent: 'select.pointer' })
+    expect(view.state.selection.main.head).toBe(3)
+    view.dispatch({ selection: EditorSelection.cursor(2), userEvent: 'select' })
+    expect(view.state.selection.main.head).toBe(2)
+  })
+
   it('lets the caret into the marker once the line reveals its raw source', async () => {
     const view = await mount('- foo')
     // The reveal is the caret's own AND only while the editor holds focus — an unfocused editor shows every marker as its glyph, so the slot stays whole.
     view.focus()
     view.dispatch({ selection: EditorSelection.cursor(0) })
     expect(stepRight(view, 0)).toBe(1)
+  })
+
+  it('keeps the slot whole while the caret sits in the item’s own text, where the glyph still draws', async () => {
+    const view = await mount('- foo\n  - bar')
+    view.focus()
+    view.dispatch({ selection: EditorSelection.cursor(4) })
+    expect(stepLeft(view, 2)).toBe(0)
+    view.dispatch({ selection: EditorSelection.cursor(11) })
+    expect(stepLeft(view, 10)).toBe(8)
+    expect(stepLeft(view, 8)).toBe(6)
+  })
+
+  it('a nested bullet’s absorbed indentation is a seat the reader cannot see either', async () => {
+    const view = await mount('- foo\n  - bar\n- baz')
+    view.dispatch({ selection: EditorSelection.cursor(0) })
+    expect(stepLeft(view, 10)).toBe(8)
+    expect(stepLeft(view, 8)).toBe(6)
+    expect(stepRight(view, 6)).toBe(8)
   })
 
   it('keeps the slot whole while the editor is unfocused, where nothing reveals', async () => {

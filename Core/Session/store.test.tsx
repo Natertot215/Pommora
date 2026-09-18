@@ -422,6 +422,17 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
   })
 })
 
+describe('store — openWindow on its own origin', () => {
+  it('shows the origin tab when another tab is active', () => {
+    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
+    useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
+    expect(windowTargetOf(useSession.getState())?.id).toBe('b')
+    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
+    expect(windowTargetOf(useSession.getState())?.id).toBe('a')
+    expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
+  })
+})
+
 describe('store — applyTree reconciles the window tabs (D-6)', () => {
   it('re-paths a renamed tab, re-parents on a dead origin, closes the window when all tabs die', async () => {
     useSession.getState().openWindow({ id: 'b', path: 'Notes/B.md' })

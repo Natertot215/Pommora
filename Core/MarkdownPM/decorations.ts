@@ -7,7 +7,13 @@ import {
   type ViewUpdate,
   WidgetType,
 } from '@codemirror/view'
-import type { Extension, Range, Text } from '@codemirror/state'
+import {
+  EditorSelection,
+  EditorState,
+  type Extension,
+  type Range,
+  type Text,
+} from '@codemirror/state'
 
 import {
   tokenize,
@@ -35,6 +41,7 @@ import {
   assembleLineIntents,
   GLYPH_CLASS,
   NO_CARET,
+  seatPastMarker,
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
@@ -352,11 +359,17 @@ const docAtomics = perDoc((doc) => {
   return Decoration.set(ranges, true)
 })
 
-function atomicFor(doc: Text, scan: DocScan, head: number): DecorationSet {
+function atomicFor(
+  doc: Text,
+  scan: DocScan,
+  head: number,
+  caretLine: readonly Range<Decoration>[],
+): DecorationSet {
   const all = docAtomics(doc)
   if (head < 0) return all
   const i = lineIndexAt(scan, head)
   return all.update({
+    add: caretLine,
     filter: () => false,
     filterFrom: scan.lineStarts[i],
     filterTo: scan.lineStarts[i] + scan.lines[i].length,
@@ -397,7 +410,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
     ))
       intents.push(it)
   const ranges: Range<Decoration>[] = []
-  const atomic = inline ? Decoration.none : atomicFor(view.state.doc, scan, head)
+  const caretAtomics: Range<Decoration>[] = []
+  const caretLine = head < 0 ? null : view.state.doc.lineAt(head)
   for (const it of intents) {
     if (it.kind === 'line') {
       const spec =
@@ -431,7 +445,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
       continue
     }
     if (it.to <= it.from) continue
-    if (it.kind === 'atomic') continue
+    if (it.kind === 'atomic') {
+      if (caretLine && it.from >= caretLine.from && it.to <= caretLine.to)
+        caretAtomics.push(atomicSpan.range(it.from, it.to))
+      continue
+    }
     if (it.kind === 'class')
       ranges.push(Decoration.mark({ class: it.className }).range(it.from, it.to))
     else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
@@ -567,13 +585,34 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
   for (const { from, to } of view.visibleRanges)
     for (let i = text.indexOf('↔', from); i >= 0 && i < to; i = text.indexOf('↔', i + 1))
       ranges.push(bidir.range(i, i + 1))
+  const atomic = inline
+    ? Decoration.none
+    : atomicFor(
+        view.state.doc,
+        scan,
+        head,
+        caretAtomics.sort((a, b) => a.from - b.from),
+      )
   return { deco: Decoration.set(ranges, true), atomic }
 }
+
+// A pointer seat inside or at the end of a visible marker lands past its gap, on the content.
+const markerSeat = EditorState.transactionFilter.of((tr) => {
+  if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
+  const head = tr.selection.main.head
+  const seat = seatPastMarker(docLineIntentsOf(tr.newDoc), docScan(tr.newDoc), head)
+  return seat === null || seat === head ? tr : [tr, { selection: EditorSelection.cursor(seat) }]
+})
 
 export function markdownDecorations(
   getConn: () => ConnectionsApi | undefined,
   inline = false,
 ): Extension {
+  if (inline) return decorationPlugin(getConn, inline)
+  return [decorationPlugin(getConn, inline), markerSeat]
+}
+
+function decorationPlugin(getConn: () => ConnectionsApi | undefined, inline: boolean): Extension {
   return ViewPlugin.fromClass(
     class {
       built: Built

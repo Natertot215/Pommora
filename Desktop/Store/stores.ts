@@ -127,7 +127,10 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
         : db.prepare('SELECT path, heading FROM headings ORDER BY path, ordinal').all()
     ) as { path: string; heading: string }[]
     const out: Record<string, string[]> = {}
-    for (const p of paths ?? []) out[p] = []
+    const seeded =
+      paths ??
+      (db.prepare('SELECT path FROM indexed_files').all() as { path: string }[]).map((r) => r.path)
+    for (const p of seeded) out[p] = []
     for (const { path, heading } of rows) {
       out[path] ??= []
       out[path].push(heading)

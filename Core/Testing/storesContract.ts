@@ -170,6 +170,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/Alpha.md'])
     })
 
+    it('a page with no headings reads as an empty list, cold and by path alike', () => {
+      store.upsertPageIndex('Notes/H.md', { matrix: [], headings: [], values: {} }, STAT)
+      expect(store.readHeadings()).toEqual({ 'Notes/H.md': [] })
+      expect(store.readHeadings(['Notes/H.md'])).toEqual({ 'Notes/H.md': [] })
+    })
+
     it('a heading-naming link answers the bare title query', () => {
       store.upsertPageIndex(
         'Notes/A.md',

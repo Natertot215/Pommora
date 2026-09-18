@@ -9,7 +9,7 @@ The editor is built on CodeMirror 6, which provides the text substrate — caret
 
 The editor takes everything it cannot know from an **EditorHost** — one object declared in `Core/MarkdownPM/api.ts` and built by `Core/Pages/editorHost.tsx`: the tiles an embed asks it to render, the alias memory and pasted-link title lookup, the settings it reads, and the glance and menu affordances. A host that leaves out `glance` or the format menu simply loses that affordance, which is what lets the same editor run inside a page, a window, a tile, and a test harness. Appearance is `markdown-pm.css`, reading the design system's tokens through the CSS-variable bridge. Four rules hold the design together:
 
-- **The document is the file.** The editor's document string is the page body as saved on disk. There is no intermediate model and no reconstruction step.
+- **The document is the file.** The editor's document string is the page body as saved on disk;here is no intermediate model and no reconstruction step.
 - **Display is not source.** The same bytes render differently depending on where the caret is, and the editor never tidies or normalizes what you wrote — every change to the file is one you made.
 - **The editor sees only the body.** Frontmatter is split off when a page loads, held as a typed object, and re-serialized on save with any foreign keys and comments preserved. YAML never appears in the editor and can't be damaged from it.
 - **Interface state stays out of the file.** Heading folds, embed tile heights, Scale factors, and similar per-machine preferences live in `nexus.db`, so the `.md` carries content and nothing else.

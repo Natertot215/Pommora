@@ -1,5 +1,6 @@
 import {
   connectionText,
+  expressibleHeading,
   normalizeTitle,
   pageEmbedPattern,
   pageEmbedText,
@@ -55,14 +56,14 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
   )
 }
 
-/** Rewrites every link and bare run that names `oldHeading` on the page titled `title`; a bare fragment or `§` run counts only when `ownTitle` is that page. */
+/** Rewrites every link and bare run that names `oldHeading` on the page titled `title`; a bare fragment counts only when `ownTitle` is that page, and a `§` run only when `outline` (the page's headings around the rename) is given, so a longer heading the run names keeps it. A heading the wikilink grammar can't write is never written into one. */
 export function rewriteHeadingConnections(
   body: string,
   title: string,
   oldHeading: string,
   newHeading: string,
   ownTitle = '',
-  runs = false,
+  outline?: readonly string[],
 ): string {
   const titleKey = normalizeTitle(title)
   const oldKey = normalizeTitle(oldHeading)
@@ -70,9 +71,10 @@ export function rewriteHeadingConnections(
   const names = (page: string | null): boolean =>
     page === '' ? own : page !== null && normalizeTitle(page) === titleKey
   const inCode = codeMask(body)
+  const wiki = expressibleHeading(newHeading)
   const afterLinks = body.replace(pageLinkPattern(), (match, ...args) => {
     const { page, heading, alias } = groupsOf(args)
-    if (heading === undefined || inCode(offsetOf(args))) return match
+    if (!wiki || heading === undefined || inCode(offsetOf(args))) return match
     if (!names(page) || normalizeTitle(titleOf(heading)) !== oldKey) return match
     return `[[${page}#${newHeading}${escapedPipe(heading, alias)}]]`
   })
@@ -85,11 +87,12 @@ export function rewriteHeadingConnections(
       return `[${label}](${target.slice(0, target.indexOf('#'))}#${encodeLinkTarget(newHeading)})`
     },
   )
-  if (!own || !runs) return afterMd
+  if (!own || !outline) return afterMd
   const inCodeFinal = codeMask(afterMd)
   let out = afterMd
-  for (const run of sectionRunsIn(afterMd, [oldHeading], inCodeFinal).reverse())
-    out = `${out.slice(0, run.from + 1)}${newHeading}${out.slice(run.to)}`
+  for (const run of sectionRunsIn(afterMd, [...outline, oldHeading], inCodeFinal).reverse())
+    if (normalizeTitle(run.heading) === oldKey)
+      out = `${out.slice(0, run.from + 1)}${newHeading}${out.slice(run.to)}`
   return out
 }
 

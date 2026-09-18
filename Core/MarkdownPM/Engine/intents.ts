@@ -319,6 +319,30 @@ export function assembleLineIntents(
   return intents
 }
 
+/** The seat a visible marker hands the caret: past its gap, where the content and any token opening it begin. A pointer landing at the marker's end sits before the zero-width gap, one seat short. */
+export function seatPastMarker(
+  cached: CachedLineIntents,
+  scan: DocScan,
+  pos: number,
+): number | null {
+  const line = cached.perLine[lineIndexAt(scan, pos)]
+  const marker = line.find(
+    (it) =>
+      it.kind === 'class' &&
+      (it.className.startsWith('md-list-number') || it.className.startsWith('md-list-arrow')),
+  )
+  if (marker?.kind !== 'class' || pos < marker.from || pos > marker.to) return null
+  let end = marker.to
+  for (const it of line)
+    if (
+      ((it.kind === 'class' && it.className === 'md-list-gap') || it.kind === 'hide') &&
+      it.from === end &&
+      it.to > end
+    )
+      end = it.to
+  return end
+}
+
 export function decorationsFor(
   text: string,
   tokens: Token[],
@@ -386,8 +410,10 @@ function pushConstruct(
       className: `md-list-item md-list-task${lm.checked ? ' md-list-done' : ''}`,
       level: lm.level,
     })
-    if (lm.markerStart > 0)
+    if (lm.markerStart > 0) {
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
+      intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
+    }
     if (!onMarker) {
       intents.push({
         kind: 'hide',
@@ -429,6 +455,9 @@ function pushConstruct(
         to: innerStart + lm.contentStart,
         spec: { type: 'bullet' },
       })
+      const slotStart = bulletAbsorbs ? ls : innerStart
+      if (innerStart + lm.markerStart > slotStart)
+        intents.push({ kind: 'atomic', from: slotStart, to: innerStart + lm.markerStart })
       intents.push({
         kind: 'atomic',
         from: innerStart + lm.markerStart,

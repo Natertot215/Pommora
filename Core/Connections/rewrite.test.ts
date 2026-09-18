@@ -173,17 +173,34 @@ describe('rewriteHeadingConnections', () => {
     expect(rewriteHeadingConnections('[[#Old]]', 'P', 'Old', 'New', 'P')).toBe('[[#New]]')
   })
 
-  it('rewrites a bare `§` run only when runs is set', () => {
-    expect(rewriteHeadingConnections('§Old', 'P', 'Old', 'New', 'P', false)).toBe('§Old')
-    expect(rewriteHeadingConnections('§Old', 'P', 'Old', 'New', 'P', true)).toBe('§New')
+  it('rewrites a bare `§` run only when the outline is given', () => {
+    expect(rewriteHeadingConnections('§Old', 'P', 'Old', 'New', 'P')).toBe('§Old')
+    expect(rewriteHeadingConnections('§Old', 'P', 'Old', 'New', 'P', ['Old'])).toBe('§New')
+  })
+
+  it('a run naming a longer heading keeps it when the shorter one renames', () => {
+    expect(
+      rewriteHeadingConnections('§Note Taking §Note', 'P', 'Note', 'Note!', 'P', [
+        'Note',
+        'Note Taking',
+      ]),
+    ).toBe('§Note Taking §Note!')
+  })
+
+  it('never writes a heading the link grammar cannot express', () => {
+    expect(rewriteHeadingConnections('[[#Old]] [x](#Old)', 'P', 'Old', 'A | B', 'P')).toBe(
+      '[[#Old]] [x](#A%20%7C%20B)',
+    )
   })
 
   it('leaves a link naming a different page untouched', () => {
-    expect(rewriteHeadingConnections('[[Q#Old]]', 'P', 'Old', 'New', 'P', true)).toBe('[[Q#Old]]')
+    expect(rewriteHeadingConnections('[[Q#Old]]', 'P', 'Old', 'New', 'P', ['Old'])).toBe(
+      '[[Q#Old]]',
+    )
   })
 
   it('leaves a run that merely starts with the heading untouched', () => {
-    expect(rewriteHeadingConnections('§Older', 'P', 'Old', 'New', 'P', true)).toBe('§Older')
+    expect(rewriteHeadingConnections('§Older', 'P', 'Old', 'New', 'P', ['Old'])).toBe('§Older')
   })
 
   it('leaves a fenced sample untouched', () => {
