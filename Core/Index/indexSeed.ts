@@ -1,9 +1,10 @@
 import { join, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
-import { extractHeadingMentions, extractMentions, frontmatterMentions } from '../Connections/scan'
+import { frontmatterMentions, linksIn } from '../Connections/scan'
 import { normalizeTitle, titleFromPath } from '../Connections/connections'
-import { headingOutline } from '../MarkdownPM/Engine/headingScan'
+import { headingOutline, headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
+import { lineIndexAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
 import { sweepAdmitsBody } from '../Files/pageFile'
 import {
@@ -22,7 +23,8 @@ import {
   type ContentIndexStore,
   contentIndexStore,
   type IndexedStat,
-  type Membership,
+  type MatrixKind,
+  type MatrixNode,
   type PageIndexEntry,
 } from '../Platform/stores'
 import { machine } from '../Platform/machine'
@@ -33,34 +35,41 @@ import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
 
 import { readWatchScope } from '../Settings/settings'
 
-const NO_ROWS: PageIndexEntry = {
-  mentions: [],
-  headings: [],
-  headingMentions: [],
-  values: {},
-  memberships: [],
-}
+const NO_ROWS: PageIndexEntry = { matrix: [], headings: [], values: {} }
 
 function extractPageIndex(rel: string, content: string): PageIndexEntry {
   if (!sweepAdmitsBody(content)) return NO_ROWS
   const values = frontmatterValues(content)
   const own = titleFromPath(rel)
   const { body } = splitEnvelope(content)
-  const outline = headingOutline(body).map((h) => h.text)
-  const mentions = extractMentions(body, own)
-  for (const title of frontmatterMentions(values)) mentions.add(title)
+  const scan = scanDoc(body)
+  const outline = headingOutlineOf(scan).map((h) => h.text)
+  const tally = new Map<string, MatrixNode>()
+  // A NUL separator: no normalized title or Context key can hold one, so the three parts never blur.
+  const add = (kind: MatrixKind, target: string, qualifier: string): void => {
+    const key = `${kind}\0${target}\0${qualifier}`
+    const held = tally.get(key)
+    if (held) held.count++
+    else tally.set(key, { kind, target, qualifier, count: 1 })
+  }
+  for (const hit of linksIn(body, own, outline, scan.inCode)) {
+    add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
+    // `mask` is indexed by LINE, so the hit's offset resolves to one first; `firstLine` is a line index and comparing it to an offset would classify by document length.
+    if (scan.citations.mask[lineIndexAt(scan, hit.at)] === 1)
+      add('citation', hit.target, hit.qualifier)
+  }
+  for (const target of frontmatterMentions(values)) add('frontmatter', target, '')
+  for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
   return {
-    mentions: [...mentions],
+    matrix: [...tally.values()],
     headings: [...new Set(outline.map(normalizeTitle))].filter(Boolean),
-    headingMentions: extractHeadingMentions(body, own, outline),
     values,
-    memberships: extractMemberships(values),
   }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
-function extractMemberships(values: Record<string, unknown>): Membership[] {
-  const out: Membership[] = []
+function spaceRelations(values: Record<string, unknown>): { target: string; qualifier: string }[] {
+  const out: { target: string; qualifier: string }[] = []
   for (const [key, raw] of Object.entries(values)) {
     if (parseContextKey(key) === null || raw == null) continue
     const titles = new Set<string>()
@@ -68,7 +77,7 @@ function extractMemberships(values: Record<string, unknown>): Membership[] {
       const title = normalizeTitle(value)
       if (title) titles.add(title)
     }
-    for (const title of titles) out.push({ key, title })
+    for (const target of titles) out.push({ target, qualifier: key })
   }
   return out
 }

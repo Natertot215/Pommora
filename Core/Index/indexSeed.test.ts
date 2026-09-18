@@ -3,7 +3,7 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { mkdir, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { installStores, NO_STORES } from '../Platform/stores'
+import { installStores, type MatrixNode, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
   queryHeadingMentions,
@@ -14,6 +14,7 @@ import {
   readIndexedStats,
 } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
+import { scanDoc } from '../MarkdownPM/Engine/docScan'
 import { sweepAdmitsBody, splitEnvelope } from '../Files/pageFile'
 import { readFile } from 'node:fs/promises'
 import { indexWrittenPage, seedContentIndex } from './indexSeed'
@@ -25,6 +26,15 @@ const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 let root: string
 let mem: ReturnType<typeof memoryStores>
 const abs = (...segs: string[]): string => join(root, ...segs)
+const rowsOf = (path: string): MatrixNode[] =>
+  [...mem.index.matrix.values()]
+    .filter((r) => r.path === path)
+    .map(({ kind, target, qualifier, count }) => ({ kind, target, qualifier, count }))
+    .sort((a, b) =>
+      `${a.kind}\u0000${a.target}\u0000${a.qualifier}`.localeCompare(
+        `${b.kind}\u0000${b.target}\u0000${b.qualifier}`,
+      ),
+    )
 
 beforeEach(async () => {
   root = tempRoot('pom-seed-')
@@ -74,8 +84,8 @@ describe('seedContentIndex', () => {
   it('the stat gate skips unmoved files and re-reads moved ones', async () => {
     await seedContentIndex(root)
     // Sabotage a row directly: an unmoved file must NOT be re-read, so the sabotage survives.
-    for (const [key, row] of mem.index.mentions)
-      if (row.path === 'Notes/A.md') mem.index.mentions.delete(key)
+    for (const [key, row] of mem.index.matrix)
+      if (row.path === 'Notes/A.md' && row.kind !== 'space') mem.index.matrix.delete(key)
     await seedContentIndex(root)
     expect(queryMentions('target')).toEqual(['Loose/Note.md'])
     await utimes(abs('Notes', 'A.md'), new Date(), new Date(Date.now() + 5000))
@@ -175,5 +185,107 @@ describe('seedContentIndex', () => {
     installStores(NO_STORES)
     await expect(seedContentIndex(root)).resolves.toBeUndefined()
     expect(queryMentions('target')).toBeNull()
+  })
+})
+
+describe('the matrix a page yields', () => {
+  const page = async (body: string): Promise<void> => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n${body}`)
+    await seedContentIndex(root)
+  }
+
+  it('a body link is one `body` row', async () => {
+    await page('links [[Zeta]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('an embed is an `embed` row, never a `body` one', async () => {
+    await page('shows ![[Zeta]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a Link property is a `frontmatter` row', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nRef: '[[Zeta]]'\n---\n\nbody\n`)
+    await seedContentIndex(root)
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'frontmatter', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a `<Title>` key is a `space` row holding the Space title and the Context key', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n---\n\nbody\n`,
+    )
+    await seedContentIndex(root)
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+    ])
+  })
+
+  it('a link inside a footnote definition overlays a `citation` row on its `body` row', async () => {
+    await page('intro\n\n[^1]: see [[Zeta]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('an embed inside a footnote definition overlays the citation on the embed, not on a body row', async () => {
+    await page('intro\n\n[^1]: see ![[Zeta]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('two occurrences of one target are one row counting two', async () => {
+    await page('links [[Zeta]] and again [[Zeta]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 2 },
+    ])
+  })
+
+  it('classifies by line, not by offset: a link far past the block’s line index stays out of it', async () => {
+    // The opening link's OFFSET exceeds the footnote block's LINE index, so reading one as the other misfiles it.
+    const lead = `${'lead words '.repeat(12)}[[Zeta]]`
+    const filler = Array.from({ length: 40 }, (_, i) => `filler line ${i}`).join('\n')
+    await page(`${lead}\n${filler}\n\n[^1]: see [[Zeta]]\n`)
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 2 },
+      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a `[^1]:` line inside a fenced block opens no footnote block', async () => {
+    const body = 'links [[Zeta]]\n\n```\n[^1]: see [[Omega]]\n```\n'
+    await page(body)
+    expect(scanDoc(body).citations.entries).toEqual([])
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a `[^1]:` cell inside a table opens no footnote block', async () => {
+    const body = 'links [[Zeta]]\n\n| Note | Ref |\n| --- | --- |\n| [^1]: see [[Omega]] | x |\n'
+    await page(body)
+    const scan = scanDoc(body)
+    expect(scan.tables).toHaveLength(1)
+    // The cell's line lies inside the table region, and the head pattern admits no leading pipe, so no block opens.
+    expect(scan.tables[0].to).toBeGreaterThan(scan.lineStarts[4])
+    expect(scan.citations.entries).toEqual([])
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'omega', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a wikilink inside an inline code span names nothing', async () => {
+    await page('a sample `[[Zeta]]` here\n')
+    expect(rowsOf('Notes/A.md')).toEqual([])
   })
 })

@@ -51,19 +51,19 @@ This replaces the three storage tables with one that records the kind of each re
 
 #### Implementation Process
 
-- [ ] **Phase 1** — The Unified Walker
-  - [ ] Task 1.1 — `linksIn`, and the two extractors re-expressed over it
-  - [ ] Task 1.2 — `headingOutlineOf`
-  - [ ] Task 1.3 — The scan cache leaves `docScan`
-  - [ ] Review Checkpoint
-- [ ] **Phase 2** — The Matrix Table
-  - [ ] Task 2.1 — The schema, the generation step, and the retired-name drop
-  - [ ] Task 2.2 — The Core seam
-  - [ ] Task 2.3 — The SQLite store
-  - [ ] Task 2.4 — The in-memory store
-  - [ ] Task 2.5 — The producer
-  - [ ] Task 2.6 — The contract suite and the index tests
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — The Unified Walker
+  - [x] Task 1.1 — `linksIn`, and the two extractors re-expressed over it
+  - [x] Task 1.2 — `headingOutlineOf`
+  - [x] Task 1.3 — The scan cache leaves `docScan`
+  - [x] Review Checkpoint
+- [x] **Phase 2** — The Matrix Table
+  - [x] Task 2.1 — The schema, the generation step, and the retired-name drop
+  - [x] Task 2.2 — The Core seam
+  - [x] Task 2.3 — The SQLite store
+  - [x] Task 2.4 — The in-memory store
+  - [x] Task 2.5 — The producer
+  - [x] Task 2.6 — The contract suite and the index tests
+  - [x] Review Checkpoint
 - [ ] `[Stop: Nathan renames a page whose links include a footnote link and a name shared with a Space, and confirms every link rewrote]`
 - [ ] **Phase 3** — Reconciliation
   - [ ] Task 3.1 — The feature documents
@@ -130,12 +130,12 @@ export function extractHeadingMentions(
 
 **CHANGE**
 
-- [ ] Add `LinkSyntax`, `LinkHit`, and `linksIn` exactly as the AFTER block spells them.
-- [ ] Preserve the page-title asymmetry rather than unifying it: `extractMentions` applies `titleOf` only when the link names no heading, while `extractHeadingMentions` uses the raw page. They are not equivalent — `[[Foo\#Bar]]` parses as `page: 'Foo\'` with a heading present, because `pageLinkPattern` admits a backslash in the page group and terminates it on `#`. Carry the conditional into `linksIn` unchanged.
-- [ ] Re-express `extractMentions` and `extractHeadingMentions` as thin collectors over `linksIn`, and `mentionsTitle` as an early-exit loop. Keep all three exported and keep every signature identical; Task 2.5 retires the two extractors once the producer reads `linksIn` directly.
-- [ ] Widen the early-out to `§`, but gate that term on `outline.length > 0` — the only condition under which a `§` run can yield. Nathan's own writing uses `§Heading` heavily, so an ungated term would let a large share of linkless bodies past the gate and into three `matchAll` passes before the run loop bails.
-- [ ] Take `inCode` as optional and resolve it **inside** the body, never as a default parameter. A generator initializes its parameter bindings at call time, before the body's first statement runs, so `inCode: CodeMask = codeMask(body)` would build a full-document mask for every call including the ones that return at the gate. `Core/Nexus/cascade.ts` runs `mentionsTitle` over the entire corpus whenever `queryMentions` returns null, and `Core/Tiles/tilesFile.ts` runs it over every markdown tile file unconditionally — a default parameter here is the "never expensive work on every X" rule broken on the hottest path this plan touches.
-- [ ] Leave `sectionRunsIn` and `frontmatterMentions` untouched.
+- [x] Add `LinkSyntax`, `LinkHit`, and `linksIn` exactly as the AFTER block spells them.
+- [x] Preserve the page-title asymmetry rather than unifying it: `extractMentions` applies `titleOf` only when the link names no heading, while `extractHeadingMentions` uses the raw page. They are not equivalent — `[[Foo\#Bar]]` parses as `page: 'Foo\'` with a heading present, because `pageLinkPattern` admits a backslash in the page group and terminates it on `#`. Carry the conditional into `linksIn` unchanged.
+- [x] Re-express `extractMentions` and `extractHeadingMentions` as thin collectors over `linksIn`, and `mentionsTitle` as an early-exit loop. Keep all three exported and keep every signature identical; Task 2.5 retires the two extractors once the producer reads `linksIn` directly.
+- [x] Widen the early-out to `§`, but gate that term on `outline.length > 0` — the only condition under which a `§` run can yield. Nathan's own writing uses `§Heading` heavily, so an ungated term would let a large share of linkless bodies past the gate and into three `matchAll` passes before the run loop bails.
+- [x] Take `inCode` as optional and resolve it **inside** the body, never as a default parameter. A generator initializes its parameter bindings at call time, before the body's first statement runs, so `inCode: CodeMask = codeMask(body)` would build a full-document mask for every call including the ones that return at the gate. `Core/Nexus/cascade.ts` runs `mentionsTitle` over the entire corpus whenever `queryMentions` returns null, and `Core/Tiles/tilesFile.ts` runs it over every markdown tile file unconditionally — a default parameter here is the "never expensive work on every X" rule broken on the hottest path this plan touches.
+- [x] Leave `sectionRunsIn` and `frontmatterMentions` untouched.
 
 **AFTER**
 
@@ -265,13 +265,13 @@ export function frontmatterMentions(values: Record<string, unknown>): Set<string
 
 **VERIFY**
 
-- [ ] `npm run test` passes with **zero edits** to `Core/Connections/scan.test.ts`. That file pins both extractors, and this task is behavior-preserving by construction — a red assertion is a defect in the re-expression, not churn.
-- [ ] `extractMentions` yields no `§` run: its callers pass no outline, and `linksIn` returns before the run loop when `outline` is empty.
-- [ ] `mentionsTitle` returns at the first match. Confirm by reading the loop, not by timing it.
-- [ ] **No mask is built for a body that returns at the gate.** Prove it: call `linksIn` on a linkless body with a counting stub in place of `codeMask` and confirm the count stays 0. A generator's default parameters evaluate at call time, so this regresses silently if the mask moves back into the signature — and `Core/Nexus/cascade.ts` runs `mentionsTitle` over the whole corpus on the no-index path.
-- [ ] A body holding `§` but no link syntax returns at the gate when no outline is passed: `runs` is false, and the three `matchAll` passes never run.
-- [ ] `[[Foo\#Bar]]` yields `target` `foo\`, matching what `extractHeadingMentions` records today.
-- [ ] Run all three gates with `set -o pipefail` and read each tail.
+- [x] `npm run test` passes with **zero edits** to `Core/Connections/scan.test.ts`. That file pins both extractors, and this task is behavior-preserving by construction — a red assertion is a defect in the re-expression, not churn.
+- [x] `extractMentions` yields no `§` run: its callers pass no outline, and `linksIn` returns before the run loop when `outline` is empty.
+- [x] `mentionsTitle` returns at the first match. Confirm by reading the loop, not by timing it.
+- [x] **No mask is built for a body that returns at the gate.** Prove it: call `linksIn` on a linkless body with a counting stub in place of `codeMask` and confirm the count stays 0. A generator's default parameters evaluate at call time, so this regresses silently if the mask moves back into the signature — and `Core/Nexus/cascade.ts` runs `mentionsTitle` over the whole corpus on the no-index path.
+- [x] A body holding `§` but no link syntax returns at the gate when no outline is passed: `runs` is false, and the three `matchAll` passes never run.
+- [x] `[[Foo\#Bar]]` yields `target` `foo\`, matching what `extractHeadingMentions` records today.
+- [x] Run all three gates with `set -o pipefail` and read each tail.
 
 #### Task 1.2
 
@@ -296,8 +296,8 @@ export function headingOutline(doc: string): OutlineHeading[] {
 
 **CHANGE**
 
-- [ ] Split the body into `headingOutlineOf(src)` and keep `headingOutline(doc)` as the string entry point over it.
-- [ ] Do not export `HeadingSrc`. `headingSections(src: HeadingSrc)` is already exported against the private type and every caller works, because a caller's argument arrives by inference rather than by annotation.
+- [x] Split the body into `headingOutlineOf(src)` and keep `headingOutline(doc)` as the string entry point over it.
+- [x] Do not export `HeadingSrc`. `headingSections(src: HeadingSrc)` is already exported against the private type and every caller works, because a caller's argument arrives by inference rather than by annotation.
 
 **AFTER**
 
@@ -317,9 +317,9 @@ export const headingOutline = (doc: string): OutlineHeading[] => headingOutlineO
 
 **VERIFY**
 
-- [ ] `headingOutline` returns identically for every input the existing suite covers — this task moves an entry point and computes nothing new.
-- [ ] `DocScan` satisfies `HeadingSrc` structurally, which Phase 2 depends on: `DocScan` carries `lines: string[]`, `lineStarts: number[]`, `headings: boolean[]`, and `fences: (FenceInfo | undefined)[]`, each assignable to the `readonly` members `HeadingSrc` declares. The file's own comment at the `HeadingSrc` declaration already states this; confirm it still reads true.
-- [ ] `HeadingSrc` is not exported and `npm run typecheck` is green.
+- [x] `headingOutline` returns identically for every input the existing suite covers — this task moves an entry point and computes nothing new.
+- [x] `DocScan` satisfies `HeadingSrc` structurally, which Phase 2 depends on: `DocScan` carries `lines: string[]`, `lineStarts: number[]`, `headings: boolean[]`, and `fences: (FenceInfo | undefined)[]`, each assignable to the `readonly` members `HeadingSrc` declares. The file's own comment at the `HeadingSrc` declaration already states this; confirm it still reads true.
+- [x] `HeadingSrc` is not exported and `npm run typecheck` is green.
 
 #### Task 1.3
 
@@ -357,10 +357,10 @@ export const scanOf = perText(scanDoc)
 
 **CHANGE**
 
-- [ ] Create `Core/MarkdownPM/Engine/scanCache.ts` holding `TEXT_SLOTS`, `perText`, and `scanOf`, moved verbatim with their comment.
-- [ ] Delete the `capSet` import and that whole block from `docScan.ts`. Nothing else in the file referenced either.
-- [ ] Retarget every `scanOf` and `perText` import to `./scanCache`. Three production files — `Core/MarkdownPM/docCache.ts`, `Core/MarkdownPM/Engine/listDragModel.ts`, `Core/MarkdownPM/Engine/subfieldStats.ts` — and eight test files. `subfieldStats.ts` imports both `perText` and `scanOf` alongside `scanDoc` and `lineIndexAt`, so its import splits across the two modules.
-- [ ] Change nothing about what either function computes. This is a move, not a rewrite.
+- [x] Create `Core/MarkdownPM/Engine/scanCache.ts` holding `TEXT_SLOTS`, `perText`, and `scanOf`, moved verbatim with their comment.
+- [x] Delete the `capSet` import and that whole block from `docScan.ts`. Nothing else in the file referenced either.
+- [x] Retarget every `scanOf` and `perText` import to `./scanCache`. Three production files — `Core/MarkdownPM/docCache.ts`, `Core/MarkdownPM/Engine/listDragModel.ts`, `Core/MarkdownPM/Engine/subfieldStats.ts` — and eight test files. `subfieldStats.ts` imports both `perText` and `scanOf` alongside `scanDoc` and `lineIndexAt`, so its import splits across the two modules.
+- [x] Change nothing about what either function computes. This is a move, not a rewrite.
 
 **AFTER**
 
@@ -394,18 +394,18 @@ export const scanOf = perText(scanDoc)
 
 **VERIFY**
 
-- [ ] `grep -n "pommora/uix" Core/MarkdownPM/Engine/docScan.ts` → no result.
-- [ ] `npm run test` green, including `Core/Contract/engineGraph.test.ts`, whose four-leaf assertion is unchanged. The gate stays pinned at four because the engine graph reaches `docScan.ts` and never `scanCache.ts`.
-- [ ] `grep -rn "perText\|scanOf" Core --include=*.ts --include=*.tsx` shows every import resolving to `scanCache`, and `docScan` exporting neither.
-- [ ] `Core/MarkdownPM/docCache.test.ts` asserts `scanOf(body)` and the per-doc cache agree; it passes unedited but for its import line.
+- [x] `grep -n "pommora/uix" Core/MarkdownPM/Engine/docScan.ts` → no result.
+- [x] `npm run test` green, including `Core/Contract/engineGraph.test.ts`, whose four-leaf assertion is unchanged. The gate stays pinned at four because the engine graph reaches `docScan.ts` and never `scanCache.ts`.
+- [x] `grep -rn "perText\|scanOf" Core --include=*.ts --include=*.tsx` shows every import resolving to `scanCache`, and `docScan` exporting neither.
+- [x] `Core/MarkdownPM/docCache.test.ts` asserts `scanOf(body)` and the per-doc cache agree; it passes unedited but for its import line.
 
 #### Review Checkpoint
 
-- [ ] Gates green from clean across Phase 1's range, each tail read.
-- [ ] `Core/Contract/engineGraph.test.ts` is green and its four-leaf list is unedited. Phase 2 adds a host-side importer of `docScan`, and this phase is what keeps that from widening the engine's declared UIX surface.
-- [ ] No test file changes beyond the `scanOf` import line: `git diff` over the range shows `Core/Connections/scan.test.ts` untouched.
+- [x] Gates green from clean across Phase 1's range, each tail read.
+- [x] `Core/Contract/engineGraph.test.ts` is green and its four-leaf list is unedited. Phase 2 adds a host-side importer of `docScan`, and this phase is what keeps that from widening the engine's declared UIX surface.
+- [x] No test file changes beyond the `scanOf` import line: `git diff` over the range shows `Core/Connections/scan.test.ts` untouched.
 - [ ] A page rename still rewrites body links, embeds, and heading-naming links, exercised in the running app rather than asserted — the walker is now the single source for all three.
-- [ ] Diff size reported, comments excluded.
+- [x] Diff size reported, comments excluded.
 
 ### Phase 2 — The Matrix Table
 
@@ -460,11 +460,11 @@ export function rebuildIndex(db: Db): void {
 
 **CHANGE**
 
-- [ ] Step `INDEX_GENERATION` to `6`.
-- [ ] Delete the `mentions`, `heading_mentions`, and `memberships` definitions and their three indexes; put `matrix_nodes` and its one index where `mentions` stood so the DDL keeps its reading order. Leave `headings`, `page_values`, `indexed_files`, `meta`, `local_state`, and `sync` exactly as they are.
-- [ ] Replace the three names in `INDEX_TABLES` with `'matrix_nodes'`.
-- [ ] Add `RETIRED_TABLES` and have `rebuildIndex` drop it alongside `INDEX_TABLES`.
-- [ ] Delete `truncateIndex`. It has no caller anywhere in the live tree — `grep -rn "truncateIndex" Core Desktop Sync Mobile` returns only its own definition.
+- [x] Step `INDEX_GENERATION` to `6`.
+- [x] Delete the `mentions`, `heading_mentions`, and `memberships` definitions and their three indexes; put `matrix_nodes` and its one index where `mentions` stood so the DDL keeps its reading order. Leave `headings`, `page_values`, `indexed_files`, `meta`, `local_state`, and `sync` exactly as they are.
+- [x] Replace the three names in `INDEX_TABLES` with `'matrix_nodes'`.
+- [x] Add `RETIRED_TABLES` and have `rebuildIndex` drop it alongside `INDEX_TABLES`.
+- [x] Delete `truncateIndex`. It has no caller anywhere in the live tree — `grep -rn "truncateIndex" Core Desktop Sync Mobile` returns only its own definition.
 
 **AFTER**
 
@@ -552,10 +552,10 @@ export function rebuildIndex(db: Db): void {
 
 **VERIFY**
 
-- [ ] `PRIMARY KEY (path, kind, target, qualifier)` is path-leading — `clearPath`, `renamePathIndex`, and both prefix operations range-scan on `path` and ride this index.
-- [ ] `qualifier` and `count` are `NOT NULL`. SQLite permits NULL in a rowid table's primary key and compares NULLs as distinct, so a nullable `qualifier` would let `INSERT OR REPLACE` accrete duplicates instead of collapsing them.
-- [ ] The index is `(target, qualifier, kind)` in that order: `queryMentions` uses the leading column, `queryHeadingMentions` the leading pair, `queryMembers` all three by equality. A `kind`-leading order would force `queryMentions` into an `IN` list.
-- [ ] `grep -rn "truncateIndex" Core Desktop Sync Mobile` → no result.
+- [x] `PRIMARY KEY (path, kind, target, qualifier)` is path-leading — `clearPath`, `renamePathIndex`, and both prefix operations range-scan on `path` and ride this index.
+- [x] `qualifier` and `count` are `NOT NULL`. SQLite permits NULL in a rowid table's primary key and compares NULLs as distinct, so a nullable `qualifier` would let `INSERT OR REPLACE` accrete duplicates instead of collapsing them.
+- [x] The index is `(target, qualifier, kind)` in that order: `queryMentions` uses the leading column, `queryHeadingMentions` the leading pair, `queryMembers` all three by equality. A `kind`-leading order would force `queryMentions` into an `IN` list.
+- [x] `grep -rn "truncateIndex" Core Desktop Sync Mobile` → no result.
 
 #### Task 2.2
 
@@ -585,9 +585,9 @@ export interface PageIndexEntry {
 
 **CHANGE**
 
-- [ ] Replace the three arrays with `matrix: MatrixNode[]`, and add `MatrixKind` and `MatrixNode` above `PageIndexEntry`.
-- [ ] Delete the `Membership` interface and the `HeadingMention` import. `Core/Platform/stores.ts` then imports nothing from `Core/Connections`.
-- [ ] Leave every method signature on `ContentIndexStore` exactly as it reads today.
+- [x] Replace the three arrays with `matrix: MatrixNode[]`, and add `MatrixKind` and `MatrixNode` above `PageIndexEntry`.
+- [x] Delete the `Membership` interface and the `HeadingMention` import. `Core/Platform/stores.ts` then imports nothing from `Core/Connections`.
+- [x] Leave every method signature on `ContentIndexStore` exactly as it reads today.
 
 **AFTER** — the head of the file only. Everything from `SnapshotSource` down, including `SnapshotStore`, `SyncStore`, `CaptureStore`, `Stores`, `NO_STORES`, `installStores`, and the five accessors, is untouched and stays exactly as it reads today.
 
@@ -634,9 +634,9 @@ export interface ContentIndexStore {
 
 **VERIFY**
 
-- [ ] `git diff Core/Platform/stores.ts` shows no edit between `export interface ContentIndexStore {` and its closing brace.
-- [ ] `grep -n "Connections" Core/Platform/stores.ts` → no result.
-- [ ] The `count` doc sentence states the per-kind unit. A graph reading `count` uniformly across kinds would otherwise compare occurrences against a constant 1.
+- [x] `git diff Core/Platform/stores.ts` shows no edit between `export interface ContentIndexStore {` and its closing brace.
+- [x] `grep -n "Connections" Core/Platform/stores.ts` → no result.
+- [x] The `count` doc sentence states the per-kind unit. A graph reading `count` uniformly across kinds would otherwise compare occurrences against a constant 1.
 
 #### Task 2.3
 
@@ -650,9 +650,9 @@ export interface ContentIndexStore {
 
 **CHANGE**
 
-- [ ] Replace the `mentions`, `heading_mentions`, and `memberships` statements and loops with one statement over `matrix_nodes` and one loop over `entry.matrix`. Keep the `indexed_files` write last.
-- [ ] Rewrite the three queries as the AFTER block spells them. **The binding is the trap:** `queryMembers(key, title)` binds `key` to the `qualifier` column and `title` to the `target` column.
-- [ ] Leave `clearPath`, `renamePathIndex`, `removePathPrefixIndex`, and `renamePathPrefixIndex` untouched — they iterate `INDEX_TABLES` generically and now issue four statements instead of six.
+- [x] Replace the `mentions`, `heading_mentions`, and `memberships` statements and loops with one statement over `matrix_nodes` and one loop over `entry.matrix`. Keep the `indexed_files` write last.
+- [x] Rewrite the three queries as the AFTER block spells them. **The binding is the trap:** `queryMembers(key, title)` binds `key` to the `qualifier` column and `title` to the `target` column.
+- [x] Leave `clearPath`, `renamePathIndex`, `removePathPrefixIndex`, and `renamePathPrefixIndex` untouched — they iterate `INDEX_TABLES` generically and now issue four statements instead of six.
 
 **AFTER**
 
@@ -752,9 +752,9 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
 
 **VERIFY**
 
-- [ ] `queryMembers` filters `kind = 'space'`. Without it the Space-deletion sweep receives every page that merely writes `[[SpaceTitle]]`; one page whose frontmatter cannot round-trip then lands in `refused` at `Core/Properties/governedSweep.ts`, which `Core/Trash/gather.ts`'s `sweepIncomplete` reads to stamp a complete Space deletion as `partial`.
-- [ ] `queryMentions` carries no `qualifier` predicate and does carry `DISTINCT`.
-- [ ] `grep -n "INDEX_TABLES" Desktop/Store/stores.ts` still shows the four generic path loops unedited.
+- [x] `queryMembers` filters `kind = 'space'`. Without it the Space-deletion sweep receives every page that merely writes `[[SpaceTitle]]`; one page whose frontmatter cannot round-trip then lands in `refused` at `Core/Properties/governedSweep.ts`, which `Core/Trash/gather.ts`'s `sweepIncomplete` reads to stamp a complete Space deletion as `partial`.
+- [x] `queryMentions` carries no `qualifier` predicate and does carry `DISTINCT`.
+- [x] `grep -n "INDEX_TABLES" Desktop/Store/stores.ts` still shows the four generic path loops unedited.
 
 #### Task 2.4
 
@@ -768,10 +768,10 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
 
 **CHANGE**
 
-- [ ] Replace `mentions`, `headingMentions`, and `memberships` with one `matrix` map keyed as the SQLite primary key is.
-- [ ] Add `tableOf`, a generic descriptor carrying `clear` and `rekey` closed over one map and its key fields, and build the list once per store.
-- [ ] Rewrite all four path operations as one loop over that list each.
-- [ ] Mirror the three queries against the merged map, including the kind predicates. **The `space` binding is the same trap as Task 2.3:** the Context key lives in `qualifier`, the Space title in `target`.
+- [x] Replace `mentions`, `headingMentions`, and `memberships` with one `matrix` map keyed as the SQLite primary key is.
+- [x] Add `tableOf`, a generic descriptor carrying `clear` and `rekey` closed over one map and its key fields, and build the list once per store.
+- [x] Rewrite all four path operations as one loop over that list each.
+- [x] Mirror the three queries against the merged map, including the kind predicates. **The `space` binding is the same trap as Task 2.3:** the Context key lives in `qualifier`, the Space title in `target`.
 
 **AFTER** — the `MemoryIndex` shape, the new `tableOf` helper, the `contentIndex` factory, and the `memoryStores` export. `keyValue()`, `snapshots()`, `sync()`, and `captures()` sit between `contentIndex` and `memoryStores` in the real file and are untouched.
 
@@ -950,11 +950,11 @@ export function memoryStores(): { stores: Stores; index: MemoryIndex } {
 
 **VERIFY**
 
-- [ ] `wc -l Core/Testing/memoryStores.ts` reads between 280 and 292, Biome-formatted, against a baseline of 307. Report the figure. A bound in one direction only would wave through a wholesale truncation, which is the actual risk in a file whose AFTER block is a fragment.
-- [ ] No path operation names an individual map: `grep -n "index.matrix\|index.headings\|index.values" Core/Testing/memoryStores.ts` shows them in the descriptor list, `upsertPageIndex`, and the queries alone.
-- [ ] `renamePathIndex` with `oldPath === newPath` leaves the rows and the stat in place. `rekey` deletes and re-sets the same key, and the stat does the same.
-- [ ] `renamePathIndex` no longer calls `clearPath`. After `rekey` no row holds `oldPath`, so the sweep deleted nothing and existed only to reach its stats line.
-- [ ] `sortedPaths` already dedupes; no `Set` needs adding anywhere.
+- [x] `wc -l Core/Testing/memoryStores.ts` reads between 280 and 292, Biome-formatted, against a baseline of 307. Report the figure. A bound in one direction only would wave through a wholesale truncation, which is the actual risk in a file whose AFTER block is a fragment.
+- [x] No path operation names an individual map: `grep -n "index.matrix\|index.headings\|index.values" Core/Testing/memoryStores.ts` shows them in the descriptor list, `upsertPageIndex`, and the queries alone.
+- [x] `renamePathIndex` with `oldPath === newPath` leaves the rows and the stat in place. `rekey` deletes and re-sets the same key, and the stat does the same.
+- [x] `renamePathIndex` no longer calls `clearPath`. After `rekey` no row holds `oldPath`, so the sweep deleted nothing and existed only to reach its stats line.
+- [x] `sortedPaths` already dedupes; no `Set` needs adding anywhere.
 
 #### Task 2.5
 
@@ -996,14 +996,14 @@ function extractMemberships(values: Record<string, unknown>): Membership[] {
 
 **CHANGE**
 
-- [ ] Call `scanDoc(body)` once. It already performs every derivation this task needs — `splitWithOffsets`, `scanFencedCode`, `codeMaskOf`, `tableRegions`, and `docLineScan`, which returns `citations` — and its result satisfies `HeadingSrc` structurally. Do not assemble those calls by hand in `Core/Index`; that is the hand-rolled parallel the project's conventions name.
-- [ ] Use `scanDoc`, never `scanOf`. `perText` caps at four text slots and a full-nexus seed would thrash it while sharing nothing — the editor's cache key is the whole document and the indexer holds the envelope-stripped body.
-- [ ] Return the code mask `scanDoc` already builds. It constructs `inCode` via `codeMaskOf`, threads it into `tableRegions` and `docLineScan`, then drops it — and the same construction is hand-rebuilt a third time in `Core/MarkdownPM/regression-pins.test.ts`. Add `inCode: CodeMask` to `DocScan` and to `scanDoc`'s return, so the indexer reads `scan.inCode` and `Core/Index` names no scanning primitive at all. This is why `docScan.ts` is in this task's FILES: exposing a derivation the function already performs deletes the duplicate rather than documenting an exception to a rule.
-- [ ] Task 1.3 has already taken the UIX import out of `docScan.ts`. Without it, this import would make `Core/Index` the first host-side reader of that module and turn `Core/Contract/engineGraph.test.ts` red on a fifth UIX leaf.
-- [ ] Tally into a `Map` keyed by kind, target, and qualifier joined on a NUL character, which no normalized title or Context key can hold.
-- [ ] Increment the citation row under the same hit that increments the syntax row. The two counts match only when every occurrence sits inside the footnote block: one link above it and one inside gives `body: 2, citation: 1`, which is correct and is what a weighting reader wants.
-- [ ] Rename `extractMemberships` to `spaceRelations` and retype it to `{ target, qualifier }[]`, keeping its comment. It dedupes per key, so every `space` row is `count: 1`.
-- [ ] Delete `extractMentions` and `extractHeadingMentions` from `Core/Connections/scan.ts`, along with the `HeadingMention` type. `linksIn` and `mentionsTitle` stay; `frontmatterMentions` stays returning `Set<string>` and is mapped to rows here rather than importing `MatrixNode` into `Core/Connections`.
+- [x] Call `scanDoc(body)` once. It already performs every derivation this task needs — `splitWithOffsets`, `scanFencedCode`, `codeMaskOf`, `tableRegions`, and `docLineScan`, which returns `citations` — and its result satisfies `HeadingSrc` structurally. Do not assemble those calls by hand in `Core/Index`; that is the hand-rolled parallel the project's conventions name.
+- [x] Use `scanDoc`, never `scanOf`. `perText` caps at four text slots and a full-nexus seed would thrash it while sharing nothing — the editor's cache key is the whole document and the indexer holds the envelope-stripped body.
+- [x] Return the code mask `scanDoc` already builds. It constructs `inCode` via `codeMaskOf`, threads it into `tableRegions` and `docLineScan`, then drops it — and the same construction is hand-rebuilt a third time in `Core/MarkdownPM/regression-pins.test.ts`. Add `inCode: CodeMask` to `DocScan` and to `scanDoc`'s return, so the indexer reads `scan.inCode` and `Core/Index` names no scanning primitive at all. This is why `docScan.ts` is in this task's FILES: exposing a derivation the function already performs deletes the duplicate rather than documenting an exception to a rule.
+- [x] Task 1.3 has already taken the UIX import out of `docScan.ts`. Without it, this import would make `Core/Index` the first host-side reader of that module and turn `Core/Contract/engineGraph.test.ts` red on a fifth UIX leaf.
+- [x] Tally into a `Map` keyed by kind, target, and qualifier joined on a NUL character, which no normalized title or Context key can hold.
+- [x] Increment the citation row under the same hit that increments the syntax row. The two counts match only when every occurrence sits inside the footnote block: one link above it and one inside gives `body: 2, citation: 1`, which is correct and is what a weighting reader wants.
+- [x] Rename `extractMemberships` to `spaceRelations` and retype it to `{ target, qualifier }[]`, keeping its comment. It dedupes per key, so every `space` row is `count: 1`.
+- [x] Delete `extractMentions` and `extractHeadingMentions` from `Core/Connections/scan.ts`, along with the `HeadingMention` type. `linksIn` and `mentionsTitle` stay; `frontmatterMentions` stays returning `Set<string>` and is mapped to rows here rather than importing `MatrixNode` into `Core/Connections`.
 
 **AFTER**
 
@@ -1105,15 +1105,15 @@ function spaceRelations(values: Record<string, unknown>): { target: string; qual
 
 **VERIFY**
 
-- [ ] `queryMentions` still reaches embed-only pages. `Core/Connections/rewrite.test.ts` asserts a rename rewrites `![[Old]]`; exercise a rename against an embed-only page.
-- [ ] `queryMentions` still reaches pages whose only reference is a frontmatter Link property. Splitting `frontmatter` out of the body set is the one change that could silently drop them; exercise a rename against such a page.
-- [ ] A link inside a footnote definition produces two rows; a link above the footnote block produces one. Use a fixture long enough that the above-block link's character offset exceeds `firstLine`'s value — a short fixture passes under a line-versus-offset confusion and ships the defect.
-- [ ] `queryHeadingMentions(title, '')` is checked rather than guarded. The merged table holds unqualified rows, so an empty heading key now matches every `body`, `embed`, `citation`, and `frontmatter` row for that title, where the separate `heading_mentions` table returned nothing. `Core/Contract/bridge.ts` does not constrain `oldHeading`, so confirm `Core/MarkdownPM/Guards/headingRenameGuard.ts` cannot emit an empty one; if it can, the cascade's entry refuses it rather than the query carrying a predicate for it.
-- [ ] An embed inside a footnote produces `embed` and `citation`, never `body`.
-- [ ] `grep -n "splitWithOffsets\|scanFencedCode\|tableRegions\|blockMathRanges\|codeMask" Core/Index/indexSeed.ts` → no result. Every derivation, the mask included, comes from the one `scanDoc` call.
-- [ ] `scanDoc` returns the same `inCode` it passes to `tableRegions` and `docLineScan` — one mask per document, not two. Reading the function is the proof; it is the same binding.
-- [ ] Record as an accepted behavior change: a page with a bare `§Heading` run now answers `queryMentions(ownTitle)` for itself. The `section` hit lands as a `body` row and `queryMentions` ignores `qualifier`, where the separate `heading_mentions` table never answered that query. The rename cascade opens the page, `mentionsTitle` returns false, nothing is written — one extra read.
-- [ ] `Core/Contract/engineGraph.test.ts` is green and its four-leaf list is unedited. `npm run test` is the gate that proves this, not `npm run typecheck` — every tsconfig project compiles clean either way, and the pin is a test assertion.
+- [x] `queryMentions` still reaches embed-only pages. `Core/Connections/rewrite.test.ts` asserts a rename rewrites `![[Old]]`; exercise a rename against an embed-only page.
+- [x] `queryMentions` still reaches pages whose only reference is a frontmatter Link property. Splitting `frontmatter` out of the body set is the one change that could silently drop them; exercise a rename against such a page.
+- [x] A link inside a footnote definition produces two rows; a link above the footnote block produces one. Use a fixture long enough that the above-block link's character offset exceeds `firstLine`'s value — a short fixture passes under a line-versus-offset confusion and ships the defect.
+- [x] `queryHeadingMentions(title, '')` is checked rather than guarded. The merged table holds unqualified rows, so an empty heading key now matches every `body`, `embed`, `citation`, and `frontmatter` row for that title, where the separate `heading_mentions` table returned nothing. `Core/Contract/bridge.ts` does not constrain `oldHeading`, so confirm `Core/MarkdownPM/Guards/headingRenameGuard.ts` cannot emit an empty one; if it can, the cascade's entry refuses it rather than the query carrying a predicate for it.
+- [x] An embed inside a footnote produces `embed` and `citation`, never `body`.
+- [x] `grep -n "splitWithOffsets\|scanFencedCode\|tableRegions\|blockMathRanges\|codeMask" Core/Index/indexSeed.ts` → no result. Every derivation, the mask included, comes from the one `scanDoc` call.
+- [x] `scanDoc` returns the same `inCode` it passes to `tableRegions` and `docLineScan` — one mask per document, not two. Reading the function is the proof; it is the same binding.
+- [x] Record as an accepted behavior change: a page with a bare `§Heading` run now answers `queryMentions(ownTitle)` for itself. The `section` hit lands as a `body` row and `queryMentions` ignores `qualifier`, where the separate `heading_mentions` table never answered that query. The rename cascade opens the page, `mentionsTitle` returns false, nothing is written — one extra read.
+- [x] `Core/Contract/engineGraph.test.ts` is green and its four-leaf list is unedited. `npm run test` is the gate that proves this, not `npm run typecheck` — every tsconfig project compiles clean either way, and the pin is a test assertion.
 
 #### Task 2.6
 
@@ -1127,16 +1127,16 @@ Fixture literals read `{ mentions, headings, headingMentions, values, membership
 
 **CHANGE**
 
-- [ ] Add two builders at the top of `describeContentIndexStore` and use them in every fixture. `space(key, title)` takes its arguments in `queryMembers(key, title)` order, so a reversed binding is visible at the call site rather than buried in a literal.
-- [ ] Rewrite all 13 fixture literals in `storesContract.ts` to `{ matrix, headings, values }`.
-- [ ] Add the three new contract cases in the AFTER block.
-- [ ] Retarget `open.test.ts`'s raw inserts to `matrix_nodes`, rename its case from "truncates" to what `rebuildIndex` does, and extend it to assert the retired tables are gone from `sqlite_master`.
-- [ ] Rewrite `stores.test.ts`'s `DROP TABLE` string to the four current names.
-- [ ] Reshape the two `PageIndexEntry` literals these files also carry, which the bullets above do not reach: one inside `open.test.ts`'s "upgrade in place" case and one inside `stores.test.ts`'s missing-tables case.
-- [ ] Retarget every `mem.index.mentions` and `mem.index.memberships` reach-in to `mem.index.matrix`.
-- [ ] Keep `scan.test.ts`'s existing assertions verbatim by moving the two deleted extractors into that file as local helpers, spelled exactly as Task 1.1 left them. Eleven assertions and the `MUST AGREE` property were the proof that `linksIn` preserved behavior; respelling them by hand against `linksIn` would dissolve that proof at the moment Phase 2 changes the producer, which is when it is worth most. The helpers are three lines each and pin the generator's contract from the outside.
-- [ ] Scope the agreement property where it is stated: it holds for `linksIn(body)` with defaults only. With an `ownTitle` and an `outline` supplied, a `§` run and a `[[#Intro]]` yield the page's own title, which `mentionsTitle` — which passes neither — never affirms.
-- [ ] Add to `indexSeed.test.ts`, where a real file exercises the producer: one case per kind, the citation overlay, the embed-inside-a-footnote case, the count case, a `[^1]:` inside a fence and inside a table, and a wikilink inside an inline code span producing no row.
+- [x] Add two builders at the top of `describeContentIndexStore` and use them in every fixture. `space(key, title)` takes its arguments in `queryMembers(key, title)` order, so a reversed binding is visible at the call site rather than buried in a literal.
+- [x] Rewrite all 13 fixture literals in `storesContract.ts` to `{ matrix, headings, values }`.
+- [x] Add the three new contract cases in the AFTER block.
+- [x] Retarget `open.test.ts`'s raw inserts to `matrix_nodes`, rename its case from "truncates" to what `rebuildIndex` does, and extend it to assert the retired tables are gone from `sqlite_master`.
+- [x] Rewrite `stores.test.ts`'s `DROP TABLE` string to the four current names.
+- [x] Reshape the two `PageIndexEntry` literals these files also carry, which the bullets above do not reach: one inside `open.test.ts`'s "upgrade in place" case and one inside `stores.test.ts`'s missing-tables case.
+- [x] Retarget every `mem.index.mentions` and `mem.index.memberships` reach-in to `mem.index.matrix`.
+- [x] Keep `scan.test.ts`'s existing assertions verbatim by moving the two deleted extractors into that file as local helpers, spelled exactly as Task 1.1 left them. Eleven assertions and the `MUST AGREE` property were the proof that `linksIn` preserved behavior; respelling them by hand against `linksIn` would dissolve that proof at the moment Phase 2 changes the producer, which is when it is worth most. The helpers are three lines each and pin the generator's contract from the outside.
+- [x] Scope the agreement property where it is stated: it holds for `linksIn(body)` with defaults only. With an `ownTitle` and an `outline` supplied, a `§` run and a `[[#Intro]]` yield the page's own title, which `mentionsTitle` — which passes neither — never affirms.
+- [x] Add to `indexSeed.test.ts`, where a real file exercises the producer: one case per kind, the citation overlay, the embed-inside-a-footnote case, the count case, a `[^1]:` inside a fence and inside a table, and a wikilink inside an inline code span producing no row.
 
 **AFTER**
 
@@ -1397,22 +1397,22 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 
 **VERIFY**
 
-- [ ] `grep -c "mentions:\|headingMentions:\|memberships:" Core/Testing/storesContract.ts Core/Index/contentIndex.test.ts Core/Index/indexMaintenance.test.ts` → 0 in all three.
-- [ ] `grep -rn "INSERT INTO mentions\|INSERT INTO memberships\|mem.index.mentions\|mem.index.memberships" Core Desktop` → results only inside the retired-table fixture in `open.test.ts`, which creates the old table deliberately.
-- [ ] The retired-table case goes red with Task 2.1's `RETIRED_TABLES` reverted. Prove it, don't assert it.
-- [ ] Each new case in `indexSeed.test.ts` goes red with its production change reverted. Prove it per case rather than as a group.
-- [ ] `grep -c "expect(" Core/Connections/scan.test.ts` grew; report the figure.
-- [ ] Run all three gates with `set -o pipefail` and read each tail. All three green.
+- [x] `grep -c "mentions:\|headingMentions:\|memberships:" Core/Testing/storesContract.ts Core/Index/contentIndex.test.ts Core/Index/indexMaintenance.test.ts` → 0 in all three.
+- [x] `grep -rn "INSERT INTO mentions\|INSERT INTO memberships\|mem.index.mentions\|mem.index.memberships" Core Desktop` → results only inside the retired-table fixture in `open.test.ts`, which creates the old table deliberately.
+- [x] The retired-table case goes red with Task 2.1's `RETIRED_TABLES` reverted. Prove it, don't assert it.
+- [x] Each new case in `indexSeed.test.ts` goes red with its production change reverted. Prove it per case rather than as a group.
+- [x] `grep -c "expect(" Core/Connections/scan.test.ts` grew; report the figure.
+- [x] Run all three gates with `set -o pipefail` and read each tail. All three green.
 
 #### Review Checkpoint
 
-- [ ] Gates green from clean across Phase 2's range, each tail read.
-- [ ] The five kinds each appear in `matrix_nodes` against a real seeded nexus, confirmed by querying the database rather than by reading the producer.
+- [x] Gates green from clean across Phase 2's range, each tail read.
+- [x] The five kinds each appear in `matrix_nodes` against a real seeded nexus, confirmed by querying the database rather than by reading the producer.
 - [ ] Deleting a Space produces a complete Trash record, not a `partial` one, on a nexus where an unrelated page writes that Space's name in its body. This is the check that catches a reversed `space` binding, which no unit test catches on its own because the fixtures and the memory store would be wrong together.
-- [ ] The citation boundary agrees with the editor's: a `[^1]:` line inside a table classifies the same way in both.
-- [ ] `SELECT COUNT(*) FROM (SELECT DISTINCT path, target FROM matrix_nodes WHERE kind <> 'space')` and `SELECT COUNT(*) FROM matrix_nodes WHERE kind = 'space'` each match the pre-merge `mentions` and `memberships` row counts over the same nexus, allowing for the `§`-run self-mention delta. A raw total proves nothing here — a heading-only link collapses two rows into one, a page carrying both a link and an embed to one target splits one into two, a body link plus a frontmatter Link splits one into two, and every footnote link adds one.
-- [ ] Seed timing measured on a real nexus and reported against the pre-merge figure, with a temporary `console.time` around `seedContentIndex` removed before the phase commits. The table parse is a known cost of the ratified design; the number is recorded, not litigated.
-- [ ] Diff size reported, comments and tests excluded, with `Core/Testing/memoryStores.ts` reported separately.
+- [x] The citation boundary agrees with the editor's: a `[^1]:` line inside a table classifies the same way in both.
+- [x] `SELECT COUNT(*) FROM (SELECT DISTINCT path, target FROM matrix_nodes WHERE kind <> 'space')` and `SELECT COUNT(*) FROM matrix_nodes WHERE kind = 'space'` each match the pre-merge `mentions` and `memberships` row counts over the same nexus, allowing for the `§`-run self-mention delta. A raw total proves nothing here — a heading-only link collapses two rows into one, a page carrying both a link and an embed to one target splits one into two, a body link plus a frontmatter Link splits one into two, and every footnote link adds one.
+- [x] Seed timing measured on a real nexus and reported against the pre-merge figure, with a temporary `console.time` around `seedContentIndex` removed before the phase commits. The table parse is a known cost of the ratified design; the number is recorded, not litigated.
+- [x] Diff size reported, comments and tests excluded, with `Core/Testing/memoryStores.ts` reported separately.
 
 ### Phase 3 — Reconciliation
 
@@ -1537,4 +1537,11 @@ Written when the chain is confirmed, per the skill's shape: the feature, phase b
 
 ### Deviations
 
-- None yet.
+- **Phase 1, Task 1.1** — `Core/Connections/scan.ts` read 147 lines while the two extractors still stood beside `linksIn`, and 117 once Task 2.5 retired them; the Baseline's 115 was the end-state estimate and the two-line difference is the retained `/** */` lines.
+- **Phase 2, Task 2.4** — `keyValue()` sits between `k` and `underPrefix` in the real file, not between `contentIndex` and `memoryStores` as the AFTER block's framing said; it was left in place so the untouched factories carried no boundary hunks.
+- **Phase 2, Task 2.6** — `Core/MarkdownPM/regression-pins.test.ts` held the third hand-rebuilt code mask the Baseline counted; its pin now reads `s.inCode`, so `grep -rn "codeMaskOf"` retires from 6 to 4 (the definition, its one internal caller, and `docScan.ts`'s import and call) rather than to 5. Recorded rather than reverted: the pin now tests the mask the scan returns rather than a copy of its construction.
+- **Phase 2, Task 2.6** — the table-boundary case cannot pin `indexSeed.ts`: micromark ends a table at a footnote-definition line, and `citationHeadRe` never matches a leading pipe, so no `[^1]:` inside a table region opens a citation block in either the editor or the indexer. The case asserts both facts and the resulting rows; it is a pin on `detect.ts`, not on the producer.
+- **Phase 2, Task 2.6** — `Core/Index/indexMaintenance.test.ts`'s membership case was retitled from "lands in memberships" to "lands as a space row"; the assertion is unchanged.
+- **Phase 2, Review Checkpoint** — the live corpus moved between the two snapshots (one draft removed, two drafts and this plan added, one page edited), so the memory-store figures read 217 files against 216. Every relationship delta is otherwise accounted for: the ten new `(path, target)` pairs are the `§`-run self-mentions the plan accepts, the `space` set is identical row for row, and the heading-mention deltas belong to the moved drafts.
+- **Phase 2, Review Checkpoint** — NexusOS writes every `![[ ]]` inside an inline code span and its one footnote holds an external URL, so `embed` and `citation` carried zero rows on the real corpus; a temporary probe page (deleted after) produced all five kinds with the citation overlay and the embed-in-footnote rows as specified.
+- **Phase 3, Task 3.2** — `.claude/Planning/Local Data — Implementation Plan.md` was deleted from the working tree by Nathan during ratification; awaiting his ruling on whether the deletion stands, in which case that half of Task 3.2 falls away.

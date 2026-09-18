@@ -2,13 +2,38 @@
 
 import { describe, it, expect } from 'vitest'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
-import {
-  extractHeadingMentions,
-  extractMentions,
-  frontmatterMentions,
-  mentionsTitle,
-  sectionRunsIn,
-} from './scan'
+import { frontmatterMentions, type LinkHit, linksIn, mentionsTitle, sectionRunsIn } from './scan'
+
+// `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the matrix took their place. They are kept here, unchanged, so the properties they pinned keep answering over the one walker that remains.
+function extractMentions(body: string, ownTitle = ''): Set<string> {
+  const out = new Set<string>()
+  for (const hit of linksIn(body, ownTitle)) out.add(hit.target)
+  return out
+}
+
+interface HeadingMention {
+  title: string
+  heading: string
+}
+
+/** Every link that names a heading, keyed the way the index stores it; a bare fragment or a bare `§` run names the containing page. */
+function extractHeadingMentions(
+  body: string,
+  ownTitle: string,
+  outline: readonly string[] = [],
+): HeadingMention[] {
+  const seen = new Set<string>()
+  const out: HeadingMention[] = []
+  for (const hit of linksIn(body, ownTitle, outline)) {
+    // An embed always yields an empty qualifier, so this one test rejects both.
+    if (hit.qualifier === '') continue
+    const key = `${hit.target}#${hit.qualifier}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ title: hit.target, heading: hit.qualifier })
+  }
+  return out
+}
 
 describe('mentionsTitle', () => {
   it('matches a page link by its normalized title', () => {
@@ -56,7 +81,7 @@ describe('mentionsTitle', () => {
 })
 
 describe('extractMentions MUST AGREE with mentionsTitle', () => {
-  // The index's extractor and the cascade's per-file confirmation answer over the same bodies, and a disagreement is a silently skipped rewrite.
+  // The index's extractor and the cascade's per-file confirmation answer over the same bodies, and a disagreement is a silently skipped rewrite. The agreement is over `linksIn(body)` with its defaults alone: `mentionsTitle` passes neither an own title nor an outline, and with both supplied a `§` run or a `[[#Intro]]` yields the page's own title, which `mentionsTitle` never sees.
   const bodies = [
     'plain [[Alpha]] link',
     'aliased [[Alpha|shown words]] link',
@@ -159,5 +184,49 @@ describe('an empty fragment', () => {
   it('[[#]] indexes nothing, and a property holding a bare fragment writes no empty key', () => {
     expect([...extractMentions('[[#]]', 'Own')]).toEqual([])
     expect([...frontmatterMentions({ a: '[[#H]]' })]).toEqual([])
+  })
+})
+
+describe('linksIn', () => {
+  const hits = (body: string, own = '', outline: readonly string[] = []): LinkHit[] => [
+    ...linksIn(body, own, outline),
+  ]
+
+  it('names the syntax each occurrence was written in', () => {
+    expect(hits('a [[Alpha]] link').map((h) => h.syntax)).toEqual(['wiki'])
+    expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['embed'])
+    expect(hits('a [label](Alpha.md) link').map((h) => h.syntax)).toEqual(['markdown'])
+    expect(hits('see §Setup', 'Own', ['Setup']).map((h) => h.syntax)).toEqual(['section'])
+  })
+
+  it('reads the heading half of a link into the qualifier', () => {
+    expect(hits('[[Page#Heading]]')[0]).toMatchObject({ target: 'page', qualifier: 'heading' })
+    expect(hits('[Text](Page.md#frag)')[0]).toMatchObject({ target: 'page', qualifier: 'frag' })
+    expect(hits('[[Page]]')[0].qualifier).toBe('')
+  })
+
+  it('reports `at` as the offset the match begins at', () => {
+    const body = 'lead words [[Alpha]] trail'
+    expect(hits(body)[0].at).toBe(body.indexOf('[[Alpha]]'))
+    const embed = 'lead ![[Alpha]] trail'
+    expect(hits(embed)[0].at).toBe(embed.indexOf('![[Alpha]]'))
+  })
+
+  it('stops the page half at the first `#`, a trailing backslash included', () => {
+    expect(hits('[[Foo\\#Bar]]')[0]).toMatchObject({ target: 'foo\\', qualifier: 'bar' })
+  })
+
+  it('yields a `§` run only when an outline AND an own title are both supplied', () => {
+    expect(hits('see §Setup', 'Own', ['Setup'])).toEqual([
+      { syntax: 'section', target: 'own', qualifier: 'setup', at: 4 },
+    ])
+    expect(hits('see §Setup', 'Own', [])).toEqual([])
+    expect(hits('see §Setup', '', ['Setup'])).toEqual([])
+  })
+
+  it('honors a mask passed in rather than building its own', () => {
+    const body = 'plain [[Alpha]] and [x](Beta.md) and ![[Gamma]]'
+    expect(hits(body)).toHaveLength(3)
+    expect([...linksIn(body, '', [], () => true)]).toEqual([])
   })
 })

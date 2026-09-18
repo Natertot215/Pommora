@@ -5,6 +5,7 @@ import type {
   CaptureStore,
   ContentIndexStore,
   IndexedStat,
+  MatrixKind,
   SnapshotRow,
   SnapshotSource,
   SnapshotStore,
@@ -12,12 +13,18 @@ import type {
   SyncStore,
 } from '../Platform/stores'
 
+interface MatrixRow {
+  path: string
+  kind: MatrixKind
+  target: string
+  qualifier: string
+  count: number
+}
+
 interface MemoryIndex {
-  mentions: Map<string, { path: string; title: string }>
+  matrix: Map<string, MatrixRow>
   headings: Map<string, { path: string; heading: string; ordinal: number }>
-  headingMentions: Map<string, { path: string; title: string; heading: string }>
   values: Map<string, { path: string; key: string; value: string }>
-  memberships: Map<string, { path: string; key: string; title: string }>
   stats: Map<string, IndexedStat>
 }
 
@@ -42,108 +49,77 @@ const keyValue = (): KeyValueStore => {
 
 const underPrefix = (path: string, dir: string): boolean => path.startsWith(`${dir}/`)
 
+interface IndexTable {
+  clear(holds: (path: string) => boolean): void
+  rekey(holds: (path: string) => boolean, move: (path: string) => string): void
+}
+
+// One descriptor per map: the four path operations differ only in which fields key a row, so the difference lives here and each operation is one loop.
+const tableOf = <R extends { path: string }>(
+  map: Map<string, R>,
+  keyOf: (row: R) => string[],
+): IndexTable => ({
+  clear(holds) {
+    for (const [key, row] of map) if (holds(row.path)) map.delete(key)
+  },
+  rekey(holds, move) {
+    for (const [key, row] of [...map]) {
+      if (!holds(row.path)) continue
+      map.delete(key)
+      const next = { ...row, path: move(row.path) }
+      map.set(k(next.path, ...keyOf(next)), next)
+    }
+  },
+})
+
 const contentIndex = (index: MemoryIndex): ContentIndexStore => {
+  const tables: IndexTable[] = [
+    tableOf(index.matrix, (r) => [r.kind, r.target, r.qualifier]),
+    tableOf(index.headings, (r) => [r.heading]),
+    tableOf(index.values, (r) => [r.key]),
+  ]
   const clearPath = (path: string): void => {
-    for (const table of [
-      index.mentions,
-      index.headings,
-      index.headingMentions,
-      index.values,
-      index.memberships,
-    ])
-      for (const [key, row] of table) if (row.path === path) table.delete(key)
+    for (const t of tables) t.clear((p) => p === path)
     index.stats.delete(path)
   }
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
+  const nodes = (): MatrixRow[] => [...index.matrix.values()]
   return {
     upsertPageIndex(path, entry, stat) {
       clearPath(path)
-      for (const title of entry.mentions) index.mentions.set(k(path, title), { path, title })
+      for (const node of entry.matrix)
+        index.matrix.set(k(path, node.kind, node.target, node.qualifier), { path, ...node })
       entry.headings.forEach((heading, ordinal) => {
         index.headings.set(k(path, heading), { path, heading, ordinal })
       })
-      for (const { title, heading } of entry.headingMentions)
-        index.headingMentions.set(k(path, title, heading), { path, title, heading })
       for (const [key, value] of Object.entries(entry.values))
         index.values.set(k(path, key), { path, key, value: JSON.stringify(value) ?? 'null' })
-      for (const { key, title } of entry.memberships)
-        index.memberships.set(k(path, key, title), { path, key, title })
       index.stats.set(path, { mtimeMs: stat.mtimeMs, size: stat.size })
     },
     removePathIndex(path) {
       clearPath(path)
     },
+    // `rekey` deletes each row before re-setting it, so no row still holds `oldPath` and the stats are all that remain to move.
     renamePathIndex(oldPath, newPath) {
-      for (const row of [...index.mentions.values()].filter((r) => r.path === oldPath))
-        index.mentions.set(k(newPath, row.title), { path: newPath, title: row.title })
-      for (const row of [...index.headings.values()].filter((r) => r.path === oldPath))
-        index.headings.set(k(newPath, row.heading), { ...row, path: newPath })
-      for (const row of [...index.headingMentions.values()].filter((r) => r.path === oldPath))
-        index.headingMentions.set(k(newPath, row.title, row.heading), {
-          path: newPath,
-          title: row.title,
-          heading: row.heading,
-        })
-      for (const row of [...index.values.values()].filter((r) => r.path === oldPath))
-        index.values.set(k(newPath, row.key), { path: newPath, key: row.key, value: row.value })
-      for (const row of [...index.memberships.values()].filter((r) => r.path === oldPath))
-        index.memberships.set(k(newPath, row.key, row.title), {
-          path: newPath,
-          key: row.key,
-          title: row.title,
-        })
+      for (const t of tables)
+        t.rekey(
+          (p) => p === oldPath,
+          () => newPath,
+        )
       const stat = index.stats.get(oldPath)
-      if (stat) index.stats.set(newPath, stat)
-      if (oldPath !== newPath) clearPath(oldPath)
+      if (!stat) return
+      index.stats.delete(oldPath)
+      index.stats.set(newPath, stat)
     },
     removePathPrefixIndex(dir) {
-      for (const table of [
-        index.mentions,
-        index.headings,
-        index.headingMentions,
-        index.values,
-        index.memberships,
-      ])
-        for (const [key, row] of table) if (underPrefix(row.path, dir)) table.delete(key)
+      for (const t of tables) t.clear((p) => underPrefix(p, dir))
       for (const path of [...index.stats.keys()])
         if (underPrefix(path, dir)) index.stats.delete(path)
     },
     renamePathPrefixIndex(oldDir, newDir) {
       const move = (path: string): string => newDir + path.slice(oldDir.length)
-      for (const [key, row] of [...index.mentions]) {
-        if (!underPrefix(row.path, oldDir)) continue
-        index.mentions.delete(key)
-        const path = move(row.path)
-        index.mentions.set(k(path, row.title), { path, title: row.title })
-      }
-      for (const [key, row] of [...index.headings]) {
-        if (!underPrefix(row.path, oldDir)) continue
-        index.headings.delete(key)
-        const path = move(row.path)
-        index.headings.set(k(path, row.heading), { ...row, path })
-      }
-      for (const [key, row] of [...index.headingMentions]) {
-        if (!underPrefix(row.path, oldDir)) continue
-        index.headingMentions.delete(key)
-        const path = move(row.path)
-        index.headingMentions.set(k(path, row.title, row.heading), {
-          path,
-          title: row.title,
-          heading: row.heading,
-        })
-      }
-      for (const [key, row] of [...index.values]) {
-        if (!underPrefix(row.path, oldDir)) continue
-        index.values.delete(key)
-        const path = move(row.path)
-        index.values.set(k(path, row.key), { path, key: row.key, value: row.value })
-      }
-      for (const [key, row] of [...index.memberships]) {
-        if (!underPrefix(row.path, oldDir)) continue
-        index.memberships.delete(key)
-        const path = move(row.path)
-        index.memberships.set(k(path, row.key, row.title), { path, key: row.key, title: row.title })
-      }
+      for (const t of tables) t.rekey((p) => underPrefix(p, oldDir), move)
+      // Biome expands a call whose arguments are all functions regardless of width, which is why the `renamePathIndex` call above reads across five lines and this one does not.
       for (const [path, stat] of [...index.stats]) {
         if (!underPrefix(path, oldDir)) continue
         index.stats.delete(path)
@@ -152,13 +128,20 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     queryMentions(normalizedTitle) {
       return sortedPaths(
-        [...index.mentions.values()].filter((r) => r.title === normalizedTitle).map((r) => r.path),
+        nodes()
+          .filter((r) => r.target === normalizedTitle && r.kind !== 'space')
+          .map((r) => r.path),
       )
     },
     queryHeadingMentions(normalizedTitle, normalizedHeading) {
       return sortedPaths(
-        [...index.headingMentions.values()]
-          .filter((r) => r.title === normalizedTitle && r.heading === normalizedHeading)
+        nodes()
+          .filter(
+            (r) =>
+              r.target === normalizedTitle &&
+              r.qualifier === normalizedHeading &&
+              r.kind !== 'space',
+          )
           .map((r) => r.path),
       )
     },
@@ -178,8 +161,8 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     queryMembers(key, title) {
       return sortedPaths(
-        [...index.memberships.values()]
-          .filter((r) => r.key === key && r.title === title)
+        nodes()
+          .filter((r) => r.kind === 'space' && r.qualifier === key && r.target === title)
           .map((r) => r.path),
       )
     },
@@ -287,11 +270,9 @@ const captures = (): CaptureStore => {
 
 export function memoryStores(): { stores: Stores; index: MemoryIndex } {
   const index: MemoryIndex = {
-    mentions: new Map(),
+    matrix: new Map(),
     headings: new Map(),
-    headingMentions: new Map(),
     values: new Map(),
-    memberships: new Map(),
     stats: new Map(),
   }
   return {

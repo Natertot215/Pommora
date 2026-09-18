@@ -59,7 +59,7 @@ describe('the content index over SQLite', () => {
     })
     markIndexReady()
     db.exec(
-      'DROP TABLE mentions; DROP TABLE headings; DROP TABLE heading_mentions; DROP TABLE page_values; DROP TABLE memberships; DROP TABLE indexed_files',
+      'DROP TABLE matrix_nodes; DROP TABLE headings; DROP TABLE page_values; DROP TABLE indexed_files',
     )
     expect(queryMentions('beta')).toBeNull()
     expect(queryKeyHolders('Status')).toBeNull()
@@ -68,7 +68,11 @@ describe('the content index over SQLite', () => {
     expect(() =>
       upsertPageIndex(
         'Notes/A.md',
-        { mentions: ['x'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        {
+          matrix: [{ kind: 'body', target: 'x', qualifier: '', count: 1 }],
+          headings: [],
+          values: {},
+        },
         {
           mtimeMs: 1000,
           size: 10,
