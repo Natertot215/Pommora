@@ -68,8 +68,9 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
-function spaceRelations(values: Record<string, unknown>): { target: string; qualifier: string }[] {
-  const out: { target: string; qualifier: string }[] = []
+function* spaceRelations(
+  values: Record<string, unknown>,
+): Generator<{ target: string; qualifier: string }> {
   for (const [key, raw] of Object.entries(values)) {
     if (parseContextKey(key) === null || raw == null) continue
     const titles = new Set<string>()
@@ -77,9 +78,8 @@ function spaceRelations(values: Record<string, unknown>): { target: string; qual
       const title = normalizeTitle(value)
       if (title) titles.add(title)
     }
-    for (const target of titles) out.push({ target, qualifier: key })
+    for (const target of titles) yield { target, qualifier: key }
   }
-  return out
 }
 
 export function frontmatterValues(content: string): Record<string, unknown> {
