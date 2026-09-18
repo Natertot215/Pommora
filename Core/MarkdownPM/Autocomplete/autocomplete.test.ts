@@ -7,7 +7,7 @@ import {
   openHeadingRows,
 } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
-import { scanOf } from '../Engine/docScan'
+import { scanOf } from '../Engine/scanCache'
 
 const autocompleteQuery = (doc: string, caret: number, allowEmbeds = false, armed?: number) =>
   queryOf(scanOf(doc), caret, allowEmbeds, armed)

@@ -1,4 +1,3 @@
-import { capSet } from '@pommora/uix/Utilities/capMap'
 import { codeMaskOf, isInsideInlineCode } from './markdownCode'
 import {
   isThematicBreakLine,
@@ -95,18 +94,3 @@ export function inSealedBlockAt(scan: DocScan, i: number): boolean {
   const holds = (f: number, t: number): boolean => from >= f && from <= t
   return scan.maths.some(([f, t]) => holds(f, t)) || scan.tables.some((r) => holds(r.from, r.to))
 }
-
-/** A few texts rather than one, because more than one page can be on screen and a single slot would let their renders evict each other. */
-const TEXT_SLOTS = 4
-export function perText<T>(derive: (text: string) => T): (text: string) => T {
-  const held = new Map<string, T>()
-  return (text) => {
-    const hit = held.get(text)
-    if (hit !== undefined) return hit
-    const v = derive(text)
-    capSet(held, text, v, TEXT_SLOTS)
-    return v
-  }
-}
-
-export const scanOf = perText(scanDoc)

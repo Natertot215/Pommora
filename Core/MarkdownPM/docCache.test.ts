@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { Text } from '@codemirror/state'
 import { docScan, docSpanTokens } from './docCache'
-import { scanOf } from './Engine/docScan'
+import { scanOf } from './Engine/scanCache'
 import { tokenize } from './Engine/tokens'
 
 describe('docSpanTokens — the parse answers to the doc version and the span set, nothing else', () => {

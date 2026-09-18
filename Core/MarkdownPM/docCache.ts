@@ -1,7 +1,7 @@
 // CM's Text.toString() re-joins the rope on every call, and extensions re-scanning the result per keystroke was the lag source.
 import type { Text } from '@codemirror/state'
 import { docLineIntents } from './Engine/intents'
-import { scanOf } from './Engine/docScan'
+import { scanOf } from './Engine/scanCache'
 import { headingOutline } from './Engine/headingScan'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import type { Token } from './Engine/tokens'

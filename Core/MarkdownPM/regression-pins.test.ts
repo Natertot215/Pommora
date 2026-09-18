@@ -14,7 +14,7 @@ import {
 import { setHeading, setList } from './Input/format'
 import { subBlockAt, renumberSequencedRun } from './Engine/listDragModel'
 import { calloutDeleteVerdict, type GuardVerdict } from './Guards/calloutGuard'
-import { scanOf } from './Engine/docScan'
+import { scanOf } from './Engine/scanCache'
 import { headingSections } from './Engine/headingScan'
 import { headingSrc } from './Engine/headingScan'
 import { fenceRangesOf } from './Engine/detect'

@@ -7,7 +7,7 @@ import {
   type ListMarker,
 } from './detect'
 import { lineOffsetsOf, quoteDepthOf } from './markdownCode'
-import { scanOf } from './docScan'
+import { scanOf } from './scanCache'
 import { lineStartAt, lineEndAt } from '../Input/edits'
 
 export interface ChangeSpec {

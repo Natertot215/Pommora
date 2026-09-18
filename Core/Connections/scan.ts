@@ -1,4 +1,4 @@
-// `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename reaches them without giving them a link-graph edge — one predicate answers for both syntaxes.
+// `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename reaches them — one walker answers for every syntax, and `syntax` keeps them apart for a reader that cares.
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
 import { markdownLinkRegex, targetFragment, targetTitle } from './links'
@@ -47,36 +47,67 @@ export function sectionRunsIn(
   return out
 }
 
-/** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. */
-export function extractMentions(body: string, ownTitle = ''): Set<string> {
-  const out = new Set<string>()
-  if (!body.includes('[[') && !body.includes('](')) return out
-  const inCode = codeMask(body)
+export type LinkSyntax = 'wiki' | 'embed' | 'markdown' | 'section'
+
+/** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. */
+export interface LinkHit {
+  syntax: LinkSyntax
+  target: string
+  qualifier: string
+  at: number
+}
+
+/** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
+export function* linksIn(
+  body: string,
+  ownTitle = '',
+  outline: readonly string[] = [],
+  inCode?: CodeMask,
+): Generator<LinkHit> {
+  const runs = outline.length > 0 && body.includes('§')
+  if (!body.includes('[[') && !body.includes('](') && !runs) return
+  const mask = inCode ?? codeMask(body)
   const own = normalizeTitle(ownTitle)
-  const add = (raw: string | null): void => {
-    const key = titleKey(raw, own)
-    if (key) out.add(key)
-  }
   for (const m of body.matchAll(pageLinkPattern())) {
     const g = m.groups
-    if (!g || (m.index !== undefined && inCode(m.index))) continue
+    const at = m.index
+    if (!g || at === undefined || mask(at)) continue
     // `[[]]` matches with an empty page and no heading; it names nothing, and never the page itself.
     if (g.page === '' && !g.heading) continue
-    add(g.heading === undefined ? titleOf(g.page) : g.page)
+    // `titleOf` only where the page half ends the link: with a heading present a trailing backslash is the title's own, not a table cell's escaped pipe.
+    const target = titleKey(g.heading === undefined ? titleOf(g.page) : g.page, own)
+    if (!target) continue
+    const qualifier = g.heading === undefined ? '' : normalizeTitle(titleOf(g.heading))
+    yield { syntax: 'wiki', target, qualifier, at }
   }
   for (const m of body.matchAll(pageEmbedPattern())) {
-    if (m.index !== undefined && inCode(m.index)) continue
-    add(m.groups?.page ?? null)
+    const at = m.index
+    if (at === undefined || mask(at)) continue
+    const target = titleKey(m.groups?.page ?? null, own)
+    if (target) yield { syntax: 'embed', target, qualifier: '', at }
   }
   for (const m of body.matchAll(markdownLinkRegex())) {
-    if (m.index !== undefined && inCode(m.index)) continue
-    add(targetTitle(m[2]))
+    const at = m.index
+    if (at === undefined || mask(at)) continue
+    const target = titleKey(targetTitle(m[2]), own)
+    if (!target) continue
+    yield { syntax: 'markdown', target, qualifier: normalizeTitle(targetFragment(m[2])), at }
   }
+  if (!runs || own === '') return
+  for (const run of sectionRunsIn(body, outline, mask))
+    yield { syntax: 'section', target: own, qualifier: normalizeTitle(run.heading), at: run.from }
+}
+
+export function extractMentions(body: string, ownTitle = ''): Set<string> {
+  const out = new Set<string>()
+  for (const hit of linksIn(body, ownTitle)) out.add(hit.target)
   return out
 }
 
 export function mentionsTitle(body: string, normalizedKey: string): boolean {
-  return normalizedKey !== '' && extractMentions(body).has(normalizedKey)
+  if (normalizedKey === '') return false
+  for (const hit of linksIn(body)) if (hit.target === normalizedKey) return true
+  return false
 }
 
 export interface HeadingMention {
@@ -90,27 +121,16 @@ export function extractHeadingMentions(
   ownTitle: string,
   outline: readonly string[] = [],
 ): HeadingMention[] {
-  const own = normalizeTitle(ownTitle)
   const seen = new Set<string>()
   const out: HeadingMention[] = []
-  const add = (rawTitle: string | null, rawHeading: string): void => {
-    const title = titleKey(rawTitle, own)
-    const heading = normalizeTitle(rawHeading)
-    if (!title || !heading || seen.has(`${title}#${heading}`)) return
-    seen.add(`${title}#${heading}`)
-    out.push({ title, heading })
+  for (const hit of linksIn(body, ownTitle, outline)) {
+    // An embed always yields an empty qualifier, so this one test rejects both.
+    if (hit.qualifier === '') continue
+    const key = `${hit.target}#${hit.qualifier}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ title: hit.target, heading: hit.qualifier })
   }
-  const inCode = codeMask(body)
-  for (const m of body.matchAll(pageLinkPattern())) {
-    const g = m.groups
-    if (!g || g.heading === undefined || (m.index !== undefined && inCode(m.index))) continue
-    add(g.page, titleOf(g.heading))
-  }
-  for (const m of body.matchAll(markdownLinkRegex())) {
-    if (m.index !== undefined && inCode(m.index)) continue
-    add(targetTitle(m[2]), targetFragment(m[2]))
-  }
-  for (const run of sectionRunsIn(body, outline, inCode)) add('', run.heading)
   return out
 }
 

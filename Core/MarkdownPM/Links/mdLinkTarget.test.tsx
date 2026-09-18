@@ -10,7 +10,7 @@ import { resolveMdTarget, type ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { renderCellContent } from '../Tables/cellStatic'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
-import { scanOf } from '../Engine/docScan'
+import { scanOf } from '../Engine/scanCache'
 
 class ResizeObserverStub {
   observe(): void {}
