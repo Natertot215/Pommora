@@ -47,7 +47,7 @@ This replaces the three storage tables with one that records the kind of each re
 - `grep -rn "truncateIndex" Core Desktop Sync Mobile` → 1, the definition alone — retires to 0
 
 **START:** 2026-09-17T23:47:20Z
-**END:** <same command, run as the report is given>
+**END:** 2026-09-18T01:09:07Z
 
 #### Implementation Process
 
@@ -1462,56 +1462,56 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 
 **Conformance**
 
-- [ ] No duplicated mechanism: `grep -n "scanDoc" Core/Index/indexSeed.ts` returns the one call, and the indexer names no scanning primitive of its own. The code mask is read from the scan rather than rebuilt, so the construction that existed in three places now exists in one.
-- [ ] No weight column, no container table, no path-keyed target, and no property-sharing rows exist — each was ruled out explicitly.
-- [ ] Nothing changed outside what the plan named: `git diff --name-only ef88befe3..HEAD` matches the plan's FILES lists.
-- [ ] No dependency added.
-- [ ] The engine's declared UIX surface did not widen: `Core/Contract/engineGraph.test.ts` still names four leaves and `git diff` shows the file unedited, although `Core/Index` now reads `Core/MarkdownPM/Engine/docScan.ts`.
+- [x] No duplicated mechanism: `grep -n "scanDoc" Core/Index/indexSeed.ts` returns the one call, and the indexer names no scanning primitive of its own. The code mask is read from the scan rather than rebuilt, so the construction that existed in three places now exists in one.
+- [x] No weight column, no container table, no path-keyed target, and no property-sharing rows exist — each was ruled out explicitly.
+- [x] Nothing changed outside what the plan named: `git diff --name-only ef88befe3..HEAD` matches the plan's FILES lists.
+- [x] No dependency added.
+- [x] The engine's declared UIX surface did not widen: `Core/Contract/engineGraph.test.ts` still names four leaves and `git diff` shows the file unedited, although `Core/Index` now reads `Core/MarkdownPM/Engine/docScan.ts`.
 
 **Correctness**
 
-- [ ] `matrix_nodes` distinguishes all five kinds against a real seeded nexus, read from the database.
-- [ ] A link inside a footnote definition carries both its syntax row and a `citation` row; a link above the footnote block carries its syntax row alone. Where a target is linked both above and inside, the syntax row's count exceeds the citation row's by the occurrences outside the block.
-- [ ] `count` reflects occurrences for `body`, `citation`, and `embed`: a target linked three times in one body reads 3. `frontmatter` and `space` rows read 1 by construction.
-- [ ] A page rename rewrites body links, embeds, frontmatter Link properties, and heading-naming links — every kind the cascade reached before the merge.
-- [ ] Deleting a Space produces a complete Trash record on a nexus where an unrelated page writes that Space's name as a body link.
-- [ ] A `space` row carries the Context key in `qualifier` and the Space title in `target`, confirmed against the producer rather than against the fixtures.
-- [ ] An existing `nexus.db` at generation 5 opens, drops all three retired tables, and reseeds.
+- [x] `matrix_nodes` distinguishes all five kinds against a real seeded nexus, read from the database.
+- [x] A link inside a footnote definition carries both its syntax row and a `citation` row; a link above the footnote block carries its syntax row alone. Where a target is linked both above and inside, the syntax row's count exceeds the citation row's by the occurrences outside the block.
+- [x] `count` reflects occurrences for `body`, `citation`, and `embed`: a target linked three times in one body reads 3. `frontmatter` and `space` rows read 1 by construction.
+- [x] A page rename rewrites body links, embeds, frontmatter Link properties, and heading-naming links — every kind the cascade reached before the merge.
+- [x] Deleting a Space produces a complete Trash record on a nexus where an unrelated page writes that Space's name as a body link.
+- [x] A `space` row carries the Context key in `qualifier` and the Space title in `target`, confirmed against the producer rather than against the fixtures.
+- [x] An existing `nexus.db` at generation 5 opens, drops all three retired tables, and reseeds.
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `ef88befe3..HEAD`. The Phase 2 `console.time` is gone.
+- [x] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `ef88befe3..HEAD`. The Phase 2 `console.time` is gone.
 - [x] `grep -rnE "extractMentions|extractHeadingMentions|\bHeadingMention\b|truncateIndex" Core Desktop --include=*.ts --include=*.tsx` returns only `Core/Connections/scan.test.ts`, which keeps the two retired extractors as local helpers pinning `linksIn` from the outside.
-- [ ] `grep -rn "mentions:\|headingMentions:\|memberships:" Core Desktop --include=*.ts --include=*.tsx` → no result.
+- [x] `grep -rn "mentions:\|headingMentions:\|memberships:" Core Desktop --include=*.ts --include=*.tsx` → no result.
 
 **Confirmation**
 
-- [ ] Every verification result read, not declared. Each new test goes red with its production change reverted, proven per case.
-- [ ] `npm run typecheck`, `npm run test`, and `npm run lint` each run with `set -o pipefail` and each tail read — a piped gate exits with the pipe's status and has masked a red suite before.
-- [ ] User: Nathan's rename pass, taken at the `[Stop: …]`.
+- [x] Every verification result read, not declared. Each new test goes red with its production change reverted, proven per case.
+- [x] `npm run typecheck`, `npm run test`, and `npm run lint` each run with `set -o pipefail` and each tail read — a piped gate exits with the pipe's status and has masked a red suite before.
+- [x] User: Nathan's rename pass, taken at the `[Stop: …]`.
 
 **Continuity**
 
-- [ ] Reconciliation complete; `CorePM.md`, `ConnectionsPM.md`, and `FrameworkPM.md` read true; both planning documents updated.
-- [ ] Every deviation fixed or carrying Nathan's ruling.
+- [x] Reconciliation complete; `CorePM.md`, `ConnectionsPM.md`, and `FrameworkPM.md` read true; both planning documents updated.
+- [x] Every deviation fixed or carrying Nathan's ruling.
 
 **Confidence**
 
-- [ ] Gates green from clean on `ef88befe3..HEAD`.
-- [ ] Every Baseline count moved as the plan said, or the difference is in Deviations.
-- [ ] Diff size reported, comments and tests excluded, with `Core/Testing/memoryStores.ts` reported separately — it is test infrastructure and must not be counted as the shipped win. The expectation is roughly flat, not negative: `ddl.ts` and `scan.ts` shrink, `indexSeed.ts` grows, and the rest hold.
-- [ ] Seed timing against a real nexus reported beside the pre-merge figure.
+- [x] Gates green from clean on `ef88befe3..HEAD`.
+- [x] Every Baseline count moved as the plan said, or the difference is in Deviations.
+- [x] Diff size reported, comments and tests excluded, with `Core/Testing/memoryStores.ts` reported separately — it is test infrastructure and must not be counted as the shipped win. The expectation is roughly flat, not negative: `ddl.ts` and `scan.ts` shrink, `indexSeed.ts` grows, and the rest hold.
+- [x] Seed timing against a real nexus reported beside the pre-merge figure.
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to Nathan — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `ef88befe3..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched: Phase 1 · Phase 2 · Phase 3
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `ef88befe3..HEAD`
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
