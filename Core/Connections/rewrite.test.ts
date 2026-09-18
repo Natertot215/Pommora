@@ -187,6 +187,14 @@ describe('rewriteHeadingConnections', () => {
     ).toBe('§Note Taking §Note!')
   })
 
+  it('a § inside a heading’s text rides through links and runs', () => {
+    expect(
+      rewriteHeadingConnections('[[#§Intro]] [[P#§Intro]] §§Intro', 'P', '§Intro', '§Start', 'P', [
+        '§Intro',
+      ]),
+    ).toBe('[[#§Start]] [[P#§Start]] §§Start')
+  })
+
   it('never writes a heading the link grammar cannot express', () => {
     expect(rewriteHeadingConnections('[[#Old]] [x](#Old)', 'P', 'Old', 'A | B', 'P')).toBe(
       '[[#Old]] [x](#A%20%7C%20B)',

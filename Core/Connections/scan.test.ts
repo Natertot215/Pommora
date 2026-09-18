@@ -118,6 +118,18 @@ describe('sectionRunsIn', () => {
     expect(runs).toEqual([{ from: 0, to: text.length, heading: 'Setup Guide' }])
   })
 
+  it('a heading whose text opens with § is reached by §§ in prose and never by its own line', () => {
+    const doc = '## §Intro\ntext §§Intro and §Intro'
+    expect(sectionRunsIn(doc, ['§Intro'], codeMask(doc))).toEqual([
+      { from: 15, to: 22, heading: '§Intro' },
+    ])
+  })
+
+  it('a heading line’s own § is heading text, not a run to another heading', () => {
+    const doc = '## Setup\n## §Setup'
+    expect(sectionRunsIn(doc, ['Setup', '§Setup'], codeMask(doc))).toEqual([])
+  })
+
   it('never matches a `§` inside a markdown link, its label or its URL', () => {
     expect(sectionRunsIn('[see §Setup](https://x.com/§Setup)', ['Setup'], codeMask(''))).toEqual([])
   })
