@@ -64,8 +64,7 @@ export interface OutlineHeading {
 }
 
 /** `headingSections` drops body-less headings; an outline still lists them, or two consecutive headings would show only the second. */
-export function headingOutline(doc: string): OutlineHeading[] {
-  const src = headingSrc(doc)
+export function headingOutlineOf(src: HeadingSrc): OutlineHeading[] {
   return scanHeadings(src).map((h) => ({
     from: src.lineStarts[h.idx],
     level: h.level,
@@ -73,6 +72,8 @@ export function headingOutline(doc: string): OutlineHeading[] {
     key: h.key,
   }))
 }
+
+export const headingOutline = (doc: string): OutlineHeading[] => headingOutlineOf(headingSrc(doc))
 
 export function sectionEnd(headings: readonly { level: number }[], start: number): number {
   for (let n = start + 1; n < headings.length; n++)
