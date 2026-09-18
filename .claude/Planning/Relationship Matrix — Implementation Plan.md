@@ -1533,7 +1533,9 @@ Written when the chain is confirmed, per the skill's shape: the feature, phase b
 
 ### Open Items
 
-- None.
+- **`Core/MarkdownPM/Citations/citationBreakage.test.tsx`** sits on Vitest's 5-second default timeout (5020 ms observed under machine contention; 9–13 s alone at HEAD); pre-existing, unattributed to this range. Either an explicit `testTimeout` on the file or hoisting the per-seat editor mount out of its loop.
+- **`Sync/handlers.test.ts:579`** failed once in a contended full run with three extra `/pull` entries in `sent`; not reproduced in five isolated runs. Check: twenty `npx vitest run Sync` runs, then `--sequence.shuffle` over the full suite.
+- **`Core/Testing/memoryStores.ts` and `Desktop/Store/stores.ts` order paths differently across the BMP boundary** (JS `.sort()` compares UTF-16 units, SQLite's BINARY collation compares UTF-8 bytes); pre-existing, every consumer treats the result as a set. A byte-comparing sort or a contract case that pins the order.
 
 ### Deviations
 
@@ -1546,4 +1548,6 @@ Written when the chain is confirmed, per the skill's shape: the feature, phase b
 - **Phase 2, Review Checkpoint** — NexusOS writes every `![[ ]]` inside an inline code span and its one footnote holds an external URL, so `embed` and `citation` carried zero rows on the real corpus; a temporary probe page (deleted after) produced all five kinds with the citation overlay and the embed-in-footnote rows as specified.
 - **Phase 3, Task 3.2** — `.claude/Planning/Local Data — Implementation Plan.md` was retired by Nathan's ruling (commit `b6d1bfbc9`), taking its unshipped Database-window design with it; the Local Data half of Task 3.2 falls away, and `ContextPM.md`'s Database-window focus no longer routes to it.
 - **Phase 2, Task 2.6** — `Core/Connections/scan.test.ts` keeps `extractMentions` and `extractHeadingMentions` as local helpers so its pre-merge assertions stand verbatim; the agreement property between `extractMentions` and `mentionsTitle` was retired once both read the same generator, since it could no longer fail.
+- **`[Stop:]`** — the live pass was driven over CDP through the bridge on Nathan's instruction rather than by his hand: a probe Space under Projects and three probe pages (a target sharing the Space's name, a source carrying a body link, a heading link, an embed, a footnote link, and a registered Link property naming it, and a member tagged with the Space). The page rename rewrote all five forms; the heading rename cascaded through `connections:headingRenamed`; the Space deletion produced a complete record naming the one member with no `partial`, while the source's plain body link stayed. Every fixture and the trash bundle were removed afterward with the live index confirmed empty of them.
+- **Final Verification** — the review pair ran once over the whole range rather than per phase; the simplification pass covered Phases 1 and 2's code, and the adversarial pass covered all three phases' output.
 - **Final Verification** — `.claude/Planning/TilesV2-Spec.md` named the `mentions` table for its backlinks panel kind; it reads the relationship rows now.
