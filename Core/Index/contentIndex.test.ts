@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { installStores, NO_STORES } from '../Platform/stores'
+import { installStores, NO_STORES, type PageIndexEntry } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
   markIndexReady,
@@ -22,12 +22,13 @@ afterEach(() => {
 })
 
 const STAT = { mtimeMs: 1000, size: 10 }
-const TAGGED = {
-  mentions: ['beta'],
+const TAGGED: PageIndexEntry = {
+  matrix: [
+    { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+    { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+  ],
   headings: [],
-  headingMentions: [],
   values: { Status: 'Open', '<Projects>': ['Pommora'] },
-  memberships: [{ key: '<Projects>', title: 'pommora' }],
 }
 
 describe('the content index', () => {
@@ -35,25 +36,26 @@ describe('the content index', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        mentions: ['beta'],
+        matrix: [
+          { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+          { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+        ],
         headings: [],
-        headingMentions: [],
         values: { Status: 'Open', '<Projects>': ['Pommora'] },
-        memberships: [{ key: '<Projects>', title: 'pommora' }],
       },
       STAT,
     )
     upsertPageIndex(
       'Loose/B.md',
       {
-        mentions: ['beta', 'gamma'],
-        headings: [],
-        headingMentions: [],
-        values: { '<Projects>': ['Pommora', 'Sapphire'] },
-        memberships: [
-          { key: '<Projects>', title: 'pommora' },
-          { key: '<Projects>', title: 'sapphire' },
+        matrix: [
+          { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+          { kind: 'body', target: 'gamma', qualifier: '', count: 1 },
+          { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+          { kind: 'space', target: 'sapphire', qualifier: '<Projects>', count: 1 },
         ],
+        headings: [],
+        values: { '<Projects>': ['Pommora', 'Sapphire'] },
       },
       STAT,
     )
@@ -70,17 +72,22 @@ describe('the content index', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        mentions: ['beta'],
+        matrix: [
+          { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+          { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+        ],
         headings: [],
-        headingMentions: [],
         values: { Status: 'Open' },
-        memberships: [{ key: '<Projects>', title: 'pommora' }],
       },
       STAT,
     )
     upsertPageIndex(
       'Notes/A.md',
-      { mentions: ['gamma'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      {
+        matrix: [{ kind: 'body', target: 'gamma', qualifier: '', count: 1 }],
+        headings: [],
+        values: {},
+      },
       { mtimeMs: 2000, size: 12 },
     )
     expect(queryMentions('beta')).toEqual([])
@@ -91,11 +98,7 @@ describe('the content index', () => {
   })
 
   it('no mentions is an empty array; NO INDEX is null — the two never conflate', () => {
-    upsertPageIndex(
-      'Notes/A.md',
-      { mentions: [], headings: [], headingMentions: [], values: {}, memberships: [] },
-      STAT,
-    )
+    upsertPageIndex('Notes/A.md', { matrix: [], headings: [], values: {} }, STAT)
     expect(queryMentions('beta')).toEqual([])
     installStores(NO_STORES)
     expect(queryMentions('beta')).toBeNull()
@@ -109,7 +112,11 @@ describe('the content index', () => {
     installStores(memoryStores().stores)
     upsertPageIndex(
       'Notes/A.md',
-      { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      {
+        matrix: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+        headings: [],
+        values: {},
+      },
       STAT,
     )
     expect(queryMentions('beta')).toBeNull()
@@ -120,7 +127,11 @@ describe('the content index', () => {
   it('a prefix rename survives an astral folder name (SQL-side character arithmetic)', () => {
     upsertPageIndex(
       'Projects 🚀/A.md',
-      { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      {
+        matrix: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+        headings: [],
+        values: {},
+      },
       STAT,
     )
     renamePathPrefixIndex('Projects 🚀', 'Launchpad')

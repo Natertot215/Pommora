@@ -33,16 +33,14 @@ const byPath = <T extends { path: string }>(rows: T[], ...keys: (keyof T)[]): T[
   })
 
 const dump = (): unknown => ({
-  mentions: byPath([...mem.index.mentions.values()], 'title'),
+  matrix: byPath([...mem.index.matrix.values()], 'kind', 'target', 'qualifier'),
   values: byPath([...mem.index.values.values()], 'key'),
-  memberships: byPath([...mem.index.memberships.values()], 'key', 'title'),
 })
 
 async function expectMaintained(): Promise<void> {
   const maintained = dump()
-  mem.index.mentions.clear()
+  mem.index.matrix.clear()
   mem.index.values.clear()
-  mem.index.memberships.clear()
   mem.index.stats.clear()
   await seedContentIndex(root)
   expect(maintained).toEqual(dump())
@@ -125,7 +123,7 @@ describe('the writers maintain the rows', () => {
     await expectMaintained()
   })
 
-  it('a context write lands in memberships; a Space rename and delete each keep them current', async () => {
+  it('a context write lands as a space row; a Space rename and delete each keep it current', async () => {
     const tagged = await handleMutate(
       {
         op: 'setContext',
@@ -185,8 +183,10 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(r.ok).toBe(true)
-    const scratch = dump() as { mentions: unknown[] }
-    expect(scratch.mentions).toEqual([{ path: 'Notes/Daily/Alpha.md', title: 'beta' }])
+    const scratch = dump() as { matrix: unknown[] }
+    expect(scratch.matrix).toEqual([
+      { path: 'Notes/Daily/Alpha.md', kind: 'body', target: 'beta', qualifier: '', count: 1 },
+    ])
     await expectMaintained()
   })
 })

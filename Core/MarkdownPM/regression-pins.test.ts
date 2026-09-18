@@ -1,6 +1,6 @@
 // Each case is a fixed break, kept here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { codeMask, codeMaskOf, isInsideCode } from './Engine/markdownCode'
+import { codeMask, isInsideCode } from './Engine/markdownCode'
 import { splitRow } from './Engine/Tables/codec'
 import { tokenize } from './Engine/tokens'
 import {
@@ -403,7 +403,7 @@ describe('isInsideCode answers exactly what codeMask answers, at every offset', 
   // If the scan-built mask ever answered differently from the string form, a fence would hold code for one layer and prose for another.
   it('the scan-built mask agrees with the string-built one, offset for offset', () => {
     const s = scanDoc(doc)
-    const fromScan = codeMaskOf(s.lines, s.lineStarts, (i) => s.fences[i] !== undefined)
+    const fromScan = s.inCode
     const mask = codeMask(doc)
     const disagreements: number[] = []
     for (let o = 0; o <= doc.length; o++) if (fromScan(o) !== mask(o)) disagreements.push(o)

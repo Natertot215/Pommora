@@ -4,6 +4,8 @@ import type {
   BaseRecord,
   CaptureStore,
   ContentIndexStore,
+  MatrixKind,
+  MatrixNode,
   SnapshotStore,
   SyncStore,
 } from '../Platform/stores'
@@ -47,6 +49,15 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
   describe(name, () => {
     let store: ContentIndexStore
     const STAT = { mtimeMs: 1000, size: 10 }
+    // Built rather than spelled: `space` takes (key, title) in `queryMembers` order, so the transposition onto (target, qualifier) reads on one line and a reversed binding reads wrong at the call site.
+    const node = (kind: MatrixKind, target: string, qualifier = ''): MatrixNode => ({
+      kind,
+      target,
+      qualifier,
+      count: 1,
+    })
+    const body = (target: string, qualifier = ''): MatrixNode => node('body', target, qualifier)
+    const space = (key: string, title: string): MatrixNode => node('space', title, key)
     beforeEach(() => {
       store = make()
     })
@@ -55,25 +66,23 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          mentions: ['beta'],
+          matrix: [body('beta'), space('<Projects>', 'pommora')],
           headings: [],
-          headingMentions: [],
           values: { Status: 'Open', '<Projects>': ['Pommora'] },
-          memberships: [{ key: '<Projects>', title: 'pommora' }],
         },
         STAT,
       )
       store.upsertPageIndex(
         'Loose/B.md',
         {
-          mentions: ['beta', 'gamma'],
-          headings: [],
-          headingMentions: [],
-          values: { '<Projects>': ['Pommora', 'Sapphire'] },
-          memberships: [
-            { key: '<Projects>', title: 'pommora' },
-            { key: '<Projects>', title: 'sapphire' },
+          matrix: [
+            body('beta'),
+            body('gamma'),
+            space('<Projects>', 'pommora'),
+            space('<Projects>', 'sapphire'),
           ],
+          headings: [],
+          values: { '<Projects>': ['Pommora', 'Sapphire'] },
         },
         STAT,
       )
@@ -89,18 +98,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('a re-upsert replaces the page rows rather than accreting them', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        {
-          mentions: ['beta'],
-          headings: [],
-          headingMentions: [],
-          values: { Status: 'Open' },
-          memberships: [],
-        },
+        { matrix: [body('beta')], headings: [], values: { Status: 'Open' } },
         STAT,
       )
       store.upsertPageIndex(
         'Notes/A.md',
-        { mentions: ['gamma'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        { matrix: [body('gamma')], headings: [], values: {} },
         { mtimeMs: 2000, size: 12 },
       )
       expect(store.queryMentions('beta')).toEqual([])
@@ -112,13 +115,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('serializes a null value rather than dropping the key', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        {
-          mentions: [],
-          headings: [],
-          headingMentions: [],
-          values: { Blank: null },
-          memberships: [],
-        },
+        { matrix: [], headings: [], values: { Blank: null } },
         STAT,
       )
       expect(store.queryKeyHolders('Blank')).toEqual(['Notes/A.md'])
@@ -128,11 +125,9 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          mentions: ['beta'],
+          matrix: [body('beta'), space('<Projects>', 'pommora')],
           headings: [],
-          headingMentions: [],
           values: { Status: 'Open' },
-          memberships: [{ key: '<Projects>', title: 'pommora' }],
         },
         STAT,
       )
@@ -147,11 +142,9 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          mentions: ['beta'],
+          matrix: [body('beta'), space('<Projects>', 'pommora')],
           headings: [],
-          headingMentions: [],
           values: { Status: 'Open' },
-          memberships: [{ key: '<Projects>', title: 'pommora' }],
         },
         STAT,
       )
@@ -166,13 +159,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('round-trips headings and heading mentions, then carries them across a rename', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        {
-          mentions: [],
-          headings: ['setup', 'intro'],
-          headingMentions: [{ title: 'beta', heading: 'setup' }],
-          values: {},
-          memberships: [],
-        },
+        { matrix: [body('beta', 'setup')], headings: ['setup', 'intro'], values: {} },
         STAT,
       )
       expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
@@ -183,15 +170,58 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/Alpha.md'])
     })
 
+    it('a heading-naming link answers the bare title query', () => {
+      store.upsertPageIndex(
+        'Notes/A.md',
+        { matrix: [body('beta', 'setup')], headings: [], values: {} },
+        STAT,
+      )
+      expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
+    })
+
+    it('returns a path once however many rows reach the target', () => {
+      store.upsertPageIndex(
+        'Notes/A.md',
+        {
+          matrix: [
+            body('beta'),
+            body('beta', 'setup'),
+            node('embed', 'beta'),
+            node('citation', 'beta'),
+          ],
+          headings: [],
+          values: {},
+        },
+        STAT,
+      )
+      expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
+    })
+
+    it('keeps space rows out of the title queries and link rows out of the member query', () => {
+      store.upsertPageIndex(
+        'Notes/A.md',
+        { matrix: [space('<Projects>', 'beta')], headings: [], values: {} },
+        STAT,
+      )
+      store.upsertPageIndex(
+        'Loose/B.md',
+        { matrix: [body('beta')], headings: [], values: {} },
+        STAT,
+      )
+      expect(store.queryMentions('beta')).toEqual(['Loose/B.md'])
+      expect(store.queryHeadingMentions('beta', '')).toEqual(['Loose/B.md'])
+      expect(store.queryMembers('<Projects>', 'beta')).toEqual(['Notes/A.md'])
+    })
+
     it('prefix-renames descendants, exact on a % folder name', () => {
       store.upsertPageIndex(
         '50% Off/A.md',
-        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        { matrix: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.upsertPageIndex(
         '50% Off More/B.md',
-        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        { matrix: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.renamePathPrefixIndex('50% Off', 'Sale')
@@ -201,7 +231,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('prefix-renames across an astral folder name', () => {
       store.upsertPageIndex(
         'Projects 🚀/A.md',
-        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        { matrix: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.renamePathPrefixIndex('Projects 🚀', 'Launchpad')
@@ -211,12 +241,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('removes a prefix, exact on a % folder name', () => {
       store.upsertPageIndex(
         '50% Off/A.md',
-        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        { matrix: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.upsertPageIndex(
         '50% Off More/B.md',
-        { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+        { matrix: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.removePathPrefixIndex('50% Off')

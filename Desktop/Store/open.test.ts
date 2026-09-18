@@ -67,7 +67,7 @@ describe('openNexusDb', () => {
     second.close()
   })
 
-  it('a stale index generation truncates the index tables and nothing else', () => {
+  it('a stale index generation rebuilds the index tables, drops the retired ones, and keeps the rest', () => {
     const first = opened()
     for (const scope of ['aliases', 'folds', 'tabs']) {
       first
@@ -77,17 +77,29 @@ describe('openNexusDb', () => {
     first
       .prepare("INSERT INTO page_values (path, key, value) VALUES ('a.md', 'Status', '\"x\"')")
       .run()
-    first.prepare("INSERT INTO mentions (path, title) VALUES ('a.md', 'x')").run()
     first
-      .prepare("INSERT INTO memberships (path, key, title) VALUES ('a.md', '<Areas>', 'x')")
+      .prepare(
+        "INSERT INTO matrix_nodes (path, kind, target, qualifier, count) VALUES ('a.md', 'body', 'x', '', 1)",
+      )
       .run()
     first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
+    // A table this generation retired, as a database written before the merge still carries it.
+    first.exec('CREATE TABLE mentions (path TEXT NOT NULL, title TEXT NOT NULL)')
+    first.prepare("INSERT INTO mentions (path, title) VALUES ('a.md', 'x')").run()
     first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '1')").run()
     first.close()
 
     const second = opened()
     expect(count(second, 'local_state')).toBe(3)
     for (const table of INDEX_TABLES) expect(count(second, table)).toBe(0)
+    const named = (name: string): number =>
+      (
+        second
+          .prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?")
+          .get(name) as { n: number }
+      ).n
+    for (const retired of ['mentions', 'heading_mentions', 'memberships'])
+      expect(named(retired)).toBe(0)
     expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
     second.close()
   })
@@ -200,7 +212,11 @@ describe('upgrade in place', () => {
     expect(readScope('folds')).toEqual({ p1: ['x'] })
     upsertPageIndex(
       'Notes/A.md',
-      { mentions: ['beta'], headings: [], headingMentions: [], values: {}, memberships: [] },
+      {
+        matrix: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+        headings: [],
+        values: {},
+      },
       STAT,
     )
     expect(queryMentions('beta')).toEqual(['Notes/A.md'])
