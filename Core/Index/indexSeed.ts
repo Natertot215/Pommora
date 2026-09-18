@@ -54,7 +54,7 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
   }
   for (const hit of linksIn(body, own, outline, scan.inCode)) {
     add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
-    // `mask` is indexed by LINE, so the hit's offset resolves to one first; `firstLine` is a line index and comparing it to an offset would classify by document length.
+    // `mask` is indexed by line, so the hit's offset resolves to one first.
     if (scan.citations.mask[lineIndexAt(scan, hit.at)] === 1)
       add('citation', hit.target, hit.qualifier)
   }
