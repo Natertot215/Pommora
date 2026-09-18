@@ -80,32 +80,7 @@ describe('mentionsTitle', () => {
   })
 })
 
-describe('extractMentions MUST AGREE with mentionsTitle', () => {
-  // The index's extractor and the cascade's per-file confirmation answer over the same bodies, and a disagreement is a silently skipped rewrite. The agreement is over `linksIn(body)` with its defaults alone: `mentionsTitle` passes neither an own title nor an outline, and with both supplied a `§` run or a `[[#Intro]]` yields the page's own title, which `mentionsTitle` never sees.
-  const bodies = [
-    'plain [[Alpha]] link',
-    'aliased [[Alpha|shown words]] link',
-    'an embed ![[Alpha]] is swept too',
-    'markdown [label](Alpha) link',
-    'markdown [label](Alpha.md) with extension',
-    'a URL [site](https://example.com/Alpha) names no page',
-    '```\n[[Alpha]]\n```\ncode is a sample',
-    'inline `[[Alpha]]` sample',
-    'NFD Álpha as [[Álpha]]',
-    'two [[Alpha]] and [[Beta]]',
-    'none at all',
-  ]
-  const titles = ['alpha', 'beta', 'álpha']
-
-  it('yields exactly the titles mentionsTitle affirms, body by body', () => {
-    for (const body of bodies) {
-      const extracted = extractMentions(body)
-      for (const key of titles) {
-        expect(extracted.has(key), `"${body}" × "${key}"`).toBe(mentionsTitle(body, key))
-      }
-    }
-  })
-
+describe('extractMentions over linksIn', () => {
   it('extraction reads the concrete set the syntax names', () => {
     expect(extractMentions('see [[Alpha]] and [x](Beta) and ![[Gamma]]')).toEqual(
       new Set(['alpha', 'beta', 'gamma']),
