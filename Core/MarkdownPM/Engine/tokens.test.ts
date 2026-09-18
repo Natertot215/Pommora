@@ -7,7 +7,7 @@ import {
   shiftToken,
   type Token,
 } from './tokens'
-import { scanOf } from './docScan'
+import { scanOf } from './scanCache'
 
 const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
 const slice = (text: string, r: [number, number]): string => text.slice(r[0], r[1])

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { scanOf } from '../Engine/docScan'
+import { scanOf } from '../Engine/scanCache'
 import { blockQueryAt } from './blockQuery'
 
 const at = (text: string, caret = text.length) => blockQueryAt(scanOf(text), caret)

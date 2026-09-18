@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { calloutDeleteVerdict, calloutGuard } from './calloutGuard'
-import { scanOf } from '../Engine/docScan'
+import { scanOf } from '../Engine/scanCache'
 
 const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean => {
   const s = scanOf(doc)

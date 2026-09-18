@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { embedInsertAfter } from './embedInsert'
 import { autocompleteQuery } from '../Autocomplete/autocomplete'
-import { scanOf } from '../Engine/docScan'
+import { scanOf } from '../Engine/scanCache'
 
 describe('embedInsertAfter', () => {
   it('fences below a block with content following', () => {
