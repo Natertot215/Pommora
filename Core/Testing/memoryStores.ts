@@ -5,7 +5,7 @@ import type {
   CaptureStore,
   ContentIndexStore,
   IndexedStat,
-  MatrixKind,
+  MatrixNode,
   SnapshotRow,
   SnapshotSource,
   SnapshotStore,
@@ -13,12 +13,8 @@ import type {
   SyncStore,
 } from '../Platform/stores'
 
-interface MatrixRow {
+interface MatrixRow extends MatrixNode {
   path: string
-  kind: MatrixKind
-  target: string
-  qualifier: string
-  count: number
 }
 
 interface MemoryIndex {
@@ -119,7 +115,6 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     renamePathPrefixIndex(oldDir, newDir) {
       const move = (path: string): string => newDir + path.slice(oldDir.length)
       for (const t of tables) t.rekey((p) => underPrefix(p, oldDir), move)
-      // Biome expands a call whose arguments are all functions regardless of width, which is why the `renamePathIndex` call above reads across five lines and this one does not.
       for (const [path, stat] of [...index.stats]) {
         if (!underPrefix(path, oldDir)) continue
         index.stats.delete(path)
