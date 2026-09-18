@@ -18,7 +18,7 @@ function titleKey(raw: string | null, own: string): string {
   return raw === '' ? own : normalizeTitle(raw)
 }
 
-// A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code or inside a wikilink are never runs.
+// A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a wikilink, or a markdown link are never runs.
 export function sectionRunsIn(
   text: string,
   headings: readonly string[],
@@ -26,10 +26,9 @@ export function sectionRunsIn(
   sorted = false,
 ): SectionRun[] {
   if (!text.includes('§') || headings.length === 0) return []
-  const links = [...text.matchAll(pageLinkPattern())].map((m) => [
-    m.index ?? 0,
-    (m.index ?? 0) + m[0].length,
-  ])
+  const links = [...text.matchAll(pageLinkPattern()), ...text.matchAll(markdownLinkRegex())].map(
+    (m) => [m.index ?? 0, (m.index ?? 0) + m[0].length],
+  )
   const byLength = sorted ? headings : [...headings].sort((a, b) => b.length - a.length)
   const out: SectionRun[] = []
   for (let i = text.indexOf('§'); i !== -1; i = text.indexOf('§', i + 1)) {

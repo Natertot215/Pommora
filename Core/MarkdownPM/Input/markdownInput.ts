@@ -146,7 +146,11 @@ export const markdownInput = [
     if (text.length !== 1) return false
     const scan = docScan(view.state.doc)
     const settings = settingsOf(view)
-    if (from !== to) return apply(view, wrapSelection(scan, from, to, text, settings))
+    if (from !== to)
+      return apply(
+        view,
+        wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
+      )
     if (refusedInAlias(scan.text, from, text)) return true
     if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(

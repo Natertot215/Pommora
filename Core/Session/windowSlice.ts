@@ -151,7 +151,10 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     closeHistory: () => set({ historyTarget: null }),
     openWindow: (target) => {
       const cur = get().pageWindow
-      if (cur?.kind === 'page' && cur.originId === target.id) return
+      if (cur?.kind === 'page' && cur.originId === target.id) {
+        get().openWindowTab(target)
+        return
+      }
       const { tabs: restored, activeTab } = reconcileRecord(get().windowsFile.origins[target.id])
       const tabs =
         restored.length > 0

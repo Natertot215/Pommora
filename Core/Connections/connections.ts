@@ -68,7 +68,7 @@ export function emptyAliasPipeAt(line: string, rel: number): number | null {
 // The `#` of an empty heading slot, `[[Page#]]`: like an empty pipe, it goes when the caret leaves it.
 export function emptyHeadingHashAt(line: string, rel: number): number | null {
   const s = linkAt(line, rel)
-  return s?.heading && s.heading[0] === s.heading[1] && !s.alias ? s.heading[0] - 1 : null
+  return s?.heading && s.heading[0] === s.heading[1] ? s.heading[0] - 1 : null
 }
 
 const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')

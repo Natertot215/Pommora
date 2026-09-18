@@ -4,7 +4,7 @@ import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { rewriteHeadingConnections } from '@pommora/core/Connections/rewrite'
 import { headingParts } from '../Engine/detect'
 import { editorHost, syncLanding } from '../api'
-import { docHeadingKeys, docOutline, docString } from '../docCache'
+import { docHeadingKeys, docOutline, docSectionHeadings, docString } from '../docCache'
 import { changesTo } from '../../Pages/merge3'
 import { carriedAnnotations } from './calloutGuard'
 
@@ -16,7 +16,7 @@ export interface HeadingRename {
 
 export const headingRenamed = StateEffect.define<HeadingRename>()
 
-// The one changed range that sits on a heading line and changed its content; other ranges in the same transaction (an undo that also restores links) are ignored. A heading typed fresh is not a rename; a heading cleared is a rename to nothing, which the listener carries.
+// The one changed range that sits on a heading line and changed its content; other ranges in the same transaction (an undo that also restores links) are ignored. A heading typed fresh is not a rename; a heading cleared is a rename to nothing, which the listener carries. The outline decides what a heading line is, so a `## ` sample inside a fence never renames.
 function headingRenameOf(tr: Transaction): HeadingRename | null {
   let found: HeadingRename | null = null
   let seen = 0
@@ -27,6 +27,7 @@ function headingRenameOf(tr: Transaction): HeadingRename | null {
     const oldParts = headingParts(oldLine.text)
     const newParts = headingParts(newLine.text)
     if (!oldParts || !newParts) return
+    if (!docOutline(tr.startState.doc).some((h) => h.from === oldLine.from)) return
     const old = oldParts.content.trim()
     const next = newParts.content.trim()
     if (!old || old === next) return
@@ -36,20 +37,21 @@ function headingRenameOf(tr: Transaction): HeadingRename | null {
   return seen === 1 ? found : null
 }
 
-// Where the old text stands on more than one line, only the links nearest the renamed line move; the rest keep the survivor.
+// Where the old text stands on more than one line, only the links nearest the renamed line move; the rest keep the survivor. The cut falls on a line boundary, the midpoint's line going to the earlier heading, so no link straddles it.
 function ownedRange(tr: Transaction, rename: HeadingRename): [number, number] {
   const oldKey = normalizeTitle(rename.old)
-  const renamedFrom = tr.newDoc.line(rename.line).from
+  const doc = tr.newDoc
+  const renamedFrom = doc.line(rename.line).from
   const others = docOutline(tr.startState.doc)
     .filter((h) => normalizeTitle(h.text) === oldKey)
     .map((h) => tr.changes.mapPos(h.from))
     .filter((from) => from !== renamedFrom)
   const prev = Math.max(-1, ...others.filter((f) => f < renamedFrom))
-  const next = Math.min(tr.newDoc.length + 1, ...others.filter((f) => f > renamedFrom))
-  return [
-    prev < 0 ? 0 : Math.ceil((prev + renamedFrom) / 2),
-    next > tr.newDoc.length ? tr.newDoc.length : Math.floor((renamedFrom + next) / 2),
-  ]
+  const next = Math.min(doc.length + 1, ...others.filter((f) => f > renamedFrom))
+  const a =
+    prev < 0 ? 0 : Math.min(doc.lineAt(Math.ceil((prev + renamedFrom) / 2)).to + 1, renamedFrom)
+  const b = next > doc.length ? doc.length : doc.lineAt(Math.floor((renamedFrom + next) / 2)).to
+  return [a, Math.max(a, b)]
 }
 
 export const headingRenameGuard: Extension = EditorState.transactionFilter.of((tr) => {
@@ -66,12 +68,15 @@ export const headingRenameGuard: Extension = EditorState.transactionFilter.of((t
   if (!rename.next) return stamped
   const host = tr.startState.facet(editorHost)
   const own = host.pageTitle() ?? ''
-  const runs = host.settings().inPageHeadingResolution === 'automatic'
+  const outline =
+    host.settings().inPageHeadingResolution === 'automatic'
+      ? docSectionHeadings(tr.startState.doc)
+      : undefined
   const after = docString(tr.newDoc)
   const [a, b] = ownedRange(tr, rename)
   const rewritten =
     after.slice(0, a) +
-    rewriteHeadingConnections(after.slice(a, b), own, rename.old, rename.next, own, runs) +
+    rewriteHeadingConnections(after.slice(a, b), own, rename.old, rename.next, own, outline) +
     after.slice(b)
   if (rewritten === after) return stamped
   return [stamped, { changes: changesTo(after, rewritten), sequential: true }]
@@ -98,12 +103,16 @@ export function headingRenameSettle(
       return
     const host = u.state.facet(editorHost)
     const own = host.pageTitle() ?? ''
-    const runs = host.settings().inPageHeadingResolution === 'automatic'
+    const outline =
+      host.settings().inPageHeadingResolution === 'automatic'
+        ? docSectionHeadings(u.state.doc)
+        : undefined
     const doc = docString(u.state.doc)
+    const live = docHeadingKeys(u.state.doc)
     let body = doc
     for (const stale of held.trail)
-      if (stale && stale !== final)
-        body = rewriteHeadingConnections(body, own, stale, final, own, runs)
+      if (stale && stale !== final && !live.includes(normalizeTitle(stale)))
+        body = rewriteHeadingConnections(body, own, stale, final, own, outline)
     // Deferred as the alias slot's own leave dispatch defers: a dispatch inside an update listener re-enters the view.
     if (body !== doc)
       setTimeout(() => u.view.dispatch({ changes: changesTo(doc, body), userEvent: 'input' }), 0)
