@@ -433,6 +433,19 @@ describe('store — openWindow on its own origin', () => {
   })
 })
 
+describe('store — openWindow with a travel armed for the origin', () => {
+  it('lands on the origin tab even when the record last showed another', () => {
+    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
+    useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
+    useSession.getState().closeWindow()
+    useSession
+      .getState()
+      .setPendingTravel({ route: 'window', path: 'Notes/A.md', heading: 'Setup' })
+    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
+    expect(windowTargetOf(useSession.getState())?.id).toBe('a')
+  })
+})
+
 describe('store — applyTree reconciles the window tabs (D-6)', () => {
   it('re-paths a renamed tab, re-parents on a dead origin, closes the window when all tabs die', async () => {
     useSession.getState().openWindow({ id: 'b', path: 'Notes/B.md' })

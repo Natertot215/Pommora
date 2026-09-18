@@ -77,6 +77,12 @@ describe('a list marker holds no seats the reader cannot see', () => {
     expect(stepRight(view, 6)).toBe(8)
   })
 
+  it('a nested number’s hidden indentation is no seat either', async () => {
+    const view = await mount('1. a\n   1. foo')
+    expect(stepLeft(view, 8)).toBe(5)
+    expect(stepRight(view, 5)).toBe(8)
+  })
+
   it('keeps the slot whole while the editor is unfocused, where nothing reveals', async () => {
     const view = await mount('- foo')
     view.dispatch({ selection: EditorSelection.cursor(0) })
