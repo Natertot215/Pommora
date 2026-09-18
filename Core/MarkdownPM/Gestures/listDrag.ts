@@ -4,7 +4,6 @@ import { parseListMarkerPrefixed as parseListMarker } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
 import { forEachLine, nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { focusAt } from '../caretPlacement'
 import { lineElementAt } from '../lineDom'
 import {
   subBlockAt,
@@ -109,7 +108,8 @@ function clickAction(view: EditorView, pos: number): void {
     view.dispatch({ changes: toggle, userEvent: 'input' })
     return
   }
-  focusAt(view, pos)
+  view.dispatch({ selection: { anchor: pos }, userEvent: 'select.pointer' })
+  view.focus()
 }
 
 export const listDragExtension: Extension = [

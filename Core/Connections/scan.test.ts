@@ -118,6 +118,10 @@ describe('sectionRunsIn', () => {
     expect(runs).toEqual([{ from: 0, to: text.length, heading: 'Setup Guide' }])
   })
 
+  it('never matches a `§` inside a markdown link, its label or its URL', () => {
+    expect(sectionRunsIn('[see §Setup](https://x.com/§Setup)', ['Setup'], codeMask(''))).toEqual([])
+  })
+
   it('never matches a `§` sitting inside a wikilink', () => {
     const text = '[[Page§X]]'
     expect(sectionRunsIn(text, ['X'], codeMask(text))).toEqual([])

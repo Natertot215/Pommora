@@ -189,6 +189,56 @@ describe('the editor reports a settled heading rename', () => {
     expect(onHeadingRename).toHaveBeenCalledWith('Setup', 'Intro')
   })
 
+  it('a rename passing through another heading’s text leaves that heading’s links alone', async () => {
+    const onHeadingRename = vi.fn()
+    const body = '## Setup\n[[#Setup]] a\n## Setups\n[[#Setups]] b'
+    const view = await mountEditor({ initialBody: body, onHeadingRename })
+    const end = body.indexOf('## Setups') + '## Setups'.length
+    await act(async () => {
+      view.dispatch({ changes: { from: end - 1, to: end }, selection: { anchor: end - 1 } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: end - 1, to: end - 1, insert: '2' },
+        selection: { anchor: end },
+      })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('## Setup\n[[#Setup]] a\n## Setup2\n[[#Setup2]] b')
+    expect(onHeadingRename).toHaveBeenCalledWith('Setups', 'Setup2')
+  })
+
+  it('on a short document the link nearest the renamed duplicate still follows', async () => {
+    const view = await mountEditor({
+      initialBody: '## Notes\n[[#Notes]] first\n## Notes\n[[#Notes]] second',
+    })
+    await act(async () => {
+      view.dispatch({ changes: { from: 8, to: 8, insert: 'x' } })
+    })
+    expect(view.state.doc.toString()).toBe(
+      '## Notesx\n[[#Notesx]] first\n## Notes\n[[#Notes]] second',
+    )
+  })
+
+  it('a `## ` line inside a fence is a sample, not a rename', async () => {
+    const onHeadingRename = vi.fn()
+    const body = '## Setup\n[[#Setup]]\n```\n## Setup\n```'
+    const view = await mountEditor({ initialBody: body, onHeadingRename })
+    const at = body.lastIndexOf('## Setup') + 8
+    await act(async () => {
+      view.dispatch({ changes: { from: at, to: at, insert: 'x' }, selection: { anchor: at + 1 } })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('## Setup\n[[#Setup]]\n```\n## Setupx\n```')
+    expect(onHeadingRename).not.toHaveBeenCalled()
+  })
+
   it('renaming one of two identical headings fires nothing (the survivor keeps the links)', async () => {
     const onHeadingRename = vi.fn()
     const view = await mountEditor({

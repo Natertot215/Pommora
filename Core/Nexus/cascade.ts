@@ -8,6 +8,7 @@ import {
   rewriteHeadingConnections,
 } from '../Connections/rewrite'
 import { normalizeTitle, titleFromPath } from '../Connections/connections'
+import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { ok, type Result } from '../Contract/result'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { frontmatterValues, nexusCorpus } from '../Index/indexSeed'
@@ -66,7 +67,7 @@ export async function renameHeadingCascade(
       oldHeading,
       newHeading,
       titleFromPath(file),
-      runs,
+      runs ? headingOutline(body).map((h) => h.text) : undefined,
     )
     return next === body ? null : mergeFrontmatter(content, {}, [], next)
   }

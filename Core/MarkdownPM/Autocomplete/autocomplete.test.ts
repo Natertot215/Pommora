@@ -313,6 +313,17 @@ describe('a typed § arms the section form', () => {
   it('is null when nothing is armed', () => {
     expect(autocompleteQuery('see §Set end', 8)).toBeNull()
   })
+
+  it('a space inside the query rides through, so a multi-word heading is reachable', () => {
+    const doc = 'see §Getting S'
+    const r = autocompleteQuery(doc, doc.length, false, 4)!
+    expect(r.form).toBe('section')
+    expect(r.query).toBe('Getting S')
+  })
+
+  it('a space right after the § is not a query', () => {
+    expect(autocompleteQuery('see § Set', 8, false, 4)).toBeNull()
+  })
 })
 
 describe('openHeadingRows', () => {

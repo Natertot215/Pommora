@@ -142,7 +142,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     readHeadings(paths) {
       const out: Record<string, string[]> = {}
-      for (const p of paths ?? []) out[p] = []
+      for (const p of paths ?? index.stats.keys()) out[p] = []
       const rows = [...index.headings.values()].sort((a, b) => a.ordinal - b.ordinal)
       for (const { path, heading } of rows) {
         if (paths && !paths.includes(path)) continue
