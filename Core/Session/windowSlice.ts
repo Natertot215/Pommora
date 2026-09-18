@@ -152,6 +152,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     openWindow: (target) => {
       const cur = get().pageWindow
       if (cur?.kind === 'page' && cur.originId === target.id) {
+        set({ navOpen: false })
         get().openWindowTab(target)
         return
       }
@@ -160,11 +161,15 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
         restored.length > 0
           ? restored
           : [{ id: makeTabId(), target: { kind: 'page' as const, ...target } }]
+      const asked =
+        get().pendingTravel?.path === target.path
+          ? tabs.find((t) => t.target.kind === 'page' && t.target.id === target.id)
+          : undefined
       const next: WindowState = {
         kind: 'page',
         originId: target.id,
         tabs,
-        activeTabId: (activeTab ?? tabs[0]).id,
+        activeTabId: (asked ?? activeTab ?? tabs[0]).id,
       }
       clearWindowCache()
       // windowExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.

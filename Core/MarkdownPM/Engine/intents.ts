@@ -449,13 +449,13 @@ function pushConstruct(
       if (lm.markerStart > 0)
         intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
     } else {
+      const slotStart = bulletAbsorbs ? ls : innerStart
       intents.push({
         kind: 'widget',
-        from: bulletAbsorbs ? ls : innerStart,
+        from: slotStart,
         to: innerStart + lm.contentStart,
         spec: { type: 'bullet' },
       })
-      const slotStart = bulletAbsorbs ? ls : innerStart
       if (innerStart + lm.markerStart > slotStart)
         intents.push({ kind: 'atomic', from: slotStart, to: innerStart + lm.markerStart })
       intents.push({
@@ -467,8 +467,10 @@ function pushConstruct(
     return lm
   } else if (lm?.kind === 'arrow' || (lm?.kind === 'bullet' && lm.bullet === '+' && !lm.box)) {
     intents.push({ kind: 'line', from: ls, className: 'md-list-item', level: lm.level })
-    if (lm.markerStart > 0)
+    if (lm.markerStart > 0) {
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
+      intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
+    }
     intents.push({
       kind: 'class',
       from: innerStart + lm.markerStart,
@@ -485,8 +487,10 @@ function pushConstruct(
       className: 'md-list-item md-list-ordered',
       level: lm.level,
     })
-    if (lm.markerStart > 0)
+    if (lm.markerStart > 0) {
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
+      intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
+    }
     intents.push({
       kind: 'class',
       from: innerStart + lm.markerStart,

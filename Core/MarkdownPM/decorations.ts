@@ -11,6 +11,7 @@ import {
   EditorSelection,
   EditorState,
   type Extension,
+  type Line,
   type Range,
   type Text,
 } from '@codemirror/state'
@@ -361,18 +362,17 @@ const docAtomics = perDoc((doc) => {
 
 function atomicFor(
   doc: Text,
-  scan: DocScan,
-  head: number,
-  caretLine: readonly Range<Decoration>[],
+  caretLine: Line | null,
+  caretAtomics: Range<Decoration>[],
 ): DecorationSet {
   const all = docAtomics(doc)
-  if (head < 0) return all
-  const i = lineIndexAt(scan, head)
+  if (!caretLine) return all
   return all.update({
-    add: caretLine,
+    add: caretAtomics,
+    sort: true,
     filter: () => false,
-    filterFrom: scan.lineStarts[i],
-    filterTo: scan.lineStarts[i] + scan.lines[i].length,
+    filterFrom: caretLine.from,
+    filterTo: caretLine.to,
   })
 }
 
@@ -585,18 +585,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
   for (const { from, to } of view.visibleRanges)
     for (let i = text.indexOf('↔', from); i >= 0 && i < to; i = text.indexOf('↔', i + 1))
       ranges.push(bidir.range(i, i + 1))
-  const atomic = inline
-    ? Decoration.none
-    : atomicFor(
-        view.state.doc,
-        scan,
-        head,
-        caretAtomics.sort((a, b) => a.from - b.from),
-      )
+  const atomic = inline ? Decoration.none : atomicFor(view.state.doc, caretLine, caretAtomics)
   return { deco: Decoration.set(ranges, true), atomic }
 }
 
-// A pointer seat inside or at the end of a visible marker lands past its gap, on the content.
 const markerSeat = EditorState.transactionFilter.of((tr) => {
   if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
   const head = tr.selection.main.head
@@ -608,8 +600,8 @@ export function markdownDecorations(
   getConn: () => ConnectionsApi | undefined,
   inline = false,
 ): Extension {
-  if (inline) return decorationPlugin(getConn, inline)
-  return [decorationPlugin(getConn, inline), markerSeat]
+  const plugin = decorationPlugin(getConn, inline)
+  return inline ? plugin : [plugin, markerSeat]
 }
 
 function decorationPlugin(getConn: () => ConnectionsApi | undefined, inline: boolean): Extension {

@@ -19,7 +19,6 @@ export function headingHash(
 ): Edit | null {
   if (inserted !== '§' || inCodeAt(scan, selStart) || inCodeAt(scan, selStart - 1)) return null
   const li = lineIndexAt(scan, selStart)
-  if (selEnd > selStart && lineIndexAt(scan, selEnd) !== li) return null
   const from = selStart - scan.lineStarts[li]
   const to = selEnd - scan.lineStarts[li]
   const title = titleSpanAt(scan.lines[li], from)

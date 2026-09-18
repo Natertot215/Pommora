@@ -51,8 +51,13 @@ function ownedRange(tr: Transaction, rename: HeadingRename): [number, number] {
   const a =
     prev < 0 ? 0 : Math.min(doc.lineAt(Math.ceil((prev + renamedFrom) / 2)).to + 1, renamedFrom)
   const b = next > doc.length ? doc.length : doc.lineAt(Math.floor((renamedFrom + next) / 2)).to
-  return [a, Math.max(a, b)]
+  return [a, b]
 }
+
+const runOutline = (state: EditorState): readonly string[] | undefined =>
+  state.facet(editorHost).settings().inPageHeadingResolution === 'automatic'
+    ? docSectionHeadings(state.doc)
+    : undefined
 
 export const headingRenameGuard: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.annotation(syncLanding)) return tr
@@ -68,10 +73,7 @@ export const headingRenameGuard: Extension = EditorState.transactionFilter.of((t
   if (!rename.next) return stamped
   const host = tr.startState.facet(editorHost)
   const own = host.pageTitle() ?? ''
-  const outline =
-    host.settings().inPageHeadingResolution === 'automatic'
-      ? docSectionHeadings(tr.startState.doc)
-      : undefined
+  const outline = runOutline(tr.startState)
   const after = docString(tr.newDoc)
   const [a, b] = ownedRange(tr, rename)
   const rewritten =
@@ -95,20 +97,12 @@ export function headingRenameSettle(
   const settle = (u: ViewUpdate, held: Pending): void => {
     const text = held.pos <= u.state.doc.length ? u.state.doc.lineAt(held.pos).text : ''
     const final = headingParts(text)?.content.trim() ?? ''
-    if (
-      !final ||
-      final === held.old ||
-      docHeadingKeys(u.state.doc).includes(normalizeTitle(held.old))
-    )
-      return
+    const live = docHeadingKeys(u.state.doc)
+    if (!final || final === held.old || live.includes(normalizeTitle(held.old))) return
     const host = u.state.facet(editorHost)
     const own = host.pageTitle() ?? ''
-    const outline =
-      host.settings().inPageHeadingResolution === 'automatic'
-        ? docSectionHeadings(u.state.doc)
-        : undefined
+    const outline = runOutline(u.state)
     const doc = docString(u.state.doc)
-    const live = docHeadingKeys(u.state.doc)
     let body = doc
     for (const stale of held.trail)
       if (stale && stale !== final && !live.includes(normalizeTitle(stale)))

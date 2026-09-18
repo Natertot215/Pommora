@@ -116,21 +116,18 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       normalizedHeading,
     )
   },
-  readHeadings(paths) {
+  readHeadings(only) {
     const rows = (
-      paths
+      only
         ? db
             .prepare(
-              `SELECT path, heading FROM headings WHERE path IN (${paths.map(() => '?').join(',')}) ORDER BY path, ordinal`,
+              `SELECT path, heading FROM headings WHERE path IN (${only.map(() => '?').join(',')}) ORDER BY path, ordinal`,
             )
-            .all(...paths)
+            .all(...only)
         : db.prepare('SELECT path, heading FROM headings ORDER BY path, ordinal').all()
     ) as { path: string; heading: string }[]
     const out: Record<string, string[]> = {}
-    const seeded =
-      paths ??
-      (db.prepare('SELECT path FROM indexed_files').all() as { path: string }[]).map((r) => r.path)
-    for (const p of seeded) out[p] = []
+    for (const p of only ?? paths(db, 'SELECT path FROM indexed_files')) out[p] = []
     for (const { path, heading } of rows) {
       out[path] ??= []
       out[path].push(heading)
