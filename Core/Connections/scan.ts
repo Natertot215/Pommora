@@ -71,7 +71,7 @@ export function* linksIn(
   for (const m of body.matchAll(pageLinkPattern())) {
     const g = m.groups
     const at = m.index
-    if (!g || at === undefined || mask(at)) continue
+    if (!g || mask(at)) continue
     // `[[]]` matches with an empty page and no heading; it names nothing, and never the page itself.
     if (g.page === '' && !g.heading) continue
     // `titleOf` only where the page half ends the link: with a heading present a trailing backslash is the title's own, not a table cell's escaped pipe.
@@ -82,13 +82,13 @@ export function* linksIn(
   }
   for (const m of body.matchAll(pageEmbedPattern())) {
     const at = m.index
-    if (at === undefined || mask(at)) continue
+    if (mask(at)) continue
     const target = titleKey(m.groups?.page ?? null, own)
     if (target) yield { syntax: 'embed', target, qualifier: '', at }
   }
   for (const m of body.matchAll(markdownLinkRegex())) {
     const at = m.index
-    if (at === undefined || mask(at)) continue
+    if (mask(at)) continue
     const target = titleKey(targetTitle(m[2]), own)
     if (!target) continue
     yield { syntax: 'markdown', target, qualifier: normalizeTitle(targetFragment(m[2])), at }

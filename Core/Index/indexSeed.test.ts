@@ -112,7 +112,7 @@ describe('seedContentIndex', () => {
     expect(queryKeyHolders('ID')).toEqual(['Notes/A.md'])
   })
 
-  it('records every `<Title>` key as memberships, one normalized row per value, scalar or list', async () => {
+  it('records every `<Title>` key as a space row, one normalized row per value, scalar or list', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n  - pommora\n<Areas>: 2024\n---\n\nbody\n`,
