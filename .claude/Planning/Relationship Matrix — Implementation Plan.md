@@ -1481,7 +1481,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 **Completeness**
 
 - [ ] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `ef88befe3..HEAD`. The Phase 2 `console.time` is gone.
-- [ ] `grep -rn "extractMentions\|extractHeadingMentions\|HeadingMention\|truncateIndex" Core Desktop --include=*.ts --include=*.tsx` → no result.
+- [x] `grep -rnE "extractMentions|extractHeadingMentions|\bHeadingMention\b|truncateIndex" Core Desktop --include=*.ts --include=*.tsx` returns only `Core/Connections/scan.test.ts`, which keeps the two retired extractors as local helpers pinning `linksIn` from the outside.
 - [ ] `grep -rn "mentions:\|headingMentions:\|memberships:" Core Desktop --include=*.ts --include=*.tsx` → no result.
 
 **Confirmation**
@@ -1544,4 +1544,6 @@ Written when the chain is confirmed, per the skill's shape: the feature, phase b
 - **Phase 2, Task 2.6** — `Core/Index/indexMaintenance.test.ts`'s membership case was retitled from "lands in memberships" to "lands as a space row"; the assertion is unchanged.
 - **Phase 2, Review Checkpoint** — the live corpus moved between the two snapshots (one draft removed, two drafts and this plan added, one page edited), so the memory-store figures read 217 files against 216. Every relationship delta is otherwise accounted for: the ten new `(path, target)` pairs are the `§`-run self-mentions the plan accepts, the `space` set is identical row for row, and the heading-mention deltas belong to the moved drafts.
 - **Phase 2, Review Checkpoint** — NexusOS writes every `![[ ]]` inside an inline code span and its one footnote holds an external URL, so `embed` and `citation` carried zero rows on the real corpus; a temporary probe page (deleted after) produced all five kinds with the citation overlay and the embed-in-footnote rows as specified.
-- **Phase 3, Task 3.2** — `.claude/Planning/Local Data — Implementation Plan.md` was deleted from the working tree by Nathan during ratification; awaiting his ruling on whether the deletion stands, in which case that half of Task 3.2 falls away.
+- **Phase 3, Task 3.2** — `.claude/Planning/Local Data — Implementation Plan.md` was retired by Nathan's ruling (commit `b6d1bfbc9`), taking its unshipped Database-window design with it; the Local Data half of Task 3.2 falls away, and `ContextPM.md`'s Database-window focus no longer routes to it.
+- **Phase 2, Task 2.6** — `Core/Connections/scan.test.ts` keeps `extractMentions` and `extractHeadingMentions` as local helpers so its pre-merge assertions stand verbatim; the agreement property between `extractMentions` and `mentionsTitle` was retired once both read the same generator, since it could no longer fail.
+- **Final Verification** — `.claude/Planning/TilesV2-Spec.md` named the `mentions` table for its backlinks panel kind; it reads the relationship rows now.

@@ -49,7 +49,7 @@ The shape is decided; nothing of it is built.
 - `SidePane` hosts a tab strip and one `TileHost` per tab, on the `WindowTabStrip` precedent: the page-wide tab and the custom tabs. Selection-aware kinds read the store's selection themselves; the host binding does not thread it.
 - Inside a 240–420px pane the grid is a vertical stack: bands of full-width tiles with absolute heights, north edges negotiating through the band pair. The model already handles it; the ratio row is available but rarely useful at that width.
 - The document is Nexus content, cross-device, never `local_state`. Custom tabs are user-created and capped; the page-wide tab is reserved.
-- A **panel** tile is a menu surface (`menu-base`) standing on a tile: a properties panel, a backlinks panel, a list. The recipe takes it as a kind whose surface is a menu. A backlinks kind reads the content index's `mentions` table, the seam Linked-From was gated on.
+- A **panel** tile is a menu surface (`menu-base`) standing on a tile: a properties panel, a backlinks panel, a list. The recipe takes it as a kind whose surface is a menu. A backlinks kind reads the content index's relationship rows, which carry each link's kind and count, the seam Linked-From was gated on.
 - The Page Window's frontmatter SidePane (`PagePanel`, properties only) and the shell SidePane stay distinct until a properties kind exists; then the Page Window's could become a one-tile panel.
 
 ### Why the Document Is a File of Its Own
