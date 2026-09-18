@@ -4,6 +4,7 @@ import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from './co
 import { markdownLinkRegex, targetFragment, targetTitle } from './links'
 import { readLink } from './linkValue'
 import { codeMask, type CodeMask } from '../MarkdownPM/Engine/markdownCode'
+import { headingParts } from '../MarkdownPM/Engine/detect'
 
 export interface SectionRun {
   from: number
@@ -18,7 +19,7 @@ function titleKey(raw: string | null, own: string): string {
   return raw === '' ? own : normalizeTitle(raw)
 }
 
-// A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a wikilink, or a markdown link are never runs.
+// A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a wikilink, a markdown link, or a heading line (whose `§` is the heading's own text) are never runs.
 export function sectionRunsIn(
   text: string,
   headings: readonly string[],
@@ -31,8 +32,13 @@ export function sectionRunsIn(
   )
   const byLength = sorted ? headings : [...headings].sort((a, b) => b.length - a.length)
   const out: SectionRun[] = []
+  const onHeading = (i: number): boolean => {
+    const from = text.lastIndexOf('\n', i) + 1
+    const to = text.indexOf('\n', i)
+    return headingParts(text.slice(from, to === -1 ? text.length : to)) !== null
+  }
   for (let i = text.indexOf('§'); i !== -1; i = text.indexOf('§', i + 1)) {
-    if (inCode(i) || links.some(([a, b]) => i >= a && i < b)) continue
+    if (inCode(i) || onHeading(i) || links.some(([a, b]) => i >= a && i < b)) continue
     for (const heading of byLength) {
       const end = i + 1 + heading.length
       if (end > text.length) continue
