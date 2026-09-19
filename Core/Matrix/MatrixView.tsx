@@ -1,10 +1,12 @@
 import { useMemo, useRef } from 'react'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
+import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
+import { pageMoveContext } from '../Interface/Menus/pageMenuActions'
 import { usePublishCount } from '../Interface/Subfield/publish'
-import { contextTargetToSelect } from '../Navigation/tabsModel'
+import { contextTargetToSelect, isOpenInTabs } from '../Navigation/tabsModel'
 import type { NexusTree } from '../Nexus/tree'
-import { recordsByIdOf } from '../Nexus/treeIndex'
+import { nodesOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { panBy } from './Engine/viewport'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
@@ -13,10 +15,9 @@ import type { MatrixRecord } from './matrixKind'
 import { matrixRuntime } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 
-export function recordOf(tree: NexusTree | null, index: number): MatrixRecord | null {
-  const n = matrixRuntime.graph.nodes[index]
-  if (!n || !tree) return null
-  const r = recordsByIdOf(tree).get(n.id)
+export function recordOf(tree: NexusTree | null, id: string | null): MatrixRecord | null {
+  if (id === null || !tree) return null
+  const r = recordsByIdOf(tree).get(id)
   return r && r.kind !== 'homepage' && r.kind !== 'matrix'
     ? { kind: r.kind, id: r.id, path: r.path, title: r.title }
     : null
@@ -36,14 +37,32 @@ export function MatrixView({
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const select = useSession((st) => st.select)
-  const hovered = useMatrixHover()
+  const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
+  const hoveredId = useMatrixHover()
   const count = useMatrixCount()
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  const idAt = (i: number): string | null => matrixRuntime.graph.nodes[i]?.id ?? null
+
   const open = (i: number): void => {
-    const rec = recordOf(tree, i)
+    const rec = recordOf(tree, idAt(i))
     if (rec) void select(contextTargetToSelect(rec))
+  }
+
+  const menu = (i: number): void => {
+    const rec = recordOf(tree, idAt(i))
+    if (!rec) return
+    const { tabs, pinned } = useSession.getState()
+    void showEntityMenu({
+      kind: rec.kind,
+      id: rec.id,
+      path: rec.path,
+      title: rec.title,
+      alreadyOpen: isOpenInTabs(tabs, pinned, contextTargetToSelect(rec)),
+      host: 'matrix',
+      ...(rec.kind === 'page' ? pageMoveContext(tree, rec.path) : {}),
+    })
   }
 
   const nodeDown = (e: React.PointerEvent, i: number): void => {
@@ -85,25 +104,37 @@ export function MatrixView({
     })
   }
 
-  const labelIndex = hovered
-  const rec = useMemo(() => recordOf(tree, labelIndex), [tree, labelIndex])
+  const renamingId = useMemo(
+    () =>
+      renamingPath === null || !tree
+        ? null
+        : (nodesOf(tree).find((r) => r.path === renamingPath)?.id ?? null),
+    [renamingPath, tree],
+  )
+  const editing = renamingId !== null
+  // The overlay names its node by id: an index taken here goes stale the moment a reply rebuilds the graph under it.
+  const labelId = editing ? renamingId : hoveredId
+  const rec = useMemo(() => recordOf(tree, labelId), [tree, labelId])
   return (
     <>
       {publishes && <PublishCount count={count} />}
       <MatrixCanvas
         parked={parked}
-        // Phase 7: the inline rename field, which holds the hover while it is open.
-        editing={false}
+        editing={editing}
+        labelId={labelId}
         canvasRef={canvasRef}
         onNodeDown={nodeDown}
         onBackgroundDown={backgroundDown}
-        // Phase 7: the entity menu for the node under the pointer.
-        onMenu={() => {}}
+        onMenu={menu}
       >
         <MatrixLabel
           rec={rec}
-          onPointerDown={(e) => nodeDown(e, labelIndex)}
-          onContextMenu={(e) => e.preventDefault()}
+          editing={editing}
+          onPointerDown={(e) => nodeDown(e, matrixRuntime.indexOf(labelId))}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            menu(matrixRuntime.indexOf(labelId))
+          }}
         />
       </MatrixCanvas>
     </>

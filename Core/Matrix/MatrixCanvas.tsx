@@ -13,7 +13,7 @@ import { cullLabels } from './Engine/labels'
 import { panBy, toScreen, toWorld, type Viewport, zoomAt } from './Engine/viewport'
 import { iconFor, onIconLoad } from './iconCache'
 import * as s from './matrix.css'
-import { matrixRuntime } from './matrixRuntime'
+import { FADE_MS, matrixRuntime } from './matrixRuntime'
 
 // KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
 const PINCH_RATE = 0.01
@@ -67,7 +67,7 @@ function readPaint(host: HTMLElement): Paint {
   return paint
 }
 
-// Phase 7: the modifier the entity menu reads for its Shift-held rows.
+// The modifier the label's glance arms on, since a canvas node has no pointer event of its own.
 export let lastShift = false
 
 function screenPoint(
@@ -144,6 +144,7 @@ function drawLink(
 export function MatrixCanvas({
   parked,
   editing,
+  labelId,
   canvasRef,
   onNodeDown,
   onBackgroundDown,
@@ -152,6 +153,7 @@ export function MatrixCanvas({
 }: {
   parked: boolean
   editing: boolean
+  labelId: string | null
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   onNodeDown: (e: React.PointerEvent, index: number) => void
   onBackgroundDown: (e: React.PointerEvent) => void
@@ -172,6 +174,8 @@ export function MatrixCanvas({
   parkedRef.current = parked
 
   drawRef.current = (): void => {
+    // The runtime's listeners are not surface-scoped, so a parked surface would repaint its whole graph on every frame another surface drives.
+    if (parkedRef.current) return
     const canvas = canvasRef.current
     const paint = paintRef.current
     const ctx = canvas?.getContext('2d')
@@ -200,6 +204,12 @@ export function MatrixCanvas({
     const emphasis = easeCubic(ease.value)
     const dim = 1 - emphasis * (1 - paint.inactive)
 
+    const arrivals = matrixRuntime.arrivals
+    const arrival = (i: number): number => {
+      const born = arrivals.get(nodes[i].id)
+      return born === undefined ? 1 : clamp((now - born) / FADE_MS, 0, 1)
+    }
+
     const neighbours = neighboursRef.current
     const hot = hotRef.current
     neighbours.clear()
@@ -210,10 +220,19 @@ export function MatrixCanvas({
         neighbours.add(l.source)
         neighbours.add(l.target)
         hot.push(l)
-      } else drawLink(ctx, graph, l, v, paint.link, hovered >= 0 ? dim : 1)
+      } else
+        drawLink(
+          ctx,
+          graph,
+          l,
+          v,
+          paint.link,
+          (hovered >= 0 ? dim : 1) * Math.min(arrival(l.source), arrival(l.target)),
+        )
     }
     const hotStroke = dragging >= 0 && dragging === hovered ? paint.ringDrag : paint.linkHover
-    for (const l of hot) drawLink(ctx, graph, l, v, hotStroke, 1)
+    for (const l of hot)
+      drawLink(ctx, graph, l, v, hotStroke, Math.min(arrival(l.source), arrival(l.target)))
 
     nodes.forEach((n, i) => {
       const [sx, sy] = toScreen(v, n.x, n.y)
@@ -221,8 +240,20 @@ export function MatrixCanvas({
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
       const ring = i === dragging ? 'drag' : i === hovered ? 'hover' : 'rest'
       const lit = hovered < 0 || i === hovered || neighbours.has(i)
-      drawNode(ctx, sx, sy, r, paint, ring, lit ? 1 : dim)
+      drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i))
     })
+    for (const g of matrixRuntime.ghosts) {
+      const [sx, sy] = toScreen(v, g.x, g.y)
+      drawNode(
+        ctx,
+        sx,
+        sy,
+        g.radius * v.zoom,
+        paint,
+        'rest',
+        clamp(1 - (now - g.born) / FADE_MS, 0, 1),
+      )
+    }
 
     const tree = useSession.getState().tree
     const records = tree ? recordsByIdOf(tree) : null
@@ -231,7 +262,7 @@ export function MatrixCanvas({
     ctx.textBaseline = 'top'
     ctx.fillStyle = paint.title
     const cells = cellsRef.current
-    cullLabels(nodes, v, width, height, hovered, cells)
+    cullLabels(nodes, v, width, height, matrixRuntime.indexOf(labelId), cells)
     for (const i of cells.values()) {
       const n = nodes[i]
       const [sx, sy] = toScreen(v, n.x, n.y + n.radius)
@@ -240,7 +271,7 @@ export function MatrixCanvas({
       const lead = image ? ICON_PX.caption + s.TITLE_ICON_GAP : 0
       const left = sx - (ctx.measureText(n.title).width + lead) / 2
       const top = sy + s.TITLE_OFFSET
-      ctx.globalAlpha = hovered < 0 || neighbours.has(i) ? 1 : dim
+      ctx.globalAlpha = (hovered < 0 || neighbours.has(i) ? 1 : dim) * arrival(i)
       if (image) ctx.drawImage(image, left, top, ICON_PX.caption, ICON_PX.caption)
       ctx.fillText(n.title, left + lead, top)
       ctx.globalAlpha = 1
@@ -282,6 +313,9 @@ export function MatrixCanvas({
   useEffect(() => {
     if (!parked) matrixRuntime.resume()
   }, [parked])
+
+  // The overlaid node's title is skipped by index, and a rename moves that index without any runtime event to repaint on.
+  useEffect(() => matrixRuntime.invalidate(), [labelId])
 
   useEffect(() => {
     const host = hostRef.current

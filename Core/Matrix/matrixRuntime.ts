@@ -1,3 +1,4 @@
+import { duration, ms } from '@pommora/uix/Animations/motion'
 import { useSession } from '../Session/store'
 import type { Forces } from './Engine/forces'
 import { buildGraph, type Graph, type GraphNode } from './Engine/graph'
@@ -21,6 +22,7 @@ import type { Positions } from './matrixLayout'
 const HIT_SLACK = 4
 // KNOB — pans and zooms inside this window fold into one viewport write.
 const VIEWPORT_SAVE_MS = 400
+export const FADE_MS = ms(duration.base)
 
 type Listener = () => void
 
@@ -49,9 +51,7 @@ class MatrixRuntime {
   viewport: Viewport = DEFAULT_VIEWPORT
   hoveredId: string | null = null
   draggingId: string | null = null
-  // Phase 7: the Move To fade's departing circles.
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
-  // Phase 7: the Move To fade's arriving circles, by id and birth.
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
   private stages = new Map<Surface, Stage>()
@@ -166,6 +166,19 @@ class MatrixRuntime {
     const layout = new Map<string, { x: number; y: number }>()
     for (const [id, [x, y]] of Object.entries(s.matrixPositions)) layout.set(id, { x, y })
     for (const n of this.graph.nodes) layout.set(n.id, { x: n.x, y: n.y })
+    // Only a fresh walk can have moved a page, and only Location mode draws containment.
+    if (b && b.walk !== walk && c.group.mode === 'location') {
+      const was = new Map(b.walk.input.pages.map((p) => [p.id, p.folderId]))
+      const born = performance.now()
+      for (const p of walk.input.pages) {
+        const from = was.get(p.id)
+        if (from === undefined || from === p.folderId) continue
+        const n = this.nodeOf(p.id)
+        if (n) this.ghosts.push({ x: n.x, y: n.y, radius: n.radius, born })
+        layout.delete(p.id)
+        this.arrivals.set(p.id, born)
+      }
+    }
     const fresh = place(graph, layout)
     const settleAll = fresh.size === graph.nodes.length
     const prev = this.sim
@@ -173,6 +186,10 @@ class MatrixRuntime {
     const moving = prev?.local ? prev.graph.nodes.filter((n) => !n.pinned).map((n) => n.id) : null
     this.graph = graph
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
+    if (this.draggingId !== null && !graph.index.has(this.draggingId)) {
+      this.draggingId = null
+      this.dragFrom = null
+    }
     this.sim = createSimulation(graph, c.forces, settleAll)
     if (prev) this.sim.held = prev.held
     else for (const [id, p] of Object.entries(s.matrixPositions)) if (p[2]) this.sim.held.add(id)
@@ -246,6 +263,11 @@ class MatrixRuntime {
   private step(): void {
     const sim = this.sim
     const awake = sim ? tick(sim) : false
+    if (this.animating()) {
+      const cutoff = performance.now() - FADE_MS
+      this.ghosts = this.ghosts.filter((g) => g.born > cutoff)
+      for (const [id, born] of this.arrivals) if (born <= cutoff) this.arrivals.delete(id)
+    }
     for (const fn of this.listeners) fn()
     if (this.wasAwake && !awake) this.settled()
     this.wasAwake = awake
@@ -291,7 +313,8 @@ class MatrixRuntime {
     const was = this.owner === surface ? this.stage : null
     this.stages.set(surface, next)
     if (was === null) return
-    if (was.width === 0) {
+    // A pan needs two sized boxes: a surface measuring for the first time, or collapsing as it is torn down, moved no picture.
+    if (was.width === 0 || next.width === 0) {
       if (this.fitOnSettle && this.sim && !this.sim.awake) this.fitNow()
       return
     }
@@ -300,7 +323,7 @@ class MatrixRuntime {
     if (dx !== 0 || dy !== 0) this.setViewport(panBy(this.viewport, dx, dy))
   }
 
-  private indexOf(id: string | null): number {
+  indexOf(id: string | null): number {
     return id === null ? -1 : (this.graph.index.get(id) ?? -1)
   }
 

@@ -1,27 +1,35 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../Assets/EntityIcon'
+import { IconChoice } from '../Assets/IconChoice'
+import { glanceShown } from '../Interface/Glance/glanceAction'
+import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
+import { RenamableTitle } from '../Interface/RenamableTitle'
 import { ancestryOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { toScreen } from './Engine/viewport'
+import { lastShift } from './MatrixCanvas'
 import type { MatrixRecord } from './matrixKind'
 import * as s from './matrix.css'
 import { matrixRuntime } from './matrixRuntime'
 
 export function MatrixLabel({
   rec,
-  children,
+  editing,
   onPointerDown,
   onContextMenu,
 }: {
   rec: MatrixRecord | null
-  children?: React.ReactNode
+  editing: boolean
   onPointerDown: (e: React.PointerEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
+  const iconPath = useSession((st) => st.iconPath)
+  const endIcon = useSession((st) => st.endIcon)
+  const mutate = useSession((st) => st.mutate)
   const hideLocation = useSession((st) => st.matrixConfig.display.hideLocation)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
   const anchorRef = useRef<HTMLDivElement>(null)
@@ -31,6 +39,8 @@ export function MatrixLabel({
   // Layout, not passive: the first transform lands before paint, so the label never flashes at the host's origin.
   useLayoutEffect(() => {
     if (id === null) return
+    let lx = Number.NaN
+    let ly = Number.NaN
     const follow = (): void => {
       const n = matrixRuntime.nodeOf(id)
       const a = anchorRef.current
@@ -42,10 +52,22 @@ export function MatrixLabel({
       a.style.transform = `translate(${sx - r}px, ${sy - r}px)`
       a.style.width = a.style.height = `${r * 2}px`
       l.style.transform = `translate(-50%, 0) translate(${sx}px, ${sy + r}px)`
+      if (sx === lx && sy === ly) return
+      lx = sx
+      ly = sy
+      // A standing pane re-measures off the anchor's own scroll, so it tracks the node rather than the frame.
+      if (glanceShown()) a.dispatchEvent(new Event('scroll'))
     }
     follow()
     return matrixRuntime.subscribe(follow)
   }, [id])
+
+  useEffect(() => {
+    const a = anchorRef.current
+    if (!a || editing || !rec || rec.kind !== 'page') return
+    hoverGlance({ kind: 'page', id: rec.id, path: rec.path }, a, 'location', lastShift)
+    return leaveGlance
+  }, [rec, editing])
 
   if (!rec || !tree) return null
   const node = matrixRuntime.nodeOf(rec.id)
@@ -64,12 +86,30 @@ export function MatrixLabel({
         onPointerDown={onPointerDown}
         onContextMenu={onContextMenu}
       />
+      <IconChoice
+        open={iconPath === rec.path}
+        onClose={endIcon}
+        triggerRef={anchorRef}
+        value={node.icon}
+        onSelect={(icon) => void mutate({ op: 'setIcon', path: rec.path, kind: rec.kind, icon })}
+      />
       <div ref={labelRef} className={s.label}>
         <div className={cx(s.labelRow, text.caption.emphasized)}>
           {!hideIcon && (
             <EntityIcon kind={rec.kind} icon={node.icon} size="caption" className={s.labelGlyph} />
           )}
-          {children ?? <span>{node.title}</span>}
+          {editing ? (
+            <RenamableTitle
+              path={rec.path}
+              kind={rec.kind}
+              title={node.title}
+              className={cx(text.caption.emphasized, s.labelField)}
+              renames="title"
+              host="matrix"
+            />
+          ) : (
+            <span>{node.title}</span>
+          )}
         </div>
         {trail.length > 0 && (
           <NavTrail
