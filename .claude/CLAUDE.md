@@ -12,8 +12,8 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `ID` key. Pages use MarkdownPM as their editor surface, which includes inline connections to other pages.
-- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; located within `/Tasks`) and **Events** (calendar-shaped; located within `/Events`) — each as Markdown files distinguished via their id's kind mark and validated against their folder placement.
-- **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; written as bare `Property`: so any application that reads frontmatter reads them.
+- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; located within `/Tasks`) and **Events** (calendar-shaped; located within `/Events`) — each as Markdown files distinguished via their ID’s kind mark and validated against their folder placement. Agenda’s *scaffolding* exists, the feature itself doesn’t yet.
+- **Properties:** the Nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; written as bare `Property`: so any application that reads YAML reads them.
 - **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page, or a heading within one, as the Content ↔ Content matrix. 
 
 **Files are canonical for content.** Pages, Tasks, and Events are all Markdown files carrying one `ID` key, the kind marked inside the ULID itself. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — contradictions are ignored.
@@ -23,7 +23,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 **Pommora —**  `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42• React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react` as a secondary source to pull from per icon. **MarkdownPM** — a CodeMirror 6 custom-built Markdown editor.
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); post-commit hooks rebuild both. The showcase is **never** a priority during development.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); post-commit hooks rebuild both.
 
 ### Hard Rules
 
@@ -35,7 +35,6 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first.
-- **Don’t** waste time on screenshots, CDP driving, or DOM inspection to test something Nathan can see on his own — unless I’m asleep or specifically ask, don’t waste your efforts.
 - **Don’t** treat comments as authoritative — a constraint a comment claims isn’t a law, and change-scoping shouldn’t treat them as fact.
 
 #### Testing Conventions

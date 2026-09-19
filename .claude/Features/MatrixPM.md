@@ -42,15 +42,15 @@ Every expensive step is bounded: the spread force approximates distant clusters 
 
 ### The Surface
 
-The picture is drawn on a `<canvas>`, with one DOM overlay following the node under the pointer. Paint is aliased onto host-scoped `--matrix-*` custom properties and read once through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, and the Shift-preview open — each on the surface it was raised from, since a tab and a window can stand at once.
+The picture is drawn on a `<canvas>`, with one DOM overlay following the node under the pointer. Paint is aliased onto host-scoped `--matrix-*` custom properties and read once through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, and the Shift-preview open — each on the surface it was raised from, since a tab and a window can stand at once. Both read one world rectangle and fit it to their own box, so each is centred on the same picture at the scale its box allows.
 
-Hovering a node lights its links and eases the rest down; dragging one pulls it toward the pointer through its springs, and releasing it lets it settle back. **Lock** refuses a node drag and stands Shuffle down, **Shuffle** jitters every node and lets the layout re-solve, and **Hide Icons** and **Hide Paths** trim the overlay's glyph and its trail. A right-click answers as a sidebar row does, and a Page moved in Location mode fades out where it was and in beside its new Folder.
+Hovering a node lights its links and eases the rest down, and letting it go raises them on the same curve; dragging one pulls it toward the pointer through its springs, and releasing it lets it settle back. Each kind of node carries its title from a zoom of its own — Spaces first, then Folders, then Pages — fading it in across a band above that zoom rather than printing it whole at a threshold, and the overlay's own title arrives and leaves by the same fade. **Lock** refuses a node drag and stands Shuffle down, **Shuffle** jitters every node and lets the layout re-solve, and **Hide Icons** and **Hide Paths** trim the overlay's glyph and its trail. A right-click answers as a sidebar row does, a node renamed from here keeps its emphasis until the name is committed, and a Page moved in Location mode fades out where it was and in beside its new Folder.
 
 ### What Persists
 
 The Matrix's choices travel with the Nexus in `.nexus/matrix.json`, written in four sections — group, filter, forces, and display — each holding only the keys a change wrote, so a device that moved one key never clobbers another's on the merge. A hand edit from outside surfaces live through the file watcher.
 
-The picture's own geometry stays on the machine that made it: every node's place keyed by id, so a rename keeps a node where it was, and the viewport's zoom and pan. A row that no longer reads is dropped on its own rather than taking the rest of the layout with it, and a first open with nothing stored fits the graph once it settles.
+The picture's own geometry stays on the machine that made it: every node's place keyed by id, so a rename keeps a node where it was, and the world rectangle the picture is framed on. A row that no longer reads is dropped on its own rather than taking the rest of the layout with it, and a first open with nothing stored fits the graph once it settles.
 
 ### Prospects
 
