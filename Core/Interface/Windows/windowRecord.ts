@@ -23,10 +23,12 @@ export interface WindowSetRecord {
   activeIndex: number
 }
 
+export type WindowKind = 'page' | 'nav' | 'matrix'
+
 export interface WindowsFile {
   navSet: WindowSetRecord | null
   origins: Record<string, WindowSetRecord>
-  open: { kind: 'page' | 'nav'; originId: string } | null
+  open: { kind: WindowKind; originId: string } | null
   navOverride?: boolean
 }
 

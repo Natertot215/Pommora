@@ -310,6 +310,17 @@ describe('windowTabs — the NavWindow kind entry (H-2/H-3)', () => {
   })
 })
 
+describe('windowTabs — the Matrix kind entry', () => {
+  it('the mirror names the open Matrix window and keeps no set for it', () => {
+    useSession.getState().openMatrixWindow()
+    const file = useSession.getState().windowsFile
+    expect(useSession.getState().pageWindow?.kind).toBe('matrix')
+    expect(file.open).toEqual({ kind: 'matrix', originId: 'matrix' })
+    expect(file.origins.matrix).toBeUndefined()
+    expect(file.navSet).toBeNull()
+  })
+})
+
 describe('windowTabs — the engulf exit flag (A-4)', () => {
   it("a promote's engulf flag never leaks onto the next window's close", () => {
     useSession.getState().openWindow(page('x'))

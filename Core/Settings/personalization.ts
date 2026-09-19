@@ -42,6 +42,8 @@ export type PickerSelection = 'outlined' | 'checked'
 
 export type TabOpenBehavior = 'overtake' | 'newtab'
 
+export type MatrixOpenIn = 'tab' | 'window'
+
 export const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const
 export const HISTORY_DAYS = {
   min: HISTORY_DAY_STEPS[0],
@@ -99,6 +101,7 @@ export interface Personalization {
   sidebarMode?: SidebarMode
   revealTabBarOnHover?: boolean
   tabOpenBehavior?: TabOpenBehavior
+  matrixOpenIn?: MatrixOpenIn
   tabTakeFocus?: boolean
   tabMinWidth?: number
   tabMaxWidth?: number

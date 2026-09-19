@@ -76,6 +76,15 @@ describe('readPersonalization heading link settings', () => {
   })
 })
 
+describe('readPersonalization matrixOpenIn', () => {
+  it('passes Window through and leaves the tab default unwritten', () => {
+    expect(readPersonalization({ matrixOpenIn: 'window' }).matrixOpenIn).toBe('window')
+    expect(readPersonalization({ matrixOpenIn: 'tab' }).matrixOpenIn).toBeUndefined()
+    expect(readPersonalization({ matrixOpenIn: 'garbage' }).matrixOpenIn).toBeUndefined()
+    expect(readPersonalization({}).matrixOpenIn).toBeUndefined()
+  })
+})
+
 describe('coerceHeadingSize', () => {
   it('clamps to the slider range and falls back on junk', () => {
     expect(coerceHeadingSize(1.6, 1.8)).toBe(1.6)

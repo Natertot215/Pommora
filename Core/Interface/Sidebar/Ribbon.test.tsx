@@ -20,6 +20,8 @@ beforeEach(() => {
     select: selectSpy as never,
     setPersonalization: setPersonalizationSpy as never,
     personalization: { sidebarMode: 'collections' },
+    tabs: [],
+    pinned: [],
   })
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -54,6 +56,37 @@ describe('Ribbon', () => {
     act(() => matrix.click())
     expect(selectSpy).toHaveBeenCalledWith({ kind: 'matrix' })
     expect(setPersonalizationSpy).not.toHaveBeenCalled()
+  })
+
+  it('Open Matrix In Window toggles the window when no Matrix tab stands', () => {
+    const openMatrixWindowSpy = vi.fn()
+    act(() =>
+      useSession.setState({
+        toggleMatrixWindow: openMatrixWindowSpy as never,
+        personalization: { sidebarMode: 'collections', matrixOpenIn: 'window' },
+      }),
+    )
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    act(() => matrix.click())
+    expect(openMatrixWindowSpy).toHaveBeenCalledTimes(1)
+    expect(selectSpy).not.toHaveBeenCalled()
+  })
+
+  it('Open Matrix In Window focuses the tab instead once one is open', () => {
+    const openMatrixWindowSpy = vi.fn()
+    act(() =>
+      useSession.setState({
+        toggleMatrixWindow: openMatrixWindowSpy as never,
+        personalization: { sidebarMode: 'collections', matrixOpenIn: 'window' },
+        tabs: [
+          { id: 't1', target: { kind: 'matrix' }, navStack: [{ kind: 'matrix' }], navIndex: 0 },
+        ],
+      }),
+    )
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    act(() => matrix.click())
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'matrix' })
+    expect(openMatrixWindowSpy).not.toHaveBeenCalled()
   })
 
   it('Homepage click selects the homepage and never switches mode', () => {
