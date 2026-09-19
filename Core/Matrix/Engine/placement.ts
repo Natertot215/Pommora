@@ -1,6 +1,6 @@
 import type { Graph } from './graph'
 
-// KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
+// KNOBs — the spiral a node the layout has never seen is seated on.
 const SPIRAL_STEP = 60
 const PLACE_JITTER = 12
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))

@@ -1,7 +1,7 @@
 import type { GraphNode, NodeKind } from './graph'
 import { toScreen, type Viewport } from './viewport'
 
-// KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
+// KNOBs — the label cell and the zoom each node kind reveals its title at.
 const REVEAL_ZOOM: Record<NodeKind, number> = { page: 1, folder: 0.6, space: 0.35 }
 const LABEL_CELL_PX = 96
 

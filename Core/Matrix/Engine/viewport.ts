@@ -1,6 +1,6 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-// KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
+// KNOBs — the zoom clamps and the padding a fit leaves around the graph.
 export const ZOOM_MIN = 0.025
 export const ZOOM_MAX = 2.5
 const FIT_PADDING = 80

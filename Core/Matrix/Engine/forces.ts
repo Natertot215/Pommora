@@ -2,7 +2,7 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { GraphLink, GraphNode, LinkKind, NodeKind } from './graph'
 import { type Cell, type Quadtree, visit } from './quadtree'
 
-// KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
+// KNOBs — the node radii and their growth, the per-kind link strengths, and the four forces the menu scales.
 export const BASE_RADIUS: Record<NodeKind, number> = { page: 40, folder: 60, space: 80 }
 const LINK_MULTIPLE: Record<LinkKind, number> = {
   body: 0.08,
@@ -18,7 +18,7 @@ const LINK_STRENGTH: Record<LinkKind, number> = {
   citation: 0.6,
   frontmatter: 0.8,
   space: 0.7,
-  location: 0.7,
+  location: 0.75,
 }
 export const LINK_GAP = 4
 const COLLIDE_STRENGTH = 0.7

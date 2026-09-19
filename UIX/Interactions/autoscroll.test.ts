@@ -5,7 +5,6 @@ import {
   clampToLimit,
   edgeVelocity,
   gateIntent,
-  easeOutQuint,
   glideMs,
   scrollGlide,
   scrollableInAxis,
@@ -379,16 +378,6 @@ describe('glideMs — distance-proportional, clamped both ends', () => {
   })
   it('direction does not change the duration', () => {
     expect(glideMs(-750, P)).toBe(glideMs(750, P))
-  })
-})
-
-describe('easeOutQuint', () => {
-  it('spans 0 to 1 exactly', () => {
-    expect(easeOutQuint(0)).toBe(0)
-    expect(easeOutQuint(1)).toBe(1)
-  })
-  it('front-loads the travel — most of the distance is covered early', () => {
-    expect(easeOutQuint(0.5)).toBeGreaterThan(0.9)
   })
 })
 
