@@ -103,7 +103,7 @@ function runEntityAction(
       s.beginRename(path, false, target.host)
       return
     case 'title:icon':
-      s.beginIcon(path)
+      s.beginIcon(path, target.host)
       return
     case 'title:newabove':
     case 'title:newbelow':

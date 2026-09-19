@@ -8,6 +8,8 @@ const ALPHA_MIN = 0.001
 const VELOCITY_DECAY = 0.4
 const SLEEP_ENERGY = 0.01
 const DRAG_ALPHA_TARGET = 0.3
+const DRAG_PULL = 0.25
+const DRAG_SETTLED = 1
 const SHUFFLE_JITTER = 0.6
 
 export interface Simulation {
@@ -18,7 +20,7 @@ export interface Simulation {
   awake: boolean
   tree: Quadtree
   local: boolean
-  held: Set<string>
+  drag: { id: string; x: number; y: number } | null
 }
 
 export function createSimulation(graph: Graph, forces: Forces, awake: boolean): Simulation {
@@ -30,7 +32,7 @@ export function createSimulation(graph: Graph, forces: Forces, awake: boolean): 
     awake,
     tree: buildQuadtree(graph.nodes),
     local: false,
-    held: new Set(),
+    drag: null,
   }
 }
 
@@ -43,6 +45,18 @@ export function tick(sim: Simulation): boolean {
   applySpread(nodes, sim.tree, sim.forces, sim.alpha)
   applyLink(nodes, links, sim.forces, sim.alpha)
   applyCollide(nodes, sim.tree)
+  // One spring, two anchors: the pointer while the node is held, and the place it came from once it is let go.
+  let homing = false
+  if (sim.drag) {
+    const n = nodes[sim.graph.index.get(sim.drag.id) ?? -1]
+    if (n) {
+      const dx = sim.drag.x - n.x
+      const dy = sim.drag.y - n.y
+      n.vx += dx * DRAG_PULL
+      n.vy += dy * DRAG_PULL
+      homing = Math.hypot(dx, dy) > DRAG_SETTLED
+    }
+  }
   let energy = 0
   let moving = 0
   for (const n of nodes) {
@@ -57,9 +71,10 @@ export function tick(sim: Simulation): boolean {
     energy += n.vx * n.vx + n.vy * n.vy
     moving++
   }
-  // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones; a held reheat (a drag) never sleeps.
+  // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones; a node travelling back to its anchor is judged by its own distance, since that average thins as the graph grows.
   if (
     sim.alphaTarget === 0 &&
+    !homing &&
     (energy / Math.max(moving, 1) < SLEEP_ENERGY || sim.alpha < ALPHA_MIN)
   )
     sleep(sim)
@@ -68,13 +83,14 @@ export function tick(sim: Simulation): boolean {
 
 function releasePins(sim: Simulation): void {
   if (!sim.local) return
-  for (const n of sim.graph.nodes) n.pinned = sim.held.has(n.id)
+  for (const n of sim.graph.nodes) n.pinned = false
   sim.local = false
 }
 
 function sleep(sim: Simulation): void {
   sim.awake = false
   sim.alpha = 0
+  sim.drag = null
   releasePins(sim)
   sim.tree = buildQuadtree(sim.graph.nodes)
 }
@@ -105,13 +121,12 @@ export function shuffle(sim: Simulation): void {
     n.vx = n.vy = 0
     n.pinned = false
   }
-  sim.held.clear()
   wake(sim, 1)
 }
 
 export function wakeLocal(sim: Simulation, ids: ReadonlySet<string>): void {
   wake(sim, DRAG_ALPHA_TARGET)
-  for (const n of sim.graph.nodes) n.pinned = !ids.has(n.id) || sim.held.has(n.id)
+  for (const n of sim.graph.nodes) n.pinned = !ids.has(n.id)
   sim.local = true
 }
 

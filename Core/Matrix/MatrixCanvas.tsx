@@ -205,10 +205,13 @@ export function MatrixCanvas({
     const dim = 1 - emphasis * (1 - paint.inactive)
 
     const arrivals = matrixRuntime.arrivals
-    const arrival = (i: number): number => {
-      const born = arrivals.get(nodes[i].id)
-      return born === undefined ? 1 : clamp((now - born) / FADE_MS, 0, 1)
-    }
+    const arrival =
+      arrivals.size === 0
+        ? () => 1
+        : (i: number): number => {
+            const born = arrivals.get(nodes[i].id)
+            return born === undefined ? 1 : clamp((now - born) / FADE_MS, 0, 1)
+          }
 
     const neighbours = neighboursRef.current
     const hot = hotRef.current
@@ -311,7 +314,8 @@ export function MatrixCanvas({
   }, [])
 
   useEffect(() => {
-    if (!parked) matrixRuntime.resume()
+    if (parked) matrixRuntime.setHovered(-1)
+    else matrixRuntime.resume()
   }, [parked])
 
   // The overlaid node's title is skipped by index, and a rename moves that index without any runtime event to repaint on.
