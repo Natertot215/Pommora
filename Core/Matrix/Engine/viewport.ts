@@ -43,7 +43,6 @@ export interface Stage {
   height: number
 }
 
-/** Frames `bounds` centred in the stage; the first-ever open with no persisted viewport. */
 export function fit(
   bounds: { x0: number; y0: number; x1: number; y1: number },
   stage: Stage,

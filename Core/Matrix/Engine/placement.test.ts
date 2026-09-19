@@ -18,7 +18,7 @@ const input: GraphInput = {
 }
 
 const build = (): Graph =>
-  buildGraph(input, { mode: 'connection', hideEmpty: false, hideOrphans: false, visible: null })
+  buildGraph(input, { mode: 'connection', hideUnlinked: false, visible: null })
 
 const at = (graph: Graph, id: string) => graph.nodes[graph.index.get(id) as number]
 

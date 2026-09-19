@@ -3,8 +3,8 @@ import type { Forces } from './forces'
 import { buildGraph, type Graph, type GraphInput } from './graph'
 import { cool, createSimulation, reheat, shuffle, tick, wakeLocal } from './simulation'
 
-const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 0.45 }
-const REST = 30 + 0.45 * (500 - 30)
+const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 1 }
+const REST = 240
 
 const page = (id: string): GraphInput['pages'][number] => ({
   id,
@@ -24,12 +24,7 @@ const chain = (count: number): Graph => {
       kind: 'body' as const,
     })),
   }
-  const graph = buildGraph(input, {
-    mode: 'connection',
-    hideEmpty: false,
-    hideOrphans: false,
-    visible: null,
-  })
+  const graph = buildGraph(input, { mode: 'connection', hideUnlinked: false, visible: null })
   graph.nodes.forEach((n, i) => {
     n.x = i * 400
     n.y = i % 2 ? 120 : -120

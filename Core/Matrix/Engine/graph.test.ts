@@ -25,7 +25,7 @@ const input: GraphInput = {
     { from: 'b', to: 'c', kind: 'frontmatter' },
   ],
 }
-const all = { hideEmpty: false, hideOrphans: false, visible: null }
+const all = { hideUnlinked: false, visible: null }
 
 describe('buildGraph', () => {
   it('connection mode draws pages and their connections only', () => {
@@ -48,8 +48,8 @@ describe('buildGraph', () => {
     ])
   })
 
-  it('hideEmpty in Location mode drops a folder with no pages beneath it and keeps one that holds a page at depth', () => {
-    const g = buildGraph(input, { ...all, mode: 'location', hideEmpty: true })
+  it('hideUnlinked in Location mode drops a folder with no pages beneath it and keeps one that holds a page at depth', () => {
+    const g = buildGraph(input, { ...all, mode: 'location', hideUnlinked: true })
     expect(g.index.has('set2')).toBe(false)
     expect(g.index.has('c1')).toBe(true)
   })
@@ -64,19 +64,24 @@ describe('buildGraph', () => {
     ])
   })
 
-  it('hideEmpty in Space mode drops a space no page is tagged with, even one another space tags', () => {
-    const g = buildGraph(input, { ...all, mode: 'space', hideEmpty: true })
+  it('hideUnlinked in Space mode drops a space no page is tagged with, even one another space tags', () => {
+    const g = buildGraph(input, { ...all, mode: 'space', hideUnlinked: true })
     expect(g.index.has('s3')).toBe(false)
     expect(g.index.has('s2')).toBe(false)
     expect(g.index.has('b')).toBe(true)
   })
 
-  it('hideOrphans drops nodes with no link in the current mode', () => {
+  it('hideUnlinked in Connection mode drops a page with no link', () => {
     const g = buildGraph(
       { ...input, connections: [] },
-      { ...all, mode: 'connection', hideOrphans: true },
+      { ...all, mode: 'connection', hideUnlinked: true },
     )
     expect(g.nodes).toEqual([])
+  })
+
+  it('the default keeps every node, linked or not', () => {
+    const g = buildGraph({ ...input, connections: [] }, { ...all, mode: 'space' })
+    expect(g.nodes.map((n) => n.id)).toEqual(['a', 'b', 'c', 's1', 's2', 's3'])
   })
 
   it('a connection to a page the filter hides draws nothing', () => {
@@ -86,7 +91,7 @@ describe('buildGraph', () => {
   })
 
   it('links are re-indexed after a drop, the id map matches, and degree counts only surviving links', () => {
-    const g = buildGraph(input, { ...all, mode: 'space', hideEmpty: true })
+    const g = buildGraph(input, { ...all, mode: 'space', hideUnlinked: true })
     for (const l of g.links) expect(g.index.get(g.nodes[l.source].id)).toBe(l.source)
     expect(g.nodes[g.index.get('s1') as number].degree).toBe(2)
   })

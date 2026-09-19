@@ -6,6 +6,9 @@ import type { SavedView } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { ClearReport, TrashMode, TrashRow } from '../Trash/trashRow'
 import type { NavigationState } from '../Navigation/navRef'
+import type { MatrixConfig, MatrixPatch } from '../Matrix/matrixConfig'
+import type { MatrixGraphReply } from '../Matrix/matrixGraph'
+import type { MatrixLayout } from '../Matrix/matrixLayout'
 import type { GlanceSize, StoredTabSet, WindowsFile } from '../Interface/Windows/windowRecord'
 import type { NavViewModes, SubfieldConfig, ThumbRect } from '../Interface/chrome'
 import type { OpenIn, PageValues, ViewButton } from '../Views/viewRow'
@@ -210,6 +213,11 @@ export interface Asks {
 
   'nav:read': { args: []; reply: Result<NavigationState> }
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
+  'matrix:read': { args: []; reply: Result<MatrixConfig> }
+  'matrix:write': { args: [patch: MatrixPatch]; reply: Result<null> }
+  'matrix:graph': { args: [paths?: string[]]; reply: Result<MatrixGraphReply> }
+  'matrixLayout:load': { args: []; reply: Result<MatrixLayout> }
+  'matrixLayout:save': { args: [patch: Partial<MatrixLayout>]; reply: Result<null> }
   'tabs:load': { args: []; reply: Result<StoredTabSet | null> }
   'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
   'windows:load': { args: []; reply: Result<WindowsFile> }
@@ -268,6 +276,7 @@ export interface Tells {
 export interface Pushes {
   'menu:action': string
   'nav:changed': Omit<NavigationState, 'recents'>
+  'matrix:changed': MatrixConfig
   'assets:changed': AssetMap
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]

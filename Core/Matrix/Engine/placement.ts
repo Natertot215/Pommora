@@ -13,7 +13,6 @@ export function spiral(i: number): { x: number; y: number } {
   return { x: r * Math.cos(a), y: r * Math.sin(a) }
 }
 
-/** Seats every node: persisted position, else the centroid of its placed neighbours, else the outer ring. Returns the ids that had no persisted position. */
 export function place(graph: Graph, layout: Layout): Set<string> {
   const { nodes, links } = graph
   const fresh = new Set<string>()

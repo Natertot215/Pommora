@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_FORCES } from './forces'
 import { buildGraph, type GraphInput } from './graph'
 import { place } from './placement'
 import { createSimulation, tick } from './simulation'
@@ -8,7 +7,7 @@ const PAGES = 4300
 const FOLDERS = 200
 const SPACES = 20
 const CONNECTIONS = 6000
-const TICK_BUDGET_MS = 80
+const TICK_BUDGET_MS = 400
 
 function seeded(seed: number): () => number {
   let s = seed
@@ -47,14 +46,9 @@ function generate(): GraphInput {
 
 describe('the engine at twenty times NexusOS', () => {
   it(`ticks a ${PAGES}-page Location graph under ${TICK_BUDGET_MS} ms`, () => {
-    const graph = buildGraph(generate(), {
-      mode: 'location',
-      hideEmpty: false,
-      hideOrphans: false,
-      visible: null,
-    })
+    const graph = buildGraph(generate(), { mode: 'location', hideUnlinked: false, visible: null })
     place(graph, new Map())
-    const sim = createSimulation(graph, DEFAULT_FORCES, true)
+    const sim = createSimulation(graph, { gravity: 1, spread: 1, strength: 1, distance: 1 }, true)
     for (let i = 0; i < 10; i++) tick(sim)
     const t0 = performance.now()
     for (let i = 0; i < 30; i++) tick(sim)

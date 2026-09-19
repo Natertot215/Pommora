@@ -73,5 +73,31 @@ describe('mergeKeys', () => {
     expect(mergeDepthFor('.nexus/properties.json')).toEqual({ defs: 1 })
     expect(mergeDepthFor('.nexus/assets/crops.json')).toEqual({ byImage: 1 })
     expect(mergeDepthFor('.nexus/homepage/homepage.json')).toEqual({})
+    expect(mergeDepthFor('.nexus/matrix.json')).toEqual({
+      group: 1,
+      filter: 1,
+      forces: 1,
+      display: 1,
+    })
+  })
+
+  it('merges two forces keys and takes one side of rules whole', () => {
+    const depth = mergeDepthFor('.nexus/matrix.json')
+    const base = {
+      forces: { gravity: 0.5, spread: 0.5 },
+      filter: { rules: { match: 'all', rules: [{ key: 'Status' }] } },
+    }
+    const local = {
+      forces: { gravity: 0.9, spread: 0.5 },
+      filter: { rules: { match: 'all', rules: [{ key: 'Area' }] } },
+    }
+    const remote = {
+      forces: { gravity: 0.5, spread: 0.1 },
+      filter: { rules: { match: 'any', rules: [{ key: 'Topic' }] } },
+    }
+    expect(merge(base, local, remote, depth, takeRemote)).toEqual({
+      forces: { gravity: 0.9, spread: 0.1 },
+      filter: { rules: { match: 'any', rules: [{ key: 'Topic' }] } },
+    })
   })
 })

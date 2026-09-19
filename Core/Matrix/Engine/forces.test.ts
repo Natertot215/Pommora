@@ -4,7 +4,6 @@ import {
   applyLink,
   applySpread,
   BASE_RADIUS,
-  DEFAULT_FORCES,
   type Forces,
   LINK_GAP,
   RADIUS_MAX,
@@ -35,7 +34,8 @@ const inbound = (counts: Partial<Record<LinkKind, number>>): Record<LinkKind, nu
   ...counts,
 })
 
-const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 0.45 }
+const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 1 }
+const even: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
 const body: GraphLink[] = [{ source: 0, target: 1, kind: 'body' }]
 
 describe('radiusOf', () => {
@@ -57,7 +57,7 @@ describe('radiusOf', () => {
 describe('applySpread', () => {
   it('pushes two nodes apart', () => {
     const nodes = [node('a', -10, 40, 1), node('b', 10, 40, 1)]
-    applySpread(nodes, buildQuadtree(nodes), DEFAULT_FORCES, 1)
+    applySpread(nodes, buildQuadtree(nodes), even, 1)
     expect(nodes[0].vx).toBeLessThan(0)
     expect(nodes[1].vx).toBeGreaterThan(0)
   })
@@ -73,7 +73,7 @@ describe('applyLink', () => {
         n.x += n.vx
       }
     }
-    const rest = 30 + 0.45 * (500 - 30) + nodes[0].radius + nodes[1].radius
+    const rest = 240 + nodes[0].radius + nodes[1].radius
     expect(Math.abs(nodes[1].x - nodes[0].x)).toBeCloseTo(rest, 0)
   })
 

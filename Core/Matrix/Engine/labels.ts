@@ -7,7 +7,6 @@ const LABEL_CELL_PX = 96
 
 export const revealed = (kind: NodeKind, zoom: number): boolean => zoom >= REVEAL_ZOOM[kind]
 
-/** The node indices whose titles paint this frame: revealed at this zoom, one per screen cell, the larger disc winning a cell; `skip` is the hovered node, whose title the overlay carries. */
 export function cullLabels(
   nodes: GraphNode[],
   v: Viewport,
