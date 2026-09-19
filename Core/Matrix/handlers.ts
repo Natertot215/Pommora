@@ -9,7 +9,13 @@ import type { Viewport } from './Engine/viewport'
 import type { MatrixPatch } from './matrixConfig'
 import { readMatrixFile, writeMatrixFile } from './matrixFile'
 import { readMatrixGraph } from './matrixGraph'
-import { isLayoutPatch, type MatrixLayout, type Positions } from './matrixLayout'
+import {
+  isLayoutPatch,
+  isPositions,
+  isViewport,
+  type MatrixLayout,
+  type Positions,
+} from './matrixLayout'
 
 export const matrixHandlers = {
   'matrix:read': withRoot(async (root) => ok(await readMatrixFile(root))),
@@ -30,13 +36,15 @@ export const matrixHandlers = {
     return reply ? ok(reply) : fail('operation-failed', 'The index is not ready.')
   }),
 
-  'matrixLayout:load': () =>
-    sessionRoot() === null
-      ? NO_NEXUS
-      : ok({
-          positions: readValue<Positions>('matrixLayout') ?? {},
-          viewport: readValue<Viewport>('matrixViewport'),
-        } satisfies MatrixLayout),
+  'matrixLayout:load': () => {
+    if (sessionRoot() === null) return NO_NEXUS
+    const positions = readValue<Positions>('matrixLayout')
+    const viewport = readValue<Viewport>('matrixViewport')
+    return ok({
+      positions: isPositions(positions) ? positions : {},
+      viewport: isViewport(viewport) ? viewport : null,
+    } satisfies MatrixLayout)
+  },
 
   'matrixLayout:save': (_ctx, patch: unknown) => {
     if (adopting()) return BUSY

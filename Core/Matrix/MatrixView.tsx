@@ -61,7 +61,7 @@ export function MatrixView({
         matrixRuntime.moveDrag(wx, wy)
       },
       onDrop: () => matrixRuntime.endDrag(),
-      onAbort: () => matrixRuntime.endDrag(),
+      onAbort: () => matrixRuntime.cancelDrag(),
       onTap: () => open(i),
     })
   }

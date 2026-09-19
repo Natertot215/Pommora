@@ -95,16 +95,18 @@ describe('loadMatrix', () => {
     expect(s.matrixPositions).toEqual({ p1: [1, 2] })
   })
 
-  it('stays unloaded on a refused graph and retries only when the tree moves', async () => {
+  it('lands the config on a refused graph, stays unloaded, and asks again on the next pass', async () => {
+    channels['matrix:read'].mockResolvedValue({
+      ok: true,
+      value: parseMatrixConfig({ display: { hideIcon: true } }),
+    })
     channels['matrix:graph'].mockResolvedValue({
       ok: false,
       error: { code: 'operation-failed', message: 'The index is not ready.' },
     })
     await seatLoaded()
     expect(useSession.getState().matrixLoaded).toBe(false)
-    await seatLoaded()
-    expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
-    useSession.setState({ tree: makeTree() })
+    expect(useSession.getState().matrixConfig.display.hideIcon).toBe(true)
     await seatLoaded()
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
   })
@@ -156,6 +158,10 @@ describe('the refetch lane', () => {
     expect(useSession.getState().matrixGraph.links).toEqual([
       link('Notes/Renamed.md', 'p1', 'beta'),
     ])
+    channels['matrix:graph'].mockResolvedValue({ ok: true, value: { links: [], values: {} } })
+    useSession.getState().refetchMatrixPaths(['Notes/Renamed.md'])
+    await vi.advanceTimersByTimeAsync(200)
+    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
   })
 })
 

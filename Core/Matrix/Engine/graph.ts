@@ -12,7 +12,7 @@ export interface GraphInput {
   connections: Array<{ from: string; to: string; kind: ConnectionKind }>
 }
 
-export interface BuildOptions {
+interface BuildOptions {
   mode: GroupMode
   hideUnlinked: boolean
   visible: ReadonlySet<string> | null

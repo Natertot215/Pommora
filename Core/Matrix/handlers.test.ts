@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { closeSession, openSession } from '../Nexus/session'
+import { writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { realpathPosix, tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
@@ -75,6 +76,15 @@ describe('the layout channels', () => {
     expect(reply).toEqual({
       ok: true,
       value: { positions: { a: [1, 2] }, viewport: { x: 5, y: 6, zoom: 2 } },
+    })
+  })
+
+  it('loads a stored row the save would have refused as nothing', () => {
+    writeValue('matrixLayout', { a: [1] })
+    writeValue('matrixViewport', { x: 0, y: 0, zoom: 99 })
+    expect(matrixHandlers['matrixLayout:load']()).toEqual({
+      ok: true,
+      value: { positions: {}, viewport: null },
     })
   })
 

@@ -4,16 +4,16 @@ import { type Cell, type Quadtree, visit } from './quadtree'
 
 // KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
 export const BASE_RADIUS: Record<NodeKind, number> = { page: 40, folder: 60, space: 80 }
-export const LINK_MULTIPLE: Record<LinkKind, number> = {
+const LINK_MULTIPLE: Record<LinkKind, number> = {
   body: 0.08,
   citation: 0.04,
   frontmatter: 0.06,
   space: 0,
   location: 0,
 }
-export const MEMBER_MULTIPLE = 0.03
+const MEMBER_MULTIPLE = 0.03
 export const RADIUS_MAX = 160
-export const LINK_STRENGTH: Record<LinkKind, number> = {
+const LINK_STRENGTH: Record<LinkKind, number> = {
   body: 1,
   citation: 0.6,
   frontmatter: 0.8,
@@ -49,12 +49,8 @@ export function radiusOf(
   return clamp(grown, base, RADIUS_MAX)
 }
 
-const gravityOf = (multiple: number): number => GRAVITY * multiple
-const chargeOf = (multiple: number): number => -CHARGE * multiple
-const distanceOf = (multiple: number): number => DISTANCE * multiple
-
 export function applyGravity(nodes: GraphNode[], forces: Forces, alpha: number): void {
-  const k = gravityOf(forces.gravity) * alpha
+  const k = GRAVITY * forces.gravity * alpha
   for (const n of nodes) {
     n.vx -= n.x * k
     n.vy -= n.y * k
@@ -67,7 +63,7 @@ export function applySpread(
   forces: Forces,
   alpha: number,
 ): void {
-  const charge = chargeOf(forces.spread) * alpha
+  const charge = -CHARGE * forces.spread * alpha
   let n = nodes[0]
   const push = (cell: Cell): boolean => {
     if (cell.count === 0) return true
@@ -98,7 +94,7 @@ export function applyLink(
   forces: Forces,
   alpha: number,
 ): void {
-  const distance = distanceOf(forces.distance)
+  const distance = DISTANCE * forces.distance
   for (const l of links) {
     const a = nodes[l.source]
     const b = nodes[l.target]

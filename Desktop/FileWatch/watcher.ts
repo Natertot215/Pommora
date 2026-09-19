@@ -17,6 +17,7 @@ import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { isRecentWrite } from '@pommora/core/Files/writeEcho'
+import type { Pushes } from '@pommora/core/Contract/bridge'
 import { push as pushToWindow } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
@@ -34,11 +35,35 @@ const SETTLE_MS = 200
 
 let watcher: FSWatcher | null = null
 let debounce: ReturnType<typeof setTimeout> | null = null
-let navDebounce: ReturnType<typeof setTimeout> | null = null
-let pushedNav = ''
-let matrixDebounce: ReturnType<typeof setTimeout> | null = null
-let pushedMatrix = ''
 let batch: WatchEvent[] = []
+const configDebounce = new Map<string, ReturnType<typeof setTimeout>>()
+const pushedConfig = new Map<string, string>()
+
+// A config file whose section answers live: re-read after the settle, and pushed only when its text moved.
+function pushConfig<K extends keyof Pushes>(
+  root: string,
+  win: BrowserWindow,
+  channel: K,
+  read: (root: string) => Promise<Pushes[K]>,
+): void {
+  const held = configDebounce.get(channel)
+  if (held) clearTimeout(held)
+  configDebounce.set(
+    channel,
+    setTimeout(async () => {
+      if (sessionRoot() !== root || win.isDestroyed()) return
+      try {
+        const value = await read(root)
+        const text = JSON.stringify(value)
+        if (text === pushedConfig.get(channel)) return
+        pushedConfig.set(channel, text)
+        pushToWindow(win, channel, value)
+      } catch {
+        // Transient FS state mid-sync — the next settle re-reads.
+      }
+    }, SETTLE_MS),
+  )
+}
 
 export async function startWatcher(root: string, win: BrowserWindow): Promise<void> {
   stopWatcher()
@@ -58,14 +83,12 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
       const path = posixPath(hostPath)
       emitWatch(event, path)
       if (isTileBody(path)) return
-      // The app's own writes echo back and confirm through their own channels; state.json skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
-      if (isConfigPath(root, path, 'state')) {
-        if (navDebounce) clearTimeout(navDebounce)
-        navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
-      } else if (isConfigPath(root, path, 'matrix')) {
-        if (matrixDebounce) clearTimeout(matrixDebounce)
-        matrixDebounce = setTimeout(() => void pushMatrix(root, win), SETTLE_MS)
-      } else if (isRecentWrite(path)) return
+      // The app's own writes echo back and confirm through their own channels; a live config file skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
+      if (isConfigPath(root, path, 'state'))
+        pushConfig(root, win, 'nav:changed', readNavigationFile)
+      else if (isConfigPath(root, path, 'matrix'))
+        pushConfig(root, win, 'matrix:changed', readMatrixFile)
+      else if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)
@@ -85,16 +108,9 @@ export function stopWatcher(): void {
     clearTimeout(debounce)
     debounce = null
   }
-  if (navDebounce) {
-    clearTimeout(navDebounce)
-    navDebounce = null
-  }
-  pushedNav = ''
-  if (matrixDebounce) {
-    clearTimeout(matrixDebounce)
-    matrixDebounce = null
-  }
-  pushedMatrix = ''
+  for (const timer of configDebounce.values()) clearTimeout(timer)
+  configDebounce.clear()
+  pushedConfig.clear()
   if (watcher) {
     void watcher.close()
     watcher = null
@@ -141,32 +157,5 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     }
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
-  }
-}
-
-/** Pushes state.json's navigation section whenever it moves, the app's own writes included, so an external or synced-in edit surfaces live. */
-async function pushNav(root: string, win: BrowserWindow): Promise<void> {
-  if (sessionRoot() !== root || win.isDestroyed()) return
-  try {
-    const nav = await readNavigationFile(root)
-    const text = JSON.stringify(nav)
-    if (text === pushedNav) return
-    pushedNav = text
-    pushToWindow(win, 'nav:changed', nav)
-  } catch {
-    // Transient FS state mid-sync — the next settle re-reads.
-  }
-}
-
-async function pushMatrix(root: string, win: BrowserWindow): Promise<void> {
-  if (sessionRoot() !== root || win.isDestroyed()) return
-  try {
-    const config = await readMatrixFile(root)
-    const text = JSON.stringify(config)
-    if (text === pushedMatrix) return
-    pushedMatrix = text
-    pushToWindow(win, 'matrix:changed', config)
-  } catch {
-    // Transient FS state mid-sync — the next settle re-reads.
   }
 }

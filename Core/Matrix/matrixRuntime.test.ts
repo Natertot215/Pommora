@@ -379,6 +379,53 @@ describe('matrixRuntime', () => {
     expect([at('p1').pinned, at('p2').pinned, at('p3').pinned]).toEqual([true, true, false])
   })
 
+  it('defers a store change while every surface is hidden and rebuilds once on resume', () => {
+    seed()
+    attach()
+    flush()
+    const walked = walks.count
+    visible = false
+    useSession.setState({ tree: makeTree() })
+    expect(walks.count).toBe(walked)
+    visible = true
+    matrixRuntime.resume()
+    expect(walks.count).toBe(walked + 1)
+    const graph = matrixRuntime.graph
+    matrixRuntime.resume()
+    expect(walks.count).toBe(walked + 1)
+    expect(matrixRuntime.graph).toBe(graph)
+  })
+
+  it('returns a cancelled drag to where it began and leaves it unpinned', () => {
+    seed()
+    attach()
+    flush()
+    const n = matrixRuntime.graph.nodes[0]
+    const from = [n.x, n.y]
+    matrixRuntime.beginDrag(0)
+    matrixRuntime.moveDrag(120, -40)
+    matrixRuntime.cancelDrag()
+    expect([n.x, n.y]).toEqual(from)
+    expect(n.pinned).toBe(false)
+    expect(matrixRuntime.draggingId).toBeNull()
+    expect(matrixRuntime.sim?.held.has(n.id)).toBe(false)
+    expect(matrixRuntime.sim?.awake).toBe(true)
+  })
+
+  it('drops a hover the rebuild lost, so the node comes back unhovered', () => {
+    seed()
+    attach()
+    flush()
+    matrixRuntime.setHovered(matrixRuntime.graph.index.get('p2') ?? -1)
+    expect(matrixRuntime.hoveredIndex()).toBeGreaterThanOrEqual(0)
+    const shrunk = makeTree()
+    shrunk.collections[0].sets[0].pages = []
+    useSession.setState({ tree: shrunk })
+    expect(matrixRuntime.hoveredIndex()).toBe(-1)
+    useSession.setState({ tree: makeTree() })
+    expect(matrixRuntime.hoveredIndex()).toBe(-1)
+  })
+
   it('wakes on a shuffle', () => {
     seed()
     attach()

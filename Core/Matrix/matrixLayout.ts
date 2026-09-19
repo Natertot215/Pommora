@@ -2,7 +2,7 @@ import { isFiniteNumber } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
 import { type Viewport, ZOOM_MAX, ZOOM_MIN } from './Engine/viewport'
 
-/** A third slot marks the node as held where the user dropped it, so the pin outlives the session. */
+// A third slot marks the node as held where the user dropped it, so the pin outlives the session.
 export type Positions = Record<string, [number, number] | [number, number, 1]>
 
 export interface MatrixLayout {
@@ -10,7 +10,7 @@ export interface MatrixLayout {
   viewport: Viewport | null
 }
 
-const isPositions = (v: unknown): v is Positions =>
+export const isPositions = (v: unknown): v is Positions =>
   isPlainObject(v) &&
   Object.values(v).every(
     (p) =>
@@ -20,7 +20,7 @@ const isPositions = (v: unknown): v is Positions =>
       isFiniteNumber(p[1]),
   )
 
-const isViewport = (v: unknown): v is Viewport =>
+export const isViewport = (v: unknown): v is Viewport =>
   isPlainObject(v) &&
   isFiniteNumber(v.x) &&
   isFiniteNumber(v.y) &&

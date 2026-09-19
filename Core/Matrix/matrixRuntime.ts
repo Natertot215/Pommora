@@ -1,6 +1,6 @@
 import { useSession } from '../Session/store'
 import type { Forces } from './Engine/forces'
-import { buildGraph, type Graph } from './Engine/graph'
+import { buildGraph, type Graph, type GraphNode } from './Engine/graph'
 import { place } from './Engine/placement'
 import {
   cool,
@@ -58,6 +58,8 @@ class MatrixRuntime {
   private built: Built | null = null
   private wasAwake = false
   private fitOnSettle = false
+  private dirty = false
+  private dragFrom: { x: number; y: number; pinned: boolean } | null = null
   private unsubscribe: (() => void) | null = null
   private save: ReturnType<typeof setTimeout> | null = null
 
@@ -88,6 +90,7 @@ class MatrixRuntime {
   }
 
   resume(): void {
+    if (this.dirty) this.sync()
     this.schedule()
   }
 
@@ -98,8 +101,10 @@ class MatrixRuntime {
     this.sim = null
     this.wasAwake = false
     this.fitOnSettle = false
+    this.dirty = false
     this.hoveredId = null
     this.draggingId = null
+    this.dragFrom = null
     this.ghosts = []
     this.arrivals.clear()
   }
@@ -112,6 +117,11 @@ class MatrixRuntime {
       void s.loadMatrix()
       return
     }
+    if (!this.visible) {
+      this.dirty = true
+      return
+    }
+    this.dirty = false
     const c = s.matrixConfig
     const b = this.built
     if (
@@ -159,6 +169,7 @@ class MatrixRuntime {
     // A local settle's moving set is carried too, or a push mid-settle would jiggle the whole picture at the local wake's heat.
     const moving = prev?.local ? prev.graph.nodes.filter((n) => !n.pinned).map((n) => n.id) : null
     this.graph = graph
+    if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
     this.sim = createSimulation(graph, c.forces, settleAll)
     if (prev) this.sim.held = prev.held
     else for (const [id, p] of Object.entries(s.matrixPositions)) if (p[2]) this.sim.held.add(id)
@@ -273,18 +284,25 @@ class MatrixRuntime {
     if (dx !== 0 || dy !== 0) this.setViewport(panBy(this.viewport, dx, dy))
   }
 
+  private indexOf(id: string | null): number {
+    return id === null ? -1 : (this.graph.index.get(id) ?? -1)
+  }
+
+  nodeOf(id: string | null): GraphNode | undefined {
+    return this.graph.nodes[this.indexOf(id)]
+  }
+
   hitTest(wx: number, wy: number): number {
     if (!this.sim) return -1
-    const n = nodeAt(this.sim, wx, wy, HIT_SLACK)
-    return n ? (this.graph.index.get(n.id) ?? -1) : -1
+    return this.indexOf(nodeAt(this.sim, wx, wy, HIT_SLACK)?.id ?? null)
   }
 
   hoveredIndex(): number {
-    return this.hoveredId === null ? -1 : (this.graph.index.get(this.hoveredId) ?? -1)
+    return this.indexOf(this.hoveredId)
   }
 
   draggingIndex(): number {
-    return this.draggingId === null ? -1 : (this.graph.index.get(this.draggingId) ?? -1)
+    return this.indexOf(this.draggingId)
   }
 
   setHovered(i: number): void {
@@ -309,6 +327,7 @@ class MatrixRuntime {
     const n = this.graph.nodes[i]
     if (!n || !this.sim || this.built?.display.locked) return
     this.draggingId = n.id
+    this.dragFrom = { x: n.x, y: n.y, pinned: n.pinned }
     reheat(this.sim)
     n.pinned = true
     this.schedule()
@@ -326,7 +345,26 @@ class MatrixRuntime {
   endDrag(): void {
     if (this.draggingId === null) return
     this.sim?.held.add(this.draggingId)
+    this.dropped()
+  }
+
+  cancelDrag(): void {
+    const id = this.draggingId
+    if (id === null) return
+    const n = this.graph.nodes[this.draggingIndex()]
+    const from = this.dragFrom
+    if (n && from) {
+      n.x = from.x
+      n.y = from.y
+      n.vx = n.vy = 0
+      n.pinned = from.pinned
+    }
+    this.dropped()
+  }
+
+  private dropped(): void {
     this.draggingId = null
+    this.dragFrom = null
     if (this.sim) cool(this.sim)
     this.schedule()
   }
@@ -340,7 +378,6 @@ class MatrixRuntime {
   setForces(forces: Forces): void {
     if (!this.sim) return
     this.sim.forces = forces
-    reheat(this.sim)
     cool(this.sim)
     this.schedule()
   }
