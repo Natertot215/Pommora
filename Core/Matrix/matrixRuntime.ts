@@ -15,7 +15,13 @@ import {
 } from './Engine/simulation'
 import { DEFAULT_VIEWPORT, fit, panBy, type Stage, type Viewport } from './Engine/viewport'
 import type { MatrixConfig } from './matrixConfig'
-import { matrixVisible, matrixWalk, type MatrixWalk } from './matrixInput'
+import {
+  matrixTree,
+  matrixVisible,
+  matrixWalk,
+  type MatrixTree,
+  type MatrixWalk,
+} from './matrixInput'
 import type { Positions } from './matrixLayout'
 
 // KNOB — the hit slack past a node's edge, in world units.
@@ -35,6 +41,7 @@ const NO_STAGE: Stage = { x: 0, y: 0, width: 0, height: 0 }
 interface Built {
   tree: unknown
   reply: unknown
+  held: MatrixTree
   walk: MatrixWalk
   visible: ReadonlySet<string> | null
   group: unknown
@@ -141,15 +148,15 @@ class MatrixRuntime {
       return
     }
     const first = b === null
+    const held = b && b.tree === s.tree ? b.held : matrixTree(s.tree)
     const walk =
-      b && b.tree === s.tree && b.reply === s.matrixGraph
-        ? b.walk
-        : matrixWalk(s.tree, s.matrixGraph)
+      b && b.held === held && b.reply === s.matrixGraph ? b.walk : matrixWalk(held, s.matrixGraph)
     const visible =
       b && b.walk === walk && b.filter === c.filter ? b.visible : matrixVisible(walk, c.filter)
     this.built = {
       tree: s.tree,
       reply: s.matrixGraph,
+      held,
       walk,
       visible,
       group: c.group,
