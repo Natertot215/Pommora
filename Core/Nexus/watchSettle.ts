@@ -16,9 +16,13 @@ import { getLiveTree } from './liveTree'
 import { classifyEvent, type WatchClass, type WatchEvent, type WatchEventName } from './watchPatch'
 import { pageIdIndex } from './valuesChanged'
 
-export function isStatePath(root: string, path: string): boolean {
+export function isConfigPath(
+  root: string,
+  path: string,
+  file: keyof typeof NEXUS_CONFIG_FILES,
+): boolean {
   const segs = relative(root, path).split('/')
-  return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.state
+  return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES[file]
 }
 
 export function tileBodyUnder(segs: string[], rel: string): boolean {

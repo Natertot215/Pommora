@@ -47,3 +47,8 @@ export function leaveGlance(): void {
   hovered = null
   cancelGlance()
 }
+
+// A release that arrives a frame after the pointer left only counts while the surface still holds the hover.
+export function leaveGlanceFrom(el: Element): void {
+  if (hovered?.el === el) leaveGlance()
+}

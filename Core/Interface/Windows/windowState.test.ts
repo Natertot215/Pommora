@@ -29,6 +29,16 @@ describe('readWindowsState', () => {
     expect(readWindowsState()).toEqual(file)
   })
 
+  it('round-trips a matrix window, which keeps no set of its own', () => {
+    const matrix: WindowsFile = {
+      navSet: null,
+      origins: {},
+      open: { kind: 'matrix', originId: 'matrix' },
+    }
+    writeWindowsState(matrix)
+    expect(readWindowsState()).toEqual(matrix)
+  })
+
   it('a rewrite replaces the row', () => {
     writeWindowsState(file)
     writeWindowsState(EMPTY_WINDOWS)
@@ -62,5 +72,20 @@ describe('sanitizeWindows', () => {
     })
     expect(clean?.navSet?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
     expect(clean?.open).toBeNull()
+  })
+
+  it('drops a Matrix tab from a stored strip — no window tab renders that kind', () => {
+    const clean = sanitizeWindows({
+      navSet: null,
+      origins: {
+        p1: {
+          tabs: [{ target: { kind: 'matrix' } }, { target: { kind: 'page', id: 'p1' } }],
+          activeIndex: 0,
+        },
+      },
+      open: { kind: 'matrix', originId: 'matrix' },
+    })
+    expect(clean?.origins.p1?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
+    expect(clean?.open).toEqual({ kind: 'matrix', originId: 'matrix' })
   })
 })

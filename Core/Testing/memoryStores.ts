@@ -5,7 +5,8 @@ import type {
   CaptureStore,
   ContentIndexStore,
   IndexedStat,
-  MatrixNode,
+  MatrixGraphRows,
+  MatrixLinkRow,
   SnapshotRow,
   SnapshotSource,
   SnapshotStore,
@@ -13,12 +14,8 @@ import type {
   SyncStore,
 } from '../Platform/stores'
 
-interface MatrixRow extends MatrixNode {
-  path: string
-}
-
 interface MemoryIndex {
-  matrix: Map<string, MatrixRow>
+  matrix: Map<string, MatrixLinkRow>
   headings: Map<string, { path: string; heading: string; ordinal: number }>
   values: Map<string, { path: string; key: string; value: string }>
   stats: Map<string, IndexedStat>
@@ -79,7 +76,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     index.stats.delete(path)
   }
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
-  const nodes = (): MatrixRow[] => [...index.matrix.values()]
+  const nodes = (): MatrixLinkRow[] => [...index.matrix.values()]
   return {
     upsertPageIndex(path, entry, stat) {
       clearPath(path)
@@ -150,6 +147,24 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         out[path].push(heading)
       }
       return out
+    },
+    readMatrixGraph(paths) {
+      const held = (path: string): boolean => !paths || paths.includes(path)
+      const links = nodes()
+        .filter(
+          (r) =>
+            (r.kind === 'body' || r.kind === 'citation' || r.kind === 'frontmatter') &&
+            held(r.path),
+        )
+        .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+      const pages: MatrixGraphRows['pages'] = {}
+      for (const [path, stat] of index.stats)
+        if (held(path)) pages[path] = { values: {}, mtimeMs: stat.mtimeMs }
+      for (const row of index.values.values()) {
+        const page = pages[row.path]
+        if (page) page.values[row.key] = JSON.parse(row.value)
+      }
+      return { links, pages }
     },
     queryKeyHolders(key) {
       return sortedPaths([...index.values.values()].filter((r) => r.key === key).map((r) => r.path))

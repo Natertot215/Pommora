@@ -34,7 +34,6 @@ import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
 import { CheckboxGlyph } from '../../Properties/Cells/checkboxLook'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useSaveView } from '../ViewTileScope'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { optionsOf } from '@pommora/core/Properties/properties'
 import {
@@ -214,35 +213,35 @@ function ValueFieldShell({
 
 function LocationField({
   values,
-  sets,
+  nodes,
   onCommit,
 }: {
   values: string[]
-  sets: SetNode[]
+  nodes: (CollectionNode | SetNode)[]
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const expanded = useDisclosureSet()
   const { shown, toggle } = useMultiValue(values, onCommit)
-  const byId = new Map(flattenSets(sets).map((s) => [s.id, s]))
+  const byId = new Map(flattenNodes(nodes).map((n) => [n.id, n]))
 
-  const renderSet = (s: SetNode): React.JSX.Element => {
-    const kids = s.sets ?? []
-    const picked = shown.includes(s.id)
+  const renderNode = (n: CollectionNode | SetNode): React.JSX.Element => {
+    const kids = n.sets ?? []
+    const picked = shown.includes(n.id)
     return (
       <DisclosureRow
-        key={s.id}
-        title={s.title}
-        icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
+        key={n.id}
+        title={n.title}
+        icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
         dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
-        open={expanded.has(s.id)}
-        onToggle={() => expanded.toggle(s.id)}
-        onClick={() => toggle(s.id)}
+        open={expanded.has(n.id)}
+        onToggle={() => expanded.toggle(n.id)}
+        onClick={() => toggle(n.id)}
         selected={picked}
         picker
       >
-        {kids.length > 0 ? kids.map(renderSet) : undefined}
+        {kids.length > 0 ? kids.map(renderNode) : undefined}
       </DisclosureRow>
     )
   }
@@ -255,12 +254,17 @@ function LocationField({
         ) : (
           <SegmentRun
             entries={shown.map((v) => {
-              const set = byId.get(v)
+              const node = byId.get(v)
               return {
                 key: v,
-                label: set?.title ?? v,
+                label: node?.title ?? v,
                 icon: (
-                  <EntityIcon kind="set" icon={set?.icon} size="body" className={sr.segmentIcon} />
+                  <EntityIcon
+                    kind={node?.kind ?? 'set'}
+                    icon={node?.icon}
+                    size="body"
+                    className={sr.segmentIcon}
+                  />
                 ),
                 onRemove: () => toggle(v),
               }
@@ -278,9 +282,9 @@ function LocationField({
       >
         {!open
           ? null
-          : sets.length === 0
+          : nodes.length === 0
             ? emptyPicker('No Sets in this collection.')
-            : sets.map(renderSet)}
+            : nodes.map(renderNode)}
       </PickerMenu>
     </>
   )
@@ -355,28 +359,33 @@ function ChipsField({
   )
 }
 
-function flattenSets(sets: SetNode[] | undefined): SetNode[] {
-  return (sets ?? []).flatMap((s) => [s, ...flattenSets(s.sets)])
+function flattenNodes(
+  nodes: (CollectionNode | SetNode)[] | undefined,
+): (CollectionNode | SetNode)[] {
+  return (nodes ?? []).flatMap((n) => [n, ...flattenNodes(n.sets)])
 }
 
+export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>
+
 export function FilterFrame({
-  source,
+  locations,
   view,
   schema,
   tree,
   label,
   onBack,
+  onCommit,
 }: {
-  source: CollectionNode | SetNode
-  view: SavedView
+  locations: (CollectionNode | SetNode)[]
+  view: FilterView
   schema: PropertyDefinition[]
   tree: NexusTree | null
   label: string
   onBack: () => void
+  onCommit: (next: FilterView) => void
 }): React.JSX.Element {
   const styleFor = useStyleFor()
   const nexusClock = useSession((s) => s.personalization.timeFormat)
-  const saveView = useSaveView(source)
   const [draft, setDraft] = useState<Connector | null | false>(false)
 
   const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
@@ -389,9 +398,9 @@ export function FilterFrame({
   }
   const liveView = writtenRef.current
 
-  const commit = (next: SavedView): void => {
+  const commit = (next: FilterView): void => {
     writtenRef.current = next
-    void saveView(next)
+    onCommit(next)
   }
 
   const decoded: DecodedFilter = decodeFilter(liveView.filter)
@@ -415,7 +424,7 @@ export function FilterFrame({
 
   const contextIds = contextIdsOf(tree)
   const capitalize = useCapitalizeMetadata()
-  const targets = filterTargets(schema, tree, (source.sets?.length ?? 0) > 0, capitalize)
+  const targets = filterTargets(schema, tree, locations.length > 0, capitalize)
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 
@@ -561,7 +570,7 @@ export function FilterFrame({
     return (
       <LocationField
         values={rule.values ?? (rule.value != null ? [rule.value] : [])}
-        sets={source.sets ?? []}
+        nodes={locations}
         onCommit={(values) => patch({ values })}
       />
     )

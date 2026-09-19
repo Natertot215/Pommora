@@ -62,6 +62,21 @@ describe('the sidebar entity menu', () => {
     ).toEqual(['Rename', 'Delete', '—', 'Reveal Location'])
   })
 
+  it('a Matrix node neither creates siblings nor locks', () => {
+    const page = entityMenuItems(
+      { kind: 'page', id: 'p1', path: 'Notes/A.md', title: 'A', host: 'matrix' },
+      [],
+    ).map((i) => i.action)
+    expect(page).not.toContain('title:newabove')
+    expect(page).not.toContain('title:newbelow')
+    expect(page).toContain('title:rename')
+    const set = entityMenuItems(
+      { kind: 'set', id: 's1', path: 'Notes/S', title: 'S', host: 'matrix' },
+      [],
+    ).map((i) => i.action)
+    expect(set).not.toContain('lock')
+  })
+
   it('names the lock for the state it moves to', () => {
     const items = entityMenuItems(
       { kind: 'set', path: 'Notes/S', title: 'S', host: 'sidebar', disclosureLocked: true },

@@ -48,6 +48,7 @@ export function useBridgeSubscriptions(): void {
           return id !== undefined && changed.has(id)
         })
         bumpContainerValues(changes)
+        useSession.getState().refetchMatrixPages(changed)
       }),
     [bumpContainerValues],
   )
@@ -64,6 +65,7 @@ export function useBridgeSubscriptions(): void {
     const off = dialer().on('pages:changed', (paths) => {
       for (const path of paths) absorb(path)
       void useSession.getState().loadHeadings(paths)
+      useSession.getState().refetchMatrixPaths(paths)
     })
     return () => {
       off()
@@ -72,6 +74,12 @@ export function useBridgeSubscriptions(): void {
   }, [replaceBody])
 
   useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
+
+  const applyMatrixChanged = useSession((s) => s.applyMatrixChanged)
+  useEffect(
+    () => dialer().on('matrix:changed', (config) => applyMatrixChanged(config)),
+    [applyMatrixChanged],
+  )
 
   const applySyncStatus = useSession((s) => s.applySyncStatus)
   useEffect(() => dialer().on('sync:changed', applySyncStatus), [applySyncStatus])

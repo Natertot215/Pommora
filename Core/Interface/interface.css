@@ -25,13 +25,15 @@
 }
 
 /* Full-bleed so the banner reaches the pane edges; the body inset (and the reclaimed fold-chevron gutter) moves into .mdpm-editor. */
-.detail-page {
+.detail-page,
+.detail-matrix {
   padding: 0;
   overflow: hidden;
 }
 
-/* Moved off screen rather than hidden: embedded webpages then read as out of view and pause under their own retention, where a hidden subtree would keep them painting and unmounting would end their sessions outright. */
-.detail-page.is-parked {
+/* Moved off screen rather than hidden: embedded webpages then read as out of view and pause under their own retention, where a hidden subtree would keep them painting and unmounting would end their sessions outright, and the Matrix's canvas stops ticking while parked. */
+.detail-page.is-parked,
+.detail-matrix.is-parked {
   position: absolute;
   inset: 0;
   transform: translateX(-200vw);

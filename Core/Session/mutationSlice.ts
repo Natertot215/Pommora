@@ -37,7 +37,8 @@ export interface RenameSlice {
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
   iconPath: string | null
-  beginIcon: (path: string) => void
+  iconHost: RenameHost | null
+  beginIcon: (path: string, host?: RenameHost) => void
   endIcon: () => void
   /** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
   peekSignal: { parentPath: string; childId: string; nonce: number } | null
@@ -58,7 +59,7 @@ let nextRenameToken = 1
 // The unclaimed-session sweep's beat — long enough for a create's row to arrive and claim.
 const RENAME_CLAIM_BEAT_MS = 2000
 let renameOrphanTimer: number | undefined
-const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1 }
+const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1, matrix: 3 }
 const RENAME_CLEARED = {
   renamingPath: null,
   renamingCreate: false,
@@ -146,8 +147,9 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   },
 
   iconPath: null,
-  beginIcon: (path) => set({ iconPath: path }),
-  endIcon: () => set({ iconPath: null }),
+  iconHost: null,
+  beginIcon: (path, host) => set({ iconPath: path, iconHost: host ?? 'sidebar' }),
+  endIcon: () => set({ iconPath: null, iconHost: null }),
   peekSignal: null,
   signalPeek: (parentPath, childId) =>
     set((s) => ({ peekSignal: { parentPath, childId, nonce: (s.peekSignal?.nonce ?? 0) + 1 } })),

@@ -1,4 +1,4 @@
-import { factorChoice, PickerControl, stepsWith } from '@pommora/uix/Pickers/PickerControl'
+import { factorPickerProps, PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { coerceScale, SCALE_STEPS } from './personalization'
 
 export function ScalePicker({
@@ -15,17 +15,12 @@ export function ScalePicker({
       ariaLabel={ariaLabel}
       solid
       chevronLead
-      value={String(value)}
-      options={stepsWith(SCALE_STEPS, value).map(factorChoice)}
-      onPick={(v) => onPick(Number(v))}
-      typeable={{
-        text: value.toFixed(2),
-        suffix: 'x',
-        onCommit: (written) => {
-          const typed = Number.parseFloat(written.replace(/x/i, '').trim())
-          if (Number.isFinite(typed)) onPick(coerceScale(typed, value))
-        },
-      }}
+      {...factorPickerProps({
+        steps: SCALE_STEPS,
+        value,
+        coerce: (typed) => coerceScale(typed, value),
+        onPick,
+      })}
     />
   )
 }

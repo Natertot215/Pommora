@@ -5,6 +5,9 @@ import { useExitPresence } from '../Animations/useExitPresence'
 import * as s from './frame-slide.css'
 
 const SLIDE_MS = ms(duration.base)
+// KNOB — the floor a settings pane keeps under its slides.
+export const PANE_MIN_W = 225
+export const PANE_MIN_H = 245
 
 /** Never caps or scrolls a slot's height: a slot needing a ceiling wraps its content in a `MenuScrollFrame`, since two scrolling containers break the slide. */
 export function FrameSlide({

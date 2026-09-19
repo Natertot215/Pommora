@@ -9,6 +9,7 @@ import { NavMenu } from './NavMenu'
 import { TabBar } from '../../Navigation/TabBar'
 import { activeUnpinnedTab } from '../../Navigation/tabsModel'
 import { SettingsMenu } from './SettingsMenu'
+import { viewSettingsScope } from './viewSettingsScope'
 import { useSession } from '../../Session/store'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import './toolbar.css'
@@ -27,9 +28,11 @@ export function Toolbar({
   const [panel, setPanel] = useState<TrioPanel | null>(null)
   const [beaks, setBeaks] = useState<number[]>([])
   const trioRef = useRef<HTMLDivElement>(null)
+  const matrixPane = useSession((s) => viewSettingsScope(s.selection) === 'matrix')
   useDismissal(panel !== null, false, {
     layer: () => trioRef.current,
     dismiss: () => setPanel(null),
+    outsidePress: !(panel === 'settings' && matrixPane),
   })
   const navP = useExitPresence(panel === 'navigation')
   const settingsP = useExitPresence(panel === 'settings')

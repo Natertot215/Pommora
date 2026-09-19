@@ -23,7 +23,7 @@ export function entityMenuItems(
   if (target.kind === 'page')
     return pageMetaMenuItems(target.alreadyOpen, {
       window: true,
-      newPages: 'pair',
+      newPages: target.host === 'matrix' ? undefined : 'pair',
       move: target,
       properties: target.properties,
       clipboard: true,

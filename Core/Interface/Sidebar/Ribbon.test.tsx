@@ -20,6 +20,8 @@ beforeEach(() => {
     select: selectSpy as never,
     setPersonalization: setPersonalizationSpy as never,
     personalization: { sidebarMode: 'collections' },
+    tabs: [],
+    pinned: [],
   })
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -35,11 +37,56 @@ afterEach(() => {
 const buttons = (): HTMLButtonElement[] => Array.from(host.querySelectorAll('button'))
 
 describe('Ribbon', () => {
-  it('renders Homepage first, then the five launcher icons in order', () => {
+  it('renders Homepage first, then the six launcher icons in order', () => {
     const bs = buttons()
     expect(bs[0].getAttribute('aria-label')).toBe('Homepage')
     const labels = bs.slice(1).map((b) => b.getAttribute('aria-label'))
-    expect(labels).toEqual(['navigation', 'agenda', 'contexts', 'collections', 'settings'])
+    expect(labels).toEqual([
+      'matrix',
+      'navigation',
+      'agenda',
+      'contexts',
+      'collections',
+      'settings',
+    ])
+  })
+
+  it('a Matrix click opens the Matrix and never switches mode', () => {
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    act(() => matrix.click())
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'matrix' })
+    expect(setPersonalizationSpy).not.toHaveBeenCalled()
+  })
+
+  it('Open Matrix In Window toggles the window when no Matrix tab stands', () => {
+    const openMatrixWindowSpy = vi.fn()
+    act(() =>
+      useSession.setState({
+        toggleMatrixWindow: openMatrixWindowSpy as never,
+        personalization: { sidebarMode: 'collections', matrixOpenIn: 'window' },
+      }),
+    )
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    act(() => matrix.click())
+    expect(openMatrixWindowSpy).toHaveBeenCalledTimes(1)
+    expect(selectSpy).not.toHaveBeenCalled()
+  })
+
+  it('Open Matrix In Window focuses the tab instead once one is open', () => {
+    const openMatrixWindowSpy = vi.fn()
+    act(() =>
+      useSession.setState({
+        toggleMatrixWindow: openMatrixWindowSpy as never,
+        personalization: { sidebarMode: 'collections', matrixOpenIn: 'window' },
+        tabs: [
+          { id: 't1', target: { kind: 'matrix' }, navStack: [{ kind: 'matrix' }], navIndex: 0 },
+        ],
+      }),
+    )
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    act(() => matrix.click())
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'matrix' })
+    expect(openMatrixWindowSpy).not.toHaveBeenCalled()
   })
 
   it('Homepage click selects the homepage and never switches mode', () => {
@@ -89,19 +136,25 @@ describe('Ribbon', () => {
     expect(agenda.getAttribute('aria-selected')).toBe('false')
   })
 
-  it('honors a persisted ribbonOrder, appending any missing keys', () => {
+  const renderWithOrder = (ribbonOrder: string[]): (string | null)[] => {
     act(() => root.unmount())
-    useSession.setState({
-      personalization: { sidebarMode: 'collections', ribbonOrder: ['settings', 'agenda'] },
-    })
+    useSession.setState({ personalization: { sidebarMode: 'collections', ribbonOrder } })
     root = createRoot(host)
     act(() => root.render(<Ribbon />))
-    const labels = buttons()
+    return buttons()
       .slice(1)
       .map((b) => b.getAttribute('aria-label'))
-    expect(labels.slice(0, 2)).toEqual(['settings', 'agenda'])
-    expect(labels).toContain('collections')
-    expect(labels).toContain('contexts')
-    expect(labels).toContain('navigation')
+  }
+
+  it('seats a missing key at its default index — a saved five-key order still shows the Matrix first', () => {
+    expect(
+      renderWithOrder(['settings', 'agenda', 'contexts', 'collections', 'navigation']),
+    ).toEqual(['matrix', 'settings', 'agenda', 'contexts', 'collections', 'navigation'])
+  })
+
+  it('honors a saved order that places the Matrix itself', () => {
+    expect(
+      renderWithOrder(['settings', 'agenda', 'contexts', 'matrix', 'collections', 'navigation']),
+    ).toEqual(['settings', 'agenda', 'contexts', 'matrix', 'collections', 'navigation'])
   })
 })

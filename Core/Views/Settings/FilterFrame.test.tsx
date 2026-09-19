@@ -5,9 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import { useSession } from '../../Session/store'
-import { FilterFrame } from './FilterFrame'
-import { stubDialer } from '../../vitest.setup'
+import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
@@ -57,18 +55,19 @@ mountEachTest((h, r) => {
   host = h
   root = r
 })
-let saveSpy: ReturnType<typeof vi.fn>
+let saveSpy: ReturnType<typeof vi.fn<(next: FilterView) => void>>
 
 const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <FilterFrame
-        source={source}
+        locations={source.sets}
         view={v}
         schema={schema}
         tree={null}
         label="Settings"
         onBack={() => {}}
+        onCommit={saveSpy}
       />,
     )
   })
@@ -96,14 +95,10 @@ const optionWithText = (t: string): Element | undefined =>
     .at(-1)
 
 beforeEach(() => {
-  saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
-  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'views:save': saveSpy,
-  })
-  useSession.setState({ load: vi.fn(async () => {}) as never })
+  saveSpy = vi.fn<(next: FilterView) => void>()
 })
 
-const lastSaved = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView
+const lastSaved = (): FilterView => saveSpy.mock.calls.at(-1)?.[0] as FilterView
 
 const twoRules = (): SavedView =>
   view({

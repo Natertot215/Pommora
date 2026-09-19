@@ -176,6 +176,35 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readHeadings(['Notes/H.md'])).toEqual({ 'Notes/H.md': [] })
     })
 
+    it("reads the page-to-page rows and every page's values, whole and by path", () => {
+      store.upsertPageIndex(
+        'Notes/A.md',
+        {
+          matrix: [body('beta'), node('citation', 'gamma'), space('<Projects>', 'pommora')],
+          headings: [],
+          values: { ID: 'idA', Status: ['Open'] },
+        },
+        STAT,
+      )
+      store.upsertPageIndex(
+        'Notes/B.md',
+        { matrix: [], headings: [], values: { ID: 'idB' } },
+        { mtimeMs: 2000, size: 20 },
+      )
+      const whole = store.readMatrixGraph()
+      expect(whole.links).toEqual([
+        { path: 'Notes/A.md', ...body('beta') },
+        { path: 'Notes/A.md', ...node('citation', 'gamma') },
+      ])
+      expect(whole.pages).toEqual({
+        'Notes/A.md': { values: { ID: 'idA', Status: ['Open'] }, mtimeMs: 1000 },
+        'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 },
+      })
+      const narrowed = store.readMatrixGraph(['Notes/B.md'])
+      expect(narrowed.links).toEqual([])
+      expect(narrowed.pages).toEqual({ 'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 } })
+    })
+
     it('a heading-naming link answers the bare title query', () => {
       store.upsertPageIndex(
         'Notes/A.md',

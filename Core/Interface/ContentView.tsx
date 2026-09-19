@@ -9,6 +9,9 @@ import { HomepageView } from '../Tiles/HomepageView'
 import { SpaceView } from '../Tiles/SpaceView'
 import { PageView } from '../Pages/PageView'
 import { NavView } from '../Navigation/NavView'
+import { MATRIX_REF } from '@pommora/core/Matrix/matrixKind'
+import { MatrixView } from '../Matrix/MatrixView'
+import { isOpenInTabs } from '../Navigation/tabsModel'
 import { Subfield } from './Subfield/Subfield'
 import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
@@ -55,6 +58,7 @@ function DetailView(): React.JSX.Element | null {
       )
     }
     case 'page':
+    case 'matrix':
       return null
   }
 }
@@ -100,6 +104,8 @@ export function ContentView(): React.JSX.Element {
   const expanded = useSession((s) => s.subfieldExpanded)
   const activeTabId = useSession((s) => s.activeTabId)
   const hosts = useHosts()
+  const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
+  const matrixParked = selectionKind !== 'matrix'
 
   const viewRef = useRef<HTMLDivElement>(null)
   const prevSelection = useRef(selection)
@@ -125,6 +131,7 @@ export function ContentView(): React.JSX.Element {
     selectionKind === 'set' ||
     selectionKind === 'page' ||
     selectionKind === 'space' ||
+    selectionKind === 'matrix' ||
     (selectionKind === 'none' && !!tree)
 
   const paneClass =
@@ -158,6 +165,14 @@ export function ContentView(): React.JSX.Element {
             </div>
           )
         })}
+        {matrixTab && (
+          <div
+            className={matrixParked ? 'detail detail-matrix is-parked' : 'detail detail-matrix'}
+            aria-hidden={matrixParked || undefined}
+          >
+            <MatrixView parked={matrixParked} publishes={!matrixParked} />
+          </div>
+        )}
         <DetailView />
       </div>
       {showSubfield && <ContentFooter />}

@@ -8,6 +8,7 @@ import type { WatchEvent } from './watchPatch'
 import {
   classifyBatch,
   emitWatch,
+  isConfigPath,
   pagesChangedIn,
   setWatchTap,
   syncIgnoredUnder,
@@ -48,6 +49,16 @@ describe('syncIgnoredUnder', () => {
 
   it('still refuses .trash', () => {
     expect(syncIgnoredUnder(root, scope)(`${root}/.trash/Notes/gone.md`)).toBe(true)
+  })
+})
+
+describe('isConfigPath', () => {
+  it('names each config file apart from the other', () => {
+    expect(isConfigPath(root, `${root}/.nexus/state.json`, 'state')).toBe(true)
+    expect(isConfigPath(root, `${root}/.nexus/matrix.json`, 'matrix')).toBe(true)
+    expect(isConfigPath(root, `${root}/.nexus/matrix.json`, 'state')).toBe(false)
+    expect(isConfigPath(root, `${root}/.nexus/state.json`, 'matrix')).toBe(false)
+    expect(isConfigPath(root, `${root}/Notes/matrix.json`, 'matrix')).toBe(false)
   })
 })
 

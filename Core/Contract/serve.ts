@@ -1,6 +1,7 @@
 import { actionsHandlers } from '../Actions/handlers'
 import { assetsHandlers } from '../Assets/handlers'
 import { interfaceHandlers } from '../Interface/handlers'
+import { matrixHandlers } from '../Matrix/handlers'
 import { navigationHandlers } from '../Navigation/handlers'
 import { nexusHandlers } from '../Nexus/handlers'
 import { pagesHandlers } from '../Pages/handlers'
@@ -24,6 +25,7 @@ export const handlers: Handlers = {
   ...settingsHandlers,
   ...syncHandlers,
   ...navigationHandlers,
+  ...matrixHandlers,
   ...interfaceHandlers,
   ...webHandlers,
   ...actionsHandlers,

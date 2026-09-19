@@ -144,7 +144,7 @@ const filterRule = z.object({
   values: z.array(z.string()).optional(),
 })
 
-const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
+export const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
   z.object({
     match: z.enum(MATCH_MODES),
     rules: z.array(z.union([filterRule, filterGroup])),

@@ -15,6 +15,7 @@ import {
   openTab,
   openTabAt,
   pinTabId,
+  liveTarget,
   pushMru,
   reconcileTabs,
   reorderWithinZone,
@@ -46,6 +47,21 @@ const mkTree = (...ids: string[]): NexusTree =>
     personalization: {},
   }) as unknown as NexusTree
 const navTab = (id: string): Tab => newTabTab(id)
+
+describe('tabsModel — the Matrix kind', () => {
+  it('liveTarget carries the id-less Matrix through untouched', () => {
+    expect(liveTarget(reconcileIndexOf(mkTree('a')), { kind: 'matrix' })).toEqual({
+      kind: 'matrix',
+    })
+  })
+
+  it('opening the Matrix twice yields one tab', () => {
+    const first = openTab([], 't0', [], { kind: 'matrix' }, { newTab: true }, 'M1')
+    const again = openTab(first.tabs, first.activeTabId, [], { kind: 'matrix' }, {}, 'M2')
+    expect(again.tabs).toHaveLength(1)
+    expect(again.activeTabId).toBe('M1')
+  })
+})
 
 describe('tabsModel — openTab', () => {
   it('focuses an already-open tab instead of duplicating (I-1)', () => {

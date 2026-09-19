@@ -18,11 +18,9 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { findSpace } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import * as s from '../Interface/Toolbar/toolbar-menu.css'
+import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
-
-const PANE_MIN_W = 225
-const PANE_MIN_H = 245
 
 export function SpaceMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)

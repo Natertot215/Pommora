@@ -37,6 +37,8 @@ export interface WindowSlice {
   reorderWindowTabs: (activeId: string, overId: string) => void
   closeWindowTab: (id: string, exit?: 'dismiss' | 'engulf') => void
   closeWindow: (reason?: 'dismiss' | 'engulf') => void
+  openMatrixWindow: () => void
+  toggleMatrixWindow: () => void
   navOpen: boolean
   openNav: () => void
   closeNav: () => void
@@ -96,15 +98,18 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       file = { ...file, origins }
     }
     if (win) {
-      const rec = toWindowRecord(win)
-      file =
-        win.kind === 'nav'
-          ? { ...file, navSet: rec, open: { kind: 'nav', originId: win.originId } }
-          : {
-              ...file,
-              origins: { ...file.origins, [win.originId]: rec },
-              open: { kind: 'page', originId: win.originId },
-            }
+      switch (win.kind) {
+        case 'nav':
+          file = { ...file, navSet: toWindowRecord(win) }
+          break
+        case 'page':
+          file = { ...file, origins: { ...file.origins, [win.originId]: toWindowRecord(win) } }
+          break
+        // The Matrix window carries no tabs, so there is no set to record — only that it stands.
+        case 'matrix':
+          break
+      }
+      file = { ...file, open: { kind: win.kind, originId: win.originId } }
     } else {
       file = { ...file, open: null }
     }
@@ -196,7 +201,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
     openWindowTab: (target, at) => {
       const cur = get().pageWindow
-      if (!cur) {
+      if (!cur || cur.kind === 'matrix') {
         get().openWindow(target)
         return
       }
@@ -241,6 +246,20 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       clearWindowCache()
       set({ pageWindow: null, windowExit: reason ?? 'dismiss' })
       mirrorWindows()
+    },
+    openMatrixWindow: () => {
+      if (get().pageWindow?.kind === 'matrix') return
+      clearWindowCache()
+      set({
+        pageWindow: { kind: 'matrix', originId: 'matrix', tabs: [], activeTabId: '' },
+        navOpen: false,
+        windowExit: 'dismiss',
+      })
+      mirrorWindows()
+    },
+    toggleMatrixWindow: () => {
+      if (get().pageWindow?.kind === 'matrix') get().closeWindow()
+      else get().openMatrixWindow()
     },
 
     openNav: () => {

@@ -45,7 +45,7 @@ import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { StatusEditor } from './StatusEditor'
 import { URLEditor } from './URLEditor'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import {
   nexusReorderIndex,
@@ -564,8 +564,8 @@ export function PropertyFrame({
         open={view.kind !== 'list'}
         root={list}
         detail={detailView.kind === 'type' ? typePicker : editor(detailView.id)}
-        minWidth={225}
-        minHeight={245}
+        minWidth={PANE_MIN_W}
+        minHeight={PANE_MIN_H}
       />
       <IconChoice
         open={iconOpen}

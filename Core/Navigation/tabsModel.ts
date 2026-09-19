@@ -1,12 +1,13 @@
 // `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the pinned refs and passed in separately wherever a decision must see them.
 
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import type {
-  NavRef,
-  NewTabSentinel,
-  SelectTarget,
-  Tab,
-  TabTarget,
+import {
+  isSingleton,
+  type NavRef,
+  type NewTabSentinel,
+  type SelectTarget,
+  type Tab,
+  type TabTarget,
 } from '@pommora/core/Navigation/navRef'
 import type { StoredTab } from '@pommora/core/Interface/Windows/windowRecord'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
@@ -30,8 +31,8 @@ export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | n
   const probe: SelectTarget =
     ref.kind === 'set' || ref.kind === 'page'
       ? { kind: ref.kind, id: ref.id, path: '' }
-      : ref.kind === 'homepage'
-        ? { kind: 'homepage' }
+      : isSingleton(ref)
+        ? { kind: ref.kind }
         : { kind: ref.kind, id: ref.id }
   const r = reconcileWith(index, probe)
   return r.kind === 'none' ? null : r
