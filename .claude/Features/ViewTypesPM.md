@@ -1,7 +1,7 @@
 ## View Types
 
 
-A view is a saved presentation of a Collection's or a depth-1 Set's Pages, and the pipeline behind it also serves the Matrix nexus-wide. It never modifies its source: filtering, grouping, and sorting are presentation only, computed by one pure pipeline that every renderer draws from. Six view kinds — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — form one registry, `VIEW_KINDS` in `Core/Views/views.ts`, each entry carrying the kind's label, its icon, and whether it lays structural groups flat; Table and Cards have renderers, mapped by kind in `ViewHost`'s `VIEW_RENDERERS`, and the other four appear in the type picker at full weight but don't switch. Views also render inside dashboard and page tiles as view embeds, through the same pipeline.
+A view is a saved presentation of a Collection's or a depth-1 Set's Pages. It never modifies its source: filtering, grouping, and sorting are presentation only, computed by one pure pipeline that every renderer draws from. Six view kinds — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — form one registry, `VIEW_KINDS` in `Core/Views/views.ts`, each entry carrying the kind's label, its icon, and whether it lays structural groups flat; Table and Cards have renderers, mapped by kind in `ViewHost`'s `VIEW_RENDERERS`, and the other four appear in the type picker at full weight but don't switch. Views also render inside dashboard and page tiles as view embeds, through the same pipeline.
 
 ### The Saved-View Model
 
@@ -17,7 +17,7 @@ Every renderer also shares the **hover ghost** (`UIX/Interactions/ghostCreate.ts
 
 ### The Pipeline
 
-`resolveView` in `Core/Views/Pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page, an embedded tile, and the Matrix run the same code. Row frontmatter loads lazily per container over a batch IPC.
+`resolveView` in `Core/Views/Pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code, and the Matrix runs its filter stage alone over the whole Nexus. Row frontmatter loads lazily per container over a batch IPC.
 
 #### II. Filter
 

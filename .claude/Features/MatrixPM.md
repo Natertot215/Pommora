@@ -1,37 +1,56 @@
 ## The Matrix
 
-The graph view. A Nexus's relationships live in an index that every other surface reads as paths; the Matrix reads the rows themselves and draws them — Pages, Folders, and Spaces as nodes, their connections and containment as links, laid out by a force simulation Pommora owns. It opens from the ribbon's first icon into a tab, or into a floating window under **Open Matrix In**, and both surfaces draw one simulation.
+The graph view. A Nexus's relationships live in an index that every other surface reads as paths; the Matrix reads the rows themselves and draws them — Pages, Folders, and Spaces as nodes, their connections and containment as links, laid out by a force simulation Pommora owns. It opens from the ribbon into a tab, or into a floating window under **Open Matrix In**, and both surfaces draw one simulation.
 
-### The Model
+### Node Mechanics
 
-A node is a Page, a Folder, or a Space; a link is one of five kinds — body, citation, and frontmatter for content ↔ content, space for a Space relation, and location for containment. **Groups** chooses which of them the picture carries:
+A node is a Page, a Folder, or a Space. A link is one of five kinds: body, citation, and frontmatter carry content ↔ content, space carries a Space relation, and location carries containment.
+
+#### Groups
+
+**Groups** chooses which links the picture is built from, and which nodes appear at all.
 
 - **Connection** draws Pages alone, linked by what they cite and mention.
-- **Location** adds each Folder as a node and links every Page to the one that holds it.
-- **Space** adds each Space and links every Page that tags it, alongside Space ↔ Space relations.
+- **Location** adds each Folder and links every Page to the one that holds it, Folder to parent Folder up the nest.
+- **Space** adds each Space, links every Page that tags it, and draws Space ↔ Space relations.
 
-A node's size follows its weight: a Page grows with the connections that land on it, a Folder or Space with the members it holds, each clamped to a ceiling. **Unlinked Items** decides whether nodes with nothing attached appear at all.
+Picking a mode rebuilds the graph and settles it, so the picture answers the click rather than the next thing that moves it. **Unlinked Items** decides whether nodes with nothing attached appear; a Folder or Space is unlinked when it holds no members.
+
+#### Weight
+
+A node's radius follows what it carries, clamped to a ceiling, so the largest hub stays in proportion to the field. A Page grows with the connections that land on it, weighted per kind — a body link counts for more than a citation. A Folder or Space grows with its members, counted through the whole nest beneath it, so a Collection reflects everything it contains rather than only its direct children.
+
+#### Pull
+
+Each link kind pulls at its own strength — body and containment hardest, a citation least — and every link's pull is divided by the smaller of the two nodes' link counts, so it thins as its ends gain neighbours. A leaf Page is therefore held to its Folder more firmly than a hub is held to any one of its citations. Four multipliers — **Gravity**, **Spread**, **Strength**, and **Distance** — scale the forces from the menu's **Link Forces** rows and persist with the Nexus; every other feel number is a constant in the engine rather than a setting.
 
 ### The Engine
 
-`Core/Matrix/Engine/` is the physics, and it reaches no browser global and no store — graph building, forces, a quadtree, placement, the viewport, and label culling, each with its own tests.
+`Core/Matrix/Engine/` is the physics. It reaches no browser global, no store, and no React, and every module carries its own tests.
 
-- **The loop** integrates gravity toward the centre, charge-based spread through a Barnes–Hut quadtree, per-kind link springs, and collision, then sleeps by energy rather than by a fixed tick budget, so a settled picture costs nothing.
-- **A local wake** moves only what changed: a Page created elsewhere joins at its Folder's centroid while the rest of the picture holds still.
-- **Placement** seats a node the layout has never seen on a spiral outside the current extent, so a first open and a growing Nexus both open without overlap.
-- **Four multipliers** — Gravity, Spread, Strength, and Distance — scale the forces from the menu's **Link Forces** rows, and every other feel number is a constant in the engine rather than a setting.
+#### The Loop
+
+One integration step runs gravity toward the centre, charge-based spread through a Barnes–Hut quadtree, the per-kind link springs, and collision, then measures the energy of the nodes that actually moved. A picture at rest sleeps and costs nothing; a picture in motion keeps its own frames. The quadtree it builds each tick is the same structure the pointer hit-tests against, so finding the node under the cursor is a tree descent rather than a scan.
+
+#### Waking
+
+Work is scoped to what changed. A Page created elsewhere joins among the nodes it already links to and only it moves, while the rest of the picture holds still. A dragged node wakes the graph around it; a released one is carried home by the same spring that followed the pointer, and the loop stays awake until it arrives. A node the layout has never seen is seated on a spiral outside the current extent, so a first open and a growing Nexus both open without overlap.
+
+#### Scale
+
+Every expensive step is bounded: the spread force approximates distant clusters rather than visiting them, labels are culled to one per cell so a dense field prints the largest node's title and drops the rest, and the layout is written once on settle rather than per frame. A bench ticks a synthetic Nexus against a budget as a gate.
 
 ### The Surface
 
-The picture is drawn on a `<canvas>`, the repository's first, with one DOM overlay following the node under the pointer. Paint is aliased onto host-scoped `--matrix-*` custom properties and read once through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, and the Shift-preview open.
+The picture is drawn on a `<canvas>`, with one DOM overlay following the node under the pointer. Paint is aliased onto host-scoped `--matrix-*` custom properties and read once through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, and the Shift-preview open — each on the surface it was raised from, since a tab and a window can stand at once.
 
-Hovering a node lights its links and dims the rest; dragging one pulls it toward the pointer through its springs, and releasing it lets the same spring carry it back to where it began. **Lock** holds the layout still, **Shuffle** jitters every node and releases it, and **Hide Icons** and **Hide Paths** trim the overlay. A right-click answers as a sidebar row does, and a Page moved in Location mode fades out where it was and in beside its new Folder.
+Hovering a node lights its links and eases the rest down; dragging one pulls it toward the pointer through its springs, and releasing it lets it settle back. **Lock** refuses a node drag and stands Shuffle down, **Shuffle** jitters every node and lets the layout re-solve, and **Hide Icons** and **Hide Paths** trim the overlay. A right-click answers as a sidebar row does, and a Page moved in Location mode fades out where it was and in beside its new Folder.
 
 ### What Persists
 
-The Matrix's choices travel with the Nexus in `.nexus/matrix.json`, written in four sections — group, filter, forces, and display — each holding only the keys a change wrote, so a device that moved one key never clobbers another's on the per-key merge. A hand edit from outside surfaces live through the file watcher.
+The Matrix's choices travel with the Nexus in `.nexus/matrix.json`, written in four sections — group, filter, forces, and display — each holding only the keys a change wrote, so a device that moved one key never clobbers another's on the merge. A hand edit from outside surfaces live through the file watcher.
 
-The picture's own geometry stays on the machine that made it, in `local_state`: every node's place keyed by id, so a rename keeps a node where it was, and the viewport's zoom and pan. A first open with nothing stored fits the graph once it settles.
+The picture's own geometry stays on the machine that made it: every node's place keyed by id, so a rename keeps a node where it was, and the viewport's zoom and pan. A row that no longer reads is dropped on its own rather than taking the rest of the layout with it, and a first open with nothing stored fits the graph once it settles.
 
 ### Prospects
 

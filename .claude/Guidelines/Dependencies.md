@@ -7,7 +7,7 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 #### Shell · Build · Packaging
 
 - **Electron** + **electron-vite** — desktop shell + Vite-first dev loop with main-process HMR.
-- **Vite 7** + **@vitejs/plugin-react 5** — renderer bundler. **Decided**(compat pin: newer plugin-react needs Vite 8, unsupported by electron-vite 5).
+- **Vite 7** + **@vitejs/plugin-react 5** — renderer bundler. **Decided** (compat pin: newer plugin-react needs Vite 8, unsupported by electron-vite 5).
 - **electron-builder** — packaging + (via `electron-updater`) auto-update. **Decided** for packaging; updater **Not-yet-needed**.
 - **@electron/notarize** · **@sentry/electron** — notarization wrapper · crash reporting. **Not-yet-needed** (current build is ad-hoc-signed). See Distribution below.
 
@@ -15,7 +15,7 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 
 - **React 19** + **TypeScript 6**
 - **vanilla-extract** (`@vanilla-extract/css` + vite-plugin) — typed, zero-runtime CSS-in-TS; the token layer authors `*.css.ts`.
-- **lucide-react** — the curated icon registry in `UIX/Symbols/` driven by `SymbolsPM.md`. `@tabler/icons-react` stays installed as a second source** to pull from per-icon (import its `Icon*`, register it, pass `strokeWidth={1.75}` to match Lucide's weight). (Material Symbols + a `symbols.json` indirection layer was the pre-build guess — not used. A user-swappable icon library, incl. SF Symbols, remains a possible future setting.)
+- **lucide-react** — the curated icon registry in `UIX/Symbols/` driven by `SymbolsPM.md`. `@tabler/icons-react` stays installed as a second source to pull from per-icon (import its `Icon*`, register it, pass `strokeWidth={1.75}` to match Lucide's weight). (Material Symbols + a `symbols.json` indirection layer was the pre-build guess — not used. A user-swappable icon library, incl. SF Symbols, remains a possible future setting.)
 - **@fontsource-variable/inter** — the app font.
 
 #### State · Data · Search
