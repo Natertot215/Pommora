@@ -3,7 +3,7 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import type { WindowKind } from './windowRecord'
 
-// Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
+// Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, there are no pins, and a Matrix window holds no tabs.
 
 export interface WindowTab {
   id: string
