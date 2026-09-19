@@ -8,7 +8,7 @@ export interface MatrixConfig {
   group: { mode: GroupMode }
   filter: { rules: FilterGroup | null; enabled: boolean }
   forces: Forces
-  display: { unlinked: boolean; hideIcon: boolean; hideLocation: boolean; locked: boolean }
+  display: { unlinked: boolean; hideIcon: boolean; hidePath: boolean; locked: boolean }
 }
 
 export type MatrixPatch = { [S in keyof MatrixConfig]?: Partial<MatrixConfig[S]> }
@@ -36,7 +36,7 @@ export const DEFAULT_MATRIX_CONFIG: MatrixConfig = {
   group: { mode: 'connection' },
   filter: { rules: null, enabled: true },
   forces: DEFAULT_FORCES,
-  display: { unlinked: true, hideIcon: false, hideLocation: false, locked: false },
+  display: { unlinked: true, hideIcon: false, hidePath: false, locked: false },
 }
 
 const GROUP_MODES: readonly GroupMode[] = ['connection', 'location', 'space']
@@ -69,7 +69,7 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
     display: {
       unlinked: bool(display.unlinked, d.display.unlinked),
       hideIcon: bool(display.hideIcon, d.display.hideIcon),
-      hideLocation: bool(display.hideLocation, d.display.hideLocation),
+      hidePath: bool(display.hidePath, d.display.hidePath),
       locked: bool(display.locked, d.display.locked),
     },
   }

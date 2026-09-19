@@ -1,4 +1,4 @@
-import { icons as lucideIcons, type LucideIcon } from 'lucide-react'
+import { type IconNode, icons as lucideIcons, type LucideIcon } from 'lucide-react'
 
 /** Validated against lucide-react's own per-icon dist filenames — the sole outlier is a legacy alias with no canonical file. */
 export function toKebabIconId(name: string): string {
@@ -31,6 +31,15 @@ export const ALL_ICONS: IconEntry[] = (() => {
 const BY_ID = new Map(ALL_ICONS.map((e) => [e.id, e.Glyph]))
 
 export const lucideGlyph = (id: string): LucideIcon | undefined => BY_ID.get(id)
+
+// `createLucideIcon` keeps an icon's node list in the closure it hands to `forwardRef`, so the drawing is
+// reachable only through that render function; it runs no hooks, and calling it costs one element.
+type NodeCarrier = { render: (props: object, ref: null) => { props: { iconNode: IconNode } } }
+
+export const lucideIconNodes = (id: string): IconNode | null => {
+  const Glyph = BY_ID.get(id)
+  return Glyph ? (Glyph as unknown as NodeCarrier).render({}, null).props.iconNode : null
+}
 
 export function searchIcons(query: string): IconEntry[] {
   const q = query.trim().toLowerCase().replace(/[\s-]/g, '')

@@ -101,7 +101,8 @@ export function PickerControl<T extends string>({
     void door(rows, el, { solid, compact: true }).then((picked) => {
       // Resolved through the options rather than cast: the reply crosses as a bare string.
       const chosen = options.find((o) => o.value === picked)
-      if (chosen) onPick(chosen.value)
+      // Picking the value already shown is not a change, and a consumer that rebuilds on every pick would do it for nothing.
+      if (chosen && chosen.value !== value) onPick(chosen.value)
     })
   }
 

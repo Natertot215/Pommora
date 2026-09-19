@@ -3,6 +3,7 @@ import type { NavRef, NavigationState } from './navRef'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Paths/paths'
 import { readValue, writeValue } from '../Platform/localState'
 import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
+import { newId } from '../Nexus/ids'
 import { machine } from '../Platform/machine'
 import { parseConnectionText } from '../Connections/connections'
 import { underAssetRoot } from '../Assets/assetRoots'
@@ -80,6 +81,8 @@ export async function writeNavigationState(
         return { ...state, navigation }
       },
       () => ({}),
+      // A corrupt file moves aside under the lock so the write after the empty read lands.
+      (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
     )
     if (!written.ok) throw new Error(written.error.message)
   })

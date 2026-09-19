@@ -188,6 +188,8 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
 
 // The full Lucide set behind a dynamic import, kept out of every non-picker bundle. LazyGlyph and
 // the Icon Picker read this store; the module loads once, on first demand, and notifies subscribers.
+export type { IconNode } from 'lucide-react'
+
 type FullIconSet = typeof import('./allSymbols')
 let fullSet: FullIconSet | null = null
 let pending: Promise<FullIconSet> | null = null

@@ -1,5 +1,6 @@
 import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Paths/paths'
+import { newId } from '../Nexus/ids'
 import { machine } from '../Platform/machine'
 import { isPlainObject } from '../Properties/propertyValue'
 import { type MatrixConfig, type MatrixPatch, parseMatrixConfig } from './matrixConfig'
@@ -23,6 +24,8 @@ export async function writeMatrixFile(root: string, patch: MatrixPatch): Promise
       return next
     },
     () => ({}),
+    // A corrupt file moves aside under the lock so the write after the empty read lands.
+    (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
   )
   if (!written.ok) throw new Error(written.error.message)
 }
