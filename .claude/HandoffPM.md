@@ -10,12 +10,12 @@
 
 **Tab Cross-Drag is complete: 27 commits from `c588afcd3` to the documents commit, every gate green, pushed.** A page tab tugged off the main bar or a floating window's strip floats to the other row and seats at the pointed slot; a gallery card, list row, or sidebar page row dropped on either row opens its page there; nothing seated is activated; the source gap holds while the tab hovers elsewhere; a release over nothing snaps home. The engine's `family` gate replaced `crossZone`, the insertion lifecycle escorts rows into the engine, one shell `DragGroup` sits in `App.tsx`, and `openTabAt`/`openTabIn` seat at an index. Nathan confirmed the Phase 1 and Phase 3 checkpoints by hand; every later interaction was driven over CDP against his live Nexus (the app's tabs, windows, recents, and pins were restored to their pre-walkthrough state afterward).
 
-**Two defects surfaced live and closed in the range.** The NavWindow's opened tab row had a 0px strip inside it (`nav-window.css` gives the tabwrap the row's height), and the Page Window's strip had been click-through since before the plan: its toolbar is `pointer-events: none` and the body's over-scroll mask painted above it (`window-base.css` opts the tabwrap in and lifts it). The adversarial review's accepted findings landed in `d6a0d1f0e`; the two it raised that were ruled out, and every other ruling, are under the plan's `### Deviations`.
+**Two defects surfaced live and closed in the range.** The NavWindow's opened tab row had a 0px strip inside it (`nav-window.css` gives the tabwrap the row's height), and the Page Window's strip had been click-through since before the plan: its toolbar is `pointer-events: none` and the body's over-scroll mask painted above it (`window-base.css` opts the tabwrap in and lifts it). The adversarial review's accepted findings landed in `f0c912523`; the two it raised that were ruled out, and every other ruling, are under the plan's `### Deviations`.
 
 #### Completion Criteria
 
 - [x] Phases 1–4 ticked; the two hand checkpoints carry Nathan's word; the four hand-check lists of Phase 4 walked over CDP.
-- [x] Simplification (Opus, then Fable) and the Fable adversarial review run over `dd605692d..HEAD`; findings fixed or ruled on.
+- [x] Simplification (Opus, then Fable) and the Fable adversarial review run over `b3acbca58..HEAD`; findings fixed or ruled on.
 - [x] Reconciliation walked: `PommoraDND.md`, `NavigationPM.md`, `InterfacePM.md` at minimal wording; PM-139 in History; Context current.
 - [x] Gates green on the final tree; the range's added comments reduced to nine one-line prop contracts.
 - [ ] Nathan's morning check against the expectations list in the closeout report.
