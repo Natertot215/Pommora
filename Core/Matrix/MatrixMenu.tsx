@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   FooterIconButton,
   MenuFooting,
@@ -135,6 +135,11 @@ export function MatrixMenu(): React.JSX.Element {
     </MenuScrollFrame>
   )
 
+  const filterView = useMemo(
+    () => ({ filter: config.filter.rules ?? undefined, filter_enabled: config.filter.enabled }),
+    [config.filter],
+  )
+
   return (
     <FrameSlide
       open={filtering && tree !== null}
@@ -143,10 +148,7 @@ export function MatrixMenu(): React.JSX.Element {
         tree && (
           <FilterFrame
             locations={tree.collections}
-            view={{
-              filter: config.filter.rules ?? undefined,
-              filter_enabled: config.filter.enabled,
-            }}
+            view={filterView}
             schema={tree.registry}
             tree={tree}
             label={MATRIX_TITLE}

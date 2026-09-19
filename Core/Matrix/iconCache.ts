@@ -31,7 +31,7 @@ export function iconFor(name: string, color: string, dpr: number): HTMLImageElem
   cache.set(key, null)
   void loadIconNodes(name).then((nodes) => {
     if (!nodes) return
-    const img = new Image(ICON_PX.caption * dpr, ICON_PX.caption * dpr)
+    const img = new Image(ICON_PX.footnote * dpr, ICON_PX.footnote * dpr)
     img.onload = () => {
       cache.set(key, img)
       for (const fn of listeners) fn()
