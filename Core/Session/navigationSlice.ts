@@ -588,6 +588,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'homepage':
           set({ selection: { kind: 'homepage' } })
           break
+        case 'matrix':
+          set({ selection: { kind: 'matrix' } })
+          break
         case 'context':
         case 'space':
           set({ selection: { kind: target.kind, id: target.id } })

@@ -3,6 +3,7 @@ import { isPlainObject } from '../Properties/propertyValue'
 export type SelectionState =
   | { kind: 'none' }
   | { kind: 'homepage' }
+  | { kind: 'matrix' }
   /** Reserved for ContextView; member selection is `space`. */
   | { kind: 'context'; id: string }
   | { kind: 'space'; id: string }
@@ -18,14 +19,19 @@ export const TAB_FAMILY = 'tabs'
 
 export type NavRef =
   | { kind: 'homepage' }
+  | { kind: 'matrix' }
   | { kind: 'context' | 'space' | 'collection' | 'set' | 'page' | 'task' | 'event'; id: string }
 
+export const isSingleton = (t: { kind?: unknown }): t is { kind: 'homepage' | 'matrix' } =>
+  t.kind === 'homepage' || t.kind === 'matrix'
+
 export function toNavRef(t: NavRef | SelectTarget): NavRef {
-  return t.kind === 'homepage' ? { kind: 'homepage' } : { kind: t.kind, id: t.id }
+  return isSingleton(t) ? { kind: t.kind } : { kind: t.kind, id: t.id }
 }
 
 const NAV_KINDS = new Set<string>([
   'homepage',
+  'matrix',
   'context',
   'space',
   'collection',
@@ -41,7 +47,7 @@ export const TAB_KINDS = new Set<string>(
 
 export function isNavRef(v: unknown, kinds: ReadonlySet<string> = NAV_KINDS): v is NavRef {
   if (!isPlainObject(v) || typeof v.kind !== 'string' || !kinds.has(v.kind)) return false
-  return v.kind === 'homepage' ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
+  return isSingleton(v) ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
 
 export interface NavigationState {
