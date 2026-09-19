@@ -85,7 +85,7 @@ export function applyPatch(config: MatrixConfig, patch: MatrixPatch): MatrixConf
   }
 }
 
-const SECTIONS = ['group', 'filter', 'forces', 'display'] as const
+export const SECTIONS = ['group', 'filter', 'forces', 'display'] as const
 
 // A pushed section that reads the same as the held one keeps the held reference, and an all-equal push keeps the config itself.
 export function mergeConfig(held: MatrixConfig, pushed: MatrixConfig): MatrixConfig {

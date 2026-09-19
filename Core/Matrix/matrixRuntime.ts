@@ -106,6 +106,7 @@ class MatrixRuntime {
 
   private clear(): void {
     this.flushViewport()
+    this.viewport = DEFAULT_VIEWPORT
     this.built = null
     this.graph = EMPTY
     this.sim = null

@@ -180,13 +180,13 @@ describe('the layout half', () => {
   })
 
   it('saves the viewport alone once loaded', async () => {
-    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 3 })
+    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 2 })
     expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
     await seatLoaded()
-    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 3 })
-    expect(useSession.getState().matrixViewport).toEqual({ x: 1, y: 2, zoom: 3 })
+    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 2 })
+    expect(useSession.getState().matrixViewport).toEqual({ x: 1, y: 2, zoom: 2 })
     expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
-      viewport: { x: 1, y: 2, zoom: 3 },
+      viewport: { x: 1, y: 2, zoom: 2 },
     })
   })
 })

@@ -5,6 +5,7 @@ import {
   type MatrixConfig,
   mergeConfig,
   type MatrixPatch,
+  SECTIONS,
 } from '@pommora/core/Matrix/matrixConfig'
 import { EMPTY_GRAPH_REPLY, type MatrixGraphReply } from '@pommora/core/Matrix/matrixGraph'
 import type { Positions } from '@pommora/core/Matrix/matrixLayout'
@@ -108,8 +109,14 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       if (!config.ok) console.error('matrix read failed:', config.error.message)
       // A Nexus switch between the ask and its answer: the answer belongs to a root the store has left.
       if (get().tree !== tree) return
-      // A row changed while the read was in flight is newer than the file it answered with, and recency-first keeps it.
-      if (config.ok && get().matrixConfig === asked) get().applyMatrixChanged(config.value)
+      // A section changed while the read was in flight is newer than the file it answered with, and recency-first keeps it; the rest still take the file's.
+      if (config.ok) {
+        const held = get().matrixConfig
+        const landed = Object.fromEntries(
+          SECTIONS.filter((k) => held[k] === asked[k]).map((k) => [k, config.value[k]]),
+        )
+        get().applyMatrixChanged({ ...held, ...landed })
+      }
       // A refused graph leaves the load undone; clearing the mark after the config lands lets the next store change ask again.
       if (!graph.ok) {
         triedTree = null
