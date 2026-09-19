@@ -30,6 +30,38 @@ export const factorChoice = (f: number): PickerOption<string> => ({
 export const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
+/** Every multiplier control — a list of factor rows, and the same field behind a right press. */
+export function factorPickerProps({
+  steps,
+  value,
+  coerce,
+  onPick,
+}: {
+  steps: readonly number[]
+  value: number
+  coerce: (typed: number) => number
+  onPick: (factor: number) => void
+}): {
+  value: string
+  options: PickerOption<string>[]
+  onPick: (v: string) => void
+  typeable: { text: string; suffix: string; onCommit: (written: string) => void }
+} {
+  return {
+    value: String(value),
+    options: stepsWith(steps, value).map(factorChoice),
+    onPick: (v) => onPick(Number(v)),
+    typeable: {
+      text: value.toFixed(2),
+      suffix: 'x',
+      onCommit: (written) => {
+        const typed = Number.parseFloat(written.replace(/x/i, '').trim())
+        if (Number.isFinite(typed)) onPick(coerce(typed))
+      },
+    },
+  }
+}
+
 export function PickerControl<T extends string>({
   ariaLabel,
   value,

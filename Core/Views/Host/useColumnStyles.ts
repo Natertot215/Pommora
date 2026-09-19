@@ -14,7 +14,7 @@ import { useSession } from '../../Session/store'
 export function styleFor(
   columnId: string,
   schema: PropertyDefinition[],
-  view: SavedView,
+  view: Pick<SavedView, 'column_styles'>,
   nexusDateFormat?: DateFormat,
 ): ColumnStyle {
   const saved = Object.entries(view.column_styles?.[columnId] ?? {}).filter(
@@ -30,7 +30,7 @@ export function styleFor(
 export function useStyleFor(): (
   columnId: string,
   schema: PropertyDefinition[],
-  view: SavedView,
+  view: Pick<SavedView, 'column_styles'>,
 ) => ColumnStyle {
   const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
   return useCallback(
