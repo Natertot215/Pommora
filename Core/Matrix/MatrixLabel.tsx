@@ -18,16 +18,19 @@ import { matrixRuntime } from './matrixRuntime'
 export function MatrixLabel({
   rec,
   editing,
+  hosts,
   onPointerDown,
   onContextMenu,
 }: {
   rec: MatrixRecord | null
   editing: boolean
+  hosts: boolean
   onPointerDown: (e: React.PointerEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
+  const picking = hosts ? iconPath : null
   const endIcon = useSession((st) => st.endIcon)
   const mutate = useSession((st) => st.mutate)
   const hideLocation = useSession((st) => st.matrixConfig.display.hideLocation)
@@ -87,7 +90,7 @@ export function MatrixLabel({
         onContextMenu={onContextMenu}
       />
       <IconChoice
-        open={iconPath === rec.path}
+        open={picking === rec.path}
         onClose={endIcon}
         triggerRef={anchorRef}
         value={node.icon}
@@ -115,6 +118,7 @@ export function MatrixLabel({
           <NavTrail
             segments={trail}
             chevronSize="caption"
+            iconSize="footnote"
             overScroll={false}
             className={text.subline.standard}
           />

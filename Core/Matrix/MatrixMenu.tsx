@@ -115,7 +115,7 @@ export function MatrixMenu(): React.JSX.Element {
           leading={
             <FooterIconButton
               icon={display.locked ? 'locked' : 'lock-open'}
-              ariaLabel="Lock Layout"
+              ariaLabel={`${display.locked ? 'Unlock' : 'Lock'} Layout`}
               pressed={display.locked}
               onClick={() => patch({ display: { locked: !display.locked } })}
             />

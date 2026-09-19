@@ -9,6 +9,7 @@ import { recordsByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { BASE_RADIUS, LINK_GAP } from './Engine/forces'
 import type { Graph, GraphLink } from './Engine/graph'
+import { glanceShown } from '../Interface/Glance/glanceAction'
 import { cullLabels } from './Engine/labels'
 import { panBy, toScreen, toWorld, type Viewport, zoomAt } from './Engine/viewport'
 import { iconFor, onIconLoad } from './iconCache'
@@ -48,8 +49,7 @@ function readPaint(host: HTMLElement): Paint {
     return getComputedStyle(probe).color
   }
   const scoped = getComputedStyle(host)
-  const number = (token: string, fallback: number): number =>
-    Number.parseFloat(scoped.getPropertyValue(token)) || fallback
+  const number = (token: string): number => Number.parseFloat(scoped.getPropertyValue(token))
   const paint: Paint = {
     fill: color('--matrix-fill'),
     ring: color('--matrix-ring'),
@@ -58,9 +58,9 @@ function readPaint(host: HTMLElement): Paint {
     link: color('--matrix-link'),
     linkHover: color('--matrix-link-hover'),
     title: color('--matrix-title'),
-    inactive: number('--matrix-inactive', 0.55),
-    hairline: number('--matrix-hairline', 1),
-    ringWidth: number('--matrix-ring-width', 1),
+    inactive: number('--matrix-inactive'),
+    hairline: number('--matrix-hairline'),
+    ringWidth: number('--matrix-ring-width'),
     titleFont,
   }
   probe.remove()
@@ -205,7 +205,7 @@ export function MatrixCanvas({
     const arrivals = matrixRuntime.arrivals
     const arrival =
       arrivals.size === 0
-        ? () => 1
+        ? (): number => 1
         : (i: number): number => {
             const born = arrivals.get(nodes[i].id)
             return born === undefined ? 1 : clamp((now - born) / FADE_MS, 0, 1)
@@ -391,9 +391,12 @@ export function MatrixCanvas({
         const canvas = canvasRef.current
         if (!canvas || !onCanvas(e) || editing) return
         const [wx, wy] = toWorldPoint(canvas, e)
-        matrixRuntime.setHovered(matrixRuntime.hitTest(wx, wy))
+        const i = matrixRuntime.hitTest(wx, wy)
+        if (i >= 0 || !glanceShown()) matrixRuntime.setHovered(i)
       }}
-      onPointerLeave={() => matrixRuntime.setHovered(-1)}
+      onPointerLeave={() => {
+        if (!glanceShown()) matrixRuntime.setHovered(-1)
+      }}
       onContextMenu={(e) => {
         e.preventDefault()
         const canvas = canvasRef.current

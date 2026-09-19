@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useId, useMemo, useRef } from 'react'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
@@ -38,10 +38,14 @@ export function MatrixView({
   const tree = useSession((st) => st.tree)
   const select = useSession((st) => st.select)
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
+  const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
   const hoveredId = useMatrixHover()
   const count = useMatrixCount()
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const surfaceId = useId()
+  // Whichever surface last raised a menu owns what that menu starts; with one surface open there is nothing to tell apart.
+  const mine = matrixRuntime.acting === null || matrixRuntime.acting === surfaceId
 
   const idAt = (i: number): string | null => matrixRuntime.graph.nodes[i]?.id ?? null
 
@@ -53,6 +57,7 @@ export function MatrixView({
   const menu = (i: number): void => {
     const rec = recordOf(tree, idAt(i))
     if (!rec) return
+    matrixRuntime.acting = surfaceId
     const { tabs, pinned } = useSession.getState()
     void showEntityMenu({
       kind: rec.kind,
@@ -73,7 +78,7 @@ export function MatrixView({
       event: e,
       onActivate: () => {
         matrixRuntime.beginDrag(i)
-        return true
+        return matrixRuntime.draggingId !== null
       },
       onDragMove: (ev) => {
         const [wx, wy] = toWorldPoint(canvas, ev)
@@ -104,16 +109,24 @@ export function MatrixView({
     })
   }
 
-  const renamingId = useMemo(() => {
-    if (renamingPath === null || !tree) return null
-    const id = nodesOf(tree).find((r) => r.path === renamingPath)?.id ?? null
-    // A page the graph does not carry has no node to seat the field under, so the rename stays with the surface that can show it.
-    return matrixRuntime.indexOf(id) >= 0 ? id : null
-  }, [renamingPath, tree])
-  // A hidden surface never claims: the field would open where nobody can see it and the rename would read as doing nothing.
-  const editing = renamingId !== null && !parked
+  const renamingId = useMemo(
+    () =>
+      renamingPath === null || !tree
+        ? null
+        : (nodesOf(tree).find((r) => r.path === renamingPath)?.id ?? null),
+    [renamingPath, tree],
+  )
+  // Read past the memo: a page the graph does not yet carry has no node to seat the field under, and a reply can add one without changing the tree. A hidden surface never claims either, or the field opens where nobody can see it.
+  const editing = renamingId !== null && !parked && mine && matrixRuntime.indexOf(renamingId) >= 0
   // The overlay names its node by id: an index taken here goes stale the moment a reply rebuilds the graph under it.
-  const labelId = editing ? renamingId : hoveredId
+  const pickingId = useMemo(
+    () =>
+      iconPath === null || !tree
+        ? null
+        : (nodesOf(tree).find((r) => r.path === iconPath)?.id ?? null),
+    [iconPath, tree],
+  )
+  const labelId = editing ? renamingId : ((mine ? pickingId : null) ?? hoveredId)
   const rec = useMemo(() => recordOf(tree, labelId), [tree, labelId])
   return (
     <>
@@ -128,8 +141,9 @@ export function MatrixView({
         onMenu={menu}
       >
         <MatrixLabel
-          rec={rec}
+          rec={parked ? null : rec}
           editing={editing}
+          hosts={mine}
           onPointerDown={(e) => nodeDown(e, matrixRuntime.indexOf(labelId))}
           onContextMenu={(e) => {
             e.preventDefault()
