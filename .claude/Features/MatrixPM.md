@@ -44,7 +44,7 @@ Every expensive step is bounded: the spread force approximates distant clusters 
 
 The picture is drawn on a `<canvas>`, with one DOM overlay following the node under the pointer. Paint is aliased onto host-scoped `--matrix-*` custom properties and read once through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, and the Shift-preview open — each on the surface it was raised from, since a tab and a window can stand at once.
 
-Hovering a node lights its links and eases the rest down; dragging one pulls it toward the pointer through its springs, and releasing it lets it settle back. **Lock** refuses a node drag and stands Shuffle down, **Shuffle** jitters every node and lets the layout re-solve, and **Hide Icons** and **Hide Paths** trim the overlay. A right-click answers as a sidebar row does, and a Page moved in Location mode fades out where it was and in beside its new Folder.
+Hovering a node lights its links and eases the rest down; dragging one pulls it toward the pointer through its springs, and releasing it lets it settle back. **Lock** refuses a node drag and stands Shuffle down, **Shuffle** jitters every node and lets the layout re-solve, and **Hide Icons** and **Hide Paths** trim the overlay's glyph and its trail. A right-click answers as a sidebar row does, and a Page moved in Location mode fades out where it was and in beside its new Folder.
 
 ### What Persists
 
