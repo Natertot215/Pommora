@@ -10,6 +10,7 @@ import { ContentView } from './ContentView'
 import { Toolbar } from './Toolbar/Toolbar'
 import { SidePane } from './SidePane/SidePane'
 import { NavWindow } from './Windows/NavWindow'
+import { MatrixWindow } from '../Matrix/MatrixWindow'
 import { PageWindow } from './Windows/PageWindow'
 import { PageHistoryWindow } from './Windows/PageHistoryWindow'
 import { WebWindow } from '@pommora/core/Interface/Windows/WebWindow'
@@ -49,6 +50,7 @@ export function App(): React.JSX.Element {
   const trafficLights = useSession((s) => s.hostPlatform !== 'windows' && !s.fullscreen)
   const toggleIteration = useSession((s) => s.toggleIteration)
   const toggleNav = useSession((s) => s.toggleNav)
+  const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
   const commands = useSession((s) => s.commands)
   useNavThumbnails()
 
@@ -85,6 +87,9 @@ export function App(): React.JSX.Element {
       } else if (matchesCommand(commands['toggle-nav'], e)) {
         e.preventDefault()
         toggleNav()
+      } else if (matchesCommand(commands['toggle-matrix'], e)) {
+        e.preventDefault()
+        toggleMatrixWindow()
       } else if (matchesCommand(commands['toggle-iteration'], e)) {
         e.preventDefault()
         toggleIteration()
@@ -92,7 +97,7 @@ export function App(): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [commands, toggleRibbon, toggleNav, toggleIteration])
+  }, [commands, toggleRibbon, toggleNav, toggleMatrixWindow, toggleIteration])
 
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
@@ -180,6 +185,7 @@ export function App(): React.JSX.Element {
           </Button>
           {status === 'ready' && <SidePane open={sidePaneOpen} />}
           {status === 'ready' && <NavWindow />}
+          {status === 'ready' && <MatrixWindow />}
           {status === 'ready' && <PageWindow />}
           {status === 'ready' && <PageHistoryWindow />}
           {status === 'ready' && <WebWindow />}

@@ -57,7 +57,7 @@ function groupRows<K>(rows: ViewRow[], keyOf: (r: ViewRow) => K): Map<K, ViewRow
   return m
 }
 
-function buildSetTree(sets: SetNode[] | undefined): SetTreeNode[] {
+export function buildSetTree(sets: SetNode[] | undefined): SetTreeNode[] {
   return (sets ?? []).map((s) => ({ id: s.id, children: buildSetTree(s.sets) }))
 }
 
@@ -94,7 +94,7 @@ export const frontmatterOf = (
   pageId: string,
 ): PageFrontmatter => values[pageId]?.frontmatter ?? { [ID_KEY]: pageId }
 
-function toRow(
+export function toRow(
   page: PageNode,
   parentSetId: string | undefined,
   values: Record<string, PageValues>,

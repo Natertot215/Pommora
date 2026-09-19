@@ -3,6 +3,7 @@ import { EMBED_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/persona
 import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
 import { createLayoutSlice } from './layoutSlice'
+import { createMatrixSlice } from './matrixSlice'
 import { createConfigSlice } from './configSlice'
 import { createGlanceSlice } from './glanceSlice'
 import { createNavigationSlice } from './navigationSlice'
@@ -35,6 +36,7 @@ export const useSession = create<SessionState>()((...a) => ({
   ...createRenameSlice(...a),
   ...createCacheSlice(...a),
   ...createGlanceSlice(...a),
+  ...createMatrixSlice(...a),
 }))
 
 /** Every surface that mounts an embed reads the nexus-wide scale HERE, so what an absent or out-of-range value means is settled once. */

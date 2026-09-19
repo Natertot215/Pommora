@@ -3,7 +3,9 @@ import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personal
 import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import type { WatchScope } from '../Paths/exclusion'
 import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
+import { newId } from '../Nexus/ids'
 import { getLiveTree } from '../Nexus/liveTree'
+import { machine } from '../Platform/machine'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { nexusFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
 import { normalizeSeg, rootSegs } from '../Paths/exclusion'
@@ -16,7 +18,13 @@ export function updateNexusConfig(
   file: keyof typeof NEXUS_CONFIG_FILES,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<Result<Record<string, unknown>>> {
-  return rmwJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, () => ({}))
+  return rmwJsonStrict(
+    nexusConfig(root, NEXUS_CONFIG_FILES[file]),
+    mutate,
+    () => ({}),
+    // A corrupt file moves aside under the lock so the write after the empty read lands.
+    (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
+  )
 }
 
 export async function updateSettings(

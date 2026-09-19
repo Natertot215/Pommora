@@ -16,6 +16,7 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
   switch (selection.kind) {
     case 'none':
     case 'homepage':
+    case 'matrix':
       return selection
     case 'context':
       return { kind: 'none' }

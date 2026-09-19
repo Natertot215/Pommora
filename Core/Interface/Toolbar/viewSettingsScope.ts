@@ -1,6 +1,6 @@
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 
-type ViewSettingsScope = 'view' | 'page' | 'context' | 'homepage' | 'none'
+type ViewSettingsScope = 'view' | 'page' | 'context' | 'homepage' | 'matrix' | 'none'
 
 export function viewSettingsScope(selection: SelectionState): ViewSettingsScope {
   switch (selection.kind) {
@@ -13,6 +13,8 @@ export function viewSettingsScope(selection: SelectionState): ViewSettingsScope 
       return 'context'
     case 'homepage':
       return 'homepage'
+    case 'matrix':
+      return 'matrix'
     default:
       return 'none'
   }

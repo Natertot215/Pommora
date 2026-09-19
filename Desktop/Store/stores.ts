@@ -4,6 +4,8 @@ import type {
   CaptureStore,
   ContentIndexStore,
   IndexedStat,
+  MatrixGraphRows,
+  MatrixLinkRow,
   SnapshotStore,
   SyncStore,
 } from '@pommora/core/Platform/stores'
@@ -133,6 +135,28 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       out[path].push(heading)
     }
     return out
+  },
+  readMatrixGraph(only) {
+    const inClause = only ? ` AND path IN (${only.map(() => '?').join(',')})` : ''
+    const args = only ?? []
+    const links = db
+      .prepare(
+        `SELECT path, kind, target, qualifier, count FROM matrix_nodes WHERE kind IN ('body','citation','frontmatter')${inClause} ORDER BY path`,
+      )
+      .all(...args) as unknown as MatrixLinkRow[]
+    const stats = db
+      .prepare(`SELECT path, mtime_ms FROM indexed_files WHERE 1=1${inClause}`)
+      .all(...args) as { path: string; mtime_ms: number }[]
+    const values = db
+      .prepare(`SELECT path, key, value FROM page_values WHERE 1=1${inClause}`)
+      .all(...args) as { path: string; key: string; value: string }[]
+    const pages: MatrixGraphRows['pages'] = {}
+    for (const s of stats) pages[s.path] = { values: {}, mtimeMs: s.mtime_ms }
+    for (const v of values) {
+      const page = pages[v.path]
+      if (page) page.values[v.key] = JSON.parse(v.value)
+    }
+    return { links, pages }
   },
   queryKeyHolders(key) {
     return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)

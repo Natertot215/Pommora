@@ -18,6 +18,7 @@ import {
   Columns3Cog,
   Command,
   Copy,
+  Earth,
   Ellipsis,
   EllipsisVertical,
   Eye,
@@ -63,6 +64,7 @@ import {
   Send,
   Server,
   Shapes,
+  Shuffle,
   SlidersHorizontal,
   SquareCheck,
   SquareDashed,
@@ -86,6 +88,7 @@ import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
 /** This registry IS the roster: to add an icon, import it above and add a line here. */
 export const icons = {
   orbit: Orbit,
+  earth: Earth,
   calendar: Calendar,
   clock: Clock,
   'clock-fading': ClockFading,
@@ -138,6 +141,7 @@ export const icons = {
   'grip-horizontal': GripHorizontal,
   image: Image,
   'rotate-ccw': RotateCcw,
+  shuffle: Shuffle,
   pipette: Pipette,
   'wrap-text': WrapText,
   heart: Heart,
@@ -184,6 +188,8 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
 
 // The full Lucide set behind a dynamic import, kept out of every non-picker bundle. LazyGlyph and
 // the Icon Picker read this store; the module loads once, on first demand, and notifies subscribers.
+export type { IconNode } from 'lucide-react'
+
 type FullIconSet = typeof import('./allSymbols')
 let fullSet: FullIconSet | null = null
 let pending: Promise<FullIconSet> | null = null

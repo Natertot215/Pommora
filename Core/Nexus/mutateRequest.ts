@@ -73,7 +73,7 @@ export type MutateRequest =
   | { op: 'reorderContexts'; ids: string[] }
   | { op: 'reorderSpaces'; contextId: string; ids: string[] }
 
-export type RenameHost = 'detail' | 'sidebar'
+export type RenameHost = 'detail' | 'sidebar' | 'matrix'
 
 export interface ContextTarget extends PageMenuContext {
   kind: MutableKind

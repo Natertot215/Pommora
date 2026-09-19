@@ -15,6 +15,8 @@ export type Scope =
   | 'recents'
   | 'record'
   | 'glancePane'
+  | 'matrixLayout'
+  | 'matrixViewport'
   | 'devicePrefs'
   | 'sync'
 

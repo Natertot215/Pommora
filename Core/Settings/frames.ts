@@ -30,6 +30,7 @@ import {
   WEB_ZOOM_DEFAULT,
   type HeadingLinkStyle,
   type InPageHeadingResolution,
+  type MatrixOpenIn,
   type Personalization,
   type PickerSelection,
   type PreviewPersistence,
@@ -114,6 +115,7 @@ export type Row =
   | PickerControlRow<PickerSelection>
   | PickerControlRow<PreviewPersistence>
   | PickerControlRow<TabOpenBehavior>
+  | PickerControlRow<MatrixOpenIn>
   | PickerControlRow<HeadingLinkStyle>
   | PickerControlRow<InPageHeadingResolution>
   | (RowText & {
@@ -357,6 +359,16 @@ export const FRAMES = roster([
             options: [
               { value: 'overtake', label: 'Overtake' },
               { value: 'newtab', label: 'New Tab' },
+            ],
+          },
+          {
+            kind: 'picker',
+            key: 'matrixOpenIn',
+            label: 'Open Matrix In',
+            fallback: 'tab',
+            options: [
+              { value: 'tab', label: 'New Tab' },
+              { value: 'window', label: 'Window' },
             ],
           },
           {

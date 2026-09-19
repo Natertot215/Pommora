@@ -2,7 +2,13 @@
 
 import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
-import { type NavRef, type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
+import {
+  isSingleton,
+  type NavRef,
+  type SelectTarget,
+  toNavRef,
+} from '@pommora/core/Navigation/navRef'
+import { MATRIX_ICON, MATRIX_TITLE } from '@pommora/core/Matrix/matrixKind'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { findContainerWhere } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
@@ -15,17 +21,17 @@ import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
 
-/** `id` and `path` are '' for the folderless homepage singleton. */
-interface NodeRecord extends TrailNode {
+/** `id` and `path` are '' for the two folderless singletons, the Homepage and the Matrix. */
+export interface NodeRecord extends TrailNode {
   key: string
-  kind: 'homepage' | 'space' | 'collection' | 'set' | 'page'
+  kind: 'homepage' | 'matrix' | 'space' | 'collection' | 'set' | 'page'
   /** The raw icon field — surfaces that render absence read this, not the resolved glyph. */
   ownIcon?: string
   parents: TrailNode[]
 }
 
 export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
-  kind: 'homepage' | 'context' | 'space' | 'collection' | 'set' | 'page'
+  kind: 'homepage' | 'matrix' | 'context' | 'space' | 'collection' | 'set' | 'page'
   icon: string
 }
 
@@ -42,6 +48,7 @@ interface TreeIndex {
   search?: SearchEntry[]
   pages?: ConnPage[]
   pagesById?: Map<string, ConnPage>
+  recordsById?: Map<string, NodeRecord>
   pageIndex?: PageIndex
   containers?: Map<string, ContainerCore>
   navKeys?: string[]
@@ -68,6 +75,15 @@ function walk(tree: NexusTree): NodeRecord[] {
     id: '',
     title: tree.nexus.name,
     icon: iconNameOr(tree.nexus.profileIcon, DEFAULT_NEXUS_ICON),
+    path: '',
+    parents: [],
+  })
+  nodes.push({
+    key: navKey({ kind: 'matrix' }),
+    kind: 'matrix',
+    id: '',
+    title: MATRIX_TITLE,
+    icon: MATRIX_ICON,
     path: '',
     parents: [],
   })
@@ -151,6 +167,7 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
     for (const r of ix.nodes)
       switch (r.kind) {
         case 'homepage':
+        case 'matrix':
           break
         case 'space':
           spaces.add(r.id)
@@ -200,18 +217,19 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
   if (!ix.search) {
     const byKind: Record<NodeRecord['kind'], SearchEntry[]> = {
       homepage: [],
+      matrix: [],
       space: [],
       collection: [],
       set: [],
       page: [],
     }
     for (const r of ix.nodes) {
-      const target: NavRef =
-        r.kind === 'homepage' ? { kind: 'homepage' } : { kind: r.kind, id: r.id }
+      const target: NavRef = isSingleton(r) ? { kind: r.kind } : { kind: r.kind, id: r.id }
       byKind[r.kind].push({ key: r.key, target, title: r.title, lower: r.title.toLowerCase() })
     }
     ix.search = [
       ...byKind.homepage,
+      ...byKind.matrix,
       ...byKind.space,
       ...byKind.collection,
       ...byKind.set,
@@ -241,6 +259,13 @@ export function pagesByIdOf(tree: NexusTree): ReadonlyMap<string, ConnPage> {
   const ix = indexFor(tree)
   if (!ix.pagesById) ix.pagesById = new Map(pagesOf(tree).map((p) => [p.id, p]))
   return ix.pagesById
+}
+
+export function recordsByIdOf(tree: NexusTree): ReadonlyMap<string, NodeRecord> {
+  const ix = indexFor(tree)
+  if (!ix.recordsById)
+    ix.recordsById = new Map(ix.nodes.filter((r) => r.id !== '').map((r) => [r.id, r]))
+  return ix.recordsById
 }
 
 export function pageIndexOf(tree: NexusTree): PageIndex {

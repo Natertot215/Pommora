@@ -3,27 +3,39 @@ import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useSession } from '../../Session/store'
+import { isOpenInTabs } from '../../Navigation/tabsModel'
+import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
 
 // The icon that summoned a window dismisses it, matching the keyboard command that shares the state — neither switches sidebarMode.
-type RibbonKey = 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
+type RibbonKey = 'matrix' | 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   collections: 'collections',
   contexts: 'contexts',
   agenda: 'agenda',
 }
-const STATIC_ICON: Record<'agenda' | 'navigation' | 'settings', string> = {
+const STATIC_ICON: Record<'matrix' | 'agenda' | 'navigation' | 'settings', string> = {
+  matrix: MATRIX_ICON,
   agenda: 'calendar',
   navigation: 'map',
   settings: 'sliders-horizontal',
 }
-const DEFAULT_ORDER: RibbonKey[] = ['navigation', 'agenda', 'contexts', 'collections', 'settings']
+const DEFAULT_ORDER: RibbonKey[] = [
+  'matrix',
+  'navigation',
+  'agenda',
+  'contexts',
+  'collections',
+  'settings',
+]
 
 function resolveOrder(persisted: string[] | undefined): RibbonKey[] {
   const known = new Set<string>(DEFAULT_ORDER)
   const keys = (persisted ?? []).filter((k): k is RibbonKey => known.has(k))
-  for (const k of DEFAULT_ORDER) if (!keys.includes(k)) keys.push(k)
+  DEFAULT_ORDER.forEach((k, i) => {
+    if (!keys.includes(k)) keys.splice(i, 0, k)
+  })
   return keys
 }
 
@@ -31,6 +43,9 @@ export function Ribbon(): React.JSX.Element {
   const select = useSession((s) => s.select)
   const toggleNav = useSession((s) => s.toggleNav)
   const toggleSettings = useSession((s) => s.toggleSettings)
+  const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
+  const matrixInWindow = useSession((s) => s.personalization.matrixOpenIn === 'window')
+  const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
   const mode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
   const order = useSession((s) => s.personalization.ribbonOrder)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -49,6 +64,10 @@ export function Ribbon(): React.JSX.Element {
     if (m) setPersonalization('sidebarMode', m)
     else if (k === 'navigation') toggleNav()
     else if (k === 'settings') toggleSettings()
+    else if (k === 'matrix') {
+      if (matrixInWindow && !matrixTab) toggleMatrixWindow()
+      else void select(MATRIX_REF)
+    }
   }
 
   const reorderIcons = (activeId: string, overId: string): void => {

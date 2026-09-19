@@ -103,7 +103,7 @@ function PageRow({
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
-  const iconPath = useSession((s) => s.iconPath)
+  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
   const endIcon = useSession((s) => s.endIcon)
   const mutate = useSession((s) => s.mutate)
   const rowRef = useRef<HTMLDivElement>(null)

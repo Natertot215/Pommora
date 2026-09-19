@@ -18,7 +18,7 @@ import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 import { LayoutFrame } from './LayoutFrame'
 import { ScalePicker } from '@pommora/core/Settings/ScalePicker'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
 import {
   AccessoryButton,
   FooterIconButton,
@@ -259,12 +259,13 @@ export function SettingsFrame(): React.JSX.Element | null {
     ) : detailId === 'filter' ? (
       <FilterFrame
         key={view.id}
-        source={node}
+        locations={node.sets ?? []}
         view={view}
         schema={schema}
         tree={tree}
         label="Settings"
         onBack={back}
+        onCommit={(next) => void saveViewAdopting(node, { ...view, ...next })}
       />
     ) : (
       blankLeaf
@@ -276,8 +277,8 @@ export function SettingsFrame(): React.JSX.Element | null {
         open={pane !== 'root' && !frozen(pane)}
         root={scopedRoot || plainRoot}
         detail={detail}
-        minWidth={225}
-        minHeight={245}
+        minWidth={PANE_MIN_W}
+        minHeight={PANE_MIN_H}
       />
       <IconChoice
         open={iconOpen}

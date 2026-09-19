@@ -1,4 +1,4 @@
-import { duration, ms } from '../Animations/motion'
+import { duration, easeSnap, ms } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 
 type Axis = 'x' | 'y' | 'xy'
@@ -214,11 +214,6 @@ export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams):
   return clamp(Math.abs(distance) / speed, minMs, maxMs)
 }
 
-/** The JS form of `easing.baseSnap` — a CSS cubic-bezier can't drive a scrollTop, so the curve is stated twice. Change them together. */
-export function easeOutQuint(t: number): number {
-  return 1 - (1 - t) ** 5
-}
-
 let glide: { raf: number; teardown: () => void } | null = null
 
 function stopGlide(): void {
@@ -262,7 +257,7 @@ export function scrollGlide(
     if (!g) return
     started ??= now
     const t = Math.min(1, (now - started) / ms)
-    scroller.scrollTop = from + (target() - from) * easeOutQuint(t)
+    scroller.scrollTop = from + (target() - from) * easeSnap(t)
     if (t < 1) {
       g.raf = requestAnimationFrame(step)
       return

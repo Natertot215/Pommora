@@ -1,14 +1,15 @@
 import { isPlainObject } from '../../Properties/propertyValue'
 import { EMPTY_WINDOWS, type WindowSetRecord, type WindowsFile } from './windowRecord'
-import { toNavRef, type NavRef } from '../../Navigation/navRef'
+import { isNavRef, type NavRef, toNavRef, WINDOW_TAB_KINDS } from '../../Navigation/navRef'
 import { readValue, writeValue } from '../../Platform/localState'
-import { isNavRef, TAB_KINDS } from '../../Navigation/navRef'
 
 function readRecord(v: unknown): WindowSetRecord | null {
   if (!isPlainObject(v) || !Array.isArray(v.tabs)) return null
   const tabs = v.tabs
     .map((t) =>
-      isPlainObject(t) && isNavRef(t.target, TAB_KINDS) ? { target: toNavRef(t.target) } : null,
+      isPlainObject(t) && isNavRef(t.target, WINDOW_TAB_KINDS)
+        ? { target: toNavRef(t.target) }
+        : null,
     )
     .filter((t): t is { target: NavRef } => t !== null)
   const activeIndex =
@@ -21,9 +22,8 @@ function readRecord(v: unknown): WindowSetRecord | null {
 function readOpen(v: unknown): WindowsFile['open'] {
   if (!isPlainObject(v)) return null
   const kind = v.kind
-  return (kind === 'page' || kind === 'nav') && typeof v.originId === 'string'
-    ? { kind, originId: v.originId }
-    : null
+  if (kind !== 'page' && kind !== 'nav' && kind !== 'matrix') return null
+  return typeof v.originId === 'string' ? { kind, originId: v.originId } : null
 }
 
 export function sanitizeWindows(raw: unknown): WindowsFile | null {
