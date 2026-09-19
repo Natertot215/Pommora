@@ -58,7 +58,7 @@ let nextRenameToken = 1
 // The unclaimed-session sweep's beat — long enough for a create's row to arrive and claim.
 const RENAME_CLAIM_BEAT_MS = 2000
 let renameOrphanTimer: number | undefined
-const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1 }
+const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1, matrix: 3 }
 const RENAME_CLEARED = {
   renamingPath: null,
   renamingCreate: false,

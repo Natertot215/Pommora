@@ -54,6 +54,19 @@ const flush = (limit = 5000): void => {
 const config = (over: Partial<MatrixConfig['display']> = {}): MatrixConfig =>
   applyPatch(DEFAULT_MATRIX_CONFIG, { display: over })
 
+const relocated = () => {
+  const moved = makeTree()
+  const [page] = moved.collections[0].sets[0].pages
+  moved.collections[0].sets[0].pages = []
+  moved.collections[0].pages.push({ ...page, path: 'Notes/Beta.md' })
+  return moved
+}
+
+const placeOf = (id: string): number[] => {
+  const n = matrixRuntime.nodeOf(id)
+  return n ? [n.x, n.y] : []
+}
+
 function seed(over: Record<string, unknown> = {}): void {
   saveLayout = vi.fn()
   saveViewport = vi.fn()
@@ -378,6 +391,15 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.viewport).toEqual(owned)
   })
 
+  it('never pans on the collapsing measure a surface reports as it is torn down', () => {
+    seed()
+    attach()
+    flush()
+    const before = matrixRuntime.viewport
+    matrixRuntime.setStage(surface, { x: 0, y: 0, width: 0, height: 0 })
+    expect(matrixRuntime.viewport).toEqual(before)
+  })
+
   it('carries a local settle across a rebuild, moving only the fresh nodes', () => {
     seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach()
@@ -454,5 +476,36 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.sim?.awake).toBe(false)
     matrixRuntime.shuffle()
     expect(matrixRuntime.sim?.awake).toBe(true)
+  })
+
+  it('fades a page out of its old folder and in beside the new one, in Location mode', () => {
+    seed({
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, { group: { mode: 'location' } }),
+      matrixPositions: { p1: [0, 0], p2: [60, 0] },
+    })
+    attach()
+    flush()
+    const from = placeOf('p2')
+    useSession.setState({ tree: relocated() })
+    expect(matrixRuntime.ghosts).toHaveLength(1)
+    expect([matrixRuntime.ghosts[0].x, matrixRuntime.ghosts[0].y]).toEqual(from)
+    expect(matrixRuntime.arrivals.has('p2')).toBe(true)
+    expect(placeOf('p2')).not.toEqual(from)
+    expect(matrixRuntime.sim?.local).toBe(true)
+    expect([matrixRuntime.nodeOf('p1')?.pinned, matrixRuntime.nodeOf('p2')?.pinned]).toEqual([
+      true,
+      false,
+    ])
+  })
+
+  it('plays nothing for the same move in Connection mode', () => {
+    seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
+    attach()
+    flush()
+    const from = placeOf('p2')
+    useSession.setState({ tree: relocated() })
+    expect(matrixRuntime.ghosts).toHaveLength(0)
+    expect(matrixRuntime.arrivals.size).toBe(0)
+    expect(placeOf('p2')).toEqual(from)
   })
 })
