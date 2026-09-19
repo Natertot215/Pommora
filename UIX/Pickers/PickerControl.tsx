@@ -30,7 +30,7 @@ export const factorChoice = (f: number): PickerOption<string> => ({
 export const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
-/** Every multiplier control — a list of factor rows, and the same field behind a right press. */
+// Every multiplier control — a list of factor rows, and the same field behind a right press.
 export function factorPickerProps({
   steps,
   value,

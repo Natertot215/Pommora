@@ -2,12 +2,12 @@ import type { GraphNode, NodeKind } from './graph'
 import { toScreen, type Viewport } from './viewport'
 
 // KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
-export const REVEAL_ZOOM: Record<NodeKind, number> = { page: 1, folder: 0.6, space: 0.35 }
+const REVEAL_ZOOM: Record<NodeKind, number> = { page: 1, folder: 0.6, space: 0.35 }
 const LABEL_CELL_PX = 96
 
 export const revealed = (kind: NodeKind, zoom: number): boolean => zoom >= REVEAL_ZOOM[kind]
 
-/** The caller owns `cells` and reads the surviving indices off it, so a per-frame cull allocates nothing. */
+// The caller owns `cells` and reads the surviving indices off it, so a per-frame cull allocates nothing.
 export function cullLabels(
   nodes: GraphNode[],
   v: Viewport,

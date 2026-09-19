@@ -32,7 +32,7 @@ export function MatrixLabel({
   useLayoutEffect(() => {
     if (id === null) return
     const follow = (): void => {
-      const n = matrixRuntime.graph.nodes[matrixRuntime.graph.index.get(id) ?? -1]
+      const n = matrixRuntime.nodeOf(id)
       const a = anchorRef.current
       const l = labelRef.current
       if (!n || !a || !l) return
@@ -48,7 +48,7 @@ export function MatrixLabel({
   }, [id])
 
   if (!rec || !tree) return null
-  const node = matrixRuntime.graph.nodes[matrixRuntime.graph.index.get(rec.id) ?? -1]
+  const node = matrixRuntime.nodeOf(rec.id)
   if (!node) return null
   const trail = hideLocation
     ? []

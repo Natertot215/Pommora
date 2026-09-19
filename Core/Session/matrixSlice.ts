@@ -8,8 +8,8 @@ import {
 } from '@pommora/core/Matrix/matrixConfig'
 import { EMPTY_GRAPH_REPLY, type MatrixGraphReply } from '@pommora/core/Matrix/matrixGraph'
 import type { Positions } from '@pommora/core/Matrix/matrixLayout'
-import { type Result, valueOr } from '../Contract/result'
-import { nodesOf, pagesByIdOf } from '../Nexus/treeIndex'
+import type { Result } from '../Contract/result'
+import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { host as dialer } from '../Platform/dialer'
 import type { Slice } from './sessionState'
 
@@ -63,12 +63,19 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       ...held.links.filter((l) => !replaced.has(l.path) && !ids.has(l.pageId)),
       ...next.links,
     ]
-    return { links, values: { ...held.values, ...next.values } }
+    const values = { ...held.values, ...next.values }
+    for (const l of held.links)
+      if (replaced.has(l.path) && !ids.has(l.pageId)) delete values[l.pageId]
+    return { links, values }
+  }
+
+  const cancelRefetch = (): void => {
+    if (refetch) clearTimeout(refetch)
+    refetch = null
   }
 
   const flush = async (): Promise<void> => {
-    if (refetch) clearTimeout(refetch)
-    refetch = null
+    cancelRefetch()
     if (!get().matrixLoaded || pendingPaths.size === 0) return
     const paths = [...pendingPaths]
     pendingPaths = new Set()
@@ -81,7 +88,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   const queue = (paths: string[]): void => {
     if (paths.length === 0) return
     for (const p of paths) pendingPaths.add(p)
-    if (refetch) clearTimeout(refetch)
+    cancelRefetch()
     refetch = setTimeout(() => void flush(), REFETCH_MS)
   }
 
@@ -99,9 +106,14 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       ])
       if (!config.ok) console.error('matrix read failed:', config.error.message)
       // A Nexus switch between the ask and its answer: the answer belongs to a root the store has left.
-      if (!graph.ok || get().tree !== tree) return
+      if (get().tree !== tree) return
+      if (config.ok) get().applyMatrixChanged(config.value)
+      // A refused graph leaves the load undone; clearing the mark after the config lands lets the next store change ask again.
+      if (!graph.ok) {
+        triedTree = null
+        return
+      }
       set({
-        matrixConfig: valueOr(config, DEFAULT_MATRIX_CONFIG),
         matrixGraph: graph.value,
         matrixPositions: layout.ok ? layout.value.positions : {},
         matrixViewport: layout.ok ? layout.value.viewport : null,
@@ -138,7 +150,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     saveMatrixLayout: (positions) => {
       const { tree, matrixLoaded, matrixPositions } = get()
       if (!tree || !matrixLoaded) return
-      const live = new Set(nodesOf(tree).map((r) => r.id))
+      const live = recordsByIdOf(tree)
       const next: Positions = { ...matrixPositions, ...positions }
       for (const id of Object.keys(next)) if (!live.has(id)) delete next[id]
       set({ matrixPositions: next })
@@ -153,8 +165,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     resetMatrix: () => {
       pendingPaths = new Set()
-      if (refetch) clearTimeout(refetch)
-      refetch = null
+      cancelRefetch()
       triedTree = null
       set({ ...PER_NEXUS })
     },

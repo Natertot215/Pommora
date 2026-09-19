@@ -17,7 +17,7 @@ export interface MatrixGraphReply {
 
 export const EMPTY_GRAPH_REPLY: MatrixGraphReply = { links: [], values: {} }
 
-/** `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. */
+// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches.
 export function readMatrixGraph(paths?: string[]): MatrixGraphReply | null {
   const rows = readRows(paths)
   if (!rows) return null

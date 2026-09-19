@@ -35,7 +35,7 @@ export const panBy = (v: Viewport, dx: number, dy: number): Viewport => ({
   y: v.y - dy / v.zoom,
 })
 
-/** The visible region of the canvas in screen px: the padded box the panes leave free, which the whole canvas runs under. */
+// The visible region of the canvas in screen px: the padded box the panes leave free, which the whole canvas runs under.
 export interface Stage {
   x: number
   y: number

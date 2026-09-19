@@ -4,7 +4,6 @@ import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
 const cache = new Map<string, HTMLImageElement | null>()
 const listeners = new Set<() => void>()
 
-/** A surface that paints icons subscribes; two surfaces at once each get told. */
 export function onIconLoad(fn: () => void): () => void {
   listeners.add(fn)
   return () => {
@@ -25,7 +24,7 @@ export function svgOf(nodes: IconNodes, color: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
 }
 
-/** The bitmap for a lucide name in `color` at `dpr`, or `null` until it has loaded and the title paints alone, or when the name is unknown. */
+// The bitmap for a lucide name in `color` at `dpr`, or `null` until it has loaded and the title paints alone, or when the name is unknown.
 export function iconFor(name: string, color: string, dpr: number): HTMLImageElement | null {
   const key = `${name}|${color}|${dpr}`
   if (cache.has(key)) return cache.get(key) ?? null

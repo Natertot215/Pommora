@@ -113,7 +113,8 @@ export function buildQuadtree(nodes: GraphNode[]): Quadtree {
 // One stack for every walk: two visits per node per tick would otherwise allocate thousands of arrays a frame.
 const stack: Cell[] = []
 
-/** Pre-order; return `true` from `fn` to skip the cell's children. */
+// Pre-order; return `true` from `fn` to skip the cell's children.
+// The stack is shared, so `fn` must never call `visit` or `find` itself.
 export function visit(tree: Quadtree, fn: (c: Cell) => boolean): void {
   stack.length = 0
   if (tree.root) stack.push(tree.root)

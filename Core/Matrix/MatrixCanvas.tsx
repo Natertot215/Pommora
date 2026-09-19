@@ -48,7 +48,8 @@ function readPaint(host: HTMLElement): Paint {
     return getComputedStyle(probe).color
   }
   const scoped = getComputedStyle(host)
-  const length = (token: string): number => Number.parseFloat(scoped.getPropertyValue(token)) || 1
+  const number = (token: string, fallback: number): number =>
+    Number.parseFloat(scoped.getPropertyValue(token)) || fallback
   const paint: Paint = {
     fill: color('--matrix-fill'),
     ring: color('--matrix-ring'),
@@ -57,9 +58,9 @@ function readPaint(host: HTMLElement): Paint {
     link: color('--matrix-link'),
     linkHover: color('--matrix-link-hover'),
     title: color('--matrix-title'),
-    inactive: Number.parseFloat(scoped.getPropertyValue('--matrix-inactive')) || 0.55,
-    hairline: length('--matrix-hairline'),
-    ringWidth: length('--matrix-ring-width'),
+    inactive: number('--matrix-inactive', 0.55),
+    hairline: number('--matrix-hairline', 1),
+    ringWidth: number('--matrix-ring-width', 1),
     titleFont,
   }
   probe.remove()
@@ -69,14 +70,20 @@ function readPaint(host: HTMLElement): Paint {
 // Phase 7: the modifier the entity menu reads for its Shift-held rows.
 export let lastShift = false
 
-/** Screen → world through the compounded CSS zoom, the viewport, and the canvas's box. */
-export function toWorldPoint(
+function screenPoint(
   canvas: HTMLCanvasElement,
   e: { clientX: number; clientY: number },
 ): [number, number] {
   const box = canvas.getBoundingClientRect()
   const z = currentZoom(canvas)
-  return toWorld(matrixRuntime.viewport, (e.clientX - box.left) / z, (e.clientY - box.top) / z)
+  return [(e.clientX - box.left) / z, (e.clientY - box.top) / z]
+}
+
+export function toWorldPoint(
+  canvas: HTMLCanvasElement,
+  e: { clientX: number; clientY: number },
+): [number, number] {
+  return toWorld(matrixRuntime.viewport, ...screenPoint(canvas, e))
 }
 
 const easeCubic = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
@@ -325,16 +332,8 @@ export function MatrixCanvas({
         return
       }
       if (!canvas) return
-      const box = canvas.getBoundingClientRect()
-      const z = currentZoom(canvas)
-      matrixRuntime.setViewport(
-        zoomAt(
-          v,
-          (e.clientX - box.left) / z,
-          (e.clientY - box.top) / z,
-          Math.exp(-e.deltaY * PINCH_RATE),
-        ),
-      )
+      const [sx, sy] = screenPoint(canvas, e)
+      matrixRuntime.setViewport(zoomAt(v, sx, sy, Math.exp(-e.deltaY * PINCH_RATE)))
     }
     host.addEventListener('wheel', onWheel, { passive: false })
     return () => host.removeEventListener('wheel', onWheel)
