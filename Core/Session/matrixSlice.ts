@@ -43,7 +43,6 @@ const REFETCH_MS = 150
 export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   let pendingPaths = new Set<string>()
   let refetch: ReturnType<typeof setTimeout> | null = null
-  let loading = false
   let triedTree: unknown = null
 
   const logged = (what: string, reply: Promise<Result<unknown>>): void => {
@@ -68,8 +67,9 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   }
 
   const flush = async (): Promise<void> => {
+    if (refetch) clearTimeout(refetch)
     refetch = null
-    if (!get().matrixLoaded) return
+    if (!get().matrixLoaded || pendingPaths.size === 0) return
     const paths = [...pendingPaths]
     pendingPaths = new Set()
     const reply = await dialer().ask('matrix:graph', paths)
@@ -90,15 +90,13 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     loadMatrix: async () => {
       const tree = get().tree
-      if (get().matrixLoaded || loading || tree === null || tree === triedTree) return
-      loading = true
+      if (get().matrixLoaded || tree === null || tree === triedTree) return
       triedTree = tree
       const [config, graph, layout] = await Promise.all([
         dialer().ask('matrix:read'),
         dialer().ask('matrix:graph'),
         dialer().ask('matrixLayout:load'),
       ])
-      loading = false
       if (!config.ok) console.error('matrix read failed:', config.error.message)
       // A Nexus switch between the ask and its answer: the answer belongs to a root the store has left.
       if (!graph.ok || get().tree !== tree) return
@@ -137,10 +135,10 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     refetchMatrixPaths: (paths) => queue(paths),
 
     saveMatrixLayout: (positions) => {
-      const { tree, matrixLoaded } = get()
+      const { tree, matrixLoaded, matrixPositions } = get()
       if (!tree || !matrixLoaded) return
       const live = new Set(nodesOf(tree).map((r) => r.id))
-      const next: Positions = { ...get().matrixPositions, ...positions }
+      const next: Positions = { ...matrixPositions, ...positions }
       for (const id of Object.keys(next)) if (!live.has(id)) delete next[id]
       set({ matrixPositions: next })
       logged('matrix layout save', dialer().ask('matrixLayout:save', { positions: next }))
@@ -156,7 +154,6 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       pendingPaths = new Set()
       if (refetch) clearTimeout(refetch)
       refetch = null
-      loading = false
       triedTree = null
       set({ ...PER_NEXUS })
     },

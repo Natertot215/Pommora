@@ -1,6 +1,6 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { GraphLink, GraphNode, LinkKind, NodeKind } from './graph'
-import { type Quadtree, visit } from './quadtree'
+import { type Cell, type Quadtree, visit } from './quadtree'
 
 // KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
 export const BASE_RADIUS: Record<NodeKind, number> = { page: 40, folder: 60, space: 80 }
@@ -68,28 +68,28 @@ export function applySpread(
   alpha: number,
 ): void {
   const charge = chargeOf(forces.spread) * alpha
-  for (const n of nodes) {
-    visit(tree, (cell) => {
-      if (cell.count === 0) return true
-      let dx = cell.cx - n.x
-      let dy = cell.cy - n.y
-      let d2 = dx * dx + dy * dy
-      const w = cell.x1 - cell.x0
-      if (w * w < THETA2 * d2 || cell.leaf) {
-        if (cell.leaf && cell.node === n) return true
-        if (d2 < DISTANCE_MIN2) {
-          dx = dx || (Math.random() - 0.5) * 1e-6
-          dy = dy || (Math.random() - 0.5) * 1e-6
-          d2 = DISTANCE_MIN2
-        }
-        const f = (charge * cell.count) / d2
-        n.vx += dx * f
-        n.vy += dy * f
-        return true
+  let n = nodes[0]
+  const push = (cell: Cell): boolean => {
+    if (cell.count === 0) return true
+    let dx = cell.cx - n.x
+    let dy = cell.cy - n.y
+    let d2 = dx * dx + dy * dy
+    const w = cell.x1 - cell.x0
+    if (w * w < THETA2 * d2 || cell.leaf) {
+      if (cell.leaf && cell.node === n) return true
+      if (d2 < DISTANCE_MIN2) {
+        dx = dx || (Math.random() - 0.5) * 1e-6
+        dy = dy || (Math.random() - 0.5) * 1e-6
+        d2 = DISTANCE_MIN2
       }
-      return false
-    })
+      const f = (charge * cell.count) / d2
+      n.vx += dx * f
+      n.vy += dy * f
+      return true
+    }
+    return false
   }
+  for (n of nodes) visit(tree, push)
 }
 
 export function applyLink(
@@ -119,32 +119,37 @@ export function applyLink(
 }
 
 export function applyCollide(nodes: GraphNode[], tree: Quadtree): void {
-  for (const n of nodes) {
-    const r = n.radius + LINK_GAP
-    visit(tree, (cell) => {
-      if (cell.count === 0) return true
-      const reach = cell.maxRadius + LINK_GAP
-      if (n.x + r < cell.x0 - reach || n.x - r > cell.x1 + reach) return true
-      if (n.y + r < cell.y0 - reach || n.y - r > cell.y1 + reach) return true
-      if (!cell.leaf) return false
-      const m = cell.node
-      if (m === null || m === n || m.id < n.id) return true
-      const rr = r + m.radius + LINK_GAP
-      let dx = n.x + n.vx - m.x - m.vx || (Math.random() - 0.5) * 1e-6
-      let dy = n.y + n.vy - m.y - m.vy || (Math.random() - 0.5) * 1e-6
-      const d2 = dx * dx + dy * dy
-      if (d2 < rr * rr) {
-        const d = Math.sqrt(d2)
-        const push = ((rr - d) / d) * COLLIDE_STRENGTH
-        dx *= push
-        dy *= push
-        const share = (m.radius * m.radius) / (n.radius * n.radius + m.radius * m.radius)
-        n.vx += dx * share
-        n.vy += dy * share
-        m.vx -= dx * (1 - share)
-        m.vy -= dy * (1 - share)
-      }
-      return true
-    })
+  let n = nodes[0]
+  let r = 0
+  const separate = (cell: Cell): boolean => {
+    if (cell.count === 0) return true
+    const reach = cell.maxRadius + LINK_GAP
+    const x = n.x + n.vx
+    const y = n.y + n.vy
+    if (x + r < cell.x0 - reach || x - r > cell.x1 + reach) return true
+    if (y + r < cell.y0 - reach || y - r > cell.y1 + reach) return true
+    if (!cell.leaf) return false
+    const m = cell.node
+    if (m === null || m === n || m.id < n.id) return true
+    const rr = r + m.radius + LINK_GAP
+    let dx = n.x + n.vx - m.x - m.vx || (Math.random() - 0.5) * 1e-6
+    let dy = n.y + n.vy - m.y - m.vy || (Math.random() - 0.5) * 1e-6
+    const d2 = dx * dx + dy * dy
+    if (d2 < rr * rr) {
+      const d = Math.sqrt(d2)
+      const push = ((rr - d) / d) * COLLIDE_STRENGTH
+      dx *= push
+      dy *= push
+      const share = (m.radius * m.radius) / (n.radius * n.radius + m.radius * m.radius)
+      n.vx += dx * share
+      n.vy += dy * share
+      m.vx -= dx * (1 - share)
+      m.vy -= dy * (1 - share)
+    }
+    return true
+  }
+  for (n of nodes) {
+    r = n.radius + LINK_GAP
+    visit(tree, separate)
   }
 }

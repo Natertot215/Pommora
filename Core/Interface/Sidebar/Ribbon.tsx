@@ -33,7 +33,7 @@ function resolveOrder(persisted: string[] | undefined): RibbonKey[] {
   const known = new Set<string>(DEFAULT_ORDER)
   const keys = (persisted ?? []).filter((k): k is RibbonKey => known.has(k))
   DEFAULT_ORDER.forEach((k, i) => {
-    if (!keys.includes(k)) keys.splice(Math.min(i, keys.length), 0, k)
+    if (!keys.includes(k)) keys.splice(i, 0, k)
   })
   return keys
 }

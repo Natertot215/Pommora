@@ -126,20 +126,19 @@ export function visit(tree: Quadtree, fn: (c: Cell) => boolean): void {
 
 export function find(tree: Quadtree, x: number, y: number, radius: number): GraphNode | null {
   let best: GraphNode | null = null
-  let bestD2 = radius * radius
+  let bestD = radius
   visit(tree, (c) => {
     if (c.count === 0) return true
     const dx = x < c.x0 ? c.x0 - x : x > c.x1 ? x - c.x1 : 0
     const dy = y < c.y0 ? c.y0 - y : y > c.y1 ? y - c.y1 : 0
-    const reach = Math.sqrt(bestD2) + c.maxRadius
+    const reach = Math.max(bestD, 0) + c.maxRadius
     if (dx * dx + dy * dy > reach * reach) return true
     if (!c.leaf || !c.node) return false
     const n = c.node
     const d = Math.hypot(n.x - x, n.y - y) - n.radius
-    const d2 = Math.max(d, 0) ** 2
-    if (d2 < bestD2 || (d <= 0 && best === null)) {
+    if (d < bestD) {
       best = n
-      bestD2 = d2
+      bestD = d
     }
     return true
   })

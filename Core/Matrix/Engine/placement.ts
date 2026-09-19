@@ -35,13 +35,15 @@ export function place(graph: Graph, layout: Layout): Set<string> {
     } else fresh.add(n.id)
   }
   const neighbours = new Map<number, number[]>()
-  for (const l of links) {
-    if (!layout.has(nodes[l.target].id)) continue
-    neighbours.set(l.source, [...(neighbours.get(l.source) ?? []), l.target])
+  const near = (from: number, to: number): void => {
+    if (!fresh.has(nodes[from].id) || fresh.has(nodes[to].id)) return
+    const list = neighbours.get(from)
+    if (list) list.push(to)
+    else neighbours.set(from, [to])
   }
   for (const l of links) {
-    if (!layout.has(nodes[l.source].id)) continue
-    neighbours.set(l.target, [...(neighbours.get(l.target) ?? []), l.source])
+    near(l.source, l.target)
+    near(l.target, l.source)
   }
   let k = 0
   nodes.forEach((n, i) => {
@@ -55,9 +57,10 @@ export function place(graph: Graph, layout: Layout): Set<string> {
         near.reduce((s, j) => s + nodes[j].y, 0) / near.length +
         (Math.random() - 0.5) * PLACE_JITTER
     } else {
-      const a = k++ * GOLDEN_ANGLE
-      n.x = (ring + SPIRAL_STEP) * Math.cos(a)
-      n.y = (ring + SPIRAL_STEP) * Math.sin(a)
+      const a = k * GOLDEN_ANGLE
+      const r = ring + SPIRAL_STEP * Math.sqrt(1 + k++)
+      n.x = r * Math.cos(a)
+      n.y = r * Math.sin(a)
     }
   })
   return fresh
