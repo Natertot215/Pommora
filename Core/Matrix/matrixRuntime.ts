@@ -24,9 +24,11 @@ const VIEWPORT_SAVE_MS = 400
 
 type Listener = () => void
 
-interface Surface {
+export interface Surface {
   visible: () => boolean
 }
+
+const NO_STAGE: Stage = { x: 0, y: 0, width: 0, height: 0 }
 
 interface Built {
   tree: unknown
@@ -45,7 +47,6 @@ class MatrixRuntime {
   graph: Graph = EMPTY
   sim: Simulation | null = null
   viewport: Viewport = DEFAULT_VIEWPORT
-  stage: Stage = { x: 0, y: 0, width: 0, height: 0 }
   hoveredId: string | null = null
   draggingId: string | null = null
   // Phase 7: the Move To fade's departing circles.
@@ -53,6 +54,7 @@ class MatrixRuntime {
   // Phase 7: the Move To fade's arriving circles, by id and birth.
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
+  private stages = new Map<Surface, Stage>()
   private listeners = new Set<Listener>()
   private frame = 0
   private built: Built | null = null
@@ -72,6 +74,7 @@ class MatrixRuntime {
     this.resume()
     return () => {
       this.surfaces.delete(surface)
+      this.stages.delete(surface)
       if (this.surfaces.size === 0) {
         this.unsubscribe?.()
         this.unsubscribe = null
@@ -271,10 +274,23 @@ class MatrixRuntime {
     })
   }
 
+  // The last visible surface to attach owns the stage, so a window overtaking a tab measures for both and a handoff never pans.
+  private get owner(): Surface | null {
+    let last: Surface | null = null
+    for (const s of this.surfaces) if (s.visible()) last = s
+    return last
+  }
+
+  get stage(): Stage {
+    const o = this.owner
+    return (o && this.stages.get(o)) ?? NO_STAGE
+  }
+
   // The world point under the stage's centre stays there, so a pane sliding in pans the picture on the pane's own motion.
-  setStage(next: Stage): void {
-    const was = this.stage
-    this.stage = next
+  setStage(surface: Surface, next: Stage): void {
+    const was = this.owner === surface ? this.stage : null
+    this.stages.set(surface, next)
+    if (was === null) return
     if (was.width === 0) {
       if (this.fitOnSettle && this.sim && !this.sim.awake) this.fitNow()
       return

@@ -262,10 +262,17 @@ export function MatrixCanvas({
   }, [])
 
   useEffect(() => {
-    const detach = matrixRuntime.attach({ visible: () => !parkedRef.current })
+    const surface = { visible: () => !parkedRef.current }
+    const detach = matrixRuntime.attach(surface)
     const stop = matrixRuntime.subscribe(() => drawRef.current())
     const stopIcons = onIconLoad(() => matrixRuntime.invalidate())
+    const ro = new ResizeObserver(([entry]) => {
+      const box = entry.contentRect
+      matrixRuntime.setStage(surface, { x: box.x, y: box.y, width: box.width, height: box.height })
+    })
+    if (stageRef.current) ro.observe(stageRef.current)
     return () => {
+      ro.disconnect()
       stopIcons()
       stop()
       detach()
@@ -308,17 +315,6 @@ export function MatrixCanvas({
       media?.removeEventListener('change', onRatio)
     }
   }, [canvasRef])
-
-  useEffect(() => {
-    const el = stageRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => {
-      const box = entry.contentRect
-      matrixRuntime.setStage({ x: box.x, y: box.y, width: box.width, height: box.height })
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
   useEffect(() => {
     const host = hostRef.current

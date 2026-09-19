@@ -4,9 +4,10 @@ import { fail, ok } from '../Contract/result'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
+import type { Stage } from './Engine/viewport'
 import { applyPatch, DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
 import { EMPTY_GRAPH_REPLY, type MatrixGraphReply, type MatrixLink } from './matrixGraph'
-import { matrixRuntime } from './matrixRuntime'
+import { matrixRuntime, type Surface } from './matrixRuntime'
 
 const walks = vi.hoisted(() => ({ count: 0 }))
 vi.mock('./matrixInput', async (actual) => {
@@ -20,7 +21,7 @@ vi.mock('./matrixInput', async (actual) => {
   }
 })
 
-const STAGE = { x: 0, y: 0, width: 800, height: 600 }
+const STAGE: Stage = { x: 0, y: 0, width: 800, height: 600 }
 
 const link = (pageId: string, target: string): MatrixLink => ({
   pageId,
@@ -69,8 +70,12 @@ function seed(over: Record<string, unknown> = {}): void {
   } as never)
 }
 
-const attach = (): void => {
-  detach = matrixRuntime.attach({ visible: () => visible })
+let surface: Surface = { visible: () => visible }
+
+const attach = (stage: Stage | null = STAGE): void => {
+  surface = { visible: () => visible }
+  detach = matrixRuntime.attach(surface)
+  if (stage) matrixRuntime.setStage(surface, stage)
 }
 
 beforeEach(() => {
@@ -82,7 +87,6 @@ beforeEach(() => {
   })
   visible = true
   vi.stubGlobal('requestAnimationFrame', (fn: () => void) => frames.push(fn))
-  matrixRuntime.setStage(STAGE)
   matrixRuntime.setViewport({ x: 0, y: 0, zoom: 1 })
   // Drained rather than dropped: a queued frame left standing keeps the runtime's own frame handle set, and every later schedule is a no-op.
   flush()
@@ -209,14 +213,13 @@ describe('matrixRuntime', () => {
   })
 
   it('waits for a sized stage before fitting a first open that carries positions', () => {
-    matrixRuntime.setStage({ x: 0, y: 0, width: 0, height: 0 })
     matrixRuntime.setViewport({ x: 0, y: 0, zoom: 1 })
     vi.runAllTimers()
     seed({ matrixViewport: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
-    attach()
+    attach(null)
     flush()
     expect(saveViewport).not.toHaveBeenCalled()
-    matrixRuntime.setStage(STAGE)
+    matrixRuntime.setStage(surface, STAGE)
     vi.runAllTimers()
     expect(saveViewport).toHaveBeenCalledTimes(1)
     expect(matrixRuntime.viewport).not.toEqual({ x: 0, y: 0, zoom: 1 })
@@ -352,9 +355,27 @@ describe('matrixRuntime', () => {
     attach()
     flush()
     const before = matrixRuntime.viewport
-    matrixRuntime.setStage({ ...STAGE, x: 100, width: STAGE.width - 100 })
+    matrixRuntime.setStage(surface, { ...STAGE, x: 100, width: STAGE.width - 100 })
     expect(matrixRuntime.viewport.x).toBeCloseTo(before.x - 50 / before.zoom)
-    matrixRuntime.setStage(STAGE)
+    matrixRuntime.setStage(surface, STAGE)
+  })
+
+  it('gives the stage to the surface that attached last and never pans on the handoff', () => {
+    seed()
+    attach()
+    flush()
+    const tab = surface
+    const window: Surface = { visible: () => true }
+    const detachWindow = matrixRuntime.attach(window)
+    matrixRuntime.setStage(window, { x: 0, y: 0, width: 400, height: 300 })
+    const owned = matrixRuntime.viewport
+    expect(matrixRuntime.stage.width).toBe(400)
+    matrixRuntime.setStage(tab, { ...STAGE, x: 100, width: STAGE.width - 100 })
+    expect(matrixRuntime.viewport).toEqual(owned)
+    expect(matrixRuntime.stage.width).toBe(400)
+    detachWindow()
+    expect(matrixRuntime.stage.width).toBe(STAGE.width - 100)
+    expect(matrixRuntime.viewport).toEqual(owned)
   })
 
   it('carries a local settle across a rebuild, moving only the fresh nodes', () => {
