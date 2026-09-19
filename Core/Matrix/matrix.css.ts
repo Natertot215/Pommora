@@ -44,6 +44,12 @@ export const stage = style({
   inset: 0,
   pointerEvents: 'none',
   overflow: 'hidden',
+  // Both clearances key to the shell's own panes, which a floating window has neither of — its picture centres on the whole surface.
+  selectors: {
+    '.window &': {
+      vars: { '--sidebar-clearance': '0px', '--side-pane-clearance': '0px' },
+    },
+  },
 })
 
 export const anchor = style({
@@ -63,6 +69,12 @@ export const label = style({
   flexDirection: 'column',
   alignItems: 'center',
   gap: ROW_GAP,
+  // The title follows the hovered node across the canvas, so anything it covers must still take the pointer.
+  pointerEvents: 'none',
+})
+
+export const labelField = style({
+  pointerEvents: 'auto',
 })
 
 export const labelRow = style({

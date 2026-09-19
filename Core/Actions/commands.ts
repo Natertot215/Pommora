@@ -12,6 +12,7 @@ export const DEFAULT_COMMANDS = {
   'zoom-out': 'cmd+-',
   'toggle-ribbon': 'cmd+t',
   'toggle-nav': 'cmd+o',
+  'toggle-matrix': 'cmd+shift+m',
   'toggle-iteration': 'cmd+shift+t',
   'next-tab': 'ctrl+tab',
   'previous-tab': 'ctrl+shift+tab',

@@ -3,11 +3,12 @@ import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useSession } from '../../Session/store'
-import { MATRIX_ICON } from '../../Matrix/matrixKind'
+import { isOpenInTabs } from '../../Navigation/tabsModel'
+import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
 
-// The icon that summoned a window dismisses it, matching the keyboard command that shares the state — neither switches sidebarMode; the Matrix opens a tab.
+// The icon that summoned a window dismisses it, matching the keyboard command that shares the state — neither switches sidebarMode.
 type RibbonKey = 'matrix' | 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   collections: 'collections',
@@ -42,6 +43,9 @@ export function Ribbon(): React.JSX.Element {
   const select = useSession((s) => s.select)
   const toggleNav = useSession((s) => s.toggleNav)
   const toggleSettings = useSession((s) => s.toggleSettings)
+  const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
+  const matrixInWindow = useSession((s) => s.personalization.matrixOpenIn === 'window')
+  const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
   const mode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
   const order = useSession((s) => s.personalization.ribbonOrder)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -60,7 +64,10 @@ export function Ribbon(): React.JSX.Element {
     if (m) setPersonalization('sidebarMode', m)
     else if (k === 'navigation') toggleNav()
     else if (k === 'settings') toggleSettings()
-    else if (k === 'matrix') void select({ kind: 'matrix' })
+    else if (k === 'matrix') {
+      if (matrixInWindow && !matrixTab) toggleMatrixWindow()
+      else void select(MATRIX_REF)
+    }
   }
 
   const reorderIcons = (activeId: string, overId: string): void => {

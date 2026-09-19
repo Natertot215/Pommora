@@ -91,6 +91,7 @@ export function readPersonalization(raw: unknown): Personalization {
     sidebarMode: mode(p.sidebarMode),
     revealTabBarOnHover: bool(p.revealTabBarOnHover),
     tabOpenBehavior: p.tabOpenBehavior === 'newtab' ? 'newtab' : undefined,
+    matrixOpenIn: p.matrixOpenIn === 'window' ? 'window' : undefined,
     tabTakeFocus: p.tabTakeFocus === false ? false : undefined,
     tabMinWidth: clampInt(p.tabMinWidth, TAB_MIN_WIDTH.min, TAB_MIN_WIDTH.max),
     tabMaxWidth: clampInt(p.tabMaxWidth, TAB_MAX_WIDTH.min, TAB_MAX_WIDTH.max),

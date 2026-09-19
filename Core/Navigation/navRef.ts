@@ -45,6 +45,8 @@ export const TAB_KINDS = new Set<string>(
   [...NAV_KINDS].filter((k) => k !== 'task' && k !== 'event'),
 )
 
+export const WINDOW_TAB_KINDS = new Set<string>([...TAB_KINDS].filter((k) => k !== 'matrix'))
+
 export function isNavRef(v: unknown, kinds: ReadonlySet<string> = NAV_KINDS): v is NavRef {
   if (!isPlainObject(v) || typeof v.kind !== 'string' || !kinds.has(v.kind)) return false
   return isSingleton(v) ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0

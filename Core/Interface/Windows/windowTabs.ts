@@ -1,6 +1,7 @@
 import type { WindowTabTarget } from '@pommora/core/Navigation/navRef'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
+import type { WindowKind } from './windowRecord'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
 
@@ -10,7 +11,7 @@ export interface WindowTab {
 }
 
 export interface WindowState {
-  kind: 'page' | 'nav'
+  kind: WindowKind
   originId: string
   tabs: WindowTab[]
   activeTabId: string
