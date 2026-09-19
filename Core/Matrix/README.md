@@ -30,16 +30,16 @@ drove the loop's own shape rather than a library's:
 | `Engine/quadtree.ts` | The Barnes–Hut tree, built per tick, and the hit test behind it |
 | `Engine/simulation.ts` | The tick, sleep by energy, local wake, the drag and return spring, Shuffle |
 | `Engine/placement.ts` | Seating a node the layout has never carried, on a spiral outside the extent |
-| `Engine/viewport.ts` | Pan, zoom, the zoom clamps, world ↔ screen, and the fit |
-| `Engine/labels.ts` | Culling titles to one per cell, largest node winning |
+| `Engine/viewport.ts` | The frame, its pan and zoom, the zoom clamps, world ↔ screen, and the fit |
+| `Engine/labels.ts` | How far each kind is through its zoom reveal, and culling titles to one per cell |
 | `Engine/engine.test.ts` | The isolation gate: the engine's import graph and its DOM sweep |
 | `Engine/scale.test.ts` | The bench: a synthetic Nexus ticked against a budget |
-| `matrixRuntime.ts` | The simulation's one owner — the frame loop, the rebuild guard, the stage, the fade, the layout and viewport writes |
+| `matrixRuntime.ts` | The simulation's one owner — the frame loop, the rebuild guard, the stages, the fade, the layout and frame writes |
 | `matrixInput.ts` | The tree walk into a `GraphInput`, and what the filter leaves visible |
 | `matrixGraph.ts` | The index read behind `matrix:graph` and the shape of its reply |
 | `matrixConfig.ts` | The four sections, their patch, and the section merge |
 | `matrixFile.ts`, `handlers.ts` | `.nexus/matrix.json`, its per-key merge, and the channels over it |
-| `matrixLayout.ts` | The machine-local positions and viewport, and the readers that validate them |
+| `matrixLayout.ts` | The machine-local positions and frame, and the readers that validate them |
 | `matrixKind.ts` | The selection kind, its title, its icon, and a node's record shape |
 | `MatrixView.tsx` | What the surface is told: the label's node, the menu, the tap, the drag |
 | `MatrixCanvas.tsx` | The canvas, its paint read from host-scoped tokens, the pointer gates |

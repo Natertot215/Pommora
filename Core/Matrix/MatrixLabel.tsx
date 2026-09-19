@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+import { titleInput } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../Assets/EntityIcon'
@@ -13,16 +14,20 @@ import { toScreen } from './Engine/viewport'
 import { lastShift } from './MatrixCanvas'
 import type { MatrixRecord } from './matrixKind'
 import * as s from './matrix.css'
-import { matrixRuntime } from './matrixRuntime'
+import { matrixRuntime, type Surface } from './matrixRuntime'
 
 export function MatrixLabel({
+  surface,
   rec,
+  closing,
   editing,
   hosts,
   onPointerDown,
   onContextMenu,
 }: {
+  surface: Surface
   rec: MatrixRecord | null
+  closing: boolean
   editing: boolean
   hosts: boolean
   onPointerDown: (e: React.PointerEvent) => void
@@ -35,9 +40,16 @@ export function MatrixLabel({
   const mutate = useSession((st) => st.mutate)
   const hidePath = useSession((st) => st.matrixConfig.display.hidePath)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
+  const [entered, setEntered] = useState(false)
   const anchorRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
   const id = rec?.id ?? null
+
+  // The opacity has to change after the first paint for the transition to run at all.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   // Layout, not passive: the first transform lands before paint, so the label never flashes at the host's origin.
   useLayoutEffect(() => {
@@ -49,8 +61,9 @@ export function MatrixLabel({
       const a = anchorRef.current
       const l = labelRef.current
       if (!n || !a || !l) return
-      const { zoom } = matrixRuntime.viewport
-      const [sx, sy] = toScreen(matrixRuntime.viewport, n.x, n.y)
+      const v = matrixRuntime.viewportOf(surface)
+      const { zoom } = v
+      const [sx, sy] = toScreen(v, n.x, n.y)
       const r = n.radius * zoom
       a.style.transform = `translate(${sx - r}px, ${sy - r}px)`
       a.style.width = a.style.height = `${r * 2}px`
@@ -63,14 +76,14 @@ export function MatrixLabel({
     }
     follow()
     return matrixRuntime.subscribe(follow)
-  }, [id])
+  }, [id, surface])
 
   useEffect(() => {
     const a = anchorRef.current
-    if (!a || editing || !rec || rec.kind !== 'page') return
+    if (!a || editing || closing || !rec || rec.kind !== 'page') return
     hoverGlance({ kind: 'page', id: rec.id, path: rec.path }, a, 'location', lastShift)
     return () => leaveGlanceFrom(a)
-  }, [rec, editing])
+  }, [rec, editing, closing])
 
   if (!rec || !tree) return null
   const node = matrixRuntime.nodeOf(rec.id)
@@ -85,7 +98,7 @@ export function MatrixLabel({
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the hovered node made real — its own drag, click and menu, which the canvas cannot carry */}
       <div
         ref={anchorRef}
-        className={s.anchor}
+        className={cx(s.anchor, closing && s.anchorClosing)}
         onPointerDown={onPointerDown}
         onContextMenu={onContextMenu}
       />
@@ -96,7 +109,7 @@ export function MatrixLabel({
         value={node.icon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: rec.path, kind: rec.kind, icon })}
       />
-      <div ref={labelRef} className={s.label}>
+      <div ref={labelRef} className={cx(s.label, s.labelFade, entered && !closing && s.labelShown)}>
         <div className={cx(s.labelRow, text.footnote.emphasized)}>
           {!hideIcon && (
             <EntityIcon kind={rec.kind} icon={node.icon} size="footnote" className={s.labelGlyph} />
@@ -106,8 +119,8 @@ export function MatrixLabel({
               path={rec.path}
               kind={rec.kind}
               title={node.title}
-              className={cx(text.footnote.emphasized, s.labelField)}
-              renames="title"
+              className={cx(titleInput, s.labelField)}
+              autoSize
               host="matrix"
             />
           ) : (

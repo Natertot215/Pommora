@@ -5,14 +5,14 @@ import { adopting } from '../Nexus/handlers'
 import { sessionRoot } from '../Nexus/session'
 import { readValue, writeValue } from '../Platform/localState'
 import { isPlainObject } from '../Properties/propertyValue'
-import type { Viewport } from './Engine/viewport'
+import type { Frame } from './Engine/viewport'
 import type { MatrixPatch } from './matrixConfig'
 import { readMatrixFile, writeMatrixFile } from './matrixFile'
 import { readMatrixGraph } from './matrixGraph'
 import {
   isLayoutPatch,
   readPositions,
-  isViewport,
+  isFrame,
   type MatrixLayout,
   type Positions,
 } from './matrixLayout'
@@ -39,19 +39,19 @@ export const matrixHandlers = {
   'matrixLayout:load': () => {
     if (sessionRoot() === null) return NO_NEXUS
     const positions = readValue<Positions>('matrixLayout')
-    const viewport = readValue<Viewport>('matrixViewport')
+    const frame = readValue<Frame>('matrixFrame')
     return ok({
       positions: readPositions(positions),
-      viewport: isViewport(viewport) ? viewport : null,
+      frame: isFrame(frame) ? frame : null,
     } satisfies MatrixLayout)
   },
 
   'matrixLayout:save': (_ctx, patch: unknown) => {
     if (adopting()) return BUSY
     if (!isLayoutPatch(patch))
-      return fail('operation-failed', 'A layout patch needs finite positions or a finite viewport.')
+      return fail('operation-failed', 'A layout patch needs finite positions or a finite frame.')
     if (patch.positions && !writeValue('matrixLayout', patch.positions)) return NO_NEXUS
-    if (patch.viewport && !writeValue('matrixViewport', patch.viewport)) return NO_NEXUS
+    if (patch.frame && !writeValue('matrixFrame', patch.frame)) return NO_NEXUS
     return ok(null)
   },
 } satisfies Partial<Handlers>

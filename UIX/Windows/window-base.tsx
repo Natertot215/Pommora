@@ -27,13 +27,21 @@ const BOUNDS: WindowBounds = { min: { w: 360, h: 280 }, def: { w: 850, h: 600 } 
 
 export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, def: 260, max: 420 }
 
-// A remembered size may come from a larger display, so the opening rect is centered and then clamped to this viewport.
-const opening = (size: Size | undefined, bounds: WindowBounds): Rect => {
+// A remembered size may come from a larger display, so the opening rect is placed and then clamped to this viewport.
+const opening = (
+  size: Size | undefined,
+  bounds: WindowBounds,
+  region?: () => Rect | null,
+): Rect => {
   const s = size ?? bounds.def
+  const r = region?.()
+  // A named region is centred on both axes; the bare viewport keeps its upper bias, where the whole screen is the window's to sit in.
+  const box = r ?? { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight }
+  const share = r ? 2 : 3
   return onScreen({
     ...s,
-    x: Math.round((window.innerWidth - s.w) / 2),
-    y: Math.round((window.innerHeight - s.h) / 3),
+    x: Math.round(box.x + (box.w - s.w) / 2),
+    y: Math.round(box.y + (box.h - s.h) / share),
   })
 }
 
@@ -55,6 +63,8 @@ interface WindowBaseProps {
   initialSize?: Size
   /** Carries the grip so the caller can tell a resize from a move — every drop reports, a move included. */
   onSizeChange?: (size: Size, grip: ResizeGrip) => void
+  /** Read once, at open. Absent centres on the viewport with its upper bias. */
+  region?: () => Rect | null
   dragSurfaces?: string
   ariaLabel: string
   className?: string
@@ -82,6 +92,7 @@ export function WindowBase({
   bounds = BOUNDS,
   initialSize,
   onSizeChange,
+  region,
   dragSurfaces,
   ariaLabel,
   className,
@@ -100,7 +111,7 @@ export function WindowBase({
   children,
 }: WindowBaseProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
-  const [geo, setGeo] = useState(() => opening(initialSize, bounds))
+  const [geo, setGeo] = useState(() => opening(initialSize, bounds, region))
   useEffect(() => {
     const onResize = (): void => setGeo(onScreen)
     window.addEventListener('resize', onResize)

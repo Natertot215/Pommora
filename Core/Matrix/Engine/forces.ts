@@ -3,7 +3,7 @@ import type { GraphLink, GraphNode, LinkKind, NodeKind } from './graph'
 import { type Cell, type Quadtree, visit } from './quadtree'
 
 // KNOBs — the node radii and their growth, the per-kind link strengths, and the four forces the menu scales.
-export const BASE_RADIUS: Record<NodeKind, number> = { page: 40, folder: 60, space: 80 }
+export const BASE_RADIUS: Record<NodeKind, number> = { page: 30, folder: 40, space: 50 }
 const LINK_MULTIPLE: Record<LinkKind, number> = {
   body: 0.08,
   citation: 0.04,
@@ -20,7 +20,7 @@ const LINK_STRENGTH: Record<LinkKind, number> = {
   space: 0.7,
   location: 0.75,
 }
-export const LINK_GAP = 4
+export const LINK_GAP = 8
 const COLLIDE_STRENGTH = 0.7
 const THETA2 = 0.81
 const DISTANCE_MIN2 = 1

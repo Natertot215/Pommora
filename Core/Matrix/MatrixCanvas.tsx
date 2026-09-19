@@ -10,11 +10,11 @@ import { useSession } from '../Session/store'
 import { BASE_RADIUS, LINK_GAP } from './Engine/forces'
 import type { Graph, GraphLink } from './Engine/graph'
 import { glanceShown } from '../Interface/Glance/glanceAction'
-import { cullLabels } from './Engine/labels'
-import { panBy, toScreen, toWorld, type Viewport, zoomAt } from './Engine/viewport'
+import { cullLabels, labelReveal, type LabelReveal } from './Engine/labels'
+import { toScreen, toWorld, type Viewport } from './Engine/viewport'
 import { iconFor, onIconLoad } from './iconCache'
 import * as s from './matrix.css'
-import { FADE_MS, matrixRuntime } from './matrixRuntime'
+import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
 
 // KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
 const PINCH_RATE = 0.01
@@ -22,6 +22,11 @@ const LINK_WIDTH_MIN = 1.0
 const LINK_WIDTH_MAX = 2.5
 const LINK_WIDTH_SCALE = 0.5
 const MAX_FRAME_MS = 64
+
+const titleAlphas = (zoom: number): LabelReveal => {
+  const r = labelReveal(zoom)
+  return { page: easeBase(r.page), folder: easeBase(r.folder), space: easeBase(r.space) }
+}
 
 interface Paint {
   fill: string
@@ -80,10 +85,11 @@ function screenPoint(
 }
 
 export function toWorldPoint(
+  surface: Surface,
   canvas: HTMLCanvasElement,
   e: { clientX: number; clientY: number },
 ): [number, number] {
-  return toWorld(matrixRuntime.viewport, ...screenPoint(canvas, e))
+  return toWorld(matrixRuntime.viewportOf(surface), ...screenPoint(canvas, e))
 }
 
 function drawNode(
@@ -140,6 +146,7 @@ function drawLink(
 }
 
 export function MatrixCanvas({
+  surface,
   parked,
   editing,
   labelId,
@@ -149,6 +156,7 @@ export function MatrixCanvas({
   onMenu,
   children,
 }: {
+  surface: Surface
   parked: boolean
   editing: boolean
   labelId: string | null
@@ -162,18 +170,16 @@ export function MatrixCanvas({
   const stageRef = useRef<HTMLDivElement>(null)
   const paintRef = useRef<Paint | null>(null)
   const drawRef = useRef<() => void>(() => {})
-  const parkedRef = useRef(parked)
   const dprRef = useRef(1)
-  const emphasisRef = useRef({ value: 0, at: 0 })
+  const emphasisRef = useRef({ from: 0, to: 0, t: 1, at: 0 })
   const neighboursRef = useRef(new Set<number>())
   const hotRef = useRef<GraphLink[]>([])
   const cellsRef = useRef(new Map<number, number>())
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
-  parkedRef.current = parked
 
   drawRef.current = (): void => {
     // The runtime's listeners are not surface-scoped, so a parked surface would repaint its whole graph on every frame another surface drives.
-    if (parkedRef.current) return
+    if (!surface.visible()) return
     const canvas = canvasRef.current
     const paint = paintRef.current
     const ctx = canvas?.getContext('2d')
@@ -182,24 +188,28 @@ export function MatrixCanvas({
     const height = canvas.clientHeight
     ctx.clearRect(0, 0, width, height)
 
-    const v = matrixRuntime.viewport
+    const v = matrixRuntime.viewportOf(surface)
     const graph = matrixRuntime.graph
     const { nodes, links } = graph
     const hovered = matrixRuntime.hoveredIndex()
     const dragging = matrixRuntime.draggingIndex()
 
     const now = performance.now()
+    // Each flip re-seeds from the value on screen, so a reversal mid-fade cannot jump.
     const ease = emphasisRef.current
     const target = hovered >= 0 ? 1 : 0
     const elapsed = ease.at === 0 ? 0 : Math.min(now - ease.at, MAX_FRAME_MS)
     ease.at = now
-    if (ease.value !== target) {
-      const by = elapsed / ms(duration.slow)
-      ease.value =
-        target > ease.value ? Math.min(target, ease.value + by) : Math.max(target, ease.value - by)
-      matrixRuntime.invalidate()
+    let emphasis = ease.from + (ease.to - ease.from) * easeBase(ease.t)
+    if (ease.to !== target) {
+      ease.from = emphasis
+      ease.to = target
+      ease.t = 0
+    } else if (ease.t < 1) {
+      ease.t = Math.min(1, ease.t + elapsed / ms(duration.slow))
+      emphasis = ease.from + (ease.to - ease.from) * easeBase(ease.t)
     }
-    const emphasis = easeBase(ease.value)
+    if (ease.t < 1) matrixRuntime.invalidate()
     const dim = 1 - emphasis * (1 - paint.inactive)
 
     const arrivals = matrixRuntime.arrivals
@@ -263,7 +273,8 @@ export function MatrixCanvas({
     ctx.textBaseline = 'top'
     ctx.fillStyle = paint.title
     const cells = cellsRef.current
-    cullLabels(nodes, v, width, height, matrixRuntime.indexOf(labelId), cells)
+    const alphas = titleAlphas(v.zoom)
+    cullLabels(nodes, v, width, height, matrixRuntime.indexOf(labelId), cells, alphas)
     for (const i of cells.values()) {
       const n = nodes[i]
       const [sx, sy] = toScreen(v, n.x, n.y + n.radius)
@@ -272,7 +283,7 @@ export function MatrixCanvas({
       const lead = image ? ICON_PX.footnote + s.TITLE_ICON_GAP : 0
       const left = sx - (ctx.measureText(n.title).width + lead) / 2
       const top = sy + s.TITLE_OFFSET
-      ctx.globalAlpha = (hovered < 0 || neighbours.has(i) ? 1 : dim) * arrival(i)
+      ctx.globalAlpha = (hovered < 0 || neighbours.has(i) ? 1 : dim) * arrival(i) * alphas[n.kind]
       if (image) ctx.drawImage(image, left, top, ICON_PX.footnote, ICON_PX.footnote)
       ctx.fillText(n.title, left + lead, top)
       ctx.globalAlpha = 1
@@ -294,7 +305,6 @@ export function MatrixCanvas({
   }, [])
 
   useEffect(() => {
-    const surface = { visible: () => !parkedRef.current }
     const detach = matrixRuntime.attach(surface)
     const stop = matrixRuntime.subscribe(() => drawRef.current())
     const stopIcons = onIconLoad(() => matrixRuntime.invalidate())
@@ -309,7 +319,7 @@ export function MatrixCanvas({
       stop()
       detach()
     }
-  }, [])
+  }, [surface])
 
   useEffect(() => {
     if (parked) matrixRuntime.setHovered(-1)
@@ -358,18 +368,17 @@ export function MatrixCanvas({
     const onWheel = (e: WheelEvent): void => {
       e.preventDefault()
       const canvas = canvasRef.current
-      const v = matrixRuntime.viewport
       if (!e.ctrlKey) {
-        matrixRuntime.setViewport(panBy(v, -e.deltaX, -e.deltaY))
+        matrixRuntime.pan(surface, -e.deltaX, -e.deltaY)
         return
       }
       if (!canvas) return
       const [sx, sy] = screenPoint(canvas, e)
-      matrixRuntime.setViewport(zoomAt(v, sx, sy, Math.exp(-e.deltaY * PINCH_RATE)))
+      matrixRuntime.zoom(surface, sx, sy, Math.exp(-e.deltaY * PINCH_RATE))
     }
     host.addEventListener('wheel', onWheel, { passive: false })
     return () => host.removeEventListener('wheel', onWheel)
-  }, [canvasRef])
+  }, [canvasRef, surface])
 
   const onCanvas = (e: { target: EventTarget }): boolean => e.target === canvasRef.current
 
@@ -381,7 +390,7 @@ export function MatrixCanvas({
       onPointerDown={(e) => {
         const canvas = canvasRef.current
         if (!canvas || !onCanvas(e)) return
-        const [wx, wy] = toWorldPoint(canvas, e)
+        const [wx, wy] = toWorldPoint(surface, canvas, e)
         const i = matrixRuntime.hitTest(wx, wy)
         if (i >= 0) onNodeDown(e, i)
         else onBackgroundDown(e)
@@ -390,18 +399,18 @@ export function MatrixCanvas({
         lastShift = e.shiftKey
         const canvas = canvasRef.current
         if (!canvas || !onCanvas(e) || editing) return
-        const [wx, wy] = toWorldPoint(canvas, e)
+        const [wx, wy] = toWorldPoint(surface, canvas, e)
         const i = matrixRuntime.hitTest(wx, wy)
         if (i >= 0 || !glanceShown()) matrixRuntime.setHovered(i)
       }}
       onPointerLeave={() => {
-        if (!glanceShown()) matrixRuntime.setHovered(-1)
+        if (!editing && !glanceShown()) matrixRuntime.setHovered(-1)
       }}
       onContextMenu={(e) => {
         e.preventDefault()
         const canvas = canvasRef.current
         if (!canvas || !onCanvas(e)) return
-        const [wx, wy] = toWorldPoint(canvas, e)
+        const [wx, wy] = toWorldPoint(surface, canvas, e)
         const i = matrixRuntime.hitTest(wx, wy)
         if (i >= 0) onMenu(i)
       }}

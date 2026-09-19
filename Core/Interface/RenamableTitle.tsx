@@ -10,6 +10,7 @@ export function RenamableTitle({
   title,
   className,
   renames = 'row',
+  autoSize,
   host,
 }: {
   path: string
@@ -17,6 +18,7 @@ export function RenamableTitle({
   title: string
   className: string
   renames?: 'title' | 'row'
+  autoSize?: boolean
   host: RenameHost
 }): React.JSX.Element {
   const target = useSession((s) => s.renamingPath === path)
@@ -43,6 +45,7 @@ export function RenamableTitle({
       emptyInitial={owns && renamingCreate}
       value={title}
       className={className}
+      autoSize={autoSize}
       onCommit={(next) => void submitRename(path, kind, next)}
       onCancel={cancelRename}
     />

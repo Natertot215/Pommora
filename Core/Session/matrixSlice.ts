@@ -1,4 +1,4 @@
-import type { Viewport } from '@pommora/core/Matrix/Engine/viewport'
+import type { Frame } from '@pommora/core/Matrix/Engine/viewport'
 import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
@@ -18,7 +18,7 @@ export interface MatrixSlice {
   matrixConfig: MatrixConfig
   matrixGraph: MatrixGraphReply
   matrixPositions: Positions
-  matrixViewport: Viewport | null
+  matrixFrame: Frame | null
   matrixLoaded: boolean
   loadMatrix: () => Promise<void>
   patchMatrix: (patch: MatrixPatch) => void
@@ -26,7 +26,7 @@ export interface MatrixSlice {
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
   saveMatrixLayout: (positions: Positions) => void
-  saveMatrixViewport: (viewport: Viewport) => void
+  saveMatrixFrame: (frame: Frame) => void
   resetMatrix: () => void
 }
 
@@ -34,7 +34,7 @@ const PER_NEXUS = {
   matrixConfig: DEFAULT_MATRIX_CONFIG,
   matrixGraph: EMPTY_GRAPH_REPLY,
   matrixPositions: {},
-  matrixViewport: null,
+  matrixFrame: null,
   matrixLoaded: false,
 } satisfies Partial<MatrixSlice>
 
@@ -125,7 +125,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       set({
         matrixGraph: graph.value,
         matrixPositions: layout.ok ? layout.value.positions : {},
-        matrixViewport: layout.ok ? layout.value.viewport : null,
+        matrixFrame: layout.ok ? layout.value.frame : null,
         matrixLoaded: true,
       })
       if (pendingPaths.size) void flush()
@@ -166,10 +166,10 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       logged('matrix layout save', dialer().ask('matrixLayout:save', { positions: next }))
     },
 
-    saveMatrixViewport: (viewport) => {
+    saveMatrixFrame: (frame) => {
       if (!get().matrixLoaded) return
-      set({ matrixViewport: viewport })
-      logged('matrix layout save', dialer().ask('matrixLayout:save', { viewport }))
+      set({ matrixFrame: frame })
+      logged('matrix layout save', dialer().ask('matrixLayout:save', { frame }))
     },
 
     resetMatrix: () => {

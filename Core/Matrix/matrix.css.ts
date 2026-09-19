@@ -1,4 +1,5 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style } from '@vanilla-extract/css'
+import { duration, easing } from '@pommora/uix/Animations/motion'
 import { hexA, SURFACE_FROST } from '@pommora/uix/Glass/glass-base'
 import { vars } from '@pommora/uix/Theme/color.css'
 import { PURE_WHITE } from '@pommora/uix/Theme/colors'
@@ -15,7 +16,12 @@ export const host = style({
   width: '100%',
   height: '100%',
   overflow: 'hidden',
-  background: c.background.window,
+  selectors: {
+    '.window &': {
+      flex: 1,
+      minHeight: 0,
+    },
+  },
   vars: {
     '--matrix-fill': c.label.control,
     '--matrix-ring': `${PURE_WHITE}${hexA(SURFACE_FROST.borderAlpha)}`,
@@ -28,6 +34,13 @@ export const host = style({
     '--matrix-hairline': 'var(--width-200)',
     '--matrix-ring-width': 'var(--width-150)',
   },
+})
+
+// The window's own frost is the fill and the graph runs to its edges, so the drag band has to outrank the surface it now covers.
+export const matrixWindow = style({})
+
+globalStyle(`${matrixWindow} .window-drag`, {
+  zIndex: 1,
 })
 
 export const canvas = style({
@@ -58,6 +71,21 @@ export const anchor = style({
   left: 0,
   borderRadius: 'var(--radius-full)',
   pointerEvents: 'auto',
+})
+
+// Inert through its own exit, so a node the pointer has already left cannot take a press or re-arm a glance.
+export const anchorClosing = style({
+  pointerEvents: 'none',
+})
+
+// A transition rather than a pair of keyframes: a title re-hovered part-way through its exit carries on from the opacity it is painted at instead of restarting from nothing.
+export const labelFade = style({
+  opacity: 0,
+  transition: `opacity ${duration.slow} ${easing.baseEase}`,
+})
+
+export const labelShown = style({
+  opacity: 1,
 })
 
 export const label = style({

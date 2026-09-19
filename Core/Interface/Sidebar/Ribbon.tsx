@@ -2,8 +2,12 @@ import type { SidebarMode } from '@pommora/core/Settings/personalization'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { openOrder } from '../../Actions/menuModel'
+import { popMenu } from '../../Actions/menuActions'
+import { openLabel } from '../../Actions/toggleLabels'
 import { useSession } from '../../Session/store'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
+import { ctxHandler } from './sidebarRows'
 import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
@@ -21,6 +25,10 @@ const STATIC_ICON: Record<'matrix' | 'agenda' | 'navigation' | 'settings', strin
   navigation: 'map',
   settings: 'sliders-horizontal',
 }
+type SummonKey = 'matrix' | 'navigation'
+type RibbonMenuAction = 'open' | 'preview'
+const summons = (k: RibbonKey): k is SummonKey => k === 'matrix' || k === 'navigation'
+
 const DEFAULT_ORDER: RibbonKey[] = [
   'matrix',
   'navigation',
@@ -44,8 +52,13 @@ export function Ribbon(): React.JSX.Element {
   const toggleNav = useSession((s) => s.toggleNav)
   const toggleSettings = useSession((s) => s.toggleSettings)
   const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
+  const openMatrixWindow = useSession((s) => s.openMatrixWindow)
+  const openNav = useSession((s) => s.openNav)
+  const openNewTab = useSession((s) => s.openNewTab)
   const matrixInWindow = useSession((s) => s.personalization.matrixOpenIn === 'window')
   const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
+  const navTab = useSession((s) => s.tabs.some((t) => t.target.kind === 'newtab'))
+  const windowKind = useSession((s) => s.pageWindow?.kind ?? null)
   const mode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
   const order = useSession((s) => s.personalization.ribbonOrder)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -67,6 +80,26 @@ export function Ribbon(): React.JSX.Element {
     else if (k === 'matrix') {
       if (matrixInWindow && !matrixTab) toggleMatrixWindow()
       else void select(MATRIX_REF)
+    }
+  }
+
+  // No trigger: a right-click presents natively whatever the in-app menu preference says.
+  const openMenu = async (k: SummonKey): Promise<void> => {
+    const alreadyOpen = k === 'matrix' ? matrixTab : navTab
+    const previewing = windowKind === (k === 'matrix' ? 'matrix' : 'nav')
+    const action = await popMenu<RibbonMenuAction>(
+      openOrder<RibbonMenuAction>(
+        alreadyOpen,
+        [{ label: openLabel(alreadyOpen), action: 'open' }],
+        [{ label: 'Preview', action: 'preview', disabled: previewing }],
+      ),
+    )
+    if (action === 'open') {
+      if (k === 'matrix') void select(MATRIX_REF)
+      else openNewTab()
+    } else if (action === 'preview') {
+      if (k === 'matrix') openMatrixWindow()
+      else openNav()
     }
   }
 
@@ -97,6 +130,7 @@ export function Ribbon(): React.JSX.Element {
             icon={iconFor(k)}
             active={MODE_FOR[k] === mode}
             onClick={() => onIcon(k)}
+            onMenu={summons(k) ? () => void openMenu(k) : undefined}
           />
         ))}
       </SortableZone>
@@ -109,11 +143,13 @@ function RibbonTab({
   icon,
   active,
   onClick,
+  onMenu,
 }: {
   tabKey: RibbonKey
   icon: string
   active: boolean
   onClick: () => void
+  onMenu?: () => void
 }): React.JSX.Element {
   const { setNodeRef, style, handle, isDragging } = useDragItem(tabKey)
   return (
@@ -129,6 +165,7 @@ function RibbonTab({
       onClick={() => {
         if (!isDragging) onClick()
       }}
+      onContextMenu={ctxHandler(onMenu)}
     >
       <Icon name={icon} size="titleSmall" />
     </button>
