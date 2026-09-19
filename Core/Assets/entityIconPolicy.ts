@@ -2,7 +2,7 @@ import type { IconName } from '@pommora/uix/Symbols'
 import { asIconName, iconNameOr } from '@pommora/uix/Symbols'
 import type { EntityIconKind } from '../Settings/personalization'
 
-export const DEFAULT_NEXUS_ICON: IconName = 'orbit'
+export const DEFAULT_NEXUS_ICON: IconName = 'pommora'
 
 export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   collection: 'gallery-vertical-end',

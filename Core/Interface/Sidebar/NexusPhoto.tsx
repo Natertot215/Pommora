@@ -8,6 +8,9 @@ import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import * as s from './nexus-header.css'
 
+// KNOB — a glyph's share of the frame a photo fills.
+const GLYPH_SHARE = 0.85
+
 export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
   const icon = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
@@ -30,7 +33,7 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
         {photoUrl ? (
           <AssetImage value={icon.profileImage} />
         ) : (
-          <Icon name={icon.profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * 0.6)} />
+          <Icon name={icon.profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * GLYPH_SHARE)} />
         )}
       </span>
       <NexusIconEditors icon={icon} triggerRef={ref} />
