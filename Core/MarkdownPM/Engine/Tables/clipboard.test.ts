@@ -28,6 +28,11 @@ describe('table clipboard', () => {
     expect(decodePayload('| 1 | 2 |')).toEqual({ kind: 'rect', grid: [['1', '2']] })
   })
 
+  it('a lone cell copies as its display text, not a pipe cell', () => {
+    expect(encodeRect([['a \\| b<br>c']])).toBe('a | b\nc')
+    expect(decodePayload(encodeRect([['x']]))).toBeNull()
+  })
+
   it('a lone pipe cell is a text paste, not a structural one', () => {
     expect(decodePayload('| x |')).toBeNull()
     expect(decodePayload('plain prose')).toBeNull()
