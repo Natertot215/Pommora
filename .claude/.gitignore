@@ -1,0 +1,11 @@
+# Machine-local overrides: absolute paths and per-host hooks.
+settings.local.json
+
+# Symlinks into the Studio's own folders.
+skills
+commands
+
+# Per-session scratch worktrees.
+worktrees/
+
+.DS_Store
