@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { duration, ms } from '@pommora/uix/Animations/motion'
+import { duration, easeBase, ms } from '@pommora/uix/Animations/motion'
 import { text } from '@pommora/uix/Theme'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -38,7 +38,7 @@ interface Paint {
 
 function readPaint(host: HTMLElement): Paint {
   const probe = document.createElement('span')
-  probe.className = text.caption.emphasized
+  probe.className = text.footnote.emphasized
   host.appendChild(probe)
   const cs = getComputedStyle(probe)
   const titleFont = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
@@ -85,8 +85,6 @@ export function toWorldPoint(
 ): [number, number] {
   return toWorld(matrixRuntime.viewport, ...screenPoint(canvas, e))
 }
-
-const easeCubic = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
 
 function drawNode(
   ctx: CanvasRenderingContext2D,
@@ -196,12 +194,12 @@ export function MatrixCanvas({
     const elapsed = ease.at === 0 ? 0 : Math.min(now - ease.at, MAX_FRAME_MS)
     ease.at = now
     if (ease.value !== target) {
-      const by = elapsed / ms(duration.fast)
+      const by = elapsed / ms(duration.slow)
       ease.value =
         target > ease.value ? Math.min(target, ease.value + by) : Math.max(target, ease.value - by)
       matrixRuntime.invalidate()
     }
-    const emphasis = easeCubic(ease.value)
+    const emphasis = easeBase(ease.value)
     const dim = 1 - emphasis * (1 - paint.inactive)
 
     const arrivals = matrixRuntime.arrivals
@@ -271,11 +269,11 @@ export function MatrixCanvas({
       const [sx, sy] = toScreen(v, n.x, n.y + n.radius)
       const glyph = hideIcon ? undefined : records?.get(n.id)?.icon
       const image = glyph ? iconFor(glyph, paint.title, dprRef.current) : null
-      const lead = image ? ICON_PX.caption + s.TITLE_ICON_GAP : 0
+      const lead = image ? ICON_PX.footnote + s.TITLE_ICON_GAP : 0
       const left = sx - (ctx.measureText(n.title).width + lead) / 2
       const top = sy + s.TITLE_OFFSET
       ctx.globalAlpha = (hovered < 0 || neighbours.has(i) ? 1 : dim) * arrival(i)
-      if (image) ctx.drawImage(image, left, top, ICON_PX.caption, ICON_PX.caption)
+      if (image) ctx.drawImage(image, left, top, ICON_PX.footnote, ICON_PX.footnote)
       ctx.fillText(n.title, left + lead, top)
       ctx.globalAlpha = 1
     }

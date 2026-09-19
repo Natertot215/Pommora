@@ -94,16 +94,16 @@ export function MatrixLabel({
         onSelect={(icon) => void mutate({ op: 'setIcon', path: rec.path, kind: rec.kind, icon })}
       />
       <div ref={labelRef} className={s.label}>
-        <div className={cx(s.labelRow, text.caption.emphasized)}>
+        <div className={cx(s.labelRow, text.footnote.emphasized)}>
           {!hideIcon && (
-            <EntityIcon kind={rec.kind} icon={node.icon} size="caption" className={s.labelGlyph} />
+            <EntityIcon kind={rec.kind} icon={node.icon} size="footnote" className={s.labelGlyph} />
           )}
           {editing ? (
             <RenamableTitle
               path={rec.path}
               kind={rec.kind}
               title={node.title}
-              className={cx(text.caption.emphasized, s.labelField)}
+              className={cx(text.footnote.emphasized, s.labelField)}
               renames="title"
               host="matrix"
             />
@@ -116,7 +116,7 @@ export function MatrixLabel({
             segments={trail}
             chevronSize="caption"
             overScroll={false}
-            className={text.footnote.standard}
+            className={text.subline.standard}
           />
         )}
       </div>

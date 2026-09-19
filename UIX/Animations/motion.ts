@@ -12,3 +12,6 @@ export const easing = {
 } as const
 
 export const ms = (d: (typeof duration)[keyof typeof duration]): number => Number.parseInt(d, 10)
+
+/** The JS form of `easing.baseEase` — a CSS timing function can't drive a canvas paint, so the curve is stated twice. Change them together. */
+export const easeBase = (t: number): number => t * t * (3 - 2 * t)
