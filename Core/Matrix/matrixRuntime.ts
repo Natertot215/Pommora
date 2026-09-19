@@ -185,7 +185,8 @@ class MatrixRuntime {
     const moving = prev?.local ? prev.graph.nodes.filter((n) => !n.pinned).map((n) => n.id) : null
     this.graph = graph
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
-    if (this.dragFrom && !graph.index.has(this.dragFrom.id)) this.dragFrom = null
+    const lostDrag = this.dragFrom !== null && !graph.index.has(this.dragFrom.id)
+    if (lostDrag) this.dragFrom = null
     this.sim = createSimulation(graph, c.forces, settleAll)
     const carried = prev?.drag ?? null
     this.sim.drag = carried && graph.index.has(carried.id) ? carried : null
@@ -195,6 +196,8 @@ class MatrixRuntime {
       this.sim.alpha = prev.alpha
       this.sim.alphaTarget = prev.alphaTarget
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
+    if (b && b.group !== c.group) cool(this.sim)
+    if (lostDrag) cool(this.sim)
     if (this.dragFrom) reheat(this.sim)
     if (first) {
       this.viewport = s.matrixViewport ?? this.viewport
