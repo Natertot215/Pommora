@@ -79,7 +79,7 @@ describe('the Matrix menu', () => {
     for (const [label, key] of [
       ['Unlinked Items', 'unlinked'],
       ['Hide Icons', 'hideIcon'],
-      ['Hide Paths', 'hideLocation'],
+      ['Hide Paths', 'hidePath'],
     ] as const) {
       patch.mockClear()
       click(control(label))

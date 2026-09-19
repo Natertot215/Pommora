@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ALL_ICONS, lucideGlyph, searchIcons, toKebabIconId } from './allSymbols'
+import { ALL_ICONS, lucideGlyph, lucideIconNodes, searchIcons, toKebabIconId } from './allSymbols'
 import { ICON_NAMES } from './iconNames'
 import { icons } from './index'
 
@@ -34,6 +34,25 @@ describe('ALL_ICONS', () => {
   it('resolves a known id to a component and misses unknown ones', () => {
     expect(lucideGlyph('clock-plus')).toBeTypeOf('object')
     expect(lucideGlyph('not-a-real-icon')).toBeUndefined()
+  })
+})
+
+describe('lucideIconNodes', () => {
+  // The drawing is read out of createLucideIcon's closure, so a lucide-react release that reshapes it
+  // turns this red rather than silently blanking every glyph the Matrix paints.
+  it('reads the drawing out of every icon in the set', () => {
+    const earth = lucideIconNodes('earth')
+    expect(earth).toEqual(
+      expect.arrayContaining([['circle', expect.objectContaining({ cx: '12', r: '10' })]]),
+    )
+    for (const { id } of ALL_ICONS) {
+      const nodes = lucideIconNodes(id)
+      expect(Array.isArray(nodes) && nodes.length > 0, id).toBe(true)
+    }
+  })
+
+  it('misses an id the roster does not hold', () => {
+    expect(lucideIconNodes('not-a-real-icon')).toBeNull()
   })
 })
 

@@ -361,7 +361,7 @@ describe('matrixRuntime', () => {
     const graph = matrixRuntime.graph
     const sim = matrixRuntime.sim
     useSession.setState({ matrixConfig: config({ hideIcon: true }) })
-    useSession.setState({ matrixConfig: config({ hideIcon: true, hideLocation: true }) })
+    useSession.setState({ matrixConfig: config({ hideIcon: true, hidePath: true }) })
     useSession.setState({ matrixConfig: config({ hideIcon: true, locked: true }) })
     expect(matrixRuntime.graph).toBe(graph)
     expect(matrixRuntime.sim).toBe(sim)

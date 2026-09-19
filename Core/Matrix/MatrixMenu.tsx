@@ -82,8 +82,8 @@ export function MatrixMenu(): React.JSX.Element {
           label: 'Hide Paths',
           trailing: {
             kind: 'switch',
-            checked: display.hideLocation,
-            onChange: (next) => patch({ display: { hideLocation: next } }),
+            checked: display.hidePath,
+            onChange: (next) => patch({ display: { hidePath: next } }),
             ariaLabel: 'Hide Paths',
           },
         },

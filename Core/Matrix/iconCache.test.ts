@@ -1,15 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import type { IconNodes } from '@pommora/uix/Symbols/iconNodes'
+import type { IconNode } from '@pommora/uix/Symbols'
 
 const roster = vi.hoisted(() =>
-  vi.fn(
-    async (name: string): Promise<IconNodes | null> =>
-      name === 'earth' ? [['path', { d: 'M0 0' }]] : null,
-  ),
+  vi.fn((name: string): IconNode | null => (name === 'earth' ? [['path', { d: 'M0 0' }]] : null)),
 )
 
-vi.mock('@pommora/uix/Symbols/iconNodes', () => ({ loadIconNodes: roster }))
+vi.mock('@pommora/uix/Symbols', () => ({
+  loadFullIconSet: async () => ({ lucideIconNodes: roster }),
+}))
 
 class ImageStub {
   onload: (() => void) | null = null
@@ -55,8 +54,8 @@ describe('iconCache', () => {
     iconFor('earth', '#00f', 2)
     await Promise.resolve()
     iconFor('earth', '#00f', 2)
-    expect(roster).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(roster).toHaveBeenCalledTimes(1))
     iconFor('earth', '#00f', 3)
-    expect(roster).toHaveBeenCalledTimes(2)
+    await vi.waitFor(() => expect(roster).toHaveBeenCalledTimes(2))
   })
 })

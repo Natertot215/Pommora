@@ -46,11 +46,11 @@ describe('matrix.json', () => {
   })
 
   it('merges a section key by key and lets an unknown top-level key ride', async () => {
-    await writeMatrixFile(root, { display: { hideIcon: true, hideLocation: true } })
+    await writeMatrixFile(root, { display: { hideIcon: true, hidePath: true } })
     await writeMatrixFile(root, { links: { kinds: ['body'] } } as never)
     await writeMatrixFile(root, { display: { hideIcon: false } })
     expect(await onDisk()).toEqual({
-      display: { hideIcon: false, hideLocation: true },
+      display: { hideIcon: false, hidePath: true },
       links: { kinds: ['body'] },
     })
   })

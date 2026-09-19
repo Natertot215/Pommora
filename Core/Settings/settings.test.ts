@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import {
   readWatchScope,
@@ -10,6 +10,7 @@ import {
 } from './settings'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { dirname, join } from '../Paths/posix'
 
 let root: string
 beforeEach(async () => {
@@ -69,12 +70,13 @@ describe('writeExcludedFolders', () => {
 })
 
 describe('an unreadable settings.json is never replaced', () => {
-  it('updateSettings fails the write and leaves the file byte-identical', async () => {
+  it('updateSettings moves an unreadable file aside and lands the write', async () => {
     await writeFile(path(), '{ corrupt', 'utf8')
-    await expect(
-      updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' })),
-    ).rejects.toThrow()
-    expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
+    await updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' }))
+    expect(JSON.parse(await readFile(path(), 'utf8')).profile_subtitle).toBe('x')
+    const aside = (await readdir(dirname(path()))).find((f) => f.includes('.bad-'))
+    expect(aside).toBeDefined()
+    expect(await readFile(join(dirname(path()), aside ?? ''), 'utf8')).toBe('{ corrupt')
   })
 })
 

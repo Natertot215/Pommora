@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { rm, readFile, writeFile, mkdir, readdir } from 'node:fs/promises'
+import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import type { NavRef } from './navRef'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -86,10 +86,14 @@ describe('navigation state — one contract, routed storage', () => {
     expect((await readNavigationFile(root)).banner).toBe('.nexus/assets/banner-x.jpg')
   })
 
-  it('a write REFUSES an unreadable file rather than clobbering it', async () => {
+  it('a write moves an unreadable file aside rather than losing it', async () => {
     await seedState('{ corrupt')
-    await expect(writeNavigationState(root, { pinned: [{ kind: 'homepage' }] })).rejects.toThrow()
-    expect(await readFile(statePath(root), 'utf8')).toBe('{ corrupt')
+    await writeNavigationState(root, { pinned: [{ kind: 'homepage' }] })
+    expect((await readState()).navigation).toEqual({ pinned: [{ kind: 'homepage' }] })
+    const dir = dirname(statePath(root))
+    const aside = (await readdir(dir)).find((f) => f.includes('.bad-'))
+    expect(aside).toBeDefined()
+    expect(await readFile(join(dir, aside ?? ''), 'utf8')).toBe('{ corrupt')
   })
 
   it('the order section and foreign keys ride through a navigation write untouched', async () => {

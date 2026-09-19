@@ -33,7 +33,7 @@ export function MatrixLabel({
   const picking = hosts ? iconPath : null
   const endIcon = useSession((st) => st.endIcon)
   const mutate = useSession((st) => st.mutate)
-  const hideLocation = useSession((st) => st.matrixConfig.display.hideLocation)
+  const hidePath = useSession((st) => st.matrixConfig.display.hidePath)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
   const anchorRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
@@ -75,7 +75,7 @@ export function MatrixLabel({
   if (!rec || !tree) return null
   const node = matrixRuntime.nodeOf(rec.id)
   if (!node) return null
-  const trail = hideLocation
+  const trail = hidePath
     ? []
     : (ancestryOf(tree, { kind: rec.kind, id: rec.id }) ?? [])
         .slice(0, -1)

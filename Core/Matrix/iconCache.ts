@@ -1,4 +1,4 @@
-import { type IconNodes, loadIconNodes } from '@pommora/uix/Symbols/iconNodes'
+import { type IconNode, loadFullIconSet } from '@pommora/uix/Symbols'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
 
 const cache = new Map<string, HTMLImageElement | null>()
@@ -11,7 +11,7 @@ export function onIconLoad(fn: () => void): () => void {
   }
 }
 
-export function svgOf(nodes: IconNodes, color: string): string {
+export function svgOf(nodes: IconNode, color: string): string {
   const body = nodes
     .map(
       ([tag, attrs]) =>
@@ -29,7 +29,8 @@ export function iconFor(name: string, color: string, dpr: number): HTMLImageElem
   const key = `${name}|${color}|${dpr}`
   if (cache.has(key)) return cache.get(key) ?? null
   cache.set(key, null)
-  void loadIconNodes(name).then((nodes) => {
+  void loadFullIconSet().then((set) => {
+    const nodes = set.lucideIconNodes(name)
     if (!nodes) return
     const img = new Image(ICON_PX.footnote * dpr, ICON_PX.footnote * dpr)
     img.onload = () => {
