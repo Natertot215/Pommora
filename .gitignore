@@ -30,18 +30,6 @@ graphify-out/
 # Playwright MCP — tool console logs / page traces (regeneratable)
 .playwright-mcp/
 
-# Claude Code — settings.json travels: it carries the ~-relative auto-memory
-# route, which resolves on every machine. Genuinely machine-bound overrides
-# (absolute paths, per-host hooks) belong in the .local overlay instead.
-.claude/settings.local.json
-
-# Skill discovery reads the project root's .claude/skills and ~/.claude/skills,
-# never an ancestor's — so the Studio-wide skills are reached through a symlink.
-# No trailing slash: a dir-pattern ignore does not match a symlink.
-.claude/skills
-
-# Commands resolve the same way, through the same kind of symlink to the Studio's
-# own folder. The link is machine-local by construction — committed, it dangles on
-# every other checkout — so it stays out of the tree.
-.claude/commands
-.claude/Sessions
+# Claude Code — the project's agentic documentation and tooling. It is its own
+# repository inside this one: versioned on this machine, never on the remote.
+.claude/
