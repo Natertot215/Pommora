@@ -1,4 +1,5 @@
-import { useId, useMemo, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
@@ -8,11 +9,10 @@ import { contextTargetToSelect, isOpenInTabs } from '../Navigation/tabsModel'
 import type { NexusTree } from '../Nexus/tree'
 import { nodesOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
-import { panBy } from './Engine/viewport'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
 import { MatrixLabel } from './MatrixLabel'
 import type { MatrixRecord } from './matrixKind'
-import { matrixRuntime } from './matrixRuntime'
+import { matrixRuntime, type Surface } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 
 function recordOf(tree: NexusTree | null, id: string | null): MatrixRecord | null {
@@ -43,6 +43,10 @@ export function MatrixView({
   const count = useMatrixCount()
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const parkedRef = useRef(parked)
+  parkedRef.current = parked
+  // One identity for the life of the view: the runtime keys a surface's stage — and so its own framing of the picture — off it.
+  const [surface] = useState<Surface>(() => ({ visible: () => !parkedRef.current }))
   const surfaceId = useId()
   // Whichever surface last raised a menu owns what that menu starts; with one surface open there is nothing to tell apart.
   const mine = matrixRuntime.acting === null || matrixRuntime.acting === surfaceId
@@ -81,7 +85,7 @@ export function MatrixView({
         return matrixRuntime.draggingId !== null
       },
       onDragMove: (ev) => {
-        const [wx, wy] = toWorldPoint(canvas, ev)
+        const [wx, wy] = toWorldPoint(surface, canvas, ev)
         matrixRuntime.moveDrag(wx, wy)
       },
       onDrop: () => matrixRuntime.endDrag(),
@@ -100,9 +104,7 @@ export function MatrixView({
       onActivate: () => true,
       onDragMove: (ev) => {
         const z = currentZoom(el)
-        matrixRuntime.setViewport(
-          panBy(matrixRuntime.viewport, (ev.clientX - last[0]) / z, (ev.clientY - last[1]) / z),
-        )
+        matrixRuntime.pan(surface, (ev.clientX - last[0]) / z, (ev.clientY - last[1]) / z)
         last = [ev.clientX, ev.clientY]
       },
       onDrop: () => {},
@@ -126,12 +128,25 @@ export function MatrixView({
         : (nodesOf(tree).find((r) => r.path === iconPath)?.id ?? null),
     [iconPath, tree],
   )
-  const labelId = editing ? renamingId : ((mine ? pickingId : null) ?? hoveredId)
-  const rec = useMemo(() => recordOf(tree, labelId), [tree, labelId])
+  const liveId = editing ? renamingId : ((mine ? pickingId : null) ?? hoveredId)
+  const live = useMemo(() => (parked ? null : recordOf(tree, liveId)), [tree, liveId, parked])
+  // The overlay outlives its hover by one fade, and the canvas keeps skipping that title until the fade is over — otherwise the painted one lands under the leaving one.
+  const shown = useHeldPresence(live)
+  // The renamed node keeps the surface's focus while its field is open, and lets it go on the same fade any other hover leaves by.
+  useEffect(() => {
+    if (!editing) return
+    const i = matrixRuntime.indexOf(renamingId)
+    if (i < 0) return
+    matrixRuntime.setHovered(i)
+    return () => matrixRuntime.setHovered(-1)
+  }, [editing, renamingId])
+
+  const labelId = shown?.held.id ?? null
   return (
     <>
       {publishes && <PublishCount count={count} />}
       <MatrixCanvas
+        surface={surface}
         parked={parked}
         editing={editing}
         labelId={labelId}
@@ -141,7 +156,9 @@ export function MatrixView({
         onMenu={menu}
       >
         <MatrixLabel
-          rec={parked ? null : rec}
+          surface={surface}
+          rec={shown?.held ?? null}
+          closing={shown?.closing ?? false}
           editing={editing}
           hosts={mine}
           onPointerDown={(e) => nodeDown(e, matrixRuntime.indexOf(labelId))}

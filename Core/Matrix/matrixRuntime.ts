@@ -14,7 +14,16 @@ import {
   tick,
   wakeLocal,
 } from './Engine/simulation'
-import { DEFAULT_VIEWPORT, fit, panBy, type Stage, type Viewport } from './Engine/viewport'
+import {
+  DEFAULT_FRAME,
+  fit,
+  type Frame,
+  framed,
+  panFrame,
+  type Stage,
+  zoomFrame,
+  type Viewport,
+} from './Engine/viewport'
 import type { MatrixConfig } from './matrixConfig'
 import {
   matrixTree,
@@ -27,8 +36,8 @@ import type { Positions } from './matrixLayout'
 
 // KNOB — the hit slack past a node's edge, in world units.
 const HIT_SLACK = 4
-// KNOB — pans and zooms inside this window fold into one viewport write.
-const VIEWPORT_SAVE_MS = 400
+// KNOB — pans and zooms inside this window fold into one frame write.
+const FRAME_SAVE_MS = 400
 export const FADE_MS = ms(duration.base)
 
 type Listener = () => void
@@ -56,7 +65,7 @@ const EMPTY: Graph = { nodes: [], links: [], index: new Map() }
 class MatrixRuntime {
   graph: Graph = EMPTY
   sim: Simulation | null = null
-  viewport: Viewport = DEFAULT_VIEWPORT
+  frame: Frame = DEFAULT_FRAME
   hoveredId: string | null = null
   acting: string | null = null
   private dragFrom: { id: string; x: number; y: number } | null = null
@@ -65,7 +74,7 @@ class MatrixRuntime {
   private surfaces = new Set<Surface>()
   private stages = new Map<Surface, Stage>()
   private listeners = new Set<Listener>()
-  private frame = 0
+  private raf = 0
   private built: Built | null = null
   private wasAwake = false
   private fitOnSettle = false
@@ -106,8 +115,8 @@ class MatrixRuntime {
   }
 
   private clear(): void {
-    this.flushViewport()
-    this.viewport = DEFAULT_VIEWPORT
+    this.flushFrame()
+    this.frame = DEFAULT_FRAME
     this.built = null
     this.graph = EMPTY
     this.sim = null
@@ -209,31 +218,32 @@ class MatrixRuntime {
     if (lostDrag) cool(this.sim)
     if (this.dragFrom) reheat(this.sim)
     if (first) {
-      this.viewport = s.matrixViewport ?? this.viewport
-      // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when no viewport was persisted.
-      this.fitOnSettle = s.matrixViewport === null
+      this.frame = s.matrixFrame ?? this.frame
+      // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when nothing was persisted.
+      this.fitOnSettle = s.matrixFrame === null
       if (this.fitOnSettle && !this.sim.awake) this.fitNow()
     }
     this.schedule()
   }
 
-  // The stage has no size until the surface's first measure; the fit waits for it rather than spending itself on a zero box.
+  // An empty graph has nothing to frame, so the fit stays owed until there is something to fit.
   private fitNow(): void {
-    if (this.stage.width === 0) return
+    const next = this.fitted()
+    if (next === null) return
     this.fitOnSettle = false
-    this.setViewport(this.fitted())
+    this.setFrame(next)
   }
 
-  private flushViewport(): void {
+  private flushFrame(): void {
     if (this.save === null) return
     clearTimeout(this.save)
     this.save = null
-    useSession.getState().saveMatrixViewport(this.viewport)
+    useSession.getState().saveMatrixFrame(this.frame)
   }
 
-  private fitted(): Viewport {
+  private fitted(): Frame | null {
     const { nodes } = this.graph
-    if (nodes.length === 0 || this.stage.width === 0) return this.viewport
+    if (nodes.length === 0) return null
     let x0 = Number.POSITIVE_INFINITY
     let y0 = x0
     let x1 = Number.NEGATIVE_INFINITY
@@ -244,7 +254,7 @@ class MatrixRuntime {
       x1 = Math.max(x1, n.x + n.radius)
       y1 = Math.max(y1, n.y + n.radius)
     }
-    return fit({ x0, y0, x1, y1 }, this.stage)
+    return fit({ x0, y0, x1, y1 })
   }
 
   private get visible(): boolean {
@@ -253,9 +263,9 @@ class MatrixRuntime {
   }
 
   private schedule(): void {
-    if (this.frame || !this.visible) return
-    this.frame = requestAnimationFrame(() => {
-      this.frame = 0
+    if (this.raf || !this.visible) return
+    this.raf = requestAnimationFrame(() => {
+      this.raf = 0
       this.step()
     })
   }
@@ -285,41 +295,35 @@ class MatrixRuntime {
     return this.ghosts.length > 0 || this.arrivals.size > 0
   }
 
-  // Any surface change that needs a paint but no physics: hover, viewport, a label move.
+  // Any surface change that needs a paint but no physics: hover, the frame, a label move.
   invalidate(): void {
-    if (this.frame || !this.visible) return
-    this.frame = requestAnimationFrame(() => {
-      this.frame = 0
+    if (this.raf || !this.visible) return
+    this.raf = requestAnimationFrame(() => {
+      this.raf = 0
       if (this.sim?.awake || this.animating()) this.step()
       else for (const fn of this.listeners) fn()
     })
   }
 
-  // The last visible surface to attach owns the stage, so a window overtaking a tab measures for both and a handoff never pans.
-  private get owner(): Surface | null {
-    let last: Surface | null = null
-    for (const s of this.surfaces) if (s.visible()) last = s
-    return last
-  }
-
-  get stage(): Stage {
-    const o = this.owner
-    return (o && this.stages.get(o)) ?? NO_STAGE
-  }
-
-  // The world point under the stage's centre stays there, so a pane sliding in pans the picture on the pane's own motion.
+  // Each surface fits the shared frame into its own box, so a stage that moves or resizes reframes only its own picture.
   setStage(surface: Surface, next: Stage): void {
-    const was = this.owner === surface ? this.stage : null
     this.stages.set(surface, next)
-    if (was === null) return
-    // A pan needs two sized boxes: a surface measuring for the first time, or collapsing as it is torn down, moved no picture.
-    if (was.width === 0 || next.width === 0) {
-      if (this.fitOnSettle && this.sim && !this.sim.awake) this.fitNow()
-      return
-    }
-    const dx = next.x + next.width / 2 - (was.x + was.width / 2)
-    const dy = next.y + next.height / 2 - (was.y + was.height / 2)
-    if (dx !== 0 || dy !== 0) this.setViewport(panBy(this.viewport, dx, dy))
+  }
+
+  private stageOf(surface: Surface): Stage {
+    return this.stages.get(surface) ?? NO_STAGE
+  }
+
+  viewportOf(surface: Surface): Viewport {
+    return framed(this.frame, this.stageOf(surface))
+  }
+
+  pan(surface: Surface, dx: number, dy: number): void {
+    this.setFrame(panFrame(this.frame, this.stageOf(surface), dx, dy))
+  }
+
+  zoom(surface: Surface, sx: number, sy: number, factor: number): void {
+    this.setFrame(zoomFrame(this.frame, this.stageOf(surface), sx, sy, factor))
   }
 
   indexOf(id: string | null): number {
@@ -354,14 +358,14 @@ class MatrixRuntime {
     this.invalidate()
   }
 
-  setViewport(v: Viewport): void {
-    if (v === this.viewport) return
-    this.viewport = v
+  setFrame(f: Frame): void {
+    if (f === this.frame) return
+    this.frame = f
     if (this.save !== null) clearTimeout(this.save)
     this.save = setTimeout(() => {
       this.save = null
-      useSession.getState().saveMatrixViewport(this.viewport)
-    }, VIEWPORT_SAVE_MS)
+      useSession.getState().saveMatrixFrame(this.frame)
+    }, FRAME_SAVE_MS)
     this.invalidate()
   }
 

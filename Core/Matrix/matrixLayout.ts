@@ -1,12 +1,12 @@
 import { isFiniteNumber } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
-import { type Viewport, ZOOM_MAX, ZOOM_MIN } from './Engine/viewport'
+import type { Frame } from './Engine/viewport'
 
 export type Positions = Record<string, [number, number]>
 
 export interface MatrixLayout {
   positions: Positions
-  viewport: Viewport | null
+  frame: Frame | null
 }
 
 // The layout is machine-local and regenerative, so a row that no longer reads is dropped on its own rather than taking every other node's place with it.
@@ -24,16 +24,17 @@ export const isPositions = (v: unknown): v is Positions =>
     (p) => Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1]),
   )
 
-export const isViewport = (v: unknown): v is Viewport =>
+export const isFrame = (v: unknown): v is Frame =>
   isPlainObject(v) &&
-  isFiniteNumber(v.x) &&
-  isFiniteNumber(v.y) &&
-  isFiniteNumber(v.zoom) &&
-  v.zoom >= ZOOM_MIN &&
-  v.zoom <= ZOOM_MAX
+  isFiniteNumber(v.cx) &&
+  isFiniteNumber(v.cy) &&
+  isFiniteNumber(v.w) &&
+  isFiniteNumber(v.h) &&
+  v.w > 0 &&
+  v.h > 0
 
 export const isLayoutPatch = (v: unknown): v is Partial<MatrixLayout> =>
   isPlainObject(v) &&
   (v.positions === undefined || isPositions(v.positions)) &&
-  (v.viewport === undefined || isViewport(v.viewport)) &&
-  (v.positions !== undefined || v.viewport !== undefined)
+  (v.frame === undefined || isFrame(v.frame)) &&
+  (v.positions !== undefined || v.frame !== undefined)

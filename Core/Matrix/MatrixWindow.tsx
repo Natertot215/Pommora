@@ -2,8 +2,9 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { footerLabel } from '../Actions/toggleLabels'
 import { Subfield } from '../Interface/Subfield/Subfield'
-import { useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
+import { shellRegion, useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { useSession } from '../Session/store'
+import { matrixWindow } from './matrix.css'
 import { MatrixView } from './MatrixView'
 import { MATRIX_REF, MATRIX_TITLE } from './matrixKind'
 import { useMatrixCount } from './useMatrixRuntime'
@@ -27,6 +28,8 @@ function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element 
   return (
     <WindowBase
       {...geometry}
+      region={shellRegion}
+      className={matrixWindow}
       closing={closing}
       onClose={() => closeWindow()}
       ariaLabel={MATRIX_TITLE}
@@ -35,9 +38,7 @@ function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element 
       footer={<Subfield page={null} count={count} selection={MATRIX_REF} />}
       footerLabel={footerLabel}
     >
-      <div className="window-body">
-        <MatrixView parked={false} publishes={false} />
-      </div>
+      <MatrixView parked={false} publishes={false} />
     </WindowBase>
   )
 }

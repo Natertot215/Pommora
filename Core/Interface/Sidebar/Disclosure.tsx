@@ -80,9 +80,9 @@ export function Disclosure({
     if (locked) setJustUnlocked(false)
     prevLocked.current = locked
   }, [locked])
-  const renamingChild = useSession((s) =>
-    rename ? s.renamingPath?.startsWith(`${rename.path}/`) === true : false,
-  )
+  // Both reveals exist to seat the sidebar's own field: a rename hosted elsewhere has nothing here to show, and unfolding for it would persist a fold the person never asked for.
+  const renamingPath = useSession((s) => (s.renamingHost === 'sidebar' ? s.renamingPath : null))
+  const renamingChild = rename ? renamingPath?.startsWith(`${rename.path}/`) === true : false
   useEffect(() => {
     if (renamingChild && !open && !locked) setAndSave(true)
   }, [renamingChild, open, locked])
@@ -102,7 +102,6 @@ export function Disclosure({
     setPeekId(id)
     peekTimer.current = setTimeout(stopPeek, PEEK_LINGER_MS)
   }
-  const renamingPath = useSession((s) => s.renamingPath)
   const namingChildId =
     locked && renamingPath
       ? (directChildren?.find((c) => c.path === renamingPath)?.id ?? null)

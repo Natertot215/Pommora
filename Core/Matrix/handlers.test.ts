@@ -50,7 +50,7 @@ describe('the layout channels', () => {
         ok: false,
         error: {
           code: 'operation-failed',
-          message: 'A layout patch needs finite positions or a finite viewport.',
+          message: 'A layout patch needs finite positions or a finite frame.',
         },
       },
     )
@@ -58,7 +58,7 @@ describe('the layout channels', () => {
       ok: false,
       error: {
         code: 'operation-failed',
-        message: 'A layout patch needs finite positions or a finite viewport.',
+        message: 'A layout patch needs finite positions or a finite frame.',
       },
     })
   })
@@ -76,27 +76,27 @@ describe('the layout channels', () => {
 
   it('writes either half alone and loads both back', () => {
     matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2] } })
-    matrixHandlers['matrixLayout:save'](ctx, { viewport: { x: 5, y: 6, zoom: 2 } })
+    matrixHandlers['matrixLayout:save'](ctx, { frame: { cx: 5, cy: 6, w: 7, h: 8 } })
     const reply = matrixHandlers['matrixLayout:load']()
     expect(reply).toEqual({
       ok: true,
-      value: { positions: { a: [1, 2] }, viewport: { x: 5, y: 6, zoom: 2 } },
+      value: { positions: { a: [1, 2] }, frame: { cx: 5, cy: 6, w: 7, h: 8 } },
     })
   })
 
   it('loads a stored row the save would have refused as nothing', () => {
     writeValue('matrixLayout', { a: [1] })
-    writeValue('matrixViewport', { x: 0, y: 0, zoom: 99 })
+    writeValue('matrixFrame', { cx: 0, cy: 0, w: 0, h: 0 })
     expect(matrixHandlers['matrixLayout:load']()).toEqual({
       ok: true,
-      value: { positions: {}, viewport: null },
+      value: { positions: {}, frame: null },
     })
   })
 
-  it('loads an unwritten layout as an empty map and no viewport', () => {
+  it('loads an unwritten layout as an empty map and no frame', () => {
     expect(matrixHandlers['matrixLayout:load']()).toEqual({
       ok: true,
-      value: { positions: {}, viewport: null },
+      value: { positions: {}, frame: null },
     })
   })
 })

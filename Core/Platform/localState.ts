@@ -16,7 +16,7 @@ export type Scope =
   | 'record'
   | 'glancePane'
   | 'matrixLayout'
-  | 'matrixViewport'
+  | 'matrixFrame'
   | 'devicePrefs'
   | 'sync'
 

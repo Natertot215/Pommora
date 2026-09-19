@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GraphNode, NodeKind } from './graph'
-import { cullLabels, revealed } from './labels'
-import { DEFAULT_VIEWPORT } from './viewport'
+import { cullLabels, labelReveal } from './labels'
 
 const node = (id: string, kind: NodeKind, x: number, radius: number): GraphNode => ({
   id,
@@ -20,18 +19,26 @@ const pair = [node('small', 'page', 0, 40), node('large', 'page', 1, 80)]
 
 const cells = new Map<number, number>()
 const culled = (nodes: GraphNode[], zoom: number, skip: number): number[] => {
-  cullLabels(nodes, { ...DEFAULT_VIEWPORT, zoom }, 400, 400, skip, cells)
+  cullLabels(nodes, { x: 0, y: 0, zoom }, 400, 400, skip, cells, labelReveal(zoom))
   return [...cells.values()]
 }
 
 describe('label policy', () => {
-  it('revealed honours the kind threshold', () => {
-    expect(revealed('page', 0.74)).toBe(false)
-    expect(revealed('page', 0.75)).toBe(true)
-    expect(revealed('folder', 0.49)).toBe(false)
-    expect(revealed('folder', 0.5)).toBe(true)
-    expect(revealed('space', 0.24)).toBe(false)
-    expect(revealed('space', 0.25)).toBe(true)
+  it('a title is absent at its kind threshold and whole above the band', () => {
+    expect(labelReveal(0.74).page).toBe(0)
+    expect(labelReveal(0.75).page).toBe(0)
+    expect(labelReveal(2).page).toBe(1)
+    expect(labelReveal(0.49).folder).toBe(0)
+    expect(labelReveal(1).folder).toBe(1)
+    expect(labelReveal(0.24).space).toBe(0)
+    expect(labelReveal(0.5).space).toBe(1)
+  })
+
+  it('the band carries a title in, and each kind crosses it over its own share of zoom', () => {
+    const mid = labelReveal(0.75 + (0.75 * 0.35) / 2).page
+    expect(mid).toBeGreaterThan(0)
+    expect(mid).toBeLessThan(1)
+    expect(labelReveal(0.25 + (0.25 * 0.35) / 2).space).toBeCloseTo(mid)
   })
 
   it('a kind below its threshold paints no title', () => {
@@ -39,15 +46,15 @@ describe('label policy', () => {
   })
 
   it('one cell keeps one title and the larger node wins it', () => {
-    expect(culled(pair, DEFAULT_VIEWPORT.zoom, -1)).toEqual([1])
+    expect(culled(pair, 1, -1)).toEqual([1])
   })
 
   it('the skipped node never paints and leaves the cell to its neighbour', () => {
-    expect(culled(pair, DEFAULT_VIEWPORT.zoom, 1)).toEqual([0])
+    expect(culled(pair, 1, 1)).toEqual([0])
   })
 
   it('clears the map it is handed, so a cull answers for its own frame alone', () => {
-    culled(pair, DEFAULT_VIEWPORT.zoom, -1)
+    culled(pair, 1, -1)
     expect(culled(pair, 0.7, -1)).toEqual([])
   })
 })

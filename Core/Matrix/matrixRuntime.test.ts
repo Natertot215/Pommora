@@ -23,6 +23,11 @@ vi.mock('./matrixInput', async (actual) => {
 
 const STAGE: Stage = { x: 0, y: 0, width: 800, height: 600 }
 
+const centreOf = (v: { x: number; y: number; zoom: number }, st: Stage): [number, number] => [
+  v.x + (st.x + st.width / 2) / v.zoom,
+  v.y + (st.y + st.height / 2) / v.zoom,
+]
+
 const link = (pageId: string, target: string): MatrixLink => ({
   pageId,
   path: `${pageId}.md`,
@@ -36,7 +41,7 @@ const linked = (): MatrixGraphReply => ({ links: [link('p2', 'Alpha')], values: 
 
 let frames: Array<() => void> = []
 let saveLayout: ReturnType<typeof vi.fn>
-let saveViewport: ReturnType<typeof vi.fn>
+let saveFrame: ReturnType<typeof vi.fn>
 let detach: (() => void) | null = null
 let visible = true
 
@@ -78,16 +83,16 @@ const placeOf = (id: string): number[] => {
 
 function seed(over: Record<string, unknown> = {}): void {
   saveLayout = vi.fn()
-  saveViewport = vi.fn()
+  saveFrame = vi.fn()
   useSession.setState({
     tree: makeTree(),
     matrixConfig: DEFAULT_MATRIX_CONFIG,
     matrixGraph: EMPTY_GRAPH_REPLY,
     matrixPositions: {},
-    matrixViewport: { x: 0, y: 0, zoom: 1 },
+    matrixFrame: { cx: 0, cy: 0, w: 800, h: 600 },
     matrixLoaded: true,
     saveMatrixLayout: saveLayout as never,
-    saveMatrixViewport: saveViewport as never,
+    saveMatrixFrame: saveFrame as never,
     ...over,
   } as never)
 }
@@ -109,7 +114,7 @@ beforeEach(() => {
   })
   visible = true
   vi.stubGlobal('requestAnimationFrame', (fn: () => void) => frames.push(fn))
-  matrixRuntime.setViewport({ x: 0, y: 0, zoom: 1 })
+  matrixRuntime.setFrame({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
   // Drained rather than dropped: a queued frame left standing keeps the runtime's own frame handle set, and every later schedule is a no-op.
   flush()
   vi.runAllTimers()
@@ -272,43 +277,43 @@ describe('matrixRuntime', () => {
     expect(saveLayout).toHaveBeenCalledTimes(1)
   })
 
-  it('fits the graph to the stage on the first settle when no viewport was persisted', () => {
-    seed({ matrixViewport: null })
+  it('fits the graph to the stage on the first settle when nothing was persisted', () => {
+    seed({ matrixFrame: null })
     attach()
     flush()
     vi.runAllTimers()
-    expect(saveViewport).toHaveBeenCalledTimes(1)
-    expect(saveViewport.mock.calls[0][0]).toEqual(matrixRuntime.viewport)
-    expect(matrixRuntime.viewport).not.toEqual({ x: 0, y: 0, zoom: 1 })
+    expect(saveFrame).toHaveBeenCalledTimes(1)
+    expect(saveFrame.mock.calls[0][0]).toEqual(matrixRuntime.frame)
+    expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
-  it('waits for a sized stage before fitting a first open that carries positions', () => {
-    matrixRuntime.setViewport({ x: 0, y: 0, zoom: 1 })
+  it('fits a first open that carries positions once its settle lands', () => {
+    matrixRuntime.setFrame({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
     vi.runAllTimers()
-    seed({ matrixViewport: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
+    seed({ matrixFrame: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach(null)
     flush()
-    expect(saveViewport).not.toHaveBeenCalled()
+    expect(saveFrame).not.toHaveBeenCalled()
     matrixRuntime.setStage(surface, STAGE)
     vi.runAllTimers()
-    expect(saveViewport).toHaveBeenCalledTimes(1)
-    expect(matrixRuntime.viewport).not.toEqual({ x: 0, y: 0, zoom: 1 })
+    expect(saveFrame).toHaveBeenCalledTimes(1)
+    expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
-  it('writes one viewport for a pan, and the last surface flushes it as it leaves', () => {
+  it('writes one frame for a pan, and the last surface flushes it as it leaves', () => {
     seed()
     attach()
     flush()
-    saveViewport.mockClear()
-    matrixRuntime.setViewport({ x: 10, y: 0, zoom: 1 })
-    matrixRuntime.setViewport({ x: 20, y: 0, zoom: 1 })
-    expect(saveViewport).not.toHaveBeenCalled()
+    saveFrame.mockClear()
+    matrixRuntime.setFrame({ cx: 10, cy: 0, w: STAGE.width, h: STAGE.height })
+    matrixRuntime.setFrame({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(saveFrame).not.toHaveBeenCalled()
     detach?.()
     detach = null
-    expect(saveViewport).toHaveBeenCalledTimes(1)
-    expect(saveViewport.mock.calls[0][0]).toEqual({ x: 20, y: 0, zoom: 1 })
+    expect(saveFrame).toHaveBeenCalledTimes(1)
+    expect(saveFrame.mock.calls[0][0]).toEqual({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
     vi.runAllTimers()
-    expect(saveViewport).toHaveBeenCalledTimes(1)
+    expect(saveFrame).toHaveBeenCalledTimes(1)
   })
 
   it('walks the tree once for a filter patch and rebuilds the graph from the cache', () => {
@@ -406,7 +411,7 @@ describe('matrixRuntime', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
       'matrix:graph': graphAsk,
-      'matrixLayout:load': async () => ok({ positions: {}, viewport: null }),
+      'matrixLayout:load': async () => ok({ positions: {}, frame: null }),
     })
     seed()
     attach()
@@ -419,41 +424,47 @@ describe('matrixRuntime', () => {
     expect(graphAsk).toHaveBeenCalledTimes(1)
   })
 
-  it('pans the picture by a moved stage centre and never on the first stage', () => {
+  it('keeps a resized stage centred on the world point it already held', () => {
     seed()
     attach()
     flush()
-    const before = matrixRuntime.viewport
-    matrixRuntime.setStage(surface, { ...STAGE, x: 100, width: STAGE.width - 100 })
-    expect(matrixRuntime.viewport.x).toBeCloseTo(before.x - 50 / before.zoom)
+    const held = centreOf(matrixRuntime.viewportOf(surface), STAGE)
+    const moved: Stage = { ...STAGE, x: 100, width: STAGE.width - 100 }
+    matrixRuntime.setStage(surface, moved)
+    expect(centreOf(matrixRuntime.viewportOf(surface), moved)).toEqual(held)
     matrixRuntime.setStage(surface, STAGE)
   })
 
-  it('gives the stage to the surface that attached last and never pans on the handoff', () => {
+  it('shows one picture on every surface, each scaled to its own box', () => {
     seed()
     attach()
     flush()
-    const tab = surface
+    const held = centreOf(matrixRuntime.viewportOf(surface), STAGE)
+
+    const small: Stage = { x: 0, y: 0, width: 400, height: 300 }
     const window: Surface = { visible: () => true }
     const detachWindow = matrixRuntime.attach(window)
-    matrixRuntime.setStage(window, { x: 0, y: 0, width: 400, height: 300 })
-    const owned = matrixRuntime.viewport
-    expect(matrixRuntime.stage.width).toBe(400)
-    matrixRuntime.setStage(tab, { ...STAGE, x: 100, width: STAGE.width - 100 })
-    expect(matrixRuntime.viewport).toEqual(owned)
-    expect(matrixRuntime.stage.width).toBe(400)
+    matrixRuntime.setStage(window, small)
+
+    const wide = matrixRuntime.viewportOf(surface)
+    const tight = matrixRuntime.viewportOf(window)
+    expect(centreOf(tight, small)).toEqual(held)
+    expect(centreOf(wide, STAGE)).toEqual(held)
+    // The same picture at each surface's own scale: the smaller box draws it smaller, never crops it.
+    expect(tight.zoom).toBeLessThan(wide.zoom)
+    expect(small.width / tight.zoom).toBeCloseTo(STAGE.width / wide.zoom)
+
     detachWindow()
-    expect(matrixRuntime.stage.width).toBe(STAGE.width - 100)
-    expect(matrixRuntime.viewport).toEqual(owned)
+    expect(centreOf(matrixRuntime.viewportOf(surface), STAGE)).toEqual(held)
   })
 
-  it('never pans on the collapsing measure a surface reports as it is torn down', () => {
+  it('never moves the picture on the collapsing measure a surface reports as it is torn down', () => {
     seed()
     attach()
     flush()
-    const before = matrixRuntime.viewport
+    const before = matrixRuntime.frame
     matrixRuntime.setStage(surface, { x: 0, y: 0, width: 0, height: 0 })
-    expect(matrixRuntime.viewport).toEqual(before)
+    expect(matrixRuntime.frame).toEqual(before)
   })
 
   it('carries a local settle across a rebuild, moving only the fresh nodes', () => {

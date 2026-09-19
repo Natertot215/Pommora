@@ -41,7 +41,7 @@ beforeEach(() => {
     'matrix:graph': vi.fn(async () => ({ ok: true, value: GRAPH })),
     'matrixLayout:load': vi.fn(async () => ({
       ok: true,
-      value: { positions: { p1: [1, 2] }, viewport: null },
+      value: { positions: { p1: [1, 2] }, frame: null },
     })),
     'matrixLayout:save': vi.fn(async () => ({ ok: true, value: null })),
   }
@@ -179,14 +179,14 @@ describe('the layout half', () => {
     expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
   })
 
-  it('saves the viewport alone once loaded', async () => {
-    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 2 })
+  it('saves the frame alone once loaded', async () => {
+    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
     expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
     await seatLoaded()
-    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 2 })
-    expect(useSession.getState().matrixViewport).toEqual({ x: 1, y: 2, zoom: 2 })
+    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+    expect(useSession.getState().matrixFrame).toEqual({ cx: 1, cy: 2, w: 3, h: 4 })
     expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
-      viewport: { x: 1, y: 2, zoom: 2 },
+      frame: { cx: 1, cy: 2, w: 3, h: 4 },
     })
   })
 })
@@ -194,13 +194,13 @@ describe('the layout half', () => {
 describe('resetMatrix', () => {
   it('returns every field to its per-Nexus value', async () => {
     await seatLoaded()
-    useSession.getState().saveMatrixViewport({ x: 1, y: 2, zoom: 3 })
+    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
     useSession.getState().resetMatrix()
     const s = useSession.getState()
     expect(s.matrixConfig).toBe(DEFAULT_MATRIX_CONFIG)
     expect(s.matrixGraph).toEqual({ links: [], values: {} })
     expect(s.matrixPositions).toEqual({})
-    expect(s.matrixViewport).toBeNull()
+    expect(s.matrixFrame).toBeNull()
     expect(s.matrixLoaded).toBe(false)
   })
 })
