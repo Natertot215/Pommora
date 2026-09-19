@@ -2,7 +2,7 @@ import type { GraphNode, NodeKind } from './graph'
 import { toScreen, type Viewport } from './viewport'
 
 // KNOBs — the label cell and the zoom each node kind reveals its title at.
-const REVEAL_ZOOM: Record<NodeKind, number> = { page: 1, folder: 0.6, space: 0.35 }
+const REVEAL_ZOOM: Record<NodeKind, number> = { page: 0.75, folder: 0.5, space: 0.25 }
 const LABEL_CELL_PX = 96
 
 export const revealed = (kind: NodeKind, zoom: number): boolean => zoom >= REVEAL_ZOOM[kind]

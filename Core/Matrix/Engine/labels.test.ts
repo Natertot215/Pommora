@@ -26,15 +26,16 @@ const culled = (nodes: GraphNode[], zoom: number, skip: number): number[] => {
 
 describe('label policy', () => {
   it('revealed honours the kind threshold', () => {
-    expect(revealed('page', 0.9)).toBe(false)
-    expect(revealed('page', 1)).toBe(true)
-    expect(revealed('folder', 0.6)).toBe(true)
-    expect(revealed('space', 0.34)).toBe(false)
-    expect(revealed('space', 0.35)).toBe(true)
+    expect(revealed('page', 0.74)).toBe(false)
+    expect(revealed('page', 0.75)).toBe(true)
+    expect(revealed('folder', 0.49)).toBe(false)
+    expect(revealed('folder', 0.5)).toBe(true)
+    expect(revealed('space', 0.24)).toBe(false)
+    expect(revealed('space', 0.25)).toBe(true)
   })
 
   it('a kind below its threshold paints no title', () => {
-    expect(culled(pair, 0.9, -1)).toEqual([])
+    expect(culled(pair, 0.7, -1)).toEqual([])
   })
 
   it('one cell keeps one title and the larger node wins it', () => {
@@ -47,6 +48,6 @@ describe('label policy', () => {
 
   it('clears the map it is handed, so a cull answers for its own frame alone', () => {
     culled(pair, DEFAULT_VIEWPORT.zoom, -1)
-    expect(culled(pair, 0.9, -1)).toEqual([])
+    expect(culled(pair, 0.7, -1)).toEqual([])
   })
 })

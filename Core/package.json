@@ -2,6 +2,7 @@
   "name": "@pommora/core",
   "private": true,
   "exports": {
+    "./Assets/logoSvg": "./Assets/logoSvg.ts",
     "./*": {
       "types": [
         "./*.ts",

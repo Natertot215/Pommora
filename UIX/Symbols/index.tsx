@@ -1,6 +1,7 @@
 import {
   AppWindow,
   ArrowUpDown,
+  Atom,
   Calendar,
   CalendarDays,
   ChartGantt,
@@ -80,7 +81,14 @@ import {
   X,
 } from 'lucide-react'
 import { forwardRef, useEffect, useSyncExternalStore } from 'react'
-import { CardsGrid, ListRounded, LockFilled, LockOutline, ProgressCheck } from './customGlyphs'
+import {
+  CardsGrid,
+  ListRounded,
+  LockFilled,
+  LockOutline,
+  Pommora,
+  ProgressCheck,
+} from './customGlyphs'
 import { fileTypeGlyphs } from './fileTypes'
 import { ICON_NAMES } from './iconNames'
 import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
@@ -88,6 +96,7 @@ import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
 /** This registry IS the roster: to add an icon, import it above and add a line here. */
 export const icons = {
   orbit: Orbit,
+  atom: Atom,
   earth: Earth,
   calendar: Calendar,
   clock: Clock,
@@ -163,6 +172,7 @@ export const icons = {
   'layout-panel-left': LayoutPanelLeft,
   'text-align-justify': TextAlignJustify,
   table: Grid3x2,
+  pommora: Pommora,
   'list-rounded': ListRounded,
   'cards-grid': CardsGrid,
   'progress-check': ProgressCheck,

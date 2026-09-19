@@ -10,24 +10,26 @@ const shape = (items: { label: string; separatorBefore?: boolean }[]): string[] 
   items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
 
 describe('the nexus icon menu', () => {
-  it('offers the photo rows only with a photo, and divides the removes off', () => {
+  it('offers the photo rows only with a photo, and divides one reset off', () => {
     expect(shape(nexusIconMenuItems({ hasPhoto: false, hasGlyph: false }))).toEqual([
       'Edit Icon',
       'Add Photo',
     ])
-    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: true }))).toEqual([
+    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: false }))).toEqual([
       'Edit Icon',
       'Edit Photo',
       'Change Photo',
       '—',
-      'Remove Photo',
-      'Remove Icon',
+      'Reset Photo',
     ])
+    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: true }))).toEqual(
+      shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: false })),
+    )
     expect(shape(nexusIconMenuItems({ hasPhoto: false, hasGlyph: true }))).toEqual([
       'Edit Icon',
       'Add Photo',
       '—',
-      'Remove Icon',
+      'Reset Icon',
     ])
   })
 })

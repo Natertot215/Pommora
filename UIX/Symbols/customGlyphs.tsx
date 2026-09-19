@@ -2,6 +2,7 @@
 import { forwardRef } from 'react'
 import type { LucideIcon, LucideProps } from 'lucide-react'
 import { IconProgressCheck } from '@tabler/icons-react'
+import { MARK_BOX, markDiscs } from './mark'
 
 // Tabler glyphs read smaller than Lucide at the same box; this bump matches them.
 const TABLER_SCALE = 1.1
@@ -96,3 +97,23 @@ const lockGlyph = (filled: boolean): LucideIcon =>
 
 export const LockFilled = lockGlyph(true)
 export const LockOutline = lockGlyph(false)
+
+export const Pommora = forwardRef<SVGSVGElement, LucideProps>(
+  ({ size = 24, color, ...rest }, ref) => (
+    <svg
+      ref={ref}
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${MARK_BOX} ${MARK_BOX}`}
+      fill="none"
+      {...rest}
+    >
+      <g fill="currentColor" stroke="none">
+        {markDiscs('icon').map(({ cx, cy, r }) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} />
+        ))}
+      </g>
+    </svg>
+  ),
+) as unknown as LucideIcon

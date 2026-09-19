@@ -1,0 +1,12 @@
+{
+  "fill": { "automatic-gradient": "extended-srgb:0.04000,0.04000,0.05000,1.00000" },
+  "groups": [
+    {
+      "layers": [{ "image-name": "Mark.svg", "name": "Mark", "glass": true }],
+      "shadow": { "kind": "neutral", "opacity": 0.6 },
+      "specular": true,
+      "translucency": { "enabled": true, "value": 0.5 }
+    }
+  ],
+  "supported-platforms": { "circles": ["watchOS"], "squares": "shared" }
+}

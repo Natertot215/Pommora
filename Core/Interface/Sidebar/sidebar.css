@@ -65,6 +65,10 @@
   background: transparent;
   cursor: default;
 }
+/* The mark's scattered dots carry less ink than a stroked glyph, so it holds the full label. */
+.ribbon-home {
+  color: var(--label-primary);
+}
 .ribbon-icon:hover {
   background: var(--state-hover);
 }

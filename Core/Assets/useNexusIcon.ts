@@ -5,6 +5,7 @@ import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
+import { asRenderableIcon } from '@pommora/uix/Symbols'
 
 export function useNexusIcon() {
   const profileImage = useSession((st) => st.tree?.nexus.profileImage ?? null)
@@ -18,15 +19,20 @@ export function useNexusIcon() {
 
   const openMenu = async (): Promise<void> => {
     const action = await popMenu(
-      nexusIconMenuItems({ hasPhoto: !!profileImage, hasGlyph: !!profileIcon }),
+      nexusIconMenuItems({ hasPhoto: !!profileImage, hasGlyph: !!asRenderableIcon(profileIcon) }),
     )
     if (action === 'changeIcon') setPickerOpen(true)
     else if (action === 'addPhoto') {
       const source = valueOr(await host().ask('nexus:pickFile'), null)
-      if (source && (await mutate({ op: 'setProfileImage', source }))) openEditor()
+      if (source && (await mutate({ op: 'setProfileImage', source }))) {
+        if (profileIcon) await mutate({ op: 'setProfileIcon', icon: null })
+        openEditor()
+      }
     } else if (action === 'editPhoto') openEditor()
-    else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', source: null })
-    else if (action === 'removeIcon') await mutate({ op: 'setProfileIcon', icon: null })
+    else if (action === 'resetIcon') {
+      if (profileImage) await mutate({ op: 'setProfileImage', source: null })
+      if (profileIcon) await mutate({ op: 'setProfileIcon', icon: null })
+    }
   }
 
   const onSave = async (crop: Crop): Promise<void> => {

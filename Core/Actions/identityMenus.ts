@@ -1,7 +1,7 @@
 import type { ActionItem } from './menuModel'
 import { iconLabel } from './toggleLabels'
 
-type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'removePhoto' | 'removeIcon'
+type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
 
 export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
 
@@ -17,11 +17,14 @@ export function nexusIconMenuItems(opts: {
     { label: 'Edit Icon', action: 'changeIcon' },
     ...(opts.hasPhoto ? [{ label: 'Edit Photo', action: 'editPhoto' as const }] : []),
     { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', action: 'addPhoto' },
-    ...(opts.hasPhoto
-      ? [{ label: 'Remove Photo', action: 'removePhoto' as const, separatorBefore: true }]
-      : []),
-    ...(opts.hasGlyph
-      ? [{ label: 'Remove Icon', action: 'removeIcon' as const, separatorBefore: !opts.hasPhoto }]
+    ...(opts.hasPhoto || opts.hasGlyph
+      ? [
+          {
+            label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon',
+            action: 'resetIcon' as const,
+            separatorBefore: true,
+          },
+        ]
       : []),
   ]
 }

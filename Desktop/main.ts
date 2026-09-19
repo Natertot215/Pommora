@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { extname, join, sep } from 'node:path'
@@ -324,6 +325,10 @@ app
   .whenReady()
   .then(async () => {
     if (!app.hasSingleInstanceLock()) return
+    // Development never reaches the bundle's icon — Electron's own wins, catalog or not — so the Dock
+    // is handed the render a packaged build compiles, already inset to Apple's grid.
+    const devIcon = join(__dirname, '../../build/icon.png')
+    if (!app.isPackaged && app.dock && existsSync(devIcon)) app.dock.setIcon(devIcon)
     try {
       device = await ensureDevice(userData())
     } catch (e) {

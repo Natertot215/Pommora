@@ -21,6 +21,7 @@ electronFuses:
   enableNodeCliInspectArguments: false
   resetAdHocDarwinSignature: true
 mac:
+  icon: build/Pommora.icon
   target: dir
   identity: null # unsigned/ad-hoc — local preview build (right-click → Open first time)
   category: public.app-category.productivity

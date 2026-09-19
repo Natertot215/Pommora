@@ -18,7 +18,7 @@ import { FADE_MS, matrixRuntime } from './matrixRuntime'
 
 // KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
 const PINCH_RATE = 0.01
-const LINK_WIDTH_MIN = 1
+const LINK_WIDTH_MIN = 1.0
 const LINK_WIDTH_MAX = 2.5
 const LINK_WIDTH_SCALE = 0.5
 const MAX_FRAME_MS = 64

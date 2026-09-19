@@ -13,6 +13,7 @@
     "dev": "npm run dev -w Desktop",
     "build": "npm run build -w Desktop",
     "package": "npm run package -w Desktop",
+    "icon": "node --no-warnings Desktop/scripts/makeIcon.mjs",
     "dashboard": "npm run dev -w Dashboard",
     "build:dashboard": "npm run build -w Dashboard",
     "sync": "node Sync/hub.ts",
