@@ -50,7 +50,7 @@ class MatrixRuntime {
   sim: Simulation | null = null
   viewport: Viewport = DEFAULT_VIEWPORT
   hoveredId: string | null = null
-  draggingId: string | null = null
+  acting: string | null = null
   private dragFrom: { id: string; x: number; y: number } | null = null
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
   arrivals = new Map<string, number>()
@@ -106,7 +106,6 @@ class MatrixRuntime {
     this.fitOnSettle = false
     this.dirty = false
     this.hoveredId = null
-    this.draggingId = null
     this.dragFrom = null
     this.ghosts = []
     this.arrivals.clear()
@@ -186,19 +185,17 @@ class MatrixRuntime {
     const moving = prev?.local ? prev.graph.nodes.filter((n) => !n.pinned).map((n) => n.id) : null
     this.graph = graph
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
-    if (this.draggingId !== null && !graph.index.has(this.draggingId)) {
-      this.draggingId = null
-      this.dragFrom = null
-    }
+    if (this.dragFrom && !graph.index.has(this.dragFrom.id)) this.dragFrom = null
     this.sim = createSimulation(graph, c.forces, settleAll)
-    this.sim.drag = prev?.drag ?? null
+    const carried = prev?.drag ?? null
+    this.sim.drag = carried && graph.index.has(carried.id) ? carried : null
     if (prev?.awake && !settleAll) {
       if (moving) wakeLocal(this.sim, new Set([...moving, ...fresh]))
       this.sim.awake = true
       this.sim.alpha = prev.alpha
       this.sim.alphaTarget = prev.alphaTarget
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
-    if (this.draggingId !== null) reheat(this.sim)
+    if (this.dragFrom) reheat(this.sim)
     if (first) {
       this.viewport = s.matrixViewport ?? this.viewport
       // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when no viewport was persisted.
@@ -330,6 +327,10 @@ class MatrixRuntime {
     return this.indexOf(this.hoveredId)
   }
 
+  get draggingId(): string | null {
+    return this.dragFrom?.id ?? null
+  }
+
   draggingIndex(): number {
     return this.indexOf(this.draggingId)
   }
@@ -355,11 +356,24 @@ class MatrixRuntime {
   beginDrag(i: number): void {
     const n = this.graph.nodes[i]
     if (!n || !this.sim || this.built?.display.locked) return
-    this.draggingId = n.id
-    this.dragFrom = { id: n.id, x: n.x, y: n.y }
-    this.sim.drag = { id: n.id, x: n.x, y: n.y, held: true }
+    this.landReturn()
+    const from = { id: n.id, x: n.x, y: n.y }
+    this.dragFrom = from
+    this.sim.drag = { ...from, held: true }
     reheat(this.sim)
     this.schedule()
+  }
+
+  // A return still in flight is seated where it was heading, since the one anchor is about to name another node.
+  private landReturn(): void {
+    const drag = this.sim?.drag
+    if (!drag || drag.held) return
+    const n = this.nodeOf(drag.id)
+    if (n) {
+      n.x = drag.x
+      n.y = drag.y
+      n.vx = n.vy = 0
+    }
   }
 
   moveDrag(wx: number, wy: number): void {
@@ -373,11 +387,10 @@ class MatrixRuntime {
   // A drop and an abort are one ending: the spring's anchor moves from the pointer back to the place the node came from, and the settle drops it.
   endDrag(): void {
     const from = this.dragFrom
-    if (this.draggingId === null || from === null) return
-    this.draggingId = null
+    if (!from) return
     this.dragFrom = null
     if (this.sim) {
-      this.sim.drag = { id: from.id, x: from.x, y: from.y, held: false }
+      this.sim.drag = { ...from, held: false }
       cool(this.sim)
     }
     this.schedule()

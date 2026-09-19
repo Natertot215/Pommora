@@ -99,6 +99,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       const tree = get().tree
       if (get().matrixLoaded || tree === null || tree === triedTree) return
       triedTree = tree
+      const asked = get().matrixConfig
       const [config, graph, layout] = await Promise.all([
         dialer().ask('matrix:read'),
         dialer().ask('matrix:graph'),
@@ -107,7 +108,8 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       if (!config.ok) console.error('matrix read failed:', config.error.message)
       // A Nexus switch between the ask and its answer: the answer belongs to a root the store has left.
       if (get().tree !== tree) return
-      if (config.ok) get().applyMatrixChanged(config.value)
+      // A row changed while the read was in flight is newer than the file it answered with, and recency-first keeps it.
+      if (config.ok && get().matrixConfig === asked) get().applyMatrixChanged(config.value)
       // A refused graph leaves the load undone; clearing the mark after the config lands lets the next store change ask again.
       if (!graph.ok) {
         triedTree = null

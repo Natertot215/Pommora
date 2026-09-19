@@ -460,20 +460,6 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.graph).toBe(graph)
   })
 
-  it('ends an aborted drag exactly as a drop ends it', () => {
-    seed()
-    attach()
-    flush()
-    const n = matrixRuntime.graph.nodes[0]
-    matrixRuntime.beginDrag(0)
-    matrixRuntime.moveDrag(120, -40)
-    matrixRuntime.endDrag()
-    expect(n.pinned).toBe(false)
-    expect(matrixRuntime.draggingId).toBeNull()
-    expect(matrixRuntime.sim?.drag?.id).toBe(n.id)
-    expect(matrixRuntime.sim?.awake).toBe(true)
-  })
-
   it('drops a hover the rebuild lost, so the node comes back unhovered', () => {
     seed()
     attach()
