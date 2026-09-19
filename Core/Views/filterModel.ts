@@ -181,15 +181,15 @@ interface FilterTarget {
 export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,
-  hasSets = true,
+  hasLocations = true,
   capitalize = false,
 ): FilterTarget[] {
   const contextsById = contextsByIdOf(tree)
   const contextIds = [...contextsById.keys()]
   return [
     TITLE_TARGET,
-    // Every Location operator needs a Set to point at, so on a container with none it's a target that can never complete.
-    ...(hasSets
+    // Every Location operator needs a location to point at, so with none it's a target that can never complete.
+    ...(hasLocations
       ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' as const }]
       : []),
     ...STAMP_TARGETS,

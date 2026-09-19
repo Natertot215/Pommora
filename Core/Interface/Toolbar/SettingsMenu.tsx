@@ -4,6 +4,7 @@ import { MenuSurface } from '@pommora/uix/Menus'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { PageMenu } from '../../Pages/PageMenu'
 import { SettingsScaffold } from '../../Tiles/HomepageSettings'
+import { MatrixMenu } from '../../Matrix/MatrixMenu'
 import * as s from '@pommora/uix/Menus/frames.css'
 
 export function SettingsMenu({
@@ -24,6 +25,8 @@ export function SettingsMenu({
           <PageMenu />
         ) : scope === 'homepage' || scope === 'context' ? (
           <SettingsScaffold />
+        ) : scope === 'matrix' ? (
+          <MatrixMenu />
         ) : (
           <div style={{ minHeight: 24 }} />
         )}

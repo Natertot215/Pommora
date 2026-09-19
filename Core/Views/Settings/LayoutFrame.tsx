@@ -225,12 +225,13 @@ export function LayoutFrame({
     ) : frame === 'filter' ? (
       <FilterFrame
         key={view.id}
-        source={source}
+        locations={source.sets ?? []}
         view={view}
         schema={schema}
         tree={tree}
         label="Views"
         onBack={() => setFrame(null)}
+        onCommit={(next) => void saveView({ ...view, ...next })}
       />
     ) : frame ? (
       <MenuTopRow label="Views" current={LEAF_CURRENT[frame]} onBack={() => setFrame(null)} />
