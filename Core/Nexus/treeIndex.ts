@@ -263,7 +263,8 @@ export function pagesByIdOf(tree: NexusTree): ReadonlyMap<string, ConnPage> {
 
 export function recordsByIdOf(tree: NexusTree): ReadonlyMap<string, NodeRecord> {
   const ix = indexFor(tree)
-  if (!ix.recordsById) ix.recordsById = new Map(ix.nodes.map((r) => [r.id, r]))
+  if (!ix.recordsById)
+    ix.recordsById = new Map(ix.nodes.filter((r) => r.id !== '').map((r) => [r.id, r]))
   return ix.recordsById
 }
 

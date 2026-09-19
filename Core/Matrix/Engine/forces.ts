@@ -24,8 +24,8 @@ export const LINK_GAP = 4
 const COLLIDE_STRENGTH = 0.7
 const THETA2 = 0.81
 const DISTANCE_MIN2 = 1
-const GRAVITY = 0.1
-const CHARGE = 125
+const GRAVITY = 0.035
+const CHARGE = 375
 const DISTANCE = 240
 
 export interface Forces {

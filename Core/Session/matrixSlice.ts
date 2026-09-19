@@ -3,8 +3,8 @@ import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
   type MatrixConfig,
+  mergeConfig,
   type MatrixPatch,
-  sameConfig,
 } from '@pommora/core/Matrix/matrixConfig'
 import { EMPTY_GRAPH_REPLY, type MatrixGraphReply } from '@pommora/core/Matrix/matrixGraph'
 import type { Positions } from '@pommora/core/Matrix/matrixLayout'
@@ -115,9 +115,10 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       logged('matrix write', dialer().ask('matrix:write', patch))
     },
 
-    // The watcher pushes our own writes back too; an equal config keeps its reference so nothing downstream rebuilds.
+    // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
     applyMatrixChanged: (config) => {
-      if (!sameConfig(config, get().matrixConfig)) set({ matrixConfig: config })
+      const merged = mergeConfig(get().matrixConfig, config)
+      if (merged !== get().matrixConfig) set({ matrixConfig: merged })
     },
 
     refetchMatrixPages: (pageIds) => {

@@ -2,7 +2,8 @@ import { isFiniteNumber } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
 import { type Viewport, ZOOM_MAX, ZOOM_MIN } from './Engine/viewport'
 
-export type Positions = Record<string, [number, number]>
+/** A third slot marks the node as held where the user dropped it, so the pin outlives the session. */
+export type Positions = Record<string, [number, number] | [number, number, 1]>
 
 export interface MatrixLayout {
   positions: Positions
@@ -12,7 +13,11 @@ export interface MatrixLayout {
 const isPositions = (v: unknown): v is Positions =>
   isPlainObject(v) &&
   Object.values(v).every(
-    (p) => Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1]),
+    (p) =>
+      Array.isArray(p) &&
+      (p.length === 2 || (p.length === 3 && p[2] === 1)) &&
+      isFiniteNumber(p[0]) &&
+      isFiniteNumber(p[1]),
   )
 
 const isViewport = (v: unknown): v is Viewport =>

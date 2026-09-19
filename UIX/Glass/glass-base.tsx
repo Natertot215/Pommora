@@ -50,7 +50,7 @@ export const GHOST_FROST: FrostParams = {
   shadow: shadowLiftVar,
 }
 
-const hexA = (n: number): string =>
+export const hexA = (n: number): string =>
   Math.round(clamp(n, 0, 1) * 255)
     .toString(16)
     .padStart(2, '0')
