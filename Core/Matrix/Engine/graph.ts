@@ -14,9 +14,7 @@ export interface GraphInput {
 
 export interface BuildOptions {
   mode: GroupMode
-  hideEmpty: boolean
-  hideOrphans: boolean
-  /** Page ids the filter admits; `null` admits every page. */
+  hideUnlinked: boolean
   visible: ReadonlySet<string> | null
 }
 
@@ -101,7 +99,6 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
     inbound[l.target][l.kind]++
   }
 
-  // A hub's members are the visible pages it holds: beneath a folder at any depth, tagged to a space directly.
   const members = new Array<number>(nodes.length).fill(0)
   const parentOf = new Map(input.folders.map((f) => [f.id, f.parentId]))
   for (const p of input.pages) {
@@ -117,18 +114,22 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   }
 
   const keep = nodes.map(
-    (n, i) =>
-      !(options.hideOrphans && n.degree === 0) &&
-      !(options.hideEmpty && n.kind !== 'page' && members[i] === 0),
+    (n, i) => !options.hideUnlinked || (n.degree > 0 && (n.kind === 'page' || members[i] > 0)),
   )
-  return compact({ nodes, links, index }, keep, inbound, members)
+  return compact(nodes, links, keep, inbound, members)
 }
 
-function compact(graph: Graph, keep: boolean[], inbound: Inbound[], members: number[]): Graph {
+function compact(
+  all: GraphNode[],
+  allLinks: GraphLink[],
+  keep: boolean[],
+  inbound: Inbound[],
+  members: number[],
+): Graph {
   const remap = new Map<number, number>()
   const nodes: GraphNode[] = []
   const index = new Map<string, number>()
-  graph.nodes.forEach((n, i) => {
+  all.forEach((n, i) => {
     if (!keep[i]) return
     remap.set(i, nodes.length)
     index.set(n.id, nodes.length)
@@ -137,7 +138,7 @@ function compact(graph: Graph, keep: boolean[], inbound: Inbound[], members: num
   })
   for (const n of nodes) n.degree = 0
   const links: GraphLink[] = []
-  for (const l of graph.links) {
+  for (const l of allLinks) {
     const source = remap.get(l.source)
     const target = remap.get(l.target)
     if (source === undefined || target === undefined) continue

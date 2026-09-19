@@ -21,11 +21,12 @@ export const LINK_STRENGTH: Record<LinkKind, number> = {
   location: 0.7,
 }
 export const LINK_GAP = 4
+const COLLIDE_STRENGTH = 0.7
 const THETA2 = 0.81
 const DISTANCE_MIN2 = 1
-const GRAVITY_MAX = 0.2
-const SPREAD_MAX = 10
-const DISTANCE_RANGE: [number, number] = [30, 500]
+const GRAVITY = 0.1
+const CHARGE = 125
+const DISTANCE = 240
 
 export interface Forces {
   gravity: number
@@ -33,8 +34,6 @@ export interface Forces {
   strength: number
   distance: number
 }
-
-export const DEFAULT_FORCES: Forces = { gravity: 0.5, spread: 0.5, strength: 1, distance: 0.45 }
 
 export function radiusOf(
   kind: NodeKind,
@@ -50,10 +49,9 @@ export function radiusOf(
   return clamp(grown, base, RADIUS_MAX)
 }
 
-const gravityOf = (slider: number): number => slider * GRAVITY_MAX
-const chargeOf = (slider: number): number => -((slider * SPREAD_MAX) ** 3)
-const distanceOf = (slider: number): number =>
-  DISTANCE_RANGE[0] + slider * (DISTANCE_RANGE[1] - DISTANCE_RANGE[0])
+const gravityOf = (multiple: number): number => GRAVITY * multiple
+const chargeOf = (multiple: number): number => -CHARGE * multiple
+const distanceOf = (multiple: number): number => DISTANCE * multiple
 
 export function applyGravity(nodes: GraphNode[], forces: Forces, alpha: number): void {
   const k = gravityOf(forces.gravity) * alpha
@@ -137,7 +135,7 @@ export function applyCollide(nodes: GraphNode[], tree: Quadtree): void {
       const d2 = dx * dx + dy * dy
       if (d2 < rr * rr) {
         const d = Math.sqrt(d2)
-        const push = ((rr - d) / d) * 0.7
+        const push = ((rr - d) / d) * COLLIDE_STRENGTH
         dx *= push
         dy *= push
         const share = (m.radius * m.radius) / (n.radius * n.radius + m.radius * m.radius)

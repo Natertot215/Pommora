@@ -71,6 +71,7 @@ export const NEXUS_CONFIG_FILES = {
   identity: 'nexus.json',
   settings: 'settings.json',
   state: 'state.json',
+  matrix: 'matrix.json',
   homepage: `${HOMEPAGE_HOST_DIRNAME}/homepage.json`,
   properties: 'properties.json',
   crops: `${ASSETS_DIRNAME}/crops.json`,

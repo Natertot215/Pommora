@@ -42,12 +42,12 @@ function childBounds(c: Cell, q: number): [number, number, number, number] {
 }
 
 function insert(c: Cell, n: GraphNode): void {
-  if (c.leaf && c.node === null) {
-    c.node = n
-    return
-  }
   if (c.leaf) {
-    const held = c.node as GraphNode
+    const held = c.node
+    if (held === null) {
+      c.node = n
+      return
+    }
     c.leaf = false
     c.node = null
     // The one write in a read: two nodes on one point would split forever, so the newcomer takes a hair's offset.

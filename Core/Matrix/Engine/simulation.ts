@@ -19,7 +19,6 @@ export interface Simulation {
   ticks: number
   awake: boolean
   tree: Quadtree
-  /** Set by `wakeLocal`; cleared on sleep so the pins release. */
   local: boolean
 }
 
@@ -61,47 +60,47 @@ export function tick(sim: Simulation): boolean {
   }
   sim.ticks++
   // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones; a held reheat (a drag) is exempt from the ceiling, which guards a settle that never converges.
-  const settled =
-    sim.alphaTarget === 0 && (energy / Math.max(moving, 1) < SLEEP_ENERGY || sim.alpha < ALPHA_MIN)
-  if (settled || (sim.alphaTarget === 0 && sim.ticks >= TICK_CEILING)) sleep(sim)
+  if (
+    sim.alphaTarget === 0 &&
+    (energy / Math.max(moving, 1) < SLEEP_ENERGY ||
+      sim.alpha < ALPHA_MIN ||
+      sim.ticks >= TICK_CEILING)
+  )
+    sleep(sim)
   return sim.awake
+}
+
+function releasePins(sim: Simulation): void {
+  if (!sim.local) return
+  for (const n of sim.graph.nodes) n.pinned = false
+  sim.local = false
 }
 
 function sleep(sim: Simulation): void {
   sim.awake = false
   sim.alpha = 0
   sim.ticks = 0
-  if (sim.local) {
-    for (const n of sim.graph.nodes) n.pinned = false
-    sim.local = false
-  }
+  releasePins(sim)
   sim.tree = buildQuadtree(sim.graph.nodes)
 }
 
-/** Every entry point wakes through here, so a shuffle, a drag, or a slider inside a local wake releases its pins. */
 function wake(sim: Simulation, alpha: number): void {
-  if (sim.local) {
-    for (const n of sim.graph.nodes) n.pinned = false
-    sim.local = false
-  }
+  releasePins(sim)
   sim.alpha = Math.max(sim.alpha, alpha)
   sim.ticks = 0
   sim.awake = true
 }
 
-/** Drag start: hold the simulation warm until `cool`. */
 export function reheat(sim: Simulation): void {
   sim.alphaTarget = DRAG_ALPHA_TARGET
   wake(sim, DRAG_ALPHA_TARGET)
 }
 
-/** Drag end: let the simulation settle and sleep; a sim that slept mid-gesture wakes to settle. */
 export function cool(sim: Simulation): void {
   sim.alphaTarget = 0
   wake(sim, DRAG_ALPHA_TARGET)
 }
 
-/** Shuffle Layout: a full reheat from the current positions with jitter. */
 export function shuffle(sim: Simulation): void {
   for (const n of sim.graph.nodes) {
     n.x += (Math.random() - 0.5) * SHUFFLE_JITTER
@@ -112,7 +111,6 @@ export function shuffle(sim: Simulation): void {
   wake(sim, 1)
 }
 
-/** A short reheat in which only `ids` move; everything else is pinned until the next sleep or the next wake. */
 export function wakeLocal(sim: Simulation, ids: ReadonlySet<string>): void {
   sim.alphaTarget = 0
   wake(sim, DRAG_ALPHA_TARGET)

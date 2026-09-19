@@ -6,7 +6,7 @@ import { sameScope, type WatchScope } from '@pommora/core/Paths/exclusion'
 import {
   classifyBatch,
   emitWatch,
-  isStatePath,
+  isConfigPath,
   pagesChangedIn,
   syncIgnoredUnder,
   tileBodyOf,
@@ -14,6 +14,7 @@ import {
   valueChangesOf,
 } from '@pommora/core/Nexus/watchSettle'
 import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
+import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { isRecentWrite } from '@pommora/core/Files/writeEcho'
 import { push as pushToWindow } from '../Bridge/ipc'
@@ -35,6 +36,8 @@ let watcher: FSWatcher | null = null
 let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
 let pushedNav = ''
+let matrixDebounce: ReturnType<typeof setTimeout> | null = null
+let pushedMatrix = ''
 let batch: WatchEvent[] = []
 
 export async function startWatcher(root: string, win: BrowserWindow): Promise<void> {
@@ -56,9 +59,12 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
       emitWatch(event, path)
       if (isTileBody(path)) return
       // The app's own writes echo back and confirm through their own channels; state.json skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
-      if (isStatePath(root, path)) {
+      if (isConfigPath(root, path, 'state')) {
         if (navDebounce) clearTimeout(navDebounce)
         navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
+      } else if (isConfigPath(root, path, 'matrix')) {
+        if (matrixDebounce) clearTimeout(matrixDebounce)
+        matrixDebounce = setTimeout(() => void pushMatrix(root, win), SETTLE_MS)
       } else if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
@@ -84,6 +90,11 @@ export function stopWatcher(): void {
     navDebounce = null
   }
   pushedNav = ''
+  if (matrixDebounce) {
+    clearTimeout(matrixDebounce)
+    matrixDebounce = null
+  }
+  pushedMatrix = ''
   if (watcher) {
     void watcher.close()
     watcher = null
@@ -142,6 +153,19 @@ async function pushNav(root: string, win: BrowserWindow): Promise<void> {
     if (text === pushedNav) return
     pushedNav = text
     pushToWindow(win, 'nav:changed', nav)
+  } catch {
+    // Transient FS state mid-sync — the next settle re-reads.
+  }
+}
+
+async function pushMatrix(root: string, win: BrowserWindow): Promise<void> {
+  if (sessionRoot() !== root || win.isDestroyed()) return
+  try {
+    const config = await readMatrixFile(root)
+    const text = JSON.stringify(config)
+    if (text === pushedMatrix) return
+    pushedMatrix = text
+    pushToWindow(win, 'matrix:changed', config)
   } catch {
     // Transient FS state mid-sync — the next settle re-reads.
   }

@@ -22,6 +22,15 @@ export interface IndexedStat {
   size: number
 }
 
+export interface MatrixLinkRow extends MatrixNode {
+  path: string
+}
+
+export interface MatrixGraphRows {
+  links: MatrixLinkRow[]
+  pages: Record<string, { values: Record<string, unknown>; mtimeMs: number }>
+}
+
 export interface ContentIndexStore {
   upsertPageIndex(path: string, entry: PageIndexEntry, stat: IndexedStat): void
   removePathIndex(path: string): void
@@ -35,6 +44,8 @@ export interface ContentIndexStore {
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(): Map<string, IndexedStat>
+  /** Page → page rows only (`body`, `citation`, `frontmatter`), plus every indexed page's governed values and mtime; `paths` narrows both. */
+  readMatrixGraph(paths?: string[]): MatrixGraphRows
 }
 
 export type SnapshotSource = 'edit' | 'external' | 'restore'
