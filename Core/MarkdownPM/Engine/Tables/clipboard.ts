@@ -1,7 +1,7 @@
-import { delimCell, parseDelimiter, pipeRow, serialize, splitRow } from './codec'
+import { cellToDisplay, delimCell, parseDelimiter, pipeRow, serialize, splitRow } from './codec'
 import type { Column, TableModel } from './model'
 
-// Shape carries the meaning: pipe rows alone are a rectangle, a delimiter line makes it a column (one wide) or a whole table (wider). Cells travel in source form, exactly as the model holds them.
+// Shape carries the meaning: pipe rows alone are a rectangle, a delimiter line makes it a column (one wide) or a whole table (wider). Cells travel in source form, exactly as the model holds them; a lone cell travels as its display text, since one pipe cell decodes as text and a paste would keep the pipes.
 
 export type TablePayload =
   | { kind: 'rect'; grid: string[][] }
@@ -9,6 +9,7 @@ export type TablePayload =
   | { kind: 'table' }
 
 export function encodeRect(grid: string[][]): string {
+  if (grid.length === 1 && grid[0].length === 1) return cellToDisplay(grid[0][0])
   return grid.map(pipeRow).join('\n')
 }
 
