@@ -194,7 +194,7 @@ describe('matrixRuntime', () => {
     expect(n.x).toBeLessThan(from[0] + 400)
   })
 
-  it('releases a dropped node and settles it back near where it began', () => {
+  it('lets a dropped node go where the springs have it, without returning it', () => {
     seed()
     attach()
     flush()
@@ -206,12 +206,11 @@ describe('matrixRuntime', () => {
     const carried = Math.hypot(n.x - from[0], n.y - from[1])
     expect(carried).toBeGreaterThan(1)
     matrixRuntime.endDrag()
-    expect(matrixRuntime.sim?.drag).toEqual({ id: n.id, x: from[0], y: from[1], held: false })
+    expect(matrixRuntime.sim?.drag).toBeNull()
     flush()
     expect(matrixRuntime.sim?.awake).toBe(false)
     expect(n.pinned).toBe(false)
-    expect(matrixRuntime.sim?.drag).toBeNull()
-    expect(Math.hypot(n.x - from[0], n.y - from[1])).toBeLessThan(carried / 4)
+    expect(Math.hypot(n.x - from[0], n.y - from[1])).toBeGreaterThan(carried / 4)
     expect(saveLayout.mock.lastCall?.[0][n.id]).toHaveLength(2)
   })
 

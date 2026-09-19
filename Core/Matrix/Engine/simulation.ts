@@ -9,8 +9,6 @@ const VELOCITY_DECAY = 0.4
 const SLEEP_ENERGY = 0.01
 const DRAG_ALPHA_TARGET = 0.3
 const DRAG_PULL = 0.25
-const RETURN_PULL = 0.04
-const DRAG_SETTLED = 1
 const SHUFFLE_JITTER = 0.6
 
 export interface Simulation {
@@ -21,7 +19,7 @@ export interface Simulation {
   awake: boolean
   tree: Quadtree
   local: boolean
-  drag: { id: string; x: number; y: number; held: boolean } | null
+  drag: { id: string; x: number; y: number } | null
 }
 
 export function createSimulation(graph: Graph, forces: Forces, awake: boolean): Simulation {
@@ -46,17 +44,12 @@ export function tick(sim: Simulation): boolean {
   applySpread(nodes, sim.tree, sim.forces, sim.alpha)
   applyLink(nodes, links, sim.forces, sim.alpha)
   applyCollide(nodes, sim.tree)
-  // One spring, two anchors: the pointer while the node is held, and the place it came from once it is let go.
-  let homing = false
+  // The held node is pulled toward the pointer rather than placed at it, so it arrives through its own springs and its neighbours resist the move.
   if (sim.drag) {
     const n = nodes[sim.graph.index.get(sim.drag.id) ?? -1]
     if (n) {
-      const dx = sim.drag.x - n.x
-      const dy = sim.drag.y - n.y
-      const pull = sim.drag.held ? DRAG_PULL : RETURN_PULL
-      n.vx += dx * pull
-      n.vy += dy * pull
-      homing = Math.hypot(dx, dy) > DRAG_SETTLED
+      n.vx += (sim.drag.x - n.x) * DRAG_PULL
+      n.vy += (sim.drag.y - n.y) * DRAG_PULL
     }
   }
   let energy = 0
@@ -73,10 +66,9 @@ export function tick(sim: Simulation): boolean {
     energy += n.vx * n.vx + n.vy * n.vy
     moving++
   }
-  // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones; a node travelling back to its anchor is judged by its own distance, since that average thins as the graph grows.
+  // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones.
   if (
     sim.alphaTarget === 0 &&
-    !homing &&
     (energy / Math.max(moving, 1) < SLEEP_ENERGY || sim.alpha < ALPHA_MIN)
   )
     sleep(sim)
@@ -106,6 +98,12 @@ function wake(sim: Simulation, alpha: number): void {
 export function reheat(sim: Simulation): void {
   sim.alphaTarget = DRAG_ALPHA_TARGET
   wake(sim, DRAG_ALPHA_TARGET)
+}
+
+// A mode change replaces every link, so the picture re-solves at full heat rather than relaxing out of the shape the last mode left it in.
+export function resettle(sim: Simulation): void {
+  sim.alphaTarget = 0
+  wake(sim, 1)
 }
 
 export function cool(sim: Simulation): void {
