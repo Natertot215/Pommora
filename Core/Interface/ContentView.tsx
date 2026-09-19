@@ -55,6 +55,7 @@ function DetailView(): React.JSX.Element | null {
       )
     }
     case 'page':
+    case 'matrix':
       return null
   }
 }
@@ -125,6 +126,7 @@ export function ContentView(): React.JSX.Element {
     selectionKind === 'set' ||
     selectionKind === 'page' ||
     selectionKind === 'space' ||
+    selectionKind === 'matrix' ||
     (selectionKind === 'none' && !!tree)
 
   const paneClass =

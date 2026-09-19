@@ -49,6 +49,7 @@ export function subfieldCrumbs(
   switch (selection.kind) {
     case 'none':
     case 'context':
+    case 'matrix':
       return []
     case 'homepage':
       return [{ title: tree.nexus.name }]

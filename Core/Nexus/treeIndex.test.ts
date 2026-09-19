@@ -9,6 +9,7 @@ import {
   pagesByIdOf,
   pagesOf,
   reconcileIndexOf,
+  recordsByIdOf,
   resolveIndexOf,
   searchEntriesOf,
 } from './treeIndex'
@@ -46,9 +47,10 @@ describe('reconcileIndexOf', () => {
 })
 
 describe('resolveIndexOf', () => {
-  it('holds display cores for homepage, spaces, collections, sets, and pages — never groups', () => {
+  it('holds display cores for the homepage, the Matrix, spaces, collections, sets, and pages — never groups', () => {
     const ix = resolveIndexOf(makeTree())
     expect(ix.get('homepage')?.title).toBe('TestNexus')
+    expect(ix.get('matrix')?.title).toBe('Matrix')
     expect(ix.get('space:a1')?.path.map((c) => c.title)).toEqual(['Realms'])
     expect(ix.get('page:p2')?.path.map((c) => c.title)).toEqual(['Notes', 'Ideas'])
     expect(ix.get('set:s1')?.path.map((c) => c.title)).toEqual(['Notes'])
@@ -60,17 +62,19 @@ describe('searchEntriesOf', () => {
   it('lists entries grouped by kind with ready-to-select refs', () => {
     const entries = searchEntriesOf(makeTree())
     expect(entries[0]).toMatchObject({ key: 'homepage', title: 'TestNexus' })
+    expect(entries[1]).toMatchObject({ key: 'matrix', title: 'Matrix' })
     const alpha = entries.find((e) => e.title === 'Alpha')
     expect(alpha?.target).toEqual({ kind: 'page', id: 'p1' })
     expect(alpha?.key).toBe('page:p1')
     expect(alpha?.lower).toBe('alpha')
   })
 
-  it('indexes homepage, spaces, collections, sets, and pages', () => {
+  it('indexes the homepage, the Matrix, spaces, collections, sets, and pages', () => {
     const entries = searchEntriesOf(makeTree())
     const byKind = (k: string): string[] =>
       entries.filter((e) => e.target.kind === k).map((e) => e.title)
     expect(byKind('homepage')).toEqual(['TestNexus'])
+    expect(byKind('matrix')).toEqual(['Matrix'])
     expect(byKind('space').sort()).toEqual(['Pommora', 'Reading', 'Work'])
     expect(byKind('collection')).toEqual(['Notes'])
     expect(byKind('set')).toEqual(['Ideas'])
@@ -83,6 +87,7 @@ describe('the connections projections', () => {
     const t = makeTree()
     expect(pagesOf(t).map((p) => p.id)).toEqual(['p1', 'p2'])
     expect(pagesByIdOf(t).get('p2')?.path).toBe('Notes/Ideas/Beta.md')
+    expect(recordsByIdOf(t).get('p2')?.path).toBe('Notes/Ideas/Beta.md')
   })
 
   it('pageIndexOf resolves and autocompletes over the projected pages', () => {
@@ -130,7 +135,15 @@ describe('duplicate ids — a copied .md carries its id in frontmatter', () => {
 describe('navKeysOf', () => {
   it('enumerates the closed key universe, homepage included, at every depth', () => {
     const keys = new Set(navKeysOf(makeTree()))
-    for (const k of ['homepage', 'space:a1', 'collection:c1', 'set:s1', 'page:p1', 'page:p2'])
+    for (const k of [
+      'homepage',
+      'matrix',
+      'space:a1',
+      'collection:c1',
+      'set:s1',
+      'page:p1',
+      'page:p2',
+    ])
       expect(keys.has(k)).toBe(true)
     expect(keys.has('context:g1')).toBe(false)
   })

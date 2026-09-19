@@ -18,6 +18,7 @@ import {
   Columns3Cog,
   Command,
   Copy,
+  Earth,
   Ellipsis,
   EllipsisVertical,
   Eye,
@@ -86,6 +87,7 @@ import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
 /** This registry IS the roster: to add an icon, import it above and add a line here. */
 export const icons = {
   orbit: Orbit,
+  earth: Earth,
   calendar: Calendar,
   clock: Clock,
   'clock-fading': ClockFading,
