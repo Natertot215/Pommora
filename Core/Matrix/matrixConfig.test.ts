@@ -35,6 +35,12 @@ describe('parseMatrixConfig', () => {
   it('reads rules that are not an object as null', () => {
     expect(parseMatrixConfig({ filter: { rules: 'all' } }).filter.rules).toBeNull()
     expect(parseMatrixConfig({ filter: { rules: [] } }).filter.rules).toBeNull()
+    expect(parseMatrixConfig({ filter: { rules: { match: 'all' } } }).filter.rules).toBeNull()
+  })
+
+  it('keeps a well-formed group', () => {
+    const rules = { match: 'all', rules: [] }
+    expect(parseMatrixConfig({ filter: { rules } }).filter.rules).toEqual(rules)
   })
 })
 

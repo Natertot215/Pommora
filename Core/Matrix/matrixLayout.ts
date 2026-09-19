@@ -1,6 +1,6 @@
 import { isFiniteNumber } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
-import type { Viewport } from './Engine/viewport'
+import { type Viewport, ZOOM_MAX, ZOOM_MIN } from './Engine/viewport'
 
 export type Positions = Record<string, [number, number]>
 
@@ -20,7 +20,8 @@ const isViewport = (v: unknown): v is Viewport =>
   isFiniteNumber(v.x) &&
   isFiniteNumber(v.y) &&
   isFiniteNumber(v.zoom) &&
-  v.zoom > 0
+  v.zoom >= ZOOM_MIN &&
+  v.zoom <= ZOOM_MAX
 
 export const isLayoutPatch = (v: unknown): v is Partial<MatrixLayout> =>
   isPlainObject(v) &&

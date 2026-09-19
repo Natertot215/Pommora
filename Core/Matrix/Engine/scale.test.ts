@@ -45,17 +45,21 @@ function generate(): GraphInput {
 }
 
 describe('the engine at twenty times NexusOS', () => {
-  it(`ticks a ${PAGES}-page Location graph under ${TICK_BUDGET_MS} ms`, () => {
-    const graph = buildGraph(generate(), { mode: 'location', hideUnlinked: false, visible: null })
-    place(graph, new Map())
-    const sim = createSimulation(graph, { gravity: 1, spread: 1, strength: 1, distance: 1 }, true)
-    for (let i = 0; i < 10; i++) tick(sim)
-    const t0 = performance.now()
-    for (let i = 0; i < 30; i++) tick(sim)
-    const mean = (performance.now() - t0) / 30
-    console.info(
-      `matrix tick: ${mean.toFixed(2)} ms over ${graph.nodes.length} nodes / ${graph.links.length} links`,
-    )
-    expect(mean).toBeLessThan(TICK_BUDGET_MS)
-  })
+  it(
+    `ticks a ${PAGES}-page Location graph under ${TICK_BUDGET_MS} ms`,
+    () => {
+      const graph = buildGraph(generate(), { mode: 'location', hideUnlinked: false, visible: null })
+      place(graph, new Map())
+      const sim = createSimulation(graph, { gravity: 1, spread: 1, strength: 1, distance: 1 }, true)
+      for (let i = 0; i < 10; i++) tick(sim)
+      const t0 = performance.now()
+      for (let i = 0; i < 30; i++) tick(sim)
+      const mean = (performance.now() - t0) / 30
+      console.info(
+        `matrix tick: ${mean.toFixed(2)} ms over ${graph.nodes.length} nodes / ${graph.links.length} links`,
+      )
+      expect(mean).toBeLessThan(TICK_BUDGET_MS)
+    },
+    TICK_BUDGET_MS * 40,
+  )
 })

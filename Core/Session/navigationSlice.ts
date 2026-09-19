@@ -8,6 +8,7 @@ import { errText, fail, type PommoraError } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
   type NavRef,
+  isSingleton,
   type SelectionState,
   type SelectTarget,
   type Tab,
@@ -147,7 +148,7 @@ const slide = (
 
 function sameShownTarget(sel: SelectionState, t: SelectTarget): boolean {
   if (sel.kind !== t.kind) return false
-  if (sel.kind === 'homepage') return true
+  if (isSingleton(sel)) return true
   if (sel.kind === 'page') return t.kind === 'page' && sel.id === t.id && sel.path === t.path
   return 'id' in t && 'id' in sel && sel.id === t.id
 }

@@ -1,4 +1,4 @@
-import type { FilterGroup } from '../Views/views'
+import { type FilterGroup, filterGroup } from '../Views/views'
 import { isPlainObject } from '../Properties/propertyValue'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { Forces } from './Engine/forces'
@@ -16,7 +16,7 @@ export type MatrixPatch = { [S in keyof MatrixConfig]?: Partial<MatrixConfig[S]>
 export const FORCE_RANGE: [number, number] = [0.35, 4]
 export const FORCE_STEP = 0.25
 
-export const DEFAULT_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
+const DEFAULT_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
 
 export const DEFAULT_MATRIX_CONFIG: MatrixConfig = {
   group: { mode: 'connection' },
@@ -43,7 +43,7 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
   return {
     group: { mode },
     filter: {
-      rules: isPlainObject(filter.rules) ? (filter.rules as unknown as FilterGroup) : null,
+      rules: filterGroup.safeParse(filter.rules).data ?? null,
       enabled: bool(filter.enabled, d.filter.enabled),
     },
     forces: {

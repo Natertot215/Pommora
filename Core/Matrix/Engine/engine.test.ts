@@ -22,7 +22,7 @@ describe('the Matrix engine', () => {
   it('never reaches the DOM', () => {
     for (const f of graph.files.filter((f) => f.startsWith('Core/Matrix/Engine/'))) {
       expect(readFileSync(join(REPO_ROOT, f), 'utf8')).not.toMatch(
-        /\b(window|document|requestAnimationFrame)\b/,
+        /\b(window|document|globalThis|self|navigator|localStorage|matchMedia|performance|requestAnimationFrame)\b/,
       )
     }
   })
