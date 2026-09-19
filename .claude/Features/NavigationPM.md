@@ -28,7 +28,7 @@ The tab bar holds the open working set, each tab **warm** — it keeps its own s
 - **Persistence** — closing Pommora never resets the tabs; they reopen cold on relaunch, each machine keeping its own set. Warm state is session-only.
 - **Lifecycle** — closing the active tab focuses the most recently used one; the close × shows only on unpinned tabs; a deleted entity's unpinned tab closes while its pinned tab hides, the pin staying stored. The last tab closing drops to NavView, and opening an entity already in a tab focuses that tab.
 - **Interaction** — within-zone drag reorders, pinned among pinned and unpinned among unpinned; a page tab tugged off its row moves between the main bar and a floating window's strip at the pointed slot, and a gallery card, list row, or sidebar page row dropped on either row opens its page there, in each case without activating the seated tab; Ctrl+Tab cycles all tabs; a tab's right-click offers Pin or Unpin and Close, with Preview and the page send rows above them where the tab holds a page. **Reveal Tab Bar On Hover** hides the bar when idle.
-- **Iconography** — tab icons resolve live like every nav surface: the Homepage tab shows the Nexus photo when one is set, the Matrix tab shows the globe and reads "Matrix", and a NavView tab reads "New Tab".
+- **Iconography** — tab icons resolve live like every nav surface: the Homepage tab shows the Nexus photo when one is set, the Matrix tab shows the atom and reads "Matrix", and a NavView tab reads "New Tab".
 
 ### Back and Forward
 

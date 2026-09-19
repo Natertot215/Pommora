@@ -43,6 +43,8 @@ The host answers one `menu` channel, and `menu.ts` is the one popper behind it: 
 
 `electron.vite.config.ts` builds the three bundles — main, preload, renderer — and `electron-builder.yml` packages them, taking its build resources from `Desktop/build/` and flipping Electron's Node-surface fuses off in the packaged binary alone. Core and UIX are `devDependencies` of Desktop rather than dependencies, because electron-vite externalizes every runtime dependency and Electron's own Node refuses TypeScript under `node_modules`; as dev dependencies they are bundled instead, from source.
 
+The app icon is `Desktop/build/Pommora.icon`, an Icon Composer document whose single layer is the Pommora mark; `electron-builder` compiles it into the bundle's asset catalog, and macOS renders the container, material, and lighting from it. A development launch shows Electron's own icon regardless of the bundle, so the host hands the Dock `Desktop/build/icon.png`, a render of the same document inset to Apple's icon grid. `npm run icon` regenerates both from the mark's geometry.
+
 ### Renderer
 
 `Desktop/Renderer` is the entry point alone: `index.html`, `main.tsx` mounting Core's `App`, the drag-region style, and the Vite environment types.
