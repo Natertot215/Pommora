@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-19-2026              | PM-141 | MatrixPM Foundations                                 |
 | 09-16-2026              | PM-140 | MarkdownPM Heading Links                             |
 | 09-15-2026 → 09-16      | PM-139 | Tab Cross-Drag                                       |
 | 09-13-2026 → 09-14      | PM-138 | Sync Scaffolding - Part 2                            |
@@ -143,6 +144,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-141 || MatrixPM Foundations
+**DATE:** 09-19-2026
+
+`Core/Matrix/` opened as the graph view, built over eight phases on a branch of its own. `Engine/` is the physics as a React-free, DOM-free module set — `graph.ts` building nodes and five link kinds under three Group modes, `forces.ts` carrying gravity, Barnes–Hut spread over `quadtree.ts`, per-kind link springs and collision, `simulation.ts` sleeping by energy rather than a tick budget and waking locally for what changed, `placement.ts` seating an unseen node on a spiral outside the extent, and `labels.ts` culling titles by cell. `matrixRuntime.ts` is the one caller of `requestAnimationFrame`: it owns the simulation, the rebuild guard over tree, reply, group, filter, forces and display, the stage keyed by surface so a tab and a window never re-pan each other, and a debounced viewport write. `MatrixCanvas.tsx` draws to the repository's first `<canvas>` on host-scoped `--matrix-*` aliases read through a probe, with one `MatrixLabel` overlay following the hovered node and hosting the rename field, the icon picker, and the Shift-preview. `matrix:graph` reads the index's relationship rows directly, the first surface to do so; `.nexus/matrix.json` travels with the Nexus in four per-key merged sections while the layout and viewport stay in `local_state`. The Matrix seats as a selection kind across the shell — the ribbon, the tab strip, recents, the NavWindow's search — and as a third `WindowKind` in the one floating slot on ⌘⇧M and under **Open Matrix In**. A node answers as a sidebar row does, through `showEntityMenu`, `RenamableTitle`, `hoverGlance`, and `IconChoice`, and a Page moved in Location mode fades out where it was and in beside its new Folder. A dragged node approaches the pointer through its springs and settles back where it began, retiring the held-pin model the first pass had built.
+
+- **Commits:** `570981882^..HEAD`
+- **Diff:** Net +5739 | +6727 / −988
 
 #### PM-140 || MarkdownPM Heading Links
 **DATE:** 09-16-2026
