@@ -38,7 +38,7 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 #### Post-v1
 
-No phase commitments — Sub-pages, independent UI titles, a graph view, and a plugin system among them. The catalog is Prospects below. Pommora Sync's decision log is [[Sync-Scaffolding-V2 — Decision Log]]; the identity groundwork and the content arc have shipped, and the mobile companion is its open Prospect.
+No phase commitments — Sub-pages, independent UI titles, and a plugin system among them. The catalog is Prospects below. Pommora Sync's decision log is [[Sync-Scaffolding-V2 — Decision Log]]; the identity groundwork and the content arc have shipped, and the mobile companion is its open Prospect.
 
 ---
 

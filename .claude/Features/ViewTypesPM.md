@@ -17,7 +17,7 @@ Every renderer also shares the **hover ghost** (`UIX/Interactions/ghostCreate.ts
 
 ### The Pipeline
 
-`resolveView` in `Core/Views/Pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
+`resolveView` in `Core/Views/Pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code, and the Matrix runs its filter stage alone over the whole Nexus. Row frontmatter loads lazily per container over a batch IPC.
 
 #### II. Filter
 
@@ -59,7 +59,7 @@ The view's configuration is edited through a handful of panes, each reachable fr
 - **SettingsFrame** — the toolbar's sliders button: **Configuration** (the Collection's Open In), **Properties**, **Visibility**, and the Layout, Group, Filter, and Sort frames, over a footing holding the view's **Scale** — a factor picker (`1.00x`) whose right press opens the value for typing.
 - **Grouping** — Group By (Location, or a Select, Status, or Date property), a Date By granularity, per-kind Order pickers (Location: Custom or Location; Select and Status: Default, Reversed, Custom; Date: Ascending or Descending), and a Sub-Group picker with its own Order. The middle shows the set hierarchy or the option list, each row carrying the hide eye; the footing holds Hide Empty Groups, Ungrouped Top or Bottom, and the date Separation. A flat kind drops Sub-Group and gains a None row.
 - **Sorting** — Sort By (None, Title, Creation Time, Last Modified, and the sortable properties), a per-type Order picker (Custom snapshots the current sequence into a draggable list), and a Sub-Sort with its own Order. A flat kind adds **Location** as a reserved sort with its own Location or Custom order.
-- **Filtering** — the filter as a flat row list, `(connector)(what)(operator)(value)(×)`, serialized to the nested group: a run of Ands is one group and an Or starts the next. The footing carries the All/Any toggle and the on/off axis. Location's picker is the Set tree. A shape the pane can't represent renders locked behind a Reset rather than being flattened.
+- **Filtering** — the filter as a flat row list, `(connector)(what)(operator)(value)(×)`, serialized to the nested group: a run of Ands is one group and an Or starts the next. The footing carries the All/Any toggle and the on/off axis. Location's picker is the Set tree, rooted at the Collections when the Matrix filters across the Nexus. A shape the pane can't represent renders locked behind a Reset rather than being flattened.
 - **Visibility** — the shown/hidden split as one flat list: shown rows in column order, then hidden rows ghosted after them. Dragging into the shown zone reorders or unhides at the slot; dragging into the hidden zone hides; each row's eye toggles it. Title is a draggable anchor that never hides.
 
 ### The View Host

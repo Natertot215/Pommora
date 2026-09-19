@@ -73,6 +73,7 @@ AREAS = [
         ],
         ["main"],
     ),
+    ("Matrix", ["Core/Matrix"], []),
     ("App Chrome", ["Core"], ["renderer"]),
     ("Desktop Shell", ["Desktop"], []),
     ("Sync", ["Sync"], []),
@@ -92,6 +93,7 @@ ORDER = [
     "Editor — MarkdownPM",
     "Pommora UIX",
     "App Chrome",
+    "Matrix",
     "Surfaces & Embeds",
     "Shared Contract",
 ]
@@ -105,6 +107,7 @@ COLORS = [
     "#DC519F",
     "#B26F07",
     "#A24CCE",
+    "#2F8F6B",
     "#D93B31",
 ]
 

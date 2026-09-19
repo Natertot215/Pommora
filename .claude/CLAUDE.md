@@ -76,6 +76,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 ├── // Index         | • The content index and its seeding
 ├── // Interface     | • The application shell and its windows
 ├── // MarkdownPM    | • The CodeMirror Markdown editor
+├── // Matrix        | • The graph view: its engine, surface, and window
 ├── // Navigation    | • Nav views, the tab bar, and recents
 ├── // Nexus         | • Nexus admission, adoption, and cascade
 ├── // Pages         | • The page view, its header, and file history

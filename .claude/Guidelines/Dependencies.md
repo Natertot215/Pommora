@@ -6,27 +6,27 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 
 #### Shell · Build · Packaging
 
-- **Electron** + **electron-vite** — desktop shell + Vite-first dev loop with main-process HMR. **Decided.**
+- **Electron** + **electron-vite** — desktop shell + Vite-first dev loop with main-process HMR.
 - **Vite 7** + **@vitejs/plugin-react 5** — renderer bundler. **Decided** (compat pin: newer plugin-react needs Vite 8, unsupported by electron-vite 5).
 - **electron-builder** — packaging + (via `electron-updater`) auto-update. **Decided** for packaging; updater **Not-yet-needed**.
 - **@electron/notarize** · **@sentry/electron** — notarization wrapper · crash reporting. **Not-yet-needed** (current build is ad-hoc-signed). See Distribution below.
 
 #### UI · Styling · Icons
 
-- **React 19** + **TypeScript 6** — **Decided.**
-- **vanilla-extract** (`@vanilla-extract/css` + vite-plugin) — typed, zero-runtime CSS-in-TS; the token layer authors `*.css.ts`. **Decided.** (Tailwind was the pre-build guess — not used.)
-- **lucide-react** — the curated icon registry in `UIX/Symbols/` driven by `SymbolsPM.md`. **Decided.** **`@tabler/icons-react` stays installed as a second source** to pull from per-icon (import its `Icon*`, register it, pass `strokeWidth={1.75}` to match Lucide's weight). (Material Symbols + a `symbols.json` indirection layer was the pre-build guess — not used. A user-swappable icon library, incl. SF Symbols, remains a possible future setting.)
-- **@fontsource-variable/inter** — the app font. **Decided.**
+- **React 19** + **TypeScript 6**
+- **vanilla-extract** (`@vanilla-extract/css` + vite-plugin) — typed, zero-runtime CSS-in-TS; the token layer authors `*.css.ts`.
+- **lucide-react** — the curated icon registry in `UIX/Symbols/` driven by `SymbolsPM.md`. `@tabler/icons-react` stays installed as a second source to pull from per-icon (import its `Icon*`, register it, pass `strokeWidth={1.75}` to match Lucide's weight). (Material Symbols + a `symbols.json` indirection layer was the pre-build guess — not used. A user-swappable icon library, incl. SF Symbols, remains a possible future setting.)
+- **@fontsource-variable/inter** — the app font.
 
 #### State · Data · Search
 
-- **Zustand 5** (vanilla + `useSyncExternalStore`) — framework-agnostic store. **Decided.**
-- **`node:sqlite`** (WAL) — synchronous SQLite behind `Desktop/Store/driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node and in Node 24 for the server, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
-- **zod 4** — schema = codec = type for sidecars + frontmatter. **Decided.** `z.looseObject` defensively retains foreign keys on sidecars — note this is *defensive*, not required: sidecars are controlled schemas, and markdown frontmatter (not the sidecar) is the preserve-everything surface.
-- **ulidx** — monotonic ULID ids. **Decided.**
-- **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API. **Decided.**
-- **chokidar 5** — filesystem watcher (Phase 4 live refresh). **Decided.** (`@parcel/watcher` is faster on very large trees but adds a native-module rebuild — the failure class the SQLite driver was chosen to avoid; revisit only if watch perf at nexus scale becomes an issue.)
-- **@codemirror/merge** — the `diff` behind the three-way merge a landing makes in an open page, imported by `Core/Pages/merge3.ts` alone, which the engine and host graph tests keep out of the engine. **Decided.**
+- **Zustand 5** (vanilla + `useSyncExternalStore`) — framework-agnostic store.
+- **`node:sqlite`** (WAL) — synchronous SQLite behind `Desktop/Store/driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node and in Node 24 for the server, so there is no native module to compile and no ABI to match — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
+- **zod 4** — schema = codec = type for sidecars + frontmatter.  `z.looseObject` defensively retains foreign keys on sidecars — note this is *defensive*, not required: sidecars are controlled schemas, and markdown frontmatter (not the sidecar) is the preserve-everything surface.
+- **ulidx** — monotonic ULID ids.
+- **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API.
+- **chokidar 5** — filesystem watcher (`@parcel/watcher` is faster on very large trees but adds a native-module rebuild — the failure class the SQLite driver was chosen to avoid; revisit only if watch perf at nexus scale becomes an issue.)
+- **@codemirror/merge** — the `diff` behind the three-way merge a landing makes in an open page, imported by `Core/Pages/merge3.ts` alone, which the engine and host graph tests keep out of the engine.
 - **SQLite FTS5** — full-text search; `unicode61` tokenizer with `remove_diacritics=2` + external-content mode over the `pages` table is the nexus-scale pattern (1k–10k pages). `MiniSearch` (in-memory) is fine to ~2k notes but balloons by 10k. **Not-yet-needed** (deferred global search; ships inside `node:sqlite` already). Needs a `pages` table and a body column, neither of which currently exists.
 
 #### Drag-and-Drop · Block Layout

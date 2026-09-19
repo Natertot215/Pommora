@@ -1,7 +1,7 @@
 ## Navigation
 
 
-How you get from where you are to where you want to be. A **toolbar tab bar** holds the open working set, each tab with its own history, over a shared **navigation layer** for the cross-tree jumps — recent, pinned, searched, favorited — that the sidebar tree alone can't serve. The main pane shows the active tab's entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. The code is `Core/Navigation/` for the layer and the tab model, and `Core/Interface/Windows/` for the window.
+How you get from where you are to where you want to be. A **toolbar tab bar** holds the open working set, each tab with its own history, over a shared **navigation layer** for the cross-tree jumps — recent, pinned, searched, favorited — that the sidebar tree alone can't serve. The main pane shows the active tab's entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. The code is `Core/Navigation/` for the layer and the tab model, and `Core/Interface/Windows/` for the windows, with the Matrix's own in `Core/Matrix/`.
 
 ### The Navigation Layer
 
@@ -16,19 +16,19 @@ Pins and favorites persist as ordered arrays in the `navigation` section of `.ne
 
 ### NavWindow
 
-The summoned wayfinding overlay: a non-modal floating window on the shared window chassis, opening centered with its size remembered, that blocks nothing behind it and hands the caret to its search field on open. A glass rail holding the Favorites runs beside a main frame: a search field over a gallery of Recents cards with pins on top — locked cards on the shared chassis ([[PommoraUIX]]), each resolving location, icon, and title live from the tree, the open one wearing the accent stroke. The ribbon's Navigation icon summons it, **Toggle Navigation** (⌘O) toggles it, and Escape or its close dismisses it.
+The summoned wayfinding overlay: a non-modal floating window on the shared window chassis, opening centered with its size remembered, that blocks nothing behind it and hands the caret to its search field on open. A glass rail holding the Favorites runs beside a main frame: a search field over a gallery of Recents cards with pins on top — locked cards on the shared chassis ([[PommoraUIX]]), each resolving location, icon, and title live from the tree, the open one carrying the accent stroke. The ribbon's Navigation icon summons it, **Toggle Navigation** (⌘O) toggles it, and Escape or its close dismisses it.
 
 The gallery and list modes reorder differently: the gallery displaces, cards reflowing to open a slot, pins among pins and recents among recents; the list uses the sidebar's insertion-line drag. Only recents reorder within search results, and the rail's Style toggle governs the results too — searching changes what is listed, never how it's drawn. Hits whose kind has no destination surface in List only. A row's right-click opens it, pins it, favorites it, or drops it from the list, and a live page row carries the page menu's send rows — Move To ▸, Copy Link, Copy Path. Picking an entity dismisses the window when **Close Navigation On Select** is on.
 
 ### Toolbar Tabs
 
-The tab bar holds the open working set, each tab **warm** — it keeps its own scroll and editor undo, so flipping back lands where you left off. The most recently visited page tabs go further, as many as the **Active Tab Cache** setting (5–20, default 5): their surface is parked off screen with its editor intact rather than torn down, which is what lets an embedded website survive a tab flip with its session — its media paused on the switch when **Pause Media on Tab Switch** is on, and not resumed on return. Older tabs fall back to serialized warm state and rebuild on return.
+The tab bar holds the open working set, each tab **warm** — it keeps its own scroll and editor undo, so flipping back lands where you left off. The most recently visited page tabs go further, as many as the **Active Tab Cache** setting (5–20, default 5): their surface is parked off screen with its editor intact rather than torn down, which is what lets an embedded website survive a tab flip with its session — its media paused on the switch when **Pause Media on Tab Switch** is on, and not resumed on return. The Matrix tab parks the same way, outside that count. Older tabs fall back to serialized warm state and rebuild on return.
 
 - **Pinned tabs** dock left as compact, label-less entity icons with the full name on hover. They are the pin set, persist, and are protected: navigating while a pinned tab is active opens a new tab rather than replacing it. **Unpinned tabs** sit to the right as scratch tabs, where navigating replaces the active one in place unless New Tab is used — or, when **Default Opening Behavior** is set to New Tab, navigation always opens a new one, which **Take Focus** can send to the background instead of activating.
 - **Persistence** — closing Pommora never resets the tabs; they reopen cold on relaunch, each machine keeping its own set. Warm state is session-only.
 - **Lifecycle** — closing the active tab focuses the most recently used one; the close × shows only on unpinned tabs; a deleted entity's unpinned tab closes while its pinned tab hides, the pin staying stored. The last tab closing drops to NavView, and opening an entity already in a tab focuses that tab.
 - **Interaction** — within-zone drag reorders, pinned among pinned and unpinned among unpinned; a page tab tugged off its row moves between the main bar and a floating window's strip at the pointed slot, and a gallery card, list row, or sidebar page row dropped on either row opens its page there, in each case without activating the seated tab; Ctrl+Tab cycles all tabs; a tab's right-click offers Pin or Unpin and Close, with Preview and the page send rows above them where the tab holds a page. **Reveal Tab Bar On Hover** hides the bar when idle.
-- **Iconography** — tab icons resolve live like every nav surface: the Homepage tab shows the Nexus photo when one is set, and a NavView tab reads "New Tab".
+- **Iconography** — tab icons resolve live like every nav surface: the Homepage tab shows the Nexus photo when one is set, the Matrix tab shows the globe and reads "Matrix", and a NavView tab reads "New Tab".
 
 ### Back and Forward
 

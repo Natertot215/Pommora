@@ -53,6 +53,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Maximum Tab Width | `tabMaxWidth` | The widest a tab grows. | 150–350px · **250px** |
 | Active Tab Cache | `tabCache` | The most open tabs kept active before older ones fall to on-demand loading. | **5** · 10 · 15 · 20 Tabs |
 | Pause Media on Tab Switch | `pauseMediaOnTabSwitch` | A tab's video and audio pause when it leaves the main view; playback does not resume on return. | **On** · Off |
+| Open Matrix In | `matrixOpenIn` | Where the ribbon's Matrix icon opens it. | **New Tab** · Window |
 
 #### Appearance
 
@@ -165,6 +166,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 | Zoom Out | `zoom-out` | Steps the host zoom down. | ⌘- |
 | Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
 | Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
+| Toggle Matrix | `toggle-matrix` | Summons the Matrix window. | ⌘⇧M |
 | Toggle Iteration | `toggle-iteration` | Summons the iteration window. | ⌘⇧T |
 | Next Tab | `next-tab` | Moves to the next tab in visual order. | ⌃Tab |
 | Previous Tab | `previous-tab` | Moves to the previous tab in visual order. | ⌃⇧Tab |
