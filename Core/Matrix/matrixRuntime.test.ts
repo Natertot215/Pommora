@@ -62,6 +62,15 @@ const relocated = () => {
   return moved
 }
 
+const without = (id: string) => {
+  const t = makeTree()
+  for (const c of t.collections) {
+    c.pages = c.pages.filter((p) => p.id !== id)
+    for (const set of c.sets) set.pages = set.pages.filter((p) => p.id !== id)
+  }
+  return t
+}
+
 const placeOf = (id: string): number[] => {
   const n = matrixRuntime.nodeOf(id)
   return n ? [n.x, n.y] : []
@@ -204,6 +213,33 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.sim?.drag).toBeNull()
     expect(Math.hypot(n.x - from[0], n.y - from[1])).toBeLessThan(carried / 4)
     expect(saveLayout.mock.lastCall?.[0][n.id]).toHaveLength(2)
+  })
+
+  it('redraws on a Groups pick, where every node already has a place', () => {
+    seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
+    attach()
+    flush()
+    const before = [placeOf('p1'), placeOf('p2')]
+    useSession.getState().patchMatrix({ group: { mode: 'location' } })
+    expect(matrixRuntime.sim?.awake).toBe(true)
+    flush()
+    expect([placeOf('p1'), placeOf('p2')]).not.toEqual(before)
+  })
+
+  it('ends a drag whose node the rebuild lost, so the loop can sleep', () => {
+    seed()
+    attach()
+    flush()
+    matrixRuntime.beginDrag(matrixRuntime.indexOf('p1'))
+    matrixRuntime.moveDrag(400, 0)
+    step()
+    expect(matrixRuntime.sim?.alphaTarget).toBeGreaterThan(0)
+    useSession.setState({ tree: without('p1') } as never)
+    expect(matrixRuntime.draggingId).toBeNull()
+    expect(matrixRuntime.sim?.drag).toBeNull()
+    expect(matrixRuntime.sim?.alphaTarget).toBe(0)
+    flush()
+    expect(matrixRuntime.sim?.awake).toBe(false)
   })
 
   it('carries a drag across a rebuild, and the node keeps following the pointer', () => {
