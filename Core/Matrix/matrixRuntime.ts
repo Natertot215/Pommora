@@ -357,7 +357,7 @@ class MatrixRuntime {
     if (!n || !this.sim || this.built?.display.locked) return
     this.draggingId = n.id
     this.dragFrom = { id: n.id, x: n.x, y: n.y }
-    this.sim.drag = { id: n.id, x: n.x, y: n.y }
+    this.sim.drag = { id: n.id, x: n.x, y: n.y, held: true }
     reheat(this.sim)
     this.schedule()
   }
@@ -377,7 +377,7 @@ class MatrixRuntime {
     this.draggingId = null
     this.dragFrom = null
     if (this.sim) {
-      this.sim.drag = { id: from.id, x: from.x, y: from.y }
+      this.sim.drag = { id: from.id, x: from.x, y: from.y, held: false }
       cool(this.sim)
     }
     this.schedule()

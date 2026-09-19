@@ -197,7 +197,7 @@ describe('matrixRuntime', () => {
     const carried = Math.hypot(n.x - from[0], n.y - from[1])
     expect(carried).toBeGreaterThan(1)
     matrixRuntime.endDrag()
-    expect(matrixRuntime.sim?.drag).toEqual({ id: n.id, x: from[0], y: from[1] })
+    expect(matrixRuntime.sim?.drag).toEqual({ id: n.id, x: from[0], y: from[1], held: false })
     flush()
     expect(matrixRuntime.sim?.awake).toBe(false)
     expect(n.pinned).toBe(false)

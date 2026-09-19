@@ -9,6 +9,7 @@ const VELOCITY_DECAY = 0.4
 const SLEEP_ENERGY = 0.01
 const DRAG_ALPHA_TARGET = 0.3
 const DRAG_PULL = 0.25
+const RETURN_PULL = 0.04
 const DRAG_SETTLED = 1
 const SHUFFLE_JITTER = 0.6
 
@@ -20,7 +21,7 @@ export interface Simulation {
   awake: boolean
   tree: Quadtree
   local: boolean
-  drag: { id: string; x: number; y: number } | null
+  drag: { id: string; x: number; y: number; held: boolean } | null
 }
 
 export function createSimulation(graph: Graph, forces: Forces, awake: boolean): Simulation {
@@ -52,8 +53,9 @@ export function tick(sim: Simulation): boolean {
     if (n) {
       const dx = sim.drag.x - n.x
       const dy = sim.drag.y - n.y
-      n.vx += dx * DRAG_PULL
-      n.vy += dy * DRAG_PULL
+      const pull = sim.drag.held ? DRAG_PULL : RETURN_PULL
+      n.vx += dx * pull
+      n.vy += dy * pull
       homing = Math.hypot(dx, dy) > DRAG_SETTLED
     }
   }
