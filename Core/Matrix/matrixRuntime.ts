@@ -51,6 +51,7 @@ class MatrixRuntime {
   viewport: Viewport = DEFAULT_VIEWPORT
   hoveredId: string | null = null
   draggingId: string | null = null
+  private dragFrom: { id: string; x: number; y: number } | null = null
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
@@ -61,7 +62,6 @@ class MatrixRuntime {
   private wasAwake = false
   private fitOnSettle = false
   private dirty = false
-  private dragFrom: { x: number; y: number; pinned: boolean } | null = null
   private unsubscribe: (() => void) | null = null
   private save: ReturnType<typeof setTimeout> | null = null
 
@@ -80,7 +80,7 @@ class MatrixRuntime {
         this.unsubscribe = null
         if (this.sim?.awake) this.settled()
         this.clear()
-      }
+      } else if (this.sim?.awake && !this.visible) this.settled()
     }
   }
 
@@ -191,23 +191,14 @@ class MatrixRuntime {
       this.dragFrom = null
     }
     this.sim = createSimulation(graph, c.forces, settleAll)
-    if (prev) this.sim.held = prev.held
-    else for (const [id, p] of Object.entries(s.matrixPositions)) if (p[2]) this.sim.held.add(id)
-    for (const id of this.sim.held) {
-      const i = graph.index.get(id)
-      if (i !== undefined) graph.nodes[i].pinned = true
-    }
+    this.sim.drag = prev?.drag ?? null
     if (prev?.awake && !settleAll) {
       if (moving) wakeLocal(this.sim, new Set([...moving, ...fresh]))
       this.sim.awake = true
       this.sim.alpha = prev.alpha
       this.sim.alphaTarget = prev.alphaTarget
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
-    const dragged = this.draggingIndex()
-    if (dragged >= 0) {
-      reheat(this.sim)
-      graph.nodes[dragged].pinned = true
-    }
+    if (this.draggingId !== null) reheat(this.sim)
     if (first) {
       this.viewport = s.matrixViewport ?? this.viewport
       // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when no viewport was persisted.
@@ -276,9 +267,8 @@ class MatrixRuntime {
 
   private settled(): void {
     if (this.fitOnSettle) this.fitNow()
-    const held = this.sim?.held
     const positions: Positions = {}
-    for (const n of this.graph.nodes) positions[n.id] = held?.has(n.id) ? [n.x, n.y, 1] : [n.x, n.y]
+    for (const n of this.graph.nodes) positions[n.id] = [n.x, n.y]
     useSession.getState().saveMatrixLayout(positions)
   }
 
@@ -366,45 +356,30 @@ class MatrixRuntime {
     const n = this.graph.nodes[i]
     if (!n || !this.sim || this.built?.display.locked) return
     this.draggingId = n.id
-    this.dragFrom = { x: n.x, y: n.y, pinned: n.pinned }
+    this.dragFrom = { id: n.id, x: n.x, y: n.y }
+    this.sim.drag = { id: n.id, x: n.x, y: n.y }
     reheat(this.sim)
-    n.pinned = true
     this.schedule()
   }
 
   moveDrag(wx: number, wy: number): void {
-    const n = this.graph.nodes[this.draggingIndex()]
-    if (!n) return
-    n.x = wx
-    n.y = wy
-    n.vx = n.vy = 0
+    const drag = this.sim?.drag
+    if (!drag) return
+    drag.x = wx
+    drag.y = wy
     this.invalidate()
   }
 
+  // A drop and an abort are one ending: the spring's anchor moves from the pointer back to the place the node came from, and the settle drops it.
   endDrag(): void {
-    if (this.draggingId === null) return
-    this.sim?.held.add(this.draggingId)
-    this.dropped()
-  }
-
-  cancelDrag(): void {
-    const id = this.draggingId
-    if (id === null) return
-    const n = this.graph.nodes[this.draggingIndex()]
     const from = this.dragFrom
-    if (n && from) {
-      n.x = from.x
-      n.y = from.y
-      n.vx = n.vy = 0
-      n.pinned = from.pinned
-    }
-    this.dropped()
-  }
-
-  private dropped(): void {
+    if (this.draggingId === null || from === null) return
     this.draggingId = null
     this.dragFrom = null
-    if (this.sim) cool(this.sim)
+    if (this.sim) {
+      this.sim.drag = { id: from.id, x: from.x, y: from.y }
+      cool(this.sim)
+    }
     this.schedule()
   }
 

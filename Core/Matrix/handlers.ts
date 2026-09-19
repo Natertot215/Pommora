@@ -11,7 +11,7 @@ import { readMatrixFile, writeMatrixFile } from './matrixFile'
 import { readMatrixGraph } from './matrixGraph'
 import {
   isLayoutPatch,
-  isPositions,
+  readPositions,
   isViewport,
   type MatrixLayout,
   type Positions,
@@ -41,7 +41,7 @@ export const matrixHandlers = {
     const positions = readValue<Positions>('matrixLayout')
     const viewport = readValue<Viewport>('matrixViewport')
     return ok({
-      positions: isPositions(positions) ? positions : {},
+      positions: readPositions(positions),
       viewport: isViewport(viewport) ? viewport : null,
     } satisfies MatrixLayout)
   },

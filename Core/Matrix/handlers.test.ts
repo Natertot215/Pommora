@@ -63,10 +63,15 @@ describe('the layout channels', () => {
     })
   })
 
-  it('admits the held mark and refuses any other third slot', () => {
-    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 1] } }).ok).toBe(true)
-    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 0] } }).ok).toBe(false)
-    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 2] } }).ok).toBe(false)
+  it('refuses a position carrying anything past its pair', () => {
+    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 1] } }).ok).toBe(false)
+    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1] } }).ok).toBe(false)
+  })
+
+  it('reads a stored layout row by row, keeping every pair it understands', () => {
+    writeValue('matrixLayout', { a: [1, 2], b: [3, 4, 1], c: [5], d: 'no' })
+    const reply = matrixHandlers['matrixLayout:load']()
+    expect(reply.ok && reply.value.positions).toEqual({ a: [1, 2], b: [3, 4] })
   })
 
   it('writes either half alone and loads both back', () => {

@@ -15,7 +15,7 @@ import type { MatrixRecord } from './matrixKind'
 import { matrixRuntime } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 
-export function recordOf(tree: NexusTree | null, id: string | null): MatrixRecord | null {
+function recordOf(tree: NexusTree | null, id: string | null): MatrixRecord | null {
   if (id === null || !tree) return null
   const r = recordsByIdOf(tree).get(id)
   return r && r.kind !== 'homepage' && r.kind !== 'matrix'
@@ -80,7 +80,7 @@ export function MatrixView({
         matrixRuntime.moveDrag(wx, wy)
       },
       onDrop: () => matrixRuntime.endDrag(),
-      onAbort: () => matrixRuntime.cancelDrag(),
+      onAbort: () => matrixRuntime.endDrag(),
       onTap: () => open(i),
     })
   }
@@ -104,14 +104,14 @@ export function MatrixView({
     })
   }
 
-  const renamingId = useMemo(
-    () =>
-      renamingPath === null || !tree
-        ? null
-        : (nodesOf(tree).find((r) => r.path === renamingPath)?.id ?? null),
-    [renamingPath, tree],
-  )
-  const editing = renamingId !== null
+  const renamingId = useMemo(() => {
+    if (renamingPath === null || !tree) return null
+    const id = nodesOf(tree).find((r) => r.path === renamingPath)?.id ?? null
+    // A page the graph does not carry has no node to seat the field under, so the rename stays with the surface that can show it.
+    return matrixRuntime.indexOf(id) >= 0 ? id : null
+  }, [renamingPath, tree])
+  // A hidden surface never claims: the field would open where nobody can see it and the rename would read as doing nothing.
+  const editing = renamingId !== null && !parked
   // The overlay names its node by id: an index taken here goes stale the moment a reply rebuilds the graph under it.
   const labelId = editing ? renamingId : hoveredId
   const rec = useMemo(() => recordOf(tree, labelId), [tree, labelId])

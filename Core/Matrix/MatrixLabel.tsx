@@ -5,7 +5,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { IconChoice } from '../Assets/IconChoice'
 import { glanceShown } from '../Interface/Glance/glanceAction'
-import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
+import { hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceLink'
 import { RenamableTitle } from '../Interface/RenamableTitle'
 import { ancestryOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
@@ -27,7 +27,7 @@ export function MatrixLabel({
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
-  const iconPath = useSession((st) => st.iconPath)
+  const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
   const endIcon = useSession((st) => st.endIcon)
   const mutate = useSession((st) => st.mutate)
   const hideLocation = useSession((st) => st.matrixConfig.display.hideLocation)
@@ -66,7 +66,7 @@ export function MatrixLabel({
     const a = anchorRef.current
     if (!a || editing || !rec || rec.kind !== 'page') return
     hoverGlance({ kind: 'page', id: rec.id, path: rec.path }, a, 'location', lastShift)
-    return leaveGlance
+    return () => leaveGlanceFrom(a)
   }, [rec, editing])
 
   if (!rec || !tree) return null

@@ -153,52 +153,74 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.graph.nodes).toHaveLength(0)
   })
 
-  it('pins, moves, and re-settles through a drag; the dropped node stays put', () => {
+  it('writes the positions when a surface leaves and the one still attached cannot tick', () => {
+    seed()
+    attach()
+    const parked: Surface = { visible: () => false }
+    const detachParked = matrixRuntime.attach(parked)
+    step()
+    expect(matrixRuntime.sim?.awake).toBe(true)
+    detach?.()
+    detach = null
+    expect(saveLayout).toHaveBeenCalledTimes(1)
+    expect(matrixRuntime.graph.nodes).not.toHaveLength(0)
+    detachParked()
+  })
+
+  it('approaches the pointer through its springs rather than tracking it', () => {
     seed()
     attach()
     flush()
+    const n = matrixRuntime.graph.nodes[0]
+    const from = [n.x, n.y]
     matrixRuntime.beginDrag(0)
-    expect(matrixRuntime.graph.nodes[0].pinned).toBe(true)
-    matrixRuntime.moveDrag(120, -40)
-    expect(matrixRuntime.graph.nodes[0].x).toBe(120)
-    expect(matrixRuntime.graph.nodes[0].y).toBe(-40)
+    expect(n.pinned).toBe(false)
+    matrixRuntime.moveDrag(from[0] + 400, from[1])
+    step()
+    const first = n.x
+    expect(first).toBeGreaterThan(from[0])
+    expect(first).toBeLessThan(from[0] + 400)
+    for (let i = 0; i < 40; i++) step()
+    expect(n.x).toBeGreaterThan(first)
+    expect(n.x).toBeLessThan(from[0] + 400)
+  })
+
+  it('releases a dropped node and settles it back near where it began', () => {
+    seed()
+    attach()
+    flush()
+    const n = matrixRuntime.graph.nodes[0]
+    const from = [n.x, n.y]
+    matrixRuntime.beginDrag(0)
+    matrixRuntime.moveDrag(from[0] + 300, from[1] + 200)
+    for (let i = 0; i < 30; i++) step()
+    const carried = Math.hypot(n.x - from[0], n.y - from[1])
+    expect(carried).toBeGreaterThan(1)
     matrixRuntime.endDrag()
-    expect(matrixRuntime.sim?.awake).toBe(true)
+    expect(matrixRuntime.sim?.drag).toEqual({ id: n.id, x: from[0], y: from[1] })
     flush()
     expect(matrixRuntime.sim?.awake).toBe(false)
-    expect([matrixRuntime.graph.nodes[0].x, matrixRuntime.graph.nodes[0].y]).toEqual([120, -40])
-    expect(saveLayout.mock.lastCall?.[0][matrixRuntime.graph.nodes[0].id]).toEqual([120, -40, 1])
+    expect(n.pinned).toBe(false)
+    expect(matrixRuntime.sim?.drag).toBeNull()
+    expect(Math.hypot(n.x - from[0], n.y - from[1])).toBeLessThan(carried / 4)
+    expect(saveLayout.mock.lastCall?.[0][n.id]).toHaveLength(2)
   })
 
-  it('keeps a dropped node pinned across a rebuild', () => {
+  it('carries a drag across a rebuild, and the node keeps following the pointer', () => {
     seed()
     attach()
     flush()
+    const id = matrixRuntime.graph.nodes[0].id
     matrixRuntime.beginDrag(0)
-    matrixRuntime.moveDrag(120, -40)
-    matrixRuntime.endDrag()
-    flush()
-    useSession.getState().patchMatrix({ group: { mode: 'location' } })
-    flush()
-    expect(matrixRuntime.graph.nodes[0].pinned).toBe(true)
-    expect(matrixRuntime.graph.nodes[1].pinned).toBe(false)
-    matrixRuntime.shuffle()
-    expect(matrixRuntime.graph.nodes[0].pinned).toBe(false)
-  })
-
-  it('keeps the dragged node pinned and following across a rebuild', () => {
-    seed()
-    attach()
-    flush()
-    matrixRuntime.beginDrag(0)
-    matrixRuntime.moveDrag(120, -40)
+    matrixRuntime.moveDrag(400, 0)
+    for (let i = 0; i < 10; i++) step()
     useSession.setState({ matrixGraph: { links: [], values: {} } })
-    const i = matrixRuntime.draggingIndex()
-    expect(i).toBeGreaterThanOrEqual(0)
-    expect(matrixRuntime.graph.nodes[i].pinned).toBe(true)
-    expect(matrixRuntime.graph.nodes[i].x).toBe(120)
-    matrixRuntime.moveDrag(200, 10)
-    expect(matrixRuntime.graph.nodes[i].x).toBe(200)
+    expect(matrixRuntime.draggingId).toBe(id)
+    expect(matrixRuntime.sim?.drag?.id).toBe(id)
+    const carried = placeOf(id)[0]
+    matrixRuntime.moveDrag(900, 0)
+    for (let i = 0; i < 20; i++) step()
+    expect(placeOf(id)[0]).toBeGreaterThan(carried)
   })
 
   it('carries an in-flight settle across a rebuild and settles once', () => {
@@ -274,13 +296,12 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.graph.nodes).toHaveLength(1)
   })
 
-  it('seats a marked position as a held pin on the first build, and Shuffle releases it', () => {
-    seed({ matrixPositions: { p1: [0, 0, 1], p2: [60, 0] } })
+  it('seats every stored position unpinned and writes back a bare pair', () => {
+    seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach()
-    const at = (id: string) => matrixRuntime.graph.nodes[matrixRuntime.graph.index.get(id) ?? -1]
-    expect([at('p1').pinned, at('p2').pinned]).toEqual([true, false])
+    const at = (id: string) => matrixRuntime.nodeOf(id)
+    expect([at('p1')?.pinned, at('p2')?.pinned]).toEqual([false, false])
     matrixRuntime.shuffle()
-    expect(at('p1').pinned).toBe(false)
     flush()
     expect(saveLayout.mock.lastCall?.[0].p1).toHaveLength(2)
   })
@@ -439,19 +460,17 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.graph).toBe(graph)
   })
 
-  it('returns a cancelled drag to where it began and leaves it unpinned', () => {
+  it('ends an aborted drag exactly as a drop ends it', () => {
     seed()
     attach()
     flush()
     const n = matrixRuntime.graph.nodes[0]
-    const from = [n.x, n.y]
     matrixRuntime.beginDrag(0)
     matrixRuntime.moveDrag(120, -40)
-    matrixRuntime.cancelDrag()
-    expect([n.x, n.y]).toEqual(from)
+    matrixRuntime.endDrag()
     expect(n.pinned).toBe(false)
     expect(matrixRuntime.draggingId).toBeNull()
-    expect(matrixRuntime.sim?.held.has(n.id)).toBe(false)
+    expect(matrixRuntime.sim?.drag?.id).toBe(n.id)
     expect(matrixRuntime.sim?.awake).toBe(true)
   })
 
