@@ -16,7 +16,7 @@ import { iconFor, onIconLoad } from './iconCache'
 import * as s from './matrix.css'
 import { FADE_MS, matrixRuntime } from './matrixRuntime'
 
-// KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
+// KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
 const PINCH_RATE = 0.01
 const LINK_WIDTH_MIN = 1
 const LINK_WIDTH_MAX = 2.5

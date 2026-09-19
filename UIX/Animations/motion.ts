@@ -34,3 +34,6 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t:
 
 /** The JS form of `easing.baseEase`, whose CSS keyword `ease` is this curve. Change them together. */
 export const easeBase = cubicBezier(0.25, 0.1, 0.25, 1)
+
+/** The JS form of `easing.baseSnap`. Change them together. */
+export const easeSnap = cubicBezier(0.22, 1, 0.36, 1)

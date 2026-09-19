@@ -2,7 +2,7 @@ import { applyCollide, applyGravity, applyLink, applySpread, type Forces } from 
 import type { Graph, GraphNode } from './graph'
 import { buildQuadtree, find, type Quadtree } from './quadtree'
 
-// KNOBs — initial values; tuned by eye in the iteration pass (Task 8.3), never exposed.
+// KNOBs — the alpha ramp, the sleep floor, the drag and return pulls, and the shuffle jitter.
 const ALPHA_DECAY = 0.0228
 const ALPHA_MIN = 0.001
 const VELOCITY_DECAY = 0.4
