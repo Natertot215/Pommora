@@ -8,6 +8,7 @@ import {
   createSimulation,
   nodeAt,
   reheat,
+  resettle,
   shuffle,
   type Simulation,
   tick,
@@ -204,7 +205,7 @@ class MatrixRuntime {
       this.sim.alpha = prev.alpha
       this.sim.alphaTarget = prev.alphaTarget
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
-    if (b && b.group !== c.group) cool(this.sim)
+    if (b && b.group !== c.group) resettle(this.sim)
     if (lostDrag) cool(this.sim)
     if (this.dragFrom) reheat(this.sim)
     if (first) {
@@ -367,24 +368,10 @@ class MatrixRuntime {
   beginDrag(i: number): void {
     const n = this.graph.nodes[i]
     if (!n || !this.sim || this.built?.display.locked) return
-    this.landReturn()
-    const from = { id: n.id, x: n.x, y: n.y }
-    this.dragFrom = from
-    this.sim.drag = { ...from, held: true }
+    this.dragFrom = { id: n.id, x: n.x, y: n.y }
+    this.sim.drag = { id: n.id, x: n.x, y: n.y }
     reheat(this.sim)
     this.schedule()
-  }
-
-  // A return still in flight is seated where it was heading, since the one anchor is about to name another node.
-  private landReturn(): void {
-    const drag = this.sim?.drag
-    if (!drag || drag.held) return
-    const n = this.nodeOf(drag.id)
-    if (n) {
-      n.x = drag.x
-      n.y = drag.y
-      n.vx = n.vy = 0
-    }
   }
 
   moveDrag(wx: number, wy: number): void {
@@ -395,13 +382,12 @@ class MatrixRuntime {
     this.invalidate()
   }
 
-  // A drop and an abort are one ending: the spring's anchor moves from the pointer back to the place the node came from, and the settle drops it.
+  // A drop and an abort are one ending: the node is let go where the springs have it and the layout relaxes around it.
   endDrag(): void {
-    const from = this.dragFrom
-    if (!from) return
+    if (!this.dragFrom) return
     this.dragFrom = null
     if (this.sim) {
-      this.sim.drag = { ...from, held: false }
+      this.sim.drag = null
       cool(this.sim)
     }
     this.schedule()
