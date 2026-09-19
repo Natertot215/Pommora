@@ -29,7 +29,7 @@ describe('the quadtree', () => {
     expect(find(tree, 2000, 2000, 10)).toBe(null)
   })
 
-  it('a pointer inside a disc returns that node over a nearer centre that does not cover it', () => {
+  it('a pointer inside a node returns it over a nearer centre that does not cover it', () => {
     const tree = buildQuadtree([node('small', 0, 0, 5), node('large', 30, 0, 25)])
     expect(find(tree, 12, 0, 100)?.id).toBe('large')
   })

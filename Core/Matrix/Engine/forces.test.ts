@@ -89,7 +89,7 @@ describe('applyLink', () => {
 })
 
 describe('applyCollide', () => {
-  it('separates overlapping discs to their radii plus the link gap', () => {
+  it('separates overlapping nodes to their radii plus the link gap', () => {
     const nodes = [node('a', 0, 40, 1), node('b', 50, 40, 1)]
     for (let i = 0; i < 200; i++) {
       applyCollide(nodes, buildQuadtree(nodes))

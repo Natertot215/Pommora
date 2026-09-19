@@ -8,7 +8,7 @@ const ALPHA_MIN = 0.001
 const VELOCITY_DECAY = 0.4
 const SLEEP_ENERGY = 0.01
 const DRAG_ALPHA_TARGET = 0.3
-const SHUFFLE_JITTER = 40
+const SHUFFLE_JITTER = 0.6
 
 export interface Simulation {
   graph: Graph
@@ -18,6 +18,7 @@ export interface Simulation {
   awake: boolean
   tree: Quadtree
   local: boolean
+  held: Set<string>
 }
 
 export function createSimulation(graph: Graph, forces: Forces, awake: boolean): Simulation {
@@ -29,6 +30,7 @@ export function createSimulation(graph: Graph, forces: Forces, awake: boolean): 
     awake,
     tree: buildQuadtree(graph.nodes),
     local: false,
+    held: new Set(),
   }
 }
 
@@ -66,7 +68,7 @@ export function tick(sim: Simulation): boolean {
 
 function releasePins(sim: Simulation): void {
   if (!sim.local) return
-  for (const n of sim.graph.nodes) n.pinned = false
+  for (const n of sim.graph.nodes) n.pinned = sim.held.has(n.id)
   sim.local = false
 }
 
@@ -94,17 +96,22 @@ export function cool(sim: Simulation): void {
 }
 
 export function shuffle(sim: Simulation): void {
+  let extent = 0
+  for (const n of sim.graph.nodes) extent = Math.max(extent, Math.hypot(n.x, n.y))
+  const jitter = extent * SHUFFLE_JITTER
   for (const n of sim.graph.nodes) {
-    n.x += (Math.random() - 0.5) * SHUFFLE_JITTER
-    n.y += (Math.random() - 0.5) * SHUFFLE_JITTER
+    n.x += (Math.random() - 0.5) * jitter
+    n.y += (Math.random() - 0.5) * jitter
     n.vx = n.vy = 0
+    n.pinned = false
   }
+  sim.held.clear()
   wake(sim, 1)
 }
 
 export function wakeLocal(sim: Simulation, ids: ReadonlySet<string>): void {
   wake(sim, DRAG_ALPHA_TARGET)
-  for (const n of sim.graph.nodes) n.pinned = !ids.has(n.id)
+  for (const n of sim.graph.nodes) n.pinned = !ids.has(n.id) || sim.held.has(n.id)
   sim.local = true
 }
 

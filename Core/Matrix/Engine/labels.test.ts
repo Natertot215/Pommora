@@ -18,6 +18,12 @@ const node = (id: string, kind: NodeKind, x: number, radius: number): GraphNode 
 
 const pair = [node('small', 'page', 0, 40), node('large', 'page', 1, 80)]
 
+const cells = new Map<number, number>()
+const culled = (nodes: GraphNode[], zoom: number, skip: number): number[] => {
+  cullLabels(nodes, { ...DEFAULT_VIEWPORT, zoom }, 400, 400, skip, cells)
+  return [...cells.values()]
+}
+
 describe('label policy', () => {
   it('revealed honours the kind threshold', () => {
     expect(revealed('page', 0.9)).toBe(false)
@@ -28,14 +34,19 @@ describe('label policy', () => {
   })
 
   it('a kind below its threshold paints no title', () => {
-    expect(cullLabels(pair, { ...DEFAULT_VIEWPORT, zoom: 0.9 }, 400, 400, -1)).toEqual([])
+    expect(culled(pair, 0.9, -1)).toEqual([])
   })
 
-  it('one cell keeps one title and the larger disc wins it', () => {
-    expect(cullLabels(pair, DEFAULT_VIEWPORT, 400, 400, -1)).toEqual([1])
+  it('one cell keeps one title and the larger node wins it', () => {
+    expect(culled(pair, DEFAULT_VIEWPORT.zoom, -1)).toEqual([1])
   })
 
   it('the skipped node never paints and leaves the cell to its neighbour', () => {
-    expect(cullLabels(pair, DEFAULT_VIEWPORT, 400, 400, 1)).toEqual([0])
+    expect(culled(pair, DEFAULT_VIEWPORT.zoom, 1)).toEqual([0])
+  })
+
+  it('clears the map it is handed, so a cull answers for its own frame alone', () => {
+    culled(pair, DEFAULT_VIEWPORT.zoom, -1)
+    expect(culled(pair, 0.9, -1)).toEqual([])
   })
 })

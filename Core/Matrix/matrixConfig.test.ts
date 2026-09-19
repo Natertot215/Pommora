@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
-  FORCE_RANGE,
   type MatrixConfig,
   parseMatrixConfig,
 } from './matrixConfig'
@@ -22,8 +21,8 @@ describe('parseMatrixConfig', () => {
 
   it('clamps a force outside its range and refuses one that is not a number', () => {
     const config = parseMatrixConfig({ forces: { gravity: 10, spread: -2, distance: 'far' } })
-    expect(config.forces.gravity).toBe(FORCE_RANGE[1])
-    expect(config.forces.spread).toBe(FORCE_RANGE[0])
+    expect(config.forces.gravity).toBe(2)
+    expect(config.forces.spread).toBe(0.35)
     expect(config.forces.distance).toBe(DEFAULT_MATRIX_CONFIG.forces.distance)
   })
 

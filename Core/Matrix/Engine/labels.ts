@@ -7,14 +7,16 @@ const LABEL_CELL_PX = 96
 
 export const revealed = (kind: NodeKind, zoom: number): boolean => zoom >= REVEAL_ZOOM[kind]
 
+/** The caller owns `cells` and reads the surviving indices off it, so a per-frame cull allocates nothing. */
 export function cullLabels(
   nodes: GraphNode[],
   v: Viewport,
   width: number,
   height: number,
   skip: number,
-): number[] {
-  const cells = new Map<number, number>()
+  cells: Map<number, number>,
+): void {
+  cells.clear()
   const cols = Math.ceil(width / LABEL_CELL_PX) + 1
   nodes.forEach((n, i) => {
     if (i === skip || !revealed(n.kind, v.zoom)) return
@@ -24,5 +26,4 @@ export function cullLabels(
     const held = cells.get(key)
     if (held === undefined || nodes[held].radius < n.radius) cells.set(key, i)
   })
-  return [...cells.values()]
 }

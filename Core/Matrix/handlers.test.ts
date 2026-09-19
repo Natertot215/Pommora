@@ -62,6 +62,12 @@ describe('the layout channels', () => {
     })
   })
 
+  it('admits the held mark and refuses any other third slot', () => {
+    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 1] } }).ok).toBe(true)
+    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 0] } }).ok).toBe(false)
+    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 2] } }).ok).toBe(false)
+  })
+
   it('writes either half alone and loads both back', () => {
     matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2] } })
     matrixHandlers['matrixLayout:save'](ctx, { viewport: { x: 5, y: 6, zoom: 2 } })

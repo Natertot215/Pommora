@@ -74,6 +74,16 @@ describe('the config half', () => {
     useSession.getState().applyMatrixChanged(parseMatrixConfig({ group: { mode: 'space' } }))
     expect(useSession.getState().matrixConfig).not.toBe(before)
   })
+
+  it('keeps every section a push leaves alone, so only what moved rebuilds', () => {
+    const before = useSession.getState().matrixConfig
+    useSession.getState().applyMatrixChanged(parseMatrixConfig({ display: { hideIcon: true } }))
+    const after = useSession.getState().matrixConfig
+    expect(after.display).toEqual({ ...before.display, hideIcon: true })
+    expect(after.group).toBe(before.group)
+    expect(after.filter).toBe(before.filter)
+    expect(after.forces).toBe(before.forces)
+  })
 })
 
 describe('loadMatrix', () => {
