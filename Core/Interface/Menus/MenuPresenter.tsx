@@ -41,7 +41,6 @@ function Level({
         return (
           <PickerRow
             key={`${row.label}-${String(i)}`}
-            ring
             align="start"
             selected={row.checked}
             leading={leadingGlyph(row.icon)}

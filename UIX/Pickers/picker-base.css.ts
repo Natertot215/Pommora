@@ -90,23 +90,14 @@ export const optionCheck = style({
 
 export const optionCheckHidden = style({ visibility: 'hidden' })
 
+/** Carries no fill of its own: the mark is the check, and `:has()` reads this to tell a list that has a selection from one that has none. */
 export const optionSelected = style({
-  background: c.state.selected,
-  selectors: { '&:hover': { background: c.state.selected } },
+  selectors: { '&:hover': { background: c.state.hover } },
 })
 
+// The mark rides only where a list has something selected, so a menu of plain commands keeps its gutter.
 globalStyle(`${option} ${optionCheck}`, { display: 'none' })
-globalStyle(`:root.picker-checked ${pane}:has(${optionSelected}) ${optionCheck}`, {
-  display: 'inline-flex',
-})
-// The repeated class outranks the run-unification rules above, which would otherwise keep painting a ring the mode has stood down.
-globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}`, {
-  background: 'transparent',
-})
-globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}:hover`, {
-  background: c.state.hover,
-})
-globalStyle(`:root.picker-checked ${optionRing}${optionRing}${optionRing}`, { boxShadow: 'none' })
+globalStyle(`${pane}:has(${optionSelected}) ${optionCheck}`, { display: 'inline-flex' })
 
 const rowBody = style({
   display: 'flex',

@@ -484,7 +484,6 @@ export function FilterFrame({
       <PickerRow
         key={t.id}
         selected={t.id === current}
-        ring
         leading={<Icon name={t.icon ?? 'tag'} size="body" />}
         onClick={() => {
           close()
@@ -634,7 +633,6 @@ export function FilterFrame({
                   <PickerRow
                     key={o.label}
                     selected={o === current}
-                    ring
                     align="start"
                     {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
                     onClick={() => {
