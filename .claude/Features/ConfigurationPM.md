@@ -13,6 +13,7 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 | --- | --- | --- | --- |
 | Date Format | `dateFormat` | The date format every interface without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
 | Time Format | `timeFormat` | The Nexus's clock, wherever a time renders. | **12 Hours** · 24 Hours |
+| Experimental Features | `experimentalFeatures` | Under Advanced; carries the surfaces still being built, which are absent while it is off. | On · **Off** |
 
 **Nexus**
 
