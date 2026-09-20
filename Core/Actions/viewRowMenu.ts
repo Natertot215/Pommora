@@ -1,6 +1,6 @@
 import type { ActionItem } from './menuModel'
 
-type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'delete'
+type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'duplicate' | 'delete'
 
 interface ViewRowMenuContext {
   titlesShown?: boolean
@@ -15,6 +15,7 @@ export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAct
     ...(ctx.titlesShown === undefined
       ? []
       : [{ label: ctx.titlesShown ? 'Hide Titles' : 'Show Titles', action: 'titles' as const }]),
-    { label: 'Delete', action: 'delete', separatorBefore: true, disabled: !ctx.deletable },
+    { label: 'Duplicate', action: 'duplicate', separatorBefore: true },
+    { label: 'Delete', action: 'delete', disabled: !ctx.deletable },
   ]
 }

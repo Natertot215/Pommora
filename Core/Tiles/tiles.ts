@@ -98,6 +98,7 @@ export interface ViewTileEntry {
   active?: number
   style?: TileStyle
   display_title?: string
+  display_icon?: string
   title?: boolean
   icon?: boolean
   title_level?: number
@@ -139,6 +140,7 @@ const viewEntry = z.looseObject({
   views: z.array(embeddedView).min(1),
   active: z.number().int().nonnegative().optional().catch(undefined),
   display_title: z.string().optional().catch(undefined),
+  display_icon: z.string().optional().catch(undefined),
   title: boolField,
   icon: boolField,
   title_level: z.number().int().min(1).max(6).optional().catch(undefined),
