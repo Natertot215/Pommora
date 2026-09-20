@@ -5,27 +5,19 @@ import {
   type CardBanner,
   isCompact,
   type SavedView,
+  type ViewFormat,
   VIEW_KINDS,
   VIEW_TYPES,
   type ViewType,
 } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
-import {
-  MenuIndex,
-  MenuSeparator,
-  MenuTopRow,
-  MenuScrollFrame,
-  MenuFooting,
-  FootingItem,
-} from '@pommora/uix/Menus'
-import { footingLabel, footingSymbol } from '@pommora/uix/Menus/menu-base.css'
-import { Slider } from '@pommora/uix/Controls/Slider'
+import { MenuIndex, MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
-import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { factorPickerProps, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
@@ -79,16 +71,17 @@ const SCALE_MIN = 0.5
 const SCALE_MAX = 1.5
 
 const BANNERS: PickerOption<CardBanner>[] = [
-  { value: 'image', label: 'Image' },
   { value: 'preview', label: 'Preview' },
+  { value: 'banner', label: 'Banner' },
   { value: 'none', label: 'None' },
 ]
 
-// Live scrub: while the Scale knob drags, push the factor onto the configured view's mounted cards root(s), scoped by data-view-id so a sibling cards view isn't dragged along.
-const scrubCardScale = (v: number, viewId: string): void => {
-  for (const el of document.querySelectorAll<HTMLElement>(`.cards-view[data-view-id="${viewId}"]`))
-    el.style.setProperty('--card-scale', String(v))
-}
+const FORMATS: PickerOption<ViewFormat>[] = [
+  { value: 'compact', label: 'Compact' },
+  { value: 'standard', label: 'Standard' },
+]
+
+const SCALE_STEPS = Array.from({ length: 11 }, (_, i) => Number((SCALE_MIN + i / 10).toFixed(2)))
 
 // KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
@@ -137,52 +130,61 @@ export function LayoutFrame({
     const icon = iconForTypeSwitch(view, type)
     write(icon ? { type, icon } : { type })
   }
-  const toggleFormat = (): void => write({ format: isCompact(view) ? 'standard' : 'compact' })
 
-  const cardsFooting = cards ? (
-    <MenuFooting>
-      <FootingItem
-        icon="palette"
-        label="Style"
-        value={isCompact(view) ? 'Compact' : 'Standard'}
-        trailing={
-          <span className={footingSymbol}>
-            <Icon name="chevrons-up-down" size="control" />
-          </span>
-        }
-        onClick={toggleFormat}
+  const cardsRows = cards ? (
+    <>
+      <MenuSeparator flush />
+      <MenuIndex
+        sections={[
+          {
+            rows: [
+              {
+                kind: 'item',
+                icon: <Icon name="image" size="headline" />,
+                label: 'Card Image',
+                trailing: {
+                  kind: 'picker',
+                  ariaLabel: 'Card Image',
+                  solid: true,
+                  value: view.card_banner ?? 'banner',
+                  options: BANNERS,
+                  onPick: (v) => write({ card_banner: v as CardBanner }),
+                },
+              },
+              {
+                kind: 'item',
+                icon: <Icon name="palette" size="headline" />,
+                label: 'Card Style',
+                trailing: {
+                  kind: 'picker',
+                  ariaLabel: 'Card Style',
+                  solid: true,
+                  value: isCompact(view) ? 'compact' : 'standard',
+                  options: FORMATS,
+                  onPick: (v) => write({ format: v as ViewFormat }),
+                },
+              },
+              {
+                kind: 'item',
+                icon: <Icon name="scaling" size="headline" />,
+                label: 'Card Scale',
+                trailing: {
+                  kind: 'picker',
+                  ariaLabel: 'Card Scale',
+                  solid: true,
+                  ...factorPickerProps({
+                    steps: SCALE_STEPS,
+                    value: view.card_size ?? 1,
+                    coerce: (typed) => Math.min(Math.max(typed, SCALE_MIN), SCALE_MAX),
+                    onPick: (v) => write({ card_size: v }),
+                  }),
+                },
+              },
+            ],
+          },
+        ]}
       />
-      <FootingItem
-        icon="image"
-        label="Banner"
-        trailing={
-          <PickerControl
-            ariaLabel="Card Banner"
-            solid
-            value={view.card_banner ?? 'image'}
-            options={BANNERS}
-            onPick={(v) => write({ card_banner: v })}
-          />
-        }
-      />
-      <FootingItem
-        icon="scaling"
-        label="Size"
-        trailing={
-          <Slider
-            value={view.card_size ?? 1}
-            min={SCALE_MIN}
-            max={SCALE_MAX}
-            step={0.05}
-            ariaLabel="Size"
-            onInput={(v) => scrubCardScale(v, view.id)}
-            onCommit={(v) => write({ card_size: v })}
-            format={(v) => `${v.toFixed(2)}x`}
-            readoutClassName={footingLabel}
-          />
-        }
-      />
-    </MenuFooting>
+    </>
   ) : null
 
   const leafPane =
@@ -266,7 +268,7 @@ export function LayoutFrame({
     )
 
   const mainFrame = (
-    <MenuScrollFrame header={header} footer={cardsFooting} maxHeight={VIEWSETTINGS_MAX_HEIGHT}>
+    <MenuScrollFrame header={header} footer={cardsRows} maxHeight={VIEWSETTINGS_MAX_HEIGHT}>
       {door === 'full' && (
         <>
           {title}

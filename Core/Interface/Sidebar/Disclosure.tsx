@@ -1,5 +1,5 @@
 import { Children, isValidElement, useEffect, useRef, useState } from 'react'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
+import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
@@ -151,7 +151,7 @@ export function Disclosure({
           onSetLock?.(!locked)
         }}
       >
-        <Icon name={locked ? 'locked' : 'lock-open'} size="control" />
+        <LockGlyph locked={locked} />
       </button>
     ) : undefined
   const header = (

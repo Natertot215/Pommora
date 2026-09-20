@@ -5,7 +5,7 @@ import {
   PickerMenu,
   type PickerDirection,
 } from '@pommora/uix/Pickers/picker-base'
-import { Icon } from '@pommora/uix/Symbols'
+import { LockGlyph } from '@pommora/uix/Symbols'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
@@ -466,7 +466,7 @@ export function GlancePane(): React.JSX.Element {
       onMouseDown={(e) => e.preventDefault()}
       onClick={onLock}
     >
-      <Icon name="lock-open" size="control" />
+      <LockGlyph locked={false} />
     </button>
   )
   // A locked pin holds its control always visible; unlocking flips it to the reveal-on-hover open lock and leaves the pane standing.
@@ -478,7 +478,7 @@ export function GlancePane(): React.JSX.Element {
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => setPinLocked(p.pinId, !p.locked)}
     >
-      <Icon name={p.locked ? 'locked' : 'lock-open'} size="control" />
+      <LockGlyph locked={p.locked} />
     </button>
   )
 

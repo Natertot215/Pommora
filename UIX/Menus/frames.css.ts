@@ -2,7 +2,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
 import type { IconSize } from '../Theme/theme-vars.css'
 import { duration, easing } from '../Animations/motion'
-import { accessoryButton, flushAffordance, footing, rowBox, rowDragging } from './menu-base.css'
+import { accessoryButton, flushAffordance, rowBox, rowDragging } from './menu-base.css'
 import { button as eyeToggleButton } from '../Elements/eye-toggle.css'
 import { menuAnchor } from './menuAnchor'
 import { stack } from '../Theme/stack'
@@ -161,8 +161,4 @@ export const configEditor = style({
   flexDirection: 'column',
   gap: '8px',
   paddingTop: `${OPTION.gapAroundLabel}px`,
-})
-
-export const footerLock = style({
-  selectors: { [`${footing} &`]: { color: c.label.tertiary } },
 })

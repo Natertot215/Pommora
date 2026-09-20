@@ -25,12 +25,12 @@ export const VIEW_KINDS: Record<ViewType, ViewKind> = {
 }
 
 const VIEW_FORMATS = ['standard', 'compact'] as const
-type ViewFormat = (typeof VIEW_FORMATS)[number]
+export type ViewFormat = (typeof VIEW_FORMATS)[number]
 
 export const isCompact = (view: { format?: ViewFormat }): boolean =>
   (view.format ?? 'standard') === 'compact'
 
-const CARD_BANNERS = ['image', 'preview', 'none'] as const
+const CARD_BANNERS = ['banner', 'preview', 'none'] as const
 export type CardBanner = (typeof CARD_BANNERS)[number]
 
 export const COLUMN_ALIGNS = ['left', 'center', 'right'] as const

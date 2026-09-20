@@ -5,7 +5,7 @@ import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf } from '../../Nexus/treeIndex'
-import { footerLock, ICON } from '@pommora/uix/Menus/frames.css'
+import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeIndex'
 import { pickView } from '../Pipeline/pickView'
@@ -19,8 +19,8 @@ import { LayoutFrame } from './LayoutFrame'
 import { ScalePicker } from '@pommora/core/Settings/ScalePicker'
 import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
 import {
-  AccessoryButton,
   FooterIconButton,
+  FooterLockButton,
   MenuFooting,
   MenuIndex,
   MenuRowView,
@@ -194,18 +194,14 @@ export function SettingsFrame(): React.JSX.Element | null {
       footer={
         <MenuFooting
           leading={
-            <NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />
+            <FooterLockButton
+              ariaLabel={lockLabel(scope.locked, 'view configuration')}
+              locked={scope.locked}
+              onToggle={() => scope.setLocked(!scope.locked)}
+            />
           }
           trailing={
-            <AccessoryButton
-              icon={scope.locked ? 'locked' : 'lock-open'}
-              size="control"
-              box={20}
-              ariaLabel={lockLabel(scope.locked, 'view configuration')}
-              className={footerLock}
-              pressed={scope.locked}
-              onClick={() => scope.setLocked(!scope.locked)}
-            />
+            <NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />
           }
         />
       }
