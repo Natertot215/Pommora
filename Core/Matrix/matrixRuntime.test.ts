@@ -424,6 +424,23 @@ describe('matrixRuntime', () => {
     expect(graphAsk).toHaveBeenCalledTimes(1)
   })
 
+  // Every frame is made from a box, so a gesture before the first fit moves a real picture rather than scaling an empty one.
+  it('takes its first frame from the first stage that has a size', () => {
+    seed()
+    attach()
+    flush()
+    detach?.()
+    detach = null
+    expect(matrixRuntime.frame).toBeNull()
+
+    matrixRuntime.setStage(surface, { ...STAGE, width: 0, height: 0 })
+    expect(matrixRuntime.frame).toBeNull()
+
+    matrixRuntime.setStage(surface, STAGE)
+    expect(matrixRuntime.frame).toEqual({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(matrixRuntime.viewportOf(surface).zoom).toBe(1)
+  })
+
   it('keeps a resized stage centred on the world point it already held', () => {
     seed()
     attach()

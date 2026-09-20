@@ -3,6 +3,7 @@ import {
   fit,
   type Frame,
   framed,
+  lifeSize,
   panFrame,
   type Stage,
   toScreen,
@@ -48,15 +49,12 @@ describe('the viewport', () => {
     expect(ay - by).toBeCloseTo(-60)
   })
 
-  // A frame nothing has fitted yet shows the world at life size; a gesture on it has to mint a real extent rather than scale a zero one.
-  it('a gesture on an unset frame takes the stage extent and moves the picture', () => {
-    const unset: Frame = { cx: 0, cy: 0, w: 0, h: 0 }
-    expect(framed(unset, WIDE).zoom).toBe(1)
-    const panned = panFrame(unset, WIDE, 40, 0)
-    expect(panned.w).toBe(WIDE.width)
-    expect(framed(panned, WIDE).zoom).toBe(1)
-    const zoomed = zoomFrame(unset, WIDE, 100, 100, 1.5)
-    expect(framed(zoomed, WIDE).zoom).toBeCloseTo(1.5)
+  it('lifeSize frames a stage at its own scale', () => {
+    const v = framed(lifeSize(WIDE), WIDE)
+    expect(v.zoom).toBe(1)
+    const [sx, sy] = toScreen(v, 0, 0)
+    expect(sx).toBeCloseTo(WIDE.x + WIDE.width / 2)
+    expect(sy).toBeCloseTo(WIDE.y + WIDE.height / 2)
   })
 
   it('a stage pinned at a clamp moves no other stage', () => {
