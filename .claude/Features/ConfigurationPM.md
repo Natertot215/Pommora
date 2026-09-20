@@ -91,7 +91,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a block, or a folder that carries no schema. Collections, Sets, views and properties ask regardless. | **On** · Off |
+| Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a property, or one of a property's options. Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it. | **On** · Off |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
 
 **File History**
@@ -170,7 +170,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 | Toggle Iteration | `toggle-iteration` | Summons the iteration window. | ⌘⇧T |
 | Next Tab | `next-tab` | Moves to the next tab in visual order. | ⌃Tab |
 | Previous Tab | `previous-tab` | Moves to the previous tab in visual order. | ⌃⇧Tab |
-| Undo Value | `undo-value` | Reverts the last property value written outside a text field. | ⌘Z |
+| Undo Value | `undo-value` | Reverts the last property value written outside a text field, and restores the last deletion that offered an Undo. | ⌘Z |
 | Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves. | ⌘⇧V |
 | Bold | `format:bold` | Bolds the selection. | ⌘B |
 | Italic | `format:italic` | Italicizes the selection. | ⌘I |
