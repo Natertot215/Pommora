@@ -425,7 +425,6 @@ export function PickerRow({
   onClick,
   onContextMenu,
   selected = false,
-  ring = false,
   leading,
   align,
   disabled = false,
@@ -434,7 +433,6 @@ export function PickerRow({
   onClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
   selected?: boolean
-  ring?: boolean
   leading?: ReactNode
   align?: 'start' | 'center'
   disabled?: boolean
@@ -443,12 +441,7 @@ export function PickerRow({
   return (
     <button
       type="button"
-      className={cx(
-        s.option,
-        selected && s.optionSelected,
-        selected && ring && s.optionRing,
-        disabled && rowDisabled,
-      )}
+      className={cx(s.option, selected && s.optionSelected, disabled && rowDisabled)}
       disabled={disabled}
       onClick={onClick}
       onContextMenu={onContextMenu}
