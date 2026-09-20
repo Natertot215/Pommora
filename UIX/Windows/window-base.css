@@ -87,6 +87,7 @@
   min-width: 0;
   min-height: 0;
   padding-top: var(--window-toolbar-h);
+  --over-scroll-fade: var(--window-toolbar-h);
   overflow-y: auto;
   scrollbar-width: none;
   transition: padding-right var(--duration-base) var(--ease-base);
@@ -147,7 +148,7 @@
   display: flex;
   align-items: center;
 }
-.page-window .window-tabwrap {
+.window-toolbar .window-tabwrap {
   align-self: flex-start;
   height: var(--window-toolbar-h);
   pointer-events: auto;
