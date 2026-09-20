@@ -15,7 +15,7 @@ import {
   wakeLocal,
 } from './Engine/simulation'
 import {
-  DEFAULT_FRAME,
+  lifeSize,
   fit,
   type Frame,
   framed,
@@ -65,7 +65,7 @@ const EMPTY: Graph = { nodes: [], links: [], index: new Map() }
 class MatrixRuntime {
   graph: Graph = EMPTY
   sim: Simulation | null = null
-  frame: Frame = DEFAULT_FRAME
+  frame: Frame | null = null
   hoveredId: string | null = null
   acting: string | null = null
   private dragFrom: { id: string; x: number; y: number } | null = null
@@ -116,7 +116,7 @@ class MatrixRuntime {
 
   private clear(): void {
     this.flushFrame()
-    this.frame = DEFAULT_FRAME
+    this.frame = null
     this.built = null
     this.graph = EMPTY
     this.sim = null
@@ -235,10 +235,11 @@ class MatrixRuntime {
   }
 
   private flushFrame(): void {
-    if (this.save === null) return
+    const f = this.frame
+    if (this.save === null || f === null) return
     clearTimeout(this.save)
     this.save = null
-    useSession.getState().saveMatrixFrame(this.frame)
+    useSession.getState().saveMatrixFrame(f)
   }
 
   private fitted(): Frame | null {
@@ -305,9 +306,10 @@ class MatrixRuntime {
     })
   }
 
-  // Each surface fits the shared frame into its own box, so a stage that moves or resizes reframes only its own picture.
+  // Each surface fits the shared frame into its own box, so a stage that moves or resizes reframes only its own picture. The first box to arrive is also what a frame is made from, so every frame past that carries a real extent.
   setStage(surface: Surface, next: Stage): void {
     this.stages.set(surface, next)
+    if (this.frame === null && next.width > 0) this.frame = lifeSize(next)
   }
 
   private stageOf(surface: Surface): Stage {
@@ -315,14 +317,17 @@ class MatrixRuntime {
   }
 
   viewportOf(surface: Surface): Viewport {
-    return framed(this.frame, this.stageOf(surface))
+    const stage = this.stageOf(surface)
+    return framed(this.frame ?? lifeSize(stage), stage)
   }
 
   pan(surface: Surface, dx: number, dy: number): void {
+    if (this.frame === null) return
     this.setFrame(panFrame(this.frame, this.stageOf(surface), dx, dy))
   }
 
   zoom(surface: Surface, sx: number, sy: number, factor: number): void {
+    if (this.frame === null) return
     this.setFrame(zoomFrame(this.frame, this.stageOf(surface), sx, sy, factor))
   }
 
@@ -364,7 +369,7 @@ class MatrixRuntime {
     if (this.save !== null) clearTimeout(this.save)
     this.save = setTimeout(() => {
       this.save = null
-      useSession.getState().saveMatrixFrame(this.frame)
+      useSession.getState().saveMatrixFrame(f)
     }, FRAME_SAVE_MS)
     this.invalidate()
   }
