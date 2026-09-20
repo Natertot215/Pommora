@@ -386,7 +386,7 @@ export function MatrixCanvas({
     // biome-ignore lint/a11y/noStaticElementInteractions: the canvas is the surface, and its nodes carry their own semantics through the overlay
     <div
       ref={hostRef}
-      className={s.host}
+      className={cx('over-scroll', s.host)}
       onPointerDown={(e) => {
         const canvas = canvasRef.current
         if (!canvas || !onCanvas(e)) return
