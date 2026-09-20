@@ -12,31 +12,21 @@ import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
 
-// The icon that summoned a window dismisses it, matching the keyboard command that shares the state — neither switches sidebarMode.
-type RibbonKey = 'matrix' | 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
+// The Settings icon dismisses the window it summoned, matching the keyboard command that shares the state, and never switches sidebarMode.
+type RibbonKey = 'matrix' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   collections: 'collections',
   contexts: 'contexts',
   agenda: 'agenda',
 }
-const STATIC_ICON: Record<'matrix' | 'agenda' | 'navigation' | 'settings', string> = {
+const STATIC_ICON: Record<'matrix' | 'agenda' | 'settings', string> = {
   matrix: MATRIX_ICON,
   agenda: 'calendar',
-  navigation: 'map',
   settings: 'sliders-horizontal',
 }
-type SummonKey = 'matrix' | 'navigation'
 type RibbonMenuAction = 'open' | 'preview'
-const summons = (k: RibbonKey): k is SummonKey => k === 'matrix' || k === 'navigation'
 
-const DEFAULT_ORDER: RibbonKey[] = [
-  'matrix',
-  'navigation',
-  'agenda',
-  'contexts',
-  'collections',
-  'settings',
-]
+const DEFAULT_ORDER: RibbonKey[] = ['matrix', 'agenda', 'contexts', 'collections', 'settings']
 
 function resolveOrder(persisted: string[] | undefined): RibbonKey[] {
   const known = new Set<string>(DEFAULT_ORDER)
@@ -49,16 +39,12 @@ function resolveOrder(persisted: string[] | undefined): RibbonKey[] {
 
 export function Ribbon(): React.JSX.Element {
   const select = useSession((s) => s.select)
-  const toggleNav = useSession((s) => s.toggleNav)
   const toggleSettings = useSession((s) => s.toggleSettings)
   const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
   const openMatrixWindow = useSession((s) => s.openMatrixWindow)
-  const openNav = useSession((s) => s.openNav)
-  const openNewTab = useSession((s) => s.openNewTab)
   const matrixInWindow = useSession((s) => s.personalization.matrixOpenIn === 'window')
   const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
-  const navTab = useSession((s) => s.tabs.some((t) => t.target.kind === 'newtab'))
-  const windowKind = useSession((s) => s.pageWindow?.kind ?? null)
+  const matrixWindowOpen = useSession((s) => s.pageWindow?.kind === 'matrix')
   const mode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
   const order = useSession((s) => s.personalization.ribbonOrder)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -75,7 +61,6 @@ export function Ribbon(): React.JSX.Element {
   const onIcon = (k: RibbonKey): void => {
     const m = MODE_FOR[k]
     if (m) setPersonalization('sidebarMode', m)
-    else if (k === 'navigation') toggleNav()
     else if (k === 'settings') toggleSettings()
     else if (k === 'matrix') {
       if (matrixInWindow && !matrixTab) toggleMatrixWindow()
@@ -84,23 +69,16 @@ export function Ribbon(): React.JSX.Element {
   }
 
   // No trigger: a right-click presents natively whatever the in-app menu preference says.
-  const openMenu = async (k: SummonKey): Promise<void> => {
-    const alreadyOpen = k === 'matrix' ? matrixTab : navTab
-    const previewing = windowKind === (k === 'matrix' ? 'matrix' : 'nav')
+  const openMenu = async (): Promise<void> => {
     const action = await popMenu<RibbonMenuAction>(
       openOrder<RibbonMenuAction>(
-        alreadyOpen,
-        [{ label: openLabel(alreadyOpen), action: 'open' }],
-        [{ label: 'Preview', action: 'preview', disabled: previewing }],
+        matrixTab,
+        [{ label: openLabel(matrixTab), action: 'open' }],
+        [{ label: 'Preview', action: 'preview', disabled: matrixWindowOpen }],
       ),
     )
-    if (action === 'open') {
-      if (k === 'matrix') void select(MATRIX_REF)
-      else openNewTab()
-    } else if (action === 'preview') {
-      if (k === 'matrix') openMatrixWindow()
-      else openNav()
-    }
+    if (action === 'open') void select(MATRIX_REF)
+    else if (action === 'preview') openMatrixWindow()
   }
 
   const reorderIcons = (activeId: string, overId: string): void => {
@@ -130,7 +108,7 @@ export function Ribbon(): React.JSX.Element {
             icon={iconFor(k)}
             active={MODE_FOR[k] === mode}
             onClick={() => onIcon(k)}
-            onMenu={summons(k) ? () => void openMenu(k) : undefined}
+            onMenu={k === 'matrix' ? () => void openMenu() : undefined}
           />
         ))}
       </SortableZone>

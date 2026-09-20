@@ -9,23 +9,27 @@ type BannerMenuAction = 'change' | 'edit' | 'remove'
 
 type IconFavoriteMenuAction = 'toggle'
 
+// The nexus holds an icon or a photo, so the one it holds leads as Edit and the other follows as Add. The seeded mark is neither: it offers both and restores nothing.
 export function nexusIconMenuItems(opts: {
   hasPhoto: boolean
   hasGlyph: boolean
 }): ActionItem<NexusIconAction>[] {
+  const icon: ActionItem<NexusIconAction> = {
+    label: opts.hasGlyph ? 'Edit Icon' : 'Add Icon',
+    action: 'changeIcon',
+  }
+  const photo: ActionItem<NexusIconAction> = opts.hasPhoto
+    ? { label: 'Edit Photo', action: 'editPhoto' }
+    : { label: 'Add Photo', action: 'addPhoto' }
+  const rows = opts.hasPhoto ? [photo, icon] : [icon, photo]
+  if (!opts.hasPhoto && !opts.hasGlyph) return rows
   return [
-    { label: 'Edit Icon', action: 'changeIcon' },
-    ...(opts.hasPhoto ? [{ label: 'Edit Photo', action: 'editPhoto' as const }] : []),
-    { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', action: 'addPhoto' },
-    ...(opts.hasPhoto || opts.hasGlyph
-      ? [
-          {
-            label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon',
-            action: 'resetIcon' as const,
-            separatorBefore: true,
-          },
-        ]
-      : []),
+    ...rows,
+    {
+      label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon',
+      action: 'resetIcon',
+      separatorBefore: true,
+    },
   ]
 }
 

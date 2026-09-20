@@ -5,7 +5,6 @@ import { ToolbarTrio } from './ToolbarTrio'
 import { ViewMenu } from '../../Views/Settings/ViewMenu'
 import { SpaceMenu } from '../../Tiles/SpaceMenu'
 import { OutlineMenu } from './OutlineMenu'
-import { NavMenu } from './NavMenu'
 import { TabBar } from '../../Navigation/TabBar'
 import { activeUnpinnedTab } from '../../Navigation/tabsModel'
 import { SettingsMenu } from './SettingsMenu'
@@ -15,8 +14,8 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import './toolbar.css'
 import '@pommora/uix/Animations/toolbar-slide.css'
 
-type TrioPanel = 'navigation' | 'settings'
-type TrioSegment = Segment & { panel?: TrioPanel }
+// Settings is the only segment that opens a panel; the others act where they stand.
+type TrioSegment = Segment & { panel?: boolean }
 
 export function Toolbar({
   sidePaneOpen,
@@ -25,17 +24,16 @@ export function Toolbar({
   sidePaneOpen: boolean
   onToggleSidePane: () => void
 }): React.JSX.Element {
-  const [panel, setPanel] = useState<TrioPanel | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [beaks, setBeaks] = useState<number[]>([])
   const trioRef = useRef<HTMLDivElement>(null)
   const matrixPane = useSession((s) => viewSettingsScope(s.selection) === 'matrix')
-  useDismissal(panel !== null, false, {
+  useDismissal(settingsOpen, false, {
     layer: () => trioRef.current,
-    dismiss: () => setPanel(null),
-    outsidePress: !(panel === 'settings' && matrixPane),
+    dismiss: () => setSettingsOpen(false),
+    outsidePress: !(settingsOpen && matrixPane),
   })
-  const navP = useExitPresence(panel === 'navigation')
-  const settingsP = useExitPresence(panel === 'settings')
+  const settingsP = useExitPresence(settingsOpen)
 
   useEffect(() => {
     const el = trioRef.current
@@ -61,9 +59,9 @@ export function Toolbar({
     return () => ro.disconnect()
   }, [])
 
-  const toggle = (p: TrioPanel): void => setPanel((cur) => (cur === p ? null : p))
-
   const flat = useSession((s) => s.hostPlatform === 'windows')
+  const toggleNav = useSession((s) => s.toggleNav)
+  const navOpen = useSession((s) => s.navOpen)
   const goBack = useSession((s) => s.goBack)
   const goForward = useSession((s) => s.goForward)
   const canGoBack = useSession((s) => {
@@ -80,23 +78,17 @@ export function Toolbar({
     { icon: 'chevron-right', title: 'Forward', onClick: goForward, disabled: !canGoForward },
   ]
   const trio: TrioSegment[] = [
-    {
-      icon: 'map',
-      title: 'Navigation',
-      panel: 'navigation',
-      onClick: () => toggle('navigation'),
-      active: panel === 'navigation',
-    },
+    { icon: 'map', title: 'Navigation', onClick: toggleNav, active: navOpen },
     {
       icon: 'sliders-horizontal',
       title: 'Settings',
-      panel: 'settings',
-      onClick: () => toggle('settings'),
-      active: panel === 'settings',
+      panel: true,
+      onClick: () => setSettingsOpen((v) => !v),
+      active: settingsOpen,
     },
     { icon: 'panel-right', title: 'Side Pane', onClick: onToggleSidePane, active: sidePaneOpen },
   ]
-  const beakFor = (p: TrioPanel): number | undefined => beaks[trio.findIndex((s) => s.panel === p)]
+  const settingsBeak = beaks[trio.findIndex((s) => s.panel)]
 
   return (
     <div className="app-toolbar">
@@ -110,11 +102,8 @@ export function Toolbar({
         <SpaceMenu />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
           <ToolbarTrio segments={trio} flat={flat} />
-          {navP.mounted && (
-            <NavMenu closing={navP.closing} notchInsetRight={beakFor('navigation')} />
-          )}
           {settingsP.mounted && (
-            <SettingsMenu closing={settingsP.closing} notchInsetRight={beakFor('settings')} />
+            <SettingsMenu closing={settingsP.closing} notchInsetRight={settingsBeak} />
           )}
         </div>
       </div>
