@@ -98,7 +98,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 #### Fades
 
-The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window sets its own dynamically, to its toolbar's height, so content dissolves exactly under the toolbar.
+The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window's body takes the larger of its toolbar band's height and the primitive's own default, so content dissolves across the band where one exists and along a plain edge where it doesn't.
 
 | Title       | Token           | Value  | Role                                          |
 | ----------- | --------------- | ------ | --------------------------------------------- |
