@@ -7,6 +7,7 @@ import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { pickerBloom } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { firePointer, stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
 import { armGlance, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
 import type { GlanceTarget } from '../../MarkdownPM/api'
@@ -550,6 +551,40 @@ describe('pinned panes (Task 10)', () => {
     expect(warned()).toBe(true)
     ctlHost.remove()
     spy.mockRestore()
+  })
+})
+
+// The grips sit beside the pane's body rather than inside it, so containment has to read against the portal layer or a press on one is a press away.
+describe('the resize edges', () => {
+  // The pane blooms out rather than unmounting, so a dismissal reads as the closing class, not an absent portal.
+  const leaving = (): boolean => document.querySelector(`.${pickerBloom.close}`) !== null
+
+  const grip = (): HTMLElement => {
+    const el = document.querySelector<HTMLElement>('[data-picker-portal] .resize-edge-e')
+    if (!el) throw new Error('no east resize edge')
+    return el
+  }
+
+  beforeEach(() => {
+    stubPointerCapture()
+    useSession.setState((st) => ({
+      personalization: { ...st.personalization, dismissPreviewOnPointer: true },
+    }))
+  })
+
+  it('a press away blooms the pane out', async () => {
+    present(link())
+    await flush()
+    await act(async () => firePointer(document.body, 'pointerdown'))
+    expect(leaving()).toBe(true)
+  })
+
+  it('a press on a resize edge leaves the pane standing', async () => {
+    present(link())
+    await flush()
+    expect(grip()).toBeTruthy()
+    await act(async () => firePointer(grip(), 'pointerdown'))
+    expect(leaving()).toBe(false)
   })
 })
 

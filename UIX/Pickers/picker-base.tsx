@@ -17,6 +17,9 @@ import { GlassWindow } from '../Glass/glass-window'
 import { rowDisabled } from '../Menus/menu-base.css'
 import { MenuScrollFrame } from '../Menus/menu-row'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
+
+/** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
+export const PICKER_PORTAL_ATTR = 'data-picker-portal'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
@@ -381,7 +384,7 @@ export function PickerMenu({
             // biome-ignore lint/a11y/noStaticElementInteractions: a shield, not a control
             <div
               className={s.shield}
-              data-picker-portal
+              {...{ [PICKER_PORTAL_ATTR]: '' }}
               {...{ [SHIELD_ATTR]: '' }}
               onPointerDown={stopPointerBubble}
               onContextMenu={stopContextBubble}
@@ -391,7 +394,7 @@ export function PickerMenu({
           <div
             ref={paneRef}
             className={s.layer}
-            data-picker-portal
+            {...{ [PICKER_PORTAL_ATTR]: '' }}
             tabIndex={managed ? -1 : undefined}
             onPointerDown={stopPointerBubble}
             onContextMenu={stopContextBubble}

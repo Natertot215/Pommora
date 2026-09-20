@@ -1,6 +1,10 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
-import { PickerMenu, type PickerDirection } from '@pommora/uix/Pickers/picker-base'
+import {
+  PICKER_PORTAL_ATTR,
+  PickerMenu,
+  type PickerDirection,
+} from '@pommora/uix/Pickers/picker-base'
 import { Icon } from '@pommora/uix/Symbols'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
@@ -280,7 +284,7 @@ export function GlancePane(): React.JSX.Element {
   useEffect(() => {
     const onDown = (e: PointerEvent): void => {
       const t = e.target
-      if (t instanceof Element && t.closest('[data-picker-portal]')) return
+      if (t instanceof Element && t.closest(`[${PICKER_PORTAL_ATTR}]`)) return
       beginExit(
         useSession
           .getState()
@@ -393,7 +397,8 @@ export function GlancePane(): React.JSX.Element {
       onGone: close,
       onEscape: close,
       onMoved: dropBoxes,
-      body: () => cardRef.current,
+      // The pane's rim and its resize edges sit outside the body, so containment reads against the portal layer and a press on an edge is not a press away.
+      body: () => cardRef.current?.closest(`[${PICKER_PORTAL_ATTR}]`) ?? null,
       dismissOnPress: dismissOnPointer,
     })
     return () => {
