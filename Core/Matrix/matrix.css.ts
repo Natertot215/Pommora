@@ -16,8 +16,13 @@ export const host = style({
   width: '100%',
   height: '100%',
   overflow: 'hidden',
+  // The fade is a fixed band here, not a scroll signal: a canvas never scrolls, so the kit's timeline is dropped and its progress pinned open.
+  animationName: 'none',
   selectors: {
-    // The graph runs to the window's edges under the bands, so the kit's edge fade is pinned open — a canvas never scrolls, and its timeline would otherwise leave the mask flat.
+    '&:not(.window *)': {
+      maskImage: 'none',
+      WebkitMaskImage: 'none',
+    },
     '.window &': {
       flex: 1,
       minHeight: 0,
