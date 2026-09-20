@@ -10,26 +10,34 @@ const shape = (items: { label: string; separatorBefore?: boolean }[]): string[] 
   items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
 
 describe('the nexus icon menu', () => {
-  it('offers the photo rows only with a photo, and divides one reset off', () => {
-    expect(shape(nexusIconMenuItems({ hasPhoto: false, hasGlyph: false }))).toEqual([
-      'Edit Icon',
-      'Add Photo',
-    ])
-    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: false }))).toEqual([
-      'Edit Icon',
-      'Edit Photo',
-      'Change Photo',
-      '—',
-      'Reset Photo',
-    ])
-    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: true }))).toEqual(
-      shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: false })),
-    )
+  it('leads with what the nexus holds and offers the other as an addition', () => {
     expect(shape(nexusIconMenuItems({ hasPhoto: false, hasGlyph: true }))).toEqual([
       'Edit Icon',
       'Add Photo',
       '—',
       'Reset Icon',
+    ])
+    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: false }))).toEqual([
+      'Edit Photo',
+      'Add Icon',
+      '—',
+      'Reset Photo',
+    ])
+  })
+
+  it('offers both as additions on the seeded mark, and nothing to restore', () => {
+    expect(shape(nexusIconMenuItems({ hasPhoto: false, hasGlyph: false }))).toEqual([
+      'Add Icon',
+      'Add Photo',
+    ])
+  })
+
+  it('names the photo when a hand-written settings file carries both', () => {
+    expect(shape(nexusIconMenuItems({ hasPhoto: true, hasGlyph: true }))).toEqual([
+      'Edit Photo',
+      'Edit Icon',
+      '—',
+      'Reset Photo',
     ])
   })
 })

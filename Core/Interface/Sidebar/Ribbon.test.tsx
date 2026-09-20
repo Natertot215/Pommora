@@ -37,18 +37,11 @@ afterEach(() => {
 const buttons = (): HTMLButtonElement[] => Array.from(host.querySelectorAll('button'))
 
 describe('Ribbon', () => {
-  it('renders Homepage first, then the six launcher icons in order', () => {
+  it('renders Homepage first, then the five launcher icons in order', () => {
     const bs = buttons()
     expect(bs[0].getAttribute('aria-label')).toBe('Homepage')
     const labels = bs.slice(1).map((b) => b.getAttribute('aria-label'))
-    expect(labels).toEqual([
-      'matrix',
-      'navigation',
-      'agenda',
-      'contexts',
-      'collections',
-      'settings',
-    ])
+    expect(labels).toEqual(['matrix', 'agenda', 'contexts', 'collections', 'settings'])
   })
 
   it('a Matrix click opens the Matrix and never switches mode', () => {
@@ -101,30 +94,18 @@ describe('Ribbon', () => {
     expect(setPersonalizationSpy).toHaveBeenCalledWith('sidebarMode', 'contexts')
   })
 
-  it('navigation / settings are no-ops (no mode switch)', () => {
-    const nav = buttons().find((b) => b.getAttribute('aria-label') === 'navigation')!
-    act(() => nav.click())
+  it('settings is a no-op (no mode switch)', () => {
+    const settings = buttons().find((b) => b.getAttribute('aria-label') === 'settings')!
+    act(() => settings.click())
     expect(setPersonalizationSpy).not.toHaveBeenCalled()
   })
 
-  it('the window icons toggle — the icon that summoned a window dismisses it', () => {
-    const toggleNavSpy = vi.fn()
+  it('the Settings icon toggles — the icon that summoned a window dismisses it', () => {
     const toggleSettingsSpy = vi.fn()
-    act(() =>
-      useSession.setState({
-        toggleNav: toggleNavSpy as never,
-        toggleSettings: toggleSettingsSpy as never,
-      }),
-    )
-    const click = (label: string): void => {
-      const b = buttons().find((x) => x.getAttribute('aria-label') === label)!
-      act(() => b.click())
-    }
-    click('navigation')
-    click('navigation')
-    click('settings')
-    click('settings')
-    expect(toggleNavSpy).toHaveBeenCalledTimes(2)
+    act(() => useSession.setState({ toggleSettings: toggleSettingsSpy as never }))
+    const settings = buttons().find((b) => b.getAttribute('aria-label') === 'settings')!
+    act(() => settings.click())
+    act(() => settings.click())
     expect(toggleSettingsSpy).toHaveBeenCalledTimes(2)
   })
 
@@ -146,15 +127,29 @@ describe('Ribbon', () => {
       .map((b) => b.getAttribute('aria-label'))
   }
 
-  it('seats a missing key at its default index — a saved five-key order still shows the Matrix first', () => {
-    expect(
-      renderWithOrder(['settings', 'agenda', 'contexts', 'collections', 'navigation']),
-    ).toEqual(['matrix', 'settings', 'agenda', 'contexts', 'collections', 'navigation'])
+  it('seats a missing key at its default index — a saved four-key order still shows the Matrix first', () => {
+    expect(renderWithOrder(['settings', 'agenda', 'contexts', 'collections'])).toEqual([
+      'matrix',
+      'settings',
+      'agenda',
+      'contexts',
+      'collections',
+    ])
   })
 
   it('honors a saved order that places the Matrix itself', () => {
+    expect(renderWithOrder(['settings', 'agenda', 'contexts', 'matrix', 'collections'])).toEqual([
+      'settings',
+      'agenda',
+      'contexts',
+      'matrix',
+      'collections',
+    ])
+  })
+
+  it('drops a key the ribbon no longer carries — a saved order naming Navigation loses it', () => {
     expect(
-      renderWithOrder(['settings', 'agenda', 'contexts', 'matrix', 'collections', 'navigation']),
-    ).toEqual(['settings', 'agenda', 'contexts', 'matrix', 'collections', 'navigation'])
+      renderWithOrder(['settings', 'navigation', 'agenda', 'contexts', 'matrix', 'collections']),
+    ).toEqual(['settings', 'agenda', 'contexts', 'matrix', 'collections'])
   })
 })
