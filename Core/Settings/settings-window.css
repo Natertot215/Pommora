@@ -9,10 +9,12 @@
   min-height: 0;
   overflow-y: auto;
 }
-.settings-rail-foot {
+/* The doubled class beats whatever order the sheets land in: the foot sits on the rail's own inset, as a footing bar does. */
+.settings-rail-foot.settings-rail-foot {
   position: relative;
   z-index: 4;
   flex: 0 0 auto;
+  padding-bottom: 0;
 }
 
 .settings-body {
