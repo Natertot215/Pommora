@@ -17,9 +17,15 @@ export const host = style({
   height: '100%',
   overflow: 'hidden',
   selectors: {
+    // The graph runs to the window's edges under the bands, so the kit's edge fade is pinned open — a canvas never scrolls, and its timeline would otherwise leave the mask flat.
     '.window &': {
       flex: 1,
       minHeight: 0,
+      vars: {
+        '--os-lead': '1',
+        '--os-trail': '1',
+        '--over-scroll-fade': 'var(--window-toolbar-h)',
+      },
     },
   },
   vars: {
