@@ -87,7 +87,6 @@ export function DisclosureRow({
   const row = picker ? (
     <PickerRow
       selected={selected}
-      ring
       onClick={onClick}
       leading={
         <span className={side}>

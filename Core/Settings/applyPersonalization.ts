@@ -74,13 +74,8 @@ const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
   muteCheckedItems: 'mute-checked',
 }
 
-/** The string-valued sibling of ROOT_CLASSES, for a setting whose default writes no key at all. */
-const ROOT_VALUE_CLASSES: Partial<Record<keyof Personalization, { value: string; cls: string }>> = {
-  pickerSelection: { value: 'checked', cls: 'picker-checked' },
-}
-
-/** The three tables are the whole roster: a key with a DOM effect belongs to exactly one, so a new setting is only ever an entry, never a second list to keep in step. */
-const TABLES = [ROOT_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES] as const
+/** The two tables are the whole roster: a key with a DOM effect belongs to exactly one, so a new setting is only ever an entry, never a second list to keep in step. */
+const TABLES = [ROOT_VARS, ROOT_CLASSES] as const
 
 export function applyPersonalizationKey<K extends keyof Personalization>(
   key: K,
@@ -98,8 +93,6 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
   // Anything in no table has no DOM effect at this seam: accent → applyAccent; defaultIcons → resolved per-render.
   const cls = ROOT_CLASSES[key]
   if (cls) el.classList.toggle(cls, value === true)
-  const valued = ROOT_VALUE_CLASSES[key]
-  if (valued) el.classList.toggle(valued.cls, value === valued.value)
 }
 
 export function applyPersonalization(p: Personalization): void {

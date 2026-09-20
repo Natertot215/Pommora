@@ -32,7 +32,6 @@ import {
   type InPageHeadingResolution,
   type MatrixOpenIn,
   type Personalization,
-  type PickerSelection,
   type PreviewPersistence,
   type TabOpenBehavior,
   type TimeFormatSetting,
@@ -112,7 +111,6 @@ export type Row =
   | PickerControlRow<LinkDisplay>
   | PickerControlRow<DateFormat>
   | PickerControlRow<TimeFormatSetting>
-  | PickerControlRow<PickerSelection>
   | PickerControlRow<PreviewPersistence>
   | PickerControlRow<TabOpenBehavior>
   | PickerControlRow<MatrixOpenIn>
@@ -172,11 +170,6 @@ type Frame = {
   | { sections: readonly Section[]; Surface?: never }
   | { Surface: () => React.JSX.Element; sections?: never }
 )
-
-const pickerSelectionOptions: readonly PickerOption<PickerSelection>[] = [
-  { value: 'outlined', label: 'Outlined' },
-  { value: 'checked', label: 'Checked' },
-]
 
 const dateFormatOptions: readonly PickerOption<DateFormat>[] = DATE_FORMATS.map((value) => ({
   value,
@@ -260,14 +253,6 @@ export const FRAMES = roster([
             key: 'nativeHighlight',
             label: 'Use Native Highlighting',
             hint: "Selected text uses the system's own highlight instead of Pommora's.",
-          },
-          {
-            kind: 'picker',
-            key: 'pickerSelection',
-            label: 'Show Selection In Pickers As',
-            hint: 'How every picker marks the row you are on.',
-            fallback: 'outlined',
-            options: pickerSelectionOptions,
           },
           {
             kind: 'deviceZoom',

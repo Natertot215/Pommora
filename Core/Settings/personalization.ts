@@ -38,7 +38,6 @@ export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 export type FolderPlacement = 'top' | 'bottom'
 
 export type SidebarMode = 'collections' | 'contexts' | 'agenda'
-export type PickerSelection = 'outlined' | 'checked'
 
 export type TabOpenBehavior = 'overtake' | 'newtab'
 
@@ -108,7 +107,6 @@ export interface Personalization {
   tabCache?: number
   pauseMediaOnTabSwitch?: boolean
   nativeHighlight?: boolean
-  pickerSelection?: PickerSelection
   connectionsOpenInPreview?: boolean
   plainUnresolvedLinks?: boolean
   headingLinkStyle?: HeadingLinkStyle

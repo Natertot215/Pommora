@@ -98,7 +98,6 @@ export function readPersonalization(raw: unknown): Personalization {
     tabCache: clampInt(p.tabCache, TAB_CACHE.min, TAB_CACHE.max),
     pauseMediaOnTabSwitch: p.pauseMediaOnTabSwitch === false ? false : undefined,
     nativeHighlight: bool(p.nativeHighlight),
-    pickerSelection: p.pickerSelection === 'checked' ? 'checked' : undefined,
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
     headingLinkStyle: HEADING_LINK_STYLES.find((d) => d === p.headingLinkStyle),
