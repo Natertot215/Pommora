@@ -7,10 +7,6 @@
   display: none;
 }
 
-.page-window-body {
-  --over-scroll-fade: var(--window-toolbar-h);
-}
-
 /* Align the footer content with the embed's text column — its left/right insets scale off the same --page-detail-scale the embed uses, so the crumbs sit under the body like the detail footer. */
 .page-window .window-footer .subfield {
   padding-left: calc(20px * var(--page-detail-scale));

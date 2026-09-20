@@ -1,7 +1,10 @@
 .navwindow {
   padding: var(--app-inset);
-  /* The tab row and the search field own the top of this window, so it carries no title-bar band. It still moves by its inset ring. */
-  --window-toolbar-h: 0px;
+  /* The rail is an inflow panel, so the floating strip clears its whole width once it is open and the scan glyph alone once it is not. */
+  --window-tab-clear-l: calc(
+    var(--window-panel-inset) +
+    max(22px, var(--io-l) * (var(--window-panel-l-w) + var(--window-panel-inset)))
+  );
 }
 
 .navwindow .window-actions-flow {
@@ -19,30 +22,9 @@
   --window-flow-reveal: 0px;
 }
 
-.navwindow-tabs {
-  --navwindow-tabs-h: 28px; /* KNOB — the strip row's height */
-  height: 0;
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  padding-left: var(--row-pad-standard);
-  padding-right: var(--window-tab-clear-r);
-  transition:
-    height var(--duration-base) var(--ease-base),
-    padding-left var(--duration-base) var(--ease-base);
-}
-.navwindow.is-page-tab .navwindow-tabs {
-  padding-left: var(--window-tab-clear-l); /* KNOB — clearance past the scan glyph */
-}
-.navwindow-tabs.has-tabs {
-  height: var(--navwindow-tabs-h);
-}
-.navwindow-tabs .window-tabwrap {
-  height: 100%;
-}
-.navwindow-tabs.is-forced {
-  transition: none;
+/* The band the strip floats in is the window's move handle, so the rail and the column below it both start clear of it. */
+.navwindow-rail {
+  padding-top: var(--window-toolbar-h);
 }
 
 .navwindow-content {
@@ -59,6 +41,7 @@
   overflow-y: auto;
 }
 .navwindow-main {
+  padding-top: var(--window-toolbar-h);
   display: flex;
   flex-direction: column;
   flex: 1;

@@ -5,7 +5,7 @@ import { duration, easing, ms } from '@pommora/uix/Animations/motion'
 import { text } from '@pommora/uix/Theme'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
-import { TAB_FAMILY, type NavRef } from '@pommora/core/Navigation/navRef'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { moveByKey } from '../../Navigation/navRecents'
@@ -17,7 +17,6 @@ import { NavList } from '../../Navigation/NavList'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { consumeWindowMorph } from './windowMorph'
-import { useDragFamily } from '@pommora/uix/Interactions/drag'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../../Navigation/NavGallery'
@@ -32,7 +31,7 @@ const RAIL = { min: 120, def: 200, max: 320 }
 
 // Matched against the press target itself, so child content — row internals, card bodies, the search input — never arms a window move.
 const DRAG_SURFACES =
-  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .window-tabwrap, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
+  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .window-tabwrap, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)
@@ -97,7 +96,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
-  const pageWindow = useSession((s) => s.pageWindow)
   const pageTarget = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
   // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
   useEffect(() => {
@@ -121,8 +119,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
-  const forced = useDragFamily() === TAB_FAMILY
-  const hasTabs = pageWindow?.kind === 'nav' && pageWindow.tabs.length > 1
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
   const [editing, setEditing] = useState(false)
@@ -155,6 +151,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}
+      title={<WindowTabStrip index={resolveIndex} title={null} />}
       actions={
         <WindowActions
           sidePaneOpen={sidePaneOpen}
@@ -197,15 +194,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
     >
       <div className="navwindow-content">
-        <div
-          className={cx(
-            'navwindow-tabs',
-            (hasTabs || forced) && 'has-tabs',
-            forced && !hasTabs && 'is-forced',
-          )}
-        >
-          <WindowTabStrip index={resolveIndex} title={null} />
-        </div>
         {pageTarget ? (
           <div
             className="window-body navwindow-page over-scroll page-tile-grows"
