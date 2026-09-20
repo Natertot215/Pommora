@@ -12,7 +12,6 @@ describe('the tab menu', () => {
           pinned: false,
           isNewTab: false,
           isPage: true,
-          previews: true,
           moveTargets: [],
         }),
       ),
@@ -35,7 +34,6 @@ describe('the tab menu', () => {
       pinned: false,
       isNewTab: false,
       isPage: true,
-      previews: true,
       moveTargets: [{ id: 'c', label: 'Notes', path: 'Notes' }],
       currentParentPath: 'Notes',
     })
@@ -52,14 +50,28 @@ describe('the tab menu', () => {
     expect(shape(tabMenuItems({ pinned: false, isNewTab: false }))).toEqual(['Pin', '—', 'Close'])
   })
 
+  it('greys the rows that cannot act — the active tab, and a Matrix already previewed', () => {
+    const onActive = tabMenuItems({ pinned: true, isNewTab: false, active: true })
+    expect(onActive.find((i) => i.action === 'open')?.disabled).toBe(true)
+    const previewed = tabMenuItems({
+      pinned: true,
+      isNewTab: false,
+      isMatrix: true,
+      matrixWindowOpen: true,
+    })
+    expect(previewed.find((i) => i.action === 'window')?.disabled).toBe(true)
+    const page = tabMenuItems({ pinned: true, isNewTab: false, isPage: true, moveTargets: [] })
+    expect(page.find((i) => i.action === 'window')?.disabled).toBeFalsy()
+  })
+
   it('a target that also stands in a window offers Preview under Open', () => {
-    expect(shape(tabMenuItems({ pinned: true, isNewTab: false, previews: true }))).toEqual([
+    expect(shape(tabMenuItems({ pinned: true, isNewTab: false, isMatrix: true }))).toEqual([
       'Open',
       'Preview',
       '—',
       'Unpin',
     ])
-    expect(shape(tabMenuItems({ pinned: false, isNewTab: false, previews: true }))).toEqual([
+    expect(shape(tabMenuItems({ pinned: false, isNewTab: false, isMatrix: true }))).toEqual([
       'Preview',
       '—',
       'Pin',
@@ -75,7 +87,6 @@ describe('the tab menu', () => {
           pinned: true,
           isNewTab: false,
           isPage: true,
-          previews: true,
           moveTargets: [],
         }),
       ),

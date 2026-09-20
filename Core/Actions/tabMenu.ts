@@ -12,17 +12,24 @@ interface TabMenuContext extends PageMenuContext {
   pinned: boolean
   isNewTab: boolean
   isPage?: boolean
-  /** The target also stands in a floating window — a page or the Matrix. */
-  previews?: boolean
+  isMatrix?: boolean
+  active?: boolean
+  matrixWindowOpen?: boolean
 }
 
 type TabMenuAction = 'open' | 'pin' | 'unpin' | 'close' | 'window' | PageSendAction | PageMoveAction
 
 export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {
   const items: ActionItem<TabMenuAction>[] = []
-  // A pinned tab is a bare glyph, so its menu names the way into the pane that an unpinned tab already is.
-  if (ctx.pinned && !ctx.isNewTab) items.push({ label: 'Open', action: 'open' })
-  if (ctx.previews) items.push({ label: 'Preview', action: 'window' })
+  if (ctx.pinned && !ctx.isNewTab)
+    items.push({ label: 'Open', action: 'open', disabled: ctx.active })
+  // Only one Matrix window stands, where a Page Window re-points at whatever page asks for it.
+  if (ctx.isPage || ctx.isMatrix)
+    items.push({
+      label: 'Preview',
+      action: 'window',
+      disabled: ctx.isMatrix && ctx.matrixWindowOpen,
+    })
   if (ctx.isPage)
     items.push(...afterSeparator(pageMetaMenuSubset(pageSendActions(ctx), undefined, ctx)))
   if (!ctx.isNewTab)

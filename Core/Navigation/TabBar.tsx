@@ -95,6 +95,7 @@ function TabBarBody({
   const closeTab = useSession((s) => s.closeTab)
   const openWindow = useSession((s) => s.openWindow)
   const openMatrixWindow = useSession((s) => s.openMatrixWindow)
+  const matrixWindowOpen = useSession((s) => s.pageWindow?.kind === 'matrix')
   const pinTab = useSession((s) => s.pinTab)
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
@@ -170,7 +171,9 @@ function TabBarBody({
           pinned,
           isNewTab: target.kind === 'newtab',
           isPage,
-          previews: isPage || target.kind === 'matrix',
+          isMatrix: target.kind === 'matrix',
+          active: tabId === activeTabId,
+          matrixWindowOpen,
           ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
         }),
       )
