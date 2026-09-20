@@ -10,18 +10,12 @@ import {
   SortableZone,
   useDragFamily,
   useDragItem,
-  type Carried,
   type DragItem,
 } from '@pommora/uix/Interactions/drag'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import {
-  TAB_FAMILY,
-  type PageTarget,
-  type Tab,
-  type TabTarget,
-} from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY, type Tab, type TabTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
@@ -29,7 +23,7 @@ import { resolveWith, type ResolvedNav } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
-import { useSeat, useTabClose } from './tabClose'
+import { useActiveTabInView, useTabClose, useTabExchange } from './tabRows'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
@@ -112,12 +106,7 @@ function TabBarBody({
   const pinKeyOf = (id: string): string =>
     pinnedEntries.find((e) => e.tab.id === id)?.res?.key ?? ''
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? 'New Tab'
-  const carry = (id: string): PageTarget | null => {
-    const tab = entryOf(id)?.tab
-    return tab?.target.kind === 'page' ? tab.target : null
-  }
-  const { still, seat } = useSeat(openTabAt)
-  const receive = (item: Carried, index: number): void => seat(item as PageTarget, index)
+  const { still, carry, receive } = useTabExchange((id) => entryOf(id)?.tab.target, openTabAt)
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
@@ -153,12 +142,7 @@ function TabBarBody({
     return () => window.removeEventListener('keydown', onKey)
   }, [activateTab])
 
-  const stripRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    stripRef.current
-      ?.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(activeTabId)}"]`)
-      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
-  }, [activeTabId])
+  const stripRef = useActiveTabInView(activeTabId)
 
   const runTabMenu =
     (tabId: string, pinned: boolean, target: TabTarget) =>
