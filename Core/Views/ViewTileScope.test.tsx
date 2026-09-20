@@ -10,6 +10,7 @@ import { GroupFrame } from './Settings/GroupFrame'
 import { SettingsFrame } from './Settings/SettingsFrame'
 import {
   resolveViewWrite,
+  saveViewIn,
   useSaveView,
   VIEW_CONFIG_LOCKED,
   ViewTileScopeProvider,
@@ -196,6 +197,49 @@ describe('a locked view-embed scope', () => {
     )
     await clickRow('Group')
     expect(texts()).toContain('Group By')
+  })
+
+  it('offers Filter, whose rules belong to the view the tile carries', async () => {
+    await render(
+      <ViewTileScopeProvider value={scope(false)}>
+        <SettingsFrame />
+      </ViewTileScopeProvider>,
+    )
+    expect(texts()).toContain('Filter')
+  })
+
+  it('withholds Configuration, which would write the source container', async () => {
+    await render(
+      <ViewTileScopeProvider value={scope(false)}>
+        <SettingsFrame />
+      </ViewTileScopeProvider>,
+    )
+    expect(texts()).not.toContain('Configuration')
+  })
+})
+
+describe('saveViewIn — the write every settings frame routes through', () => {
+  it('lands a scoped write on the tile payload, never the source', async () => {
+    const res = await saveViewIn(scope(false), source, { ...view, name: 'Renamed' })
+    expect(res).toEqual({ ok: true, value: { id: view.id } })
+    expect(persistConfig).toHaveBeenCalledWith({ ...view, name: 'Renamed' })
+    expect(sourceSave).not.toHaveBeenCalled()
+  })
+
+  it('refuses a scoped write while the tile is locked', async () => {
+    const res = await saveViewIn(scope(true), source, { ...view, name: 'Renamed' })
+    expect(res).toEqual({
+      ok: false,
+      error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED },
+    })
+    expect(persistConfig).not.toHaveBeenCalled()
+    expect(sourceSave).not.toHaveBeenCalled()
+  })
+
+  it('falls through to the source when nothing scopes it', async () => {
+    await saveViewIn(null, source, { ...view, name: 'Renamed' })
+    expect(sourceSave).toHaveBeenCalled()
+    expect(persistConfig).not.toHaveBeenCalled()
   })
 })
 

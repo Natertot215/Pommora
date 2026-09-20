@@ -38,17 +38,23 @@ export function resolveViewWrite(
 }
 
 /** Callers pass the full next view: the scope's `view` may be stale mid-gesture. */
+export function saveViewIn(
+  scope: ViewTileScopeValue | null,
+  source: CollectionNode | SetNode,
+  view: SavedView,
+  opts?: { viewState?: boolean },
+): Promise<Result<{ id: string }>> {
+  if (!scope) return saveViewAdopting(source, view)
+  const write = resolveViewWrite(scope.locked, view, opts)
+  if (write.kind === 'refused') return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
+  if (write.kind === 'state') scope.persistState(write.state)
+  else scope.persistConfig(write.view)
+  return Promise.resolve(ok({ id: view.id }))
+}
+
 export function useSaveView(
   source: CollectionNode | SetNode,
 ): (view: SavedView, opts?: { viewState?: boolean }) => Promise<Result<{ id: string }>> {
   const scope = useViewTileScope()
-  return (view, opts) => {
-    if (!scope) return saveViewAdopting(source, view)
-    const write = resolveViewWrite(scope.locked, view, opts)
-    if (write.kind === 'refused')
-      return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
-    if (write.kind === 'state') scope.persistState(write.state)
-    else scope.persistConfig(write.view)
-    return Promise.resolve(ok({ id: view.id }))
-  }
+  return (view, opts) => saveViewIn(scope, source, view, opts)
 }
