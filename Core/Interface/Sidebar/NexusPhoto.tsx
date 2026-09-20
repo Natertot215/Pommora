@@ -22,7 +22,7 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
       <span
         ref={ref}
-        className={photoUrl ? s.photo : `${s.photo} ${s.photoEmpty}`}
+        className={s.photo}
         style={dim}
         onContextMenu={(e) => {
           e.preventDefault()

@@ -94,6 +94,7 @@ function TabBarBody({
   const openNewTab = useSession((s) => s.openNewTab)
   const closeTab = useSession((s) => s.closeTab)
   const openWindow = useSession((s) => s.openWindow)
+  const openMatrixWindow = useSession((s) => s.openMatrixWindow)
   const pinTab = useSession((s) => s.pinTab)
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
@@ -169,15 +170,18 @@ function TabBarBody({
           pinned,
           isNewTab: target.kind === 'newtab',
           isPage,
+          previews: isPage || target.kind === 'matrix',
           ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
         }),
       )
-      if (action === 'pin') pinTab(tabId)
+      if (action === 'open') activateTab(tabId)
+      else if (action === 'pin') pinTab(tabId)
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
-      else if (!isPage) return
-      else if (action === 'window') openWindow({ id: target.id, path: target.path })
-      else if (action) runPageSendAction(action, target)
+      else if (action === 'window') {
+        if (isPage) openWindow({ id: target.id, path: target.path })
+        else openMatrixWindow()
+      } else if (isPage && action) runPageSendAction(action, target)
     }
 
   // A native CSS app-region never delivers hover, killing the + button's hover-reveal on the same pixels, so the bar drags the window itself via pointer deltas.
