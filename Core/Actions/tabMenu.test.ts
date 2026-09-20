@@ -7,7 +7,15 @@ const shape = (items: ReturnType<typeof tabMenuItems>): string[] =>
 describe('the tab menu', () => {
   it('offers a page tab its window, the send block, Pin, and Close, each in its own group', () => {
     expect(
-      shape(tabMenuItems({ pinned: false, isNewTab: false, isPage: true, moveTargets: [] })),
+      shape(
+        tabMenuItems({
+          pinned: false,
+          isNewTab: false,
+          isPage: true,
+          previews: true,
+          moveTargets: [],
+        }),
+      ),
     ).toEqual([
       'Preview',
       '—',
@@ -27,6 +35,7 @@ describe('the tab menu', () => {
       pinned: false,
       isNewTab: false,
       isPage: true,
+      previews: true,
       moveTargets: [{ id: 'c', label: 'Notes', path: 'Notes' }],
       currentParentPath: 'Notes',
     })
@@ -38,9 +47,39 @@ describe('the tab menu', () => {
     })
   })
 
-  it('a pinned tab offers Unpin alone after the send block', () => {
-    expect(shape(tabMenuItems({ pinned: true, isNewTab: false }))).toEqual(['Unpin'])
+  it('a pinned tab leads with the way into the pane, which an unpinned one already is', () => {
+    expect(shape(tabMenuItems({ pinned: true, isNewTab: false }))).toEqual(['Open', '—', 'Unpin'])
     expect(shape(tabMenuItems({ pinned: false, isNewTab: false }))).toEqual(['Pin', '—', 'Close'])
+  })
+
+  it('a target that also stands in a window offers Preview under Open', () => {
+    expect(shape(tabMenuItems({ pinned: true, isNewTab: false, previews: true }))).toEqual([
+      'Open',
+      'Preview',
+      '—',
+      'Unpin',
+    ])
+    expect(shape(tabMenuItems({ pinned: false, isNewTab: false, previews: true }))).toEqual([
+      'Preview',
+      '—',
+      'Pin',
+      '—',
+      'Close',
+    ])
+  })
+
+  it('a pinned page keeps its send block between Preview and Unpin', () => {
+    expect(
+      shape(
+        tabMenuItems({
+          pinned: true,
+          isNewTab: false,
+          isPage: true,
+          previews: true,
+          moveTargets: [],
+        }),
+      ),
+    ).toEqual(['Open', 'Preview', '—', 'Copy Link', 'Copy Path', '—', 'View History', '—', 'Unpin'])
   })
 
   it('the NavView tab can only close', () => {
