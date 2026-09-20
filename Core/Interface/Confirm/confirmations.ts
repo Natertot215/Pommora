@@ -17,10 +17,16 @@ export interface ConfirmRequest {
 
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
-/** A Collection or a Set carries a schema and everything filed under it, so it asks regardless of the Confirm Before Deletion switch. */
+/** A container, a Context, and a Space each carry everything filed under them, so they ask regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a property, an option. */
+const ALWAYS_ASKS: ReadonlySet<MutableKind> = new Set<MutableKind>([
+  'collection',
+  'set',
+  'space',
+  'context',
+])
+
 const waived = (kind?: MutableKind): boolean =>
-  kind !== 'collection' &&
-  kind !== 'set' &&
+  (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
   useSession.getState().personalization.confirmDeletion === false
 
 export const confirmDelete = async (target: {
@@ -67,39 +73,45 @@ export const askRemoveTile = (): Promise<boolean> =>
         tone: 'destructive',
       })
 
-export const askDeleteView = (): Promise<boolean> =>
+export const askDeleteView = (from: 'container' | 'tile' = 'container'): Promise<boolean> =>
   ask({
     message: 'Delete this view?',
-    detail: 'Its configuration is removed from the container; pages are untouched.',
+    detail: `Its configuration is removed from the ${from}; pages are untouched.`,
     action: 'Delete',
     tone: 'destructive',
   })
 
 export const askDestroyProperty = (name: string): Promise<boolean> =>
-  ask({
-    message: `Delete “${name}” everywhere?`,
-    detail:
-      'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
-    action: 'Delete',
-    tone: 'destructive',
-  })
+  waived()
+    ? Promise.resolve(true)
+    : ask({
+        message: `Delete “${name}” everywhere?`,
+        detail:
+          'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
+        action: 'Delete',
+        tone: 'destructive',
+      })
 
 export const askRemoveOption = (name: string): Promise<boolean> =>
-  ask({
-    message: `Remove “${name}”?`,
-    detail:
-      'The option is deleted from the property and its value stripped from every page that had it.',
-    action: 'Remove',
-    tone: 'destructive',
-  })
+  waived()
+    ? Promise.resolve(true)
+    : ask({
+        message: `Remove “${name}”?`,
+        detail:
+          'The option is deleted from the property and its value stripped from every page that had it.',
+        action: 'Remove',
+        tone: 'destructive',
+      })
 
 export const askClearOption = (name: string): Promise<boolean> =>
-  ask({
-    message: `Clear “${name}” from every page?`,
-    detail: 'The option stays; only its assigned values are removed.',
-    action: 'Clear',
-    tone: 'destructive',
-  })
+  waived()
+    ? Promise.resolve(true)
+    : ask({
+        message: `Clear “${name}” from every page?`,
+        detail: 'The option stays; only its assigned values are removed.',
+        action: 'Clear',
+        tone: 'destructive',
+      })
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
   const { permanentDelete } = valueOr(await host().ask('delete:facts'), DELETE_FACTS_FALLBACK)

@@ -423,6 +423,7 @@ export function PickerMenu({
 export function PickerRow({
   children,
   onClick,
+  onContextMenu,
   selected = false,
   ring = false,
   leading,
@@ -431,6 +432,7 @@ export function PickerRow({
 }: {
   children: ReactNode
   onClick?: () => void
+  onContextMenu?: (e: React.MouseEvent) => void
   selected?: boolean
   ring?: boolean
   leading?: ReactNode
@@ -449,6 +451,7 @@ export function PickerRow({
       )}
       disabled={disabled}
       onClick={onClick}
+      onContextMenu={onContextMenu}
     >
       <span className={readsLeft ? s.leadingRow : s.centeredRow}>
         {leading != null && <span className={s.optionGlyph}>{leading}</span>}

@@ -4,6 +4,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
+import { duplicateView } from '../duplicateView'
 import { restoreView } from '../restoreView'
 import { viewGlyph } from '../viewIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -115,6 +116,8 @@ export function ViewFrame({
         return setIconFor(v)
       case 'color':
         return setColorFor(v)
+      case 'duplicate':
+        return void duplicateView(node.path, node.kind, v, rows)
       case 'delete':
         return void deleteRow(v)
       default:

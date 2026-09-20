@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
 import {
   savedView,
+  copyName,
   DEFAULT_VIEW_TYPE,
   decodeGroupConfig,
   decodeSubGroup,
@@ -307,5 +308,19 @@ describe('filter codec', () => {
     })
     expect(view.filter).toBeUndefined()
     expect(view.id).toBe('view_x')
+  })
+})
+
+describe('a duplicate’s name', () => {
+  it('numbers the copy from two', () => {
+    expect(copyName('Ideas', ['Ideas'])).toBe('Ideas (2)')
+  })
+
+  it('increments a numbered original rather than appending to it', () => {
+    expect(copyName('Ideas (2)', ['Ideas', 'Ideas (2)'])).toBe('Ideas (3)')
+  })
+
+  it('fills the lowest free number', () => {
+    expect(copyName('Ideas', ['Ideas', 'Ideas (2)', 'Ideas (4)'])).toBe('Ideas (3)')
   })
 })

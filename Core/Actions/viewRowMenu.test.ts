@@ -6,7 +6,13 @@ const labels = (ctx: Parameters<typeof viewRowMenuItems>[0]): string[] =>
 
 describe('a saved view row’s menu', () => {
   it('offers the rows every host can perform', () => {
-    expect(labels({ deletable: true })).toEqual(['Rename', 'Edit Icon', 'Edit Color', 'Delete'])
+    expect(labels({ deletable: true })).toEqual([
+      'Rename',
+      'Edit Icon',
+      'Edit Color',
+      'Duplicate',
+      'Delete',
+    ])
   })
 
   it('names the titles toggle after what it does', () => {
@@ -14,9 +20,9 @@ describe('a saved view row’s menu', () => {
     expect(labels({ titlesShown: false, deletable: true })).toContain('Show Titles')
   })
 
-  it('separates Delete from the rows that edit a view you are keeping', () => {
+  it('separates the rows that make and unmake a view from those that edit one', () => {
     const rows = viewRowMenuItems({ deletable: true })
-    expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['delete'])
+    expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['duplicate'])
   })
 
   it('keeps Delete on a container’s last view, refused rather than absent', () => {

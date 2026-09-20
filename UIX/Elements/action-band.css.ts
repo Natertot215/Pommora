@@ -82,8 +82,12 @@ export const segmentExiting = style({
   animationTimingFunction: 'var(--ease-base)',
 })
 
-/** Carries its own lead-in since the segment's gap is zero. */
-export const segmentTrail = style({ marginLeft: '6px' })
+/** The dropdown trigger runs tighter than a pill — its trailing chevron already carries the eye to the edge. */
+export const segmentDrop = style({ paddingInline: `calc(${SEGMENT_PAD_X} / 2)` })
+export const segmentTrail = style({
+  marginLeft: '6px',
+  selectors: { '&&': { color: c.label.secondary } },
+})
 
 /** Hidden at rest; the HOST binds its own reveal scope with a globalStyle raising opacity. */
 export const settingsBtn = style({

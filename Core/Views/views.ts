@@ -285,6 +285,14 @@ export function mintNewView(name: string, schema: PropertyDefinition[]): SavedVi
   }
 }
 
+export function copyName(name: string, siblings: readonly string[]): string {
+  const base = name.replace(/ \(\d+\)$/, '')
+  const taken = new Set(siblings)
+  let n = 2
+  while (taken.has(`${base} (${n})`)) n++
+  return `${base} (${n})`
+}
+
 export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
   return mintNewView(VIEW_KINDS[DEFAULT_VIEW_TYPE].label, schema)
 }

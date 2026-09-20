@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ViewTileEntry } from '@pommora/core/Tiles/tiles'
+import type { EmbeddedView, ViewTileEntry } from '@pommora/core/Tiles/tiles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
+  copyName,
   DEFAULT_VIEW_ID,
   mintDefaultView,
   mintNewView,
@@ -14,13 +15,16 @@ import { Icon } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
-import { AccessoryButton, Menu, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
+import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
+import { AccessoryButton, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
-import { optionRing, PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
+import { entityIcon } from '../../Assets/entityIconPolicy'
+import { askDeleteView } from '../../Interface/Confirm/confirmations'
+import { notifyDeleted } from '../../Interface/Notifications/notifications'
 import { findCollection, findSet } from '../../Nexus/treeIndex'
 import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
 import { viewGlyph } from '../../Views/viewIcon'
@@ -36,6 +40,7 @@ import {
   SEGMENT_ICON,
   segment,
   segmentActive,
+  segmentDrop,
   segmentEntering,
   segmentExiting,
   segmentTrail,
@@ -94,6 +99,15 @@ function usePillPresence(views: SavedView[]): {
 
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
+
+const freeEmbedId = (arr: unknown[], entryId: string): string => {
+  const used = new Set(
+    arr.map((el) => ((el as { config?: { id?: unknown } })?.config?.id as string) ?? ''),
+  )
+  let slot = arr.length
+  while (used.has(`embed:${entryId}:${slot}`)) slot++
+  return `embed:${entryId}:${slot}`
+}
 
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = labelColorFor(v.color)
@@ -158,11 +172,12 @@ export function ViewTile({
   onActivate?: () => void
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
+  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const [cfgOpen, setCfgOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [renaming, setRenaming] = useState<number | null>(null)
   const [titleEditing, setTitleEditing] = useState(false)
-  const [iconFor, setIconFor] = useState<number | null>(null)
+  const [iconFor, setIconFor] = useState<number | 'title' | null>(null)
   const [colorFor, setColorFor] = useState<number | null>(null)
   const menuAnchorRef = useRef<Element | null>(null)
   const titleIconRef = useRef<SVGSVGElement>(null)
@@ -228,22 +243,45 @@ export function ViewTile({
     if (locked) return
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
-      const used = new Set(
-        arr.map((el) => ((el as { config?: { id?: unknown } })?.config?.id as string) ?? ''),
-      )
-      let slot = arr.length
-      while (used.has(`embed:${entry.id}:${slot}`)) slot++
       arr.push({
         source_id: source.id,
-        config: { ...mintNewView('Untitled', schema), id: `embed:${entry.id}:${slot}` },
+        config: { ...mintNewView('Untitled', schema), id: freeEmbedId(arr, entry.id) },
       })
       return { ...raw, views: arr, active: arr.length - 1 }
+    })
+  }
+  const duplicate = (i: number): void => {
+    if (locked) return
+    mutateEntry(entry.id, (raw) => {
+      const arr = rawViews(raw)
+      const el = arr[i]
+      if (typeof el !== 'object' || el === null) return raw
+      const config = {
+        ...views[i],
+        id: freeEmbedId(arr, entry.id),
+        name: copyName(
+          views[i].name,
+          views.map((v) => v.name),
+        ),
+      }
+      arr.splice(i + 1, 0, { ...(el as Record<string, unknown>), config })
+      return { ...raw, views: arr, active: i + 1 }
+    })
+  }
+  const restoreViewAt = (i: number, el: EmbeddedView): void => {
+    mutateEntry(entry.id, (raw) => {
+      const arr = rawViews(raw)
+      const at = Math.min(i, arr.length)
+      arr.splice(at, 0, el)
+      return { ...raw, views: arr, active: at }
     })
   }
   const deleteView = (id: string): void => {
     if (locked) return
     const i = views.findIndex((v) => v.id === id)
-    if (i < 0) return
+    if (i < 0 || entry.views.length <= 1) return
+    const removed = entry.views[i]
+    const name = views[i].name
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       if (arr.length <= 1) return raw
@@ -251,6 +289,7 @@ export function ViewTile({
       const cur = typeof raw.active === 'number' ? raw.active : 0
       return { ...raw, views: arr, active: Math.min(cur > i ? cur - 1 : cur, arr.length - 1) }
     })
+    notifyDeleted(name, () => restoreViewAt(i, removed))
   }
   const reorderViews = (activeId: string, overId: string): void => {
     if (locked) return
@@ -277,7 +316,7 @@ export function ViewTile({
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
     else if (action === 'change-icon') {
       menuAnchorRef.current = titleIconRef.current
-      setIconFor(index)
+      setIconFor('title')
     } else if (action === 'hide-title') patchEntry({ title: false })
     else if (action?.startsWith('size-')) {
       const n = Number(action.slice(5))
@@ -310,9 +349,12 @@ export function ViewTile({
         return setIconFor(i)
       case 'color':
         return setColorFor(i)
+      case 'duplicate':
+        return duplicate(i)
       case 'titles':
         return patchEntry({ view_button: labeled ? 'icon' : undefined })
       case 'delete':
+        if (!(await askDeleteView('tile'))) return
         return animate ? presence.beginExit(views[i].id) : deleteView(views[i].id)
       default:
         return
@@ -363,7 +405,7 @@ export function ViewTile({
     <button
       ref={dropRef}
       type="button"
-      className={segment}
+      className={cx(segment, segmentActive, segmentDrop)}
       style={strokeStyle(view)}
       onClick={() => setListOpen(true)}
     >
@@ -371,7 +413,7 @@ export function ViewTile({
       <span className={cx(labelSlot, !labeled && labelSlotHidden)}>
         <span className={labelText}>{view.name}</span>
       </span>
-      <Icon name="chevron-down" size="footnote" className={segmentTrail} />
+      <Icon name="chevrons-up-down" size="control" className={segmentTrail} />
     </button>
   ) : (
     <>
@@ -419,7 +461,7 @@ export function ViewTile({
               <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
                 <Icon
                   ref={titleIconRef}
-                  name={viewGlyph(view)}
+                  name={entityIcon(source.kind, entry.display_icon ?? source.icon, defaultIcons)}
                   className={cx(
                     s.titleIcon,
                     `md-h${titleLevel}`,
@@ -481,25 +523,25 @@ export function ViewTile({
         >
           <SettingsFrame />
         </PickerMenu>
-        <PickerMenu open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
+        <PickerMenu solid open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame
               maxHeight={PICKER_MAX_HEIGHT}
               footer={<MenuFooting leading={newViewButton} />}
             >
-              <Menu>
-                {views.map((v, i) => (
-                  <MenuItem
-                    key={v.id}
-                    className={i === index ? optionRing : undefined}
-                    leading={<Icon name={viewGlyph(v)} size="headline" />}
-                    onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
-                    onContextMenu={(e) => void rowMenu(i, e, false)}
-                  >
-                    {renaming === i ? renameField(i) : v.name}
-                  </MenuItem>
-                ))}
-              </Menu>
+              {views.map((v, i) => (
+                <PickerRow
+                  key={v.id}
+                  ring
+                  align="start"
+                  selected={i === index}
+                  leading={<Icon name={viewGlyph(v)} size="headline" />}
+                  onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
+                  onContextMenu={(e) => void rowMenu(i, e, false)}
+                >
+                  {renaming === i ? renameField(i) : v.name}
+                </PickerRow>
+              ))}
             </MenuScrollFrame>
           </div>
         </PickerMenu>
@@ -507,9 +549,16 @@ export function ViewTile({
           open={iconFor !== null}
           onClose={() => setIconFor(null)}
           triggerRef={menuAnchorRef}
-          value={iconFor !== null ? views[iconFor]?.icon : undefined}
+          value={
+            iconFor === 'title'
+              ? (entry.display_icon ?? source.icon)
+              : iconFor !== null
+                ? views[iconFor]?.icon
+                : undefined
+          }
           onSelect={(icon) => {
-            if (iconFor !== null) persistConfig(iconFor, { ...views[iconFor], icon })
+            if (iconFor === 'title') patchEntry({ display_icon: icon })
+            else if (iconFor !== null) persistConfig(iconFor, { ...views[iconFor], icon })
           }}
         />
         <ColorPicker
