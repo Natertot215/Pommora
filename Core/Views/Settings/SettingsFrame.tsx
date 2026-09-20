@@ -10,7 +10,6 @@ import { useSession } from '../../Session/store'
 import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeIndex'
 import { pickView } from '../Pipeline/pickView'
 import { viewGlyph } from '../viewIcon'
-import { saveViewAdopting } from '../Host/viewMint'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { VisibilityList } from './HiddenFrame'
 import { GroupFrame } from './GroupFrame'
@@ -32,7 +31,7 @@ import {
 } from '@pommora/uix/Menus'
 import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
-import { useViewTileScope } from '../ViewTileScope'
+import { saveViewIn, useViewTileScope } from '../ViewTileScope'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { host } from '../../Platform/dialer'
 
@@ -94,9 +93,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const schemaCollection = node.kind === 'collection' ? node : findCollectionForSet(tree, node.id)
   const schema = schemaCollection?.properties ?? []
   const view = scope?.view ?? pickView(node, schema)
-  const entries = scope
-    ? ENTRIES.filter((e) => e.id !== 'configuration' && e.id !== 'filter')
-    : ENTRIES
+  const entries = scope ? ENTRIES.filter((e) => e.id !== 'configuration') : ENTRIES
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 
@@ -119,7 +116,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const viewScale = coerceScale(view.view_scale, 1)
   const setViewScale = (f: number): void => {
     const next = coerceScale(f, 1)
-    void saveViewAdopting(node, { ...view, view_scale: next === 1 ? undefined : next })
+    void saveViewIn(scope, node, { ...view, view_scale: next === 1 ? undefined : next })
   }
 
   const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
@@ -265,7 +262,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         tree={tree}
         label="Settings"
         onBack={back}
-        onCommit={(next) => void saveViewAdopting(node, { ...view, ...next })}
+        onCommit={(next) => void saveViewIn(scope, node, { ...view, ...next })}
       />
     ) : (
       blankLeaf
