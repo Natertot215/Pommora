@@ -98,6 +98,8 @@ export interface Personalization {
   setPlacement?: FolderPlacement
   subSetPlacement?: FolderPlacement
   sidebarMode?: SidebarMode
+  /** Reveals the surfaces that are still being built; off, they are absent rather than disabled. */
+  experimentalFeatures?: boolean
   revealTabBarOnHover?: boolean
   tabOpenBehavior?: TabOpenBehavior
   matrixOpenIn?: MatrixOpenIn

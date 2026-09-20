@@ -166,6 +166,7 @@ type Frame = {
   label: string
   icon: string
   foot?: boolean
+  experimental?: true
 } & (
   | { sections: readonly Section[]; Surface?: never }
   | { Surface: () => React.JSX.Element; sections?: never }
@@ -220,6 +221,16 @@ export const FRAMES = roster([
       {
         title: 'Nexus',
         rows: [{ kind: 'nexus', label: 'Nexus' }],
+      },
+      {
+        title: 'Advanced',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'experimentalFeatures',
+            label: 'Experimental Features',
+          },
+        ],
       },
     ],
   },
@@ -797,12 +808,14 @@ export const FRAMES = roster([
     key: 'automations',
     label: 'Automations',
     icon: 'zap',
+    experimental: true,
     sections: [],
   },
   {
     key: 'shortcuts',
     label: 'Shortcuts',
     icon: 'command',
+    experimental: true,
     sections: [],
   },
   {

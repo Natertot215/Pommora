@@ -21,6 +21,7 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession } from '../Session/store'
+import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
@@ -58,6 +59,10 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
   const closeSettings = useSession((s) => s.closeSettings)
   const [category, setCategory] = useState<CategoryKey>('general')
   const geometry = useWindowGeometry('settings')
+  const experimental = useExperimental()
+  const shown = FRAMES.filter((l) => experimental || !l.experimental)
+  // The gate can close from a sync merge or a hand-edited settings file while this window sits on a frame it hides.
+  const active = shown.some((l) => l.key === category) ? category : 'general'
 
   return (
     <WindowBase
@@ -76,21 +81,25 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
         children: (
           <>
             <Menu className="settings-rail-list over-scroll">
-              {FRAMES.filter((l) => !l.foot).map((l) => (
-                <RailTab key={l.key} frame={l} active={category} onPick={setCategory} />
-              ))}
+              {shown
+                .filter((l) => !l.foot)
+                .map((l) => (
+                  <RailTab key={l.key} frame={l} active={active} onPick={setCategory} />
+                ))}
             </Menu>
-            {FRAMES.filter((l) => l.foot).map((l) => (
-              <Menu key={l.key} className="settings-rail-foot">
-                <MenuSeparator />
-                <RailTab frame={l} active={category} onPick={setCategory} />
-              </Menu>
-            ))}
+            {shown
+              .filter((l) => l.foot)
+              .map((l) => (
+                <Menu key={l.key} className="settings-rail-foot">
+                  <MenuSeparator />
+                  <RailTab frame={l} active={active} onPick={setCategory} />
+                </Menu>
+              ))}
           </>
         ),
       }}
     >
-      <FrameBody category={category} />
+      <FrameBody category={active} />
     </WindowBase>
   )
 }
