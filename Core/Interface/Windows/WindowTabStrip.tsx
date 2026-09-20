@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useMemo } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
@@ -6,7 +6,6 @@ import {
   SortableZone,
   useDragFamily,
   useDragItem,
-  type Carried,
   type DragItem,
 } from '@pommora/uix/Interactions/drag'
 import { Icon } from '@pommora/uix/Symbols'
@@ -14,10 +13,10 @@ import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
-import { useSeat, useTabClose } from '../../Navigation/tabClose'
+import { useActiveTabInView, useTabClose, useTabExchange } from '../../Navigation/tabRows'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { TAB_FAMILY, type PageTarget } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
 import '../../Navigation/tab-base.css'
@@ -65,23 +64,12 @@ export function WindowTabStrip({
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the live node would swap text mid-collapse without this hold.
   const heldTitle = useHeld(title, !showStrip)
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!activeTabId) return
-    scrollRef.current
-      ?.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(activeTabId)}"]`)
-      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
-  }, [activeTabId])
+  const scrollRef = useActiveTabInView(activeTabId)
 
   const entryOf = (id: string): Entry | undefined =>
     pageEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
-  const carry = (id: string): PageTarget | null => {
-    const tab = entryOf(id)?.tab
-    return tab?.target.kind === 'page' ? tab.target : null
-  }
-  const { still, seat } = useSeat(openWindowTab)
-  const receive = (item: Carried, at: number): void => seat(item as PageTarget, at)
+  const { still, carry, receive } = useTabExchange((id) => entryOf(id)?.tab.target, openWindowTab)
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
