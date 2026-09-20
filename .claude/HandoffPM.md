@@ -41,7 +41,7 @@
 #### Session Pointers
 
 - The plan, its Deviations and Open Items: `.claude/Planning/Tab Transfer — Implementation Plan.md`.
-- The engine and its escort: `UIX/Interactions/{engine,insertionDrag,tableDnd,drag}.tsx`, `shared.ts`; the rows: `Core/Navigation/TabBar.tsx`, `Core/Interface/Windows/WindowTabStrip.tsx`, `Core/Navigation/tabClose.ts` (`useSeat`); the sources: `Core/Navigation/{NavGallery,NavList}.tsx`, `Core/Interface/Sidebar/sidebarDnd.tsx`; the models: `Core/Navigation/tabsModel.ts`, `Core/Interface/Windows/windowTabs.ts`; the family name: `TAB_FAMILY` in `Core/Navigation/navRef.ts`.
+- The engine and its escort: `UIX/Interactions/{engine,insertionDrag,tableDnd,drag}.tsx`, `shared.ts`; the rows: `Core/Navigation/TabBar.tsx`, `Core/Interface/Windows/WindowTabStrip.tsx`, `Core/Navigation/tabRows.ts` (`useTabExchange`); the sources: `Core/Navigation/{NavGallery,NavList}.tsx`, `Core/Interface/Sidebar/sidebarDnd.tsx`; the models: `Core/Navigation/tabsModel.ts`, `Core/Interface/Windows/windowTabs.ts`; the family name: `TAB_FAMILY` in `Core/Navigation/navRef.ts`.
 - The CDP walkthrough harness lived in this session's scratchpad (`lib.mjs`, `groupA.mjs`, `groupB.mjs`, `finalC.mjs`, `probeEscort.mjs`, `restore.mjs`) and is deleted with it; the recipe is the one in `.claude/Guidelines/Development-Environment.md`, plus the session store reached by dynamically importing `Core/Session/store.ts` at the URL the page loaded it from.
 
 #### Working Notes
