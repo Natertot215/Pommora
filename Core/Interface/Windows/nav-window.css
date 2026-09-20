@@ -22,12 +22,11 @@
   --window-flow-reveal: 0px;
 }
 
-/* The strip is all this band carries, so a window showing none gives the height back to its content and moves by its surfaces again. */
 .navwindow:not(:has(.tab-strip)) {
   --window-toolbar-h: 0px;
 }
 
-/* The band the strip floats in is the window's move handle, so the rail and the column beside it both start clear of it. The rail states no transition: the shorthand would replace the inflow pane's, and its width slide is the motion that matters. */
+/* The inflow pane's own transition carries this; a shorthand here would replace it and cost the rail its width slide. */
 .navwindow-rail {
   padding-top: var(--window-toolbar-h);
 }
