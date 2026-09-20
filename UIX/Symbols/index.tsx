@@ -92,6 +92,8 @@ import {
 import { fileTypeGlyphs } from './fileTypes'
 import { ICON_NAMES } from './iconNames'
 import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
+import { cx } from '../Utilities/cx'
+import * as sym from './symbols.css'
 
 /** This registry IS the roster: to add an icon, import it above and add a line here. */
 export const icons = {
@@ -247,3 +249,29 @@ export const Icon = forwardRef<
   if (Curated) return <Curated ref={ref} {...rest} {...sized} />
   return <LazyGlyph ref={ref} name={name} {...rest} {...sized} />
 })
+
+// Both faces stay mounted in one grid cell so a toggle cross-fades rather than swapping glyphs outright.
+export function LockGlyph({
+  locked,
+  size = 'control',
+}: {
+  locked: boolean
+  size?: IconSize
+}): React.JSX.Element {
+  return (
+    <span className={sym.glyphSwap}>
+      <Icon
+        name="locked"
+        size={size}
+        className={sym.glyphSwapFace}
+        data-face={locked ? 'shown' : 'hidden'}
+      />
+      <Icon
+        name="lock-open"
+        size={size}
+        className={cx(sym.glyphSwapFace, sym.lockOpenFace)}
+        data-face={locked ? 'hidden' : 'shown'}
+      />
+    </span>
+  )
+}

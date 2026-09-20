@@ -221,7 +221,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── Interactions ──────────────────────────────────────────────────────────
 
-  const banner: CardBanner = view.card_banner ?? 'image'
+  const banner: CardBanner = view.card_banner ?? 'banner'
   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
   const flatMode = view.group?.kind === 'flat'
   const hideLocation = view.hide_location ?? false
@@ -960,7 +960,7 @@ const CardFace = memo(function CardFace({
           capture={banner === 'preview'}
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
         >
-          {banner === 'image' ? (
+          {banner === 'banner' ? (
             <AssetImage value={cover} fallback={ph} />
           ) : src ? (
             <img src={src} alt="" onError={onImgError} />
@@ -1096,7 +1096,7 @@ const PageCard = memo(function PageCard({
       popMenu(
         cardMenuModel({
           addable: api.addableFor(row).length > 0,
-          editableImage: banner === 'image' && !!cover,
+          editableImage: banner === 'banner' && !!cover,
           ...api.titleMenuContext(row),
         }),
       ),

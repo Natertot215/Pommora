@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   FooterIconButton,
+  FooterLockButton,
   MenuFooting,
   MenuIndex,
   MenuScrollFrame,
@@ -8,6 +9,7 @@ import {
 } from '@pommora/uix/Menus'
 import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
 import { factorPickerProps, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { lockLabel } from '../Actions/toggleLabels'
 import { useSession } from '../Session/store'
 import { FilterFrame } from '../Views/Settings/FilterFrame'
 import type { Forces } from './Engine/forces'
@@ -113,11 +115,10 @@ export function MatrixMenu(): React.JSX.Element {
       footer={
         <MenuFooting
           leading={
-            <FooterIconButton
-              icon={display.locked ? 'locked' : 'lock-open'}
-              ariaLabel={`${display.locked ? 'Unlock' : 'Lock'} Layout`}
-              pressed={display.locked}
-              onClick={() => patch({ display: { locked: !display.locked } })}
+            <FooterLockButton
+              ariaLabel={lockLabel(display.locked, 'Layout')}
+              locked={display.locked}
+              onToggle={() => patch({ display: { locked: !display.locked } })}
             />
           }
           trailing={

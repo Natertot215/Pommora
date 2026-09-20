@@ -1,7 +1,7 @@
 import { forwardRef, Fragment, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
 import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
 import { Button } from '../Buttons/Button'
-import { Icon, type IconName } from '../Symbols'
+import { Icon, type IconName, LockGlyph } from '../Symbols'
 import * as s from './menu-base.css'
 import { cx } from '../Utilities/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
@@ -252,34 +252,10 @@ export const AccessoryButton = forwardRef<
   )
 })
 
-export function FooterLockButton({
-  verb,
-  noun,
-  locked,
-  onToggle,
-}: {
-  verb: string
-  noun: string
-  locked: boolean
-  onToggle: () => void
-}): React.JSX.Element {
-  return (
-    <Button
-      size="button-inline"
-      aria-label={`${verb} ${noun}`}
-      className={s.footerLockAction}
-      onClick={onToggle}
-    >
-      <Icon name={locked ? 'locked' : 'lock-open'} size="control" className={s.lockIcon} />
-      {verb}
-    </Button>
-  )
-}
-
 export const FooterIconButton = forwardRef<
   HTMLButtonElement,
   {
-    icon: string
+    icon: string | ReactNode
     ariaLabel: string
     onClick?: () => void
     disabled?: boolean
@@ -294,15 +270,34 @@ export const FooterIconButton = forwardRef<
       ref={ref}
       size="button-inline"
       aria-label={ariaLabel}
-      className={s.footerLockAction}
+      className={s.footerAction}
       onClick={onClick}
       disabled={disabled}
       pressed={pressed}
     >
-      <Icon name={icon} size="body" />
+      {typeof icon === 'string' ? <Icon name={icon} size="body" /> : icon}
     </Button>
   )
 })
+
+export function FooterLockButton({
+  ariaLabel,
+  locked,
+  onToggle,
+}: {
+  ariaLabel: string
+  locked: boolean
+  onToggle: () => void
+}): React.JSX.Element {
+  return (
+    <FooterIconButton
+      icon={<LockGlyph locked={locked} size="body" />}
+      ariaLabel={ariaLabel}
+      pressed={locked}
+      onClick={onToggle}
+    />
+  )
+}
 
 export function Menu({
   className,
