@@ -64,6 +64,7 @@ A Collection assigns which registry properties its Pages validate, and that sche
 #### Singletons
 
 - **Homepage** — one tiled dashboard per Nexus, the landing surface; always reachable and not user-deletable, its config file written by the first banner or heading-icon edit.
+- **Matrix** — per-Nexus customizable node-link graph that visualizes cross-domain connections across pages, locations, and spaces.
 - **Settings** — per-Nexus interface preferences, the accent color among them.
 
 #### Identity and linking

@@ -33,7 +33,6 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch, and hoist shared logic; duplication = debt, and repetition = regression.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
-- **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — present your implementation design first.
 - **Don’t** treat comments as authoritative — a constraint a comment claims isn’t a law, and change-scoping shouldn’t treat them as fact.
 
@@ -41,7 +40,7 @@ Pommora's current structure is based on relating **Content** ↔ **Content** thr
 
 - **The visual iteration scratchpad** — `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single quotes, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs it.
-- **Use the `Test` Nexus when driving scratch testing** — `/Users/nathantaichman/Test`, seeded with collections, sets, pages, and contexts. NexusOS is Nathan's own nexus and never the target of a driven test.
+- **Test on the `~/Test` Nexus** — it’s pre-seeded with scratch collections, sets, pages, and contexts.
 - **Launch the GUI** by copy-pasting from the repo’s root:  `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`
 -  `POMMORA_DEBUG_PORT` arms CDP; the `--remote-debugging-port` flag does not survive the hop into `Desktop`. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node, and the app crashes. 
 - **Native context menus over CDP:** send a real right-click with Input.dispatchMouseEvent (button 'right', mousePressed then mouseReleased, at the target's box); a JS-dispatched contextmenu event never reaches main's context-menu listener. Dismiss with osascript 'tell application "System Events" to key code 53'.
