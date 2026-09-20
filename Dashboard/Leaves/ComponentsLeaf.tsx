@@ -67,7 +67,7 @@ export function ComponentsLeaf(): React.JSX.Element {
           <PopupButton label="PickerRow">
             <PickerMenu solid>
               {POPOUT_LABELS.map((label, i) => (
-                <PickerRow key={label} ring selected={i === 0} onClick={() => {}}>
+                <PickerRow key={label} selected={i === 0} onClick={() => {}}>
                   {label}
                 </PickerRow>
               ))}

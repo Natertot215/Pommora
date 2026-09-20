@@ -532,7 +532,6 @@ export function ViewTile({
               {views.map((v, i) => (
                 <PickerRow
                   key={v.id}
-                  ring
                   align="start"
                   selected={i === index}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
