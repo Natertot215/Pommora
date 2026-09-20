@@ -16,7 +16,7 @@ Pins and favorites persist as ordered arrays in the `navigation` section of `.ne
 
 ### NavWindow
 
-The summoned wayfinding overlay: a non-modal floating window on the shared window chassis, opening centered with its size remembered, that blocks nothing behind it and hands the caret to its search field on open. A glass rail holding the Favorites runs beside a main frame: a search field over a gallery of Recents cards with pins on top — locked cards on the shared chassis ([[PommoraUIX]]), each resolving location, icon, and title live from the tree, the open one carrying the accent stroke. The ribbon's Navigation icon summons it, **Toggle Navigation** (⌘O) toggles it, and Escape or its close dismisses it.
+The summoned wayfinding overlay: a non-modal floating window on the shared window chassis, opening centered with its size remembered, that blocks nothing behind it and hands the caret to its search field on open. A glass rail holding the Favorites runs beside a main frame: a search field over a gallery of Recents cards with pins on top — locked cards on the shared chassis ([[PommoraUIX]]), each resolving location, icon, and title live from the tree, the open one carrying the accent stroke. The toolbar trio's Navigation button summons it, **Toggle Navigation** (⌘O) toggles it, and Escape or its close dismisses it.
 
 The gallery and list modes reorder differently: the gallery displaces, cards reflowing to open a slot, pins among pins and recents among recents; the list uses the sidebar's insertion-line drag. Only recents reorder within search results, and the rail's Style toggle governs the results too — searching changes what is listed, never how it's drawn. Hits whose kind has no destination surface in List only. A row's right-click opens it, pins it, favorites it, or drops it from the list, and a live page row carries the page menu's send rows — Move To ▸, Copy Link, Copy Path. Picking an entity dismisses the window when **Close Navigation On Select** is on.
 
@@ -42,7 +42,6 @@ The new-tab page (`Core/Navigation/NavView.tsx`): a full-window Recents gallery 
 
 #### Pending
 
-- **NavMenu** — the toolbar Navigation button's menu, a blank placeholder whose content is undecided.
 - **Agenda is unsearchable** — Tasks and Events are absent from the tree the index builds from; the persistence layer admits their refs and renders them as inert rows.
 - **Body and full-text search** — waits on a SQLite FTS layer that doesn't exist.
 
