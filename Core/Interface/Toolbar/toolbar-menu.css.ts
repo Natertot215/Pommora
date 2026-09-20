@@ -19,8 +19,6 @@ const wrapper = style({
 
 const anchor = style(menuAnchor('center', stack.local.lifted))
 
-export const anchorRight = style(menuAnchor('right', stack.local.lifted))
-
 /** The segment's own gap is zeroed so the collapsing label slot (button.css) is the sole icon↔title spacing. */
 const button = style({ paddingInline: BUTTON.padX })
 globalStyle(`${button} button`, { gap: 0 })

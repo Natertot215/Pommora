@@ -14,7 +14,6 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import './toolbar.css'
 import '@pommora/uix/Animations/toolbar-slide.css'
 
-// Settings is the only segment that opens a panel; the others act where they stand.
 type TrioSegment = Segment & { panel?: boolean }
 
 export function Toolbar({
@@ -31,7 +30,7 @@ export function Toolbar({
   useDismissal(settingsOpen, false, {
     layer: () => trioRef.current,
     dismiss: () => setSettingsOpen(false),
-    outsidePress: !(settingsOpen && matrixPane),
+    outsidePress: !matrixPane,
   })
   const settingsP = useExitPresence(settingsOpen)
 
