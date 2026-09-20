@@ -127,6 +127,13 @@ describe('readPersonalization: ribbon knobs', () => {
     expect(p.sidebarMode).toBe('agenda')
     expect(p.ribbonOrder).toEqual(['agenda', 'collections'])
   })
+  it('keeps experimentalFeatures only as a boolean', () => {
+    expect(readPersonalization({ experimentalFeatures: true }).experimentalFeatures).toBe(true)
+    expect(readPersonalization({ experimentalFeatures: false }).experimentalFeatures).toBe(false)
+    expect(
+      readPersonalization({ experimentalFeatures: 'yes' }).experimentalFeatures,
+    ).toBeUndefined()
+  })
   it('drops an invalid sidebarMode and filters garbage from ribbonOrder', () => {
     const p = readPersonalization({ sidebarMode: 'bogus', ribbonOrder: [1, '', 'contexts'] })
     expect(p.sidebarMode).toBeUndefined()

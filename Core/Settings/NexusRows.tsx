@@ -11,6 +11,7 @@ import { clockOf } from '../Properties/formatValue'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useTimedLabel } from './ClearActionRow'
 import { useSession } from '../Session/store'
+import { useExperimental } from './experimental'
 import * as x from './exclusion-rows.css'
 import { host } from '../Platform/dialer'
 
@@ -54,6 +55,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [busy, setBusy] = useState(false)
   const inFlight = useRef(false)
   const clock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
+  const experimental = useExperimental()
   const [syncLabel, markSynced] = useTimedLabel('Sync Now', 'Synced')
 
   // One channel in flight at a time: each reply is the whole state, so a second call would answer from a list the first has already replaced.
@@ -95,14 +97,13 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
     if (bindingState === 'pending' && pushed.reason !== 'pending') refresh(false)
   }, [pushed, refresh, bindingState])
 
-  if (state === null) return null
-
-  const binding = state.binding
+  // The nexus's own identity does not come from sync, so it stands even where no device identity exists to answer for one.
+  const binding = state?.binding ?? null
   const address = draft ?? binding?.address ?? ''
   const devices = binding?.state === 'approved' ? binding.devices : []
   const secure = address.startsWith('https:')
   const needsPassword =
-    binding === null || binding.state === 'pending' || state.status.reason === 'password'
+    binding === null || binding.state === 'pending' || state?.status.reason === 'password'
 
   const onConnect = async (): Promise<void> => {
     const ok = await run(() => {
@@ -120,21 +121,23 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
 
   return (
     <>
-      <SettingsFieldRow label="This Device">
-        <InputField
-          label="Device name"
-          edit={
-            busy
-              ? undefined
-              : {
-                  value: state.device.name,
-                  onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
-                }
-          }
-        >
-          {state.device.name}
-        </InputField>
-      </SettingsFieldRow>
+      {state && (
+        <SettingsFieldRow label="This Device">
+          <InputField
+            label="Device name"
+            edit={
+              busy
+                ? undefined
+                : {
+                    value: state.device.name,
+                    onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
+                  }
+            }
+          >
+            {state.device.name}
+          </InputField>
+        </SettingsFieldRow>
+      )}
       <SettingsFieldRow label="Nexus ID">
         <span className={x.count}>{nexusId}</span>
       </SettingsFieldRow>
@@ -163,90 +166,94 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
           }}
         />
       )}
-      <SettingsFieldRow label="Server" hint={binding ? captionFor(binding) : undefined}>
-        <span className={x.manageCluster}>
-          <InputField
-            label="Server address"
-            edit={{ value: address, onCommit: setDraft, renames: 'row', emptyCommits: true }}
-          >
-            {address === '' ? <span className={placeholder}>No server</span> : address}
-          </InputField>
-          {secure && (
-            <InputField
-              label="Pin"
-              edit={{ value: pin, onCommit: setPin, renames: 'row', emptyCommits: true }}
-            >
-              {pin === '' ? <span className={placeholder}>No pin</span> : pin}
-            </InputField>
-          )}
-          {(binding?.state !== 'approved' || state.status.reason === 'password') && (
+      {experimental && state && (
+        <>
+          <SettingsFieldRow label="Server" hint={binding ? captionFor(binding) : undefined}>
+            <span className={x.manageCluster}>
+              <InputField
+                label="Server address"
+                edit={{ value: address, onCommit: setDraft, renames: 'row', emptyCommits: true }}
+              >
+                {address === '' ? <span className={placeholder}>No server</span> : address}
+              </InputField>
+              {secure && (
+                <InputField
+                  label="Pin"
+                  edit={{ value: pin, onCommit: setPin, renames: 'row', emptyCommits: true }}
+                >
+                  {pin === '' ? <span className={placeholder}>No pin</span> : pin}
+                </InputField>
+              )}
+              {(binding?.state !== 'approved' || state.status.reason === 'password') && (
+                <Button
+                  type="filled"
+                  label="Connect"
+                  disabled={busy}
+                  onClick={() => void onConnect()}
+                />
+              )}
+              {binding !== null && (
+                <>
+                  <Button type="base" label="Refresh" disabled={busy} onClick={() => refresh()} />
+                  <Button
+                    type="base"
+                    label="Disconnect"
+                    disabled={busy}
+                    onClick={() => void run(() => host().ask('sync:disconnect'))}
+                  />
+                </>
+              )}
+            </span>
+          </SettingsFieldRow>
+          <SettingsFieldRow label="Sync" hint={syncCaption(state.status, clock)}>
             <Button
               type="filled"
-              label="Connect"
-              disabled={busy}
-              onClick={() => void onConnect()}
+              label={syncLabel}
+              disabled={busy || binding?.state !== 'approved'}
+              onClick={() =>
+                void run(async () => {
+                  const r = await host().ask('sync:now')
+                  if (r.ok && r.value.status.state !== 'off') markSynced()
+                  return r
+                })
+              }
             />
-          )}
-          {binding !== null && (
-            <>
-              <Button type="base" label="Refresh" disabled={busy} onClick={() => refresh()} />
-              <Button
-                type="base"
-                label="Disconnect"
-                disabled={busy}
-                onClick={() => void run(() => host().ask('sync:disconnect'))}
+          </SettingsFieldRow>
+          {devices.map((device) => {
+            const own = device.id === state.device.id
+            return (
+              <MenuRowView
+                key={device.id}
+                row={{
+                  kind: 'item',
+                  inert: true,
+                  label: device.name,
+                  caption: `${fingerprint(device.id)} · ${device.approved ? 'Approved' : 'Pending'}${device.x25519 ? ' · paired' : ''}`,
+                  trailing: own
+                    ? undefined
+                    : {
+                        kind: 'field',
+                        children: (
+                          <Button
+                            type={device.approved ? 'destructive' : 'filled'}
+                            label={device.approved ? 'Revoke' : 'Approve'}
+                            disabled={busy}
+                            onClick={() =>
+                              void run(() =>
+                                device.approved
+                                  ? host().ask('sync:revoke', device.id)
+                                  : host().ask('sync:approve', device.id),
+                              )
+                            }
+                          />
+                        ),
+                      },
+                }}
               />
-            </>
-          )}
-        </span>
-      </SettingsFieldRow>
-      <SettingsFieldRow label="Sync" hint={syncCaption(state.status, clock)}>
-        <Button
-          type="filled"
-          label={syncLabel}
-          disabled={busy || binding?.state !== 'approved'}
-          onClick={() =>
-            void run(async () => {
-              const r = await host().ask('sync:now')
-              if (r.ok && r.value.status.state !== 'off') markSynced()
-              return r
-            })
-          }
-        />
-      </SettingsFieldRow>
-      {devices.map((device) => {
-        const own = device.id === state.device.id
-        return (
-          <MenuRowView
-            key={device.id}
-            row={{
-              kind: 'item',
-              inert: true,
-              label: device.name,
-              caption: `${fingerprint(device.id)} · ${device.approved ? 'Approved' : 'Pending'}${device.x25519 ? ' · paired' : ''}`,
-              trailing: own
-                ? undefined
-                : {
-                    kind: 'field',
-                    children: (
-                      <Button
-                        type={device.approved ? 'destructive' : 'filled'}
-                        label={device.approved ? 'Revoke' : 'Approve'}
-                        disabled={busy}
-                        onClick={() =>
-                          void run(() =>
-                            device.approved
-                              ? host().ask('sync:revoke', device.id)
-                              : host().ask('sync:approve', device.id),
-                          )
-                        }
-                      />
-                    ),
-                  },
-            }}
-          />
-        )
-      })}
+            )
+          })}
+        </>
+      )}
     </>
   )
 }

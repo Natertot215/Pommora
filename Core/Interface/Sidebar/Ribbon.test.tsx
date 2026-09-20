@@ -19,7 +19,7 @@ beforeEach(() => {
   useSession.setState({
     select: selectSpy as never,
     setPersonalization: setPersonalizationSpy as never,
-    personalization: { sidebarMode: 'collections' },
+    personalization: { sidebarMode: 'collections', experimentalFeatures: true },
     tabs: [],
     pinned: [],
   })
@@ -56,7 +56,11 @@ describe('Ribbon', () => {
     act(() =>
       useSession.setState({
         toggleMatrixWindow: openMatrixWindowSpy as never,
-        personalization: { sidebarMode: 'collections', matrixOpenIn: 'window' },
+        personalization: {
+          sidebarMode: 'collections',
+          matrixOpenIn: 'window',
+          experimentalFeatures: true,
+        },
       }),
     )
     const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
@@ -70,7 +74,11 @@ describe('Ribbon', () => {
     act(() =>
       useSession.setState({
         toggleMatrixWindow: openMatrixWindowSpy as never,
-        personalization: { sidebarMode: 'collections', matrixOpenIn: 'window' },
+        personalization: {
+          sidebarMode: 'collections',
+          matrixOpenIn: 'window',
+          experimentalFeatures: true,
+        },
         tabs: [
           { id: 't1', target: { kind: 'matrix' }, navStack: [{ kind: 'matrix' }], navIndex: 0 },
         ],
@@ -119,7 +127,9 @@ describe('Ribbon', () => {
 
   const renderWithOrder = (ribbonOrder: string[]): (string | null)[] => {
     act(() => root.unmount())
-    useSession.setState({ personalization: { sidebarMode: 'collections', ribbonOrder } })
+    useSession.setState({
+      personalization: { sidebarMode: 'collections', ribbonOrder, experimentalFeatures: true },
+    })
     root = createRoot(host)
     act(() => root.render(<Ribbon />))
     return buttons()
@@ -151,5 +161,36 @@ describe('Ribbon', () => {
     expect(
       renderWithOrder(['settings', 'navigation', 'agenda', 'contexts', 'matrix', 'collections']),
     ).toEqual(['settings', 'agenda', 'contexts', 'matrix', 'collections'])
+  })
+
+  const renderPlain = (personalization: Record<string, unknown>): (string | null)[] => {
+    act(() => root.unmount())
+    useSession.setState({ personalization: personalization as never })
+    root = createRoot(host)
+    act(() => root.render(<Ribbon />))
+    return buttons()
+      .slice(1)
+      .map((b) => b.getAttribute('aria-label'))
+  }
+
+  it('without Experimental Features the Agenda tab is absent, saved order or not', () => {
+    expect(renderPlain({ sidebarMode: 'collections' })).toEqual([
+      'matrix',
+      'contexts',
+      'collections',
+      'settings',
+    ])
+    expect(
+      renderPlain({
+        sidebarMode: 'collections',
+        ribbonOrder: ['agenda', 'settings', 'contexts', 'matrix', 'collections'],
+      }),
+    ).toEqual(['settings', 'contexts', 'matrix', 'collections'])
+  })
+
+  it('a stored agenda mode reads as collections once the gate closes', () => {
+    renderPlain({ sidebarMode: 'agenda' })
+    const collections = buttons().find((b) => b.getAttribute('aria-label') === 'collections')!
+    expect(collections.getAttribute('aria-selected')).toBe('true')
   })
 })

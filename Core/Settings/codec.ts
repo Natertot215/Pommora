@@ -89,6 +89,7 @@ export function readPersonalization(raw: unknown): Personalization {
     setPlacement: placement(p.setPlacement),
     subSetPlacement: placement(p.subSetPlacement),
     sidebarMode: mode(p.sidebarMode),
+    experimentalFeatures: bool(p.experimentalFeatures),
     revealTabBarOnHover: bool(p.revealTabBarOnHover),
     tabOpenBehavior: p.tabOpenBehavior === 'newtab' ? 'newtab' : undefined,
     matrixOpenIn: p.matrixOpenIn === 'window' ? 'window' : undefined,

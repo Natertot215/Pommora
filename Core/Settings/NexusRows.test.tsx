@@ -46,8 +46,15 @@ const bothApproved = approved([THIS_DEVICE, { ...OTHER, approved: true }])
 
 const reply = (value: SyncState) => vi.fn(async () => ({ ok: true, value }))
 
-const render = async (channels: Record<string, unknown>): Promise<void> => {
-  useSession.setState({ tree: { nexus: { id: NEXUS_ID } } as never, syncStatus: null })
+const render = async (
+  channels: Record<string, unknown>,
+  experimentalFeatures = true,
+): Promise<void> => {
+  useSession.setState({
+    tree: { nexus: { id: NEXUS_ID } } as never,
+    syncStatus: null,
+    personalization: { experimentalFeatures },
+  })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -164,11 +171,14 @@ describe('NexusRows', () => {
     expect(host.textContent).toContain('Studio')
   })
 
-  it('a refused state on mount reports nothing and draws nothing', async () => {
+  it('a refused state on mount reports nothing and keeps the nexus identity rows', async () => {
     const show = vi.fn()
     await render({ 'sync:state': refuse('no identity'), 'error:show': show })
     expect(show).not.toHaveBeenCalled()
-    expect(host.textContent).toBe('')
+    expect(host.textContent).toContain(NEXUS_ID)
+    expect(host.textContent).toContain('Nexus Password')
+    expect(host.textContent).not.toContain('This Device')
+    expect(button('Sync Now')).toBeUndefined()
   })
 
   it('a nexus switch fetches the state again', async () => {
@@ -272,5 +282,15 @@ describe('NexusRows', () => {
     await act(async () => button('Connect')?.click())
     expect(ask).toHaveBeenCalledWith('https://hub.example:7473', 'openit', '4821')
     expect(fieldText('Nexus password')).toBe('Not set')
+  })
+
+  it('without Experimental Features the identity rows stand and the sync ones are gone', async () => {
+    await render({ 'sync:state': reply(mixed) }, false)
+    expect(host.textContent).toContain('This Device')
+    expect(host.textContent).toContain(NEXUS_ID)
+    expect(host.textContent).toContain('Nexus Password')
+    expect(host.textContent).not.toContain('Server')
+    expect(button('Sync Now')).toBeUndefined()
+    expect(button('Approve')).toBeUndefined()
   })
 })

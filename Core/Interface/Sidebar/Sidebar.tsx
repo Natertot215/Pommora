@@ -38,6 +38,7 @@ import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
+import { sidebarModeOf } from '@pommora/core/Settings/experimental'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../Glance/glanceLink'
 import { glanceShown } from '../Glance/glanceAction'
@@ -421,7 +422,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const setPlacement = useSession((s) => s.personalization.setPlacement ?? 'top')
   const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
-  const mode: SidebarMode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
+  const mode: SidebarMode = useSession((s) => sidebarModeOf(s.personalization))
 
   const onSelectCollection = (col: CollectionNode): void => {
     void select({ kind: 'collection', id: col.id })

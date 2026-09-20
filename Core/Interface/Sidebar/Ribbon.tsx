@@ -6,6 +6,8 @@ import { openOrder } from '../../Actions/menuModel'
 import { popMenu } from '../../Actions/menuActions'
 import { openLabel } from '../../Actions/toggleLabels'
 import { useSession } from '../../Session/store'
+import { sidebarModeOf, useExperimental } from '@pommora/core/Settings/experimental'
+import { type RibbonKey, resolveOrder, withHidden } from './ribbonOrder'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { ctxHandler } from './sidebarRows'
 import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
@@ -13,7 +15,6 @@ import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
 
 // The Settings icon dismisses the window it summoned, matching the keyboard command that shares the state, and never switches sidebarMode.
-type RibbonKey = 'matrix' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   collections: 'collections',
   contexts: 'contexts',
@@ -26,17 +27,6 @@ const STATIC_ICON: Record<'matrix' | 'agenda' | 'settings', string> = {
 }
 type RibbonMenuAction = 'open' | 'preview'
 
-const DEFAULT_ORDER: RibbonKey[] = ['matrix', 'agenda', 'contexts', 'collections', 'settings']
-
-function resolveOrder(persisted: string[] | undefined): RibbonKey[] {
-  const known = new Set<string>(DEFAULT_ORDER)
-  const keys = (persisted ?? []).filter((k): k is RibbonKey => known.has(k))
-  DEFAULT_ORDER.forEach((k, i) => {
-    if (!keys.includes(k)) keys.splice(i, 0, k)
-  })
-  return keys
-}
-
 export function Ribbon(): React.JSX.Element {
   const select = useSession((s) => s.select)
   const toggleSettings = useSession((s) => s.toggleSettings)
@@ -45,11 +35,12 @@ export function Ribbon(): React.JSX.Element {
   const matrixInWindow = useSession((s) => s.personalization.matrixOpenIn === 'window')
   const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
   const matrixWindowOpen = useSession((s) => s.pageWindow?.kind === 'matrix')
-  const mode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
+  const mode = useSession((s) => sidebarModeOf(s.personalization))
   const order = useSession((s) => s.personalization.ribbonOrder)
+  const experimental = useExperimental()
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const keys = resolveOrder(order)
+  const keys = resolveOrder(order, experimental)
 
   const iconFor = (k: RibbonKey): string =>
     k === 'collections'
@@ -87,7 +78,7 @@ export function Ribbon(): React.JSX.Element {
       activeId,
       overId,
     ).map((x) => x.id)
-    setPersonalization('ribbonOrder', next)
+    setPersonalization('ribbonOrder', withHidden(order, next))
   }
 
   return (
