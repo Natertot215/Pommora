@@ -231,9 +231,8 @@ export async function setSpaceContext(
     const half = await writeSpaceSidecar(far.dir, (raw) => {
       const base = repaired(raw)
       const held = listOf(base[backKey]).filter((v): v is string => typeof v === 'string')
-      const next = wants
-        ? [...held, a.title]
-        : held.filter((t) => normalizeTitle(t) !== normalizeTitle(a.title))
+      const without = held.filter((t) => normalizeTitle(t) !== normalizeTitle(a.title))
+      const next = wants ? [...without, a.title] : without
       return setOrDrop(base, backKey, next.length > 0 && next)
     })
     if (!half.ok) return half
