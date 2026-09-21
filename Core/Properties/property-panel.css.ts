@@ -30,7 +30,7 @@ export const pageRows = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '8px',
-  padding: '4px 0 6px',
+  padding: '0 0 6px',
 })
 
 export const group = style({
