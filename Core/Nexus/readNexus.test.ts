@@ -304,17 +304,28 @@ describe('readNexus — registry-backed contexts', () => {
     )
     w(
       join(reg, '.nexus', 'state.json'),
-      JSON.stringify({ order: { spaces: { ctx_projects: ['sp-cs-proj', 'sp-pom'] } } }),
+      JSON.stringify({
+        order: {
+          contexts: ['ctxC', 'ctx_areas'],
+          spaces: { ctx_projects: ['sp-cs-proj', 'sp-pom'] },
+        },
+      }),
     )
     d(join(reg, '.nexus', 'contexts', 'Areas', 'Work'))
     w(
       join(reg, '.nexus', 'contexts', 'Areas', 'Work', '_space.json'),
-      JSON.stringify({ id: 'sp-work', color: 'blue' }),
+      JSON.stringify({ id: 'sp-work', $color: 'blue' }),
     )
     d(join(reg, '.nexus', 'contexts', 'Projects', 'Pommora'))
     w(
       join(reg, '.nexus', 'contexts', 'Projects', 'Pommora', '_space.json'),
-      JSON.stringify({ id: 'sp-pom', color: 'cyan', '<Classes>': ['CS 161'] }),
+      JSON.stringify({
+        id: 'sp-pom',
+        $color: 'cyan',
+        '<Classes>': ['CS 161'],
+        Status: ['Active'],
+        $order: { contexts: ['ctxC'], properties: [] },
+      }),
     )
     d(join(reg, '.nexus', 'contexts', 'Projects', 'CS Project'))
     w(
@@ -351,6 +362,20 @@ describe('readNexus — registry-backed contexts', () => {
     expect(pom?.contextId).toBe('ctx_projects')
     expect(pom?.color).toBe('cyan')
     expect(pom?.path).toBe('.nexus/contexts/Projects/Pommora')
+  })
+
+  it('carries the sidecar own values, and nothing the node already models', async () => {
+    const t = await readNexus(reg)
+    const projects = t.contexts?.find((g) => g.def.id === 'ctx_projects')
+    expect(projects?.spaces.find((s) => s.id === 'sp-pom')?.values).toEqual({
+      Status: ['Active'],
+      $order: { contexts: ['ctxC'], properties: [] },
+    })
+    expect(projects?.spaces.find((s) => s.id === 'sp-cs-proj')?.values).toBeUndefined()
+  })
+
+  it('carries the panel nexus-wide Context order off state.json', async () => {
+    expect((await readNexus(reg)).contextOrder).toEqual(['ctxC', 'ctx_areas'])
   })
 
   it('resolves wrapped page keys onto the node contextValues', async () => {
@@ -421,6 +446,10 @@ describe('readNexus — the walk names what it cannot read', () => {
 
   it('a clean walk carries no list', async () => {
     expect((await readNexus(sidecar)).unreadable).toBeUndefined()
+  })
+
+  it('a state.json naming no Context order leaves the field absent', async () => {
+    expect((await readNexus(root)).contextOrder).toBeUndefined()
   })
 
   it('an unusable registry names itself — a blank Contexts layer is not mass deletion', async () => {

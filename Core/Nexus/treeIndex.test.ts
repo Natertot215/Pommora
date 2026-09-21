@@ -12,6 +12,7 @@ import {
   recordsByIdOf,
   resolveIndexOf,
   searchEntriesOf,
+  spaceLinksOf,
 } from './treeIndex'
 
 describe('the record walk', () => {
@@ -146,5 +147,59 @@ describe('navKeysOf', () => {
     ])
       expect(keys.has(k)).toBe(true)
     expect(keys.has('context:g1')).toBe(false)
+  })
+})
+
+describe('spaceLinksOf', () => {
+  const linkedTree = (bStoresItToo: boolean): NexusTree => {
+    const base = makeTree()
+    return {
+      ...base,
+      contexts: [
+        {
+          def: { id: 'g1', title: 'Realms', singular: 'Realm' },
+          spaces: [
+            {
+              kind: 'space',
+              id: 'a1',
+              title: 'Work',
+              path: '.nexus/contexts/Realms/Work',
+              contextId: 'g1',
+              contextValues: { g2: ['b1'] },
+            },
+          ],
+        },
+        {
+          def: { id: 'g2', title: 'Themes', singular: 'Theme' },
+          spaces: [
+            {
+              kind: 'space',
+              id: 'b1',
+              title: 'Reading',
+              path: '.nexus/contexts/Themes/Reading',
+              contextId: 'g2',
+              ...(bStoresItToo ? { contextValues: { g1: ['a1'] } } : {}),
+            },
+          ],
+        },
+      ],
+    }
+  }
+
+  it('reads one half as a link on both ends', () => {
+    const links = spaceLinksOf(linkedTree(false))
+    expect(links.get('a1')).toEqual({ g2: ['b1'] })
+    expect(links.get('b1')).toEqual({ g1: ['a1'] })
+  })
+
+  it('gives a stored pair one entry per end, never two', () => {
+    const links = spaceLinksOf(linkedTree(true))
+    expect(links.get('a1')).toEqual({ g2: ['b1'] })
+    expect(links.get('b1')).toEqual({ g1: ['a1'] })
+  })
+
+  it('caches on the tree identity', () => {
+    const t = linkedTree(true)
+    expect(spaceLinksOf(t)).toBe(spaceLinksOf(t))
   })
 })

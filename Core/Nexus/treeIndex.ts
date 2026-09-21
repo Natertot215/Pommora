@@ -9,7 +9,13 @@ import {
   toNavRef,
 } from '@pommora/core/Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '@pommora/core/Matrix/matrixKind'
-import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import type {
+  CollectionNode,
+  NexusTree,
+  PageNode,
+  SetNode,
+  SpaceNode,
+} from '@pommora/core/Nexus/tree'
 import { findContainerWhere } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
@@ -53,6 +59,7 @@ interface TreeIndex {
   containers?: Map<string, ContainerCore>
   navKeys?: string[]
   ancestry?: Map<string, TrailNode[]>
+  spaceLinks?: Map<string, Record<string, string[]>>
 }
 
 const byTree = new WeakMap<NexusTree, TreeIndex>()
@@ -351,12 +358,40 @@ export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
   return !!col && col.sets.some((s) => s.id === setId)
 }
 
-export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
-  if (!tree) return null
-  for (const g of tree.contexts) {
+export function spaceLinksOf(tree: NexusTree): ReadonlyMap<string, Record<string, string[]>> {
+  const ix = indexFor(tree)
+  if (ix.spaceLinks) return ix.spaceLinks
+  const out = new Map<string, Record<string, string[]>>()
+  const add = (spaceId: string, contextId: string, otherId: string): void => {
+    const links = out.get(spaceId) ?? {}
+    const ids = links[contextId] ?? []
+    if (!ids.includes(otherId)) ids.push(otherId)
+    links[contextId] = ids
+    out.set(spaceId, links)
+  }
+  for (const g of tree.contexts)
+    for (const s of g.spaces)
+      for (const [contextId, ids] of Object.entries(s.contextValues ?? {}))
+        for (const other of ids) {
+          add(s.id, contextId, other)
+          add(other, g.def.id, s.id)
+        }
+  ix.spaceLinks = out
+  return out
+}
+
+export function spaceNodeOf(tree: NexusTree | null, id: string): SpaceNode | null {
+  for (const g of tree?.contexts ?? []) {
     const sp = g.spaces.find((s) => s.id === id)
-    if (sp)
-      return {
+    if (sp) return sp
+  }
+  return null
+}
+
+export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
+  const sp = spaceNodeOf(tree, id)
+  return sp
+    ? {
         path: sp.path,
         kind: 'space',
         name: sp.title,
@@ -364,8 +399,7 @@ export function findSpace(tree: NexusTree | null, id: string): BannerOwner | nul
         icon: sp.icon,
         headingIconHidden: sp.headingIconHidden,
       }
-  }
-  return null
+    : null
 }
 
 export function containerOwner(node: CollectionNode | SetNode): BannerOwner {

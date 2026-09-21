@@ -13,6 +13,7 @@ import {
   applyWatchEvents,
   classifyEvent,
   patchContainerFromDisk,
+  patchOrderFromDisk,
   touchesCorpus,
   type WatchEvent,
 } from './watchPatch'
@@ -78,7 +79,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     )
     await writeFile(
       abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
-      JSON.stringify({ id: 'sp1', color: 'mint' }),
+      JSON.stringify({ id: 'sp1', $color: 'mint', Status: ['Active'] }),
     )
     await writeFile(
       abs('.nexus', 'settings.json'),
@@ -111,11 +112,23 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(notes?.pages.map((p) => p.id)).toEqual([ULID_B, ULID_A])
     expect(notes?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
     expect(live?.contexts[0]?.spaces[0]?.color).toBe('mint')
+    expect(live?.contexts[0]?.spaces[0]?.values).toEqual({ Status: ['Active'] })
     expect(live?.nexus.profileSubtitle).toBe('Second brain')
     expect(live?.homepage.banner).toBe('Loose/b.png')
 
     const walked = await readNexus(root)
     expect(stabilize(walked, live)).toBe(live)
+  })
+
+  it('patches the panel Context order off state.json, and holds the tree when it did not move', async () => {
+    await refreshTree(root)
+    await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { contexts: ['ctx1'] } }))
+    expect(await patchOrderFromDisk(root)).toBe('ok')
+    const live = getLiveTree()
+    expect(live?.contextOrder).toEqual(['ctx1'])
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+    expect(await patchOrderFromDisk(root)).toBe('ok')
+    expect(getLiveTree()).toBe(live)
   })
 
   it('patches crops.json as a leaf, dropping a malformed entry, walk-identically', async () => {

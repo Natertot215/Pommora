@@ -1,6 +1,8 @@
 import { valueOr } from '@pommora/core/Contract/result'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { NexusTree, SpaceNode } from '@pommora/core/Nexus/tree'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { spaceLinksOf } from '@pommora/core/Nexus/treeIndex'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
 import { resolveTreeContextKeys } from '@pommora/core/Contexts/contextResolve'
@@ -26,6 +28,23 @@ export function pageRowOf(
     ...(links && (links.size || rider)
       ? { contextValues: { ...Object.fromEntries(links), ...rider } }
       : {}),
+  }
+}
+
+// A Space has no ID key on disk; this one exists to satisfy ViewRow and is never written back.
+export function spaceRowOf(tree: NexusTree, node: SpaceNode, fm?: PageFrontmatter): ViewRow {
+  const frontmatter = fm ?? ({ ...node.values, [ID_KEY]: node.id } as PageFrontmatter)
+  const links = spaceLinksOf(tree).get(node.id)
+  const rider = frontmatter.contextValues as Record<string, string[]> | undefined
+  return {
+    id: node.id,
+    title: node.title,
+    icon: node.icon,
+    path: node.path,
+    frontmatter,
+    createdAt: null,
+    modifiedAt: null,
+    ...(links || rider ? { contextValues: { ...links, ...rider } } : {}),
   }
 }
 

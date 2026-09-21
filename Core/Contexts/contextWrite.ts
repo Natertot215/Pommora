@@ -24,6 +24,7 @@ import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { COLOR_KEY } from './spaceSidecar'
 
 type Raw = Record<string, unknown>
 
@@ -278,8 +279,8 @@ export async function setSpaceColor(
   if (!ref) return fail('not-found', 'Unknown Space.')
   const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (cur) => {
     const next: Raw = { ...cur }
-    if (color === undefined) delete next.color
-    else next.color = color
+    if (color === undefined) delete next[COLOR_KEY]
+    else next[COLOR_KEY] = color
     return next
   })
   return written.ok ? ok(null) : written

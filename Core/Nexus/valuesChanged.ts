@@ -20,6 +20,21 @@ export function noteValueWrite(root: string | null, absFile: string): void {
   files.add(rel)
 }
 
+// A sidecar write silences its own watcher echo, so its writer notes the folder here and the confirm patches that node.
+const sidecarWrites = new Set<string>()
+
+export function noteSidecarWrite(absSpaceDir: string): void {
+  sidecarWrites.add(absSpaceDir)
+}
+
+export function flushSidecarWrites(root: string): string[] {
+  const rels = [...sidecarWrites]
+    .map((abs) => relPosix(root, abs))
+    .filter((rel) => rel && !escapes(rel))
+  sidecarWrites.clear()
+  return rels
+}
+
 interface PageIndices {
   byPath: ReadonlyMap<string, string>
   /** null marks an id two files claim. */

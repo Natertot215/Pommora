@@ -144,6 +144,8 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
   ...PAGE_MODELED_KEYS,
   'created_at',
   'modified_at',
+  'id',
+  'heading_icon_hidden',
 ])
 
 export const KEY_REFUSAL = {

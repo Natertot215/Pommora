@@ -143,6 +143,8 @@ describe('invalidPropertyName', () => {
     expect(invalidPropertyName('<Foo')).toBe(true)
     expect(invalidPropertyName('modified_at')).toBe(true)
     expect(invalidPropertyName(' PageID ')).toBe(true)
+    expect(invalidPropertyName('id')).toBe(true)
+    expect(invalidPropertyName('heading_icon_hidden')).toBe(true)
     expect(invalidPropertyName('pageid')).toBe(false)
     expect(invalidPropertyName('Budget ($)')).toBe(false)
   })

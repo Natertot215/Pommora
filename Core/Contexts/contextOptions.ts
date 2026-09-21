@@ -11,7 +11,11 @@ export interface ContextOption {
 // The card grid calls this per context value per render, so a STABLE array is cached per (tree, contextId) — keyed on the tree object, so a push invalidates it.
 const optionsCache = new WeakMap<NexusTree, Map<string, ContextOption[]>>()
 
-export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOption[] {
+export function contextOptionsFor(
+  contextId: string,
+  tree: NexusTree,
+  excludeId?: string,
+): ContextOption[] {
   let byContext = optionsCache.get(tree)
   if (!byContext) {
     byContext = new Map()
@@ -22,7 +26,7 @@ export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOp
     opts = buildOptions(contextId, tree)
     byContext.set(contextId, opts)
   }
-  return opts
+  return excludeId ? opts.filter((o) => o.value !== excludeId) : opts
 }
 
 function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {

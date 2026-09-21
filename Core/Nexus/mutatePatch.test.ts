@@ -7,6 +7,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk } from './watchPatch'
+import { noteSidecarWrite } from './valuesChanged'
 
 vi.mock('./readNexus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./readNexus')>()
@@ -247,6 +248,20 @@ describe('confirmBy over the container patcher', () => {
     const live = getLiveTree()
     expect(live?.collections[0]?.openIn).toBe('page-preview')
     expect(live?.collections[0]?.views?.[0]?.name).toBe('All')
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('a noted Space sidecar write patches its node without a walk', async () => {
+    await writeFile(
+      abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
+      JSON.stringify({ id: 'sp1', Status: ['Active'] }),
+    )
+    noteSidecarWrite(abs('.nexus', 'contexts', 'Areas', 'Home'))
+    const pushed = await confirmBy(root, async () => 'ok')
+    expect(pushed).not.toBeNull()
+    expect(walkSpy).not.toHaveBeenCalled()
+    const live = getLiveTree()
+    expect(live?.contexts[0]?.spaces[0]?.values).toEqual({ Status: ['Active'] })
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 })

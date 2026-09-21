@@ -98,7 +98,7 @@ describe('createSpace', () => {
     )
     expect(typeof sc.id).toBe('string')
     expect(sc.icon).toBeUndefined()
-    expect(sc.color).toBeUndefined()
+    expect(sc.$color).toBeUndefined()
     expect(sc.tiles).toBeUndefined()
     const doc = await readTileDocAt(join(contextsDir(root), 'Projects', 'Sapphire'))
     expect(doc.tiles).toHaveLength(4)
@@ -199,15 +199,15 @@ describe('setSpaceColor', () => {
 
   it('accepts a legacy anchor name, clears on undefined, rejects a non-color', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'cyan')).ok).toBe(true)
-    expect((await sidecar()).color).toBe('cyan')
+    expect((await sidecar()).$color).toBe('cyan')
     expect((await setSpaceColor(root, 'sp-pom', undefined)).ok).toBe(true)
-    expect('color' in (await sidecar())).toBe(false)
+    expect('$color' in (await sidecar())).toBe(false)
     expect((await setSpaceColor(root, 'sp-pom', 'magenta')).ok).toBe(false)
   })
 
   it('writes a ramp cell through verbatim', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'blue-6')).ok).toBe(true)
-    expect((await sidecar()).color).toBe('blue-6')
+    expect((await sidecar()).$color).toBe('blue-6')
     expect('modified_at' in (await sidecar())).toBe(false)
   })
 
