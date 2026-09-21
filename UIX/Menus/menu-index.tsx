@@ -4,7 +4,7 @@ import type { IconSize } from '../Theme/theme-vars.css'
 import { DualSwitch } from '../Controls/DualSwitch'
 import { ColorSwatch } from '../Controls/ColorSwatch'
 import { Slider } from '../Controls/Slider'
-import { PickerControl, type PickerOption } from '../Pickers/PickerControl'
+import { factorPickerProps, PickerControl, type PickerOption } from '../Pickers/PickerControl'
 import { cx } from '../Utilities/cx'
 import { Reveal } from '../Animations/Reveal'
 import { AccessoryButton, MenuCaption, MenuItem, MenuSeparator } from './menu-row'
@@ -44,21 +44,24 @@ export type MenuRow = (
 
 export type MenuSection = { title?: string; caps?: boolean; rows: MenuRow[] }
 
+export interface PickerRowLook {
+  ariaLabel?: string
+  iconSize?: IconSize
+  solid?: boolean
+  inert?: boolean
+  reveal?: boolean
+  className?: string
+  labelClassName?: string
+  typeable?: ComponentProps<typeof PickerControl>['typeable']
+}
+
 export const pickerRow = <T extends string>(
   glyph: string | undefined,
   label: string,
   value: T,
   options: readonly PickerOption<T>[],
   onPick: (v: T) => void,
-  look?: {
-    ariaLabel?: string
-    iconSize?: IconSize
-    solid?: boolean
-    inert?: boolean
-    reveal?: boolean
-    className?: string
-    labelClassName?: string
-  },
+  look?: PickerRowLook,
 ): MenuRow => ({
   kind: 'item',
   icon: glyph ? <Icon name={glyph} size={look?.iconSize ?? 'body'} /> : undefined,
@@ -70,11 +73,22 @@ export const pickerRow = <T extends string>(
     options,
     onPick,
     solid: look?.solid,
+    typeable: look?.typeable,
   },
   inert: look?.inert,
   reveal: look?.reveal,
   className: look?.className,
 })
+
+export const factorRow = (
+  glyph: string | undefined,
+  label: string,
+  spec: Parameters<typeof factorPickerProps>[0],
+  look?: PickerRowLook,
+): MenuRow => {
+  const { value, options, onPick, typeable } = factorPickerProps(spec)
+  return pickerRow(glyph, label, value, options, onPick, { ...look, typeable })
+}
 
 function trailingNode(t: Trailing): ReactNode {
   switch (t.kind) {

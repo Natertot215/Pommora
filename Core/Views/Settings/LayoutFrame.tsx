@@ -16,6 +16,7 @@ import {
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
+  factorRow,
   pickerRow,
 } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
@@ -24,7 +25,7 @@ import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
-import { factorPickerProps, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
@@ -163,22 +164,17 @@ export function LayoutFrame({
                 (v) => write({ format: v }),
                 CARD_ROW_LOOK,
               ),
-              {
-                kind: 'item',
-                icon: <Icon name="scaling" size={CARD_ROW_LOOK.iconSize} />,
-                label: 'Card Scale',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Card Scale',
-                  solid: CARD_ROW_LOOK.solid,
-                  ...factorPickerProps({
-                    steps: CARD_SCALE_STEPS,
-                    value: view.card_size ?? 1,
-                    coerce: (typed) => clamp(typed, CARD_SCALE_MIN, CARD_SCALE_MAX),
-                    onPick: (v) => write({ card_size: v }),
-                  }),
+              factorRow(
+                'scaling',
+                'Card Scale',
+                {
+                  steps: CARD_SCALE_STEPS,
+                  value: view.card_size ?? 1,
+                  coerce: (typed) => clamp(typed, CARD_SCALE_MIN, CARD_SCALE_MAX),
+                  onPick: (v) => write({ card_size: v }),
                 },
-              },
+                CARD_ROW_LOOK,
+              ),
             ],
           },
         ]}

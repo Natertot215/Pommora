@@ -116,10 +116,15 @@ function drawNode(
     ctx.fill()
     ctx.globalAlpha = alpha
   }
-  ctx.lineWidth = ring === 'rest' ? paint.hairline : paint.ringWidth
-  ctx.strokeStyle =
-    ring === 'rest' ? paint.ring : ring === 'hover' ? paint.ringHover : paint.ringDrag
+  ctx.lineWidth = paint.hairline
+  ctx.strokeStyle = paint.ring
   ctx.stroke()
+  if (ring !== 'rest' && lit > 0) {
+    ctx.globalAlpha = alpha * lit
+    ctx.lineWidth = paint.ringWidth
+    ctx.strokeStyle = ring === 'drag' ? paint.ringDrag : paint.ringHover
+    ctx.stroke()
+  }
   ctx.globalAlpha = 1
 }
 
@@ -224,7 +229,15 @@ export function MatrixCanvas({
     }
     if (ease.t < 1) matrixRuntime.invalidate()
     // The released subject outlives its focus until the emphasis reaches nothing, held by id so a rebuild mid-fade cannot resolve it onto whatever took the slot.
-    const subject = focus >= 0 || emphasis > 0 ? matrixRuntime.indexOf(subjectRef.current) : -1
+    let subject = focus >= 0 || emphasis > 0 ? matrixRuntime.indexOf(subjectRef.current) : -1
+    // A subject that left the graph mid-fade takes the emphasis with it: without this the whole picture reads as lit.
+    if (subject < 0 && emphasis > 0) {
+      ease.from = 0
+      ease.to = 0
+      ease.t = 1
+      emphasis = 0
+      subject = -1
+    }
     const dim = 1 - emphasis * (1 - paint.inactive)
 
     const arrivals = matrixRuntime.arrivals
@@ -251,14 +264,17 @@ export function MatrixCanvas({
         drawLink(ctx, graph, l, v, paint.link, dim * Math.min(arrival(l.source), arrival(l.target)))
     }
     const hotStroke = dragging >= 0 ? paint.ringDrag : paint.linkHover
-    for (const l of hot)
-      drawLink(ctx, graph, l, v, hotStroke, Math.min(arrival(l.source), arrival(l.target)))
+    for (const l of hot) {
+      const a = Math.min(arrival(l.source), arrival(l.target))
+      drawLink(ctx, graph, l, v, paint.link, a)
+      drawLink(ctx, graph, l, v, hotStroke, a * emphasis)
+    }
 
     nodes.forEach((n, i) => {
       const [sx, sy] = toScreen(v, n.x, n.y)
       const r = n.radius * v.zoom
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
-      const ring = i === dragging ? 'drag' : i === focus ? 'hover' : 'rest'
+      const ring = i === dragging ? 'drag' : i === subject ? 'hover' : 'rest'
       const lit = isLit(i)
       drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i), lit ? emphasis : 0)
     })
