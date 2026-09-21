@@ -260,9 +260,10 @@ export const FooterIconButton = forwardRef<
     onClick?: () => void
     disabled?: boolean
     pressed?: boolean
+    quiet?: boolean
   }
 >(function FooterIconButton(
-  { icon, ariaLabel, onClick, disabled, pressed },
+  { icon, ariaLabel, onClick, disabled, pressed, quiet },
   ref,
 ): React.JSX.Element {
   return (
@@ -270,7 +271,7 @@ export const FooterIconButton = forwardRef<
       ref={ref}
       size="button-inline"
       aria-label={ariaLabel}
-      className={s.footingLabel}
+      className={cx(s.footingLabel, quiet && s.footingQuiet)}
       onClick={onClick}
       disabled={disabled}
       pressed={pressed}
