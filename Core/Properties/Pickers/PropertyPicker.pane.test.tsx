@@ -174,41 +174,28 @@ describe('PropertyPicker panes', () => {
     expect(dependentDismiss).not.toHaveBeenCalled()
   })
 
-  it('grouped entries open on Spaces and Properties, and a branch lists its own entries', async () => {
-    const onReveal = vi.fn()
-    const chooser: PickEntry[] = [
-      {
-        id: 'ctx_a',
-        name: 'Areas',
-        icon: 'square-dashed',
-        revealOnly: true,
-        drillable: false,
-        group: 'Spaces',
-      },
-      {
-        id: 'prop_r',
-        name: 'Rank',
-        icon: 'square-dashed',
-        revealOnly: true,
-        drillable: false,
-        group: 'Properties',
-      },
-    ]
-    await render({ chooser, onReveal })
-    expect(rowButton('Spaces')).toBeDefined()
-    expect(rowButton('Properties')).toBeDefined()
-    expect(rowButton('Rank')).toBeUndefined()
+  it('lists Contexts, a divider, then properties, and a Context drills under Spaces', async () => {
+    const entry = (id: string, name: string, group: PickEntry['group']): PickEntry => ({
+      id,
+      name,
+      icon: 'square-dashed',
+      revealOnly: false,
+      drillable: true,
+      group,
+    })
+    const chooser = [entry('prop_sel', 'Stage', 'Properties'), entry('ctx_a', 'Areas', 'Spaces')]
+    await render({ chooser, resolveTarget: () => optionsTarget() })
+    const stage = rowButton('Stage')
+    const divider = stage?.previousElementSibling
+    expect(divider?.getAttribute('aria-hidden')).toBe('true')
+    expect(divider?.previousElementSibling).toBe(rowButton('Areas'))
     await act(async () => {
-      rowButton('Properties')?.click()
+      rowButton('Areas')?.click()
     })
     await act(async () => {
       await new Promise((r) => setTimeout(r, 30))
     })
-    expect(rowButton('Areas')).toBeUndefined()
-    await act(async () => {
-      rowButton('Rank')?.click()
-    })
-    expect(onReveal).toHaveBeenCalledWith(chooser[1])
+    expect(rowButton('Spaces')?.textContent).toContain('Areas')
   })
 
   it('a targeted chooser entry slides to its value pane, chooserInitial pre-drills, and onCommit carries the entry', async () => {
