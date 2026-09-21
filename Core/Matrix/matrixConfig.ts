@@ -7,7 +7,7 @@ import type { GroupMode } from './Engine/graph'
 export interface MatrixConfig {
   group: { mode: GroupMode }
   filter: { rules: FilterGroup | null; enabled: boolean }
-  forces: Forces
+  forces: Record<GroupMode, Forces>
   display: { unlinked: boolean; hideIcon: boolean; hidePath: boolean; locked: boolean }
 }
 
@@ -30,7 +30,23 @@ export const clampForce = (key: keyof Forces, v: number): number => {
   return clamp(v, steps[0], steps[steps.length - 1])
 }
 
-const DEFAULT_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
+// A watcher push rebuilds every grouping's set, so the runtime reads these by value: by reference, tuning one grouping would re-solve the picture drawn under another.
+export const sameForces = (a: Forces, b: Forces): boolean =>
+  a.gravity === b.gravity &&
+  a.spread === b.spread &&
+  a.strength === b.strength &&
+  a.distance === b.distance
+
+// KNOBs — where each grouping's forces rest. They start alike and are meant to part: containment, membership, and connection springs pull on different shapes.
+const CONNECTION_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
+const LOCATION_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
+const SPACE_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
+
+const DEFAULT_FORCES: Record<GroupMode, Forces> = {
+  connection: CONNECTION_FORCES,
+  location: LOCATION_FORCES,
+  space: SPACE_FORCES,
+}
 
 export const DEFAULT_MATRIX_CONFIG: MatrixConfig = {
   group: { mode: 'connection' },
@@ -54,6 +70,17 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
   const forces = section(raw, 'forces')
   const display = section(raw, 'display')
   const mode = GROUP_MODES.find((m) => m === group.mode) ?? d.group.mode
+  // A file written before each grouping carried its own set holds one flat set; it seeds all three rather than being dropped.
+  const forcesFor = (of: GroupMode): Forces => {
+    const own = { ...forces, ...(isPlainObject(forces[of]) ? forces[of] : {}) }
+    const fallback = d.forces[of]
+    return {
+      gravity: force(own.gravity, 'gravity', fallback.gravity),
+      spread: force(own.spread, 'spread', fallback.spread),
+      strength: force(own.strength, 'strength', fallback.strength),
+      distance: force(own.distance, 'distance', fallback.distance),
+    }
+  }
   return {
     group: { mode },
     filter: {
@@ -61,10 +88,9 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
       enabled: bool(filter.enabled, d.filter.enabled),
     },
     forces: {
-      gravity: force(forces.gravity, 'gravity', d.forces.gravity),
-      spread: force(forces.spread, 'spread', d.forces.spread),
-      strength: force(forces.strength, 'strength', d.forces.strength),
-      distance: force(forces.distance, 'distance', d.forces.distance),
+      connection: forcesFor('connection'),
+      location: forcesFor('location'),
+      space: forcesFor('space'),
     },
     display: {
       unlinked: bool(display.unlinked, d.display.unlinked),
