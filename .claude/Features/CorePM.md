@@ -125,16 +125,16 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 
 **Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live.
 
-| State | Where it lives | What clears it |
-| --- | --- | --- |
-| Every setting in the Settings window | `settings.json` | Changing it; a row at its default stores no key |
-| Pins and Favorites | `state.json` | Unpinning or removing; an entry that stops resolving hides but is never dropped |
-| Property definitions and their order | `properties.json` | Editing the registry |
-| Top-level Collection order | `state.json` | Reordering |
-| Saved views and what a container is | Each container's own sidecar | Editing the view; deleting the container |
-| Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering |
-| Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page |
-| The Matrix's group, filter, forces, and display | `matrix.json` | Changing a row; each section holds only the keys a change wrote |
+| State                                                         | Where it lives                                                               | What clears it                                                                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Every setting in the Settings window                          | `settings.json`                                                              | Changing it; a row at its default stores no key                                 |
+| Pins and Favorites                                            | `state.json`                                                                 | Unpinning or removing; an entry that stops resolving hides but is never dropped |
+| Property definitions and their order                          | `properties.json`                                                            | Editing the registry                                                            |
+| Top-level Collection order                                    | `state.json`                                                                 | Reordering                                                                      |
+| Saved views and what a container is                           | Each container's own sidecar                                                 | Editing the view; deleting the container                                        |
+| Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering                                                |
+| Page bodies, frontmatter, and their property values           | The Markdown files themselves                                                | Editing the page                                                                |
+| The Matrix's group, filter, forces, and display               | `matrix.json`                                                                | Changing a row; sections merge one at a time, and forces by grouping block      |
 
 **Stays on this machine, filed under the Nexus's id.** `nexus.db` sits in the app's userData directory and holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history and the bytes its sync conflicts left behind.
 

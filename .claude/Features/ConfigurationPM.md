@@ -52,7 +52,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Minimum Tab Width | `tabMinWidth` | The narrowest a tab shrinks before the strip scrolls. | 50–100px · **70px** |
 | Maximum Tab Width | `tabMaxWidth` | The widest a tab grows. | 150–350px · **250px** |
 | Active Tab Cache | `tabCache` | The most open tabs kept active before older ones fall to on-demand loading. | **5** · 10 · 15 · 20 Tabs |
-| Pause Media on Tab Switch | `pauseMediaOnTabSwitch` | A tab's video and audio pause when it leaves the main view; playback does not resume on return. | **On** · Off |
+| Pause Media On Tab Switch | `pauseMediaOnTabSwitch` | A tab's video and audio pause when it leaves the main view; playback does not resume on return. | **On** · Off |
 | Open Matrix In | `matrixOpenIn` | Where the ribbon's Matrix icon opens it. | **New Tab** · Window |
 
 #### Appearance
