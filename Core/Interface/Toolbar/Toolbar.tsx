@@ -3,7 +3,6 @@ import { Segmented, type Segment } from '@pommora/uix/Buttons/Button'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewMenu } from '../../Views/Settings/ViewMenu'
-import { SpaceMenu } from '../../Tiles/SpaceMenu'
 import { OutlineMenu } from './OutlineMenu'
 import { TabBar } from '../../Navigation/TabBar'
 import { activeUnpinnedTab } from '../../Navigation/tabsModel'
@@ -98,7 +97,6 @@ export function Toolbar({
       <div className="app-toolbar-right">
         <ViewMenu />
         <OutlineMenu />
-        <SpaceMenu />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
           <ToolbarTrio segments={trio} flat={flat} />
           {settingsP.mounted && (
