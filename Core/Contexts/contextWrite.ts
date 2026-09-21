@@ -1,7 +1,13 @@
 import { join } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, parseContextKey, type ContextsRegistry } from './contexts'
-import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from './contextResolve'
+import {
+  listOf,
+  NO_DEFS,
+  preservedChanges,
+  reconcileGovernedRoot,
+  type GovernedWorld,
+} from './contextResolve'
 import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
 import { mintSeed, NEW_TILE_H } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
@@ -18,13 +24,20 @@ import { ok, fail, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { adoptedId, newId } from '../Nexus/ids'
 import { createDisambiguated, nameError } from '../Paths/names'
-import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
+import {
+  atomicWriteFile,
+  pathExists,
+  readJsonStrict,
+  rmwJsonStrict,
+  setOrDrop,
+} from '../Files/atomicWrite'
+import { noteSidecarWrite } from '../Nexus/valuesChanged'
 import { isMarkdownFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { COLOR_KEY } from './spaceSidecar'
+import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 
 type Raw = Record<string, unknown>
 
@@ -34,6 +47,7 @@ interface SpaceRef {
   contextId: string
   contextTitle: string
   dir: string
+  raw: Raw
 }
 
 interface ContextWorld extends GovernedWorld {
@@ -90,6 +104,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
           contextId: def.id,
           contextTitle: def.title,
           dir: join(dir, e.name),
+          raw: sc.value,
         })
       }
     }
@@ -175,26 +190,55 @@ export async function loadGovernedWorld(
   return world.ok ? { ...world.value, defs } : skipped
 }
 
+export async function writeSpaceSidecar(
+  absSpaceDir: string,
+  mutate: (raw: Raw) => Raw | null,
+): Promise<Result<null>> {
+  const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
+  if (!written.ok) return written
+  noteSidecarWrite(absSpaceDir)
+  return ok(null)
+}
+
+const names = (raw: unknown, title: string): boolean =>
+  listOf(raw).some((v) => typeof v === 'string' && normalizeTitle(v) === normalizeTitle(title))
+
 export async function setSpaceContext(
   world: ContextWorld,
   spaceId: string,
   contextId: string,
   targetSpaceIds: string[],
 ): Promise<Result<null>> {
-  const ref = world.spaceById.get(spaceId)
-  if (!ref) return fail('not-found', 'Unknown Space.')
+  const a = world.spaceById.get(spaceId)
+  if (!a) return fail('not-found', 'Unknown Space.')
+  if (targetSpaceIds.includes(spaceId))
+    return fail('operation-failed', 'A Space can’t link itself.')
   const titles = targetTitles(world, targetSpaceIds)
   if (!titles.ok) return titles
   const applied = applyTarget(world, contextId, titles.value)
   if (!applied.ok) return applied
   const { key, value } = applied.value
-  const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (raw) => {
-    const { root } = reconcileGovernedRoot(raw, world)
-    if (value) root[key] = value
-    else delete root[key]
-    return root
-  }).catch(() => fail('operation-failed', 'Context write failed.'))
-  return written.ok ? ok(null) : written
+  const backKey = contextKey(a.contextTitle)
+  const repaired = (raw: Raw): Raw => ({
+    ...raw,
+    ...preservedChanges(reconcileGovernedRoot(raw, world), raw),
+  })
+
+  for (const s of world.spacesByContext.get(contextId) ?? []) {
+    const far = world.spaceById.get(s.id)
+    const wants = targetSpaceIds.includes(s.id)
+    if (!far || far.id === a.id || names(far.raw[backKey], a.title) === wants) continue
+    const half = await writeSpaceSidecar(far.dir, (raw) => {
+      const base = repaired(raw)
+      const held = listOf(base[backKey]).filter((v): v is string => typeof v === 'string')
+      const next = wants
+        ? [...held, a.title]
+        : held.filter((t) => normalizeTitle(t) !== normalizeTitle(a.title))
+      return setOrDrop(base, backKey, next.length > 0 && next)
+    })
+    if (!half.ok) return half
+  }
+  return writeSpaceSidecar(a.dir, (raw) => setOrDrop(repaired(raw), key, value))
 }
 
 export async function setContextOnPath(
@@ -277,11 +321,18 @@ export async function setSpaceColor(
   if (!world.ok) return world
   const ref = world.value.spaceById.get(spaceId)
   if (!ref) return fail('not-found', 'Unknown Space.')
-  const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (cur) => {
-    const next: Raw = { ...cur }
-    if (color === undefined) delete next[COLOR_KEY]
-    else next[COLOR_KEY] = color
-    return next
-  })
-  return written.ok ? ok(null) : written
+  return writeSpaceSidecar(ref.dir, (cur) => setOrDrop(cur, COLOR_KEY, color))
 }
+
+export const setSpaceRowOrder = (
+  absSpaceDir: string,
+  contexts: string[],
+  properties: string[],
+): Promise<Result<null>> =>
+  writeSpaceSidecar(absSpaceDir, (raw) =>
+    setOrDrop(
+      raw,
+      ORDER_KEY,
+      (contexts.length > 0 || properties.length > 0) && { contexts, properties },
+    ),
+  )

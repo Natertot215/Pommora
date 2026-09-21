@@ -26,7 +26,7 @@ import {
   patchSettingsFromDisk,
   patchSpaceFromDisk,
 } from './watchPatch'
-import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
+import { isMarkdownFile } from '../Files/walk'
 import { flushSidecarWrites } from './valuesChanged'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
@@ -37,6 +37,8 @@ function patchForMutation(
 ): NexusTree | 'no-change' | null {
   switch (req.op) {
     case 'setProperty':
+    case 'setSpaceColor':
+    case 'setSpaceRowOrder':
     case 'emptyBundle':
       return 'no-change'
     case 'createPage':
@@ -68,7 +70,6 @@ function patchForMutation(
       return reorderChildrenInTree(tree, '', req.order)
     case 'renameContext':
     case 'renameSpace':
-    case 'setSpaceColor':
     case 'reorderContexts':
     case 'reorderSpaces':
       return patchContextGroupsInTree(tree, req)
@@ -76,8 +77,6 @@ function patchForMutation(
       return null
   }
 }
-
-const isSpacePath = (path: string): boolean => path.startsWith(`${CONTEXTS_DIR_REL}/`)
 
 function subtreeHoldsAdoptedId(tree: NexusTree, path: string): boolean {
   const under = (p: string): boolean => p === path || p.startsWith(`${path}/`)
@@ -134,11 +133,11 @@ async function routeMutation(
       return req.op === 'setBanner' ? patchCropsFromDisk(root) : 'ok'
     }
     case 'setContext':
-      return isSpacePath(req.path)
-        ? patchSpaceFromDisk(root, req.path)
-        : patchPageFromDisk(root, req.path)
+      return isMarkdownFile(req.path) ? patchPageFromDisk(root, req.path) : 'ok'
     case 'setCrop':
       return patchCropsFromDisk(root)
+    case 'reorderPanelContexts':
+      return patchOrderFromDisk(root)
     case 'setProfileImage': {
       const own = await patchSettingsFromDisk(root)
       if (own === 'refresh') return 'refresh'
