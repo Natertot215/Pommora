@@ -1,4 +1,5 @@
 import { type PointerEvent as ReactPointerEvent, useState } from 'react'
+import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { beginPointerGesture } from '@pommora/uix/Interactions/gesture'
 
 type CellSweep = { colId: string; rows: Set<string> }
@@ -22,7 +23,8 @@ export function useCellSweep({
     let rows: MeasuredRow[] = []
     let anchor = -1
     let range: [number, number] | null = null
-    let stale = false
+    let lastY = e.clientY
+    let stopScroll: (() => void) | null = null
 
     const measure = (): boolean => {
       const grid = gridEl()
@@ -41,23 +43,35 @@ export function useCellSweep({
       return rows.length - 1
     }
 
+    const track = (y: number): void => {
+      const at = indexAt(y)
+      const next: [number, number] = [Math.min(anchor, at), Math.max(anchor, at)]
+      if (range && range[0] === next[0] && range[1] === next[1]) return
+      range = next
+      setSweep({
+        colId,
+        rows: new Set(rows.slice(next[0], next[1] + 1).map((r) => r.id)),
+      })
+    }
+
     beginPointerGesture({
       el: e.currentTarget as HTMLElement,
       event: e,
-      onActivate: () => measure(),
-      onDragMove: (ev) => {
-        if (stale) {
-          stale = false
-          if (!measure()) return
-        }
-        const at = indexAt(ev.clientY)
-        const next: [number, number] = [Math.min(anchor, at), Math.max(anchor, at)]
-        if (range && range[0] === next[0] && range[1] === next[1]) return
-        range = next
-        setSweep({
-          colId,
-          rows: new Set(rows.slice(next[0], next[1] + 1).map((r) => r.id)),
+      onActivate: (ev) => {
+        lastY = ev.clientY
+        const grid = gridEl()
+        if (!grid || !measure()) return false
+        stopScroll = startAutoScroll({
+          getPoint: () => ({ x: 0, y: lastY }),
+          scroller: resolveScroller(grid, 'y'),
+          dragEl: grid,
+          axis: 'y',
         })
+        return true
+      },
+      onDragMove: (ev) => {
+        lastY = ev.clientY
+        track(lastY)
       },
       onDrop: () => {
         if (!range || range[0] === range[1]) {
@@ -71,9 +85,10 @@ export function useCellSweep({
       onTap: () => setSweep(null),
       onAbort: () => setSweep(null),
       onWindowScroll: () => {
-        stale = true
+        if (measure()) track(lastY)
       },
       scrollTarget: gridEl,
+      teardown: () => stopScroll?.(),
     })
   }
 
