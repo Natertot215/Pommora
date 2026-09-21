@@ -358,7 +358,9 @@ export function PropertyPanel({
       def,
       current,
       contextOptions:
-        def.type === 'context' && tree ? contextOptionsFor(editing.id, tree, subjectId) : undefined,
+        def.type === 'context' && tree
+          ? contextOptionsFor(editing.id, tree, isSpace ? subjectId : undefined)
+          : undefined,
     }
   })()
 
