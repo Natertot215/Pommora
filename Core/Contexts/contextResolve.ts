@@ -12,7 +12,7 @@ import type { NexusTree, SpaceNode } from '../Nexus/tree'
 
 type ResolvedLinks = Map<string, string[]>
 
-const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
+export const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
 
 export interface GovernedWorld {
   registry: ContextsRegistry | null

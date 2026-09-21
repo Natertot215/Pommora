@@ -71,7 +71,9 @@ export type MutateRequest =
   | { op: 'setContext'; path: string; contextId: string; spaceIds: string[] }
   | { op: 'setSpaceColor'; spaceId: string; color?: string }
   | { op: 'reorderContexts'; ids: string[] }
+  | { op: 'reorderPanelContexts'; ids: string[] }
   | { op: 'reorderSpaces'; contextId: string; ids: string[] }
+  | { op: 'setSpaceRowOrder'; path: string; contexts: string[]; properties: string[] }
 
 export type RenameHost = 'detail' | 'sidebar' | 'matrix'
 

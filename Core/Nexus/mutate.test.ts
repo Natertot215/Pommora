@@ -1425,3 +1425,50 @@ describe('handleMutate — setActiveView', () => {
     ).rejects.toThrow(/Re-entrant file lock/)
   })
 })
+
+describe('setContext on a Space', () => {
+  const sidecar = async (context: string, space: string): Promise<Record<string, unknown>> =>
+    JSON.parse(await read(`.nexus/contexts/${context}/${space}/_space.json`))
+
+  beforeEach(async () => {
+    closeSession()
+    for (const [context, space, id] of [
+      ['Projects', 'Pommora', 'sp-pom'],
+      ['Areas', 'Work', 'sp-work'],
+    ]) {
+      await mkdir(join(root, '.nexus', 'contexts', context, space), { recursive: true })
+      await writeFile(
+        join(root, '.nexus', 'contexts', context, space, '_space.json'),
+        JSON.stringify({ id }),
+      )
+    }
+    await writeFile(
+      join(root, '.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({
+        contexts: [
+          { id: 'ctxP', title: 'Projects', singular: 'Project' },
+          { id: 'ctxA', title: 'Areas', singular: 'Area' },
+        ],
+      }),
+    )
+    await openSession(root)
+  })
+
+  const link = (spaceIds: string[]) =>
+    handleMutate(
+      { op: 'setContext', path: '.nexus/contexts/Projects/Pommora', contextId: 'ctxA', spaceIds },
+      nexusDeps,
+    )
+
+  it('an add and its removal sent back to back leave no half behind', async () => {
+    const replies = await Promise.all([link(['sp-work']), link([])])
+    expect(replies.every((r) => r.ok)).toBe(true)
+    expect('<Areas>' in (await sidecar('Projects', 'Pommora'))).toBe(false)
+    expect('<Projects>' in (await sidecar('Areas', 'Work'))).toBe(false)
+  })
+
+  it('the same add sent twice names the Space once', async () => {
+    await Promise.all([link(['sp-work']), link(['sp-work'])])
+    expect((await sidecar('Areas', 'Work'))['<Projects>']).toEqual(['Pommora'])
+  })
+})

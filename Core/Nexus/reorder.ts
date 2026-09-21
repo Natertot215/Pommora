@@ -19,7 +19,7 @@ type ContainerOrderKey = ChildOrderKey | 'page_order'
 // Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps a real ULID before any write captures them. Strip them so a transient id never lands in a persisted order array.
 const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWith('adopted-'))
 
-/** The one `state.json` order writer: both keys go through this file's single lock-taking RMW. */
+/** The one `state.json` order writer: every key goes through this file's single lock-taking RMW. */
 async function writeStateOrder(
   nexusRoot: string,
   ids: string[],
@@ -37,6 +37,9 @@ async function writeStateOrder(
 
 export const setCollectionOrder = (nexusRoot: string, ids: string[]): Promise<Result<string[]>> =>
   writeStateOrder(nexusRoot, ids, (order, clean) => ({ ...order, collections: clean }))
+
+export const setPanelContextOrder = (nexusRoot: string, ids: string[]): Promise<Result<string[]>> =>
+  writeStateOrder(nexusRoot, ids, (order, clean) => ({ ...order, contexts: clean }))
 
 export const setSpaceOrder = (
   nexusRoot: string,

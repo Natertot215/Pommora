@@ -20,7 +20,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
 
-const noShape = (name: string): Result<never> =>
+export const noShape = (name: string): Result<never> =>
   fail('invalid-property', `"${name}" was given a value it has no shape for.`)
 
 export async function createPage(

@@ -1,6 +1,9 @@
 // Every renderer mutation resolves its session root here and routes to the module that owns the operation. Arms carrying only a resolve and one module call stay in place.
 
 import { setOrDrop } from '../Files/atomicWrite'
+import { isMarkdownFile } from '../Files/walk'
+import { machine } from '../Platform/machine'
+import { contextsDir } from '../Paths/paths'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
 import { errText, fault, ok, NO_NEXUS, type Result } from '../Contract/result'
@@ -22,6 +25,7 @@ import {
   loadContextWorld,
   setContextOnPath,
   setSpaceColor,
+  setSpaceRowOrder,
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
@@ -30,7 +34,7 @@ import type { TrashMode } from '../Trash/trashRow'
 import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { renameOp } from './rename'
-import { setChildOrder, setCollectionOrder, setSpaceOrder } from './reorder'
+import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { sessionRoot } from './session'
 
 export interface MutateDeps {
@@ -144,11 +148,14 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return resolved
       if (await isReserved(root, resolved.value)) return fault('That item can’t take contexts.')
-      const world = await loadContextWorld(root)
-      if (!world.ok) return world
-      return done(
-        await setContextOnPath(root, resolved.value, world.value, req.contextId, req.spaceIds),
-      )
+      const abs = resolved.value
+      const write = async (): Promise<MutateReply> => {
+        const world = await loadContextWorld(root)
+        if (!world.ok) return world
+        return done(await setContextOnPath(root, abs, world.value, req.contextId, req.spaceIds))
+      }
+      // A Space's link write decides each far half from the world it loaded, so two of them never overlap.
+      return isMarkdownFile(abs) ? write() : machine().lock(contextsDir(root), write)
     }
 
     case 'setSpaceColor':
@@ -163,8 +170,17 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'reorderContexts':
       return reorderContextsOp(ctx, req)
 
+    case 'reorderPanelContexts':
+      return done(await setPanelContextOrder(root, req.ids))
+
     case 'reorderSpaces':
       return done(await setSpaceOrder(root, req.contextId, req.ids))
+
+    case 'setSpaceRowOrder': {
+      const resolved = await resolveUnderRoot(root, req.path)
+      if (!resolved.ok) return resolved
+      return done(await setSpaceRowOrder(resolved.value, req.contexts, req.properties))
+    }
 
     default: {
       const _exhaustive: never = req

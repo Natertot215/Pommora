@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { setCollectionOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
+import {
+  setCollectionOrder,
+  setSpaceOrder,
+  setContainerOrder,
+  setChildOrder,
+  setPanelContextOrder,
+} from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
@@ -50,6 +56,25 @@ describe('setCollectionOrder', () => {
     await setSpaceOrder(root, 'ctxC', ['x'])
     expect((await readState()).order).toEqual({
       spaces: { ctx_projects: ['s2', 's1'], ctxC: ['x'] },
+    })
+  })
+
+  it('setPanelContextOrder writes its own key beside the other two', async () => {
+    await mkdir(nexusDir(root), { recursive: true })
+    await writeFile(
+      nexusConfig(root, NEXUS_CONFIG_FILES.state),
+      JSON.stringify({ navigation: { pinned: [{ kind: 'homepage' }] } }),
+    )
+    await setSpaceOrder(root, 'ctx_areas', ['x', 'y'])
+    await setCollectionOrder(root, ['a'])
+    await setPanelContextOrder(root, ['ctxC', 'ctx_projects'])
+    expect(await readState()).toEqual({
+      navigation: { pinned: [{ kind: 'homepage' }] },
+      order: {
+        collections: ['a'],
+        spaces: { ctx_areas: ['x', 'y'] },
+        contexts: ['ctxC', 'ctx_projects'],
+      },
     })
   })
 
