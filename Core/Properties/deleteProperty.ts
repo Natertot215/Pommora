@@ -106,7 +106,7 @@ export async function stripAndRemove(
   return { skipped: swept.skipped.length, removed: await removeFromRegistry(root, propertyId) }
 }
 
-export function stripKeyRewrite(key: string): Rewrite {
+function stripKeyRewrite(key: string): Rewrite {
   return (raw) => {
     if (!(key in raw)) return null
     const next = { ...raw }
@@ -115,7 +115,7 @@ export function stripKeyRewrite(key: string): Rewrite {
   }
 }
 
-export function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
+function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
   return withSidecarLock(folder, 'collection', async () => {
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     if (!sidecar) return
