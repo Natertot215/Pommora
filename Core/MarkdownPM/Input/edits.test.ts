@@ -456,7 +456,7 @@ describe('sections and bullets', () => {
     ).toBe('a • ')
   })
   it('a line-opening marker, a bracket, and the default keep the en dash', () => {
-    expect(dashArrow(scanDoc('-'), 1, 1, ' ', { transformBullets: true })).toBeNull()
+    expect(dashArrow(scanDoc(' -'), 2, 2, ' ', { transformBullets: true })).toBeNull()
     expect(
       apply('a [^b -', dashArrow(scanDoc('a [^b -'), 7, 7, ' ', { transformBullets: true })!),
     ).toBe('a [^b – ')
