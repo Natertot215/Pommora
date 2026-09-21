@@ -129,6 +129,8 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Equations | `transformEquations` | `>=`, `<=`, `!=` · `/=` · `=/`, `+-` · `-+`, and `~=` become `≥`, `≤`, `≠`, `±`, and `≈`. | **On** · Off |
 | Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
 | Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
+| Sections | `transformSections` | `##` becomes `§` anywhere but a line's start, where it still opens a heading. | On · **Off** |
+| Bullets | `transformBullets` | A spaced ` - ` becomes `•`, taking the stroke the en dash otherwise holds. | On · **Off** |
 | Brackets | `pairBrackets` | `(`, `[`, and `{` add their closers, and a typed closer steps over its own. | **On** · Off |
 | Markers | `pairMarkers` | Emphasis, code, strikethrough, and highlight markers pair. | **On** · Off |
 | Quotes | `pairQuotes` | `"` and `'` pair. | **On** · Off |

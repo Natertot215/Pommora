@@ -36,13 +36,14 @@ A handful of rewrites fire as you type, implemented in `Input/` as a high-preced
 
 - **List continuation** — Enter continues a list, Tab indents (to a cap), Shift+Tab outdents, and `-[]` canonicalizes to `- [ ]`.
 - **Callout shorthand** — `||` becomes `> [!callout] `.
+- **Sections and bullets** — with them on, `##` becomes `§` anywhere but a line's start, and a spaced ` - ` becomes `•` in place of the en dash. Both stand down inside an unclosed bracket, so a citation's label keeps what it holds.
 - **Auto-pairing** — round, square, and curly brackets, the single emphasis and code markers, and quotes pair when the caret has whitespace, a line edge, or existing pair syntax on both sides, so nothing pairs against a character. Paired syntax types over its closing on enter, doubled emphasis promotes to the stronger form rather than pairing again, and Backspace inside an empty pair removes both halves.
 - **Enter and Shift+Enter** — Enter steps past an open construct's closer; Shift+Enter closes it first, then breaks the line.
 - **Dashes, arrows, and ellipses** — `--` becomes `—`, a spaced ` - ` becomes `–`, `->` becomes `→`, `>>` and `<<` become `»` and `«`, and `...` becomes `…`. A `>>` opening a line stays a nested blockquote, while one after a quote's `> ` converts. An arrow list's `->` converts whether or not inline arrows do.
 - **Equations** — `>=` becomes `≥`, `<=` becomes `≤`, `!=`, `/=`, and `=/` become `≠`, `+-` and `-+` become `±`, and `~=` becomes `≈`. A doubled character ahead of the pair, code, links, and URLs leave it literal.
 - **Whole-marker backspace** — on a marker line, Backspace removes the whole marker at once, callouts included.
 
-Settings › Pages & Writing turns each group on or off: the Transformations section holds Dashes, Arrows, Equations, Ellipses, and Callout, and the Autopairing section holds Brackets, Markers, Quotes, Wrap Selections, Delete Pairs Together, and Exit On Enter. Wrap Selections, off by default, wraps a selection in the pair character typed over it and keeps the text selected, so a second `*` or `[` doubles the wrap; emphasis and code markers wrap only a single-line selection.
+Settings › Pages & Writing turns each group on or off: the Transformations section holds Dashes, Arrows, Equations, Ellipses, Callout, Sections, and Bullets — the last two off by default — and the Autopairing section holds Brackets, Markers, Quotes, Wrap Selections, Delete Pairs Together, and Exit On Enter. Wrap Selections, off by default, wraps a selection in the pair character typed over it and keeps the text selected, so a second `*` or `[` doubles the wrap; emphasis and code markers wrap only a single-line selection.
 
 ### Tables
 
