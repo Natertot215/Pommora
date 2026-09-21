@@ -1,5 +1,5 @@
 import { type ActionItem, openOrder } from './menuModel'
-import { type PropertyAction, type PropertyMenuRow, propertiesRow } from './propertyRows'
+import { type PropertyAction, type PropertyMenuRow, propertyBranchRows } from './propertyRows'
 import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
 
@@ -40,6 +40,7 @@ export interface MoveTarget {
 export interface PageMenuContext {
   moveTargets?: MoveTarget[]
   currentParentPath?: string
+  spaces?: PropertyMenuRow[]
   properties?: PropertyMenuRow[]
 }
 
@@ -111,6 +112,7 @@ export function pageMetaMenuItems(
     window?: boolean
     newPages?: 'pair' | 'single'
     move?: PageMenuContext
+    spaces?: PropertyMenuRow[]
     properties?: PropertyMenuRow[]
     clipboard?: boolean
     history?: boolean
@@ -126,7 +128,7 @@ export function pageMetaMenuItems(
     ),
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Edit Icon', action: 'title:icon' },
-    ...(opts.properties?.length ? [propertiesRow(opts.properties)] : []),
+    ...propertyBranchRows(opts),
     ...(opts.newPages === 'pair'
       ? [
           { label: 'New Page Above', action: 'title:newabove' as const, separatorBefore: true },

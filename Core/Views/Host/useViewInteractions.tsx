@@ -18,8 +18,7 @@ import { useSession } from '../../Session/store'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
-import type { PropertyMenuRow } from '@pommora/core/Actions/propertyRows'
-import { propertyMenuRows, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
+import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -354,8 +353,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       ...pageMoveContext(tree, row.path),
     }
   }
-  const propertyRows = (row: ViewRow): PropertyMenuRow[] =>
-    propertyMenuRows({ tree, schema, row, capitalize })
+  const propertyBranches = (row: ViewRow): ReturnType<typeof propertyMenuBranches> =>
+    propertyMenuBranches({ tree, schema, row, capitalize })
   /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
   const runTitleAction = (action: string, row: ViewRow, anchor: HTMLElement): boolean => {
     if (runPageSendAction(action, row)) return true
@@ -437,7 +436,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     structuralSlot,
     openPage,
     titleMenuContext,
-    propertyRows,
+    propertyBranches,
     runTitleAction,
     iconPicker,
     ghost,

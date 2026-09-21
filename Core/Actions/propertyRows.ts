@@ -10,7 +10,6 @@ export interface PropertyMenuRow {
   id: string
   name: string
   options?: readonly PropertyMenuOption[]
-  separatorBefore?: boolean
 }
 
 export type PropertyAction = `prop:${string}`
@@ -39,10 +38,19 @@ export function propertiesRow(
     submenu: rows.map((r) => ({
       label: r.name,
       action: `${PREFIX}${r.id}` as PropertyAction,
-      ...(r.separatorBefore ? { separatorBefore: true } : {}),
       ...optionBranch(r),
     })),
   }
+}
+
+export function propertyBranchRows(t: {
+  spaces?: readonly PropertyMenuRow[]
+  properties?: readonly PropertyMenuRow[]
+}): ActionItem<PropertyAction>[] {
+  return [
+    ...(t.spaces?.length ? [propertiesRow(t.spaces, 'Spaces')] : []),
+    ...(t.properties?.length ? [propertiesRow(t.properties)] : []),
+  ]
 }
 
 export function parsePropertyAction(action: string): { id: string; value: string | null } | null {

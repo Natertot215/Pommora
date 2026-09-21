@@ -1,6 +1,5 @@
 import type { Result } from '../Contract/result'
 import type { PageMenuContext } from '../Actions/pageMenu'
-import type { PropertyMenuRow } from '../Actions/propertyRows'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { Crop } from './schemas'
 
@@ -86,7 +85,6 @@ export interface ContextTarget extends PageMenuContext {
   alreadyOpen?: boolean
   disclosureLocked?: boolean
   host?: RenameHost
-  spaces?: PropertyMenuRow[]
   headingIconHidden?: boolean
 }
 

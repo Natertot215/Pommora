@@ -347,7 +347,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         ? {
             ...base,
             ...interactions.titleMenuContext(row),
-            properties: interactions.propertyRows(row),
+            ...interactions.propertyBranches(row),
           }
         : base
     const action = await interactions.holdGhost(() => popMenu(cellMenuModel(ctx)))
