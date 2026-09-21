@@ -132,6 +132,7 @@ export function PropertyPanel({
     }
   }, [valuesEpoch, subjectId, path, isSpace])
 
+  // KNOB — a row added this session outlives a subject change; key this on `path` to scope it per subject.
   const nexusId = tree?.nexus.id
   useEffect(() => {
     setEditing(null)

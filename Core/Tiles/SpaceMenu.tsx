@@ -82,6 +82,7 @@ export function SpaceMenu(): React.JSX.Element | null {
                 icon="palette"
                 ariaLabel="Change Color"
                 pressed={colorOpen}
+                quiet
                 onClick={() => setColorOpen(true)}
               />
             }
