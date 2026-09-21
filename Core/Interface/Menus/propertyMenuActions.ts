@@ -8,6 +8,7 @@ import {
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
+import { afterSeparator } from '../../Actions/menuModel'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { pickFileInto } from '../../Properties/Pickers/filePick'
@@ -37,15 +38,16 @@ export interface PropertyMenuTarget {
 const contextOptionsOf = (
   tree: NexusTree | null,
   def: PropertyDefinition,
+  excludeId?: string,
 ): ReturnType<typeof contextOptionsFor> | undefined =>
-  def.type === 'context' && tree ? contextOptionsFor(def.id, tree) : undefined
+  def.type === 'context' && tree ? contextOptionsFor(def.id, tree, excludeId) : undefined
 
-export function propertyMenuRows({
+export function propertyMenuBranches({
   tree,
   schema,
   row,
   capitalize = false,
-}: PropertyMenuTarget): PropertyMenuRow[] {
+}: PropertyMenuTarget): { contexts: PropertyMenuRow[]; properties: PropertyMenuRow[] } {
   const contexts = contextsByIdOf(tree)
   const build = (id: string, def: PropertyDefinition): PropertyMenuRow => {
     const base = { id, name: columnLabel(id, schema, contexts, capitalize) }
@@ -61,19 +63,23 @@ export function propertyMenuRows({
     const selected = selectedValues(current)
     return {
       ...base,
-      options: pickShape(def, contextOptionsOf(tree, def)).options.map((o) => ({
+      options: pickShape(def, contextOptionsOf(tree, def, row.id)).options.map((o) => ({
         value: o.value,
         label: o.label,
         checked: selected.includes(o.value),
       })),
     }
   }
-  const contextRows = [...contexts.keys()].map((id) => build(id, syntheticContextDef(id)))
   const built = schema.filter((d) => !STAMP_TYPES.has(d.type)).map((def) => build(def.id, def))
-  const schemaRows = [...built.filter((r) => r.options), ...built.filter((r) => !r.options)]
-  if (contextRows.length > 0 && schemaRows.length > 0)
-    schemaRows[0] = { ...schemaRows[0], separatorBefore: true }
-  return [...contextRows, ...schemaRows]
+  return {
+    contexts: [...contexts.keys()].map((id) => build(id, syntheticContextDef(id))),
+    properties: [...built.filter((r) => r.options), ...built.filter((r) => !r.options)],
+  }
+}
+
+export function propertyMenuRows(t: PropertyMenuTarget): PropertyMenuRow[] {
+  const { contexts, properties } = propertyMenuBranches(t)
+  return [...contexts, ...(contexts.length > 0 ? afterSeparator(properties) : properties)]
 }
 
 export function runPropertyAction(
@@ -104,6 +110,6 @@ export function runPropertyAction(
   }
   if (def.type === 'checkbox')
     commitValue(value === 'true' ? { kind: 'checkbox', value: true } : null)
-  else commitValue(pickedValue(def, current, value, contextOptionsOf(tree, def)))
+  else commitValue(pickedValue(def, current, value, contextOptionsOf(tree, def, row.id)))
   return true
 }

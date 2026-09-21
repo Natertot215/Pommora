@@ -46,6 +46,8 @@ import { glanceShown } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
+import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { dropOutlineSpacer } from '@pommora/uix/Menus/listed-outline.css'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
@@ -370,50 +372,91 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
   const select = useSession((s) => s.select)
   const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
+  const colorPath = useSession((s) => (s.colorHost === 'sidebar' ? s.colorPath : null))
+  const endIcon = useSession((s) => s.endIcon)
+  const endColor = useSession((s) => s.endColor)
+  const mutate = useSession((s) => s.mutate)
+  const rowRef = useRef<HTMLDivElement>(null)
   return (
-    <DragRow id={node.id}>
-      <Leaf
-        icon={entityIcon('space', node.icon, defaultIcons)}
-        title={node.title}
-        depth={1}
-        selected={selected}
-        onSelect={() => void select({ kind: 'space', id: node.id })}
-        onContextMenu={() => showContextFor({ ...node, kind: 'space' })}
-        rename={{ path: node.path, kind: 'space' }}
+    <>
+      <DragRow id={node.id}>
+        <div ref={rowRef}>
+          <Leaf
+            icon={entityIcon('space', node.icon, defaultIcons)}
+            title={node.title}
+            depth={1}
+            selected={selected}
+            onSelect={() => void select({ kind: 'space', id: node.id })}
+            onContextMenu={() => void showContextFor({ ...node, kind: 'space' }, rowRef.current)}
+            rename={{ path: node.path, kind: 'space' }}
+          />
+        </div>
+      </DragRow>
+      <IconChoice
+        open={iconPath === node.path}
+        onClose={endIcon}
+        triggerRef={rowRef}
+        value={node.icon}
+        onSelect={(icon) => void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon })}
       />
-    </DragRow>
+      <ColorPicker
+        open={colorPath === node.path}
+        selected={labelColorFor(node.color)}
+        onPick={(color) => {
+          endColor()
+          void mutate({ op: 'setSpaceColor', spaceId: node.id, color })
+        }}
+        onDismiss={endColor}
+        triggerRef={rowRef}
+      />
+    </>
   )
 }
 
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
+  const endIcon = useSession((s) => s.endIcon)
+  const mutate = useSession((s) => s.mutate)
+  const headerRef = useRef<HTMLDivElement>(null)
   const path = contextDirRel(group.def.title)
   return (
-    <Disclosure
-      icon={entityIcon('context', group.def.icon, defaultIcons)}
-      title={group.def.title}
-      depth={0}
-      defaultOpen
-      persistKey={`context:${group.def.id}`}
-      dragId={group.def.id}
-      onContextMenu={() =>
-        void showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' })
-      }
-      rename={{ path, kind: 'context' }}
-      onBodyContextMenu={() => {
-        const label = createSpaceLabel(group.def)
-        void useSession
-          .getState()
-          .createFromMenu(
-            [{ label, req: { op: 'createSpace', contextId: group.def.id, name: label } }],
-            'sidebar',
-          )
-      }}
-    >
-      {group.spaces.map((s) => (
-        <SpaceRow key={s.id} node={s} />
-      ))}
-    </Disclosure>
+    <>
+      <Disclosure
+        icon={entityIcon('context', group.def.icon, defaultIcons)}
+        title={group.def.title}
+        depth={0}
+        defaultOpen
+        persistKey={`context:${group.def.id}`}
+        dragId={group.def.id}
+        headerRef={headerRef}
+        onContextMenu={() =>
+          void showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' })
+        }
+        rename={{ path, kind: 'context' }}
+        onBodyContextMenu={() => {
+          const label = createSpaceLabel(group.def)
+          void useSession
+            .getState()
+            .createFromMenu(
+              [{ label, req: { op: 'createSpace', contextId: group.def.id, name: label } }],
+              'sidebar',
+            )
+        }}
+      >
+        {group.spaces.map((s) => (
+          <SpaceRow key={s.id} node={s} />
+        ))}
+      </Disclosure>
+      <IconChoice
+        open={iconPath === path}
+        onClose={endIcon}
+        triggerRef={headerRef}
+        value={group.def.icon}
+        onSelect={(icon) => void mutate({ op: 'setIcon', path, kind: 'context', icon })}
+      />
+    </>
   )
 }
 

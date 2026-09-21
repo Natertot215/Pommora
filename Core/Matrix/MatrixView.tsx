@@ -39,10 +39,17 @@ export function MatrixView({
   const select = useSession((st) => st.select)
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
+  const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
   const hoveredId = useMatrixHover()
   const count = useMatrixCount()
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const anchorRef = useRef<HTMLDivElement>(null)
+  const [menuId, setMenuId] = useState<string | null>(null)
+  const picking = useSession((st) => st.pendingPick !== null)
+  useEffect(() => {
+    if (!picking) setMenuId(null)
+  }, [picking])
   const parkedRef = useRef(parked)
   parkedRef.current = parked
   // One identity for the life of the view: the runtime keys a surface's stage — and so its own framing of the picture — off it.
@@ -58,20 +65,29 @@ export function MatrixView({
     if (rec) void select(contextTargetToSelect(rec))
   }
 
-  const menu = (i: number): void => {
+  const menu = async (i: number): Promise<void> => {
     const rec = recordOf(tree, idAt(i))
     if (!rec) return
     matrixRuntime.acting = surfaceId
+    setMenuId(rec.id)
+    // KNOB — a node right-clicked under a still pointer has no label yet, and mounting one takes two frames; the cap is slack.
+    for (let f = 0; f < 4 && anchorRef.current?.dataset.nodeId !== rec.id; f++)
+      await new Promise(requestAnimationFrame)
+    const anchor = anchorRef.current?.dataset.nodeId === rec.id ? anchorRef.current : undefined
     const { tabs, pinned } = useSession.getState()
-    void showEntityMenu({
-      kind: rec.kind,
-      id: rec.id,
-      path: rec.path,
-      title: rec.title,
-      alreadyOpen: isOpenInTabs(tabs, pinned, contextTargetToSelect(rec)),
-      host: 'matrix',
-      ...(rec.kind === 'page' ? pageMoveContext(tree, rec.path) : {}),
-    })
+    await showEntityMenu(
+      {
+        kind: rec.kind,
+        id: rec.id,
+        path: rec.path,
+        title: rec.title,
+        alreadyOpen: isOpenInTabs(tabs, pinned, contextTargetToSelect(rec)),
+        host: 'matrix',
+        ...(rec.kind === 'page' ? pageMoveContext(tree, rec.path) : {}),
+      },
+      anchor,
+    )
+    if (useSession.getState().pendingPick === null) setMenuId(null)
   }
 
   const nodeDown = (e: React.PointerEvent, i: number): void => {
@@ -121,14 +137,11 @@ export function MatrixView({
   // Read past the memo: a page the graph does not yet carry has no node to seat the field under, and a reply can add one without changing the tree. A hidden surface never claims either, or the field opens where nobody can see it.
   const editing = renamingId !== null && !parked && mine && matrixRuntime.indexOf(renamingId) >= 0
   // The overlay names its node by id: an index taken here goes stale the moment a reply rebuilds the graph under it.
-  const pickingId = useMemo(
-    () =>
-      iconPath === null || !tree
-        ? null
-        : (nodesOf(tree).find((r) => r.path === iconPath)?.id ?? null),
-    [iconPath, tree],
-  )
-  const liveId = editing ? renamingId : ((mine ? pickingId : null) ?? hoveredId)
+  const pickingId = useMemo(() => {
+    const path = iconPath ?? colorPath
+    return path === null || !tree ? null : (nodesOf(tree).find((r) => r.path === path)?.id ?? null)
+  }, [iconPath, colorPath, tree])
+  const liveId = editing ? renamingId : ((mine ? (pickingId ?? menuId) : null) ?? hoveredId)
   const live = useMemo(() => (parked ? null : recordOf(tree, liveId)), [tree, liveId, parked])
   // The overlay outlives its hover by one fade, and the canvas keeps skipping that title until the fade is over — otherwise the painted one lands under the leaving one.
   const shown = useHeldPresence(live)
@@ -153,7 +166,7 @@ export function MatrixView({
         canvasRef={canvasRef}
         onNodeDown={nodeDown}
         onBackgroundDown={backgroundDown}
-        onMenu={menu}
+        onMenu={(i) => void menu(i)}
       >
         <MatrixLabel
           surface={surface}
@@ -161,10 +174,11 @@ export function MatrixView({
           closing={shown?.closing ?? false}
           editing={editing}
           hosts={mine}
+          anchorRef={anchorRef}
           onPointerDown={(e) => nodeDown(e, matrixRuntime.indexOf(labelId))}
           onContextMenu={(e) => {
             e.preventDefault()
-            menu(matrixRuntime.indexOf(labelId))
+            void menu(matrixRuntime.indexOf(labelId))
           }}
         />
       </MatrixCanvas>
