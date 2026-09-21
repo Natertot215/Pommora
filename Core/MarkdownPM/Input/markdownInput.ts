@@ -12,6 +12,7 @@ import {
   dashArrow,
   ellipsis,
   equations,
+  bullet,
   sectionSign,
   calloutShorthand,
   shiftEnterEdit,
@@ -152,7 +153,8 @@ export const markdownInput = [
         dashArrow(scan, from, from, text, settings) ??
         ellipsis(scan, from, from, text, settings) ??
         equations(scan, from, from, text, settings) ??
-        sectionSign(scan, from, from, text, settings),
+        sectionSign(scan, from, from, text, settings) ??
+        bullet(scan, from, from, text, settings),
     )
   }),
 ]

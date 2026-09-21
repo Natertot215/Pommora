@@ -670,7 +670,6 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'transformBullets',
             label: 'Bullets',
-            hint: 'A spaced hyphen becomes • rather than an en dash.',
           },
         ],
       },

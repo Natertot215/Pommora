@@ -11,6 +11,7 @@ import {
   dashArrow,
   ellipsis,
   equations,
+  bullet,
   sectionSign,
   indentListOnTab,
   continueBlockquoteOnEnter,
@@ -448,19 +449,24 @@ describe('sections and bullets', () => {
     expect(sectionSign(scanDoc('`a #`'), 4, 4, '#', on)).toBeNull()
     expect(sectionSign(scanDoc('a #'), 3, 3, '#')).toBeNull()
   })
-  it('bullets take the spaced hyphen from the en dash', () => {
+  it('a spaced caret becomes a bullet', () => {
     const on = { transformBullets: true }
-    expect(apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ', on)!)).toBe('a • ')
-    expect(
-      apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ', { ...on, transformDashes: false })!),
-    ).toBe('a • ')
+    const e = bullet(scanDoc('a ^'), 3, 3, ' ', on)!
+    expect(apply('a ^', e)).toBe('a • ')
+    expect(e.selection).toBe(4)
+    expect(apply('^', bullet(scanDoc('^'), 1, 1, ' ', on)!)).toBe('• ')
   })
-  it('a line-opening marker, a bracket, and the default keep the en dash', () => {
-    expect(dashArrow(scanDoc(' -'), 2, 2, ' ', { transformBullets: true })).toBeNull()
-    expect(
-      apply('a [^b -', dashArrow(scanDoc('a [^b -'), 7, 7, ' ', { transformBullets: true })!),
-    ).toBe('a [^b – ')
-    expect(apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ')!)).toBe('a – ')
+  it('a citation label, an attached caret, code, and the default leave it literal', () => {
+    const on = { transformBullets: true }
+    expect(bullet(scanDoc('a [^b'), 5, 5, ' ', on)).toBeNull()
+    expect(bullet(scanDoc('x^'), 2, 2, ' ', on)).toBeNull()
+    expect(bullet(scanDoc('`a ^`'), 4, 4, ' ', on)).toBeNull()
+    expect(bullet(scanDoc('a ^'), 3, 3, ' ')).toBeNull()
+  })
+  it('the en dash keeps the spaced hyphen', () => {
+    expect(apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ', { transformBullets: true })!)).toBe(
+      'a – ',
+    )
   })
 })
 

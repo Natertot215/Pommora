@@ -527,6 +527,21 @@ export function sectionSign(
   return { from: c - 1, to: c, insert: '§', selection: c }
 }
 
+export function bullet(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  inserted: string,
+  settings: Personalization = {},
+): Edit | null {
+  if (inserted !== ' ' || selStart !== selEnd || settings.transformBullets !== true) return null
+  const doc = scan.text
+  const c = selStart
+  if (doc[c - 1] !== '^' || !(c === 1 || /[ \t\n]/.test(doc[c - 2] ?? ''))) return null
+  if (isLiteralAt(scan, c) || inBracket(doc, c)) return null
+  return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
+}
+
 const EQUATIONS: Record<string, string> = {
   '>=': '≥',
   '<=': '≤',
@@ -568,7 +583,6 @@ export function dashArrow(
   if (inCodeAt(scan, c) || inCodeAt(scan, c - 1)) return null
   const dashes = settings.transformDashes !== false
   const arrows = settings.transformArrows !== false
-  const bullets = settings.transformBullets === true && !inBracket(doc, c)
 
   if (
     dashes &&
@@ -596,18 +610,12 @@ export function dashArrow(
     return { from: c - 1, to: c, insert: '«', selection: c }
   if (arrows && inserted === '-' && doc[c - 1] === '<')
     return { from: c - 1, to: c, insert: '←', selection: c }
-  if (
-    (dashes || bullets) &&
-    inserted === ' ' &&
-    c >= 2 &&
-    doc[c - 1] === '-' &&
-    doc[c - 2] === ' '
-  ) {
+  if (dashes && inserted === ' ' && c >= 2 && doc[c - 1] === '-' && doc[c - 2] === ' ') {
     const ls = lineStartAt(doc, c)
     const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
     const before = doc.slice(ls + pfx.length, c - 2)
     if (/\S/.test(before) && !isInsideWikilink(c, doc)) {
-      return { from: c - 1, to: c, insert: bullets ? '• ' : '– ', selection: c + 1 }
+      return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
     }
   }
   return null
