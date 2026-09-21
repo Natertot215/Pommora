@@ -26,12 +26,16 @@ export type PickTarget = { def: PropertyDefinition; current: PropertyValue | nul
   | { kind: 'file' }
 )
 
+const PICK_GROUPS = ['Spaces', 'Properties'] as const
+type PickGroup = (typeof PICK_GROUPS)[number]
+
 export type PickEntry = {
   id: string
   name: string
   icon: string
   revealOnly: boolean
   drillable: boolean
+  group?: PickGroup
 }
 
 export const selectedValues = (current: PropertyValue | null): string[] => {
@@ -83,8 +87,11 @@ export function PropertyPicker({
 }): React.JSX.Element | null {
   const held = useHeld(target, open)
   const [picked, setPicked] = useState<PickEntry | null>(null)
+  const [group, setGroup] = useState<PickGroup | null>(null)
   useEffect(() => {
-    setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
+    const initial = open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null
+    setPicked(initial)
+    setGroup(initial?.group ?? null)
   }, [open, chooserInitial])
 
   const t = picked ? (resolveTarget?.(picked) ?? null) : held
@@ -133,6 +140,69 @@ export function PropertyPicker({
     />
   )
 
+  const grouped = chooser?.some((e) => e.group) ?? false
+  const listed = grouped ? (chooser ?? []).filter((e) => e.group === group) : (chooser ?? [])
+  const entries = (
+    <FrameSlide
+      open={picked !== null}
+      minWidth={120}
+      minHeight={0}
+      root={
+        listed.length === 0 ? (
+          <div style={{ minWidth: 96, height: 24 }} />
+        ) : (
+          <div>
+            {group && <MenuTopRow label={group} onBack={() => setGroup(null)} />}
+            {listed.map((e) => (
+              <MenuItem
+                key={e.id}
+                leading={<Icon name={e.icon} size="body" />}
+                trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
+                onClick={() => {
+                  if (e.drillable) return setPicked(e)
+                  onReveal?.(e)
+                  if (e.revealOnly) onDismiss()
+                }}
+              >
+                {e.name}
+              </MenuItem>
+            ))}
+          </div>
+        )
+      }
+      detail={
+        picked && (
+          <div>
+            <MenuTopRow
+              label={picked.group ?? 'Properties'}
+              current={picked.name}
+              onBack={() => setPicked(null)}
+              className={chooserTop}
+            />
+            {pane}
+          </div>
+        )
+      }
+    />
+  )
+  const branches = (
+    <FrameSlide
+      open={group !== null}
+      minWidth={120}
+      minHeight={0}
+      root={
+        <div>
+          {PICK_GROUPS.filter((g) => chooser?.some((e) => e.group === g)).map((g) => (
+            <MenuItem key={g} trailing={<Icon name="chevron-right" />} onClick={() => setGroup(g)}>
+              {g}
+            </MenuItem>
+          ))}
+        </div>
+      }
+      detail={group && entries}
+    />
+  )
+
   return (
     <PickerMenu
       solid
@@ -142,50 +212,7 @@ export function PropertyPicker({
       origin={chooser ? 'auto' : origin}
       anchorX={anchorX}
     >
-      {chooser ? (
-        <FrameSlide
-          open={picked !== null}
-          minWidth={120}
-          minHeight={0}
-          root={
-            chooser.length === 0 ? (
-              <div style={{ minWidth: 96, height: 24 }} />
-            ) : (
-              <div>
-                {chooser.map((e) => (
-                  <MenuItem
-                    key={e.id}
-                    leading={<Icon name={e.icon} size="body" />}
-                    trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
-                    onClick={() => {
-                      if (e.drillable) return setPicked(e)
-                      onReveal?.(e)
-                      if (e.revealOnly) onDismiss()
-                    }}
-                  >
-                    {e.name}
-                  </MenuItem>
-                ))}
-              </div>
-            )
-          }
-          detail={
-            picked && (
-              <div>
-                <MenuTopRow
-                  label="Properties"
-                  current={picked.name}
-                  onBack={() => setPicked(null)}
-                  className={chooserTop}
-                />
-                {pane}
-              </div>
-            )
-          }
-        />
-      ) : (
-        pane
-      )}
+      {chooser ? (grouped ? branches : entries) : pane}
     </PickerMenu>
   )
 }

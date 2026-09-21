@@ -645,6 +645,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       : (propertyTypeIconName(e.type) ?? 'square-dashed'),
                     revealOnly: e.revealOnly,
                     drillable: !e.revealOnly && isOptionsKind(e.type),
+                    group: addColumn(e.id, tree).kind === 'context' ? 'Spaces' : 'Properties',
                   }),
                 )
               : undefined

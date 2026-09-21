@@ -174,6 +174,43 @@ describe('PropertyPicker panes', () => {
     expect(dependentDismiss).not.toHaveBeenCalled()
   })
 
+  it('grouped entries open on Spaces and Properties, and a branch lists its own entries', async () => {
+    const onReveal = vi.fn()
+    const chooser: PickEntry[] = [
+      {
+        id: 'ctx_a',
+        name: 'Areas',
+        icon: 'square-dashed',
+        revealOnly: true,
+        drillable: false,
+        group: 'Spaces',
+      },
+      {
+        id: 'prop_r',
+        name: 'Rank',
+        icon: 'square-dashed',
+        revealOnly: true,
+        drillable: false,
+        group: 'Properties',
+      },
+    ]
+    await render({ chooser, onReveal })
+    expect(rowButton('Spaces')).toBeDefined()
+    expect(rowButton('Properties')).toBeDefined()
+    expect(rowButton('Rank')).toBeUndefined()
+    await act(async () => {
+      rowButton('Properties')?.click()
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30))
+    })
+    expect(rowButton('Areas')).toBeUndefined()
+    await act(async () => {
+      rowButton('Rank')?.click()
+    })
+    expect(onReveal).toHaveBeenCalledWith(chooser[1])
+  })
+
   it('a targeted chooser entry slides to its value pane, chooserInitial pre-drills, and onCommit carries the entry', async () => {
     const onCommit = vi.fn()
     const chooser: PickEntry[] = [
