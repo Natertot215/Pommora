@@ -16,15 +16,16 @@ import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '..
 import { focusRange } from '../caretPlacement'
 import { webpageEmbedUrlSpan } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { type EditorHost, editorHost } from '../api'
+import { inGripStrip } from '../lineDom'
 
 const GRIP_SELECTOR = ['md-block-handle', 'md-callout-first', 'md-blockquote-first']
   .map((c) => `.cm-line.${c}`)
   .join(', ')
 
-/** Null on the line's own text — a press past the content column's left edge is never a gutter press. */
+/** Null on the line's own text — a press past the grip's own band is never a grip press. */
 function gutterLineAt(e: MouseEvent, selector: string): HTMLElement | null {
   const line = (e.target as HTMLElement).closest?.(selector) as HTMLElement | null
-  return line && e.clientX < line.getBoundingClientRect().left ? line : null
+  return line && inGripStrip(e, line) ? line : null
 }
 
 const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_SELECTOR)

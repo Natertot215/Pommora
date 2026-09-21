@@ -11,6 +11,7 @@ import {
   type CalloutLine,
   type CitationEntry,
   type ListMarker,
+  type MarkdownScope,
 } from './detect'
 import { codeLanguageName } from './codeLangs'
 import { type DocScan, lineIndexAt, quotePrefixWidth, scanDoc } from './docScan'
@@ -47,6 +48,15 @@ export type WidgetSpec =
   | { type: 'checkbox'; bracketFrom: number; checked: boolean }
   | { type: 'citeRef'; ordinal: number }
 
+export type RailIntent = {
+  kind: 'rail'
+  from: number
+  level: number
+  typeClass: string
+  first: boolean
+  last: boolean
+}
+
 export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
   | { kind: 'hide'; from: number; to: number }
@@ -55,21 +65,33 @@ export type DecoIntent =
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
   | { kind: 'codeTag'; from: number; name?: string }
   | { kind: 'line'; from: number; className: string; level?: number }
-  | {
-      kind: 'rail'
-      from: number
-      level: number
-      typeClass: string
-      first: boolean
-      last: boolean
-    }
+  | RailIntent
 
 // The rail's x sits on its ANCESTOR's glyph center; ordered / arrow / `+` return null, so no rail is drawn under one.
-function railTypeClass(m: ListMarker): string | null {
+export function railTypeClass(m: ListMarker): string | null {
   if (m.kind === 'checkbox') return 'md-outline-task'
   if (m.kind === 'bullet' && m.bullet === '-') return 'md-outline-bullet'
   if (m.kind === 'alphabetical') return 'md-outline-alpha'
   return null
+}
+
+export const railClass = (r: Pick<RailIntent, 'typeClass' | 'first' | 'last'>): string =>
+  `md-outline-rail ${r.typeClass}${r.first ? ' md-outline-first' : ''}${r.last ? ' md-outline-last' : ''}`
+
+// The form a marker is DRAWN as, and the line class that carries it — one answer for the editor's decorations and the resting cell's DOM alike.
+// Null where the source parses as a marker but nothing draws one: a bullet holding an empty box is prose, and both renderers have to agree on that.
+export type ListGlyph = 'checkbox' | 'bullet' | 'arrow' | 'number'
+
+export function listGlyphOf(lm: ListMarker): ListGlyph | null {
+  if (lm.kind === 'checkbox' && lm.box) return 'checkbox'
+  if (lm.kind === 'bullet' && lm.bullet === '-' && !lm.box) return 'bullet'
+  if (lm.kind === 'arrow' || (lm.kind === 'bullet' && lm.bullet === '+' && !lm.box)) return 'arrow'
+  return isSequenced(lm.kind) ? 'number' : null
+}
+
+export function listLineClass(lm: ListMarker): string {
+  if (lm.kind === 'checkbox') return `md-list-item md-list-task${lm.checked ? ' md-list-done' : ''}`
+  return isSequenced(lm.kind) ? 'md-list-item md-list-ordered' : 'md-list-item'
 }
 
 export const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
@@ -101,17 +123,19 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
   return intents
 }
 
-function lineIntentsInto(
+// Null where the line is chrome of its own and never enters the list vocabulary; otherwise the offset the list grammar starts at.
+// A cell holds no box, no fence, no math and no citation row, and its own extension draws the footnote markers, so none of this is walked there.
+function pageChrome(
   scan: DocScan,
   i: number,
   selStart: number,
   intents: DecoIntent[],
-): ListMarker | null {
+): number | null {
   const { lines, lineStarts, fences, callouts, maths } = scan
   const line = lines[i]
   const ls = lineStarts[i]
   const le = ls + line.length
-
+  let base = 0
   // Display math is formula source: a `- b` term must never become a bullet with a live drag glyph inside the formula.
   const inMathLine = (k: number): boolean =>
     maths.some(([f, t]) => lineStarts[k] >= f && lineStarts[k] <= t)
@@ -119,7 +143,6 @@ function lineIntentsInto(
   const quoteChromeAt = (k: number): boolean => scan.quotes[k] && !scan.literal[k]
 
   const fence = fences[i]
-  let base = 0
   const co = callouts[i]
   if (co) {
     intents.push({
@@ -230,8 +253,27 @@ function lineIntentsInto(
     })
   }
 
-  // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
-  const li = pushConstruct(intents, line, ls, base, selStart)
+  return base
+}
+
+function lineIntentsInto(
+  scan: DocScan,
+  i: number,
+  selStart: number,
+  intents: DecoIntent[],
+  scope: MarkdownScope,
+): ListMarker | null {
+  const line = scan.lines[i]
+  const ls = scan.lineStarts[i]
+  const le = ls + line.length
+  let base = 0
+  if (scope === 'page') {
+    const chrome = pageChrome(scan, i, selStart, intents)
+    if (chrome === null) return null
+    base = chrome
+  }
+
+  const li = pushConstruct(intents, line, ls, base, selStart, scope)
   if (li) {
     const contentFrom = ls + base + li.contentStart
     if (contentFrom < le)
@@ -240,12 +282,12 @@ function lineIntentsInto(
   return li
 }
 
-function railIntents(
+export function railIntents(
   lineStarts: number[],
   listLevels: number[],
   listKinds: string[],
-): DecoIntent[][] {
-  const rails: DecoIntent[][] = new Array(listLevels.length)
+): RailIntent[][] {
+  const rails: RailIntent[][] = new Array(listLevels.length)
   const railKind: string[] = []
   for (let i = 0; i < listLevels.length; i++) {
     const level = listLevels[i]
@@ -272,19 +314,19 @@ function railIntents(
 interface CachedLineIntents {
   perLine: DecoIntent[][]
   /** Held apart from `perLine` because the caret's own line re-derives, and a rail folded in there would go with it. */
-  rails: DecoIntent[][]
+  rails: RailIntent[][]
 }
 
 export const NO_CARET = -1
 
-export function docLineIntents(scan: DocScan): CachedLineIntents {
+export function docLineIntents(scan: DocScan, scope: MarkdownScope = 'page'): CachedLineIntents {
   const n = scan.lines.length
   const perLine: DecoIntent[][] = new Array(n)
   const listLevels = new Array<number>(n).fill(-1)
   const listKinds = new Array<string>(n).fill('')
   for (let i = 0; i < n; i++) {
     perLine[i] = []
-    const li = lineIntentsInto(scan, i, NO_CARET, perLine[i])
+    const li = lineIntentsInto(scan, i, NO_CARET, perLine[i], scope)
     if (li) {
       listLevels[i] = li.level
       listKinds[i] = railTypeClass(li) ?? ''
@@ -303,13 +345,14 @@ export function assembleLineIntents(
   cached: CachedLineIntents,
   selStart: number,
   window?: { from: number; to: number },
+  scope: MarkdownScope = 'page',
 ): DecoIntent[] {
   const caret = caretLine(scan, selStart)
   const first = window ? lineIndexAt(scan, window.from) : 0
   const last = window ? lineIndexAt(scan, window.to) : scan.lines.length - 1
   const intents: DecoIntent[] = []
   for (let i = first; i <= last; i++) {
-    if (i === caret) lineIntentsInto(scan, i, selStart, intents)
+    if (i === caret) lineIntentsInto(scan, i, selStart, intents, scope)
     else for (const it of cached.perLine[i]) intents.push(it)
   }
   for (let i = first; i <= last; i++) {
@@ -324,8 +367,22 @@ export function seatPastMarker(
   cached: CachedLineIntents,
   scan: DocScan,
   pos: number,
+  scope: MarkdownScope = 'page',
 ): number | null {
   const line = cached.perLine[lineIndexAt(scan, pos)]
+  // A REPLACED marker — a bullet, a checkbox — draws nothing the caret can sit against, so a press at its start reveals the source instead of landing on the item.
+  if (scope === 'cell') {
+    let end = pos
+    for (let moved = true; moved; ) {
+      moved = false
+      for (const it of line)
+        if (it.kind === 'atomic' && end >= it.from && end < it.to) {
+          end = it.to
+          moved = true
+        }
+    }
+    if (end !== pos) return end
+  }
   const marker = line.find(
     (it) =>
       it.kind === 'class' &&
@@ -349,6 +406,7 @@ export function decorationsFor(
   active: Set<number>,
   selStart: number,
   scan?: DocScan,
+  scope: MarkdownScope = 'page',
 ): DecoIntent[] {
   const s = scan ?? scanDoc(text)
   const intents: DecoIntent[] = tokenIntents(tokens, active)
@@ -356,7 +414,7 @@ export function decorationsFor(
   const listLevels = new Array<number>(n).fill(-1)
   const listKinds = new Array<string>(n).fill('')
   for (let i = 0; i < n; i++) {
-    const li = lineIntentsInto(s, i, selStart, intents)
+    const li = lineIntentsInto(s, i, selStart, intents, scope)
     if (li) {
       listLevels[i] = li.level
       listKinds[i] = railTypeClass(li) ?? ''
@@ -373,22 +431,24 @@ function pushConstruct(
   ls: number,
   base: number,
   selStart: number,
+  scope: MarkdownScope,
 ): ListMarker | null {
   const inner = base === 0 ? line : line.slice(base)
   const innerStart = ls + base
   const le = ls + line.length
   const caretOnLine = selStart >= ls && selStart <= le
   const lm = parseListMarker(inner)
+  const glyph = lm && listGlyphOf(lm)
   const onMarker =
     lm !== null && selStart >= innerStart + lm.markerStart && selStart <= innerStart + lm.markerEnd
 
-  const bulletAbsorbs =
-    base > 0 && !onMarker && lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box
+  const bulletAbsorbs = base > 0 && !onMarker && glyph === 'bullet'
   const hrAbsorbs = base > 0 && !caretOnLine && lm === null && isThematicBreakLine(inner)
+  // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
   if (base > 0 && !bulletAbsorbs && !hrAbsorbs)
     intents.push({ kind: 'hide', from: ls, to: innerStart })
 
-  if (isHeadingLine(inner)) {
+  if (scope === 'page' && isHeadingLine(inner)) {
     const hm = headingParts(inner)
     if (hm) {
       const level = hm.hashes.length
@@ -403,11 +463,11 @@ function pushConstruct(
         })
       if (!caretOnLine) intents.push({ kind: 'hide', from: innerStart, to: contentStart })
     }
-  } else if (lm?.kind === 'checkbox' && lm.box) {
+  } else if (lm?.box && glyph === 'checkbox') {
     intents.push({
       kind: 'line',
       from: ls,
-      className: `md-list-item md-list-task${lm.checked ? ' md-list-done' : ''}`,
+      className: listLineClass(lm),
       level: lm.level,
     })
     if (lm.markerStart > 0) {
@@ -442,9 +502,9 @@ function pushConstruct(
       })
     }
     return lm
-  } else if (lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box) {
+  } else if (lm && glyph === 'bullet') {
     // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
-    intents.push({ kind: 'line', from: ls, className: 'md-list-item', level: lm.level })
+    intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
     if (onMarker) {
       if (lm.markerStart > 0)
         intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
@@ -465,8 +525,8 @@ function pushConstruct(
       })
     }
     return lm
-  } else if (lm?.kind === 'arrow' || (lm?.kind === 'bullet' && lm.bullet === '+' && !lm.box)) {
-    intents.push({ kind: 'line', from: ls, className: 'md-list-item', level: lm.level })
+  } else if (lm && glyph === 'arrow') {
+    intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
     if (lm.markerStart > 0) {
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
       intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
@@ -479,12 +539,12 @@ function pushConstruct(
     })
     pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm
-  } else if (lm && isSequenced(lm.kind)) {
+  } else if (lm && glyph === 'number') {
     // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
     intents.push({
       kind: 'line',
       from: ls,
-      className: 'md-list-item md-list-ordered',
+      className: listLineClass(lm),
       level: lm.level,
     })
     if (lm.markerStart > 0) {
@@ -499,7 +559,7 @@ function pushConstruct(
     })
     pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm
-  } else if (isThematicBreakLine(inner) && !caretOnLine) {
+  } else if (scope === 'page' && isThematicBreakLine(inner) && !caretOnLine) {
     intents.push({
       kind: 'widget',
       from: hrAbsorbs ? ls : innerStart,

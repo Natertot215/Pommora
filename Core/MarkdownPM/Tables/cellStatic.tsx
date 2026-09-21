@@ -9,7 +9,17 @@ import {
   type Token,
 } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
-import { CONTENT_CLASS } from '../Engine/intents'
+import {
+  CONTENT_CLASS,
+  listGlyphOf,
+  listLineClass,
+  railClass,
+  railIntents,
+  railTypeClass,
+  type ListGlyph,
+} from '../Engine/intents'
+import { parseListMarker, type ListMarker } from '../Engine/detect'
+import { applyChanges, checkboxToggleChange } from '../Engine/listDragModel'
 import {
   wikiLinkView,
   resolveMdTarget,
@@ -23,16 +33,19 @@ import { dwellTarget, followTarget } from '../Links/linkClicks'
 import { CITE_GLYPH } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
+import { CheckMark } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
 
+// `base` is where `text` begins in the cell, because every reader of `data-link-span` resolves it against the WHOLE cell; a line rendered on its own would hand them offsets from a document that does not exist.
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
   ordinalOf?: (label: string) => number | null,
   headingLinkStyle?: HeadingLinkStyle,
+  base = 0,
 ): React.ReactNode {
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
-  if (!/[*_~`[$]/.test(text)) return text
+  if (!/[*_~`[$=]/.test(text)) return text
   const tokens = tokenize(text)
   if (tokens.length === 0) return text
   const conn = getConn?.()
@@ -69,7 +82,7 @@ export function renderCellContent(
             key={key++}
             className={`md-connection-${view.status}`}
             data-conn-title={text.slice(rs, re)}
-            data-link-span={`${s},${e}`}
+            data-link-span={`${base + s},${base + e}`}
           >
             {frag ? (
               <>
@@ -102,7 +115,7 @@ export function renderCellContent(
             key={key++}
             className="md-connection-resolved"
             data-conn-title={target.kind === 'page' ? target.page.title : undefined}
-            data-link-span={`${s},${e}`}
+            data-link-span={`${base + s},${base + e}`}
           >
             {content}
           </span>
@@ -112,7 +125,7 @@ export function renderCellContent(
             className={
               target.kind === 'external' ? MD_LINK_CLASS : 'md-link-invalid md-unresolved-fixed'
             }
-            data-link-span={`${s},${e}`}
+            data-link-span={`${base + s},${base + e}`}
           >
             {content}
           </span>
@@ -145,6 +158,90 @@ export function renderCellContent(
   }
   if (pos < text.length) out.push(text.slice(pos))
   return out
+}
+
+function MarkerGlyph({
+  lm,
+  glyph,
+  line,
+}: {
+  lm: ListMarker
+  glyph: ListGlyph
+  line: string
+}): React.JSX.Element {
+  if (glyph === 'checkbox')
+    return (
+      <span className="md-list-checkbox-seat">
+        <span className={cx('checkbox', lm.checked && 'checkbox-checked')}>
+          {lm.checked && <CheckMark size={12} />}
+        </span>
+      </span>
+    )
+  if (glyph === 'bullet') return <span className="md-list-bullet">•</span>
+  const text = line.slice(lm.markerStart, lm.markerEnd)
+  const cls = glyph === 'arrow' ? 'md-list-arrow' : 'md-list-number'
+  return <span className={`${cls} md-control`}>{text}</span>
+}
+
+// A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
+export function renderCellBody(
+  text: string,
+  getConn?: () => ConnectionsApi | undefined,
+  ordinalOf?: (label: string) => number | null,
+  headingLinkStyle?: HeadingLinkStyle,
+): React.ReactNode {
+  const lines = text.split('\n')
+  // A marker nothing draws is prose here exactly as it is in the editor, so the two surfaces accept the same lines.
+  const items = lines.map((l) => {
+    const lm = parseListMarker(l)
+    const glyph = lm && listGlyphOf(lm)
+    return lm && glyph ? { lm, glyph } : null
+  })
+  if (items.every((it) => it === null))
+    return renderCellContent(text, getConn, ordinalOf, headingLinkStyle)
+  let offset = 0
+  const starts = lines.map((l) => {
+    const from = offset
+    offset += l.length + 1
+    return from
+  })
+  const rails = railIntents(
+    starts,
+    items.map((it) => it?.lm.level ?? -1),
+    items.map((it) => (it ? (railTypeClass(it.lm) ?? '') : '')),
+  )
+  return lines.map((line, i) => {
+    const it = items[i]
+    const content = it ? line.slice(it.lm.contentStart) : line
+    const rendered = renderCellContent(
+      content,
+      getConn,
+      ordinalOf,
+      headingLinkStyle,
+      starts[i] + (it?.lm.contentStart ?? 0),
+    )
+    return (
+      <div
+        // biome-ignore lint/suspicious/noArrayIndexKey: a cell's lines are plain strings with no identity but their position — the index IS the key
+        key={i}
+        className={it ? listLineClass(it.lm) : undefined}
+        style={it ? ({ '--list-level': it.lm.level } as React.CSSProperties) : undefined}
+        data-cell-line={i}
+      >
+        {rails[i]?.map((r) => (
+          <span
+            key={r.level}
+            className={railClass(r)}
+            style={{ '--rail-level': r.level } as React.CSSProperties}
+            aria-hidden="true"
+          />
+        ))}
+        {it && <MarkerGlyph lm={it.lm} glyph={it.glyph} line={line} />}
+        {it ? <span className="md-list-text">{rendered}</span> : rendered}
+        {content === '' && '\u200b'}
+      </div>
+    )
+  })
 }
 
 const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-span]`
@@ -204,6 +301,24 @@ function StaticCellImpl({
     return go
   }
 
+  // A resting cell has no editor, so the toggle the list drag extension serves in a live one has to be offered here too.
+  const claimCheckbox = (e: React.MouseEvent): (() => void) | null => {
+    if (readOnly?.()) return null
+    const seat = (e.target as HTMLElement | null)?.closest?.('.md-list-checkbox-seat')
+    const row = seat?.closest('[data-cell-line]') as HTMLElement | null
+    const index = row?.dataset.cellLine
+    if (index === undefined) return null
+    const doc = live.current
+    const lines = doc.split('\n')
+    let at = 0
+    for (let k = 0; k < Number(index); k++) at += lines[k].length + 1
+    const change = checkboxToggleChange(doc, at)
+    if (!change) return null
+    e.preventDefault()
+    e.stopPropagation()
+    return () => onCommit(applyChanges(doc, [change]))
+  }
+
   const claimCite = (e: React.MouseEvent): (() => void) | null => {
     if (!onCite) return null
     const el = (e.target as HTMLElement | null)?.closest?.(CITE_GLYPH) as HTMLElement | null
@@ -261,7 +376,7 @@ function StaticCellImpl({
       onClick={(e) => {
         if (e.button !== 0) return
         if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
-        const go = claimCite(e) ?? claimLink(e)
+        const go = claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
         if (go) return go()
         if (readOnly?.()) return
         if (e.detail === 1 && window.getSelection()?.isCollapsed === false) return
@@ -286,10 +401,10 @@ function StaticCellImpl({
           if (linkSpanAt(e.target)) e.preventDefault()
           return
         }
-        if (e.button === 0) claimCite(e) ?? claimLink(e)
+        if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
       }}
     >
-      {renderCellContent(text, connections, ordinalOf, linkStyle)}
+      {renderCellBody(text, connections, ordinalOf, linkStyle)}
     </div>
   )
 }

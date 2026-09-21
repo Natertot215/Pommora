@@ -5,7 +5,7 @@ import { blockAt, blockStarts } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { lineElementAt } from '../lineDom'
+import { inGripStrip, lineElementAt } from '../lineDom'
 import { moveRange } from '../Engine/listDragModel'
 
 function bottomAbove(view: EditorView, at: number): number | null {
@@ -102,7 +102,7 @@ export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfi
     EditorView.domEventHandlers({
       mousedown(e) {
         const line = (e.target as HTMLElement).closest?.(sel) as HTMLElement | null
-        if (e.button === 0 && line && e.clientX < line.getBoundingClientRect().left) {
+        if (e.button === 0 && line && inGripStrip(e, line)) {
           e.preventDefault()
           return true
         }
@@ -111,7 +111,7 @@ export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfi
       pointerdown(e, view) {
         if (e.button !== 0) return false
         const line = (e.target as HTMLElement).closest?.(sel) as HTMLElement | null
-        if (!line || e.clientX >= line.getBoundingClientRect().left) return false
+        if (!line || !inGripStrip(e, line)) return false
         const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
         if (!block) return false
         startBlockDrag(view, e, block, { onClick, onDragStart, line })

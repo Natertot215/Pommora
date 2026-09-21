@@ -184,7 +184,7 @@
   color: var(--label-control);
 }
 
-/* KNOBS: --rail-inset (rail x), --grip-top (first-line offset — box blocks override it for their padded first row). */
+/* KNOBS: --rail-inset (rail x), --grip-top (first-line offset — box blocks override it for their padded first row), --grip-left (the gutter x, which a surface with no gutter overrides). */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-blockquote-first .md-blockquote-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
@@ -204,11 +204,9 @@
 .mdpm-editor .cm-line.md-blockquote-first .md-blockquote-grip {
   content: "";
   position: absolute;
-  left: calc(
-    -1 *
-    var(--rail-inset) +
-    (var(--rail-inset) - var(--icon-body) * var(--glyph-scale)) /
-    2
+  left: var(
+    --grip-left,
+    calc(-1 * var(--rail-inset) + (var(--rail-inset) - var(--icon-body) * var(--glyph-scale)) / 2)
   );
   top: var(
     --grip-top,
@@ -416,7 +414,7 @@
 }
 
 /* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. --number-zone lives on .cm-content rather than .md-list-item so a citation row, which hangs in the same column but isn't a list line, still gets one. */
-.mdpm-editor .cm-line.md-list-item {
+.mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) {
   --list-indent: 20px;
   --bullet-zone: 16px;
   --task-zone: 1.8em;
@@ -432,7 +430,7 @@
 .md-outline-rail {
   display: none;
 }
-.outline-lines .mdpm-editor .cm-line.md-list-item {
+.outline-lines .mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) {
   position: relative;
 }
 .outline-lines .md-outline-rail {
@@ -496,7 +494,7 @@
   margin-right: var(--list-gap);
 }
 
-.mdpm-editor .cm-line.md-list-item .md-list-text,
+.mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) .md-list-text,
 .mdpm-editor .cm-line:is(.md-citation, .md-citation-continued) .md-citation-text {
   white-space: break-spaces;
   overflow-wrap: anywhere;
@@ -517,7 +515,7 @@
   opacity: var(--state-ghost);
 }
 
-.mdpm-editor .cm-line.md-list-ordered {
+.mdpm-editor :is(.cm-line.md-list-ordered, .mdpm-tbl-cell-static .md-list-ordered) {
   padding-left: calc(var(--list-origin) + var(--list-column) + var(--number-zone));
   text-indent: calc(-1 * var(--number-zone));
 }
@@ -562,11 +560,14 @@
   cursor: pointer;
 }
 
-.mdpm-editor .cm-line.md-list-task {
+.mdpm-editor :is(.cm-line.md-list-task, .mdpm-tbl-cell-static .md-list-task) {
   padding-left: calc(var(--list-origin) + var(--list-column) + var(--task-zone));
   text-indent: calc(-1 * var(--task-zone));
 }
-:root.mute-checked .mdpm-editor .cm-line.md-list-done .md-list-text {
+:root.mute-checked
+  .mdpm-editor
+  :is(.cm-line.md-list-done, .mdpm-tbl-cell-static .md-list-done)
+  .md-list-text {
   opacity: var(--state-inactive);
   text-decoration: line-through;
   text-decoration-color: var(--label-secondary);

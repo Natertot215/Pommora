@@ -12,6 +12,7 @@ import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
   isBlockquoteLine,
+  type MarkdownScope,
 } from '../Engine/detect'
 
 // A transform reading more than its own line takes the caller's whole-document scan (one per doc version): the string-form code and callout tests re-split and re-pair every fence per call.
@@ -35,15 +36,21 @@ const lineMarkerRe = /^(\s*)(?:(?:\d+|[A-Z])\.|[-+→]|>|#{1,6})(?:[ \t]*\[[ xX]
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
 // Gated to REAL blockquotes only (whitespace after `>`) so `>x` isn't read as quoted here while the renderer treats it as plain text.
-const blockPrefix = (line: string): string =>
-  isBlockquoteLine(line) ? (blockquotePrefixRe.exec(line)?.[0] ?? '') : ''
+// A cell draws no quote, so a `>` there is prose and carries no prefix — otherwise the keys would nest inside a box the surface never shows.
+const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
+  scope === 'page' && isBlockquoteLine(line) ? (blockquotePrefixRe.exec(line)?.[0] ?? '') : ''
 
-export function continueListOnEnter(doc: string, selStart: number, selEnd: number): Edit | null {
+export function continueListOnEnter(
+  doc: string,
+  selStart: number,
+  selEnd: number,
+  scope: MarkdownScope = 'page',
+): Edit | null {
   if (selStart !== selEnd) return null
   const ls = lineStartAt(doc, selStart)
   const lineEnd = lineEndAt(doc, selStart)
   const line = doc.slice(ls, lineEnd)
-  const pfx = blockPrefix(line)
+  const pfx = blockPrefix(line, scope)
   const lm = parseListMarker(line.slice(pfx.length))
   if (lm === null) return null
   if (selStart < ls + pfx.length + lm.contentStart) return null
@@ -65,7 +72,7 @@ export function continueListOnEnter(doc: string, selStart: number, selEnd: numbe
       const fs = p + 1
       const fe = lineEndAt(doc, fs)
       const fline = doc.slice(fs, fe)
-      const fpfx = blockPrefix(fline)
+      const fpfx = blockPrefix(fline, scope)
       const finner = fline.slice(fpfx.length)
       const flm = parseListMarker(finner)
       const sameLevel =
@@ -153,21 +160,31 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
   return { from: selStart, to: selEnd, insert: '\n', selection: selStart + 1 }
 }
 
-export function indentListOnTab(doc: string, selStart: number, selEnd: number): Edit | null {
+export function indentListOnTab(
+  doc: string,
+  selStart: number,
+  selEnd: number,
+  scope: MarkdownScope = 'page',
+): Edit | null {
   if (selStart !== selEnd) return null
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
-  const pfx = blockPrefix(line)
+  const pfx = blockPrefix(line, scope)
   const lm = parseListMarker(line.slice(pfx.length))
   if (lm === null || lm.level >= MAX_NESTING_LEVEL) return null
   return { from: ls + pfx.length, to: ls + pfx.length, insert: '\t', selection: selStart + 1 }
 }
 
-export function outdentListOnShiftTab(doc: string, selStart: number, selEnd: number): Edit | null {
+export function outdentListOnShiftTab(
+  doc: string,
+  selStart: number,
+  selEnd: number,
+  scope: MarkdownScope = 'page',
+): Edit | null {
   if (selStart !== selEnd) return null
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
-  const pfx = blockPrefix(line)
+  const pfx = blockPrefix(line, scope)
   const inner = line.slice(pfx.length)
   if (parseListMarker(inner) === null || !/^[ \t]/.test(inner)) return null
   return {
@@ -178,42 +195,53 @@ export function outdentListOnShiftTab(doc: string, selStart: number, selEnd: num
   }
 }
 
-export function smartBackspace(scan: DocScan, selStart: number, selEnd: number): Edit | null {
+export function smartBackspace(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  scope: MarkdownScope = 'page',
+): Edit | null {
   if (selStart !== selEnd) return null
-  // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
-  if (inCodeAt(scan, selStart)) return null
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
 
-  // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
-  if (inCalloutAt(scan, selStart)) {
-    const pfx = blockPrefix(line)
-    const headLen = calloutHeadPrefixLen(line)
-    if (headLen !== null) {
-      if (selStart > ls && selStart <= ls + headLen)
-        return { from: ls, to: ls + headLen, insert: '', selection: ls }
+  // A cell draws neither, so neither question applies there — and the scan, which is always page-shaped, would answer both wrongly.
+  if (scope === 'page') {
+    // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
+    if (inCodeAt(scan, selStart)) return null
+
+    // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
+    if (inCalloutAt(scan, selStart)) {
+      const pfx = blockPrefix(line)
+      const headLen = calloutHeadPrefixLen(line)
+      if (headLen !== null) {
+        if (selStart > ls && selStart <= ls + headLen)
+          return { from: ls, to: ls + headLen, insert: '', selection: ls }
+        return null
+      }
+      const lm = parseListMarker(line.slice(pfx.length))
+      if (lm) {
+        const innerContentStart = ls + pfx.length + lm.contentStart
+        if (selStart !== innerContentStart) return null
+        return {
+          from: ls + pfx.length,
+          to: innerContentStart,
+          insert: '',
+          selection: ls + pfx.length,
+        }
+      }
+      if (selStart === ls + pfx.length && ls > 0)
+        return { from: ls - 1, to: ls + pfx.length, insert: '', selection: ls - 1 }
       return null
     }
-    const lm = parseListMarker(line.slice(pfx.length))
-    if (lm) {
-      const innerContentStart = ls + pfx.length + lm.contentStart
-      if (selStart !== innerContentStart) return null
-      return {
-        from: ls + pfx.length,
-        to: innerContentStart,
-        insert: '',
-        selection: ls + pfx.length,
-      }
-    }
-    if (selStart === ls + pfx.length && ls > 0)
-      return { from: ls - 1, to: ls + pfx.length, insert: '', selection: ls - 1 }
-    return null
   }
 
-  const m = lineMarkerRe.exec(line)
-  if (m === null) return null
-  const contentStart = ls + m[0].length
+  // A cell's `#` and `>` are prose, so only a list marker collapses there — `lineMarkerRe` would eat two characters of what the author typed.
+  const markerLen =
+    scope === 'cell' ? parseListMarker(line)?.contentStart : lineMarkerRe.exec(line)?.[0].length
+  if (markerLen === undefined) return null
+  const contentStart = ls + markerLen
   if (selStart !== contentStart) return null
   return { from: ls, to: contentStart, insert: '', selection: ls }
 }
@@ -223,11 +251,12 @@ export function canonicalizeCheckbox(
   selStart: number,
   selEnd: number,
   inserted: string,
+  scope: MarkdownScope = 'page',
 ): Edit | null {
   if (inserted !== ' ' || selStart !== selEnd) return null
   const ls = lineStartAt(doc, selStart)
   const before = doc.slice(ls, selStart)
-  const pfx = blockPrefix(before)
+  const pfx = blockPrefix(before, scope)
   const m = shorthandCheckboxRe.exec(before.slice(pfx.length))
   if (m === null) return null
   const [, ws, marker, inner] = m

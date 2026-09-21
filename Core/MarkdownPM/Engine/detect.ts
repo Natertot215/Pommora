@@ -353,6 +353,9 @@ export function calloutHeadPrefixLen(line: string): number | null {
   return tag ? pfx.length + tag[0].length : null
 }
 
+// A table cell reads the list vocabulary and nothing else: a `#`, a fence, a quote marker and a rule are literal text there, so every reader that walks a line takes the scope it is walking for.
+export type MarkdownScope = 'page' | 'cell'
+
 export const MAX_NESTING_LEVEL = 3
 
 export function indentLevel(ws: string): number {
