@@ -25,6 +25,15 @@ const input: GraphInput = {
     { from: 'b', to: 'c', kind: 'frontmatter' },
   ],
 }
+const paired: GraphInput = {
+  ...input,
+  pages: [],
+  spaces: [
+    { id: 's1', title: 'Work', spaceIds: ['s2'] },
+    { id: 's2', title: 'Pommora', spaceIds: ['s1'] },
+  ],
+  connections: [],
+}
 const all = { hideUnlinked: false, visible: null }
 
 describe('buildGraph', () => {
@@ -64,11 +73,38 @@ describe('buildGraph', () => {
     ])
   })
 
-  it('hideUnlinked in Space mode drops a space no page is tagged with, even one another space tags', () => {
+  it('hideUnlinked in Space mode drops a Space with neither members nor links and keeps one another Space links', () => {
     const g = buildGraph(input, { ...all, mode: 'space', hideUnlinked: true })
     expect(g.index.has('s3')).toBe(false)
-    expect(g.index.has('s2')).toBe(false)
+    expect(g.index.has('s2')).toBe(true)
     expect(g.index.has('b')).toBe(true)
+  })
+
+  it('draws a pair stored on both Spaces as one link and grows both ends by it', () => {
+    const g = buildGraph(paired, { ...all, mode: 'space' })
+    expect(g.links).toHaveLength(1)
+    const r = (id: string) => g.nodes[g.index.get(id) as number].radius
+    expect(r('s1')).toBeGreaterThan(BASE_RADIUS.space)
+    expect(r('s2')).toBe(r('s1'))
+  })
+
+  it('draws two links for two pages citing each other', () => {
+    const g = buildGraph(
+      {
+        ...input,
+        connections: [
+          { from: 'a', to: 'b', kind: 'body' },
+          { from: 'b', to: 'a', kind: 'body' },
+        ],
+      },
+      { ...all, mode: 'connection' },
+    )
+    expect(g.links).toHaveLength(2)
+  })
+
+  it('a Space the filter hides is absent', () => {
+    const g = buildGraph(input, { ...all, mode: 'space', visible: new Set(['a', 's1']) })
+    expect(g.nodes.map((n) => n.id)).toEqual(['a', 's1'])
   })
 
   it('hideUnlinked in Connection mode drops a page with no link', () => {
@@ -93,7 +129,7 @@ describe('buildGraph', () => {
   it('links are re-indexed after a drop, the id map matches, and degree counts only surviving links', () => {
     const g = buildGraph(input, { ...all, mode: 'space', hideUnlinked: true })
     for (const l of g.links) expect(g.index.get(g.nodes[l.source].id)).toBe(l.source)
-    expect(g.nodes[g.index.get('s1') as number].degree).toBe(2)
+    expect(g.nodes[g.index.get('s1') as number].degree).toBe(3)
   })
 
   it('a hub grows with members, a page with inbound links, never with outbound', () => {

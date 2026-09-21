@@ -72,7 +72,9 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
     if (!options.visible || options.visible.has(p.id)) add(p.id, 'page', p.title, p.icon)
   if (options.mode === 'location')
     for (const f of input.folders) add(f.id, 'folder', f.title, f.icon)
-  if (options.mode === 'space') for (const s of input.spaces) add(s.id, 'space', s.title, s.icon)
+  if (options.mode === 'space')
+    for (const s of input.spaces)
+      if (!options.visible || options.visible.has(s.id)) add(s.id, 'space', s.title, s.icon)
 
   const links: GraphLink[] = []
   const link = (from: string, to: string, kind: LinkKind): void => {
@@ -89,14 +91,26 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   }
   if (options.mode === 'space') {
     for (const p of input.pages) for (const s of p.spaceIds) link(p.id, s, 'space')
-    for (const s of input.spaces) for (const t of s.spaceIds) link(s.id, t, 'space')
+    const drawn = new Set<string>()
+    for (const s of input.spaces)
+      for (const t of s.spaceIds) {
+        const pair = s.id < t ? `${s.id}\u0000${t}` : `${t}\u0000${s.id}`
+        if (drawn.has(pair)) continue
+        drawn.add(pair)
+        link(s.id, t, 'space')
+      }
   }
 
   const inbound = nodes.map(noInbound)
+  const spaceLinks = new Array<number>(nodes.length).fill(0)
   for (const l of links) {
     nodes[l.source].degree++
     nodes[l.target].degree++
     inbound[l.target][l.kind]++
+    if (nodes[l.source].kind === 'space' && nodes[l.target].kind === 'space') {
+      spaceLinks[l.source]++
+      spaceLinks[l.target]++
+    }
   }
 
   const members = new Array<number>(nodes.length).fill(0)
@@ -114,18 +128,17 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   }
 
   const keep = nodes.map(
-    (n, i) => !options.hideUnlinked || (n.degree > 0 && (n.kind === 'page' || members[i] > 0)),
+    (n, i) =>
+      !options.hideUnlinked ||
+      (n.degree > 0 && (n.kind === 'page' || members[i] > 0 || spaceLinks[i] > 0)),
   )
-  return compact(nodes, links, keep, inbound, members)
+  nodes.forEach((n, i) => {
+    n.radius = radiusOf(n.kind, inbound[i], members[i], spaceLinks[i])
+  })
+  return compact(nodes, links, keep)
 }
 
-function compact(
-  all: GraphNode[],
-  allLinks: GraphLink[],
-  keep: boolean[],
-  inbound: Inbound[],
-  members: number[],
-): Graph {
+function compact(all: GraphNode[], allLinks: GraphLink[], keep: boolean[]): Graph {
   const remap = new Map<number, number>()
   const nodes: GraphNode[] = []
   const index = new Map<string, number>()
@@ -133,7 +146,6 @@ function compact(
     if (!keep[i]) return
     remap.set(i, nodes.length)
     index.set(n.id, nodes.length)
-    n.radius = radiusOf(n.kind, inbound[i], members[i])
     nodes.push(n)
   })
   for (const n of nodes) n.degree = 0

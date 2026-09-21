@@ -153,11 +153,18 @@ describe('vocabulary', () => {
     expect(crew?.label).toBe('Crew')
     expect(operatorsFor('ctx-crew', schema, ['ctx-crew']).map((o) => o.op)).toEqual([
       'contains_any',
-      'contains_all',
       'does_not_contain',
       'is_empty',
       'is_not_empty',
     ])
+  })
+
+  it("a Context reads Contains / Isn't + empties", () => {
+    const ops = operatorsFor('ctx-crew', schema, ['ctx-crew'])
+    expect(ops.map((o) => o.label)).toEqual(['Contains', "Isn't", 'Is Empty', "Isn't Empty"])
+    expect(ops[0].op).toBe('contains_any')
+    expect(ops[0].slot).toBe('chips')
+    expect(ops[0].multi).toBe(true)
   })
 
   it('offers no Context targets when there is no tree', () => {

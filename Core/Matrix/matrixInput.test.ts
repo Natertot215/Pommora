@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { NexusTree } from '../Nexus/tree'
-import { makeTree } from '../Testing/testTree'
+import type { PropertyDefinition } from '../Properties/properties'
+import { linkedSpacesTree, makeTree } from '../Testing/testTree'
+import type { FilterGroup } from '../Views/views'
 import { DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
 import { filterSetTree, matrixTree, matrixVisible, matrixWalk } from './matrixInput'
@@ -70,7 +72,7 @@ describe('matrixInput', () => {
       rules: [{ property_id: '_location', op: 'is_inside', value: 'c1' }],
     }
     const inside = matrixInput(makeTree(), replyOf([]), configWith({ rules, enabled: true }))
-    expect([...(inside.visible ?? [])].sort()).toEqual(['p1', 'p2'])
+    expect([...(inside.visible ?? [])].sort()).toEqual(['a1', 'p1', 'p2', 'pr1', 't1'])
 
     const off = matrixInput(makeTree(), replyOf([]), configWith({ rules, enabled: false }))
     expect(off.visible).toBeNull()
@@ -80,5 +82,68 @@ describe('matrixInput', () => {
     expect(filterSetTree(makeTree())).toEqual([
       { id: 'c1', children: [{ id: 's1', children: [] }] },
     ])
+  })
+})
+
+const STATUS: PropertyDefinition = {
+  id: 'prop_status',
+  name: 'Status',
+  type: 'select',
+  select_options: [
+    { value: 'Active', label: 'Active' },
+    { value: 'Done', label: 'Done' },
+  ],
+}
+
+const spacesTree = (): NexusTree => {
+  const tree = linkedSpacesTree({
+    aValues: { Status: 'Done' },
+    aContextValues: { g2: ['b1'] },
+  })
+  tree.registry = [STATUS]
+  return tree
+}
+
+const spacesVisible = (rules: FilterGroup): string[] => {
+  const walk = matrixWalk(matrixTree(spacesTree()), replyOf([]))
+  const visible = matrixVisible(walk, { ...DEFAULT_MATRIX_CONFIG.filter, rules, enabled: true })
+  return [...(visible ?? [])].filter((id) => id === 'a1' || id === 'b1').sort()
+}
+
+const all = (...rules: FilterGroup['rules']): FilterGroup => ({ match: 'all', rules })
+
+describe('matrixVisible over Spaces', () => {
+  it('judges a Space on the rules it can answer and abstains on the rest', () => {
+    expect(spacesVisible(all({ property_id: 'prop_status', op: 'is', value: 'Active' }))).toEqual([
+      'b1',
+    ])
+    expect(spacesVisible(all({ property_id: 'prop_status', op: 'is_not_empty' }))).toEqual(['a1'])
+  })
+
+  it('keeps a Space under its own Context and the Spaces linked to it', () => {
+    expect(spacesVisible(all({ property_id: 'g1', op: 'contains_any', values: ['a1'] }))).toEqual([
+      'a1',
+      'b1',
+    ])
+    expect(spacesVisible(all({ property_id: 'g1', op: 'is_empty' }))).toEqual([])
+  })
+
+  it('drops a rule no Space can answer, at any depth', () => {
+    expect(spacesVisible(all({ property_id: '_location', op: 'is', value: 'c1' }))).toEqual([
+      'a1',
+      'b1',
+    ])
+    expect(
+      spacesVisible(all({ property_id: '_created_at', op: 'on_or_after', value: '2026-01-01' })),
+    ).toEqual(['a1', 'b1'])
+    expect(
+      spacesVisible(
+        all(all({ property_id: '_location', op: 'is', value: 'c1' }), {
+          property_id: '_created_at',
+          op: 'on_or_after',
+          value: '2026-01-01',
+        }),
+      ),
+    ).toEqual(['a1', 'b1'])
   })
 })
