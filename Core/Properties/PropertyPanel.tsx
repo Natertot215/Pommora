@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
-import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
-import { MenuItem, MenuScrollFrame, MenuTopRow } from '@pommora/uix/Menus'
+import { AccessoryButton, MenuItem, heading } from '@pommora/uix/Menus'
+import { ICON } from '@pommora/uix/Menus/frames.css'
+import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
+import { DropLine } from '@pommora/uix/Interactions/DropLine'
+import { nexusReorderIndex } from '@pommora/uix/Interactions/frameDndModel'
+import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -14,7 +18,6 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { Cell } from './Cells/Cell'
 import { PropertyEditor } from './Pickers/PropertyEditor'
 import {
@@ -24,7 +27,7 @@ import {
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
-import { fetchPageValues, pageRowOf, schemaForPage } from './pageRow'
+import { collectionOfPage, fetchPageValues, pageRowOf, schemaForPage, spaceRowOf } from './pageRow'
 import { parseEditorValue } from './parseEditorValue'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
@@ -33,11 +36,18 @@ import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { validateLink } from './Cells/linkResolve'
 import { displayPropertyName, useCapitalizeMetadata } from './Cells/columnLabel'
 import { propertyIcon } from './Cells/PropertyTypes'
+import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
+import { useOptionReorder } from './Schema/useOptionReorder'
+import { resolveRowOrder } from './rowOrder'
+import { pushValueUndo } from './valueUndo'
+import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
+import { host } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { contextIdentityOf, contextIdsOf, isContextColumnId } from '../Contexts/contextIdentity'
 import { relDirname } from '@pommora/core/Paths/posix'
+import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
-import { useSession, type WindowTarget } from '../Session/store'
+import { useSession } from '../Session/store'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
@@ -46,32 +56,46 @@ import * as s from './property-panel.css'
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
-type PropertyPanelProps =
-  | { page: PageDetail; onBack: () => void }
-  | { page: WindowTarget; onBack?: never }
+const GROUPS = [
+  { key: 'contexts', label: 'Contexts', add: 'Add Context' },
+  { key: 'properties', label: 'Properties', add: 'Add Property' },
+] as const
+type GroupKey = (typeof GROUPS)[number]['key']
 
-export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
-  const pageFrame = props.onBack !== undefined
-  const pageDetail = props.onBack ? props.page : null
+export type PanelSubject =
+  | { kind: 'page'; id: string; path: string; title?: string }
+  | { kind: 'space'; id: string }
+
+export function PropertyPanel({
+  subject,
+  host: panelHost,
+}: {
+  subject: PanelSubject
+  host: 'dropdown' | 'side-pane'
+}): React.JSX.Element {
+  const isSpace = subject.kind === 'space'
   const capitalize = useCapitalizeMetadata()
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
   const assetMap = useSession((st) => st.assetMap)
   const [editing, setEditing] = useState<Editing>(null)
-  const [addOpen, setAddOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState<GroupKey | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
-  const addRef = useRef<HTMLButtonElement | null>(null)
+  const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
+    contexts: null,
+    properties: null,
+  })
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
-  const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
   const [base, setBase] = useState<PageFrontmatter | null>(null)
   const [override, setOverride] = useState<Overrides | null>(null)
   const [fetchedTitle, setFetchedTitle] = useState('')
-  const pageId = props.page.id
-  const fm = override?.[pageId]?.fm ?? base
+  const subjectId = subject.id
+  const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
+  const path = subject.kind === 'page' ? subject.path : (spaceNode?.path ?? '')
 
-  const path = props.page.path
   useEffect(() => {
     setEditing(null)
+    if (isSpace) return
     const cached = readPageDetail(path)
     if (cached) {
       setBase(cached.frontmatter as PageFrontmatter)
@@ -88,35 +112,37 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     return () => {
       live = false
     }
-  }, [path])
+  }, [path, isSpace])
 
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   useEffect(() => {
-    if (valuesEpoch?.kind !== 'container') return
-    const named = valuesEpoch.changes.some((c) => c.pageIds.includes(pageId))
+    if (isSpace || valuesEpoch?.kind !== 'container') return
+    const named = valuesEpoch.changes.some((c) => c.pageIds.includes(subjectId))
     const mine =
       named || valuesEpoch.changes.some((c) => c.pageIds.length === 0 && c.rel === relDirname(path))
     if (!mine) return
-    setOverride((prev) => retireSettled(prev, named ? [pageId] : null))
+    setOverride((prev) => retireSettled(prev, named ? [subjectId] : null))
     let live = true
-    void fetchPageValues(relDirname(path), [pageId]).then((values) => {
-      const next = values?.[pageId]?.frontmatter
+    void fetchPageValues(relDirname(path), [subjectId]).then((values) => {
+      const next = values?.[subjectId]?.frontmatter
       if (live && next) setBase(next as PageFrontmatter)
     })
     return () => {
       live = false
     }
-  }, [valuesEpoch, pageId, path])
+  }, [valuesEpoch, subjectId, path, isSpace])
 
   const nexusId = tree?.nexus.id
   useEffect(() => {
     setEditing(null)
     setRevealed(new Set())
-    setSetAside(new Set())
   }, [nexusId])
 
-  const title = pageDetail ? pageDetail.title : fetchedTitle
-  const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
+  const title = subject.kind === 'page' ? (subject.title ?? fetchedTitle) : ''
+  const schema = useMemo(
+    () => (isSpace ? (tree?.registry ?? []) : schemaForPage(tree, path)),
+    [tree, path, isSpace],
+  )
   const ctx = useMemo<ValueContext | null>(
     () => (tree ? buildValueContext(tree, schema, assetMap) : null),
     [tree, schema, assetMap],
@@ -129,10 +155,15 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
       }),
     [tree],
   )
-  const row = useMemo<ViewRow | null>(
-    () => (fm ? pageRowOf(tree, { id: pageId, path, title }, fm) : null),
-    [fm, tree, pageId, path, title],
-  )
+  // The host pushes a Space's patched node before its write replies, so a settled override is already behind the node.
+  const entry = override?.[subjectId]
+  const overrideFm = isSpace && entry?.write === null ? undefined : entry?.fm
+  const row = useMemo<ViewRow | null>(() => {
+    if (isSpace) return tree && spaceNode ? spaceRowOf(tree, spaceNode, overrideFm) : null
+    const frontmatter = overrideFm ?? base
+    return frontmatter ? pageRowOf(tree, { id: subjectId, path, title }, frontmatter) : null
+  }, [isSpace, tree, spaceNode, overrideFm, base, subjectId, path, title])
+  const fm = row?.frontmatter ?? null
   const contextValues = row?.contextValues
 
   const isContextRow = (id: string): boolean => isContextColumnId(tree, id)
@@ -153,26 +184,99 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     if (row) assignValue(writer, row, { id, kind: isContextRow(id) ? 'context' : 'property' }, next)
   }
 
-  const allFields: Field[] = [
-    ...contextRows.map((t) => ({ ...t, def: null })),
-    ...schema.map((d) => ({
-      id: d.id,
-      label: displayPropertyName(d.name, capitalize),
-      icon: propertyIcon(d),
-      def: d,
-    })),
-  ]
-  const isShown = (f: Field): boolean =>
+  const contextFields: Field[] = contextRows.map((t) => ({ ...t, def: null }))
+  const schemaFields: Field[] = schema.map((d) => ({
+    id: d.id,
+    label: displayPropertyName(d.name, capitalize),
+    icon: propertyIcon(d),
+    def: d,
+  }))
+  const held = (f: Field): boolean =>
     f.def
-      ? revealed.has(f.id) || (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined
-      : (contextValues?.[f.id]?.length ?? 0) > 0 ||
-        (pageFrame ? !setAside.has(f.id) : revealed.has(f.id))
-  const shown = allFields.filter(isShown)
-  const groups: [string, Field[]][] = [
-    ['contexts', shown.filter((f) => !f.def)],
-    ['properties', shown.filter((f) => f.def)],
-  ]
-  const entering = useEntrance(shown, (f) => f.id, fm !== null)
+      ? (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined
+      : (contextValues?.[f.id]?.length ?? 0) > 0
+  const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
+  const spaceOrder = useMemo(() => readSpaceRowOrder(spaceNode?.values), [spaceNode])
+  const nameOf = (f: Field): string => f.def?.name ?? f.label
+  const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.contextOrder)
+  const fields: Record<GroupKey, Field[]> = {
+    contexts: resolveRowOrder(nexusWide, nameOf, spaceOrder.contexts),
+    properties: resolveRowOrder(schemaFields, nameOf, spaceOrder.properties),
+  }
+  const shown: Record<GroupKey, Field[]> = {
+    contexts: fields.contexts.filter(isShown),
+    properties: fields.properties.filter(isShown),
+  }
+  const hidden = (key: GroupKey): PickEntry[] =>
+    fields[key]
+      .filter((f) => !isShown(f))
+      .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
+  const entering = useEntrance([...shown.contexts, ...shown.properties], (f) => f.id, fm !== null)
+  const openAdd = (key: GroupKey): void => {
+    triggerRef.current = addRefs.current[key]
+    setAddOpen(key)
+  }
+
+  const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
+    send(next)
+    pushValueUndo(() => {
+      send(prior)
+      return true
+    })
+  }
+  const commitOrder = (group: GroupKey, id: string, toIndex: number): void => {
+    const shownIds = shown[group].map((f) => f.id)
+    if (isSpace) {
+      const moved = moveItem(shown[group], shownIds.indexOf(id), toIndex)
+      const next: SpaceRowOrder = {
+        contexts: (group === 'contexts' ? moved : shown.contexts).map(nameOf),
+        properties: (group === 'properties' ? moved : shown.properties).map(nameOf),
+      }
+      sendWithUndo((o) => void mutate({ op: 'setSpaceRowOrder', path, ...o }), next, spaceOrder)
+      return
+    }
+    if (group === 'contexts') {
+      const full = fields.contexts.map((f) => f.id)
+      const ids = moveItem(full, full.indexOf(id), nexusReorderIndex(full, shownIds, id, toIndex))
+      sendWithUndo(
+        (o) => void mutate({ op: 'reorderPanelContexts', ids: o }),
+        ids,
+        tree?.contextOrder ?? [],
+      )
+      return
+    }
+    const collection = collectionOfPage(tree, path)
+    if (!collection) return
+    const full = schema.map((d) => d.id)
+    sendWithUndo(
+      (index) =>
+        void host()
+          .ask('schema:reorder', collection.path, id, index)
+          .then((r) => (r.ok ? undefined : host().ask('error:show', r.error.message))),
+      nexusReorderIndex(full, shownIds, id, toIndex),
+      full.indexOf(id),
+    )
+  }
+
+  // The hook's geometry snapshot re-arms on the array's identity, so each list is memoized on its joined ids.
+  const contextIdsKey = shown.contexts.map((f) => f.id).join(',')
+  const propertyIdsKey = shown.properties.map((f) => f.id).join(',')
+  const contextIds = useMemo(() => contextIdsKey.split(',').filter(Boolean), [contextIdsKey])
+  const propertyIds = useMemo(() => propertyIdsKey.split(',').filter(Boolean), [propertyIdsKey])
+  const labelOfId = (id: string): string =>
+    [...fields.contexts, ...fields.properties].find((f) => f.id === id)?.label ?? id
+  const contextDrag = useOptionReorder(contextIds, labelOfId, (rowId, to) =>
+    commitOrder('contexts', rowId, to),
+  )
+  const propertyDrag = useOptionReorder(propertyIds, labelOfId, (rowId, to) =>
+    commitOrder('properties', rowId, to),
+  )
+  const ghostApi = useGhostOptionAnchor(
+    editing !== null ||
+      addOpen !== null ||
+      contextDrag.dragging !== null ||
+      propertyDrag.dragging !== null,
+  )
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const editRow = (
@@ -195,14 +299,8 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
   }
   const emptyRow = (id: string, keep: boolean): void => {
-    const context = isContextRow(id)
     commit(id, null)
-    const setAsideRow = context && pageFrame
-    if (keep) {
-      if (!setAsideRow) reveal(id)
-      return
-    }
-    if (setAsideRow) setSetAside((prev) => new Set([...prev, id]))
+    if (keep) reveal(id)
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
@@ -231,11 +329,12 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     return true
   }
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
-    setAddOpen(false)
+    setAddOpen(null)
     reveal(id)
     requestAnimationFrame(() => {
       const el =
-        document.querySelector<HTMLElement>(`[data-property-row="${id}"]`) ?? addRef.current
+        document.querySelector<HTMLElement>(`[data-property-row="${id}"]`) ??
+        addRefs.current[isContextRow(id) ? 'contexts' : 'properties']
       if (def && el) return editRow(def, el)
       triggerRef.current = el
       setEditing({ id, mode: 'picker' })
@@ -259,106 +358,141 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
       def,
       current,
       contextOptions:
-        def.type === 'context' && tree ? contextOptionsFor(editing.id, tree) : undefined,
+        def.type === 'context' && tree ? contextOptionsFor(editing.id, tree, subjectId) : undefined,
     }
   })()
 
-  const hiddenEntries: PickEntry[] = allFields
-    .filter((f) => !isShown(f))
-    .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
-
   const body = (): React.ReactNode => {
     if (!ctx || !row || !fm) return null
+    const renderRow = (
+      { def, id, label, icon }: Field,
+      drag: ReturnType<typeof useOptionReorder>,
+    ): React.ReactNode => {
+      const column: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
+      const rowBody = (
+        <MenuItem
+          key={id}
+          ref={(el) => drag.registerRow(id, el)}
+          className={s.row}
+          onPointerDown={(e) => drag.onRowPointerDown(id, e)}
+          leading={<Icon name={icon} size="control" />}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            void rowMenu(id, label, resolveFieldValue(row, id, schema))
+          }}
+          trailing={
+            // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
+            <span
+              className={s.value}
+              data-property-row={id}
+              onContextMenu={(e) => {
+                if (!valueMenu(id, resolveFieldValue(row, id, schema), e.target)) return
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+              onClick={(e) => editRow(def ?? syntheticContextDef(id), e.currentTarget, e.target)}
+            >
+              {editing?.id === id && editing.mode === 'editor' && def ? (
+                <PropertyEditor
+                  initial={(() => {
+                    const v = resolveFieldValue(row, id, schema)
+                    if (v.kind === 'number') return String(v.value)
+                    if (v.kind === 'url') return linkEditText(v.value)
+                    return ''
+                  })()}
+                  numeric={def.type === 'number'}
+                  validate={def.type === 'url' ? validateLink : undefined}
+                  onCommit={(raw) => {
+                    const next = parseEditorValue(def.type, raw, resolveFieldValue(row, id, schema))
+                    if (next !== undefined) commit(id, next)
+                    setEditing(null)
+                  }}
+                  onCancel={() => setEditing(null)}
+                />
+              ) : (
+                (Cell({
+                  row,
+                  column,
+                  ctx,
+                  hideIcon: false,
+                  style: { look: 'standard' },
+                  remove: (next) => commit(id, next),
+                }) ?? <EmptyValue className={s.empty} />)
+              )}
+            </span>
+          }
+        >
+          {label}
+        </MenuItem>
+      )
+      return (
+        <Reveal key={id} open enterOnMount={entering(id)} fill>
+          {rowBody}
+        </Reveal>
+      )
+    }
     return (
       <>
-        <div className={pageFrame ? s.pageRows : cx(s.panelRows, 'over-scroll')}>
-          {groups.map(([key, group]) =>
-            group.length === 0 ? null : (
-              <div key={key} className={s.group}>
-                {group.map(({ def, id, label, icon }) => {
-                  const column: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
-                  const rowBody = (
-                    <MenuItem
-                      key={id}
-                      className={s.row}
-                      leading={<Icon name={icon} size="control" />}
-                      onContextMenu={(e) => {
-                        e.preventDefault()
-                        void rowMenu(id, label, resolveFieldValue(row, id, schema))
+        <div className={panelHost === 'dropdown' ? s.pageRows : cx(s.panelRows, 'over-scroll')}>
+          {GROUPS.map(({ key, label, add }) => {
+            const rows = shown[key]
+            const drag = key === 'contexts' ? contextDrag : propertyDrag
+            const addable = fields[key].some((f) => !isShown(f))
+            const ghost = addable && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
+            return (
+              <div key={key} {...ghostAnchorProps(ghostApi, key)}>
+                <div className={heading}>
+                  <span>{label}</span>
+                  {addable && (
+                    <AccessoryButton
+                      ref={(el) => {
+                        addRefs.current[key] = el
                       }}
-                      trailing={
-                        // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
-                        <span
-                          className={s.value}
-                          data-property-row={id}
-                          onContextMenu={(e) => {
-                            if (!valueMenu(id, resolveFieldValue(row, id, schema), e.target)) return
-                            e.preventDefault()
-                            e.stopPropagation()
-                          }}
-                          onClick={(e) =>
-                            editRow(def ?? syntheticContextDef(id), e.currentTarget, e.target)
-                          }
+                      icon="plus"
+                      size={ICON.optionsAdd}
+                      ariaLabel={add}
+                      create
+                      onClick={() => openAdd(key)}
+                    />
+                  )}
+                </div>
+                {(rows.length > 0 || ghost) && (
+                  <div
+                    ref={drag.containerRef}
+                    className={cx(
+                      'drop-line-host',
+                      s.group,
+                      panelHost === 'dropdown' && s.groupBordered,
+                    )}
+                  >
+                    {drag.ghost}
+                    {rows.map((f) => renderRow(f, drag))}
+                    {ghost && (
+                      <Reveal open={!ghost.closing} enterOnMount onCollapsed={ghostApi.closed}>
+                        <div
+                          data-ghost-root
+                          onPointerEnter={ghostApi.onGhostEnter}
+                          onPointerLeave={ghostApi.onGhostLeave}
                         >
-                          {editing?.id === id && editing.mode === 'editor' && def ? (
-                            <PropertyEditor
-                              initial={(() => {
-                                const v = resolveFieldValue(row, id, schema)
-                                if (v.kind === 'number') return String(v.value)
-                                if (v.kind === 'url') return linkEditText(v.value)
-                                return ''
-                              })()}
-                              numeric={def.type === 'number'}
-                              validate={def.type === 'url' ? validateLink : undefined}
-                              onCommit={(raw) => {
-                                const next = parseEditorValue(
-                                  def.type,
-                                  raw,
-                                  resolveFieldValue(row, id, schema),
-                                )
-                                if (next !== undefined) commit(id, next)
-                                setEditing(null)
-                              }}
-                              onCancel={() => setEditing(null)}
-                            />
-                          ) : (
-                            (Cell({
-                              row,
-                              column,
-                              ctx,
-                              hideIcon: false,
-                              style: { look: 'standard' },
-                              remove: (next) => commit(id, next),
-                            }) ?? <EmptyValue className={s.empty} />)
-                          )}
-                        </span>
-                      }
-                    >
-                      {label}
-                    </MenuItem>
-                  )
-                  return pageFrame ? (
-                    <Reveal key={id} open enterOnMount={entering(id)} fill>
-                      {rowBody}
-                    </Reveal>
-                  ) : (
-                    rowBody
-                  )
-                })}
+                          <MenuItem
+                            className={cx(s.row, 'ghost-worn')}
+                            leading={<Icon name="plus" size="control" />}
+                            onClick={() => {
+                              ghostApi.take()
+                              openAdd(key)
+                            }}
+                          >
+                            {add}
+                          </MenuItem>
+                        </div>
+                      </Reveal>
+                    )}
+                    {drag.lineTop !== null ? <DropLine style={{ top: drag.lineTop }} /> : null}
+                  </div>
+                )}
               </div>
-            ),
-          )}
-          {hiddenEntries.length > 0 && (
-            <Button
-              ref={addRef}
-              size="button-inline"
-              icon="plus"
-              iconSize={pageFrame ? 'control' : 'caption'}
-              label="Add Property"
-              className={s.add}
-              onClick={() => setAddOpen(true)}
-            />
-          )}
+            )
+          })}
         </div>
         {editing?.mode === 'rename' && (
           <TextPicker
@@ -375,40 +509,29 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
         )}
         <PropertyPicker
           target={panelTarget}
-          chooser={addOpen ? hiddenEntries : undefined}
-          open={panelTarget !== null || addOpen}
-          triggerRef={addOpen ? addRef : triggerRef}
+          chooser={addOpen ? hidden(addOpen) : undefined}
+          open={panelTarget !== null || addOpen !== null}
+          triggerRef={triggerRef}
           onCommit={(v) => {
             if (editing) commit(editing.id, v)
           }}
-          onReveal={(entry) => {
-            if (pageFrame && isContextRow(entry.id)) {
-              setAddOpen(false)
-              setSetAside((prev) => new Set([...prev].filter((r) => r !== entry.id)))
-              return
-            }
+          onReveal={(entry) =>
             revealAndEdit(
               entry.id,
               schema.find((d) => d.id === entry.id),
             )
-          }}
+          }
           onDismiss={() => {
             setEditing(null)
-            setAddOpen(false)
+            setAddOpen(null)
           }}
         />
       </>
     )
   }
 
-  return props.onBack ? (
-    <div className={s.frame}>
-      <MenuScrollFrame
-        header={<MenuTopRow label="Settings" current="Properties" onBack={props.onBack} />}
-      >
-        {body()}
-      </MenuScrollFrame>
-    </div>
+  return panelHost === 'dropdown' ? (
+    <div className={s.frame}>{body()}</div>
   ) : (
     <div className="window-panel-column">{body()}</div>
   )

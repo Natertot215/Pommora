@@ -6,17 +6,23 @@ import {
   FooterLockButton,
   FooterIconButton,
   MenuFooting,
+  MenuItem,
   MenuScrollFrame,
+  MenuSeparator,
 } from '@pommora/uix/Menus'
+import { Icon } from '@pommora/uix/Symbols'
+import { ICON } from '@pommora/uix/Menus/frames.css'
 import { tintAt } from '@pommora/uix/Theme/colors'
 import { cellColor } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { IconChoice } from '../Assets/IconChoice'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
-import { findSpace } from '../Nexus/treeIndex'
+import { spaceNodeOf } from '../Nexus/treeIndex'
+import { PropertyPanel } from '../Properties/PropertyPanel'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
+import { useExperimental } from '../Settings/experimental'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function SpaceMenu(): React.JSX.Element | null {
@@ -34,11 +40,12 @@ export function SpaceMenu(): React.JSX.Element | null {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
-  const node = id === null ? null : findSpace(tree, id)
+  const experimental = useExperimental()
+  const node = id === null ? null : spaceNodeOf(tree, id)
   if (id === null || !node) return null
 
   const iconHidden = node.headingIconHidden === true
-  const resolved = labelColorFor(spaceColor(tree, id))
+  const resolved = labelColorFor(node.color)
   const solid = resolved === 'default' ? null : cellColor(resolved)
 
   const openHeaderMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -84,7 +91,7 @@ export function SpaceMenu(): React.JSX.Element | null {
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div onContextMenu={(e) => void openHeaderMenu(e)}>
           <InlineEditHeader
-            value={node.name}
+            value={node.title}
             icon={entityIcon('space', node.icon, defaultIcons)}
             iconRef={iconRef}
             outline={solid ? tintAt(solid, 'secondary') : undefined}
@@ -93,11 +100,21 @@ export function SpaceMenu(): React.JSX.Element | null {
             iconOpen={pickerOpen}
             onIconClick={() => setPickerOpen(true)}
             onCommit={(next) => {
-              if (next && next !== node.name)
+              if (next && next !== node.title)
                 void mutate({ op: 'renameSpace', spaceId: id, newName: next })
             }}
           />
         </div>
+        <MenuSeparator flush />
+        <PropertyPanel subject={{ kind: 'space', id }} host="dropdown" />
+        {experimental && (
+          <MenuItem
+            leading={<Icon name="link-2" size={ICON.rootEntry} />}
+            trailing={<Icon name="chevron-right" />}
+          >
+            Connections
+          </MenuItem>
+        )}
       </MenuScrollFrame>
       <IconChoice
         open={pickerOpen}
@@ -121,15 +138,4 @@ export function SpaceMenu(): React.JSX.Element | null {
       />
     </>
   )
-}
-
-function spaceColor(
-  tree: ReturnType<typeof useSession.getState>['tree'],
-  id: string,
-): string | undefined {
-  for (const g of tree?.contexts ?? []) {
-    const sp = g.spaces.find((s) => s.id === id)
-    if (sp) return sp.color
-  }
-  return undefined
 }

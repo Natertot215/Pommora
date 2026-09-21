@@ -151,7 +151,12 @@ function PageWindowBody({
         className: 'page-window-side-pane',
         children: (
           <div className="window-pane-scroll">
-            {sidePaneOpen && <PropertyPanel page={target} />}
+            {sidePaneOpen && (
+              <PropertyPanel
+                subject={{ kind: 'page', id: target.id, path: target.path }}
+                host="side-pane"
+              />
+            )}
           </div>
         ),
       }}

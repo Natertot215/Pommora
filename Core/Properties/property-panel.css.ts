@@ -6,7 +6,7 @@ import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 
 const c = colorVars.color
 
-// KNOB — the page-frame pane's content-driven width ceiling.
+// KNOB — the dropdown panel's content-driven width ceiling.
 const PANEL_MAX_WIDTH = '350px'
 
 export const frame = style({
@@ -54,9 +54,6 @@ export const value = style({
 
 globalStyle(`${row} > .${side}:last-child`, { flex: '0 1 auto', minWidth: 0 })
 
-export const empty = style([text.caption.standard])
+export const empty = style([text.caption.standard, { paddingRight: 'var(--row-pad-standard)' }])
 
-// The window panel's rows zero their trailing pad, so an empty value's glyph would sit flush to the group's edge.
-globalStyle(`${panelRows} .${empty}`, { paddingRight: '6px' })
-
-export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
+export const groupBordered = style({ border: `var(--width-100) solid ${c.border.base}` })

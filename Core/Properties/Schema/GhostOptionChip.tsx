@@ -50,16 +50,6 @@ export function OptionNameCaret({
   )
 }
 
-export function ghostAnchorProps(
-  api: GhostAnchor,
-  anchorId: string,
-): { onPointerEnter: () => void; onPointerLeave: () => void } {
-  return {
-    onPointerEnter: () => api.onHover(anchorId, true),
-    onPointerLeave: () => api.onHover(anchorId, false),
-  }
-}
-
 export function GhostOptionChip({
   api,
   anchorId,

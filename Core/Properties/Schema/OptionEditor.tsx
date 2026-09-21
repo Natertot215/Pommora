@@ -11,12 +11,8 @@ import {
 import type { PropertyType } from '@pommora/core/Properties/properties'
 import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
 import { cx } from '@pommora/uix/Utilities/cx'
-import {
-  GhostOptionChip,
-  OptionNameCaret,
-  ghostAnchorProps,
-  useGhostOptionAnchor,
-} from './GhostOptionChip'
+import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostOptionChip'
+import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'

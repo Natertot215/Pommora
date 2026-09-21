@@ -188,7 +188,12 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         className: 'navwindow-side-pane',
         children: (
           <div className="window-pane-scroll">
-            {sidePaneOpen && pageTarget && <PropertyPanel page={pageTarget} />}
+            {sidePaneOpen && pageTarget && (
+              <PropertyPanel
+                subject={{ kind: 'page', id: pageTarget.id, path: pageTarget.path }}
+                host="side-pane"
+              />
+            )}
           </div>
         ),
       }}

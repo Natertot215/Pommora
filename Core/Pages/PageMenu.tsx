@@ -13,15 +13,21 @@ import {
 import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PropertyPanel } from '../Properties/PropertyPanel'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { EDITOR_SCALE_DEFAULT, coerceScale } from '../Settings/personalization'
 import { ScalePicker } from '../Settings/ScalePicker'
+import { useExperimental } from '../Settings/experimental'
 
-const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
+const FOOTER_ACTIONS = [
+  'title:rename',
+  'title:copylink',
+  'title:history',
+  'title:reveal',
+  'title:delete',
+] as const
 
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
@@ -29,8 +35,8 @@ export function PageMenu(): React.JSX.Element | null {
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
   const openHistory = useSession((st) => st.openHistory)
+  const experimental = useExperimental()
   const [iconOpen, setIconOpen] = useState(false)
-  const [pane, setPane] = useState<'root' | 'properties'>('root')
   const iconRef = useRef<HTMLButtonElement>(null)
   const [renaming, setRenaming] = useState(false)
   const setPersonalization = useSession((st) => st.setPersonalization)
@@ -46,45 +52,21 @@ export function PageMenu(): React.JSX.Element | null {
   if (!pageDetail) return null
 
   const runFooterAction = async (): Promise<void> => {
-    const action = await popMenu(pageMetaMenuSubset(FOOTER_ACTIONS))
+    const action = await popMenu(
+      pageMetaMenuSubset(FOOTER_ACTIONS).map((r) =>
+        r.action === 'title:history' ? { ...r, separatorBefore: undefined } : r,
+      ),
+    )
     if (action === 'title:rename') setRenaming(true)
     else if (action === 'title:copylink')
       await host().ask('clipboard:write', pageLinkText(pageDetail.title))
+    else if (action === 'title:history') openHistory({ id: pageDetail.id, path: pageDetail.path })
     else if (action === 'title:reveal') await host().ask('path:reveal', pageDetail.path)
     else if (action === 'title:delete')
       await confirmDelete({ path: pageDetail.path, kind: 'page', title: pageDetail.title })
   }
   const ownIcon =
     typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined
-
-  const root = (
-    <>
-      <InlineEditHeader
-        editing={renaming}
-        onEditingChange={setRenaming}
-        value={pageDetail.title}
-        icon={entityIcon('page', ownIcon, defaultIcons)}
-        iconRef={iconRef}
-        iconOpen={iconOpen}
-        onIconClick={() => setIconOpen(true)}
-        onCommit={(next) => void submitRename(pageDetail.path, 'page', next)}
-      />
-      <MenuSeparator flush />
-      <MenuItem
-        leading={<Icon name="server" size={ICON.rootEntry} />}
-        trailing={<Icon name="chevron-right" />}
-        onClick={() => setPane('properties')}
-      >
-        Properties
-      </MenuItem>
-      <MenuItem
-        leading={<Icon name="history" size={ICON.rootEntry} />}
-        onClick={() => openHistory({ id: pageDetail.id, path: pageDetail.path })}
-      >
-        History
-      </MenuItem>
-    </>
-  )
 
   return (
     <>
@@ -104,13 +86,34 @@ export function PageMenu(): React.JSX.Element | null {
           />
         }
       >
-        <FrameSlide
-          open={pane !== 'root'}
-          root={root}
-          detail={<PropertyPanel page={pageDetail} onBack={() => setPane('root')} />}
-          minWidth={225}
-          minHeight={245}
+        <InlineEditHeader
+          editing={renaming}
+          onEditingChange={setRenaming}
+          value={pageDetail.title}
+          icon={entityIcon('page', ownIcon, defaultIcons)}
+          iconRef={iconRef}
+          iconOpen={iconOpen}
+          onIconClick={() => setIconOpen(true)}
+          onCommit={(next) => void submitRename(pageDetail.path, 'page', next)}
         />
+        <MenuSeparator flush />
+        <PropertyPanel
+          subject={{
+            kind: 'page',
+            id: pageDetail.id,
+            path: pageDetail.path,
+            title: pageDetail.title,
+          }}
+          host="dropdown"
+        />
+        {experimental && (
+          <MenuItem
+            leading={<Icon name="link-2" size={ICON.rootEntry} />}
+            trailing={<Icon name="chevron-right" />}
+          >
+            Connections
+          </MenuItem>
+        )}
       </MenuScrollFrame>
       <IconChoice
         open={iconOpen}
