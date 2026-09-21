@@ -35,6 +35,7 @@ import {
   type MutateRequest,
 } from '@pommora/core/Nexus/mutateRequest'
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
+import { collectionOfPage } from '../../Properties/pageRow'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
@@ -431,7 +432,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void select({ kind: 'set', id: set.id, path: set.path })
   }
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
-    const owner = tree.collections.find((c) => page.path.startsWith(`${c.path}/`))
+    const owner = collectionOfPage(tree, page.path)
     if (owner?.openIn === 'page-preview') {
       if (e && isCmd(e))
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })

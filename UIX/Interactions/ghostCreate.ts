@@ -151,6 +151,16 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   return { ghost, ...handlers }
 }
 
+export function ghostAnchorProps(
+  api: GhostAnchor,
+  anchorId: string,
+): { onPointerEnter: () => void; onPointerLeave: () => void } {
+  return {
+    onPointerEnter: () => api.onHover(anchorId, true),
+    onPointerLeave: () => api.onHover(anchorId, false),
+  }
+}
+
 /** An anchor gone from the consumer's pipeline strands `closing`, which reopens with no dwell. */
 export function useClearStrandedGhost(
   api: GhostAnchor,

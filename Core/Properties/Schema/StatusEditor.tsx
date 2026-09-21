@@ -14,12 +14,8 @@ import {
 import type { StatusGroup } from '@pommora/core/Properties/properties'
 import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
 import { cx } from '@pommora/uix/Utilities/cx'
-import {
-  GhostOptionChip,
-  OptionNameCaret,
-  ghostAnchorProps,
-  useGhostOptionAnchor,
-} from './GhostOptionChip'
+import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostOptionChip'
+import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { OptionSlot, type OptionStyle } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
