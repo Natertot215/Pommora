@@ -1,5 +1,9 @@
-import { readFile, rm } from 'node:fs/promises'
+import { readFile, rm, mkdir, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { tempRoot } from '../Testing/hostFs'
+import { createContextGroup, createSpace } from '../Contexts/contextWrite'
+import { setSpaceProperty } from '../Properties/setProperty'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -174,6 +178,36 @@ describe('restoring a deleted property', () => {
     expect(await assigns(notes, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await listBundles(root)).toHaveLength(0)
+  })
+
+  it('a Space value comes back on its sidecar and decodes', async () => {
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
+    const group = await createContextGroup(root, 'Projects')
+    if (!group.ok) throw new Error('context failed')
+    const space = await createSpace(root, group.value.id, 'Pommora')
+    if (!space.ok) throw new Error('space failed')
+    const sidecarFile = join(root, space.value.path, '_space.json')
+    const sidecar = async (): Promise<Record<string, unknown>> =>
+      JSON.parse(await readFile(sidecarFile, 'utf8'))
+
+    const id = await seedPriority()
+    expect(
+      (
+        await setSpaceProperty(join(root, space.value.path), await liveDef(id), {
+          kind: 'select',
+          value: 'hi',
+        })
+      ).ok,
+    ).toBe(true)
+    expect((await sidecar()).Priority).toEqual(['hi'])
+
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    expect('Priority' in (await sidecar())).toBe(false)
+
+    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok).toBe(true)
+    expect((await sidecar()).Priority).toEqual(['hi'])
   })
 
   it('a Multi-Select value comes back holding only the options the definition still offers', async () => {

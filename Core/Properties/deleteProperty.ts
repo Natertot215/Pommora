@@ -10,7 +10,10 @@ import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './pr
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
-import { readTextOrNull } from '../Files/atomicWrite'
+import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
+import { listFilesRecursive } from '../Files/walk'
+import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
+import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 
 import { isPlainObject } from './propertyValue'
@@ -44,6 +47,17 @@ async function snapshot(
     if (id) values[id] = fm[key]
     else partial = true
   }
+  for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
+    const raw = await readJsonObject(file)
+    if (!raw) {
+      partial = true
+      continue
+    }
+    if (!(key in raw)) continue
+    const id = typeof raw.id === 'string' ? raw.id : undefined
+    if (!id || id in values) partial = true
+    else values[id] = raw[key]
+  }
   await writePropertyBundle(root, {
     entity: 'property',
     id: propertyId,
@@ -63,7 +77,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   if (!def) return fail('not-found', 'Property not found.')
   const key = def.name
 
-  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
+  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
   const files = await keyHolderFiles(root, key, folders)
   await snapshot(root, propertyId, def, folders, files)
@@ -71,13 +85,25 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   await writeSchemaJournal(root, record)
 
-  const raw = stripKeyRewrite(key)
-  const swept = await sweepGovernedRoots(root, files, { raw })
-
-  for (const folder of folders) await unassignAndPurge(folder, propertyId)
-  const removed = await removeFromRegistry(root, propertyId)
-  if (!swept.skipped.length) await clearSchemaJournal(root, record)
+  const { skipped, removed } = await stripAndRemove(root, propertyId, key, folders, files)
+  if (!skipped) await clearSchemaJournal(root, record)
   return removed
+}
+
+export async function stripAndRemove(
+  root: string,
+  propertyId: string,
+  key: string,
+  folders: string[],
+  files: string[],
+): Promise<{ skipped: number; removed: Result<null> }> {
+  const raw = stripKeyRewrite(key)
+  const swept = await sweepGovernedRoots(root, files, {
+    raw,
+    sidecars: withOrderEntry(raw, 'properties', key, null),
+  })
+  for (const folder of folders) await unassignAndPurge(folder, propertyId)
+  return { skipped: swept.skipped.length, removed: await removeFromRegistry(root, propertyId) }
 }
 
 export function stripKeyRewrite(key: string): Rewrite {

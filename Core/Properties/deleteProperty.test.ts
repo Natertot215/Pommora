@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { rm, readFile, readdir } from 'node:fs/promises'
+import { rm, readFile, readdir, mkdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
+import { contextsDir } from '../Paths/paths'
 import { tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
 import { createProperty } from './registryProperty'
@@ -133,5 +134,66 @@ describe('deleteProperty', () => {
     expect((sc?.property_cache as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
     expect(sc?.property_cache).toBeUndefined()
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
+  })
+})
+
+describe('a global delete reaches a Space sidecar', () => {
+  const seedSpace = async (name: string, raw: Record<string, unknown>): Promise<string> => {
+    const dir = join(contextsDir(root), 'Projects', name)
+    await mkdir(dir, { recursive: true })
+    const file = join(dir, '_space.json')
+    await writeFile(file, JSON.stringify(raw))
+    return file
+  }
+  const sidecar = async (file: string): Promise<Record<string, unknown>> =>
+    JSON.parse(await readFile(file, 'utf8'))
+
+  const mkProperty = async (): Promise<string> => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Priority',
+      type: 'select',
+      select_options: [{ value: 'hi', label: 'High' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('setup failed')
+    return c.value.id
+  }
+
+  const bundle = async (
+    id: string,
+  ): Promise<{ values: Record<string, unknown>; partial?: true }> => {
+    const trashed = await readdir(join(root, '.trash'))
+    const name = trashed.find((f) => f.includes(`property-${id}`))
+    const record = await readRecord(join(root, '.trash', name ?? ''))
+    return record as unknown as { values: Record<string, unknown>; partial?: true }
+  }
+
+  it('captures the value under the sidecar id and strips the key and its $order entry', async () => {
+    const id = await mkProperty()
+    const file = await seedSpace('Pommora', {
+      id: 'sp1',
+      Priority: ['hi'],
+      icon: 'box',
+      $order: { properties: ['Priority', 'Other'] },
+    })
+
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+
+    expect((await bundle(id)).values.sp1).toEqual(['hi'])
+    const raw = await sidecar(file)
+    expect('Priority' in raw).toBe(false)
+    expect(raw.icon).toBe('box')
+    expect(raw.$order).toEqual({ properties: ['Other'] })
+  })
+
+  it('marks the record partial for a sidecar holding the key with no id', async () => {
+    const id = await mkProperty()
+    await seedSpace('Nameless', { Priority: ['hi'] })
+
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+
+    const record = await bundle(id)
+    expect(record.partial).toBe(true)
+    expect(Object.keys(record.values)).toHaveLength(0)
   })
 })

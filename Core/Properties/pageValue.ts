@@ -1,8 +1,9 @@
-// Option lists are edited IN PLACE, never decode-to-strings→re-encode: a page may carry foreign or non-string elements, and an op must touch only its target.
+// Option lists are edited IN PLACE, never decode-to-strings→re-encode: a holder may carry foreign or non-string elements, and an op must touch only its target.
 
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
+import type { Rewrite } from './governedSweep'
 
-type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
+export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 
 const SKIP = Symbol('skip')
 
@@ -22,30 +23,15 @@ function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | ty
   return filtered.length ? filtered : null
 }
 
-function applyEdit(content: string, key: string, target: string, edit: ValueEdit): string | null {
-  const root = splitFrontmatter(content)
-  const nextValue = rewriteRaw((root as Record<string, unknown>)[key], target, edit)
-  if (nextValue === SKIP) return null
-  return mergeFrontmatter(
-    content,
-    // Governed but not supplied is how the merge is told to delete the key.
-    nextValue === null ? {} : { [key]: nextValue },
-    [key],
-    splitEnvelope(content).body,
-  )
-}
-
-export function stripPageValue(content: string, key: string, value: string): string | null {
-  return applyEdit(content, key, value, { op: 'strip' })
-}
-
-export function replacePageValue(
-  content: string,
-  key: string,
-  oldValue: string,
-  newValue: string,
-): string | null {
-  return applyEdit(content, key, oldValue, { op: 'replace', to: newValue })
+export function valueEditRewrite(key: string, target: string, edit: ValueEdit): Rewrite {
+  return (raw) => {
+    const next = rewriteRaw(raw[key], target, edit)
+    if (next === SKIP) return null
+    const out = { ...raw }
+    if (next === null) delete out[key]
+    else out[key] = next
+    return out
+  }
 }
 
 export function stripPageMember(content: string, key: string): string | null {

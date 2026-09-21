@@ -4,7 +4,7 @@ import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
-import { replacePageValue, stripPageValue } from './pageValue'
+import { valueEditRewrite, type ValueEdit } from './pageValue'
 import { ok, fail, type Result } from '../Contract/result'
 import type { Adoption } from './propertyValue'
 import {
@@ -156,11 +156,15 @@ async function resolveForCascade(
   return ok(def.name)
 }
 
-async function stripCascade(root: string, key: string, value: string): Promise<number> {
+export async function valueEditSweep(
+  root: string,
+  key: string,
+  target: string,
+  edit: ValueEdit,
+): Promise<number> {
   const files = await keyHolderFiles(root, key, await collectionFolders(root))
-  const text = (content: string): string | null => stripPageValue(content, key, value)
-  const swept = await sweepGovernedRoots(root, files, { text })
-  return swept.skipped.length
+  const raw = valueEditRewrite(key, target, edit)
+  return (await sweepGovernedRoots(root, files, { raw, sidecars: raw })).skipped.length
 }
 
 /** Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate. */
@@ -223,11 +227,11 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
         await clearSchemaJournal(root, record)
         return edit
       }
-      const key = edit.value
-      const files = await keyHolderFiles(root, key, await collectionFolders(root))
-      const text = (c: string): string | null => replacePageValue(c, key, oldValue, newTitle)
-      const swept = await sweepGovernedRoots(root, files, { text })
-      if (!swept.skipped.length) await clearSchemaJournal(root, record)
+      const skipped = await valueEditSweep(root, edit.value, oldValue, {
+        op: 'replace',
+        to: newTitle,
+      })
+      if (!skipped) await clearSchemaJournal(root, record)
       return ok(null)
     })
 }
@@ -238,7 +242,7 @@ function clearOp(requireType: RequireType) {
     serializeSchemaOp(async () => {
       const r = await resolveForCascade(root, propertyId, requireType)
       if (!r.ok) return r
-      await stripCascade(root, r.value, value)
+      await valueEditSweep(root, r.value, value, { op: 'strip' })
       return ok(null)
     })
 }
@@ -251,7 +255,7 @@ function removeOp(requireType: RequireType) {
       if (!r.ok) return r
       const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
       await writeSchemaJournal(root, record)
-      const skipped = await stripCascade(root, r.value, value)
+      const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
       if (skipped) return ok(null)
       const dropped = await dropOptionFromDef(root, propertyId, value)
       await clearSchemaJournal(root, record)

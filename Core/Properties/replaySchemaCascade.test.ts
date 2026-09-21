@@ -4,6 +4,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { realpathPosix, tempRoot, noModeBits } from '../Testing/hostFs'
+import { contextsDir } from '../Paths/paths'
 import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -19,7 +20,6 @@ import { pageCollectionSidecar } from '../Nexus/schemas'
 import { createProperty, editProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
-import { replacePageValue } from './pageValue'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
 
@@ -60,6 +60,17 @@ async function seedNexus(): Promise<string> {
 
 const page = (root: string, name: string): Promise<string> =>
   readFile(join(root, 'Col', `${name}.md`), 'utf8')
+
+async function seedSpace(root: string, raw: Record<string, unknown>): Promise<string> {
+  const dir = join(contextsDir(root), 'Projects', 'Pommora')
+  await mkdir(dir, { recursive: true })
+  const file = join(dir, '_space.json')
+  await writeFile(file, JSON.stringify(raw))
+  return file
+}
+
+const spaceRaw = async (file: string): Promise<Record<string, unknown>> =>
+  JSON.parse(await readFile(file, 'utf8'))
 
 async function renameCrashState(root: string): Promise<void> {
   await writeSchemaJournal(root, { op: 'rename', id: 'prop_s', from: 'Stage', to: 'Phase' })
@@ -161,6 +172,21 @@ describe('delete replay', () => {
     expect(await readSchemaJournal(crashed)).toBeNull()
   })
 
+  it('the delete arm, replayed, reaches a Space sidecar', async () => {
+    const root = await seedNexus()
+    const file = await seedSpace(root, {
+      id: 'sp1',
+      Stage: ['Draft'],
+      $order: { properties: ['Stage'] },
+    })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await openSession(root)
+    await replaySchemaCascade(root)
+    const raw = await spaceRaw(file)
+    expect('Stage' in raw).toBe(false)
+    expect(raw.$order).toEqual({ properties: [] })
+  })
+
   it('a record meeting the id under another name clears untouched', async () => {
     const root = await seedNexus()
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Priority' })
@@ -217,9 +243,7 @@ describe('option replay', () => {
       },
       result: null,
     }))
-    const half = replacePageValue(await page(crashed, 'A'), 'Stage', 'Draft', 'Queued')
-    if (half === null) throw new Error('fixture: half-cascade produced nothing')
-    await writeFile(join(crashed, 'Col', 'A.md'), half)
+    await writeFile(join(crashed, 'Col', 'A.md'), wantA)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
     expect(await page(crashed, 'A')).toBe(wantA)
@@ -269,6 +293,45 @@ describe('option replay', () => {
     await replaySchemaCascade(root)
     expect(await page(root, 'A')).toContain('Stage: Draft')
     expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('option-rename, replayed, reaches a Space sidecar', async () => {
+    const root = await seedNexus()
+    const file = await seedSpace(root, { id: 'sp1', Stage: ['Draft'] })
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id: 'prop_s',
+      from: 'Draft',
+      to: 'Queued',
+    })
+    await mutateRegistry(root, (registry) => ({
+      next: {
+        ...registry,
+        defs: {
+          ...registry.defs,
+          prop_s: {
+            ...registry.defs.prop_s,
+            select_options: [
+              { value: 'Queued', label: 'Queued' },
+              { value: 'Done', label: 'Done' },
+            ],
+          },
+        },
+      },
+      result: null,
+    }))
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect((await spaceRaw(file)).Stage).toEqual(['Queued'])
+  })
+
+  it('option-remove, replayed, reaches a Space sidecar', async () => {
+    const root = await seedNexus()
+    const file = await seedSpace(root, { id: 'sp1', Stage: ['Draft'] })
+    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect('Stage' in (await spaceRaw(file))).toBe(false)
   })
 })
 

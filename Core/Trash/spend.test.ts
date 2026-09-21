@@ -787,6 +787,34 @@ describe('restore — the attack folds', () => {
     expect(sap['<Projects 2>']).toEqual(['Pommora'])
     expect('<Projects>' in sap).toBe(false)
   })
+
+  it('a re-keyed passenger carries its $order.contexts entry to the final title', async () => {
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({
+        id: 'sp-sap',
+        '<Projects>': ['Pommora'],
+        $order: { contexts: ['Projects'] },
+      }),
+    )
+    await handleMutate(
+      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+      nexusDeps,
+    )
+    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
+    await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
+    await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
+
+    const [listed] = await listBundles(root)
+    expect(
+      (await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
+    const sap = JSON.parse(
+      await readFile(join(contextsDir(root), 'Projects 2', 'Sapphire', '_space.json'), 'utf8'),
+    )
+    expect(sap.$order).toEqual({ contexts: ['Projects 2'] })
+  })
 })
 
 describe('emptyBundle — giving a bundle up for good', () => {

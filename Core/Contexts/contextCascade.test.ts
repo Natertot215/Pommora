@@ -304,6 +304,35 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
   })
 })
 
+describe('the Context cascades carry $order.contexts (B-7)', () => {
+  const pomSidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+
+  it('a rename rewrites the entry on a Space that lists the Context without holding its key', async () => {
+    await writeFile(
+      pomSidecar(),
+      JSON.stringify({ id: 'sp-pom', $order: { contexts: ['Classes', 'Projects'] } }),
+    )
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    const pom = JSON.parse(
+      await readFile(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'), 'utf8'),
+    )
+    expect(pom.$order).toEqual({ contexts: ['Classes', 'Ventures'] })
+  })
+
+  it('a delete drops the entry and captures nothing for a Space that only listed it', async () => {
+    await writeFile(
+      pomSidecar(),
+      JSON.stringify({ id: 'sp-pom', $order: { contexts: ['Projects'] } }),
+    )
+    const r = await unlinkContextKey(root, 'Projects')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const pom = JSON.parse(await readFile(pomSidecar(), 'utf8'))
+    expect(pom.$order).toEqual({ contexts: [] })
+    expect(r.value.captured.some((c) => c.id === 'sp-pom')).toBe(false)
+  })
+})
+
 describe('a delete sweep never strips a passenger (G-1a)', () => {
   const pomSidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
 

@@ -10,6 +10,7 @@ import { readSidecar } from '../Files/sidecar'
 import { machine } from '../Platform/machine'
 import { collectionFolders, assignInner } from '../Properties/assignment'
 import { updatePageProperty } from '../Nexus/page'
+import { setSpaceProperty } from '../Properties/setProperty'
 import { isBlankValue, reconcilePropertyValue } from '../Properties/propertyValue'
 import { createProperty } from '../Properties/registryProperty'
 import { serializeSchemaOp } from '../Properties/schemaChain'
@@ -50,9 +51,9 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
 
   const roots = projectBaseline(await refreshTree(root)).entries
   let dropped = 0
-  for (const [pageId, raw] of Object.entries(record.values)) {
-    const entry = roots[pageId]
-    if (entry?.kind !== 'page') {
+  for (const [id, raw] of Object.entries(record.values)) {
+    const entry = roots[id]
+    if (entry?.kind !== 'page' && entry?.kind !== 'space') {
       dropped++
       continue
     }
@@ -61,10 +62,11 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       dropped++
       continue
     }
-    const file = join(root, entry.path)
-    const written = await machine().lock(file, () =>
-      updatePageProperty(root, file, def, reconciled.value),
-    )
+    const abs = join(root, entry.path)
+    const written =
+      entry.kind === 'page'
+        ? await machine().lock(abs, () => updatePageProperty(root, abs, def, reconciled.value))
+        : await setSpaceProperty(abs, def, reconciled.value)
     if (!written.ok) dropped++
   }
   if (dropped) console.warn(`restore: ${dropped} value(s) of ${def.name} no longer validate`)

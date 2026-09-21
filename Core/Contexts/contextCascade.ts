@@ -18,6 +18,7 @@ import {
   sweepGovernedRoots,
 } from '../Properties/governedSweep'
 import { loadContextWorld } from './contextWrite'
+import { withOrderEntry } from './spaceSidecar'
 import { queryMembers } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { nameError } from '../Paths/names'
@@ -108,7 +109,13 @@ async function cascadeTitle(
     j.spaceId === undefined
       ? { key: contextKey(j.oldTitle) }
       : { key: contextKey(def.title), spaceTitle: j.oldTitle }
-  return sweepMembers(root, member, (raw) => rewriteRoot(raw, def.title, j), pageLeg(j))
+  const rewrite: Rewrite = (raw) => rewriteRoot(raw, def.title, j)
+  return sweepMembers(
+    root,
+    member,
+    j.spaceId === undefined ? withOrderEntry(rewrite, 'contexts', j.oldTitle, j.newTitle) : rewrite,
+    pageLeg(j),
+  )
 }
 
 export async function unlinkContextKey(
@@ -119,8 +126,7 @@ export async function unlinkContextKey(
   const key = contextKey(contextTitle)
   const skipPrefix = skipUnder ? `${skipUnder}/` : null
   const captured: SweepCapture[] = []
-  const swept = await sweepMembers(root, { key }, (raw, file) => {
-    if (skipPrefix && file.startsWith(skipPrefix)) return null
+  const strip: Rewrite = (raw, file) => {
     if (!(key in raw)) return null
     const values = Array.isArray(raw[key])
       ? raw[key].filter((v): v is string => typeof v === 'string')
@@ -129,7 +135,11 @@ export async function unlinkContextKey(
     const next = { ...raw }
     delete next[key]
     return next
-  })
+  }
+  const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
+  const swept = await sweepMembers(root, { key }, (raw, file) =>
+    skipPrefix && file.startsWith(skipPrefix) ? null : entry(raw, file),
+  )
   return ok({ ...swept, captured })
 }
 
