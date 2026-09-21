@@ -255,7 +255,7 @@ export const AccessoryButton = forwardRef<
 export const FooterIconButton = forwardRef<
   HTMLButtonElement,
   {
-    icon: IconName | ReactNode
+    icon: string | React.JSX.Element
     ariaLabel: string
     onClick?: () => void
     disabled?: boolean

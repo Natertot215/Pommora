@@ -22,6 +22,7 @@ import {
   useDisclosureSet,
   heading,
   pickerRow,
+  type PickerRowLook,
 } from '@pommora/uix/Menus'
 import { footingLabel, footingSymbol, side } from '@pommora/uix/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
@@ -73,6 +74,8 @@ const GRANULARITY: PickerOption<DateGranularity>[] = [
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year' },
 ]
+
+export const SUB_LOOK: PickerRowLook = { className: gp.subRow, labelClassName: gp.subLabel }
 
 const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
@@ -260,7 +263,7 @@ export function GroupFrame({
             view.structural_order_mode ?? 'custom',
             STRUCTURAL_ORDER,
             (m) => save({ structural_order_mode: m }),
-            subGroup ? gp.SUB_LOOK : undefined,
+            subGroup ? SUB_LOOK : undefined,
           )}
         />
       )}
@@ -286,7 +289,7 @@ export function GroupFrame({
                 subGroup.order_mode,
                 orderOptionsFor(declaredType(subGroup.property_id, schema)),
                 (m) => saveSub({ ...subGroup, order_mode: m }),
-                gp.SUB_LOOK,
+                SUB_LOOK,
               )}
             />
           )}

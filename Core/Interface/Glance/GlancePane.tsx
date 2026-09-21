@@ -5,6 +5,7 @@ import {
   PickerMenu,
   type PickerDirection,
 } from '@pommora/uix/Pickers/picker-base'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
@@ -462,7 +463,7 @@ export function GlancePane(): React.JSX.Element {
     <button
       type="button"
       className="glance-lock"
-      aria-label="Lock preview"
+      aria-label={lockLabel(false, 'Preview')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onLock}
     >
@@ -474,7 +475,7 @@ export function GlancePane(): React.JSX.Element {
     <button
       type="button"
       className={p.locked ? 'glance-lock glance-lock-persist' : 'glance-lock'}
-      aria-label={p.locked ? 'Unlock preview' : 'Lock preview'}
+      aria-label={lockLabel(p.locked, 'Preview')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => setPinLocked(p.pinId, !p.locked)}
     >

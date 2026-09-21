@@ -1,4 +1,5 @@
 import { Children, isValidElement, useEffect, useRef, useState } from 'react'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { MenuItem } from '@pommora/uix/Menus'
@@ -144,7 +145,7 @@ export function Disclosure({
       <button
         type="button"
         className={cx('row-lock', justUnlocked && 'row-lock-persist')}
-        aria-label={locked ? 'Unlock folder' : 'Lock folder'}
+        aria-label={lockLabel(locked, 'Folder')}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation()

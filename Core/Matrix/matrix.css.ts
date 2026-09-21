@@ -37,7 +37,7 @@ export const host = style({
     '--matrix-fill': c.label.control,
     '--matrix-fill-lit': c.label.primary,
     '--matrix-ring': `${PURE_WHITE}${hexA(SURFACE_FROST.borderAlpha)}`,
-    '--matrix-ring-hover': 'var(--accent-stroke-hot)',
+    '--matrix-ring-hover': 'var(--accent-stroke)',
     '--matrix-ring-drag': 'var(--accent-stroke-hot)',
     '--matrix-link': c.solid.greyDefault,
     '--matrix-link-hover': 'var(--accent-stroke)',

@@ -15,7 +15,9 @@ export {
 export {
   MenuIndex,
   MenuRowView,
+  factorRow,
   pickerRow,
+  type PickerRowLook,
   type MenuRow,
   type MenuSection,
   type Trailing,

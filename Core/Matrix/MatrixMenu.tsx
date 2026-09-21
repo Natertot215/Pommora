@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
 import {
+  factorRow,
   FooterIconButton,
   FooterLockButton,
   MenuFooting,
   MenuIndex,
   MenuScrollFrame,
   type MenuSection,
+  pickerRow,
 } from '@pommora/uix/Menus'
 import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
-import { factorPickerProps, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useSession } from '../Session/store'
 import { FilterFrame } from '../Views/Settings/FilterFrame'
@@ -41,17 +43,9 @@ export function MatrixMenu(): React.JSX.Element {
   const sections: MenuSection[] = [
     {
       rows: [
-        {
-          kind: 'item',
-          label: 'Groups',
-          trailing: {
-            kind: 'picker',
-            ariaLabel: 'Groups',
-            value: config.group.mode,
-            options: GROUP_OPTIONS,
-            onPick: (v: GroupMode) => patch({ group: { mode: v } }),
-          },
-        },
+        pickerRow(undefined, 'Groups', config.group.mode, GROUP_OPTIONS, (v: GroupMode) =>
+          patch({ group: { mode: v } }),
+        ),
         {
           kind: 'item',
           label: 'Filter',
@@ -93,20 +87,14 @@ export function MatrixMenu(): React.JSX.Element {
     },
     {
       title: 'Link Forces',
-      rows: FORCES.map(({ key, label }) => ({
-        kind: 'item',
-        label,
-        trailing: {
-          kind: 'picker',
-          ariaLabel: label,
-          ...factorPickerProps({
-            steps: FORCE_STEPS[key],
-            value: config.forces[key],
-            coerce: (typed) => clampForce(key, typed),
-            onPick: (factor) => patch({ forces: { [key]: factor } }),
-          }),
-        },
-      })),
+      rows: FORCES.map(({ key, label }) =>
+        factorRow(undefined, label, {
+          steps: FORCE_STEPS[key],
+          value: config.forces[key],
+          coerce: (typed) => clampForce(key, typed),
+          onPick: (factor) => patch({ forces: { [key]: factor } }),
+        }),
+      ),
     },
   ]
 
