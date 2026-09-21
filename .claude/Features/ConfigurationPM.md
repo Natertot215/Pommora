@@ -130,7 +130,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
 | Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
 | Sections | `transformSections` | `##` becomes `§` away from a line's start, where it opens a heading. | On · **Off** |
-| Bullets | `transformBullets` | A spaced `^` becomes `•`. | On · **Off** |
+| Bullets | `transformBullets` | A spaced ` ^ ` becomes `•`, following text on the line. | On · **Off** |
 | Brackets | `pairBrackets` | `(`, `[`, and `{` add their closers, and a typed closer steps over its own. | **On** · Off |
 | Markers | `pairMarkers` | Emphasis, code, strikethrough, and highlight markers pair. | **On** · Off |
 | Quotes | `pairQuotes` | `"` and `'` pair. | **On** · Off |
