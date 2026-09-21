@@ -6,10 +6,10 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import { applyValueAtRoot } from '@pommora/core/Properties/propertyValue'
-import { pageRowOf } from '@pommora/core/Properties/pageRow'
+import { pageRowOf, spaceRowOf } from '@pommora/core/Properties/pageRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { makeTree } from '../../Testing/testTree'
-import { propertyMenuRows, runPropertyAction } from './propertyMenuActions'
+import { propertyMenuBranches, propertyMenuRows, runPropertyAction } from './propertyMenuActions'
 
 const SCHEMA: PropertyDefinition[] = [
   {
@@ -126,6 +126,30 @@ describe('propertyMenuRows', () => {
       { value: 'b', label: 'Beta', checked: true },
     ])
     expect(rows.find((r) => r.name === 'Count')?.options).toBeUndefined()
+  })
+})
+
+describe('propertyMenuBranches', () => {
+  it('hands back the two halves, neither carrying the divider the join adds', () => {
+    const { contexts, properties } = propertyMenuBranches({
+      tree: treeWithSchema(),
+      schema: SCHEMA,
+      row: row(),
+    })
+    expect(contexts.map((r) => r.name)).toEqual(['Realms'])
+    expect(properties.map((r) => r.name)).toEqual(['stage', 'Tags', 'Done', 'Count'])
+    expect([...contexts, ...properties].every((r) => r.separatorBefore === undefined)).toBe(true)
+  })
+
+  it("leaves a Space out of its own Context's options", () => {
+    const tree = treeWithSchema()
+    const node = tree.contexts[0].spaces[0]
+    const { contexts } = propertyMenuBranches({
+      tree,
+      schema: tree.registry,
+      row: spaceRowOf(tree, node),
+    })
+    expect(contexts[0].options?.map((o) => o.value)).toEqual(['t1', 'pr1'])
   })
 })
 

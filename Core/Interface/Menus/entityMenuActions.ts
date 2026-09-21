@@ -10,9 +10,15 @@ import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
-import { fetchPageRow, schemaForPage } from '@pommora/core/Properties/pageRow'
+import { fetchPageRow, schemaForPage, spaceRowOf } from '@pommora/core/Properties/pageRow'
+import { spaceNodeOf } from '@pommora/core/Nexus/treeIndex'
 import { contextTargetToSelect } from '../../Navigation/tabsModel'
-import { propertyMenuRows, runPropertyAction } from './propertyMenuActions'
+import {
+  propertyMenuBranches,
+  type PropertyMenuTarget,
+  propertyMenuRows,
+  runPropertyAction,
+} from './propertyMenuActions'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { useSession } from '../../Session/store'
@@ -39,29 +45,44 @@ function creatorsFor(target: ContextTarget): Creator[] {
 export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElement): Promise<void> {
   const creators = creatorsFor(target)
   const s = useSession.getState()
-  const row =
-    trigger && target.kind === 'page' && target.id
-      ? await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
-      : null
-  const schema = row ? schemaForPage(s.tree, target.path) : []
-  const properties = row
-    ? propertyMenuRows({
+  const node = target.kind === 'space' && target.id ? spaceNodeOf(s.tree, target.id) : null
+  let row: ViewRow | null = null
+  if (trigger && target.id) {
+    if (target.kind === 'page')
+      row = await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
+    else if (node && s.tree) row = spaceRowOf(s.tree, node)
+  }
+  const schema = !row ? [] : node ? (s.tree?.registry ?? []) : schemaForPage(s.tree, target.path)
+  const menuTarget: PropertyMenuTarget | null = row
+    ? {
         tree: s.tree,
         schema,
         row,
         capitalize: s.personalization.capitalizeMetadata ?? false,
-      })
-    : undefined
-  const action = await popMenu(entityMenuItems({ ...target, properties }, creators))
-  if (action === null) return
-  if (row && trigger) {
-    const commit = pageValueCommit(schema, row)
-    if (runPropertyAction(action, { tree: s.tree, schema, row, commit, trigger })) return
+      }
+    : null
+  let halves: Pick<ContextTarget, 'spaces' | 'properties'> = {}
+  if (menuTarget) {
+    if (node) {
+      const { contexts, properties } = propertyMenuBranches(menuTarget)
+      halves = { spaces: contexts, properties }
+    } else halves = { properties: propertyMenuRows(menuTarget) }
   }
-  runEntityAction(target, creators, action)
+  const shown: ContextTarget = {
+    ...target,
+    headingIconHidden: node?.headingIconHidden,
+    ...halves,
+  }
+  const action = await popMenu(entityMenuItems(shown, creators))
+  if (action === null) return
+  if (menuTarget && trigger) {
+    const commit = valueCommitFor(schema, menuTarget.row)
+    if (runPropertyAction(action, { ...menuTarget, commit, trigger })) return
+  }
+  runEntityAction(shown, creators, action)
 }
 
-function pageValueCommit(
+function valueCommitFor(
   schema: PropertyDefinition[],
   opened: ViewRow,
 ): (column: ResolvedColumn, value: PropertyValue | null) => void {
@@ -103,7 +124,19 @@ function runEntityAction(
       s.beginRename(path, false, target.host)
       return
     case 'title:icon':
+    case 'editIcon':
       s.beginIcon(path, target.host)
+      return
+    case 'toggleIcon':
+      void s.mutate({
+        op: 'setHeadingIconHidden',
+        path,
+        kind: 'space',
+        hidden: !target.headingIconHidden,
+      })
+      return
+    case 'changeColor':
+      s.beginColor(path, target.host)
       return
     case 'title:newabove':
     case 'title:newbelow':

@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus'
+import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../Assets/EntityIcon'
@@ -9,6 +11,7 @@ import { glanceShown } from '../Interface/Glance/glanceAction'
 import { hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceLink'
 import { RenamableTitle } from '../Interface/RenamableTitle'
 import { ancestryOf } from '../Nexus/treeIndex'
+import { spaceIdentityOf } from '../Contexts/contextIdentity'
 import { useSession } from '../Session/store'
 import { toScreen } from './Engine/viewport'
 import { lastShift } from './MatrixCanvas'
@@ -22,6 +25,7 @@ export function MatrixLabel({
   closing,
   editing,
   hosts,
+  anchorRef,
   onPointerDown,
   onContextMenu,
 }: {
@@ -30,18 +34,21 @@ export function MatrixLabel({
   closing: boolean
   editing: boolean
   hosts: boolean
+  anchorRef: React.RefObject<HTMLDivElement | null>
   onPointerDown: (e: React.PointerEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
+  const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
   const picking = hosts ? iconPath : null
+  const pickingColor = hosts ? colorPath : null
   const endIcon = useSession((st) => st.endIcon)
+  const endColor = useSession((st) => st.endColor)
   const mutate = useSession((st) => st.mutate)
   const hidePath = useSession((st) => st.matrixConfig.display.hidePath)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
   const [entered, setEntered] = useState(false)
-  const anchorRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
   const id = rec?.id ?? null
 
@@ -98,6 +105,7 @@ export function MatrixLabel({
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the hovered node made real — its own drag, click and menu, which the canvas cannot carry */}
       <div
         ref={anchorRef}
+        data-node-id={rec.id}
         className={cx(s.anchor, closing && s.anchorClosing)}
         onPointerDown={onPointerDown}
         onContextMenu={onContextMenu}
@@ -109,6 +117,18 @@ export function MatrixLabel({
         value={node.icon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: rec.path, kind: rec.kind, icon })}
       />
+      {rec.kind === 'space' && (
+        <ColorPicker
+          open={pickingColor === rec.path}
+          selected={labelColorFor(spaceIdentityOf(tree, rec.id)?.color)}
+          onPick={(color) => {
+            endColor()
+            void mutate({ op: 'setSpaceColor', spaceId: rec.id, color })
+          }}
+          onDismiss={endColor}
+          triggerRef={anchorRef}
+        />
+      )}
       <div ref={labelRef} className={cx(s.label, s.labelFade, entered && !closing && s.labelShown)}>
         <div className={cx(s.labelRow, text.footnote.emphasized)}>
           {!hideIcon && (

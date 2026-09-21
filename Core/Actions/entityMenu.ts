@@ -1,7 +1,8 @@
 import { type ActionItem, afterSeparator } from './menuModel'
 import { type CreateMenuAction, createMenuItems } from './createMenu'
 import { type PageMetaAction, type PageMoveAction, pageMetaMenuItems } from './pageMenu'
-import type { PropertyAction } from './propertyRows'
+import { type TitleMenuAction, titleMenuItems } from './identityMenus'
+import { type PropertyAction, propertiesRow } from './propertyRows'
 import { openLabel } from './toggleLabels'
 import type { ContextTarget, Creator } from '../Nexus/mutateRequest'
 
@@ -15,6 +16,8 @@ export type EntityMenuAction =
   | 'delete'
   | 'lock'
   | 'reveal'
+  | TitleMenuAction
+  | 'changeColor'
 
 export function entityMenuItems(
   target: ContextTarget,
@@ -39,11 +42,31 @@ export function entityMenuItems(
     target.host === 'sidebar' && (target.kind === 'collection' || target.kind === 'set')
       ? [{ label: target.disclosureLocked ? 'Unlock Folder' : 'Lock Folder', action: 'lock' }]
       : []
+  const identity: ActionItem<EntityMenuAction>[] =
+    target.kind === 'space'
+      ? [
+          ...titleMenuItems({ toggleIcon: true, iconHidden: target.headingIconHidden }),
+          { label: 'Change Color', action: 'changeColor' },
+        ]
+      : target.kind === 'context'
+        ? titleMenuItems()
+        : [{ label: 'Rename', action: 'rename' }]
+  const branches: ActionItem<EntityMenuAction>[] =
+    target.kind === 'space'
+      ? [
+          ...(target.spaces?.length ? [propertiesRow(target.spaces, 'Spaces')] : []),
+          ...(target.properties?.length ? [propertiesRow(target.properties)] : []),
+        ]
+      : []
   return [
     ...open,
     ...(open.length > 0 ? afterSeparator(create) : create),
-    { label: 'Rename', action: 'rename', separatorBefore: open.length + create.length > 0 },
-    { label: 'Delete', action: 'delete' },
-    ...afterSeparator<EntityMenuAction>([...lock, { label: 'Reveal Location', action: 'reveal' }]),
+    ...(open.length + create.length > 0 ? afterSeparator(identity) : identity),
+    ...branches,
+    { label: 'Delete', action: 'delete', separatorBefore: target.kind === 'space' },
+    ...afterSeparator<ActionItem<EntityMenuAction>>([
+      ...lock,
+      { label: 'Reveal Location', action: 'reveal' },
+    ]),
   ]
 }

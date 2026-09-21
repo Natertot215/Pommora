@@ -29,9 +29,12 @@ function optionBranch(row: PropertyMenuRow): Partial<ActionItem<PropertyAction>>
   }
 }
 
-export function propertiesRow(rows: readonly PropertyMenuRow[]): ActionItem<PropertyAction> {
+export function propertiesRow(
+  rows: readonly PropertyMenuRow[],
+  label = 'Properties',
+): ActionItem<PropertyAction> {
   return {
-    label: 'Properties',
+    label,
     action: `${PREFIX}${rows[0].id}`,
     submenu: rows.map((r) => ({
       label: r.name,

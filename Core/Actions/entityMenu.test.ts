@@ -8,6 +8,14 @@ const creators = [
   { label: 'New Page', req: { op: 'createPage' as const, parentPath: 'Notes', name: 'Untitled' } },
 ]
 
+const SPACE = {
+  kind: 'space' as const,
+  id: 'a1',
+  path: '.nexus/contexts/Realms/Work',
+  title: 'Work',
+  host: 'sidebar' as const,
+}
+
 describe('the sidebar entity menu', () => {
   it('a page draws the whole page menu, Reveal included', () => {
     const items = entityMenuItems(
@@ -59,7 +67,58 @@ describe('the sidebar entity menu', () => {
       shape(
         entityMenuItems({ kind: 'context', path: 'Areas', title: 'Areas', host: 'sidebar' }, []),
       ),
-    ).toEqual(['Rename', 'Delete', '—', 'Reveal Location'])
+    ).toEqual(['Rename', 'Edit Icon', 'Delete', '—', 'Reveal Location'])
+  })
+
+  it('a Space draws its identity rows, then its two branches', () => {
+    const half = [{ id: 'g1', name: 'Realms', options: [] }]
+    expect(shape(entityMenuItems({ ...SPACE, spaces: half, properties: half }, []))).toEqual([
+      'New Tab',
+      '—',
+      'Rename',
+      'Edit Icon',
+      'Hide Icon',
+      'Change Color',
+      'Spaces',
+      'Properties',
+      '—',
+      'Delete',
+      '—',
+      'Reveal Location',
+    ])
+    expect(
+      entityMenuItems({ ...SPACE, headingIconHidden: true }, []).map((i) => i.label),
+    ).toContain('Show Icon')
+  })
+
+  it('a Space with neither half draws no branch', () => {
+    expect(shape(entityMenuItems(SPACE, []))).toEqual([
+      'New Tab',
+      '—',
+      'Rename',
+      'Edit Icon',
+      'Hide Icon',
+      'Change Color',
+      '—',
+      'Delete',
+      '—',
+      'Reveal Location',
+    ])
+  })
+
+  it('a page keeps its one Properties branch', () => {
+    const items = entityMenuItems(
+      {
+        kind: 'page',
+        id: 'p1',
+        path: 'Notes/A.md',
+        title: 'A',
+        properties: [{ id: 'g1', name: 'Realms', options: [] }],
+      },
+      [],
+    )
+    expect(items.filter((i) => i.label === 'Properties')).toHaveLength(1)
+    expect(items.some((i) => i.label === 'Spaces')).toBe(false)
   })
 
   it('a Matrix node neither creates siblings nor locks', () => {

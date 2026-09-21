@@ -27,6 +27,7 @@ export function Disclosure({
   onSetLock,
   selfPath,
   directChildren,
+  headerRef,
   children,
 }: {
   icon: string
@@ -45,6 +46,7 @@ export function Disclosure({
   onSetLock?: (locked: boolean) => void
   selfPath?: string
   directChildren?: { id: string; path: string }[]
+  headerRef?: React.RefObject<HTMLDivElement | null>
   children: React.ReactNode
 }): React.JSX.Element {
   // Read reactively rather than seeded once: a group whose id exists in both Nexuses does not remount across a switch, and its fold must follow the store.
@@ -125,7 +127,8 @@ export function Disclosure({
   }, [locked])
   useEffect(() => clearPeekTimer, [])
   const peekOnly = locked && !open && peekId !== null
-  const headerEl = useRef<HTMLDivElement | null>(null)
+  const ownHeaderEl = useRef<HTMLDivElement | null>(null)
+  const headerEl = headerRef ?? ownHeaderEl
   const childrenEl = useRef<HTMLDivElement | null>(null)
   // A move into the peeked child isn't a dismiss — only leaving both header and children collapses it.
   const dismissOnLeave = (e: React.MouseEvent): void => {

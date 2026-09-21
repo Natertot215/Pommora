@@ -29,6 +29,12 @@ describe('propertiesRow', () => {
     expect(link.action).toBe('prop:p2')
   })
 
+  it('takes a label for the Spaces half, over the same submenu', () => {
+    const row = propertiesRow(ROWS, 'Spaces')
+    expect(row.label).toBe('Spaces')
+    expect(row.submenu).toEqual(propertiesRow(ROWS).submenu)
+  })
+
   it('a property with no options to offer is disabled rather than an empty branch', () => {
     const select = propertiesRow(ROWS).submenu?.[1]
     expect(select).toMatchObject({ disabled: true })
