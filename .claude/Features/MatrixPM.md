@@ -12,13 +12,15 @@ A node is a Page, a Folder, or a Space. A link is one of five kinds: body, citat
 
 - **Connection** draws Pages alone, linked by what they cite and mention.
 - **Location** adds each Folder and links every Page to the one that holds it, Folder to parent Folder up the nest.
-- **Space** adds each Space, links every Page that tags it, and draws Space ↔ Space relations.
+- **Space** adds each Space, links every Page that tags it, and draws each Space ↔ Space link once.
 
-Picking a mode rebuilds the graph and settles it, so the picture answers the click rather than the next thing that moves it. **Unlinked Items** decides whether nodes with nothing attached appear; a Folder or Space is unlinked when it holds no members.
+Picking a mode rebuilds the graph and settles it, so the picture answers the click rather than the next thing that moves it. **Unlinked Items** decides whether nodes with nothing attached appear; a Folder is unlinked when it holds no members, and a Space when it holds no members and links no other Space.
+
+The **Filter** narrows the graph by the rules a view uses, and reaches Spaces as well as Pages. A Space is judged on the rules it can answer — a property it holds a value for, its title, and its links, counting itself among the Spaces of its own Context — and a rule it has nothing to answer with leaves it in place.
 
 #### Weight
 
-A node's radius follows what it carries, clamped to a ceiling, so the largest hub stays in proportion to the field. A Page grows with the connections that land on it, weighted per kind — a body link counts for more than a citation. A Folder or Space grows with its members, counted through the whole nest beneath it, so a Collection reflects everything it contains rather than only its direct children.
+A node's radius follows what it carries, clamped to a ceiling, so the largest hub stays in proportion to the field. A Page grows with the connections that land on it, weighted per kind — a body link counts for more than a citation. A Folder or Space grows with its members, counted through the whole nest beneath it, so a Collection reflects everything it contains rather than only its direct children; a Space grows with the Spaces it links as well.
 
 #### Pull
 

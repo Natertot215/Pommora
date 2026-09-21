@@ -32,7 +32,8 @@ The operator families are type-aware, defined in `Core/Views/filterModel.ts`:
 | Date | Is (calendar day) · Before · After (both inclusive) · Is Empty · Isn't Empty |
 | Checkbox | Is (true / false) |
 | Select · Status | Is · Isn't (chips read as any-of / none-of) · Is Empty · Isn't Empty |
-| Multi-select · Context | Is Any · Is All · Isn't · Is Empty · Isn't Empty |
+| Multi-select | Is Any · Is All · Isn't · Is Empty · Isn't Empty |
+| Context | Contains · Isn't · Is Empty · Isn't Empty |
 | File | Is Empty · Isn't Empty |
 | Location | Is · Isn't (immediate parent Set) · Contains · Doesn't Contain (any depth) |
 

@@ -41,7 +41,7 @@ Two layers, PARA-aligned. The organization layer holds categorical anchors; the 
 
 #### II. Organization Layer — Contexts & Spaces
 
-A **Context** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts/contexts.json`, with Areas, Topics, and Projects seeded as ordinary entries. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are the categorical anchors things point at, each with its own tile surface.
+A **Context** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts/contexts.json`, with Areas, Topics, and Projects seeded as ordinary entries. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and assign no properties — Spaces are the categorical anchors things point at, each with its own tile surface, its links to other Spaces, and its values for any property in the registry.
 
 | Seeded Context | Role                                                      |
 | -------------- | --------------------------------------------------------- |
@@ -123,9 +123,9 @@ Moving a Page **across Collections** never strips — its values ride along, the
 
 #### Contexts & Spaces
 
-`.nexus/contexts/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, and its own relation keys); its block document is a device-local row. There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
+`.nexus/contexts/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, `$color`, banner, its own relation keys, and its property values); its block document is a device-local row. There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
 
-A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's angle-bracket key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same angle-bracket keys in a Space's own sidecar.
+A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's angle-bracket key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list. A Space-to-Space link rides the same angle-bracket keys and is stored on both Spaces' sidecars, so either file reads whole.
 
 #### Agenda (Tasks + Events)
 
