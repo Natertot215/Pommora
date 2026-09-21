@@ -4,16 +4,17 @@ import { pageBody, shownPage, useSession } from '../Session/store'
 import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'
 import { host } from '../Platform/dialer'
+import { chromePartEl, chromePartRect } from '../Interface/chromeParts'
 
 // The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that chrome band.
 function contentRect(pane: Element): ThumbRect {
   const p = pane.getBoundingClientRect()
   let { left, right } = p
-  const sidebar = document.querySelector('.surface-glass')?.getBoundingClientRect()
+  const sidebar = chromePartRect('sidebar')
   if (sidebar && sidebar.right > left && sidebar.right < right) left = sidebar.right
-  const sidePane = document.querySelector('.side-pane-glass')?.getBoundingClientRect()
+  const sidePane = chromePartRect('sidePane')
   if (sidePane && sidePane.left > left && sidePane.left < right) right = sidePane.left
-  const toolbar = document.querySelector('.app-toolbar')?.getBoundingClientRect()
+  const toolbar = chromePartRect('toolbar')
   const maskTop = toolbar ? Math.max(0, toolbar.bottom - p.top) : 0
   const maskFill = pane.querySelector('.banner-img') ? 'banner' : 'window'
   return { x: left, y: p.top, width: right - left, height: p.bottom - p.top, maskTop, maskFill }
@@ -41,7 +42,7 @@ export function useNavThumbnails(): void {
     let canceled = false
     const timer = setTimeout(() => {
       void (async () => {
-        const pane = document.querySelector('.content-pane')
+        const pane = chromePartEl('contentPane')
         if (!pane || canceled) return
         await document.fonts?.ready
         await imagesReady(pane)

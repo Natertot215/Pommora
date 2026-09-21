@@ -91,9 +91,7 @@ function useHosts(): Host[] {
 }
 
 const VIEW_SLIDE_PX = 14
-
-let paneEl: HTMLElement | null = null
-export const getContentViewRect = (): DOMRect | null => paneEl?.getBoundingClientRect() ?? null
+import { publishChromePart } from './chromeParts'
 
 export function ContentView(): React.JSX.Element {
   const selection = useSession((s) => s.selection)
@@ -144,9 +142,7 @@ export function ContentView(): React.JSX.Element {
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       className={paneClass}
-      ref={(el) => {
-        paneEl = el
-      }}
+      ref={publishChromePart('contentView')}
       onMouseMove={(e) => {
         if (showSubfield) reveal.onMouseMove(e)
       }}

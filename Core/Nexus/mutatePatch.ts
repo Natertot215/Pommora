@@ -90,6 +90,10 @@ function subtreeHoldsAdoptedId(tree: NexusTree, path: string): boolean {
   return scan(tree.collections)
 }
 
+// The page patch names the id it landed; a mutation confirm only needs to know that it landed.
+const patchPage = async (root: string, path: string): Promise<'ok' | 'refresh'> =>
+  (await patchPageFromDisk(root, path)) === 'refresh' ? 'refresh' : 'ok'
+
 function patchEntityFromDisk(
   root: string,
   kind: MutableKind | BannerOwnerKind,
@@ -97,7 +101,7 @@ function patchEntityFromDisk(
 ): Promise<'ok' | 'refresh'> | null {
   switch (kind) {
     case 'page':
-      return patchPageFromDisk(root, path)
+      return patchPage(root, path)
     case 'collection':
     case 'set':
       return patchContainerFromDisk(root, path)
@@ -133,7 +137,7 @@ async function routeMutation(
       return req.op === 'setBanner' ? patchCropsFromDisk(root) : 'ok'
     }
     case 'setContext':
-      return isMarkdownFile(req.path) ? patchPageFromDisk(root, req.path) : 'ok'
+      return isMarkdownFile(req.path) ? patchPage(root, req.path) : 'ok'
     case 'setCrop':
       return patchCropsFromDisk(root)
     case 'reorderPanelContexts':

@@ -1,13 +1,7 @@
-import type { DateFormat } from '../Properties/columnStyles'
-import type { LinkDisplay } from '../Properties/properties'
-import type {
-  AccentSetting,
-  CheckboxColorSetting,
-  CodeColorSetting,
-  ConnectionColorSetting,
-  ExternalLinkColorSetting,
-  HighlightColorSetting,
-} from '@pommora/uix/Theme/colors'
+import { z } from 'zod'
+import { DATE_FORMATS } from '../Properties/columnStyles'
+import { LINK_DISPLAYS } from '../Properties/properties'
+import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 export const HEADING_LINK_STYLES = ['page-heading', 'heading-only'] as const
@@ -35,13 +29,17 @@ export const TIME_FORMAT_LABELS: Record<TimeFormatSetting, string> = {
 export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
-export type FolderPlacement = 'top' | 'bottom'
+export const FOLDER_PLACEMENTS = ['top', 'bottom'] as const
+export type FolderPlacement = (typeof FOLDER_PLACEMENTS)[number]
 
-export type SidebarMode = 'collections' | 'contexts' | 'agenda'
+export const SIDEBAR_MODES = ['collections', 'contexts', 'agenda'] as const
+export type SidebarMode = (typeof SIDEBAR_MODES)[number]
 
-export type TabOpenBehavior = 'overtake' | 'newtab'
+export const TAB_OPEN_BEHAVIORS = ['overtake', 'newtab'] as const
+export type TabOpenBehavior = (typeof TAB_OPEN_BEHAVIORS)[number]
 
-export type MatrixOpenIn = 'tab' | 'window'
+export const MATRIX_OPEN_INS = ['tab', 'window'] as const
+export type MatrixOpenIn = (typeof MATRIX_OPEN_INS)[number]
 
 export const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const
 export const HISTORY_DAYS = {
@@ -73,97 +71,15 @@ export const TAB_CACHE = {
   max: TAB_CACHE_STEPS[TAB_CACHE_STEPS.length - 1],
   default: 5,
 } as const
-export function clampInt(v: unknown, min: number, max: number): number | undefined {
-  return typeof v === 'number' && Number.isFinite(v) ? clamp(Math.round(v), min, max) : undefined
-}
-export interface Personalization {
-  accent?: AccentSetting
-  connectionColor?: ConnectionColorSetting
-  externalLinkColor?: ExternalLinkColorSetting
-  checkboxColor?: CheckboxColorSetting
-  highlightColor?: HighlightColorSetting
-  codeColor?: CodeColorSetting
-  /** Display only: the strike is drawn, never written, so the file stays the plain `- [x]` it was. */
-  muteCheckedItems?: boolean
-  hideChevrons?: boolean
-  repairOnOpen?: boolean
-  capitalizeMetadata?: boolean
-  outlinerLines?: boolean
-  codeblockLineCount?: boolean
-  navCloseOnSelect?: boolean
-  removeTitleOnLinkChange?: boolean
-  aliasPickerOnCommit?: boolean
-  defaultIcons?: Partial<Record<EntityIconKind, string>>
-  favoriteIcons?: string[]
-  setPlacement?: FolderPlacement
-  subSetPlacement?: FolderPlacement
-  sidebarMode?: SidebarMode
-  /** Reveals the surfaces that are still being built; off, they are absent rather than disabled. */
-  experimentalFeatures?: boolean
-  revealTabBarOnHover?: boolean
-  tabOpenBehavior?: TabOpenBehavior
-  matrixOpenIn?: MatrixOpenIn
-  tabTakeFocus?: boolean
-  tabMinWidth?: number
-  tabMaxWidth?: number
-  tabCache?: number
-  pauseMediaOnTabSwitch?: boolean
-  nativeHighlight?: boolean
-  connectionsOpenInPreview?: boolean
-  plainUnresolvedLinks?: boolean
-  headingLinkStyle?: HeadingLinkStyle
-  inPageHeadingResolution?: InPageHeadingResolution
-  ribbonOrder?: string[]
-  previewPersistence?: PreviewPersistence
-  dismissPreviewOnPointer?: boolean
-  fileHistory?: boolean
-  historyDays?: number
-  historyInterval?: number
-  permanentDelete?: boolean
-  /** Off skips the confirmation only where nothing owns a schema: a page, a tile, a bare folder. */
-  confirmDeletion?: boolean
-  dateFormat?: DateFormat
-  timeFormat?: TimeFormatSetting
-  trashDateFormat?: DateFormat
-  trashHideTime?: boolean
-  pasteLinkIntoText?: boolean
-  defaultLinkFormat?: LinkDisplay
-  openLinksInApp?: boolean
-  webZoomFactor?: number
-  embedScale?: number
-  /** A tile states its own size through Embed Scale, so this stops at a tile's edge. */
-  editorScale?: number
-  heading1Size?: number
-  heading2Size?: number
-  heading3Size?: number
-  heading4Size?: number
-  heading5Size?: number
-  heading6Size?: number
-  citationsShown?: boolean
-  jumpToCitation?: boolean
-  transformDashes?: boolean
-  transformArrows?: boolean
-  transformEquations?: boolean
-  transformEllipses?: boolean
-  transformCallouts?: boolean
-  transformSections?: boolean
-  transformBullets?: boolean
-  pairBrackets?: boolean
-  pairMarkers?: boolean
-  pairQuotes?: boolean
-  wrapSelections?: boolean
-  deletePairsTogether?: boolean
-  exitPairsOnEnter?: boolean
-}
 
 export const SCALE_STEPS = [0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5] as const
 const SCALE_MIN = SCALE_STEPS[0]
 const SCALE_MAX = SCALE_STEPS[SCALE_STEPS.length - 1]
 export const WEB_ZOOM_DEFAULT = 1
 export const EDITOR_SCALE_DEFAULT = 1
+export const clampScale = (n: number): number => clamp(n, SCALE_MIN, SCALE_MAX)
 export function coerceScale(v: unknown, fallback: number): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
-  return clamp(v, SCALE_MIN, SCALE_MAX)
+  return typeof v !== 'number' || !Number.isFinite(v) ? fallback : clampScale(v)
 }
 
 /** Each heading level's size in em of the page text; the fallback is the stylesheet's own. */
@@ -186,9 +102,9 @@ export const HEADING_SIZE_DEFAULTS: Record<HeadingSizeKey, number> = {
 }
 export const HEADING_SIZE_MIN = 0.5
 export const HEADING_SIZE_MAX = 2.5
+export const clampHeadingSize = (n: number): number => clamp(n, HEADING_SIZE_MIN, HEADING_SIZE_MAX)
 export function coerceHeadingSize(v: unknown, fallback: number): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
-  return clamp(v, HEADING_SIZE_MIN, HEADING_SIZE_MAX)
+  return typeof v !== 'number' || !Number.isFinite(v) ? fallback : clampHeadingSize(v)
 }
 
 /** Resize is a viewport, never a scale — a view embed normalizes its table's body text to the editor's before taking the same zoom a page embed does. */
@@ -206,19 +122,9 @@ export function coerceInterfaceScale(v: unknown): number {
 }
 
 // One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
-export type PreviewPersistence = 'off' | '1s' | '5s' | '10s' | 'always'
+export const PREVIEW_PERSISTENCE_VALUES = ['off', '1s', '5s', '10s', 'always'] as const
+export type PreviewPersistence = (typeof PREVIEW_PERSISTENCE_VALUES)[number]
 export const PREVIEW_PERSISTENCE_DEFAULT: PreviewPersistence = '1s'
-const PREVIEW_PERSISTENCE_VALUES: readonly PreviewPersistence[] = [
-  'off',
-  '1s',
-  '5s',
-  '10s',
-  'always',
-]
-
-export function coercePreviewPersistence(v: unknown): PreviewPersistence | undefined {
-  return PREVIEW_PERSISTENCE_VALUES.find((p) => p === v)
-}
 
 const PREVIEW_LINGER_MS: Record<Exclude<PreviewPersistence, 'off'>, number> = {
   '1s': 1000,
@@ -231,3 +137,128 @@ const PREVIEW_LINGER_MS: Record<Exclude<PreviewPersistence, 'off'>, number> = {
 export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefined): number {
   return v === undefined ? 1000 : PREVIEW_LINGER_MS[v]
 }
+
+// One declaration per setting: the shape the file is read through and the type the app holds are the same object, so a setting the reader forgot cannot compile.
+// Every field is per-field lenient — an absent or invalid value decodes to undefined, which every consumer reads as the built-in default.
+const lenient = <T extends z.ZodTypeAny>(schema: T) => schema.optional().catch(undefined)
+const flag = () => lenient(z.boolean())
+// A setting whose built-in is on records only the explicit off.
+const offOnly = () =>
+  lenient(z.boolean().transform((v): boolean | undefined => (v === false ? false : undefined)))
+const oneOf = <const T extends readonly [string, ...string[]]>(values: T) => lenient(z.enum(values))
+// A setting whose built-in is one of its own options records only the other: the file stays the shorter of the two readings, and the type still spans both so a control can show either.
+const recorded = <const T extends readonly [string, ...string[]]>(values: T, kept: T[number]) =>
+  lenient(z.enum(values).transform((v): T[number] | undefined => (v === kept ? v : undefined)))
+const color = <S extends string>(inherit: S) =>
+  lenient(
+    z.custom<ColorSetting<S>>((v) => typeof v === 'string' && (v === inherit || isColorKey(v))),
+  )
+// Only a stored number takes the ramp; anything else leaves the key unwritten.
+const stepped = (range: { min: number; max: number }) =>
+  lenient(z.number().transform((n) => clamp(Math.round(n), range.min, range.max)))
+const scaled = () => lenient(z.number().transform(clampScale))
+const headingSize = () => lenient(z.number().transform(clampHeadingSize))
+// Each entry stands on its own: a malformed one drops, and an empty list is the absent list.
+const nonEmptyStrings = () =>
+  lenient(
+    z
+      .array(z.unknown())
+      .transform((a) => a.filter((v): v is string => typeof v === 'string' && v.length > 0))
+      .refine((a) => a.length > 0),
+  )
+const iconsByKind = () =>
+  lenient(
+    z
+      .record(z.string(), z.unknown())
+      .transform(
+        (r): Partial<Record<EntityIconKind, string>> =>
+          Object.fromEntries(
+            ENTITY_ICON_KINDS.flatMap((k) =>
+              typeof r[k] === 'string' && r[k].length > 0 ? [[k, r[k]]] : [],
+            ),
+          ),
+      )
+      .refine((r) => Object.keys(r).length > 0),
+  )
+
+export const personalizationSchema = z.object({
+  accent: color<'system'>('system'),
+  connectionColor: color<'accent'>('accent'),
+  externalLinkColor: color<'system'>('system'),
+  checkboxColor: color<'accent'>('accent'),
+  highlightColor: color<'accent'>('accent'),
+  codeColor: color<'default'>('default'),
+  // Display only: the strike is drawn, never written, so the file stays the plain `- [x]` it was.
+  muteCheckedItems: flag(),
+  hideChevrons: flag(),
+  repairOnOpen: flag(),
+  capitalizeMetadata: flag(),
+  outlinerLines: flag(),
+  codeblockLineCount: flag(),
+  navCloseOnSelect: flag(),
+  removeTitleOnLinkChange: flag(),
+  aliasPickerOnCommit: flag(),
+  defaultIcons: iconsByKind(),
+  favoriteIcons: nonEmptyStrings(),
+  setPlacement: oneOf(FOLDER_PLACEMENTS),
+  subSetPlacement: oneOf(FOLDER_PLACEMENTS),
+  sidebarMode: oneOf(SIDEBAR_MODES),
+  // Reveals the surfaces that are still being built; off, they are absent rather than disabled.
+  experimentalFeatures: flag(),
+  revealTabBarOnHover: flag(),
+  tabOpenBehavior: recorded(TAB_OPEN_BEHAVIORS, 'newtab'),
+  matrixOpenIn: recorded(MATRIX_OPEN_INS, 'window'),
+  tabTakeFocus: offOnly(),
+  tabMinWidth: stepped(TAB_MIN_WIDTH),
+  tabMaxWidth: stepped(TAB_MAX_WIDTH),
+  tabCache: stepped(TAB_CACHE),
+  pauseMediaOnTabSwitch: offOnly(),
+  nativeHighlight: flag(),
+  connectionsOpenInPreview: flag(),
+  plainUnresolvedLinks: flag(),
+  headingLinkStyle: oneOf(HEADING_LINK_STYLES),
+  inPageHeadingResolution: oneOf(IN_PAGE_HEADING_RESOLUTIONS),
+  ribbonOrder: nonEmptyStrings(),
+  previewPersistence: oneOf(PREVIEW_PERSISTENCE_VALUES),
+  dismissPreviewOnPointer: flag(),
+  fileHistory: offOnly(),
+  historyDays: stepped(HISTORY_DAYS),
+  historyInterval: stepped(HISTORY_INTERVAL),
+  permanentDelete: flag(),
+  // Off skips the confirmation only where nothing owns a schema: a page, a tile, a bare folder.
+  confirmDeletion: offOnly(),
+  dateFormat: oneOf(DATE_FORMATS),
+  timeFormat: recorded(TIME_FORMAT_SETTINGS, 'twentyFourHour'),
+  trashDateFormat: oneOf(DATE_FORMATS),
+  trashHideTime: flag(),
+  pasteLinkIntoText: flag(),
+  defaultLinkFormat: oneOf(LINK_DISPLAYS),
+  openLinksInApp: flag(),
+  webZoomFactor: scaled(),
+  embedScale: scaled(),
+  // A tile states its own size through Embed Scale, so this stops at a tile's edge.
+  editorScale: scaled(),
+  heading1Size: headingSize(),
+  heading2Size: headingSize(),
+  heading3Size: headingSize(),
+  heading4Size: headingSize(),
+  heading5Size: headingSize(),
+  heading6Size: headingSize(),
+  citationsShown: flag(),
+  jumpToCitation: flag(),
+  transformDashes: flag(),
+  transformArrows: flag(),
+  transformEquations: flag(),
+  transformEllipses: flag(),
+  transformCallouts: flag(),
+  transformSections: flag(),
+  transformBullets: flag(),
+  pairBrackets: flag(),
+  pairMarkers: flag(),
+  pairQuotes: flag(),
+  wrapSelections: flag(),
+  deletePairsTogether: flag(),
+  exitPairsOnEnter: flag(),
+})
+
+export type Personalization = z.infer<typeof personalizationSchema>

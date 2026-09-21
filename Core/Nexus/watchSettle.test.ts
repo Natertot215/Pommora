@@ -89,7 +89,8 @@ describe('classifyBatch', () => {
     seedLiveTree(tree)
     const classified = classifyBatch([at('Notes/A.md'), at('Notes/A.md')], root, scope)
     expect(pagesChangedIn(classified)).toEqual(['Notes/A.md'])
-    expect(valueChangesOf(classified, tree)).toEqual([{ rel: 'Notes', pageIds: ['pA'] }])
+    const touched = new Map([['Notes/A.md', 'pA']])
+    expect(valueChangesOf(classified, touched)).toEqual([{ rel: 'Notes', pageIds: ['pA'] }])
   })
 
   it('classifies each event once', () => {
@@ -98,7 +99,7 @@ describe('classifyBatch', () => {
     const events = [at('Notes/A.md'), at('.nexus/homepage/_tiles.json')]
     const classified = classifyBatch(events, root, scope)
     pagesChangedIn(classified)
-    valueChangesOf(classified, tree)
+    valueChangesOf(classified, new Map())
     tilesChangedIn(classified)
     expect(spy).toHaveBeenCalledTimes(events.length)
     expect(tilesChangedIn(classified)).toEqual([{ kind: 'homepage' }])

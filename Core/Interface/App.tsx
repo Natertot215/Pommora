@@ -4,6 +4,7 @@ import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
 import { Surface } from './InterfaceScaffold'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
+import { publishChromePart } from './chromeParts'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
 import { ContentView } from './ContentView'
@@ -119,6 +120,7 @@ export function App(): React.JSX.Element {
             '--side-pane-width': `${sidePaneWidth}px`,
           } as CSSProperties
         }
+        ref={publishChromePart('shell')}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault()
@@ -135,10 +137,13 @@ export function App(): React.JSX.Element {
               onToggleSidePane={() => setSidePaneOpen((v) => !v)}
             />
           )}
-          <main className="content-pane">
+          <main className="content-pane" ref={publishChromePart('contentPane')}>
             <ContentView />
           </main>
-          <Surface className={paneSlide({ side: 'left', mode: 'overlay' })}>
+          <Surface
+            ref={publishChromePart('sidebar')}
+            className={paneSlide({ side: 'left', mode: 'overlay' })}
+          >
             {status === 'ready' && tree && <Ribbon />}
             <Button
               size="button-large"

@@ -1,6 +1,7 @@
 import type { Rect, ResizeGrip, Size } from '@pommora/uix/Interactions/ResizeFrame'
 import { isGlanceSize } from '../../Contract/validators'
 import { useSession } from '../../Session/store'
+import { chromePartEl } from '../chromeParts'
 
 /** A floating window's remembered size, machine-local per Nexus. The stored map arrives from `nexus.db` unvalidated, so an entry that is not a pair of finite numbers opens at the default instead. */
 export function useWindowGeometry(id: string): {
@@ -19,8 +20,8 @@ export function useWindowGeometry(id: string): {
 
 /** The area the shell's panes leave free. A window centred on the viewport sits under the sidebar, which reads as off-centre. */
 export function shellRegion(): Rect | null {
-  const shell = document.querySelector('.shell')
-  if (!(shell instanceof HTMLElement)) return null
+  const shell = chromePartEl('shell')
+  if (!shell) return null
   const probe = document.createElement('div')
   probe.style.cssText = 'position:absolute;height:0;visibility:hidden'
   shell.append(probe)

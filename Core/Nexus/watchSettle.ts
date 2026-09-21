@@ -11,10 +11,9 @@ import {
 import { isMarkdownFile } from '../Files/walk'
 import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from '../Paths/paths'
 import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
-import type { NexusTree, ValueChange } from './tree'
+import type { ValueChange } from './tree'
 import { getLiveTree } from './liveTree'
 import { classifyEvent, type WatchClass, type WatchEvent, type WatchEventName } from './watchPatch'
-import { pageIdIndex } from './valuesChanged'
 
 export function isConfigPath(
   root: string,
@@ -77,8 +76,10 @@ export function classifyBatch(events: WatchEvent[], root: string, scope: WatchSc
   return events.map((ev) => classifyEvent(held, root, ev, scope))
 }
 
-export function valueChangesOf(classified: WatchClass[], tree: NexusTree | null): ValueChange[] {
-  const byPath = pageIdIndex(tree)
+export function valueChangesOf(
+  classified: WatchClass[],
+  byPath: ReadonlyMap<string, string>,
+): ValueChange[] {
   const byContainer = new Map<string, Set<string>>()
   for (const c of classified) {
     if (c.kind !== 'page-upsert') continue

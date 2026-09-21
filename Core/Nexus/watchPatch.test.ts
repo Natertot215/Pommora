@@ -103,7 +103,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
       ],
       scope(),
     )
-    expect(result).toBe('patched')
+    expect(result.outcome).toBe('patched')
 
     const live = getLiveTree()
     expect(live).not.toBeNull()
@@ -147,7 +147,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
       [ev('change', '.nexus', 'assets', 'crops.json')],
       scope(),
     )
-    expect(result).toBe('patched')
+    expect(result.outcome).toBe('patched')
     const live = getLiveTree()
     expect(live?.crops).toEqual({ 'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 } })
     expect(stabilize(await readNexus(root), live)).toBe(live)
@@ -157,7 +157,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     await refreshTree(root)
     await unlink(abs('Notes', 'A.md'))
     const result = await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())
-    expect(result).toBe('patched')
+    expect(result.outcome).toBe('patched')
     const live = getLiveTree()
     expect(live?.collections[0]?.pages).toHaveLength(0)
     expect(stabilize(await readNexus(root), live)).toBe(live)
@@ -167,7 +167,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     await refreshTree(root)
     await writeFile(abs('Notes', 'bad.md'), `---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\nnope\n`)
     const result = await applyWatchEvents(root, [ev('add', 'Notes', 'bad.md')], scope())
-    expect(result).toBe('refresh')
+    expect(result.outcome).toBe('refresh')
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.title)).toEqual(['A'])
   })
 
@@ -177,7 +177,9 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
     const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_C}\n---\n\nalpha\n`)
-    expect(await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())).toBe('patched')
+    expect((await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())).outcome).toBe(
+      'patched',
+    )
     const live = getLiveTree()
     expect(live?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_B, ULID_C])
     expect(stabilize(await readNexus(root), live)).toBe(live)
@@ -186,16 +188,16 @@ describe('applyWatchEvents — must agree with the walk', () => {
   it('an empty batch is a no-op that preserves tree identity', async () => {
     await refreshTree(root)
     const before = getLiveTree()
-    expect(await applyWatchEvents(root, [], scope())).toBe('patched')
+    expect((await applyWatchEvents(root, [], scope())).outcome).toBe('patched')
     expect(getLiveTree()).toBe(before)
   })
 
   it('an exclusion change in settings is structural — refresh, never a leaf patch', async () => {
     await refreshTree(root)
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Loose'] }))
-    expect(await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], scope())).toBe(
-      'refresh',
-    )
+    expect(
+      (await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], scope())).outcome,
+    ).toBe('refresh')
   })
 
   it('a mixed batch with one unclassifiable event refreshes once, patching nothing', async () => {
@@ -207,7 +209,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
       [ev('add', 'Notes', 'B.md'), ev('change', '.nexus', 'contexts', 'contexts.json')],
       scope(),
     )
-    expect(result).toBe('refresh')
+    expect(result.outcome).toBe('refresh')
     expect(getLiveTree()).toBe(before)
   })
 })
@@ -222,7 +224,7 @@ describe('settings leaves — the walk and the settings patch must never disagre
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ asset_directory: 'Media/' }))
     // settle re-walks on a structural outcome; the patch alone must otherwise carry the leaf.
     if (
-      (await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], scope())) ===
+      (await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], scope())).outcome ===
       'refresh'
     )
       await refreshTree(root)
@@ -406,7 +408,7 @@ describe('the asset root outranks every other skip', () => {
     await refreshTree(root)
     const s = scope([], 'file-assets')
     const events = ['a.png', 'b.jpg', 'c.md'].map((n) => ev('add', 'file-assets', n))
-    expect(await applyWatchEvents(root, events, s)).toBe('patched')
+    expect((await applyWatchEvents(root, events, s)).outcome).toBe('patched')
   })
 
   it('the root escapes the cruft rules; what sits below it does not', async () => {
@@ -439,12 +441,12 @@ describe('the asset root outranks every other skip', () => {
     const before = getHeldAssetMap(root)
     const events = names.map((n) => ev('add', 'file-assets', n))
 
-    expect(await applyWatchEvents(root, events, s)).toBe('patched')
+    expect((await applyWatchEvents(root, events, s)).outcome).toBe('patched')
     const after = getHeldAssetMap(root)
     expect(after).not.toBe(before)
     expect(Object.keys(after?.files ?? {})).toHaveLength(50)
     // The same batch with the arm pointed elsewhere is a walk — both halves, or this proves nothing about the arm.
-    expect(await applyWatchEvents(root, events, scope([], 'Media'))).toBe('refresh')
+    expect((await applyWatchEvents(root, events, scope([], 'Media'))).outcome).toBe('refresh')
   })
 
   it('syncIgnoredUnder and classifyEvent agree about what an asset path is', async () => {

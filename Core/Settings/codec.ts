@@ -1,146 +1,19 @@
-import type { AccentSetting, ColorSetting } from '@pommora/uix/Theme/colors'
-import { isColorKey } from '@pommora/uix/Theme/colors'
+import type { AccentSetting } from '@pommora/uix/Theme/colors'
 import { chordOf } from '@pommora/uix/Interactions/chords'
 import { COMMAND_IDS, type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
-import { DATE_FORMATS } from '../Properties/columnStyles'
-import { LINK_DISPLAYS } from '../Properties/properties'
 import { isPlainObject } from '../Properties/propertyValue'
 import { asString } from '../Nexus/coerce'
 import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Paths/nexusPaths'
 import { normalizeSeg, rootSegs, type WatchScope } from '../Paths/exclusion'
 import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
-import {
-  EMBED_SCALE_DEFAULT,
-  ENTITY_ICON_KINDS,
-  WEB_ZOOM_DEFAULT,
-  coercePreviewPersistence,
-  clampInt,
-  HEADING_LINK_STYLES,
-  HISTORY_DAYS,
-  HISTORY_INTERVAL,
-  IN_PAGE_HEADING_RESOLUTIONS,
-  TAB_CACHE,
-  TAB_MAX_WIDTH,
-  TAB_MIN_WIDTH,
-  coerceScale,
-  EDITOR_SCALE_DEFAULT,
-  type EntityIconKind,
-  type FolderPlacement,
-  type Personalization,
-  type SidebarMode,
-  HEADING_SIZE_DEFAULTS,
-  HEADING_SIZE_KEYS,
-  type HeadingSizeKey,
-  coerceHeadingSize,
-} from './personalization'
+import { type Personalization, personalizationSchema } from './personalization'
 
 type Json = Record<string, unknown>
 
 // Per-field: absent/invalid → undefined = the built-in default.
-export function readPersonalization(raw: unknown): Personalization {
-  const p = isPlainObject(raw) ? raw : {}
-  const bool = (v: unknown): boolean | undefined => (typeof v === 'boolean' ? v : undefined)
-  const placement = (v: unknown): FolderPlacement | undefined =>
-    v === 'top' || v === 'bottom' ? v : undefined
-  const mode = (v: unknown): SidebarMode | undefined =>
-    v === 'collections' || v === 'contexts' || v === 'agenda' ? v : undefined
-  const colorSetting = <S extends string>(v: unknown, inherit: S): ColorSetting<S> | undefined => {
-    const c = asString(v)
-    return c === inherit || (c != null && isColorKey(c)) ? (c as ColorSetting<S>) : undefined
-  }
-  // An unwritten key stays unwritten — only a stored number clamps to the ramp.
-  const scale = (v: unknown, fallback: number): number | undefined =>
-    typeof v === 'number' ? coerceScale(v, fallback) : undefined
-  const headingSizes: Partial<Record<HeadingSizeKey, number>> = {}
-  for (const key of HEADING_SIZE_KEYS)
-    if (typeof p[key] === 'number')
-      headingSizes[key] = coerceHeadingSize(p[key], HEADING_SIZE_DEFAULTS[key])
-  const ribbonOrder = Array.isArray(p.ribbonOrder)
-    ? p.ribbonOrder.filter((v): v is string => typeof v === 'string' && v.length > 0)
-    : []
-  const rawIcons = isPlainObject(p.defaultIcons) ? p.defaultIcons : {}
-  const defaultIcons: Partial<Record<EntityIconKind, string>> = {}
-  for (const k of ENTITY_ICON_KINDS) {
-    const v = asString(rawIcons[k])
-    if (v) defaultIcons[k] = v
-  }
-  const favoriteIcons = Array.isArray(p.favoriteIcons)
-    ? p.favoriteIcons.filter((v): v is string => typeof v === 'string' && v.length > 0)
-    : []
-  return {
-    accent: colorSetting(p.accent, 'system'),
-    connectionColor: colorSetting(p.connectionColor, 'accent'),
-    externalLinkColor: colorSetting(p.externalLinkColor, 'system'),
-    checkboxColor: colorSetting(p.checkboxColor, 'accent'),
-    highlightColor: colorSetting(p.highlightColor, 'accent'),
-    codeColor: colorSetting(p.codeColor, 'default'),
-    muteCheckedItems: bool(p.muteCheckedItems),
-    hideChevrons: bool(p.hideChevrons),
-    repairOnOpen: bool(p.repairOnOpen),
-    capitalizeMetadata: bool(p.capitalizeMetadata),
-    outlinerLines: bool(p.outlinerLines),
-    codeblockLineCount: bool(p.codeblockLineCount),
-    navCloseOnSelect: bool(p.navCloseOnSelect),
-    removeTitleOnLinkChange: bool(p.removeTitleOnLinkChange),
-    aliasPickerOnCommit: bool(p.aliasPickerOnCommit),
-    defaultIcons: Object.keys(defaultIcons).length ? defaultIcons : undefined,
-    favoriteIcons: favoriteIcons.length ? favoriteIcons : undefined,
-    setPlacement: placement(p.setPlacement),
-    subSetPlacement: placement(p.subSetPlacement),
-    sidebarMode: mode(p.sidebarMode),
-    experimentalFeatures: bool(p.experimentalFeatures),
-    revealTabBarOnHover: bool(p.revealTabBarOnHover),
-    tabOpenBehavior: p.tabOpenBehavior === 'newtab' ? 'newtab' : undefined,
-    matrixOpenIn: p.matrixOpenIn === 'window' ? 'window' : undefined,
-    tabTakeFocus: p.tabTakeFocus === false ? false : undefined,
-    tabMinWidth: clampInt(p.tabMinWidth, TAB_MIN_WIDTH.min, TAB_MIN_WIDTH.max),
-    tabMaxWidth: clampInt(p.tabMaxWidth, TAB_MAX_WIDTH.min, TAB_MAX_WIDTH.max),
-    tabCache: clampInt(p.tabCache, TAB_CACHE.min, TAB_CACHE.max),
-    pauseMediaOnTabSwitch: p.pauseMediaOnTabSwitch === false ? false : undefined,
-    nativeHighlight: bool(p.nativeHighlight),
-    connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
-    plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
-    headingLinkStyle: HEADING_LINK_STYLES.find((d) => d === p.headingLinkStyle),
-    inPageHeadingResolution: IN_PAGE_HEADING_RESOLUTIONS.find(
-      (d) => d === p.inPageHeadingResolution,
-    ),
-    ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
-    previewPersistence: coercePreviewPersistence(p.previewPersistence),
-    dismissPreviewOnPointer: bool(p.dismissPreviewOnPointer),
-    fileHistory: p.fileHistory === false ? false : undefined,
-    historyDays: clampInt(p.historyDays, HISTORY_DAYS.min, HISTORY_DAYS.max),
-    historyInterval: clampInt(p.historyInterval, HISTORY_INTERVAL.min, HISTORY_INTERVAL.max),
-    permanentDelete: bool(p.permanentDelete),
-    confirmDeletion: p.confirmDeletion === false ? false : undefined,
-    dateFormat: DATE_FORMATS.find((f) => f === p.dateFormat),
-    timeFormat: p.timeFormat === 'twentyFourHour' ? 'twentyFourHour' : undefined,
-    trashDateFormat: DATE_FORMATS.find((f) => f === p.trashDateFormat),
-    trashHideTime: bool(p.trashHideTime),
-    pasteLinkIntoText: bool(p.pasteLinkIntoText),
-    defaultLinkFormat: LINK_DISPLAYS.find((d) => d === p.defaultLinkFormat),
-    openLinksInApp: bool(p.openLinksInApp),
-    webZoomFactor: scale(p.webZoomFactor, WEB_ZOOM_DEFAULT),
-    embedScale: scale(p.embedScale, EMBED_SCALE_DEFAULT),
-    editorScale: scale(p.editorScale, EDITOR_SCALE_DEFAULT),
-    ...headingSizes,
-    citationsShown: bool(p.citationsShown),
-    jumpToCitation: bool(p.jumpToCitation),
-    transformDashes: bool(p.transformDashes),
-    transformArrows: bool(p.transformArrows),
-    transformEquations: bool(p.transformEquations),
-    transformEllipses: bool(p.transformEllipses),
-    transformCallouts: bool(p.transformCallouts),
-    transformSections: bool(p.transformSections),
-    transformBullets: bool(p.transformBullets),
-    pairBrackets: bool(p.pairBrackets),
-    pairMarkers: bool(p.pairMarkers),
-    pairQuotes: bool(p.pairQuotes),
-    wrapSelections: bool(p.wrapSelections),
-    deletePairsTogether: bool(p.deletePairsTogether),
-    exitPairsOnEnter: bool(p.exitPairsOnEnter),
-  }
-}
+export const readPersonalization = (raw: unknown): Personalization =>
+  personalizationSchema.parse(isPlainObject(raw) ? raw : {})
 
 const MODIFIER_KEYS = new Set(['cmd', 'ctrl', 'alt', 'shift'])
 

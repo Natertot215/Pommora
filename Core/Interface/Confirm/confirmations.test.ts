@@ -20,8 +20,8 @@ const switchOff = (): void => {
   useSession.setState({ personalization: { ...p, confirmDeletion: false } })
 }
 const switchOn = (): void => {
-  const p = useSession.getState().personalization
-  useSession.setState({ personalization: { ...p, confirmDeletion: true } })
+  const { confirmDeletion: _off, ...p } = useSession.getState().personalization
+  useSession.setState({ personalization: p })
 }
 
 describe('what the Confirm Before Deletion switch governs', () => {

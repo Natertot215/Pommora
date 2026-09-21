@@ -9,6 +9,7 @@ import { activeUnpinnedTab } from '../../Navigation/tabsModel'
 import { SettingsMenu } from './SettingsMenu'
 import { viewSettingsScope } from './viewSettingsScope'
 import { useSession } from '../../Session/store'
+import { publishChromePart } from '../chromeParts'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import './toolbar.css'
 import '@pommora/uix/Animations/toolbar-slide.css'
@@ -89,7 +90,7 @@ export function Toolbar({
   const settingsBeak = beaks[trio.findIndex((s) => s.panel)]
 
   return (
-    <div className="app-toolbar">
+    <div className="app-toolbar" ref={publishChromePart('toolbar')}>
       <div className="app-toolbar-cluster app-toolbar-cluster--nav">
         <Segmented glass segments={backForward} paddingX="6px" iconSize="titleSmall" />
       </div>

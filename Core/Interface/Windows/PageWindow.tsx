@@ -8,7 +8,7 @@ import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { Subfield } from '../Subfield/Subfield'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
-import { getContentViewRect } from '../ContentView'
+import { chromePartRect, publishChromePart } from '../chromeParts'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
 import { useWindowTabConnections } from '../../Session/pageConnections'
@@ -53,6 +53,7 @@ function PageWindowBody({
       ? pendingTravel.heading
       : undefined
   const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
 
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
@@ -102,7 +103,7 @@ function PageWindowBody({
   useEffect(() => {
     if (!closing || useSession.getState().windowExit !== 'engulf') return
     const el = rootRef.current
-    const to = getContentViewRect()
+    const to = chromePartRect('contentView')
     if (!el || !to) return
     const from = el.getBoundingClientRect()
     const dx = to.left + to.width / 2 - (from.left + from.width / 2)

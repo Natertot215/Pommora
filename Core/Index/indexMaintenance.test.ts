@@ -201,24 +201,29 @@ describe('the watcher maintains the rows', () => {
       [{ event: 'add', absPath: join(root, 'Loose', 'Note.md') }],
       { excluded: [], assetDir: ASSETS_DIR_REL },
     )
-    expect(added).toBe('patched')
+    expect(added.outcome).toBe('patched')
     expect(queryMentions('alpha')).toEqual(['Loose/Note.md'])
     await expectMaintained()
     await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\n[[Alpha]]`)
     expect(
-      await applyWatchEvents(
-        root,
-        [{ event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md') }],
-        { excluded: [], assetDir: ASSETS_DIR_REL },
-      ),
+      (
+        await applyWatchEvents(
+          root,
+          [{ event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md') }],
+          { excluded: [], assetDir: ASSETS_DIR_REL },
+        )
+      ).outcome,
     ).toBe('patched')
     expect(queryMentions('alpha')?.sort()).toEqual(['Loose/Note.md', 'Notes/Daily/Beta.md'])
     await unlink(join(root, 'Loose', 'Note.md'))
     expect(
-      await applyWatchEvents(root, [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }], {
-        excluded: [],
-        assetDir: ASSETS_DIR_REL,
-      }),
+      (
+        await applyWatchEvents(
+          root,
+          [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }],
+          { excluded: [], assetDir: ASSETS_DIR_REL },
+        )
+      ).outcome,
     ).toBe('patched')
     await expectMaintained()
   })

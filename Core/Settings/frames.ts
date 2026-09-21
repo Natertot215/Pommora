@@ -401,7 +401,7 @@ export const FRAMES = roster([
           {
             kind: 'toggle',
             key: 'pauseMediaOnTabSwitch',
-            label: 'Pause Media on Tab Switch',
+            label: 'Pause Media On Tab Switch',
             hint: 'Automatically pause video and audio playback from an open tab when no longer in the main view.',
             defaultOn: true,
           },
