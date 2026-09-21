@@ -206,8 +206,10 @@
   text-align: inherit;
   white-space: pre-wrap;
 }
+/* Longhands, not the shorthand: the shorthand's own padding-left clobbered the list indent, and the table's stylesheet is injected last (the dynamic import in widget.tsx), so nesting drew flat. */
 .mdpm-tbl-cell-editor .cm-editor .cm-line {
-  padding: 0;
+  padding-block: 0;
+  padding-right: 0;
 }
 
 /* Mirrors the nested editor's content box so promoting a cell to an editor on click doesn't shift its text. */
@@ -223,7 +225,22 @@
   overflow-wrap: anywhere;
   cursor: text;
 }
+/* A cell has no gutter, so the block grip sits in the inset the list already reserves, and the press band reaches that far into the line rather than staying left of it. */
+.mdpm-tbl-cell-editor .cm-line.md-block-handle {
+  --grip-strip: var(--list-indent);
+  --grip-left: calc((var(--list-indent) - var(--icon-body) * var(--glyph-scale)) / 2);
+}
+
+/* The checkbox is the one glyph a resting cell still acts on; the rest carry no drag class, so they keep the cell's text cursor. */
+.mdpm-tbl-cell-static .md-list-checkbox-seat {
+  cursor: pointer;
+}
+
 /* Gives the cell's tail a line box — pre-wrap draws none after a trailing newline, so the cell would otherwise grow taller once promoted to its editor. */
 .mdpm-tbl-cell-static::after {
   content: "\200b";
+}
+/* A list draws one block per line and each carries its own box, so the tail would add an empty line under the last item. */
+.mdpm-tbl-cell-static:has(.md-list-item)::after {
+  content: none;
 }

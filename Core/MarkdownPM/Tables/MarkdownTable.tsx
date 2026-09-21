@@ -13,6 +13,8 @@ import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engine/Tables/clipboard'
 import { foldLabel } from '../Engine/detect'
+import { GLYPH_CLASS } from '../Engine/intents'
+import { inGripStrip } from '../lineDom'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
@@ -164,6 +166,11 @@ export function MarkdownTable({
 
   const startSweep = (e: React.PointerEvent<HTMLTableElement>): void => {
     if (e.button !== 0) return
+    // A list glyph is a drag handle and a checkbox target, and the grip band is the block's. Capture runs first and the gesture singleton is claimed before any threshold, so sweeping here would leave the press dead rather than shared.
+    const target = e.target as HTMLElement
+    if (target.closest?.(`.${GLYPH_CLASS}`)) return
+    const handle = target.closest?.('.cm-line.md-block-handle') as HTMLElement | null
+    if (handle && inGripStrip(e, handle)) return
     const start = cellPosOf(e.target)
     const wrap = wrapRef.current
     if (!start || !wrap) return

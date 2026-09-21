@@ -65,7 +65,7 @@ export function Checkbox({
 }
 
 // Not from the icon registry: a stroke the icons don't offer, and the editor's widget emits this markup as a raw string.
-const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
+export const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg
     viewBox="0 0 24 24"
     width={size}

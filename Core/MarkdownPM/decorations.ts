@@ -31,8 +31,9 @@ import {
   docSectionHeadings,
   docSpanTokens,
   docString,
-  perDoc,
+  perScopedDoc,
 } from './docCache'
+import type { MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '@pommora/core/Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './Engine/embedRanges'
@@ -42,6 +43,7 @@ import {
   assembleLineIntents,
   GLYPH_CLASS,
   NO_CARET,
+  railClass,
   seatPastMarker,
   tokenIntents,
   type WidgetSpec,
@@ -264,7 +266,7 @@ class OutlinerRailWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = `md-outline-rail ${this.typeClass}${this.first ? ' md-outline-first' : ''}${this.last ? ' md-outline-last' : ''}`
+    el.className = railClass(this)
     el.style.setProperty('--rail-level', String(this.level))
     el.setAttribute('aria-hidden', 'true')
     return el
@@ -352,9 +354,9 @@ interface Built {
 }
 
 // NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker.
-const docAtomics = perDoc((doc) => {
+const docAtomics = perScopedDoc((doc, scope) => {
   const ranges: Range<Decoration>[] = []
-  for (const line of docLineIntentsOf(doc).perLine)
+  for (const line of docLineIntentsOf(doc, scope).perLine)
     for (const it of line)
       if (it.kind === 'atomic' && it.to > it.from) ranges.push(atomicSpan.range(it.from, it.to))
   return Decoration.set(ranges, true)
@@ -364,8 +366,9 @@ function atomicFor(
   doc: Text,
   caretLine: Line | null,
   caretAtomics: Range<Decoration>[],
+  scope: MarkdownScope,
 ): DecorationSet {
-  const all = docAtomics(doc)
+  const all = docAtomics(doc, scope)
   if (!caretLine) return all
   return all.update({
     add: caretAtomics,
@@ -376,7 +379,7 @@ function atomicFor(
   })
 }
 
-function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boolean): Built {
+function build(view: EditorView, conn: ConnectionsApi | undefined, scope: MarkdownScope): Built {
   const text = docString(view.state.doc)
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
@@ -401,14 +404,14 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — a spread into push throws past V8's argument ceiling, and CM deactivates a crashed plugin for good.
-  if (!inline)
-    for (const it of assembleLineIntents(
-      scan,
-      docLineIntentsOf(view.state.doc),
-      head,
-      view.viewport,
-    ))
-      intents.push(it)
+  for (const it of assembleLineIntents(
+    scan,
+    docLineIntentsOf(view.state.doc, scope),
+    head,
+    view.viewport,
+    scope,
+  ))
+    intents.push(it)
   const ranges: Range<Decoration>[] = []
   const caretAtomics: Range<Decoration>[] = []
   const caretLine = head < 0 ? null : view.state.doc.lineAt(head)
@@ -585,31 +588,34 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, inline: boole
   for (const { from, to } of view.visibleRanges)
     for (let i = text.indexOf('↔', from); i >= 0 && i < to; i = text.indexOf('↔', i + 1))
       ranges.push(bidir.range(i, i + 1))
-  const atomic = inline ? Decoration.none : atomicFor(view.state.doc, caretLine, caretAtomics)
+  const atomic = atomicFor(view.state.doc, caretLine, caretAtomics, scope)
   return { deco: Decoration.set(ranges, true), atomic }
 }
 
-const markerSeat = EditorState.transactionFilter.of((tr) => {
-  if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
-  const head = tr.selection.main.head
-  const seat = seatPastMarker(docLineIntentsOf(tr.newDoc), docScan(tr.newDoc), head)
-  return seat === null || seat === head ? tr : [tr, { selection: EditorSelection.cursor(seat) }]
-})
+const markerSeat = (scope: MarkdownScope): Extension =>
+  EditorState.transactionFilter.of((tr) => {
+    if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
+    const head = tr.selection.main.head
+    const seat = seatPastMarker(docLineIntentsOf(tr.newDoc, scope), docScan(tr.newDoc), head, scope)
+    return seat === null || seat === head ? tr : [tr, { selection: EditorSelection.cursor(seat) }]
+  })
 
 export function markdownDecorations(
   getConn: () => ConnectionsApi | undefined,
-  inline = false,
+  scope: MarkdownScope = 'page',
 ): Extension {
-  const plugin = decorationPlugin(getConn, inline)
-  return inline ? plugin : [plugin, markerSeat]
+  return [decorationPlugin(getConn, scope), markerSeat(scope)]
 }
 
-function decorationPlugin(getConn: () => ConnectionsApi | undefined, inline: boolean): Extension {
+function decorationPlugin(
+  getConn: () => ConnectionsApi | undefined,
+  scope: MarkdownScope,
+): Extension {
   return ViewPlugin.fromClass(
     class {
       built: Built
       constructor(view: EditorView) {
-        this.built = build(view, getConn(), inline)
+        this.built = build(view, getConn(), scope)
       }
       update(u: ViewUpdate): void {
         // Inline tokens are viewport-scoped, so scroll must rebuild too; line-level chrome spans the whole doc.
@@ -620,7 +626,7 @@ function decorationPlugin(getConn: () => ConnectionsApi | undefined, inline: boo
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
         )
-          this.built = build(u.view, getConn(), inline)
+          this.built = build(u.view, getConn(), scope)
       }
     },
     {

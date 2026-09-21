@@ -20,6 +20,7 @@ import {
   type Edit,
 } from './edits'
 import { renumberAfterNest, type ChangeSpec } from '../Engine/listDragModel'
+import { applyEdit } from './applyEdit'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
@@ -32,20 +33,8 @@ import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
 
-/** `recount` lands in the edited document's coordinates, in the same transaction, so one undo takes both. */
-function apply(view: EditorView, edit: Edit | null, recount: ChangeSpec[] = []): boolean {
-  if (!edit) return false
-  view.dispatch(
-    {
-      changes: { from: edit.from, to: edit.to, insert: edit.insert },
-      selection: { anchor: edit.selection, head: edit.head },
-      scrollIntoView: true,
-      userEvent: 'input',
-    },
-    { changes: recount, sequential: true },
-  )
-  return true
-}
+const apply = (view: EditorView, edit: Edit | null, recount: ChangeSpec[] = []): boolean =>
+  applyEdit(view, edit, { recount, scrollIntoView: true })
 
 const nest =
   (transform: (doc: string, selStart: number, selEnd: number) => Edit | null) =>

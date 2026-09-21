@@ -1,4 +1,5 @@
 import { parse } from '../parser'
+import { parseListMarker } from '../detect'
 import type { Align, Column, TableModel } from './model'
 import { normalize } from './model'
 
@@ -15,11 +16,24 @@ interface RowSplit {
 export const escapeCell = (s: string): string => s.replace(/\\(?=[\\|])|\|/g, (m) => `\\${m}`)
 export const unescapeCell = (s: string): string => s.replace(/\\([\\|])/g, '$1')
 
+// GFM trims a cell on both edges, so an empty last item arrives back as a bare marker with the grammar's required space gone.
+// A box says task list and nothing else, so it is restored wherever it sits; a bare `-` is restored only under a list line, since a lone dash in a cell is the prose it reads as.
+const BARE_MARKER = /^[ \t]*(?:(?:\d+|[A-Z])\.|[-+→])$/
+const BARE_TASK = /^[ \t]*[-+][ \t]*\[[ xX]\]$/
+const restoreTrailingItem = (display: string): string => {
+  const cut = display.lastIndexOf('\n')
+  const last = display.slice(cut + 1)
+  if (BARE_TASK.test(last)) return `${display} `
+  if (cut === -1 || !BARE_MARKER.test(last)) return display
+  const above = display.slice(display.lastIndexOf('\n', cut - 1) + 1, cut)
+  return parseListMarker(above) ? `${display} ` : display
+}
+
 // A cell is single-line GFM on disk, so an in-cell line break serializes as `<br>` (literal newlines would split the row); model + segments stay in raw source form.
 export const cellToSource = (display: string): string =>
   escapeCell(display).replace(/\r?\n/g, '<br>')
 export const cellToDisplay = (source: string): string =>
-  unescapeCell(source).replace(/<br\s*\/?>/gi, '\n')
+  restoreTrailingItem(unescapeCell(source).replace(/<br\s*\/?>/gi, '\n'))
 
 export function splitRow(line: string, base: number): RowSplit {
   const cuts: number[] = []

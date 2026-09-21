@@ -1,6 +1,7 @@
 // CM's Text.toString() re-joins the rope on every call, and extensions re-scanning the result per keystroke was the lag source.
 import type { Text } from '@codemirror/state'
 import { docLineIntents } from './Engine/intents'
+import type { MarkdownScope } from './Engine/detect'
 import { scanOf } from './Engine/scanCache'
 import { headingOutline } from './Engine/headingScan'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
@@ -23,7 +24,16 @@ export const docString = perDoc((doc) => doc.toString())
 
 export const docScan = perDoc((doc) => scanOf(docString(doc)))
 
-export const docLineIntentsOf = perDoc((doc) => docLineIntents(docScan(doc)))
+/** One cache per vocabulary: `perDoc` keys on the text alone, and the same text read as a page and as a cell derives differently. */
+export function perScopedDoc<T>(
+  derive: (doc: Text, scope: MarkdownScope) => T,
+): (doc: Text, scope?: MarkdownScope) => T {
+  const page = perDoc((doc) => derive(doc, 'page'))
+  const cell = perDoc((doc) => derive(doc, 'cell'))
+  return (doc, scope = 'page') => (scope === 'cell' ? cell(doc) : page(doc))
+}
+
+export const docLineIntentsOf = perScopedDoc((doc, scope) => docLineIntents(docScan(doc), scope))
 
 export const docOutline = perDoc((doc) => headingOutline(docString(doc)))
 

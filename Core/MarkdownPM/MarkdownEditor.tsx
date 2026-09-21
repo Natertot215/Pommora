@@ -301,7 +301,7 @@ export function MarkdownEditor({
       }),
       listDragExtension,
       listRenumberOnDelete,
-      blockHandles,
+      blockHandles(),
       blockGripHover(),
       blockDragExtension,
       calloutDragExtension,
