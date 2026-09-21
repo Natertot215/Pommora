@@ -33,13 +33,14 @@ const decimalsToPicker = (d: NumberConfig['number_decimals']): string =>
   typeof d === 'number' ? String(d) : 'hidden'
 const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hidden' : Number(v))
 
+const ROW_LOOK = { inert: true, className: s.rowRhythm }
+
 const row = (label: string, trailing: Trailing, reveal?: boolean): MenuRow => ({
   kind: 'item',
-  inert: true,
   label,
   trailing,
   reveal,
-  className: s.rowRhythm,
+  ...ROW_LOOK,
 })
 
 function ValueField({
@@ -104,7 +105,7 @@ export function NumberEditor({
           family,
           FAMILY_OPTIONS,
           (v) => onSetConfig({ number_family: v }),
-          { ariaLabel: 'Number format', inert: true, className: s.rowRhythm },
+          { ...ROW_LOOK, ariaLabel: 'Number format' },
         )}
       />
 
@@ -115,12 +116,7 @@ export function NumberEditor({
           config.number_currency ?? 'USD',
           CURRENCY_OPTIONS,
           (v) => onSetConfig({ number_currency: v }),
-          {
-            ariaLabel: 'Currency',
-            inert: true,
-            className: s.rowRhythm,
-            reveal: family === 'currency',
-          },
+          { ...ROW_LOOK, ariaLabel: 'Currency', reveal: family === 'currency' },
         )}
       />
 
@@ -144,7 +140,7 @@ export function NumberEditor({
           decimalsToPicker(config.number_decimals),
           DECIMAL_OPTIONS,
           (v) => onSetConfig({ number_decimals: pickerToDecimals(v) }),
-          { ariaLabel: 'Decimal places', inert: true, className: s.rowRhythm },
+          { ...ROW_LOOK, ariaLabel: 'Decimal places' },
         )}
       />
 
@@ -179,9 +175,8 @@ export function NumberEditor({
 
       <MenuRowView
         row={pickerRow(undefined, 'Style', look, STYLE_OPTIONS, onSetStyle, {
+          ...ROW_LOOK,
           ariaLabel: 'Number style',
-          inert: true,
-          className: s.rowRhythm,
           reveal: barCapable,
         })}
       />

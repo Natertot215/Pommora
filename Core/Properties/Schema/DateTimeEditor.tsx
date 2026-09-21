@@ -20,6 +20,8 @@ const TIME_OPTIONS: { value: TimeFormat; label: string }[] = [
   { value: 'none', label: 'Hidden' },
 ]
 
+const ROW_LOOK = { iconSize: 'headline', inert: true } as const
+
 /** Time stays visible under Relative — it still gates the "at <clock>" rendering. */
 export function DateTimeEditor({
   style,
@@ -40,7 +42,7 @@ export function DateTimeEditor({
           dateFmt,
           DATE_OPTIONS,
           (v) => onChange({ date_format: v }),
-          { ariaLabel: 'Date format', iconSize: 'headline', inert: true },
+          { ...ROW_LOOK, ariaLabel: 'Date format' },
         )}
       />
       <MenuRowView
@@ -50,7 +52,7 @@ export function DateTimeEditor({
           style.weekday ?? 'none',
           WEEKDAY_OPTIONS,
           (v) => onChange({ weekday: v }),
-          { ariaLabel: 'Weekday format', iconSize: 'headline', inert: true, reveal: showDay },
+          { ...ROW_LOOK, ariaLabel: 'Weekday format', reveal: showDay },
         )}
       />
       <MenuRowView
@@ -60,7 +62,7 @@ export function DateTimeEditor({
           style.time_format ?? 'none',
           TIME_OPTIONS,
           (v) => onChange({ time_format: v }),
-          { ariaLabel: 'Time format', iconSize: 'headline', inert: true },
+          { ...ROW_LOOK, ariaLabel: 'Time format' },
         )}
       />
     </div>
