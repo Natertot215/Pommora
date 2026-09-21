@@ -7,11 +7,11 @@ import {
   type SortCriterion,
   VIEW_KINDS,
 } from '@pommora/core/Views/views'
-import { MenuRowView, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus'
+import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/Menus'
 import { useSaveView } from '../ViewTileScope'
 import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { CustomList, PropertyPreview, pickerRow } from './GroupFrame'
+import { CustomList, PropertyPreview } from './GroupFrame'
 import { bucketOrder } from '../Pipeline/group'
 import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
 import * as gp from './group-frame.css'
@@ -194,7 +194,7 @@ export function SortFrame({
                 view.location_order_mode ?? 'location',
                 LOCATION_ORDERS,
                 (v) => void saveView({ ...view, location_order_mode: v }),
-                Boolean(sub),
+                sub ? gp.SUB_LOOK : undefined,
               )}
             />
           ) : (
@@ -212,7 +212,7 @@ export function SortFrame({
                       ? { ...primary, order: seededOrder() }
                       : { property_id: primary.property_id, direction: v },
                   ),
-                Boolean(sub),
+                sub ? gp.SUB_LOOK : undefined,
               )}
             />
           )}
@@ -233,7 +233,7 @@ export function SortFrame({
                 sub.direction,
                 directionOptions(sub.property_id, schema),
                 (d) => save([primary, { ...sub, direction: d }]),
-                true,
+                gp.SUB_LOOK,
               )}
             />
           )}

@@ -11,18 +11,17 @@ import {
   VIEW_KINDS,
 } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
-import type { IconSize } from '@pommora/uix/Theme/theme-vars.css'
 import {
   DisclosureRow,
   FootingItem,
   MenuRowView,
-  type MenuRow,
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
   useDisclosureSet,
   heading,
+  pickerRow,
 } from '@pommora/uix/Menus'
 import { footingLabel, footingSymbol, side } from '@pommora/uix/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
@@ -77,22 +76,6 @@ const GRANULARITY: PickerOption<DateGranularity>[] = [
 
 const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
-
-export const pickerRow = <T extends string>(
-  glyph: string,
-  label: string,
-  value: T,
-  options: readonly PickerOption<T>[],
-  onPick: (v: T) => void,
-  sub = false,
-  look?: { iconSize?: IconSize; solid?: boolean },
-): MenuRow => ({
-  kind: 'item',
-  icon: <Icon name={glyph} size={look?.iconSize ?? 'body'} />,
-  label: sub ? <span className={gp.subLabel}>{label}</span> : label,
-  trailing: { kind: 'picker', ariaLabel: label, value, options, onPick, solid: look?.solid },
-  className: sub ? gp.subRow : undefined,
-})
 
 export function GroupFrame({
   source,
@@ -277,7 +260,7 @@ export function GroupFrame({
             view.structural_order_mode ?? 'custom',
             STRUCTURAL_ORDER,
             (m) => save({ structural_order_mode: m }),
-            Boolean(subGroup),
+            subGroup ? gp.SUB_LOOK : undefined,
           )}
         />
       )}
@@ -303,7 +286,7 @@ export function GroupFrame({
                 subGroup.order_mode,
                 orderOptionsFor(declaredType(subGroup.property_id, schema)),
                 (m) => saveSub({ ...subGroup, order_mode: m }),
-                true,
+                gp.SUB_LOOK,
               )}
             />
           )}

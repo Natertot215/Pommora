@@ -5,7 +5,7 @@ import { Icon } from '@pommora/uix/Symbols'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { numberDivisor } from '../formatValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { MenuRowView, type MenuRow, type Trailing } from '@pommora/uix/Menus'
+import { MenuRowView, pickerRow, type MenuRow, type Trailing } from '@pommora/uix/Menus'
 import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
 import * as s from './number-editor.css'
 
@@ -98,26 +98,29 @@ export function NumberEditor({
   return (
     <div className={s.section}>
       <MenuRowView
-        row={row('Format', {
-          kind: 'picker',
-          ariaLabel: 'Number format',
-          value: family,
-          options: FAMILY_OPTIONS,
-          onPick: (v: NumberFamily) => onSetConfig({ number_family: v }),
-        })}
+        row={pickerRow(
+          undefined,
+          'Format',
+          family,
+          FAMILY_OPTIONS,
+          (v) => onSetConfig({ number_family: v }),
+          { ariaLabel: 'Number format', inert: true, className: s.rowRhythm },
+        )}
       />
 
       <MenuRowView
-        row={row(
+        row={pickerRow(
+          undefined,
           'Currency',
+          config.number_currency ?? 'USD',
+          CURRENCY_OPTIONS,
+          (v) => onSetConfig({ number_currency: v }),
           {
-            kind: 'picker',
             ariaLabel: 'Currency',
-            value: config.number_currency ?? 'USD',
-            options: CURRENCY_OPTIONS,
-            onPick: (v) => onSetConfig({ number_currency: v }),
+            inert: true,
+            className: s.rowRhythm,
+            reveal: family === 'currency',
           },
-          family === 'currency',
         )}
       />
 
@@ -135,13 +138,14 @@ export function NumberEditor({
       />
 
       <MenuRowView
-        row={row('Decimals', {
-          kind: 'picker',
-          ariaLabel: 'Decimal places',
-          value: decimalsToPicker(config.number_decimals),
-          options: DECIMAL_OPTIONS,
-          onPick: (v) => onSetConfig({ number_decimals: pickerToDecimals(v) }),
-        })}
+        row={pickerRow(
+          undefined,
+          'Decimals',
+          decimalsToPicker(config.number_decimals),
+          DECIMAL_OPTIONS,
+          (v) => onSetConfig({ number_decimals: pickerToDecimals(v) }),
+          { ariaLabel: 'Decimal places', inert: true, className: s.rowRhythm },
+        )}
       />
 
       <MenuRowView
@@ -174,17 +178,12 @@ export function NumberEditor({
       />
 
       <MenuRowView
-        row={row(
-          'Style',
-          {
-            kind: 'picker',
-            ariaLabel: 'Number style',
-            value: look,
-            options: STYLE_OPTIONS,
-            onPick: onSetStyle,
-          },
-          barCapable,
-        )}
+        row={pickerRow(undefined, 'Style', look, STYLE_OPTIONS, onSetStyle, {
+          ariaLabel: 'Number style',
+          inert: true,
+          className: s.rowRhythm,
+          reveal: barCapable,
+        })}
       />
     </div>
   )

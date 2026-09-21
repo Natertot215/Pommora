@@ -1,5 +1,5 @@
 import { resolveColor } from '@pommora/uix/Theme/ramp'
-import { MenuIndex } from '@pommora/uix/Menus'
+import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import * as s from '@pommora/uix/Menus/frames.css'
 
 export type CheckboxLook = 'checkbox' | 'switch'
@@ -41,18 +41,10 @@ export function CheckboxEditor({
                   onPick: onSetColor,
                 },
               },
-              {
-                kind: 'item',
+              pickerRow(undefined, 'Style', look, STYLE_OPTIONS, onSetStyle, {
+                ariaLabel: 'Checkbox style',
                 inert: true,
-                label: 'Style',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Checkbox style',
-                  value: look,
-                  options: STYLE_OPTIONS,
-                  onPick: onSetStyle,
-                },
-              },
+              }),
             ],
           },
         ]}

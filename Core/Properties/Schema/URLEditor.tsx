@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import type { LinkConfig, LinkDisplay } from '@pommora/core/Properties/properties'
-import { MenuIndex } from '@pommora/uix/Menus'
+import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import { LINK_FORMAT_OPTIONS } from './linkFormatOptions'
 import * as s from '@pommora/uix/Menus/frames.css'
 
@@ -47,18 +47,14 @@ export function URLEditor({
                   onPick: (next) => onSetConfig({ link_color: next }),
                 },
               },
-              {
-                kind: 'item',
-                inert: true,
-                label: 'Format',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Link format',
-                  value: display,
-                  options: LINK_FORMAT_OPTIONS,
-                  onPick: (v: LinkDisplay) => onSetConfig({ link_display: v }),
-                },
-              },
+              pickerRow(
+                undefined,
+                'Format',
+                display,
+                LINK_FORMAT_OPTIONS,
+                (v: LinkDisplay) => onSetConfig({ link_display: v }),
+                { ariaLabel: 'Link format', inert: true },
+              ),
             ],
           },
         ]}
