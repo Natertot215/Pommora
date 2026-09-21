@@ -28,12 +28,9 @@ const titleAlphas = (zoom: number): LabelReveal => {
   return { page: easeBase(r.page), folder: easeBase(r.folder), space: easeBase(r.space) }
 }
 
-type Rgb = [number, number, number]
-
 interface Paint {
   fill: string
-  fillRgb: Rgb
-  fillLitRgb: Rgb
+  fillLit: string
   ring: string
   ringHover: string
   ringDrag: string
@@ -45,14 +42,6 @@ interface Paint {
   ringWidth: number
   titleFont: string
 }
-
-const rgbOf = (css: string): Rgb => {
-  const [r = 0, g = 0, b = 0] = css.match(/[\d.]+/g)?.map(Number) ?? []
-  return [r, g, b]
-}
-
-const mixRgb = (a: Rgb, b: Rgb, t: number): string =>
-  `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(' ')})`
 
 function readPaint(host: HTMLElement): Paint {
   const probe = document.createElement('span')
@@ -69,8 +58,7 @@ function readPaint(host: HTMLElement): Paint {
   const number = (token: string): number => Number.parseFloat(scoped.getPropertyValue(token))
   const paint: Paint = {
     fill: color('--matrix-fill'),
-    fillRgb: rgbOf(color('--matrix-fill')),
-    fillLitRgb: rgbOf(color('--matrix-fill-lit')),
+    fillLit: color('--matrix-fill-lit'),
     ring: color('--matrix-ring'),
     ringHover: color('--matrix-ring-hover'),
     ringDrag: color('--matrix-ring-drag'),
@@ -114,13 +102,20 @@ function drawNode(
   paint: Paint,
   ring: 'rest' | 'hover' | 'drag',
   alpha: number,
-  fill: string = paint.fill,
+  lit = 0,
 ): void {
   ctx.globalAlpha = alpha
   ctx.beginPath()
   ctx.arc(x, y, r, 0, Math.PI * 2)
-  ctx.fillStyle = fill
+  ctx.fillStyle = paint.fill
   ctx.fill()
+  // The lit tone lays over the resting fill: control and primary share a hue and differ in alpha, so a swap would only pop.
+  if (lit > 0) {
+    ctx.globalAlpha = alpha * lit
+    ctx.fillStyle = paint.fillLit
+    ctx.fill()
+    ctx.globalAlpha = alpha
+  }
   ctx.lineWidth = ring === 'rest' ? paint.hairline : paint.ringWidth
   ctx.strokeStyle =
     ring === 'rest' ? paint.ring : ring === 'hover' ? paint.ringHover : paint.ringDrag
@@ -232,7 +227,6 @@ export function MatrixCanvas({
     // The released subject outlives the focus until the emphasis reaches nothing, so the dim and the fill fade off it.
     const subject = focus >= 0 ? focus : emphasis > 0 ? subjectRef.current : -1
     const dim = 1 - emphasis * (1 - paint.inactive)
-    const litFill = mixRgb(paint.fillRgb, paint.fillLitRgb, emphasis)
 
     const arrivals = matrixRuntime.arrivals
     const arrival =
@@ -273,8 +267,16 @@ export function MatrixCanvas({
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
       const ring = i === dragging ? 'drag' : i === hovered ? 'hover' : 'rest'
       const lit = subject < 0 || i === subject || neighbours.has(i)
-      const fill = subject >= 0 && lit ? litFill : paint.fill
-      drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i), fill)
+      drawNode(
+        ctx,
+        sx,
+        sy,
+        r,
+        paint,
+        ring,
+        (lit ? 1 : dim) * arrival(i),
+        subject >= 0 && lit ? emphasis : 0,
+      )
     })
     for (const g of matrixRuntime.ghosts) {
       const [sx, sy] = toScreen(v, g.x, g.y)
