@@ -83,27 +83,6 @@ describe('a list marker holds no seats the reader cannot see', () => {
     expect(stepRight(view, 5)).toBe(8)
   })
 
-  it('a press in a nested number’s gutter lands on the content, not beside the glyph', async () => {
-    const view = await mount('1. a\n   1. foo')
-    view.focus()
-    for (const pos of [5, 6, 7, 8, 9, 10]) {
-      view.dispatch({ selection: EditorSelection.cursor(pos), userEvent: 'select.pointer' })
-      expect(view.state.selection.main.head).toBe(11)
-    }
-  })
-
-  it('a drag out of the slot tints from the content, in either direction', async () => {
-    const view = await mount('1. a\n   1. foo')
-    view.focus()
-    view.dispatch({ selection: EditorSelection.range(5, 13), userEvent: 'select.pointer' })
-    expect(view.state.selection.main.anchor).toBe(11)
-    view.dispatch({ selection: EditorSelection.range(13, 5), userEvent: 'select.pointer' })
-    expect(view.state.selection.main.head).toBe(11)
-    view.dispatch({ selection: EditorSelection.range(5, 7), userEvent: 'select.pointer' })
-    expect(view.state.selection.main.empty).toBe(true)
-    expect(view.state.selection.main.head).toBe(11)
-  })
-
   it('keeps the slot whole while the editor is unfocused, where nothing reveals', async () => {
     const view = await mount('- foo')
     view.dispatch({ selection: EditorSelection.cursor(0) })

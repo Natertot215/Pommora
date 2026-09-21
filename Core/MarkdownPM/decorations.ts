@@ -594,23 +594,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
 
 const markerSeat = (scope: MarkdownScope): Extension =>
   EditorState.transactionFilter.of((tr) => {
-    if (!tr.selection || !tr.isUserEvent('select.pointer')) return tr
-    const range = tr.selection.main
-    const seat = seatPastMarker(
-      docLineIntentsOf(tr.newDoc, scope),
-      docScan(tr.newDoc),
-      range.from,
-      scope,
-    )
-    if (seat === null || seat === range.from) return tr
-    // A drag reads its anchor off the raw press, so the start edge needs the same seating the caret gets; one that never leaves the slot has selected nothing on screen.
-    const selection =
-      seat >= range.to
-        ? EditorSelection.cursor(seat)
-        : range.anchor === range.from
-          ? EditorSelection.range(seat, range.head)
-          : EditorSelection.range(range.anchor, seat)
-    return [tr, { selection }]
+    if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
+    const head = tr.selection.main.head
+    const seat = seatPastMarker(docLineIntentsOf(tr.newDoc, scope), docScan(tr.newDoc), head, scope)
+    return seat === null || seat === head ? tr : [tr, { selection: EditorSelection.cursor(seat) }]
   })
 
 export function markdownDecorations(
