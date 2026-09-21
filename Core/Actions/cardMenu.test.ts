@@ -19,6 +19,13 @@ describe('cardMenuModel', () => {
     expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
   })
 
+  it('carries both page branches after Edit Icon', () => {
+    const half = [{ id: 'g1', name: 'Realms', options: [] }]
+    const m = cardMenuModel({ addable: false, spaces: half, properties: half })
+    const at = m.findIndex((i) => i.label === 'Edit Icon')
+    expect(m.slice(at + 1, at + 3).map((i) => i.label)).toEqual(['Spaces', 'Properties'])
+  })
+
   it('an open page reads "Open"', () => {
     expect(cardMenuModel({ addable: false, alreadyOpen: true })[0].label).toBe('Open')
   })

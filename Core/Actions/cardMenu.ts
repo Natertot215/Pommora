@@ -18,6 +18,8 @@ export function cardMenuModel(ctx: CardMenuContext): ActionItem<CardMenuAction>[
   const meta = pageMetaMenuItems(ctx.alreadyOpen, {
     newPages: 'single',
     move: ctx,
+    spaces: ctx.spaces,
+    properties: ctx.properties,
     clipboard: true,
     history: true,
   }) as ActionItem<CardMenuAction>[]

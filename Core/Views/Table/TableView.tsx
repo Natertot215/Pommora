@@ -343,13 +343,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     })
     if (!base) return
     const ctx: CellMenuContext =
-      base.kind === 'title'
-        ? {
-            ...base,
-            ...interactions.titleMenuContext(row),
-            ...interactions.propertyBranches(row),
-          }
-        : base
+      base.kind === 'title' ? { ...base, ...interactions.titleMenuContext(row) } : base
     const action = await interactions.holdGhost(() => popMenu(cellMenuModel(ctx)))
     if (!action) return
     const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
