@@ -56,4 +56,14 @@ globalStyle(`${row} > .${side}:last-child`, { flex: '0 1 auto', minWidth: 0 })
 
 export const empty = style([text.caption.standard, { paddingRight: 'var(--row-pad-standard)' }])
 
+export const section = style({})
+
+export const sectionAdd = style({
+  opacity: 0,
+  selectors: {
+    [`${section}:hover &`]: { opacity: 1 },
+    '&:focus-visible': { opacity: 1 },
+  },
+})
+
 export const groupBordered = style({ border: `var(--width-100) solid ${c.border.base}` })
