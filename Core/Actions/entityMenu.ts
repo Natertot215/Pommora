@@ -2,7 +2,7 @@ import { type ActionItem, afterSeparator } from './menuModel'
 import { type CreateMenuAction, createMenuItems } from './createMenu'
 import { type PageMetaAction, type PageMoveAction, pageMetaMenuItems } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
-import { type PropertyAction, propertiesRow } from './propertyRows'
+import { type PropertyAction, propertyBranchRows } from './propertyRows'
 import { openLabel } from './toggleLabels'
 import type { ContextTarget, Creator } from '../Nexus/mutateRequest'
 
@@ -28,6 +28,7 @@ export function entityMenuItems(
       window: true,
       newPages: target.host === 'matrix' ? undefined : 'pair',
       move: target,
+      spaces: target.spaces,
       properties: target.properties,
       clipboard: true,
       history: true,
@@ -52,21 +53,13 @@ export function entityMenuItems(
         ? titleMenuItems()
         : [{ label: 'Rename', action: 'rename' }]
   const branches: ActionItem<EntityMenuAction>[] =
-    target.kind === 'space'
-      ? [
-          ...(target.spaces?.length ? [propertiesRow(target.spaces, 'Spaces')] : []),
-          ...(target.properties?.length ? [propertiesRow(target.properties)] : []),
-        ]
-      : []
+    target.kind === 'space' ? propertyBranchRows(target) : []
   return [
     ...open,
     ...(open.length > 0 ? afterSeparator(create) : create),
     ...(open.length + create.length > 0 ? afterSeparator(identity) : identity),
     ...branches,
     { label: 'Delete', action: 'delete', separatorBefore: target.kind === 'space' },
-    ...afterSeparator<ActionItem<EntityMenuAction>>([
-      ...lock,
-      { label: 'Reveal Location', action: 'reveal' },
-    ]),
+    ...afterSeparator<EntityMenuAction>([...lock, { label: 'Reveal Location', action: 'reveal' }]),
   ]
 }

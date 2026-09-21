@@ -18,7 +18,7 @@ export function openOrder<A>(
   return alreadyOpen ? [...open, ...preview] : [...preview, ...open]
 }
 
-export function afterSeparator<T extends { separatorBefore?: boolean }>(rows: readonly T[]): T[] {
+export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>[] {
   return rows.length === 0 ? [] : [{ ...rows[0], separatorBefore: true }, ...rows.slice(1)]
 }
 

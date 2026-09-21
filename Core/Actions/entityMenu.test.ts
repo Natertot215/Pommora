@@ -106,19 +106,20 @@ describe('the sidebar entity menu', () => {
     ])
   })
 
-  it('a page keeps its one Properties branch', () => {
+  it('a page carries the same two branches, after Edit Icon', () => {
     const items = entityMenuItems(
       {
         kind: 'page',
         id: 'p1',
         path: 'Notes/A.md',
         title: 'A',
-        properties: [{ id: 'g1', name: 'Realms', options: [] }],
+        spaces: [{ id: 'g1', name: 'Realms', options: [] }],
+        properties: [{ id: 'p1', name: 'Stage', options: [] }],
       },
       [],
     )
-    expect(items.filter((i) => i.label === 'Properties')).toHaveLength(1)
-    expect(items.some((i) => i.label === 'Spaces')).toBe(false)
+    const at = items.findIndex((i) => i.label === 'Edit Icon')
+    expect(items.slice(at + 1, at + 3).map((i) => i.label)).toEqual(['Spaces', 'Properties'])
   })
 
   it('a Matrix node neither creates siblings nor locks', () => {

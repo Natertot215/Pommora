@@ -109,6 +109,7 @@ function baseCellMenuModel(ctx: CellMenuContext): {
           window: true,
           newPages: 'pair',
           move: ctx,
+          spaces: ctx.spaces,
           properties: ctx.properties,
           clipboard: true,
           history: true,

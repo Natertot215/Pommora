@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parsePropertyAction, propertiesRow } from './propertyRows'
+import { parsePropertyAction, propertiesRow, propertyBranchRows } from './propertyRows'
 
 const ROWS = [
   {
@@ -7,19 +7,15 @@ const ROWS = [
     name: 'Areas',
     options: [{ value: 's1', label: 'Health', checked: true }],
   },
-  { id: 'p1', name: 'Select', options: [], separatorBefore: true },
+  { id: 'p1', name: 'Select', options: [] },
   { id: 'p2', name: 'Link' },
 ]
 
 describe('propertiesRow', () => {
-  it('nests every row under one Properties branch, keeping the divider', () => {
+  it('nests every row under one Properties branch', () => {
     const row = propertiesRow(ROWS)
     expect(row.label).toBe('Properties')
-    expect(row.submenu?.map((i) => [i.label, i.separatorBefore])).toEqual([
-      ['Areas', undefined],
-      ['Select', true],
-      ['Link', undefined],
-    ])
+    expect(row.submenu?.map((i) => i.label)).toEqual(['Areas', 'Select', 'Link'])
   })
 
   it('an options row carries its picks checked; a bare row stays a leaf', () => {
@@ -39,6 +35,17 @@ describe('propertiesRow', () => {
     const select = propertiesRow(ROWS).submenu?.[1]
     expect(select).toMatchObject({ disabled: true })
     expect(select?.submenu).toBeUndefined()
+  })
+})
+
+describe('propertyBranchRows', () => {
+  it('draws Spaces then Properties, and leaves out an empty half', () => {
+    const labels = (t: Parameters<typeof propertyBranchRows>[0]): string[] =>
+      propertyBranchRows(t).map((i) => i.label)
+    expect(labels({ spaces: ROWS, properties: ROWS })).toEqual(['Spaces', 'Properties'])
+    expect(labels({ spaces: [], properties: ROWS })).toEqual(['Properties'])
+    expect(labels({ spaces: ROWS })).toEqual(['Spaces'])
+    expect(labels({})).toEqual([])
   })
 })
 

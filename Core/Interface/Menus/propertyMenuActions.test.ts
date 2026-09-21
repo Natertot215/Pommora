@@ -9,7 +9,7 @@ import { applyValueAtRoot } from '@pommora/core/Properties/propertyValue'
 import { pageRowOf, spaceRowOf } from '@pommora/core/Properties/pageRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { makeTree } from '../../Testing/testTree'
-import { propertyMenuBranches, propertyMenuRows, runPropertyAction } from './propertyMenuActions'
+import { propertyMenuBranches, runPropertyAction } from './propertyMenuActions'
 
 const SCHEMA: PropertyDefinition[] = [
   {
@@ -80,30 +80,25 @@ const row = (frontmatter: Record<string, unknown> = {}): ViewRow =>
     ...frontmatter,
   } as unknown as PageFrontmatter)
 
-const rowsFor = (frontmatter: Record<string, unknown> = {}): ReturnType<typeof propertyMenuRows> =>
-  propertyMenuRows({ tree: treeWithSchema(), schema: SCHEMA, row: row(frontmatter) })
+const branchesFor = (
+  frontmatter: Record<string, unknown> = {},
+): ReturnType<typeof propertyMenuBranches> =>
+  propertyMenuBranches({ tree: treeWithSchema(), schema: SCHEMA, row: row(frontmatter) })
 
-describe('propertyMenuRows', () => {
-  it('leads with the registry contexts, then the schema behind a divider, and drops the stamps', () => {
-    const rows = rowsFor()
-    expect(rows.map((r) => r.name)).toEqual(['Realms', 'stage', 'Tags', 'Done', 'Count'])
-    expect(rows[1].separatorBefore).toBe(true)
-    expect(rows[0].separatorBefore).toBeUndefined()
-  })
-
-  it('orders every property that opens a subtree ahead of the leaves, with no divider between them', () => {
-    const rows = rowsFor().slice(1)
-    expect(rows.map((r) => [r.name, r.options !== undefined])).toEqual([
+describe('propertyMenuBranches', () => {
+  it('hands back the registry contexts and the schema apart, dropping the stamps', () => {
+    const { spaces, properties } = branchesFor()
+    expect(spaces.map((r) => r.name)).toEqual(['Realms'])
+    expect(properties.map((r) => [r.name, r.options !== undefined])).toEqual([
       ['stage', true],
       ['Tags', true],
       ['Done', true],
       ['Count', false],
     ])
-    expect(rows.slice(1).every((r) => r.separatorBefore === undefined)).toBe(true)
   })
 
   it('a context offers its spaces, checked against the page', () => {
-    const [realms] = rowsFor({ '<Realms>': ['Reading'] })
+    const [realms] = branchesFor({ '<Realms>': ['Reading'] }).spaces
     expect(realms.options).toEqual([
       { value: 'a1', label: 'Work', checked: false },
       { value: 't1', label: 'Reading', checked: true },
@@ -112,44 +107,33 @@ describe('propertyMenuRows', () => {
   })
 
   it('a checkbox offers Check and Uncheck, marking the standing state', () => {
-    expect(rowsFor().find((r) => r.name === 'Done')?.options).toEqual([
+    const done = (fm?: Record<string, unknown>) =>
+      branchesFor(fm).properties.find((r) => r.name === 'Done')?.options
+    expect(done()).toEqual([
       { value: 'true', label: 'Check', checked: false },
       { value: '', label: 'Uncheck', checked: true },
     ])
-    expect(rowsFor({ Done: true }).find((r) => r.name === 'Done')?.options?.[0].checked).toBe(true)
+    expect(done({ Done: true })?.[0].checked).toBe(true)
   })
 
   it('a select marks the held option; a number stays a leaf for its own picker', () => {
-    const rows = rowsFor({ stage: 'b' })
-    expect(rows.find((r) => r.name === 'stage')?.options).toEqual([
+    const { properties } = branchesFor({ stage: 'b' })
+    expect(properties.find((r) => r.name === 'stage')?.options).toEqual([
       { value: 'a', label: 'Alpha', checked: false },
       { value: 'b', label: 'Beta', checked: true },
     ])
-    expect(rows.find((r) => r.name === 'Count')?.options).toBeUndefined()
-  })
-})
-
-describe('propertyMenuBranches', () => {
-  it('hands back the two halves, neither carrying the divider the join adds', () => {
-    const { contexts, properties } = propertyMenuBranches({
-      tree: treeWithSchema(),
-      schema: SCHEMA,
-      row: row(),
-    })
-    expect(contexts.map((r) => r.name)).toEqual(['Realms'])
-    expect(properties.map((r) => r.name)).toEqual(['stage', 'Tags', 'Done', 'Count'])
-    expect([...contexts, ...properties].every((r) => r.separatorBefore === undefined)).toBe(true)
+    expect(properties.find((r) => r.name === 'Count')?.options).toBeUndefined()
   })
 
   it("leaves a Space out of its own Context's options", () => {
     const tree = treeWithSchema()
     const node = tree.contexts[0].spaces[0]
-    const { contexts } = propertyMenuBranches({
+    const { spaces } = propertyMenuBranches({
       tree,
       schema: tree.registry,
       row: spaceRowOf(tree, node),
     })
-    expect(contexts[0].options?.map((o) => o.value)).toEqual(['t1', 'pr1'])
+    expect(spaces[0].options?.map((o) => o.value)).toEqual(['t1', 'pr1'])
   })
 })
 

@@ -16,7 +16,6 @@ import { contextTargetToSelect } from '../../Navigation/tabsModel'
 import {
   propertyMenuBranches,
   type PropertyMenuTarget,
-  propertyMenuRows,
   runPropertyAction,
 } from './propertyMenuActions'
 import { host } from '../../Platform/dialer'
@@ -61,17 +60,10 @@ export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElemen
         capitalize: s.personalization.capitalizeMetadata ?? false,
       }
     : null
-  let halves: Pick<ContextTarget, 'spaces' | 'properties'> = {}
-  if (menuTarget) {
-    if (node) {
-      const { contexts, properties } = propertyMenuBranches(menuTarget)
-      halves = { spaces: contexts, properties }
-    } else halves = { properties: propertyMenuRows(menuTarget) }
-  }
   const shown: ContextTarget = {
     ...target,
     headingIconHidden: node?.headingIconHidden,
-    ...halves,
+    ...(menuTarget ? propertyMenuBranches(menuTarget) : {}),
   }
   const action = await popMenu(entityMenuItems(shown, creators))
   if (action === null) return

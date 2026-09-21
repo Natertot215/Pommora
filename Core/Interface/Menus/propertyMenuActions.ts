@@ -8,7 +8,6 @@ import {
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { afterSeparator } from '../../Actions/menuModel'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { pickFileInto } from '../../Properties/Pickers/filePick'
@@ -47,7 +46,7 @@ export function propertyMenuBranches({
   schema,
   row,
   capitalize = false,
-}: PropertyMenuTarget): { contexts: PropertyMenuRow[]; properties: PropertyMenuRow[] } {
+}: PropertyMenuTarget): { spaces: PropertyMenuRow[]; properties: PropertyMenuRow[] } {
   const contexts = contextsByIdOf(tree)
   const build = (id: string, def: PropertyDefinition): PropertyMenuRow => {
     const base = { id, name: columnLabel(id, schema, contexts, capitalize) }
@@ -72,14 +71,9 @@ export function propertyMenuBranches({
   }
   const built = schema.filter((d) => !STAMP_TYPES.has(d.type)).map((def) => build(def.id, def))
   return {
-    contexts: [...contexts.keys()].map((id) => build(id, syntheticContextDef(id))),
+    spaces: [...contexts.keys()].map((id) => build(id, syntheticContextDef(id))),
     properties: [...built.filter((r) => r.options), ...built.filter((r) => !r.options)],
   }
-}
-
-export function propertyMenuRows(t: PropertyMenuTarget): PropertyMenuRow[] {
-  const { contexts, properties } = propertyMenuBranches(t)
-  return [...contexts, ...(contexts.length > 0 ? afterSeparator(properties) : properties)]
 }
 
 export function runPropertyAction(
