@@ -51,11 +51,11 @@ describe('radiusOf', () => {
   it('grows a hub with its members and clamps at the maximum', () => {
     expect(radiusOf('space', inbound({}), 10)).toBeGreaterThan(BASE_RADIUS.space)
     expect(radiusOf('space', inbound({}), 10_000)).toBe(RADIUS_MAX)
-    expect(radiusOf('folder', inbound({}), 40)).toBe(80)
+    expect(radiusOf('folder', inbound({}), 40)).toBe(BASE_RADIUS.folder * 2)
   })
 
   it('compounds a Space linearly with its Space links, apart from its members', () => {
-    expect(radiusOf('space', inbound({}), 0, 5)).toBe(75)
+    expect(radiusOf('space', inbound({}), 0, 5)).toBe(BASE_RADIUS.space * 1.5)
     const one = radiusOf('space', inbound({}), 0, 1)
     const two = radiusOf('space', inbound({}), 0, 2)
     expect(one - BASE_RADIUS.space).toBeCloseTo(two - one)
