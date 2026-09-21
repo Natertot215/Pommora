@@ -153,6 +153,7 @@
   align-self: flex-start;
   height: var(--window-toolbar-h);
   pointer-events: auto;
+  padding-top: var(--window-panel-inset);
   padding-left: var(--window-tab-clear-l);
   padding-right: var(--window-tab-clear-r);
 }
