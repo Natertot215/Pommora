@@ -40,6 +40,7 @@ import {
 import { readSettings, type SettingsLeaves, scopeOf } from '../Settings/codec'
 import { coerceOpenIn } from './schemas'
 import { containerFieldsFrom } from './containerFields'
+import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import {
   findContainerWhere,
   makeCollectionNode,
@@ -352,12 +353,9 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
   const next = makeSpaceNode({
     id,
     title: node.title,
-    icon: asString(sc.icon),
     path: dirRel,
-    banner: asString(sc.banner),
-    headingIconHidden: sc.heading_icon_hidden === true,
-    color: asString(sc.color),
     contextId: node.contextId,
+    ...spaceFieldsFrom(sc),
   })
   const links = resolveEntityContexts(sc, tree.contexts)
   if (links) next.contextValues = links
@@ -398,9 +396,11 @@ export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'
       const spaces = resolveOrder(g.spaces, asStringArray(order.spaces[g.def.id]))
       return spaces.some((s, i) => s !== g.spaces[i]) ? { ...g, spaces } : g
     })
+    const contextOrder = order.contexts
+    const reordered = JSON.stringify(contextOrder) !== JSON.stringify(t.contextOrder)
     const moved = collections.some((c, i) => c !== t.collections[i])
-    return moved || contexts.some((g, i) => g !== t.contexts[i])
-      ? { ...t, collections, contexts }
+    return moved || reordered || contexts.some((g, i) => g !== t.contexts[i])
+      ? { ...t, collections, contexts, contextOrder }
       : t
   })
 }

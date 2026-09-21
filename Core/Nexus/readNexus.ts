@@ -10,6 +10,7 @@ import {
   type ContextsRegistry,
 } from '../Contexts/contexts'
 import { resolveContextKeys } from '../Contexts/contextResolve'
+import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import { type Crop, coerceOpenIn, cropsFile } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -50,10 +51,15 @@ export function readCropLeaves(config: Json): NexusTree['crops'] {
   return Object.fromEntries(Object.entries(byImage).filter((e): e is [string, Crop] => !!e[1]))
 }
 
-export function readOrder(state: Json): { collections?: string[]; spaces: Json } {
+export function readOrder(state: Json): {
+  collections?: string[]
+  contexts?: string[]
+  spaces: Json
+} {
   const order = isPlainObject(state.order) ? state.order : {}
   return {
     collections: asStringArray(order.collections),
+    contexts: asStringArray(order.contexts),
     spaces: isPlainObject(order.spaces) ? order.spaces : {},
   }
 }
@@ -242,12 +248,9 @@ async function readSpace(
   const node = makeSpaceNode({
     id: asString(sc.id) ?? adoptedId(relDir),
     title: name,
-    icon: asString(sc.icon),
     path: relDir,
-    banner: asString(sc.banner),
-    headingIconHidden: sc.heading_icon_hidden === true,
-    color: asString(sc.color),
     contextId,
+    ...spaceFieldsFrom(sc),
   })
   retainContextKeys(node, sc)
   return node
@@ -366,6 +369,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     homepage: readHomepageLeaves(homepageConfig),
     crops: readCropLeaves(cropsConfig),
     contexts: contexts ?? [],
+    contextOrder: order.contexts,
     collections,
     accent: leaves.accent,
     personalization: leaves.personalization,

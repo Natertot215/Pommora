@@ -31,6 +31,7 @@ export function makeSpaceNode(f: {
   banner?: string
   headingIconHidden?: boolean
   color?: string
+  values?: Record<string, unknown>
 }): SpaceNode {
   return {
     kind: 'space',
@@ -42,6 +43,7 @@ export function makeSpaceNode(f: {
     headingIconHidden: f.headingIconHidden ?? false,
     color: f.color,
     contextId: f.contextId,
+    values: f.values,
   }
 }
 

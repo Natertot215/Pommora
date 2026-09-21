@@ -5,7 +5,8 @@ import {
   writeJson,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { noteValueWrite } from '../Nexus/valuesChanged'
+import { noteSidecarWrite, noteValueWrite } from '../Nexus/valuesChanged'
+import { dirname } from '../Paths/posix'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { listFilesRecursive } from '../Files/walk'
@@ -89,6 +90,7 @@ export async function sweepGovernedRoots(
         const next = sidecars(raw, file)
         if (next === null) return
         await writeJson(file, next)
+        noteSidecarWrite(dirname(file))
         out.touched.push(file)
       })
     }

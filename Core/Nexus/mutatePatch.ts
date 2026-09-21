@@ -27,6 +27,7 @@ import {
   patchSpaceFromDisk,
 } from './watchPatch'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
+import { flushSidecarWrites } from './valuesChanged'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
 function patchForMutation(
@@ -209,7 +210,11 @@ export async function confirmBy(
   work: () => Promise<'ok' | 'refresh'>,
 ): Promise<NexusTree | null> {
   const before = getLiveTree()
-  if ((await work()) === 'refresh') {
+  let route = await work()
+  for (const dirRel of flushSidecarWrites(root)) {
+    if (route === 'ok' && (await patchSpaceFromDisk(root, dirRel)) === 'refresh') route = 'refresh'
+  }
+  if (route === 'refresh') {
     try {
       await refreshAfterWrite(root)
     } catch {

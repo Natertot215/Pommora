@@ -34,6 +34,7 @@ export interface SpaceNode extends PathNode {
   contextId: string
   color?: string
   contextValues?: Record<string, string[]>
+  values?: Record<string, unknown>
 }
 
 export interface ContextGroup {
@@ -97,6 +98,8 @@ export interface NexusTree {
   crops: Record<string, Crop>
   collections: CollectionNode[]
   contexts: ContextGroup[]
+  // Not the sidebar's order: `contexts` above carries the registry's, and these two move independently.
+  contextOrder?: string[]
   accent: AccentSetting
   personalization: Personalization
   commands: Commands
