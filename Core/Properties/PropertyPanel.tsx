@@ -62,7 +62,7 @@ const GROUPS = [
 ] as const
 type GroupKey = (typeof GROUPS)[number]['key']
 
-export type PanelSubject =
+type PanelSubject =
   | { kind: 'page'; id: string; path: string; title?: string }
   | { kind: 'space'; id: string }
 
