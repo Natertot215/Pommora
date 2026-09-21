@@ -187,19 +187,29 @@ export function touchesCorpus(root: string, events: WatchEvent[], scope: WatchSc
   })
 }
 
+// The patch reads every upserted page to land it, so the ids it saw travel out with it — the only other way to name them is a walk of the whole tree.
+export interface WatchPatch {
+  outcome: 'patched' | 'refresh'
+  touched: ReadonlyMap<string, string>
+}
+
+// An abandoned patch names an arbitrary prefix of the batch, so the walk starts from no ids rather than a subset.
+const walked = (): WatchPatch => ({ outcome: 'refresh', touched: new Map() })
+
 export async function applyWatchEvents(
   root: string,
   events: WatchEvent[],
   scope: WatchScope,
-): Promise<'patched' | 'refresh'> {
+): Promise<WatchPatch> {
   const tree = getLiveTree()
-  if (!tree) return 'refresh'
+  if (!tree) return walked()
   const classes = events.map((ev) => classifyEvent(tree, root, ev, scope))
-  if (classes.some((c) => c.kind === 'full-refresh')) return 'refresh'
+  if (classes.some((c) => c.kind === 'full-refresh')) return walked()
+  const touched = new Map<string, string>()
   for (const c of classes) {
-    if ((await applyOne(root, c, scope)) === 'refresh') return 'refresh'
+    if ((await applyOne(root, c, scope, touched)) === 'refresh') return walked()
   }
-  return 'patched'
+  return { outcome: 'patched', touched }
 }
 
 /** Null from the transform means the patch could not land — degrade to the walk, never drift. The root pin closes a confirm that outlived its session: a switch mid-apply installs the NEW nexus's tree, and an old-root write must never patch into it. */
@@ -229,6 +239,7 @@ async function applyOne(
   root: string,
   c: WatchClass,
   watched: WatchScope,
+  touched: Map<string, string>,
 ): Promise<'ok' | 'refresh'> {
   switch (c.kind) {
     case 'ignored':
@@ -241,12 +252,15 @@ async function applyOne(
       return 'ok'
     case 'page-remove':
       removePathIndex(c.rel)
+      touched.delete(c.rel)
       return removePage(root, c.rel)
     case 'page-upsert': {
       await cascadeSeen(root, await indexWrittenPage(root, join(root, c.rel)))
-      const outcome = await patchPageFromDisk(root, c.rel)
+      const landed = await patchPageFromDisk(root, c.rel)
       noteExternalEdit(root, join(root, c.rel))
-      return outcome
+      if (landed === 'refresh') return 'refresh'
+      if (landed.id !== null) touched.set(c.rel, landed.id)
+      return 'ok'
     }
     case 'container-meta':
       return patchContainerFromDisk(root, c.dirRel)
@@ -267,13 +281,17 @@ async function applyOne(
   }
 }
 
-export async function patchPageFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
+// A null id means the patch landed with no page to name — the file vanished before it could be read.
+type PagePatch = 'refresh' | { id: string | null }
+
+export async function patchPageFromDisk(root: string, rel: string): Promise<PagePatch> {
   const abs = join(root, rel)
   let record: Awaited<ReturnType<typeof readPageRecord>>
   try {
     record = await readPageRecord(abs, rel)
   } catch {
-    return (await pathExists(abs)) ? 'refresh' : removePage(root, rel)
+    if (await pathExists(abs)) return 'refresh'
+    return removePage(root, rel) === 'refresh' ? 'refresh' : { id: null }
   }
   const tree = getLiveTree()
   if (!tree) return 'refresh'
@@ -283,12 +301,13 @@ export async function patchPageFromDisk(root: string, rel: string): Promise<'ok'
   if (links) node.contextValues = links
   else delete node.contextValues
   const existing = findPage(tree, rel)
-  if (existing && existing.id === node.id) return replaceNode(root, rel, node)
+  if (existing && existing.id === node.id)
+    return replaceNode(root, rel, node) === 'refresh' ? 'refresh' : { id: node.id }
   const dirRel = relDirname(rel)
   const container = containerAt(tree, dirRel)
   if (!container) return 'refresh'
   const meta = (await readJsonObject(join(root, dirRel, SIDECAR_FILENAME[container.kind]))) ?? {}
-  return applyPatch(
+  const landed = applyPatch(
     root,
     (t) =>
       updateNodeInTree(t, dirRel, (n) =>
@@ -303,6 +322,7 @@ export async function patchPageFromDisk(root: string, rel: string): Promise<'ok'
           : n,
       ) ?? t,
   )
+  return landed === 'refresh' ? 'refresh' : { id: node.id }
 }
 
 export async function patchContainerFromDisk(

@@ -126,7 +126,7 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
   try {
     const before = getLiveTree()
     const assetsBefore = getHeldAssetMap(root)
-    const outcome = await applyWatchEvents(root, events, scope)
+    const { outcome, touched } = await applyWatchEvents(root, events, scope)
     let tree = getLiveTree()
     // The map is patch-only, so the fallback walk is where the listing is taken again.
     if (outcome === 'refresh') {
@@ -139,7 +139,7 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     const classified = classifyBatch(events, root, scope)
     const pages = pagesChangedIn(classified)
     if (pages.length) pushToWindow(win, 'pages:changed', pages)
-    const changed = valueChangesOf(classified, outcome === 'refresh' ? null : tree)
+    const changed = valueChangesOf(classified, touched)
     if (changed.length) pushToWindow(win, 'values:changed', changed)
     for (const host of tilesChangedIn(classified)) pushToWindow(win, 'tiles:changed', host)
     const assets = getHeldAssetMap(root)

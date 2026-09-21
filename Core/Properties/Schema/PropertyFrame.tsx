@@ -275,27 +275,24 @@ export function PropertyFrame({
   const assign = async (id: string): Promise<void> => {
     await commit(await host().ask('schema:assign', collectionPath, id))
   }
-  const saveOptions = async (id: string, next: Option[]): Promise<void> => {
-    await commit(await host().ask('property:setOptions', id, next))
+  // Every property write is the same round trip; only the channel and its arguments differ.
+  const write = async (res: Promise<WriteResult>): Promise<void> => {
+    await commit(await res)
   }
-  const saveStatusGroups = async (id: string, next: StatusGroup[]): Promise<void> => {
-    await commit(await host().ask('property:setStatusGroups', id, next))
-  }
-  const saveLinkConfig = async (id: string, patch: LinkConfig): Promise<void> => {
-    await commit(await host().ask('property:setLinkConfig', id, patch))
-  }
-  const saveCheckboxColor = async (id: string, color: string | undefined): Promise<void> => {
-    await commit(await host().ask('property:setCheckboxColor', id, color))
-  }
-  const saveNumberFormat = async (id: string, patch: Partial<NumberConfig>): Promise<void> => {
-    await commit(await host().ask('property:setNumberFormat', id, patch))
-  }
-  const saveFileDirectory = async (id: string, dir: string): Promise<void> => {
-    await commit(await host().ask('property:setFileDirectory', id, { file_directory: dir }))
-  }
-  const savePropertyIcon = async (id: string, icon: string): Promise<void> => {
-    await commit(await host().ask('property:setIcon', id, icon))
-  }
+  const saveOptions = (id: string, next: Option[]): Promise<void> =>
+    write(host().ask('property:setOptions', id, next))
+  const saveStatusGroups = (id: string, next: StatusGroup[]): Promise<void> =>
+    write(host().ask('property:setStatusGroups', id, next))
+  const saveLinkConfig = (id: string, patch: LinkConfig): Promise<void> =>
+    write(host().ask('property:setLinkConfig', id, patch))
+  const saveCheckboxColor = (id: string, color: string | undefined): Promise<void> =>
+    write(host().ask('property:setCheckboxColor', id, color))
+  const saveNumberFormat = (id: string, patch: Partial<NumberConfig>): Promise<void> =>
+    write(host().ask('property:setNumberFormat', id, patch))
+  const saveFileDirectory = (id: string, dir: string): Promise<void> =>
+    write(host().ask('property:setFileDirectory', id, { file_directory: dir }))
+  const savePropertyIcon = (id: string, icon: string): Promise<void> =>
+    write(host().ask('property:setIcon', id, icon))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const next = { ...activeView.column_styles?.[propId], ...patch }
     const res = await saveView({
@@ -304,28 +301,18 @@ export function PropertyFrame({
     })
     if (!res.ok) await host().ask('error:show', res.error.message)
   }
-  const renameOption = async (id: string, oldValue: string, newTitle: string): Promise<void> => {
-    await commit(await host().ask('property:renameOption', id, oldValue, newTitle))
-  }
-  const removeOption = async (id: string, value: string): Promise<void> => {
-    await commit(await host().ask('property:removeOption', id, value))
-  }
-  const clearOption = async (id: string, value: string): Promise<void> => {
-    await commit(await host().ask('property:clearOption', id, value))
-  }
-  const renameStatusOption = async (
-    id: string,
-    oldValue: string,
-    newTitle: string,
-  ): Promise<void> => {
-    await commit(await host().ask('property:renameStatusOption', id, oldValue, newTitle))
-  }
-  const removeStatusOption = async (id: string, value: string): Promise<void> => {
-    await commit(await host().ask('property:removeStatusOption', id, value))
-  }
-  const clearStatusOption = async (id: string, value: string): Promise<void> => {
-    await commit(await host().ask('property:clearStatusOption', id, value))
-  }
+  const renameOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
+    write(host().ask('property:renameOption', id, oldValue, newTitle))
+  const removeOption = (id: string, value: string): Promise<void> =>
+    write(host().ask('property:removeOption', id, value))
+  const clearOption = (id: string, value: string): Promise<void> =>
+    write(host().ask('property:clearOption', id, value))
+  const renameStatusOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
+    write(host().ask('property:renameStatusOption', id, oldValue, newTitle))
+  const removeStatusOption = (id: string, value: string): Promise<void> =>
+    write(host().ask('property:removeStatusOption', id, value))
+  const clearStatusOption = (id: string, value: string): Promise<void> =>
+    write(host().ask('property:clearStatusOption', id, value))
   const handleDrop = async (drop: PaneDrop): Promise<void> => {
     const r =
       drop.kind === 'reorder-assigned'
@@ -395,6 +382,93 @@ export function PropertyFrame({
     </>
   )
 
+  const NO_SETTINGS = (): React.JSX.Element => <div style={{ minHeight: 8 }} />
+  const selectSettings = (
+    def: PropertyDefinition,
+    _style: ColumnStyle,
+    look: OptionStyle,
+  ): React.JSX.Element => (
+    <OptionEditor
+      type={def.type}
+      options={def.select_options ?? []}
+      look={look}
+      onSetOptions={(next) => void saveOptions(def.id, next)}
+      onRenameOption={(oldValue, newTitle) => void renameOption(def.id, oldValue, newTitle)}
+      onRemoveOption={(value) => void removeOption(def.id, value)}
+      onClearOption={(value) => void clearOption(def.id, value)}
+    />
+  )
+
+  // One arm per property type, so a type added to the schema is a compile error here rather than a blank panel at runtime.
+  const SETTINGS: Record<
+    PropertyType,
+    (def: PropertyDefinition, style: ColumnStyle, look: OptionStyle) => React.JSX.Element
+  > = {
+    select: selectSettings,
+    multi_select: selectSettings,
+    status: (def, _style, look) => (
+      <StatusEditor
+        groups={def.status_groups ?? []}
+        look={look}
+        onSetGroups={(next) => void saveStatusGroups(def.id, next)}
+        onRenameOption={(oldValue, newTitle) => void renameStatusOption(def.id, oldValue, newTitle)}
+        onRemoveOption={(value) => void removeStatusOption(def.id, value)}
+        onClearOption={(value) => void clearStatusOption(def.id, value)}
+      />
+    ),
+    url: (def) => (
+      <URLEditor
+        underline={def.link_underline ?? false}
+        display={def.link_display ?? DEFAULT_LINK_DISPLAY}
+        color={def.link_color}
+        onSetConfig={(patch) => void saveLinkConfig(def.id, patch)}
+      />
+    ),
+    datetime: (def, style) => (
+      <DateTimeEditor style={style} onChange={(patch) => void saveColumnStyle(def.id, patch)} />
+    ),
+    checkbox: (def, style) => (
+      <CheckboxEditor
+        color={def.checkbox_color}
+        look={style.look === 'switch' ? 'switch' : 'checkbox'}
+        onSetColor={(next) => void saveCheckboxColor(def.id, next)}
+        onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
+      />
+    ),
+    number: (def, style) => (
+      <NumberEditor
+        config={{
+          number_family: def.number_family,
+          number_currency: def.number_currency,
+          number_separators: def.number_separators,
+          number_decimals: def.number_decimals,
+          number_fraction: def.number_fraction,
+          number_denominator: def.number_denominator,
+        }}
+        look={style.look === 'bar' ? 'bar' : 'number'}
+        onSetConfig={(patch) => void saveNumberFormat(def.id, patch)}
+        onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
+      />
+    ),
+    file: (def) => (
+      <FileEditor
+        directory={def.file_directory}
+        onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
+        onBrowse={() => {
+          void host()
+            .ask('assets:chooseDir', 'property', def.file_directory)
+            .then((picked) => {
+              if (picked.ok && picked.value !== null) void saveFileDirectory(def.id, picked.value)
+            })
+        }}
+      />
+    ),
+    // A registry Context and the two stamps carry no settings of their own.
+    context: NO_SETTINGS,
+    created_time: NO_SETTINGS,
+    last_edited_time: NO_SETTINGS,
+  }
+
   const editor = (id: string): React.JSX.Element => {
     const def = props.find((d) => d.id === id)
     if (!def) {
@@ -444,76 +518,7 @@ export function PropertyFrame({
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
-        {hasSelectOptions(def.type) ? (
-          <OptionEditor
-            type={def.type}
-            options={def.select_options ?? []}
-            look={optionLook}
-            onSetOptions={(next) => void saveOptions(def.id, next)}
-            onRenameOption={(oldValue, newTitle) => void renameOption(def.id, oldValue, newTitle)}
-            onRemoveOption={(value) => void removeOption(def.id, value)}
-            onClearOption={(value) => void clearOption(def.id, value)}
-          />
-        ) : def.type === 'status' ? (
-          <StatusEditor
-            groups={def.status_groups ?? []}
-            look={optionLook}
-            onSetGroups={(next) => void saveStatusGroups(def.id, next)}
-            onRenameOption={(oldValue, newTitle) =>
-              void renameStatusOption(def.id, oldValue, newTitle)
-            }
-            onRemoveOption={(value) => void removeStatusOption(def.id, value)}
-            onClearOption={(value) => void clearStatusOption(def.id, value)}
-          />
-        ) : def.type === 'url' ? (
-          <URLEditor
-            underline={def.link_underline ?? false}
-            display={def.link_display ?? DEFAULT_LINK_DISPLAY}
-            color={def.link_color}
-            onSetConfig={(patch) => void saveLinkConfig(def.id, patch)}
-          />
-        ) : def.type === 'datetime' ? (
-          <DateTimeEditor
-            style={columnStyle}
-            onChange={(patch) => void saveColumnStyle(def.id, patch)}
-          />
-        ) : def.type === 'checkbox' ? (
-          <CheckboxEditor
-            color={def.checkbox_color}
-            look={columnStyle.look === 'switch' ? 'switch' : 'checkbox'}
-            onSetColor={(next) => void saveCheckboxColor(def.id, next)}
-            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
-          />
-        ) : def.type === 'number' ? (
-          <NumberEditor
-            config={{
-              number_family: def.number_family,
-              number_currency: def.number_currency,
-              number_separators: def.number_separators,
-              number_decimals: def.number_decimals,
-              number_fraction: def.number_fraction,
-              number_denominator: def.number_denominator,
-            }}
-            look={columnStyle.look === 'bar' ? 'bar' : 'number'}
-            onSetConfig={(patch) => void saveNumberFormat(def.id, patch)}
-            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
-          />
-        ) : def.type === 'file' ? (
-          <FileEditor
-            directory={def.file_directory}
-            onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
-            onBrowse={() => {
-              void host()
-                .ask('assets:chooseDir', 'property', def.file_directory)
-                .then((picked) => {
-                  if (picked.ok && picked.value !== null)
-                    void saveFileDirectory(def.id, picked.value)
-                })
-            }}
-          />
-        ) : (
-          <div style={{ minHeight: 8 }} />
-        )}
+        {SETTINGS[def.type](def, columnStyle, optionLook)}
       </MenuScrollFrame>
     )
   }

@@ -1,41 +1,46 @@
-import { isPlainObject } from '../../Properties/propertyValue'
-import { EMPTY_WINDOWS, type WindowSetRecord, type WindowsFile } from './windowRecord'
+import { z } from 'zod'
+import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
 import { isNavRef, type NavRef, toNavRef, WINDOW_TAB_KINDS } from '../../Navigation/navRef'
 import { readValue, writeValue } from '../../Platform/localState'
 
-function readRecord(v: unknown): WindowSetRecord | null {
-  if (!isPlainObject(v) || !Array.isArray(v.tabs)) return null
-  const tabs = v.tabs
-    .map((t) =>
-      isPlainObject(t) && isNavRef(t.target, WINDOW_TAB_KINDS)
-        ? { target: toNavRef(t.target) }
-        : null,
-    )
-    .filter((t): t is { target: NavRef } => t !== null)
-  const activeIndex =
-    typeof v.activeIndex === 'number' && Number.isInteger(v.activeIndex) && v.activeIndex >= 0
-      ? v.activeIndex
-      : 0
-  return { tabs, activeIndex }
-}
+// `NavRef` keeps its one validator; the schema decodes the file's shape around it.
+const windowTarget = z
+  .custom<NavRef>((v) => isNavRef(v, WINDOW_TAB_KINDS))
+  .transform((t) => toNavRef(t))
 
-function readOpen(v: unknown): WindowsFile['open'] {
-  if (!isPlainObject(v)) return null
-  const kind = v.kind
-  if (kind !== 'page' && kind !== 'nav' && kind !== 'matrix') return null
-  return typeof v.originId === 'string' ? { kind, originId: v.originId } : null
-}
+const windowTab = z.object({ target: windowTarget })
+
+const windowSetRecord = z.object({
+  // A tab whose target no longer reads drops; the rest of the set still opens.
+  tabs: z.array(z.unknown()).transform((ts) =>
+    ts.flatMap((t) => {
+      const tab = windowTab.safeParse(t)
+      return tab.success ? [tab.data] : []
+    }),
+  ),
+  activeIndex: z.number().int().min(0).catch(0).default(0),
+})
+
+const windowsFile = z.object({
+  navSet: windowSetRecord.nullable().catch(null),
+  origins: z.record(z.string(), windowSetRecord.nullable().catch(null)),
+  open: z
+    .object({
+      kind: z.enum(['page', 'nav', 'matrix']),
+      originId: z.string(),
+    })
+    .nullable()
+    .catch(null),
+  navOverride: z.boolean().optional().catch(undefined),
+})
 
 export function sanitizeWindows(raw: unknown): WindowsFile | null {
-  if (!isPlainObject(raw) || !isPlainObject(raw.origins)) return null
-  const origins: Record<string, WindowSetRecord> = {}
-  for (const [id, rec] of Object.entries(raw.origins)) {
-    const clean = readRecord(rec)
-    if (clean) origins[id] = clean
-  }
-  const file: WindowsFile = { navSet: readRecord(raw.navSet), origins, open: readOpen(raw.open) }
-  if (typeof raw.navOverride === 'boolean') file.navOverride = raw.navOverride
-  return file
+  const read = windowsFile.safeParse(raw)
+  if (!read.success) return null
+  const { origins, ...rest } = read.data
+  const kept: WindowsFile['origins'] = {}
+  for (const [id, rec] of Object.entries(origins)) if (rec) kept[id] = rec
+  return { ...rest, origins: kept }
 }
 
 export function readWindowsState(): WindowsFile {

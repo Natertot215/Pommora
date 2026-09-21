@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode, type Ref } from 'react'
 import { GlassPane } from '@pommora/uix/Glass/glass-pane'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Banner } from './Header/Banner'
@@ -54,9 +54,15 @@ export function InterfaceScaffold({
 export function Surface({
   children,
   className,
+  ref,
 }: {
   children: ReactNode
   className?: string
+  ref?: Ref<HTMLDivElement>
 }): React.JSX.Element {
-  return <GlassPane className={cx('surface-glass', className)}>{children}</GlassPane>
+  return (
+    <GlassPane ref={ref} className={cx('surface-glass', className)}>
+      {children}
+    </GlassPane>
+  )
 }
