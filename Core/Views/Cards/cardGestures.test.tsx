@@ -144,11 +144,12 @@ describe('a card value', () => {
 })
 
 describe('the card menu', () => {
-  it('offers Add Property while a blank addable property stands', async () => {
+  it('carries the Properties branch, and no Add Property row beside it', async () => {
     await renderView(root, source())
     await rightClick('p1', null)
     const items = (menuSpy.mock.calls.at(-1)?.[0] as { items: Array<{ label: string }> }).items
-    expect(items.map((i) => i.label)).toContain('Add Property')
+    expect(items.map((i) => i.label)).toContain('Properties')
+    expect(items.map((i) => i.label)).not.toContain('Add Property')
   })
 
   it('answering Icon mounts the one root icon picker', async () => {

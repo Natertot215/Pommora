@@ -4,12 +4,11 @@ import {
   type PageMoveAction,
   pageMetaMenuItems,
 } from './pageMenu'
-import { type ActionItem, afterSeparator } from './menuModel'
+import type { ActionItem } from './menuModel'
 
-type CardMenuAction = PageMetaAction | PageMoveAction | 'add' | 'image:edit'
+type CardMenuAction = PageMetaAction | PageMoveAction | 'image:edit'
 
 interface CardMenuContext extends PageMenuContext {
-  addable: boolean
   alreadyOpen?: boolean
   editableImage?: boolean
 }
@@ -23,9 +22,5 @@ export function cardMenuModel(ctx: CardMenuContext): ActionItem<CardMenuAction>[
     clipboard: true,
     history: true,
   }) as ActionItem<CardMenuAction>[]
-  const items: ActionItem<CardMenuAction>[] = ctx.editableImage
-    ? [{ label: 'Edit Image', action: 'image:edit' }, ...meta]
-    : meta
-  if (!ctx.addable) return items
-  return [{ label: 'Add Property', action: 'add' }, ...afterSeparator(items)]
+  return ctx.editableImage ? [{ label: 'Edit Image', action: 'image:edit' }, ...meta] : meta
 }

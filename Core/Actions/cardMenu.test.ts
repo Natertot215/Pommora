@@ -3,7 +3,7 @@ import { cardMenuModel } from './cardMenu'
 
 describe('cardMenuModel', () => {
   it('lists the page-meta actions with one New Page — the grid has no above', () => {
-    const m = cardMenuModel({ addable: false })
+    const m = cardMenuModel({})
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
@@ -21,35 +21,27 @@ describe('cardMenuModel', () => {
 
   it('carries both page branches after Edit Icon', () => {
     const half = [{ id: 'g1', name: 'Realms', options: [] }]
-    const m = cardMenuModel({ addable: false, spaces: half, properties: half })
+    const m = cardMenuModel({ spaces: half, properties: half })
     const at = m.findIndex((i) => i.label === 'Edit Icon')
     expect(m.slice(at + 1, at + 3).map((i) => i.label)).toEqual(['Spaces', 'Properties'])
   })
 
   it('an open page reads "Open"', () => {
-    expect(cardMenuModel({ addable: false, alreadyOpen: true })[0].label).toBe('Open')
+    expect(cardMenuModel({ alreadyOpen: true })[0].label).toBe('Open')
   })
 
-  it('leads with an Add Property leaf that routes to the in-app picker', () => {
-    const m = cardMenuModel({ addable: true })
-    expect(m[0]).toMatchObject({ label: 'Add Property', action: 'add' })
-    expect(m[0].submenu).toBeUndefined()
-    expect(m[1].separatorBefore).toBe(true)
-  })
-
-  it('omits the Add Property row when nothing is addable', () => {
-    expect(cardMenuModel({ addable: false }).some((i) => i.label === 'Add Property')).toBe(false)
+  it('carries no Add Property row; Properties covers it', () => {
+    expect(cardMenuModel({}).some((i) => i.label === 'Add Property')).toBe(false)
   })
 
   it('leads with Edit Image only when the image is editable', () => {
-    expect(cardMenuModel({ addable: false }).some((i) => i.action === 'image:edit')).toBe(false)
-    const m = cardMenuModel({ addable: false, editableImage: true })
+    expect(cardMenuModel({}).some((i) => i.action === 'image:edit')).toBe(false)
+    const m = cardMenuModel({ editableImage: true })
     expect(m[0]).toMatchObject({ label: 'Edit Image', action: 'image:edit' })
   })
 
   it('opens the send block with Move To once the card is given destinations', () => {
     const m = cardMenuModel({
-      addable: false,
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
     const actions = m.map((i) => i.action)
