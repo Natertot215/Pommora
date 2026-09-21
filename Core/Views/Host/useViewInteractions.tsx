@@ -351,10 +351,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     return {
       alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
       ...pageMoveContext(tree, row.path),
+      ...propertyMenuBranches({ tree, schema, row, capitalize }),
     }
   }
-  const propertyBranches = (row: ViewRow): ReturnType<typeof propertyMenuBranches> =>
-    propertyMenuBranches({ tree, schema, row, capitalize })
   /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
   const runTitleAction = (action: string, row: ViewRow, anchor: HTMLElement): boolean => {
     if (runPageSendAction(action, row)) return true
@@ -436,7 +435,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     structuralSlot,
     openPage,
     titleMenuContext,
-    propertyBranches,
     runTitleAction,
     iconPicker,
     ghost,
