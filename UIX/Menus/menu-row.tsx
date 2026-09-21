@@ -255,7 +255,7 @@ export const AccessoryButton = forwardRef<
 export const FooterIconButton = forwardRef<
   HTMLButtonElement,
   {
-    icon: string | ReactNode
+    icon: IconName | ReactNode
     ariaLabel: string
     onClick?: () => void
     disabled?: boolean
@@ -270,7 +270,7 @@ export const FooterIconButton = forwardRef<
       ref={ref}
       size="button-inline"
       aria-label={ariaLabel}
-      className={s.footerAction}
+      className={s.footingLabel}
       onClick={onClick}
       disabled={disabled}
       pressed={pressed}

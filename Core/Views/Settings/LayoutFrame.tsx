@@ -12,19 +12,21 @@ import {
 } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { MenuIndex, MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
+import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
 import { factorPickerProps, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { GroupFrame } from './GroupFrame'
+import { GroupFrame, pickerRow } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { iconForTypeSwitch } from '../viewIcon'
 import { VIEW_RENDERERS } from '../Host/ViewHost'
 import { ViewItemMenu } from './ViewItemMenu'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
 
@@ -67,9 +69,6 @@ function ViewSwitches({
   )
 }
 
-const SCALE_MIN = 0.5
-const SCALE_MAX = 1.5
-
 const BANNERS: PickerOption<CardBanner>[] = [
   { value: 'preview', label: 'Preview' },
   { value: 'banner', label: 'Banner' },
@@ -81,7 +80,11 @@ const FORMATS: PickerOption<ViewFormat>[] = [
   { value: 'standard', label: 'Standard' },
 ]
 
-const SCALE_STEPS = Array.from({ length: 11 }, (_, i) => Number((SCALE_MIN + i / 10).toFixed(2)))
+const CARD_ROW_LOOK = { iconSize: ICON.rootEntry, solid: true } as const
+
+const CARD_SCALE_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
+const CARD_SCALE_MIN = CARD_SCALE_STEPS[0]
+const CARD_SCALE_MAX = CARD_SCALE_STEPS[CARD_SCALE_STEPS.length - 1]
 
 // KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
@@ -138,44 +141,36 @@ export function LayoutFrame({
         sections={[
           {
             rows: [
+              pickerRow(
+                'image',
+                'Card Image',
+                view.card_banner ?? 'banner',
+                BANNERS,
+                (v) => write({ card_banner: v }),
+                false,
+                CARD_ROW_LOOK,
+              ),
+              pickerRow(
+                'palette',
+                'Card Style',
+                isCompact(view) ? 'compact' : 'standard',
+                FORMATS,
+                (v) => write({ format: v }),
+                false,
+                CARD_ROW_LOOK,
+              ),
               {
                 kind: 'item',
-                icon: <Icon name="image" size="headline" />,
-                label: 'Card Image',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Card Image',
-                  solid: true,
-                  value: view.card_banner ?? 'banner',
-                  options: BANNERS,
-                  onPick: (v) => write({ card_banner: v as CardBanner }),
-                },
-              },
-              {
-                kind: 'item',
-                icon: <Icon name="palette" size="headline" />,
-                label: 'Card Style',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Card Style',
-                  solid: true,
-                  value: isCompact(view) ? 'compact' : 'standard',
-                  options: FORMATS,
-                  onPick: (v) => write({ format: v as ViewFormat }),
-                },
-              },
-              {
-                kind: 'item',
-                icon: <Icon name="scaling" size="headline" />,
+                icon: <Icon name="scaling" size={CARD_ROW_LOOK.iconSize} />,
                 label: 'Card Scale',
                 trailing: {
                   kind: 'picker',
                   ariaLabel: 'Card Scale',
-                  solid: true,
+                  solid: CARD_ROW_LOOK.solid,
                   ...factorPickerProps({
-                    steps: SCALE_STEPS,
+                    steps: CARD_SCALE_STEPS,
                     value: view.card_size ?? 1,
-                    coerce: (typed) => Math.min(Math.max(typed, SCALE_MIN), SCALE_MAX),
+                    coerce: (typed) => clamp(typed, CARD_SCALE_MIN, CARD_SCALE_MAX),
                     onPick: (v) => write({ card_size: v }),
                   }),
                 },

@@ -195,7 +195,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         <MenuFooting
           leading={
             <FooterLockButton
-              ariaLabel={lockLabel(scope.locked, 'view configuration')}
+              ariaLabel={lockLabel(scope.locked, 'View Configuration')}
               locked={scope.locked}
               onToggle={() => scope.setLocked(!scope.locked)}
             />

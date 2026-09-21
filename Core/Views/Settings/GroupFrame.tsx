@@ -11,6 +11,7 @@ import {
   VIEW_KINDS,
 } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
+import type { IconSize } from '@pommora/uix/Theme/theme-vars.css'
 import {
   DisclosureRow,
   FootingItem,
@@ -84,11 +85,12 @@ export const pickerRow = <T extends string>(
   options: readonly PickerOption<T>[],
   onPick: (v: T) => void,
   sub = false,
+  look?: { iconSize?: IconSize; solid?: boolean },
 ): MenuRow => ({
   kind: 'item',
-  icon: <Icon name={glyph} size="body" />,
+  icon: <Icon name={glyph} size={look?.iconSize ?? 'body'} />,
   label: sub ? <span className={gp.subLabel}>{label}</span> : label,
-  trailing: { kind: 'picker', ariaLabel: label, value, options, onPick },
+  trailing: { kind: 'picker', ariaLabel: label, value, options, onPick, solid: look?.solid },
   className: sub ? gp.subRow : undefined,
 })
 
