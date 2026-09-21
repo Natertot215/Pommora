@@ -1095,7 +1095,6 @@ const PageCard = memo(function PageCard({
     const action = await holdGhost(() =>
       popMenu(
         cardMenuModel({
-          addable: api.addableFor(row).length > 0,
           editableImage: banner === 'banner' && !!cover,
           ...api.titleMenuContext(row),
         }),
@@ -1104,8 +1103,6 @@ const PageCard = memo(function PageCard({
     if (!action) return
     if (api.titleAction(action, row, anchor)) return
     if (action === 'image:edit') requestBanner('edit', anchor)
-    else if (action === 'add' && textRef.current)
-      api.openAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
   }
 
   const iconName = entityIcon('page', row.icon, defaultIcons)
