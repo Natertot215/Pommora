@@ -20,7 +20,7 @@ import { renameHeadingCascade } from './cascade'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
-import { ensureConfigLayout } from './migrateConfig'
+import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
 import { handleMutate, type MutateDeps } from './mutate'
 import { confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
@@ -39,6 +39,7 @@ async function prepareOpenedNexus(path: string): Promise<string | null> {
     nexusId = (await ensureIdentity(path)).id
     await ensureConfigLayout(path)
     await ensureContextsRegistry(path)
+    await normalizeSavedViews(path)
   } catch (e) {
     console.error('ensure config-on-open failed:', e)
   }
