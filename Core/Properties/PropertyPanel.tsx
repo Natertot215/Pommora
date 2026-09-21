@@ -441,9 +441,20 @@ export function PropertyPanel({
             const rows = shown[key]
             const drag = key === 'contexts' ? contextDrag : propertyDrag
             const addable = fields[key].some((f) => !isShown(f))
-            const ghost = addable && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
+            const standing = addable && rows.length === 0
+            const ghost =
+              addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
+            const addRow = (onClick: () => void): React.JSX.Element => (
+              <MenuItem
+                className={cx(s.row, 'ghost-worn')}
+                leading={<Icon name="plus" size="control" />}
+                onClick={onClick}
+              >
+                {add}
+              </MenuItem>
+            )
             return (
-              <div key={key} {...ghostAnchorProps(ghostApi, key)}>
+              <div key={key} className={s.section} {...ghostAnchorProps(ghostApi, key)}>
                 <div className={heading}>
                   <span>{label}</span>
                   {addable && (
@@ -454,12 +465,13 @@ export function PropertyPanel({
                       icon="plus"
                       size={ICON.optionsAdd}
                       ariaLabel={add}
+                      className={addOpen === key ? undefined : s.sectionAdd}
                       create
                       onClick={() => openAdd(key)}
                     />
                   )}
                 </div>
-                {(rows.length > 0 || ghost) && (
+                {(rows.length > 0 || ghost || standing) && (
                   <div
                     ref={drag.containerRef}
                     className={cx(
@@ -470,6 +482,7 @@ export function PropertyPanel({
                   >
                     {drag.ghost}
                     {rows.map((f) => renderRow(f, drag))}
+                    {standing && <div data-ghost-root>{addRow(() => openAdd(key))}</div>}
                     {ghost && (
                       <Reveal open={!ghost.closing} enterOnMount onCollapsed={ghostApi.closed}>
                         <div
@@ -477,16 +490,10 @@ export function PropertyPanel({
                           onPointerEnter={ghostApi.onGhostEnter}
                           onPointerLeave={ghostApi.onGhostLeave}
                         >
-                          <MenuItem
-                            className={cx(s.row, 'ghost-worn')}
-                            leading={<Icon name="plus" size="control" />}
-                            onClick={() => {
-                              ghostApi.take()
-                              openAdd(key)
-                            }}
-                          >
-                            {add}
-                          </MenuItem>
+                          {addRow(() => {
+                            ghostApi.take()
+                            openAdd(key)
+                          })}
                         </div>
                       </Reveal>
                     )}
