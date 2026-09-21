@@ -80,7 +80,7 @@ export function SpaceMenu(): React.JSX.Element | null {
               <MenuFooting
                 leading={
                   <FooterLockButton
-                    ariaLabel={lockLabel(locked, 'board')}
+                    ariaLabel={lockLabel(locked, 'Board')}
                     locked={locked}
                     onToggle={() => setHostLock({ kind: 'space', id }, !locked)}
                   />

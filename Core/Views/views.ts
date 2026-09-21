@@ -238,7 +238,11 @@ export const savedView = z.looseObject({
   hide_empty_groups: z.boolean().optional(),
   card_size: z.number().optional().catch(undefined),
   view_scale: z.number().optional().catch(undefined),
-  card_banner: z.enum(CARD_BANNERS).optional().catch(undefined),
+  // 'image' was this value's first spelling; it reads through as the banner it always meant.
+  card_banner: z
+    .preprocess((v) => (v === 'image' ? 'banner' : v), z.enum(CARD_BANNERS))
+    .optional()
+    .catch(undefined),
   hide_location: z.boolean().optional(),
   wrap_titles: z.boolean().optional(),
   set_cards: z.boolean().optional(),

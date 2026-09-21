@@ -256,6 +256,20 @@ describe('card_size codec', () => {
   })
 })
 
+describe('card_banner codec', () => {
+  const base = { id: 'view_d', name: 'D', type: 'cards', property_order: [], hidden_properties: [] }
+  it('round-trips each mode', () => {
+    for (const mode of ['preview', 'banner', 'none'])
+      expect(savedView.parse({ ...base, card_banner: mode }).card_banner).toBe(mode)
+  })
+  it("reads the original 'image' spelling through as banner", () => {
+    expect(savedView.parse({ ...base, card_banner: 'image' }).card_banner).toBe('banner')
+  })
+  it('drops a mode it does not know', () => {
+    expect(savedView.parse({ ...base, card_banner: 'cover' }).card_banner).toBeUndefined()
+  })
+})
+
 describe('mint seam', () => {
   const schema = [{ id: 'prop_a' }, { id: 'prop_b' }] as never[]
   it('mintNewView is title-only: schema ids and all three Contexts hidden', () => {

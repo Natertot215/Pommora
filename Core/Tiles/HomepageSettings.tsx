@@ -34,7 +34,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
           <MenuFooting
             leading={
               <FooterLockButton
-                ariaLabel={lockLabel(locked, 'board')}
+                ariaLabel={lockLabel(locked, 'Board')}
                 locked={locked}
                 onToggle={() => void setLocked(!locked)}
               />
