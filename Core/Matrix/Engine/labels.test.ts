@@ -25,24 +25,24 @@ const culled = (nodes: GraphNode[], zoom: number, skip: number): number[] => {
 
 describe('label policy', () => {
   it('a title is absent at its kind threshold and whole above the band', () => {
-    expect(labelReveal(0.74).page).toBe(0)
-    expect(labelReveal(0.75).page).toBe(0)
+    expect(labelReveal(0.59).page).toBe(0)
+    expect(labelReveal(0.6).page).toBe(0)
     expect(labelReveal(2).page).toBe(1)
-    expect(labelReveal(0.49).folder).toBe(0)
+    expect(labelReveal(0.39).folder).toBe(0)
     expect(labelReveal(1).folder).toBe(1)
-    expect(labelReveal(0.24).space).toBe(0)
+    expect(labelReveal(0.19).space).toBe(0)
     expect(labelReveal(0.5).space).toBe(1)
   })
 
   it('the band carries a title in, and each kind crosses it over its own share of zoom', () => {
-    const mid = labelReveal(0.75 + (0.75 * 0.35) / 2).page
+    const mid = labelReveal(0.6 + (0.6 * 0.35) / 2).page
     expect(mid).toBeGreaterThan(0)
     expect(mid).toBeLessThan(1)
-    expect(labelReveal(0.25 + (0.25 * 0.35) / 2).space).toBeCloseTo(mid)
+    expect(labelReveal(0.2 + (0.2 * 0.35) / 2).space).toBeCloseTo(mid)
   })
 
   it('a kind below its threshold paints no title', () => {
-    expect(culled(pair, 0.7, -1)).toEqual([])
+    expect(culled(pair, 0.5, -1)).toEqual([])
   })
 
   it('one cell keeps one title and the larger node wins it', () => {
@@ -55,6 +55,6 @@ describe('label policy', () => {
 
   it('clears the map it is handed, so a cull answers for its own frame alone', () => {
     culled(pair, 1, -1)
-    expect(culled(pair, 0.7, -1)).toEqual([])
+    expect(culled(pair, 0.5, -1)).toEqual([])
   })
 })
