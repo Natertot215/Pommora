@@ -12,7 +12,14 @@ export {
   FootingItem,
   MenuScrollFrame,
 } from './menu-row'
-export { MenuIndex, MenuRowView, type MenuRow, type MenuSection, type Trailing } from './menu-index'
+export {
+  MenuIndex,
+  MenuRowView,
+  pickerRow,
+  type MenuRow,
+  type MenuSection,
+  type Trailing,
+} from './menu-index'
 export { DisclosureRow, useDisclosureSet } from './menu-disclosure'
 export {
   MENU_MAX_HEIGHT,

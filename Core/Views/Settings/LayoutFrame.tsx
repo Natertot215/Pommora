@@ -11,7 +11,13 @@ import {
   type ViewType,
 } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
-import { MenuIndex, MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
+import {
+  MenuIndex,
+  MenuSeparator,
+  MenuTopRow,
+  MenuScrollFrame,
+  pickerRow,
+} from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
@@ -19,7 +25,7 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
 import { factorPickerProps, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { GroupFrame, pickerRow } from './GroupFrame'
+import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
@@ -147,7 +153,6 @@ export function LayoutFrame({
                 view.card_banner ?? 'banner',
                 BANNERS,
                 (v) => write({ card_banner: v }),
-                false,
                 CARD_ROW_LOOK,
               ),
               pickerRow(
@@ -156,7 +161,6 @@ export function LayoutFrame({
                 isCompact(view) ? 'compact' : 'standard',
                 FORMATS,
                 (v) => write({ format: v }),
-                false,
                 CARD_ROW_LOOK,
               ),
               {

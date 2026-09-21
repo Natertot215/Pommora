@@ -1,9 +1,10 @@
 import { Fragment, type ComponentProps, type ReactNode } from 'react'
 import { Icon, type IconName } from '../Symbols'
+import type { IconSize } from '../Theme/theme-vars.css'
 import { DualSwitch } from '../Controls/DualSwitch'
 import { ColorSwatch } from '../Controls/ColorSwatch'
 import { Slider } from '../Controls/Slider'
-import { PickerControl } from '../Pickers/PickerControl'
+import { PickerControl, type PickerOption } from '../Pickers/PickerControl'
 import { cx } from '../Utilities/cx'
 import { Reveal } from '../Animations/Reveal'
 import { AccessoryButton, MenuCaption, MenuItem, MenuSeparator } from './menu-row'
@@ -42,6 +43,38 @@ export type MenuRow = (
 ) & { reveal?: boolean }
 
 export type MenuSection = { title?: string; caps?: boolean; rows: MenuRow[] }
+
+export const pickerRow = <T extends string>(
+  glyph: string | undefined,
+  label: string,
+  value: T,
+  options: readonly PickerOption<T>[],
+  onPick: (v: T) => void,
+  look?: {
+    ariaLabel?: string
+    iconSize?: IconSize
+    solid?: boolean
+    inert?: boolean
+    reveal?: boolean
+    className?: string
+    labelClassName?: string
+  },
+): MenuRow => ({
+  kind: 'item',
+  icon: glyph ? <Icon name={glyph} size={look?.iconSize ?? 'body'} /> : undefined,
+  label: look?.labelClassName ? <span className={look.labelClassName}>{label}</span> : label,
+  trailing: {
+    kind: 'picker',
+    ariaLabel: look?.ariaLabel ?? label,
+    value,
+    options,
+    onPick,
+    solid: look?.solid,
+  },
+  inert: look?.inert,
+  reveal: look?.reveal,
+  className: look?.className,
+})
 
 function trailingNode(t: Trailing): ReactNode {
   switch (t.kind) {

@@ -6,8 +6,7 @@ import {
   type TimeFormat,
   type WeekdayFormat,
 } from '@pommora/core/Properties/columnStyles'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
-import { MenuRowView, type MenuRow } from '@pommora/uix/Menus'
+import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
 const DATE_OPTIONS = DATE_FORMATS.map((value) => ({ value, label: DATE_FORMAT_LABELS[value] }))
 const WEEKDAY_OPTIONS: { value: WeekdayFormat; label: string }[] = [
@@ -20,23 +19,6 @@ const TIME_OPTIONS: { value: TimeFormat; label: string }[] = [
   { value: 'twentyFourHour', label: '24 Hours' },
   { value: 'none', label: 'Hidden' },
 ]
-
-const pickerRow = <T extends string>(
-  glyph: IconName,
-  label: string,
-  ariaLabel: string,
-  value: T,
-  options: { value: T; label: string }[],
-  onPick: (v: T) => void,
-  reveal?: boolean,
-): MenuRow => ({
-  kind: 'item',
-  inert: true,
-  icon: <Icon name={glyph} size="headline" />,
-  label,
-  trailing: { kind: 'picker', ariaLabel, value, options, onPick },
-  reveal,
-})
 
 /** Time stays visible under Relative — it still gates the "at <clock>" rendering. */
 export function DateTimeEditor({
@@ -52,29 +34,33 @@ export function DateTimeEditor({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <MenuRowView row={{ kind: 'heading', label: 'Format' }} />
       <MenuRowView
-        row={pickerRow('calendar-days', 'Date', 'Date format', dateFmt, DATE_OPTIONS, (v) =>
-          onChange({ date_format: v }),
+        row={pickerRow(
+          'calendar-days',
+          'Date',
+          dateFmt,
+          DATE_OPTIONS,
+          (v) => onChange({ date_format: v }),
+          { ariaLabel: 'Date format', iconSize: 'headline', inert: true },
         )}
       />
       <MenuRowView
         row={pickerRow(
           'calendar',
           'Day',
-          'Weekday format',
           style.weekday ?? 'none',
           WEEKDAY_OPTIONS,
           (v) => onChange({ weekday: v }),
-          showDay,
+          { ariaLabel: 'Weekday format', iconSize: 'headline', inert: true, reveal: showDay },
         )}
       />
       <MenuRowView
         row={pickerRow(
           'clock',
           'Time',
-          'Time format',
           style.time_format ?? 'none',
           TIME_OPTIONS,
           (v) => onChange({ time_format: v }),
+          { ariaLabel: 'Time format', iconSize: 'headline', inert: true },
         )}
       />
     </div>

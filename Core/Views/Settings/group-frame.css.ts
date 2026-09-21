@@ -11,6 +11,8 @@ export const subRow = style({ marginTop: SUB_ORDER_GAP })
 
 export const subLabel = style([text.body.emphasized, { color: c.label.secondary }])
 
+export const SUB_LOOK = { className: subRow, labelClassName: subLabel }
+
 /** KNOB — the hierarchy's disclosed sub-group chips render a step smaller than table chips. */
 export const subChip = style({ zoom: 0.85 })
 
