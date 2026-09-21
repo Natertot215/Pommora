@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { duration, easeBase, ms } from '@pommora/uix/Animations/motion'
 import { text } from '@pommora/uix/Theme'
-import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
+import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
+import { spacesByIdOf } from '../Contexts/contextIdentity'
 import { recordsByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { BASE_RADIUS, LINK_GAP } from './Engine/forces'
-import type { Graph, GraphLink } from './Engine/graph'
+import type { Graph, GraphLink, GraphNode } from './Engine/graph'
 import { glanceShown } from '../Interface/Glance/glanceAction'
 import { cullLabels, labelReveal, type LabelReveal } from './Engine/labels'
 import { toScreen, toWorld, type Viewport } from './Engine/viewport'
@@ -37,41 +38,82 @@ interface Paint {
   link: string
   linkHover: string
   title: string
+  icon: string
   inactive: number
   hairline: number
   ringWidth: number
+  iconScale: number
   titleFont: string
 }
 
-function readPaint(host: HTMLElement): Paint {
+// What one node is painted in: its resting fill, the tone the emphasis lays over it, and the stroke that tone rings it with.
+interface Tone {
+  fill: string
+  lit: string
+  stroke: string
+}
+
+interface SpacePaint extends Tone {
+  icon: string
+}
+
+// The accent strokes and the Space tints are `color-mix()` at the custom-property level; a probe inside the host resolves them through its own computed `color`.
+function withProbe<T>(host: HTMLElement, read: (probe: HTMLSpanElement) => T): T {
   const probe = document.createElement('span')
   probe.className = text.footnote.emphasized
   host.appendChild(probe)
-  const cs = getComputedStyle(probe)
-  const titleFont = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
-  // The accent strokes are `color-mix()` text at the custom-property level; the probe's computed `color` resolves them.
-  const color = (token: string): string => {
-    probe.style.color = `var(${token})`
-    return getComputedStyle(probe).color
-  }
+  const out = read(probe)
+  probe.remove()
+  return out
+}
+
+const colorOf = (probe: HTMLElement, css: string): string => {
+  probe.style.color = css
+  return getComputedStyle(probe).color
+}
+
+function readPaint(host: HTMLElement): Paint {
   const scoped = getComputedStyle(host)
   const number = (token: string): number => Number.parseFloat(scoped.getPropertyValue(token))
-  const paint: Paint = {
-    fill: color('--matrix-fill'),
-    fillLit: color('--matrix-fill-lit'),
-    ring: color('--matrix-ring'),
-    ringHover: color('--matrix-ring-hover'),
-    ringDrag: color('--matrix-ring-drag'),
-    link: color('--matrix-link'),
-    linkHover: color('--matrix-link-hover'),
-    title: color('--matrix-title'),
-    inactive: number('--matrix-inactive'),
-    hairline: number('--matrix-hairline'),
-    ringWidth: number('--matrix-ring-width'),
-    titleFont,
-  }
-  probe.remove()
-  return paint
+  return withProbe(host, (probe) => {
+    const cs = getComputedStyle(probe)
+    const color = (token: string): string => colorOf(probe, `var(${token})`)
+    return {
+      fill: color('--matrix-fill'),
+      fillLit: color('--matrix-fill-lit'),
+      ring: color('--matrix-ring'),
+      ringHover: color('--matrix-ring-hover'),
+      ringDrag: color('--matrix-ring-drag'),
+      link: color('--matrix-link'),
+      linkHover: color('--matrix-link-hover'),
+      title: color('--matrix-title'),
+      icon: color('--matrix-icon'),
+      inactive: number('--matrix-inactive'),
+      hairline: number('--matrix-hairline'),
+      ringWidth: number('--matrix-ring-width'),
+      iconScale: number('--matrix-icon-scale'),
+      titleFont: `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`,
+    }
+  })
+}
+
+function readSpacePaint(host: HTMLElement, color: string): SpacePaint {
+  const solid = solidColorCss(color)
+  return withProbe(host, (probe) => ({
+    fill: colorOf(
+      probe,
+      `color-mix(in srgb, ${solid} var(--matrix-space-tint), var(--matrix-fill))`,
+    ),
+    lit: colorOf(
+      probe,
+      `color-mix(in srgb, ${solid} var(--matrix-space-lit-tint), var(--matrix-fill))`,
+    ),
+    stroke: colorOf(probe, solid),
+    icon: colorOf(
+      probe,
+      `color-mix(in srgb, ${solid} var(--matrix-space-icon-tint), var(--matrix-icon))`,
+    ),
+  }))
 }
 
 // The modifier the label's glance arms on, since a canvas node has no pointer event of its own.
@@ -100,6 +142,7 @@ function drawNode(
   y: number,
   r: number,
   paint: Paint,
+  tone: Tone,
   ring: 'rest' | 'hover' | 'drag',
   alpha: number,
   lit = 0,
@@ -107,12 +150,12 @@ function drawNode(
   ctx.globalAlpha = alpha
   ctx.beginPath()
   ctx.arc(x, y, r, 0, Math.PI * 2)
-  ctx.fillStyle = paint.fill
+  ctx.fillStyle = tone.fill
   ctx.fill()
-  // The lit tone lays over the resting fill: control and primary share a hue and differ in alpha, so a swap would only pop.
+  // The lit tone lays over the resting fill rather than replacing it, so a Space rises through its own color and a Location through the same hue it already sits in.
   if (lit > 0) {
     ctx.globalAlpha = alpha * lit
-    ctx.fillStyle = paint.fillLit
+    ctx.fillStyle = tone.lit
     ctx.fill()
     ctx.globalAlpha = alpha
   }
@@ -122,7 +165,7 @@ function drawNode(
   if (ring !== 'rest' && lit > 0) {
     ctx.globalAlpha = alpha * lit
     ctx.lineWidth = paint.ringWidth
-    ctx.strokeStyle = ring === 'drag' ? paint.ringDrag : paint.ringHover
+    ctx.strokeStyle = tone.stroke
     ctx.stroke()
   }
   ctx.globalAlpha = 1
@@ -191,15 +234,17 @@ export function MatrixCanvas({
   const neighboursRef = useRef(new Set<number>())
   const hotRef = useRef<GraphLink[]>([])
   const cellsRef = useRef(new Map<number, number>())
+  const spacePaintsRef = useRef(new Map<string, SpacePaint>())
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
 
   drawRef.current = (): void => {
     // The runtime's listeners are not surface-scoped, so a parked surface would repaint its whole graph on every frame another surface drives.
     if (!surface.visible()) return
     const canvas = canvasRef.current
+    const host = hostRef.current
     const paint = paintRef.current
     const ctx = canvas?.getContext('2d')
-    if (!canvas || !ctx || !paint) return
+    if (!canvas || !host || !ctx || !paint) return
     const width = canvas.clientWidth
     const height = canvas.clientHeight
     ctx.clearRect(0, 0, width, height)
@@ -207,6 +252,21 @@ export function MatrixCanvas({
     const v = matrixRuntime.viewportOf(surface)
     const graph = matrixRuntime.graph
     const { nodes, links } = graph
+    const tree = useSession.getState().tree
+    const records = tree ? recordsByIdOf(tree) : null
+    const spaces = tree ? spacesByIdOf(tree) : null
+    const spacePaints = spacePaintsRef.current
+    // A Space with no color of its own takes no tint: it paints as a Location does, rather than reading as a grey blob with a glyph lost inside it.
+    const spacePaintOf = (n: GraphNode): SpacePaint | null => {
+      if (n.kind !== 'space') return null
+      const color = spaces?.get(n.id)?.color
+      if (!color) return null
+      const held = spacePaints.get(color)
+      if (held) return held
+      const made = readSpacePaint(host, color)
+      spacePaints.set(color, made)
+      return made
+    }
     const dragging = matrixRuntime.draggingIndex()
     // A held node keeps the focus even when the pointer outruns it, since it trails the cursor on its spring.
     const focus = dragging >= 0 ? dragging : matrixRuntime.hoveredIndex()
@@ -263,20 +323,51 @@ export function MatrixCanvas({
       } else
         drawLink(ctx, graph, l, v, paint.link, dim * Math.min(arrival(l.source), arrival(l.target)))
     }
-    const hotStroke = dragging >= 0 ? paint.ringDrag : paint.linkHover
+    const subjectSpace = subject >= 0 ? spacePaintOf(nodes[subject]) : null
+    const hotStroke = subjectSpace?.stroke ?? (dragging >= 0 ? paint.ringDrag : paint.linkHover)
     for (const l of hot) {
       const a = Math.min(arrival(l.source), arrival(l.target))
       drawLink(ctx, graph, l, v, paint.link, a)
       drawLink(ctx, graph, l, v, hotStroke, a * emphasis)
     }
 
+    const alphas = titleAlphas(v.zoom)
+    // Both resting tones are cut once: a node loop that minted one per node would allocate the whole graph every frame.
+    const rest: Tone = { fill: paint.fill, lit: paint.fillLit, stroke: paint.ringHover }
+    const restHeld: Tone = { fill: paint.fill, lit: paint.fillLit, stroke: paint.ringDrag }
     nodes.forEach((n, i) => {
       const [sx, sy] = toScreen(v, n.x, n.y)
       const r = n.radius * v.zoom
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
       const ring = i === dragging ? 'drag' : i === subject ? 'hover' : 'rest'
       const lit = isLit(i)
-      drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i), lit ? emphasis : 0)
+      const space = spacePaintOf(n)
+      const tone = space ?? (ring === 'drag' ? restHeld : rest)
+      const alpha = (lit ? 1 : dim) * arrival(i)
+      const raise = lit ? emphasis : 0
+      drawNode(ctx, sx, sy, r, paint, tone, ring, alpha, raise)
+      if (hideIcon) return
+      // A Page's glyph arrives on the zoom that reveals its title; a Folder's and a Space's stand whatever the picture is scaled to.
+      const iconAlpha = alpha * (n.kind === 'page' ? alphas.page : 1)
+      const glyph = iconAlpha > 0 ? records?.get(n.id)?.icon : undefined
+      if (!glyph) return
+      const box = r * 2 * paint.iconScale
+      const px = box * dprRef.current
+      const left = sx - box / 2
+      const top = sy - box / 2
+      const image = iconFor(glyph, space?.icon ?? paint.icon, px)
+      if (image) {
+        ctx.globalAlpha = iconAlpha
+        ctx.drawImage(image, left, top, box, box)
+        ctx.globalAlpha = 1
+      }
+      // The glyph rides the same layering its fill does, so a Space's icon brightens with the tint it sits on rather than holding its resting color through the raise.
+      const raised = space && raise > 0 ? iconFor(glyph, paint.fillLit, px) : null
+      if (raised) {
+        ctx.globalAlpha = iconAlpha * raise
+        ctx.drawImage(raised, left, top, box, box)
+        ctx.globalAlpha = 1
+      }
     })
     for (const g of matrixRuntime.ghosts) {
       const [sx, sy] = toScreen(v, g.x, g.y)
@@ -286,31 +377,23 @@ export function MatrixCanvas({
         sy,
         g.radius * v.zoom,
         paint,
+        rest,
         'rest',
         clamp(1 - (now - g.born) / FADE_MS, 0, 1),
       )
     }
 
-    const tree = useSession.getState().tree
-    const records = tree ? recordsByIdOf(tree) : null
     ctx.font = paint.titleFont
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     ctx.fillStyle = paint.title
     const cells = cellsRef.current
-    const alphas = titleAlphas(v.zoom)
     cullLabels(nodes, v, width, height, matrixRuntime.indexOf(labelId), cells, alphas)
     for (const i of cells.values()) {
       const n = nodes[i]
       const [sx, sy] = toScreen(v, n.x, n.y + n.radius)
-      const glyph = hideIcon ? undefined : records?.get(n.id)?.icon
-      const image = glyph ? iconFor(glyph, paint.title, dprRef.current) : null
-      const lead = image ? ICON_PX.footnote + s.TITLE_ICON_GAP : 0
-      const left = sx - (ctx.measureText(n.title).width + lead) / 2
-      const top = sy + s.TITLE_OFFSET
       ctx.globalAlpha = (isLit(i) ? 1 : dim) * arrival(i) * alphas[n.kind]
-      if (image) ctx.drawImage(image, left, top, ICON_PX.footnote, ICON_PX.footnote)
-      ctx.fillText(n.title, left + lead, top)
+      ctx.fillText(n.title, sx - ctx.measureText(n.title).width / 2, sy + s.TITLE_OFFSET)
       ctx.globalAlpha = 1
     }
   }
@@ -321,6 +404,7 @@ export function MatrixCanvas({
     if (!host) return
     const read = (): void => {
       paintRef.current = readPaint(host)
+      spacePaintsRef.current.clear()
       drawRef.current()
     }
     read()

@@ -6,9 +6,9 @@ import { PURE_WHITE } from '@pommora/uix/Theme/colors'
 
 const c = vars.color
 
-// KNOBs — the node-to-title drop and the icon-to-title clearance, shared with the canvas's own titles.
+// KNOBs — the canvas title's drop below its node, and the overlay row's icon-to-title clearance.
 export const TITLE_OFFSET = 4
-export const TITLE_ICON_GAP = 4
+const TITLE_ICON_GAP = 4
 const ROW_GAP = '2px'
 
 export const host = style({
@@ -42,6 +42,11 @@ export const host = style({
     '--matrix-link': c.solid.greyDefault,
     '--matrix-link-hover': 'var(--accent-stroke)',
     '--matrix-title': c.label.primary,
+    '--matrix-icon': c.solid.grey,
+    '--matrix-icon-scale': '0.5',
+    '--matrix-space-tint': 'var(--tint-tertiary)',
+    '--matrix-space-lit-tint': 'var(--tint-primary)',
+    '--matrix-space-icon-tint': 'var(--tint-solid)',
     '--matrix-inactive': 'var(--state-inactive)',
     '--matrix-hairline': 'var(--width-200)',
     '--matrix-ring-width': 'var(--width-150)',
