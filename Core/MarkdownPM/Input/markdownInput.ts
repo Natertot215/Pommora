@@ -12,6 +12,7 @@ import {
   dashArrow,
   ellipsis,
   equations,
+  sectionSign,
   calloutShorthand,
   shiftEnterEdit,
   indentListOnTab,
@@ -150,7 +151,8 @@ export const markdownInput = [
         autoPair(scan, from, from, text, settings) ??
         dashArrow(scan, from, from, text, settings) ??
         ellipsis(scan, from, from, text, settings) ??
-        equations(scan, from, from, text, settings),
+        equations(scan, from, from, text, settings) ??
+        sectionSign(scan, from, from, text, settings),
     )
   }),
 ]

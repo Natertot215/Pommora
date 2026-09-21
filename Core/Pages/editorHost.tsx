@@ -69,6 +69,8 @@ function buildEditorHost(
         transformEquations: p.transformEquations,
         transformEllipses: p.transformEllipses,
         transformCallouts: p.transformCallouts,
+        transformSections: p.transformSections,
+        transformBullets: p.transformBullets,
         pairBrackets: p.pairBrackets,
         pairMarkers: p.pairMarkers,
         pairQuotes: p.pairQuotes,
