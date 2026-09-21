@@ -16,7 +16,7 @@ A node is a Page, a Folder, or a Space. A link is one of five kinds: body, citat
 
 Picking a mode rebuilds the graph and settles it, so the picture answers the click rather than the next thing that moves it. **Unlinked Items** decides whether nodes with nothing attached appear; a Folder is unlinked when it holds no members, and a Space when it holds no members and links no other Space.
 
-The **Filter** narrows the graph by the rules a view uses, and reaches Spaces as well as Pages. A Space is judged on the rules it can answer — a property it holds a value for, its title, and its links, counting itself among the Spaces of its own Context — and a rule it has nothing to answer with leaves it in place.
+The **Filter** reaches Spaces as well as Pages: a Space is judged on the rules it can answer — a property it holds, its title, its links — and any other rule leaves it in place.
 
 #### Weight
 
