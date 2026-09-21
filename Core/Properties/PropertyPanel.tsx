@@ -132,7 +132,7 @@ export function PropertyPanel({
     }
   }, [valuesEpoch, subjectId, path, isSpace])
 
-  // A Space has no values push: its confirming tree push lands after the write settles and swaps the node, so the override retires with it.
+  // A Space has no values push; its override retires on its node's swap.
   useEffect(() => {
     if (isSpace) setOverride((prev) => retireSettled(prev, null))
   }, [isSpace, spaceNode])
