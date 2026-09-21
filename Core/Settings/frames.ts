@@ -661,6 +661,18 @@ export const FRAMES = roster([
             label: 'Callout',
             defaultOn: true,
           },
+          {
+            kind: 'toggle',
+            key: 'transformSections',
+            label: 'Sections',
+            hint: 'A `##` away from a line\u2019s start becomes \u00a7.',
+          },
+          {
+            kind: 'toggle',
+            key: 'transformBullets',
+            label: 'Bullets',
+            hint: 'A spaced hyphen becomes \u2022 instead of an en dash.',
+          },
         ],
       },
       {

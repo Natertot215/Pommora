@@ -131,6 +131,8 @@ export function readPersonalization(raw: unknown): Personalization {
     transformEquations: bool(p.transformEquations),
     transformEllipses: bool(p.transformEllipses),
     transformCallouts: bool(p.transformCallouts),
+    transformSections: bool(p.transformSections),
+    transformBullets: bool(p.transformBullets),
     pairBrackets: bool(p.pairBrackets),
     pairMarkers: bool(p.pairMarkers),
     pairQuotes: bool(p.pairQuotes),

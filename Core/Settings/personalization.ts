@@ -146,6 +146,8 @@ export interface Personalization {
   transformEquations?: boolean
   transformEllipses?: boolean
   transformCallouts?: boolean
+  transformSections?: boolean
+  transformBullets?: boolean
   pairBrackets?: boolean
   pairMarkers?: boolean
   pairQuotes?: boolean

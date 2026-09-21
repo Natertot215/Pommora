@@ -43,6 +43,8 @@ export type EditorSettings = Pick<
   | 'transformEquations'
   | 'transformEllipses'
   | 'transformCallouts'
+  | 'transformSections'
+  | 'transformBullets'
   | 'pairBrackets'
   | 'pairMarkers'
   | 'pairQuotes'

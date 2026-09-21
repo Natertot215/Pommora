@@ -11,6 +11,7 @@ import {
   dashArrow,
   ellipsis,
   equations,
+  sectionSign,
   indentListOnTab,
   continueBlockquoteOnEnter,
   calloutShorthand,
@@ -428,6 +429,38 @@ describe('equations', () => {
     expect(equations(scanDoc('PATH='), 5, 5, '/')).toBeNull()
     expect(equations(scanDoc('`a >`'), 4, 4, '=')).toBeNull()
     expect(equations(scanDoc('a >'), 3, 3, '=', { transformEquations: false })).toBeNull()
+  })
+})
+
+describe('sections and bullets', () => {
+  it('a second hash away from a line start becomes a section sign', () => {
+    const on = { transformSections: true }
+    const e = sectionSign(scanDoc('a #'), 3, 3, '#', on)!
+    expect(apply('a #', e)).toBe('a §')
+    expect(e.selection).toBe(3)
+  })
+  it('a heading, a bracket, a third hash, code, and the default leave it literal', () => {
+    const on = { transformSections: true }
+    expect(sectionSign(scanDoc('#'), 1, 1, '#', on)).toBeNull()
+    expect(sectionSign(scanDoc('> #'), 3, 3, '#', on)).toBeNull()
+    expect(sectionSign(scanDoc('a ##'), 4, 4, '#', on)).toBeNull()
+    expect(sectionSign(scanDoc('a [^b#'), 6, 6, '#', on)).toBeNull()
+    expect(sectionSign(scanDoc('`a #`'), 4, 4, '#', on)).toBeNull()
+    expect(sectionSign(scanDoc('a #'), 3, 3, '#')).toBeNull()
+  })
+  it('bullets take the spaced hyphen from the en dash', () => {
+    const on = { transformBullets: true }
+    expect(apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ', on)!)).toBe('a • ')
+    expect(
+      apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ', { ...on, transformDashes: false })!),
+    ).toBe('a • ')
+  })
+  it('a line-opening marker, a bracket, and the default keep the en dash', () => {
+    expect(dashArrow(scanDoc('-'), 1, 1, ' ', { transformBullets: true })).toBeNull()
+    expect(
+      apply('a [^b -', dashArrow(scanDoc('a [^b -'), 7, 7, ' ', { transformBullets: true })!),
+    ).toBe('a [^b – ')
+    expect(apply('a -', dashArrow(scanDoc('a -'), 3, 3, ' ')!)).toBe('a – ')
   })
 })
 
