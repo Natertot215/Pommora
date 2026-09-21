@@ -182,7 +182,7 @@ export function MatrixCanvas({
   const drawRef = useRef<() => void>(() => {})
   const dprRef = useRef(1)
   const emphasisRef = useRef({ from: 0, to: 0, t: 1, at: 0 })
-  const subjectRef = useRef(-1)
+  const subjectRef = useRef<string | null>(null)
   const neighboursRef = useRef(new Set<number>())
   const hotRef = useRef<GraphLink[]>([])
   const cellsRef = useRef(new Map<number, number>())
@@ -202,11 +202,10 @@ export function MatrixCanvas({
     const v = matrixRuntime.viewportOf(surface)
     const graph = matrixRuntime.graph
     const { nodes, links } = graph
-    const hovered = matrixRuntime.hoveredIndex()
     const dragging = matrixRuntime.draggingIndex()
     // A held node keeps the focus even when the pointer outruns it, since it trails the cursor on its spring.
-    const focus = dragging >= 0 ? dragging : hovered
-    if (focus >= 0) subjectRef.current = focus
+    const focus = dragging >= 0 ? dragging : matrixRuntime.hoveredIndex()
+    if (focus >= 0) subjectRef.current = nodes[focus].id
 
     const now = performance.now()
     // Each flip re-seeds from the value on screen, so a reversal mid-fade cannot jump.
@@ -224,8 +223,8 @@ export function MatrixCanvas({
       emphasis = ease.from + (ease.to - ease.from) * easeBase(ease.t)
     }
     if (ease.t < 1) matrixRuntime.invalidate()
-    // The released subject outlives the focus until the emphasis reaches nothing, so the dim and the fill fade off it.
-    const subject = focus >= 0 ? focus : emphasis > 0 ? subjectRef.current : -1
+    // The released subject outlives its focus until the emphasis reaches nothing, held by id so a rebuild mid-fade cannot resolve it onto whatever took the slot.
+    const subject = focus >= 0 || emphasis > 0 ? matrixRuntime.indexOf(subjectRef.current) : -1
     const dim = 1 - emphasis * (1 - paint.inactive)
 
     const arrivals = matrixRuntime.arrivals
@@ -239,6 +238,7 @@ export function MatrixCanvas({
 
     const neighbours = neighboursRef.current
     const hot = hotRef.current
+    const isLit = (i: number): boolean => subject < 0 || i === subject || neighbours.has(i)
     neighbours.clear()
     hot.length = 0
     for (const l of links) {
@@ -248,14 +248,7 @@ export function MatrixCanvas({
         neighbours.add(l.target)
         hot.push(l)
       } else
-        drawLink(
-          ctx,
-          graph,
-          l,
-          v,
-          paint.link,
-          (subject >= 0 ? dim : 1) * Math.min(arrival(l.source), arrival(l.target)),
-        )
+        drawLink(ctx, graph, l, v, paint.link, dim * Math.min(arrival(l.source), arrival(l.target)))
     }
     const hotStroke = dragging >= 0 ? paint.ringDrag : paint.linkHover
     for (const l of hot)
@@ -265,18 +258,9 @@ export function MatrixCanvas({
       const [sx, sy] = toScreen(v, n.x, n.y)
       const r = n.radius * v.zoom
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
-      const ring = i === dragging ? 'drag' : i === hovered ? 'hover' : 'rest'
-      const lit = subject < 0 || i === subject || neighbours.has(i)
-      drawNode(
-        ctx,
-        sx,
-        sy,
-        r,
-        paint,
-        ring,
-        (lit ? 1 : dim) * arrival(i),
-        subject >= 0 && lit ? emphasis : 0,
-      )
+      const ring = i === dragging ? 'drag' : i === focus ? 'hover' : 'rest'
+      const lit = isLit(i)
+      drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i), lit ? emphasis : 0)
     })
     for (const g of matrixRuntime.ghosts) {
       const [sx, sy] = toScreen(v, g.x, g.y)
@@ -308,8 +292,7 @@ export function MatrixCanvas({
       const lead = image ? ICON_PX.footnote + s.TITLE_ICON_GAP : 0
       const left = sx - (ctx.measureText(n.title).width + lead) / 2
       const top = sy + s.TITLE_OFFSET
-      const lit = subject < 0 || i === subject || neighbours.has(i)
-      ctx.globalAlpha = (lit ? 1 : dim) * arrival(i) * alphas[n.kind]
+      ctx.globalAlpha = (isLit(i) ? 1 : dim) * arrival(i) * alphas[n.kind]
       if (image) ctx.drawImage(image, left, top, ICON_PX.footnote, ICON_PX.footnote)
       ctx.fillText(n.title, left + lead, top)
       ctx.globalAlpha = 1
