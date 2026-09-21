@@ -16,7 +16,8 @@ import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
-import { sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots, type Rewrite } from './governedSweep'
+import { withOrderEntry } from '../Contexts/spaceSidecar'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -81,7 +82,16 @@ export async function renameSweep(root: string, oldName: string, newName: string
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER)
-  const swept = await sweepGovernedRoots(root, files, { text })
+  // Spreading the rest after the moved key lets an existing `newName` win, as the page half's collision rule does.
+  const moveKey: Rewrite = (raw) => {
+    if (!(oldName in raw)) return null
+    const { [oldName]: moved, ...rest } = raw
+    return { [newName]: moved, ...rest }
+  }
+  const swept = await sweepGovernedRoots(root, files, {
+    text,
+    sidecars: withOrderEntry(moveKey, 'properties', oldName, newName),
+  })
   return swept.skipped.length
 }
 

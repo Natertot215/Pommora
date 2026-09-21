@@ -1,6 +1,7 @@
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
+import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { errText, fail, ok, type Result } from '../Contract/result'
@@ -100,18 +101,20 @@ async function rekeyPassengers(
   const newKey = contextKey(newTitle)
   const strings = (v: unknown): string[] =>
     Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+  const rekey = (raw: Record<string, unknown>): Record<string, unknown> | null => {
+    if (!(oldKey in raw)) return null
+    const existing = strings(raw[newKey])
+    const merged = [...existing, ...strings(raw[oldKey]).filter((v) => !existing.includes(v))]
+    const next = { ...raw }
+    delete next[oldKey]
+    if (merged.length) next[newKey] = merged
+    return next
+  }
+  const rekeyed = withOrderEntry(rekey, 'contexts', oldTitle, newTitle)
   for (const d of await listEntries(absContextDir)) {
     if (d.kind !== 'dir') continue
     const file = join(absContextDir, d.name, SPACE_SIDECAR)
-    await rmwJsonStrict(file, (raw) => {
-      if (!(oldKey in raw)) return null
-      const existing = strings(raw[newKey])
-      const merged = [...existing, ...strings(raw[oldKey]).filter((v) => !existing.includes(v))]
-      const next = { ...raw }
-      delete next[oldKey]
-      if (merged.length) next[newKey] = merged
-      return next
-    })
+    await rmwJsonStrict(file, (raw) => rekeyed(raw, file))
   }
 }
 

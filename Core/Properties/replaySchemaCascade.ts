@@ -4,13 +4,11 @@ import { errText } from '../Contract/result'
 import { readRegistry } from './propertiesRegistry'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
-import { removeFromRegistry, renameSweep } from './registryProperty'
-import { stripKeyRewrite, unassignAndPurge } from './deleteProperty'
-import { dropOptionFromDef } from './optionOps'
+import { renameSweep } from './registryProperty'
+import { stripAndRemove } from './deleteProperty'
+import { dropOptionFromDef, valueEditSweep } from './optionOps'
 import { optionValues } from './properties'
-import { replacePageValue, stripPageValue } from './pageValue'
 import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
-import { sweepGovernedRoots } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 
 export function replaySchemaCascade(root: string): Promise<boolean> {
@@ -41,14 +39,9 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const crashed = def?.name === journal.name
       const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
       if (!crashed && !freed) return false
-      const key = journal.name
       const folders = await collectionFolders(root)
-      const files = await keyHolderFiles(root, key, folders)
-      const raw = stripKeyRewrite(key)
-      const swept = await sweepGovernedRoots(root, files, { raw })
-      for (const folder of folders) await unassignAndPurge(folder, journal.id)
-      await removeFromRegistry(root, journal.id)
-      return swept.skipped.length > 0
+      const files = await keyHolderFiles(root, journal.name, folders)
+      return (await stripAndRemove(root, journal.id, journal.name, folders, files)).skipped > 0
     }
     case 'option-rename': {
       const def = defs[journal.id]
@@ -56,21 +49,15 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const values = optionValues(def)
       // Holds `to` and not `from` = the commit landed cleanly; every other state is not this record's.
       if (!values.includes(journal.to) || values.includes(journal.from)) return false
-      const key = def.name
-      const files = await keyHolderFiles(root, key, await collectionFolders(root))
-      const text = (c: string): string | null => replacePageValue(c, key, journal.from, journal.to)
-      const swept = await sweepGovernedRoots(root, files, { text })
-      return swept.skipped.length > 0
+      return (
+        (await valueEditSweep(root, def.name, journal.from, { op: 'replace', to: journal.to })) > 0
+      )
     }
     case 'option-remove': {
       // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed.
       const def = defs[journal.id]
       if (!def || !optionValues(def).includes(journal.value)) return false
-      const key = def.name
-      const files = await keyHolderFiles(root, key, await collectionFolders(root))
-      const text = (c: string): string | null => stripPageValue(c, key, journal.value)
-      const swept = await sweepGovernedRoots(root, files, { text })
-      if (swept.skipped.length > 0) return true
+      if ((await valueEditSweep(root, def.name, journal.value, { op: 'strip' })) > 0) return true
       await dropOptionFromDef(root, journal.id, journal.value)
       return false
     }
