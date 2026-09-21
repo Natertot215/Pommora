@@ -388,7 +388,12 @@ export function seatPastMarker(
       it.kind === 'class' &&
       (it.className.startsWith('md-list-number') || it.className.startsWith('md-list-arrow')),
   )
-  if (marker?.kind !== 'class' || pos < marker.from || pos > marker.to) return null
+  if (marker?.kind !== 'class') return null
+  // A nested item's indentation is hidden, so it draws at zero width and the whole gutter beside the number maps onto offsets inside it — the slot the press belongs to starts where that indentation does.
+  let start = marker.from
+  for (const it of line)
+    if (it.kind === 'hide' && it.to === start && it.from < start) start = it.from
+  if (pos < start || pos > marker.to) return null
   let end = marker.to
   for (const it of line)
     if (
