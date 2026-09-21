@@ -90,6 +90,7 @@ function TabBarBody({
   const openWindow = useSession((s) => s.openWindow)
   const openMatrixWindow = useSession((s) => s.openMatrixWindow)
   const matrixWindowOpen = useSession((s) => s.pageWindow?.kind === 'matrix')
+  const windowOpen = useSession((s) => s.pageWindow !== null)
   const pinTab = useSession((s) => s.pinTab)
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
@@ -106,7 +107,11 @@ function TabBarBody({
   const pinKeyOf = (id: string): string =>
     pinnedEntries.find((e) => e.tab.id === id)?.res?.key ?? ''
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? 'New Tab'
-  const { still, carry, receive } = useTabExchange((id) => entryOf(id)?.tab.target, openTabAt)
+  // No window means no row to land in, so the tab carries nothing and stays pinned to its axis.
+  const { still, carry, receive } = useTabExchange(
+    (id) => (windowOpen ? entryOf(id)?.tab.target : undefined),
+    openTabAt,
+  )
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
