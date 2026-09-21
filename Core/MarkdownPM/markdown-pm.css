@@ -501,8 +501,10 @@
   word-break: normal;
 }
 
+/* Width, not font-size: a zero font collapses the rect's HEIGHT too, and CodeMirror's inline hit-test reads the line's child rects, so a press anywhere on the item resolves to this span. `overflow: hidden` would move the inline-block's baseline to its bottom edge and grow the line. */
 .md-list-gap {
-  font-size: 0;
+  display: inline-block;
+  width: 0;
 }
 
 .md-list-glyph {
