@@ -6,7 +6,6 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
 import { type DevicePrefs, packDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
-import { readTabsState, sanitizeTabSet, writeTabsState } from '../Navigation/tabsState'
 import type { GlanceSize } from './Windows/windowRecord'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './Windows/windowState'
 
@@ -34,14 +33,6 @@ export function scopeSet<T>(
 const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean'
 
 export const interfaceHandlers = {
-  'tabs:load': () => (sessionRoot() === null ? NO_NEXUS : ok(readTabsState())),
-  'tabs:save': (_ctx, set: unknown) => {
-    if (adopting()) return BUSY
-    const clean = sanitizeTabSet(set)
-    if (!clean) return fail('operation-failed', 'Bad tab set.')
-    return writeTabsState(clean) ? ok(null) : NO_NEXUS
-  },
-
   'windows:load': () => (sessionRoot() === null ? NO_NEXUS : ok(readWindowsState())),
   'windows:save': (_ctx, file: unknown) => {
     if (adopting()) return BUSY

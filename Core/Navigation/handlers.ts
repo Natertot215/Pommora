@@ -5,6 +5,7 @@ import { adopting } from '../Nexus/handlers'
 import { sessionRoot } from '../Nexus/session'
 import { isPlainObject } from '../Properties/propertyValue'
 import { readNavigationState, writeNavigationState } from './navigationFile'
+import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
 import type { NavigationState } from './navRef'
 
 export const navigationHandlers = {
@@ -21,6 +22,14 @@ export const navigationHandlers = {
       return fail('operation-failed', 'Navigation patch must be an object.')
     await writeNavigationState(root, patch as Partial<NavigationState>)
     return ok(null)
+  },
+
+  'tabs:load': () => (sessionRoot() === null ? NO_NEXUS : ok(readTabsState())),
+  'tabs:save': (_ctx, set: unknown) => {
+    if (adopting()) return BUSY
+    const clean = sanitizeTabSet(set)
+    if (!clean) return fail('operation-failed', 'Bad tab set.')
+    return writeTabsState(clean) ? ok(null) : NO_NEXUS
   },
 
   'capture:thumbnail': withRoot(
