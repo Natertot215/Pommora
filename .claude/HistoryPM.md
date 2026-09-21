@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-21-2026              | PM-142 | Space Links                                          |
 | 09-19-2026              | PM-141 | MatrixPM Foundations                                 |
 | 09-16-2026              | PM-140 | MarkdownPM Heading Links                             |
 | 09-15-2026 → 09-16      | PM-139 | Tab Cross-Drag                                       |
@@ -144,6 +145,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-142 || Space Links
+**DATE:** 09-21-2026
+
+A Space links other Spaces and holds a value for any registry property on its own sidecar. `Core/Contexts/spaceSidecar.ts` owns the sidecar's `$color` and `$order` keys, and `writeSpaceSidecar` is the one writer behind the link, value, row-order, and color writes; each notes its folder in a ledger that `confirmBy` drains through `patchSpaceFromDisk`, so a sidecar write reaches the tree without a walk. `setSpaceContext` writes a link onto both sidecars under a `contextsDir` lock, its far half idempotent, and `spaceLinksOf` reads either half as the link. The property rename, option rename and remove, global delete and its restore, and the Context cascades reach sidecars through `sweepGovernedRoots`' sidecar leg, each wrapped in `withOrderEntry`; `replaySchemaCascade` calls the live ops' hoisted bodies, `valueEditSweep` and `stripAndRemove`, and `confirmedKeyHolders` counts a sidecar's keys. `PropertyPanel` takes a `subject` and a `host` and serves a page's dropdown, a Space's dropdown, and the side pane on one row rule, with Contexts and Properties as two groups that each add from their heading, drag-order through `useOptionReorder`, and revert through `sendWithUndo`; `FrameSlide` left both dropdowns. `propertyBranchRows` draws **Spaces ▸** and **Properties ▸** on every page menu, the card's included, and on a Space's sidebar row and Matrix node, where `showEntityMenu` also seats Edit Icon, Hide Icon, and Change Color; the card's **Add Property** row left. The Matrix draws a stored pair as one line and grows both Spaces by `SPACE_LINK_MULTIPLE`, its filter prunes to the rules a Space can answer, and a Context target's operators read Contains, Isn't, Is Empty, and Isn't Empty through `CONTEXT_OPS`.
+
+- **Commits:** `08327354a^..825165e42`
+- **Diff:** Net +648 | +1180 / −532
 
 #### PM-141 || MatrixPM Foundations
 **DATE:** 09-19-2026

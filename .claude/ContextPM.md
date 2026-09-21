@@ -69,6 +69,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-142 || Space Links
+**DATE:** 09-21-2026
+
+A Space links other Spaces and holds a value for any registry property on its own sidecar. `Core/Contexts/spaceSidecar.ts` owns the sidecar's `$color` and `$order` keys, and `writeSpaceSidecar` is the one writer behind the link, value, row-order, and color writes; each notes its folder in a ledger that `confirmBy` drains through `patchSpaceFromDisk`, so a sidecar write reaches the tree without a walk. `setSpaceContext` writes a link onto both sidecars under a `contextsDir` lock, its far half idempotent, and `spaceLinksOf` reads either half as the link. The property rename, option rename and remove, global delete and its restore, and the Context cascades reach sidecars through `sweepGovernedRoots`' sidecar leg, each wrapped in `withOrderEntry`; `replaySchemaCascade` calls the live ops' hoisted bodies, `valueEditSweep` and `stripAndRemove`, and `confirmedKeyHolders` counts a sidecar's keys. `PropertyPanel` takes a `subject` and a `host` and serves a page's dropdown, a Space's dropdown, and the side pane on one row rule, with Contexts and Properties as two groups that each add from their heading, drag-order through `useOptionReorder`, and revert through `sendWithUndo`; `FrameSlide` left both dropdowns. `propertyBranchRows` draws **Spaces ▸** and **Properties ▸** on every page menu, the card's included, and on a Space's sidebar row and Matrix node, where `showEntityMenu` also seats Edit Icon, Hide Icon, and Change Color; the card's **Add Property** row left. The Matrix draws a stored pair as one line and grows both Spaces by `SPACE_LINK_MULTIPLE`, its filter prunes to the rules a Space can answer, and a Context target's operators read Contains, Isn't, Is Empty, and Isn't Empty through `CONTEXT_OPS`.
+
 #### PM-139 || Tab Cross-Drag
 **DATE:** 09-15-2026 → 09-16
 
@@ -88,16 +93,6 @@ Content crosses between devices on the identity layer. Part 1 left: a device enc
 **DATE:** 09-11-2026
 
 `Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `(activeId, toZone, beforeId)` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share. The audit's topic 6 closed.
-
-#### PM-135 || Sync Scaffolding - Part 1
-**DATE:** 09-11-2026
-
-Every install mints one Ed25519 key at first launch, its fingerprint naming the device, with the public half and a name in `pommora.json` and the private half keychain-encrypted beside it. `Sync/server.ts` is one Node file on built-ins keeping which devices each Nexus admits over four verbs, and every request to it is signed by the device key rather than carried by a session or a token. `Core/Sync/` holds the wire contract, the canonical signing string, the client, and six `sync:*` channels, and Settings › General gained a Nexus heading over them. No content crossed on that layer; the content arc added it against the same identities.
-
-#### PM-134 || MarkdownPM Block Menu
-**DATE:** 09-09-2026
-
-MarkdownPM gained a command menu: `/` on an empty line opens an in-app pane of five sections and nineteen rows, filtered by title and label as the query is typed, picked by Return or a click, and undone in one step to the blank line. The model sits in `Core/Actions/blockMenu.ts`, the trigger reads the cached scan through the same `inSealedBlockAt` the embed seat reads, and the pane shares its geometry, key guard, and cursor with the `[[` autocomplete. The blank-line fix in `selectedLines` repaired the context menu's Heading and List rows on an empty line, and the divider, table, quote, footnote, and embed transforms now seat the caret consistently.
 
 ### Guidelines
 
