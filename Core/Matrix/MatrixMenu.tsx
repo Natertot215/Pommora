@@ -40,10 +40,12 @@ export function MatrixMenu(): React.JSX.Element {
   const [filtering, setFiltering] = useState(false)
 
   const display = config.display
+  const mode = config.group.mode
+  const forces = config.forces[mode]
   const sections: MenuSection[] = [
     {
       rows: [
-        pickerRow(undefined, 'Groups', config.group.mode, GROUP_OPTIONS, (v: GroupMode) =>
+        pickerRow(undefined, 'Groups', mode, GROUP_OPTIONS, (v: GroupMode) =>
           patch({ group: { mode: v } }),
         ),
         {
@@ -90,9 +92,10 @@ export function MatrixMenu(): React.JSX.Element {
       rows: FORCES.map(({ key, label }) =>
         factorRow(undefined, label, {
           steps: FORCE_STEPS[key],
-          value: config.forces[key],
+          value: forces[key],
           coerce: (typed) => clampForce(key, typed),
-          onPick: (factor) => patch({ forces: { [key]: factor } }),
+          // The whole set goes over, since the file merges a section one level deep and a lone value would drop the other three.
+          onPick: (factor) => patch({ forces: { [mode]: { ...forces, [key]: factor } } }),
         }),
       ),
     },

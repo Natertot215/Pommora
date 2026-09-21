@@ -28,20 +28,19 @@ describe('matrix.json', () => {
   })
 
   it('seeds the file with only the patched section', async () => {
-    await writeMatrixFile(root, { forces: { spread: 0.9 } })
-    expect(await onDisk()).toEqual({ forces: { spread: 0.9 } })
-    expect((await readMatrixFile(root)).forces).toEqual({
-      ...DEFAULT_MATRIX_CONFIG.forces,
-      spread: 0.9,
-    })
+    const space = { ...DEFAULT_MATRIX_CONFIG.forces.space, spread: 0.9 }
+    await writeMatrixFile(root, { forces: { space } })
+    expect(await onDisk()).toEqual({ forces: { space } })
+    expect((await readMatrixFile(root)).forces).toEqual({ ...DEFAULT_MATRIX_CONFIG.forces, space })
   })
 
   it('keeps the first section when a second one is written', async () => {
-    await writeMatrixFile(root, { forces: { spread: 0.9 } })
+    const space = { ...DEFAULT_MATRIX_CONFIG.forces.space, spread: 0.9 }
+    await writeMatrixFile(root, { forces: { space } })
     await writeMatrixFile(root, { group: { mode: 'space' } })
-    expect(await onDisk()).toEqual({ forces: { spread: 0.9 }, group: { mode: 'space' } })
+    expect(await onDisk()).toEqual({ forces: { space }, group: { mode: 'space' } })
     const config = await readMatrixFile(root)
-    expect(config.forces.spread).toBe(0.9)
+    expect(config.forces.space.spread).toBe(0.9)
     expect(config.group.mode).toBe('space')
   })
 

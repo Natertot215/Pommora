@@ -352,11 +352,58 @@ describe('matrixRuntime', () => {
     flush()
     const sim = matrixRuntime.sim
     useSession.setState({
-      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, { forces: { gravity: 2 } }),
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        forces: { connection: { ...DEFAULT_MATRIX_CONFIG.forces.connection, gravity: 2 } },
+      }),
     })
     expect(matrixRuntime.sim).toBe(sim)
     expect(matrixRuntime.sim?.forces.gravity).toBe(2)
     expect(matrixRuntime.sim?.awake).toBe(true)
+  })
+
+  it('leaves the simulation settled when a grouping it is not drawn under is tuned', () => {
+    seed()
+    attach()
+    flush()
+    const sim = matrixRuntime.sim
+    const forces = matrixRuntime.sim?.forces
+    matrixRuntime.sim!.awake = false
+    // The shape a file watcher pushes: every grouping's set is rebuilt, so only a comparison by value can tell that the active one held still.
+    const held = DEFAULT_MATRIX_CONFIG.forces
+    useSession.setState({
+      matrixConfig: {
+        ...DEFAULT_MATRIX_CONFIG,
+        forces: {
+          connection: { ...held.connection },
+          location: { ...held.location },
+          space: { ...held.space, gravity: 2 },
+        },
+      },
+    })
+    expect(matrixRuntime.sim).toBe(sim)
+    expect(matrixRuntime.sim?.forces).toBe(forces)
+    expect(matrixRuntime.sim?.awake).toBe(false)
+  })
+
+  it('carries each grouping onto its own forces as the mode switches', () => {
+    seed()
+    attach()
+    flush()
+    const held = DEFAULT_MATRIX_CONFIG.forces
+    const tuned: MatrixConfig = {
+      ...DEFAULT_MATRIX_CONFIG,
+      forces: {
+        connection: { ...held.connection, gravity: 0.5 },
+        location: { ...held.location, gravity: 1.5 },
+        space: { ...held.space, gravity: 2 },
+      },
+    }
+    useSession.setState({ matrixConfig: tuned })
+    expect(matrixRuntime.sim?.forces.gravity).toBe(0.5)
+    useSession.setState({ matrixConfig: applyPatch(tuned, { group: { mode: 'space' } }) })
+    expect(matrixRuntime.sim?.forces.gravity).toBe(2)
+    useSession.setState({ matrixConfig: applyPatch(tuned, { group: { mode: 'location' } }) })
+    expect(matrixRuntime.sim?.forces.gravity).toBe(1.5)
   })
 
   it('repaints on a label or lock patch and rebuilds on an unlinked one', () => {

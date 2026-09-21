@@ -89,12 +89,13 @@ describe('the Matrix menu', () => {
     }
   })
 
-  it('patches a force from a picked step and clamps a typed one', async () => {
+  it("patches the active grouping's force from a picked step and clamps a typed one", async () => {
+    const connection = DEFAULT_MATRIX_CONFIG.forces.connection
     picked = '2.5'
     mount()
     click(control('Spread'))
     await act(async () => {})
-    expect(patch).toHaveBeenCalledWith({ forces: { spread: 2.5 } })
+    expect(patch).toHaveBeenCalledWith({ forces: { connection: { ...connection, spread: 2.5 } } })
 
     patch.mockClear()
     act(() => {
@@ -108,7 +109,7 @@ describe('the Matrix menu', () => {
       field.dispatchEvent(new Event('input', { bubbles: true }))
       field.blur()
     })
-    expect(patch).toHaveBeenCalledWith({ forces: { gravity: 2 } })
+    expect(patch).toHaveBeenCalledWith({ forces: { connection: { ...connection, gravity: 2 } } })
   })
 
   it('toggles the lock and holds Shuffle while it is on', () => {

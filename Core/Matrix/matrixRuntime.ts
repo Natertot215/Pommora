@@ -24,7 +24,7 @@ import {
   zoomFrame,
   type Viewport,
 } from './Engine/viewport'
-import type { MatrixConfig } from './matrixConfig'
+import { type MatrixConfig, sameForces } from './matrixConfig'
 import {
   matrixTree,
   matrixVisible,
@@ -56,7 +56,7 @@ interface Built {
   visible: ReadonlySet<string> | null
   group: unknown
   filter: unknown
-  forces: unknown
+  forces: MatrixConfig['forces']
   display: MatrixConfig['display']
 }
 
@@ -152,7 +152,9 @@ class MatrixRuntime {
       b.filter === c.filter &&
       b.display.unlinked === c.display.unlinked
     ) {
-      if (b.forces !== c.forces) this.setForces(c.forces)
+      // Only the active grouping's set reaches the simulation, so moving a slider for one the picture is not drawn under leaves it settled.
+      const forces = c.forces[c.group.mode]
+      if (!sameForces(b.forces[c.group.mode], forces)) this.setForces(forces)
       if (b.display !== c.display) this.invalidate()
       b.forces = c.forces
       b.display = c.display
@@ -205,7 +207,7 @@ class MatrixRuntime {
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
     const lostDrag = this.dragFrom !== null && !graph.index.has(this.dragFrom.id)
     if (lostDrag) this.dragFrom = null
-    this.sim = createSimulation(graph, c.forces, settleAll)
+    this.sim = createSimulation(graph, c.forces[c.group.mode], settleAll)
     const carried = prev?.drag ?? null
     this.sim.drag = carried && graph.index.has(carried.id) ? carried : null
     if (prev?.awake && !settleAll) {

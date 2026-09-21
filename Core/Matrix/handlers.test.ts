@@ -7,6 +7,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { realpathPosix, tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { matrixHandlers } from './handlers'
+import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
 
 let root: string
 const ctx = {} as HostContext
@@ -33,12 +34,16 @@ describe('matrix config channels', () => {
   })
 
   it('round-trips one section', async () => {
-    expect(await matrixHandlers['matrix:write'](ctx, { forces: { spread: 0.9 } })).toEqual({
+    const space = { ...DEFAULT_MATRIX_CONFIG.forces.space, spread: 0.9 }
+    expect(await matrixHandlers['matrix:write'](ctx, { forces: { space } })).toEqual({
       ok: true,
       value: null,
     })
     const reply = await matrixHandlers['matrix:read'](ctx)
-    expect(reply.ok && reply.value.forces.spread).toBe(0.9)
+    expect(reply.ok && reply.value.forces.space.spread).toBe(0.9)
+    expect(reply.ok && reply.value.forces.connection).toEqual(
+      DEFAULT_MATRIX_CONFIG.forces.connection,
+    )
     expect(reply.ok && reply.value.group.mode).toBe('connection')
   })
 })
