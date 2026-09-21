@@ -11,7 +11,8 @@ const LINK_MULTIPLE: Record<LinkKind, number> = {
   space: 0,
   location: 0,
 }
-const MEMBER_MULTIPLE = 0.03
+const MEMBER_MULTIPLE = 0.025
+const SPACE_LINK_MULTIPLE = 0.1
 export const RADIUS_MAX = 160
 const LINK_STRENGTH: Record<LinkKind, number> = {
   body: 1,
@@ -39,13 +40,14 @@ export function radiusOf(
   kind: NodeKind,
   inbound: Record<LinkKind, number>,
   members: number,
+  links = 0,
 ): number {
   const base = BASE_RADIUS[kind]
   const grown =
     kind === 'page'
       ? base *
         (1 + Object.entries(inbound).reduce((s, [k, n]) => s + LINK_MULTIPLE[k as LinkKind] * n, 0))
-      : base * (1 + MEMBER_MULTIPLE * members)
+      : base * (1 + MEMBER_MULTIPLE * members + SPACE_LINK_MULTIPLE * links)
   return clamp(grown, base, RADIUS_MAX)
 }
 

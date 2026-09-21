@@ -108,6 +108,12 @@ const SET_OPS: OperatorChoice[] = [
   ...EMPTIES,
 ]
 
+const CONTEXT_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.containsAny, label: 'Contains', slot: 'chips', multi: true },
+  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips', multi: true },
+  ...EMPTIES,
+]
+
 const NUMBER_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'number' },
   { op: FILTER_OPS.isNot, label: "Isn't", slot: 'number' },
@@ -153,8 +159,9 @@ export function operatorsFor(
     case 'status':
       return OPTION_OPS
     case 'multi_select':
-    case 'context':
       return SET_OPS
+    case 'context':
+      return CONTEXT_OPS
     case 'number':
       return NUMBER_OPS
     case 'datetime':
