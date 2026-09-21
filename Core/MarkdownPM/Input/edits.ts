@@ -537,8 +537,11 @@ export function bullet(
   if (inserted !== ' ' || selStart !== selEnd || settings.transformBullets !== true) return null
   const doc = scan.text
   const c = selStart
-  if (doc[c - 1] !== '^' || !(c === 1 || /[ \t\n]/.test(doc[c - 2] ?? ''))) return null
+  if (c < 2 || doc[c - 1] !== '^' || doc[c - 2] !== ' ') return null
   if (isLiteralAt(scan, c) || inBracket(doc, c)) return null
+  const ls = lineStartAt(doc, c)
+  const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
+  if (!/\S/.test(doc.slice(ls + pfx.length, c - 2))) return null
   return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
 }
 

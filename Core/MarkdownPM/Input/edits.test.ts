@@ -454,12 +454,14 @@ describe('sections and bullets', () => {
     const e = bullet(scanDoc('a ^'), 3, 3, ' ', on)!
     expect(apply('a ^', e)).toBe('a • ')
     expect(e.selection).toBe(4)
-    expect(apply('^', bullet(scanDoc('^'), 1, 1, ' ', on)!)).toBe('• ')
   })
-  it('a citation label, an attached caret, code, and the default leave it literal', () => {
+  it('a citation label, an attached caret, a bare line, code, and the default leave it literal', () => {
     const on = { transformBullets: true }
     expect(bullet(scanDoc('a [^b'), 5, 5, ' ', on)).toBeNull()
     expect(bullet(scanDoc('x^'), 2, 2, ' ', on)).toBeNull()
+    expect(bullet(scanDoc('^'), 1, 1, ' ', on)).toBeNull()
+    expect(bullet(scanDoc(' ^'), 2, 2, ' ', on)).toBeNull()
+    expect(bullet(scanDoc('> ^'), 3, 3, ' ', on)).toBeNull()
     expect(bullet(scanDoc('`a ^`'), 4, 4, ' ', on)).toBeNull()
     expect(bullet(scanDoc('a ^'), 3, 3, ' ')).toBeNull()
   })
