@@ -35,27 +35,31 @@ describe('iconCache', () => {
   })
 
   it('answers null for an unknown name without throwing', async () => {
-    expect(iconFor('not-an-icon', '#fff', 2)).toBeNull()
+    expect(iconFor('not-an-icon', '#fff', 32)).toBeNull()
     await Promise.resolve()
-    expect(iconFor('not-an-icon', '#fff', 2)).toBeNull()
+    expect(iconFor('not-an-icon', '#fff', 32)).toBeNull()
   })
 
   it('tells every listener once the bitmap is in, and answers it from then on', async () => {
     const told = vi.fn()
     const stop = onIconLoad(told)
-    expect(iconFor('earth', '#0f0', 2)).toBeNull()
+    expect(iconFor('earth', '#0f0', 32)).toBeNull()
     await vi.waitFor(() => expect(told).toHaveBeenCalled())
-    expect(iconFor('earth', '#0f0', 2)).toBeInstanceOf(ImageStub)
+    expect(iconFor('earth', '#0f0', 32)).toBeInstanceOf(ImageStub)
     stop()
   })
 
-  it('loads a name, colour and ratio once', async () => {
+  it('loads a name, colour and size bucket once, and rounds a size up to its bucket', async () => {
     roster.mockClear()
-    iconFor('earth', '#00f', 2)
+    iconFor('earth', '#00f', 32)
     await Promise.resolve()
-    iconFor('earth', '#00f', 2)
+    iconFor('earth', '#00f', 32)
     await vi.waitFor(() => expect(roster).toHaveBeenCalledTimes(1))
-    iconFor('earth', '#00f', 3)
-    await vi.waitFor(() => expect(roster).toHaveBeenCalledTimes(2))
+    iconFor('earth', '#00f', 24)
+    iconFor('earth', '#00f', 4)
+    await Promise.resolve()
+    expect(roster).toHaveBeenCalledTimes(2)
+    iconFor('earth', '#00f', 64)
+    await vi.waitFor(() => expect(roster).toHaveBeenCalledTimes(3))
   })
 })
