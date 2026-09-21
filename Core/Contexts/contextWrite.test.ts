@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createContextGroup,
   createSpace,
@@ -193,14 +193,12 @@ describe('setSpaceContext (G-1, cross-context)', () => {
 
   const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
   const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
-  const read = async (file: string): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(file, 'utf8'))
 
   it('writes the pair onto both files', async () => {
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
-    expect((await read(pomFile()))['<Classes>']).toEqual(['CS 161'])
-    expect((await read(csFile()))['<Projects>']).toEqual(['Pommora'])
+    expect((await readSpaceSidecar(pomFile()))['<Classes>']).toEqual(['CS 161'])
+    expect((await readSpaceSidecar(csFile()))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('writes the pair under one key when both Spaces share a Context', async () => {
@@ -209,22 +207,22 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     await writeFile(join(athena, '_space.json'), JSON.stringify({ id: 'sp-ath' }))
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', ['sp-ath'])
     expect(r.ok).toBe(true)
-    expect((await read(pomFile()))['<Projects>']).toEqual(['Athena'])
-    expect((await read(join(athena, '_space.json')))['<Projects>']).toEqual(['Pommora'])
+    expect((await readSpaceSidecar(pomFile()))['<Projects>']).toEqual(['Athena'])
+    expect((await readSpaceSidecar(join(athena, '_space.json')))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('strips the pair from both files, leaving no emptied array', async () => {
     expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])).ok).toBe(true)
     expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', [])).ok).toBe(true)
-    expect('<Classes>' in (await read(pomFile()))).toBe(false)
-    expect('<Projects>' in (await read(csFile()))).toBe(false)
+    expect('<Classes>' in (await readSpaceSidecar(pomFile()))).toBe(false)
+    expect('<Projects>' in (await readSpaceSidecar(csFile()))).toBe(false)
   })
 
   it('strips a link whose only half is far (C-6)', async () => {
     await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', [])
     expect(r.ok).toBe(true)
-    expect('<Projects>' in (await read(csFile()))).toBe(false)
+    expect('<Projects>' in (await readSpaceSidecar(csFile()))).toBe(false)
   })
 
   it('completes a kept link’s missing half and leaves the far file untouched (C-5)', async () => {
@@ -232,7 +230,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     const before = await readFile(csFile(), 'utf8')
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
-    expect((await read(pomFile()))['<Classes>']).toEqual(['CS 161'])
+    expect((await readSpaceSidecar(pomFile()))['<Classes>']).toEqual(['CS 161'])
     expect(await readFile(csFile(), 'utf8')).toBe(before)
   })
 
@@ -247,14 +245,14 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     await writeFile(pomFile(), JSON.stringify({ id: 'sp-pom', '<Classes>': ['Vanished'] }))
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', [])
     expect(r.ok).toBe(true)
-    expect((await read(pomFile()))['<Classes>']).toEqual(['Vanished'])
+    expect((await readSpaceSidecar(pomFile()))['<Classes>']).toEqual(['Vanished'])
   })
 })
 
 describe('setSpaceRowOrder', () => {
   const dir = (): string => join(contextsDir(root), 'Projects', 'Pommora')
-  const sidecar = async (): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(join(dir(), '_space.json'), 'utf8'))
+  const sidecar = (): Promise<Record<string, unknown>> =>
+    readSpaceSidecar(join(dir(), '_space.json'))
 
   it('writes both lists under $order, replaces them wholesale, and removes the key when both empty', async () => {
     expect((await setSpaceRowOrder(dir(), ['ctxC'], ['prop_a'])).ok).toBe(true)
@@ -267,10 +265,8 @@ describe('setSpaceRowOrder', () => {
 })
 
 describe('setSpaceColor', () => {
-  const sidecar = async (): Promise<Record<string, unknown>> =>
-    JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),
-    )
+  const sidecar = (): Promise<Record<string, unknown>> =>
+    readSpaceSidecar(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
 
   it('accepts a legacy anchor name, clears on undefined, rejects a non-color', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'cyan')).ok).toBe(true)

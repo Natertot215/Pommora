@@ -3,7 +3,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits, windows } from '../Testing/hostFs'
+import { readSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate, type MutateDeps } from './mutate'
 import { setActiveViewOp } from '../Pages/setActiveView'
@@ -1427,8 +1427,8 @@ describe('handleMutate — setActiveView', () => {
 })
 
 describe('setContext on a Space', () => {
-  const sidecar = async (context: string, space: string): Promise<Record<string, unknown>> =>
-    JSON.parse(await read(`.nexus/contexts/${context}/${space}/_space.json`))
+  const sidecar = (context: string, space: string): Promise<Record<string, unknown>> =>
+    readSpaceSidecar(join(root, '.nexus', 'contexts', context, space, '_space.json'))
 
   beforeEach(async () => {
     closeSession()

@@ -132,6 +132,11 @@ export function PropertyPanel({
     }
   }, [valuesEpoch, subjectId, path, isSpace])
 
+  // A Space has no values push: its confirming tree push lands after the write settles and swaps the node, so the override retires with it.
+  useEffect(() => {
+    if (isSpace) setOverride((prev) => retireSettled(prev, null))
+  }, [isSpace, spaceNode])
+
   // KNOB — a row added this session outlives a subject change; key this on `path` to scope it per subject.
   const nexusId = tree?.nexus.id
   useEffect(() => {
@@ -156,9 +161,7 @@ export function PropertyPanel({
       }),
     [tree],
   )
-  // The host pushes a Space's patched node before its write replies, so a settled override is already behind the node.
-  const entry = override?.[subjectId]
-  const overrideFm = isSpace && entry?.write === null ? undefined : entry?.fm
+  const overrideFm = override?.[subjectId]?.fm
   const row = useMemo<ViewRow | null>(() => {
     if (isSpace) return tree && spaceNode ? spaceRowOf(tree, spaceNode, overrideFm) : null
     const frontmatter = overrideFm ?? base

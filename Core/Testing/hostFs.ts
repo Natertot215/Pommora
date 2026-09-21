@@ -1,7 +1,7 @@
 import { mkdtempSync } from 'node:fs'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { contextsDir } from '../Paths/paths'
+import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 import { join } from '../Paths/posix'
 
 export const windows = process.platform === 'win32'
@@ -22,7 +22,7 @@ export const seedSpaceSidecar = async (
 ): Promise<string> => {
   const dir = join(contextsDir(root), contextTitle, spaceName)
   await mkdir(dir, { recursive: true })
-  const file = join(dir, '_space.json')
+  const file = join(dir, SPACE_SIDECAR)
   await writeFile(file, JSON.stringify(raw))
   return file
 }

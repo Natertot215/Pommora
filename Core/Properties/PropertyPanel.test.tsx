@@ -163,7 +163,7 @@ describe('PropertyPanel', () => {
     expect(ask.mock.calls.map((c) => c[0])).not.toContain('view:loadValues')
   })
 
-  it('a Space reads its node again once a write settles', async () => {
+  it('a Space keeps its edit until the confirming push, then reads its node', async () => {
     ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
     ;(window as unknown as { nexus: unknown }).nexus = {
       ask,
@@ -171,14 +171,16 @@ describe('PropertyPanel', () => {
       on: vi.fn(() => () => {}),
     }
     setTree({ Stage: 'a' })
-    useSession.setState({ mutate: vi.fn(async () => false) as never })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
     const cell = host.querySelector('[data-property-row="prop_stage"]')
     await act(async () => {
       cell?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     await act(async () => {})
-    expect(text()).toContain('Alpha')
+    expect(text()).not.toContain('Alpha')
+    await act(async () => setTree({ Stage: 'b' }))
+    await act(async () => {})
+    expect(text()).toContain('Beta')
   })
 
   it('a page’s Context rows read the nexus-wide order', async () => {
