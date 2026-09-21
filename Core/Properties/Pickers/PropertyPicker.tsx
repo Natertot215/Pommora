@@ -9,7 +9,7 @@ import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
-import { MenuItem, MenuTopRow } from '@pommora/uix/Menus'
+import { MenuItem, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
@@ -26,16 +26,13 @@ export type PickTarget = { def: PropertyDefinition; current: PropertyValue | nul
   | { kind: 'file' }
 )
 
-const PICK_GROUPS = ['Spaces', 'Properties'] as const
-type PickGroup = (typeof PICK_GROUPS)[number]
-
 export type PickEntry = {
   id: string
   name: string
   icon: string
   revealOnly: boolean
   drillable: boolean
-  group?: PickGroup
+  group?: 'Spaces' | 'Properties'
 }
 
 export const selectedValues = (current: PropertyValue | null): string[] => {
@@ -87,11 +84,8 @@ export function PropertyPicker({
 }): React.JSX.Element | null {
   const held = useHeld(target, open)
   const [picked, setPicked] = useState<PickEntry | null>(null)
-  const [group, setGroup] = useState<PickGroup | null>(null)
   useEffect(() => {
-    const initial = open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null
-    setPicked(initial)
-    setGroup(initial?.group ?? null)
+    setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
   }, [open, chooserInitial])
 
   const t = picked ? (resolveTarget?.(picked) ?? null) : held
@@ -140,68 +134,22 @@ export function PropertyPicker({
     />
   )
 
-  const grouped = chooser?.some((e) => e.group) ?? false
-  const listed = grouped ? (chooser ?? []).filter((e) => e.group === group) : (chooser ?? [])
-  const entries = (
-    <FrameSlide
-      open={picked !== null}
-      minWidth={120}
-      minHeight={0}
-      root={
-        listed.length === 0 ? (
-          <div style={{ minWidth: 96, height: 24 }} />
-        ) : (
-          <div>
-            {group && <MenuTopRow label={group} onBack={() => setGroup(null)} />}
-            {listed.map((e) => (
-              <MenuItem
-                key={e.id}
-                leading={<Icon name={e.icon} size="body" />}
-                trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
-                onClick={() => {
-                  if (e.drillable) return setPicked(e)
-                  onReveal?.(e)
-                  if (e.revealOnly) onDismiss()
-                }}
-              >
-                {e.name}
-              </MenuItem>
-            ))}
-          </div>
-        )
-      }
-      detail={
-        picked && (
-          <div>
-            <MenuTopRow
-              label={picked.group ?? 'Properties'}
-              current={picked.name}
-              onBack={() => setPicked(null)}
-              className={chooserTop}
-            />
-            {pane}
-          </div>
-        )
-      }
-    />
+  const entryRow = (e: PickEntry): React.JSX.Element => (
+    <MenuItem
+      key={e.id}
+      leading={<Icon name={e.icon} size="body" />}
+      trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
+      onClick={() => {
+        if (e.drillable) return setPicked(e)
+        onReveal?.(e)
+        if (e.revealOnly) onDismiss()
+      }}
+    >
+      {e.name}
+    </MenuItem>
   )
-  const branches = (
-    <FrameSlide
-      open={group !== null}
-      minWidth={120}
-      minHeight={0}
-      root={
-        <div>
-          {PICK_GROUPS.filter((g) => chooser?.some((e) => e.group === g)).map((g) => (
-            <MenuItem key={g} trailing={<Icon name="chevron-right" />} onClick={() => setGroup(g)}>
-              {g}
-            </MenuItem>
-          ))}
-        </div>
-      }
-      detail={group && entries}
-    />
-  )
+  const spaces = chooser?.filter((e) => e.group === 'Spaces') ?? []
+  const rest = chooser?.filter((e) => e.group !== 'Spaces') ?? []
 
   return (
     <PickerMenu
@@ -212,7 +160,39 @@ export function PropertyPicker({
       origin={chooser ? 'auto' : origin}
       anchorX={anchorX}
     >
-      {chooser ? (grouped ? branches : entries) : pane}
+      {chooser ? (
+        <FrameSlide
+          open={picked !== null}
+          minWidth={120}
+          minHeight={0}
+          root={
+            chooser.length === 0 ? (
+              <div style={{ minWidth: 96, height: 24 }} />
+            ) : (
+              <div>
+                {spaces.map(entryRow)}
+                {spaces.length > 0 && rest.length > 0 && <MenuSeparator />}
+                {rest.map(entryRow)}
+              </div>
+            )
+          }
+          detail={
+            picked && (
+              <div>
+                <MenuTopRow
+                  label={picked.group ?? 'Properties'}
+                  current={picked.name}
+                  onBack={() => setPicked(null)}
+                  className={chooserTop}
+                />
+                {pane}
+              </div>
+            )
+          }
+        />
+      ) : (
+        pane
+      )}
     </PickerMenu>
   )
 }
