@@ -2,7 +2,9 @@
 
 import { queryKeyHolders } from '../Index/contentIndex'
 import { corpusUnder, nexusCorpus } from '../Index/indexSeed'
-import { readTextOrNull } from '../Files/atomicWrite'
+import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
+import { listFilesRecursive } from '../Files/walk'
+import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 import { splitFrontmatter } from '../Files/pageFile'
 
 export async function keyHolderFiles(
@@ -27,6 +29,10 @@ export async function confirmedKeyHolders(
   )) {
     const content = await readTextOrNull(file)
     if (content !== null && key in splitFrontmatter(content)) holders.push(file)
+  }
+  for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
+    const raw = await readJsonObject(file)
+    if (raw && key in raw) holders.push(file)
   }
   return holders
 }
