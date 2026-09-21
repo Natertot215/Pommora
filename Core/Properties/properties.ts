@@ -154,7 +154,7 @@ export const KEY_REFUSAL = {
   reserved: (name: string) => `"${name}" is a key Pommora manages.`,
   duplicate: (name: string) => `A property named "${name}" already exists.`,
   held: (name: string, n: number) =>
-    `${n} ${n === 1 ? 'page already uses' : 'pages already use'} "${name}" as a key.`,
+    `${n} ${n === 1 ? 'file already uses' : 'files already use'} "${name}" as a key.`,
 } as const
 
 export function normalizePropertyName(raw: string): string {

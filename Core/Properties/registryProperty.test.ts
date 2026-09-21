@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { readSpaceSidecar, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   editProperty,
@@ -140,13 +140,32 @@ describe('editProperty', () => {
 
     const refused = await editProperty(root, c.value.id, { name: 'foo' })
     expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.error.message).toBe('1 page already uses "foo" as a key.')
+    if (!refused.ok) expect(refused.error.message).toBe('1 file already uses "foo" as a key.')
     expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('Status')
 
     expect((await editProperty(root, c.value.id, { name: 'Status ' })).ok).toBe(true)
     expect((await editProperty(root, c.value.id, { name: 'Phase' })).ok).toBe(true)
     expect(await readFile(p.value.path, 'utf8')).toContain('foo: bar')
+  })
+
+  it('refuses a rename onto a key a Space sidecar already holds', async () => {
+    const c = await createProperty(root, def({ name: 'Status', type: 'select' }))
+    if (!c.ok) return
+    const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', {
+      id: 'sp1',
+      Status: ['Active'],
+      Stage: ['Hand-written'],
+    })
+
+    const refused = await editProperty(root, c.value.id, { name: 'Stage' })
+    expect(refused.ok).toBe(false)
+    if (!refused.ok) expect(refused.error.message).toBe('1 file already uses "Stage" as a key.')
+    expect(await readSpaceSidecar(file)).toEqual({
+      id: 'sp1',
+      Status: ['Active'],
+      Stage: ['Hand-written'],
+    })
   })
 
   it('refuses renaming onto a taken title, the same as creating one', async () => {
