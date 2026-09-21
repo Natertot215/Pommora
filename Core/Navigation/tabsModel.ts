@@ -6,10 +6,10 @@ import {
   type NavRef,
   type NewTabSentinel,
   type SelectTarget,
+  type StoredTab,
   type Tab,
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
-import type { StoredTab } from '@pommora/core/Interface/Windows/windowRecord'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { navKey } from './navRecents'

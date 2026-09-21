@@ -1,20 +1,8 @@
-import type { NavRef, NewTabSentinel } from '../../Navigation/navRef'
-
-export interface StoredTab {
-  id: string
-  target: NavRef | NewTabSentinel
-  navStack: NavRef[]
-  navIndex: number
-}
+import type { NavRef } from '../../Navigation/navRef'
 
 export interface GlanceSize {
   w: number
   h: number
-}
-
-export interface StoredTabSet {
-  tabs: StoredTab[]
-  activeTabId: string
 }
 
 /** Bare refs only — ids are session-local and re-minted at restore. */

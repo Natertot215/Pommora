@@ -73,3 +73,15 @@ export interface Tab {
   navStack: SelectTarget[]
   navIndex: number
 }
+
+export interface StoredTab {
+  id: string
+  target: NavRef | NewTabSentinel
+  navStack: NavRef[]
+  navIndex: number
+}
+
+export interface StoredTabSet {
+  tabs: StoredTab[]
+  activeTabId: string
+}

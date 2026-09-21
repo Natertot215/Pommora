@@ -11,11 +11,11 @@ import {
   isSingleton,
   type SelectionState,
   type SelectTarget,
+  type StoredTabSet,
   type Tab,
   toNavRef,
 } from '@pommora/core/Navigation/navRef'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
-import type { StoredTabSet } from '@pommora/core/Interface/Windows/windowRecord'
 import { type ReconcileIndex, reconcileSelection, reconcileWith } from './reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import {

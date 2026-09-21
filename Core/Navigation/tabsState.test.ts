@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import type { StoredTabSet } from '../Interface/Windows/windowRecord'
+import type { StoredTabSet } from './navRef'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { writeValue } from '../Platform/localState'
