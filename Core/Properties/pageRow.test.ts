@@ -1,35 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { NexusTree, SpaceNode } from '@pommora/core/Nexus/tree'
-import { makeTree } from '../Testing/testTree'
+import { linkedSpacesTree } from '../Testing/testTree'
 import { spaceRowOf } from './pageRow'
 
 const linked = (): { tree: NexusTree; node: SpaceNode } => {
-  const base = makeTree()
-  const home: SpaceNode = {
-    kind: 'space',
-    id: 'a1',
-    title: 'Work',
-    path: '.nexus/contexts/Realms/Work',
-    contextId: 'g1',
-    values: { Status: ['Active'] },
-  }
-  const other: SpaceNode = {
-    kind: 'space',
-    id: 'b1',
-    title: 'Reading',
-    path: '.nexus/contexts/Themes/Reading',
-    contextId: 'g2',
-    contextValues: { g1: ['a1'] },
-  }
-  const tree: NexusTree = {
-    ...base,
-    contexts: [
-      { def: { id: 'g1', title: 'Realms', singular: 'Realm' }, spaces: [home] },
-      { def: { id: 'g2', title: 'Themes', singular: 'Theme' }, spaces: [other] },
-    ],
-  }
-  return { tree, node: home }
+  const tree = linkedSpacesTree({
+    aValues: { Status: ['Active'] },
+    bContextValues: { g1: ['a1'] },
+  })
+  return { tree, node: tree.contexts[0].spaces[0] }
 }
 
 describe('spaceRowOf', () => {

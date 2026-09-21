@@ -3,8 +3,13 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { realpathPosix, tempRoot, noModeBits } from '../Testing/hostFs'
-import { contextsDir } from '../Paths/paths'
+import {
+  realpathPosix,
+  tempRoot,
+  noModeBits,
+  seedSpaceSidecar,
+  readSpaceSidecar,
+} from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -61,16 +66,8 @@ async function seedNexus(): Promise<string> {
 const page = (root: string, name: string): Promise<string> =>
   readFile(join(root, 'Col', `${name}.md`), 'utf8')
 
-async function seedSpace(root: string, raw: Record<string, unknown>): Promise<string> {
-  const dir = join(contextsDir(root), 'Projects', 'Pommora')
-  await mkdir(dir, { recursive: true })
-  const file = join(dir, '_space.json')
-  await writeFile(file, JSON.stringify(raw))
-  return file
-}
-
-const spaceRaw = async (file: string): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(file, 'utf8'))
+const seedSpace = (root: string, raw: Record<string, unknown>): Promise<string> =>
+  seedSpaceSidecar(root, 'Projects', 'Pommora', raw)
 
 async function renameCrashState(root: string): Promise<void> {
   await writeSchemaJournal(root, { op: 'rename', id: 'prop_s', from: 'Stage', to: 'Phase' })
@@ -182,7 +179,7 @@ describe('delete replay', () => {
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
     await openSession(root)
     await replaySchemaCascade(root)
-    const raw = await spaceRaw(file)
+    const raw = await readSpaceSidecar(file)
     expect('Stage' in raw).toBe(false)
     expect(raw.$order).toEqual({ properties: [] })
   })
@@ -322,7 +319,7 @@ describe('option replay', () => {
     }))
     await openSession(root)
     await replaySchemaCascade(root)
-    expect((await spaceRaw(file)).Stage).toEqual(['Queued'])
+    expect((await readSpaceSidecar(file)).Stage).toEqual(['Queued'])
   })
 
   it('option-remove, replayed, reaches a Space sidecar', async () => {
@@ -331,7 +328,7 @@ describe('option replay', () => {
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
     await openSession(root)
     await replaySchemaCascade(root)
-    expect('Stage' in (await spaceRaw(file))).toBe(false)
+    expect('Stage' in (await readSpaceSidecar(file))).toBe(false)
   })
 })
 

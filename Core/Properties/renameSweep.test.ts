@@ -1,7 +1,6 @@
 import { readFile, rm, writeFile, mkdir, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { contextsDir } from '../Paths/paths'
-import { tempRoot } from '../Testing/hostFs'
+import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameSweep } from './registryProperty'
 
@@ -80,15 +79,8 @@ describe('renameSweep', () => {
 })
 
 describe('renameSweep reaches a Space sidecar', () => {
-  const seedSpace = async (raw: Record<string, unknown>): Promise<string> => {
-    const dir = join(contextsDir(root), 'Projects', 'Pommora')
-    await mkdir(dir, { recursive: true })
-    const file = join(dir, '_space.json')
-    await writeFile(file, JSON.stringify(raw))
-    return file
-  }
-  const sidecar = async (file: string): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(file, 'utf8'))
+  const seedSpace = (raw: Record<string, unknown>): Promise<string> =>
+    seedSpaceSidecar(root, 'Projects', 'Pommora', raw)
 
   it('moves the key and its $order entry together', async () => {
     const file = await seedSpace({
@@ -97,7 +89,7 @@ describe('renameSweep reaches a Space sidecar', () => {
       $order: { contexts: ['ctxA'], properties: ['Other', 'Status'] },
     })
     await renameSweep(root, 'Status', 'Stage')
-    const raw = await sidecar(file)
+    const raw = await readSpaceSidecar(file)
     expect(raw.Stage).toBe('Old')
     expect('Status' in raw).toBe(false)
     expect(raw.$order).toEqual({ contexts: ['ctxA'], properties: ['Other', 'Stage'] })
@@ -106,7 +98,7 @@ describe('renameSweep reaches a Space sidecar', () => {
   it('renames a listed entry on a sidecar that no longer holds the key', async () => {
     const file = await seedSpace({ id: 'sp1', $order: { properties: ['Status'] } })
     await renameSweep(root, 'Status', 'Stage')
-    expect((await sidecar(file)).$order).toEqual({ properties: ['Stage'] })
+    expect((await readSpaceSidecar(file)).$order).toEqual({ properties: ['Stage'] })
   })
 
   it('leaves a sidecar with neither the key nor the entry byte-identical', async () => {

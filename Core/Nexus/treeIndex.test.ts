@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { makeTree } from '../Testing/testTree'
+import { makeTree, linkedSpacesTree } from '../Testing/testTree'
 import { reconcileWith } from '../Session/reconcileSelection'
 import {
   containersByPathOf,
@@ -151,40 +151,11 @@ describe('navKeysOf', () => {
 })
 
 describe('spaceLinksOf', () => {
-  const linkedTree = (bStoresItToo: boolean): NexusTree => {
-    const base = makeTree()
-    return {
-      ...base,
-      contexts: [
-        {
-          def: { id: 'g1', title: 'Realms', singular: 'Realm' },
-          spaces: [
-            {
-              kind: 'space',
-              id: 'a1',
-              title: 'Work',
-              path: '.nexus/contexts/Realms/Work',
-              contextId: 'g1',
-              contextValues: { g2: ['b1'] },
-            },
-          ],
-        },
-        {
-          def: { id: 'g2', title: 'Themes', singular: 'Theme' },
-          spaces: [
-            {
-              kind: 'space',
-              id: 'b1',
-              title: 'Reading',
-              path: '.nexus/contexts/Themes/Reading',
-              contextId: 'g2',
-              ...(bStoresItToo ? { contextValues: { g1: ['a1'] } } : {}),
-            },
-          ],
-        },
-      ],
-    }
-  }
+  const linkedTree = (bStoresItToo: boolean): NexusTree =>
+    linkedSpacesTree({
+      aContextValues: { g2: ['b1'] },
+      ...(bStoresItToo ? { bContextValues: { g1: ['a1'] } } : {}),
+    })
 
   it('reads one half as a link on both ends', () => {
     const links = spaceLinksOf(linkedTree(false))

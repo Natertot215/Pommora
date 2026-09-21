@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, readFile, mkdir, stat, writeFile } from 'node:fs/promises'
+import { rm, readFile, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { contextsDir } from '../Paths/paths'
-import { tempRoot } from '../Testing/hostFs'
+import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   setOptions,
   renameOption,
@@ -79,16 +78,8 @@ async function statusPageHolding(id: string, value: string): Promise<string> {
   return p.value.path
 }
 
-async function spaceSidecar(name: string, raw: Record<string, unknown>): Promise<string> {
-  const dir = join(contextsDir(root), 'Projects', name)
-  await mkdir(dir, { recursive: true })
-  const file = join(dir, '_space.json')
-  await writeFile(file, JSON.stringify(raw))
-  return file
-}
-
-const readSidecarRaw = async (file: string): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(file, 'utf8'))
+const spaceSidecar = (name: string, raw: Record<string, unknown>): Promise<string> =>
+  seedSpaceSidecar(root, 'Projects', name, raw)
 
 async function statusValues(id: string): Promise<string[]> {
   const def = (await readRegistry(root)).defs[id]
@@ -259,8 +250,8 @@ describe('option cascades reach a Space sidecar', () => {
     const list = await spaceSidecar('Sapphire', { id: 'sp2', Tags: ['Urgent', 'Keep'] })
 
     expect((await renameOption(root, id, 'Urgent', 'Critical')).ok).toBe(true)
-    expect((await readSidecarRaw(scalar)).Tags).toEqual(['Critical'])
-    expect((await readSidecarRaw(list)).Tags).toEqual(['Critical', 'Keep'])
+    expect((await readSpaceSidecar(scalar)).Tags).toEqual(['Critical'])
+    expect((await readSpaceSidecar(list)).Tags).toEqual(['Critical', 'Keep'])
   })
 
   it('a remove empties a one-element list and the key leaves the sidecar', async () => {
@@ -271,7 +262,7 @@ describe('option cascades reach a Space sidecar', () => {
     const file = await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A'], icon: 'box' })
 
     expect((await removeOption(root, id, 'A')).ok).toBe(true)
-    const raw = await readSidecarRaw(file)
+    const raw = await readSpaceSidecar(file)
     expect('Tags' in raw).toBe(false)
     expect(raw.icon).toBe('box')
   })

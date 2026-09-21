@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { rm, readFile, readdir, mkdir, writeFile } from 'node:fs/promises'
+import { rm, readFile, readdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { contextsDir } from '../Paths/paths'
-import { tempRoot } from '../Testing/hostFs'
+import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
@@ -138,15 +137,8 @@ describe('deleteProperty', () => {
 })
 
 describe('a global delete reaches a Space sidecar', () => {
-  const seedSpace = async (name: string, raw: Record<string, unknown>): Promise<string> => {
-    const dir = join(contextsDir(root), 'Projects', name)
-    await mkdir(dir, { recursive: true })
-    const file = join(dir, '_space.json')
-    await writeFile(file, JSON.stringify(raw))
-    return file
-  }
-  const sidecar = async (file: string): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(file, 'utf8'))
+  const seedSpace = (name: string, raw: Record<string, unknown>): Promise<string> =>
+    seedSpaceSidecar(root, 'Projects', name, raw)
 
   const mkProperty = async (): Promise<string> => {
     const c = await createProperty(root, {
@@ -180,7 +172,7 @@ describe('a global delete reaches a Space sidecar', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
     expect((await bundle(id)).values.sp1).toEqual(['hi'])
-    const raw = await sidecar(file)
+    const raw = await readSpaceSidecar(file)
     expect('Priority' in raw).toBe(false)
     expect(raw.icon).toBe('box')
     expect(raw.$order).toEqual({ properties: ['Other'] })

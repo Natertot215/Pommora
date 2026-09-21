@@ -1,6 +1,8 @@
 import { mkdtempSync } from 'node:fs'
-import { realpath } from 'node:fs/promises'
+import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { contextsDir } from '../Paths/paths'
+import { join } from '../Paths/posix'
 
 export const windows = process.platform === 'win32'
 
@@ -11,3 +13,19 @@ export const realpathPosix = async (p: string): Promise<string> => posixPath(awa
 export const tempRoot = (prefix: string): string => posixPath(mkdtempSync(`${tmpdir()}/${prefix}`))
 
 export const noModeBits = windows || process.getuid?.() === 0
+
+export const seedSpaceSidecar = async (
+  root: string,
+  contextTitle: string,
+  spaceName: string,
+  raw: Record<string, unknown>,
+): Promise<string> => {
+  const dir = join(contextsDir(root), contextTitle, spaceName)
+  await mkdir(dir, { recursive: true })
+  const file = join(dir, '_space.json')
+  await writeFile(file, JSON.stringify(raw))
+  return file
+}
+
+export const readSpaceSidecar = async (file: string): Promise<Record<string, unknown>> =>
+  JSON.parse(await readFile(file, 'utf8'))
