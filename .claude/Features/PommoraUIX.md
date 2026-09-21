@@ -373,7 +373,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Symbols
 
-`UIX/Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `allSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.
+`UIX/Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `allSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), `LockGlyph` (the lock's two faces in one cell, cross-fading between them), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.
 
 ### Table
 
