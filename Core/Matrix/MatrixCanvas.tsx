@@ -28,8 +28,12 @@ const titleAlphas = (zoom: number): LabelReveal => {
   return { page: easeBase(r.page), folder: easeBase(r.folder), space: easeBase(r.space) }
 }
 
+type Rgb = [number, number, number]
+
 interface Paint {
   fill: string
+  fillRgb: Rgb
+  fillLitRgb: Rgb
   ring: string
   ringHover: string
   ringDrag: string
@@ -41,6 +45,14 @@ interface Paint {
   ringWidth: number
   titleFont: string
 }
+
+const rgbOf = (css: string): Rgb => {
+  const [r = 0, g = 0, b = 0] = css.match(/[\d.]+/g)?.map(Number) ?? []
+  return [r, g, b]
+}
+
+const mixRgb = (a: Rgb, b: Rgb, t: number): string =>
+  `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(' ')})`
 
 function readPaint(host: HTMLElement): Paint {
   const probe = document.createElement('span')
@@ -57,6 +69,8 @@ function readPaint(host: HTMLElement): Paint {
   const number = (token: string): number => Number.parseFloat(scoped.getPropertyValue(token))
   const paint: Paint = {
     fill: color('--matrix-fill'),
+    fillRgb: rgbOf(color('--matrix-fill')),
+    fillLitRgb: rgbOf(color('--matrix-fill-lit')),
     ring: color('--matrix-ring'),
     ringHover: color('--matrix-ring-hover'),
     ringDrag: color('--matrix-ring-drag'),
@@ -100,11 +114,12 @@ function drawNode(
   paint: Paint,
   ring: 'rest' | 'hover' | 'drag',
   alpha: number,
+  fill: string = paint.fill,
 ): void {
   ctx.globalAlpha = alpha
   ctx.beginPath()
   ctx.arc(x, y, r, 0, Math.PI * 2)
-  ctx.fillStyle = paint.fill
+  ctx.fillStyle = fill
   ctx.fill()
   ctx.lineWidth = ring === 'rest' ? paint.hairline : paint.ringWidth
   ctx.strokeStyle =
@@ -172,6 +187,7 @@ export function MatrixCanvas({
   const drawRef = useRef<() => void>(() => {})
   const dprRef = useRef(1)
   const emphasisRef = useRef({ from: 0, to: 0, t: 1, at: 0 })
+  const subjectRef = useRef(-1)
   const neighboursRef = useRef(new Set<number>())
   const hotRef = useRef<GraphLink[]>([])
   const cellsRef = useRef(new Map<number, number>())
@@ -193,11 +209,14 @@ export function MatrixCanvas({
     const { nodes, links } = graph
     const hovered = matrixRuntime.hoveredIndex()
     const dragging = matrixRuntime.draggingIndex()
+    // A held node keeps the focus even when the pointer outruns it, since it trails the cursor on its spring.
+    const focus = dragging >= 0 ? dragging : hovered
+    if (focus >= 0) subjectRef.current = focus
 
     const now = performance.now()
     // Each flip re-seeds from the value on screen, so a reversal mid-fade cannot jump.
     const ease = emphasisRef.current
-    const target = hovered >= 0 ? 1 : 0
+    const target = focus >= 0 ? 1 : 0
     const elapsed = ease.at === 0 ? 0 : Math.min(now - ease.at, MAX_FRAME_MS)
     ease.at = now
     let emphasis = ease.from + (ease.to - ease.from) * easeBase(ease.t)
@@ -210,7 +229,10 @@ export function MatrixCanvas({
       emphasis = ease.from + (ease.to - ease.from) * easeBase(ease.t)
     }
     if (ease.t < 1) matrixRuntime.invalidate()
+    // The released subject outlives the focus until the emphasis reaches nothing, so the dim and the fill fade off it.
+    const subject = focus >= 0 ? focus : emphasis > 0 ? subjectRef.current : -1
     const dim = 1 - emphasis * (1 - paint.inactive)
+    const litFill = mixRgb(paint.fillRgb, paint.fillLitRgb, emphasis)
 
     const arrivals = matrixRuntime.arrivals
     const arrival =
@@ -226,7 +248,7 @@ export function MatrixCanvas({
     neighbours.clear()
     hot.length = 0
     for (const l of links) {
-      const touches = hovered >= 0 && (l.source === hovered || l.target === hovered)
+      const touches = subject >= 0 && (l.source === subject || l.target === subject)
       if (touches) {
         neighbours.add(l.source)
         neighbours.add(l.target)
@@ -238,10 +260,10 @@ export function MatrixCanvas({
           l,
           v,
           paint.link,
-          (hovered >= 0 ? dim : 1) * Math.min(arrival(l.source), arrival(l.target)),
+          (subject >= 0 ? dim : 1) * Math.min(arrival(l.source), arrival(l.target)),
         )
     }
-    const hotStroke = dragging >= 0 && dragging === hovered ? paint.ringDrag : paint.linkHover
+    const hotStroke = dragging >= 0 ? paint.ringDrag : paint.linkHover
     for (const l of hot)
       drawLink(ctx, graph, l, v, hotStroke, Math.min(arrival(l.source), arrival(l.target)))
 
@@ -250,8 +272,9 @@ export function MatrixCanvas({
       const r = n.radius * v.zoom
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
       const ring = i === dragging ? 'drag' : i === hovered ? 'hover' : 'rest'
-      const lit = hovered < 0 || i === hovered || neighbours.has(i)
-      drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i))
+      const lit = subject < 0 || i === subject || neighbours.has(i)
+      const fill = subject >= 0 && lit ? litFill : paint.fill
+      drawNode(ctx, sx, sy, r, paint, ring, (lit ? 1 : dim) * arrival(i), fill)
     })
     for (const g of matrixRuntime.ghosts) {
       const [sx, sy] = toScreen(v, g.x, g.y)
@@ -283,7 +306,8 @@ export function MatrixCanvas({
       const lead = image ? ICON_PX.footnote + s.TITLE_ICON_GAP : 0
       const left = sx - (ctx.measureText(n.title).width + lead) / 2
       const top = sy + s.TITLE_OFFSET
-      ctx.globalAlpha = (hovered < 0 || neighbours.has(i) ? 1 : dim) * arrival(i) * alphas[n.kind]
+      const lit = subject < 0 || i === subject || neighbours.has(i)
+      ctx.globalAlpha = (lit ? 1 : dim) * arrival(i) * alphas[n.kind]
       if (image) ctx.drawImage(image, left, top, ICON_PX.footnote, ICON_PX.footnote)
       ctx.fillText(n.title, left + lead, top)
       ctx.globalAlpha = 1
