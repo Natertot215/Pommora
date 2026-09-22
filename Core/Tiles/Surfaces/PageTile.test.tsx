@@ -11,7 +11,8 @@ vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
     return createElement('div', { className: 'stub-editor' }, body)
   },
 }))
-vi.mock('../../Session/saveScheduler', () => ({
+vi.mock('../../Session/saveScheduler', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../Session/saveScheduler')>()),
   flushPageSave: vi.fn(async () => undefined),
   schedulePageSave: vi.fn(),
 }))

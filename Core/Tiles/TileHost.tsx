@@ -147,17 +147,16 @@ export function TileHost({
     if (!editingId) return
     // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not swallow the click-out.
     const onDown = (e: PointerEvent): void => {
-      const t = e.target as Element | null
-      if (t?.closest?.(`.tile.is-editing-tile, [${PICKER_PORTAL_ATTR}]`)) return
-      setEditingId(null)
+      const inside = (e.target as Element | null)?.closest?.(
+        `.tile.is-editing-tile, [${PICKER_PORTAL_ATTR}]`,
+      )
+      if (!inside) setEditingId(null)
     }
     document.addEventListener('pointerdown', onDown, true)
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [editingId])
 
   useEscape(editingId !== null, () => setEditingId(null))
-
-  const suppressFlush = useCallback((id: string) => isTileRemoving(id), [])
 
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
@@ -342,12 +341,12 @@ export function TileHost({
         beginEdit: setEditingId,
         connections: conn,
         openPage: openRoute,
-        suppressFlush,
+        suppressFlush: isTileRemoving,
         pagesById,
         mutateEntry,
       })
     },
-    [entries, editingId, conn, openRoute, suppressFlush, pagesById, host, mutateEntry],
+    [entries, editingId, conn, openRoute, pagesById, host, mutateEntry],
   )
 
   const onBackdrop = useCallback(

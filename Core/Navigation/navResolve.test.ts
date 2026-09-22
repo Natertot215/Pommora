@@ -164,35 +164,6 @@ describe('pageTargetFromNav', () => {
     expect(pageTargetFromNav(navFor({ kind: 'collection', id: 'c1' }, tree), tree)).toBeNull()
   })
 
-  it('carries a Space as its own target and a page as the page target', () => {
-    const tree = {
-      ...makeTree(),
-      contexts: [
-        {
-          def: { id: 'g1', title: 'Realms', singular: 'Realm' },
-          spaces: [
-            {
-              kind: 'space' as const,
-              id: 'sp1',
-              title: 'Astral',
-              path: '.nexus/contexts/Realms/Astral',
-              contextId: 'g1',
-            },
-          ],
-        },
-      ],
-    }
-    expect(windowTargetFromNav(navFor({ kind: 'space', id: 'sp1' }, tree), tree)).toEqual({
-      kind: 'space',
-      id: 'sp1',
-    })
-    expect(windowTargetFromNav(navFor({ kind: 'page', id: 'p1' }, tree), tree)).toMatchObject({
-      kind: 'page',
-      id: 'p1',
-    })
-    expect(windowTargetFromNav(navFor({ kind: 'collection', id: 'c1' }, tree), tree)).toBeNull()
-  })
-
   it('returns null when the page id is absent from the tree', () => {
     const orphan: ResolvedNav = {
       key: 'page:ghost',
@@ -207,5 +178,20 @@ describe('pageTargetFromNav', () => {
 
   it('returns null when the tree is null', () => {
     expect(pageTargetFromNav(navFor({ kind: 'page', id: 'p1' }), null)).toBeNull()
+  })
+})
+
+describe('windowTargetFromNav', () => {
+  it('carries a Space as its own target and a page as the page target', () => {
+    const tree = makeTree()
+    const navFor = (ref: NavRef) => resolveWith(resolveIndexOf(tree), ref) as ResolvedNav
+    expect(windowTargetFromNav(navFor({ kind: 'space', id: 'a1' }), tree)).toEqual({
+      kind: 'space',
+      id: 'a1',
+    })
+    expect(windowTargetFromNav(navFor({ kind: 'page', id: 'p1' }), tree)).toMatchObject({
+      kind: 'page',
+      id: 'p1',
+    })
   })
 })

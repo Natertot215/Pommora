@@ -49,13 +49,6 @@ export function resolvePins(index: ResolveIndex, pins: NavRef[]): ResolvedNav[] 
 }
 
 // A nav row's `path` is a breadcrumb, not a file path — a glance needs the file path from the id→path map.
-// What a nav row carries into a tab row: a page with its file path, or a Space.
-export function windowTargetFromNav(it: ResolvedNav, tree: NexusTree | null): WindowTarget | null {
-  return it.target.kind === 'space'
-    ? { kind: 'space', id: it.target.id }
-    : pageTargetFromNav(it, tree)
-}
-
 export function pageTargetFromNav(
   it: ResolvedNav,
   tree: NexusTree | null,
@@ -63,4 +56,10 @@ export function pageTargetFromNav(
   if (it.target.kind !== 'page' || !tree) return null
   const page = pagesByIdOf(tree).get(it.target.id)
   return page ? { kind: 'page', id: it.target.id, path: page.path } : null
+}
+
+export function windowTargetFromNav(it: ResolvedNav, tree: NexusTree | null): WindowTarget | null {
+  return it.target.kind === 'space'
+    ? { kind: 'space', id: it.target.id }
+    : pageTargetFromNav(it, tree)
 }

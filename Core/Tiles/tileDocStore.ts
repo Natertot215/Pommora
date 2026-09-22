@@ -3,6 +3,7 @@ import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 import { decodeLayout, encodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { host as dialer } from '../Platform/dialer'
+import { createBodyWriter } from '../Session/saveScheduler'
 
 const SAVE_DEBOUNCE_MS = 300
 const BODY_CAP = 50
@@ -33,24 +34,20 @@ interface TileDoc {
 export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: null }
 
 const bodies = new Map<string, string>()
+const bodyListeners = new Map<string, Set<() => void>>()
 
-// The slot must never lag a pending write, or the mount taking over the edit would seed on pre-edit prose and its next keystroke would save that back.
+export const tileBodyWriter = createBodyWriter()
+
 export const writeTileBody = (tileId: string, text: string): void => {
   capSet(bodies, tileId, text, BODY_CAP)
 }
 
 export const readTileBody = (tileId: string): string | null => bodies.get(tileId) ?? null
 
-const bodySaves = new Map<string, number>()
-const bodyListeners = new Map<string, Set<() => void>>()
-
-// A sibling mount re-seeds when a save lands — once per debounce, never per keystroke.
+// A sibling mount re-seeds once per debounced save, never per keystroke.
 export const settleTileBody = (tileId: string): void => {
-  bodySaves.set(tileId, (bodySaves.get(tileId) ?? 0) + 1)
   for (const fn of bodyListeners.get(tileId) ?? []) fn()
 }
-
-export const tileBodySaves = (tileId: string): number => bodySaves.get(tileId) ?? 0
 
 export const subscribeTileBody = (tileId: string, fn: () => void): (() => void) => {
   const set = bodyListeners.get(tileId) ?? new Set()
@@ -64,12 +61,21 @@ export const subscribeTileBody = (tileId: string, fn: () => void): (() => void) 
 
 const removing = new Set<string>()
 
-// No mount's editor may flush a tile mid-removal: the write would land after the trash and resurrect the file as an entry-less orphan.
 export const markTileRemoving = (tileId: string): void => void removing.add(tileId)
 
 export const isTileRemoving = (tileId: string): boolean => removing.has(tileId)
 
 const docs = new Map<string, TileDoc>()
+
+const at = (host: TileHostRef): TileDoc | undefined => docs.get(tileHostKey(host))
+
+// Every write joins the ones in flight, so a flush awaits all of them and a reload sees any of them land.
+const save = (
+  doc: TileDoc,
+  patch: { layout?: unknown; tiles?: unknown[]; locked?: boolean },
+): void => {
+  doc.lastSave = Promise.all([doc.lastSave, dialer().ask('tiles:save', doc.host, patch)])
+}
 
 const notify = (doc: TileDoc): void => {
   for (const fn of doc.listeners) fn()
@@ -81,9 +87,12 @@ const put = (doc: TileDoc, next: Partial<TileDocState>): void => {
 }
 
 const adopt = (doc: TileDoc, raw: { layout: unknown; tiles: unknown[]; locked: boolean }): void => {
-  if (docs.get(tileHostKey(doc.host)) !== doc) return
+  if (at(doc.host) !== doc) return
+  const layout = decodeLayout(raw.layout) ?? emptyLayout()
+  // A tile the disk holds again is alive, whatever a removal marked before.
+  for (const id of tileIds(layout)) removing.delete(id)
   put(doc, {
-    layout: decodeLayout(raw.layout) ?? emptyLayout(),
+    layout,
     tiles: raw.tiles,
     ready: true,
     lock: raw.locked,
@@ -92,8 +101,7 @@ const adopt = (doc: TileDoc, raw: { layout: unknown; tiles: unknown[]; locked: b
 
 const flush = (doc: TileDoc): void => {
   if (doc.timer) clearTimeout(doc.timer)
-  if (doc.pending)
-    doc.lastSave = dialer().ask('tiles:save', doc.host, { layout: encodeLayout(doc.pending) })
+  if (doc.pending) save(doc, { layout: encodeLayout(doc.pending) })
   doc.timer = null
   doc.pending = null
 }
@@ -107,12 +115,11 @@ const writeLayout = (doc: TileDoc, layout: TileLayout): void => {
 
 // A disk change is read only after the local write it may race has landed, so the user's own last action never silently reverts.
 const reload = async (doc: TileDoc): Promise<void> => {
-  const key = tileHostKey(doc.host)
   flush(doc)
   const saved = doc.lastSave
   await saved
   const r = await dialer().ask('tiles:get', doc.host)
-  if (!r.ok || docs.get(key) !== doc || doc.lastSave !== saved || doc.pending !== null) return
+  if (!r.ok || at(doc.host) !== doc || doc.lastSave !== saved || doc.pending !== null) return
   if (doc.holds > 0) {
     doc.heldPush = true
     return
@@ -153,17 +160,19 @@ async function retire(doc: TileDoc): Promise<void> {
   await doc.lastSave
   // A remount inside the same commit — a host swapped in place, React's double-invoked effects — re-subscribes before this resolves, and keeps the document rather than re-reading the file.
   if (doc.listeners.size > 0) return
-  const key = tileHostKey(doc.host)
-  if (docs.get(key) === doc) {
-    docs.delete(key)
-    for (const id of tileIds(doc.state.layout)) bodies.delete(id)
+  if (at(doc.host) === doc) {
+    docs.delete(tileHostKey(doc.host))
+    for (const id of tileIds(doc.state.layout)) {
+      bodies.delete(id)
+      removing.delete(id)
+    }
   }
   doc.off()
   doc.off = () => {}
 }
 
 export function subscribeTileDoc(host: TileHostRef, fn: () => void): () => void {
-  const doc = docs.get(tileHostKey(host)) ?? create(host)
+  const doc = at(host) ?? create(host)
   doc.listeners.add(fn)
   return () => {
     doc.listeners.delete(fn)
@@ -171,17 +180,16 @@ export function subscribeTileDoc(host: TileHostRef, fn: () => void): () => void 
   }
 }
 
-export const readTileDoc = (host: TileHostRef): TileDocState =>
-  docs.get(tileHostKey(host))?.state ?? EMPTY
+export const readTileDoc = (host: TileHostRef): TileDocState => at(host)?.state ?? EMPTY
 
 export function setTileLayout(host: TileHostRef, layout: TileLayout): void {
-  const doc = docs.get(tileHostKey(host))
+  const doc = at(host)
   if (doc) writeLayout(doc, layout)
 }
 
 // The layout writes before its entry op, so a crash leaves an invisible orphan rather than a dead box; a held gesture defers the commit, so the updater builds on the tree live at release.
 export function commitTileLayout(host: TileHostRef, update: LayoutUpdate): void {
-  const doc = docs.get(tileHostKey(host))
+  const doc = at(host)
   if (!doc) return
   if (doc.holds > 0) {
     doc.queued.push(update)
@@ -193,7 +201,7 @@ export function commitTileLayout(host: TileHostRef, update: LayoutUpdate): void 
 
 // A gesture commits the tree it computed from its press-time snapshot, so while ANY mount holds one, a disk reload and a sibling's structural commit both wait.
 export function holdTileDoc(host: TileHostRef, held: boolean): void {
-  const doc = docs.get(tileHostKey(host))
+  const doc = at(host)
   if (!doc) return
   doc.holds += held ? 1 : -1
   if (doc.holds > 0) return
@@ -208,35 +216,36 @@ export function holdTileDoc(host: TileHostRef, held: boolean): void {
 }
 
 export function refreshTileEntries(host: TileHostRef): void {
-  const key = tileHostKey(host)
   void dialer()
     .ask('tiles:get', host)
     .then((r) => {
-      const doc = docs.get(key)
+      const doc = at(host)
       if (r.ok && doc) put(doc, { tiles: r.value.tiles })
     })
 }
 
 export function saveTileEntries(host: TileHostRef, update: (cur: unknown[]) => unknown[]): void {
-  const doc = docs.get(tileHostKey(host))
+  const doc = at(host)
   if (!doc) return
   const next = update(doc.state.tiles)
   put(doc, { tiles: next })
-  doc.lastSave = dialer().ask('tiles:save', host, { tiles: next })
+  save(doc, { tiles: next })
 }
 
 export function syncTileDocLock(host: TileHostRef, locked: boolean | undefined): void {
-  const doc = docs.get(tileHostKey(host))
+  const doc = at(host)
   if (!doc || locked === undefined || doc.state.lock === null || doc.state.lock === locked) return
   put(doc, { lock: locked })
-  doc.lastSave = dialer().ask('tiles:save', host, { locked })
+  save(doc, { locked })
 }
 
 // The Nexus-adopt path awaits this while the OLD root is still bound — a write after the flip would bind the new Nexus and overwrite a same-relative-path file.
 export function flushAllTileDocs(): Promise<void> {
   const live = [...docs.values()]
   for (const doc of live) flush(doc)
-  return Promise.all(live.map((doc) => doc.lastSave)).then(() => undefined)
+  return Promise.all([...live.map((doc) => doc.lastSave), tileBodyWriter.flushAll()]).then(
+    () => undefined,
+  )
 }
 
 // Drops without writing: the root has flipped, so anything still owed would land in the new Nexus, and a lingering mount's `retire` flushes what it finds — pending and queued are discarded here.
@@ -244,7 +253,6 @@ export function dropAllTileDocs(): void {
   const live = [...docs.values()]
   docs.clear()
   bodies.clear()
-  bodySaves.clear()
   removing.clear()
   for (const doc of live) {
     if (doc.timer) clearTimeout(doc.timer)

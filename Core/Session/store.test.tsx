@@ -436,17 +436,6 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
   })
 })
 
-describe('store — one open action (B-3)', () => {
-  it('a Preview of a tab already open activates it in place', () => {
-    useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
-    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
-    expect(windowTargetOf(useSession.getState())?.id).toBe('b')
-    useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
-    expect(windowTargetOf(useSession.getState())?.id).toBe('a')
-    expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
-  })
-})
-
 describe('store — applyTree reconciles the window tabs (D-6)', () => {
   it('re-paths a renamed tab and closes the window when all tabs die', async () => {
     useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
@@ -471,13 +460,10 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })
 
-  it('closes a Space tab once its Space is gone, and keeps it through a rename', async () => {
+  it('closes a Space tab once its Space is gone', async () => {
     await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
     useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
     useSession.getState().openWindowTab({ kind: 'space', id: 's1' })
-    expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
-
-    await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
     expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
 
     await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }]))

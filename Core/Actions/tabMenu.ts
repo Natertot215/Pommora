@@ -8,7 +8,7 @@ import {
   pageSendActions,
 } from './pageMenu'
 import { pinLabel } from './toggleLabels'
-import type { TabTarget, WindowTarget } from '../Navigation/navRef'
+import { isWindowTarget, type TabTarget, type WindowTarget } from '../Navigation/navRef'
 
 interface TabMainContext extends PageMenuContext {
   row: 'main'
@@ -45,7 +45,7 @@ export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {
     if (ctx.pinned && ctx.kind !== 'newtab')
       items.push({ label: 'Open', action: 'open', disabled: ctx.active })
     // Only one Matrix window stands; a tabbed window takes another tab instead.
-    if (isPage || ctx.kind === 'space' || ctx.kind === 'matrix')
+    if (isWindowTarget(ctx) || ctx.kind === 'matrix')
       items.push({
         label: 'Preview',
         action: 'window',

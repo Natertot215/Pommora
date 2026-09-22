@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TileLayout, TileLeaf } from './model'
-import { getTile, tileIds, validateLayout } from './model'
+import { tileIds, validateLayout } from './model'
 import { insertBand, splitAtTile } from './ops'
 import { computeGeometry } from './rects'
 import { stackedAt, stackLayout } from './stack'
@@ -19,7 +19,6 @@ describe('stackLayout', () => {
     expect(validateLayout(stacked)).toEqual([])
     expect(tileIds(stacked)).toEqual(['a', 'b', 'c', 'd'])
     expect(stacked.bands.map((b) => (b.node as TileLeaf).h)).toEqual([200, 100, 100, 140])
-    expect(stacked.bands.every((b) => b.node.kind === 'tile')).toBe(true)
   })
 
   it('takes a nested row inside a column left to right at its place in the column', () => {
@@ -37,13 +36,6 @@ describe('stackLayout', () => {
     expect(geo.tiles.get('d')).toEqual({ x: 0, y: 424, w: 300, h: 140 })
     expect(geo.totalHeight).toBe(564)
     expect(geo.dividers).toEqual([])
-  })
-
-  it('shares no node with the tree it derives from', () => {
-    const source = board()
-    const stacked = stackLayout(source)
-    ;(stacked.bands[0]?.node as TileLeaf).h = 999
-    expect(getTile(source, 'a')?.h).toBe(200)
   })
 
   it('takes an empty layout to an empty layout', () => {

@@ -46,8 +46,6 @@ import { glanceShown } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
-import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { dropOutlineSpacer } from '@pommora/uix/Menus/listed-outline.css'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
@@ -373,9 +371,7 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
   const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
-  const colorPath = useSession((s) => (s.colorHost === 'sidebar' ? s.colorPath : null))
   const endIcon = useSession((s) => s.endIcon)
-  const endColor = useSession((s) => s.endColor)
   const mutate = useSession((s) => s.mutate)
   const rowRef = useRef<HTMLDivElement>(null)
   return (
@@ -399,16 +395,6 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
         triggerRef={rowRef}
         value={node.icon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon })}
-      />
-      <ColorPicker
-        open={colorPath === node.path}
-        selected={labelColorFor(node.color)}
-        onPick={(color) => {
-          endColor()
-          void mutate({ op: 'setSpaceColor', spaceId: node.id, color })
-        }}
-        onDismiss={endColor}
-        triggerRef={rowRef}
       />
     </>
   )

@@ -81,7 +81,7 @@ describe("a markdown tile's shared body", () => {
     expect(write).not.toHaveBeenCalled()
   })
 
-  it('never remounts an editor on a slot write, its own or anyone else’s', async () => {
+  it('never remounts the typing mount on its own slot writes', async () => {
     await mount(true)
     await act(async () => {
       editors()[0]?.click()

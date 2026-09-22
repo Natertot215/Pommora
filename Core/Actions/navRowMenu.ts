@@ -7,7 +7,7 @@ import {
   pageSendActions,
 } from './pageMenu'
 import { favoriteLabel, openLabel, pinLabel } from './toggleLabels'
-import type { NavRef } from '../Navigation/navRef'
+import { isWindowTarget, type NavRef } from '../Navigation/navRef'
 
 export interface NavRowMenuContext extends PageMenuContext {
   canOpenNewTab: boolean
@@ -35,7 +35,7 @@ export function navRowMenuItems(ctx: NavRowMenuContext): ActionItem<NavRowMenuAc
     ...openOrder<NavRowMenuAction>(
       ctx.alreadyOpen,
       ctx.canOpenNewTab ? [{ label: openLabel(ctx.alreadyOpen), action: 'open-new-tab' }] : [],
-      isPage || ctx.kind === 'space' ? [{ label: 'Preview', action: 'open-window' }] : [],
+      isWindowTarget(ctx) ? [{ label: 'Preview', action: 'open-window' }] : [],
     ),
   )
   const opens = items.length > 0

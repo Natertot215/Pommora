@@ -1,4 +1,13 @@
-import { type CSSProperties, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
@@ -236,7 +245,7 @@ export function TileGrid({
     [draft, originGeometry, width],
   )
 
-  const boardStatic = locked === true || stacked
+  const boardStatic = locked || stacked
   const now = {
     view,
     originGeometry,
@@ -461,8 +470,8 @@ export function TileGrid({
     return () => onBusyChange?.(false)
   }, [busy, onBusyChange])
 
-  // Sampled only between gestures and only off a measured width: a crossing under a held pointer would re-lay the board mid-drag, and width is 0 until the observer's first read.
-  useEffect(() => {
+  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, width is 0 until the observer's first read, and a narrow mount must never paint two-across first.
+  useLayoutEffect(() => {
     if (busy || width <= 0) return
     setStacked((was) => stackedAt(width, was))
   }, [busy, width])
@@ -478,12 +487,12 @@ export function TileGrid({
     const box = grid.getBoundingClientRect()
     const px = e.clientX - box.left
     const py = e.clientY - box.top
-    const g = live.current.originGeometry
+    const g = originGeometry
     let above: { id: string; bottom: number; band: number } | null = null
     for (const [id, r] of g.tiles) {
       const bottom = r.y + r.h
       if (px >= r.x && px <= r.x + r.w && py >= bottom && (!above || bottom > above.bottom)) {
-        const at = findTile(live.current.view, id)
+        const at = findTile(view, id)
         if (at) above = { id, bottom, band: at.band }
       }
     }

@@ -90,7 +90,7 @@ describe('the sidebar entity menu', () => {
     ])
   })
 
-  it('a Space with neither half draws no branch', () => {
+  it('a Space with neither half draws no branch, and follows Open with Preview once it holds a tab', () => {
     expect(shape(entityMenuItems(SPACE, []))).toEqual([
       'Preview',
       'New Tab',
@@ -100,10 +100,6 @@ describe('the sidebar entity menu', () => {
       '—',
       'Delete',
     ])
-  })
-
-  it('a Space leads with Preview, and follows Open with it once it holds a tab', () => {
-    expect(shape(entityMenuItems(SPACE, [])).slice(0, 2)).toEqual(['Preview', 'New Tab'])
     expect(shape(entityMenuItems({ ...SPACE, alreadyOpen: true }, [])).slice(0, 2)).toEqual([
       'Open',
       'Preview',
@@ -112,10 +108,8 @@ describe('the sidebar entity menu', () => {
 
   it('a Context offers no Preview — only a Space and a page are window tabs', () => {
     expect(
-      entityMenuItems({ kind: 'context', id: 'g1', path: 'Areas', title: 'Areas' }, []).map(
-        (i) => i.action,
-      ),
-    ).not.toContain('preview')
+      shape(entityMenuItems({ kind: 'context', id: 'g1', path: 'Areas', title: 'Areas' }, [])),
+    ).toEqual(['New Tab', '—', 'Rename', 'Edit Icon', '—', 'Delete'])
   })
 
   it('a page carries the same two branches, after Edit Icon', () => {
