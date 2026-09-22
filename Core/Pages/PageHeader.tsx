@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { cx } from '@pommora/uix/Utilities/cx'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
@@ -93,14 +94,22 @@ export function PageHeader({
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
           ref={bannerRef}
-          className="mdpm-banner"
+          className={cx('mdpm-banner', chrome === 'window' && 'window-banner')}
           onContextMenu={(e) => {
             e.preventDefault()
             void bannerMenu()
           }}
         >
           <AssetImage value={cover} className="mdpm-banner-img" />
-          <div className="mdpm-banner-overlay title-shadow">{titleHeader}</div>
+          <div
+            className={cx(
+              'mdpm-banner-overlay',
+              chrome === 'window' && 'window-banner-title',
+              'title-shadow',
+            )}
+          >
+            {titleHeader}
+          </div>
           <ImagePicker
             open={editing}
             value={cover ?? ''}
