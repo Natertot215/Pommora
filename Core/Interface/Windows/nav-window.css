@@ -1,5 +1,6 @@
 .navwindow {
-  padding: var(--app-inset);
+  --window-body-gutter: var(--app-inset);
+  padding: var(--window-body-gutter);
   /* The rail is an inflow panel, so the floating strip clears its whole width once it is open and the scan glyph alone once it is not. */
   --window-tab-clear-l: calc(
     var(--window-panel-inset) +

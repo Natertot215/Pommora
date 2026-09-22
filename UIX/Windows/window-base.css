@@ -8,6 +8,8 @@
 
   --window-toolbar-h: 36px;
   --window-panel-inset: var(--app-inset);
+  /* What the host pads the body by; the body bleeds it back so a band inside runs to the glass edge. */
+  --window-body-gutter: 0px;
   /* How far the band's trailing edge sits off the window, so the bar and its chevron travel together. */
   --window-band-trail: 0px;
   --window-panel-top: 16px;
@@ -29,8 +31,8 @@
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
   /* KNOB — the height a banner band draws at inside a window, and the edges it runs to: under the strip and out to the glass. */
   --window-banner-h: 160px;
-  --window-banner-edges: calc(-1 * (var(--window-toolbar-h) + var(--window-panel-inset)))
-    calc(-1 * var(--window-panel-inset)) 0;
+  --window-banner-edges: calc(-1 * (var(--window-toolbar-h) + var(--window-body-gutter)))
+    calc(-1 * var(--window-body-gutter)) 0;
 
   /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;
@@ -90,15 +92,24 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding-top: var(--window-toolbar-h);
+  /* A scroller clips at its padding box, never inside it — so the bleed is a margin and the content's inset its padding. */
+  margin: calc(-1 * var(--window-body-gutter)) calc(-1 * var(--window-body-gutter)) 0;
+  padding: calc(var(--window-toolbar-h) + var(--window-body-gutter)) var(--window-body-gutter) 0;
   /* Content dissolves across the whole band it scrolls under; a window carrying no band keeps the kit's own edge fade. */
-  --over-scroll-fade: max(var(--window-toolbar-h), var(--os-fade-default));
+  --over-scroll-fade: max(
+    calc(var(--window-toolbar-h) + var(--window-body-gutter)),
+    var(--os-fade-default)
+  );
   overflow-y: auto;
   scrollbar-width: none;
   transition: padding-right var(--duration-base) var(--ease-base);
 }
 .window.is-panel-right-open .window-body {
-  padding-right: calc(var(--window-panel-r-w) + var(--window-panel-inset));
+  padding-right: calc(
+    var(--window-panel-r-w) +
+    var(--window-panel-inset) +
+    var(--window-body-gutter)
+  );
 }
 .window.is-resizing .window-body {
   transition: none;

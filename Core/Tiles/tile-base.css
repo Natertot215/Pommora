@@ -128,8 +128,8 @@
   margin: var(--window-banner-edges);
 }
 .page-tile.is-window-chrome > .mdpm-header .mdpm-banner-overlay {
-  left: calc(16px * var(--page-detail-scale) + var(--window-panel-inset));
-  right: calc(16px * var(--page-detail-scale) + var(--window-panel-inset));
+  left: calc(16px * var(--page-detail-scale) + var(--window-body-gutter));
+  right: calc(16px * var(--page-detail-scale) + var(--window-body-gutter));
 }
 /* The var is declared on .detail-title itself in markdown-pm.css, where it reads --editor-scale; a declaration on an ancestor never reaches it. */
 .page-tile.is-window-chrome > .mdpm-header .detail-title {
