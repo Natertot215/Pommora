@@ -31,6 +31,7 @@ beforeEach(() => {
       ok: true,
       value: detail({ path: 'Notes/a.md', body: 'fetched' }),
     })),
+    'headingIcon:get': vi.fn(async () => ({ ok: true, value: {} })),
   })
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -67,23 +68,30 @@ describe('PageTile re-seeds on a body epoch', () => {
   })
 })
 
-// The snapshot was taken before the window chrome rung existed, so it is the shape a windowed tile keeps while Show Banners In Windowed Pages is off.
-describe('PageTile without a chrome rung', () => {
-  it('draws the bare tile, no header of any kind', async () => {
-    cachePageDetail(
-      detail({ path: 'Notes/a.md', body: 'plain', frontmatter: { banner: 'cover.png' } }),
-    )
-    await act(async () => {
+describe('the window rung', () => {
+  const mount = (chrome: 'none' | 'window', frontmatter: Record<string, unknown>) =>
+    act(async () => {
+      cachePageDetail(detail({ path: 'Notes/a.md', body: 'plain', frontmatter }))
       root.render(
         createElement(PageTile, {
           path: 'Notes/a.md',
           editing: false,
           onBeginEdit: () => {},
+          chrome,
         }),
       )
     })
+
+  it('draws the bare tile with no rung, banner or not', async () => {
+    await mount('none', { banner: 'cover.png' })
     expect(container.querySelector('.page-tile')?.outerHTML).toMatchInlineSnapshot(
       `"<div class="page-tile" style="--page-detail-scale: 0.9; --editor-scale: 1;"><div class="stub-editor">plain</div></div>"`,
     )
+  })
+
+  it('draws a header for a windowed page with a banner, and none without', async () => {
+    await mount('window', {})
+    expect(container.querySelector('.page-tile.is-window-chrome')).not.toBeNull()
+    expect(container.querySelector('.mdpm-header')).toBeNull()
   })
 })

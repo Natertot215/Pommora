@@ -4,7 +4,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { WINDOW_BASE_PANEL, type WindowBasePanel } from '@pommora/uix/Windows/window-base'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
-import { findSpace } from '../../Nexus/treeIndex'
+import { type BannerOwner, findSpace } from '../../Nexus/treeIndex'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { useWindowTabConnections } from '../../Session/pageConnections'
 import { useSession } from '../../Session/store'
@@ -27,46 +27,42 @@ export interface WindowTabBodySlots {
   actions: React.ReactNode
   footer: React.ReactNode
   footerLead: React.ReactNode
-  sidePaneOpen: boolean
   closeSidePane: () => void
 }
 
 function SpaceTabBody({
   host,
+  owner,
+  banner,
   connections,
 }: {
   host: SpaceTarget
+  owner: BannerOwner
+  banner: boolean
   connections: ConnectionsApi | undefined
-}): React.JSX.Element | null {
-  const tree = useSession((s) => s.tree)
-  const spaceBanner = useSession((s) => windowBannerShown(s.personalization, 'space'))
-  const owner = findSpace(tree, host.id)
-  if (!owner) return null
+}): React.JSX.Element {
   return (
     <>
-      <Banner owner={owner} chrome={spaceBanner ? 'window-banner' : 'window-title'} />
+      <Banner owner={owner} chrome={banner ? 'window-banner' : 'window-title'} />
       <div className="tile-host-frame">
-        {/* Keyed per Space: the surface's debounced saves and editor session must never carry across an in-place host swap. */}
         <TileHost key={host.id} host={host} connections={connections} />
       </div>
     </>
   )
 }
 
-export function useWindowTabBody(
-  target: WindowTarget | null,
-  bodyClass: string,
-): WindowTabBodySlots {
+export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlots {
   const tree = useSession((s) => s.tree)
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const experimental = useExperimental()
   const pageBanner = useSession((s) => windowBannerShown(s.personalization, 'page'))
+  const spaceBanner = useSession((s) => windowBannerShown(s.personalization, 'space'))
 
   const pageTarget = target?.kind === 'page' ? target : null
   const pagePath = pageTarget?.path
-  // Null on a Page tab: a constant host would pin that Space's shared document open while the tab is nowhere on screen.
   const spaceTarget = target?.kind === 'space' ? target : null
+  const spaceOwner = spaceTarget && findSpace(tree, spaceTarget.id)
 
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [pagePath])
@@ -76,20 +72,25 @@ export function useWindowTabBody(
   const closeSidePane = (): void => setSidePaneOpen(false)
 
   // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
-  const tabs = useSession((s) => s.pageWindow?.tabs)
+  const heldSpaces = useSession((s) =>
+    (s.pageWindow?.tabs ?? [])
+      .flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : []))
+      .join(' '),
+  )
   useEffect(() => {
-    const held = (tabs ?? []).flatMap((t) =>
-      t.target.kind === 'space' ? [subscribeTileDoc(t.target, () => {})] : [],
-    )
+    const held = heldSpaces
+      .split(' ')
+      .filter(Boolean)
+      .map((id) => subscribeTileDoc({ kind: 'space', id }, () => {}))
     return () => {
       for (const off of held) off()
     }
-  }, [tabs])
+  }, [heldSpaces])
 
   const bodyRef = useRef<HTMLDivElement>(null)
-  // The shared tile document retires with its last mount, so a Space tab's scroll restore has to wait for the board to come back (B-8); a Page tab has no board to wait on.
+  // A Space tab's scroll restore waits for its board's first read; a Page tab has no board to wait on.
   const boardReady = useTileDocReady(spaceTarget)
-  const warm = useWindowWarm(bodyRef, pagePath, pageTarget !== null || boardReady)
+  const warm = useWindowWarm(bodyRef, pagePath, boardReady)
   const connections = useWindowTabConnections(tree)
   const { page, onBody } = useSubfieldPage(pageTarget)
 
@@ -101,8 +102,8 @@ export function useWindowTabBody(
   const body = target && (
     <div
       className={cx(
+        'window-tab-body',
         'window-body',
-        bodyClass,
         'over-scroll',
         pageTarget !== null && 'page-tile-grows',
       )}
@@ -122,7 +123,15 @@ export function useWindowTabBody(
           onArrived={clearPendingTravel}
         />
       ) : (
-        spaceTarget && <SpaceTabBody host={spaceTarget} connections={connections} />
+        spaceTarget &&
+        spaceOwner && (
+          <SpaceTabBody
+            host={spaceTarget}
+            owner={spaceOwner}
+            banner={spaceBanner}
+            connections={connections}
+          />
+        )
       )}
     </div>
   )
@@ -158,7 +167,6 @@ export function useWindowTabBody(
       <Subfield page={page} selection={target.kind === 'space' ? target : undefined} inert />
     ),
     footerLead: <CitationsToggle page={page} />,
-    sidePaneOpen: paneOpen,
     closeSidePane,
   }
 }

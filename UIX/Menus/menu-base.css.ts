@@ -220,7 +220,7 @@ export const footingLabel = style([
   { selectors: { '&&': { color: c.label.secondary } } },
 ])
 export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
-export const footingQuiet = style({ selectors: { '&&': { color: c.label.tertiary } } })
+export const footingQuiet = style({ selectors: { '&&&': { color: c.label.tertiary } } })
 
 export const accessoryButton = style({
   width: 'var(--accessory-box, 20px)',

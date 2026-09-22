@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
 import type { BannerMenuAction } from '@pommora/core/Actions/identityMenus'
 import type { WindowTarget } from '@pommora/core/Navigation/navRef'
+import { resolveAssetUrl } from '../../Assets/assetUrl'
 import { findSpace } from '../../Nexus/treeIndex'
+import { coverOf } from '../../Pages/pageDetail'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import type { Personalization } from '../../Settings/personalization'
 import { useSession } from '../../Session/store'
@@ -20,10 +22,16 @@ let pending: { tabId: string; action: BannerMenuAction } | null = null
 export const windowBannerShown = (p: Personalization, kind: WindowTarget['kind']): boolean =>
   (kind === 'space' ? p.windowSpaceBanners : p.windowPageBanners) ?? false
 
+// The rows follow what the header draws: a banner whose asset no longer resolves reads as none, so Add repairs it.
 export async function windowBannerAdd(target: WindowTarget): Promise<boolean> {
-  if (target.kind === 'space') return !findSpace(useSession.getState().tree, target.id)?.banner
-  const detail = readPageDetail(target.path) ?? (await fetchPageDetail(target.path))
-  return typeof detail?.frontmatter.banner !== 'string'
+  const { tree, assetMap } = useSession.getState()
+  const detail =
+    target.kind === 'page'
+      ? (readPageDetail(target.path) ?? (await fetchPageDetail(target.path)))
+      : null
+  const value =
+    target.kind === 'space' ? findSpace(tree, target.id)?.banner : detail && coverOf(detail)
+  return resolveAssetUrl(value, assetMap) === null
 }
 
 export function runWindowBanner(tabId: string, action: BannerMenuAction): void {

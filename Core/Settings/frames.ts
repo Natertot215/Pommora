@@ -414,7 +414,7 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'windowPageBanners',
             label: 'Show Banners In Windowed Pages',
-            hint: 'A Page opened in a window carries its banner and its renameable title.',
+            hint: 'A Page opened in a window draws its banner with the title over it.',
           },
           {
             kind: 'toggle',

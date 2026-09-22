@@ -57,6 +57,7 @@ export function PageHeader({
   }
 
   const bannerRef = useRef<HTMLDivElement>(null)
+  const iconRef = useRef<SVGSVGElement>(null)
   const {
     openMenu: bannerMenu,
     run,
@@ -77,6 +78,7 @@ export function PageHeader({
     <DetailTitleHeader
       title={title}
       icon={glyph}
+      iconRef={iconRef}
       iconHidden={iconHidden}
       onRename={(newName) => submitRename(path, 'page', newName)}
       requestMenu={() => popMenu(titleMenuItems({ toggleIcon: glyph !== undefined, iconHidden }))}
@@ -119,6 +121,7 @@ export function PageHeader({
       <IconChoice
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}
+        triggerRef={iconRef}
         value={icon}
         onSelect={(chosen) => void mutate({ op: 'setIcon', path, kind: 'page', icon: chosen })}
       />

@@ -43,7 +43,7 @@ export function useWindowWarm(
     return () => el.removeEventListener('scroll', onScroll)
   }, [activeTabId, captureIfLive, scrollerRef])
 
-  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board reloads over IPC on return, so `ready` is the second thing worth waiting for.
+  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board is read over IPC on its first activation, so `ready` is the second thing worth waiting for.
   useEffect(() => {
     if (!activeTabId || !ready) return
     const saved = readWindowCache(activeTabId)?.bodyScrollTop ?? 0

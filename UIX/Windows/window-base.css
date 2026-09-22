@@ -27,6 +27,10 @@
   );
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
+  /* KNOB — the height a banner band draws at inside a window, and the edges it runs to: under the strip and out to the glass. */
+  --window-banner-h: 160px;
+  --window-banner-edges: calc(-1 * (var(--window-toolbar-h) + var(--window-panel-inset)))
+    calc(-1 * var(--window-panel-inset)) 0;
 
   /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;
@@ -86,9 +90,7 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  /* Bled to the glass edge and padded back, so a band inside can overshoot the inset while the content keeps it — a scroller clips at its padding box, never inside it. */
-  margin: calc(-1 * var(--window-panel-inset)) calc(-1 * var(--window-panel-inset)) 0;
-  padding: calc(var(--window-toolbar-h) + var(--window-panel-inset)) var(--window-panel-inset) 0;
+  padding-top: var(--window-toolbar-h);
   /* Content dissolves across the whole band it scrolls under; a window carrying no band keeps the kit's own edge fade. */
   --over-scroll-fade: max(var(--window-toolbar-h), var(--os-fade-default));
   overflow-y: auto;
@@ -266,7 +268,7 @@
   --window-band-trail: calc(var(--window-panel-r-w) + var(--window-panel-inset));
 }
 .window-footer-toggle {
-  /* The 16px is a KNOB — the chevron's inset from the band's trailing edge, which clears the se resize corner where the band reaches the window. */
+  /* The 16px is a KNOB — the chevron's inset from the band's trailing edge, clear of the se resize corner. */
   right: calc(16px + var(--window-band-trail));
   z-index: 4;
   width: 40px;
@@ -300,4 +302,5 @@
 }
 .window:has(.window-actions-flow > :only-child) {
   --slide-cluster-w: 17px;
+  --window-tab-clear-r: calc(var(--window-panel-inset) + 37px + var(--window-title-squeeze, 0px));
 }

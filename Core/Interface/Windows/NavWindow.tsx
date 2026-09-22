@@ -25,7 +25,7 @@ const RAIL = { min: 120, def: 200, max: 320 }
 
 // Matched against the press target itself, so child content — row internals, card bodies, the search input — never arms a window move.
 const DRAG_SURFACES =
-  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .window-tabwrap, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
+  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .window-tab-body, .window-tabwrap, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)
@@ -90,8 +90,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
   const target = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
-  const { body, right, actions, footer, footerLead, sidePaneOpen, closeSidePane } =
-    useWindowTabBody(target, 'navwindow-page')
+  const { body, right, actions, footer, footerLead, closeSidePane } = useWindowTabBody(target)
+  const sidePaneOpen = right.open === true
   // Also re-focuses on every map-tab return — the input remounts when a tab swaps the body away.
   useEffect(() => {
     if (!target) searchRef.current?.focus()
