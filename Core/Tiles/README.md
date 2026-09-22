@@ -51,6 +51,7 @@ own behavior, so every host gets it.
 | `tileDocStore.ts` | The host-keyed tile document — one tree, one debounce, one lock per host, shared by every mount |
 | `useTileDoc.ts` | The document's React reader — its snapshot, the host lock's two directions, and the gesture hold |
 | `TileHost.tsx` | The host binding — the entry union, the menus, create, remove, convert, duplicate |
+| `BoardLock.tsx` | The board lock control — the host settings surfaces and a windowed Space's footer bar all mount this one |
 | `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
 
 #### Resize Semantics
