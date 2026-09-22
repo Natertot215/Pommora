@@ -105,6 +105,7 @@ function runEntityAction(
   const ref = id ? { kind, id, path } : undefined
   if (ref && runPageSendAction(action, ref)) return
   switch (action) {
+    case 'preview':
     case 'title:window': {
       const t = ref && contextTargetToSelect(ref)
       if (t && isWindowTarget(t)) s.openWindowTab(t)

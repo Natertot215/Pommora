@@ -15,7 +15,12 @@ import {
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import { TAB_FAMILY, type Tab, type TabTarget } from '@pommora/core/Navigation/navRef'
+import {
+  isWindowTarget,
+  TAB_FAMILY,
+  type Tab,
+  type TabTarget,
+} from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
@@ -157,10 +162,9 @@ function TabBarBody({
       const isPage = target.kind === 'page'
       const action = await popMenu(
         tabMenuItems({
+          row: 'main',
+          kind: target.kind,
           pinned,
-          isNewTab: target.kind === 'newtab',
-          isPage,
-          isMatrix: target.kind === 'matrix',
           active: tabId === activeTabId,
           matrixWindowOpen,
           ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
@@ -171,7 +175,7 @@ function TabBarBody({
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
       else if (action === 'window') {
-        if (isPage) openWindowTab({ kind: 'page', id: target.id, path: target.path })
+        if (isWindowTarget(target)) openWindowTab(target)
         else openMatrixWindow()
       } else if (isPage && action) runPageSendAction(action, target)
     }

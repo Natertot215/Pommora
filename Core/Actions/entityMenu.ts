@@ -1,4 +1,4 @@
-import { type ActionItem, afterSeparator } from './menuModel'
+import { type ActionItem, afterSeparator, openOrder } from './menuModel'
 import { type CreateMenuAction, createMenuItems } from './createMenu'
 import { type PageMetaAction, type PageMoveAction, pageMetaMenuItems } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
@@ -12,6 +12,7 @@ export type EntityMenuAction =
   | PropertyAction
   | CreateMenuAction
   | 'open'
+  | 'preview'
   | 'rename'
   | 'delete'
   | 'lock'
@@ -36,7 +37,11 @@ export function entityMenuItems(
     })
   // Only the renderer knows the tab set; an already-open entity reads "Open" and focuses its tab.
   const open: ActionItem<EntityMenuAction>[] = target.id
-    ? [{ label: openLabel(target.alreadyOpen), action: 'open' }]
+    ? openOrder<EntityMenuAction>(
+        target.alreadyOpen,
+        [{ label: openLabel(target.alreadyOpen), action: 'open' }],
+        target.kind === 'space' ? [{ label: 'Preview', action: 'preview' }] : [],
+      )
     : []
   const create = createMenuItems(creators)
   const lock: ActionItem<EntityMenuAction>[] =
