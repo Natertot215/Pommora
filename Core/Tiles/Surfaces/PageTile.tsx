@@ -5,6 +5,7 @@ import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
+import { PageHeader } from '../../Pages/PageHeader'
 import { flushPageSave, schedulePageSave } from '../../Session/saveScheduler'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
 import { renameHeading } from '../../Pages/pageEditor'
@@ -19,6 +20,7 @@ import { ancestryOf } from '../../Nexus/treeIndex'
 
 import '../tile-base.css'
 import '../tile-title.css'
+import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/picker-base'
 
 interface EmbedEntry {
   path: string
@@ -26,10 +28,14 @@ interface EmbedEntry {
   id?: string
   title?: string
   cover?: string
+  icon?: string
 }
 
 const coverOf = (detail: PageDetail): string | undefined =>
   typeof detail.frontmatter.banner === 'string' ? detail.frontmatter.banner : undefined
+
+const iconOf = (detail: PageDetail): string | undefined =>
+  typeof detail.frontmatter.icon === 'string' ? detail.frontmatter.icon : undefined
 
 const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   path,
@@ -37,6 +43,7 @@ const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   id: detail.id,
   title: detail.title,
   cover: coverOf(detail),
+  icon: iconOf(detail),
 })
 
 export function PageTile({
@@ -60,7 +67,7 @@ export function PageTile({
   onBody?: (body: string) => void
   warm?: WarmSeam
   ancestors?: readonly string[]
-  chrome?: 'none' | 'page'
+  chrome?: 'none' | 'page' | 'window'
   arrive?: string
   onArrived?: () => void
 }): React.JSX.Element {
@@ -111,32 +118,54 @@ export function PageTile({
 
   if (failed) return <div className="page-tile page-tile-failed">{titleFromPath(path)}</div>
   if (body === null) return <div className="page-tile" />
-  const header =
-    chrome === 'page' ? (
-      entry?.cover ? (
-        <EmbedBanner
-          path={path}
-          title={entry.title ?? titleFromPath(path)}
-          cover={entry.cover}
-          onChanged={() =>
-            void fetchPageDetail(path).then((detail) => {
-              // Merge the cover only — nulling would unmount the live editor mid-edit and race the debounced body write.
-              if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail) } : l))
-            })
-          }
-        />
-      ) : entry?.id ? (
-        <EmbedCrumbs id={entry.id} />
-      ) : null
-    ) : null
+  // Merge the identity keys only — nulling would unmount the live editor mid-edit and race the debounced body write.
+  const refreshIdentity = (): void => {
+    void fetchPageDetail(path).then((detail) => {
+      if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail), icon: iconOf(detail) } : l))
+    })
+  }
+  const header = ((): React.ReactNode => {
+    switch (chrome) {
+      case 'none':
+        return null
+      case 'window':
+        return entry?.id ? (
+          <PageHeader
+            page={{
+              id: entry.id,
+              path,
+              title: entry.title ?? titleFromPath(path),
+              cover: entry.cover,
+              icon: entry.icon,
+            }}
+            onBannerDone={refreshIdentity}
+            chrome="window"
+          />
+        ) : null
+      case 'page':
+        return entry?.cover ? (
+          <EmbedBanner
+            path={path}
+            title={entry.title ?? titleFromPath(path)}
+            cover={entry.cover}
+            onChanged={refreshIdentity}
+          />
+        ) : entry?.id ? (
+          <EmbedCrumbs id={entry.id} />
+        ) : null
+    }
+  })()
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
-      className={`page-tile${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
+      className={`page-tile${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}${chrome === 'window' ? ' is-window-chrome' : ''}`}
       style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return
-        if ((e.target as HTMLElement).closest?.('.mdpm-banner')) return
+        if (
+          (e.target as HTMLElement).closest?.(`.mdpm-header, .mdpm-banner, [${PICKER_PORTAL_ATTR}]`)
+        )
+          return
         const sel = window.getSelection()
         if (sel && !sel.isCollapsed) return
         onBeginEdit()

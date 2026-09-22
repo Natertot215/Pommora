@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { Transaction } from '@codemirror/state'
 import { valueOr } from '@pommora/core/Contract/result'
@@ -6,8 +6,6 @@ import { useSession } from '../Session/store'
 import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { usePreviewConnections } from '../Session/pageConnections'
-import { IconChoice } from '../Assets/IconChoice'
-import { entityIcon } from '../Assets/entityIconPolicy'
 import { navKey } from '../Navigation/navRecents'
 import {
   dropCacheDetail,
@@ -74,8 +72,7 @@ export function PageView({
   })
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
-  const submitRename = useSession((s) => s.submitRename)
-  const mutate = useSession((s) => s.mutate)
+  const reloadPage = useSession((s) => s.reloadPage)
   const tree = useSession((s) => s.tree)
   const setPageBody = useSession((s) => s.setPageBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -106,32 +103,12 @@ export function PageView({
     },
     [],
   )
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const [iconHidden, setIconHidden] = useState(true)
-  useEffect(() => {
-    let alive = true
-    void host()
-      .ask('headingIcon:get')
-      .then((r) => {
-        if (alive) setIconHidden(valueOr(r, {})[pageId] ?? true)
-      })
-    return () => {
-      alive = false
-    }
-  }, [pageId])
   const editorRef = useRef<EditorView | null>(null)
   useEffect(() => {
     if (parked) return
     registerPageEditor(editorRef.current)
     return () => registerPageEditor(null)
   }, [parked])
-
-  const toggleHeadingIcon = (): void => {
-    const next = !iconHidden
-    setIconHidden(next)
-    void host().ask('headingIcon:set', pageId, next)
-  }
 
   const connections = usePreviewConnections(tree)
   const editorHost = useEditorHost({ pageId, connections })
@@ -157,97 +134,80 @@ export function PageView({
   const pageDetail = slot.detail
   const warmKey = navKey(slot.target)
   return (
-    <>
-      <MarkdownEditor
-        key={`${pageDetail.path}:${bodyEpoch}`}
-        initialBody={slot.body}
-        host={editorHost}
-        header={
-          <PageHeader
-            page={{
-              path: pageDetail.path,
-              title: pageDetail.title,
-              cover:
-                typeof pageDetail.frontmatter.banner === 'string'
-                  ? pageDetail.frontmatter.banner
-                  : undefined,
-              icon: entityIcon(
-                'page',
-                typeof pageDetail.frontmatter.icon === 'string'
-                  ? pageDetail.frontmatter.icon
-                  : undefined,
-                defaultIcons,
-              ),
-              iconHidden,
-            }}
-            onToggleIcon={toggleHeadingIcon}
-            onEditIcon={() => setIconPickerOpen(true)}
-            onRename={(newName) => submitRename(pageDetail.path, 'page', newName)}
-          />
-        }
-        onChange={(body) => {
-          pushLiveBody(pageDetail.path, body)
-          schedulePageSave(pageDetail.path, body)
-        }}
-        connections={connections}
-        onSelection={publishSelection}
-        onHeadingRename={(old, next) => void renameHeading(pageDetail.id, old, next)}
-        embedAncestors={[pageDetail.path]}
-        folds={{
-          load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],
-          save: (keys) => void host().ask('folds:set', pageDetail.id, keys),
-        }}
-        embedHeights={{
-          load: async () => valueOr(await host().ask('embedHeights:get'), {})[pageDetail.id] ?? {},
-          save: (heights) => void host().ask('embedHeights:set', pageDetail.id, heights),
-        }}
-        embedZooms={{
-          load: async () => valueOr(await host().ask('embedZooms:get'), {})[pageDetail.id] ?? {},
-          save: (zooms) => void host().ask('embedZooms:set', pageDetail.id, zooms),
-        }}
-        tableHeadingColumns={{
-          load: async () =>
-            valueOr(await host().ask('tableHeadingCols:get'), {})[pageDetail.id] ?? [],
-          save: (indices) => void host().ask('tableHeadingCols:set', pageDetail.id, indices),
-        }}
-        register={(view) => {
-          editorRef.current = view
-          if (!parked) registerPageEditor(view)
-        }}
-        // A warm entry whose captured path diverges from the mounting page's mounts cold — id-keyed warmth must never revive a stale-path doc.
-        warm={{
-          restore: () => {
-            const entry = readCache(tabId, warmKey)
-            return entry?.pageDetail?.path === pageDetail.path
-              ? fenceWarm(entry, slot.body)
-              : undefined
-          },
-          capture: (state) => {
-            if (cacheGeneration() !== mountedGen.current) return
-            const { slot: now, tabId: owner } = live.current
-            captureCache(
-              owner,
-              warmKey,
-              now?.status === 'ready'
-                ? { ...state, pageDetail: { ...now.detail, body: now.body } }
-                : state,
-            )
-          },
-        }}
-        active={!parked}
-        arrive={arrive}
-        onArrived={clearPendingTravel}
-      />
-      <IconChoice
-        open={iconPickerOpen}
-        onClose={() => setIconPickerOpen(false)}
-        value={
-          typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined
-        }
-        onSelect={(id) =>
-          void mutate({ op: 'setIcon', path: pageDetail.path, kind: 'page', icon: id })
-        }
-      />
-    </>
+    <MarkdownEditor
+      key={`${pageDetail.path}:${bodyEpoch}`}
+      initialBody={slot.body}
+      host={editorHost}
+      header={
+        <PageHeader
+          page={{
+            id: pageId,
+            path: pageDetail.path,
+            title: pageDetail.title,
+            cover:
+              typeof pageDetail.frontmatter.banner === 'string'
+                ? pageDetail.frontmatter.banner
+                : undefined,
+            icon:
+              typeof pageDetail.frontmatter.icon === 'string'
+                ? pageDetail.frontmatter.icon
+                : undefined,
+          }}
+          onBannerDone={() => void reloadPage()}
+        />
+      }
+      onChange={(body) => {
+        pushLiveBody(pageDetail.path, body)
+        schedulePageSave(pageDetail.path, body)
+      }}
+      connections={connections}
+      onSelection={publishSelection}
+      onHeadingRename={(old, next) => void renameHeading(pageDetail.id, old, next)}
+      embedAncestors={[pageDetail.path]}
+      folds={{
+        load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],
+        save: (keys) => void host().ask('folds:set', pageDetail.id, keys),
+      }}
+      embedHeights={{
+        load: async () => valueOr(await host().ask('embedHeights:get'), {})[pageDetail.id] ?? {},
+        save: (heights) => void host().ask('embedHeights:set', pageDetail.id, heights),
+      }}
+      embedZooms={{
+        load: async () => valueOr(await host().ask('embedZooms:get'), {})[pageDetail.id] ?? {},
+        save: (zooms) => void host().ask('embedZooms:set', pageDetail.id, zooms),
+      }}
+      tableHeadingColumns={{
+        load: async () =>
+          valueOr(await host().ask('tableHeadingCols:get'), {})[pageDetail.id] ?? [],
+        save: (indices) => void host().ask('tableHeadingCols:set', pageDetail.id, indices),
+      }}
+      register={(view) => {
+        editorRef.current = view
+        if (!parked) registerPageEditor(view)
+      }}
+      // A warm entry whose captured path diverges from the mounting page's mounts cold — id-keyed warmth must never revive a stale-path doc.
+      warm={{
+        restore: () => {
+          const entry = readCache(tabId, warmKey)
+          return entry?.pageDetail?.path === pageDetail.path
+            ? fenceWarm(entry, slot.body)
+            : undefined
+        },
+        capture: (state) => {
+          if (cacheGeneration() !== mountedGen.current) return
+          const { slot: now, tabId: owner } = live.current
+          captureCache(
+            owner,
+            warmKey,
+            now?.status === 'ready'
+              ? { ...state, pageDetail: { ...now.detail, body: now.body } }
+              : state,
+          )
+        },
+      }}
+      active={!parked}
+      arrive={arrive}
+      onArrived={clearPendingTravel}
+    />
   )
 }

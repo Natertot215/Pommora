@@ -16,6 +16,8 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigati
 import { useActiveTabInView, useTabClose, useTabExchange } from '../../Navigation/tabRows'
 import { popMenu } from '../../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
+import { bannerMenuItems } from '@pommora/core/Actions/identityMenus'
+import { runWindowBanner, windowBannerAdd, windowBannerShown } from './windowTabBanner'
 import { pageMoveContext, runPageSendAction } from '../Menus/pageMenuActions'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
@@ -82,15 +84,21 @@ export function WindowTabStrip({
       const target = tab.target
       if (target.kind === 'navwindow') return
       const isPage = target.kind === 'page'
+      const banner = windowBannerShown(useSession.getState().personalization, target.kind)
+        ? bannerMenuItems({ add: await windowBannerAdd(target) })
+        : undefined
       const action = await popMenu(
         tabMenuItems({
           row: 'window',
           kind: target.kind,
+          banner,
           ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
         }),
       )
       if (action === 'promote') promoteWindowTab(tab.id, true)
       else if (action === 'close') requestClose(tab.id)
+      else if (action === 'change' || action === 'edit' || action === 'remove')
+        runWindowBanner(tab.id, action)
       else if (isPage && action) runPageSendAction(action, target)
     }
   const renderOverlay = (id: string): React.ReactNode => {

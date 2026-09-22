@@ -1,58 +1,84 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { AssetImage } from '../Assets/AssetImage'
 import { ImagePicker } from '../Assets/ImagePicker'
+import { IconChoice } from '../Assets/IconChoice'
+import { entityIcon } from '../Assets/entityIconPolicy'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
+import { useWindowBannerSeat } from '../Interface/Windows/windowTabBanner'
+import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
-interface HeaderPage {
+export interface HeaderPage {
+  id: string
   path: string
   title: string
   cover?: string
   icon?: string
-  iconHidden?: boolean
 }
 
-interface Props {
+export function PageHeader({
+  page,
+  onBannerDone,
+  chrome = 'detail',
+}: {
   page: HeaderPage
-  onToggleIcon?: () => void
-  // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
-  onRename: (newName: string) => void | Promise<boolean | void>
-  onEditIcon: () => void
-}
-
-export function PageHeader({ page, onToggleIcon, onRename, onEditIcon }: Props): React.JSX.Element {
-  const { path, title, cover, icon, iconHidden } = page
+  onBannerDone: () => void
+  chrome?: 'detail' | 'window'
+}): React.JSX.Element {
+  const { id, path, title, cover, icon } = page
   const coverSrc = useAssetUrl(cover)
-  const reloadPage = useSession((s) => s.reloadPage)
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const submitRename = useSession((s) => s.submitRename)
+  const mutate = useSession((s) => s.mutate)
+  const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [iconHidden, setIconHidden] = useState(true)
+  useEffect(() => {
+    let alive = true
+    void host()
+      .ask('headingIcon:get')
+      .then((r) => {
+        if (alive) setIconHidden(valueOr(r, {})[id] ?? true)
+      })
+    return () => {
+      alive = false
+    }
+  }, [id])
+
+  const toggleHeadingIcon = (): void => {
+    const next = !iconHidden
+    setIconHidden(next)
+    void host().ask('headingIcon:set', id, next)
+  }
+
   const bannerRef = useRef<HTMLDivElement>(null)
   const {
     openMenu: bannerMenu,
+    run,
     addOrChange,
     editing,
     closeEditor,
     boxAspect,
     onSave,
     onRepick,
-  } = useBannerMenu(path, 'page', {
-    value: cover,
-    frame: bannerRef,
-    onDone: () => void reloadPage(),
-  })
+  } = useBannerMenu(path, 'page', { value: cover, frame: bannerRef, onDone: onBannerDone })
+  useWindowBannerSeat(chrome === 'window', run)
 
+  const glyph = entityIcon('page', icon, defaultIcons)
   const titleHeader = (
     <DetailTitleHeader
       title={title}
-      icon={icon}
+      icon={glyph}
       iconHidden={iconHidden}
-      onRename={onRename}
-      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: icon !== undefined, iconHidden }))}
-      onEditIcon={onEditIcon}
-      onToggleIcon={onToggleIcon}
+      onRename={(newName) => submitRename(path, 'page', newName)}
+      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: glyph !== undefined, iconHidden }))}
+      onEditIcon={() => setIconPickerOpen(true)}
+      onToggleIcon={toggleHeadingIcon}
     />
   )
 
@@ -82,11 +108,17 @@ export function PageHeader({ page, onToggleIcon, onRename, onEditIcon }: Props):
         </div>
       ) : (
         <>
-          <AddBannerButton onClick={() => void addOrChange()} />
+          {chrome === 'detail' && <AddBannerButton onClick={() => void addOrChange()} />}
           {titleHeader}
           <div className="mdpm-divider" />
         </>
       )}
+      <IconChoice
+        open={iconPickerOpen}
+        onClose={() => setIconPickerOpen(false)}
+        value={icon}
+        onSelect={(chosen) => void mutate({ op: 'setIcon', path, kind: 'page', icon: chosen })}
+      />
     </div>
   )
 }

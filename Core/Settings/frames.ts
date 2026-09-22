@@ -407,6 +407,23 @@ export const FRAMES = roster([
           },
         ],
       },
+      {
+        title: 'Windows',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'windowPageBanners',
+            label: 'Show Banners In Windowed Pages',
+            hint: 'A Page opened in a window carries its banner and its renameable title.',
+          },
+          {
+            kind: 'toggle',
+            key: 'windowSpaceBanners',
+            label: 'Show Banners In Windowed Spaces',
+            hint: 'A Space opened in a window carries its banner; off, it carries its title alone.',
+          },
+        ],
+      },
     ],
   },
   {
