@@ -57,18 +57,25 @@ export function useHoverDwell(active: boolean, held: boolean, graceMs: number): 
     return { settle, reset, hover, enter, press }
   })
 
-  useEffect(api.settle, [held])
+  // A release waits for the pointer's next move, whose boundary events report where it is — a native menu withholds them while open.
+  useEffect(() => {
+    if (held) return api.settle()
+    window.addEventListener('pointermove', api.settle, { once: true })
+    return () => window.removeEventListener('pointermove', api.settle)
+  }, [held])
   useEffect(() => api.reset, [active])
   useEffect(() => {
-    const down = (): void => api.press(true)
+    // Only a primary press holds; a context menu swallows its own release, so its opening ends the press.
+    const down = (e: PointerEvent): void => {
+      if (e.button === 0) api.press(true)
+    }
     const up = (): void => api.press(false)
+    const ends = ['pointerup', 'pointercancel', 'contextmenu'] as const
     window.addEventListener('pointerdown', down, { capture: true })
-    window.addEventListener('pointerup', up, { capture: true })
-    window.addEventListener('pointercancel', up, { capture: true })
+    for (const t of ends) window.addEventListener(t, up, { capture: true })
     return () => {
       window.removeEventListener('pointerdown', down, { capture: true })
-      window.removeEventListener('pointerup', up, { capture: true })
-      window.removeEventListener('pointercancel', up, { capture: true })
+      for (const t of ends) window.removeEventListener(t, up, { capture: true })
     }
   }, [api])
 

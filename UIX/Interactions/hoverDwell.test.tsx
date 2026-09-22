@@ -31,7 +31,8 @@ const tick = async (ms: number): Promise<void> => {
 const run = async (fn: () => void): Promise<void> => {
   await act(async () => fn())
 }
-const pointer = (type: string): Promise<void> => run(() => window.dispatchEvent(new Event(type)))
+const pointer = (type: string, button = 0): Promise<void> =>
+  run(() => window.dispatchEvent(Object.assign(new Event(type), { button })))
 
 beforeEach(async () => {
   vi.useFakeTimers()
@@ -85,8 +86,23 @@ describe('useHoverDwell', () => {
     await tick(GRACE * 2)
     expect(api.on).toBe(true)
     await render({ held: false })
+    await tick(GRACE * 2)
+    expect(api.on).toBe(true)
+    await pointer('pointermove')
     await tick(GRACE)
     expect(api.on).toBe(false)
+  })
+
+  it('a release under a pointer that returned keeps it open', async () => {
+    await run(() => api.hover(true))
+    await tick(GHOST_DWELL_MS)
+    await render({ held: true })
+    await run(() => api.hover(false))
+    await render({ held: false })
+    await run(() => api.hover(true))
+    await pointer('pointermove')
+    await tick(GRACE * 2)
+    expect(api.on).toBe(true)
   })
 
   it('held never opens a closed dwell', async () => {
@@ -103,6 +119,20 @@ describe('useHoverDwell', () => {
     await tick(GHOST_DWELL_MS * 2)
     expect(api.on).toBe(false)
     await pointer('pointerup')
+    await tick(GHOST_DWELL_MS)
+    expect(api.on).toBe(true)
+  })
+
+  it('a secondary press never holds, and a context menu ends a primary one', async () => {
+    await pointer('pointerdown', 2)
+    await run(() => api.hover(true))
+    await tick(GHOST_DWELL_MS)
+    expect(api.on).toBe(true)
+    await run(() => api.hover(false))
+    await tick(GRACE)
+    await pointer('pointerdown')
+    await pointer('contextmenu')
+    await run(() => api.hover(true))
     await tick(GHOST_DWELL_MS)
     expect(api.on).toBe(true)
   })
