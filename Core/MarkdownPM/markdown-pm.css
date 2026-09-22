@@ -149,9 +149,6 @@
   left: calc(var(--sidebar-clearance) + var(--content-inset));
   right: 28px;
 }
-.mdpm-banner-overlay .detail-title-icon {
-  color: var(--label-primary);
-}
 
 /* Anchored to the heading line's own layout box, not a CM gutter — a gutter is positioned from CM's line-height model, which estimates off-screen variable-height blocks at a default height and drifts on scroll. KNOBS: --rail-inset, --fold-chevron-size, motion via --disclosure / --ease-base. */
 .mdpm-editor .cm-line.md-foldable {

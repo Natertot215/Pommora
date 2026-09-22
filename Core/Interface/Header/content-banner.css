@@ -44,9 +44,6 @@
 .banner-title .detail-title-input.detail-title-input {
   pointer-events: auto;
 }
-.banner-title .detail-title-icon {
-  color: var(--label-primary);
-}
 .banner-title .detail-title-text,
 .banner-title .detail-title-input {
   font-weight: var(--weight-semibold);
