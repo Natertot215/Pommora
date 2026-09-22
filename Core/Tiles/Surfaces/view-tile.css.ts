@@ -2,6 +2,7 @@ import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { titleReveal } from '@pommora/uix/Animations/animations.css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { duration } from '@pommora/uix/Animations/motion'
+import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
 import { SEGMENT_H, segmentRow, settingsBtn } from '@pommora/uix/Elements/action-band.css'
 import {
   EMBED_SCALE_DEFAULT,
@@ -121,6 +122,7 @@ export const newViewReveal = style({
   transition: 'opacity var(--duration-fast) var(--ease-base)',
 })
 globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
+globalStyle(`${newViewReveal} ${accessoryButton}`, { color: c.label.secondary })
 
 globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 
