@@ -17,6 +17,7 @@ import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { Subfield } from '../Subfield/Subfield'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { useWindowWarm } from './useWindowWarm'
+import { windowBannerShown } from './windowTabBanner'
 
 export interface WindowTabBodySlots {
   body: React.ReactNode
@@ -37,11 +38,12 @@ function SpaceTabBody({
   connections: ConnectionsApi | undefined
 }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
+  const spaceBanner = useSession((s) => windowBannerShown(s.personalization, 'space'))
   const owner = findSpace(tree, host.id)
   if (!owner) return null
   return (
     <>
-      <Banner owner={owner} chrome="window-title" />
+      <Banner owner={owner} chrome={spaceBanner ? 'window-banner' : 'window-title'} />
       <div className="tile-host-frame">
         {/* Keyed per Space: the surface's debounced saves and editor session must never carry across an in-place host swap. */}
         <TileHost key={host.id} host={host} connections={connections} />
@@ -58,6 +60,7 @@ export function useWindowTabBody(
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const experimental = useExperimental()
+  const pageBanner = useSession((s) => windowBannerShown(s.personalization, 'page'))
 
   const pageTarget = target?.kind === 'page' ? target : null
   const pagePath = pageTarget?.path
@@ -102,6 +105,7 @@ export function useWindowTabBody(
           connections={connections}
           onBody={onBody}
           warm={warm}
+          chrome={pageBanner ? 'window' : 'none'}
           arrive={arrive}
           onArrived={clearPendingTravel}
         />

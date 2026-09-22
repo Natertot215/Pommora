@@ -208,6 +208,8 @@ export const personalizationSchema = z.object({
   revealTabBarOnHover: flag(),
   tabOpenBehavior: recorded(TAB_OPEN_BEHAVIORS, 'newtab'),
   matrixOpenIn: recorded(MATRIX_OPEN_INS, 'window'),
+  windowPageBanners: flag(),
+  windowSpaceBanners: flag(),
   tabTakeFocus: offOnly(),
   tabMinWidth: stepped(TAB_MIN_WIDTH),
   tabMaxWidth: stepped(TAB_MAX_WIDTH),

@@ -111,11 +111,36 @@
 .page-tile .mdpm-banner-img {
   -webkit-user-drag: none;
 }
-/* This var exists because the embed omits .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
+/* This var exists because the page rung's band stands without .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
 .page-tile .mdpm-banner-overlay {
   --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
   left: calc(16px * var(--page-detail-scale));
   right: calc(16px * var(--page-detail-scale));
+}
+
+/* The window's header sits in flow, so the main shell's parked-absolute header and the editor's reserved header zone stand down. Anchored at the rung's own header: a page embed nested in this editor keeps the out-of-flow band above. */
+.page-tile.is-window-chrome > .mdpm-header {
+  position: static;
+  padding-top: 0;
+  animation: none;
+}
+.page-tile.is-window-chrome .mdpm-editor .cm-content {
+  --header-zone: 0px;
+}
+.page-tile.is-window-chrome > .mdpm-header .mdpm-banner {
+  position: relative;
+  height: var(--embed-banner-h);
+  animation: none;
+}
+/* The var is declared on .detail-title itself in markdown-pm.css, where it reads --editor-scale; a declaration on an ancestor never reaches it. */
+.page-tile.is-window-chrome > .mdpm-header .detail-title {
+  --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
+}
+.page-tile.is-window-chrome > .mdpm-header:not(.has-banner) .detail-title {
+  padding: 6px calc(16px * var(--page-detail-scale)) 14px;
+}
+.page-tile.is-window-chrome > .mdpm-header .mdpm-divider {
+  margin: 0 calc(16px * var(--page-detail-scale));
 }
 
 /* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF with a phantom baseline gap). */

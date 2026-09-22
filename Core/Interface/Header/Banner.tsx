@@ -14,6 +14,7 @@ import { base } from '@pommora/uix/Fields/fields.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
+import { useWindowBannerSeat } from '../Windows/windowTabBanner'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
@@ -23,7 +24,7 @@ export function Banner({
   chrome = 'detail',
 }: {
   owner: BannerOwner
-  chrome?: 'detail' | 'window-title'
+  chrome?: 'detail' | 'window-title' | 'window-banner'
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
@@ -82,8 +83,9 @@ export function Banner({
     </RenamableLabel>
   )
   const bannerRef = useRef<HTMLDivElement>(null)
-  const { openMenu, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
+  const { openMenu, run, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
     useBannerMenu(owner.path, owner.kind, { value: owner.banner, frame: bannerRef })
+  useWindowBannerSeat(chrome === 'window-banner', run)
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''

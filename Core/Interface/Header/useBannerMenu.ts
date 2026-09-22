@@ -6,7 +6,7 @@ import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { bannerMenuItems } from '@pommora/core/Actions/identityMenus'
+import { type BannerMenuAction, bannerMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function useBannerMenu(
   path: string,
@@ -21,6 +21,7 @@ export function useBannerMenu(
   },
 ): {
   openMenu: () => Promise<void>
+  run: (action: BannerMenuAction) => Promise<void>
   addOrChange: () => Promise<void>
   editing: boolean
   openEditor: () => void
@@ -55,11 +56,14 @@ export function useBannerMenu(
     setEditing(true)
   }
   const closeEditor = (): void => setEditing(false)
-  const openMenu = async (): Promise<void> => {
-    const action = await holdGhost(() => popMenu(bannerMenuItems({ noun, add, noRemove })))
+  const run = async (action: BannerMenuAction): Promise<void> => {
     if (action === 'change') await addOrChange()
     else if (action === 'edit') openEditor()
-    else if (action === 'remove') await setBanner(null)
+    else await setBanner(null)
+  }
+  const openMenu = async (): Promise<void> => {
+    const action = await holdGhost(() => popMenu(bannerMenuItems({ noun, add, noRemove })))
+    if (action) await run(action)
   }
   const onSave = async (crop: Crop): Promise<void> => {
     closeEditor()
@@ -67,5 +71,15 @@ export function useBannerMenu(
   }
   const onRepick = setBanner
 
-  return { openMenu, addOrChange, editing, openEditor, closeEditor, boxAspect, onSave, onRepick }
+  return {
+    openMenu,
+    run,
+    addOrChange,
+    editing,
+    openEditor,
+    closeEditor,
+    boxAspect,
+    onSave,
+    onRepick,
+  }
 }

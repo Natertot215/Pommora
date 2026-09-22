@@ -65,3 +65,24 @@ describe('PageTile re-seeds on a body epoch', () => {
     expect(container.querySelector('.stub-editor')?.textContent).toBe('RESTORED')
   })
 })
+
+// The snapshot was taken before the window chrome rung existed, so it is the shape a windowed tile keeps while Show Banners In Windowed Pages is off.
+describe('PageTile without a chrome rung', () => {
+  it('draws the bare tile, no header of any kind', async () => {
+    cachePageDetail(
+      detail({ path: 'Notes/a.md', body: 'plain', frontmatter: { banner: 'cover.png' } }),
+    )
+    await act(async () => {
+      root.render(
+        createElement(PageTile, {
+          path: 'Notes/a.md',
+          editing: false,
+          onBeginEdit: () => {},
+        }),
+      )
+    })
+    expect(container.querySelector('.page-tile')?.outerHTML).toMatchInlineSnapshot(
+      `"<div class="page-tile" style="--page-detail-scale: 0.9; --editor-scale: 1;"><div class="stub-editor">plain</div></div>"`,
+    )
+  })
+})

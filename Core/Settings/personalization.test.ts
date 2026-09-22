@@ -113,6 +113,18 @@ describe('every decode helper at its boundary', () => {
     ['flag keeps a stored boolean either way', { hideChevrons: true }, 'hideChevrons', true],
     ['flag keeps a stored false', { hideChevrons: false }, 'hideChevrons', false],
     ['flag drops a non-boolean', { hideChevrons: 'yes' }, 'hideChevrons', undefined],
+    [
+      'flag keeps a stored window-banner toggle',
+      { windowPageBanners: true },
+      'windowPageBanners',
+      true,
+    ],
+    [
+      'flag drops a non-boolean window-banner toggle',
+      { windowSpaceBanners: 1 },
+      'windowSpaceBanners',
+      undefined,
+    ],
     ['offOnly records the explicit off', { fileHistory: false }, 'fileHistory', false],
     ['offOnly drops the built-in on', { fileHistory: true }, 'fileHistory', undefined],
     ['offOnly drops a non-boolean', { fileHistory: 'no' }, 'fileHistory', undefined],
