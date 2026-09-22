@@ -19,7 +19,7 @@ import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
 
 // KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
 const PINCH_RATE = 0.01
-const LINK_WIDTH_MIN = 1.0
+const LINK_WIDTH_MIN = 1.25
 const LINK_WIDTH_MAX = 5.0
 const LINK_WIDTH_SCALE = 0.5
 const MAX_FRAME_MS = 64
@@ -195,7 +195,8 @@ function drawLink(
   const uy = dy / len
   const weight = Math.min(a.radius, b.radius) / BASE_RADIUS.page
   ctx.globalAlpha = alpha
-  ctx.lineWidth = clamp(LINK_WIDTH_MIN + weight * LINK_WIDTH_SCALE, LINK_WIDTH_MIN, LINK_WIDTH_MAX)
+  const width = clamp(LINK_WIDTH_MIN + weight * LINK_WIDTH_SCALE, LINK_WIDTH_MIN, LINK_WIDTH_MAX)
+  ctx.lineWidth = Math.max(width * v.zoom, LINK_WIDTH_MIN)
   ctx.lineCap = 'round'
   ctx.strokeStyle = color
   ctx.beginPath()
