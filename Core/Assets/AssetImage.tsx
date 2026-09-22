@@ -27,9 +27,11 @@ interface Props {
   style?: CSSProperties
   fallback?: ReactNode
   preview?: Crop
+  /** A banner paints in the frame its view mounts; lazy loading would land it a beat after the view's entrance. */
+  eager?: boolean
 }
 
-export function AssetImage({ value, className, style, fallback = null, preview }: Props) {
+export function AssetImage({ value, className, style, fallback = null, preview, eager }: Props) {
   const map = useSession((s) => s.assetMap)
   const crops = useSession((s) => s.tree?.crops)
   const url = resolveAssetUrl(value, map)
@@ -77,7 +79,7 @@ export function AssetImage({ value, className, style, fallback = null, preview }
       src={url}
       alt=""
       draggable={false}
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
       onError={() => setFailed(true)}
     />
   )

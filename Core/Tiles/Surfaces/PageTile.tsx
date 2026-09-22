@@ -222,7 +222,7 @@ function EmbedBanner({
         void bannerMenu()
       }}
     >
-      <AssetImage value={cover} className="mdpm-banner-img" />
+      <AssetImage value={cover} className="mdpm-banner-img" eager />
       <div className="mdpm-banner-overlay title-shadow">
         <span className="detail-title-text">{title}</span>
       </div>

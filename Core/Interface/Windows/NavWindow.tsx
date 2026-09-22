@@ -18,6 +18,7 @@ import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowTabBody } from './WindowTabBody'
 import { NavGallery } from '../../Navigation/NavGallery'
 import { useWindowGeometry } from './useWindowGeometry'
+import { useWindowTabSlide } from './useWindowTabSlide'
 import { Subfield } from '../Subfield/Subfield'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import './nav-window.css'
@@ -94,6 +95,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const { body, right, actions, footer, footerLead, closeSidePane, promote } =
     useWindowTabBody(target)
   const sidePaneOpen = right.open === true
+  const contentRef = useRef<HTMLDivElement>(null)
+  useWindowTabSlide(contentRef, rootRef, sidePaneOpen)
   // Also re-focuses on every map-tab return — the input remounts when a tab swaps the body away.
   useEffect(() => {
     if (!target) searchRef.current?.focus()
@@ -166,7 +169,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
       right={right}
     >
-      <div className="navwindow-content">
+      <div className="navwindow-content" ref={contentRef}>
         {body ?? (
           <div className="navwindow-main">
             {bannered ? (

@@ -1,6 +1,6 @@
 // The one set of tree transforms both processes apply — the renderer optimistically, main as canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
 
-import { NEW_PAGE_SLOT, type MutateRequest } from './mutateRequest'
+import { NEW_SLOT, type MutateRequest } from './mutateRequest'
 import { titleFromPath } from '../Connections/connections'
 import { stabilize } from './treeStabilize'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
@@ -159,24 +159,29 @@ function extract(
   return { containers: next, node }
 }
 
+// The order array already names the slot; an appended row would flash at the bottom first.
+function atSlot<T>(list: T[], node: T, order: string[] | undefined): T[] {
+  const slot = order ? order.indexOf(NEW_SLOT) : -1
+  const at = slot >= 0 ? Math.min(slot, list.length) : list.length
+  return [...list.slice(0, at), node, ...list.slice(at)]
+}
+
 function insert(
   containers: (CollectionNode | SetNode)[],
   parentPath: string,
   node: PageNode | SetNode,
-  pageAt?: number,
+  order?: string[],
 ): { containers: (CollectionNode | SetNode)[]; done: boolean } {
   let done = false
   const next = containers.map((c) => {
     if (done) return c
     if (c.path === parentPath) {
       done = true
-      if (node.kind !== 'page') return { ...c, sets: [...(c.sets ?? []), node] }
-      const at =
-        pageAt !== undefined && pageAt >= 0 ? Math.min(pageAt, c.pages.length) : c.pages.length
-      return { ...c, pages: [...c.pages.slice(0, at), node, ...c.pages.slice(at)] }
+      if (node.kind !== 'page') return { ...c, sets: atSlot(c.sets ?? [], node, order) }
+      return { ...c, pages: atSlot(c.pages, node, order) }
     }
     if (c.sets?.length) {
-      const r = insert(c.sets, parentPath, node, pageAt)
+      const r = insert(c.sets, parentPath, node, order)
       if (r.done) {
         done = true
         return { ...c, sets: r.containers as SetNode[] }
@@ -285,7 +290,7 @@ export function insertCreatedInTree(
     return {
       ...tree,
       contexts: tree.contexts.map((g) =>
-        g.def.id === req.contextId ? { ...g, spaces: [...g.spaces, node] } : g,
+        g.def.id === req.contextId ? { ...g, spaces: atSlot(g.spaces, node, req.order) } : g,
       ),
     }
   }
@@ -312,10 +317,7 @@ export function insertCreatedInTree(
             title: basename(created.path),
             path: created.path,
           })
-    // The order array already names the slot; an appended row would flash at the bottom first.
-    const pageAt =
-      req.op === 'createPage' && req.order ? req.order.indexOf(NEW_PAGE_SLOT) : undefined
-    const placed = insert(tree.collections, req.parentPath, node, pageAt)
+    const placed = insert(tree.collections, req.parentPath, node, req.order)
     if (!placed.done) return null
     return { ...tree, collections: placed.containers as CollectionNode[] }
   }

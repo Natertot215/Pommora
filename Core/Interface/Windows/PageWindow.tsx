@@ -12,11 +12,10 @@ import { windowTargetOf, useEmbedScale, useSession } from '../../Session/store'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
+import { useWindowTabSlide } from './useWindowTabSlide'
 import './page-window.css'
 
 const DRAG_SURFACES = '.tab-scroll, .tab-strip'
-
-const SLIDE_PX = 14
 
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
@@ -49,28 +48,7 @@ function PageWindowBody({
   const resolveIndex = tree ? resolveIndexOf(tree) : null
   const trail = trailOf(tree, target)
 
-  const windowSlide = useSession((s) => s.windowSlide)
-  const prevId = useRef(target.id)
-  const playedSeq = useRef(0)
-  useEffect(() => {
-    const swapped = prevId.current !== target.id
-    prevId.current = target.id
-    if (!swapped || !windowSlide || windowSlide.seq === playedSeq.current) return
-    playedSeq.current = windowSlide.seq
-    const x = windowSlide.dir === 'back' ? -SLIDE_PX : SLIDE_PX
-    const timing = { duration: ms(duration.fast), easing: easing.baseEase }
-    bodyRef.current?.animate(
-      [
-        { transform: `translateX(${x}px)`, opacity: 0 },
-        { transform: 'translateX(0)', opacity: 1 },
-      ],
-      timing,
-    )
-    if (sidePaneOpen)
-      rootRef.current
-        ?.querySelector('.window-side-pane')
-        ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
-  }, [target.id, windowSlide, sidePaneOpen, bodyRef])
+  useWindowTabSlide(bodyRef, rootRef, sidePaneOpen)
 
   // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime values); the css .engulfing class only suppresses the default scale-out.
   const exitReason = useSession((s) => s.windowExit)

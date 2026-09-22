@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
 import { useRevealNear } from '@pommora/uix/Interactions/revealBar'
-import { duration, easing, ms } from '@pommora/uix/Animations/motion'
+import { slideIn } from '@pommora/uix/Animations/motion'
 import { Icon } from '@pommora/uix/Symbols'
 import { findCollection, findSet } from '../Nexus/treeIndex'
 import { ContainerView } from '../Views/ContainerView'
@@ -17,6 +17,7 @@ import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
+import { publishChromePart } from './chromeParts'
 
 function DetailView(): React.JSX.Element | null {
   const selection = useSession((s) => s.selection)
@@ -90,9 +91,6 @@ function useHosts(): Host[] {
   }, [selection, tabs, tabMru, activeTabId, readyIds, warmTabs])
 }
 
-const VIEW_SLIDE_PX = 14
-import { publishChromePart } from './chromeParts'
-
 export function ContentView(): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const selectionKind = selection.kind
@@ -113,14 +111,7 @@ export function ContentView(): React.JSX.Element {
     prevSelection.current = selection
     if (!swapped || !navSlide || navSlide.seq === playedSeq.current) return
     playedSeq.current = navSlide.seq
-    const x = navSlide.dir === 'back' ? -VIEW_SLIDE_PX : VIEW_SLIDE_PX
-    viewRef.current?.animate(
-      [
-        { transform: `translateX(${x}px)`, opacity: 0 },
-        { transform: 'translateX(0)', opacity: 1 },
-      ],
-      { duration: ms(duration.fast), easing: easing.baseEase },
-    )
+    slideIn(viewRef.current, navSlide.dir === 'back')
   }, [selection, navSlide])
   const reveal = useRevealNear()
 

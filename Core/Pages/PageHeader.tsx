@@ -100,7 +100,7 @@ export function PageHeader({
             void bannerMenu()
           }}
         >
-          <AssetImage value={cover} className="mdpm-banner-img" />
+          <AssetImage value={cover} className="mdpm-banner-img" eager />
           <div
             className={cx(
               'mdpm-banner-overlay',

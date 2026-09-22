@@ -115,7 +115,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     latest: ViewCreationConfig,
     createdId: string,
     anchorId: string | null,
-    where: 'above' | 'below',
+    where: 'above' | 'below' | 'first',
   ): void => {
     const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
     // The live view already folds a held override, so the next create composes on this one.
@@ -147,14 +147,17 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   const addIn = (parentPath: string): Promise<boolean> => {
     const c = cfg()
     const gestureViewId = c.view.id
-    const order = c.structuralOrder
-      ? orderWithSlot(containerPagesOf(parentPath), null, 'last')
-      : undefined
+    const siblings = containerPagesOf(parentPath)
+    const top = useSession.getState().personalization.newPagePlacement === 'top'
+    // Top leads the folder's own order in any view; a non-structural view otherwise leaves page_order to its sort.
+    const order =
+      top || c.structuralOrder ? orderWithSlot(siblings, null, top ? 'first' : 'last') : undefined
     return createPageIn(parentPath, impliedSeeds(), order, (created) => {
-      // A non-structural view has no page_order write to land the "end of the group" — absent any live array, the read-side title fallback would rank the newborn mid-band.
+      // A non-structural view has no page_order write to land the newborn's slot — absent any live array, the read-side title fallback would rank the newborn mid-band.
       const latest = cfg()
       latest.onCreated(created)
-      if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, 'below')
+      if (latest.view.id === gestureViewId)
+        settleOrders(latest, created.id, null, top ? 'first' : 'below')
       requestAnimationFrame(() => glideToRow(created.id))
     })
   }

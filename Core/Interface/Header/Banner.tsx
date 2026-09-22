@@ -42,7 +42,7 @@ export function Banner({
   // Always rendered (never conditionally removed) so hide/show slides it in/out rather than popping.
   const homeIcon = (): React.ReactNode => {
     const cls = iconHidden ? 'banner-home-icon is-hidden' : 'banner-home-icon'
-    if (homePhotoSrc) return <AssetImage value={nexus?.profileImage} className={cls} />
+    if (homePhotoSrc) return <AssetImage value={nexus?.profileImage} className={cls} eager />
     return <Icon name={nexus?.profileIcon ?? DEFAULT_NEXUS_ICON} className={cls} />
   }
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -140,7 +140,7 @@ export function Banner({
         void openMenu()
       }}
     >
-      <AssetImage value={owner.banner} className="banner-img" />
+      <AssetImage value={owner.banner} className="banner-img" eager />
       <ImagePicker
         open={editing}
         value={owner.banner ?? ''}

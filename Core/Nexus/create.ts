@@ -8,7 +8,7 @@ import { mintDefaultView, VIEW_ID_PREFIX } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import { NEW_PAGE_SLOT, type MutateReply, type MutateRequest } from './mutateRequest'
+import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity } from './folderEntity'
@@ -36,12 +36,7 @@ export async function createPageOp(
     createPage(parent.value, name, { values }),
   )
   if (!r.ok) return r
-  if (req.order)
-    await setChildOrder(
-      parent.value,
-      'page_order',
-      req.order.map((x) => (x === NEW_PAGE_SLOT ? r.value.id : x)),
-    )
+  if (req.order) await setChildOrder(parent.value, 'page_order', fillSlot(req.order, r.value.id))
   await indexWrittenPage(root, r.value.path)
   noteValueWrite(root, r.value.path)
   return created(req.parentPath, r.value)
@@ -59,5 +54,7 @@ export async function createContainerOp(
   const r = await createDisambiguated(req.name, (name) =>
     createFolderEntity(parent.value, req.kind, name, extra),
   )
-  return r.ok ? created(req.parentPath, r.value) : r
+  if (!r.ok) return r
+  if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
+  return created(req.parentPath, r.value)
 }

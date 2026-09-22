@@ -27,7 +27,7 @@ import type {
   SetNode,
   SpaceNode,
 } from '@pommora/core/Nexus/tree'
-import type { FolderPlacement, SidebarMode } from '@pommora/core/Settings/personalization'
+import type { Placement, SidebarMode } from '@pommora/core/Settings/personalization'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import {
   DEFAULT_NEW_NAME,
@@ -146,7 +146,7 @@ function PageRow({
         value={page.icon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: page.path, kind: 'page', icon })}
       />
-      {ghost.anchorId === page.id && <GhostLeaf depth={depth} />}
+      {ghost.anchorId === page.id && <GhostLeaf depth={depth} kind="page" label="New Page" />}
     </>
   )
 }
@@ -165,7 +165,15 @@ const SidebarGhostApi = createContext<{
   closed: () => void
 } | null>(null)
 
-function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
+function GhostLeaf({
+  depth,
+  kind,
+  label,
+}: {
+  depth: number
+  kind: 'page' | 'space'
+  label: string
+}): React.JSX.Element {
   const api = useContext(SidebarGhostApi)
   const closing = useContext(SidebarGhost).closing
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -178,6 +186,10 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
         onPointerEnter={api?.onGhostEnter}
         onPointerLeave={api?.onGhostLeave}
         onClick={api?.create}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
       >
         <MenuItem
           className="row"
@@ -185,11 +197,11 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
           leading={<span className={dropOutlineSpacer} data-drop-outline-spacer />}
         >
           <Icon
-            name={entityIcon('page', undefined, defaultIcons)}
+            name={entityIcon(kind, undefined, defaultIcons)}
             size="headline"
             className="row-icon"
           />
-          New Page
+          {label}
         </MenuItem>
       </div>
     </Reveal>
@@ -259,7 +271,7 @@ function ContainerRow({
 function placeChildren(
   folders: React.JSX.Element[],
   pages: React.JSX.Element[],
-  placement: FolderPlacement,
+  placement: Placement,
 ): React.JSX.Element[] {
   return placement === 'bottom' ? [...pages, ...folders] : [...folders, ...pages]
 }
@@ -366,17 +378,30 @@ function CollectionRow({
   )
 }
 
-function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
+function SpaceRow({
+  node,
+  ghostLabel,
+}: {
+  node: SpaceNode
+  ghostLabel: string
+}): React.JSX.Element {
   const select = useSession((s) => s.select)
   const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
   const endIcon = useSession((s) => s.endIcon)
   const mutate = useSession((s) => s.mutate)
+  const ghost = useContext(SidebarGhost)
+  const api = useContext(SidebarGhostApi)
+  const holdGhost = useContext(GhostSuppress)
   const rowRef = useRef<HTMLDivElement>(null)
   return (
     <>
-      <DragRow id={node.id}>
+      <DragRow
+        id={node.id}
+        onPointerEnter={() => api?.onHover(node.id, true)}
+        onPointerLeave={() => api?.onHover(node.id, false)}
+      >
         <div ref={rowRef}>
           <Leaf
             icon={entityIcon('space', node.icon, defaultIcons)}
@@ -384,7 +409,9 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
             depth={1}
             selected={selected}
             onSelect={() => void select({ kind: 'space', id: node.id })}
-            onContextMenu={() => void showContextFor({ ...node, kind: 'space' }, rowRef.current)}
+            onContextMenu={() =>
+              void holdGhost(() => showContextFor({ ...node, kind: 'space' }, rowRef.current))
+            }
             rename={{ path: node.path, kind: 'space' }}
           />
         </div>
@@ -396,6 +423,7 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
         value={node.icon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon })}
       />
+      {ghost.anchorId === node.id && <GhostLeaf depth={1} kind="space" label={ghostLabel} />}
     </>
   )
 }
@@ -405,8 +433,12 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
   const endIcon = useSession((s) => s.endIcon)
   const mutate = useSession((s) => s.mutate)
+  const ghost = useContext(SidebarGhost)
+  const api = useContext(SidebarGhostApi)
+  const holdGhost = useContext(GhostSuppress)
   const headerRef = useRef<HTMLDivElement>(null)
   const path = contextDirRel(group.def.title)
+  const newLabel = createSpaceLabel(group.def)
   return (
     <>
       <Disclosure
@@ -418,21 +450,29 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
         dragId={group.def.id}
         headerRef={headerRef}
         onContextMenu={() =>
-          void showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' })
+          void holdGhost(() =>
+            showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' }),
+          )
+        }
+        onHeaderHover={(entering) => api?.onHover(group.def.id, entering)}
+        belowHeader={
+          ghost.anchorId === group.def.id && <GhostLeaf depth={1} kind="space" label={newLabel} />
         }
         rename={{ path, kind: 'context' }}
         onBodyContextMenu={() => {
-          const label = createSpaceLabel(group.def)
-          void useSession
-            .getState()
-            .createFromMenu(
-              [{ label, req: { op: 'createSpace', contextId: group.def.id, name: label } }],
-              'sidebar',
-            )
+          void useSession.getState().createFromMenu(
+            [
+              {
+                label: newLabel,
+                req: { op: 'createSpace', contextId: group.def.id, name: newLabel },
+              },
+            ],
+            'sidebar',
+          )
         }}
       >
         {group.spaces.map((s) => (
-          <SpaceRow key={s.id} node={s} />
+          <SpaceRow key={s.id} node={s} ghostLabel={newLabel} />
         ))}
       </Disclosure>
       <IconChoice
@@ -522,9 +562,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void mutate(req)
   }
   const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
-  useEffect(() => {
-    if (mode !== 'collections') clearGhost()
-  }, [mode, clearGhost])
+  useEffect(() => clearGhost(), [mode, clearGhost])
   useClearStrandedGhost(ghostApi, dndIndex.byId)
   const [sidebarGhostApi] = useState(() => ({
     onHover,
@@ -534,7 +572,23 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     create: (): void => {
       const anchorId = take()
       const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
-      if (entry) void useSession.getState().newPageAdjacent(entry.path, 'below', 'sidebar')
+      const s = useSession.getState()
+      switch (entry?.kind) {
+        case 'contextGroup': {
+          const def = s.tree?.contexts.find((g) => g.def.id === entry.id)?.def
+          if (def)
+            void s.createNamed(
+              { op: 'createSpace', contextId: def.id, name: createSpaceLabel(def) },
+              'sidebar',
+            )
+          return
+        }
+        case 'space':
+          void s.newSpaceAdjacent(entry.id, 'below', 'sidebar')
+          return
+        case 'page':
+          void s.newPageAdjacent(entry.path, 'below', 'sidebar')
+      }
     },
   }))
   const ghostValue = ghostApi.ghost ?? NO_GHOST
