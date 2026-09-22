@@ -12,11 +12,11 @@ import './nav-view.css'
 export function NavBanner({
   search,
   empty,
-  windowed = false,
+  chrome = 'detail',
 }: {
   search: ReactNode
   empty: (add: () => void) => ReactNode
-  windowed?: boolean
+  chrome?: 'detail' | 'window'
 }): ReactNode {
   const ownBanner = useSession((s) => s.navBanner)
   const homeBanner = useSession((s) => s.tree?.homepage.banner)
@@ -32,14 +32,16 @@ export function NavBanner({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={bannerRef}
-      className={cx('banner', 'nav-view-banner', windowed && 'window-banner')}
+      className={cx('banner', 'nav-view-banner', chrome === 'window' && 'window-banner')}
       onContextMenu={(e) => {
         e.preventDefault()
         void openMenu()
       }}
     >
       <AssetImage value={value} className="banner-img" />
-      <div className={cx('banner-title', windowed && 'window-banner-title', 'title-shadow')}>
+      <div
+        className={cx('banner-title', chrome === 'window' && 'window-banner-title', 'title-shadow')}
+      >
         {search}
       </div>
       <ImagePicker
