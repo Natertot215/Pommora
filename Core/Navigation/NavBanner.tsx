@@ -1,4 +1,5 @@
 import { type ReactNode, useRef } from 'react'
+import { cx } from '@pommora/uix/Utilities/cx'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { AssetImage } from '../Assets/AssetImage'
@@ -11,9 +12,11 @@ import './nav-view.css'
 export function NavBanner({
   search,
   empty,
+  windowed = false,
 }: {
   search: ReactNode
   empty: (add: () => void) => ReactNode
+  windowed?: boolean
 }): ReactNode {
   const ownBanner = useSession((s) => s.navBanner)
   const homeBanner = useSession((s) => s.tree?.homepage.banner)
@@ -29,14 +32,16 @@ export function NavBanner({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={bannerRef}
-      className="banner nav-view-banner"
+      className={cx('banner', 'nav-view-banner', windowed && 'window-banner')}
       onContextMenu={(e) => {
         e.preventDefault()
         void openMenu()
       }}
     >
       <AssetImage value={value} className="banner-img" />
-      <div className="banner-title title-shadow">{search}</div>
+      <div className={cx('banner-title', windowed && 'window-banner-title', 'title-shadow')}>
+        {search}
+      </div>
       <ImagePicker
         open={editing}
         value={value ?? ''}

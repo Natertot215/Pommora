@@ -182,6 +182,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
                   />
                 }
                 empty={() => searchRow}
+                windowed
               />
             ) : (
               searchRow

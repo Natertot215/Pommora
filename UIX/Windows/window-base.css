@@ -25,10 +25,6 @@
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
   --window-body-pad: var(--window-toolbar-h) var(--window-clear-r) 0 var(--window-clear-l);
-  /* KNOB — the height a banner band draws at inside a window, and the edges it runs to: under the strip and the panes, out to the glass. */
-  --window-banner-h: 160px;
-  --window-banner-edges: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
-    calc(-1 * var(--window-clear-l));
 
   /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;
@@ -48,6 +44,20 @@
 }
 .window:has(> .window-panel-right-overlay) {
   --window-clear-r: calc(var(--io) * (var(--window-panel-r-w) + var(--window-panel-inset)));
+}
+
+/* The window banner — the one band a windowed Page, Space, and the Navigation Window's map tab draw: under the strip and any open pane, out to the glass, its title clearing the panes. Doubled with .window so it outranks each surface's own band rules. */
+.window .window-banner {
+  height: 140px; /* KNOB — the band's height */
+  margin: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
+    calc(-1 * var(--window-clear-l));
+}
+/* The clearances ride --io, which a transition on left or right would chase. */
+.window .window-banner-title {
+  left: calc(var(--content-edge) + var(--window-clear-l));
+  right: calc(var(--content-edge) + var(--window-clear-r));
+  bottom: 12px;
+  transition: none;
 }
 /* The toolbar strip is zero-height, so the move gesture needs this band; `z-index: 0` clears the body's flow without outranking it. */
 .window-drag {

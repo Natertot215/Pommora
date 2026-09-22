@@ -134,7 +134,7 @@ export function Banner({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={bannerRef}
-      className={`banner${homeClass}${surfaceClass}`}
+      className={`banner${homeClass}${surfaceClass}${chrome === 'window-banner' ? ' window-banner' : ''}`}
       onContextMenu={(e) => {
         e.preventDefault()
         void openMenu()
@@ -160,7 +160,11 @@ export function Banner({
           {homeTitle('banner-title-text')}
         </span>
       ) : (
-        <div className="banner-title title-shadow">{titleHeader}</div>
+        <div
+          className={`banner-title${chrome === 'window-banner' ? ' window-banner-title' : ''} title-shadow`}
+        >
+          {titleHeader}
+        </div>
       )}
       {iconPicker}
     </div>

@@ -1,9 +1,6 @@
 .navwindow {
   /* The floating strip clears the rail's whole width once it is open and the scan glyph alone once it is not. */
-  --window-tab-clear-l: calc(
-    var(--window-panel-inset) +
-    max(22px, var(--io-l) * (var(--window-panel-l-w) + var(--window-panel-inset)))
-  );
+  --window-tab-clear-l: calc(var(--window-panel-inset) + max(22px, var(--window-clear-l)));
 }
 
 .navwindow .window-actions-flow {
