@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-21-2026 → 09-22      | PM-143 | Space Windows                                        |
 | 09-21-2026              | PM-142 | Space Links                                          |
 | 09-19-2026              | PM-141 | MatrixPM Foundations                                 |
 | 09-16-2026              | PM-140 | MarkdownPM Heading Links                             |
@@ -145,6 +146,16 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-143 || Space Windows
+**DATE:** 09-21-2026 → 09-22
+
+A Space became a window tab kind beside Pages, in the Page Window and the NavWindow. `Core/Session/windowSlice.ts` narrowed `WindowTarget` to `page | space`, `openWindowTab` became the one open action and `promoteWindowTab` the one promote, and the windows file kept a single `pageSet`; `openWindow`, `originId`, `navOverride`, `activeIndex`, and `deriveTarget` retired. `Core/Tiles/tileDocStore.ts` holds each host's tile document once, shared by every mount, with the markdown body slot, the gesture hold, and the removal mark beside it; `useTileDoc.ts` reads it through `useSyncExternalStore`, and the Nexus switch flushes every document and body before the root flips. `Core/Tiles/Layout/stack.ts` draws a board under 488px as one column, and `TileGrid` owns board-staticness through `locked`, so a locked tile's and a static board's edges answer nothing. `Core/Interface/Windows/WindowTabBody.tsx` is the one tab body both windows mount, `Core/Tiles/BoardLock.tsx` the one lock control behind three mounts, and every menu that builds a Space's rows offers Preview. Two settings give a windowed Page its banner and a windowed Space its banner, edge to edge under the strip at `--window-banner-h`, managed from the tab's right-click through `windowTabBanner.ts`'s single seat; a windowed Page without a banner draws no header.
+
+**Rulings during the run:** a sibling mount mirrors a markdown tile once per debounced save; nav rows and cards carry a Space into either tab row; floating windows resize from their four edges; the sidebar Space row's menu dropped Hide Icon, Change Color, and Reveal Location while the Space settings pane's header took Change Color with its picker anchored to the field right-clicked; title icons keep `label-control` over a banner. Thirteen read-only reviews closed with two fold commits, among them the removal mark clearing when a tile returns from disk, the body writer flushing with its document, every save joining the ones in flight, and the tab body owning its bleed to the glass edge so the Settings window kept its geometry.
+
+- **Commits:** `4b3d28854^..265a1ad8e`
+- **Diff:** Net +476 | +1352 / −876
 
 #### PM-142 || Space Links
 **DATE:** 09-21-2026
