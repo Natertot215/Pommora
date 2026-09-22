@@ -63,7 +63,6 @@ export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElemen
     : null
   const shown: ContextTarget = {
     ...target,
-    headingIconHidden: node?.headingIconHidden,
     ...(menuTarget ? propertyMenuBranches(menuTarget) : {}),
   }
   const action = await popMenu(entityMenuItems(shown, creators))
@@ -122,14 +121,6 @@ function runEntityAction(
     case 'title:icon':
     case 'editIcon':
       s.beginIcon(path, target.host)
-      return
-    case 'toggleIcon':
-      void s.mutate({
-        op: 'setHeadingIconHidden',
-        path,
-        kind: 'space',
-        hidden: !target.headingIconHidden,
-      })
       return
     case 'changeColor':
       s.beginColor(path, target.host)

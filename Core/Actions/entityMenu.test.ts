@@ -78,16 +78,16 @@ describe('the sidebar entity menu', () => {
       '—',
       'Rename',
       'Edit Icon',
-      'Hide Icon',
-      'Change Color',
       'Spaces',
       'Properties',
       '—',
       'Delete',
     ])
-    expect(
-      entityMenuItems({ ...SPACE, headingIconHidden: true }, []).map((i) => i.label),
-    ).toContain('Show Icon')
+    expect(shape(entityMenuItems({ ...SPACE, host: 'matrix' }, [])).slice(3, 6)).toEqual([
+      'Rename',
+      'Edit Icon',
+      'Change Color',
+    ])
   })
 
   it('a Space with neither half draws no branch', () => {
@@ -97,8 +97,6 @@ describe('the sidebar entity menu', () => {
       '—',
       'Rename',
       'Edit Icon',
-      'Hide Icon',
-      'Change Color',
       '—',
       'Delete',
     ])

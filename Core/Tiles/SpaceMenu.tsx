@@ -21,7 +21,7 @@ import { PropertyPanel } from '../Properties/PropertyPanel'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
 import { useExperimental } from '../Settings/experimental'
-import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
+import { type TitleMenuAction, titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function SpaceMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
@@ -31,6 +31,7 @@ export function SpaceMenu(): React.JSX.Element | null {
   const id = selection.kind === 'space' ? selection.id : null
   const iconRef = useRef<HTMLButtonElement>(null)
   const colorRef = useRef<HTMLButtonElement>(null)
+  const colorAnchor = useRef<Element | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
@@ -38,24 +39,27 @@ export function SpaceMenu(): React.JSX.Element | null {
   const node = id === null ? null : spaceNodeOf(tree, id)
   if (id === null || !node) return null
 
-  const iconHidden = node.headingIconHidden === true
   const resolved = labelColorFor(node.color)
   const solid = resolved === 'default' ? null : cellColor(resolved)
 
+  const openColor = (anchor: Element | null): void => {
+    colorAnchor.current = anchor
+    setColorOpen(true)
+  }
+
   const openHeaderMenu = async (e: React.MouseEvent): Promise<void> => {
-    if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
+    const target = e.target as HTMLElement
+    if (target.closest('input, textarea, [contenteditable]')) return
     e.preventDefault()
     e.stopPropagation()
-    const action = await popMenu(titleMenuItems({ toggleIcon: true, iconHidden }))
+    const field = target.closest('button, [role=button]') ?? e.currentTarget
+    const action = await popMenu<TitleMenuAction | 'changeColor'>([
+      ...titleMenuItems(),
+      { label: 'Change Color', action: 'changeColor' },
+    ])
     if (action === 'rename') setRenaming(true)
     else if (action === 'editIcon') setPickerOpen(true)
-    else if (action === 'toggleIcon')
-      await mutate({
-        op: 'setHeadingIconHidden',
-        path: node.path,
-        kind: 'space',
-        hidden: !iconHidden,
-      })
+    else if (action === 'changeColor') openColor(field)
   }
 
   return (
@@ -71,7 +75,7 @@ export function SpaceMenu(): React.JSX.Element | null {
                 ariaLabel="Change Color"
                 pressed={colorOpen}
                 quiet
-                onClick={() => setColorOpen(true)}
+                onClick={() => openColor(colorRef.current)}
               />
             }
           />
@@ -123,7 +127,7 @@ export function SpaceMenu(): React.JSX.Element | null {
           void mutate({ op: 'setSpaceColor', spaceId: id, color: picked })
         }}
         onDismiss={() => setColorOpen(false)}
-        triggerRef={colorRef}
+        triggerRef={colorAnchor}
       />
     </>
   )
