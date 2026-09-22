@@ -8,16 +8,22 @@ import {
   stubPointerCapture,
 } from '@pommora/uix/Interactions/pointerHarness'
 import { getTile, tileIds } from './Layout/model'
-import { insertBand } from './Layout/ops'
+import { insertBand, splitAtTile } from './Layout/ops'
 import { TileGrid } from './TileGrid'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
+let observed: (() => void) | null = null
 vi.stubGlobal(
   'ResizeObserver',
   class {
+    constructor(cb: () => void) {
+      observed = cb
+    }
     observe(): void {}
-    disconnect(): void {}
+    disconnect(): void {
+      observed = null
+    }
   },
 )
 
@@ -57,6 +63,12 @@ const tileEl = (id: string): HTMLElement =>
   [...host.querySelectorAll<HTMLElement>('.tile')].find((t) =>
     t.querySelector(`[data-tile="${id}"]`),
   ) as HTMLElement
+
+const measure = (px: number): void => {
+  const grid = host.querySelector('.tile-grid') as HTMLElement
+  Object.defineProperty(grid, 'clientWidth', { value: px, configurable: true })
+  act(() => observed?.())
+}
 
 const settled = (id: string): void =>
   act(() => {
@@ -143,5 +155,46 @@ describe('the grid on the gesture engine', () => {
     settled('b')
     expect(tileEl('b').classList.contains('is-lifted')).toBe(false)
     expect(onLayoutChange).not.toHaveBeenCalled()
+  })
+
+  it('under the stacking width the board is static: a press starts no gesture', () => {
+    const onLayoutChange = vi.fn()
+    const onBusyChange = vi.fn()
+    act(() =>
+      root.render(
+        <TileGrid
+          layout={layout}
+          onLayoutChange={onLayoutChange}
+          onBusyChange={onBusyChange}
+          renderTile={(id) => <span data-tile={id} />}
+        />,
+      ),
+    )
+    measure(300)
+    const edge = host.querySelector('.resize-edge-s') as HTMLElement
+    act(() => firePointer(edge, 'pointerdown', { x: 0, y: 0 }))
+    act(() => firePointer(window, 'pointermove', { x: 0, y: 30 }))
+    act(() => firePointer(window, 'pointerup'))
+    expect(onLayoutChange).not.toHaveBeenCalled()
+    expect(onBusyChange).not.toHaveBeenCalledWith(true)
+  })
+
+  it('a row draws as one column under the width and returns only past the margin', () => {
+    const rowBoard = splitAtTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'c')
+    act(() =>
+      root.render(
+        <TileGrid
+          layout={rowBoard}
+          onLayoutChange={() => {}}
+          renderTile={(id) => <span data-tile={id} />}
+        />,
+      ),
+    )
+    measure(300)
+    expect(tileEl('c').style.width).toBe('300px')
+    measure(500)
+    expect(tileEl('c').style.width).toBe('500px')
+    measure(600)
+    expect(tileEl('c').style.width).toBe('296px')
   })
 })

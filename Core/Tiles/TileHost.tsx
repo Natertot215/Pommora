@@ -362,7 +362,8 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         tileClassName={tileClassName}
         tileStyle={tileStyle}
         onBusyChange={setBusy}
-        isTileStatic={(id) => hostLocked || (entries.get(id)?.locked ?? false)}
+        locked={hostLocked}
+        isTileLocked={(id) => entries.get(id)?.locked ?? false}
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
       />

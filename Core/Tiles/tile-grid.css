@@ -123,10 +123,10 @@
   --tile-border-color: var(--accent-stroke);
 }
 
-/* A locked tile or host is a geometry lock, not a full freeze — the edges and handle just drop their grab/resize cursors; tile content stays editable and borderless tiles still reveal on hover. */
+/* A locked tile, a locked host, or a board under the stacking width is a geometry lock, not a full freeze — the edges and handle just drop their grab/resize cursors; tile content stays editable and borderless tiles still reveal on hover. */
 .tile.is-locked .tile-edge,
 .tile.is-locked .tile-handle,
-.tile-host.is-host-locked .tile-edge,
-.tile-host.is-host-locked .tile-handle {
+.tile-grid.is-static .tile-edge,
+.tile-grid.is-static .tile-handle {
   cursor: default;
 }

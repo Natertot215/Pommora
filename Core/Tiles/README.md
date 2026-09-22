@@ -25,6 +25,16 @@ axes deliberately obey different physics:
   independently and a shorter column simply ends. Ragged row ends are legal; trapped holes
   are impossible by construction, so no compaction pass exists.
 
+#### Stacking
+
+Under a threshold on the grid's own measured width the board is drawn as one column:
+`Layout/stack.ts` re-serializes the tree into one band per tile in reading order — left to right
+inside a row, bands top to bottom — keeping each tile's height. The derivation is for render
+alone, so the invariants above are untouched: the tree the grid was handed is the tree it hands
+back. The threshold carries a hysteresis margin so a width animation crosses it once, and it is
+sampled between gestures, so the board holds its layout under a held pointer. It is the grid's
+own behavior, so every host gets it.
+
 #### Module Map
 
 | File | Role |
@@ -36,8 +46,11 @@ axes deliberately obey different physics:
 | `Layout/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
 | `Layout/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |
 | `Layout/codec.ts` | Persistence codec — a parse; the ops keep every mutation normalized |
-| `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint |
-| `TileHost.tsx` | The host binding — the document, the entry union, the menus, create, remove, convert, duplicate |
+| `Layout/stack.ts` | The narrow-width derivation — rows flattened to one column, and its threshold |
+| `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint, the stacked board |
+| `tileDocStore.ts` | The host-keyed tile document — one tree, one debounce, one lock per host, shared by every mount |
+| `useTileDoc.ts` | The document's React reader — its snapshot, the host lock's two directions, and the gesture hold |
+| `TileHost.tsx` | The host binding — the entry union, the menus, create, remove, convert, duplicate |
 | `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
 
 #### Resize Semantics
@@ -74,9 +87,14 @@ These are load-bearing; the comments at each site say why. Summarized:
 - **Handlers are identity-stable**, reading all live values through a per-render ref, so the
   memoized `TileShell` never re-renders for a callback identity change. The `renderTile`
   prop carries the same contract: identity-stable, no mutable per-tile closures.
+- **A static board answers no geometry gesture.** A host lock and the stacking width are one
+  state; the grid refuses the press before the pointer engine sees it and withholds the
+  backdrop's create menu, so no gesture path carries a stacked branch. Content editing, the
+  handle menu, and view tiles run either way.
 
 #### Persistence Seam
 
-`TileGrid` is fully controlled: `layout` in, `onLayoutChange` out. The codec round-trips
-the tree; entry payloads, unknown-key preservation, and the surrounding tile document belong
-to the host binding above, not here.
+`TileGrid` is fully controlled: `layout` in, `onLayoutChange` out — the tree it draws may be a
+narrow-width derivation, while the tree it hands back is the one it was given. The codec
+round-trips the tree; entry payloads and unknown-key preservation belong to the host binding
+above, and the tile document itself to `tileDocStore.ts`, not here.
