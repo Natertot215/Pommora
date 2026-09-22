@@ -173,7 +173,7 @@ export function WindowBase({
   const detail = hasFooter ? (
     <div className="window-detail">
       {children}
-      <div className="window-footer">{footer}</div>
+      <div className="window-footer reveal-band">{footer}</div>
     </div>
   ) : (
     children
@@ -245,7 +245,7 @@ export function WindowBase({
         <>
           <button
             type="button"
-            className="window-footer-toggle"
+            className="window-footer-toggle reveal-toggle"
             onClick={() => setFooterOpen((v) => !v)}
             aria-label={footerLabel?.(footerOpen)}
             title={footerLabel?.(footerOpen)}

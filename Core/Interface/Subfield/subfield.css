@@ -1,5 +1,5 @@
 .subfield {
-  height: var(--subfield-h);
+  height: var(--reveal-band-h);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -63,7 +63,7 @@
   transition: height var(--duration-base) var(--ease-base);
 }
 .content-view.subfield-open .subfield-reveal {
-  height: var(--subfield-h);
+  height: var(--reveal-band-h);
 }
 .shell.is-resizing .subfield-reveal {
   transition: none;
@@ -73,11 +73,11 @@
   right: var(--side-pane-clearance);
   z-index: 2;
   width: 44px;
-  height: var(--subfield-h);
+  height: var(--reveal-band-h);
   padding: 0 12px 0 0;
 }
 .content-view.subfield-open .subfield-toggle {
-  bottom: var(--subfield-h);
+  bottom: var(--reveal-band-h);
 }
 .content-view.subfield-near .subfield-toggle {
   opacity: 1;
@@ -90,12 +90,12 @@
 .footnotes-toggle {
   left: var(--sidebar-clearance);
   z-index: 2;
-  height: var(--subfield-h);
+  height: var(--reveal-band-h);
   padding: 0 0 0 var(--content-edge);
   justify-content: flex-start;
 }
 .content-view.subfield-open .footnotes-toggle {
-  bottom: var(--subfield-h);
+  bottom: var(--reveal-band-h);
 }
 .content-view.subfield-near-lead .footnotes-toggle {
   opacity: 1;

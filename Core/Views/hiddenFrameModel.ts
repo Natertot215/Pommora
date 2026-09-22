@@ -7,13 +7,12 @@ import {
 } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import {
-  nexusReorderIndex,
   regionScan,
   withinRegion,
   type FrameRow,
-  type FrameSlot,
   type Region,
 } from '@pommora/uix/Interactions/frameDndModel'
+import { nexusReorderIndex, type PaneSlot } from '@pommora/core/Properties/paneDrop'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 
@@ -73,7 +72,7 @@ export function hiddenPaneSlot(
   regions: { assigned: Region; all: Region },
   pointerY: number,
   draggedId: string,
-): FrameSlot | null {
+): PaneSlot | null {
   const dragged = byId.get(draggedId)
   if (!dragged) return null
   if (withinRegion(regions.all, pointerY) && !withinRegion(regions.assigned, pointerY)) {

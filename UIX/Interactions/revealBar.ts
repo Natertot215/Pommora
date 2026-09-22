@@ -32,7 +32,7 @@ export function useRevealNear(): {
       if (!rect.current) {
         rect.current = e.currentTarget.getBoundingClientRect()
         leadEdge.current = leadOrigin(
-          e.currentTarget.querySelector('.footnotes-toggle'),
+          e.currentTarget.querySelector('[data-reveal-lead]'),
           rect.current.left,
         )
       }

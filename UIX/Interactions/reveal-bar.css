@@ -1,14 +1,15 @@
+:root {
+  --reveal-band-h: 24px;
+}
+
 /* The toggle rests invisible and reveals on hover, focus, or a host-marked "near" region — generous without swallowing clicks beneath. */
-.window-footer,
-.subfield-reveal {
+.reveal-band {
   flex: none;
   height: 0;
   overflow: hidden;
 }
 
-.window-footer-toggle,
-.subfield-toggle,
-.footnotes-toggle {
+.reveal-toggle {
   position: absolute;
   bottom: 0;
   display: inline-flex;
@@ -30,17 +31,11 @@
     background var(--duration-fast) var(--ease-base);
 }
 
-.window-footer-toggle:hover,
-.window-footer-toggle:focus-visible,
-.subfield-toggle:hover,
-.subfield-toggle:focus-visible,
-.footnotes-toggle:hover,
-.footnotes-toggle:focus-visible {
+.reveal-toggle:hover,
+.reveal-toggle:focus-visible {
   opacity: 1;
 }
 
-.window-footer-toggle:hover,
-.subfield-toggle:hover,
-.footnotes-toggle:hover {
+.reveal-toggle:hover {
   background: var(--state-hover);
 }

@@ -47,11 +47,8 @@ import { StatusEditor } from './StatusEditor'
 import { URLEditor } from './URLEditor'
 import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
-import {
-  nexusReorderIndex,
-  type PaneDrop,
-  type FrameRow,
-} from '@pommora/uix/Interactions/frameDndModel'
+import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
+import { frameSlot, nexusReorderIndex, type PaneDrop } from '../paneDrop'
 import {
   CREATABLE_TYPES,
   PropertyTypeIcon,
@@ -541,7 +538,12 @@ export function PropertyFrame({
         />
       }
     >
-      <FrameDnd rows={paneRows} labelFor={nameFor} onDrop={(drop) => void handleDrop(drop)}>
+      <FrameDnd
+        rows={paneRows}
+        labelFor={nameFor}
+        onDrop={(drop) => void handleDrop(drop)}
+        slot={frameSlot}
+      >
         <ListGroups
           assigned={props}
           unassigned={unassigned}
