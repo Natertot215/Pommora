@@ -11,7 +11,7 @@ import {
   isWindowTarget,
   TAB_FAMILY,
   type NavRef,
-  type PageTarget,
+  type WindowTarget,
   type SelectTarget,
 } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
@@ -19,7 +19,7 @@ import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuA
 import { isOpenInTabs, liveTarget } from './tabsModel'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { navKey } from './navRecents'
-import { pageTargetFromNav, type ResolvedNav } from './navResolve'
+import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
@@ -205,9 +205,9 @@ export function NavList({
     if (groupKey === 'pins') reorderPin(activeId, over)
     else onReorderRecent?.(activeId, over)
   }
-  const carry = (key: string): PageTarget | null => {
+  const carry = (key: string): WindowTarget | null => {
     const it = rows.find((r) => r.key === key)
-    return (it && pageTargetFromNav(it, tree)) ?? null
+    return (it && windowTargetFromNav(it, tree)) ?? null
   }
   const ghostOf = (key: string): React.ReactNode => {
     const it = rows.find((r) => r.key === key)

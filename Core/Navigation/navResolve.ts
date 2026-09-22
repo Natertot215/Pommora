@@ -1,6 +1,6 @@
 // An entry that no longer resolves is RENDER-pruned, never dropped from storage — a cross-nexus switch resolves everything to null, and auto-deleting would wipe durable favorites.
 
-import type { NavRef } from '@pommora/core/Navigation/navRef'
+import type { NavRef, WindowTarget } from '@pommora/core/Navigation/navRef'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { pagesByIdOf } from '../Nexus/treeIndex'
@@ -49,6 +49,13 @@ export function resolvePins(index: ResolveIndex, pins: NavRef[]): ResolvedNav[] 
 }
 
 // A nav row's `path` is a breadcrumb, not a file path — a glance needs the file path from the id→path map.
+// What a nav row carries into a tab row: a page with its file path, or a Space.
+export function windowTargetFromNav(it: ResolvedNav, tree: NexusTree | null): WindowTarget | null {
+  return it.target.kind === 'space'
+    ? { kind: 'space', id: it.target.id }
+    : pageTargetFromNav(it, tree)
+}
+
 export function pageTargetFromNav(
   it: ResolvedNav,
   tree: NexusTree | null,

@@ -7,6 +7,7 @@ import {
   resolvePins,
   resolveRecents,
   resolveWith,
+  windowTargetFromNav,
 } from './navResolve'
 import { pagesByIdOf, resolveIndexOf } from '../Nexus/treeIndex'
 import { makeTree } from '../Testing/testTree'
@@ -161,6 +162,35 @@ describe('pageTargetFromNav', () => {
   it('returns null for a non-page nav ref', () => {
     const tree = makeTree()
     expect(pageTargetFromNav(navFor({ kind: 'collection', id: 'c1' }, tree), tree)).toBeNull()
+  })
+
+  it('carries a Space as its own target and a page as the page target', () => {
+    const tree = {
+      ...makeTree(),
+      contexts: [
+        {
+          def: { id: 'g1', title: 'Realms', singular: 'Realm' },
+          spaces: [
+            {
+              kind: 'space' as const,
+              id: 'sp1',
+              title: 'Astral',
+              path: '.nexus/contexts/Realms/Astral',
+              contextId: 'g1',
+            },
+          ],
+        },
+      ],
+    }
+    expect(windowTargetFromNav(navFor({ kind: 'space', id: 'sp1' }, tree), tree)).toEqual({
+      kind: 'space',
+      id: 'sp1',
+    })
+    expect(windowTargetFromNav(navFor({ kind: 'page', id: 'p1' }, tree), tree)).toMatchObject({
+      kind: 'page',
+      id: 'p1',
+    })
+    expect(windowTargetFromNav(navFor({ kind: 'collection', id: 'c1' }, tree), tree)).toBeNull()
   })
 
   it('returns null when the page id is absent from the tree', () => {
