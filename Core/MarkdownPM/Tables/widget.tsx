@@ -116,6 +116,10 @@ export function applySavedHeadingCols(view: EditorView, indices: number[]): void
 }
 
 let MarkdownTableComp: typeof import('./MarkdownTable').MarkdownTable | undefined
+const loadTable = (): Promise<void> =>
+  import('./MarkdownTable').then(({ MarkdownTable }) => {
+    MarkdownTableComp = MarkdownTable
+  })
 interface TableDom extends ReactDom {
   _height?: HeightBox
   _ro?: ResizeObserver
@@ -348,18 +352,22 @@ class TableWidget extends ReactWidget {
         }
       />,
     )
+    // Queued behind the first render's flush, so the reserved height yields only once the table has drawn.
+    queueMicrotask(() => dom.style.removeProperty('min-height'))
   }
 
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('div') as TableDom
     dom.className = 'mdpm-tbl-widget'
+    // A table drawn before reserves its last height until it renders, so CodeMirror measures it at size rather than collapsing it.
+    if (this.height.px > 0) {
+      dom.style.minHeight = `${this.height.px}px`
+    }
     if (MarkdownTableComp) {
       this.renderInto(dom, view)
     } else {
-      void import('./MarkdownTable').then(({ MarkdownTable }) => {
-        MarkdownTableComp = MarkdownTable
-        if (this.destroyed) return
-        this.renderInto(dom, view)
+      void loadTable().then(() => {
+        if (!this.destroyed) this.renderInto(dom, view)
       })
     }
     return dom
@@ -530,6 +538,8 @@ export function tableWidgetExtension(
   connections?: ConnGetter,
   onHeadingColsChange?: (indices: number[]) => void,
 ): Extension {
+  // Loaded ahead so the first table to scroll in draws with its frame rather than after an import.
+  if (!MarkdownTableComp) void loadTable()
   const persist = EditorView.updateListener.of((u) => {
     // Any change to the set is written back — a toggle, or a remap correcting stale ordinals so a reload can't re-apply them — but not a load, which is where the set came from.
     if (u.startState.field(headingColField) === u.state.field(headingColField)) return

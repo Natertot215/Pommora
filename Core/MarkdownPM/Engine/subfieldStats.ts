@@ -2,7 +2,8 @@ import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import { inlineSpans } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { lineIndexAt, scanDoc, type DocScan } from './docScan'
-import { perText, scanOf } from './scanCache'
+import { perText } from './perText'
+import { scanOf, TEXT_SLOTS } from './scanCache'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
@@ -82,7 +83,7 @@ function tableProse(scan: DocScan): Map<number, string> {
 export const computeStats = (body: string): PageStats => statsOf(body, scanOf)
 
 /** One answer per body string: the footer mounts two items needing the same figures on one render, and the prose pass walks the whole document. */
-export const pageStats = perText(computeStats)
+export const pageStats = perText(computeStats, TEXT_SLOTS)
 
 /** A highlight is a fresh string on every drag frame, so it scans outside the shared cache: that cache holds four documents and the editor reads its own document from it. */
 export const selectionStats = (text: string): PageStats => statsOf(text, scanDoc)

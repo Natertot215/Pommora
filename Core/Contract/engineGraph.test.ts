@@ -24,6 +24,7 @@ describe('the engine graph from serve.ts', () => {
     expect(graph.files.filter((f) => f.startsWith('UIX/'))).toEqual([
       'UIX/Interactions/chords.ts',
       'UIX/Theme/colors.ts',
+      'UIX/Utilities/capMap.ts',
       'UIX/Utilities/clamp.ts',
       'UIX/Utilities/moveItem.ts',
     ])

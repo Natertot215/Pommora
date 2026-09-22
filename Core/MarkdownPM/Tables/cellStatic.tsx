@@ -18,6 +18,7 @@ import {
   railTypeClass,
   type ListGlyph,
 } from '../Engine/intents'
+import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { applyChanges, checkboxToggleChange } from '../Engine/listDragModel'
 import {
@@ -36,6 +37,9 @@ import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
 
+// KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
+const cellTokens = perText(tokenize, 4096)
+
 // `base` is where `text` begins in the cell, because every reader of `data-link-span` resolves it against the WHOLE cell; a line rendered on its own would hand them offsets from a document that does not exist.
 export function renderCellContent(
   text: string,
@@ -46,7 +50,7 @@ export function renderCellContent(
 ): React.ReactNode {
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
   if (!/[*_~`[$=]/.test(text)) return text
-  const tokens = tokenize(text)
+  const tokens = cellTokens(text)
   if (tokens.length === 0) return text
   const conn = getConn?.()
   const out: React.ReactNode[] = []

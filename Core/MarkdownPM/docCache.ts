@@ -3,7 +3,7 @@ import type { Text } from '@codemirror/state'
 import { docLineIntents } from './Engine/intents'
 import type { MarkdownScope } from './Engine/detect'
 import { scanOf } from './Engine/scanCache'
-import { headingOutline } from './Engine/headingScan'
+import { headingOutlineOf } from './Engine/headingScan'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import type { Token } from './Engine/tokens'
 
@@ -35,7 +35,7 @@ export function perScopedDoc<T>(
 
 export const docLineIntentsOf = perScopedDoc((doc, scope) => docLineIntents(docScan(doc), scope))
 
-export const docOutline = perDoc((doc) => headingOutline(docString(doc)))
+export const docOutline = perDoc((doc) => headingOutlineOf(docScan(doc)))
 
 export const docHeadingKeys = perDoc((doc) => docOutline(doc).map((h) => normalizeTitle(h.text)))
 

@@ -3,8 +3,10 @@ import { gfm } from 'micromark-extension-gfm'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import type { Root } from 'mdast'
 
+const options = { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] }
+
 export function parse(text: string): Root {
-  return fromMarkdown(text, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] })
+  return fromMarkdown(text, options)
 }
 
 // Line-scoped so an unclosed `[[` never bleeds across lines.
