@@ -280,7 +280,7 @@
 }
 .window .footnotes-toggle {
   left: 0;
-  z-index: 2;
+  z-index: 4;
   height: var(--window-footer-h);
   padding: 0 12px 0 var(--window-footer-lead, 14px);
   justify-content: flex-start;
