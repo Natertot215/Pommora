@@ -83,7 +83,8 @@ interface WindowBaseProps {
   children: ReactNode
 }
 
-const DRAG_SURFACES = '.window, .window-drag, .window-row, .window-panel'
+const DRAG_SURFACES =
+  '.window, .window-drag, .window-row, .window-panel, .window-body, .window-tabwrap'
 
 export function WindowBase({
   closing,

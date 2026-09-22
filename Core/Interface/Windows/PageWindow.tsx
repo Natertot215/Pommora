@@ -14,7 +14,7 @@ import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
 import './page-window.css'
 
-const DRAG_SURFACES = '.window-tab-body, .window-tabwrap, .tab-scroll, .tab-strip'
+const DRAG_SURFACES = '.tab-scroll, .tab-strip'
 
 const SLIDE_PX = 14
 

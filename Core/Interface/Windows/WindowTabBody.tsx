@@ -109,12 +109,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
 
   const body = target && (
     <div
-      className={cx(
-        'window-tab-body',
-        'window-body',
-        'over-scroll',
-        pageTarget !== null && 'page-tile-grows',
-      )}
+      className={cx('window-body', 'over-scroll', pageTarget !== null && 'page-tile-grows')}
       ref={bodyRef}
     >
       {pageTarget ? (
