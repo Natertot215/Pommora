@@ -170,7 +170,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         {body ?? (
           <div className="navwindow-main">
             {bannered ? (
-              <NavBanner search={searchField} empty={() => searchRow} windowed />
+              <NavBanner search={searchField} empty={() => searchRow} chrome="window" />
             ) : (
               searchRow
             )}

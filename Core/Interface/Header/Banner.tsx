@@ -24,7 +24,7 @@ export function Banner({
   chrome = 'detail',
 }: {
   owner: BannerOwner
-  chrome?: 'detail' | 'window-title' | 'window-banner'
+  chrome?: 'detail' | 'window'
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
@@ -85,7 +85,7 @@ export function Banner({
   const bannerRef = useRef<HTMLDivElement>(null)
   const { openMenu, run, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
     useBannerMenu(owner.path, owner.kind, { value: owner.banner, frame: bannerRef })
-  useWindowBannerSeat(chrome === 'window-banner', run)
+  useWindowBannerSeat(chrome === 'window', run)
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
@@ -117,7 +117,7 @@ export function Banner({
       }
     />
   )
-  if (chrome === 'window-title' || !bannerSrc) {
+  if (!bannerSrc) {
     return (
       <div className={`banner-empty${homeClass}${surfaceClass}`}>
         {chrome === 'detail' && <AddBannerButton onClick={() => void addOrChange()} />}
@@ -134,10 +134,7 @@ export function Banner({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={bannerRef}
-      className={cx(
-        `banner${homeClass}${surfaceClass}`,
-        chrome === 'window-banner' && 'window-banner',
-      )}
+      className={cx(`banner${homeClass}${surfaceClass}`, chrome === 'window' && 'window-banner')}
       onContextMenu={(e) => {
         e.preventDefault()
         void openMenu()
@@ -166,7 +163,7 @@ export function Banner({
         <div
           className={cx(
             'banner-title',
-            chrome === 'window-banner' && 'window-banner-title',
+            chrome === 'window' && 'window-banner-title',
             'title-shadow',
           )}
         >

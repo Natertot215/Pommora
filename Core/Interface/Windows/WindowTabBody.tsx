@@ -44,7 +44,7 @@ function SpaceTabBody({
 }): React.JSX.Element {
   return (
     <>
-      <Banner owner={owner} chrome={banner ? 'window-banner' : 'window-title'} />
+      <Banner owner={banner ? owner : { ...owner, banner: undefined }} chrome="window" />
       <div className="tile-host-frame">
         <TileHost key={host.id} host={host} connections={connections} />
       </div>
