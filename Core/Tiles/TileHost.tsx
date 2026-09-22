@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   knownTile,
   NEW_TILE_H,
@@ -35,6 +35,7 @@ import {
   tileSourceInfo,
 } from './tileKinds'
 import { tileMenuItems } from './tileHandleMenu'
+import { isTileRemoving, markTileRemoving } from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
 import './tile-base.css'
@@ -106,8 +107,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles, setBusy } =
     useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
-  // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write would land after the trash and resurrect the file as an entry-less orphan.
-  const removing = useRef(new Set<string>())
   const tree = useSession((s) => s.tree)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const pickers = useMemo(
@@ -146,7 +145,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   useEscape(editingId !== null, () => setEditingId(null))
 
-  const suppressFlush = useCallback((id: string) => removing.current.has(id), [])
+  const suppressFlush = useCallback((id: string) => isTileRemoving(id), [])
 
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
@@ -212,7 +211,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
       void askRemoveTile().then((ok) => {
         if (!ok) return
         // Order is load-bearing: suppress the tile's editor flush, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
-        removing.current.add(id)
+        markTileRemoving(id)
         setEditingId((cur) => (cur === id ? null : cur))
         commitLayout((cur) => removeLeaf(cur, id))
         void dialer().ask('tiles:removeTile', host, id).then(refreshEntries)

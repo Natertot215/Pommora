@@ -4,6 +4,7 @@ import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import { createBodyWriter } from '../../Session/saveScheduler'
+import { readTileBody, writeTileBody } from '../tileDocStore'
 import { host as dialer } from '../../Platform/dialer'
 
 const saves = createBodyWriter()
@@ -26,15 +27,39 @@ export function MarkdownTile({
   suppressFlush?: (tileId: string) => boolean
   locked?: boolean
 }): React.JSX.Element {
-  const [body, setBody] = useState<string | null>(null)
+  const [seed, setSeed] = useState<{ no: number; editing: boolean; text: string | null }>({
+    no: 0,
+    editing,
+    text: null,
+  })
+  // The mount that did the typing must find its own text on re-entry and keep its editor, or the edit's undo history is gone.
+  const mine = useRef<string | null>(null)
   const editorHost = useEditorHost({ connections })
+  if (seed.editing !== editing) {
+    const held = editing ? readTileBody(tileId) : null
+    if (held !== null && held !== (mine.current ?? seed.text)) {
+      mine.current = held
+      setSeed((s) => ({ no: s.no + 1, editing, text: held }))
+    } else setSeed((s) => ({ ...s, editing }))
+  }
 
   useEffect(() => {
+    // Another mount's typing is newer than the file, so the slot leads the disk whenever it holds this tile.
+    const held = readTileBody(tileId)
+    if (held !== null) {
+      setSeed((s) => ({ no: s.no + 1, editing: s.editing, text: held }))
+      return
+    }
     let live = true
     void dialer()
       .ask('tiles:readMarkdown', host, tileId)
       .then((r) => {
-        if (live) setBody(r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null)
+        if (!live) return
+        setSeed((s) => ({
+          no: s.no + 1,
+          editing: s.editing,
+          text: r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null,
+        }))
       })
     return () => {
       live = false
@@ -51,13 +76,18 @@ export function MarkdownTile({
     [editing, tileId],
   )
 
-  const scheduleSave = (next: string): void =>
+  const scheduleSave = (next: string): void => {
+    // Synchronous, before the debounce and before any await: the slot must hold what was typed by the time the next pointerdown moves the edit to another mount.
+    writeTileBody(tileId, next)
+    mine.current = next
     saves.schedule(tileId, next, () =>
       suppressRef.current?.(tileId)
         ? Promise.resolve({ ok: true })
         : dialer().ask('tiles:writeMarkdown', host, tileId, next),
     )
+  }
 
+  const body = seed.text
   if (body === null) return <div className="markdown-tile" />
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
@@ -72,6 +102,7 @@ export function MarkdownTile({
       }}
     >
       <MarkdownEditor
+        key={seed.no}
         initialBody={body}
         onChange={scheduleSave}
         host={editorHost}
