@@ -30,7 +30,7 @@ export function PageHeader({
   page: HeaderPage
   onBannerDone: () => void
   chrome?: 'detail' | 'window'
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const { id, path, title, cover, icon } = page
   const coverSrc = useAssetUrl(cover)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -68,6 +68,9 @@ export function PageHeader({
     onRepick,
   } = useBannerMenu(path, 'page', { value: cover, frame: bannerRef, onDone: onBannerDone })
   useWindowBannerSeat(chrome === 'window', run)
+
+  // A windowed page without a banner draws no header at all; the seat above still takes the strip's Add Banner.
+  if (chrome === 'window' && !coverSrc) return null
 
   const glyph = entityIcon('page', icon, defaultIcons)
   const titleHeader = (
@@ -108,7 +111,7 @@ export function PageHeader({
         </div>
       ) : (
         <>
-          {chrome === 'detail' && <AddBannerButton onClick={() => void addOrChange()} />}
+          <AddBannerButton onClick={() => void addOrChange()} />
           {titleHeader}
           <div className="mdpm-divider" />
         </>

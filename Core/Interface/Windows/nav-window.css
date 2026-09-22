@@ -68,3 +68,10 @@
   margin-top: 4px;
   color: var(--label-secondary);
 }
+
+/* The NavWindow pads its whole body by the app inset; a banner band bleeds it so the band runs edge to edge, as the Page Window's already does. */
+.navwindow .page-tile.is-window-chrome > .mdpm-header .mdpm-banner,
+.navwindow .window-body .banner {
+  margin-left: calc(-1 * var(--app-inset));
+  margin-right: calc(-1 * var(--app-inset));
+}

@@ -136,12 +136,6 @@
 .page-tile.is-window-chrome > .mdpm-header .detail-title {
   --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
 }
-.page-tile.is-window-chrome > .mdpm-header:not(.has-banner) .detail-title {
-  padding: 6px calc(16px * var(--page-detail-scale)) 14px;
-}
-.page-tile.is-window-chrome > .mdpm-header .mdpm-divider {
-  margin: 0 calc(16px * var(--page-detail-scale));
-}
 
 /* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF with a phantom baseline gap). */
 .web-tile {
