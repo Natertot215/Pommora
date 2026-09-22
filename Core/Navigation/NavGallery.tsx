@@ -10,10 +10,10 @@ import {
   CardTitle,
   CardTrail,
 } from '@pommora/uix/Cards/Card'
-import { TAB_FAMILY, type NavRef, type PageTarget } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY, type NavRef, type WindowTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { navKey } from './navRecents'
-import { pageTargetFromNav, type ResolvedNav } from './navResolve'
+import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
@@ -41,9 +41,9 @@ export function NavGallery({
   const tree = useSession((s) => s.tree)
   const find = (key: string): ResolvedNav | undefined =>
     pins.find((p) => p.key === key) ?? items.find((r) => r.key === key)
-  const carry = (key: string): PageTarget | null => {
+  const carry = (key: string): WindowTarget | null => {
     const it = find(key)
-    return (it && pageTargetFromNav(it, tree)) ?? null
+    return (it && windowTargetFromNav(it, tree)) ?? null
   }
   const renderOverlay = (key: string): React.ReactNode => {
     const it = find(key)
