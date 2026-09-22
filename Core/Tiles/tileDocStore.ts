@@ -41,6 +41,27 @@ export const writeTileBody = (tileId: string, text: string): void => {
 
 export const readTileBody = (tileId: string): string | null => bodies.get(tileId) ?? null
 
+const bodySaves = new Map<string, number>()
+const bodyListeners = new Map<string, Set<() => void>>()
+
+// A sibling mount re-seeds when a save lands — once per debounce, never per keystroke.
+export const settleTileBody = (tileId: string): void => {
+  bodySaves.set(tileId, (bodySaves.get(tileId) ?? 0) + 1)
+  for (const fn of bodyListeners.get(tileId) ?? []) fn()
+}
+
+export const tileBodySaves = (tileId: string): number => bodySaves.get(tileId) ?? 0
+
+export const subscribeTileBody = (tileId: string, fn: () => void): (() => void) => {
+  const set = bodyListeners.get(tileId) ?? new Set()
+  bodyListeners.set(tileId, set)
+  set.add(fn)
+  return () => {
+    set.delete(fn)
+    if (set.size === 0) bodyListeners.delete(tileId)
+  }
+}
+
 const removing = new Set<string>()
 
 // No mount's editor may flush a tile mid-removal: the write would land after the trash and resurrect the file as an entry-less orphan.
@@ -223,6 +244,7 @@ export function dropAllTileDocs(): void {
   const live = [...docs.values()]
   docs.clear()
   bodies.clear()
+  bodySaves.clear()
   removing.clear()
   for (const doc of live) {
     if (doc.timer) clearTimeout(doc.timer)

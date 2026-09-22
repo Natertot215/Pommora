@@ -110,6 +110,19 @@ describe("a markdown tile's shared body", () => {
     expect(text()).toBe('on disk!!')
   })
 
+  it('mirrors a landed save to the mount that is not editing, and only then', async () => {
+    await mountBoth(true, false)
+    act(() => editors()[0]?.click())
+    expect(text(1)).toBe('on disk')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 500))
+    })
+    expect(write).toHaveBeenCalledOnce()
+    expect(text(0)).toBe('on disk!')
+    expect(text(1)).toBe('on disk!')
+    expect(seeds).toEqual(['on disk', 'on disk', 'on disk!'])
+  })
+
   it('starts the mount clicked into from the text the other mount typed', async () => {
     await mountBoth(true, false)
     expect(text(0)).toBe('on disk')
