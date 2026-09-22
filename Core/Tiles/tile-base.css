@@ -129,7 +129,7 @@
 }
 .page-tile.is-window-chrome > .mdpm-header .mdpm-banner {
   position: relative;
-  height: var(--embed-banner-h);
+  height: 230px;
   margin-top: calc(-1 * var(--window-toolbar-h));
   animation: none;
 }
