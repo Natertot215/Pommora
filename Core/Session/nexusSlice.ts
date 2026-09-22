@@ -17,6 +17,7 @@ import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
+import { flushAllTileDocs } from '../Tiles/tileDocStore'
 import { flushAllPageSaves, flushAllSessionSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
@@ -69,6 +70,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       set({ navOpen: false, pageWindow: null })
       // Awaited so main binds the OLD root: a late flush would overwrite a same-path file there.
       await flushAllPageSaves()
+      await flushAllTileDocs()
       await flushAllSessionSaves()
       const opened = await attempt()
       if (!opened.ok) {
