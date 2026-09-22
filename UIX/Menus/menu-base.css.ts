@@ -215,7 +215,10 @@ export const footing = style([
 
 export const footingBar = style({ display: 'flex', flexDirection: 'column' })
 
-export const footingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])
+export const footingLabel = style([
+  text.footnote.emphasized,
+  { selectors: { '&&': { color: c.label.secondary } } },
+])
 export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
 export const footingQuiet = style({ selectors: { '&&': { color: c.label.tertiary } } })
 
