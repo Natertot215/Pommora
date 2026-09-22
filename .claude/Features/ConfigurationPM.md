@@ -54,7 +54,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Active Tab Cache | `tabCache` | The most open tabs kept active before older ones fall to on-demand loading. | **5** · 10 · 15 · 20 Tabs |
 | Pause Media On Tab Switch | `pauseMediaOnTabSwitch` | A tab's video and audio pause when it leaves the main view; playback does not resume on return. | **On** · Off |
 | Open Matrix In | `matrixOpenIn` | Where the ribbon's Matrix icon opens it. | **New Tab** · Window |
-| Show Banners In Windowed Pages | `windowPageBanners` | A Page opened in a floating window carries its banner with the title over it, or its title inline when it has none; the banner is managed from the tab's own menu. | On · **Off** |
+| Show Banners In Windowed Pages | `windowPageBanners` | A Page opened in a floating window draws its banner with the title over it, managed from the tab's own menu. | On · **Off** |
 | Show Banners In Windowed Spaces | `windowSpaceBanners` | A Space opened in a floating window carries its banner; off, its title stands alone above the board. | On · **Off** |
 
 #### Appearance
