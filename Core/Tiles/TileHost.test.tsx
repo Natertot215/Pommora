@@ -2,9 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../MarkdownPM/editorHarness'
 import { TileHost } from './TileHost'
-import { dropAllTileDocs, isTileRemoving, markTileRemoving } from './tileDocStore'
+import { dropAllTileDocs, isTileRemoving, markTileRemoving, readTileBody } from './tileDocStore'
 
 vi.stubGlobal(
   'ResizeObserver',
@@ -106,7 +107,15 @@ describe('the host over the renderer table', () => {
 
   it("suppresses every mount's flush for a tile a sibling is removing", async () => {
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
-    expect(await until(() => host.querySelector('.markdown-tile') !== null)).toBe(true)
+    expect(await until(() => host.querySelector('.cm-editor') !== null)).toBe(true)
+    await act(async () => {
+      ;(host.querySelector('.markdown-tile') as HTMLElement).click()
+    })
+    const view = EditorView.findFromDOM(host.querySelector('.cm-editor') as HTMLElement)
+    await act(async () => {
+      view?.dispatch({ changes: { from: view.state.doc.length, insert: '!' } })
+    })
+    expect(readTileBody('m')).toBe('hello!')
     markTileRemoving('m')
     expect(isTileRemoving('m')).toBe(true)
     await act(async () => root.render(null))
