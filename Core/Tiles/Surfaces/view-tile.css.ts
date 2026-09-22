@@ -74,7 +74,7 @@ export const bandSpace = style({
   transition: `grid-template-rows ${bandReveal}`,
 })
 export const bandSpaceHidden = style({ gridTemplateRows: '0fr' })
-export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
+export const spaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
 export const titleIcon = style({ color: c.label.control })
 
@@ -124,11 +124,18 @@ globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
 
 globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 
+const LOCK_FADE = 'opacity var(--duration-base) var(--ease-base)'
 export const bandLock = style({
   display: 'inline-flex',
-  transition: 'opacity var(--duration-base) var(--ease-base)',
+  transition: `${LOCK_FADE}, visibility 0s`,
 })
-export const bandLockHidden = style({ opacity: 0, pointerEvents: 'none' })
+export const bandLockHidden = style({
+  opacity: 0,
+  visibility: 'hidden',
+  transition: `${LOCK_FADE}, visibility 0s var(--duration-base)`,
+})
+// The lock's own visibility governs it, not the tile-hover reveal its button class carries.
+globalStyle(`${bandLock} ${settingsBtn}`, { opacity: 1 })
 
 export const listPane = style({ minWidth: 150 })
 
@@ -144,7 +151,11 @@ export const body = style({
   vars: { '--over-scroll-fade': FADE_RISE },
 })
 
-export const bodyFlush = style({ marginTop: 0, paddingTop: BAND_PAD_Y })
+export const bodyFlush = style({
+  marginTop: 0,
+  paddingTop: BAND_PAD_Y,
+  vars: { '--over-scroll-fade': BAND_PAD_Y },
+})
 
 globalStyle(`${body} .table-view`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },

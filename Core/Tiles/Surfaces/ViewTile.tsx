@@ -20,7 +20,7 @@ import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { AccessoryButton, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
-import { GHOST_DWELL_MS } from '@pommora/uix/Interactions/ghostCreate'
+import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -106,70 +106,27 @@ const BAND_LOCK_LINGER_MS = 2000
 // KNOB — the beat that carries the pointer between reveal zones (title → band → heading row)
 const PEEK_GRACE_MS = 150
 
-// Turns on after the ghost-create dwell and off after the grace; `held` keeps it on while something anchored in its zone is open.
-function useHoverDwell(
-  active: boolean,
-  held: boolean,
-): { on: boolean; hover: (inside: boolean) => void; enter: () => void } {
-  const [peek, setPeek] = useState(false)
-  const peekRef = useRef(peek)
-  peekRef.current = peek
-  const heldRef = useRef(held)
-  heldRef.current = held
-  const inside = useRef(false)
-  const pending = useRef<{ id: number; open: boolean } | null>(null)
-  const cancel = (): void => {
-    if (pending.current) window.clearTimeout(pending.current.id)
-    pending.current = null
-  }
-  const settle = (): void => {
-    const open = inside.current || heldRef.current
-    if (pending.current?.open === open) return
-    cancel()
-    if (open === peekRef.current) return
-    const id = window.setTimeout(
-      () => {
-        pending.current = null
-        setPeek(open)
-      },
-      open ? GHOST_DWELL_MS : PEEK_GRACE_MS,
-    )
-    pending.current = { id, open }
-  }
-  const hover = (v: boolean): void => {
-    inside.current = v
-    settle()
-  }
-  const enter = (): void => {
-    inside.current = true
-    cancel()
-    setPeek(true)
-  }
-  useEffect(settle, [held])
-  useEffect(
-    () => () => {
-      cancel()
-      inside.current = false
-      setPeek(false)
-    },
-    [active],
-  )
-  return { on: active && peek, hover, enter }
+type PeekAnchor = { kind: 'zone'; el: Element } | { kind: 'row'; first: Element } | null
+
+// A table reveals from its heading row; cards, which have none, from the first group band ahead of the first card, else the first row of cards.
+function resolvePeekAnchor(body: Element): PeekAnchor {
+  const head = body.querySelector('.table-head')
+  if (head) return { kind: 'zone', el: head }
+  const first = body.querySelector('.cards-view .card')
+  if (!first) return null
+  const band = body.querySelector('.group-band-row')
+  if (band && band.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING)
+    return { kind: 'zone', el: band }
+  return { kind: 'row', first }
 }
 
-// A table reveals from its heading row; cards, which have none, from the first group band, else the first row of cards.
-function isPeekAnchor(target: EventTarget, body: Element): boolean {
-  if (!(target instanceof Element)) return false
-  if (target.closest('.table-head')) return true
-  if (!target.closest('.cards-view')) return false
-  const band = body.querySelector('.group-band-row')
-  if (band) return band.contains(target)
+function inPeekAnchor(anchor: PeekAnchor, target: EventTarget): boolean {
+  if (!anchor || !(target instanceof Element)) return false
+  if (anchor.kind === 'zone') return anchor.el.contains(target)
   const card = target.closest('.card')
-  const first = body.querySelector('.card')
   return (
-    card !== null &&
-    first !== null &&
-    Math.abs(card.getBoundingClientRect().top - first.getBoundingClientRect().top) < 1
+    card?.parentElement === anchor.first.parentElement &&
+    Math.abs(card.getBoundingClientRect().top - anchor.first.getBoundingClientRect().top) < 1
   )
 }
 
@@ -281,8 +238,13 @@ export function ViewTile({
     : []
   const presence = usePillPresence(views)
   const viewsShown = entry.view_band !== false
-  const bandPeek = useHoverDwell(!viewsShown, listOpen || cfgOpen || renaming !== null)
-  const unlockOffer = useHoverDwell(viewsShown, false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const anchoredOpen =
+    listOpen || cfgOpen || menuOpen || renaming !== null || iconFor !== null || colorFor !== null
+  const bandPeek = useHoverDwell(!viewsShown, anchoredOpen, PEEK_GRACE_MS)
+  const unlockOffer = useHoverDwell(viewsShown, false, PEEK_GRACE_MS)
+  const peekAnchor = useRef<PeekAnchor>(null)
+  const dwell = viewsShown ? unlockOffer : bandPeek
   const bandOpen = viewsShown || bandPeek.on
   const [lockLingers, setLockLingers] = useState(false)
   useEffect(() => {
@@ -295,13 +257,29 @@ export function ViewTile({
   useEffect(() => {
     if (!lockPressed.current) return
     lockPressed.current = false
-    ;(viewsShown ? unlockOffer : bandPeek).enter()
+    dwell.enter()
   }, [viewsShown])
-  const hoverProps = (dwell: typeof bandPeek) => ({
-    onPointerEnter: () => dwell.hover(true),
-    onPointerLeave: () => dwell.hover(false),
+  const hoverProps = (zone: typeof dwell) => ({
+    onPointerEnter: () => zone.hover(true),
+    onPointerLeave: () => zone.hover(false),
   })
   const peekHover = viewsShown ? undefined : hoverProps(bandPeek)
+
+  // The anchor resolves once per entry into the body, so crossing cards reads no layout beyond the first row's.
+  const bodyHover = viewsShown
+    ? undefined
+    : {
+        onPointerOver: (e: React.PointerEvent<HTMLDivElement>) => {
+          const a = peekAnchor.current
+          if (!a || !(a.kind === 'zone' ? a.el : a.first).isConnected)
+            peekAnchor.current = resolvePeekAnchor(e.currentTarget)
+          bandPeek.hover(inPeekAnchor(peekAnchor.current, e.target))
+        },
+        onPointerLeave: () => {
+          peekAnchor.current = null
+          bandPeek.hover(false)
+        },
+      }
 
   if (!embedded || !source || !tree) return <div className="tile-inert" />
 
@@ -409,10 +387,21 @@ export function ViewTile({
     patchEntry({ display_title: !next || next === source.title ? undefined : next })
   }
 
+  const toggleViews = (): void => patchEntry({ view_band: viewsShown ? false : undefined })
+  const popHeld = async <A extends string>(
+    items: Parameters<typeof popMenu<A>>[0],
+  ): Promise<A | null> => {
+    setMenuOpen(true)
+    try {
+      return await popMenu(items)
+    } finally {
+      setMenuOpen(false)
+    }
+  }
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await popMenu(embedTitleMenuItems(iconShown, titleLevel, viewsShown))
+    const action = await popHeld(embedTitleMenuItems(iconShown, titleLevel, viewsShown))
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
     else if (action === 'change-icon') {
       menuAnchorRef.current = titleIconRef.current
@@ -424,11 +413,10 @@ export function ViewTile({
       patchEntry({ title_level: n === 4 ? undefined : n })
     }
   }
-  const toggleViews = (): void => patchEntry({ view_band: viewsShown ? false : undefined })
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await popMenu(
+    const action = await popHeld(
       embedAreaMenuItems({ viewStyle: dropdown ? 'dropdown' : 'toolbar', titleShown, viewsShown }),
     )
     if (action === 'show-title') patchEntry({ title: undefined })
@@ -442,7 +430,7 @@ export function ViewTile({
     e.stopPropagation()
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await popMenu(
+    const action = await popHeld(
       viewRowMenuItems({ titlesShown: labeled, deletable: entry.views.length > 1 }),
     )
     switch (action) {
@@ -491,9 +479,8 @@ export function ViewTile({
     </button>
   )
 
-  const lockShown = bandPeek.on || unlockOffer.on || lockLingers
   const bandLock = !locked && (
-    <span className={cx(s.bandLock, !lockShown && s.bandLockHidden)}>
+    <span className={cx(s.bandLock, !dwell.on && !lockLingers && s.bandLockHidden)}>
       <button
         type="button"
         className={settingsBtn}
@@ -577,7 +564,7 @@ export function ViewTile({
     >
       <div className={s.tile} onPointerDownCapture={onActivate}>
         <div className={cx(s.titleSpace, !titleShown && s.titleSpaceHidden)}>
-          <div className={s.titleSpaceInner}>
+          <div className={s.spaceInner}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
             <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)} {...peekHover}>
               <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
@@ -617,11 +604,8 @@ export function ViewTile({
             </div>
           </div>
         </div>
-        <div
-          className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)}
-          {...hoverProps(viewsShown ? unlockOffer : bandPeek)}
-        >
-          <div className={s.titleSpaceInner}>
+        <div className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)} {...hoverProps(dwell)}>
+          <div className={s.spaceInner}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
             <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
               {switcher}
@@ -631,13 +615,7 @@ export function ViewTile({
             </div>
           </div>
         </div>
-        <div
-          className={cx(s.body, !bandOpen && s.bodyFlush, 'over-scroll')}
-          onPointerOver={
-            viewsShown ? undefined : (e) => bandPeek.hover(isPeekAnchor(e.target, e.currentTarget))
-          }
-          onPointerLeave={viewsShown ? undefined : () => bandPeek.hover(false)}
-        >
+        <div className={cx(s.body, !bandOpen && s.bodyFlush, 'over-scroll')} {...bodyHover}>
           <div
             key={index}
             className={s.slideWrap}
