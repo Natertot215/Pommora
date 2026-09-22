@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import { createBodyWriter } from '../../Session/saveScheduler'
-import { readTileBody, writeTileBody } from '../tileDocStore'
+import {
+  readTileBody,
+  settleTileBody,
+  subscribeTileBody,
+  tileBodySaves,
+  writeTileBody,
+} from '../tileDocStore'
 import { host as dialer } from '../../Platform/dialer'
 
 const saves = createBodyWriter()
@@ -66,6 +72,21 @@ export function MarkdownTile({
     }
   }, [tileId])
 
+  const saved = useSyncExternalStore(
+    useCallback((fn: () => void) => subscribeTileBody(tileId, fn), [tileId]),
+    () => tileBodySaves(tileId),
+  )
+  useEffect(() => {
+    if (editing || saved === 0) return
+    const held = readTileBody(tileId)
+    if (held === null) return
+    setSeed((s) => {
+      if (held === (mine.current ?? s.text)) return s
+      mine.current = null
+      return { no: s.no + 1, editing: s.editing, text: held }
+    })
+  }, [saved, editing, tileId])
+
   const suppressRef = useRef(suppressFlush)
   suppressRef.current = suppressFlush
   useEffect(
@@ -80,11 +101,12 @@ export function MarkdownTile({
     // Synchronous, before the debounce and before any await: the slot must hold what was typed by the time the next pointerdown moves the edit to another mount.
     writeTileBody(tileId, next)
     mine.current = next
-    saves.schedule(tileId, next, () =>
-      suppressRef.current?.(tileId)
+    saves.schedule(tileId, next, () => {
+      settleTileBody(tileId)
+      return suppressRef.current?.(tileId)
         ? Promise.resolve({ ok: true })
-        : dialer().ask('tiles:writeMarkdown', host, tileId, next),
-    )
+        : dialer().ask('tiles:writeMarkdown', host, tileId, next)
+    })
   }
 
   const body = seed.text
