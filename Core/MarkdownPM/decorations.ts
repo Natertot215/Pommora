@@ -410,6 +410,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     head,
     view.viewport,
     scope,
+    !sel.empty,
   ))
     intents.push(it)
   const ranges: Range<Decoration>[] = []

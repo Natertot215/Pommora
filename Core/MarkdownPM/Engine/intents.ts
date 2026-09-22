@@ -262,6 +262,7 @@ function lineIntentsInto(
   selStart: number,
   intents: DecoIntent[],
   scope: MarkdownScope,
+  ranged = false,
 ): ListMarker | null {
   const line = scan.lines[i]
   const ls = scan.lineStarts[i]
@@ -273,7 +274,7 @@ function lineIntentsInto(
     base = chrome
   }
 
-  const li = pushConstruct(intents, line, ls, base, selStart, scope)
+  const li = pushConstruct(intents, line, ls, base, selStart, scope, ranged)
   if (li) {
     const contentFrom = ls + base + li.contentStart
     if (contentFrom < le)
@@ -346,13 +347,14 @@ export function assembleLineIntents(
   selStart: number,
   window?: { from: number; to: number },
   scope: MarkdownScope = 'page',
+  ranged = false,
 ): DecoIntent[] {
   const caret = caretLine(scan, selStart)
   const first = window ? lineIndexAt(scan, window.from) : 0
   const last = window ? lineIndexAt(scan, window.to) : scan.lines.length - 1
   const intents: DecoIntent[] = []
   for (let i = first; i <= last; i++) {
-    if (i === caret) lineIntentsInto(scan, i, selStart, intents, scope)
+    if (i === caret) lineIntentsInto(scan, i, selStart, intents, scope, ranged)
     else for (const it of cached.perLine[i]) intents.push(it)
   }
   for (let i = first; i <= last; i++) {
@@ -432,6 +434,7 @@ function pushConstruct(
   base: number,
   selStart: number,
   scope: MarkdownScope,
+  ranged: boolean,
 ): ListMarker | null {
   const inner = base === 0 ? line : line.slice(base)
   const innerStart = ls + base
@@ -439,8 +442,12 @@ function pushConstruct(
   const caretOnLine = selStart >= ls && selStart <= le
   const lm = parseListMarker(inner)
   const glyph = lm && listGlyphOf(lm)
+  // Only a resting caret reveals the marker: a drag's head snapping across the atomic marker would otherwise swap glyph and source under the pointer on every move.
   const onMarker =
-    lm !== null && selStart >= innerStart + lm.markerStart && selStart <= innerStart + lm.markerEnd
+    !ranged &&
+    lm !== null &&
+    selStart >= innerStart + lm.markerStart &&
+    selStart <= innerStart + lm.markerEnd
 
   const bulletAbsorbs = base > 0 && !onMarker && glyph === 'bullet'
   const hrAbsorbs = base > 0 && !caretOnLine && lm === null && isThematicBreakLine(inner)
