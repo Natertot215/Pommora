@@ -8,10 +8,9 @@
 
   --window-toolbar-h: 36px;
   --window-panel-inset: var(--app-inset);
-  /* What the host pads the body by; the body bleeds it back so a band inside runs to the glass edge. */
-  --window-body-gutter: 0px;
-  /* How far the band's trailing edge sits off the window, so the bar and its chevron travel together. */
-  --window-band-trail: 0px;
+  /* How much of the body each floating pane covers; content clears it, a band runs beneath it. They ride --io, so everything keyed to them moves in one frame. */
+  --window-clear-l: 0px;
+  --window-clear-r: 0px;
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
@@ -22,17 +21,14 @@
   --slide-breathing: calc(var(--surface-inset) * 2);
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
   /* Half the body's reserved panel gutter — the floating title rides the content column's center, not the frame's. */
-  --window-title-shift: calc(
-    var(--io) *
-    (var(--window-panel-r-w) + var(--window-panel-inset)) /
-    -2
-  );
+  --window-title-shift: calc(var(--window-clear-r) / -2);
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
-  /* KNOB — the height a banner band draws at inside a window, and the edges it runs to: under the strip and out to the glass. */
+  --window-body-pad: var(--window-toolbar-h) var(--window-clear-r) 0 var(--window-clear-l);
+  /* KNOB — the height a banner band draws at inside a window, and the edges it runs to: under the strip and the panes, out to the glass. */
   --window-banner-h: 160px;
-  --window-banner-edges: calc(-1 * (var(--window-toolbar-h) + var(--window-body-gutter)))
-    calc(-1 * var(--window-body-gutter)) 0;
+  --window-banner-edges: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
+    calc(-1 * var(--window-clear-l));
 
   /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;
@@ -46,6 +42,12 @@
 }
 .window.is-panel-left-open {
   --io-l: 1;
+}
+.window:has(> .window-panel-left-overlay) {
+  --window-clear-l: calc(var(--io-l) * (var(--window-panel-l-w) + var(--window-panel-inset)));
+}
+.window:has(> .window-panel-right-overlay) {
+  --window-clear-r: calc(var(--io) * (var(--window-panel-r-w) + var(--window-panel-inset)));
 }
 /* The toolbar strip is zero-height, so the move gesture needs this band; `z-index: 0` clears the body's flow without outranking it. */
 .window-drag {
@@ -92,27 +94,11 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  /* A scroller clips at its padding box, never inside it — so the bleed is a margin and the content's inset its padding. */
-  margin: calc(-1 * var(--window-body-gutter)) calc(-1 * var(--window-body-gutter)) 0;
-  padding: calc(var(--window-toolbar-h) + var(--window-body-gutter)) var(--window-body-gutter) 0;
+  padding: var(--window-body-pad);
   /* Content dissolves across the whole band it scrolls under; a window carrying no band keeps the kit's own edge fade. */
-  --over-scroll-fade: max(
-    calc(var(--window-toolbar-h) + var(--window-body-gutter)),
-    var(--os-fade-default)
-  );
+  --over-scroll-fade: max(var(--window-toolbar-h), var(--os-fade-default));
   overflow-y: auto;
   scrollbar-width: none;
-  transition: padding-right var(--duration-base) var(--ease-base);
-}
-.window.is-panel-right-open .window-body {
-  padding-right: calc(
-    var(--window-panel-r-w) +
-    var(--window-panel-inset) +
-    var(--window-body-gutter)
-  );
-}
-.window.is-resizing .window-body {
-  transition: none;
 }
 .window-pane-scroll {
   flex: 1;
@@ -267,20 +253,15 @@
 }
 
 .window-footer {
-  margin-right: var(--window-band-trail);
-  transition:
-    height var(--duration-base) var(--ease-base),
-    margin-right var(--duration-base) var(--ease-base);
+  margin: 0 var(--window-clear-r) 0 var(--window-clear-l);
+  transition: height var(--duration-base) var(--ease-base);
 }
 .window.is-footer-open .window-footer {
   height: var(--window-footer-h);
 }
-.window.is-panel-right-open {
-  --window-band-trail: calc(var(--window-panel-r-w) + var(--window-panel-inset));
-}
 .window-footer-toggle {
   /* The 16px is a KNOB — the chevron's inset from the band's trailing edge, clear of the se resize corner. */
-  right: calc(16px + var(--window-band-trail));
+  right: calc(16px + var(--window-clear-r));
   z-index: 4;
   width: 40px;
   height: calc(var(--window-footer-h) + 2px);
@@ -289,8 +270,16 @@
 .window.is-footer-open .window-footer-toggle {
   bottom: var(--window-footer-h);
 }
+/* Their edges ride --io each frame, and a transition on left or right would chase it. */
+.window .window-footer-toggle,
 .window .footnotes-toggle {
-  left: 0;
+  transition:
+    bottom var(--duration-base) var(--ease-base),
+    opacity var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
+}
+.window .footnotes-toggle {
+  left: var(--window-clear-l);
   z-index: 4;
   height: var(--window-footer-h);
   padding: 0 12px 0 var(--window-footer-lead, 14px);

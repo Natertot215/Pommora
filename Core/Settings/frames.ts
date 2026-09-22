@@ -422,6 +422,12 @@ export const FRAMES = roster([
             label: 'Show Banners In Windowed Spaces',
             hint: 'A Space opened in a window carries its banner; off, it carries its title alone.',
           },
+          {
+            kind: 'toggle',
+            key: 'windowNavBanner',
+            label: 'Show Banner In Navigation Window',
+            hint: 'The Navigation Window carries the Navigation View banner, with the search field over it.',
+          },
         ],
       },
     ],

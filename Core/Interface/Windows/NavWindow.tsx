@@ -12,6 +12,7 @@ import { resolveIndexOf } from '../../Nexus/treeIndex'
 import { windowTargetOf, useSession } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
+import { NavBanner } from '../../Navigation/NavBanner'
 import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowTabBody } from './WindowTabBody'
@@ -111,6 +112,17 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
+  const bannered = useSession((s) => s.personalization.windowNavBanner ?? false)
+  const searchRow = (
+    <div className="nav-search-row navwindow-search">
+      <SearchField
+        inputRef={searchRef}
+        className={text.body.standard}
+        value={query}
+        onValueChange={setQuery}
+      />
+    </div>
+  )
   const resolveIndex = tree ? resolveIndexOf(tree) : null
   // Its own list, never the main pane's selection — the bar states what this window is showing.
   const shownCount = results ? results.length : resolvedPins.length + shownRecents.length
@@ -135,7 +147,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       left={{
         windowId: 'navwindow',
         bounds: RAIL,
-        mode: 'inflow',
+        mode: 'overlay',
         open: target === null,
         className: 'navwindow-rail',
         children: (
@@ -159,14 +171,21 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       <div className="navwindow-content">
         {body ?? (
           <div className="navwindow-main">
-            <div className="nav-search-row navwindow-search">
-              <SearchField
-                inputRef={searchRef}
-                className={text.body.standard}
-                value={query}
-                onValueChange={setQuery}
+            {bannered ? (
+              <NavBanner
+                search={
+                  <SearchField
+                    inputRef={searchRef}
+                    className={cx('nav-view-search', text.headline.emphasized)}
+                    value={query}
+                    onValueChange={setQuery}
+                  />
+                }
+                empty={() => searchRow}
               />
-            </div>
+            ) : (
+              searchRow
+            )}
             <div className="navwindow-main-scroll over-scroll">
               {viewMode === 'gallery' ? (
                 <NavGallery

@@ -210,6 +210,7 @@ export const personalizationSchema = z.object({
   matrixOpenIn: recorded(MATRIX_OPEN_INS, 'window'),
   windowPageBanners: flag(),
   windowSpaceBanners: flag(),
+  windowNavBanner: flag(),
   tabTakeFocus: offOnly(),
   tabMinWidth: stepped(TAB_MIN_WIDTH),
   tabMaxWidth: stepped(TAB_MAX_WIDTH),
