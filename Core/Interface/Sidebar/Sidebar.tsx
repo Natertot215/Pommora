@@ -479,7 +479,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     if (owner?.openIn === 'page-preview') {
       if (e && isCmd(e))
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
-      else useSession.getState().openWindow({ id: page.id, path: page.path })
+      else useSession.getState().openWindowTab({ kind: 'page', id: page.id, path: page.path })
       return
     }
     void select({ kind: 'page', id: page.id, path: page.path })

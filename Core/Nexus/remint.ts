@@ -11,7 +11,6 @@ import { readKey, writeKey } from '../Platform/localState'
 import { newContentId, newId } from './ids'
 import { readJsonStrict, rewritePageSerialized, setOrDrop, writeJson } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { readWindowsState, writeWindowsState } from '../Interface/Windows/windowState'
 import { sidecarPath } from '../Paths/paths'
 import { withSidecarLock } from '../Files/sidecar'
 import type { Baseline, Projection } from './remintLedger'
@@ -142,13 +141,6 @@ function copyDeviceRows(target: RemintTarget, fresh: string): void {
       const value = readKey(scope, target.id)
       if (value !== null) writeKey(scope, fresh, value)
     }
-    const windows = readWindowsState()
-    const origin = windows.origins[target.id]
-    if (origin)
-      writeWindowsState({
-        ...windows,
-        origins: { ...windows.origins, [fresh]: structuredClone(origin) },
-      })
   } catch (e) {
     console.error('remint: device-row copy failed; the copy starts on default chrome:', errText(e))
   }

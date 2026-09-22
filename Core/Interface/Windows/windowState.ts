@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
-import { isNavRef, type NavRef, toNavRef, WINDOW_TAB_KINDS } from '../../Navigation/navRef'
+import { isNavRef, type NavRef, toNavRef } from '../../Navigation/navRef'
 import { readValue, writeValue } from '../../Platform/localState'
+
+const TAB_TARGET_KINDS = new Set<string>(['page', 'space'])
 
 // `NavRef` keeps its one validator; the schema decodes the file's shape around it.
 const windowTarget = z
-  .custom<NavRef>((v) => isNavRef(v, WINDOW_TAB_KINDS))
+  .custom<NavRef>((v) => isNavRef(v, TAB_TARGET_KINDS))
   .transform((t) => toNavRef(t))
 
 const windowTab = z.object({ target: windowTarget })
@@ -18,29 +20,21 @@ const windowSetRecord = z.object({
       return tab.success ? [tab.data] : []
     }),
   ),
-  activeIndex: z.number().int().min(0).catch(0).default(0),
 })
 
+// Every field catches, so a file written before the set was unified reads as one that simply never named a page set.
 const windowsFile = z.object({
   navSet: windowSetRecord.nullable().catch(null),
-  origins: z.record(z.string(), windowSetRecord.nullable().catch(null)),
+  pageSet: windowSetRecord.nullable().catch(null),
   open: z
-    .object({
-      kind: z.enum(['page', 'nav', 'matrix']),
-      originId: z.string(),
-    })
+    .object({ kind: z.enum(['page', 'nav', 'matrix']) })
     .nullable()
     .catch(null),
-  navOverride: z.boolean().optional().catch(undefined),
 })
 
 export function sanitizeWindows(raw: unknown): WindowsFile | null {
   const read = windowsFile.safeParse(raw)
-  if (!read.success) return null
-  const { origins, ...rest } = read.data
-  const kept: WindowsFile['origins'] = {}
-  for (const [id, rec] of Object.entries(origins)) if (rec) kept[id] = rec
-  return { ...rest, origins: kept }
+  return read.success ? read.data : null
 }
 
 export function readWindowsState(): WindowsFile {

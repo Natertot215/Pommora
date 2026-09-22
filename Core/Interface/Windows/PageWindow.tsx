@@ -12,7 +12,7 @@ import { chromePartRect, publishChromePart } from '../chromeParts'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
 import { useWindowTabConnections } from '../../Session/pageConnections'
-import { windowTargetOf, useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
+import { type PageTarget, windowTargetOf, useEmbedScale, useSession } from '../../Session/store'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { WindowTabStrip } from './WindowTabStrip'
@@ -28,7 +28,10 @@ const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as co
 
 export function PageWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.pageWindow?.kind === 'page')
-  const target = useSession(windowTargetOf)
+  const target = useSession((s) => {
+    const t = windowTargetOf(s)
+    return t?.kind === 'page' ? t : null
+  })
   const shown = useHeldPresence(target, open)
   if (!shown) return null
   return <PageWindowBody target={shown.held} closing={shown.closing} />
@@ -38,7 +41,7 @@ function PageWindowBody({
   target,
   closing,
 }: {
-  target: WindowTarget
+  target: PageTarget
   closing: boolean
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)

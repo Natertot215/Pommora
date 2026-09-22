@@ -1,10 +1,10 @@
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { flushPageSave } from '../Session/saveScheduler'
 import { livePagePath } from '../Nexus/treeIndex'
-import { useSession, type WindowTarget } from '../Session/store'
+import { type PageTarget, useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 
-export async function restoreSnapshot(target: WindowTarget, ts: number): Promise<Result<null>> {
+export async function restoreSnapshot(target: PageTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
   const live = livePagePath(tree, target)
   await flushPageSave(live)

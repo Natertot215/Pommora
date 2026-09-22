@@ -9,6 +9,7 @@ import {
   type NavigationState,
   type NavRef,
   isSingleton,
+  type PageTarget,
   type SelectionState,
   type SelectTarget,
   type StoredTabSet,
@@ -67,8 +68,6 @@ import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { createMenuItems, createdRequest } from '@pommora/core/Actions/createMenu'
-
-export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }

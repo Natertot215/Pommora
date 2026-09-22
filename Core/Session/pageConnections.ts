@@ -16,7 +16,7 @@ export function useWindowTabConnections(tree: NexusTree | null): ConnectionsApi 
       connectionsFor(tree, {
         open: (page, heading) => {
           if (heading) setPendingTravel({ route: 'window', path: page.path, heading })
-          openWindowTab({ id: page.id, path: page.path })
+          openWindowTab({ kind: 'page', id: page.id, path: page.path })
         },
         bypass: (page, heading) => {
           if (heading) setPendingTravel({ route: 'tab', path: page.path, heading })
@@ -32,7 +32,7 @@ export function useWindowTabConnections(tree: NexusTree | null): ConnectionsApi 
 /** A connection opened from the main surface follows the preview preference. */
 export function usePreviewConnections(tree: NexusTree | null): ConnectionsApi | undefined {
   const select = useSession((s) => s.select)
-  const openWindow = useSession((s) => s.openWindow)
+  const openWindowTab = useSession((s) => s.openWindowTab)
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const headings = useSession((s) => s.headings)
@@ -43,7 +43,7 @@ export function usePreviewConnections(tree: NexusTree | null): ConnectionsApi | 
         open: (page, heading) => {
           if (heading)
             setPendingTravel({ route: openInWindow ? 'window' : 'tab', path: page.path, heading })
-          if (openInWindow) openWindow({ id: page.id, path: page.path })
+          if (openInWindow) openWindowTab({ kind: 'page', id: page.id, path: page.path })
           else void select({ kind: 'page', id: page.id, path: page.path })
         },
         bypass: (page, heading) => {
@@ -53,6 +53,6 @@ export function usePreviewConnections(tree: NexusTree | null): ConnectionsApi | 
         menu: showConnectionMenu,
         headingsOf: (path) => headings[path],
       }),
-    [tree, select, openWindow, openInWindow, headings, setPendingTravel],
+    [tree, select, openWindowTab, openInWindow, headings, setPendingTravel],
   )
 }

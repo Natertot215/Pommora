@@ -321,7 +321,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       return
     }
     const owner = source.kind === 'collection' ? source : findCollectionForSet(tree, source.id)
-    if (owner?.openIn === 'page-preview') useSession.getState().openWindow(target)
+    if (owner?.openIn === 'page-preview') useSession.getState().openWindowTab(target)
     else void select(target)
   }
 
@@ -370,7 +370,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       return true
     switch (action) {
       case 'title:window':
-        useSession.getState().openWindow({ id: row.id, path: row.path })
+        useSession.getState().openWindowTab({ kind: 'page', id: row.id, path: row.path })
         return true
       case 'title:newtab':
         openPage(row, true)

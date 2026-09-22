@@ -12,10 +12,9 @@ import { createWindowSlice } from './windowSlice'
 import { createRenameSlice } from './mutationSlice'
 import type { SessionState } from './sessionState'
 
-export type { SelectTarget } from '@pommora/core/Navigation/navRef'
+export type { PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'
 export type { SessionState } from './sessionState'
-export type { PageSlot, PageTarget } from './navigationSlice'
-export type { WindowTarget } from './windowSlice'
+export type { PageSlot } from './navigationSlice'
 export {
   frozenOf,
   pageBody,

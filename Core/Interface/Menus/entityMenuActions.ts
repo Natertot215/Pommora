@@ -6,6 +6,7 @@ import {
   type Creator,
 } from '@pommora/core/Nexus/mutateRequest'
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
+import { isWindowTarget } from '@pommora/core/Navigation/navRef'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
@@ -104,9 +105,11 @@ function runEntityAction(
   const ref = id ? { kind, id, path } : undefined
   if (ref && runPageSendAction(action, ref)) return
   switch (action) {
-    case 'title:window':
-      if (ref) s.openWindow(ref)
+    case 'title:window': {
+      const t = ref && contextTargetToSelect(ref)
+      if (t && isWindowTarget(t)) s.openWindowTab(t)
       return
+    }
     case 'title:newtab':
     case 'open':
       if (ref) void s.select(contextTargetToSelect(ref), { newTab: true })

@@ -30,7 +30,7 @@ export function runPageSendAction(
     return true
   }
   if (action === 'title:history') {
-    useSession.getState().openHistory({ id, path })
+    useSession.getState().openHistory({ kind: 'page', id, path })
     return true
   }
   return false

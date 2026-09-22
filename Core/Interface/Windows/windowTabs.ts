@@ -1,4 +1,4 @@
-import type { WindowTabTarget } from '@pommora/core/Navigation/navRef'
+import type { WindowTabTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import type { WindowKind } from './windowRecord'
@@ -12,23 +12,20 @@ export interface WindowTab {
 
 export interface WindowState {
   kind: WindowKind
-  originId: string
   tabs: WindowTab[]
   activeTabId: string
 }
 
-const targetPageId = (t: WindowTabTarget): string | null => (t.kind === 'page' ? t.id : null)
-
 export function openTabIn(
   win: WindowState,
   makeId: () => string,
-  target: { id: string; path: string },
+  target: WindowTarget,
   at?: number,
 ): WindowState {
   const first = win.tabs.findIndex((t) => t.target.kind !== 'navwindow')
   const base = first === -1 ? win.tabs.length : first
   const slot = at === undefined ? undefined : clamp(at + base, base, win.tabs.length)
-  const from = win.tabs.findIndex((t) => targetPageId(t.target) === target.id)
+  const from = win.tabs.findIndex((t) => t.target.kind !== 'navwindow' && t.target.id === target.id)
   if (from !== -1) {
     if (slot === undefined) {
       const existing = win.tabs[from]
@@ -37,7 +34,7 @@ export function openTabIn(
     const to = clamp(slot > from ? slot - 1 : slot, base, win.tabs.length - 1)
     return to === from ? win : { ...win, tabs: moveItem(win.tabs, from, to) }
   }
-  const tab: WindowTab = { id: makeId(), target: { kind: 'page', ...target } }
+  const tab: WindowTab = { id: makeId(), target }
   if (slot !== undefined)
     return { ...win, tabs: [...win.tabs.slice(0, slot), tab, ...win.tabs.slice(slot)] }
   return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
@@ -59,18 +56,12 @@ export function closeTabIn(win: WindowState, id: string): WindowState | null {
   const tabs = win.tabs.filter((t) => t.id !== id)
   if (tabs.length === 0) return null
   const activeTabId = win.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : win.activeTabId
-  const firstPage = tabs.find((t) => targetPageId(t.target) !== null)
-  const closedOrigin = targetPageId(win.tabs[idx].target) === win.originId
-  const originId =
-    closedOrigin && firstPage ? (targetPageId(firstPage.target) as string) : win.originId
-  if (!firstPage && win.kind === 'page') return null
-  return { ...win, tabs, activeTabId, originId }
+  return { ...win, tabs, activeTabId }
 }
 
-export function deriveTarget(
-  p: WindowState | null,
-): Extract<WindowTabTarget, { kind: 'page' }> | null {
-  if (!p) return null
-  const active = p.tabs.find((t) => t.id === p.activeTabId)
-  return active?.target.kind === 'page' ? active.target : null
+export function activeTarget(win: WindowState | null): WindowTarget | null {
+  if (!win) return null
+  const active = win.tabs.find((t) => t.id === win.activeTabId)
+  if (!active || active.target.kind === 'navwindow') return null
+  return active.target
 }
