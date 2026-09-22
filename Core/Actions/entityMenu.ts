@@ -59,12 +59,15 @@ export function entityMenuItems(
         : [{ label: 'Rename', action: 'rename' }]
   const branches: ActionItem<EntityMenuAction>[] =
     target.kind === 'space' ? propertyBranchRows(target) : []
+  const registry = target.kind === 'space' || target.kind === 'context'
   return [
     ...open,
     ...(open.length > 0 ? afterSeparator(create) : create),
     ...(open.length + create.length > 0 ? afterSeparator(identity) : identity),
     ...branches,
-    { label: 'Delete', action: 'delete', separatorBefore: target.kind === 'space' },
-    ...afterSeparator<EntityMenuAction>([...lock, { label: 'Reveal Location', action: 'reveal' }]),
+    { label: 'Delete', action: 'delete', separatorBefore: registry },
+    ...afterSeparator<EntityMenuAction>(
+      registry ? [] : [...lock, { label: 'Reveal Location', action: 'reveal' }],
+    ),
   ]
 }

@@ -18,6 +18,7 @@ import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
+import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/picker-base'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
@@ -146,7 +147,9 @@ export function TileHost({
     if (!editingId) return
     // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not swallow the click-out.
     const onDown = (e: PointerEvent): void => {
-      if (!(e.target as Element | null)?.closest?.('.tile.is-editing-tile')) setEditingId(null)
+      const t = e.target as Element | null
+      if (t?.closest?.(`.tile.is-editing-tile, [${PICKER_PORTAL_ATTR}]`)) return
+      setEditingId(null)
     }
     document.addEventListener('pointerdown', onDown, true)
     return () => document.removeEventListener('pointerdown', onDown, true)

@@ -130,3 +130,7 @@
 .tile-grid.is-static .tile-handle {
   cursor: default;
 }
+/* A stacked board's edges answer nothing, so they take no hover either — the accent tint would promise a resize the board refuses. */
+.tile-grid.is-static .tile-edge {
+  pointer-events: none;
+}
