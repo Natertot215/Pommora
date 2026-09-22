@@ -55,6 +55,24 @@ describe('cached assembly ≡ pure derivation', () => {
   })
 })
 
+describe('list marker reveal', () => {
+  const doc = 'intro\n- [ ] task'
+  const widgets = (ranged: boolean): number => {
+    const scan = scanDoc(doc)
+    return assembleLineIntents(scan, docLineIntents(scan), 6, undefined, 'page', ranged).filter(
+      (x) => x.kind === 'widget',
+    ).length
+  }
+
+  it('a resting caret on the marker reveals its source', () => {
+    expect(widgets(false)).toBe(0)
+  })
+
+  it("a range's head on the marker keeps the checkbox glyph", () => {
+    expect(widgets(true)).toBe(1)
+  })
+})
+
 describe('decoration intents', () => {
   it('inactive bold → md-bold class on content + hidden markers', () => {
     const t = '**a** xxxxx'
