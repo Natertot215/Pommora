@@ -8,6 +8,9 @@ export const favoriteLabel = (favorited: boolean): string => (favorited ? 'Unfav
 
 export const iconLabel = (iconShown: boolean): string => (iconShown ? 'Hide Icon' : 'Show Icon')
 
+export const viewsLabel = (viewsShown: boolean): string =>
+  viewsShown ? 'Hide Views' : 'Show Views'
+
 export const lockLabel = (locked: boolean, noun?: string): string => {
   const verb = locked ? 'Unlock' : 'Lock'
   return noun ? `${verb} ${noun}` : verb

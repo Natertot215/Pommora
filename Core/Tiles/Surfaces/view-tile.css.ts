@@ -13,6 +13,8 @@ const c = colorVars.color
 
 const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
+const BAND_PAD_Y = '6px'
+const bandReveal = `${duration.menu} var(--ease-base)`
 
 // KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole toolbar and dissolve at the title divider, matching the switcher's full height.
 const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
@@ -66,6 +68,12 @@ export const titleSpaceHidden = style({
   gridTemplateRows: '0fr',
   transitionDelay: duration.menu,
 })
+export const bandSpace = style({
+  display: 'grid',
+  gridTemplateRows: '1fr',
+  transition: `grid-template-rows ${bandReveal}`,
+})
+export const bandSpaceHidden = style({ gridTemplateRows: '0fr' })
 export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
 export const titleIcon = style({ color: c.label.control })
@@ -87,7 +95,7 @@ export const titleText = style({
 export const switcherRow = style([
   segmentRow,
   {
-    padding: `6px ${HEAD_PAD_R} 6px ${HEAD_PAD_L}`,
+    padding: `${BAND_PAD_Y} ${HEAD_PAD_R} ${BAND_PAD_Y} ${HEAD_PAD_L}`,
     flex: 'none',
     position: 'relative',
     zIndex: 1, // paints over the scroll region that rises behind it (FADE_RISE)
@@ -116,6 +124,12 @@ globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
 
 globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 
+export const bandLock = style({
+  display: 'inline-flex',
+  transition: 'opacity var(--duration-base) var(--ease-base)',
+})
+export const bandLockHidden = style({ opacity: 0, pointerEvents: 'none' })
+
 export const listPane = style({ minWidth: 150 })
 
 export const body = style({
@@ -126,8 +140,11 @@ export const body = style({
   overflowY: 'auto',
   marginTop: `calc(-1 * ${FADE_RISE})`,
   paddingTop: FADE_RISE,
+  transition: `margin-top ${bandReveal}, padding-top ${bandReveal}`,
   vars: { '--over-scroll-fade': FADE_RISE },
 })
+
+export const bodyFlush = style({ marginTop: 0, paddingTop: BAND_PAD_Y })
 
 globalStyle(`${body} .table-view`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },

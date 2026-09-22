@@ -5,12 +5,12 @@ const labels = (rows: { label: string }[]): string[] => rows.map((r) => r.label)
 
 describe('the view embed’s title menu', () => {
   it('offers Edit Icon only while an icon is shown', () => {
-    expect(labels(embedTitleMenuItems(true, 2))).toContain('Edit Icon')
-    expect(labels(embedTitleMenuItems(false, 2))).not.toContain('Edit Icon')
+    expect(labels(embedTitleMenuItems(true, 2, true))).toContain('Edit Icon')
+    expect(labels(embedTitleMenuItems(false, 2, true))).not.toContain('Edit Icon')
   })
 
   it('marks the heading level the title is at, out of the full six', () => {
-    const sizes = embedTitleMenuItems(true, 3).find((r) => r.label === 'Title Size')?.submenu
+    const sizes = embedTitleMenuItems(true, 3, true).find((r) => r.label === 'Title Size')?.submenu
     expect(sizes?.map((r) => r.label)).toEqual([
       'Heading 1',
       'Heading 2',
@@ -21,22 +21,44 @@ describe('the view embed’s title menu', () => {
     ])
     expect(sizes?.filter((r) => r.checked).map((r) => r.label)).toEqual(['Heading 3'])
   })
+
+  it('sits the views toggle right below Hide Title, named after what pressing it does', () => {
+    expect(labels(embedTitleMenuItems(true, 2, true)).slice(-2)).toEqual([
+      'Hide Title',
+      'Hide Views',
+    ])
+    expect(labels(embedTitleMenuItems(true, 2, false)).slice(-2)).toEqual([
+      'Hide Title',
+      'Show Views',
+    ])
+  })
 })
 
 describe('the view embed’s area menu', () => {
   it('offers Show Title only while the title row is hidden', () => {
-    expect(labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: false }))).toContain(
-      'Show Title',
-    )
-    expect(labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: true }))).not.toContain(
-      'Show Title',
-    )
+    expect(
+      labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: false, viewsShown: true })),
+    ).toContain('Show Title')
+    expect(
+      labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: true, viewsShown: true })),
+    ).not.toContain('Show Title')
+  })
+
+  it('names the views toggle after what pressing it does', () => {
+    expect(
+      labels(embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true, viewsShown: true })),
+    ).toContain('Hide Views')
+    expect(
+      labels(embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true, viewsShown: false })),
+    ).toContain('Show Views')
   })
 
   it('marks the style in force on the Style submenu', () => {
-    const style = embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true }).find(
-      (r) => r.label === 'Style',
-    )?.submenu
+    const style = embedAreaMenuItems({
+      viewStyle: 'toolbar',
+      titleShown: true,
+      viewsShown: true,
+    }).find((r) => r.label === 'Style')?.submenu
     expect(style?.map((r) => [r.label, r.checked])).toEqual([
       ['Dropdown', false],
       ['Toolbar', true],
