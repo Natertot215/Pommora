@@ -65,6 +65,7 @@ globalStyle(':root', {
     '--fill-tertiary': c.fill.tertiary,
     '--fill-quaternary': c.fill.quaternary,
     '--fill-quinary': c.fill.quinary,
+    '--border-strong': c.border.strong,
     '--border-base': c.border.base,
     '--border-light': c.border.light,
     '--border-faint': c.border.faint,
