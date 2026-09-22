@@ -20,7 +20,7 @@
   --slide-cluster-w: 36px; /* KNOB — the trailing cluster's width, the two-glyph case */
   --slide-breathing: calc(var(--surface-inset) * 2);
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
-  /* Half the body's reserved panel gutter — the floating title rides the content column's center, not the frame's. */
+  /* Half the right pane's clearance — the floating title rides the content column's center, not the frame's. */
   --window-title-shift: calc(var(--window-clear-r) / -2);
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));

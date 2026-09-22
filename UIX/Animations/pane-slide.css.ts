@@ -7,9 +7,8 @@ export const paneOverlay = styleVariants({
   left: { transform: `translateX(calc((1 - var(--io-l)) * -1 * ${parked}))` },
 })
 
-// Padding travels with the pane: a host reserving a band on it would otherwise snap while the column beside it slides.
 const inflowTransition =
-  'width var(--duration-base) var(--ease-base), opacity var(--duration-base) var(--ease-base), padding-top var(--duration-base) var(--ease-base)'
+  'width var(--duration-base) var(--ease-base), opacity var(--duration-base) var(--ease-base)'
 export const paneInflow = styleVariants({
   open: { transition: inflowTransition, width: 'var(--pane-w)' },
   closed: {
