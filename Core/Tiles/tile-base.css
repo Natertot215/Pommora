@@ -129,9 +129,13 @@
 }
 .page-tile.is-window-chrome > .mdpm-header .mdpm-banner {
   position: relative;
-  height: 230px;
-  margin-top: calc(-1 * var(--window-toolbar-h));
+  height: var(--window-banner-h);
+  margin: calc(-1 * (var(--window-toolbar-h) + 4px)) -4px 0;
   animation: none;
+}
+.page-tile.is-window-chrome > .mdpm-header .mdpm-banner-overlay {
+  left: calc(16px * var(--page-detail-scale) + 4px);
+  right: calc(16px * var(--page-detail-scale) + 4px);
 }
 /* The var is declared on .detail-title itself in markdown-pm.css, where it reads --editor-scale; a declaration on an ancestor never reaches it. */
 .page-tile.is-window-chrome > .mdpm-header .detail-title {
