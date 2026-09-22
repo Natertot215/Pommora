@@ -6,7 +6,7 @@ import { cx } from '../Utilities/cx'
 import { useRevealNear } from '../Interactions/revealBar'
 import { windowIn, windowOut } from '../Animations/animations.css'
 import {
-  CORNERS,
+  ALL_EDGES,
   onScreen,
   useResizeFrame,
   type Rect,
@@ -256,7 +256,7 @@ export function WindowBase({
       )}
       {left?.mode === 'overlay' && panel(left, 'left')}
       {right?.mode === 'overlay' && panel(right, 'right')}
-      {frame.edges(CORNERS)}
+      {frame.edges(ALL_EDGES)}
     </GlassWindow>
   )
 }
