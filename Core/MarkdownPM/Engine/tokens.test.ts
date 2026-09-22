@@ -186,6 +186,15 @@ describe('activeTokenIndices', () => {
     expect(activeTokenIndices(tokens, 0, 0).has(idx)).toBe(false)
   })
 
+  it("a range touching either edge keeps the token revealed — the drag's head can land on its opener", () => {
+    const t = 'a *b* c'
+    const tokens = tokenize(t)
+    const idx = tokens.findIndex((tk) => tk.kind === 'italic')
+    expect(activeTokenIndices(tokens, 0, 2).has(idx)).toBe(true)
+    expect(activeTokenIndices(tokens, 5, 7).has(idx)).toBe(true)
+    expect(activeTokenIndices(tokens, 0, 1).has(idx)).toBe(false)
+  })
+
   // Merely CLICKING on the closer is aiming at the syntax, and reveals it like any other construct — the distinction is the gesture, which the caller reports, not the offset.
   it('a caret rested on the closer by finishing leaves it rendered', () => {
     const tokens = tokenize('[[P]]')
