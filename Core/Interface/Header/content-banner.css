@@ -112,7 +112,8 @@
 
 /* The app toolbar and the shell's sidebar are the main pane's; a floating window has neither, so the header keeps the plain edge and sits under the window's own band. */
 .window .banner-empty {
-  --toolbar-h: 0px;
+  /* KNOB — the room between the window's strip and a bannerless title; the shell's toolbar clearance stands down for it. */
+  --toolbar-h: 10px;
   --content-start: var(--content-edge);
   --content-start-right: var(--content-edge);
 }
