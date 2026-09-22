@@ -104,6 +104,7 @@ export interface ViewTileEntry {
   title_level?: number
   view_button?: ViewButton
   view_style?: ViewStyle
+  view_band?: boolean
   locked?: boolean
   zoom?: number
 }
@@ -146,6 +147,7 @@ const viewEntry = z.looseObject({
   title_level: z.number().int().min(1).max(6).optional().catch(undefined),
   view_button: z.enum(VIEW_BUTTONS).optional().catch(undefined),
   view_style: z.enum(VIEW_STYLES).optional().catch(undefined),
+  view_band: boolField,
 })
 export type TileType = TileEntry['type']
 

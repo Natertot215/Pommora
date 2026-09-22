@@ -57,8 +57,15 @@ describe('knownTile', () => {
         icon: false,
         view_button: 'icon',
         view_style: 'dropdown',
+        view_band: false,
       }),
-    ).toMatchObject({ title: false, icon: false, view_button: 'icon', view_style: 'dropdown' })
+    ).toMatchObject({
+      title: false,
+      icon: false,
+      view_button: 'icon',
+      view_style: 'dropdown',
+      view_band: false,
+    })
     expect(
       knownTile({
         id: 'c',
