@@ -98,22 +98,33 @@
   padding-right: var(--content-start-right);
 }
 
-/* KNOB — the height a banner band draws at inside a floating window, for a Page and a Space alike. */
-.window {
-  --window-banner-h: 160px;
+/* A window's tab body is bled to the glass edge and padded back, so a band inside can run to the edge while the content keeps its inset — a scroller clips at its padding box, never inside it. */
+.window-tab-body {
+  margin: calc(-1 * var(--window-panel-inset)) calc(-1 * var(--window-panel-inset)) 0;
+  padding: calc(var(--window-toolbar-h) + var(--window-panel-inset)) var(--window-panel-inset) 0;
+  --over-scroll-fade: max(
+    calc(var(--window-toolbar-h) + var(--window-panel-inset)),
+    var(--os-fade-default)
+  );
 }
-/* The drawn band keys its title to the shell's sidebar; a floating window has none, and the band runs under the window's strip to the glass edge, its title keeping the body's inset. */
+.window.is-panel-right-open .window-tab-body {
+  padding-right: calc(var(--window-panel-r-w) + 2 * var(--window-panel-inset));
+}
+
+/* The drawn band keys its title to the shell's sidebar; a floating window has none, and its title keeps the body's inset over the bled band. */
 .window .banner {
   --content-start: calc(var(--content-edge) + var(--window-panel-inset));
   --banner-h: var(--window-banner-h);
-  margin: calc(-1 * (var(--window-toolbar-h) + var(--window-panel-inset)))
-    calc(-1 * var(--window-panel-inset)) 0;
+  margin: var(--window-banner-edges);
+}
+.window .banner-title {
+  right: calc(28px + var(--window-panel-inset));
 }
 
 /* The app toolbar and the shell's sidebar are the main pane's; a floating window has neither, so the header keeps the plain edge and sits under the window's own band. */
 .window .banner-empty {
-  /* KNOB — the room between the window's strip and a bannerless title; the shell's toolbar clearance stands down for it. */
-  --toolbar-h: 10px;
+  /* KNOB — the room between the window's strip and a bannerless title; the shell's toolbar clearance stands down. */
+  padding-top: 17px;
   --content-start: var(--content-edge);
   --content-start-right: var(--content-edge);
 }

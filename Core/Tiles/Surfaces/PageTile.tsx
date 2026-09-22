@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { titleFromPath } from '@pommora/core/Connections/connections'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import { coverOf, iconOf, type PageDetail } from '@pommora/core/Pages/pageDetail'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
@@ -30,12 +30,6 @@ interface EmbedEntry {
   cover?: string
   icon?: string
 }
-
-const coverOf = (detail: PageDetail): string | undefined =>
-  typeof detail.frontmatter.banner === 'string' ? detail.frontmatter.banner : undefined
-
-const iconOf = (detail: PageDetail): string | undefined =>
-  typeof detail.frontmatter.icon === 'string' ? detail.frontmatter.icon : undefined
 
 const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   path,

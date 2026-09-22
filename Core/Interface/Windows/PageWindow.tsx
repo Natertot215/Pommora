@@ -14,7 +14,7 @@ import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
 import './page-window.css'
 
-const DRAG_SURFACES = '.page-window-body, .window-tabwrap, .tab-scroll, .tab-strip'
+const DRAG_SURFACES = '.window-tab-body, .window-tabwrap, .tab-scroll, .tab-strip'
 
 const SLIDE_PX = 14
 
@@ -44,8 +44,9 @@ function PageWindowBody({
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
 
-  const { body, bodyRef, right, actions, footer, footerLead, sidePaneOpen, closeSidePane } =
-    useWindowTabBody(target, 'page-window-body')
+  const { body, bodyRef, right, actions, footer, footerLead, closeSidePane } =
+    useWindowTabBody(target)
+  const sidePaneOpen = right.open === true
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
   const trail = trailOf(tree, target)

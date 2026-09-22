@@ -89,7 +89,7 @@
 .page-tile .mdpm-shell {
   timeline-scope: none;
 }
-.page-tile .mdpm-banner {
+.page-tile:not(.is-window-chrome) .mdpm-banner {
   position: absolute;
   top: 0;
   left: 0;
@@ -112,27 +112,20 @@
   -webkit-user-drag: none;
 }
 /* This var exists because the page rung's band stands without .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
-.page-tile .mdpm-banner-overlay {
+.page-tile:not(.is-window-chrome) .mdpm-banner-overlay {
   --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
   left: calc(16px * var(--page-detail-scale));
   right: calc(16px * var(--page-detail-scale));
 }
 
-/* The window's header sits in flow, so the main shell's parked-absolute header and the editor's reserved header zone stand down. Anchored at the rung's own header: a page embed nested in this editor keeps the out-of-flow band above. */
+/* The window's header sits in flow, so the main shell's parked-absolute header stands down. Anchored at the rung's own header: a page embed nested in this editor keeps the out-of-flow band above. */
 .page-tile.is-window-chrome > .mdpm-header {
   position: static;
-  padding-top: 0;
   animation: none;
-}
-.page-tile.is-window-chrome .mdpm-editor .cm-content {
-  --header-zone: 0px;
 }
 .page-tile.is-window-chrome > .mdpm-header .mdpm-banner {
-  position: relative;
   height: var(--window-banner-h);
-  margin: calc(-1 * (var(--window-toolbar-h) + var(--window-panel-inset)))
-    calc(-1 * var(--window-panel-inset)) 0;
-  animation: none;
+  margin: var(--window-banner-edges);
 }
 .page-tile.is-window-chrome > .mdpm-header .mdpm-banner-overlay {
   left: calc(16px * var(--page-detail-scale) + var(--window-panel-inset));

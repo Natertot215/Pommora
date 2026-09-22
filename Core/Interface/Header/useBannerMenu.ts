@@ -57,9 +57,14 @@ export function useBannerMenu(
   }
   const closeEditor = (): void => setEditing(false)
   const run = async (action: BannerMenuAction): Promise<void> => {
-    if (action === 'change') await addOrChange()
-    else if (action === 'edit') openEditor()
-    else await setBanner(null)
+    switch (action) {
+      case 'change':
+        return addOrChange()
+      case 'edit':
+        return openEditor()
+      case 'remove':
+        await setBanner(null)
+    }
   }
   const openMenu = async (): Promise<void> => {
     const action = await holdGhost(() => popMenu(bannerMenuItems({ noun, add, noRemove })))
