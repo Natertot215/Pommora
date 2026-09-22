@@ -17,7 +17,7 @@ export interface Rect extends Size {
   y: number
 }
 
-export const CORNERS: readonly ResizeEdge[] = ['nw', 'ne', 'sw', 'se']
+export const ALL_EDGES: readonly ResizeEdge[] = ['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se']
 
 const MOVE_KEEP: Size = { w: 80, h: 40 }
 
