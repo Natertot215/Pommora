@@ -86,7 +86,9 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding-top: var(--window-toolbar-h);
+  /* Bled to the glass edge and padded back, so a band inside can overshoot the inset while the content keeps it — a scroller clips at its padding box, never inside it. */
+  margin: calc(-1 * var(--window-panel-inset)) calc(-1 * var(--window-panel-inset)) 0;
+  padding: calc(var(--window-toolbar-h) + var(--window-panel-inset)) var(--window-panel-inset) 0;
   /* Content dissolves across the whole band it scrolls under; a window carrying no band keeps the kit's own edge fade. */
   --over-scroll-fade: max(var(--window-toolbar-h), var(--os-fade-default));
   overflow-y: auto;
