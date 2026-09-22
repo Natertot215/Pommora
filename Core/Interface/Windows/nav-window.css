@@ -1,7 +1,5 @@
 .navwindow {
-  --window-body-gutter: var(--app-inset);
-  padding: var(--window-body-gutter);
-  /* The rail is an inflow panel, so the floating strip clears its whole width once it is open and the scan glyph alone once it is not. */
+  /* The floating strip clears the rail's whole width once it is open and the scan glyph alone once it is not. */
   --window-tab-clear-l: calc(
     var(--window-panel-inset) +
     max(22px, var(--io-l) * (var(--window-panel-l-w) + var(--window-panel-inset)))
@@ -27,11 +25,6 @@
   --window-toolbar-h: 0px;
 }
 
-/* The inflow pane's own transition carries this; a shorthand here would replace it and cost the rail its width slide. */
-.navwindow-rail {
-  padding-top: var(--window-toolbar-h);
-}
-
 .navwindow-content {
   display: flex;
   flex-direction: column;
@@ -46,7 +39,7 @@
   overflow-y: auto;
 }
 .navwindow-main {
-  padding-top: var(--window-toolbar-h);
+  padding: var(--window-body-pad);
   transition: padding-top var(--duration-base) var(--ease-base);
   display: flex;
   flex-direction: column;

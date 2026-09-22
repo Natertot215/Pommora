@@ -1,20 +1,16 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
-import { useAssetUrl } from '../Assets/useAssetUrl'
-import { AssetImage } from '../Assets/AssetImage'
-import { ImagePicker } from '../Assets/ImagePicker'
-import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { moveByKey } from './navRecents'
 import { useNavData } from './useNavData'
 import { usePublishCount } from '../Interface/Subfield/publish'
 import { NavGallery } from './NavGallery'
 import { NavList } from './NavList'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
-import '../Interface/Header/content-banner.css'
+import { NavBanner } from './NavBanner'
 import './nav-view.css'
 
 export function NavView(): React.JSX.Element {
@@ -26,17 +22,6 @@ export function NavView(): React.JSX.Element {
     const next = moveByKey(resolvedRecents, (r) => r.key, activeKey, overKey)
     if (next) setRecentsOrder(next.map((r) => r.key))
   }
-  const ownBanner = useSession((s) => s.navBanner)
-  const homeBanner = useSession((s) => s.tree?.homepage.banner)
-  const bannerSrc = useAssetUrl(ownBanner ?? homeBanner)
-  const bannerRef = useRef<HTMLDivElement>(null)
-  // Remove clears only NavView's own override — `noRemove` when the shown banner is inherited.
-  const { openMenu, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
-    useBannerMenu('', 'navview', {
-      value: ownBanner ?? homeBanner,
-      frame: bannerRef,
-      noRemove: !ownBanner,
-    })
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   usePublishCount(results ? results.length : resolvedPins.length + resolvedRecents.length)
@@ -53,34 +38,15 @@ export function NavView(): React.JSX.Element {
 
   return (
     <div className="nav-view">
-      {bannerSrc ? (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-        <div
-          ref={bannerRef}
-          className="banner nav-view-banner"
-          onContextMenu={(e) => {
-            e.preventDefault()
-            void openMenu()
-          }}
-        >
-          <AssetImage value={ownBanner ?? homeBanner} className="banner-img" />
-          <div className="banner-title title-shadow">{searchInput}</div>
-          <ImagePicker
-            open={editing}
-            value={ownBanner ?? homeBanner ?? ''}
-            shape="rect"
-            boxAspect={boxAspect}
-            onCancel={closeEditor}
-            onSave={onSave}
-            onRepick={onRepick}
-          />
-        </div>
-      ) : (
-        <div className="nav-view-head">
-          <AddBannerButton onClick={() => void addOrChange()} />
-          {searchInput}
-        </div>
-      )}
+      <NavBanner
+        search={searchInput}
+        empty={(add) => (
+          <div className="nav-view-head">
+            <AddBannerButton onClick={add} />
+            {searchInput}
+          </div>
+        )}
+      />
       <div className="nav-view-scroll over-scroll">
         {results ? (
           <NavGallery
