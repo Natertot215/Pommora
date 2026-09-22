@@ -51,8 +51,10 @@ export function entityMenuItems(
   const identity: ActionItem<EntityMenuAction>[] =
     target.kind === 'space'
       ? [
-          ...titleMenuItems({ toggleIcon: true, iconHidden: target.headingIconHidden }),
-          { label: 'Change Color', action: 'changeColor' },
+          ...titleMenuItems(),
+          ...(target.host === 'matrix'
+            ? [{ label: 'Change Color', action: 'changeColor' as const }]
+            : []),
         ]
       : target.kind === 'context'
         ? titleMenuItems()

@@ -85,7 +85,6 @@ export interface ContextTarget extends PageMenuContext {
   alreadyOpen?: boolean
   disclosureLocked?: boolean
   host?: RenameHost
-  headingIconHidden?: boolean
 }
 
 export interface Creator {
