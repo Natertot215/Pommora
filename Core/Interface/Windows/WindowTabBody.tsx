@@ -11,6 +11,7 @@ import { useSession } from '../../Session/store'
 import { useExperimental } from '../../Settings/experimental'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
+import { subscribeTileDoc } from '../../Tiles/tileDocStore'
 import { useTileDocReady } from '../../Tiles/useTileDoc'
 import { Banner } from '../Header/Banner'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
@@ -73,6 +74,17 @@ export function useWindowTabBody(
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
   const paneOpen = sidePaneOpen && pageTarget !== null
   const closeSidePane = (): void => setSidePaneOpen(false)
+
+  // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
+  const tabs = useSession((s) => s.pageWindow?.tabs)
+  useEffect(() => {
+    const held = (tabs ?? []).flatMap((t) =>
+      t.target.kind === 'space' ? [subscribeTileDoc(t.target, () => {})] : [],
+    )
+    return () => {
+      for (const off of held) off()
+    }
+  }, [tabs])
 
   const bodyRef = useRef<HTMLDivElement>(null)
   // The shared tile document retires with its last mount, so a Space tab's scroll restore has to wait for the board to come back (B-8); a Page tab has no board to wait on.
