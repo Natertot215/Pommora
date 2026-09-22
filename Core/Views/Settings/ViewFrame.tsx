@@ -14,7 +14,8 @@ import { titleInput } from '@pommora/uix/Menus/menu-base.css'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { LayoutFrame } from './LayoutFrame'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
-import type { PaneDrop, FrameRow, frameSlot } from '@pommora/uix/Interactions/frameDndModel'
+import type { FrameRow, SlotFor } from '@pommora/uix/Interactions/frameDndModel'
+import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
 import { useSaveView, useViewTileScope } from '../ViewTileScope'
 import { pickView } from '../Pipeline/pickView'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
@@ -30,7 +31,7 @@ import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
 const PANE_SQUARE = 225
 
-const viewSlot: typeof frameSlot = (rows, _byId, _regions, pointerY, draggedId) => {
+const viewSlot: SlotFor<PaneDrop> = (rows, _byId, _regions, pointerY, draggedId) => {
   const others = rows.filter((r) => r.id !== draggedId)
   let i = 0
   while (i < others.length && pointerY >= others[i].mid) i++

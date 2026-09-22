@@ -190,7 +190,7 @@ function ContentFooter(): React.JSX.Element {
     <>
       <button
         type="button"
-        className="subfield-toggle"
+        className="subfield-toggle reveal-toggle"
         onClick={() => setExpanded(!expanded)}
         aria-label={footerLabel(expanded)}
         title={footerLabel(expanded)}
@@ -198,7 +198,7 @@ function ContentFooter(): React.JSX.Element {
         <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="headline" />
       </button>
       <CitationsToggle page={page} />
-      <div className="subfield-reveal">
+      <div className="subfield-reveal reveal-band">
         <Subfield page={page} count={count} lead={kind === 'none' ? <ViewTypeItem /> : undefined} />
       </div>
     </>

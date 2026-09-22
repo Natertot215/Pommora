@@ -629,7 +629,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 />
               ))}
               {/* The :last-child anchor that keeps the last real column's right divider (table.css). */}
-              <div className="cell-filler" aria-hidden="true" />
+              <div className="cell-filler" data-row-end aria-hidden="true" />
             </div>
             {groups.flatMap((g) => renderRows(g, 0, true))}
             {interactions.ghostStanding && (
@@ -701,7 +701,7 @@ function GhostRow({
             )}
           </div>
         ))}
-        <div className="cell-filler" aria-hidden="true" />
+        <div className="cell-filler" data-row-end aria-hidden="true" />
       </div>
     </Reveal>
   )
@@ -819,7 +819,7 @@ const DataRow = memo(function DataRow({
           </div>
         )
       })}
-      <div className="cell-filler" aria-hidden="true" />
+      <div className="cell-filler" data-row-end aria-hidden="true" />
     </div>
   )
 })

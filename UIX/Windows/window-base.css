@@ -12,7 +12,6 @@
   --window-clear-l: 0px;
   --window-clear-r: 0px;
   --window-panel-top: 16px;
-  --window-footer-h: var(--subfield-h);
 
   --slide-panel-w: var(--window-panel-r-w);
   --slide-inset: var(--window-panel-inset);
@@ -267,38 +266,38 @@
   transition: height var(--duration-base) var(--ease-base);
 }
 .window.is-footer-open .window-footer {
-  height: var(--window-footer-h);
+  height: var(--reveal-band-h);
 }
 .window-footer-toggle {
   /* The 16px is a KNOB — the chevron's inset from the band's trailing edge, clear of the se resize corner. */
   right: calc(16px + var(--window-clear-r));
   z-index: 4;
   width: 40px;
-  height: calc(var(--window-footer-h) + 2px);
+  height: calc(var(--reveal-band-h) + 2px);
   padding: 0 6px 0 0;
 }
 .window.is-footer-open .window-footer-toggle {
-  bottom: var(--window-footer-h);
+  bottom: var(--reveal-band-h);
 }
 /* Their edges ride --io each frame, and a transition on left or right would chase it. */
 .window .window-footer-toggle,
-.window .footnotes-toggle {
+.window [data-reveal-lead] {
   transition:
     bottom var(--duration-base) var(--ease-base),
     opacity var(--duration-fast) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
 }
-.window .footnotes-toggle {
+.window [data-reveal-lead] {
   left: var(--window-clear-l);
   z-index: 4;
-  height: var(--window-footer-h);
+  height: var(--reveal-band-h);
   padding: 0 12px 0 var(--window-footer-lead, 14px);
   justify-content: flex-start;
 }
-.window.is-footer-open .footnotes-toggle {
-  bottom: var(--window-footer-h);
+.window.is-footer-open [data-reveal-lead] {
+  bottom: var(--reveal-band-h);
 }
-.window.is-footer-near-lead .footnotes-toggle,
+.window.is-footer-near-lead [data-reveal-lead],
 .window.is-footer-near .window-footer-toggle {
   opacity: 1;
 }

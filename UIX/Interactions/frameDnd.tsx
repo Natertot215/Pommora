@@ -9,13 +9,7 @@ import {
 import { cx } from '../Utilities/cx'
 import { useInsertionDrag } from './insertionDrag'
 import type { MeasuredRow } from './reorderModel'
-import {
-  type PaneDrop,
-  type FrameRow,
-  type FrameSlot,
-  type Region,
-  frameSlot,
-} from './frameDndModel'
+import type { FrameRow, FrameSlot, Region, SlotFor } from './frameDndModel'
 import * as s from '../Menus/frames.css'
 
 type Snapshot = {
@@ -24,7 +18,7 @@ type Snapshot = {
   regions: { assigned: Region; all: Region }
   boxTop: number
 }
-type Slot = FrameSlot & { topInBox: number | null }
+type Slot<D> = FrameSlot<D> & { topInBox: number | null }
 
 type Value = {
   draggingId: string | null
@@ -35,18 +29,17 @@ type Value = {
 }
 const Ctx = createContext<Value | null>(null)
 
-export function FrameDnd({
+export function FrameDnd<D>({
   rows,
   labelFor,
   onDrop,
-  slot = frameSlot,
+  slot,
   children,
 }: {
   rows: FrameRow[]
   labelFor: (id: string) => string
-  onDrop: (drop: PaneDrop) => void
-  /** Defaults to the Properties frame's; the Visibility frame injects its own. */
-  slot?: typeof frameSlot
+  onDrop: (drop: D) => void
+  slot: SlotFor<D>
   children: ReactNode
 }): React.JSX.Element {
   const els = useRef(new Map<string, HTMLElement>())
@@ -56,7 +49,7 @@ export function FrameDnd({
   })
   const box = useRef<HTMLDivElement | null>(null)
 
-  const drag = useInsertionDrag<Slot, Snapshot>({
+  const drag = useInsertionDrag<Slot<D>, Snapshot>({
     // One snapshot for rows, row set and region rects, so a vanished region fails the resolve closed.
     take: () => {
       const boxEl = box.current

@@ -238,7 +238,7 @@ export function CellEditor({
           customSelection,
           EditorView.lineWrapping,
           // Opted in explicitly: the widget's contentEditable=false host suppresses the spell-check the page editor inherits.
-          EditorView.contentAttributes.of({ spellcheck: 'true' }),
+          EditorView.contentAttributes.of({ spellcheck: 'true', 'data-drawn-caret': '' }),
           Prec.highest(
             keymap.of([
               // In a list Tab is nest and nothing else; at the deepest level it holds, as Shift-Tab does at the shallowest.

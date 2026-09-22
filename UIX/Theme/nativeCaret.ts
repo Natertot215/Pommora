@@ -41,9 +41,9 @@ const isField = (el: EventTarget | null): el is Field =>
   (el instanceof HTMLTextAreaElement && !el.readOnly && !el.disabled) ||
   (el instanceof HTMLInputElement && TEXT_TYPES.has(el.type) && !el.readOnly && !el.disabled)
 
-// A CodeMirror surface carries customCaret already.
+// A surface marked data-drawn-caret draws its own.
 const isEditable = (el: EventTarget | null): el is HTMLElement =>
-  el instanceof HTMLElement && el.isContentEditable && !el.closest('.cm-editor')
+  el instanceof HTMLElement && el.isContentEditable && !el.closest('[data-drawn-caret]')
 
 const lineHeight = (cs: CSSStyleDeclaration, fallback = 0): number =>
   parseFloat(cs.lineHeight) || fallback || parseFloat(cs.fontSize) * 1.4

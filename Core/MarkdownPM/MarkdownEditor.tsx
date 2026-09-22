@@ -302,6 +302,7 @@ export function MarkdownEditor({
         autocorrect: 'off',
         spellcheck: 'true',
         enterkeyhint: 'enter',
+        'data-drawn-caret': '',
       }),
       markdownDecorations(() => connectionsRef.current),
       tableWidgetExtension(

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { MeasuredRow } from './reorderModel'
-import { nexusReorderIndex, frameSlot, type FrameRow, type FrameSlot } from './frameDndModel'
+import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
+import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
+import { frameSlot, nexusReorderIndex, type PaneSlot } from './paneDrop'
 
 const r = (id: string, top: number, bottom: number): MeasuredRow => ({
   id,
@@ -19,7 +20,7 @@ const byId = new Map<string, FrameRow>([
 ])
 const regions = { assigned: { top: 10, bottom: 50 }, all: { top: 70, bottom: 110 } }
 
-const slot = (y: number, draggedId: string): FrameSlot | null =>
+const slot = (y: number, draggedId: string): PaneSlot | null =>
   frameSlot(rows, byId, regions, y, draggedId)
 
 describe('frameSlot — region-owned classification (E-4)', () => {

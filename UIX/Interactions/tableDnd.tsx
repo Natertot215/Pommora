@@ -59,7 +59,7 @@ export function TableRowDnd({
         if (!el) continue
         const rect = el.getBoundingClientRect()
         // The row spans a trailing 1fr filler, so rect.right would run the line into the empty gutter past the last column.
-        const filler = el.querySelector('.cell-filler')
+        const filler = el.querySelector('[data-row-end]')
         const contentRight = filler ? filler.getBoundingClientRect().left : rect.right
         measured.push({
           id: r.id,

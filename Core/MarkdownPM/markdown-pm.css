@@ -1022,3 +1022,34 @@
 .mdpm-autocomplete-match {
   font-weight: var(--weight-emphasized);
 }
+
+/* The drawn caret and selection layers; the full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme. */
+.cm-editor .cm-scroller .cm-content {
+  cursor: var(--caret-cursor);
+  caret-color: transparent;
+}
+.cm-focused > .cm-scroller > .mdpm-caret-layer {
+  animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
+}
+.mdpm-caret {
+  display: none;
+  width: var(--caret-width);
+  margin-left: calc(var(--caret-width) / -2);
+  background: var(--caret-color);
+  border-radius: var(--radius-full);
+}
+.cm-focused > .cm-scroller > .mdpm-caret-layer .mdpm-caret {
+  display: block;
+}
+
+/* Unfocused editors keep their selection painted; a field's pills instead don't exist until focus. */
+.mdpm-sel-layer .mdpm-sel {
+  background: var(--text-selection-idle);
+}
+.cm-focused > .cm-scroller > .mdpm-sel-layer .mdpm-sel {
+  background: var(--text-selection);
+}
+:root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content::selection,
+:root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content ::selection {
+  background: transparent;
+}

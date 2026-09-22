@@ -1,4 +1,4 @@
-/* One text-insertion identity: the drawn blinking bar (a CodeMirror `layer` in editor/caret.ts) paired with the I-beam hover cursor. */
+/* One text-insertion identity: the drawn blinking bar paired with the I-beam hover cursor. */
 
 :root {
   --caret-width: 2px;
@@ -11,8 +11,7 @@
     text;
 }
 
-/* The browser caret is hidden so nativeCaret.ts paints the drawn bar at a JS-tracked position instead. The full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme. */
-.cm-editor .cm-scroller .cm-content,
+/* The browser caret is hidden so nativeCaret.ts paints the drawn bar at a JS-tracked position instead. */
 input:not([type]),
 input[type="text"],
 input[type="search"],
@@ -22,10 +21,6 @@ textarea,
 [contenteditable="true"] {
   cursor: var(--caret-cursor);
   caret-color: transparent;
-}
-
-.cm-focused > .cm-scroller > .mdpm-caret-layer {
-  animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
 }
 
 /* Two identical keyframes so caret.ts can swap names to restart the blink cycle on caret move, without a reflow. */
@@ -54,17 +49,6 @@ textarea,
   100% {
     opacity: 1;
   }
-}
-
-.mdpm-caret {
-  display: none;
-  width: var(--caret-width);
-  margin-left: calc(var(--caret-width) / -2);
-  background: var(--caret-color);
-  border-radius: var(--radius-full);
-}
-.cm-focused > .cm-scroller > .mdpm-caret-layer .mdpm-caret {
-  display: block;
 }
 
 .mdpm-caret-overlay {

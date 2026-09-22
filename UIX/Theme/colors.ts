@@ -98,9 +98,3 @@ export type AccentSetting = ColorSetting<'system'>
 
 /** Never `system`, so an absent or invalid `accent` always resolves. */
 export const DEFAULT_ACCENT: SolidColor = 'cyan'
-
-export type ConnectionColorSetting = ColorSetting<'accent'>
-export type ExternalLinkColorSetting = ColorSetting<'system'>
-export type CheckboxColorSetting = ColorSetting<'accent'>
-export type HighlightColorSetting = ColorSetting<'accent'>
-export type CodeColorSetting = ColorSetting<'default'>
