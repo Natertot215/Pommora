@@ -19,7 +19,7 @@ Pommora's leading pane: a **ribbon** of icons pinned to the left edge, and a **c
 
 **Content Modes.** The column renders one mode at a time, and a switch plays the overtake sweep — the incoming mode sliding in from the ribbon edge over the sitting content. **Collections** lists the top-level Collections, each disclosing its Sets and loose Pages recursively; a depth-1 Set is selectable and a Sub-Set is expand-only. **Contexts** lists every registry Context as a disclosure of its Space rows. **Agenda** holds its place with an empty state.
 
-**Drag and Drop.** Every entity reorders within its parent by drag, Pages and Sets also reparent into other Sets and across Collections, and a Page row drags out into either tab row. Order persists parent-side — a container's sidecar holds its Sets and Pages, the nexus state file the top-level Collection order, and the registry the Contexts' own order.
+**Drag and Drop.** Every entity reorders within its parent by drag, Pages and Sets also reparent into other Sets and across Collections, and a Page or Space row drags out into either tab row. Order persists parent-side — a container's sidecar holds its Sets and Pages, the nexus state file the top-level Collection order, and the registry the Contexts' own order.
 
 **Selection.** Selection routes the whole detail pane and reads as the menu row's selected fill. It survives a rename or move, since the id survives the confirming push and the path re-derives from the fresh tree, and switching the ribbon mode never changes it.
 
@@ -61,7 +61,7 @@ A **Preview** row opens the window from any surface that offers one. Two setting
 
 #### The NavWindow
 
-The NavWindow is one kind of the same window: tab 1 is a perma-pinned, icon-only map tab whose content is the whole body — the Favorites rail, the search field, and the gallery — and Page and Space tabs open beside it from a row's Preview, or from a drop on its tab strip. A tab other than the map takes the body — a Page as the editable embed, a Space as its board — and slides the rail closed; the map tab is the return. Opening it over a live Page Window morphs one into the other, a FLIP from the Page Window's rect, and the tab set persists across sessions. Its footer is the Subfield, stating the count of the list on show, a Page tab's own figures, or a Space tab's crumb and board lock. What the NavWindow is *for* — recents, pins, favorites, search — is Navigation's.
+The NavWindow is one kind of the same window: tab 1 is a perma-pinned, icon-only map tab whose content is the whole body — the Favorites rail, the search field, and the gallery — and Page and Space tabs open beside it from a row's Preview, or from a drop on its tab strip. A tab other than the map takes the body — a Page as the editable embed, a Space as its board — and slides the rail closed; the map tab is the return, and the scan glyph promotes the active tab as the Page Window's does, or on the map tab carries the list into a new app tab. Opening it over a live Page Window morphs one into the other, a FLIP from the Page Window's rect, and the tab set persists across sessions. Its footer is the Subfield, stating the count of the list on show, a Page tab's own figures, or a Space tab's crumb and board lock. What the NavWindow is *for* — recents, pins, favorites, search — is Navigation's.
 
 #### The Settings Window
 
