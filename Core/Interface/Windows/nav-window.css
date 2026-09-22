@@ -68,17 +68,3 @@
   margin-top: 4px;
   color: var(--label-secondary);
 }
-
-/* The NavWindow pads its whole body by the app inset; a banner band bleeds that too, while its title keeps the body's inset. */
-.navwindow .page-tile.is-window-chrome > .mdpm-header .mdpm-banner,
-.navwindow .window-body .banner {
-  margin: calc(-1 * (var(--window-toolbar-h) + var(--app-inset) + 4px))
-    calc(-1 * (var(--app-inset) + 4px)) 0;
-}
-.navwindow .window-body .banner {
-  --content-start: calc(var(--content-edge) + var(--app-inset) + 4px);
-}
-.navwindow .page-tile.is-window-chrome > .mdpm-header .mdpm-banner-overlay {
-  left: calc(16px * var(--page-detail-scale) + var(--app-inset) + 4px);
-  right: calc(16px * var(--page-detail-scale) + var(--app-inset) + 4px);
-}
