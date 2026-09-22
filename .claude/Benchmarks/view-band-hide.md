@@ -36,3 +36,18 @@ These were identified during the build and left for review:
 - **Coverage:** `useHoverDwell` and the lock hand-off have no tests.
 - **Reachability:** with both the title and the views hidden, the settings button is reachable only through the hover reveal.
 - **Menu Toggles:** Hide Views and Show Views from the menus take effect immediately, while the lock hands the pointer to the band.
+
+#### Closeout Findings
+
+The closeout review of the range confirmed these, which serve as the reference answer for a skill run against it:
+
+- **Held Opens:** `held` could open a closed band, so opening settings from the title row dropped the band 1.5s later under the popover. It now sustains an open band and never opens one.
+- **Gesture Dwell:** a press didn't defer the dwell, so a column drag, resize, or first-row card drag held past 1.5s had the band pushed in under it.
+- **Pickers:** the icon and color pickers opened from a pill weren't held, so the band collapsed under its own popover; native right-click menus are held the same way.
+- **Hover Cost:** the card anchor ran a subtree query and two rect reads on every `pointerover`; it now resolves once per entry into the body.
+- **Lock Visibility:** the lock's button inherited the tile-hover reveal, so leaving the tile hid it before 2000ms, and the hidden lock stayed keyboard-reachable.
+- **Fade Width:** the body kept the band's full scroll-fade height while hidden.
+- **Coverage:** the dwell logic moved to `UIX/Interactions/hoverDwell.ts` with its own tests.
+- **Structural Cards:** a headless top group made a later Set's band the anchor; the first band now counts only when it precedes the first card.
+- **Refuted:** the `overflow: hidden` clipping concern — pills carry no outer ring, their motion is horizontal, and pickers portal out.
+
