@@ -287,13 +287,10 @@ export function activeTokenIndices(
     // A marker never reveals its syntax: showing `[^7]` under a glyph reading 2 is the contradiction this opt-out prevents.
     if (tk.kind === 'citationRef') return
     const [s, e] = tk.range
-    if (selStart !== selEnd) {
-      if (selStart < e && s < selEnd) active.add(i)
-      return
-    }
-    const caret = selStart
-    if (caret === e && caret === restingAt && (tk.kind === 'wikiLink' || tk.kind === 'link')) return
-    if (caret >= s && caret <= e) active.add(i)
+    const resting = selStart === selEnd && selStart === e && selStart === restingAt
+    if (resting && (tk.kind === 'wikiLink' || tk.kind === 'link')) return
+    // Inclusive at both edges, for a range as for a caret: a drag's head touching the token keeps its revealed syntax, so the reveal can't push the text out from under the pointer.
+    if (selStart <= e && s <= selEnd) active.add(i)
   })
   return active
 }
