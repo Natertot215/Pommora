@@ -56,6 +56,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Open Matrix In | `matrixOpenIn` | Where the ribbon's Matrix icon opens it. | **New Tab** · Window |
 | Show Banners In Windowed Pages | `windowPageBanners` | A Page opened in a floating window draws its banner with the title over it, managed from the tab's own menu. | On · **Off** |
 | Show Banners In Windowed Spaces | `windowSpaceBanners` | A Space opened in a floating window carries its banner; off, its title stands alone above the board. | On · **Off** |
+| Show Banner In Navigation Window | `windowNavBanner` | The Navigation Window's map tab carries NavView's banner, with the search field over it. | On · **Off** |
 
 #### Appearance
 
