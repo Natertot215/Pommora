@@ -1,14 +1,19 @@
 import type { ActionItem } from './menuModel'
 import type { ViewButton, ViewStyle } from '../Views/viewRow'
-import { iconLabel } from './toggleLabels'
+import { iconLabel, viewsLabel } from './toggleLabels'
 
 type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
 
 type ViewButtonMenuAction = 'toggle-title'
 
-type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' | `size-${number}`
+type EmbedTitleMenuAction =
+  | 'toggle-icon'
+  | 'change-icon'
+  | 'hide-title'
+  | 'toggle-views'
+  | `size-${number}`
 
-type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
+type EmbedAreaMenuAction = 'show-title' | 'new-view' | 'toggle-views' | ViewStyleAction
 
 const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
 
@@ -33,6 +38,7 @@ function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> 
 export function embedTitleMenuItems(
   iconShown: boolean,
   level: number,
+  viewsShown: boolean,
 ): ActionItem<EmbedTitleMenuAction>[] {
   return [
     ...(iconShown ? [{ label: 'Edit Icon', action: 'change-icon' as const }] : []),
@@ -47,16 +53,19 @@ export function embedTitleMenuItems(
       })),
     },
     { label: 'Hide Title', action: 'hide-title', separatorBefore: true },
+    { label: viewsLabel(viewsShown), action: 'toggle-views' },
   ]
 }
 
 export function embedAreaMenuItems(current: {
   viewStyle: ViewStyle
   titleShown: boolean
+  viewsShown: boolean
 }): ActionItem<EmbedAreaMenuAction>[] {
   return [
     ...(current.titleShown ? [] : [{ label: 'Show Title', action: 'show-title' as const }]),
     { label: 'New View', action: 'new-view' },
+    { label: viewsLabel(current.viewsShown), action: 'toggle-views' },
     styleRow(current.viewStyle),
   ]
 }
