@@ -48,6 +48,17 @@ type Inbound = Record<LinkKind, number>
 
 const noInbound = (): Inbound => ({ body: 0, citation: 0, frontmatter: 0, space: 0, location: 0 })
 
+export function isGroupingLink(mode: GroupMode, kind: LinkKind): boolean {
+  switch (mode) {
+    case 'connection':
+      return true
+    case 'location':
+      return kind === 'location'
+    case 'space':
+      return kind === 'space'
+  }
+}
+
 export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   const nodes: GraphNode[] = []
   const index = new Map<string, number>()

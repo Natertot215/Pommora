@@ -40,6 +40,7 @@ export const host = style({
     '--matrix-ring-hover': 'var(--accent-stroke)',
     '--matrix-ring-drag': 'var(--accent-stroke-hot)',
     '--matrix-link': c.solid.greyDefault,
+    '--matrix-link-other': 'var(--border-base)',
     '--matrix-link-hover': 'var(--accent-stroke)',
     '--matrix-title': c.label.primary,
     '--matrix-icon': c.solid.grey,

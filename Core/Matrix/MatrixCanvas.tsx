@@ -9,7 +9,7 @@ import { spacesByIdOf } from '../Contexts/contextIdentity'
 import { recordsByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { BASE_RADIUS, LINK_GAP } from './Engine/forces'
-import type { Graph, GraphLink, GraphNode } from './Engine/graph'
+import { type Graph, type GraphLink, type GraphNode, isGroupingLink } from './Engine/graph'
 import { glanceShown } from '../Interface/Glance/glanceAction'
 import { cullLabels, labelReveal, type LabelReveal } from './Engine/labels'
 import { toScreen, toWorld, type Viewport } from './Engine/viewport'
@@ -20,7 +20,7 @@ import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
 // KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
 const PINCH_RATE = 0.01
 const LINK_WIDTH_MIN = 1.0
-const LINK_WIDTH_MAX = 2.5
+const LINK_WIDTH_MAX = 5.0
 const LINK_WIDTH_SCALE = 0.5
 const MAX_FRAME_MS = 64
 
@@ -36,6 +36,7 @@ interface Paint {
   ringHover: string
   ringDrag: string
   link: string
+  linkOther: string
   linkHover: string
   title: string
   icon: string
@@ -85,6 +86,7 @@ function readPaint(host: HTMLElement): Paint {
       ringHover: color('--matrix-ring-hover'),
       ringDrag: color('--matrix-ring-drag'),
       link: color('--matrix-link'),
+      linkOther: color('--matrix-link-other'),
       linkHover: color('--matrix-link-hover'),
       title: color('--matrix-title'),
       icon: color('--matrix-icon'),
@@ -309,6 +311,9 @@ export function MatrixCanvas({
             return born === undefined ? 1 : clamp((now - born) / FADE_MS, 0, 1)
           }
 
+    const strokeOf = (l: GraphLink): string =>
+      isGroupingLink(matrixRuntime.mode, l.kind) ? paint.link : paint.linkOther
+
     const neighbours = neighboursRef.current
     const hot = hotRef.current
     const isLit = (i: number): boolean => subject < 0 || i === subject || neighbours.has(i)
@@ -321,13 +326,20 @@ export function MatrixCanvas({
         neighbours.add(l.target)
         hot.push(l)
       } else
-        drawLink(ctx, graph, l, v, paint.link, dim * Math.min(arrival(l.source), arrival(l.target)))
+        drawLink(
+          ctx,
+          graph,
+          l,
+          v,
+          strokeOf(l),
+          dim * Math.min(arrival(l.source), arrival(l.target)),
+        )
     }
     const subjectSpace = subject >= 0 ? spacePaintOf(nodes[subject]) : null
     const hotStroke = subjectSpace?.stroke ?? (dragging >= 0 ? paint.ringDrag : paint.linkHover)
     for (const l of hot) {
       const a = Math.min(arrival(l.source), arrival(l.target))
-      drawLink(ctx, graph, l, v, paint.link, a)
+      drawLink(ctx, graph, l, v, strokeOf(l), a)
       drawLink(ctx, graph, l, v, hotStroke, a * emphasis)
     }
 

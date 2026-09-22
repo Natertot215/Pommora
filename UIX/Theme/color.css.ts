@@ -41,6 +41,7 @@ const derived = createGlobalTheme(':root', {
       muted: tintAt(black, 10),
     },
     border: {
+      strong: tintAt(grey, 30),
       base: tintAt(grey, 25),
       light: tintAt(grey, 20),
       faint: tintAt(grey, 15),

@@ -1,7 +1,7 @@
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { useSession } from '../Session/store'
 import type { Forces } from './Engine/forces'
-import { buildGraph, type Graph, type GraphNode } from './Engine/graph'
+import { buildGraph, type Graph, type GraphNode, type GroupMode } from './Engine/graph'
 import { place } from './Engine/placement'
 import {
   cool,
@@ -64,6 +64,7 @@ const EMPTY: Graph = { nodes: [], links: [], index: new Map() }
 
 class MatrixRuntime {
   graph: Graph = EMPTY
+  mode: GroupMode = 'connection'
   sim: Simulation | null = null
   frame: Frame | null = null
   hoveredId: string | null = null
@@ -204,6 +205,7 @@ class MatrixRuntime {
     // A local settle's moving set is carried too, or a push mid-settle would jiggle the whole picture at the local wake's heat.
     const moving = prev?.local ? prev.graph.nodes.filter((n) => !n.pinned).map((n) => n.id) : null
     this.graph = graph
+    this.mode = c.group.mode
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
     const lostDrag = this.dragFrom !== null && !graph.index.has(this.dragFrom.id)
     if (lostDrag) this.dragFrom = null

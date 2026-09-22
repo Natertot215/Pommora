@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BASE_RADIUS } from './forces'
-import { buildGraph, type GraphInput } from './graph'
+import { buildGraph, type GraphInput, isGroupingLink } from './graph'
 
 const input: GraphInput = {
   pages: [
@@ -138,5 +138,25 @@ describe('buildGraph', () => {
     expect(r('s1')).toBeGreaterThan(r('s2'))
     expect(r('b')).toBeGreaterThan(r('a'))
     expect(r('a')).toBe(BASE_RADIUS.page)
+  })
+})
+
+describe('the tone a link is drawn in', () => {
+  it('every kind reads as the grouping under Connection, where connections are the grouping', () => {
+    expect(isGroupingLink('connection', 'body')).toBe(true)
+    expect(isGroupingLink('connection', 'citation')).toBe(true)
+    expect(isGroupingLink('connection', 'frontmatter')).toBe(true)
+  })
+
+  it('only containment reads as the grouping under Location', () => {
+    expect(isGroupingLink('location', 'location')).toBe(true)
+    expect(isGroupingLink('location', 'body')).toBe(false)
+    expect(isGroupingLink('location', 'frontmatter')).toBe(false)
+  })
+
+  it('only membership reads as the grouping under Space', () => {
+    expect(isGroupingLink('space', 'space')).toBe(true)
+    expect(isGroupingLink('space', 'body')).toBe(false)
+    expect(isGroupingLink('space', 'citation')).toBe(false)
   })
 })
