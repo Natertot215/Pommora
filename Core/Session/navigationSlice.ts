@@ -60,6 +60,7 @@ import { dropCacheTab, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { relDirname } from '../Paths/posix'
+import { dropAllTileDocs } from '../Tiles/tileDocStore'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
@@ -792,6 +793,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       pageFetchSeq++
       set(PER_NEXUS)
       clearCache()
+      dropAllTileDocs()
     },
     setPendingTravel: (pendingTravel) => set({ pendingTravel }),
     clearPendingTravel: () => set({ pendingTravel: null }),
