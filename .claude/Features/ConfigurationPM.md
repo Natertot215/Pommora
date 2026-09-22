@@ -23,6 +23,8 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 
 #### Interface
 
+**General Preferences**
+
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Hide Disclosure Chevrons | `hideChevrons` | Collapses the sidebar's chevron gutter. | On · **Off** |
@@ -32,7 +34,15 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Interface Scale | `interfaceScale` | The scaling factor applied to the entire interface; additional scaling preferences compound this value. Also what ⌘0 resets to. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
 | Embed Scale | `embedScale` | The scale embedded pages and views start at; a block's own Scale compounds it. | 50%–150% (**90%**) |
 
-**Webpages**
+**Creation Placement**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| New Page Placement | `newPagePlacement` | Where a new page lands among its siblings when it isn't created beside another — from the sidebar, a view, or New Page. | Top · **Bottom** |
+| New Folder Placement | `newFolderPlacement` | Where a new Set or Sub-Set lands among its siblings. | Top · **Bottom** |
+| New Space Placement | `newSpacePlacement` | Where a new Space lands in its Context when it isn't created beside another. | Top · **Bottom** |
+
+**Webpages & Links**
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
