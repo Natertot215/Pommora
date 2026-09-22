@@ -47,6 +47,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **The remaining style rows.** the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `Desktop/Renderer/main.tsx` first; the six static `style={{…}}` sites (`TileLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `Core/Views/Table/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes; the two repeated clearance pairings (`clearance + --content-inset` ×8, `clearance + --surface-lane` ×3) and the two `subLabel` exports at 13px and 11px each want one decision; `band` names three unrelated things across Tiles, the Views, and the toolbar.
 - [ ] **A value edited outside the app doesn’t live-refresh an open table.**
 - [ ] **A moved tab rebuilds cold.** A tab dropped into the other row starts with fresh history and no warm editor state; the two rows' warm caches are separate, and carrying one across is a decision about what a tab's identity includes.
+- [ ] **The editor re-parses its viewport on every keystroke.** The decoration plugin's span cache is keyed on the document version, so each keystroke re-tokenizes the visible span. A token cache chunked at the block boundaries `sliceStartLine` recognizes, keyed on each block's text, re-parses only the edited block.
 - [ ] **Scroll waits by timer, and the signal can't simply replace it.** `travel.ts` sleeps `FOLD_SETTLE_MS` for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
 
 ### Known Issues
@@ -75,7 +76,7 @@ The drag engine's per-zone `family` replaced the group-wide `crossZone` switch, 
 #### PM-138 || Sync Scaffolding - Part 2
 **DATE:** 09-13-2026 → 09-14
 
-Content crosses between devices on the identity layer. Part 1 left: a device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back, with the hub's per-Nexus counter detecting conflicts and recency resolving them. The one-file roster server became the `Sync/` folder carrying the change log, ciphertext blobs, a key ring per Nexus, one authority function, and TLS behind a pinned certificate; `Core/Sync/` gained the keys, the client's base record and loops, and the arrival path. The `.nexus/` JSON files merge key by key and a landing reaches an open page through a three-way merge around the caret, so the audit's concurrency topic closed. The loser of a conflict is kept on both the device and the hub rather than overwritten.
+Content crosses between devices on the identity layer. Part 1 left: a device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back, with the hub's per-Nexus counter detecting conflicts and recency resolving them. The one-file roster server became the `Sync/` folder carrying the change log, ciphertext blobs, a key ring per Nexus, one authority function, and TLS behind a pinned certificate; `Core/Sync/` gained the keys, the client's base record and loops, and the arrival path. The `.nexus/` JSON files merge key by key and a landing reaches an open page through a three-way merge around the caret. The loser of a conflict is kept on both the device and the hub rather than overwritten.
 
 #### PM-137 || One Drag Engine
 **DATE:** 09-12-2026
@@ -85,7 +86,7 @@ Content crosses between devices on the identity layer. Part 1 left: a device enc
 #### PM-136 || One View Mechanism
 **DATE:** 09-11-2026
 
-`Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `(activeId, toZone, beforeId)` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share. The audit's topic 6 closed.
+`Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `(activeId, toZone, beforeId)` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share.
 
 ### Guidelines
 
