@@ -69,9 +69,17 @@
   color: var(--label-secondary);
 }
 
-/* The NavWindow pads its whole body by the app inset; a banner band bleeds it so the band runs edge to edge, as the Page Window's already does. */
+/* The NavWindow pads its whole body by the app inset; a banner band bleeds it so the band runs edge to edge, as the Page Window's already does, while its title keeps the body's inset. */
 .navwindow .page-tile.is-window-chrome > .mdpm-header .mdpm-banner,
 .navwindow .window-body .banner {
+  margin-top: calc(-1 * (var(--window-toolbar-h) + var(--app-inset)));
   margin-left: calc(-1 * var(--app-inset));
   margin-right: calc(-1 * var(--app-inset));
+}
+.navwindow .window-body .banner {
+  --content-start: calc(var(--content-edge) + var(--app-inset));
+}
+.navwindow .page-tile.is-window-chrome > .mdpm-header .mdpm-banner-overlay {
+  left: calc(16px * var(--page-detail-scale) + var(--app-inset));
+  right: calc(16px * var(--page-detail-scale) + var(--app-inset));
 }

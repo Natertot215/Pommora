@@ -130,6 +130,7 @@
 .page-tile.is-window-chrome > .mdpm-header .mdpm-banner {
   position: relative;
   height: var(--embed-banner-h);
+  margin-top: calc(-1 * var(--window-toolbar-h));
   animation: none;
 }
 /* The var is declared on .detail-title itself in markdown-pm.css, where it reads --editor-scale; a declaration on an ancestor never reaches it. */
