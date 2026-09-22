@@ -371,12 +371,26 @@ describe('store — page slots', () => {
 })
 
 /** A minimal tree with one Collection holding the given top-level pages (selection.test.ts's shape). */
-function treeWith(pages: { id: string; path: string }[]): NexusTree {
+function treeWith(pages: { id: string; path: string }[], spaces: string[] = []): NexusTree {
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
     homepage: { headingIconHidden: false },
     crops: {},
-    contexts: [],
+    contexts:
+      spaces.length === 0
+        ? []
+        : [
+            {
+              def: { id: 'ctx1', title: 'Areas' },
+              spaces: spaces.map((id) => ({
+                kind: 'space' as const,
+                id,
+                title: 'S',
+                path: `Areas/${id}`,
+                contextId: 'ctx1',
+              })),
+            },
+          ],
     collections: [
       {
         kind: 'collection',
@@ -422,34 +436,21 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
   })
 })
 
-describe('store — openWindow on its own origin', () => {
-  it('shows the origin tab when another tab is active', () => {
-    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
-    useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
+describe('store — one open action (B-3)', () => {
+  it('a Preview of a tab already open activates it in place', () => {
+    useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
     expect(windowTargetOf(useSession.getState())?.id).toBe('b')
-    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
     expect(windowTargetOf(useSession.getState())?.id).toBe('a')
     expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
   })
 })
 
-describe('store — openWindow with a travel armed for the origin', () => {
-  it('lands on the origin tab even when the record last showed another', () => {
-    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
-    useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
-    useSession.getState().closeWindow()
-    useSession
-      .getState()
-      .setPendingTravel({ route: 'window', path: 'Notes/A.md', heading: 'Setup' })
-    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
-    expect(windowTargetOf(useSession.getState())?.id).toBe('a')
-  })
-})
-
 describe('store — applyTree reconciles the window tabs (D-6)', () => {
-  it('re-paths a renamed tab, re-parents on a dead origin, closes the window when all tabs die', async () => {
-    useSession.getState().openWindow({ id: 'b', path: 'Notes/B.md' })
-    useSession.getState().openWindowTab({ id: 'c', path: 'Notes/C.md' })
+  it('re-paths a renamed tab and closes the window when all tabs die', async () => {
+    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'c', path: 'Notes/C.md' })
 
     await useSession.getState().applyTree(
       treeWith([
@@ -463,7 +464,6 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
 
     await useSession.getState().applyTree(treeWith([{ id: 'c', path: 'Notes/C.md' }]))
     p = useSession.getState().pageWindow
-    expect(p?.originId).toBe('c')
     expect(p?.tabs).toHaveLength(1)
 
     await useSession.getState().applyTree(treeWith([]))
@@ -471,11 +471,25 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })
 
+  it('closes a Space tab once its Space is gone, and keeps it through a rename', async () => {
+    await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
+    useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
+    useSession.getState().openWindowTab({ kind: 'space', id: 's1' })
+    expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
+
+    await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
+    expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
+
+    await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }]))
+    const p = useSession.getState().pageWindow
+    expect(p?.tabs.map((t) => (t.target.kind === 'navwindow' ? 'map' : t.target.id))).toEqual(['a'])
+  })
+
   it('folds multiple simultaneous dead tabs: a dead active with a dead left neighbor lands on the survivor', async () => {
-    useSession.getState().openWindow({ id: 'a', path: 'Notes/A.md' })
-    useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
-    useSession.getState().openWindowTab({ id: 'c', path: 'Notes/C.md' })
-    useSession.getState().openWindowTab({ id: 'd', path: 'Notes/D.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'c', path: 'Notes/C.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'd', path: 'Notes/D.md' })
 
     // c and d (the active) die in one push — the active walks left past dead c onto b.
     await useSession.getState().applyTree(
@@ -487,13 +501,12 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     const p = useSession.getState().pageWindow
     expect(p?.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : ''))).toEqual(['a', 'b'])
     expect(p?.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'b' })
-    expect(p?.originId).toBe('a')
   })
 
   it('a tree from a DIFFERENT nexus resets the session before any reconcile can leak state', async () => {
-    useSession.getState().openWindow({ id: 'b', path: 'Notes/B.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
     await useSession.getState().applyTree(treeWith([{ id: 'b', path: 'Notes/B.md' }]))
-    expect(useSession.getState().windowsFile.origins.b).toBeDefined()
+    expect(useSession.getState().windowsFile.pageSet).not.toBeNull()
 
     // The menu's reload-state path: a foreign-root tree lands with NO openVia clear before it.
     const base = treeWith([])
@@ -502,11 +515,11 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
       .applyTree({ ...base, nexus: { ...base.nexus, id: 'other', rootPath: '/other' } })
     const s = useSession.getState()
     expect(s.pageWindow).toBeNull()
-    expect(s.windowsFile).toEqual({ navSet: null, origins: {}, open: null })
+    expect(s.windowsFile).toEqual({ navSet: null, pageSet: null, open: null })
     expect(s.activeTabId).toBe('')
   })
 
-  it('a summon reconciles the remembered set against the live tree (H-10 restore)', async () => {
+  it('a Preview reconciles the remembered set against the live tree, then lands on its own tab', async () => {
     await useSession.getState().applyTree(
       treeWith([
         { id: 'x', path: 'Notes/x.md' },
@@ -516,32 +529,30 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.setState({
       windowsFile: {
         navSet: null,
-        origins: {
-          x: {
-            tabs: [
-              { target: { kind: 'page', id: 'x' } },
-              { target: { kind: 'page', id: 'y' } },
-              { target: { kind: 'page', id: 'z' } },
-            ],
-            activeIndex: 2,
-          },
+        pageSet: {
+          tabs: [
+            { target: { kind: 'page', id: 'x' } },
+            { target: { kind: 'page', id: 'y' } },
+            { target: { kind: 'page', id: 'z' } },
+          ],
         },
         open: null,
       },
     })
-    useSession.getState().openWindow({ id: 'x', path: 'Notes/x.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'x', path: 'Notes/x.md' })
     const p = useSession.getState().pageWindow
-    // Dead z drops; y re-paths to its rename; the dead stored-active falls to the first survivor.
-    expect(p?.tabs.map((t) => (t.target.kind === 'page' ? t.target.path : ''))).toEqual([
-      'Notes/x.md',
-      'Notes/Renamed.md',
+    // Dead z drops; y re-paths to its rename; the asked tab takes the focus, which the record never named.
+    expect(p?.tabs.map((t) => (t.target.kind === 'navwindow' ? '' : t.target.id))).toEqual([
+      'x',
+      'y',
     ])
-    expect(p?.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'x' })
+    expect(p?.tabs[1].target).toMatchObject({ path: 'Notes/Renamed.md' })
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'x' })
   })
 
   it('keeps the nav kind alive through a reconcile: dead page tabs drop, the map tab stays', async () => {
     useSession.getState().openNavWindow()
-    useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
+    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
 
     await useSession.getState().applyTree(treeWith([]))
     const p = useSession.getState().pageWindow

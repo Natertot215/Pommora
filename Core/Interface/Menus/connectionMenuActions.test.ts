@@ -37,11 +37,15 @@ describe('a connection opens its page the two ways every page menu offers', () =
   })
 
   it('Preview floats it instead', async () => {
-    const openWindow = vi.fn()
-    useSession.setState({ openWindow })
+    const openWindowTab = vi.fn()
+    useSession.setState({ openWindowTab })
     connMenu.mockResolvedValue('title:window')
     showConnectionMenu(target)
     await settle()
-    expect(openWindow).toHaveBeenCalledWith({ id: 'p1', path: 'Notes/Alpha.md' })
+    expect(openWindowTab).toHaveBeenCalledWith({
+      kind: 'page',
+      id: 'p1',
+      path: 'Notes/Alpha.md',
+    })
   })
 })

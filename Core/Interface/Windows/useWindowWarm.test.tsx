@@ -27,7 +27,6 @@ beforeEach(() => {
   useSession.setState({
     pageWindow: {
       kind: 'page',
-      originId: 'a',
       tabs: [{ id: 'tab1', target: { kind: 'page', id: 'a', path: 'Notes/a.md' } }],
       activeTabId: 'tab1',
     },

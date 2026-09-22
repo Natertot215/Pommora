@@ -87,7 +87,7 @@ function TabBarBody({
   const activateTab = useSession((s) => s.activateTab)
   const openNewTab = useSession((s) => s.openNewTab)
   const closeTab = useSession((s) => s.closeTab)
-  const openWindow = useSession((s) => s.openWindow)
+  const openWindowTab = useSession((s) => s.openWindowTab)
   const openMatrixWindow = useSession((s) => s.openMatrixWindow)
   const matrixWindowOpen = useSession((s) => s.pageWindow?.kind === 'matrix')
   const windowOpen = useSession((s) => s.pageWindow !== null)
@@ -171,7 +171,7 @@ function TabBarBody({
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
       else if (action === 'window') {
-        if (isPage) openWindow({ id: target.id, path: target.path })
+        if (isPage) openWindowTab({ kind: 'page', id: target.id, path: target.path })
         else openMatrixWindow()
       } else if (isPage && action) runPageSendAction(action, target)
     }

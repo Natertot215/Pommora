@@ -1,16 +1,30 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { windowTargetOf, useSession } from '../../Session/store'
+import { type SelectTarget, windowTargetOf, useSession } from '../../Session/store'
 import { captureWindowCache, clearWindowCache, readWindowCache } from './windowCache'
 import { stubDialer } from '../../vitest.setup'
 
-const page = (id: string) => ({ id, path: `Notes/${id}.md` })
+const page = (id: string) => ({ kind: 'page' as const, id, path: `Notes/${id}.md` })
+const space = (id: string) => ({ kind: 'space' as const, id })
+const ids = (s = useSession.getState()): string[] =>
+  (s.pageWindow?.tabs ?? []).map((t) => (t.target.kind === 'navwindow' ? 'map' : t.target.id))
 
-// Restore hydrates bare refs against the live tree, so the fixtures carry one holding x/y/z.
+// Restore hydrates bare refs against the live tree, so the fixture carries one holding x/y/z/n and two Spaces.
 const tree = {
   nexus: { name: 'T' },
-  contexts: [],
+  contexts: [
+    {
+      def: { id: 'ctx', title: 'Areas' },
+      spaces: ['s1', 's2'].map((id) => ({
+        kind: 'space',
+        id,
+        title: id,
+        path: `Areas/${id}`,
+        contextId: 'ctx',
+      })),
+    },
+  ],
   collections: [
     {
       kind: 'collection',
@@ -36,21 +50,39 @@ beforeEach(() => {
     pageWindow: null,
     navOpen: false,
     tree,
-    windowsFile: { navSet: null, origins: {}, open: null },
+    windowsFile: { navSet: null, pageSet: null, open: null },
   })
 })
 
-describe('windowTabs — the tab model (H-1/H-5/H-6/H-7)', () => {
-  it('summon opens a single-tab window; re-summon of the same origin is a no-op (I-1)', () => {
-    useSession.getState().openWindow(page('x'))
+describe('windowTabs — the tab model (B-2/B-3)', () => {
+  it('a first Preview opens a single-tab window; a Preview of the active tab is a no-op', () => {
+    useSession.getState().openWindowTab(page('x'))
     const p1 = useSession.getState().pageWindow
     expect(p1?.tabs.map((t) => t.target)).toEqual([{ kind: 'page', id: 'x', path: 'Notes/x.md' }])
-    useSession.getState().openWindow(page('x'))
+    useSession.getState().openWindowTab(page('x'))
     expect(useSession.getState().pageWindow).toBe(p1)
   })
 
-  it('a wiki-click adds a deduped tab and focuses on re-click (H-1)', () => {
-    useSession.getState().openWindow(page('x'))
+  it('a Preview while a window stands ADDS a tab and leaves the warm cache alone', () => {
+    useSession.getState().openWindowTab(page('x'))
+    const xTab = useSession.getState().pageWindow!.tabs[0]
+    captureWindowCache(xTab.id, { scrollTop: 7 })
+    useSession.getState().openWindowTab(page('z'))
+    expect(ids()).toEqual(['x', 'z'])
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'z' })
+    expect(readWindowCache(xTab.id)?.scrollTop).toBe(7)
+  })
+
+  it('a Space Preview opens a Space tab, deduped by id like a page', () => {
+    useSession.getState().openWindowTab(space('s1'))
+    useSession.getState().openWindowTab(space('s2'))
+    useSession.getState().openWindowTab(space('s1'))
+    expect(ids()).toEqual(['s1', 's2'])
+    expect(windowTargetOf(useSession.getState())).toEqual({ kind: 'space', id: 's1' })
+  })
+
+  it('a wiki-click adds a deduped tab and focuses on re-click', () => {
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
     useSession.getState().activateWindowTab(useSession.getState().pageWindow!.tabs[0].id)
@@ -60,29 +92,9 @@ describe('windowTabs — the tab model (H-1/H-5/H-6/H-7)', () => {
     expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'y' })
   })
 
-  it('closing the origin re-parents to the left-most survivor; last close kills the window (H-6)', () => {
-    useSession.getState().openWindow(page('x'))
-    useSession.getState().openWindowTab(page('y'))
-    const p = useSession.getState().pageWindow!
-    useSession.getState().closeWindowTab(p.tabs[0].id)
-    const p2 = useSession.getState().pageWindow!
-    expect(p2.originId).toBe('y')
-    useSession.getState().closeWindowTab(p2.tabs[0].id)
-    expect(useSession.getState().pageWindow).toBeNull()
-  })
-
-  it('a new summon overtakes — swaps to the new origin single-tab set (D-2)', () => {
-    useSession.getState().openWindow(page('x'))
-    useSession.getState().openWindowTab(page('y'))
-    useSession.getState().openWindow(page('z'))
-    const p = useSession.getState().pageWindow!
-    expect(p.originId).toBe('z')
-    expect(p.tabs).toHaveLength(1)
-  })
-
-  it('never touches app tabs/selection (D-1)', () => {
+  it('never touches app tabs/selection', () => {
     const { tabs, activeTabId, selection } = useSession.getState()
-    useSession.getState().openWindow(page('x'))
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     const s = useSession.getState()
     expect(s.tabs).toBe(tabs)
@@ -90,79 +102,100 @@ describe('windowTabs — the tab model (H-1/H-5/H-6/H-7)', () => {
     expect(s.selection).toBe(selection)
   })
 
-  it('closing a non-active, non-origin tab keeps origin and active untouched', () => {
-    useSession.getState().openWindow(page('x'))
+  it('closing a non-active tab keeps the active one; closing the ACTIVE tab falls left', () => {
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     useSession.getState().openWindowTab(page('z'))
     const p = useSession.getState().pageWindow!
-    const yId = p.tabs[1].id
-    useSession.getState().activateWindowTab(p.tabs[2].id)
-    useSession.getState().closeWindowTab(yId)
-    const p2 = useSession.getState().pageWindow!
-    expect(p2.originId).toBe('x')
-    expect(p2.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : ''))).toEqual(['x', 'z'])
-    expect(p2.tabs.find((t) => t.id === p2.activeTabId)?.target).toMatchObject({ id: 'z' })
-  })
-
-  it('closing the ACTIVE tab falls to its left neighbor', () => {
-    useSession.getState().openWindow(page('x'))
-    useSession.getState().openWindowTab(page('y'))
-    const p = useSession.getState().pageWindow!
     useSession.getState().closeWindowTab(p.tabs[1].id)
+    expect(ids()).toEqual(['x', 'z'])
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'z' })
+    useSession.getState().closeWindowTab(useSession.getState().pageWindow!.tabs[1].id)
     const p2 = useSession.getState().pageWindow!
-    expect(p2.tabs).toHaveLength(1)
     expect(p2.activeTabId).toBe(p2.tabs[0].id)
   })
 })
 
-describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
-  it("a summon restores the origin's remembered set; the active pointer survives", () => {
+describe('windowTabs — the one durable page set (B-4)', () => {
+  it('closing the last tab kills the window and writes the set empty', () => {
+    useSession.getState().openWindowTab(page('x'))
+    useSession.getState().openWindowTab(page('y'))
+    const p = useSession.getState().pageWindow!
+    useSession.getState().closeWindowTab(p.tabs[0].id)
+    expect(useSession.getState().windowsFile.pageSet?.tabs).toEqual([
+      { target: { kind: 'page', id: 'y' } },
+    ])
+    useSession.getState().closeWindowTab(useSession.getState().pageWindow!.tabs[0].id)
+    expect(useSession.getState().pageWindow).toBeNull()
+    expect(useSession.getState().windowsFile.pageSet).toBeNull()
+    useSession.getState().openWindowTab(page('x'))
+    expect(ids()).toEqual(['x'])
+  })
+
+  it('the X keeps the set; the next Preview restores it beneath the asked tab', () => {
+    useSession.getState().openWindowTab(page('x'))
+    useSession.getState().openWindowTab(page('y'))
+    useSession.getState().closeWindow()
+    expect(useSession.getState().windowsFile.pageSet?.tabs).toHaveLength(2)
+    expect(useSession.getState().windowsFile.open).toBeNull()
+
+    useSession.getState().openWindowTab(page('z'))
+    expect(ids()).toEqual(['x', 'y', 'z'])
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'z' })
+    expect(useSession.getState().windowsFile.open).toEqual({ kind: 'page' })
+  })
+
+  it('a restore lands on the ASKED tab, whatever the record last showed', () => {
     useSession.setState({
       windowsFile: {
         navSet: null,
-        origins: {
-          x: {
-            tabs: [{ target: { kind: 'page', id: 'x' } }, { target: { kind: 'page', id: 'y' } }],
-            activeIndex: 1,
-          },
+        pageSet: {
+          tabs: [{ target: { kind: 'page', id: 'x' } }, { target: { kind: 'page', id: 'y' } }],
         },
         open: null,
       },
     })
-    useSession.getState().openWindow(page('x'))
-    const p = useSession.getState().pageWindow!
-    expect(p.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : ''))).toEqual(['x', 'y'])
-    expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'y' })
-    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'y', path: 'Notes/y.md' })
+    useSession.getState().openWindowTab(page('x'))
+    expect(ids()).toEqual(['x', 'y'])
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'x', path: 'Notes/x.md' })
   })
 
-  it('drag-reorder moves a page tab and the mirrored record keeps the new order (H-3)', () => {
-    useSession.getState().openWindow(page('x'))
+  it('a stored Space ref restores as a Space tab; a dead ref drops', () => {
+    useSession.setState({
+      windowsFile: {
+        navSet: null,
+        pageSet: {
+          tabs: [
+            { target: { kind: 'space', id: 's1' } },
+            { target: { kind: 'space', id: 'gone' } },
+          ],
+        },
+        open: null,
+      },
+    })
+    useSession.getState().openWindowTab(page('x'))
+    expect(ids()).toEqual(['s1', 'x'])
+  })
+
+  it('drag-reorder moves a tab and the mirrored record keeps the new order', () => {
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     useSession.getState().openWindowTab(page('z'))
     const p = useSession.getState().pageWindow!
     useSession.getState().reorderWindowTabs(p.tabs[2].id, p.tabs[0].id)
-    const next = useSession.getState().pageWindow!
-    expect(next.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : '?'))).toEqual([
-      'z',
-      'x',
-      'y',
-    ])
-    expect(useSession.getState().windowsFile.origins.x?.tabs.map((t) => t.target)).toMatchObject([
+    expect(ids()).toEqual(['z', 'x', 'y'])
+    expect(useSession.getState().windowsFile.pageSet?.tabs.map((t) => t.target)).toMatchObject([
       { id: 'z' },
       { id: 'x' },
       { id: 'y' },
     ])
   })
 
-  it('the map sentinel neither moves nor gets landed on (H-2)', () => {
+  it('the map sentinel neither moves nor gets landed on', () => {
     useSession.setState({
       windowsFile: {
-        navSet: {
-          tabs: [{ target: { kind: 'page', id: 'x' } }],
-          activeIndex: 0,
-        },
-        origins: {},
+        navSet: { tabs: [{ target: { kind: 'page', id: 'x' } }] },
+        pageSet: null,
         open: null,
       },
     })
@@ -174,89 +207,80 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
     useSession.getState().reorderWindowTabs(p.tabs[1].id, p.tabs[0].id)
     expect(useSession.getState().pageWindow).toBe(p)
   })
-
-  it('a re-parent re-keys the record: the old origin retires, the survivor keys the set (H-6)', () => {
-    useSession.getState().openWindow(page('x'))
-    useSession.getState().openWindowTab(page('y'))
-    const p = useSession.getState().pageWindow!
-    useSession.getState().closeWindowTab(p.tabs[0].id)
-    const file = useSession.getState().windowsFile
-    expect(file.origins.x).toBeUndefined()
-    expect(file.origins.y?.tabs).toEqual([{ target: { kind: 'page', id: 'y' } }])
-    expect(file.open).toEqual({ kind: 'page', originId: 'y' })
-  })
-
-  it('closing the last tab retires the set — a re-summon starts fresh; the X keeps it (H-3)', () => {
-    useSession.getState().openWindow(page('x'))
-    useSession.getState().openWindowTab(page('y'))
-    useSession.getState().closeWindow()
-    let file = useSession.getState().windowsFile
-    expect(file.origins.x?.tabs).toHaveLength(2)
-    expect(file.open).toBeNull()
-
-    useSession.getState().openWindow(page('x'))
-    const p = useSession.getState().pageWindow!
-    expect(p.tabs).toHaveLength(2)
-    useSession.getState().closeWindowTab(p.tabs[1].id)
-    useSession.getState().closeWindowTab(useSession.getState().pageWindow!.tabs[0].id)
-    file = useSession.getState().windowsFile
-    expect(useSession.getState().pageWindow).toBeNull()
-    expect(file.origins.x).toBeUndefined()
-    useSession.getState().openWindow(page('x'))
-    expect(useSession.getState().pageWindow?.tabs).toHaveLength(1)
-  })
 })
 
-describe('windowTabs — the nav kind (H-2)', () => {
-  it('the map sentinel tab refuses to close; page tabs around it close normally', () => {
-    useSession.getState().openNavWindow()
+describe('windowTabs — the nav kind (B-3)', () => {
+  it('a Preview while the NavWindow stands lands as a NavWindow tab', () => {
+    useSession.getState().openNav()
     useSession.getState().openWindowTab(page('x'))
     const p = useSession.getState().pageWindow!
     expect(p.kind).toBe('nav')
+    expect(useSession.getState().navOpen).toBe(true)
+    expect(ids()).toEqual(['map', 'x'])
+    const file = useSession.getState().windowsFile
+    expect(file.navSet?.tabs).toEqual([{ target: { kind: 'page', id: 'x' } }])
+    expect(file.pageSet).toBeNull()
+    expect(file.open).toEqual({ kind: 'nav' })
+  })
+
+  it('the map sentinel tab refuses to close; tabs around it close normally', () => {
+    useSession.getState().openNavWindow()
+    useSession.getState().openWindowTab(page('x'))
+    const p = useSession.getState().pageWindow!
     const mapId = p.tabs[0].id
     useSession.getState().closeWindowTab(mapId)
     expect(useSession.getState().pageWindow).toBe(p)
     useSession.getState().closeWindowTab(p.tabs[1].id)
-    const p2 = useSession.getState().pageWindow!
-    expect(p2.tabs.map((t) => t.target.kind)).toEqual(['navwindow'])
+    expect(ids()).toEqual(['map'])
   })
 
-  it('an indexed open splices among the page tabs, past the map sentinel, without activating', () => {
+  it('an indexed open splices among the tabs, past the map sentinel, without activating', () => {
     useSession.getState().openNavWindow()
     useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     useSession.getState().openWindowTab(page('z'), 1)
-    const p = useSession.getState().pageWindow!
-    expect(p.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : 'map'))).toEqual([
-      'map',
-      'x',
-      'z',
-      'y',
-    ])
-    expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'y' })
+    expect(ids()).toEqual(['map', 'x', 'z', 'y'])
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'y' })
   })
 
-  it('an indexed open of a tab already there moves it to that spot, keeping the active tab', () => {
+  it('an indexed open of a tab already there moves it, keeping the active tab', () => {
     useSession.getState().openNavWindow()
     useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     useSession.getState().openWindowTab(page('x'), 2)
+    expect(ids()).toEqual(['map', 'y', 'x'])
+    expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'y' })
+  })
+
+  it('openNav seeds the nav kind with the remembered set; closeNav keeps it durable', () => {
+    useSession.setState({
+      windowsFile: {
+        navSet: { tabs: [{ target: { kind: 'page', id: 'n' } }] },
+        pageSet: null,
+        open: null,
+      },
+    })
+    useSession.getState().openNav()
     const p = useSession.getState().pageWindow!
-    expect(p.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : 'map'))).toEqual([
-      'map',
-      'y',
-      'x',
+    expect(useSession.getState().navOpen).toBe(true)
+    expect(p.kind).toBe('nav')
+    expect(ids()).toEqual(['map', 'n'])
+    expect(p.activeTabId).toBe(p.tabs[0].id)
+
+    useSession.getState().closeNav()
+    expect(useSession.getState().pageWindow).toBeNull()
+    expect(useSession.getState().navOpen).toBe(false)
+    expect(useSession.getState().windowsFile.navSet?.tabs).toEqual([
+      { target: { kind: 'page', id: 'n' } },
     ])
-    expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'y' })
   })
 })
 
-describe('windowTabs — warmth (H-8)', () => {
+describe('windowTabs — warmth (B-8)', () => {
   it('round-trips per tab id; a tab close evicts its entry; the window close clears all', () => {
-    useSession.getState().openWindow(page('x'))
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
-    const p = useSession.getState().pageWindow!
-    const [xTab, yTab] = p.tabs
+    const [xTab, yTab] = useSession.getState().pageWindow!.tabs
     captureWindowCache(xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
     captureWindowCache(yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
     expect(readWindowCache(xTab.id)?.scrollTop).toBe(5)
@@ -269,44 +293,11 @@ describe('windowTabs — warmth (H-8)', () => {
     expect(readWindowCache(xTab.id)).toBeUndefined()
   })
 
-  it('a summon clears prior warmth — restored ids are fresh, old entries unreachable', () => {
-    useSession.getState().openWindow(page('x'))
-    const xTab = useSession.getState().pageWindow!.tabs[0]
-    captureWindowCache(xTab.id, { scrollTop: 7 })
-    useSession.getState().openWindow(page('z'))
-    expect(readWindowCache(xTab.id)).toBeUndefined()
-  })
-})
-
-describe('windowTabs — the NavWindow kind entry (H-2/H-3)', () => {
-  it('openNav seeds the nav kind with the remembered set (map tab active); closeNav keeps it durable', () => {
-    useSession.setState({
-      windowsFile: {
-        navSet: {
-          tabs: [{ target: { kind: 'page', id: 'n' } }],
-          activeIndex: 0,
-        },
-        origins: {},
-        open: null,
-      },
-    })
-    useSession.getState().openNav()
-    const p = useSession.getState().pageWindow!
-    expect(useSession.getState().navOpen).toBe(true)
-    expect(p.kind).toBe('nav')
-    expect(p.tabs.map((t) => t.target.kind)).toEqual(['navwindow', 'page'])
-    expect(p.activeTabId).toBe(p.tabs[0].id)
-
-    useSession.getState().closeNav()
-    expect(useSession.getState().pageWindow).toBeNull()
-    expect(useSession.getState().navOpen).toBe(false)
-    expect(useSession.getState().windowsFile.navSet?.tabs).toEqual([
-      { target: { kind: 'page', id: 'n' } },
-    ])
-  })
-
-  it('the B-2 override defaults on when the windows file does not name it', () => {
-    expect(useSession.getState().windowsFile.navOverride ?? true).toBe(true)
+  it('an overtake clears prior warmth — the entry is seeded after the Matrix stands', () => {
+    useSession.getState().openMatrixWindow()
+    captureWindowCache('stale', { scrollTop: 7 })
+    useSession.getState().openWindowTab(page('z'))
+    expect(readWindowCache('stale')).toBeUndefined()
   })
 })
 
@@ -315,26 +306,25 @@ describe('windowTabs — the Matrix kind entry', () => {
     useSession.getState().openMatrixWindow()
     const file = useSession.getState().windowsFile
     expect(useSession.getState().pageWindow?.kind).toBe('matrix')
-    expect(file.open).toEqual({ kind: 'matrix', originId: 'matrix' })
-    expect(file.origins.matrix).toBeUndefined()
+    expect(file.open).toEqual({ kind: 'matrix' })
+    expect(file.pageSet).toBeNull()
     expect(file.navSet).toBeNull()
   })
 })
 
-describe('windowTabs — the engulf exit flag (A-4)', () => {
+describe('windowTabs — the engulf exit flag', () => {
   it("a promote's engulf flag never leaks onto the next window's close", () => {
-    useSession.getState().openWindow(page('x'))
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().closeWindow('engulf')
     expect(useSession.getState().windowExit).toBe('engulf')
-    // Re-opening re-seeds — the close paths that never write the flag can't replay the FLIP.
-    useSession.getState().openWindow(page('y'))
+    useSession.getState().openWindowTab(page('y'))
     expect(useSession.getState().windowExit).toBe('dismiss')
   })
 })
 
-describe('windowTabs — the slide stamp (Task 1.3)', () => {
+describe('windowTabs — the slide stamp', () => {
   it('stamps fwd on spawn, direction by strip order on activate, monotonic seq', () => {
-    useSession.getState().openWindow(page('x'))
+    useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     const s1 = useSession.getState().windowSlide!
     expect(s1.dir).toBe('fwd')
@@ -345,5 +335,36 @@ describe('windowTabs — the slide stamp (Task 1.3)', () => {
     expect(s2.seq).toBeGreaterThan(s1.seq)
     useSession.getState().activateWindowTab(p.tabs[1].id)
     expect(useSession.getState().windowSlide!.dir).toBe('fwd')
+  })
+})
+
+const makeSelect = () =>
+  vi.fn((_t: SelectTarget, _o?: { record?: boolean; newTab?: boolean }) => Promise.resolve())
+
+describe('windowTabs — promote (C-8)', () => {
+  const realSelect = useSession.getState().select
+  let select = makeSelect()
+  beforeEach(() => {
+    select = makeSelect()
+    useSession.setState({ select })
+  })
+  afterEach(() => useSession.setState({ select: realSelect }))
+
+  it('lifts one tab into the main pane and leaves the window standing', () => {
+    useSession.getState().openWindowTab(page('x'))
+    useSession.getState().openWindowTab(page('y'))
+    const first = useSession.getState().pageWindow!.tabs[0]
+    useSession.getState().promoteWindowTab(first.id)
+    expect(ids()).toEqual(['y'])
+    expect(select).toHaveBeenCalledWith({ kind: 'page', id: 'x', path: 'Notes/x.md' }, undefined)
+    expect(useSession.getState().windowExit).toBe('dismiss')
+  })
+
+  it('promoting the last tab closes the window on the engulf, and a new-tab promote asks for one', () => {
+    useSession.getState().openWindowTab(space('s1'))
+    useSession.getState().promoteWindowTab(useSession.getState().pageWindow!.tabs[0].id, true)
+    expect(useSession.getState().pageWindow).toBeNull()
+    expect(useSession.getState().windowExit).toBe('engulf')
+    expect(select).toHaveBeenCalledWith({ kind: 'space', id: 's1' }, { newTab: true })
   })
 })

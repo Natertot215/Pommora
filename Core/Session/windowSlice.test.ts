@@ -9,7 +9,7 @@ beforeEach(() => {
   useSession.setState({
     pageWindow: null,
     navOpen: false,
-    windowsFile: { navSet: null, origins: {}, open: null },
+    windowsFile: { navSet: null, pageSet: null, open: null },
   })
 })
 
@@ -22,27 +22,30 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
 
 describe('reconcileWindow', () => {
   it('keeps the history window while the tree holds its page, and closes it once the page is gone', () => {
-    useSession.setState({ historyTarget: { id: 'a', path: 'Notes/a.md' } })
+    useSession.setState({ historyTarget: { kind: 'page', id: 'a', path: 'Notes/a.md' } })
     useSession.getState().reconcileWindow(indexOf({ a: 'Notes/a.md' }))
-    expect(useSession.getState().historyTarget).toEqual({ id: 'a', path: 'Notes/a.md' })
+    expect(useSession.getState().historyTarget).toEqual({
+      kind: 'page',
+      id: 'a',
+      path: 'Notes/a.md',
+    })
     useSession.getState().reconcileWindow(indexOf({}))
     expect(useSession.getState().historyTarget).toBeNull()
   })
 })
 
 describe('the Matrix window — one slot, three kinds', () => {
-  const page = { id: 'x', path: 'Notes/x.md' }
+  const page = { kind: 'page', id: 'x', path: 'Notes/x.md' } as const
 
-  it('overtakes an open page window, whose set survives for a re-summon', () => {
-    useSession.getState().openWindow(page)
+  it('overtakes an open page window, whose set survives for the next Preview', () => {
+    useSession.getState().openWindowTab(page)
     expect(useSession.getState().pageWindow?.kind).toBe('page')
     useSession.getState().openMatrixWindow()
     const win = useSession.getState().pageWindow!
     expect(win.kind).toBe('matrix')
     expect(win.tabs).toEqual([])
     expect(useSession.getState().windowExit).toBe('dismiss')
-    // A summon retires no origin — only a re-parent does — so the overtaken window re-opens with its tabs.
-    expect(useSession.getState().windowsFile.origins.x?.tabs).toEqual([
+    expect(useSession.getState().windowsFile.pageSet?.tabs).toEqual([
       { target: { kind: 'page', id: 'x' } },
     ])
   })
@@ -55,11 +58,12 @@ describe('the Matrix window — one slot, three kinds', () => {
     expect(useSession.getState().windowsFile.open).toBeNull()
   })
 
-  it('a tab asked for while it stands opens a page window instead', () => {
+  it('a Preview while it stands overtakes it — the Matrix has no tabs to join', () => {
     useSession.getState().openMatrixWindow()
     useSession.getState().openWindowTab(page)
     const win = useSession.getState().pageWindow!
     expect(win.kind).toBe('page')
-    expect(win.tabs.map((t) => t.target)).toEqual([{ kind: 'page', ...page }])
+    expect(win.tabs.map((t) => t.target)).toEqual([page])
+    expect(useSession.getState().windowsFile.open).toEqual({ kind: 'page' })
   })
 })

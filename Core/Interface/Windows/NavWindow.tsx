@@ -96,7 +96,10 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
-  const pageTarget = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
+  const pageTarget = useSession((s) => {
+    const t = s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null
+    return t?.kind === 'page' ? t : null
+  })
   // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
   useEffect(() => {
     if (!pageTarget) {

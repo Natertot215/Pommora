@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { isUlidShaped } from './identityMark'
 import type { EntityRecord } from './record'
 import { readKey, writeKey } from '../Platform/localState'
-import { readWindowsState, writeWindowsState } from '../Interface/Windows/windowState'
 import { readBaseline, runOpenLedger } from './remintLedger'
 import type { Baseline } from './remintLedger'
 import { adjudicate } from './remint'
@@ -182,11 +181,6 @@ describe('the re-mint writes', () => {
     writeKey('headingCols', PAGE, [0])
     writeKey('aliases', PAGE, ['the notes'])
     writeKey('headingIcon', PAGE, true)
-    writeWindowsState({
-      navSet: null,
-      origins: { [PAGE]: { tabs: [{ target: { kind: 'page', id: PAGE } }], activeIndex: 0 } },
-      open: null,
-    })
 
     await runOpenLedger(root)
 
@@ -207,9 +201,6 @@ describe('the re-mint writes', () => {
     expect(readKey('headingCols', fresh)).toEqual([0])
     expect(readKey('aliases', fresh)).toEqual(['the notes'])
     expect(readKey('headingIcon', fresh)).toBe(true)
-    const windows = readWindowsState()
-    expect(windows.origins[PAGE]).toBeDefined()
-    expect(windows.origins[fresh]).toBeDefined()
 
     // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off disk, through admission, into the projection — not through the in-memory fix-up.
     await runOpenLedger(root)

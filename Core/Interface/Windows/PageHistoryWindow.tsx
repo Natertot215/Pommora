@@ -16,7 +16,7 @@ import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatVal
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
 import { livePagePath, connectionsFor, trailOf } from '../../Nexus/treeIndex'
-import { useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
+import { type PageTarget, useEmbedScale, useSession } from '../../Session/store'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
 import { host } from '../../Platform/dialer'
@@ -41,7 +41,7 @@ function PageHistoryBody({
   target,
   closing,
 }: {
-  target: WindowTarget
+  target: PageTarget
   closing: boolean
 }): React.JSX.Element {
   const closeHistory = useSession((s) => s.closeHistory)
