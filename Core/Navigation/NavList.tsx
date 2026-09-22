@@ -8,6 +8,7 @@ import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import { useEscort } from '@pommora/uix/Interactions/drag'
 import {
+  isWindowTarget,
   TAB_FAMILY,
   type NavRef,
   type PageTarget,
@@ -55,7 +56,7 @@ export function NavRowMenu({
       navRowMenuItems({
         canOpenNewTab: onOpenNewTab !== undefined,
         alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
-        isPage: target.kind === 'page',
+        kind: target.kind,
         isPinned,
         isFavorite,
         ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
@@ -69,12 +70,11 @@ export function NavRowMenu({
         case 'open-new-tab':
           onOpenNewTab?.(target)
           break
-        case 'open-window':
-          if (target.kind === 'page' && st.tree) {
-            const livePage = liveTarget(reconcileIndexOf(st.tree), target)
-            if (livePage?.kind === 'page') st.openWindowTab(livePage)
-          }
+        case 'open-window': {
+          const live = st.tree ? liveTarget(reconcileIndexOf(st.tree), target) : null
+          if (live && isWindowTarget(live)) st.openWindowTab(live)
           break
+        }
         case 'pin':
           st.pinTarget(target)
           break

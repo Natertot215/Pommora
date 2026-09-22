@@ -14,6 +14,9 @@ import { text } from '@pommora/uix/Theme'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
 import { useActiveTabInView, useTabClose, useTabExchange } from '../../Navigation/tabRows'
+import { popMenu } from '../../Actions/menuActions'
+import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
+import { pageMoveContext, runPageSendAction } from '../Menus/pageMenuActions'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { isWindowTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
@@ -40,6 +43,7 @@ export function WindowTabStrip({
   const closeWindowTab = useSession((s) => s.closeWindowTab)
   const reorderWindowTabs = useSession((s) => s.reorderWindowTabs)
   const openWindowTab = useSession((s) => s.openWindowTab)
+  const promoteWindowTab = useSession((s) => s.promoteWindowTab)
   const tabs = pageWindow?.tabs
   const activeTabId = pageWindow?.activeTabId
   const navKind = pageWindow?.kind === 'nav'
@@ -70,6 +74,25 @@ export function WindowTabStrip({
     contentEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
   const { still, carry, receive } = useTabExchange((id) => entryOf(id)?.tab.target, openWindowTab)
+  const runTabMenu =
+    (tab: WindowTab) =>
+    async (e: React.MouseEvent): Promise<void> => {
+      e.preventDefault()
+      e.stopPropagation()
+      const target = tab.target
+      if (target.kind === 'navwindow') return
+      const isPage = target.kind === 'page'
+      const action = await popMenu(
+        tabMenuItems({
+          row: 'window',
+          kind: target.kind,
+          ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
+        }),
+      )
+      if (action === 'promote') promoteWindowTab(tab.id, true)
+      else if (action === 'close') requestClose(tab.id)
+      else if (isPage && action) runPageSendAction(action, target)
+    }
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
@@ -148,6 +171,7 @@ export function WindowTabStrip({
                     closing={ghost}
                     onActivate={() => activateWindowTab(entry.tab.id)}
                     onClose={() => requestClose(entry.tab.id)}
+                    onMenu={runTabMenu(entry.tab)}
                   />
                 </Fragment>
               ))}
@@ -166,6 +190,7 @@ function DraggableWindowTab(props: {
   closing: boolean
   onActivate: () => void
   onClose: () => void
+  onMenu?: (e: React.MouseEvent) => void
 }): React.JSX.Element {
   const drag = useDragItem(props.entry.tab.id)
   return <WindowTabItem {...props} drag={drag} />
@@ -179,6 +204,7 @@ function WindowTabItem({
   drag,
   onActivate,
   onClose,
+  onMenu,
 }: {
   entry: Entry
   navKind: boolean
@@ -187,6 +213,7 @@ function WindowTabItem({
   drag?: DragItem
   onActivate: () => void
   onClose: () => void
+  onMenu?: (e: React.MouseEvent) => void
 }): React.JSX.Element {
   const isMap = entry.tab.target.kind === 'navwindow'
   const kind = entry.tab.target.kind === 'navwindow' ? 'page' : entry.tab.target.kind
@@ -220,6 +247,7 @@ function WindowTabItem({
       onClick={() => {
         if (!drag?.isDragging) onActivate()
       }}
+      onContextMenu={onMenu}
     >
       {res ? (
         <EntityIcon item={res} size={TAB_ICON} className="tab-icon" />

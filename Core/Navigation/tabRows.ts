@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import type { Carried } from '@pommora/uix/Interactions/drag'
-import type { PageTarget, TabTarget, WindowTabTarget } from './navRef'
+import { isWindowTarget, type TabTarget, type WindowTabTarget, type WindowTarget } from './navRef'
 
 const EXIT_MS = ms(duration.base) + ms(duration.fast)
 
@@ -50,13 +50,13 @@ export function useTabClose<E extends { tab: { id: string } }>(
   }
 }
 
-/** Only a page tab travels between rows, and `TAB_FAMILY` is the rows' whole agreement on that — so the carried item is asserted here, beside the `carry` that produced it. */
+// A page or a Space travels between rows, and `TAB_FAMILY` is the rows' whole agreement on that — so the carried item is asserted here, beside the `carry` that produced it.
 export function useTabExchange(
   targetOf: (id: string) => TabTarget | WindowTabTarget | undefined,
-  open: (target: PageTarget, index: number) => void,
+  open: (target: WindowTarget, index: number) => void,
 ): {
   still: boolean
-  carry: (id: string) => PageTarget | null
+  carry: (id: string) => WindowTarget | null
   receive: (item: Carried, index: number) => void
 } {
   const placing = useRef(false)
@@ -67,11 +67,11 @@ export function useTabExchange(
     still: placing.current,
     carry: (id) => {
       const target = targetOf(id)
-      return target?.kind === 'page' ? target : null
+      return target && isWindowTarget(target) ? target : null
     },
     receive: (item, index) => {
       placing.current = true
-      open(item as PageTarget, index)
+      open(item as WindowTarget, index)
     },
   }
 }

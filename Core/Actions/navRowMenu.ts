@@ -7,11 +7,12 @@ import {
   pageSendActions,
 } from './pageMenu'
 import { favoriteLabel, openLabel, pinLabel } from './toggleLabels'
+import type { NavRef } from '../Navigation/navRef'
 
 export interface NavRowMenuContext extends PageMenuContext {
   canOpenNewTab: boolean
   alreadyOpen: boolean
-  isPage: boolean
+  kind: NavRef['kind']
   isPinned: boolean
   isFavorite: boolean
 }
@@ -28,17 +29,18 @@ type NavRowMenuAction =
   | PageMoveAction
 
 export function navRowMenuItems(ctx: NavRowMenuContext): ActionItem<NavRowMenuAction>[] {
+  const isPage = ctx.kind === 'page'
   const items: ActionItem<NavRowMenuAction>[] = []
   items.push(
     ...openOrder<NavRowMenuAction>(
       ctx.alreadyOpen,
       ctx.canOpenNewTab ? [{ label: openLabel(ctx.alreadyOpen), action: 'open-new-tab' }] : [],
-      ctx.isPage ? [{ label: 'Preview', action: 'open-window' }] : [],
+      isPage || ctx.kind === 'space' ? [{ label: 'Preview', action: 'open-window' }] : [],
     ),
   )
   const opens = items.length > 0
   // A recent is a stored ref, addressable only once the renderer has minted a live path.
-  if (ctx.isPage && ctx.currentParentPath !== undefined)
+  if (isPage && ctx.currentParentPath !== undefined)
     items.push(
       ...pageMetaMenuSubset(pageSendActions(ctx), undefined, ctx).map((r, i) =>
         i === 0 ? { ...r, separatorBefore: opens } : r,

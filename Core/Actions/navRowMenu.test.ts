@@ -7,7 +7,7 @@ const shape = (ctx: NavRowMenuContext): string[] =>
 const base: NavRowMenuContext = {
   canOpenNewTab: true,
   alreadyOpen: false,
-  isPage: true,
+  kind: 'page',
   isPinned: false,
   isFavorite: false,
 }
@@ -36,8 +36,26 @@ describe('the nav row menu', () => {
 
   it('a container row without an opener starts at Pin', () => {
     expect(
-      shape({ ...base, canOpenNewTab: false, isPage: false, isPinned: true, isFavorite: true }),
+      shape({
+        ...base,
+        canOpenNewTab: false,
+        kind: 'collection',
+        isPinned: true,
+        isFavorite: true,
+      }),
     ).toEqual(['Unpin', 'Unfavorite', '—', 'Remove'])
+  })
+
+  it('a Space row previews, and offers no send block', () => {
+    expect(shape({ ...base, kind: 'space', currentParentPath: 'Notes' })).toEqual([
+      'Preview',
+      'New Tab',
+      '—',
+      'Pin',
+      'Favorite',
+      '—',
+      'Remove',
+    ])
   })
 
   it('reads Open on a row already open in a tab', () => {
