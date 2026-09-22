@@ -1,3 +1,4 @@
+import { perText } from '../perText'
 import { parse } from '../parser'
 import { codeMask, type CodeMask } from '../markdownCode'
 import type { DocLines } from '../detect'
@@ -19,12 +20,13 @@ export interface TableRegion {
   delimiter: { columns: Column[] }
 }
 
-function isTable(block: string): boolean {
+// KNOB — distinct table sources remembered; a table being typed in mints one per keystroke.
+const isTable = perText((block) => {
   const tree = parse(block)
   return tree.children.length === 1 && tree.children[0].type === 'table'
-}
+}, 256)
 
-/** Read per keystroke by the guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc version (`docCache.docScan`), so the micromark confirmations here are paid once. */
+/** Read per keystroke by the guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc version (`docCache.docScan`). */
 export function tableRegions(
   { text, lines, lineStarts }: DocLines,
   inCode: CodeMask = codeMask(text),

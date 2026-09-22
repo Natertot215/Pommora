@@ -1,4 +1,5 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
+import { perText } from './perText'
 import { parse } from './parser'
 import { codeMask, fenceLang, fenceSpans, lineOffsetsOf, type CodeMask } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
@@ -477,14 +478,20 @@ const blockquotePrefilter = /^[ \t]*>+([ \t]|$)/
 // A first-character test would pay a full parse for every `- item`, which is what made a bulleted page the expensive case.
 const thematicBreakPrefilter = /^[ ]{0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/
 
+// KNOB — distinct lines each predicate remembers.
+const LINE_CAP = 4096
+const parsesTo = (type: string): ((line: string) => boolean) =>
+  perText((line) => parse(line).children.some((n) => n.type === type), LINE_CAP)
+const parsesThematicBreak = parsesTo('thematicBreak')
+const parsesHeading = parsesTo('heading')
+const parsesBlockquote = parsesTo('blockquote')
+
 export function isThematicBreakLine(line: string): boolean {
-  if (!thematicBreakPrefilter.test(line)) return false
-  return parse(line).children.some((n) => n.type === 'thematicBreak')
+  return thematicBreakPrefilter.test(line) && parsesThematicBreak(line)
 }
 
 export function isHeadingLine(line: string): boolean {
-  if (!headingPrefilter.test(line)) return false
-  return parse(line).children.some((n) => n.type === 'heading')
+  return headingPrefilter.test(line) && parsesHeading(line)
 }
 
 const headingPartsRe = /^([ ]{0,3})(#{1,6})([ \t]+)(.*)$/
@@ -496,8 +503,7 @@ export function headingParts(
 }
 
 export function isBlockquoteLine(line: string): boolean {
-  if (!blockquotePrefilter.test(line)) return false
-  return parse(line).children.some((n) => n.type === 'blockquote')
+  return blockquotePrefilter.test(line) && parsesBlockquote(line)
 }
 
 export function isInlineMathContent(content: string): boolean {
