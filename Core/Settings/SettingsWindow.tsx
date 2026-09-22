@@ -39,7 +39,7 @@ import {
 import './settings-window.css'
 
 const DRAG_SURFACES =
-  '.settings-body, .settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
+  '.settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
 
 const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
   kind: 'item',

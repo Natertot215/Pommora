@@ -26,7 +26,7 @@ const RAIL = { min: 120, def: 200, max: 320 }
 
 // Matched against the press target itself, so child content — row internals, card bodies, the search input — never arms a window move.
 const DRAG_SURFACES =
-  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .window-tab-body, .window-tabwrap, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
+  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)
@@ -113,16 +113,15 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     openNewTab()
   }
   const bannered = useSession((s) => s.personalization.windowNavBanner ?? false)
-  const searchRow = (
-    <div className="nav-search-row navwindow-search">
-      <SearchField
-        inputRef={searchRef}
-        className={text.body.standard}
-        value={query}
-        onValueChange={setQuery}
-      />
-    </div>
+  const searchField = (
+    <SearchField
+      inputRef={searchRef}
+      className={cx('nav-view-search', text.body.standard)}
+      value={query}
+      onValueChange={setQuery}
+    />
   )
+  const searchRow = <div className="nav-search-row navwindow-search">{searchField}</div>
   const resolveIndex = tree ? resolveIndexOf(tree) : null
   // Its own list, never the main pane's selection — the bar states what this window is showing.
   const shownCount = results ? results.length : resolvedPins.length + shownRecents.length
@@ -172,18 +171,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         {body ?? (
           <div className="navwindow-main">
             {bannered ? (
-              <NavBanner
-                search={
-                  <SearchField
-                    inputRef={searchRef}
-                    className={cx('nav-view-search', text.headline.emphasized)}
-                    value={query}
-                    onValueChange={setQuery}
-                  />
-                }
-                empty={() => searchRow}
-                windowed
-              />
+              <NavBanner search={searchField} empty={() => searchRow} windowed />
             ) : (
               searchRow
             )}
