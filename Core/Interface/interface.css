@@ -54,29 +54,20 @@
 .detail-scroll.has-header .detail-body {
   padding-top: 16px;
 }
-/* The :not(:has(.tile-host)) guard here and below scopes to the whole-page case only, so a tile that embeds a table or cards view never flips its own body. */
-.detail-scroll.has-header .detail-body:has(.table-head):not(:has(.tile-host)) {
+.detail-scroll.has-header .detail-body:has(.table-head) {
   padding-top: 0;
   padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
 }
 /* Cards carry no grips/chevron lane, so no views gutter is reserved. */
-.detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.tile-host)) {
+.detail-scroll.has-header .detail-body:has(.cards-view) {
   padding-top: 8px;
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
   padding-right: calc(var(--side-pane-clearance) + var(--surface-lane));
-}
-/* Tile handles supply the grip/chevron actions, so no reserved lane is needed. Driven by kind (is-surface), so a context with no live tile surface still insets tight. */
-.detail-scroll.is-surface .detail-body {
-  padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
-  padding-right: calc(var(--side-pane-clearance) + var(--surface-lane));
-}
-/* KNOB: the banner→first-tile clearance. */
-.detail-scroll.has-header.is-surface .detail-body {
-  padding-top: 8px;
 }
 
 .shell.is-resizing .detail,
-.shell.is-resizing .detail-body {
+.shell.is-resizing .detail-body,
+.shell.is-resizing .tile-host-frame {
   transition: none;
 }
 

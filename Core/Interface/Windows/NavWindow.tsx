@@ -3,27 +3,21 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { duration, easing, ms } from '@pommora/uix/Animations/motion'
 import { text } from '@pommora/uix/Theme'
-import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
+import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
-import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { moveByKey } from '../../Navigation/navRecents'
 import { resolveIndexOf } from '../../Nexus/treeIndex'
-import { useWindowTabConnections } from '../../Session/pageConnections'
 import { windowTargetOf, useSession } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
-import { WindowActions } from '@pommora/uix/Windows/WindowActions'
-import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
-import { useWindowWarm } from './useWindowWarm'
+import { useWindowTabBody } from './WindowTabBody'
 import { NavGallery } from '../../Navigation/NavGallery'
 import { useWindowGeometry } from './useWindowGeometry'
 import { Subfield } from '../Subfield/Subfield'
-import { CitationsToggle } from '../Subfield/CitationsToggle'
-import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import './nav-window.css'
 
@@ -85,7 +79,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       { duration: ms(duration.base), easing: easing.baseEase },
     )
   }, [])
-  const [sidePaneOpen, setSidePaneOpen] = useState(false)
 
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   const closeOnSelect = useSession((s) => s.personalization.navCloseOnSelect !== false)
@@ -96,26 +89,22 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
-  const pageTarget = useSession((s) => {
-    const t = s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null
-    return t?.kind === 'page' ? t : null
-  })
-  // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
+  const target = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
+  const { body, right, actions, footer, footerLead, sidePaneOpen, closeSidePane } =
+    useWindowTabBody(target, 'navwindow-page')
+  // Also re-focuses on every map-tab return — the input remounts when a tab swaps the body away.
   useEffect(() => {
-    if (!pageTarget) {
-      searchRef.current?.focus()
-      setSidePaneOpen(false)
-    }
-  }, [pageTarget])
+    if (!target) searchRef.current?.focus()
+  }, [target])
 
   const select = useSession((s) => s.select)
   const openNewTab = useSession((s) => s.openNewTab)
   const setNavViewMode = useSession((s) => s.setNavViewMode)
 
   const promote = (): void => {
-    if (pageTarget) {
+    if (target) {
       closeNav()
-      void select({ kind: 'page', id: pageTarget.id, path: pageTarget.path })
+      void select(target)
       return
     }
     setNavViewMode(viewMode)
@@ -123,15 +112,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     openNewTab()
   }
   const resolveIndex = tree ? resolveIndexOf(tree) : null
-
-  const [editing, setEditing] = useState(false)
-  useEffect(() => setEditing(false), [pageTarget?.path])
-  const pageScrollRef = useRef<HTMLDivElement>(null)
-  const warmSeam = useWindowWarm(pageScrollRef, pageTarget?.path)
-  const connections = useWindowTabConnections(tree)
   // Its own list, never the main pane's selection — the bar states what this window is showing.
   const shownCount = results ? results.length : resolvedPins.length + shownRecents.length
-  const { page: tabPage, onBody } = useSubfieldPage(pageTarget)
 
   return (
     <WindowBase
@@ -140,32 +122,21 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       closing={closing}
       onClose={closeNav}
       // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
-      onEscape={() => (sidePaneOpen ? setSidePaneOpen(false) : closeNav())}
+      onEscape={() => (sidePaneOpen ? closeSidePane() : closeNav())}
       dragSurfaces={DRAG_SURFACES}
-      footer={
-        tabPage ? (
-          <Subfield page={tabPage} inert />
-        ) : (
-          <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />
-        )
-      }
+      footer={footer ?? <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />}
       footerLabel={footerLabel}
-      footerLead={<CitationsToggle page={tabPage} />}
-      className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
+      footerLead={footerLead}
+      className={cx('navwindow', target !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}
       title={<WindowTabStrip index={resolveIndex} title={null} />}
-      actions={
-        <WindowActions
-          sidePaneOpen={sidePaneOpen}
-          onToggleSidePane={() => setSidePaneOpen((v) => !v)}
-        />
-      }
+      actions={actions}
       left={{
         windowId: 'navwindow',
         bounds: RAIL,
         mode: 'inflow',
-        open: pageTarget === null,
+        open: target === null,
         className: 'navwindow-rail',
         children: (
           <>
@@ -183,41 +154,10 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           </>
         ),
       }}
-      right={{
-        windowId: 'window-side-pane',
-        bounds: WINDOW_BASE_PANEL,
-        mode: 'overlay',
-        open: sidePaneOpen && pageTarget !== null,
-        className: 'navwindow-side-pane',
-        children: (
-          <div className="window-pane-scroll">
-            {sidePaneOpen && pageTarget && (
-              <PropertyPanel
-                subject={{ kind: 'page', id: pageTarget.id, path: pageTarget.path }}
-                host="side-pane"
-              />
-            )}
-          </div>
-        ),
-      }}
+      right={right}
     >
       <div className="navwindow-content">
-        {pageTarget ? (
-          <div
-            className="window-body navwindow-page over-scroll page-tile-grows"
-            ref={pageScrollRef}
-          >
-            <PageTile
-              key={pageTarget.path}
-              path={pageTarget.path}
-              editing={editing}
-              onBeginEdit={() => setEditing(true)}
-              connections={connections}
-              onBody={onBody}
-              warm={warmSeam}
-            />
-          </div>
-        ) : (
+        {body ?? (
           <div className="navwindow-main">
             <div className="nav-search-row navwindow-search">
               <SearchField

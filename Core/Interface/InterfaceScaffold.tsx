@@ -36,17 +36,11 @@ export function InterfaceScaffold({
     }
   }, [activeTabId, warmKey])
 
+  const surface = owner !== null && isSurfaceKind(owner.kind)
   return (
-    <div
-      ref={ref}
-      className={
-        'detail-scroll' +
-        (owner ? ' has-header' : '') +
-        (owner && isSurfaceKind(owner.kind) ? ' is-surface' : '')
-      }
-    >
+    <div ref={ref} className={`detail-scroll${owner ? ' has-header' : ''}`}>
       {owner ? <Banner owner={owner} /> : null}
-      <div className="detail-body">{children}</div>
+      <div className={surface ? 'tile-host-frame' : 'detail-body'}>{children}</div>
     </div>
   )
 }

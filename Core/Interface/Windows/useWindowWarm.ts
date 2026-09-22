@@ -10,6 +10,8 @@ import { captureWindowCache, readWindowCache, type WindowCacheEntry } from './wi
 export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,
   activePath: string | undefined,
+  /** Whether the tab's body can hold a scroll yet — `true` for a Page tab, a Space tab's board readiness otherwise. */
+  ready: boolean,
 ): WarmSeam | undefined {
   const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
 
@@ -41,9 +43,9 @@ export function useWindowWarm(
     return () => el.removeEventListener('scroll', onScroll)
   }, [activeTabId, captureIfLive, scrollerRef])
 
-  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass.
+  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board reloads over IPC on return, so `ready` is the second thing worth waiting for.
   useEffect(() => {
-    if (!activeTabId || activePath === undefined) return
+    if (!activeTabId || !ready) return
     const saved = readWindowCache(activeTabId)?.bodyScrollTop ?? 0
     let inner = 0
     const outer = requestAnimationFrame(() => {
@@ -55,8 +57,7 @@ export function useWindowWarm(
       cancelAnimationFrame(outer)
       cancelAnimationFrame(inner)
     }
-    // activePath IS the switch signal — the restore fires per content swap, not per tab-id.
-  }, [activePath])
+  }, [activeTabId, ready])
 
   return seam
 }

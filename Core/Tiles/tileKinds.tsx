@@ -22,6 +22,7 @@ export interface TileRenderContext {
   editing: boolean
   beginEdit: (id: string) => void
   connections?: ConnectionsApi
+  openPage?: (page: ConnPage) => void
   suppressFlush: (id: string) => boolean
   pagesById: ReadonlyMap<string, ConnPage>
   mutateEntry: MutateEntry
@@ -67,13 +68,14 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
   },
   view: {
     // The surface may only rewrite an entry still of its own kind.
-    render: ({ entry, id, beginEdit, mutateEntry }) => (
+    render: ({ entry, id, beginEdit, mutateEntry, openPage }) => (
       <ViewTile
         entry={entry}
         mutateEntry={(target, fn) =>
           mutateEntry(target, (raw) => (knownTile(raw)?.type === entry.type ? fn(raw) : raw))
         }
         onActivate={() => beginEdit(id)}
+        openPage={openPage}
       />
     ),
   },

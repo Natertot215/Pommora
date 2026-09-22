@@ -1,15 +1,13 @@
-import { tileHostKey } from '@pommora/core/Tiles/tiles'
-import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { useRef, useState } from 'react'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import {
-  FooterLockButton,
   FooterIconButton,
   MenuFooting,
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
 } from '@pommora/uix/Menus'
+import { BoardLock } from './BoardLock'
 import { Icon } from '@pommora/uix/Symbols'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { tintAt } from '@pommora/uix/Theme/colors'
@@ -31,10 +29,6 @@ export function SpaceMenu(): React.JSX.Element | null {
   const mutate = useSession((st) => st.mutate)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const id = selection.kind === 'space' ? selection.id : null
-  const locked = useSession(
-    (st) => st.hostLocks[tileHostKey({ kind: 'space', id: id ?? '' })] ?? false,
-  )
-  const setHostLock = useSession((st) => st.setHostLock)
   const iconRef = useRef<HTMLButtonElement>(null)
   const colorRef = useRef<HTMLButtonElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -69,13 +63,7 @@ export function SpaceMenu(): React.JSX.Element | null {
       <MenuScrollFrame
         footer={
           <MenuFooting
-            leading={
-              <FooterLockButton
-                ariaLabel={lockLabel(locked, 'Board')}
-                locked={locked}
-                onToggle={() => setHostLock({ kind: 'space', id }, !locked)}
-              />
-            }
+            leading={<BoardLock host={{ kind: 'space', id }} />}
             trailing={
               <FooterIconButton
                 ref={colorRef}

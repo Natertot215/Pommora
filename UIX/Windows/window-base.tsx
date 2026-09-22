@@ -45,7 +45,7 @@ const opening = (
   })
 }
 
-interface WindowBasePanel {
+export interface WindowBasePanel {
   windowId: string
   bounds: WindowPanelBounds
   mode: 'overlay' | 'inflow'

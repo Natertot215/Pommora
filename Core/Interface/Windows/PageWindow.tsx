@@ -1,22 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
+import type { WindowTarget } from '@pommora/core/Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { duration, easing, ms } from '@pommora/uix/Animations/motion'
-import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
+import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
-import { PageTile } from '../../Tiles/Surfaces/PageTile'
-import { Subfield } from '../Subfield/Subfield'
-import { CitationsToggle } from '../Subfield/CitationsToggle'
-import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { chromePartRect, publishChromePart } from '../chromeParts'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
-import { useWindowTabConnections } from '../../Session/pageConnections'
-import { type PageTarget, windowTargetOf, useEmbedScale, useSession } from '../../Session/store'
-import { WindowActions } from '@pommora/uix/Windows/WindowActions'
-import { PropertyPanel } from '../../Properties/PropertyPanel'
+import { windowTargetOf, useEmbedScale, useSession } from '../../Session/store'
 import { WindowTabStrip } from './WindowTabStrip'
-import { useWindowWarm } from './useWindowWarm'
+import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
 import './page-window.css'
 
@@ -28,10 +22,7 @@ const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as co
 
 export function PageWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.pageWindow?.kind === 'page')
-  const target = useSession((s) => {
-    const t = windowTargetOf(s)
-    return t?.kind === 'page' ? t : null
-  })
+  const target = useSession(windowTargetOf)
   const shown = useHeldPresence(target, open)
   if (!shown) return null
   return <PageWindowBody target={shown.held} closing={shown.closing} />
@@ -41,42 +32,30 @@ function PageWindowBody({
   target,
   closing,
 }: {
-  target: PageTarget
+  target: WindowTarget
   closing: boolean
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)
+  const promoteWindowTab = useSession((s) => s.promoteWindowTab)
+  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
   const geometry = useWindowGeometry('page-window')
   const embedScale = useEmbedScale()
-  const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
-  const pendingTravel = useSession((s) => s.pendingTravel)
-  const clearPendingTravel = useSession((s) => s.clearPendingTravel)
-  const arrive =
-    pendingTravel?.route === 'window' && pendingTravel.path === target.path
-      ? pendingTravel.heading
-      : undefined
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
 
-  const [editing, setEditing] = useState(false)
-  useEffect(() => setEditing(false), [target.path])
-
-  const { page, onBody } = useSubfieldPage(target)
-  const [sidePaneOpen, setSidePaneOpen] = useState(false)
-
-  const connections = useWindowTabConnections(tree)
+  const { body, bodyRef, right, actions, footer, footerLead, sidePaneOpen, closeSidePane } =
+    useWindowTabBody(target, 'page-window-body')
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
-
-  const trail = trailOf(tree, { kind: 'page', id: target.id })
+  const trail = trailOf(tree, target)
 
   const windowSlide = useSession((s) => s.windowSlide)
-  const bodyRef = useRef<HTMLDivElement>(null)
-  const prevPath = useRef(target.path)
+  const prevId = useRef(target.id)
   const playedSeq = useRef(0)
   useEffect(() => {
-    const swapped = prevPath.current !== target.path
-    prevPath.current = target.path
+    const swapped = prevId.current !== target.id
+    prevId.current = target.id
     if (!swapped || !windowSlide || windowSlide.seq === playedSeq.current) return
     playedSeq.current = windowSlide.seq
     const x = windowSlide.dir === 'back' ? -SLIDE_PX : SLIDE_PX
@@ -90,15 +69,13 @@ function PageWindowBody({
     )
     if (sidePaneOpen)
       rootRef.current
-        ?.querySelector('.page-window-side-pane')
+        ?.querySelector('.window-side-pane')
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
-  }, [target.path, windowSlide, sidePaneOpen])
+  }, [target.id, windowSlide, sidePaneOpen, bodyRef])
 
-  const warmSeam = useWindowWarm(bodyRef, target.path)
-
+  // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
   const promote = (): void => {
-    closeWindow('engulf')
-    void select({ kind: 'page', id: target.id, path: target.path })
+    if (activeTabId) promoteWindowTab(activeTabId)
   }
 
   // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime values); the css .engulfing class only suppresses the default scale-out.
@@ -130,7 +107,7 @@ function PageWindowBody({
       className={cx('page-window', closing && EXIT_CLASS[exitReason])}
       closing={closing}
       onClose={() => closeWindow()}
-      onEscape={() => (sidePaneOpen ? setSidePaneOpen(false) : closeWindow())}
+      onEscape={() => (sidePaneOpen ? closeSidePane() : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
       style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
@@ -141,46 +118,13 @@ function PageWindowBody({
           title={<NavTrail segments={trail} selected className="page-window-crumbs" />}
         />
       }
-      actions={
-        <WindowActions
-          sidePaneOpen={sidePaneOpen}
-          onToggleSidePane={() => setSidePaneOpen((v) => !v)}
-        />
-      }
-      right={{
-        windowId: 'window-side-pane',
-        bounds: WINDOW_BASE_PANEL,
-        mode: 'overlay',
-        open: sidePaneOpen,
-        className: 'page-window-side-pane',
-        children: (
-          <div className="window-pane-scroll">
-            {sidePaneOpen && (
-              <PropertyPanel
-                subject={{ kind: 'page', id: target.id, path: target.path }}
-                host="side-pane"
-              />
-            )}
-          </div>
-        ),
-      }}
-      footer={<Subfield page={page} inert />}
+      actions={actions}
+      right={right}
+      footer={footer}
       footerLabel={footerLabel}
-      footerLead={<CitationsToggle page={page} />}
+      footerLead={footerLead}
     >
-      <div className="window-body page-window-body over-scroll page-tile-grows" ref={bodyRef}>
-        <PageTile
-          key={target.path}
-          path={target.path}
-          editing={editing}
-          onBeginEdit={() => setEditing(true)}
-          connections={connections}
-          onBody={onBody}
-          warm={warmSeam}
-          arrive={arrive}
-          onArrived={clearPendingTravel}
-        />
-      </div>
+      {body}
     </WindowBase>
   )
 }
