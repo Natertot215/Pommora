@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { EmbeddedView, ViewTileEntry } from '@pommora/core/Tiles/tiles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -166,10 +167,12 @@ export function ViewTile({
   entry,
   mutateEntry,
   onActivate,
+  openPage,
 }: {
   entry: ViewTileEntry
   mutateEntry: MutateEntry
   onActivate?: () => void
+  openPage?: (page: ConnPage) => void
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
@@ -451,6 +454,7 @@ export function ViewTile({
         persistState: (next) => persistState(index, next),
         locked,
         setLocked,
+        openPage,
       }}
     >
       <div className={s.tile} onPointerDownCapture={onActivate}>

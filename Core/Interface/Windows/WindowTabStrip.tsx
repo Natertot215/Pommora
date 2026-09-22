@@ -16,7 +16,7 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigati
 import { useActiveTabInView, useTabClose, useTabExchange } from '../../Navigation/tabRows'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
+import { isWindowTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
 import '../../Navigation/tab-base.css'
@@ -48,15 +48,15 @@ export function WindowTabStrip({
     () =>
       (tabs ?? []).map((tab) => ({
         tab,
-        res: tab.target.kind === 'page' && index ? resolveWith(index, tab.target) : null,
+        res: isWindowTarget(tab.target) && index ? resolveWith(index, tab.target) : null,
       })),
     [tabs, index],
   )
 
   const { renderEntries, ghostCount, requestClose } = useTabClose(entries, closeWindowTab)
   const sentinel = renderEntries.find((e) => e.entry.tab.target.kind === 'navwindow')
-  const pageEntries = renderEntries.filter((e) => e.entry.tab.target.kind === 'page')
-  const firstLivePage = pageEntries.findIndex((e) => !e.ghost)
+  const contentEntries = renderEntries.filter((e) => isWindowTarget(e.entry.tab.target))
+  const firstLiveContent = contentEntries.findIndex((e) => !e.ghost)
 
   const forced = useDragFamily() === TAB_FAMILY
   const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0 || forced
@@ -67,7 +67,7 @@ export function WindowTabStrip({
   const scrollRef = useActiveTabInView(activeTabId)
 
   const entryOf = (id: string): Entry | undefined =>
-    pageEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
+    contentEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
   const { still, carry, receive } = useTabExchange((id) => entryOf(id)?.tab.target, openWindowTab)
   const renderOverlay = (id: string): React.ReactNode => {
@@ -121,7 +121,7 @@ export function WindowTabStrip({
               id="tabs-window"
               className={cx('tab-strip', (still || forced) && 'is-still')}
               family={TAB_FAMILY}
-              items={pageEntries.filter((e) => !e.ghost).map((e) => e.entry.tab.id)}
+              items={contentEntries.filter((e) => !e.ghost).map((e) => e.entry.tab.id)}
               axis="x"
               onReorder={reorderWindowTabs}
               getItemLabel={labelOf}
@@ -130,13 +130,13 @@ export function WindowTabStrip({
               release={closeWindowTab}
               renderOverlay={renderOverlay}
             >
-              {pageEntries.map(({ entry, ghost }, i) => (
+              {contentEntries.map(({ entry, ghost }, i) => (
                 <Fragment key={entry.tab.id}>
                   {(i > 0 || sentinel) && (
                     <span
                       className={cx(
                         'tab-seg',
-                        (ghost || (i > 0 && i === firstLivePage)) && 'is-closing',
+                        (ghost || (i > 0 && i === firstLiveContent)) && 'is-closing',
                       )}
                       aria-hidden
                     />
@@ -189,11 +189,12 @@ function WindowTabItem({
   onClose: () => void
 }): React.JSX.Element {
   const isMap = entry.tab.target.kind === 'navwindow'
+  const kind = entry.tab.target.kind === 'navwindow' ? 'page' : entry.tab.target.kind
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
-  // A page tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
+  // A tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
   const res =
     navKind && entry.res?.icon === 'map'
-      ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS.page }
+      ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS[kind] }
       : entry.res
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
@@ -223,7 +224,11 @@ function WindowTabItem({
       {res ? (
         <EntityIcon item={res} size={TAB_ICON} className="tab-icon" />
       ) : (
-        <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
+        <Icon
+          name={isMap ? 'map' : DEFAULT_ENTITY_ICONS[kind]}
+          size={TAB_ICON}
+          className="tab-icon"
+        />
       )}
       {!isMap && <span className={cx(overScrollEllipsis, 'tab-label')}>{label}</span>}
       {!isMap && (

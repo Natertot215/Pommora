@@ -18,7 +18,13 @@ import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
-export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
+export function Banner({
+  owner,
+  chrome = 'detail',
+}: {
+  owner: BannerOwner
+  chrome?: 'detail' | 'window-title'
+}): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -109,10 +115,10 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       }
     />
   )
-  if (!bannerSrc) {
+  if (chrome === 'window-title' || !bannerSrc) {
     return (
       <div className={`banner-empty${homeClass}${surfaceClass}`}>
-        <AddBannerButton onClick={() => void addOrChange()} />
+        {chrome === 'detail' && <AddBannerButton onClick={() => void addOrChange()} />}
         {owner.kind === 'homepage' ? (
           homeTitle('banner-empty-title')
         ) : (

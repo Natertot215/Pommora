@@ -32,6 +32,7 @@ import {
 import { bandReorderPatch } from '../Bands/useBandOrdering'
 import { subtreeIds } from '../Pipeline/group'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
+import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 
 export interface ViewInteractionPolicy {
@@ -107,6 +108,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   } = host
 
   const capitalize = useCapitalizeMetadata()
+  const tile = useViewTileScope()
 
   // ── Bands ─────────────────────────────────────────────────────────────────
 
@@ -318,6 +320,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     // A plain click passes NO option, so the tab-open preference still decides; forcing `false` would override it.
     if (newTab) {
       void select(target, { newTab: true })
+      return
+    }
+    // A tile that states its own route owns every page it opens; the container's Open In is the main pane's rule.
+    if (tile?.openPage) {
+      tile.openPage({ id: row.id, title: row.title, path: row.path })
       return
     }
     const owner = source.kind === 'collection' ? source : findCollectionForSet(tree, source.id)

@@ -1,6 +1,7 @@
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import { BoardLock } from '../../Tiles/BoardLock'
 import { useSession } from '../../Session/store'
 import { subfieldCrumbs } from './crumbs'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -50,6 +51,9 @@ export function Subfield({
         {items.map((id) => (
           <SubfieldItem key={id} id={id} page={page} count={count} />
         ))}
+        {inert && crumbSelection.kind === 'space' && (
+          <BoardLock host={{ kind: 'space', id: crumbSelection.id }} />
+        )}
       </div>
     </div>
   )

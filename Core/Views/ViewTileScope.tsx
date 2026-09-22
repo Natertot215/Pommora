@@ -1,6 +1,7 @@
 // Inside a view tile every view-config write lands on the tile payload, never on the source.
 
 import { createContext, useContext } from 'react'
+import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { pickViewState, type SavedView, type ViewState } from '@pommora/core/Views/views'
@@ -15,6 +16,7 @@ export interface ViewTileScopeValue {
   persistState: (next: ViewState) => void
   locked: boolean
   setLocked: (locked: boolean) => void
+  openPage?: (page: ConnPage) => void
 }
 
 const Ctx = createContext<ViewTileScopeValue | null>(null)

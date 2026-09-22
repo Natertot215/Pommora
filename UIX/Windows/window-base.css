@@ -16,7 +16,7 @@
   --slide-panel-w: var(--window-panel-r-w);
   --slide-inset: var(--window-panel-inset);
   --slide-home: calc(var(--window-panel-inset) + 22px);
-  --slide-cluster-w: 36px; /* KNOB — the trailing pair's width */
+  --slide-cluster-w: 36px; /* KNOB — the trailing cluster's width, the two-glyph case */
   --slide-breathing: calc(var(--surface-inset) * 2);
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
   /* Half the body's reserved panel gutter — the floating title rides the content column's center, not the frame's. */
@@ -295,4 +295,7 @@
   gap: var(--window-trail-gap);
   /* Two translates, so the host's reveal nudge and the shared swallow compose. */
   transform: translateX(var(--window-flow-reveal, 0px)) translateX(calc(-1 * var(--toolbar-slide)));
+}
+.window:has(.window-actions-flow > :only-child) {
+  --slide-cluster-w: 17px;
 }

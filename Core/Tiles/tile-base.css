@@ -163,3 +163,17 @@
 .web-tile-face-domain {
   color: var(--label-tertiary);
 }
+
+/* Tile handles supply the grip/chevron actions, so the board runs a tight gutter instead of the content inset. The 8px top is a KNOB — the banner→first-tile clearance. */
+.tile-host-frame {
+  padding: 8px calc(var(--side-pane-clearance) + var(--surface-lane)) 28px
+    calc(var(--sidebar-clearance) + var(--surface-lane));
+  transition:
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
+}
+/* Both gutters key to the shell's own panes, which a floating window has neither of — and an inherited clearance would cost a windowed board 240px of measured width and stack it at its default size. */
+.window .tile-host-frame {
+  --sidebar-clearance: 0px;
+  --side-pane-clearance: 0px;
+}

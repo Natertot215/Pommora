@@ -12,6 +12,7 @@ import {
 } from '@pommora/core/Tiles/tiles'
 import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
+import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
@@ -103,7 +104,13 @@ const withKey = (
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 
-export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | null {
+export function TileHost({
+  host,
+  connections,
+}: {
+  host: TileHostRef
+  connections?: ConnectionsApi
+}): React.JSX.Element | null {
   const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles, setBusy } =
     useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -131,7 +138,9 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
 
-  const connections = usePreviewConnections(tree)
+  const preview = usePreviewConnections(tree)
+  const conn = connections ?? preview
+  const openRoute = connections?.open
 
   useEffect(() => {
     if (!editingId) return
@@ -273,8 +282,10 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         else if (action === 'tile:duplicate') duplicateTile(id)
         else if (action === 'tile:delete') confirmRemove(id)
         else if (action === 'tile:lock') toggleLock(id)
-        else if (action === 'tile:open' && page)
-          select({ kind: 'page', id: page.id, path: page.path })
+        else if (action === 'tile:open' && page) {
+          if (openRoute) openRoute(page)
+          else select({ kind: 'page', id: page.id, path: page.path })
+        }
       }
       let current = entry
       const project = (action: string): TileEntry => {
@@ -312,6 +323,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
       confirmRemove,
       toggleLock,
       select,
+      openRoute,
     ],
   )
 
@@ -325,13 +337,14 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         host,
         editing: editingId === id,
         beginEdit: setEditingId,
-        connections,
+        connections: conn,
+        openPage: openRoute,
         suppressFlush,
         pagesById,
         mutateEntry,
       })
     },
-    [entries, editingId, connections, suppressFlush, pagesById, host, mutateEntry],
+    [entries, editingId, conn, openRoute, suppressFlush, pagesById, host, mutateEntry],
   )
 
   const onBackdrop = useCallback(
