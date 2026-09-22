@@ -6,7 +6,6 @@ import {
 import {
   isWindowTarget,
   type PageTarget,
-  type SelectTarget,
   toNavRef,
   type WindowTarget,
 } from '@pommora/core/Navigation/navRef'
@@ -14,7 +13,6 @@ import { type ReconcileIndex, reconcileWith } from './reconcileSelection'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { liveTarget, makeTabId } from '../Navigation/tabsModel'
 import {
-  activeTarget,
   closeTabIn,
   openTabIn,
   type WindowState,
@@ -56,7 +54,11 @@ export interface WindowSlice {
   resetWindow: () => void
 }
 
-export const windowTargetOf = (s: SessionState): WindowTarget | null => activeTarget(s.pageWindow)
+export const windowTargetOf = (s: SessionState): WindowTarget | null => {
+  const win = s.pageWindow
+  const active = win?.tabs.find((t) => t.id === win.activeTabId)
+  return active && isWindowTarget(active.target) ? active.target : null
+}
 
 const PER_NEXUS = {
   navOpen: false,
@@ -76,9 +78,9 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   // The map sentinel never persists; a restore lands on the tab that asked for the window, so the active tab is not stored.
   const toWindowRecord = (win: WindowState): WindowSetRecord => ({
-    tabs: win.tabs
-      .filter((t): t is WindowTab & { target: SelectTarget } => t.target.kind !== 'navwindow')
-      .map((t) => ({ target: toNavRef(t.target) })),
+    tabs: win.tabs.flatMap((t) =>
+      isWindowTarget(t.target) ? [{ target: toNavRef(t.target) }] : [],
+    ),
   })
 
   const saveWindowsFile = (file: WindowsFile): void => {
@@ -111,8 +113,8 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const reconcileRecord = (rec: WindowSetRecord | null): WindowTab[] => {
     const tree = get().tree
-    const index = rec && tree ? reconcileIndexOf(tree) : null
-    if (!rec || !index) return []
+    if (!rec || !tree) return []
+    const index = reconcileIndexOf(tree)
     const seen = new Set<string>()
     const tabs: WindowTab[] = []
     for (const t of rec.tabs) {
@@ -127,7 +129,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const commitWindow = (
     next: WindowState | null,
-    extra?: { windowSlide: ReturnType<typeof stampByOrder> },
+    extra?: Partial<Pick<WindowSlice, 'windowSlide' | 'navOpen' | 'windowExit'>>,
   ): void => {
     set({ pageWindow: next, ...extra })
     mirrorWindows()
@@ -151,8 +153,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
         activeTabId: sentinel.id,
       }
       clearWindowCache()
-      set({ pageWindow: next, windowExit: morphing ? 'morph' : 'dismiss' })
-      mirrorWindows()
+      commitWindow(next, { windowExit: morphing ? 'morph' : 'dismiss' })
     },
     openWindowTab: (target, at) => {
       const cur = get().pageWindow
@@ -178,12 +179,10 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       }
       clearWindowCache()
       // windowExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
-      set({
-        pageWindow: openTabIn(restored, makeTabId, target),
+      commitWindow(openTabIn(restored, makeTabId, target), {
         navOpen: false,
         windowExit: 'dismiss',
       })
-      mirrorWindows()
     },
     activateWindowTab: (id) => {
       const cur = get().pageWindow
@@ -218,18 +217,15 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
     closeWindow: (reason) => {
       clearWindowCache()
-      set({ pageWindow: null, windowExit: reason ?? 'dismiss' })
-      mirrorWindows()
+      commitWindow(null, { windowExit: reason ?? 'dismiss' })
     },
     openMatrixWindow: () => {
       if (get().pageWindow?.kind === 'matrix') return
       clearWindowCache()
-      set({
-        pageWindow: { kind: 'matrix', tabs: [], activeTabId: '' },
-        navOpen: false,
-        windowExit: 'dismiss',
-      })
-      mirrorWindows()
+      commitWindow(
+        { kind: 'matrix', tabs: [], activeTabId: '' },
+        { navOpen: false, windowExit: 'dismiss' },
+      )
     },
     toggleMatrixWindow: () => {
       if (get().pageWindow?.kind === 'matrix') get().closeWindow()
@@ -242,8 +238,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
     closeNav: () => {
       clearWindowCache()
-      set({ navOpen: false, pageWindow: null })
-      mirrorWindows()
+      commitWindow(null, { navOpen: false })
     },
     toggleNav: () => {
       if (get().navOpen) get().closeNav()

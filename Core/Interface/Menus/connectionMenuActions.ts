@@ -13,9 +13,8 @@ import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { pagePathText } from '@pommora/core/Actions/pageMenu'
 import { openInAppBrowser } from '@pommora/core/Interface/Windows/WebWindow'
-import { activeTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
-import { shownDetail, useSession } from '../../Session/store'
+import { shownDetail, useSession, windowTargetOf } from '../../Session/store'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 
@@ -46,7 +45,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
   const page = target.page
   const ref = { kind: 'page', id: page.id, path: page.path } as const
   const s = useSession.getState()
-  const { tabs, pinned, pageWindow } = s
+  const { tabs, pinned } = s
   const ctx: ConnMenuContext = {
     ...shared,
     hasAlias: target.hasAlias,
@@ -57,7 +56,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
         : isOpenInTabs(tabs, pinned, ref)
           ? 'tab'
           : 'closed',
-    windowed: activeTarget(pageWindow)?.id === page.id,
+    windowed: windowTargetOf(s)?.id === page.id,
   }
   void popMenu(connectionMenuModel(ctx)).then((action) => {
     switch (action) {

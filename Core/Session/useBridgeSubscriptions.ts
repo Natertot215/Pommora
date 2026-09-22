@@ -101,9 +101,7 @@ export function useBridgeSubscriptions(): void {
           break
         case 'new-tab': {
           const s = useSession.getState()
-          const p = s.pageWindow
-          const active = p?.kind === 'page' ? p.tabs.find((t) => t.id === p.activeTabId) : undefined
-          if (active && active.target.kind !== 'navwindow') s.promoteWindowTab(active.id, true)
+          if (s.pageWindow?.kind === 'page') s.promoteWindowTab(s.pageWindow.activeTabId, true)
           else openNewTab()
           break
         }

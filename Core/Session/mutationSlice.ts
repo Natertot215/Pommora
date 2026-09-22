@@ -42,7 +42,7 @@ export interface RenameSlice {
   endIcon: () => void
   colorPath: string | null
   colorHost: RenameHost | null
-  beginColor: (path: string, host?: RenameHost) => void
+  beginColor: (path: string, host: RenameHost) => void
   endColor: () => void
   /** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
   peekSignal: { parentPath: string; childId: string; nonce: number } | null
@@ -156,7 +156,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   endIcon: () => set({ iconPath: null, iconHost: null }),
   colorPath: null,
   colorHost: null,
-  beginColor: (path, host) => set({ colorPath: path, colorHost: host ?? 'sidebar' }),
+  beginColor: (path, host) => set({ colorPath: path, colorHost: host }),
   endColor: () => set({ colorPath: null, colorHost: null }),
   peekSignal: null,
   signalPeek: (parentPath, childId) =>

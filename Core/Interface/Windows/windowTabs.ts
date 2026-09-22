@@ -58,10 +58,3 @@ export function closeTabIn(win: WindowState, id: string): WindowState | null {
   const activeTabId = win.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : win.activeTabId
   return { ...win, tabs, activeTabId }
 }
-
-export function activeTarget(win: WindowState | null): WindowTarget | null {
-  if (!win) return null
-  const active = win.tabs.find((t) => t.id === win.activeTabId)
-  if (!active || active.target.kind === 'navwindow') return null
-  return active.target
-}

@@ -59,7 +59,7 @@
   border-radius: 5px;
   object-fit: cover;
   overflow: hidden;
-  color: var(--label-primary);
+  color: var(--label-control);
   transition:
     max-width var(--duration-base) var(--ease-base),
     opacity var(--duration-base) var(--ease-base),

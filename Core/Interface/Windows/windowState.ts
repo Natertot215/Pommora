@@ -1,13 +1,11 @@
 import { z } from 'zod'
 import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
-import { isNavRef, type NavRef, toNavRef } from '../../Navigation/navRef'
+import { isNavRef, isWindowTarget, type NavRef, toNavRef } from '../../Navigation/navRef'
 import { readValue, writeValue } from '../../Platform/localState'
-
-const TAB_TARGET_KINDS = new Set<string>(['page', 'space'])
 
 // `NavRef` keeps its one validator; the schema decodes the file's shape around it.
 const windowTarget = z
-  .custom<NavRef>((v) => isNavRef(v, TAB_TARGET_KINDS))
+  .custom<NavRef>((v) => isNavRef(v) && isWindowTarget(v))
   .transform((t) => toNavRef(t))
 
 const windowTab = z.object({ target: windowTarget })

@@ -53,7 +53,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   const docLock = state.lock
   useEffect(() => {
     if (docLock !== null) setHostLock(hostRef.current, docLock)
-  }, [docLock, setHostLock])
+  }, [docLock, hostKey, setHostLock])
   useEffect(() => {
     syncTileDocLock(hostRef.current, storeLock)
   }, [hostKey, storeLock])

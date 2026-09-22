@@ -123,7 +123,7 @@ function runEntityAction(
       s.beginIcon(path, target.host)
       return
     case 'changeColor':
-      s.beginColor(path, target.host)
+      if (target.host) s.beginColor(path, target.host)
       return
     case 'title:newabove':
     case 'title:newbelow':

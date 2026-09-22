@@ -1,19 +1,16 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
-import { createBodyWriter } from '../../Session/saveScheduler'
 import {
   readTileBody,
   settleTileBody,
   subscribeTileBody,
-  tileBodySaves,
+  tileBodyWriter,
   writeTileBody,
 } from '../tileDocStore'
 import { host as dialer } from '../../Platform/dialer'
-
-const saves = createBodyWriter()
 
 export function MarkdownTile({
   host,
@@ -72,27 +69,22 @@ export function MarkdownTile({
     }
   }, [tileId])
 
-  const saved = useSyncExternalStore(
-    useCallback((fn: () => void) => subscribeTileBody(tileId, fn), [tileId]),
-    () => tileBodySaves(tileId),
-  )
   useEffect(() => {
-    if (editing || saved === 0) return
-    const held = readTileBody(tileId)
-    if (held === null) return
-    setSeed((s) => {
-      if (held === (mine.current ?? s.text)) return s
+    if (editing) return
+    return subscribeTileBody(tileId, () => {
+      const held = readTileBody(tileId)
+      if (held === null || held === mine.current) return
       mine.current = null
-      return { no: s.no + 1, editing: s.editing, text: held }
+      setSeed((s) => (held === s.text ? s : { no: s.no + 1, editing: s.editing, text: held }))
     })
-  }, [saved, editing, tileId])
+  }, [editing, tileId])
 
   const suppressRef = useRef(suppressFlush)
   suppressRef.current = suppressFlush
   useEffect(
     () => () => {
-      if (suppressRef.current?.(tileId)) saves.cancel(tileId)
-      else void saves.flush(tileId)
+      if (suppressRef.current?.(tileId)) tileBodyWriter.cancel(tileId)
+      else void tileBodyWriter.flush(tileId)
     },
     [editing, tileId],
   )
@@ -101,7 +93,7 @@ export function MarkdownTile({
     // Synchronous, before the debounce and before any await: the slot must hold what was typed by the time the next pointerdown moves the edit to another mount.
     writeTileBody(tileId, next)
     mine.current = next
-    saves.schedule(tileId, next, () => {
+    tileBodyWriter.schedule(tileId, next, () => {
       settleTileBody(tileId)
       return suppressRef.current?.(tileId)
         ? Promise.resolve({ ok: true })

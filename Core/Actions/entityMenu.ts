@@ -13,7 +13,6 @@ export type EntityMenuAction =
   | CreateMenuAction
   | 'open'
   | 'preview'
-  | 'rename'
   | 'delete'
   | 'lock'
   | 'reveal'
@@ -44,8 +43,9 @@ export function entityMenuItems(
       )
     : []
   const create = createMenuItems(creators)
+  const folder = target.kind === 'collection' || target.kind === 'set'
   const lock: ActionItem<EntityMenuAction>[] =
-    target.host === 'sidebar' && (target.kind === 'collection' || target.kind === 'set')
+    folder && target.host === 'sidebar'
       ? [{ label: target.disclosureLocked ? 'Unlock Folder' : 'Lock Folder', action: 'lock' }]
       : []
   const identity: ActionItem<EntityMenuAction>[] =
@@ -61,15 +61,14 @@ export function entityMenuItems(
         : [{ label: 'Rename', action: 'rename' }]
   const branches: ActionItem<EntityMenuAction>[] =
     target.kind === 'space' ? propertyBranchRows(target) : []
-  const registry = target.kind === 'space' || target.kind === 'context'
   return [
     ...open,
     ...(open.length > 0 ? afterSeparator(create) : create),
     ...(open.length + create.length > 0 ? afterSeparator(identity) : identity),
     ...branches,
-    { label: 'Delete', action: 'delete', separatorBefore: registry },
+    { label: 'Delete', action: 'delete', separatorBefore: !folder },
     ...afterSeparator<EntityMenuAction>(
-      registry ? [] : [...lock, { label: 'Reveal Location', action: 'reveal' }],
+      folder ? [...lock, { label: 'Reveal Location', action: 'reveal' }] : [],
     ),
   ]
 }

@@ -9,9 +9,6 @@ export function stackedAt(width: number, was: boolean): boolean {
   return width < STACK_WIDTH_PX + (was ? STACK_HYSTERESIS_PX : 0)
 }
 
-// The leaves are REBUILT rather than shared: ops.ts mutates a cloned tree's leaves in place, so a node held by both trees is a write hazard.
 export function stackLayout(layout: TileLayout): TileLayout {
-  return {
-    bands: tileLeaves(layout).map((t) => ({ node: { kind: 'tile' as const, id: t.id, h: t.h } })),
-  }
+  return { bands: tileLeaves(layout).map((node) => ({ node })) }
 }
