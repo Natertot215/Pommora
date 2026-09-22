@@ -38,7 +38,7 @@ export function NavBanner({
         void openMenu()
       }}
     >
-      <AssetImage value={value} className="banner-img" />
+      <AssetImage value={value} className="banner-img" eager />
       <div
         className={cx('banner-title', chrome === 'window' && 'window-banner-title', 'title-shadow')}
       >

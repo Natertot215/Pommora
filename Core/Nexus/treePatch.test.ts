@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree } from './tree'
-import { NEW_PAGE_SLOT } from './mutateRequest'
+import { NEW_SLOT } from './mutateRequest'
 import {
   insertCreatedInTree,
   patchContextGroupsInTree,
@@ -122,10 +122,25 @@ describe('insertCreatedInTree', () => {
   it('a positional create appears AT its slot, not appended — the row must not flash at the bottom', () => {
     const t = insertCreatedInTree(
       tree(),
-      { op: 'createPage', parentPath: 'Notes/Sub', name: 'New', order: [NEW_PAGE_SLOT, 'p2'] },
+      { op: 'createPage', parentPath: 'Notes/Sub', name: 'New', order: [NEW_SLOT, 'p2'] },
       { id: 'x5', path: 'Notes/Sub/C.md' },
     )
     expect(t?.collections[0].sets[0].pages.map((p) => p.id)).toEqual(['x5', 'p2'])
+  })
+
+  it('a positional Set create appears AT its slot, not appended', () => {
+    const t = insertCreatedInTree(
+      tree(),
+      {
+        op: 'createContainer',
+        parentPath: 'Notes',
+        kind: 'set',
+        name: 'New',
+        order: [NEW_SLOT, 's1'],
+      },
+      { id: 'x7', path: 'Notes/New' },
+    )
+    expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['x7', 's1'])
   })
 
   it('skips optimism for a nested collection (never mislabels it as a set)', () => {
@@ -193,6 +208,25 @@ describe('insertCreatedInTree', () => {
       headingIconHidden: false,
       contextId: 'g1',
     })
+  })
+
+  it('a positional Space create appears AT its slot, not appended', () => {
+    const withGroup = insertCreatedInTree(
+      tree(),
+      { op: 'createContextGroup', name: 'Realms' },
+      { id: 'g1', path: '.nexus/contexts/Realms' },
+    ) as NexusTree
+    const withFirst = insertCreatedInTree(
+      withGroup,
+      { op: 'createSpace', contextId: 'g1', name: 'Astral' },
+      { id: 'sp1', path: '.nexus/contexts/Realms/Astral' },
+    ) as NexusTree
+    const t = insertCreatedInTree(
+      withFirst,
+      { op: 'createSpace', contextId: 'g1', name: 'Umbral', order: [NEW_SLOT, 'sp1'] },
+      { id: 'sp3', path: '.nexus/contexts/Realms/Umbral' },
+    )
+    expect(t?.contexts.at(-1)?.spaces.map((sp) => sp.id)).toEqual(['sp3', 'sp1'])
   })
 
   it('skips Space optimism when the owning group is unknown', () => {

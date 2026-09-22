@@ -147,7 +147,7 @@ function runEntityAction(
       return
     default: {
       const req = createdRequest(creators, action)
-      if (req) void s.mutate(req, (created) => s.beginRename(created.path, true, target.host))
+      if (req) void s.createNamed(req, target.host)
     }
   }
 }

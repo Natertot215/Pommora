@@ -28,6 +28,8 @@ export function Disclosure({
   selfPath,
   directChildren,
   headerRef,
+  onHeaderHover,
+  belowHeader,
   children,
 }: {
   icon: string
@@ -47,6 +49,8 @@ export function Disclosure({
   selfPath?: string
   directChildren?: { id: string; path: string }[]
   headerRef?: React.RefObject<HTMLDivElement | null>
+  onHeaderHover?: (entering: boolean) => void
+  belowHeader?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
   // Read reactively rather than seeded once: a group whose id exists in both Nexuses does not remount across a switch, and its fold must follow the store.
@@ -198,12 +202,15 @@ export function Disclosure({
         <DragRow
           id={dragId}
           springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setAndSave(true) }}
+          onPointerEnter={onHeaderHover && (() => onHeaderHover(true))}
+          onPointerLeave={onHeaderHover && (() => onHeaderHover(false))}
         >
           {header}
         </DragRow>
       ) : (
         header
       )}
+      {belowHeader}
       <Reveal open={open || peekOnly} fill>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div

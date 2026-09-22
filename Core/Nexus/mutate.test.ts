@@ -9,7 +9,7 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { setActiveViewOp } from '../Pages/setActiveView'
 import { withSidecarLock } from '../Files/sidecar'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { NEW_PAGE_SLOT } from './mutateRequest'
+import { NEW_SLOT } from './mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
@@ -126,13 +126,13 @@ describe('handleMutate — create', () => {
     expect('Stage' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
   })
 
-  it('createPage order substitutes NEW_PAGE_SLOT with the minted id and persists page_order', async () => {
+  it('createPage order substitutes NEW_SLOT with the minted id and persists page_order', async () => {
     const r = await handleMutate(
       {
         op: 'createPage',
         parentPath: 'Notes/Daily',
         name: 'Ordered',
-        order: [NEW_PAGE_SLOT, A_ID, B_ID],
+        order: [NEW_SLOT, A_ID, B_ID],
       },
       nexusDeps,
     )
@@ -145,6 +145,24 @@ describe('handleMutate — create', () => {
     const tree = await readNexus(root)
     const daily = tree.collections.flatMap((c) => c.sets).find((s) => s.path === 'Notes/Daily')
     expect(daily?.pages.map((p) => p.title).slice(0, 3)).toEqual(['Ordered', 'Alpha', 'Beta'])
+  })
+
+  it('createContainer order substitutes NEW_SLOT with the minted id and persists set_order', async () => {
+    const before = await readNexus(root)
+    const siblings = before.collections.find((c) => c.path === 'Notes')?.sets.map((s) => s.id) ?? []
+    const r = await handleMutate(
+      {
+        op: 'createContainer',
+        parentPath: 'Notes',
+        kind: 'set',
+        name: 'Leading',
+        order: [NEW_SLOT, ...siblings],
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const tree = await readNexus(root)
+    expect(tree.collections.find((c) => c.path === 'Notes')?.sets[0]?.title).toBe('Leading')
   })
 
   it('movePage notes the moved page under its destination for the values push', async () => {
@@ -1463,5 +1481,16 @@ describe('setContext on a Space', () => {
   it('the same add sent twice names the Space once', async () => {
     await Promise.all([link(['sp-work']), link(['sp-work'])])
     expect((await sidecar('Areas', 'Work'))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('createSpace order substitutes NEW_SLOT with the minted id and persists the Space order', async () => {
+    const r = await handleMutate(
+      { op: 'createSpace', contextId: 'ctxP', name: 'Atlas', order: [NEW_SLOT, 'sp-pom'] },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const tree = await readNexus(root)
+    const projects = tree.contexts.find((g) => g.def.id === 'ctxP')
+    expect(projects?.spaces.map((sp) => sp.title)).toEqual(['Atlas', 'Pommora'])
   })
 })

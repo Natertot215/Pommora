@@ -32,6 +32,7 @@ import {
   type InPageHeadingResolution,
   type MatrixOpenIn,
   type Personalization,
+  type Placement,
   type PreviewPersistence,
   type TabOpenBehavior,
   type TimeFormatSetting,
@@ -47,6 +48,11 @@ import {
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { host } from '../Platform/dialer'
+
+const PLACEMENT_OPTIONS: readonly PickerOption<Placement>[] = [
+  { value: 'top', label: 'Top' },
+  { value: 'bottom', label: 'Bottom' },
+]
 
 type KeyOf<V, R = Personalization> = {
   [K in keyof R]-?: NonNullable<R[K]> extends V ? K : never
@@ -116,6 +122,7 @@ export type Row =
   | PickerControlRow<MatrixOpenIn>
   | PickerControlRow<HeadingLinkStyle>
   | PickerControlRow<InPageHeadingResolution>
+  | PickerControlRow<Placement>
   | (RowText & {
       kind: 'nexus'
     })
@@ -240,6 +247,7 @@ export const FRAMES = roster([
     icon: 'laptop',
     sections: [
       {
+        title: 'General Preferences',
         rows: [
           {
             kind: 'toggle',
@@ -283,7 +291,36 @@ export const FRAMES = roster([
         ],
       },
       {
-        title: 'Webpages',
+        title: 'Creation Placement',
+        rows: [
+          {
+            kind: 'picker',
+            key: 'newPagePlacement',
+            label: 'New Page Placement',
+            hint: 'Where a new page lands among its siblings when it isn’t created beside another.',
+            fallback: 'bottom',
+            options: PLACEMENT_OPTIONS,
+          },
+          {
+            kind: 'picker',
+            key: 'newFolderPlacement',
+            label: 'New Folder Placement',
+            hint: 'Where a new Set or Sub-Set lands among its siblings.',
+            fallback: 'bottom',
+            options: PLACEMENT_OPTIONS,
+          },
+          {
+            kind: 'picker',
+            key: 'newSpacePlacement',
+            label: 'New Space Placement',
+            hint: 'Where a new Space lands in its Context when it isn’t created beside another.',
+            fallback: 'bottom',
+            options: PLACEMENT_OPTIONS,
+          },
+        ],
+      },
+      {
+        title: 'Webpages & Links',
         rows: [
           {
             kind: 'toggle',

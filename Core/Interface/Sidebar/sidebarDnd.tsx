@@ -11,7 +11,7 @@ import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insert
 import { toBox, useEscort, type Box } from '@pommora/uix/Interactions/drag'
 import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { titleFromPath } from '@pommora/core/Connections/connections'
-import type { FolderPlacement } from '@pommora/core/Settings/personalization'
+import type { Placement } from '@pommora/core/Settings/personalization'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { setContainerOf, isSelfOrDescendant, type Entry, type Index } from './sidebarDndModel'
 import { nextOrder, slotInGroup, type MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
@@ -44,8 +44,8 @@ export function SidebarDnd({
 }: {
   index: Index
   onCommit: (commit: MutateRequest) => void
-  setPlacement?: FolderPlacement
-  subSetPlacement?: FolderPlacement
+  setPlacement?: Placement
+  subSetPlacement?: Placement
   children: ReactNode
 }): React.JSX.Element {
   const rows = useRef(new Map<string, HTMLElement>())

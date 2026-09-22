@@ -108,7 +108,7 @@ describe('the cards ghost — dwell, create, and exit', () => {
       expect.objectContaining({
         op: 'createPage',
         parentPath: 'Col',
-        order: ['p1', '$new-page', 'p2'],
+        order: ['p1', '$new', 'p2'],
       }),
       expect.any(Function),
     )

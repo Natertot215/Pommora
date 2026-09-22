@@ -37,3 +37,19 @@ export const easeBase = cubicBezier(0.25, 0.1, 0.25, 1)
 
 /** The JS form of `easing.baseSnap`. Change them together. */
 export const easeSnap = cubicBezier(0.22, 1, 0.36, 1)
+
+const SLIDE_PX = 14 // KNOB
+
+/** A swapped view enters from the side its navigation came from; `fade: false` moves a companion surface without dimming it. */
+export function slideIn(el: Element | null | undefined, back: boolean, fade = true): void {
+  const x = back ? -SLIDE_PX : SLIDE_PX
+  el?.animate(
+    fade
+      ? [
+          { transform: `translateX(${x}px)`, opacity: 0 },
+          { transform: 'translateX(0)', opacity: 1 },
+        ]
+      : [{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }],
+    { duration: ms(duration.fast), easing: easing.baseEase },
+  )
+}

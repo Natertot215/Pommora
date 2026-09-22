@@ -29,8 +29,8 @@ export const TIME_FORMAT_LABELS: Record<TimeFormatSetting, string> = {
 export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
-export const FOLDER_PLACEMENTS = ['top', 'bottom'] as const
-export type FolderPlacement = (typeof FOLDER_PLACEMENTS)[number]
+export const PLACEMENTS = ['top', 'bottom'] as const
+export type Placement = (typeof PLACEMENTS)[number]
 
 export const SIDEBAR_MODES = ['collections', 'contexts', 'agenda'] as const
 export type SidebarMode = (typeof SIDEBAR_MODES)[number]
@@ -200,8 +200,11 @@ export const personalizationSchema = z.object({
   aliasPickerOnCommit: flag(),
   defaultIcons: iconsByKind(),
   favoriteIcons: nonEmptyStrings(),
-  setPlacement: oneOf(FOLDER_PLACEMENTS),
-  subSetPlacement: oneOf(FOLDER_PLACEMENTS),
+  setPlacement: oneOf(PLACEMENTS),
+  subSetPlacement: oneOf(PLACEMENTS),
+  newPagePlacement: oneOf(PLACEMENTS),
+  newFolderPlacement: oneOf(PLACEMENTS),
+  newSpacePlacement: oneOf(PLACEMENTS),
   sidebarMode: oneOf(SIDEBAR_MODES),
   // Reveals the surfaces that are still being built; off, they are absent rather than disabled.
   experimentalFeatures: flag(),

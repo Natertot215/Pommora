@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { NEW_PAGE_SLOT } from '@pommora/core/Nexus/mutateRequest'
-import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
+import { NEW_SLOT } from '@pommora/core/Nexus/mutateRequest'
+import { orderWithSlot, placeNew, spliceBeside, tieOrderWith } from './creationOrder'
+import { makeTree } from '../Testing/testTree'
 import { makeSorter, resolveManualOrder } from './Pipeline/sort'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 
 describe('orderWithSlot', () => {
   it('appends for a band-add and splices beside an anchor', () => {
-    expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', NEW_PAGE_SLOT])
-    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', NEW_PAGE_SLOT, 'b', 'c'])
-    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'below')).toEqual(['a', 'b', NEW_PAGE_SLOT, 'c'])
+    expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', NEW_SLOT])
+    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', NEW_SLOT, 'b', 'c'])
+    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'below')).toEqual(['a', 'b', NEW_SLOT, 'c'])
   })
 
   it('carries the FULL sibling list — a filtered subset would re-rank hidden rows', () => {
@@ -17,13 +18,43 @@ describe('orderWithSlot', () => {
       'visible1',
       'hidden1',
       'visible2',
-      NEW_PAGE_SLOT,
+      NEW_SLOT,
       'hidden2',
     ])
   })
 
   it('appends when the anchor is not among the siblings', () => {
-    expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', NEW_PAGE_SLOT])
+    expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', NEW_SLOT])
+  })
+
+  it('leads the siblings at the first slot', () => {
+    expect(orderWithSlot(['a', 'b'], null, 'first')).toEqual([NEW_SLOT, 'a', 'b'])
+  })
+})
+
+describe('placeNew', () => {
+  const page = { op: 'createPage', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
+  const set = { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Untitled' } as const
+  const space = { op: 'createSpace', contextId: 'g1', name: 'New Realm' } as const
+  const top = {
+    newPagePlacement: 'top',
+    newFolderPlacement: 'top',
+    newSpacePlacement: 'top',
+  } as const
+
+  it("leads each kind's siblings at its own Top placement", () => {
+    expect(placeNew(makeTree(), page, top)).toEqual({ ...page, order: [NEW_SLOT, 'p2'] })
+    expect(placeNew(makeTree(), set, top)).toEqual({ ...set, order: [NEW_SLOT, 's1'] })
+    expect(placeNew(makeTree(), space, top)).toEqual({
+      ...space,
+      order: [NEW_SLOT, 'a1', 't1', 'pr1'],
+    })
+  })
+
+  it('leaves the request as its own append at Bottom or unset', () => {
+    expect(placeNew(makeTree(), page, { newPagePlacement: 'bottom' })).toBe(page)
+    expect(placeNew(makeTree(), set, { newPagePlacement: 'top' })).toBe(set)
+    expect(placeNew(makeTree(), space, {})).toBe(space)
   })
 })
 
@@ -42,6 +73,15 @@ describe('tieOrderWith', () => {
       'new',
     ])
     expect(tieOrderWith(undefined, ['a', 'b'], 'new', null, 'below')).toEqual(['a', 'b', 'new'])
+  })
+
+  it('first leads the whole ranking — a band-add at Top', () => {
+    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'first')).toEqual([
+      'new',
+      'b',
+      'a',
+      'c',
+    ])
   })
 
   it('reproduces the current ranking and places the new id beside its anchor', () => {

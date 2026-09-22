@@ -14,7 +14,10 @@ export type MutateReply = Result<MutateOutcome>
 
 export const DEFAULT_NEW_NAME = 'Untitled'
 
-export const NEW_PAGE_SLOT = '$new-page'
+export const NEW_SLOT = '$new'
+
+export const fillSlot = (order: string[], id: string): string[] =>
+  order.map((x) => (x === NEW_SLOT ? id : x))
 
 export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
 
@@ -38,7 +41,13 @@ export type MutateRequest =
       seeds?: Record<string, PropertyValue>
       order?: string[]
     }
-  | { op: 'createContainer'; parentPath: string; kind: MutableContainerKind; name: string }
+  | {
+      op: 'createContainer'
+      parentPath: string
+      kind: MutableContainerKind
+      name: string
+      order?: string[]
+    }
   // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops. `fromCreate` marks a just-created page's first commit: disambiguates like a create, and skips the link cascade a linkless page can't need.
   | {
       op: 'rename'
@@ -65,7 +74,7 @@ export type MutateRequest =
   | { op: 'reorderChildren'; parentPath: string; key: ChildOrderKey; order: string[] }
   | { op: 'reorderTop'; order: string[] }
   | { op: 'createContextGroup'; name: string }
-  | { op: 'createSpace'; contextId: string; name: string }
+  | { op: 'createSpace'; contextId: string; name: string; order?: string[] }
   | { op: 'renameContext'; contextId: string; newName: string }
   | { op: 'renameSpace'; spaceId: string; newName: string }
   | { op: 'setContext'; path: string; contextId: string; spaceIds: string[] }

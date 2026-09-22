@@ -29,7 +29,7 @@ import {
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { TrashMode } from '../Trash/trashRow'
 import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'
@@ -141,7 +141,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const r = await createDisambiguated(req.name, (name) =>
         createSpace(root, req.contextId, name),
       )
-      return r.ok ? ok({ created: r.value }) : r
+      if (!r.ok) return r
+      if (req.order) await setSpaceOrder(root, req.contextId, fillSlot(req.order, r.value.id))
+      return ok({ created: r.value })
     }
 
     case 'setContext': {

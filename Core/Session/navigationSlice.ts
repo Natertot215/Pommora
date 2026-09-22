@@ -69,6 +69,7 @@ import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { createMenuItems, createdRequest } from '@pommora/core/Actions/createMenu'
+import { placeNew } from '../Views/creationOrder'
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
@@ -672,7 +673,12 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       else if (selection.kind === 'page') parentPath = relDirname(selection.path)
       if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
       if (parentPath === null) return
-      await get().mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, (created) =>
+      const req = placeNew(
+        tree,
+        { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME },
+        get().personalization,
+      )
+      await get().mutate(req, (created) =>
         get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
       )
     },
@@ -680,7 +686,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     createFromMenu: async (items, host) => {
       const action = await popMenu(createMenuItems(items))
       const req = action && createdRequest(items, action)
-      if (req) await get().mutate(req, (created) => get().beginRename(created.path, true, host))
+      if (req) await get().createNamed(req, host)
     },
 
     reconcileNavigation: (index) => {

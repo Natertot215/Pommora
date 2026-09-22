@@ -1,11 +1,13 @@
 import {
   DEFAULT_NEW_NAME,
   type MutableKind,
+  type MutateRequest,
   type RenameHost,
 } from '@pommora/core/Nexus/mutateRequest'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
-import { orderWithSlot } from '../Views/creationOrder'
+import { orderWithSlot, placeNew } from '../Views/creationOrder'
+import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { relDirname } from '@pommora/core/Paths/posix'
 import type { Slice } from './sessionState'
@@ -49,6 +51,9 @@ export interface RenameSlice {
   signalPeek: (parentPath: string, childId: string) => void
   /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
   newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
+  newSpaceAdjacent: (id: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
+  /** An unanchored create, placed by its kind's placement setting and named in place. */
+  createNamed: (req: MutateRequest, host?: RenameHost) => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
   /** A view's values snapshot is fetched once per container open, so without this the renamed column reads blank; the key pair rides along to re-key the optimistic overrides. */
   valuesEpoch: ValuesEpoch | null
@@ -176,6 +181,27 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       where,
     )
     await get().mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME, order }, (created) =>
+      get().beginRename(created.path, true, host),
+    )
+  },
+
+  newSpaceAdjacent: async (id, where, host) => {
+    const group = get().tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
+    if (!group) return
+    const order = orderWithSlot(
+      group.spaces.map((s) => s.id),
+      id,
+      where,
+    )
+    await get().mutate(
+      { op: 'createSpace', contextId: group.def.id, name: createSpaceLabel(group.def), order },
+      (created) => get().beginRename(created.path, true, host),
+    )
+  },
+
+  createNamed: async (req, host) => {
+    const { tree, personalization } = get()
+    await get().mutate(tree ? placeNew(tree, req, personalization) : req, (created) =>
       get().beginRename(created.path, true, host),
     )
   },
