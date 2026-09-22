@@ -56,17 +56,22 @@ export const hexA = (n: number): string =>
     .padStart(2, '0')
     .toUpperCase()
 
-export function frostStyle(p: FrostParams): CSSProperties {
-  const filter = `blur(${p.blur}px) brightness(${p.brightness}%)${p.saturate !== 100 ? ` saturate(${p.saturate}%)` : ''}`
-  // Zero-valued pieces emit nothing, so an edge-free frost carries no phantom geometry.
-  const edges = [
+// Zero-valued pieces emit nothing, so an edge-free frost carries no phantom geometry.
+export const frostRim = (p: FrostParams): string =>
+  [
     p.borderAlpha > 0 && OUTLINE_INSET,
     p.topSpecular > 0 && `inset 0 1px 0 ${PURE_WHITE}${hexA(p.topSpecular)}`,
     p.innerRing > 0 && `inset 0 0 0 1px ${PURE_WHITE}${hexA(p.innerRing)}`,
     p.lowerRim > 0 &&
       `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px ${PURE_WHITE}${hexA(p.lowerRim)}`,
-    p.shadow ?? shadowStandardVar,
-  ].filter(Boolean)
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+/** `rim: false` leaves the inset edges to a layer drawn above the content, as GlassWindow's is. */
+export function frostStyle(p: FrostParams, rim = true): CSSProperties {
+  const filter = `blur(${p.blur}px) brightness(${p.brightness}%)${p.saturate !== 100 ? ` saturate(${p.saturate}%)` : ''}`
+  const edges = [rim && frostRim(p), p.shadow ?? shadowStandardVar].filter(Boolean)
   return {
     background:
       p.fill != null
