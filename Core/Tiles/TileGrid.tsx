@@ -18,6 +18,7 @@ import {
 } from './Layout/ops'
 import { computeGeometry, type Rect } from './Layout/rects'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
+import { stackLayout, stackedAt } from './Layout/stack'
 import './tile-base.css'
 import './tile-grid.css'
 
@@ -28,7 +29,8 @@ interface TileGridProps {
   tileClassName?: (id: string) => string | undefined
   tileStyle?: (id: string) => CSSProperties | undefined
   onBusyChange?: (busy: boolean) => void
-  isTileStatic?: (id: string) => boolean
+  locked?: boolean
+  isTileLocked?: (id: string) => boolean
   onHandleMenu?: (id: string, e: React.MouseEvent) => void
   onBackdrop?: (target: BackdropTarget, e: React.MouseEvent) => void
 }
@@ -186,12 +188,14 @@ export function TileGrid({
   tileClassName,
   tileStyle,
   onBusyChange,
-  isTileStatic,
+  locked,
+  isTileLocked,
   onHandleMenu,
   onBackdrop,
 }: TileGridProps): React.JSX.Element {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const [width, setWidth] = useState(0)
+  const [stacked, setStacked] = useState(false)
   const [draft, setDraft] = useState<TileLayout | null>(null)
   const [tileDrag, setTileDrag] = useState<TileDrag | null>(null)
   const [settle, setSettle] = useState<Settle | null>(null)
@@ -220,21 +224,25 @@ export function TileGrid({
     }
   }, [])
 
+  // Under the stacking width the board is DRAWN as one column; the tree the grid was handed is still the tree it hands back.
+  const view = useMemo(() => (stacked ? stackLayout(layout) : layout), [layout, stacked])
   // Hit-testing and boundary extents run against the frozen origin's geometry — a preview shifting under the pointer must never retarget the gesture.
   const originGeometry = useMemo(
-    () => computeGeometry(layout, Math.max(0, width), GAP),
-    [layout, width],
+    () => computeGeometry(view, Math.max(0, width), GAP),
+    [view, width],
   )
   const geometry = useMemo(
     () => (draft ? computeGeometry(draft, Math.max(0, width), GAP) : originGeometry),
     [draft, originGeometry, width],
   )
 
+  const boardStatic = locked === true || stacked
   const now = {
-    layout,
+    view,
     originGeometry,
     onLayoutChange,
-    isTileStatic,
+    boardStatic,
+    isTileLocked,
   }
   const live = useRef(now)
   live.current = now
@@ -247,7 +255,7 @@ export function TileGrid({
     settleRef.current = null
     setSettle(null)
     setDraft(null)
-    if (s.next && s.next !== live.current.layout) live.current.onLayoutChange(s.next)
+    if (s.next && s.next !== live.current.view) live.current.onLayoutChange(s.next)
   }, [])
 
   useEffect(() => {
@@ -267,7 +275,7 @@ export function TileGrid({
     candidates.filter((c) => Math.abs(c - start) > 0.5)
 
   const gestureOrigin = (id: string, e: React.PointerEvent<HTMLElement>) => {
-    if (e.button !== 0 || live.current.isTileStatic?.(id)) return null
+    if (e.button !== 0 || live.current.boardStatic || live.current.isTileLocked?.(id)) return null
     e.preventDefault()
     e.stopPropagation()
     // A gesture starting during a live settle finalizes the pending commit NOW: the parent hasn't re-rendered, so a gesture built on the stale origin would erase the just-dropped move.
@@ -280,7 +288,7 @@ export function TileGrid({
         ? computeGeometry(pending, Math.max(0, grid.clientWidth), GAP)
         : live.current.originGeometry
     const rect = g.tiles.get(id)
-    return rect ? { origin: pending ?? live.current.layout, g, grid, rect } : null
+    return rect ? { origin: pending ?? live.current.view, g, grid, rect } : null
   }
 
   const onEdgeDown = useCallback(
@@ -453,11 +461,17 @@ export function TileGrid({
     return () => onBusyChange?.(false)
   }, [busy, onBusyChange])
 
+  // Sampled only between gestures and only off a measured width: a crossing under a held pointer would re-lay the board mid-drag, and width is 0 until the observer's first read.
+  useEffect(() => {
+    if (busy || width <= 0) return
+    setStacked((was) => stackedAt(width, was))
+  }, [busy, width])
+
   const interacting = resizingId !== null || tracking
   const dropSlot = tileDrag && draft ? geometry.tiles.get(tileDrag.id) : null
 
   const onGridContextMenu = (e: React.MouseEvent): void => {
-    if (!onBackdrop || e.target !== e.currentTarget) return
+    if (!onBackdrop || boardStatic || e.target !== e.currentTarget) return
     e.preventDefault()
     const grid = gridRef.current
     if (!grid) return
@@ -469,7 +483,7 @@ export function TileGrid({
     for (const [id, r] of g.tiles) {
       const bottom = r.y + r.h
       if (px >= r.x && px <= r.x + r.w && py >= bottom && (!above || bottom > above.bottom)) {
-        const at = findTile(live.current.layout, id)
+        const at = findTile(live.current.view, id)
         if (at) above = { id, bottom, band: at.band }
       }
     }
@@ -488,7 +502,9 @@ export function TileGrid({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={gridRef}
-      className={`tile-grid${interacting ? ' is-interacting' : ''}`}
+      className={`tile-grid${interacting ? ' is-interacting' : ''}${
+        boardStatic ? ' is-static' : ''
+      }`}
       style={{ height: geometry.totalHeight + BOTTOM_PAD_PX }}
       onContextMenu={onGridContextMenu}
     >

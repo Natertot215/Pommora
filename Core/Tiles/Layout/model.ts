@@ -89,17 +89,21 @@ export function getTile(layout: TileLayout, tileId: string): TileLeaf | undefine
   return node?.kind === 'tile' ? node : undefined
 }
 
-export function tileIds(layout: TileLayout): string[] {
-  const out: string[] = []
+export function tileLeaves(layout: TileLayout): TileLeaf[] {
+  const out: TileLeaf[] = []
   const walk = (node: LayoutNode): void => {
     if (node.kind === 'tile') {
-      out.push(node.id)
+      out.push(node)
       return
     }
     for (const child of node.children) walk(child)
   }
   for (const band of layout.bands) walk(band.node)
   return out
+}
+
+export function tileIds(layout: TileLayout): string[] {
+  return tileLeaves(layout).map((t) => t.id)
 }
 
 function cloneNode(node: LayoutNode): LayoutNode {
