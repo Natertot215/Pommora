@@ -24,10 +24,6 @@ const windowSetRecord = z.object({
 const windowsFile = z.object({
   navSet: windowSetRecord.nullable().catch(null),
   pageSet: windowSetRecord.nullable().catch(null),
-  open: z
-    .object({ kind: z.enum(['page', 'nav', 'matrix']) })
-    .nullable()
-    .catch(null),
 })
 
 export function sanitizeWindows(raw: unknown): WindowsFile | null {

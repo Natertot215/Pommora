@@ -69,13 +69,14 @@ export function MarkdownTile({
     }
   }, [tileId])
 
+  // A mount that is not editing follows the typing mount in place, once per landed save; its editor keeps its scroll and its key.
   useEffect(() => {
     if (editing) return
     return subscribeTileBody(tileId, () => {
       const held = readTileBody(tileId)
       if (held === null || held === mine.current) return
       mine.current = null
-      setSeed((s) => (held === s.text ? s : { no: s.no + 1, editing: s.editing, text: held }))
+      setSeed((s) => (held === s.text ? s : { ...s, text: held }))
     })
   }, [editing, tileId])
 
@@ -118,6 +119,7 @@ export function MarkdownTile({
       <MarkdownEditor
         key={seed.no}
         initialBody={body}
+        body={editing ? undefined : body}
         onChange={scheduleSave}
         host={editorHost}
         connections={connections}

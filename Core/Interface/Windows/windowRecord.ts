@@ -15,7 +15,6 @@ export type WindowKind = 'page' | 'nav' | 'matrix'
 export interface WindowsFile {
   navSet: WindowSetRecord | null
   pageSet: WindowSetRecord | null
-  open: { kind: WindowKind } | null
 }
 
-export const EMPTY_WINDOWS: WindowsFile = { navSet: null, pageSet: null, open: null }
+export const EMPTY_WINDOWS: WindowsFile = { navSet: null, pageSet: null }

@@ -3,7 +3,7 @@ import { docOutline, docString } from './docCache'
 import { travelToHeading } from './travel'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
-import { Compartment, EditorState, Prec } from '@codemirror/state'
+import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EDITOR_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
@@ -74,6 +74,8 @@ export function zoomFontSize(scale: number): number {
   return EDITOR_BASE_PT * coerceScale(scale, EDITOR_SCALE_DEFAULT)
 }
 
+const mirrored = Annotation.define<boolean>()
+
 interface Props {
   initialBody: string
   onChange: (body: string) => void
@@ -94,6 +96,8 @@ interface Props {
   register?: (view: EditorView | null) => void
   /** The focused main range's figures, or null while the caret is collapsed or the surface is unfocused. */
   onSelection?: (stats: PageStats | null) => void
+  /** A later value replaces the document in place while the editor stays mounted — another mount's typing, mirrored into a read-only surface. */
+  body?: string
   /** A heading to travel to once folds settle, or on a later value while the editor stays mounted. */
   arrive?: string
   onArrived?: () => void
@@ -119,6 +123,7 @@ export function MarkdownEditor({
   register,
   onSelection,
   active = true,
+  body,
   arrive,
   onArrived,
   onHeadingRename,
@@ -182,6 +187,15 @@ export function MarkdownEditor({
     const view = viewRef.current
     if (view) rerenderWebTiles(view)
   }, [active])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || body === undefined || body === view.state.doc.toString()) return
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: body },
+      annotations: mirrored.of(true),
+    })
+  }, [body])
 
   // The mount-time travel already consumed the first value; a later one arrives while the editor stays mounted.
   const firstArrive = useRef(true)
@@ -261,8 +275,10 @@ export function MarkdownEditor({
       // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
       EditorView.editable.of(true),
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch.
-      EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
+      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body is the one dispatch that passes.
+      EditorState.changeFilter.of(
+        (tr) => !(tr.startState.readOnly && tr.docChanged && !tr.annotation(mirrored)),
+      ),
       history(),
       Prec.highest(
         keymap.of([
