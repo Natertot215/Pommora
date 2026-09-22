@@ -67,7 +67,7 @@ describe('the sidebar entity menu', () => {
       shape(
         entityMenuItems({ kind: 'context', path: 'Areas', title: 'Areas', host: 'sidebar' }, []),
       ),
-    ).toEqual(['Rename', 'Edit Icon', 'Delete', '—', 'Reveal Location'])
+    ).toEqual(['Rename', 'Edit Icon', '—', 'Delete'])
   })
 
   it('a Space draws its identity rows, then its two branches', () => {
@@ -84,8 +84,6 @@ describe('the sidebar entity menu', () => {
       'Properties',
       '—',
       'Delete',
-      '—',
-      'Reveal Location',
     ])
     expect(
       entityMenuItems({ ...SPACE, headingIconHidden: true }, []).map((i) => i.label),
@@ -103,8 +101,6 @@ describe('the sidebar entity menu', () => {
       'Change Color',
       '—',
       'Delete',
-      '—',
-      'Reveal Location',
     ])
   })
 
