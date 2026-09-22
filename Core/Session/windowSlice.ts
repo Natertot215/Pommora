@@ -89,26 +89,15 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
   }
 
   const mirrorWindows = (): void => {
-    const s = get()
-    const win = s.pageWindow
-    let file = s.windowsFile
-    if (win) {
-      switch (win.kind) {
-        case 'nav':
-          file = { ...file, navSet: toWindowRecord(win) }
-          break
-        case 'page':
-          file = { ...file, pageSet: toWindowRecord(win) }
-          break
-        // The Matrix window carries no tabs, so there is no set to record — only that it stands.
-        case 'matrix':
-          break
-      }
-      file = { ...file, open: { kind: win.kind } }
-    } else {
-      file = { ...file, open: null }
-    }
-    saveWindowsFile(file)
+    const { pageWindow: win, windowsFile: file } = get()
+    // The Matrix window carries no tabs, and a closed window leaves the sets as they stand.
+    saveWindowsFile(
+      win?.kind === 'nav'
+        ? { ...file, navSet: toWindowRecord(win) }
+        : win?.kind === 'page'
+          ? { ...file, pageSet: toWindowRecord(win) }
+          : file,
+    )
   }
 
   const reconcileRecord = (rec: WindowSetRecord | null): WindowTab[] => {

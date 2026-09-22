@@ -90,21 +90,21 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
   const target = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
-  const { body, right, actions, footer, footerLead, closeSidePane } = useWindowTabBody(target)
+  const { body, right, actions, footer, footerLead, closeSidePane, promote } =
+    useWindowTabBody(target)
   const sidePaneOpen = right.open === true
   // Also re-focuses on every map-tab return — the input remounts when a tab swaps the body away.
   useEffect(() => {
     if (!target) searchRef.current?.focus()
   }, [target])
 
-  const select = useSession((s) => s.select)
   const openNewTab = useSession((s) => s.openNewTab)
   const setNavViewMode = useSession((s) => s.setNavViewMode)
 
-  const promote = (): void => {
+  // The map tab has no entity to promote: the scan carries the list itself into a new app tab.
+  const scan = (): void => {
     if (target) {
-      closeNav()
-      void select(target)
+      promote()
       return
     }
     setNavViewMode(viewMode)
@@ -129,7 +129,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       footerLead={footerLead}
       className={cx('navwindow', target !== null && 'is-page-tab')}
       ariaLabel="Navigation"
-      onScan={promote}
+      onScan={scan}
       title={<WindowTabStrip index={resolveIndex} title={null} />}
       actions={actions}
       left={{

@@ -14,7 +14,6 @@ afterEach(() => {
 const file: WindowsFile = {
   navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }] },
   pageSet: { tabs: [{ target: { kind: 'space', id: 's1' } }] },
-  open: { kind: 'page' },
 }
 
 describe('readWindowsState', () => {
@@ -22,15 +21,9 @@ describe('readWindowsState', () => {
     expect(readWindowsState()).toEqual(EMPTY_WINDOWS)
   })
 
-  it('round-trips the nav set, the page set and the open pointer', () => {
+  it('round-trips the nav set and the page set', () => {
     writeWindowsState(file)
     expect(readWindowsState()).toEqual(file)
-  })
-
-  it('round-trips a matrix window, which keeps no set of its own', () => {
-    const matrix: WindowsFile = { navSet: null, pageSet: null, open: { kind: 'matrix' } }
-    writeWindowsState(matrix)
-    expect(readWindowsState()).toEqual(matrix)
   })
 
   it('a rewrite replaces the row', () => {
@@ -53,7 +46,7 @@ describe('sanitizeWindows', () => {
   })
 
   it('a field it cannot read falls to its empty value rather than failing the file', () => {
-    expect(sanitizeWindows({ navSet: 7, pageSet: null, open: 'yes' })).toEqual(EMPTY_WINDOWS)
+    expect(sanitizeWindows({ navSet: 7, pageSet: null })).toEqual(EMPTY_WINDOWS)
   })
 
   it('a file written before the set was unified keeps its nav set and drops the rest', () => {
@@ -66,7 +59,6 @@ describe('sanitizeWindows', () => {
     ).toEqual({
       navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }] },
       pageSet: null,
-      open: { kind: 'page' },
     })
   })
 
@@ -80,13 +72,11 @@ describe('sanitizeWindows', () => {
         ],
       },
       pageSet: null,
-      open: { kind: 'weird' },
     })
     expect(clean?.navSet?.tabs).toEqual([
       { target: { kind: 'page', id: 'p1' } },
       { target: { kind: 'space', id: 's1' } },
     ])
-    expect(clean?.open).toBeNull()
   })
 
   it('drops every stored ref a window tab cannot render', () => {
@@ -100,9 +90,7 @@ describe('sanitizeWindows', () => {
           { target: { kind: 'page', id: 'p1' } },
         ],
       },
-      open: { kind: 'matrix' },
     })
     expect(clean?.pageSet?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
-    expect(clean?.open).toEqual({ kind: 'matrix' })
   })
 })

@@ -50,7 +50,7 @@ beforeEach(() => {
     pageWindow: null,
     navOpen: false,
     tree,
-    windowsFile: { navSet: null, pageSet: null, open: null },
+    windowsFile: { navSet: null, pageSet: null },
   })
 })
 
@@ -137,12 +137,10 @@ describe('windowTabs — the one durable page set (B-4)', () => {
     useSession.getState().openWindowTab(page('y'))
     useSession.getState().closeWindow()
     expect(useSession.getState().windowsFile.pageSet?.tabs).toHaveLength(2)
-    expect(useSession.getState().windowsFile.open).toBeNull()
 
     useSession.getState().openWindowTab(page('z'))
     expect(ids()).toEqual(['x', 'y', 'z'])
     expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'z' })
-    expect(useSession.getState().windowsFile.open).toEqual({ kind: 'page' })
   })
 
   it('a restore lands on the ASKED tab, whatever the record last showed', () => {
@@ -152,7 +150,6 @@ describe('windowTabs — the one durable page set (B-4)', () => {
         pageSet: {
           tabs: [{ target: { kind: 'page', id: 'x' } }, { target: { kind: 'page', id: 'y' } }],
         },
-        open: null,
       },
     })
     useSession.getState().openWindowTab(page('x'))
@@ -170,7 +167,6 @@ describe('windowTabs — the one durable page set (B-4)', () => {
             { target: { kind: 'space', id: 'gone' } },
           ],
         },
-        open: null,
       },
     })
     useSession.getState().openWindowTab(page('x'))
@@ -196,7 +192,6 @@ describe('windowTabs — the one durable page set (B-4)', () => {
       windowsFile: {
         navSet: { tabs: [{ target: { kind: 'page', id: 'x' } }] },
         pageSet: null,
-        open: null,
       },
     })
     useSession.getState().openNavWindow()
@@ -220,7 +215,6 @@ describe('windowTabs — the nav kind (B-3)', () => {
     const file = useSession.getState().windowsFile
     expect(file.navSet?.tabs).toEqual([{ target: { kind: 'page', id: 'x' } }])
     expect(file.pageSet).toBeNull()
-    expect(file.open).toEqual({ kind: 'nav' })
   })
 
   it('the map sentinel tab refuses to close; tabs around it close normally', () => {
@@ -257,7 +251,6 @@ describe('windowTabs — the nav kind (B-3)', () => {
       windowsFile: {
         navSet: { tabs: [{ target: { kind: 'page', id: 'n' } }] },
         pageSet: null,
-        open: null,
       },
     })
     useSession.getState().openNav()
@@ -306,7 +299,6 @@ describe('windowTabs — the Matrix kind entry', () => {
     useSession.getState().openMatrixWindow()
     const file = useSession.getState().windowsFile
     expect(useSession.getState().pageWindow?.kind).toBe('matrix')
-    expect(file.open).toEqual({ kind: 'matrix' })
     expect(file.pageSet).toBeNull()
     expect(file.navSet).toBeNull()
   })

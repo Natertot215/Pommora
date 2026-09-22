@@ -6,8 +6,9 @@ import { createRoot, type Root } from 'react-dom/client'
 const seeds = vi.hoisted(() => [] as string[])
 
 vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
-  MarkdownEditor: (p: { initialBody: string; onChange: (next: string) => void }) => {
-    const [body, setBody] = useState(p.initialBody)
+  MarkdownEditor: (p: { initialBody: string; body?: string; onChange: (next: string) => void }) => {
+    const [own, setBody] = useState(p.initialBody)
+    const body = p.body ?? own
     useEffect(() => {
       seeds.push(p.initialBody)
     }, [])
@@ -110,7 +111,7 @@ describe("a markdown tile's shared body", () => {
     expect(text()).toBe('on disk!!')
   })
 
-  it('mirrors a landed save to the mount that is not editing, and only then', async () => {
+  it('mirrors a landed save into the mount that is not editing, in place', async () => {
     await mountBoth(true, false)
     act(() => editors()[0]?.click())
     expect(text(1)).toBe('on disk')
@@ -120,7 +121,7 @@ describe("a markdown tile's shared body", () => {
     expect(write).toHaveBeenCalledOnce()
     expect(text(0)).toBe('on disk!')
     expect(text(1)).toBe('on disk!')
-    expect(seeds).toEqual(['on disk', 'on disk', 'on disk!'])
+    expect(seeds).toEqual(['on disk', 'on disk'])
   })
 
   it('starts the mount clicked into from the text the other mount typed', async () => {

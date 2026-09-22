@@ -9,7 +9,7 @@ beforeEach(() => {
   useSession.setState({
     pageWindow: null,
     navOpen: false,
-    windowsFile: { navSet: null, pageSet: null, open: null },
+    windowsFile: { navSet: null, pageSet: null },
   })
 })
 
@@ -55,7 +55,6 @@ describe('the Matrix window — one slot, three kinds', () => {
     expect(useSession.getState().pageWindow?.kind).toBe('matrix')
     useSession.getState().toggleMatrixWindow()
     expect(useSession.getState().pageWindow).toBeNull()
-    expect(useSession.getState().windowsFile.open).toBeNull()
   })
 
   it('a Preview while it stands overtakes it — the Matrix has no tabs to join', () => {
@@ -64,6 +63,5 @@ describe('the Matrix window — one slot, three kinds', () => {
     const win = useSession.getState().pageWindow!
     expect(win.kind).toBe('page')
     expect(win.tabs.map((t) => t.target)).toEqual([page])
-    expect(useSession.getState().windowsFile.open).toEqual({ kind: 'page' })
   })
 })

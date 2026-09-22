@@ -501,7 +501,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
       .applyTree({ ...base, nexus: { ...base.nexus, id: 'other', rootPath: '/other' } })
     const s = useSession.getState()
     expect(s.pageWindow).toBeNull()
-    expect(s.windowsFile).toEqual({ navSet: null, pageSet: null, open: null })
+    expect(s.windowsFile).toEqual({ navSet: null, pageSet: null })
     expect(s.activeTabId).toBe('')
   })
 
@@ -522,7 +522,6 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
             { target: { kind: 'page', id: 'z' } },
           ],
         },
-        open: null,
       },
     })
     useSession.getState().openWindowTab({ kind: 'page', id: 'x', path: 'Notes/x.md' })

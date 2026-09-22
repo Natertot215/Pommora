@@ -208,15 +208,13 @@ export function SidebarDnd({
     escortSpec: (id, rect) => {
       const entry = index.byId.get(id)
       const content = contentRef.current
-      return entry?.kind === 'page' && content
-        ? {
-            id,
-            family: TAB_FAMILY,
-            item: { kind: 'page', id, path: entry.path },
-            rect,
-            home: toBox(content),
-          }
-        : null
+      const item =
+        entry?.kind === 'page'
+          ? { kind: 'page', id, path: entry.path }
+          : entry?.kind === 'space'
+            ? { kind: 'space', id }
+            : null
+      return item && content ? { id, family: TAB_FAMILY, item, rect, home: toBox(content) } : null
     },
     commit: (_id, slot) => onCommit(slot.commit),
     lineFor: (slot) => ({

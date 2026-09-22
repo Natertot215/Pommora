@@ -28,6 +28,7 @@ export interface WindowTabBodySlots {
   footer: React.ReactNode
   footerLead: React.ReactNode
   closeSidePane: () => void
+  promote: () => void
 }
 
 function SpaceTabBody({
@@ -86,6 +87,13 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
       for (const off of held) off()
     }
   }, [heldSpaces])
+
+  // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
+  const promoteWindowTab = useSession((s) => s.promoteWindowTab)
+  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
+  const promote = (): void => {
+    if (target && activeTabId) promoteWindowTab(activeTabId)
+  }
 
   const bodyRef = useRef<HTMLDivElement>(null)
   // A Space tab's scroll restore waits for its board's first read; a Page tab has no board to wait on.
@@ -168,5 +176,6 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
     ),
     footerLead: <CitationsToggle page={page} />,
     closeSidePane,
+    promote,
   }
 }

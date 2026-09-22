@@ -36,15 +36,13 @@ function PageWindowBody({
   closing: boolean
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)
-  const promoteWindowTab = useSession((s) => s.promoteWindowTab)
-  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
   const geometry = useWindowGeometry('page-window')
   const embedScale = useEmbedScale()
   const tree = useSession((s) => s.tree)
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
 
-  const { body, bodyRef, right, actions, footer, footerLead, closeSidePane } =
+  const { body, bodyRef, right, actions, footer, footerLead, closeSidePane, promote } =
     useWindowTabBody(target)
   const sidePaneOpen = right.open === true
 
@@ -73,11 +71,6 @@ function PageWindowBody({
         ?.querySelector('.window-side-pane')
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
   }, [target.id, windowSlide, sidePaneOpen, bodyRef])
-
-  // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
-  const promote = (): void => {
-    if (activeTabId) promoteWindowTab(activeTabId)
-  }
 
   // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime values); the css .engulfing class only suppresses the default scale-out.
   const exitReason = useSession((s) => s.windowExit)
