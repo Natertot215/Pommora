@@ -49,5 +49,8 @@ The closeout review of the range confirmed these, which serve as the reference a
 - **Fade Width:** the body kept the band's full scroll-fade height while hidden.
 - **Coverage:** the dwell logic moved to `UIX/Interactions/hoverDwell.ts` with its own tests.
 - **Structural Cards:** a headless top group made a later Set's band the anchor; the first band now counts only when it precedes the first card.
+- **Stranded Press:** live use after the closeout showed the press guard counted a right-click, whose native menu swallows the release, so the reveal stayed dead until the next click.
+- **Menu Choice Folds:** a native menu withholds boundary events, so a band menu's choice folded the band under a still pointer.
 - **Refuted:** the `overflow: hidden` clipping concern — pills carry no outer ring, their motion is horizontal, and pickers portal out.
 
+The full scored table lives on `benchmark-branch` at `Benchmarks/view-band-hide/README.md`.
