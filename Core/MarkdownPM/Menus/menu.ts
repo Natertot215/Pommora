@@ -72,7 +72,6 @@ export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (action === 'block:page') return embedInsertAtCaret(view)
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
-  // A footnote is a pair at two disjoint sites, not a block whose format changes, so it sits outside the format union.
   if (action === 'block:citation') return insertCitation(view)
   if (action.startsWith(PASTE_AS_PREFIX)) {
     void pasteAs(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
