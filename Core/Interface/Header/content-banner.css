@@ -101,12 +101,9 @@
   padding-right: var(--content-start-right);
 }
 
-/* The drawn band keys its title to the shell's sidebar and its height to the main pane; a floating window has neither, and opens 600px tall. */
+/* The drawn band keys its title to the shell's sidebar; a floating window has none, and the band runs under the window's strip to its top edge at the detail's full height. */
 .window .banner {
   --content-start: var(--content-edge);
-  /* KNOB — the windowed band's height. 96px is --embed-banner-h, the band a windowed Page already draws, so both tab kinds read alike in one window. */
-  --banner-h: 96px;
-  /* The band runs under the window's strip to its top edge. */
   margin-top: calc(-1 * var(--window-toolbar-h));
 }
 
