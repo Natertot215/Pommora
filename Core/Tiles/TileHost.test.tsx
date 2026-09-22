@@ -4,6 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { stubEditorBridge } from '../MarkdownPM/editorHarness'
 import { TileHost } from './TileHost'
+import { dropAllTileDocs, isTileRemoving, markTileRemoving } from './tileDocStore'
 
 vi.stubGlobal(
   'ResizeObserver',
@@ -28,14 +29,17 @@ const doc = {
 
 let host: HTMLDivElement
 let root: Root
+const writeMarkdown = vi.fn(async () => ({ ok: true, value: null }))
 
 beforeEach(() => {
+  dropAllTileDocs()
+  writeMarkdown.mockClear()
   stubEditorBridge({
     'tiles:changed': () => () => {},
     'tiles:get': async () => ({ ok: true, value: doc }),
     'tiles:save': async () => ({ ok: true, value: null }),
     'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
-    'tiles:writeMarkdown': async () => ({ ok: true, value: null }),
+    'tiles:writeMarkdown': writeMarkdown,
   })
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -44,6 +48,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount())
   host.remove()
+  dropAllTileDocs()
 })
 
 async function until(cond: () => boolean): Promise<boolean> {
@@ -73,5 +78,38 @@ describe('the host over the renderer table', () => {
       )
     })
     expect(host.querySelector('.tile.is-editing-tile')).toBeNull()
+  })
+
+  const press = (el: HTMLElement): void => {
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    el.click()
+  }
+
+  it('moves the edit to the mount that was clicked', async () => {
+    await act(async () =>
+      root.render(
+        <>
+          <TileHost host={{ kind: 'homepage' }} />
+          <TileHost host={{ kind: 'homepage' }} />
+        </>,
+      ),
+    )
+    expect(await until(() => host.querySelectorAll('.markdown-tile').length === 2)).toBe(true)
+    const [first, second] = [...host.querySelectorAll('.markdown-tile')] as HTMLElement[]
+    await act(async () => press(first))
+    expect(host.querySelectorAll('.tile.is-editing-tile')).toHaveLength(1)
+    await act(async () => press(second))
+    const editing = [...host.querySelectorAll('.tile.is-editing-tile')]
+    expect(editing).toHaveLength(1)
+    expect(second.closest('.tile')).toBe(editing[0])
+  })
+
+  it("suppresses every mount's flush for a tile a sibling is removing", async () => {
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelector('.markdown-tile') !== null)).toBe(true)
+    markTileRemoving('m')
+    expect(isTileRemoving('m')).toBe(true)
+    await act(async () => root.render(null))
+    expect(writeMarkdown).not.toHaveBeenCalled()
   })
 })
