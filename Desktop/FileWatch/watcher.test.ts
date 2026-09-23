@@ -171,6 +171,26 @@ describe('state.json under the watcher', () => {
   })
 })
 
+describe('a metadata month file under the watcher', () => {
+  it('lands an outside edit inside the echo window', async () => {
+    vi.useRealTimers()
+    await refreshTree(root)
+    vi.useFakeTimers()
+    await startWatcher(root, win)
+    const id = '01KZSWEW0WPF1PFWWJSKE8Q83P'
+    await mkdir(abs('.nexus', 'metadata'), { recursive: true })
+    recordWrite(abs('.nexus', 'metadata', '08-2026.json'))
+    await writeFile(
+      abs('.nexus', 'metadata', '08-2026.json'),
+      JSON.stringify({ pages: { [id]: { locked: true } } }),
+    )
+    emit('change', '.nexus', 'metadata', '08-2026.json')
+    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'nexus:changed'))
+    expect(pushMock.mock.calls.filter((c) => c[1] === 'nexus:changed')).toHaveLength(1)
+    expect(getLiveTree()?.pageMetadata).toEqual({ [id]: { locked: true } })
+  })
+})
+
 describe('syncIgnoredUnder', () => {
   const ignored = (...segs: string[]): boolean =>
     syncIgnoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))

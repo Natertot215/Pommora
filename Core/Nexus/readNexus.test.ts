@@ -12,7 +12,8 @@ import {
   readSettingsLeaves,
   scopeOf,
 } from '../Settings/codec'
-import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, METADATA_DIR_REL } from '../Paths/nexusPaths'
+import { contentIdAt } from './ids'
 import { corpusFiles } from '../Files/walk'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { HISTORY_DAYS } from '../Settings/personalization'
@@ -709,6 +710,47 @@ describe('readNexus — profile (from settings)', () => {
     const t = await readNexus(mk({}))
     expect(t.nexus.profileImage).toBeNull()
     expect(t.nexus.profileSubtitle).toBe('')
+  })
+})
+
+describe('readNexus — page metadata', () => {
+  const SEP = contentIdAt(Date.UTC(2026, 8, 5), 'page')
+  const AUG = contentIdAt(Date.UTC(2026, 7, 10), 'page')
+  const roots: string[] = []
+  const mk = (): string => {
+    const root = tempRoot('pom-meta-')
+    roots.push(root)
+    d(join(root, '.nexus'))
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxm', createdAt: '2026' }))
+    return root
+  }
+  afterAll(() =>
+    roots.forEach((r) => {
+      rmSync(r, { recursive: true, force: true })
+    }),
+  )
+
+  it('loads every month into one map, ignoring a moved-aside sibling', async () => {
+    const root = mk()
+    d(join(root, METADATA_DIR_REL))
+    w(
+      join(root, METADATA_DIR_REL, '09-2026.json'),
+      JSON.stringify({ pages: { [SEP]: { icon: 'star' } } }),
+    )
+    w(
+      join(root, METADATA_DIR_REL, '08-2026.json'),
+      JSON.stringify({ pages: { [AUG]: { locked: true } } }),
+    )
+    w(
+      join(root, METADATA_DIR_REL, '09-2026.json.bad-x'),
+      JSON.stringify({ pages: { [SEP]: { icon: 'moved' } } }),
+    )
+    const t = await readNexus(root)
+    expect(t.pageMetadata).toEqual({ [SEP]: { icon: 'star' }, [AUG]: { locked: true } })
+  })
+
+  it('reads an empty map without a metadata folder', async () => {
+    expect((await readNexus(mk())).pageMetadata).toEqual({})
   })
 })
 

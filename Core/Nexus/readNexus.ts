@@ -16,6 +16,7 @@ import { containerFieldsFrom } from './containerFields'
 import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
 import { adoptedId } from './ids'
+import { readPageMetadata } from './pageMetadata'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { readIdentity } from './identity'
@@ -290,16 +291,25 @@ export async function readNexus(root: string): Promise<NexusTree> {
 }
 
 async function walkNexus(root: string): Promise<NexusTree> {
-  const [identityRead, settings, state, homepageConfig, cropsConfig, registry, ctxRegistryRaw] =
-    await Promise.all([
-      readIdentity(root),
-      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
-      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
-      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
-      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.crops)),
-      readRegistry(root),
-      readSidecar(contextsRegistryFile(root)),
-    ])
+  const [
+    identityRead,
+    settings,
+    state,
+    homepageConfig,
+    cropsConfig,
+    pageMetadata,
+    registry,
+    ctxRegistryRaw,
+  ] = await Promise.all([
+    readIdentity(root),
+    readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
+    readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
+    readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
+    readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.crops)),
+    readPageMetadata(root),
+    readRegistry(root),
+    readSidecar(contextsRegistryFile(root)),
+  ])
   // Absent nexus.json is real raw mode; an UNREADABLE one is an error — a lenient null here would flip the whole nexus to raw mode, ignoring every sidecar's identity, views and schema for the session. Fail the walk instead; the tree stays as last-read.
   if (!identityRead.ok && identityRead.error.code !== 'not-found') {
     throw new Error(`The nexus identity file could not be read: ${identityRead.error.message}`)
@@ -368,6 +378,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     },
     homepage: readHomepageLeaves(homepageConfig),
     crops: readCropLeaves(cropsConfig),
+    pageMetadata,
     contexts: contexts ?? [],
     contextOrder: order.contexts,
     collections,

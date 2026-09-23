@@ -377,6 +377,7 @@ function treeWith(pages: { id: string; path: string }[], spaces: string[] = []):
     nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
     homepage: { headingIconHidden: false },
     crops: {},
+    pageMetadata: {},
     contexts:
       spaces.length === 0
         ? []

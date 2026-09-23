@@ -15,6 +15,7 @@ const tree = {
   nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
   homepage: { headingIconHidden: false },
   crops: {},
+  pageMetadata: {},
   contexts: [],
   collections: [
     {

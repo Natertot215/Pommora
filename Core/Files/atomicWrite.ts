@@ -6,6 +6,7 @@ import { recordWrite } from './writeEcho'
 import { machine } from '../Platform/machine'
 import { basename, dirname } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
+import { newId } from '../Nexus/ids'
 
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
   recordWrite(filePath)
@@ -107,6 +108,20 @@ export function rmwJsonStrict(
     await writeJson(absPath, next)
     return ok(next)
   })
+}
+
+/** The primitive behind `updateNexusConfig` and every metadata month file:a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
+export function updateNexusFile(
+  absPath: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
+): Promise<Result<Record<string, unknown>>> {
+  return rmwJsonStrict(
+    absPath,
+    mutate,
+    () => ({}),
+    // A corrupt file moves aside under the lock so the write after the empty read lands.
+    (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
+  )
 }
 
 export function setOrDrop(

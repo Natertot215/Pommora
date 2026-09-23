@@ -18,6 +18,13 @@ export const CONTEXT_JOURNAL_FILENAME = 'context-rename.json'
 export const PROPERTY_JOURNAL_REL = `${NEXUS_DIR}/${PROPERTY_JOURNAL_FILENAME}`
 export const CONTEXT_JOURNAL_REL = `${NEXUS_DIR}/${CONTEXT_JOURNAL_FILENAME}`
 
+export const METADATA_DIR_REL = `${NEXUS_DIR}/metadata`
+export const SHARD_FILE_RE = /^(0[1-9]|1[0-2])-\d{4}\.json$/
+
+export const isMetadataShardRel = (rel: string): boolean =>
+  rel.startsWith(`${METADATA_DIR_REL}/`) &&
+  SHARD_FILE_RE.test(rel.slice(METADATA_DIR_REL.length + 1))
+
 export const ASSETS_DIRNAME = 'assets'
 export const ASSETS_DIR_REL = `${NEXUS_DIR}/${ASSETS_DIRNAME}`
 

@@ -11,6 +11,7 @@ const treeAt = (rootPath: string): NexusTree => ({
   nexus: { id: rootPath, rootPath, name: 'x', profileImage: null, profileSubtitle: '' },
   homepage: { headingIconHidden: false },
   crops: {},
+  pageMetadata: {},
   contexts: [],
   collections: [],
   accent: 'lavender',

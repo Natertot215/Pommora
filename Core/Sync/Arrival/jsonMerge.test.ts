@@ -45,6 +45,33 @@ describe('mergeKeys', () => {
     })
   })
 
+  it('merges a month file per page and per field', () => {
+    const depth = mergeDepthFor('.nexus/metadata/09-2026.json')
+    const base = { pages: { p1: { icon: 'star', aliases: ['a'] } } }
+    const local = { pages: { p1: { icon: 'moon', aliases: ['b', 'a'] } } }
+    const remote = { pages: { p1: { icon: 'star', aliases: ['c', 'a'], locked: true } } }
+    expect(merge(base, local, remote, depth, takeRemote)).toEqual({
+      pages: { p1: { icon: 'moon', aliases: ['c', 'a'], locked: true } },
+    })
+    expect(merge(base, local, remote, depth, takeLocal)).toEqual({
+      pages: { p1: { icon: 'moon', aliases: ['b', 'a'], locked: true } },
+    })
+  })
+
+  it('merges a page one side emptied and the other edited per field', () => {
+    const depth = mergeDepthFor('.nexus/metadata/09-2026.json')
+    const base = { pages: { p1: { icon: 'star' } } }
+    const emptied = { pages: {} }
+    const locked = { pages: { p1: { icon: 'star', locked: true } } }
+    for (const pick of [takeLocal, takeRemote]) {
+      expect(merge(base, emptied, locked, depth, pick)).toEqual({ pages: { p1: { locked: true } } })
+      expect(merge(base, locked, emptied, depth, pick)).toEqual({ pages: { p1: { locked: true } } })
+    }
+    expect(merge(base, emptied, { pages: { p1: { icon: 'moon' } } }, depth, takeLocal)).toEqual({
+      pages: {},
+    })
+  })
+
   it('takes an array inside a key whole', () => {
     const base = { order: { collections: ['a', 'b'] } }
     const local = { order: { collections: ['a', 'b', 'c'] } }
@@ -72,6 +99,8 @@ describe('mergeKeys', () => {
     expect(mergeDepthFor('.nexus/state.json')).toEqual({ order: 1, navigation: 1 })
     expect(mergeDepthFor('.nexus/properties.json')).toEqual({ defs: 1 })
     expect(mergeDepthFor('.nexus/assets/crops.json')).toEqual({ byImage: 1 })
+    expect(mergeDepthFor('.nexus/metadata/09-2026.json')).toEqual({ pages: 2 })
+    expect(mergeDepthFor('.nexus/metadata/09-2026.json.bad-x')).toEqual({})
     expect(mergeDepthFor('.nexus/homepage/homepage.json')).toEqual({})
     expect(mergeDepthFor('.nexus/matrix.json')).toEqual({
       group: 1,

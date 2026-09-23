@@ -1,6 +1,6 @@
 import { stableStringify } from '../../Files/stableJson'
 import { isPlainObject } from '../../Properties/propertyValue'
-import { NEXUS_DIR } from '../../Paths/nexusPaths'
+import { isMetadataShardRel, NEXUS_DIR } from '../../Paths/nexusPaths'
 import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
 import { basename } from '../../Paths/posix'
 
@@ -12,6 +12,7 @@ export function isMergedJson(rel: string): boolean {
 }
 
 export function mergeDepthFor(rel: string): Depth {
+  if (isMetadataShardRel(rel)) return { pages: 2 }
   switch (rel) {
     case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`:
       return { personalization: 1 }
@@ -33,6 +34,8 @@ const same = (a: unknown, b: unknown): boolean => stableStringify(a) === stableS
 const unionKeys = (...objects: Json[]): string[] => [
   ...new Set(objects.flatMap((o) => Object.keys(o))),
 ]
+
+const objectOrAbsent = (v: unknown): v is Json | undefined => v === undefined || isPlainObject(v)
 
 const levelFor = (keys: string[], level: number): Depth =>
   Object.fromEntries(keys.map((k) => [k, level]))
@@ -58,9 +61,12 @@ export function mergeKeys(
     if (!localChanged && !remoteChanged) take(base, key)
     else if (!remoteChanged) take(local, key)
     else if (!localChanged) take(remote, key)
-    else if (level > 0 && isPlainObject(l) && isPlainObject(r)) {
+    else if (level > 0 && objectOrAbsent(l) && objectOrAbsent(r)) {
+      // A side that deleted the key merges as empty, so the other side's changes inside it survive.
       const from = isPlainObject(b) ? b : {}
-      out[key] = mergeKeys(from, l, r, levelFor(unionKeys(from, l, r), level - 1), pick)
+      const [lo, ro] = [l ?? {}, r ?? {}]
+      const merged = mergeKeys(from, lo, ro, levelFor(unionKeys(from, lo, ro), level - 1), pick)
+      if (Object.keys(merged).length > 0 || (l !== undefined && r !== undefined)) out[key] = merged
     } else take(pick() === 'local' ? local : remote, key)
   }
   return out

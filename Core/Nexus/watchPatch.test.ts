@@ -5,6 +5,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import { contentIdAt } from './ids'
 import { readNexus } from './readNexus'
 import type { WatchScope } from '../Paths/exclusion'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
@@ -314,6 +315,8 @@ describe('classifyEvent', () => {
       ev('change', '.nexus', 'property-cascade.json'),
       ev('change', '.nexus', 'context-rename.json'),
       ev('add', '.nexus', 'unknown.json'),
+      ev('add', '.nexus', 'metadata', '09-2026.json.bad-x'),
+      ev('add', '.nexus', 'metadata', '13-2026.json'),
     ])
       expect(kind(e)).toBe('ignored')
 
@@ -356,6 +359,68 @@ describe('classifyEvent', () => {
     expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
     const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'), scope())
     expect(cls.kind).toBe('full-refresh')
+  })
+})
+
+describe('the metadata leaf re-reads only its month', () => {
+  const SEP = contentIdAt(Date.UTC(2026, 8, 5), 'page')
+  const AUG = contentIdAt(Date.UTC(2026, 7, 10), 'page')
+  const month = (shard: string): string => abs('.nexus', 'metadata', `${shard}.json`)
+  const seed = (shard: string, pages: object): Promise<void> =>
+    writeFile(month(shard), JSON.stringify({ pages }))
+  const land = (event: WatchEvent['event'], shard: string) =>
+    applyWatchEvents(root, [ev(event, '.nexus', 'metadata', `${shard}.json`)], scope())
+
+  beforeEach(async () => {
+    await mkdir(abs('.nexus', 'metadata'), { recursive: true })
+    await seed('09-2026', { [SEP]: { icon: 'star' } })
+    await seed('08-2026', { [AUG]: { locked: true } })
+    await refreshTree(root)
+  })
+
+  it('classifies a month file by its shard', () => {
+    const tree = getLiveTree()
+    if (tree === null) throw new Error('no tree')
+    expect(
+      classifyEvent(tree, root, ev('change', '.nexus', 'metadata', '09-2026.json'), scope()),
+    ).toEqual({
+      kind: 'metadata-leaf',
+      shard: '09-2026',
+    })
+  })
+
+  it('a change replaces only its own month, walk-identically', async () => {
+    const august = getLiveTree()?.pageMetadata[AUG]
+    await seed('09-2026', { [SEP]: { icon: 'moon', aliases: ['m'] } })
+    expect((await land('change', '09-2026')).outcome).toBe('patched')
+    const live = getLiveTree()
+    expect(live?.pageMetadata).toEqual({
+      [SEP]: { icon: 'moon', aliases: ['m'] },
+      [AUG]: { locked: true },
+    })
+    expect(live?.pageMetadata[AUG]).toBe(august)
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('an unlink clears its month, walk-identically', async () => {
+    await unlink(month('09-2026'))
+    expect((await land('unlink', '09-2026')).outcome).toBe('patched')
+    const live = getLiveTree()
+    expect(live?.pageMetadata).toEqual({ [AUG]: { locked: true } })
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('a corrupt rewrite leaves its month as held', async () => {
+    const held = getLiveTree()?.pageMetadata
+    await writeFile(month('09-2026'), '{ bad json')
+    expect((await land('change', '09-2026')).outcome).toBe('patched')
+    expect(getLiveTree()?.pageMetadata).toBe(held)
+  })
+
+  it('an identical re-read leaves the live tree untouched', async () => {
+    const live = getLiveTree()
+    expect((await land('change', '09-2026')).outcome).toBe('patched')
+    expect(getLiveTree()).toBe(live)
   })
 })
 

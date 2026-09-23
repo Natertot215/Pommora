@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { decodeTime } from 'ulidx'
-import { newId, isUlid, adoptedId, mintPropertyId, idTime, idAt } from './ids'
+import { newId, isUlid, adoptedId, mintPropertyId, idTime, idAt, contentIdAt, shardOf } from './ids'
 
 describe('newId / isUlid', () => {
   it('mints valid, unique ULIDs', () => {
@@ -47,6 +47,27 @@ describe('idAt', () => {
   it('accepts a fractional seed and a negative one', () => {
     expect(idTime(idAt(1788295304609.0347))).toBe(1788295304609)
     expect(idTime(idAt(-5))).toBe(0)
+  })
+})
+
+describe('shardOf', () => {
+  it('names the month of the id in UTC, whatever the local zone', () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'Pacific/Kiritimati'
+    try {
+      expect(shardOf(contentIdAt(Date.UTC(2026, 8, 30, 23, 30), 'page'))).toBe('09-2026')
+    } finally {
+      if (tz === undefined) delete process.env.TZ
+      else process.env.TZ = tz
+    }
+  })
+
+  it('maps a minted page id to its month', () => {
+    expect(shardOf('01KZSWEW0WPF1PFWWJSKE8Q83P')).toBe('08-2026')
+  })
+
+  it('returns null for an adopted id', () => {
+    expect(shardOf(adoptedId('a/b.md'))).toBeNull()
   })
 })
 

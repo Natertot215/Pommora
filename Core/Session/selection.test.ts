@@ -10,6 +10,7 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
     nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
     homepage: { headingIconHidden: false },
     crops: {},
+    pageMetadata: {},
     contexts: [],
     collections: [
       {
