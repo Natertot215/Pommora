@@ -5,7 +5,7 @@ import type { Personalization } from '../Settings/personalization'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
 import type { AccentSetting } from '@pommora/uix/Theme/colors'
-import type { Crop } from './schemas'
+import type { Crop, PageMeta } from './schemas'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'
 
@@ -96,6 +96,7 @@ export interface NexusTree {
   /** The tile doc's heavy layout and entries stay off the walk, loaded lazily by useTileDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
   crops: Record<string, Crop>
+  pageMetadata: Record<string, PageMeta>
   collections: CollectionNode[]
   contexts: ContextGroup[]
   // Not the sidebar's order: `contexts` above carries the registry's, and these two move independently.

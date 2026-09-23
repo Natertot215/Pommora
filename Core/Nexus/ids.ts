@@ -30,6 +30,14 @@ export function idTime(id: string): number | null {
   }
 }
 
+export function shardOf(id: string): string | null {
+  const t = idTime(id)
+  if (t === null) return null
+  const d = new Date(t)
+  const year = d.getUTCFullYear()
+  return year > 9999 ? null : `${String(d.getUTCMonth() + 1).padStart(2, '0')}-${year}`
+}
+
 /** Case-SENSITIVE where the ulid library is not: an id becomes a folder name, and a case-insensitive filesystem would collide two ids the library calls equal. */
 export function isUlid(value: string): boolean {
   return isUlidShaped(value)

@@ -17,6 +17,8 @@ import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { isRecentWrite } from '@pommora/core/Files/writeEcho'
+import { isMetadataShardRel } from '@pommora/core/Paths/nexusPaths'
+import { relPosix } from '@pommora/core/Paths/paths'
 import type { Pushes } from '@pommora/core/Contract/bridge'
 import { push as pushToWindow } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
@@ -83,12 +85,12 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
       const path = posixPath(hostPath)
       emitWatch(event, path)
       if (isTileBody(path)) return
-      // The app's own writes echo back and confirm through their own channels; a live config file skips that suppression because both its lanes settle to no push when nothing moved, so a hand-edit landing right after the app's own write is not swallowed.
+      // The app's own writes echo back and confirm through their own channels; the two live config files and the metadata month files skip that suppression because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
       if (isConfigPath(root, path, 'state'))
         pushConfig(root, win, 'nav:changed', readNavigationFile)
       else if (isConfigPath(root, path, 'matrix'))
         pushConfig(root, win, 'matrix:changed', readMatrixFile)
-      else if (isRecentWrite(path)) return
+      else if (!isMetadataShardRel(relPosix(root, path)) && isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)

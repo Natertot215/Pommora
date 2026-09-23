@@ -1,5 +1,11 @@
 import { join, relative } from './posix'
-import { ASSETS_DIRNAME, CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from './nexusPaths'
+import {
+  ASSETS_DIRNAME,
+  CONTEXTS_DIR_REL,
+  CONTEXTS_REGISTRY_REL,
+  METADATA_DIR_REL,
+  NEXUS_DIR,
+} from './nexusPaths'
 import { rootSegs } from './exclusion'
 
 export const relPosix = (root: string, abs: string): string => relative(root, abs)
@@ -40,6 +46,9 @@ export function nexusDir(root: string): string {
 export function nexusConfig(root: string, file: string): string {
   return join(nexusDir(root), file)
 }
+
+export const metadataShardPath = (root: string, shard: string): string =>
+  join(root, METADATA_DIR_REL, `${shard}.json`)
 
 export function contextsRegistryFile(root: string): string {
   return join(root, CONTEXTS_REGISTRY_REL)

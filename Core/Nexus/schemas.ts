@@ -26,6 +26,22 @@ export const cropsFile = z.looseObject({
   byImage: z.record(z.string(), crop.optional().catch(undefined)).optional().catch(undefined),
 })
 
+export const pageMetaEntry = z.object({
+  icon: z.string().optional().catch(undefined),
+  aliases: z.array(z.string()).optional().catch(undefined),
+  title_icon: z.boolean().optional().catch(undefined),
+  locked: z.literal(true).optional().catch(undefined),
+})
+export type PageMeta = z.infer<typeof pageMetaEntry>
+export type PageMetaPatch = { [K in keyof PageMeta]?: PageMeta[K] | null }
+
+export const metadataShardFile = z.looseObject({
+  pages: z
+    .record(z.string(), pageMetaEntry.optional().catch(undefined))
+    .optional()
+    .catch(undefined),
+})
+
 /** Deliberately non-discriminating — it validates any sidecar — so it must never stand in for the kind decision itself. */
 export const baseSidecar = z.looseObject({
   id: z.string(),

@@ -1,4 +1,4 @@
-import { join, relDirname } from '../Paths/posix'
+import { basename, join, relDirname } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
 import { asString, asStringArray } from './coerce'
@@ -50,7 +50,8 @@ import {
   type TreeEntity,
   updateNodeInTree,
 } from './treePatch'
-import { CONTEXTS_DIRNAME, CROPS_REL, NEXUS_DIR } from '../Paths/nexusPaths'
+import { CONTEXTS_DIRNAME, CROPS_REL, isMetadataShardRel, NEXUS_DIR } from '../Paths/nexusPaths'
+import { readShard, withShards } from './pageMetadata'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
@@ -67,6 +68,7 @@ export type WatchClass =
   | { kind: 'settings-leaf' }
   | { kind: 'homepage-leaf' }
   | { kind: 'crops-leaf' }
+  | { kind: 'metadata-leaf'; shard: string }
   | { kind: 'order-leaf' }
   | { kind: 'tiles-leaf'; host: TileHostRef }
   | { kind: 'asset'; rel: string; event: WatchEventName }
@@ -143,6 +145,7 @@ export function classifyEvent(
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.state}`) return { kind: 'order-leaf' }
+    if (isMetadataShardRel(rel)) return { kind: 'metadata-leaf', shard: basename(name, '.json') }
     if (
       segs[1] === CONTEXTS_DIRNAME &&
       segs.length === 5 &&
@@ -274,6 +277,8 @@ async function applyOne(
       return patchHomepageFromDisk(root)
     case 'crops-leaf':
       return patchCropsFromDisk(root)
+    case 'metadata-leaf':
+      return patchMetadataFromDisk(root, c.shard)
     case 'order-leaf':
       return patchOrderFromDisk(root)
     case 'full-refresh':
@@ -433,4 +438,15 @@ export async function patchHomepageFromDisk(root: string): Promise<'ok' | 'refre
 export async function patchCropsFromDisk(root: string): Promise<'ok' | 'refresh'> {
   const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.crops))) ?? {}
   return applyPatch(root, (t) => ({ ...t, crops: readCropLeaves(config) }))
+}
+
+export async function patchMetadataFromDisk(
+  root: string,
+  shard: string,
+): Promise<'ok' | 'refresh'> {
+  const read = await readShard(root, shard)
+  if (read.kind === 'unreadable') return 'ok'
+  const held = getLiveTree()?.pageMetadata
+  const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
+  return pageMetadata === held ? 'ok' : applyPatch(root, (t) => ({ ...t, pageMetadata }))
 }
