@@ -35,7 +35,6 @@ import { customCaret } from './caret'
 import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
-import { calloutAtomic } from './Guards/calloutAtomic'
 import { calloutGuard } from './Guards/calloutGuard'
 import { headingRenameGuard, headingRenameSettle } from './Guards/headingRenameGuard'
 import { citationGuard } from './Guards/citationGuard'
@@ -326,7 +325,6 @@ export function MarkdownEditor({
       gripMenu,
       customCaret,
       customSelection,
-      calloutAtomic,
       calloutGuard,
       headingRenameGuard,
       headingRenameSettle(() => onHeadingRenameRef.current),

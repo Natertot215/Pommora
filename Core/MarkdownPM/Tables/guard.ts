@@ -1,15 +1,16 @@
 import { EditorState, Prec } from '@codemirror/state'
-import type { DocScan } from '../Engine/docScan'
+import { carriedFrom, type DocScan } from '../Engine/docScan'
 import { docScan } from '../docCache'
 import { parseListMarkerPrefixed } from '../Engine/detect'
 import { parseDelimiter } from '../Engine/Tables/codec'
 import { decodePayload } from '../Engine/Tables/clipboard'
 import { tableSelfEdit } from './sync'
 
-// With the fencing blank line gone, two tables fuse and the second one's header + delimiter become body rows, so the region carries a second delimiter row. Reads the RESULT doc only, immune to the offset shift a deletion causes.
-export function fusedTableCount(scan: DocScan): number {
+// With the fencing blank line gone, two tables fuse and the second one's header + delimiter become body rows, so the region carries a second delimiter row. Counts the tables starting in `[from, to)`.
+export function fusedTableCount(scan: DocScan, from = 0, to = scan.text.length + 1): number {
   let n = 0
   for (const r of scan.tables) {
+    if (r.from < from || r.from >= to) continue
     const delims = scan.text
       .slice(r.from, r.to)
       .split('\n')
@@ -43,17 +44,18 @@ export const tablePasteGuard = Prec.high(
 // Single-char typing passes through untouched (a typed row of dashes is content the user is building); a MULTI-LINE insert landing against a table is a paste, and letting it fuse mangles the pasted header + delimiter into body rows.
 export const tableMergeGuard = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
-  // A table editing its own source cannot fuse two of them, and it is the one edit that arrives on every keystroke in a cell — checking it would scan the whole document for tables each time.
+  // A table editing its own source cannot fuse two of them, and it is the one edit that arrives on every keystroke in a cell, so it skips the count.
   if (tr.annotation(tableSelfEdit)) return tr
   let guarded = false
   tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
     if (toA > fromA || inserted.toString().includes('\n')) guarded = true
   })
-  if (
-    guarded &&
-    fusedTableCount(docScan(tr.startState.doc)) < fusedTableCount(docScan(tr.newDoc))
-  ) {
-    return []
-  }
-  return tr
+  if (!guarded) return tr
+  const before = docScan(tr.startState.doc)
+  const after = docScan.after(tr)
+  const [a, e] = after.fresh
+  const b = carriedFrom(before, after)
+  const fused = (s: DocScan, end: number): number =>
+    fusedTableCount(s, s.lineStarts[a], s.lineStarts[end])
+  return fused(before, b) < fused(after, e) ? [] : tr
 })

@@ -112,7 +112,7 @@ function bindingMoved(before: CitationScan, after: CitationScan): boolean {
 /** The section a reader sees is first-use order or it is nothing, so the rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. */
 export const citationOrder: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
-  const after = docScan(tr.newDoc)
+  const after = docScan.after(tr)
   if (!bindingMoved(docScan(tr.startState.doc).citations, after.citations)) return tr
   const changes = normalizeCitations(after)
   return changes.length === 0 ? tr : [tr, { changes, sequential: true }]

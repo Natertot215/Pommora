@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from 'node:util'
 import { describe, expect, it } from 'vitest'
 import { type DocScan, rescan, scanDoc } from './docScan'
+import { docLineIntents, stepLineIntents } from './intents'
 
 // ── The generator ───────────────────────────────────────────────────────
 
@@ -170,4 +171,34 @@ describe('rescan — the incremental scan is the full scan', () => {
     const next = '→ a | b\n-|---|'
     expect(mismatch(rescan(scanDoc('→ a | b\n|---|'), 8, 8, next), scanDoc(next))).toBeNull()
   })
+
+  it('steps line intents to what the whole document derives', () => {
+    for (let seed = 1; seed <= 1500; seed++) {
+      const r = stream(seed)
+      let text = soup(r, 5 + Math.floor(r() * 40))
+      let scan = scanDoc(text)
+      let page = docLineIntents(scan, 'page')
+      let cell = docLineIntents(scan, 'cell')
+      for (let step = 0; step < 30; step++) {
+        const e = edit(r, text)
+        const next = applied(text, e)
+        const stepped = rescan(scan, e.from, e.to, next)
+        const nextPage = stepLineIntents(page, scan, stepped, 'page')
+        const nextCell = stepLineIntents(cell, scan, stepped, 'cell')
+        for (const [got, want] of [
+          [nextPage, docLineIntents(stepped, 'page')],
+          [nextCell, docLineIntents(stepped, 'cell')],
+        ] as const) {
+          const { fresh: _a, ...g } = got
+          const { fresh: _b, ...w } = want
+          if (!isDeepStrictEqual(g, w))
+            expect.fail(`seed ${seed} step ${step}\n${JSON.stringify([text, next, e.from, e.to])}`)
+        }
+        text = next
+        scan = stepped
+        page = nextPage
+        cell = nextCell
+      }
+    }
+  }, 600_000)
 })

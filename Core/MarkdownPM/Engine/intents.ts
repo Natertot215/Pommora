@@ -14,7 +14,7 @@ import {
   type MarkdownScope,
 } from './detect'
 import { codeLanguageName } from './codeLangs'
-import { type DocScan, quotePrefixWidth, scanDoc } from './docScan'
+import { carriedFrom, type DocScan, quotePrefixWidth, scanDoc, spanAt } from './docScan'
 import { lineIndexAt } from './markdownCode'
 
 function calloutNestedQuote(
@@ -46,7 +46,7 @@ const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e
 export type WidgetSpec =
   | { type: 'hr' }
   | { type: 'bullet' }
-  | { type: 'checkbox'; bracketFrom: number; checked: boolean }
+  | { type: 'checkbox'; checked: boolean }
   | { type: 'citeRef'; ordinal: number }
 
 export type RailIntent = {
@@ -132,14 +132,11 @@ function pageChrome(
   selStart: number,
   intents: DecoIntent[],
 ): number | null {
-  const { lines, lineStarts, fences, callouts, maths, quotes } = scan
+  const { lines, lineStarts, fences, callouts, quotes } = scan
   const line = lines[i]
   const ls = lineStarts[i]
   const le = ls + line.length
   let base = 0
-  // Display math is formula source: a `- b` term must never become a bullet with a live drag glyph inside the formula.
-  const inMathLine = (k: number): boolean =>
-    maths.some(([f, t]) => lineStarts[k] >= f && lineStarts[k] <= t)
 
   const fence = fences[i]
   const co = callouts[i]
@@ -149,6 +146,7 @@ function pageChrome(
       from: ls,
       className: `md-callout${co.first ? ' md-callout-first' : ''}${co.last ? ' md-callout-last' : ''}`,
     })
+    if (co.prefixEnd > 0) intents.push({ kind: 'atomic', from: ls, to: ls + co.prefixEnd })
     base = co.prefixEnd
     const inner = line.slice(base)
     const qm = blockquotePrefixRe.exec(inner)
@@ -206,7 +204,8 @@ function pageChrome(
     return null
   }
 
-  if (inMathLine(i)) {
+  // Display math is formula source: a `- b` term must never become a bullet with a live drag glyph inside the formula.
+  if (spanAt(scan.maths, ls) !== undefined) {
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
     return null
   }
@@ -246,6 +245,7 @@ function pageChrome(
       to: mk.to,
       spec: { type: 'citeRef', ordinal: mk.ordinal },
     })
+    intents.push({ kind: 'atomic', from: mk.from, to: mk.to })
   }
 
   return base
@@ -311,24 +311,99 @@ interface CachedLineIntents {
   perLine: DecoIntent[][]
   /** Held apart from `perLine` because the caret's own line re-derives, and a rail folded in there would go with it. */
   rails: RailIntent[][]
+  listLevels: number[]
+  listKinds: string[]
+  fresh: [number, number][]
 }
 
 export const NO_CARET = -1
 
+type LineFacts = Pick<CachedLineIntents, 'perLine' | 'listLevels' | 'listKinds'>
+
+function deriveLines(scan: DocScan, from: number, to: number, scope: MarkdownScope): LineFacts {
+  const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [] }
+  for (let i = from; i < to; i++) {
+    const out: DecoIntent[] = []
+    const li = lineIntentsInto(scan, i, NO_CARET, out, scope)
+    facts.perLine.push(out)
+    facts.listLevels.push(li ? li.level : -1)
+    facts.listKinds.push(li ? (railTypeClass(li) ?? '') : '')
+  }
+  return facts
+}
+
+function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
+  return { ...facts, rails: railIntents(scan.lineStarts, facts.listLevels, facts.listKinds), fresh }
+}
+
 export function docLineIntents(scan: DocScan, scope: MarkdownScope = 'page'): CachedLineIntents {
   const n = scan.lines.length
-  const perLine: DecoIntent[][] = new Array(n)
-  const listLevels = new Array<number>(n).fill(-1)
-  const listKinds = new Array<string>(n).fill('')
-  for (let i = 0; i < n; i++) {
-    perLine[i] = []
-    const li = lineIntentsInto(scan, i, NO_CARET, perLine[i], scope)
-    if (li) {
-      listLevels[i] = li.level
-      listKinds[i] = railTypeClass(li) ?? ''
-    }
+  return withRails(scan, deriveLines(scan, 0, n, scope), [[0, n]])
+}
+
+const moveIntent = (it: DecoIntent, by: number): DecoIntent =>
+  'to' in it ? { ...it, from: it.from + by, to: it.to + by } : { ...it, from: it.from + by }
+
+export function stepLineIntents(
+  prev: CachedLineIntents,
+  was: DocScan,
+  scan: DocScan,
+  scope: MarkdownScope = 'page',
+): CachedLineIntents {
+  const [a, e] = scan.fresh
+  const b = carriedFrom(was, scan)
+  const shift = scan.text.length - was.text.length
+  const scanned = deriveLines(scan, a, e, scope)
+  const facts: LineFacts = {
+    perLine: prev.perLine.slice(0, a).concat(
+      scanned.perLine,
+      prev.perLine.slice(b).map((line) => line.map((it) => moveIntent(it, shift))),
+    ),
+    listLevels: prev.listLevels.slice(0, a).concat(scanned.listLevels, prev.listLevels.slice(b)),
+    listKinds: prev.listKinds.slice(0, a).concat(scanned.listKinds, prev.listKinds.slice(b)),
   }
-  return { perLine, rails: railIntents(scan.lineStarts, listLevels, listKinds) }
+  const fresh: [number, number][] = [[a, e]]
+  if (scope === 'page')
+    for (const [from, to] of citationLines(was, scan, a, e, b)) {
+      const redone = deriveLines(scan, from, to, scope)
+      for (let k = from; k < to; k++) {
+        facts.perLine[k] = redone.perLine[k - from]
+        facts.listLevels[k] = redone.listLevels[k - from]
+        facts.listKinds[k] = redone.listKinds[k - from]
+      }
+      fresh.push([from, to])
+    }
+  return withRails(scan, facts, fresh)
+}
+
+function citationLines(
+  was: DocScan,
+  scan: DocScan,
+  a: number,
+  e: number,
+  b: number,
+): [number, number][] {
+  const toNew = (k: number): number => (k < a ? k : k >= b ? k - b + e : a)
+  const toOld = (k: number): number => (k < a ? k : k - e + b)
+  const outside = ([from, to]: [number, number]): [number, number][] => {
+    const out: [number, number][] = []
+    if (from < Math.min(to, a)) out.push([from, Math.min(to, a)])
+    if (Math.max(from, e) < to) out.push([Math.max(from, e), to])
+    return out
+  }
+  const first = Math.min(toNew(was.citations.firstLine), scan.citations.firstLine)
+  const ranges = outside([first, scan.lines.length])
+  for (const [line, held] of scan.citations.markersAt) {
+    if ((line >= a && line < e) || line >= first) continue
+    const before = was.citations.markersAt.get(toOld(line))
+    if (
+      !before ||
+      before.length !== held.length ||
+      before.some((m, k) => m.ordinal !== held[k].ordinal)
+    )
+      ranges.push([line, line + 1])
+  }
+  return ranges
 }
 
 function caretLine(scan: DocScan, selStart: number): number {
@@ -488,7 +563,6 @@ function pushConstruct(
         to: innerStart + lm.box.end,
         spec: {
           type: 'checkbox',
-          bracketFrom: innerStart + lm.box.start,
           checked: lm.checked ?? false,
         },
       })
