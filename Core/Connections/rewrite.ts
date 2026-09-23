@@ -56,6 +56,8 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
   )
 }
 
+const HEADING_REFERENCE = /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/
+
 /** Rewrites every link and bare run that names `oldHeading` on the page titled `title`; a bare fragment counts only when `ownTitle` is that page, and a `§` run only when `outline` (the page's headings around the rename) is given, so a longer heading the run names keeps it. A heading the wikilink grammar can't write is never written into one. */
 export function rewriteHeadingConnections(
   body: string,
@@ -65,6 +67,7 @@ export function rewriteHeadingConnections(
   ownTitle = '',
   outline?: readonly string[],
 ): string {
+  if (!HEADING_REFERENCE.test(body)) return body
   const titleKey = normalizeTitle(title)
   const oldKey = normalizeTitle(oldHeading)
   const own = normalizeTitle(ownTitle) === titleKey
