@@ -34,10 +34,11 @@ export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
   const shownStatus = useSession((s) => shownPage(s)?.status)
   const navOpen = useSession((s) => s.navOpen)
+  const searching = useSession((s) => s.viewSearch[s.activeTabId] !== undefined)
   const bumpThumb = useSession((s) => s.bumpThumb)
 
   useEffect(() => {
-    if (navOpen || selection.kind === 'none') return
+    if (navOpen || searching || selection.kind === 'none') return
     if (selection.kind === 'page' && shownStatus !== 'ready') return
     let canceled = false
     const timer = setTimeout(() => {
@@ -72,5 +73,5 @@ export function useNavThumbnails(): void {
       canceled = true
       clearTimeout(timer)
     }
-  }, [selection, shownStatus, navOpen, bumpThumb])
+  }, [selection, shownStatus, navOpen, searching, bumpThumb])
 }

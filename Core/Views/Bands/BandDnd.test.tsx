@@ -228,4 +228,20 @@ describe('band drag gesture', () => {
       beforeId: null,
     })
   })
+
+  it('a disabled host starts no drag and commits nothing', async () => {
+    await act(async () => {
+      root.render(
+        <BandDnd bands={BANDS} labelFor={(id) => id} onDrop={dropSpy} disabled>
+          <Header id="A" />
+          <Header id="A1" />
+          <Header id="B" />
+        </BandDnd>,
+      )
+    })
+    await drag('A1', 2)
+    expect(line()).toBeNull()
+    expect(host.querySelector('[data-band="A1"]')?.getAttribute('data-dragging')).toBeNull()
+    expect(dropSpy).not.toHaveBeenCalled()
+  })
 })

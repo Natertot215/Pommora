@@ -741,3 +741,100 @@ describe('store — pending travel (Task 5.1)', () => {
     expect(useSession.getState().pendingTravel).toBeNull()
   })
 })
+
+describe('store — view search', () => {
+  const col = (id: string): SelectTarget => ({ kind: 'collection', id })
+  const onContainer = (search: State['viewSearch'] = {}): void =>
+    seed({
+      tabs: [uTab('t1', col('c1'), [col('c1')], 0), uTab('t2', ctx('b'), [ctx('b')], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't2'],
+      selection: col('c1'),
+      viewSearch: search,
+    })
+
+  it('opens on a container and refuses anything else', () => {
+    seed({
+      tabs: [uTab('t1', ctx('a'), [ctx('a')], 0)],
+      activeTabId: 't1',
+      selection: ctx('a'),
+      viewSearch: {},
+    })
+    expect(useSession.getState().searchView()).toBe(false)
+    expect(useSession.getState().viewSearch).toEqual({})
+    onContainer()
+    expect(useSession.getState().searchView()).toBe(true)
+    expect(useSession.getState().viewSearch).toEqual({ t1: { key: 'collection:c1', query: '' } })
+  })
+
+  it('a second summon keeps the query and raises the summon', () => {
+    onContainer()
+    useSession.getState().searchView()
+    useSession.getState().setViewQuery('ab')
+    const before = useSession.getState().viewSearchSummon
+    useSession.getState().searchView()
+    expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
+    expect(useSession.getState().viewSearchSummon).toBe(before + 1)
+  })
+
+  it('a null query ends it', () => {
+    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    useSession.getState().setViewQuery(null)
+    expect(useSession.getState().viewSearch).toEqual({})
+  })
+
+  it('survives a tab switch and clears when its tab shows something else', async () => {
+    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    useSession.getState().activateTab('t2')
+    useSession.getState().activateTab('t1')
+    expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
+    await useSession.getState().select(ctx('z'), { newTab: false })
+    expect(useSession.getState().viewSearch).toEqual({})
+  })
+
+  it('follows its tab to the pinned id when the tab is pinned', () => {
+    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    useSession.getState().pinTab('t1')
+    expect(useSession.getState().viewSearch).toEqual({
+      [pinTabId(col('c1'))]: { key: 'collection:c1', query: 'ab' },
+    })
+  })
+
+  it('follows its tab to the exact fresh id an unpin mints', () => {
+    const pinId = pinTabId(col('c1'))
+    seed({
+      tabs: [],
+      activeTabId: pinId,
+      pinned: [toNavRef(col('c1'))],
+      pinnedTabs: [{ id: pinId, target: col('c1'), navStack: [col('c1')], navIndex: 0 }],
+      selection: col('c1'),
+      viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab' } },
+    })
+    useSession.getState().unpinTab(pinId)
+    const freshId = useSession.getState().tabs[0].id
+    expect(freshId).not.toBe(pinId)
+    expect(useSession.getState().viewSearch).toEqual({
+      [freshId]: { key: 'collection:c1', query: 'ab' },
+    })
+  })
+
+  it('clears with its tab', () => {
+    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    useSession.getState().closeTab('t1')
+    expect(useSession.getState().viewSearch).toEqual({})
+  })
+
+  it('clears with its pinned tab when the pin is removed', () => {
+    const pinId = pinTabId(col('c1'))
+    seed({
+      tabs: [uTab('t2', ctx('b'), [ctx('b')], 0)],
+      activeTabId: 't2',
+      pinned: [toNavRef(col('c1'))],
+      pinnedTabs: [{ id: pinId, target: col('c1'), navStack: [col('c1')], navIndex: 0 }],
+      selection: ctx('b'),
+      viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab' } },
+    })
+    useSession.getState().unpinTarget(navKey(col('c1')))
+    expect(useSession.getState().viewSearch).toEqual({})
+  })
+})

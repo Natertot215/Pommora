@@ -53,6 +53,7 @@ export function App(): React.JSX.Element {
   const toggleNav = useSession((s) => s.toggleNav)
   const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
   const commands = useSession((s) => s.commands)
+  const searchView = useSession((s) => s.searchView)
   useNavThumbnails()
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
@@ -94,11 +95,13 @@ export function App(): React.JSX.Element {
       } else if (matchesCommand(commands['toggle-iteration'], e)) {
         e.preventDefault()
         toggleIteration()
+      } else if (matchesCommand(commands.search, e)) {
+        if (!document.activeElement?.closest('[role="dialog"]') && searchView()) e.preventDefault()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [commands, toggleRibbon, toggleNav, toggleMatrixWindow, toggleIteration])
+  }, [commands, toggleRibbon, toggleNav, toggleMatrixWindow, toggleIteration, searchView])
 
   const sidebarHidden = status === 'ready' && !sidebarVisible
 

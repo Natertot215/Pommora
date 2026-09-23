@@ -11,6 +11,7 @@ import { propsAtRoot, pageValues } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
+import { ViewTileScopeProvider } from '../ViewTileScope'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -124,6 +125,8 @@ beforeEach(() => {
   useSession.setState({
     tree: { collections: [], contexts: [], personalization: {} } as never,
     mutate: vi.fn(async () => true) as never,
+    activeTabId: 't1',
+    viewSearch: {},
   })
 })
 
@@ -564,5 +567,64 @@ describe('the root seat', () => {
     await mountSeat(source)
     expect(host.querySelector('.cards-view')).toBeTruthy()
     expect(host.querySelectorAll('.ghost-card').length).toBe(1)
+  })
+})
+
+describe('view search', () => {
+  const search = (query: string): void =>
+    useSession.setState({ viewSearch: { t1: { key: 'collection:col1', query } } })
+
+  it('narrows the groups, the lookups, and the count to title matches, dropping every group left empty', async () => {
+    search('loose')
+    await mount(setCollection())
+    expect(api?.groups.map((g) => g.kind)).toEqual(['ungrouped'])
+    expect([...(api?.rowById.keys() ?? [])]).toEqual(['pLoose'])
+    expect(api?.paintOrder.map((r) => r.id)).toEqual(['pLoose'])
+    act(() => search('in a'))
+    expect(api?.paintOrder.map((r) => r.id)).toEqual(['pA'])
+  })
+
+  it('shows every kept group open, ignores the chevron, and leaves the saved collapse alone', async () => {
+    await mount(setCollection({ collapsed_groups: ['sA'] }))
+    expect(api?.collapsed.has('sA')).toBe(true)
+    act(() => search('in a'))
+    expect(api?.collapsed.size).toBe(0)
+    saveSpy.mockClear()
+    act(() => api?.toggleCollapse('sA'))
+    expect(saveSpy).not.toHaveBeenCalled()
+    act(() => search(''))
+    expect(api?.collapsed.has('sA')).toBe(true)
+  })
+
+  it('turns row drag off only while a query is active', async () => {
+    await mount(collection())
+    expect(api?.searching).toBe(false)
+    expect(api?.dragDisabled).toBe(false)
+    act(() => search('one'))
+    expect(api?.searching).toBe(true)
+    expect(api?.dragDisabled).toBe(true)
+  })
+
+  it('leaves a view tile unsearched', async () => {
+    search('tw')
+    const source = collection()
+    await act(async () => {
+      root.render(
+        <ViewTileScopeProvider
+          value={{
+            source,
+            view: source.views?.[0] as SavedView,
+            persistConfig: vi.fn(),
+            persistState: vi.fn(),
+            locked: false,
+            setLocked: vi.fn(),
+          }}
+        >
+          <Probe source={source} flatten={false} />
+        </ViewTileScopeProvider>,
+      )
+    })
+    await act(async () => {})
+    expect(api?.paintOrder.map((r) => r.id)).toEqual(['p1', 'p2'])
   })
 })

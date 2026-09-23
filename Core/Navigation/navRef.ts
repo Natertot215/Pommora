@@ -8,7 +8,6 @@ export type SelectionState =
   | { kind: 'context'; id: string }
   | { kind: 'space'; id: string }
   | { kind: 'collection'; id: string }
-  /** A depth-1 Set is the only selectable Set; deeper Sub-Sets are expand-only. */
   | { kind: 'set'; id: string; path: string }
   | { kind: 'page'; id: string; path: string }
 

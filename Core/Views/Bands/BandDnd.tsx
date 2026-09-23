@@ -33,6 +33,7 @@ export function BandDnd({
   labelFor,
   onDrop,
   nestable = true,
+  disabled = false,
   children,
 }: {
   bands: Band[]
@@ -40,6 +41,7 @@ export function BandDnd({
   onDrop: (draggedId: string, drop: BandDrop) => void
   /** Off for a surface that renders one flat level — every drop then resolves to a reorder. */
   nestable?: boolean
+  disabled?: boolean
   children: ReactNode
 }): React.JSX.Element {
   const els = useRef(new Map<string, HTMLElement>())
@@ -91,6 +93,7 @@ export function BandDnd({
     scrollTarget: () => box.current,
     disclose: true,
     watch: bands,
+    disabled: () => disabled,
   })
 
   const registerBand = (id: string, el: HTMLElement | null): void => {

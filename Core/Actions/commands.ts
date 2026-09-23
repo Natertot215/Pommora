@@ -14,6 +14,7 @@ export const DEFAULT_COMMANDS = {
   'toggle-nav': 'cmd+o',
   'toggle-matrix': 'cmd+shift+m',
   'toggle-iteration': 'cmd+shift+t',
+  search: 'cmd+f',
   'next-tab': 'ctrl+tab',
   'previous-tab': 'ctrl+shift+tab',
   'undo-value': 'cmd+z',
