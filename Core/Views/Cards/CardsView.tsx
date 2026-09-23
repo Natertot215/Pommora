@@ -201,7 +201,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
   useEffect(() => setSetOrderOverride(null), [source])
 
-  const baseSets = source.sets ?? []
+  // A Sub-Set is no destination, so only a Collection's Sets draw as cards.
+  const baseSets = source.kind === 'collection' ? source.sets : []
   const sets = useMemo(
     () => (setOrderOverride ? byOrder(baseSets, setOrderOverride) : baseSets),
     [baseSets, setOrderOverride],

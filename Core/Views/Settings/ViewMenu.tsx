@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
-import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../../Nexus/treeIndex'
+import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeIndex'
 import { useActiveView } from '../Host/useActiveView'
 import { ViewFrame } from './ViewFrame'
 import { viewGlyph } from '../viewIcon'
@@ -10,14 +10,13 @@ import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'
 
-/** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). */
 export function ViewMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
   const node =
     selection.kind === 'collection'
       ? findCollection(tree, selection.id)
-      : selection.kind === 'set' && isDepth1Set(tree, selection.id)
+      : selection.kind === 'set'
         ? findSet(tree, selection.id)
         : undefined
   if (!node) return null

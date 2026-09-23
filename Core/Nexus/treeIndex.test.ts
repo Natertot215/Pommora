@@ -4,6 +4,7 @@ import { makeTree, linkedSpacesTree } from '../Testing/testTree'
 import { reconcileWith } from '../Session/reconcileSelection'
 import {
   containersByPathOf,
+  isDepth1Set,
   navKeysOf,
   pageIndexOf,
   pagesByIdOf,
@@ -80,6 +81,32 @@ describe('searchEntriesOf', () => {
     expect(byKind('collection')).toEqual(['Notes'])
     expect(byKind('set')).toEqual(['Ideas'])
     expect(byKind('page').sort()).toEqual(['Alpha', 'Nested Beta'])
+  })
+})
+
+describe('a Sub-Set', () => {
+  const withSubSet = (): NexusTree => {
+    const t = makeTree()
+    const col = t.collections[0]
+    const set = col?.sets[0]
+    if (!col || !set) throw new Error('fixture')
+    const sub = {
+      kind: 'set' as const,
+      id: 's2',
+      title: 'Deep',
+      path: 'Notes/Ideas/Deep',
+      pages: [],
+    }
+    return { ...t, collections: [{ ...col, sets: [{ ...set, sets: [sub] }] }] }
+  }
+
+  it('is no destination — absent from the reconcile, resolve, and search projections', () => {
+    const t = withSubSet()
+    expect(isDepth1Set(t, 's1')).toBe(true)
+    expect(isDepth1Set(t, 's2')).toBe(false)
+    expect(reconcileIndexOf(t).sets.has('s2')).toBe(false)
+    expect(resolveIndexOf(t).has('set:s2')).toBe(false)
+    expect(searchEntriesOf(t).some((e) => e.title === 'Deep')).toBe(false)
   })
 })
 

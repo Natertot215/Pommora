@@ -56,6 +56,8 @@ const CARD_SWITCHES: SwitchEntry[] = [
   { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards', defaultOn: true },
 ]
 
+const SET_CARD_SWITCHES = CARD_SWITCHES.filter((s) => s.key !== 'set_cards')
+
 function ViewSwitches({
   source,
   view,
@@ -134,7 +136,11 @@ export function LayoutFrame({
     if (name && name !== view.name) write({ name })
   }
   const cards = view.type === 'cards'
-  const switches = cards ? CARD_SWITCHES : TABLE_SWITCHES
+  const switches = !cards
+    ? TABLE_SWITCHES
+    : source.kind === 'collection'
+      ? CARD_SWITCHES
+      : SET_CARD_SWITCHES
   const setType = (type: ViewType): void => {
     if (type === view.type) return
     const icon = iconForTypeSwitch(view, type)

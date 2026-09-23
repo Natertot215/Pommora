@@ -73,8 +73,8 @@ export function subfieldCrumbs(
           : currentChain
       return spine.map((node, i) => {
         const forwardCrumb = i > currentPos
-        // Up the spine only the collection (0) and depth-1 set (1) open a detail surface.
-        const navigable = forwardCrumb || (i < currentPos && (i === 0 || i === 1))
+        // Only the collection (0), the depth-1 set (1), and a page open a detail surface.
+        const navigable = i !== currentPos && (i <= 1 || node.kind === 'page')
         const target = navigable ? targetOf(node) : null
         return {
           title: node.title,
