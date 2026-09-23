@@ -110,7 +110,7 @@ export function rmwJsonStrict(
   })
 }
 
-/** The primitive behind `updateNexusConfig` and every metadata month file:a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
+/** The primitive behind `updateNexusConfig` and every metadata month file: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
 export function updateNexusFile(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,

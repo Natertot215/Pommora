@@ -23,6 +23,7 @@ import {
   patchHomepageFromDisk,
   patchOrderFromDisk,
   patchPageFromDisk,
+  patchPageMetaFromDisk,
   patchSettingsFromDisk,
   patchSpaceFromDisk,
 } from './watchPatch'
@@ -138,6 +139,8 @@ async function routeMutation(
     }
     case 'setContext':
       return isMarkdownFile(req.path) ? patchPage(root, req.path) : 'ok'
+    case 'setPageMeta':
+      return patchPageMetaFromDisk(root, req.path)
     case 'setCrop':
       return patchCropsFromDisk(root)
     case 'reorderPanelContexts':

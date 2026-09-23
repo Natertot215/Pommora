@@ -1,5 +1,5 @@
 import { basename, dirname, join } from '../Paths/posix'
-import { valueOr } from '../Contract/result'
+import { fault, ok, valueOr, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { admitContentFile, ID_KEY, type ContentKind } from './identityMark'
@@ -7,8 +7,9 @@ import { contentIdAt, newId } from './ids'
 import {
   readJsonObject,
   readJsonStrict,
+  readTextOrNull,
   pathExists,
-  rewritePreservingTimes,
+  rewritePageSerialized,
 } from '../Files/atomicWrite'
 import { readSidecar, writeSidecar } from '../Files/sidecar'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
@@ -54,18 +55,36 @@ async function reHomeRegistered(
   return false
 }
 
-async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
-  const content = await machine().readText(absFile)
-  if (content === null) return false
-  if (admitContentFile(splitFrontmatter(content), kind).state !== 'missing') return false
-  const { body } = splitEnvelope(content)
+async function stampPage(absFile: string, kind: ContentKind): Promise<string | null> {
   const st = await machine().stat(absFile)
-  if (!st) return false
+  if (!st) return null
   // A filesystem with no birthtime reports 0 or null, and mtime is then the honest floor.
   const { birthtimeMs, mtimeMs } = st
-  const id = contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
-  await rewritePreservingTimes(absFile, mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], body))
-  return true
+  let id: string | null = null
+  const landed = await rewritePageSerialized(absFile, (content) => {
+    if (admitContentFile(splitFrontmatter(content), kind).state !== 'missing') return null
+    id = contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
+    return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
+  })
+  return landed ? id : null
+}
+
+async function pageAdmission(absFile: string) {
+  const content = await readTextOrNull(absFile)
+  return content === null ? null : admitContentFile(splitFrontmatter(content), 'page')
+}
+
+export async function ensurePageId(absFile: string): Promise<Result<string>> {
+  let admission = await pageAdmission(absFile)
+  if (admission === null) return fault('That page could not be read.')
+  if (admission.state === 'missing') {
+    const stamped = await stampPage(absFile, 'page')
+    if (stamped !== null) return ok(stamped)
+    admission = await pageAdmission(absFile)
+  }
+  return admission?.state === 'member'
+    ? ok(admission.id)
+    : fault('That page has no ID Pommora can file.')
 }
 
 type ContainerKind = 'collection' | 'set'
@@ -110,7 +129,7 @@ async function stampTree(
 
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) {
-      if (await stampPage(join(absDir, e.name), memberKind).catch(() => false)) count++
+      if ((await stampPage(join(absDir, e.name), memberKind).catch(() => null)) !== null) count++
     } else if (e.kind === 'dir' && container) {
       const childRel = `${relDir}/${e.name}`
       if (shouldSkipDir(e.name, childRel, scope)) continue

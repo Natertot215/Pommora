@@ -171,6 +171,7 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
     const collections = new Set<string>()
     const sets = new Map<string, string>()
     const pages = new Map<string, string>()
+    const pagesByPath = new Map<string, string>()
     for (const r of ix.nodes)
       switch (r.kind) {
         case 'homepage':
@@ -187,9 +188,10 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
           break
         case 'page':
           pages.set(r.id, r.path)
+          pagesByPath.set(r.path, r.id)
           break
       }
-    ix.reconcile = { spaces, collections, sets, pages }
+    ix.reconcile = { spaces, collections, sets, pages, pagesByPath }
   }
   return ix.reconcile
 }

@@ -10,7 +10,7 @@ import {
   sameScope,
   type WatchScope,
 } from '../Paths/exclusion'
-import { adoptedId } from './ids'
+import { adoptedId, isAdoptedId, shardOf } from './ids'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { isMarkdownFile } from '../Files/walk'
 import { removePathIndex } from '../Index/contentIndex'
@@ -449,4 +449,16 @@ export async function patchMetadataFromDisk(
   const held = getLiveTree()?.pageMetadata
   const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
   return pageMetadata === held ? 'ok' : applyPatch(root, (t) => ({ ...t, pageMetadata }))
+}
+
+export async function patchPageMetaFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
+  const held = getLiveTree()
+  let page = held && findPage(held, rel)
+  if (page && isAdoptedId(page.id)) {
+    if ((await patchPageFromDisk(root, rel)) === 'refresh') return 'refresh'
+    const tree = getLiveTree()
+    page = tree && findPage(tree, rel)
+  }
+  const shard = page ? shardOf(page.id) : null
+  return shard === null ? 'refresh' : patchMetadataFromDisk(root, shard)
 }
