@@ -11,8 +11,8 @@ export function parse(text: string, scan?: DocScan): Root {
   let read = text
   if (scan)
     for (const k of scan.fenceLines) {
-      const f = fenceAt(scan.lines[k])
-      if (scan.fences[k] !== undefined || f === null) continue
+      if (scan.fences[k] !== undefined) continue
+      const f = fenceAt(scan.lines[k])!
       const at = scan.lineStarts[k] + f.markerEnd - f.length
       read = read.slice(0, at) + 'x'.repeat(f.length) + read.slice(at + f.length)
     }

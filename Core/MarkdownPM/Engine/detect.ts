@@ -189,11 +189,8 @@ export function lineRefs(line: string, lineStart: number, inCode: CodeMask): Lin
   return out
 }
 
-export function citationScan(
-  d: DocLines,
-  excluded: [number, number][],
-  inCode: CodeMask = codeMask(d.text),
-): CitationScan {
+export function citationScan(d: DocLines, excluded: [number, number][]): CitationScan {
+  const inCode = codeMask(d.text)
   return assembleCitations(
     d,
     (k) => inExcluded(d.lineStarts[k], excluded),

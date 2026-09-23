@@ -1,5 +1,5 @@
 // `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
-import { parseListMarkerPrefixed, type CalloutLine } from './detect'
+import { lineEndOf, parseListMarkerPrefixed, type CalloutLine } from './detect'
 import { type DocScan, spanAt } from './docScan'
 import { lineIndexAt } from './markdownCode'
 import { headingSections } from './headingScan'
@@ -117,7 +117,7 @@ function blockContextOf(scan: DocScan): BlockContext {
 export function blockAt(scan: DocScan, pos: number): Block | null {
   const ctx = blockContextOf(scan)
   const { n, starts, callout, listMember } = ctx
-  const ends = (i: number): number => starts[i] + scan.lines[i].length
+  const ends = (i: number): number => lineEndOf(scan, i)
 
   const li = lineIndexAt(scan, pos)
   const kind = ctx.kindAt(li)

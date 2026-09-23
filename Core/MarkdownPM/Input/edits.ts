@@ -13,6 +13,7 @@ import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
   isBlockquoteLine,
+  lineEndOf,
   type MarkdownScope,
 } from '../Engine/detect'
 
@@ -534,7 +535,7 @@ export function closeBlockOnEnter(
 ): Edit | null {
   if (selStart !== selEnd || settings.pairMarkers === false) return null
   const i = lineIndexAt(scan, selStart)
-  const end = scan.lineStarts[i] + scan.lines[i].length
+  const end = lineEndOf(scan, i)
   if (selStart !== end) return null
   const block = blockCloser(scan, i, typed)
   if (block === null) return null

@@ -25,7 +25,7 @@ import { tableRegions, type TableRegion } from './Tables/regions'
 
 // ── Types ───────────────────────────────────────────────────────────────
 
-/** Every whole-document derivation the editor reads, one per document version. Per-line arrays are indexed by line; ranges are character offsets in document order. */
+/** Every whole-document derivation the editor reads, one per document version. */
 export interface DocScan extends DocLines {
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
@@ -117,7 +117,7 @@ export function rescan(prev: DocScan, from: number, to: number, text: string): D
   for (;;) {
     const start = prev.lineStarts[a]
     const end = b < n ? prev.lineStarts[b] - 1 + shift : text.length
-    const w = scanLines(splitWithOffsets(text.slice(start, end)))
+    const w = scanLines(splitWithOffsets(` ${text.slice(start, end)}`.slice(1)))
     const above = loneAbove(prev, w, a)
     if (above < a) {
       a = above
@@ -272,6 +272,7 @@ export function chunksOver(
       i = math !== undefined ? Math.max(next, lineIndexAt(s, math[0])) : top
       while (i > next && /^(?:[ \t]|\r?$)/.test(s.lines[i]) && s.fences[i - 1] === undefined) i--
     }
+    if (i === next && out.length > 0 && !cutAt(s, i)) i = lineIndexAt(s, out.pop()![0])
     while (i <= last) {
       const f = s.fences[i]
       if (f !== undefined && spanAt(s.maths, s.lineStarts[i]) === undefined) {

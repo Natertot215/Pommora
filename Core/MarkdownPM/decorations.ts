@@ -31,7 +31,7 @@ import {
   docSectionHeadings,
   perScopedDoc,
 } from './docCache'
-import type { MarkdownScope } from './Engine/detect'
+import { lineEndOf, type MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '@pommora/core/Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './Engine/embedRanges'
@@ -346,7 +346,7 @@ function atomicsOn(
   return ranges
 }
 
-// NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker. A new version maps the last one's set and re-reads only the lines its intents re-derived.
+// NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker.
 export const docAtomics = perScopedDoc(
   (doc, scope) => {
     const { perLine } = docLineIntentsOf(doc, scope)
@@ -354,13 +354,13 @@ export const docAtomics = perScopedDoc(
   },
   (prev, tr, scope) => {
     const { perLine, fresh } = docLineIntentsOf.after(tr, scope)
-    const { lineStarts, lines } = docScan.after(tr)
+    const scan = docScan.after(tr)
     let set = prev.map(tr.changes)
     for (const [a, e] of fresh)
       set = set.update({
         filter: () => false,
-        filterFrom: lineStarts[a],
-        filterTo: lineStarts[e - 1] + lines[e - 1].length,
+        filterFrom: scan.lineStarts[a],
+        filterTo: lineEndOf(scan, e - 1),
         add: atomicsOn(perLine, a, e),
         sort: true,
       })
