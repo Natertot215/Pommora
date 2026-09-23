@@ -13,6 +13,8 @@ import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { readTileDocAt, writeTileDocAt } from '../Tiles/tileDoc'
+import { readShard, updatePageMetadata } from './pageMetadata'
+import { shardOf } from './ids'
 
 const claim = (path: string, over: Partial<EntityRecord> = {}): EntityRecord => ({
   id: 'page-dup',
@@ -210,6 +212,21 @@ describe('the re-mint writes', () => {
       path: 'Library/Notes copy.md',
     })
     expect(rewalked[PAGE].path).toBe('Library/Notes.md')
+  })
+
+  it('a reminted copy carries its metadata entry under the fresh ID’s month', async () => {
+    await runOpenLedger(root)
+    await updatePageMetadata(root, PAGE, { icon: 'star' })
+    await writeFile(
+      join(root, 'Library', 'Notes copy.md'),
+      await readFile(join(root, 'Library', 'Notes.md'), 'utf8'),
+    )
+    await runOpenLedger(root)
+    const [fresh] = freshIdsIn(readBaseline()!)
+    const month = await readShard(root, shardOf(fresh)!)
+    expect(month.kind === 'ok' && month.pages[fresh]).toEqual({ icon: 'star' })
+    const original = await readShard(root, shardOf(PAGE)!)
+    expect(original.kind === 'ok' && original.pages[PAGE]).toEqual({ icon: 'star' })
   })
 
   const chooseSetView = async (viewId: string): Promise<void> => {

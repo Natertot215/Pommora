@@ -18,6 +18,7 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
   collections: new Set(),
   sets: new Map(),
   pages: new Map(Object.entries(pages)),
+  pagesByPath: new Map(Object.entries(pages).map(([id, path]) => [path, id])),
 })
 
 describe('reconcileWindow', () => {
@@ -31,6 +32,18 @@ describe('reconcileWindow', () => {
     })
     useSession.getState().reconcileWindow(indexOf({}))
     expect(useSession.getState().historyTarget).toBeNull()
+  })
+})
+
+describe('reconcileWindow — a page re-keyed at its path', () => {
+  it('re-keys a window tab and the history target to the page now at their path', () => {
+    const dead = { kind: 'page', id: 'adopted-x', path: 'Notes/x.md' } as const
+    useSession.getState().openWindowTab(dead)
+    useSession.setState({ historyTarget: dead })
+    useSession.getState().reconcileWindow(indexOf({ x: 'Notes/x.md' }))
+    const live = { kind: 'page', id: 'x', path: 'Notes/x.md' }
+    expect(useSession.getState().pageWindow?.tabs.map((t) => t.target)).toEqual([live])
+    expect(useSession.getState().historyTarget).toEqual(live)
   })
 })
 

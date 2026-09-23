@@ -9,6 +9,7 @@ export interface ReconcileIndex {
   collections: ReadonlySet<string>
   sets: ReadonlyMap<string, string>
   pages: ReadonlyMap<string, string>
+  pagesByPath: ReadonlyMap<string, string>
 }
 
 /** Returns the SAME reference when nothing changed, so callers can skip a redundant state update. */
@@ -31,7 +32,10 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
     }
     case 'page': {
       const path = index.pages.get(selection.id)
-      if (path === undefined) return { kind: 'none' }
+      if (path === undefined) {
+        const id = index.pagesByPath.get(selection.path)
+        return id === undefined ? { kind: 'none' } : { kind: 'page', id, path: selection.path }
+      }
       return path === selection.path ? selection : { kind: 'page', id: selection.id, path }
     }
   }

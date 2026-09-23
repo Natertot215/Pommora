@@ -3,10 +3,11 @@ import { ID_KEY } from './identityMark'
 import { rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { stampAdopted } from './adopt'
+import { ensurePageId, stampAdopted } from './adopt'
 import { readSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
 import { isUlid, idTime } from './ids'
+import { kindOf } from './identityMark'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
 
@@ -128,5 +129,34 @@ describe('stampAdopted', () => {
     await writeFile(page, '---\nbad: [unclosed\n---\nprose', 'utf8')
     await stampAdopted(root)
     expect(await readFile(page, 'utf8')).toBe('---\nbad: [unclosed\n---\nprose')
+  })
+})
+
+describe('ensurePageId', () => {
+  const page = () => join(root, 'Notes', 'Note1.md')
+
+  it('stamps an ID-less page with a page ID dated at its birthtime, keeping its mtime', async () => {
+    const before = await stat(page())
+    const r = await ensurePageId(page())
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(kindOf(r.value)).toBe('page')
+    expect(idTime(r.value)).toBe(Math.floor(Math.min(before.birthtimeMs, before.mtimeMs)))
+    expect(splitFrontmatter(await readFile(page(), 'utf8'))[ID_KEY]).toBe(r.value)
+    expect(Math.floor((await stat(page())).mtimeMs / 1000)).toBe(Math.floor(before.mtimeMs / 1000))
+  })
+
+  it('returns a stamped page its own ID and leaves the file untouched', async () => {
+    const id = '01KVGMT8BFP350FZZXAMG1QDRA'
+    await writeFile(page(), `---\nID: ${id}\n---\n\nbody`)
+    expect(await ensurePageId(page())).toEqual({ ok: true, value: id })
+    expect(await readFile(page(), 'utf8')).toBe(`---\nID: ${id}\n---\n\nbody`)
+  })
+
+  it('two concurrent calls on one ID-less page return the same ID, the one on disk', async () => {
+    const [a, b] = await Promise.all([ensurePageId(page()), ensurePageId(page())])
+    const onDisk = splitFrontmatter(await readFile(page(), 'utf8'))[ID_KEY]
+    expect(a).toEqual({ ok: true, value: onDisk })
+    expect(b).toEqual({ ok: true, value: onDisk })
   })
 })

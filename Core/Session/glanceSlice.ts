@@ -58,9 +58,9 @@ export const createGlanceSlice: Slice<GlanceSlice> = (set, get) => ({
         changed = true
         continue
       }
-      if (r.kind === 'page' && r.path !== p.target.path) {
+      if (r.kind === 'page' && r !== p.target) {
         changed = true
-        next.push({ ...p, target: { ...p.target, path: r.path } })
+        next.push({ ...p, target: r })
       } else next.push(p)
     }
     if (changed) set({ pinnedGlances: next })

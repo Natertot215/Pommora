@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
 import { contentIdAt } from './ids'
-import { readShard, withShards } from './pageMetadata'
+import {
+  copyPageMetadata,
+  dropPageMetadata,
+  readShard,
+  updatePageMetadata,
+  withShards,
+} from './pageMetadata'
 
 const SEP_A = contentIdAt(Date.UTC(2026, 8, 5), 'page')
 const SEP_B = contentIdAt(Date.UTC(2026, 8, 20), 'page')
@@ -57,5 +63,81 @@ describe('readShard', () => {
     expect(await readShard(root, '09-2026')).toEqual({ kind: 'absent' })
     await writeFile(metadataShardPath(root, '09-2026'), '{ bad json')
     expect(await readShard(root, '09-2026')).toEqual({ kind: 'unreadable' })
+  })
+})
+
+describe('the writer', () => {
+  let root: string
+  beforeEach(() => {
+    root = tempRoot('pom-meta-write-')
+  })
+  afterEach(() => rm(root, { recursive: true, force: true }))
+
+  const shardOnDisk = async (shard: string): Promise<unknown> =>
+    JSON.parse(await readFile(metadataShardPath(root, shard), 'utf8'))
+
+  it('a patch on a fresh month creates its file with one entry', async () => {
+    expect(await updatePageMetadata(root, SEP_A, { icon: 'star' })).toEqual({
+      ok: true,
+      value: null,
+    })
+    expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_A]: { icon: 'star' } } })
+  })
+
+  it('clearing the last field leaves an empty month', async () => {
+    await updatePageMetadata(root, SEP_A, { icon: 'star', locked: true })
+    await updatePageMetadata(root, SEP_A, { icon: null, locked: null })
+    expect(await shardOnDisk('09-2026')).toEqual({ pages: {} })
+  })
+
+  it('a no-op patch leaves the file unwritten', async () => {
+    await updatePageMetadata(root, SEP_A, { aliases: ['a', 'b'] })
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(metadataShardPath(root, '09-2026'), past, past)
+    await updatePageMetadata(root, SEP_A, { aliases: ['a', 'b'], locked: null })
+    expect((await stat(metadataShardPath(root, '09-2026'))).mtimeMs).toBe(past.getTime())
+  })
+
+  it('keeps fields this build does not model, and a no-op still writes nothing', async () => {
+    await mkdir(join(root, METADATA_DIR_REL), { recursive: true })
+    await writeFile(
+      metadataShardPath(root, '09-2026'),
+      JSON.stringify({ pages: { [SEP_A]: { icon: 'x', pinned: true } } }),
+    )
+    await updatePageMetadata(root, SEP_A, { locked: true })
+    expect(await shardOnDisk('09-2026')).toEqual({
+      pages: { [SEP_A]: { icon: 'x', pinned: true, locked: true } },
+    })
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(metadataShardPath(root, '09-2026'), past, past)
+    await updatePageMetadata(root, SEP_A, { icon: 'x' })
+    expect((await stat(metadataShardPath(root, '09-2026'))).mtimeMs).toBe(past.getTime())
+    await updatePageMetadata(root, SEP_A, { icon: null, locked: null })
+    expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_A]: { pinned: true } } })
+  })
+
+  it('refuses an ID that maps to no month', async () => {
+    const r = await updatePageMetadata(root, 'adopted-x', { icon: 'star' })
+    expect(r.ok).toBe(false)
+  })
+
+  it('dropPageMetadata writes each month it names', async () => {
+    await updatePageMetadata(root, SEP_A, { icon: 'a' })
+    await updatePageMetadata(root, SEP_B, { icon: 'b' })
+    await updatePageMetadata(root, AUG, { icon: 'c' })
+    await dropPageMetadata(root, [SEP_A, AUG], null)
+    expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_B]: { icon: 'b' } } })
+    expect(await shardOnDisk('08-2026')).toEqual({ pages: {} })
+  })
+
+  it('copyPageMetadata lands an August entry under a September ID in its own month', async () => {
+    await updatePageMetadata(root, AUG, { icon: 'star', locked: true })
+    await copyPageMetadata(root, [[AUG, SEP_A]])
+    expect(await shardOnDisk('09-2026')).toEqual({
+      pages: { [SEP_A]: { icon: 'star', locked: true } },
+    })
+    expect(await shardOnDisk('08-2026')).toEqual({
+      pages: { [AUG]: { icon: 'star', locked: true } },
+    })
   })
 })

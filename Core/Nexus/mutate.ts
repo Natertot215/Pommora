@@ -33,6 +33,7 @@ import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { TrashMode } from '../Trash/trashRow'
 import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'
+import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { sessionRoot } from './session'
@@ -117,6 +118,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'setProperty':
       return setPropertyOp(ctx, req)
+
+    case 'setPageMeta':
+      return writePageMeta(root, req.path, req.patch)
 
     case 'movePage':
       return movePageOp(ctx, req)

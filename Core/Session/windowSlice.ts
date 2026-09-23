@@ -249,33 +249,32 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       const cur = get().pageWindow
       if (cur) {
         const deadIds: string[] = []
-        const repath = new Map<string, string>()
+        const retarget = new Map<string, PageTarget>()
         for (const t of cur.tabs) {
           if (t.target.kind === 'navwindow') continue
           const r = reconcileWith(index, t.target)
           if (r.kind === 'none') deadIds.push(t.id)
-          else if (t.target.kind === 'page' && r.kind === 'page' && r.path !== t.target.path)
-            repath.set(t.id, r.path)
+          else if (t.target.kind === 'page' && r.kind === 'page' && r !== t.target)
+            retarget.set(t.id, r)
         }
-        if (deadIds.length > 0 || repath.size > 0) {
+        if (deadIds.length > 0 || retarget.size > 0) {
           for (const id of deadIds) dropWindowCache(id)
           let next: WindowState | null = cur
           for (const id of deadIds) next = next && closeTabIn(next, id)
-          if (next && repath.size > 0)
+          if (next && retarget.size > 0)
             next = {
               ...next,
               tabs: next.tabs.map((t) => {
-                const path = repath.get(t.id)
-                return path && t.target.kind === 'page'
-                  ? { ...t, target: { ...t.target, path } }
-                  : t
+                const target = retarget.get(t.id)
+                return target ? { ...t, target } : t
               }),
             }
           commitWindow(next)
         }
       }
       const history = get().historyTarget
-      if (history && reconcileWith(index, history).kind === 'none') set({ historyTarget: null })
+      const r = history && reconcileWith(index, history)
+      if (r && r !== history) set({ historyTarget: r.kind === 'page' ? r : null })
     },
 
     resetWindow: () => {

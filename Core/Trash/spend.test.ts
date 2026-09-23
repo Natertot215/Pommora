@@ -11,8 +11,12 @@ import { resolveRecord } from './resolve'
 import { listBundles } from './spend'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
+import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
+import { shardOf } from '../Nexus/ids'
+import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
+const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -79,6 +83,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })
@@ -845,6 +850,40 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(r.ok).toBe(true)
     expect(handed).toEqual([])
     expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
+  })
+
+  it.each([
+    false,
+    true,
+  ])('emptying a Set’s bundle drops both its pages’ entries (permanentDelete %s); trash alone keeps them', async (permanentDelete) => {
+    await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+    await updatePageMetadata(root, PAGE_A, { icon: 'star' })
+    await updatePageMetadata(root, PAGE_B, { locked: true })
+    const pages = async () => {
+      const month = await readShard(root, shardOf(PAGE_A)!)
+      return month.kind === 'ok' ? month.pages : null
+    }
+    await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    expect(await pages()).toEqual({ [PAGE_A]: { icon: 'star' }, [PAGE_B]: { locked: true } })
+    const [listed] = await listBundles(root)
+    const r = await handleMutate(
+      { op: 'emptyBundle', bundlePath: listed.bundlePath },
+      { ...nexusDeps, permanentDelete },
+    )
+    expect(r.ok).toBe(true)
+    expect(await pages()).toEqual({})
+  })
+
+  it('emptying a copy’s bundle keeps the entry of the live page sharing its ID', async () => {
+    await updatePageMetadata(root, PAGE_A, { icon: 'star' })
+    await writeFile(join(root, 'Notes', 'Daily', 'Alpha copy.md'), `---\nID: ${PAGE_A}\n---\ncopy`)
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha copy.md', kind: 'page' }, nexusDeps)
+    await refreshTree(root)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'emptyBundle', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    const month = await readShard(root, shardOf(PAGE_A)!)
+    expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_A]: { icon: 'star' } })
   })
 
   it('refuses a chain folder that merely wears the suffix, bundles and all', async () => {

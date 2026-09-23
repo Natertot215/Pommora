@@ -1,7 +1,7 @@
 import type { Result } from '../Contract/result'
 import type { PageMenuContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
-import type { Crop } from './schemas'
+import type { Crop, PageMetaPatch } from './schemas'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
@@ -68,6 +68,7 @@ export type MutateRequest =
   | { op: 'setDisclosureLock'; path: string; kind: MutableContainerKind; locked: boolean }
   | { op: 'setActiveView'; path: string; kind: MutableContainerKind; viewId: string }
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
+  | { op: 'setPageMeta'; path: string; patch: Omit<PageMetaPatch, 'icon'> }
   // Absent order = legacy append. Stale ids in a source container self-drop on the next read.
   | { op: 'movePage'; path: string; newParentPath: string; order?: string[] }
   | { op: 'moveSet'; path: string; newParentPath: string; order: string[] }

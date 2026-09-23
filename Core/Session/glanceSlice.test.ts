@@ -21,6 +21,7 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
   collections: new Set(),
   sets: new Map(),
   pages: new Map(Object.entries(pages)),
+  pagesByPath: new Map(Object.entries(pages).map(([id, path]) => [path, id])),
 })
 
 const pins = (): PinnedGlance[] => useSession.getState().pinnedGlances
@@ -95,6 +96,12 @@ describe('reconcileGlance', () => {
     useSession.getState().pinGlance(pin('A', 'p1', 'Notes/Old.md'))
     useSession.getState().reconcileGlance(indexOf({ p1: 'Notes/New.md' }))
     expect(pins()[0].target.path).toBe('Notes/New.md')
+  })
+
+  it('re-keys a pin whose ID vanished to the page now at its path', () => {
+    useSession.getState().pinGlance(pin('A', 'adopted-x', 'Notes/1.md'))
+    useSession.getState().reconcileGlance(indexOf({ p1: 'Notes/1.md' }))
+    expect(pins()[0].target).toEqual({ kind: 'page', id: 'p1', path: 'Notes/1.md' })
   })
 
   it('drops a deleted page', () => {

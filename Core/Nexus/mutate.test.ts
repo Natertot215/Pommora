@@ -13,6 +13,7 @@ import { NEW_SLOT } from './mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
+import { shardOf } from './ids'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
@@ -1492,5 +1493,40 @@ describe('setContext on a Space', () => {
     const tree = await readNexus(root)
     const projects = tree.contexts.find((g) => g.def.id === 'ctxP')
     expect(projects?.spaces.map((sp) => sp.title)).toEqual(['Atlas', 'Pommora'])
+  })
+})
+
+describe('handleMutate — setPageMeta', () => {
+  const month = async (id: string): Promise<unknown> =>
+    JSON.parse(await read(`.nexus/metadata/${shardOf(id)}.json`))
+
+  it('writes a stamped page’s entry into its month', async () => {
+    const r = await handleMutate(
+      { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { locked: true } },
+      nexusDeps,
+    )
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(await month(A_ID)).toEqual({ pages: { [A_ID]: { locked: true } } })
+  })
+
+  it('refuses a path that is not a page and leaves its bytes alone', async () => {
+    const before = await read('.nexus/settings.json')
+    const r = await handleMutate(
+      { op: 'setPageMeta', path: '.nexus/settings.json', patch: { locked: true } },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(await read('.nexus/settings.json')).toBe(before)
+  })
+
+  it('stamps an ID-less page, then writes under the new ID’s month', async () => {
+    await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), 'gamma')
+    const r = await handleMutate(
+      { op: 'setPageMeta', path: 'Notes/Daily/Gamma.md', patch: { title_icon: true } },
+      nexusDeps,
+    )
+    expect(r).toEqual({ ok: true, value: {} })
+    const id = splitFrontmatter(await read('Notes/Daily/Gamma.md'))[ID_KEY] as string
+    expect(await month(id)).toEqual({ pages: { [id]: { title_icon: true } } })
   })
 })

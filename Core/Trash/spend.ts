@@ -12,14 +12,16 @@ import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
-import { pathExists, readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
-import { isMarkdownFile, listEntries } from '../Files/walk'
+import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
+import { isMarkdownFile, listEntries, listMarkdownFiles } from '../Files/walk'
+import { contentId } from '../Nexus/identityMark'
+import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 import { SPACE_SIDECAR } from '../Paths/paths'
-import { refreshTree } from '../Nexus/liveTree'
+import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
@@ -136,6 +138,20 @@ async function openBundle(root: string, bundleAbs: string): Promise<Result<Recor
   return record ? ok(record) : fail('operation-failed', 'That deletion record is unreadable.')
 }
 
+async function trashedPageIds(record: ArtifactRecord, artifactAbs: string): Promise<string[]> {
+  switch (record.entity) {
+    case 'page':
+      return record.id ? [record.id] : []
+    case 'collection':
+    case 'set': {
+      const texts = await Promise.all((await listMarkdownFiles(artifactAbs)).map(readTextOrNull))
+      return texts.flatMap((text) => contentId(splitFrontmatter(text ?? '')) ?? [])
+    }
+    default:
+      return []
+  }
+}
+
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
 export async function emptyBundle(
   root: string,
@@ -152,9 +168,11 @@ export async function emptyBundle(
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
+  const pageIds = await trashedPageIds(opened.value, artifactAbs)
   recordWrite(artifactAbs)
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
+  await dropPageMetadata(root, pageIds, getLiveTree())
   recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
   return ok(null)

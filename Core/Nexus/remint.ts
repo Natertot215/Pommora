@@ -9,6 +9,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { tileDocPath } from '../Paths/paths'
 import { readKey, writeKey } from '../Platform/localState'
 import { newContentId, newId } from './ids'
+import { copyPageMetadata } from './pageMetadata'
 import { readJsonStrict, rewritePageSerialized, setOrDrop, writeJson } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { sidecarPath } from '../Paths/paths'
@@ -60,6 +61,10 @@ export async function runRemintPass(
     copyDeviceRows(target, fresh)
     done.push({ target, newId: fresh })
   }
+  await copyPageMetadata(
+    root,
+    done.filter((d) => d.target.kind === 'page').map((d) => [d.target.id, d.newId] as const),
+  )
   return done
 }
 

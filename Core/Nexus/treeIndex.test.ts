@@ -45,6 +45,23 @@ describe('reconcileIndexOf', () => {
     const ix = reconcileIndexOf(makeTree())
     expect(reconcileWith(ix, { kind: 'context', id: 'g1' })).toEqual({ kind: 'none' })
   })
+
+  it('a page whose ID vanished follows the page now at its path', () => {
+    const ix = reconcileIndexOf(makeTree())
+    const selection = { kind: 'page', id: 'adopted-beta', path: 'Notes/Ideas/Beta.md' } as const
+    expect(reconcileWith(ix, selection)).toEqual({
+      kind: 'page',
+      id: 'p2',
+      path: 'Notes/Ideas/Beta.md',
+    })
+  })
+
+  it('a page whose ID vanished with nothing at its path reconciles to none', () => {
+    const ix = reconcileIndexOf(makeTree())
+    expect(reconcileWith(ix, { kind: 'page', id: 'gone', path: 'Notes/Gone.md' })).toEqual({
+      kind: 'none',
+    })
+  })
 })
 
 describe('resolveIndexOf', () => {

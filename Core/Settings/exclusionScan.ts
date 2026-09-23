@@ -3,7 +3,9 @@
 import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { parseContextKey } from '../Contexts/contexts'
-import { ID_KEY } from '../Nexus/identityMark'
+import { contentId, ID_KEY } from '../Nexus/identityMark'
+import { dropPageMetadata } from '../Nexus/pageMetadata'
+import { getLiveTree } from '../Nexus/liveTree'
 import { ok, type Result } from '../Contract/result'
 import type { ClearReport } from '../Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText } from '../Properties/governedSweep'
@@ -53,12 +55,18 @@ export async function excludedArtifacts(
   return { pages, sidecars }
 }
 
-const clearRewrite: RewriteText = (content) => {
-  const keys = Object.keys(splitFrontmatter(content))
-  const remove = keys.filter((k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null)
-  if (remove.length === 0) return null
-  return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
-}
+const clearRewrite =
+  (cleared: string[]): RewriteText =>
+  (content) => {
+    const fm = splitFrontmatter(content)
+    const remove = Object.keys(fm).filter(
+      (k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null,
+    )
+    if (remove.length === 0) return null
+    const id = contentId(fm)
+    if (id) cleared.push(id)
+    return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
+  }
 
 export async function clearExclusionData(
   root: string,
@@ -77,6 +85,8 @@ export async function clearExclusionData(
       )
     if (gone) removed++
   }
-  const swept = await sweepGovernedRoots(root, pages, { text: clearRewrite })
+  const cleared: string[] = []
+  const swept = await sweepGovernedRoots(root, pages, { text: clearRewrite(cleared) })
+  await dropPageMetadata(root, cleared, getLiveTree())
   return ok({ pages: swept.touched.length, sidecars: removed, refused: swept.refused.length })
 }

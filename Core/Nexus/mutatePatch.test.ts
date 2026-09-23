@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mkdir, rename, rm, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
@@ -8,6 +8,12 @@ import { readNexus } from './readNexus'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk } from './watchPatch'
 import { noteSidecarWrite } from './valuesChanged'
+import { updatePageMetadata, writePageMeta } from './pageMetadata'
+import { machine } from '../Platform/machine'
+import { metadataShardPath } from '../Paths/paths'
+import { shardOf } from './ids'
+import { splitFrontmatter } from '../Files/pageFile'
+import { ID_KEY } from './identityMark'
 
 vi.mock('./readNexus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./readNexus')>()
@@ -157,6 +163,43 @@ describe('confirmMutation', () => {
     const live = getLiveTree()
     expect(live?.collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
     expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+  it('setPageMeta confirms by one month-file read — zero walks', async () => {
+    await updatePageMetadata(root, ULID_A, { locked: true })
+    const reads = vi.spyOn(machine(), 'readText')
+    try {
+      const pushed = await confirmMutation(
+        root,
+        { op: 'setPageMeta', path: 'Notes/A.md', patch: { locked: true } },
+        {},
+      )
+      expect(pushed).not.toBeNull()
+      expect(reads.mock.calls).toEqual([[metadataShardPath(root, shardOf(ULID_A)!)]])
+    } finally {
+      reads.mockRestore()
+    }
+    expect(walkSpy).not.toHaveBeenCalled()
+    expect(getLiveTree()?.pageMetadata).toEqual({ [ULID_A]: { locked: true } })
+  })
+
+  it('setPageMeta on an ID-less page leaves the tree holding its new ID and entry', async () => {
+    await writeFile(abs('Notes', 'B.md'), 'beta\n')
+    await refreshTree(root)
+    walkSpy.mockClear()
+    expect(await writePageMeta(root, 'Notes/B.md', { locked: true })).toEqual({
+      ok: true,
+      value: {},
+    })
+    await confirmMutation(
+      root,
+      { op: 'setPageMeta', path: 'Notes/B.md', patch: { locked: true } },
+      {},
+    )
+    expect(walkSpy).not.toHaveBeenCalled()
+    const id = splitFrontmatter(await readFile(abs('Notes', 'B.md'), 'utf8'))[ID_KEY] as string
+    const live = getLiveTree()
+    expect(live?.collections[0]?.pages.find((p) => p.path === 'Notes/B.md')?.id).toBe(id)
+    expect(live?.pageMetadata).toEqual({ [id]: { locked: true } })
   })
 })
 

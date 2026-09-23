@@ -4,6 +4,9 @@ import { existsSync } from 'node:fs'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { excludedArtifacts, clearExclusionData } from './exclusionScan'
+import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
+import { shardOf } from '../Nexus/ids'
+import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 
 let root: string
 const d = (p: string): Promise<string | undefined> => mkdir(join(root, p), { recursive: true })
@@ -153,6 +156,38 @@ describe('clearExclusionData', () => {
     if (!res.ok) throw new Error('expected ok')
     expect(res.value.refused).toBeGreaterThanOrEqual(1)
     expect(await read('Archive/stray.md')).toBe(stray)
+  })
+
+  it('drops the metadata entries of the pages it clears, and only theirs', async () => {
+    const NOTE = '01AAAAAAAAPAAAAAAAAAAAAAAA'
+    const DEEP = '01FFFFFFFFPFFFFFFFFFFFFFFF'
+    const OUTSIDER = '01AAAAAAAAPZZZZZZZZZZZZZZZ'
+    for (const id of [NOTE, DEEP, OUTSIDER]) await updatePageMetadata(root, id, { icon: 'star' })
+    await clearExclusionData(root, ['Archive'], 'file-assets')
+    const pagesIn = async (id: string) => {
+      const month = await readShard(root, shardOf(id)!)
+      return month.kind === 'ok' ? month.pages : null
+    }
+    expect(await pagesIn(NOTE)).toEqual({ [OUTSIDER]: { icon: 'star' } })
+    expect(await pagesIn(DEEP)).toEqual({})
+  })
+
+  it('keeps the entry of a live page that shares an excluded copy’s ID', async () => {
+    const NOTE = '01AAAAAAAAPAAAAAAAAAAAAAAA'
+    await d('.nexus')
+    await w('.nexus/settings.json', JSON.stringify({ excluded_folders: ['Archive'] }))
+    await d('Live')
+    await w('Live/_pagecollection.json', '{"id":"c-live"}')
+    await w('Live/note.md', page(NOTE, 'Kept: yes'))
+    await updatePageMetadata(root, NOTE, { icon: 'star' })
+    await refreshTree(root)
+    try {
+      await clearExclusionData(root, ['Archive'], 'file-assets')
+      const month = await readShard(root, shardOf(NOTE)!)
+      expect(month.kind === 'ok' && month.pages).toEqual({ [NOTE]: { icon: 'star' } })
+    } finally {
+      dropLiveTree()
+    }
   })
 
   it('is idempotent — a second run changes nothing and touches no page', async () => {
