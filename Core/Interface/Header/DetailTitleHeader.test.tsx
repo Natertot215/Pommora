@@ -50,7 +50,7 @@ describe('the title search', () => {
     expect(host.querySelector('.detail-title-hint')).toBeNull()
   })
 
-  it('slides the hint out on the dwell, and a plain, ⌘, or ⇧ click on it or the title starts the search', async () => {
+  it('slides the hint out on the dwell, and focusing it or a plain, ⌘, or ⇧ click on the title starts the search', async () => {
     vi.useFakeTimers()
     const s = search()
     await render(s)
@@ -62,7 +62,7 @@ describe('the title search', () => {
       vi.advanceTimersByTime(1500)
     })
     expect(q('.detail-title-hint').classList.contains(labelSlotHidden)).toBe(false)
-    act(() => q('.detail-title-hint').click())
+    act(() => q('.detail-title-search').focus())
     act(() => q('.detail-title-text').click())
     act(() => {
       q('.detail-title-text').dispatchEvent(
@@ -75,16 +75,15 @@ describe('the title search', () => {
     expect(s.start).toHaveBeenCalledTimes(4)
   })
 
-  it('an open search shows the field over the hidden title, and the X only once text is typed', async () => {
+  it('an open search holds the hint open beside the title, and shows the X only once text is typed', async () => {
     await render(search({ query: '' }))
-    expect(hidden('.detail-title-search')).toBe(false)
-    expect(hidden('.detail-title-text')).toBe(true)
+    expect(q('.detail-title-hint').classList.contains(labelSlotHidden)).toBe(false)
     expect(hidden('.detail-title-clear')).toBe(true)
     await render(search({ query: 'ab' }))
     expect(hidden('.detail-title-clear')).toBe(false)
   })
 
-  it('Escape, the X, and an empty blur end it', async () => {
+  it('Escape, the X, and a blank blur end it', async () => {
     const s = search({ query: 'ab' })
     await render(s)
     const input = q('.detail-title-search') as HTMLInputElement
@@ -94,41 +93,13 @@ describe('the title search', () => {
     act(() => q('.detail-title-clear button').click())
     expect(s.change).toHaveBeenNthCalledWith(1, null)
     expect(s.change).toHaveBeenNthCalledWith(2, null)
-    const empty = search({ query: '' })
+    const empty = search({ query: '  ' })
     await render(empty)
     act(() => {
       input.focus()
       input.blur()
     })
     expect(empty.change).toHaveBeenCalledWith(null)
-  })
-
-  it('a blank blur ends it, and picking Rename ends it first', async () => {
-    const blank = search({ query: '  ' })
-    await render(blank)
-    const input = q('.detail-title-search') as HTMLInputElement
-    act(() => {
-      input.focus()
-      input.blur()
-    })
-    expect(blank.change).toHaveBeenCalledWith(null)
-    const s = search({ query: 'ab' })
-    await act(async () => {
-      root.render(
-        <DetailTitleHeader
-          title="Ideas"
-          onRename={vi.fn()}
-          requestMenu={async () => 'rename'}
-          onEditIcon={vi.fn()}
-          search={s}
-        />,
-      )
-    })
-    await act(async () => {
-      q('.detail-title-hint').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
-    })
-    expect(s.change).toHaveBeenCalledWith(null)
-    expect(host.querySelector('input.detail-title-input:not(.detail-title-search)')).not.toBeNull()
   })
 
   it('a new summon focuses and selects the field; a standing one leaves focus alone', async () => {
