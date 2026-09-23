@@ -50,9 +50,6 @@ export function DetailTitleHeader({
   const searching = search?.query != null
   const hint = useHoverDwell(search !== undefined && !searching && !editing, false, HINT_GRACE_MS)
   const field = useRef<HTMLInputElement>(null)
-  // The field fades out on the query it held, so ending a search never flashes its placeholder.
-  const heldQuery = useRef('')
-  if (search?.query != null) heldQuery.current = search.query
   const seenSummon = useRef(search?.summon)
   useEffect(() => {
     if (search?.summon === seenSummon.current) return
@@ -68,10 +65,8 @@ export function DetailTitleHeader({
     e.preventDefault()
     e.stopPropagation()
     const action = await requestMenu()
-    if (action === 'rename') {
-      search?.change(null)
-      setEditing(true)
-    } else if (action === 'editIcon') onEditIcon()
+    if (action === 'rename') setEditing(true)
+    else if (action === 'editIcon') onEditIcon()
     else if (action === 'toggleIcon') onToggleIcon?.()
     else if (action === 'search') search?.start()
   }
@@ -90,15 +85,7 @@ export function DetailTitleHeader({
       onCancel={() => setEditing(false)}
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the title is a right-click affordance and a pointer door to its search — the keyboard reaches the search through the Search command */}
-      <span
-        className={cx(
-          'detail-title-text',
-          search && titleActionFade,
-          searching && titleActionFadeHidden,
-        )}
-        onContextMenu={openMenu}
-        onClick={search?.start}
-      >
+      <span className="detail-title-text" onContextMenu={openMenu} onClick={search?.start}>
         {title}
       </span>
     </RenamableLabel>
@@ -119,47 +106,43 @@ export function DetailTitleHeader({
         />
       )}
       {search ? (
-        <div className="detail-title-body">
+        <>
           <span
             className="detail-title-lead"
             onPointerEnter={() => hint.hover(true)}
             onPointerLeave={() => hint.hover(false)}
           >
             {label}
-            <button
-              type="button"
-              tabIndex={-1}
-              className={cx(base, labelSlot, !hint.on && labelSlotHidden, 'detail-title-hint')}
-              onClick={search.start}
-              onContextMenu={openMenu}
+            <span
+              className={cx(
+                labelSlot,
+                !hint.on && !searching && labelSlotHidden,
+                'detail-title-hint',
+              )}
             >
               <span className="detail-title-hint-run">
                 <span className={cx(segment, 'detail-title-hint-segment')} aria-hidden />
-                Search
+                <SearchField
+                  inputRef={field}
+                  tabIndex={-1}
+                  placeholder="Search"
+                  value={search.query ?? ''}
+                  onValueChange={search.change}
+                  className={cx(base, 'detail-title-search')}
+                  onFocus={search.start}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Escape') return
+                    e.preventDefault()
+                    search.change(null)
+                  }}
+                  onBlur={() => {
+                    if (!search.query?.trim()) search.change(null)
+                  }}
+                  onContextMenu={(e) => e.stopPropagation()}
+                />
               </span>
-            </button>
+            </span>
           </span>
-          <SearchField
-            inputRef={field}
-            value={search.query ?? heldQuery.current}
-            onValueChange={search.change}
-            className={cx(
-              base,
-              'detail-title-input',
-              'detail-title-search',
-              titleActionFade,
-              !searching && titleActionFadeHidden,
-            )}
-            onKeyDown={(e) => {
-              if (e.key !== 'Escape') return
-              e.preventDefault()
-              search.change(null)
-            }}
-            onBlur={() => {
-              if (!search.query?.trim()) search.change(null)
-            }}
-            onContextMenu={(e) => e.stopPropagation()}
-          />
           <span
             className={cx(
               'detail-title-clear',
@@ -174,7 +157,7 @@ export function DetailTitleHeader({
               onClick={() => search.change(null)}
             />
           </span>
-        </div>
+        </>
       ) : (
         label
       )}
