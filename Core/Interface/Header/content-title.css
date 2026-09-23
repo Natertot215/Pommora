@@ -63,7 +63,6 @@
 .detail-title-lead.is-searching .detail-title-hint {
   margin-left: 0;
 }
-/* A search that skips the hint replaces the title at once; its end still slides the title back. */
 .detail-title-lead.is-instant .detail-title-slot,
 .detail-title-lead.is-instant .detail-title-hint {
   transition: none;
@@ -72,9 +71,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 0;
   overflow: hidden;
-  white-space: nowrap;
 }
 /* Doubled: the segment recipe states its own fill at the same weight. */
 .detail-title-hint-segment.detail-title-hint-segment {

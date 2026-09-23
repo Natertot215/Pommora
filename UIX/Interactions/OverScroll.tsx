@@ -31,7 +31,8 @@ let held: HTMLElement | null = null
 
 function hold(cap: HTMLElement | null): void {
   if (cap === held) return
-  if (held) slideScrollBack(held)
+  // A lane holding the focused field keeps its caret in view.
+  if (held && !held.contains(document.activeElement)) slideScrollBack(held)
   held = cap
 }
 

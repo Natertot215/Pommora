@@ -197,14 +197,16 @@ export const frozenOf = (s: SessionState): boolean => {
   return target !== undefined && target.kind !== 'newtab' && !sameShownTarget(s.selection, target)
 }
 
+const heldContainerKey = (s: SessionState): string | null =>
+  frozenOf(s) && (s.selection.kind === 'collection' || s.selection.kind === 'set')
+    ? tabKey(s.selection)
+    : null
+
 /** A cold switch holds the last container on screen until the next page lands, so the held frame reads the search of the tab it belongs to. */
 export const shownViewSearch = (s: SessionState): ViewSearch | undefined => {
-  if (!frozenOf(s)) return s.viewSearch[s.activeTabId]
-  const { selection } = s
-  if (selection.kind !== 'collection' && selection.kind !== 'set') return undefined
-  const key = tabKey(selection)
-  const tabId = s.tabMru.find((id) => s.viewSearch[id]?.key === key)
-  return tabId === undefined ? undefined : s.viewSearch[tabId]
+  const held = heldContainerKey(s)
+  if (held === null) return s.viewSearch[s.activeTabId]
+  return Object.values(s.viewSearch).find((search) => search.key === held)
 }
 
 let pageFetchSeq = 0
@@ -270,9 +272,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     }
     keepSlots((id) => live.has(id))
     const searches = Object.entries(s.viewSearch)
+    const onScreen = heldContainerKey(s)
     const held = searches.filter(
       ([tabId, search]) =>
-        shown.get(tabId) === search.key && (search.query.trim() !== '' || tabId === s.activeTabId),
+        (shown.get(tabId) === search.key || search.key === onScreen) &&
+        (search.query.trim() !== '' || tabId === s.activeTabId),
     )
     if (held.length < searches.length) set({ viewSearch: Object.fromEntries(held) })
   }

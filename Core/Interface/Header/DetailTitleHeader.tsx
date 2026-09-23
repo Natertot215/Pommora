@@ -50,6 +50,7 @@ export function DetailTitleHeader({
   const [editing, setEditing] = useState(false)
   const searching = search?.query != null
   const hint = useHoverDwell(search !== undefined && !searching && !editing, false, HINT_GRACE_MS)
+  const hintOpen = hint.on || searching
   const field = useRef<HTMLInputElement>(null)
   // Only a search opened from the hint slides the title away; every other door replaces it at once.
   const fromHint = useRef(false)
@@ -131,19 +132,13 @@ export function DetailTitleHeader({
                     segment,
                     'detail-title-hint-segment',
                     titleActionFade,
-                    !hint.on && !searching && titleActionFadeHidden,
+                    !hintOpen && titleActionFadeHidden,
                   )}
                   aria-hidden
                 />
               </span>
             </span>
-            <span
-              className={cx(
-                labelSlot,
-                !hint.on && !searching && labelSlotHidden,
-                'detail-title-hint',
-              )}
-            >
+            <span className={cx(labelSlot, !hintOpen && labelSlotHidden, 'detail-title-hint')}>
               <SearchField
                 inputRef={field}
                 tabIndex={-1}
