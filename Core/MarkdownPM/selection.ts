@@ -1,12 +1,12 @@
 // Seated BELOW the text so the tint sits behind the glyphs. Geometry only — fill, corner and bleed are text-selection.css.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
-import { EditorSelection, type SelectionRange } from '@codemirror/state'
-import { clampToLine } from './caret'
+import type { SelectionRange } from '@codemirror/state'
+import { clampToLine, cursorMarkers } from './caret'
 
 const CLS = 'mdpm-sel'
 
 function caretEdge(view: EditorView, pos: number, assoc: 1 | -1): RectangleMarker | undefined {
-  const [m] = RectangleMarker.forRange(view, CLS, EditorSelection.cursor(pos, assoc))
+  const [m] = cursorMarkers(view, CLS, pos, assoc)
   return m && clampToLine(view, CLS, m)
 }
 

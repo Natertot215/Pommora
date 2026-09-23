@@ -28,6 +28,19 @@ export function clampToLine(view: EditorView, cls: string, m: RectangleMarker): 
     : m
 }
 
+// A seat whose assoc side faces a replaced range or a hidden widget has no coords there — flip to the surviving side.
+export function cursorMarkers(
+  view: EditorView,
+  cls: string,
+  pos: number,
+  assoc: number,
+): readonly RectangleMarker[] {
+  const markers = RectangleMarker.forRange(view, cls, EditorSelection.cursor(pos, assoc))
+  return markers.length > 0
+    ? markers
+    : RectangleMarker.forRange(view, cls, EditorSelection.cursor(pos, (assoc || 1) > 0 ? -1 : 1))
+}
+
 function caretMarkers(view: EditorView): RectangleMarker[] {
   const out: RectangleMarker[] = []
   for (const r of view.state.selection.ranges) {
@@ -38,16 +51,8 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
         continue
       }
     }
-    const cursor = r.empty ? r : EditorSelection.cursor(r.head, r.assoc)
-    // A seat whose assoc side faces a replaced range has no coords there — flip to the surviving side.
-    let markers = RectangleMarker.forRange(view, 'mdpm-caret', cursor)
-    if (markers.length === 0)
-      markers = RectangleMarker.forRange(
-        view,
-        'mdpm-caret',
-        EditorSelection.cursor(cursor.head, (cursor.assoc || 1) > 0 ? -1 : 1),
-      )
-    for (const m of markers) out.push(clampToLine(view, 'mdpm-caret', m))
+    for (const m of cursorMarkers(view, 'mdpm-caret', r.head, r.assoc))
+      out.push(clampToLine(view, 'mdpm-caret', m))
   }
   return out
 }
