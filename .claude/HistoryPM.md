@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-22-2026 → 09-23      | PM-144 | View Search                                          |
 | 09-21-2026              | PM-143 | Space Windows                                        |
 | 09-21-2026              | PM-142 | Space Links                                          |
 | 09-19-2026              | PM-141 | MatrixPM Foundations                                 |
@@ -146,6 +147,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-144 || View Search
+**DATE:** 09-22-2026 → 09-23
+
+Every Collection, Set, and Sub-Set view gained a search in its in-line title. Typing narrowed the view's own resolved rows by fuzzy title match, keeping its filter, grouping, and order; groups without a match hid, the rest opened without saving their collapse, row and band drag stood down, and the Subfield count followed. The search belonged to its tab for the session, held through tab switches, pins, and a cold switch to an unloaded page, and cleared when the tab showed anything else. Resting on the title slid out a "| Search" hint that was the field itself; opening it from the hint slid the title away, while a title click, the title and banner menus' Search row, or the new ⌘F command replaced the title at once, and ending the search slid it back. The title and query scrolled as one lane short of the X, and the view tile's lock fade moved into UIX as the fade the X shares.
+
+- **Commits:** `157af274d^..77d22253a`
+- **Diff:** Net +284 | +343 / −59
 
 #### PM-143 || Space Windows
 **DATE:** 09-21-2026
