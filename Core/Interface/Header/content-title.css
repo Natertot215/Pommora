@@ -1,5 +1,4 @@
 .detail-title {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -50,14 +49,13 @@
 .detail-title-lead {
   display: flex;
   align-items: center;
-  min-width: 0;
 }
 .detail-title-lead .detail-title-input {
   field-sizing: content;
 }
+.detail-title-lead .detail-title-text,
 .detail-title-hint {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: none;
 }
 .detail-title-hint-run {
   display: inline-flex;
@@ -79,10 +77,7 @@
   font-weight: var(--weight-emphasized);
 }
 .detail-title-clear {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  translate: 0 -50%;
   display: inline-flex;
+  margin-left: auto;
   color: var(--label-secondary);
 }

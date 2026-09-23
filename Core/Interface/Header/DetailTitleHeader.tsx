@@ -9,6 +9,7 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
+import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { cx } from '@pommora/uix/Utilities/cx'
 import './content-title.css'
 
@@ -108,7 +109,7 @@ export function DetailTitleHeader({
       {search ? (
         <>
           <span
-            className="detail-title-lead"
+            className={cx('detail-title-lead', overScrollLabel)}
             onPointerEnter={() => hint.hover(true)}
             onPointerLeave={() => hint.hover(false)}
           >
