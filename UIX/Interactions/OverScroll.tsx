@@ -4,7 +4,7 @@ import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import './over-scroll.css'
 
-const overScrollLabel = 'over-scroll-x over-scroll-cap'
+export const overScrollLabel = 'over-scroll-x over-scroll-cap'
 
 export const overScrollEllipsis = `${overScrollLabel} over-scroll-ellipsis`
 
