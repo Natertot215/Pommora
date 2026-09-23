@@ -167,7 +167,7 @@ Seated and empty.
 
 #### Shortcuts
 
-Keyboard shortcuts are data: the `commands` object in `settings.json` maps command ids to shortcut specs, with defaults in code (`DEFAULT_COMMANDS`) overlaid by the on-disk block on read, so a malformed, absent, or unrecognized entry falls back to its built-in binding. Specs are `+`-joined modifier chains ending in a key, and one parser reads them for every consumer: the application menu and the editor's context menu spell Electron accelerators from the table, the editor's formatting keymap binds CodeMirror keys from it, and the window's own key handlers match presses against it. A renderer picks a rebinding up as soon as it is read from disk; the native menus take theirs at the next adopt or launch. The leaf lists its bindings and offers no control over them yet; rebinding is hand-edited.
+Keyboard shortcuts are data: the `commands` object in `settings.json` maps command ids to shortcut specs, with defaults in code (`DEFAULT_COMMANDS`) overlaid by the on-disk block on read, so a malformed, absent, or unrecognized entry falls back to its built-in binding. Specs are `+`-joined modifier chains ending in a key, and one parser reads them for every consumer: the application menu and the editor's context menu spell Electron accelerators from the table, the editor's formatting keymap binds CodeMirror keys from it, and the window's own key handlers match presses against it. A renderer picks a rebinding up as soon as it is read from disk; the native menus take theirs at the next adopt or launch. The leaf is seated and empty; rebinding is hand-edited.
 
 | Command | Key | Description | Binding |
 | --- | --- | --- | --- |
@@ -183,6 +183,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 | Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
 | Toggle Matrix | `toggle-matrix` | Summons the Matrix window. | ⌘⇧M |
 | Toggle Iteration | `toggle-iteration` | Summons the iteration window. | ⌘⇧T |
+| Search | `search` | Opens View Search on the open Collection or Set, or refocuses it. | ⌘F |
 | Next Tab | `next-tab` | Moves to the next tab in visual order. | ⌃Tab |
 | Previous Tab | `previous-tab` | Moves to the previous tab in visual order. | ⌃⇧Tab |
 | Undo Value | `undo-value` | Reverts the last property value, Space link, or panel row order written outside a text field, and restores the last deletion that offered an Undo. | ⌘Z |
