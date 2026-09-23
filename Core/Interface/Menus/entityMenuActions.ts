@@ -12,7 +12,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import { fetchPageRow, schemaForPage, spaceRowOf } from '@pommora/core/Properties/pageRow'
-import { isDepth1Set, spaceNodeOf } from '@pommora/core/Nexus/treeIndex'
+import { spaceNodeOf } from '@pommora/core/Nexus/treeIndex'
 import { contextTargetToSelect } from '../../Navigation/tabsModel'
 import {
   propertyMenuBranches,
@@ -61,12 +61,8 @@ export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElemen
         capitalize: s.personalization.capitalizeMetadata ?? false,
       }
     : null
-  // A Sub-Set is no destination, so its menu carries no Open.
-  const id =
-    target.kind === 'set' && target.id && !isDepth1Set(s.tree, target.id) ? undefined : target.id
   const shown: ContextTarget = {
     ...target,
-    id,
     ...(menuTarget ? propertyMenuBranches(menuTarget) : {}),
   }
   const action = await popMenu(entityMenuItems(shown, creators))

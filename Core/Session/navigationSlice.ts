@@ -546,7 +546,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     select: async (target, opts) => {
-      if (target.kind === 'set' && !isDepth1Set(get().tree, target.id)) return
       const record = opts?.record !== false
       let pending: ReturnType<typeof openTabModel> | null = null
       if (record) {
@@ -607,7 +606,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'set': {
           set({ selection: { kind: 'set', id: target.id, path: target.path } })
           const setNode = findSet(get().tree, target.id)
-          if (setNode)
+          if (setNode && isDepth1Set(get().tree, target.id))
             ensureContainerView(
               setNode,
               findCollectionForSet(get().tree, target.id)?.properties ?? [],
