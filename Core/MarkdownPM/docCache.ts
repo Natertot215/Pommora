@@ -5,7 +5,6 @@ import type { MarkdownScope } from './Engine/detect'
 import { rescan, scanDoc } from './Engine/docScan'
 import { headingOutlineOf } from './Engine/headingScan'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
-import type { Token } from './Engine/tokens'
 
 interface PerDoc<T> {
   (doc: Text): T
@@ -91,15 +90,3 @@ export const docSectionHeadings = perDoc((doc) =>
     .map((h) => h.text)
     .sort((a, b) => b.length - a.length),
 )
-
-// Two slots, most-recent first: a span set is returned to as readily as it's left (scrolling back up, folding within one version).
-type Slot = { key: string; tokens: Token[] }
-const spanTokens = new WeakMap<Text, [Slot] | [Slot, Slot]>()
-export function docSpanTokens(doc: Text, key: string, derive: () => Token[]): Token[] {
-  const held = spanTokens.get(doc)
-  const hit = held?.find((s) => s.key === key)
-  if (hit) return hit.tokens
-  const fresh: Slot = { key, tokens: derive() }
-  spanTokens.set(doc, held ? [fresh, held[0]] : [fresh])
-  return fresh.tokens
-}

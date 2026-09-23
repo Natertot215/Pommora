@@ -237,6 +237,66 @@ const moveTable = (r: TableRegion, d: number): TableRegion => ({
 
 // ── Queries ─────────────────────────────────────────────────────────────
 
+const OPENS_FLUSH = /^\S/
+const LIST_ITEM = /^(?:[-+*]|\d{1,9}[.)])[ \t]+\S/
+
+function cutAt(s: LineScan, i: number): boolean {
+  if (i === 0) return true
+  if (!quietAt(s, i) || !OPENS_FLUSH.test(s.lines[i])) return false
+  const above = s.lines[i - 1]
+  return (
+    above.trim() === '' ||
+    s.headings[i - 1] ||
+    s.breaks[i - 1] ||
+    s.headings[i] ||
+    s.breaks[i] ||
+    LIST_ITEM.test(s.lines[i])
+  )
+}
+
+const CHUNK_REACH = 50
+
+export function chunksOver(
+  s: LineScan,
+  spans: readonly (readonly [number, number])[],
+): [number, number][] {
+  const n = s.lines.length
+  const out: [number, number][] = []
+  let next = 0
+  for (const [first, last] of spans) {
+    const top = Math.max(next, first)
+    let i = top
+    while (i > next && i > top - CHUNK_REACH && !cutAt(s, i)) i--
+    if (i > next && !cutAt(s, i)) {
+      const math = spanAt(s.maths, s.lineStarts[top])
+      i = math !== undefined ? Math.max(next, lineIndexAt(s, math[0])) : top
+      while (i > next && /^(?:[ \t]|\r?$)/.test(s.lines[i]) && s.fences[i - 1] === undefined) i--
+    }
+    while (i <= last) {
+      const f = s.fences[i]
+      if (f !== undefined && spanAt(s.maths, s.lineStarts[i]) === undefined) {
+        i = next = lineIndexAt(s, f.to) + 1
+        continue
+      }
+      let j = i + 1
+      while (j < n && j <= last + CHUNK_REACH && !cutAt(s, j)) j++
+      if (j < n && !cutAt(s, j)) {
+        const fence = s.fences[last]
+        const math = spanAt(s.maths, s.lineStarts[last])
+        j =
+          math !== undefined
+            ? lineIndexAt(s, math[1]) + 1
+            : fence !== undefined
+              ? lineIndexAt(s, fence.from)
+              : last + 1
+      }
+      out.push([s.lineStarts[i], j < n ? s.lineStarts[j] - 1 : s.text.length])
+      i = next = j
+    }
+  }
+  return out
+}
+
 export function spanAt<S extends Span>(spans: readonly S[], pos: number): S | undefined {
   let lo = 0
   let hi = spans.length - 1

@@ -29,8 +29,6 @@ import {
   docLineIntentsOf,
   docScan,
   docSectionHeadings,
-  docSpanTokens,
-  docString,
   perScopedDoc,
 } from './docCache'
 import type { MarkdownScope } from './Engine/detect'
@@ -49,7 +47,7 @@ import {
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
-import { type DocScan, codeBlockTextAt, inCodeAt } from './Engine/docScan'
+import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt } from './Engine/docScan'
 import { lineIndexAt } from './Engine/markdownCode'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
@@ -309,40 +307,25 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
-const INDENTED = /^[ \t]/
+const drawn = new WeakMap<EditorView, Map<string, Token[]>>()
 
-/** A slice opens on a line whose block context is self-evident: resuming inside a fence or a math block would invert every parity below. */
-export function sliceStartLine(scan: DocScan, line: number): number {
-  let i = line
-  while (i < scan.lines.length && scan.fences[i] && scan.fences[i]?.role !== 'open') i++
-  while (i > 0 && INDENTED.test(scan.lines[i]) && !scan.fences[i - 1]) i--
-  const math = scan.maths.find(([f, t]) => scan.lineStarts[i] > f && scan.lineStarts[i] <= t)
-  return math ? lineIndexAt(scan, math[0]) : i
-}
-
-// On-screen lines only — the whole-document parse is what made long docs lag. Rebuilt on `viewportChanged`.
-function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Token[] {
-  const doc = view.state.doc
-  const spans: [number, number][] = []
-  for (const { from, to } of view.visibleRanges) {
-    const a = scan.lineStarts[sliceStartLine(scan, doc.lineAt(from).number - 1)]
-    const last = doc.lineAt(to)
-    const fence = scan.fences[last.number - 1]
-    const end = fence ? fence.from - 1 : last.to
-    const b = scan.maths.find(([f, t]) => end >= f && end < t)?.[1] ?? end
-    if (a >= b) continue
-    const prev = spans[spans.length - 1]
-    if (prev && a <= prev[1] + 1) prev[1] = Math.max(prev[1], b)
-    else spans.push([a, b])
+// On-screen chunks only — the whole-document parse is what made long docs lag.
+function visibleInlineTokens(view: EditorView, scan: DocScan): Token[] {
+  const spans = view.visibleRanges.map(({ from, to }): [number, number] => [
+    lineIndexAt(scan, from),
+    lineIndexAt(scan, to),
+  ])
+  const last = drawn.get(view)
+  const now = new Map<string, Token[]>()
+  const out: Token[] = []
+  for (const [a, b] of chunksOver(scan, spans)) {
+    const chunk = scan.text.slice(a, b)
+    const tokens = now.get(chunk) ?? last?.get(chunk) ?? tokenize(chunk)
+    now.set(chunk, tokens)
+    for (const tk of tokens) out.push(shiftToken(tk, a))
   }
-  const key = spans.map(([a, b]) => `${a}:${b}`).join(',')
-  return docSpanTokens(doc, key, () => {
-    const out: Token[] = []
-    for (const [a, b] of spans) {
-      for (const tk of tokenize(text.slice(a, b))) out.push(shiftToken(tk, a))
-    }
-    return out
-  })
+  drawn.set(view, now)
+  return out
 }
 
 interface Built {
@@ -403,12 +386,12 @@ function atomicFor(
 }
 
 function build(view: EditorView, conn: ConnectionsApi | undefined, scope: MarkdownScope): Built {
-  const text = docString(view.state.doc)
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
+  const { text } = scan
   const focused = view.hasFocus
   const sel = view.state.selection.main
-  let tokens = visibleInlineTokens(view, text, scan)
+  let tokens = visibleInlineTokens(view, scan)
   // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
   if (conn && scan.embeds.length > 0) {
     const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
