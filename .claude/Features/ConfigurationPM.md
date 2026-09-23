@@ -218,11 +218,11 @@ The sidecar's remaining fields are structure rather than configuration: the enti
 
 ### Pages
 
-A page's own configuration splits by where it lives: identity and appearance in the file, chrome per machine.
+A page's own configuration splits by where it lives: identity and banner in the file, icon in page metadata, chrome per machine.
 
 | Setting | Where | Description | Set from |
 | --- | --- | --- | --- |
-| Icon | `icon` in frontmatter | The page's glyph, shown beside its title where the header is opted in. | The header's or a row's Edit Icon |
+| Icon | `icon` in `.nexus/metadata/MM-YYYY.json` | The page's glyph, shown beside its title where the header is opted in. | The header's or a row's Edit Icon |
 | Banner | `banner` in frontmatter, its crop in `.nexus/assets/crops.json` | The banner image and how it is framed. | The header's banner menu |
 | Header icon | `nexus.db` | Whether the header draws the glyph. | The header's Hide Icon / Show Icon |
 | Footnotes | `nexus.db` | Whether the citations section shows, overriding Show Footnotes By Default. | The Subfield's Show / Hide Footnotes |
