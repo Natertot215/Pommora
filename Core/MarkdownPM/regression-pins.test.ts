@@ -1,6 +1,6 @@
 // Each case is a fixed break, kept here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { codeMask, isInsideCode } from './Engine/markdownCode'
+import { codeMask } from './Engine/markdownCode'
 import { splitRow } from './Engine/Tables/codec'
 import { tokenize } from './Engine/tokens'
 import {
@@ -14,30 +14,29 @@ import {
 import { setHeading, setList } from './Input/format'
 import { subBlockAt, renumberSequencedRun } from './Engine/listDragModel'
 import { calloutDeleteVerdict, type GuardVerdict } from './Guards/calloutGuard'
-import { scanOf } from './Engine/scanCache'
 import { headingSections } from './Engine/headingScan'
 import { headingSrc } from './Engine/headingScan'
 import { fenceRangesOf } from './Engine/detect'
 import { inCodeAt, scanDoc } from './Engine/docScan'
 import { sliceStartLine } from './decorations'
 
-describe('isInsideCode — tilde fences + inline spans', () => {
+describe('codeMask — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {
     const doc = '~~~\n# not a heading\n~~~'
-    expect(isInsideCode(6, doc)).toBe(true)
+    expect(codeMask(doc)(6)).toBe(true)
   })
   it('pairs fences by marker char (a ~~~ line inside ``` is content)', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
-    expect(isInsideCode(9, doc)).toBe(true)
-    expect(isInsideCode(18, doc)).toBe(false)
+    expect(codeMask(doc)(9)).toBe(true)
+    expect(codeMask(doc)(18)).toBe(false)
   })
   it('counts inline spans — including unclosed ones being typed', () => {
-    expect(isInsideCode(10, 'run `npm --x` now')).toBe(true)
-    expect(isInsideCode(16, 'run `npm install --')).toBe(true)
-    expect(isInsideCode(2, 'ab `c`')).toBe(false)
+    expect(codeMask('run `npm --x` now')(10)).toBe(true)
+    expect(codeMask('run `npm install --')(16)).toBe(true)
+    expect(codeMask('ab `c`')(2)).toBe(false)
   })
   it('treats the closing backtick as a boundary so type-over still works', () => {
-    expect(isInsideCode(5, '`code`')).toBe(false)
+    expect(codeMask('`code`')(5)).toBe(false)
   })
 })
 
@@ -214,7 +213,7 @@ describe('format transforms — prefix-aware', () => {
 describe('subBlockAt — continuation lines ride with their item', () => {
   it("includes a wrapped item's indented body", () => {
     const doc = '- item one\n  continued text\n- item two'
-    expect(subBlockAt(doc, 2)).toEqual({ from: 0, to: 27, level: 0 })
+    expect(subBlockAt(scanDoc(doc), 2)).toEqual({ from: 0, to: 27, level: 0 })
   })
 })
 
@@ -229,7 +228,7 @@ describe('renumberSequencedRun — nested lines are skipped, not terminators', (
 describe('calloutDeleteVerdict — repair, not cancel', () => {
   const doc = '> [!callout] head\n> body'
   const verdict = (from: number, to: number): GuardVerdict => {
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     return calloutDeleteVerdict(doc, from, to, { lines: s.lines, info: s.callouts })
   }
   it('allows a whole-line removal (line + newline)', () => {
@@ -249,7 +248,7 @@ describe('calloutDeleteVerdict — repair, not cancel', () => {
   })
 })
 
-describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer split)', () => {
+describe('renderer fence engine agrees with codeMask on ~~~ (no cross-layer split)', () => {
   it('fencedCodeRanges recognizes a ~~~ block', () => {
     const doc = '~~~\n[[LivePage]]\n~~~'
     const ranges = fenceRangesOf(scanDoc(doc).fences)
@@ -261,7 +260,7 @@ describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer 
     const doc = '```\n~~~\ncode\n```\nprose'
     const ranges = fenceRangesOf(scanDoc(doc).fences)
     expect(ranges.length).toBe(1)
-    expect(isInsideCode(9, doc)).toBe(true)
+    expect(codeMask(doc)(9)).toBe(true)
   })
 })
 
@@ -275,8 +274,8 @@ describe('a longer fence holds shorter ones — both layers, one block', () => {
   })
   it('a rename can never reach a connection inside the inner block', () => {
     // The one that corrupts a file rather than a render: an under-masked line gets its [[Title]] rewritten.
-    expect(isInsideCode(doc.indexOf('[[LivePage]]'), doc)).toBe(true)
-    expect(isInsideCode(doc.lastIndexOf('[[LivePage]]'), doc)).toBe(false)
+    expect(codeMask(doc)(doc.indexOf('[[LivePage]]'))).toBe(true)
+    expect(codeMask(doc)(doc.lastIndexOf('[[LivePage]]'))).toBe(false)
   })
 })
 
@@ -337,16 +336,9 @@ describe('the viewport slice opens where the block context is self-evident', () 
     expect(sliceStartLine(scan, 12)).toBe(12)
   })
 
-  // A fence still being typed claims every line to EOF, so a viewport inside it has no line above where a slice could safely resume. The answer is the document's end — everything from there down is code, and code carries no inline tokens.
-  it('an unclosed fence resolves to the end of the document, not past the end of the line table', () => {
+  it('a fence nothing closes is prose, so a slice opens on the line itself', () => {
     const open = scanDoc('intro **bold**\n```js\ncode **not bold**\nmore')
-    expect(sliceStartLine(open, 0)).toBe(0)
-    expect(sliceStartLine(open, 1)).toBe(1)
-    for (const line of [2, 3]) {
-      const at = sliceStartLine(open, line)
-      expect(at).toBe(open.lines.length)
-      expect(open.lineStarts[at]).toBe(open.text.length)
-    }
+    for (const line of [0, 1, 2, 3]) expect(sliceStartLine(open, line)).toBe(line)
   })
 
   it('every viewport start yields the whole-document tokens (fence parity never inverts)', () => {
@@ -364,7 +356,7 @@ describe('the viewport slice opens where the block context is self-evident', () 
   })
 })
 
-describe('isInsideCode answers exactly what codeMask answers, at every offset', () => {
+describe('inCodeAt answers exactly what codeMask answers, at every offset', () => {
   // Every construct the two disagree about if the single-offset form stops being line-local: nested runs, tilde blocks, quoted fences, an unclosed opener, and a span left open at EOF.
   const doc = [
     'plain **bold** and `code` here',
@@ -383,39 +375,20 @@ describe('isInsideCode answers exactly what codeMask answers, at every offset', 
     'tail `closed` and `unclosed',
   ].join('\n')
 
-  it('agrees offset for offset', () => {
-    const mask = codeMask(doc)
+  const agrees = (text: string): number[] => {
+    const s = scanDoc(text)
+    const mask = codeMask(text)
     const disagreements: number[] = []
-    for (let o = 0; o <= doc.length; o++)
-      if (isInsideCode(o, doc) !== mask(o)) disagreements.push(o)
-    expect(disagreements).toEqual([])
+    for (let o = -1; o <= text.length + 1; o++)
+      if (inCodeAt(s, o) !== mask(o)) disagreements.push(o)
+    return disagreements
+  }
+
+  it('agrees offset for offset', () => {
+    expect(agrees(doc)).toEqual([])
   })
 
   it('agrees on a CRLF body too', () => {
-    const crlf = doc.split('\n').join('\r\n')
-    const mask = codeMask(crlf)
-    const disagreements: number[] = []
-    for (let o = 0; o <= crlf.length; o++)
-      if (isInsideCode(o, crlf) !== mask(o)) disagreements.push(o)
-    expect(disagreements).toEqual([])
-  })
-
-  // If the scan-built mask ever answered differently from the string form, a fence would hold code for one layer and prose for another.
-  it('the scan-built mask agrees with the string-built one, offset for offset', () => {
-    const s = scanDoc(doc)
-    const fromScan = s.inCode
-    const mask = codeMask(doc)
-    const disagreements: number[] = []
-    for (let o = 0; o <= doc.length; o++) if (fromScan(o) !== mask(o)) disagreements.push(o)
-    expect(disagreements).toEqual([])
-  })
-
-  // `inCodeAt` is the per-caret reader the input transforms take; it must answer what the mask does.
-  it('inCodeAt agrees with the mask at every caret position', () => {
-    const s = scanDoc(doc)
-    const mask = codeMask(doc)
-    const disagreements: number[] = []
-    for (let o = 0; o <= doc.length; o++) if (inCodeAt(s, o) !== mask(o)) disagreements.push(o)
-    expect(disagreements).toEqual([])
+    expect(agrees(doc.split('\n').join('\r\n'))).toEqual([])
   })
 })

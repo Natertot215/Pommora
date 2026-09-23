@@ -172,10 +172,10 @@ describe('blockAt', () => {
     expect(slice(doc, blockAt(doc, doc.indexOf('- b')))).toBe('- b')
   })
 
-  it('an unclosed code fence at EOF is one code block', () => {
+  it('a fence nothing closes is a paragraph line', () => {
     const doc = 'p\n\n```\ncode\nmore'
     const b = blockAt(doc, doc.indexOf('code'))
-    expect(b?.kind).toBe('code')
+    expect(b?.kind).toBe('paragraph')
     expect(slice(doc, b)).toBe('```\ncode\nmore')
   })
 

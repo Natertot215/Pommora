@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { scanOf } from '../Engine/scanCache'
+import { scanDoc } from '../Engine/docScan'
 import { blockQueryAt } from './blockQuery'
 
-const at = (text: string, caret = text.length) => blockQueryAt(scanOf(text), caret)
+const at = (text: string, caret = text.length) => blockQueryAt(scanDoc(text), caret)
 
 describe('the block menu opens on a line holding nothing but the slash', () => {
   it('takes a bare slash with the caret behind it', () => {
@@ -49,8 +49,8 @@ describe('the block menu refuses the constructs a lone-line insert refuses', () 
     expect(at('```\n/\n```', 5)).toBeNull()
   })
 
-  it('refuses a line inside a fence still being opened', () => {
-    expect(at('```\n/')).toBeNull()
+  it('refuses a line inside a code block', () => {
+    expect(at('```\n/\n```', 5)).toBeNull()
   })
 
   it('refuses a line inside a math block', () => {

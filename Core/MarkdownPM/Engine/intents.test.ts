@@ -534,14 +534,14 @@ describe('callout box chrome + nested constructs', () => {
     expect(cbLines.filter((d) => d.className.includes('codeblock-last'))).toHaveLength(1)
     expect(cbLines).toHaveLength(4)
   })
-  it('an unclosed fence inside a callout does not leak code styling onto the non-quote lines below', () => {
+  it('a fence nothing closes inside a callout is prose, and styles nothing below', () => {
     const t = '> [!callout] head\n> ```\nplain below\nmore plain'
     const ints = decorationsFor(t, tokenize(t), new Set(), 99)
     const cbLines = ints.filter(
       (d): d is Extract<typeof d, { kind: 'line' }> =>
         d.kind === 'line' && d.className.includes('codeblock'),
     )
-    expect(cbLines).toHaveLength(1)
+    expect(cbLines).toHaveLength(0)
   })
   it('a blockquote nested inside a callout renders as an inset quote (md-blockquote-nested), not flat body', () => {
     const t = '> [!callout] head\n> > quoted one\n> > quoted two\n> body'

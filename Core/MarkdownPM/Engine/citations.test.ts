@@ -11,7 +11,7 @@ import {
 } from './detect'
 import { tableRegions } from './Tables/regions'
 
-/** The house exclusion set — fences and tables — assembled the way `docLineScan` assembles it, so these cases read the document exactly as the editor's own scan does. */
+/** Fences and tables excluded as the editor's own scan excludes them, so these cases read the document as it does. */
 function scan(text: string): CitationScan {
   const d = splitWithOffsets(text)
   const fences = scanFencedCode(d.lines, d.lineStarts)
@@ -23,22 +23,19 @@ function scan(text: string): CitationScan {
   return citationScan(d, excluded)
 }
 
-const masked = (s: CitationScan): number[] => [...s.mask].flatMap((v, i) => (v === 1 ? [i] : []))
-
 describe('citationScan — the boundary', () => {
   it('reads a plain trailing run', () => {
     const s = scan('body [^1] and [^2]\n\n[^1]: one\n[^2]: two')
     expect(s.firstLine).toBe(2)
     expect(s.anchorLine).toBe(1)
     expect(s.entries.map((e) => e.label)).toEqual(['1', '2'])
-    expect(masked(s)).toEqual([2, 3])
   })
 
   it('takes an indented continuation into the citation above', () => {
     const s = scan('a[^1]\n\n[^1]: one\n    more text')
     expect(s.entries).toHaveLength(1)
     expect(s.entries[0].lastLine).toBe(3)
-    expect(masked(s)).toEqual([2, 3])
+    expect(s.firstLine).toBe(2)
   })
 
   it('takes a lazy (unindented) continuation into the citation above', () => {
@@ -51,13 +48,13 @@ describe('citationScan — the boundary', () => {
   it('keeps interleaved blank lines inside the section', () => {
     const s = scan('a[^1][^2]\n\n[^1]: one\n\n[^2]: two')
     expect(s.firstLine).toBe(2)
-    expect(masked(s)).toEqual([2, 3, 4])
+    expect(s.entries.map((e) => e.line)).toEqual([2, 4])
   })
 
   it('keeps trailing blank lines inside the section', () => {
     const s = scan('a[^1]\n\n[^1]: one\n\n\n')
     expect(s.firstLine).toBe(2)
-    expect(masked(s)).toEqual([2, 3, 4, 5])
+    expect(s.entries[0].lastLine).toBe(2)
   })
 
   it('has no section when prose follows the run', () => {
@@ -65,7 +62,6 @@ describe('citationScan — the boundary', () => {
     expect(s.firstLine).toBe(5)
     expect(s.anchorLine).toBe(-1)
     expect(s.entries).toEqual([])
-    expect(masked(s)).toEqual([])
   })
 
   it('starts the run below prose that precedes it', () => {
@@ -100,7 +96,7 @@ describe('citationScan — the boundary', () => {
     const s = scan('[^1]: one\n[^2]: two')
     expect(s.firstLine).toBe(0)
     expect(s.anchorLine).toBe(-1)
-    expect(masked(s)).toEqual([0, 1])
+    expect(s.entries.map((e) => e.line)).toEqual([0, 1])
   })
 
   it('answers an empty document', () => {
@@ -109,7 +105,6 @@ describe('citationScan — the boundary', () => {
     expect(s.anchorLine).toBe(-1)
     expect(s.entries).toEqual([])
     expect(s.markers).toEqual([])
-    expect(masked(s)).toEqual([])
   })
 
   it('reads a citation whose text is empty', () => {
@@ -212,7 +207,7 @@ describe('citationScan agrees with the parser', () => {
     '# Title\n\ntext [^note]\n\n[^note]: a citation\nwith a lazy line',
   ]
 
-  it('masks exactly the lines the parser gives the trailing run', () => {
+  it('opens the section at exactly the lines the parser gives the trailing run', () => {
     for (const text of corpus) {
       const s = scan(text)
       const lines = text.split('\n')
@@ -224,9 +219,8 @@ describe('citationScan agrees with the parser', () => {
           return out
         })
       const tail = parsed.filter((l) => l >= s.firstLine)
-      for (const l of tail) expect(s.mask[l], `${text} line ${l}`).toBe(1)
-      const maskedNonBlank = masked(s).filter((l) => lines[l].trim() !== '')
-      expect(maskedNonBlank, text).toEqual(tail)
+      const sectioned = lines.flatMap((l, i) => (i >= s.firstLine && l.trim() !== '' ? [i] : []))
+      expect(sectioned, text).toEqual(tail)
     }
   })
 })

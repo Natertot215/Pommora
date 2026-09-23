@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { Text } from '@codemirror/state'
-import { docScan, docSpanTokens } from './docCache'
-import { scanOf } from './Engine/scanCache'
+import { docSpanTokens } from './docCache'
 import { tokenize } from './Engine/tokens'
 
 describe('docSpanTokens — the parse answers to the doc version and the span set, nothing else', () => {
@@ -30,19 +29,5 @@ describe('docSpanTokens — the parse answers to the doc version and the span se
     docSpanTokens(Text.of([body]), '0:30', derive)
     docSpanTokens(Text.of([body]), '0:30', derive)
     expect(derive).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('scanOf — the counter and the editor read one scan of one text', () => {
-  const body = '# Title\n\n| Name | Status |\n| --- | --- |\n| A | Done |\n'
-
-  it('serves the editor’s own scan to a caller holding only the string', () => {
-    // The Subfield's counter is that caller: its body is the very string `docString` produced.
-    expect(scanOf(body)).toBe(docScan(Text.of(body.split('\n'))))
-  })
-
-  it('keys on the text, so a new version of an unchanged document re-reads it', () => {
-    const first = docScan(Text.of(body.split('\n')))
-    expect(docScan(Text.of(body.split('\n')))).toBe(first)
   })
 })

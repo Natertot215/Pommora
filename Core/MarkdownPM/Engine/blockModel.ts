@@ -85,12 +85,12 @@ function blockContext(scan: DocScan): BlockContext {
     i = j + 1
   }
 
-  const callout = scan.callouts.map((c, i) => (scan.literal[i] ? undefined : c))
+  const callout = scan.callouts
   const heading = scan.headings
   const hr = scan.breaks
-  const bq = scan.quotes.map((q, i) => q && !scan.literal[i])
+  const bq = scan.quotes
   // The citations section owns no block — reusing the unowned-line state costs two lines, where a BlockKind of its own would span five sites the compiler wouldn't all check.
-  const cited = (i: number): boolean => scan.citations.mask[i] === 1
+  const cited = (i: number): boolean => i >= scan.citations.firstLine
   const claimed = (i: number): boolean =>
     i < 0 ||
     i >= n ||

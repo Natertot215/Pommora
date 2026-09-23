@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parse, isInsideWikilink } from './parser'
-import { isInsideCode } from './markdownCode'
+import { codeMask } from './markdownCode'
 
 describe('parse (mdast seam)', () => {
   it('parses GFM into an mdast tree', () => {
@@ -33,11 +33,11 @@ describe('isInsideWikilink', () => {
   })
 })
 
-describe('isInsideCode', () => {
+describe('codeMask', () => {
   it('true between fences, false outside', () => {
     const t = 'before\n```\ncode\n```\nafter'
-    expect(isInsideCode(t.indexOf('code') + 1, t)).toBe(true)
-    expect(isInsideCode(t.indexOf('after') + 1, t)).toBe(false)
-    expect(isInsideCode(t.indexOf('before') + 1, t)).toBe(false)
+    expect(codeMask(t)(t.indexOf('code') + 1)).toBe(true)
+    expect(codeMask(t)(t.indexOf('after') + 1)).toBe(false)
+    expect(codeMask(t)(t.indexOf('before') + 1)).toBe(false)
   })
 })

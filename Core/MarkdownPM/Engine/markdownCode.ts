@@ -19,7 +19,7 @@ export function lineOffsetsOf(lines: string[]): number[] {
   return out
 }
 
-function fenceAt(line: string): Fence | null {
+export function fenceAt(line: string): Fence | null {
   const m = FENCE_RE.exec(line)
   if (!m) return null
   // A backtick fence's info string can't hold a backtick (ambiguous with an inline span).
@@ -53,33 +53,27 @@ export function quoteDepthOf(line: string): number {
 interface FenceSpan {
   open: number
   close: number
-  closed: boolean
   fence: Fence
 }
 
-// The one fence-pairing pass; a layer pairing fences for itself is how two of them come to disagree about the same document. An unclosed block runs to the document's end or to where its surrounding blockquote stops.
+// The one fence-pairing pass; a layer pairing fences for itself is how two of them come to disagree about the same document. A block needs its closer: an opener nothing closes before the document or its blockquote ends is a line of prose, where CommonMark would run it to the end.
 export function fenceSpans(lines: string[]): FenceSpan[] {
   const spans: FenceSpan[] = []
   let i = 0
   while (i < lines.length) {
     const open = fenceAt(lines[i])
-    if (open === null) {
+    let j = i + 1
+    while (open !== null && j < lines.length && quoteDepthOf(lines[j]) >= open.depth) {
+      const f = fenceAt(lines[j])
+      if (f !== null && fenceCloses(open, f)) break
+      j++
+    }
+    if (open === null || j === lines.length || quoteDepthOf(lines[j]) < open.depth) {
       i++
       continue
     }
-    let j = i + 1
-    let closed = false
-    while (j < lines.length) {
-      const f = fenceAt(lines[j])
-      if (f !== null && fenceCloses(open, f)) {
-        closed = true
-        break
-      }
-      if (quoteDepthOf(lines[j]) < open.depth) break
-      j++
-    }
-    spans.push({ open: i, close: closed ? j : j - 1, closed, fence: open })
-    i = closed ? j + 1 : j
+    spans.push({ open: i, close: j, fence: open })
+    i = j + 1
   }
   return spans
 }
@@ -129,45 +123,39 @@ export function inlineSpans(line: string): [number, number][] {
 
 export type CodeMask = (offset: number) => boolean
 
+export function lineIndexAt(
+  d: { lines: readonly string[]; lineStarts: readonly number[] },
+  pos: number,
+): number {
+  const { lines, lineStarts } = d
+  let lo = 0
+  let hi = lines.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (lineStarts[mid] <= pos) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
+export function codeAt(
+  d: { lines: readonly string[]; lineStarts: readonly number[] },
+  fenced: (line: number) => boolean,
+  offset: number,
+): boolean {
+  const last = d.lines.length - 1
+  if (offset < 0 || offset > d.lineStarts[last] + d.lines[last].length) return false
+  const i = lineIndexAt(d, offset)
+  return fenced(i) || isInsideInlineCode(d.lines[i], offset - d.lineStarts[i])
+}
+
 export function codeMask(text: string): CodeMask {
   const lines = text.split('\n')
+  const d = { lines, lineStarts: lineOffsetsOf(lines) }
   const fenced = fencedLineMask(lines)
-  return codeMaskOf(lines, lineOffsetsOf(lines), (i) => fenced[i] === 1)
+  return (offset) => codeAt(d, (i) => fenced[i] === 1, offset)
 }
 
-export function codeMaskOf(
-  lines: string[],
-  starts: number[],
-  fencedLine: (i: number) => boolean,
-): CodeMask {
-  const ranges: [number, number][] = []
-  let i = 0
-  while (i < lines.length) {
-    if (!fencedLine(i)) {
-      for (const [a, b] of inlineSpans(lines[i])) ranges.push([starts[i] + a, starts[i] + b])
-      i++
-      continue
-    }
-    const open = i
-    while (i < lines.length && fencedLine(i)) i++
-    const close = i - 1
-    ranges.push([starts[open], starts[close] + lines[close].length + 1])
-  }
-  return (offset) => ranges.some(([a, b]) => offset >= a && offset < b)
-}
-
-export function isInsideCode(offset: number, text: string): boolean {
-  if (offset < 0) return false
-  const lines = text.split('\n')
-  const fenced = fencedLineMask(lines)
-  for (let i = 0, start = 0; i < lines.length; i++) {
-    const next = start + lines[i].length + 1
-    if (offset < next) return fenced[i] === 1 || isInsideInlineCode(lines[i], offset - start)
-    start = next
-  }
-  return false
-}
-
-export function isInsideInlineCode(line: string, offset: number): boolean {
+function isInsideInlineCode(line: string, offset: number): boolean {
   return inlineSpans(line).some(([a, b]) => offset >= a && offset < b)
 }

@@ -10,7 +10,7 @@ import { resolveMdTarget, type ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { renderCellContent } from '../Tables/cellStatic'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
-import { scanOf } from '../Engine/scanCache'
+import { scanDoc } from '../Engine/docScan'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -144,7 +144,7 @@ describe('picking a page inside the parens', () => {
   const row = { value: 'Work Notes', label: 'Work Notes', isPage: true, location: [] }
 
   const applied = (doc: string, caret: number): { text: string; after: string } => {
-    const ac = autocompleteQuery(scanOf(doc), caret)!
+    const ac = autocompleteQuery(scanDoc(doc), caret)!
     expect(ac.form).toBe('target')
     const edit = commitEdit(ac, row)
     let text = doc

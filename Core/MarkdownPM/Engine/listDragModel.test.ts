@@ -3,19 +3,19 @@ import { describe, it, expect } from 'vitest'
 describe('subBlockAt × block math', () => {
   it('indented math with an internal blank rides the item — the reorder gesture cannot tear it', () => {
     const doc = '- one\n  $$\n  x\n\n  y\n  $$\n- two'
-    const b = subBlockAt(doc, 0)
+    const b = subBlockAt(scanDoc(doc), 0)
     expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n  x\n\n  y\n  $$')
   })
 
   it('a marker-looking line inside absorbed math stays formula content', () => {
     const doc = '- one\n  $$\n- x\n  $$\n- two'
-    const b = subBlockAt(doc, 0)
+    const b = subBlockAt(scanDoc(doc), 0)
     expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n- x\n  $$')
   })
 
   it('top-level math glued below an item is never absorbed by the gesture', () => {
     const doc = '- one\n$$\nx\n\ny\n$$'
-    const b = subBlockAt(doc, 0)
+    const b = subBlockAt(scanDoc(doc), 0)
     expect(doc.slice(b!.from, b!.to)).toBe('- one')
   })
 })
@@ -36,7 +36,7 @@ import {
 
 /** Drop the item whose line contains `grab` so it starts at the line containing `dropLine`. */
 function drop(doc: string, grab: number, at: number): string {
-  const block = subBlockAt(doc, grab)
+  const block = subBlockAt(scanDoc(doc), grab)
   if (!block) throw new Error('grab not on a list line')
   const slot: Slot = { at }
   const changes = dropChanges(doc, block, slot)
@@ -48,16 +48,16 @@ const lineStart = (doc: string, needle: string): number => doc.indexOf(needle)
 describe('subBlockAt', () => {
   it('returns just the line for a flat item', () => {
     const doc = '- a\n- b\n- c'
-    const b = subBlockAt(doc, doc.indexOf('b'))!
+    const b = subBlockAt(scanDoc(doc), doc.indexOf('b'))!
     expect(doc.slice(b.from, b.to)).toBe('- b')
   })
   it('includes deeper-indented descendants', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
-    const b = subBlockAt(doc, 1)!
+    const b = subBlockAt(scanDoc(doc), 1)!
     expect(doc.slice(b.from, b.to)).toBe('- a\n\t- a1\n\t- a2')
   })
   it('returns null off a list line', () => {
-    expect(subBlockAt('plain text', 2)).toBe(null)
+    expect(subBlockAt(scanDoc('plain text'), 2)).toBe(null)
   })
 })
 
@@ -153,13 +153,13 @@ describe('nested sub-block moves as a unit', () => {
 describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
   it('flattens a nested item to root when dropped at a root-indent target', () => {
     const doc = '- a\n\t- nested\n- b'
-    const block = subBlockAt(doc, lineStart(doc, 'nested'))!
+    const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'))!
     const changes = dropChanges(doc, block, { at: doc.length, indent: '' })!
     expect(applyChanges(doc, changes)).toBe('- a\n- b\n- nested')
   })
   it('re-indents the whole sub-block, preserving relative nesting', () => {
     const doc = '- a\n\t- p\n\t\t- c\n- b'
-    const block = subBlockAt(doc, lineStart(doc, '- p'))!
+    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'))!
     const changes = dropChanges(doc, block, { at: doc.length, indent: '' })!
     expect(applyChanges(doc, changes)).toBe('- a\n- b\n- p\n\t- c')
   })
@@ -196,18 +196,18 @@ describe('renumberSequencedRun', () => {
 describe('drag inside a callout (prefix-aware)', () => {
   it('reorders a callout bullet without doubling the `>` prefix', () => {
     const doc = '> [!callout] head\n> - one\n> - two'
-    const block = subBlockAt(doc, doc.indexOf('one'))!
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('one'))!
     const changes = dropChanges(doc, block, { at: doc.length, indent: '> ' })!
     expect(applyChanges(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
   })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
     const doc = '> - a\n\t- x'
-    const block = subBlockAt(doc, doc.indexOf('a'))!
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!
     expect(block.to).toBe(doc.indexOf('\n')) // block is just `> - a`, not the `\t- x` line
   })
   it('subBlockAt DOES keep a same-box deeper child', () => {
     const doc = '> - a\n> \t- child'
-    const block = subBlockAt(doc, doc.indexOf('a'))!
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!
     expect(block.to).toBe(doc.length) // the `> \t- child` shares the `>` box → captured
   })
 })

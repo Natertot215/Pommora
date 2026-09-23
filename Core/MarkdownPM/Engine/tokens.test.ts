@@ -7,7 +7,7 @@ import {
   shiftToken,
   type Token,
 } from './tokens'
-import { scanOf } from './scanCache'
+import { scanDoc } from './docScan'
 
 const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
 const slice = (text: string, r: [number, number]): string => text.slice(r[0], r[1])
@@ -91,15 +91,22 @@ describe('inline code is the run-length pairing the code mask reads', () => {
 describe('display math is the block model’s pairing', () => {
   it('a lone `$$` with no lone closer colors nothing, whatever `$$` prose holds later', () => {
     const doc = '$$\nformula\n\nprose $$ 5 and $$ 6'
-    expect(byKind(tokenize(doc, scanOf(doc).maths), 'blockLatex')).toEqual([])
+    expect(byKind(tokenize(doc, scanDoc(doc)), 'blockLatex')).toEqual([])
   })
 
   it('a lone-line pair is one token whose markers are the two `$$` lines', () => {
     const doc = 'p\n$$\nx = 1\n$$\nq'
-    const [tex] = byKind(tokenize(doc, scanOf(doc).maths), 'blockLatex')
+    const [tex] = byKind(tokenize(doc, scanDoc(doc)), 'blockLatex')
     expect(slice(doc, tex.range)).toBe('$$\nx = 1\n$$')
     expect(slice(doc, tex.contentRange)).toBe('\nx = 1\n')
     expect(tex.markerRanges.map((m) => slice(doc, m))).toEqual(['$$', '$$'])
+  })
+})
+
+describe('a code block needs both fences', () => {
+  it('reads a fence nothing closes as prose, so the lines below keep their marks', () => {
+    const doc = '```js\n**bold** and *em*'
+    expect(tokenize(doc).map((t) => t.kind)).toEqual(['bold', 'italic'])
   })
 })
 

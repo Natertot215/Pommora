@@ -129,8 +129,8 @@ export const listDragExtension: Extension = [
       const glyph = (e.target as HTMLElement).closest?.('.md-list-glyph')
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
-      const doc = docString(view.state.doc)
-      const block = subBlockAt(doc, pos)
+      const scan = docScan(view.state.doc)
+      const block = subBlockAt(scan, pos)
       if (!block) return false
 
       e.preventDefault()

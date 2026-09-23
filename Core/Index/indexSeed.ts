@@ -4,7 +4,7 @@ import { errText } from '../Contract/result'
 import { frontmatterMentions, linksIn } from '../Connections/scan'
 import { normalizeTitle, titleFromPath } from '../Connections/connections'
 import { headingOutline, headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
-import { lineIndexAt, scanDoc } from '../MarkdownPM/Engine/docScan'
+import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
 import { sweepAdmitsBody } from '../Files/pageFile'
 import {
@@ -52,10 +52,9 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
     if (held) held.count++
     else tally.set(key, { kind, target, qualifier, count: 1 })
   }
-  for (const hit of linksIn(body, own, outline, scan.inCode)) {
+  for (const hit of linksIn(body, own, outline, (p) => inCodeAt(scan, p))) {
     add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
-    // `mask` is indexed by line, so the hit's offset resolves to one first.
-    if (scan.citations.mask[lineIndexAt(scan, hit.at)] === 1)
+    if (hit.at >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)
   }
   for (const target of frontmatterMentions(values)) add('frontmatter', target, '')

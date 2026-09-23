@@ -8,7 +8,7 @@ import {
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@pommora/core/MarkdownPM/Citations/citationMenu'
-import { isInsideInlineCode } from '../Engine/markdownCode'
+import { inCodeAt } from '../Engine/docScan'
 import { citationFor, markerEndingAt, markersFor } from '../Engine/detect'
 import { focusRange } from '../caretPlacement'
 import type { CitationScan } from '../Engine/detect'
@@ -45,10 +45,7 @@ export function travelToCitation(view: EditorView, label: string): void {
 export function citationSeatAt(state: EditorState): boolean {
   const scan = docScan(state.doc)
   const at = state.selection.main.to
-  const line = state.doc.lineAt(at)
-  const i = line.number - 1
-  if (scan.citations.mask[i] || scan.fences[i]) return false
-  return !isInsideInlineCode(line.text, at - line.from)
+  return state.doc.lineAt(at).number - 1 < scan.citations.firstLine && !inCodeAt(scan, at)
 }
 
 /** One transaction, so one undo takes the whole act. Returns what landed in the original document's coordinates. */

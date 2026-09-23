@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { calloutDeleteVerdict, calloutGuard } from './calloutGuard'
-import { scanOf } from '../Engine/scanCache'
+import { scanDoc } from '../Engine/docScan'
 
 const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean => {
-  const s = scanOf(doc)
+  const s = scanDoc(doc)
   return calloutDeleteVerdict(doc, from, to, { lines: s.lines, info: s.callouts }).kind !== 'ok'
 }
 

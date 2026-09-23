@@ -239,7 +239,7 @@ describe('fence run length — a longer fence holds shorter ones', () => {
   it('an equal or longer run closes; a shorter one never does', () => {
     expect(roles('`````\na\n`````\nafter')).toEqual(['open', 'content', 'close', undefined])
     expect(roles('`````\na\n```````\nafter')).toEqual(['open', 'content', 'close', undefined])
-    expect(roles('`````\na\n```\nafter')).toEqual(['open', 'content', 'content', 'content'])
+    expect(roles('`````\na\n```\nafter')).toEqual([undefined, undefined, undefined, undefined])
   })
   it('a closer carrying an info word is content — only a bare run ends the block', () => {
     expect(roles('```\n```js\nx\n```\nafter')).toEqual([

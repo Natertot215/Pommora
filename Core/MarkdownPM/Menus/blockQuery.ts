@@ -1,4 +1,5 @@
-import { inSealedBlockAt, lineIndexAt, type DocScan } from '../Engine/docScan'
+import { inSealedBlockAt, type DocScan } from '../Engine/docScan'
+import { lineIndexAt } from '../Engine/markdownCode'
 
 export interface BlockQuery {
   query: string
@@ -11,6 +12,6 @@ export function blockQueryAt(scan: DocScan, caret: number): BlockQuery | null {
   const from = scan.lineStarts[i]
   const match = /^\/(\S*)$/.exec(scan.lines[i])
   if (!match || caret !== from + scan.lines[i].length) return null
-  if (inSealedBlockAt(scan, i) || scan.citations.mask[i]) return null
+  if (inSealedBlockAt(scan, i) || i >= scan.citations.firstLine) return null
   return { query: match[1], from, to: caret }
 }

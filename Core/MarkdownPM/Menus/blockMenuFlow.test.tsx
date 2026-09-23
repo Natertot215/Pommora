@@ -127,7 +127,7 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
   })
 
   it('never opens inside a code fence', async () => {
-    const view = await open('```\n')
+    const view = await open('```\n\n```', 4)
     await type(view, '/')
     expect(pane()).toBeNull()
   })

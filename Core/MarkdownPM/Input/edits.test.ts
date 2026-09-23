@@ -105,8 +105,8 @@ describe('checkbox canonicalization', () => {
     expect(apply(doc, canonicalizeCheckbox(doc, 4, 4, ' ')!)).toBe('- [x] ')
   })
   it('a fence line keeps its marker on backspace', () => {
-    const doc = '```\n- [ ] '
-    expect(smartBackspace(scanDoc(doc), doc.length, doc.length)).toBeNull()
+    const doc = '```\n- [ ] \n```'
+    expect(smartBackspace(scanDoc(doc), 10, 10)).toBeNull()
   })
 })
 
@@ -431,7 +431,7 @@ describe('ellipsis', () => {
   })
   it('stays literal past three dots, in code, and when off', () => {
     expect(ellipsis(scanDoc('...'), 3, 3, '.')).toBeNull()
-    expect(ellipsis(scanDoc('```\n..'), 6, 6, '.')).toBeNull()
+    expect(ellipsis(scanDoc('```\n..\n```'), 6, 6, '.')).toBeNull()
     expect(ellipsis(scanDoc('`a..`'), 4, 4, '.')).toBeNull()
     expect(dashArrow(scanDoc('`--`'), 3, 3, 'x')).toBeNull()
     expect(ellipsis(scanDoc('..'), 2, 2, '.', { transformEllipses: false })).toBeNull()

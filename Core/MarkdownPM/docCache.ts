@@ -2,7 +2,7 @@
 import type { Text } from '@codemirror/state'
 import { docLineIntents } from './Engine/intents'
 import type { MarkdownScope } from './Engine/detect'
-import { scanOf } from './Engine/scanCache'
+import { scanDoc } from './Engine/docScan'
 import { headingOutlineOf } from './Engine/headingScan'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import type { Token } from './Engine/tokens'
@@ -22,7 +22,7 @@ export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
 
 export const docString = perDoc((doc) => doc.toString())
 
-export const docScan = perDoc((doc) => scanOf(docString(doc)))
+export const docScan = perDoc((doc) => scanDoc(docString(doc)))
 
 /** One cache per vocabulary: `perDoc` keys on the text alone, and the same text read as a page and as a cell derives differently. */
 export function perScopedDoc<T>(

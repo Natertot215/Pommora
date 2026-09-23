@@ -96,7 +96,7 @@ describe('the fencing blank', () => {
 })
 
 describe('the rebuild gate reads the scanner', () => {
-  it('a fence typed above a tile dissolves it; deleting the fence restores it', () => {
+  it('a fence closed around a tile dissolves it; a lone fence above leaves it', () => {
     let state = mk('x\n\n![[Alpha]]')
     const tiles = (): number =>
       state.field(embedField as never, false) === undefined
@@ -104,6 +104,8 @@ describe('the rebuild gate reads the scanner', () => {
         : (state.field(embedField as never) as { ranges: unknown[] }).ranges.length
     expect(tiles()).toBe(1)
     state = state.update({ changes: { from: 0, to: 0, insert: '```\n' } }).state
+    expect(tiles()).toBe(1)
+    state = state.update({ changes: { from: state.doc.length, insert: '\n```' } }).state
     expect(tiles()).toBe(0)
     state = state.update({ changes: { from: 0, to: 4, insert: '' } }).state
     expect(tiles()).toBe(1)

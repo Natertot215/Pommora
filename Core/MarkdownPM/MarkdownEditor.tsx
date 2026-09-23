@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { docOutline, docString } from './docCache'
+import { docOutline, docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
@@ -30,7 +30,7 @@ import {
   setEmbedZooms,
 } from './Embeds/embedWidget'
 import { embeddable } from './Engine/embedRanges'
-import { type PageStats, selectionStats } from './Engine/subfieldStats'
+import { type PageStats, computeStats } from './Engine/subfieldStats'
 import { customCaret } from './caret'
 import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
@@ -373,8 +373,18 @@ export function MarkdownEditor({
           const last = lastRangeRef.current
           if (u.docChanged || range?.from !== last?.from || range?.to !== last?.to) {
             lastRangeRef.current = range
+            const fences = range ? docScan(u.state.doc).fences : []
+            const first = u.state.doc.lineAt(main.from).number - 1
             onSelectionRef.current(
-              range ? selectionStats(u.state.sliceDoc(range.from, range.to)) : null,
+              range
+                ? computeStats(
+                    u.state
+                      .sliceDoc(range.from, range.to)
+                      .split('\n')
+                      .map((line, k) => (fences[first + k] ? '' : line))
+                      .join('\n'),
+                  )
+                : null,
             )
           }
         }

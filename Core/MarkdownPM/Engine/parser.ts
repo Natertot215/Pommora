@@ -2,11 +2,21 @@ import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfm } from 'micromark-extension-gfm'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import type { Root } from 'mdast'
+import type { DocScan } from './docScan'
+import { fenceAt } from './markdownCode'
 
 const options = { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] }
 
-export function parse(text: string): Root {
-  return fromMarkdown(text, options)
+export function parse(text: string, scan?: DocScan): Root {
+  let read = text
+  if (scan)
+    for (const k of scan.fenceLines) {
+      const f = fenceAt(scan.lines[k])
+      if (scan.fences[k] !== undefined || f === null) continue
+      const at = scan.lineStarts[k] + f.markerEnd - f.length
+      read = read.slice(0, at) + 'x'.repeat(f.length) + read.slice(at + f.length)
+    }
+  return fromMarkdown(read, options)
 }
 
 // Line-scoped so an unclosed `[[` never bleeds across lines.

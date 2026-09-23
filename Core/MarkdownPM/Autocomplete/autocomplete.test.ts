@@ -7,10 +7,10 @@ import {
   openHeadingRows,
 } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
-import { scanOf } from '../Engine/scanCache'
+import { scanDoc } from '../Engine/docScan'
 
 const autocompleteQuery = (doc: string, caret: number, allowEmbeds = false, armed?: number) =>
-  queryOf(scanOf(doc), caret, allowEmbeds, armed)
+  queryOf(scanDoc(doc), caret, allowEmbeds, armed)
 
 const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
 
