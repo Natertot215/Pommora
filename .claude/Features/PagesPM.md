@@ -1,7 +1,7 @@
 ## Pages
 
 
-A Page is one Markdown file inside a Collection — the operational entity that holds free prose. It is a single Markdown file with YAML frontmatter for identity — keyed via `ID:` — and property values above a Markdown body, edited in MarkdownPM. Membership is by location: a file inside a Collection, or inside one of its Sets at any depth, is a Page of that Collection and conforms to that Collection's property schema, with no container field of its own. The body is portable Markdown and accessed via MarkdownPM, which can hold internal and external embeddings, as well as Connections to other Pages. Per-page interface state — heading folds, the header icon's visibility, per-table heading-column choices, the footnotes override, embedded tile heights and scaling factors — are persisted per-machine in `nexus.db`, and keyed by `ID:`.
+A Page is one Markdown file inside a Collection — the operational entity that holds free prose. It is a single Markdown file with YAML frontmatter for identity — keyed via `ID:` — and property values above a Markdown body, edited in MarkdownPM. Membership is by location: a file inside a Collection, or inside one of its Sets at any depth, is a Page of that Collection and conforms to that Collection's property schema, with no container field of its own. The body is portable Markdown and accessed via MarkdownPM, which can hold internal and external embeddings, as well as Connections to other Pages. Per-page interface state — heading folds, per-table heading-column choices, the footnotes override, embedded tile heights and scaling factors — are persisted per-machine in `nexus.db`, and keyed by `ID:`.
 
 ### On-Disk Shape
 
@@ -11,7 +11,7 @@ A page stores no dates of its own. Its **Creation Time** is the instant encoded 
 
 ### Title + Membership
 
-The filename minus `.md` is the title; there is no `title` field, and a rename is a file rename. The page's header shows its `icon` beside the title when the page is opted into showing it, a choice kept per machine. Within a folder, names must be unique: creating a page under a taken name disambiguates with a numeric suffix, while renaming onto a taken name is refused. Titles aren't unique Nexus-wide, so two Pages in different folders can share one, and a connection to a shared title resolves as ambiguous.
+The filename minus `.md` is the title; there is no `title` field, and a rename is a file rename. The page's header shows its `icon` beside the title when **Show Icon In Title** is on, and any page can override that from its title's menu, the override kept in its page metadata. Within a folder, names must be unique: creating a page under a taken name disambiguates with a numeric suffix, while renaming onto a taken name is refused. Titles aren't unique Nexus-wide, so two Pages in different folders can share one, and a connection to a shared title resolves as ambiguous.
 
 Every creation surface — the sidebar, a table row, a card, the grid — runs one act (`createDisambiguated` in `Core/Nexus/mutate.ts`): the page exists on disk as **Untitled** the moment the gesture fires, and its title opens as an uncommitted rename with an empty field. Confirming names the page, disambiguating like a create; leaving the field any other way keeps Untitled.
 

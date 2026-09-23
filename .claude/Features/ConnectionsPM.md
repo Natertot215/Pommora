@@ -56,7 +56,7 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 - **After a pipe** — the aliases this Page has been given before. Accepting a page whose aliases are worth offering opens the list without a keystroke when **Automatically Suggest Existing Aliases When Linking A Page** is on, and **Remove Title On Link Change** decides whether re-aiming a link drops the alias it wore. Each row carries a hover-revealed × that forgets that alias, and an alias names no location of its own, so it wears no trail.
 - **Inside a markdown link's `( )`** — Pages; accepting one encodes the target and hands the caret to the label, pre-filled with the page's title and selected.
 
-**Alias memory.** A Page remembers the aliases it has been given. The list is written when an alias is authored rather than derived by scanning bodies, so forgetting one sticks. It is keyed by page id, so it survives a rename, and lives in `nexus.db` as a per-machine accelerator — the alias itself is on the page in universal syntax, and losing the record costs a suggestion, never a link.
+**Alias memory.** A Page remembers the aliases it has been given. The list is written when an alias is authored rather than derived by scanning bodies, so forgetting one sticks. It is keyed by page id, so it survives a rename, and lives in the page's metadata, so it travels with the Nexus — the alias itself is on the page in universal syntax, and losing the record costs a suggestion, never a link.
 
 ### In-Page Heading Resolution
 

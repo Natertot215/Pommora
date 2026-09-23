@@ -1,7 +1,7 @@
 ## Configuration
 
 
-Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in that Nexus's database under the app's userData directory. This document is the one roster of every knob; other documents name a setting by its label and point here.
+Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter, its page metadata, and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in that Nexus's database under the app's userData directory. This document is the one roster of every knob; other documents name a setting by its label and point here.
 
 ### Settings
 
@@ -137,6 +137,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Editor Scale | `editorScale` | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% (**100%**) |
 | Heading 1–6 Size | `heading1Size` … `heading6Size` | Each heading level's size in em of the page text; the space above a heading follows its size. | 0.50em–2.50em (**1.80 · 1.60 · 1.40 · 1.20 · 1.10 · 1.00**) |
 | Outliner Lines | `outlinerLines` | Draws indent rails on nested lists in the editor. | On · **Off** |
+| Show Icon In Title | `titleIcon` | Draws each page's icon beside its title; a page can override it from its title's menu. | On · **Off** |
 | Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
 | Arrows | `transformArrows` | `->`, `<-`, `<->`, `>>`, and `<<` become `→`, `←`, `↔`, `»`, and `«`; an arrow list's marker converts either way. | **On** · Off |
 | Equations | `transformEquations` | `>=`, `<=`, `!=` · `/=` · `=/`, `+-` · `-+`, and `~=` become `≥`, `≤`, `≠`, `±`, and `≈`. | **On** · Off |
@@ -218,13 +219,13 @@ The sidecar's remaining fields are structure rather than configuration: the enti
 
 ### Pages
 
-A page's own configuration splits by where it lives: identity and banner in the file, icon in page metadata, chrome per machine.
+A page's own configuration splits by where it lives: identity and banner in the file, icon and title-icon override in page metadata, chrome per machine.
 
 | Setting | Where | Description | Set from |
 | --- | --- | --- | --- |
-| Icon | `icon` in `.nexus/metadata/MM-YYYY.json` | The page's glyph, shown beside its title where the header is opted in. | The header's or a row's Edit Icon |
+| Icon | `icon` in `.nexus/metadata/MM-YYYY.json` | The page's glyph, shown beside its title. | The header's or a row's Edit Icon |
 | Banner | `banner` in frontmatter, its crop in `.nexus/assets/crops.json` | The banner image and how it is framed. | The header's banner menu |
-| Header icon | `nexus.db` | Whether the header draws the glyph. | The header's Hide Icon / Show Icon |
+| Title icon | `title_icon` in `.nexus/metadata/MM-YYYY.json` | Whether the header draws the glyph, overriding Show Icon In Title; stored only where it differs from the setting. | The header's Hide Icon / Show Icon |
 | Footnotes | `nexus.db` | Whether the citations section shows, overriding Show Footnotes By Default. | The Subfield's Show / Hide Footnotes |
 | Heading folds | `nexus.db` | Which headings are collapsed. | The fold chevrons |
 | Embed heights and Scale | `nexus.db` | Each embedded tile's dragged height and Scale factor, per host page and target. | The tile's edge and grip menu |
