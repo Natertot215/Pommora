@@ -102,6 +102,38 @@ describe('the title search', () => {
     expect(empty.change).toHaveBeenCalledWith(null)
   })
 
+  it('a search from the hint slides the title away, and any other door replaces it at once', async () => {
+    const fromHint = search()
+    await render(fromHint)
+    act(() => q('.detail-title-search').focus())
+    await render({ ...fromHint, query: '' })
+    expect(q('.detail-title-lead').classList.contains('is-searching')).toBe(true)
+    expect(q('.detail-title-lead').classList.contains('is-instant')).toBe(false)
+    await render(search({ query: null }))
+    act(() => q('.detail-title-text').click())
+    await render(search({ query: '' }))
+    expect(q('.detail-title-lead').classList.contains('is-instant')).toBe(true)
+  })
+
+  it('picking Rename ends an open search, so the title it renames is back in view', async () => {
+    const s = search({ query: 'ab' })
+    await act(async () => {
+      root.render(
+        <DetailTitleHeader
+          title="Ideas"
+          onRename={vi.fn()}
+          requestMenu={async () => 'rename'}
+          onEditIcon={vi.fn()}
+          search={s}
+        />,
+      )
+    })
+    await act(async () => {
+      q('.detail-title-text').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(s.change).toHaveBeenCalledWith(null)
+  })
+
   it('refocusing an open field leaves the search and its caret alone', async () => {
     const s = search({ query: 'abc' })
     await render(s)

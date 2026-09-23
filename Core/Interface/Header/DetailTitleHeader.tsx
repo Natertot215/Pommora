@@ -51,6 +51,9 @@ export function DetailTitleHeader({
   const searching = search?.query != null
   const hint = useHoverDwell(search !== undefined && !searching && !editing, false, HINT_GRACE_MS)
   const field = useRef<HTMLInputElement>(null)
+  // Only a search opened from the hint slides the title away; every other door replaces it at once.
+  const fromHint = useRef(false)
+  if (!searching) fromHint.current = false
   const seenSummon = useRef(search?.summon)
   useEffect(() => {
     if (search?.summon === seenSummon.current) return
@@ -66,8 +69,10 @@ export function DetailTitleHeader({
     e.preventDefault()
     e.stopPropagation()
     const action = await requestMenu()
-    if (action === 'rename') setEditing(true)
-    else if (action === 'editIcon') onEditIcon()
+    if (action === 'rename') {
+      search?.change(null)
+      setEditing(true)
+    } else if (action === 'editIcon') onEditIcon()
     else if (action === 'toggleIcon') onToggleIcon?.()
     else if (action === 'search') search?.start()
   }
@@ -109,11 +114,29 @@ export function DetailTitleHeader({
       {search ? (
         <>
           <span
-            className={cx('detail-title-lead', overScrollLabel)}
+            className={cx(
+              'detail-title-lead',
+              overScrollLabel,
+              searching && 'is-searching',
+              searching && !fromHint.current && 'is-instant',
+            )}
             onPointerEnter={() => hint.hover(true)}
             onPointerLeave={() => hint.hover(false)}
           >
-            {label}
+            <span className={cx(labelSlot, searching && labelSlotHidden, 'detail-title-slot')}>
+              <span className="detail-title-slot-run">
+                {label}
+                <span
+                  className={cx(
+                    segment,
+                    'detail-title-hint-segment',
+                    titleActionFade,
+                    !hint.on && !searching && titleActionFadeHidden,
+                  )}
+                  aria-hidden
+                />
+              </span>
+            </span>
             <span
               className={cx(
                 labelSlot,
@@ -121,27 +144,31 @@ export function DetailTitleHeader({
                 'detail-title-hint',
               )}
             >
-              <span className="detail-title-hint-run">
-                <span className={cx(segment, 'detail-title-hint-segment')} aria-hidden />
-                <SearchField
-                  inputRef={field}
-                  tabIndex={-1}
-                  placeholder="Search"
-                  value={search.query ?? ''}
-                  onValueChange={search.change}
-                  className={cx(base, 'detail-title-search')}
-                  onFocus={searching ? undefined : search.start}
-                  onKeyDown={(e) => {
-                    if (e.key !== 'Escape') return
-                    e.preventDefault()
-                    search.change(null)
-                  }}
-                  onBlur={() => {
-                    if (!search.query?.trim()) search.change(null)
-                  }}
-                  onContextMenu={(e) => e.stopPropagation()}
-                />
-              </span>
+              <SearchField
+                inputRef={field}
+                tabIndex={-1}
+                placeholder="Search"
+                value={search.query ?? ''}
+                onValueChange={search.change}
+                className={cx(base, 'detail-title-search')}
+                onFocus={
+                  searching
+                    ? undefined
+                    : () => {
+                        fromHint.current = true
+                        search.start()
+                      }
+                }
+                onKeyDown={(e) => {
+                  if (e.key !== 'Escape') return
+                  e.preventDefault()
+                  search.change(null)
+                }}
+                onBlur={() => {
+                  if (!search.query?.trim()) search.change(null)
+                }}
+                onContextMenu={(e) => e.stopPropagation()}
+              />
             </span>
           </span>
           <span
