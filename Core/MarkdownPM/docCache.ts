@@ -1,5 +1,6 @@
 // CM's Text.toString() re-joins the rope on every call, and extensions re-scanning the result per keystroke was the lag source.
 import type { Text, Transaction } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 import { docLineIntents, stepLineIntents } from './Engine/intents'
 import type { MarkdownScope } from './Engine/detect'
 import { rescan, scanDoc } from './Engine/docScan'
@@ -35,6 +36,21 @@ export function perDoc<T>(
 
 export const docString = perDoc((doc) => doc.toString())
 
+/** Each view keeps what its last pass drew, by text, so a pass derives only what changed and holds nothing it has moved past. */
+export function drawnLast<T>(derive: (text: string) => T) {
+  const last = new WeakMap<EditorView, Map<string, T>>()
+  return (view: EditorView, draw: (read: (text: string, keep?: boolean) => T) => void): void => {
+    const was = last.get(view)
+    const now = new Map<string, T>()
+    draw((text, keep = true) => {
+      const v = now.get(text) ?? was?.get(text) ?? derive(text)
+      if (keep) now.set(text, v)
+      return v
+    })
+    last.set(view, now)
+  }
+}
+
 function changedSpan(tr: Transaction): [number, number] {
   let from = tr.startState.doc.length
   let to = 0
@@ -51,8 +67,8 @@ export const docScan = perDoc(
 )
 
 interface PerScopedDoc<T> {
-  (doc: Text, scope?: MarkdownScope): T
-  after(tr: Transaction, scope?: MarkdownScope): T
+  (doc: Text, scope: MarkdownScope): T
+  after(tr: Transaction, scope: MarkdownScope): T
 }
 
 /** One cache per vocabulary: `perDoc` keys on the text alone, and the same text read as a page and as a cell derives differently. */
@@ -65,15 +81,10 @@ export function perScopedDoc<T>(
       (doc) => derive(doc, scope),
       (prev, tr) => step(prev, tr, scope),
     )
-  const page = of('page')
-  const cell = of('cell')
-  return Object.assign(
-    (doc: Text, scope: MarkdownScope = 'page') => (scope === 'cell' ? cell(doc) : page(doc)),
-    {
-      after: (tr: Transaction, scope: MarkdownScope = 'page') =>
-        scope === 'cell' ? cell.after(tr) : page.after(tr),
-    },
-  )
+  const scoped = { page: of('page'), cell: of('cell') }
+  return Object.assign((doc: Text, scope: MarkdownScope) => scoped[scope](doc), {
+    after: (tr: Transaction, scope: MarkdownScope) => scoped[scope].after(tr),
+  })
 }
 
 export const docLineIntentsOf = perScopedDoc(

@@ -1,4 +1,4 @@
-import { codeAt, fenceAt, lineIndexAt, type CodeMask } from './markdownCode'
+import { codeAt, fenceAt, lineEndOf, lineIndexAt, type CodeMask } from './markdownCode'
 import {
   assembleCitations,
   blockEmbedLines,
@@ -47,14 +47,14 @@ export interface DocScan extends DocLines {
 
 type LineScan = Omit<DocScan, 'citations'>
 
-type Span = readonly [number, number] | { readonly from: number; readonly to: number }
+export type Span = readonly [number, number] | { readonly from: number; readonly to: number }
 
 // ── Construction ────────────────────────────────────────────────────────
 
 function scanLines(d: DocLines): LineScan {
   const { lines, lineStarts } = d
   const fences = scanFencedCode(lines, lineStarts)
-  const inCode: CodeMask = (p) => codeAt(d, (i) => fences[i] !== undefined, p)
+  const inCode: CodeMask = (p) => inCodeAt({ lines, lineStarts, fences }, p)
   const tables = tableRegions(d, inCode)
   const base: [number, number][] = [
     ...fenceRangesOf(fences),
@@ -111,23 +111,18 @@ export function rescan(prev: DocScan, from: number, to: number, text: string): D
   const n = prev.lines.length
   const shift = text.length - prev.text.length
   let a = lineIndexAt(prev, from)
-  while (!quietAt(prev, a)) a--
   let b = lineIndexAt(prev, to) + 1
-  while (b < n && !quietAt(prev, b)) b++
   for (;;) {
+    while (!quietAt(prev, a)) a--
+    while (b < n && !quietAt(prev, b)) b++
     const start = prev.lineStarts[a]
     const end = b < n ? prev.lineStarts[b] - 1 + shift : text.length
     const w = scanLines(splitWithOffsets(` ${text.slice(start, end)}`.slice(1)))
     const above = loneAbove(prev, w, a)
-    if (above < a) {
-      a = above
-      while (!quietAt(prev, a)) a--
-    } else if (b === n || (quietAt(w, w.lines.length) && !pairsBelow(prev, w, b)))
+    if (above < a) a = above
+    else if (b === n || (quietAt(w, w.lines.length) && !pairsBelow(prev, w, b)))
       return withCitations(splice(prev, a, b, w, start, shift, text))
-    else {
-      b = Math.min(n, 2 * b - a)
-      while (b < n && !quietAt(prev, b)) b++
-    }
+    else b = Math.min(n, 2 * b - a)
   }
 }
 
@@ -220,7 +215,8 @@ function splice(
   }
 }
 
-const fromOf = (s: Span): number => ('from' in s ? s.from : s[0])
+export const fromOf = (s: Span): number => ('from' in s ? s.from : s[0])
+export const toOf = (s: Span): number => ('to' in s ? s.to : s[1])
 const moveRange = ([f, t]: [number, number], d: number): [number, number] => [f + d, t + d]
 const moveLine = <L extends { from: number; to: number }>(l: L, d: number): L => ({
   ...l,
@@ -311,12 +307,19 @@ export function spanAt<S extends Span>(spans: readonly S[], pos: number): S | un
   }
   if (hit < 0) return undefined
   const s = spans[hit]
-  return pos <= ('to' in s ? s.to : s[1]) ? s : undefined
+  return pos <= toOf(s) ? s : undefined
 }
+
+export function inJoinedMath(scan: LineScan, i: number, first: number, last: number): boolean {
+  const math = spanAt(scan.maths, scan.lineStarts[i])
+  return math !== undefined && math[0] >= scan.lineStarts[first] && math[0] <= lineEndOf(scan, last)
+}
+
+export const indentWidth = (line: string): number => /^[ \t]*/.exec(line)![0].length
 
 export function quotePrefixWidth(line: string, levels: number): number {
   if (levels === 0) return 0
-  let w = /^[ \t]*/.exec(line)?.[0].length ?? 0
+  let w = indentWidth(line)
   for (let k = 0; k < levels && line[w] === '>'; k++)
     w += line[w + 1] === ' ' || line[w + 1] === '\t' ? 2 : 1
   return w

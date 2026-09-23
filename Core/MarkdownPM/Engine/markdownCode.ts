@@ -59,21 +59,16 @@ interface FenceSpan {
 // The one fence-pairing pass; a layer pairing fences for itself is how two of them come to disagree about the same document. A block needs its closer: an opener nothing closes before the document or its blockquote ends is a line of prose, where CommonMark would run it to the end.
 export function fenceSpans(lines: string[]): FenceSpan[] {
   const spans: FenceSpan[] = []
-  let i = 0
-  while (i < lines.length) {
+  for (let i = 0; i < lines.length; i++) {
     const open = fenceAt(lines[i])
-    let j = i + 1
-    while (open !== null && j < lines.length && quoteDepthOf(lines[j]) >= open.depth) {
+    if (open === null) continue
+    for (let j = i + 1; j < lines.length && quoteDepthOf(lines[j]) >= open.depth; j++) {
       const f = fenceAt(lines[j])
-      if (f !== null && fenceCloses(open, f)) break
-      j++
+      if (f === null || !fenceCloses(open, f)) continue
+      spans.push({ open: i, close: j, fence: open })
+      i = j
+      break
     }
-    if (open === null || j === lines.length || quoteDepthOf(lines[j]) < open.depth) {
-      i++
-      continue
-    }
-    spans.push({ open: i, close: j, fence: open })
-    i = j + 1
   }
   return spans
 }
@@ -123,10 +118,9 @@ export function inlineSpans(line: string): [number, number][] {
 
 export type CodeMask = (offset: number) => boolean
 
-export function lineIndexAt(
-  d: { lines: readonly string[]; lineStarts: readonly number[] },
-  pos: number,
-): number {
+type LineTable = { readonly lines: readonly string[]; readonly lineStarts: readonly number[] }
+
+export function lineIndexAt(d: LineTable, pos: number): number {
   const { lines, lineStarts } = d
   let lo = 0
   let hi = lines.length - 1
@@ -138,13 +132,11 @@ export function lineIndexAt(
   return lo
 }
 
-export function codeAt(
-  d: { lines: readonly string[]; lineStarts: readonly number[] },
-  fenced: (line: number) => boolean,
-  offset: number,
-): boolean {
-  const last = d.lines.length - 1
-  if (offset < 0 || offset > d.lineStarts[last] + d.lines[last].length) return false
+export const lineEndOf = (d: LineTable, line: number): number =>
+  d.lineStarts[line] + d.lines[line].length
+
+export function codeAt(d: LineTable, fenced: (line: number) => boolean, offset: number): boolean {
+  if (offset < 0 || offset > lineEndOf(d, d.lines.length - 1)) return false
   const i = lineIndexAt(d, offset)
   return fenced(i) || isInsideInlineCode(d.lines[i], offset - d.lineStarts[i])
 }

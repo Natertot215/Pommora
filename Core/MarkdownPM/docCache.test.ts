@@ -7,7 +7,7 @@ import { EditorState, type RangeSet, type RangeValue } from '@codemirror/state'
 import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
 import { docLineIntentsOf, docScan } from './docCache'
 import { docAtomics, markdownDecorations } from './decorations'
-import { docLineIntents } from './Engine/intents'
+import { type DecoIntent, docLineIntents } from './Engine/intents'
 import { scanDoc } from './Engine/docScan'
 
 vi.mock('./Engine/docScan', async (original) => {
@@ -75,6 +75,15 @@ const ranges = <T extends RangeValue>(set: RangeSet<T>): [number, number][] => {
   return out
 }
 
+const atomicsOf = (perLine: DecoIntent[][]): [number, number][] =>
+  perLine
+    .flatMap((line) =>
+      line.flatMap((it): [number, number][] =>
+        it.kind === 'atomic' && it.to > it.from ? [[it.from, it.to]] : [],
+      ),
+    )
+    .sort((x, y) => x[0] - y[0] || x[1] - y[1])
+
 const fullScans = (): number => vi.mocked(scanDoc).mock.calls.length
 
 function type(view: EditorView, e: { from: number; to?: number; insert: string }): void {
@@ -103,28 +112,16 @@ describe('docCache — every version steps from the last', () => {
 
   it('steps the scan, the intents, and the atomics to what a fresh derivation reads', async () => {
     const view = await mountEditor({ initialBody: BODY })
-    const dense = ({ fresh, ...s }: ReturnType<typeof scanDoc>): Record<string, unknown> => ({
-      ...s,
-      fences: Array.from(s.fences),
-      callouts: Array.from(s.callouts),
-    })
     const agrees = (): void => {
       const doc = view.state.doc
       const whole = scanDoc(doc.toString())
-      const stepped = dense(docScan(doc))
-      const derived = dense(whole)
-      expect(
-        Object.keys(derived).filter((k) => !isDeepStrictEqual(stepped[k], derived[k])),
-      ).toEqual([])
-      const { fresh: _a, ...intents } = docLineIntentsOf(doc)
-      const { fresh: _b, ...wholeIntents } = docLineIntents(whole)
+      const { fresh: _a, ...stepped } = docScan(doc)
+      const { fresh: _b, ...derived } = whole
+      expect(isDeepStrictEqual(stepped, derived)).toBe(true)
+      const { fresh: _c, ...intents } = docLineIntentsOf(doc, 'page')
+      const { fresh: _d, ...wholeIntents } = docLineIntents(whole)
       expect(isDeepStrictEqual(intents, wholeIntents)).toBe(true)
-      const atomics = wholeIntents.perLine.flatMap((line) =>
-        line.flatMap((it): [number, number][] =>
-          it.kind === 'atomic' && it.to > it.from ? [[it.from, it.to]] : [],
-        ),
-      )
-      expect(ranges(docAtomics(doc))).toEqual(atomics.sort((x, y) => x[0] - y[0] || x[1] - y[1]))
+      expect(ranges(docAtomics(doc, 'page'))).toEqual(atomicsOf(wholeIntents.perLine))
     }
     for (const edit of EDITS) {
       type(view, edit(view.state.doc.toString()))
@@ -175,13 +172,9 @@ describe('docCache — every version steps from the last', () => {
             insert: to > from && next(2) === 0 ? '' : PIECES[next(PIECES.length)],
           },
         }).state
-        const whole = docLineIntents(scanDoc(state.doc.toString()), scope).perLine.flatMap((line) =>
-          line.flatMap((it): [number, number][] =>
-            it.kind === 'atomic' && it.to > it.from ? [[it.from, it.to]] : [],
-          ),
-        )
+        const whole = docLineIntents(scanDoc(state.doc.toString()), scope)
         expect(ranges(docAtomics(state.doc, scope)), `${scope} step ${step}`).toEqual(
-          whole.sort((x, y) => x[0] - y[0] || x[1] - y[1]),
+          atomicsOf(whole.perLine),
         )
       }
     }

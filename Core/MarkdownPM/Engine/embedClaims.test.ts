@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { blockEmbedLines, splitWithOffsets } from './detect'
 import { scanDoc } from './docScan'
-import { claimedEmbeds } from './embedRanges'
+import { claimedEmbeds } from './embedClaims'
 
 const lines = splitWithOffsets
 const docEmbedLines = (doc: string): ReturnType<typeof blockEmbedLines> => scanDoc(doc).embeds

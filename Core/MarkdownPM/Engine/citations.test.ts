@@ -1,27 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { parse } from './parser'
-import {
-  citationScan,
-  fenceRangesOf,
-  foldLabel,
-  markerRegex,
-  scanFencedCode,
-  splitWithOffsets,
-  type CitationScan,
-} from './detect'
-import { tableRegions } from './Tables/regions'
+import { foldLabel, markerRegex, type CitationScan } from './detect'
+import { scanDoc } from './docScan'
 
-/** Fences and tables excluded as the editor's own scan excludes them, so these cases read the document as it does. */
-function scan(text: string): CitationScan {
-  const d = splitWithOffsets(text)
-  const fences = scanFencedCode(d.lines, d.lineStarts)
-  const tables = tableRegions(d)
-  const excluded: [number, number][] = [
-    ...fenceRangesOf(fences),
-    ...tables.map((r): [number, number] => [r.from, r.to]),
-  ]
-  return citationScan(d, excluded)
-}
+const scan = (text: string): CitationScan => scanDoc(text).citations
 
 describe('citationScan — the boundary', () => {
   it('reads a plain trailing run', () => {

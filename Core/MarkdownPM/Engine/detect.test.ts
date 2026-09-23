@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { tokenize } from './tokens'
+import { scanDoc } from './docScan'
 import {
   isThematicBreakLine,
   isHeadingLine,
@@ -7,7 +8,6 @@ import {
   isInlineMathContent,
   parseListMarker,
   indentLevel,
-  calloutLines,
   calloutHeadPrefixLen,
   parseListMarkerPrefixed,
   scanFencedCode,
@@ -142,6 +142,9 @@ describe('inline math heuristic', () => {
     expect(isInlineMathContent('word')).toBe(false)
   })
 })
+
+const calloutLines = (lines: string[]): ReturnType<typeof scanDoc>['callouts'] =>
+  scanDoc(lines.join('\n')).callouts
 
 describe('callout detection', () => {
   it('marks every line of a `[!type]`-headed quote run as a callout (first/last + prefix to hide)', () => {

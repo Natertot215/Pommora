@@ -320,16 +320,20 @@ export const NO_CARET = -1
 
 type LineFacts = Pick<CachedLineIntents, 'perLine' | 'listLevels' | 'listKinds'>
 
-function deriveLines(scan: DocScan, from: number, to: number, scope: MarkdownScope): LineFacts {
-  const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [] }
+function deriveLines(
+  facts: LineFacts,
+  scan: DocScan,
+  from: number,
+  to: number,
+  scope: MarkdownScope,
+): void {
   for (let i = from; i < to; i++) {
     const out: DecoIntent[] = []
     const li = lineIntentsInto(scan, i, NO_CARET, out, scope)
-    facts.perLine.push(out)
-    facts.listLevels.push(li ? li.level : -1)
-    facts.listKinds.push(li ? (railTypeClass(li) ?? '') : '')
+    facts.perLine[i] = out
+    facts.listLevels[i] = li ? li.level : -1
+    facts.listKinds[i] = li ? (railTypeClass(li) ?? '') : ''
   }
-  return facts
 }
 
 function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
@@ -338,7 +342,9 @@ function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): 
 
 export function docLineIntents(scan: DocScan, scope: MarkdownScope = 'page'): CachedLineIntents {
   const n = scan.lines.length
-  return withRails(scan, deriveLines(scan, 0, n, scope), [[0, n]])
+  const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [] }
+  deriveLines(facts, scan, 0, n, scope)
+  return withRails(scan, facts, [[0, n]])
 }
 
 const moveIntent = (it: DecoIntent, by: number): DecoIntent =>
@@ -348,29 +354,23 @@ export function stepLineIntents(
   prev: CachedLineIntents,
   was: DocScan,
   scan: DocScan,
-  scope: MarkdownScope = 'page',
+  scope: MarkdownScope,
 ): CachedLineIntents {
   const [a, e] = scan.fresh
   const b = carriedFrom(was, scan)
   const shift = scan.text.length - was.text.length
-  const scanned = deriveLines(scan, a, e, scope)
+  const carry = <T>(old: T[], move?: (v: T) => T): T[] =>
+    old.slice(0, a).concat(new Array<T>(e - a), move ? old.slice(b).map(move) : old.slice(b))
   const facts: LineFacts = {
-    perLine: prev.perLine.slice(0, a).concat(
-      scanned.perLine,
-      prev.perLine.slice(b).map((line) => line.map((it) => moveIntent(it, shift))),
-    ),
-    listLevels: prev.listLevels.slice(0, a).concat(scanned.listLevels, prev.listLevels.slice(b)),
-    listKinds: prev.listKinds.slice(0, a).concat(scanned.listKinds, prev.listKinds.slice(b)),
+    perLine: carry(prev.perLine, (line) => line.map((it) => moveIntent(it, shift))),
+    listLevels: carry(prev.listLevels),
+    listKinds: carry(prev.listKinds),
   }
+  deriveLines(facts, scan, a, e, scope)
   const fresh: [number, number][] = [[a, e]]
   if (scope === 'page')
     for (const [from, to] of citationLines(was, scan, a, e, b)) {
-      const redone = deriveLines(scan, from, to, scope)
-      for (let k = from; k < to; k++) {
-        facts.perLine[k] = redone.perLine[k - from]
-        facts.listLevels[k] = redone.listLevels[k - from]
-        facts.listKinds[k] = redone.listKinds[k - from]
-      }
+      deriveLines(facts, scan, from, to, scope)
       fresh.push([from, to])
     }
   return withRails(scan, facts, fresh)

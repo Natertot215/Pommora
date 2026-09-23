@@ -1,7 +1,7 @@
 // `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
-import { lineEndOf, parseListMarkerPrefixed, type CalloutLine } from './detect'
-import { type DocScan, spanAt } from './docScan'
-import { lineIndexAt } from './markdownCode'
+import { parseListMarkerPrefixed, type CalloutLine } from './detect'
+import { type DocScan, inJoinedMath, type Span, fromOf, spanAt, toOf } from './docScan'
+import { lineEndOf, lineIndexAt } from './markdownCode'
 import { headingSections } from './headingScan'
 
 type BlockKind =
@@ -24,8 +24,6 @@ export interface Block {
 }
 
 interface BlockContext {
-  n: number
-  starts: number[]
   callout: (CalloutLine | undefined)[]
   listMember: boolean[]
   kindAt: (i: number) => BlockKind | null
@@ -36,7 +34,6 @@ function blockContext(scan: DocScan): BlockContext {
     lines,
     lineStarts: starts,
     fences,
-    maths,
     callouts: callout,
     quotes: bq,
     headings,
@@ -55,19 +52,8 @@ function blockContext(scan: DocScan): BlockContext {
       continue
     }
     let j = i
-    while (j + 1 < n) {
-      if (isMarker(j + 1) || isListCont(j + 1)) {
-        j++
-        continue
-      }
-      const math = spanAt(maths, starts[j + 1])
-      const opener = math && lineIndexAt(scan, math[0])
-      if (opener !== undefined && opener >= i && opener <= j) {
-        j++
-        continue
-      }
-      break
-    }
+    while (j + 1 < n && (isMarker(j + 1) || isListCont(j + 1) || inJoinedMath(scan, j + 1, i, j)))
+      j++
     let hasMarker = false
     for (let k = i; k <= j && !hasMarker; k++) hasMarker = isMarker(k)
     if (hasMarker) for (let k = i; k <= j; k++) listMember[k] = true
@@ -75,15 +61,13 @@ function blockContext(scan: DocScan): BlockContext {
   }
 
   const ranged = new Array<BlockKind | undefined>(n)
-  const hold = (kind: BlockKind, spans: readonly { from: number; to: number }[]): void => {
-    for (const { from, to } of spans)
-      for (let k = lineIndexAt(scan, from); k < n && starts[k] <= to; k++) ranged[k] ??= kind
+  const hold = (kind: BlockKind, spans: readonly Span[]): void => {
+    for (const s of spans)
+      for (let k = lineIndexAt(scan, fromOf(s)); k < n && starts[k] <= toOf(s); k++)
+        ranged[k] ??= kind
   }
   hold('table', scan.tables)
-  hold(
-    'math',
-    maths.map(([from, to]) => ({ from, to })),
-  )
+  hold('math', scan.maths)
   hold('embed', scan.embeds)
   hold('webpage', scan.webpages)
   // Box-first precedence: code/table/math beat heading/list so a `#` inside one isn't mis-read, and hr beats paragraph so it's never absorbed. The citations section owns no block, where a BlockKind of its own would span five sites the compiler wouldn't all check.
@@ -100,7 +84,7 @@ function blockContext(scan: DocScan): BlockContext {
     return 'paragraph'
   }
 
-  return { n, starts, callout, listMember, kindAt }
+  return { callout, listMember, kindAt }
 }
 
 // One per scan, so a hover, drag, or menu never re-walks the document the scan already walked.
@@ -116,7 +100,9 @@ function blockContextOf(scan: DocScan): BlockContext {
 
 export function blockAt(scan: DocScan, pos: number): Block | null {
   const ctx = blockContextOf(scan)
-  const { n, starts, callout, listMember } = ctx
+  const { callout, listMember } = ctx
+  const { lineStarts: starts } = scan
+  const n = scan.lines.length
   const ends = (i: number): number => lineEndOf(scan, i)
 
   const li = lineIndexAt(scan, pos)
@@ -190,9 +176,10 @@ interface BlockStart {
 /** Single pass over the shared block context; a per-line `blockAt` call would be O(n²). */
 export function blockStarts(scan: DocScan): BlockStart[] {
   const ctx = blockContextOf(scan)
-  const { n, starts, callout, listMember } = ctx
+  const { callout, listMember } = ctx
+  const starts = scan.lineStarts
   const out: BlockStart[] = []
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < scan.lines.length; i++) {
     const kind = ctx.kindAt(i)
     if (kind === null) continue
     // Range-backed kinds test by range identity, never the previous line's kind: a neighbor test would double-start a block whose interior holds a blank line, and swallow the second of two glued blocks.

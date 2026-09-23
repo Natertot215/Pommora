@@ -9,11 +9,10 @@ import {
   citationsFor,
   foldLabel,
   isLastReference,
-  lineEndOf,
   markersFor,
 } from '../Engine/detect'
 import { scanDoc } from '../Engine/docScan'
-import { lineIndexAt } from '../Engine/markdownCode'
+import { lineEndOf, lineIndexAt } from '../Engine/markdownCode'
 import { diffAsSingleReplace } from '../Engine/listDragModel'
 
 export type CitationSlice = DocLines & { citations: CitationScan }

@@ -4,7 +4,10 @@ import { scanDoc } from '../Engine/docScan'
 import { citationGuard } from '../Guards/citationGuard'
 import { fusedTableCount as fusedIn, tableMergeGuard, tablePasteGuard } from './guard'
 
-const fusedTableCount = (doc: string): number => fusedIn(scanDoc(doc))
+const fusedTableCount = (doc: string): number => {
+  const scan = scanDoc(doc)
+  return fusedIn(scan, 0, scan.lines.length)
+}
 
 const t1 = '| A | B |\n| --- | --- |\n| 1 | 2 |'
 const t2 = '| C | D |\n| --- | --- |\n| 3 | 4 |'

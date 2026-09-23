@@ -2,7 +2,7 @@ import type { Personalization } from '@pommora/core/Settings/personalization'
 import { isInsideWikilink } from '../Engine/parser'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { inCalloutAt, inCodeAt, spanAt, type DocScan } from '../Engine/docScan'
-import { fenceAt, lineIndexAt } from '../Engine/markdownCode'
+import { fenceAt, lineEndOf, lineIndexAt } from '../Engine/markdownCode'
 import {
   parseListMarker,
   isSequenced,
@@ -13,7 +13,6 @@ import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
   isBlockquoteLine,
-  lineEndOf,
   type MarkdownScope,
 } from '../Engine/detect'
 
@@ -530,8 +529,8 @@ export function closeBlockOnEnter(
   scan: DocScan,
   selStart: number,
   selEnd: number,
-  settings: Personalization = {},
-  typed = false,
+  settings: Personalization,
+  typed: boolean,
 ): Edit | null {
   if (selStart !== selEnd || settings.pairMarkers === false) return null
   const i = lineIndexAt(scan, selStart)

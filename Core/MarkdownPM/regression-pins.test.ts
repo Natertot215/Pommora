@@ -340,7 +340,7 @@ describe('a token chunk opens where the parser holds no state', () => {
     for (const start of cuts(scan)) {
       const a = scan.lineStarts[start]
       const tail = doc.slice(a)
-      const seen = tokenize(tail, scanDoc(tail)).map((t) => key(t, a))
+      const seen = tokenize(tail).map((t) => key(t, a))
       expect(seen).toEqual(truth.filter((k) => Number(k.split('@')[1]) >= a))
     }
   })

@@ -29,8 +29,8 @@ import {
   setEmbedHeights,
   setEmbedZooms,
 } from './Embeds/embedWidget'
-import { embeddable } from './Engine/embedRanges'
-import { type PageStats, computeStats } from './Engine/subfieldStats'
+import { embeddable } from './Engine/embedClaims'
+import { type PageStats, rangeStats } from './Engine/subfieldStats'
 import { customCaret } from './caret'
 import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
@@ -292,12 +292,7 @@ export function MarkdownEditor({
       markdownInput,
       formatGate.current.of(formatKeymap(lastCommands.current)),
       keymap.of([...defaultKeymap, ...historyKeymap]),
-      markdown({
-        addKeymap: false,
-        pasteURLAsLink: false,
-        completeHTMLTags: false,
-        codeLanguages,
-      }),
+      markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
       codeHighlight,
       EditorView.lineWrapping,
       // iOS soft-keyboard hints, no-ops on desktop — mobile scaffolding.
@@ -376,18 +371,8 @@ export function MarkdownEditor({
           const last = lastRangeRef.current
           if (u.docChanged || range?.from !== last?.from || range?.to !== last?.to) {
             lastRangeRef.current = range
-            const fences = range ? docScan(u.state.doc).fences : []
-            const first = u.state.doc.lineAt(main.from).number - 1
             onSelectionRef.current(
-              range
-                ? computeStats(
-                    u.state
-                      .sliceDoc(range.from, range.to)
-                      .split('\n')
-                      .map((line, k) => (fences[first + k] ? '' : line))
-                      .join('\n'),
-                  )
-                : null,
+              range ? rangeStats(docScan(u.state.doc), range.from, range.to) : null,
             )
           }
         }

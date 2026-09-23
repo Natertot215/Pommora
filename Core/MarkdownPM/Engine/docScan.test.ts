@@ -122,15 +122,11 @@ function twoEdits(r: () => number, text: string): { from: number; to: number; ne
 
 // ── The comparison ──────────────────────────────────────────────────────
 
-const dense = ({ fresh, ...s }: DocScan): Record<string, unknown> => ({
-  ...s,
-  fences: Array.from(s.fences),
-  callouts: Array.from(s.callouts),
-})
+const settled = ({ fresh, ...s }: DocScan): Record<string, unknown> => s
 
 function mismatch(a: DocScan, b: DocScan): string | null {
-  const x = dense(a)
-  const y = dense(b)
+  const x = settled(a)
+  const y = settled(b)
   for (const key of Object.keys(y)) if (!isDeepStrictEqual(x[key], y[key])) return key
   return null
 }
@@ -248,7 +244,7 @@ function chunked(text: string): Token[] {
   const scan = scanDoc(text)
   return chunksOver(scan, [[0, scan.lines.length - 1]]).flatMap(([a, b]) => {
     const chunk = text.slice(a, b)
-    return tokenize(chunk, scanDoc(chunk)).map((tk) => shiftToken(tk, a))
+    return tokenize(chunk).map((tk) => shiftToken(tk, a))
   })
 }
 
@@ -270,13 +266,13 @@ describe('chunksOver — a chunk tokenizes as it does inside the whole document'
 
   it('reads a reference its definition sits outside the chunk as text — pinned difference', () => {
     const text = '*a [b*][ref] c*\n\n[ref]: https://example.com'
-    expect(italics(tokenize(text, scanDoc(text)))).toEqual([[0, 15]])
+    expect(italics(tokenize(text))).toEqual([[0, 15]])
     expect(italics(chunked(text))).toEqual([[0, 6]])
   })
 
   it('follows the scan where its fences and the parser’s disagree — pinned difference', () => {
     const text = '- a\n  ```\nb\n  ```\n\n*em*'
-    expect(italics(tokenize(text, scanDoc(text)))).toEqual([])
+    expect(italics(tokenize(text))).toEqual([])
     expect(italics(chunked(text))).toEqual([[text.indexOf('*em*'), text.length]])
   })
 
