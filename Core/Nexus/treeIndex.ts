@@ -164,6 +164,9 @@ function walk(tree: NexusTree): NodeRecord[] {
 
 export const nodesOf = (tree: NexusTree): readonly NodeRecord[] => indexFor(tree).nodes
 
+// A Sub-Set is an organizing folder, never a destination.
+const isDestination = (r: NodeRecord): boolean => r.kind !== 'set' || r.parents.length === 1
+
 export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
   const ix = indexFor(tree)
   if (!ix.reconcile) {
@@ -183,7 +186,7 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
           collections.add(r.id)
           break
         case 'set':
-          sets.set(r.id, r.path)
+          if (isDestination(r)) sets.set(r.id, r.path)
           break
         case 'page':
           pages.set(r.id, r.path)
@@ -198,7 +201,8 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
   const ix = indexFor(tree)
   if (!ix.resolve) {
     const m: ResolveIndex = new Map<string, NavCore>()
-    for (const r of ix.nodes) m.set(r.key, { icon: r.icon, title: r.title, path: r.parents })
+    for (const r of ix.nodes)
+      if (isDestination(r)) m.set(r.key, { icon: r.icon, title: r.title, path: r.parents })
     ix.resolve = m
   }
   return ix.resolve
@@ -231,6 +235,7 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
       page: [],
     }
     for (const r of ix.nodes) {
+      if (!isDestination(r)) continue
       const target: NavRef = isSingleton(r) ? { kind: r.kind } : { kind: r.kind, id: r.id }
       byKind[r.kind].push({ key: r.key, target, title: r.title, lower: r.title.toLowerCase() })
     }
@@ -352,11 +357,8 @@ export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'
 }
 
-/** Tested, not trusted: a reparent plus a Back-nav replay can surface either depth as a `set` selection. */
-export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
-  const col = findCollectionForSet(tree, setId)
-  return !!col && col.sets.some((s) => s.id === setId)
-}
+export const isDepth1Set = (tree: NexusTree | null, setId: string): boolean =>
+  !!tree && reconcileIndexOf(tree).sets.has(setId)
 
 export function spaceLinksOf(tree: NexusTree): ReadonlyMap<string, Record<string, string[]>> {
   const ix = indexFor(tree)
