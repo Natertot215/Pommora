@@ -834,6 +834,21 @@ describe('store — view search', () => {
     expect(shownViewSearch(useSession.getState())?.query).toBe('ab')
   })
 
+  it('closing a searching tab onto an unloaded page keeps the held container searched until it lands', () => {
+    channels['page:open'] = vi.fn(() => new Promise(() => {}))
+    const page: SelectTarget = { kind: 'page', id: 'p9', path: 'Notes/Z.md' }
+    seed({
+      tabs: [uTab('t1', col('c1'), [col('c1')], 0), uTab('t2', page, [page], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't2'],
+      selection: col('c1'),
+      viewSearch: { t1: { key: 'collection:c1', query: 'ab' } },
+    })
+    useSession.getState().closeTab('t1')
+    expect(useSession.getState().selection).toEqual(col('c1'))
+    expect(shownViewSearch(useSession.getState())?.query).toBe('ab')
+  })
+
   it('clears with its tab', () => {
     onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
     useSession.getState().closeTab('t1')
