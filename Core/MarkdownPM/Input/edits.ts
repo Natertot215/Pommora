@@ -364,6 +364,26 @@ export const trimmedRange = (doc: string, from: number, to: number): [number, nu
   return f === t ? [from, to] : [f, t]
 }
 
+// A wrap over a selection already wrapped by its own cycle steps to the next wrapper instead of compounding; '' unwraps, and a cycle without it loops.
+const WRAP_CYCLES: Record<string, string[]> = {
+  '[': ['[', '[[', '{', '{{'],
+  '"': ['"', "'", ''],
+  ...Object.fromEntries(['*', '~', '=', '_', '`'].map((m) => [m, [m, m + m, '']])),
+}
+const CYCLE_ENTRY: Record<string, string> = { '{': '[', "'": '"' }
+const closeOf = (wrapper: string): string =>
+  [...wrapper]
+    .reverse()
+    .map((ch) => PAIRS[ch].close)
+    .join('')
+const wrappedBy = (doc: string, from: number, to: number, wrapper: string): boolean =>
+  wrapper !== '' &&
+  from >= wrapper.length &&
+  doc.startsWith(wrapper, from - wrapper.length) &&
+  doc.startsWith(closeOf(wrapper), to) &&
+  !isWordCh(doc[from - wrapper.length - 1]) &&
+  !isWordCh(doc[to + wrapper.length])
+
 export function wrapSelection(
   scan: DocScan,
   selStart: number,
@@ -371,18 +391,26 @@ export function wrapSelection(
   inserted: string,
   settings: Personalization = {},
 ): Edit | null {
-  const pair = PAIRS[inserted]
+  const open = CYCLE_ENTRY[inserted] ?? inserted
+  const pair = PAIRS[open]
   if (!pair || selStart === selEnd || settings.wrapSelections !== true) return null
-  const [from, to] = trimmedRange(scan.text, selStart, selEnd)
-  if (settings[pair.group] === false || inCodeAt(scan, from) || inCodeAt(scan, to)) return null
-  const text = scan.text.slice(from, to)
+  const doc = scan.text
+  const [from, to] = trimmedRange(doc, selStart, selEnd)
+  const cycle = WRAP_CYCLES[open] ?? []
+  const outer =
+    [...cycle].sort((a, b) => b.length - a.length).find((w) => wrappedBy(doc, from, to, w)) ?? ''
+  const start = from - outer.length
+  const end = to + outer.length
+  if (settings[pair.group] === false || inCodeAt(scan, start) || inCodeAt(scan, end)) return null
+  const text = doc.slice(from, to)
   if (pair.group === 'pairMarkers' && text.includes('\n')) return null
+  const next = outer ? cycle[(cycle.indexOf(outer) + 1) % cycle.length] : open
   return {
-    from,
-    to,
-    insert: inserted + text + pair.close,
-    selection: from + 1,
-    head: to + 1,
+    from: start,
+    to: end,
+    insert: next + text + closeOf(next),
+    selection: start + next.length,
+    head: start + next.length + text.length,
   }
 }
 

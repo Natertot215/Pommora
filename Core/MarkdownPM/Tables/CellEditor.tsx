@@ -24,6 +24,7 @@ import {
   type Edit,
 } from '../Input/edits'
 import { listRenumberOnDelete } from '../Input/listRenumber'
+import { wrapChords } from '../Input/markdownInput'
 import { listDragExtension } from '../Gestures/listDrag'
 import { blockDragExtension } from '../Gestures/blockDrag'
 import { blockGripHover, blockHandles } from '../Menus/blockHandles'
@@ -304,6 +305,7 @@ export function CellEditor({
                   return true
                 },
               },
+              ...wrapChords,
               // The main editor can't catch these itself (the widget's ignoreEvent), so the cell forwards them to the page history.
               ...HISTORY_BINDINGS.map((b) => ({
                 ...b,

@@ -1,4 +1,4 @@
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 import {
   continueListOnEnter,
@@ -117,6 +117,18 @@ const onShiftEnter = (view: EditorView): boolean => {
   )
 }
 
+// ⌘ stands in for ⇧ on a pair key: it wraps a single-line selection with the shifted character, and ⌘[ with the bracket; across lines ⌘[ stays outdent.
+export const wrapChords: KeyBinding[] = Object.entries({ "'": '"', 8: '*', 9: '(', '[': '[' }).map(
+  ([key, ch]) => ({
+    key: `Mod-${key}`,
+    run: (view) => {
+      const { from, to } = view.state.selection.main
+      if (view.state.sliceDoc(from, to).includes('\n')) return false
+      return apply(view, wrapSelection(docScan(view.state.doc), from, to, ch, settingsOf(view)))
+    },
+  }),
+)
+
 export const markdownInput = [
   Prec.high(
     keymap.of([
@@ -129,6 +141,7 @@ export const markdownInput = [
       { key: 'Delete', run: onForwardDelete },
       // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
       { key: 'Shift-Backspace', run: onBackspace },
+      ...wrapChords,
     ]),
   ),
   EditorView.inputHandler.of((view, from, to, text) => {
