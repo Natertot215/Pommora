@@ -4,7 +4,7 @@ Pommora carries a Nexus between devices itself. Every device holding a Nexus tal
 
 ### What Travels
 
-The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.json`, the identity file, orderings, and the asset directory are as much a part of a Nexus as the Markdown beside them, and a copy missing them is a copy missing its organization.
+The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.json`, the identity file, orderings, page metadata, and the asset directory are as much a part of a Nexus as the Markdown beside them, and a copy missing them is a copy missing its organization.
 
 What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level. Any `.db` file and its journals stay home. The navigation thumbnail folders stay home as a cache that regenerates from the images that do travel, while `crops.json` beside them is authored and travels. The two cascade journals stay home as crash-recovery records of a heal already finished elsewhere. Every other dot-entry, `.obsidian`, `.git`, and `.claude` among them, stays home as belonging to another application.
 
@@ -60,7 +60,7 @@ A landing pushes an unpushed edit first, and captures the local bytes, under the
 
 A landed file is written atomically under the writer's modification time and records no write echo, leaving the receiving watcher to treat it as an ordinary external change. A landed rename moves the file and every base record beneath it; a delete removes the file and an emptied parent directory.
 
-Two kinds of file land through a merge rather than a replacement. The JSON files under `.nexus/` and the `_*.json` sidecars merge key by key against the last synced bytes: a key changed on one side takes that side, a key changed on both takes the newer writer's, and the merged bytes land under the current time.
+Two kinds of file land through a merge rather than a replacement. The JSON files under `.nexus/` and the `_*.json` sidecars merge key by key against the last synced bytes: a key changed on one side takes that side, a key changed on both takes the newer writer's, and the merged bytes land under the current time. Some keys hold sections that merge a level deeper, key by key within them; a metadata month file merges per page and per field, so one device clearing a page's entry and another setting a field on it keeps that field.
 
 A page open in an editor absorbs its landing instead of reloading under the writer: the renderer takes the buffer as one side and the landed file as the other, and dispatches the difference as a changes-only transaction outside undo, so the caret keeps its position; a surface without that merge reloads, capturing any text its last acknowledged save does not hold. A body write is compare-and-swap, keyed to the hash the editor last loaded or saved, and a refusal routes to the same merge or reload rather than to a retry.
 

@@ -18,6 +18,8 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   │           └── _space.json          | • The Space's identity, banner, links, property values, and row order
 │   ├── // homepage                      | • The Homepage's tile document and markdown-tile bodies
 │   │   └── homepage.json                | • The Homepage's banner and heading icon
+│   ├── // metadata                      | • Per-page metadata, one file per month of page creation
+│   │   └── <MM-YYYY>.json               | • Entries for the pages created that month, keyed by page ID
 │   ├── nexus.json                       | • The Nexus id, creation stamp, and the Agenda registration
 │   ├── properties.json                  | • The nexus-wide property registry
 │   ├── settings.json                    | • Personalization, accent, excluded folders, the profile
