@@ -119,7 +119,14 @@ async function snapshot(title) {
       prev = now
     }
     Object.assign(lines, JSON.parse(prev))
-    const rect = await c.evaluate(`(() => { const r = ${VIEW}.scrollDOM.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height, scale: 1 } })()`)
+    // Only the editor's own lines are pictured: the header, banner, and chrome around them belong to other work.
+    const rect = await c.evaluate(`(() => {
+      const v = ${VIEW}
+      const s = v.scrollDOM.getBoundingClientRect()
+      const t = v.contentDOM.getBoundingClientRect()
+      const top = Math.max(s.top, t.top)
+      return { x: t.left, y: top, width: t.width, height: Math.max(1, Math.min(s.bottom, t.bottom) - top), scale: 1 }
+    })()`)
     const shot = await c.send('Page.captureScreenshot', { format: 'png', clip: rect })
     const name = `${title.replace(/\W+/g, '-')}-${step}.png`
     fs.writeFileSync(new URL(name, dir), Buffer.from(shot.data, 'base64'))
