@@ -15,10 +15,10 @@ import {
   type ViewUpdate,
 } from '@codemirror/view'
 import { highlightTree, styleTags, tags as t } from '@lezer/highlight'
-import { docScan } from './docCache'
-import { type FenceInfo, lineEndOf } from './Engine/detect'
-import type { DocScan } from './Engine/docScan'
-import { lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
+import { docScan, drawnLast } from './docCache'
+import type { FenceInfo } from './Engine/detect'
+import { type DocScan, indentWidth } from './Engine/docScan'
+import { lineEndOf, lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
 import { CODE_LANGS } from './Engine/codeLangs'
 
@@ -150,7 +150,7 @@ function readBlock(tree: Tree, from: number, to: number): Mark[] {
   return out
 }
 
-const blockMarks = new WeakMap<EditorView, Map<string, Tree>>()
+const blockTrees = drawnLast((text) => blockParser.parse(text))
 
 const mark = perText((cls) => Decoration.mark({ class: cls }), 64)
 
@@ -158,32 +158,29 @@ function paint(
   view: EditorView,
   scan: DocScan,
   f: FenceInfo,
-  trees: Map<string, Tree>,
+  read: (text: string, keep: boolean) => Tree,
   out: Range<Decoration>[],
 ): number {
   const open = lineIndexAt(scan, f.from)
   const close = lineIndexAt(scan, f.to)
-  const indent = (line: string): number => /^[ \t]*/.exec(line)?.[0].length ?? 0
-  const cut = f.depth === 0 ? indent(scan.lines[open]) : 0
+  const cut = f.depth === 0 ? indentWidth(scan.lines[open]) : 0
   const lines = scan.lines
     .slice(open, close + 1)
-    .map((line) => line.slice(Math.min(cut, indent(line))))
-  const text = lines.join('\n')
+    .map((line) => line.slice(Math.min(cut, indentWidth(line))))
   const desc = f.lang ? LanguageDescription.matchLanguageName(codeLanguages, f.lang, true) : null
   if (desc && !desc.support)
     desc.load().then(() => {
       if (view.dom.isConnected) view.dispatch({ effects: loaded.of(null) })
     })
-  const tree = trees.get(text) ?? blockMarks.get(view)?.get(text) ?? blockParser.parse(text)
-  if (!desc || desc.support) trees.set(text, tree)
+  const tree = read(lines.join('\n'), !desc || !!desc.support)
   const starts = lineOffsetsOf(lines)
   const first = Math.max(0, lineIndexAt(scan, view.viewport.from) - open)
   const last = Math.min(lines.length - 1, lineIndexAt(scan, view.viewport.to) - open)
   const local = { lines, lineStarts: starts }
-  for (const [a, b, cls] of readBlock(tree, starts[first], starts[last] + lines[last].length))
+  for (const [a, b, cls] of readBlock(tree, starts[first], lineEndOf(local, last)))
     for (let k = lineIndexAt(local, a); k < lines.length && starts[k] < b; k++) {
       const from = Math.max(a, starts[k])
-      const to = Math.min(b, starts[k] + lines[k].length)
+      const to = Math.min(b, lineEndOf(local, k))
       const shift = lineEndOf(scan, open + k) - lineEndOf(local, k)
       if (to > from) out.push(mark(cls).range(from + shift, to + shift))
     }
@@ -192,15 +189,18 @@ function paint(
 
 function colors(view: EditorView): DecorationSet {
   const scan = docScan(view.state.doc)
-  const trees = new Map<string, Tree>()
   const out: Range<Decoration>[] = []
   let next = 0
-  for (const { from, to } of view.visibleRanges)
-    for (let i = Math.max(next, lineIndexAt(scan, from)), end = lineIndexAt(scan, to); i <= end; ) {
-      const f = scan.fences[i]
-      i = next = f === undefined ? i + 1 : paint(view, scan, f, trees, out) + 1
-    }
-  blockMarks.set(view, trees)
+  blockTrees(view, (read) => {
+    for (const { from, to } of view.visibleRanges)
+      for (
+        let i = Math.max(next, lineIndexAt(scan, from)), end = lineIndexAt(scan, to);
+        i <= end;
+      ) {
+        const f = scan.fences[i]
+        i = next = f === undefined ? i + 1 : paint(view, scan, f, read, out) + 1
+      }
+  })
   return Decoration.set(out, true)
 }
 

@@ -1,7 +1,14 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { perText } from './perText'
 import { parse } from './parser'
-import { codeMask, fenceLang, fenceSpans, lineOffsetsOf, type CodeMask } from './markdownCode'
+import {
+  codeMask,
+  fenceLang,
+  fenceSpans,
+  lineEndOf,
+  lineOffsetsOf,
+  type CodeMask,
+} from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
@@ -43,7 +50,7 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
     const { open, close } = span
     const base = {
       from: lineStarts[open],
-      to: lineStarts[close] + lines[close].length,
+      to: lineEndOf({ lines, lineStarts }, close),
       depth: span.fence.depth,
       lang: fenceLang(span.fence) || undefined,
       markerEnd: span.fence.markerEnd,
@@ -66,9 +73,10 @@ const inExcluded = (at: number, excluded: [number, number][]): boolean =>
 
 /** A LONE `$$` line opens and the next lone `$$` closes — never the token layer's lazy span regex, which one stray `$$` would flip. */
 export function blockMathRanges(
-  { lines, lineStarts }: DocLines,
+  d: DocLines,
   excluded: [number, number][],
 ): { ranges: [number, number][]; open: number } {
+  const { lines, lineStarts } = d
   const ranges: [number, number][] = []
   let open = -1
   for (let i = 0; i < lines.length; i++) {
@@ -77,7 +85,7 @@ export function blockMathRanges(
     if (open < 0) {
       open = i
     } else {
-      ranges.push([lineStarts[open], lineStarts[i] + lines[i].length])
+      ranges.push([lineStarts[open], lineEndOf(d, i)])
       open = -1
     }
   }
@@ -94,9 +102,10 @@ const HTML_RAW: [RegExp, RegExp][] = [
 const HTML_OPEN = /^ {0,3}<[A-Za-z/!?]/
 
 export function htmlBlocks(
-  { lines, lineStarts }: DocLines,
+  d: DocLines,
   fences: readonly (FenceInfo | undefined)[],
 ): [number, number][] {
+  const { lines, lineStarts } = d
   const out: [number, number][] = []
   for (let i = 0; i < lines.length; i++) {
     if (fences[i] || !HTML_OPEN.test(lines[i])) continue
@@ -107,22 +116,23 @@ export function htmlBlocks(
       if (end) while (e < lines.length - 1 && !end.test(lines[e])) e++
       j = Math.max(j, e)
     }
-    out.push([lineStarts[i], lineStarts[j] + lines[j].length])
+    out.push([lineStarts[i], lineEndOf(d, j)])
     i = j
   }
   return out
 }
 
 function loneLines<T>(
-  { lines, lineStarts }: DocLines,
+  d: DocLines,
   excluded: [number, number][],
   read: (line: string) => T | null,
 ): (T & { from: number; to: number })[] {
+  const { lines, lineStarts } = d
   const out: (T & { from: number; to: number })[] = []
   for (let i = 0; i < lines.length; i++) {
     const v = read(lines[i])
     if (v === null || inExcluded(lineStarts[i], excluded)) continue
-    out.push({ ...v, from: lineStarts[i], to: lineStarts[i] + lines[i].length })
+    out.push({ ...v, from: lineStarts[i], to: lineEndOf(d, i) })
   }
   return out
 }
@@ -182,6 +192,7 @@ export function lineRefs(line: string, lineStart: number, inCode: CodeMask): Lin
   for (const m of line.matchAll(markerRegex())) {
     const end = m.index + m[0].length
     if (headEnd !== undefined && end <= headEnd) continue
+    // A marker inside code binds nothing and takes no number — counting them here would print numbers that skip.
     if (inCode(lineStart + m.index)) continue
     out ??= []
     out.push({ col: m.index, end, label: m[1] })
@@ -200,11 +211,7 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
 
 const CONTINUATION_INDENT = /^(?: {4}|\t)/
 
-export function assembleCitations(
-  d: DocLines,
-  excluded: (line: number) => boolean,
-  refs: readonly (LineRef[] | undefined)[],
-): CitationScan {
+export function citationEntries(d: DocLines, excluded: (line: number) => boolean): CitationEntry[] {
   const { lines, lineStarts } = d
   const blank = (k: number): boolean => lines[k].trim() === ''
   const breaks = (k: number): boolean =>
@@ -243,10 +250,17 @@ export function assembleCitations(
     })
     end = aboveBlanks(h - 1)
   }
-  entries.reverse()
-  const firstLine = entries[0]?.line ?? lines.length
+  return entries.reverse()
+}
 
-  // A marker inside code binds nothing and takes no number — counting them here would print numbers that skip.
+export function assembleCitations(
+  d: DocLines,
+  excluded: (line: number) => boolean,
+  refs: readonly (LineRef[] | undefined)[],
+): CitationScan {
+  const { lines, lineStarts } = d
+  const entries = citationEntries(d, excluded)
+  const firstLine = entries[0]?.line ?? lines.length
   const firstFor = new Map<string, CitationEntry>()
   for (const e of entries) {
     const key = foldLabel(e.label)
@@ -305,9 +319,6 @@ export const markersFor = (c: CitationScan, label: string): MarkerRef[] =>
 export const isLastReference = (c: CitationScan, marker: MarkerRef): boolean =>
   markersFor(c, marker.label).every((m) => m === marker)
 
-export const lineEndOf = (d: { lines: string[]; lineStarts: number[] }, line: number): number =>
-  d.lineStarts[line] + d.lines[line].length
-
 export interface EmbedLine {
   from: number
   to: number
@@ -355,13 +366,13 @@ export interface CalloutLine {
 /** A `[!type]` lookalike inside a fence is code, never a head. */
 export function calloutLines(
   lines: string[],
-  fences: (FenceInfo | undefined)[] = scanFencedCode(lines, lineOffsetsOf(lines)),
+  fences: (FenceInfo | undefined)[],
 ): (CalloutLine | undefined)[] {
-  const codeAt = (k: number): boolean => fences[k]?.role === 'content'
+  const codeLine = (k: number): boolean => fences[k]?.role === 'content'
   const out: (CalloutLine | undefined)[] = new Array(lines.length)
   let i = 0
   while (i < lines.length) {
-    if (!isCalloutHead(lines[i]) || codeAt(i)) {
+    if (!isCalloutHead(lines[i]) || codeLine(i)) {
       i++
       continue
     }
@@ -369,7 +380,7 @@ export function calloutLines(
     while (
       j < lines.length &&
       isBlockquoteLine(lines[j]) &&
-      !(isCalloutHead(lines[j]) && !codeAt(j))
+      !(isCalloutHead(lines[j]) && !codeLine(j))
     )
       j++
     const headPrefix = blockquotePrefixRe.exec(lines[i])?.[0] ?? ''

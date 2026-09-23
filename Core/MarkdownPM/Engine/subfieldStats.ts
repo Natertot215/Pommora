@@ -105,7 +105,17 @@ export function computeStats(body: string): PageStats {
   }
 }
 
-const BODY_SLOTS = 4
-
 /** One answer per body string: the footer mounts two items needing the same figures on one render, and the prose pass walks the whole document. */
-export const pageStats = perText(computeStats, BODY_SLOTS)
+export const pageStats = perText(computeStats, 4)
+
+/** A selection counts as the document reads it: a line the document holds in a code block counts as code wherever the selection cuts the block. */
+export function rangeStats(scan: DocScan, from: number, to: number): PageStats {
+  const first = lineIndexAt(scan, from)
+  return computeStats(
+    scan.text
+      .slice(from, to)
+      .split('\n')
+      .map((line, k) => (scan.fences[first + k] ? '' : line))
+      .join('\n'),
+  )
+}

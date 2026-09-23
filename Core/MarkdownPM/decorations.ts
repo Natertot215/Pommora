@@ -29,12 +29,13 @@ import {
   docLineIntentsOf,
   docScan,
   docSectionHeadings,
+  drawnLast,
   perScopedDoc,
 } from './docCache'
-import { lineEndOf, type MarkdownScope } from './Engine/detect'
+import type { MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '@pommora/core/Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
-import { claimedEmbeds } from './Engine/embedRanges'
+import { claimedEmbeds } from './Engine/embedClaims'
 import { resolutionNudge } from './Embeds/embedWidget'
 import { linkRest, linkTyping } from './Gestures/linkGestures'
 import {
@@ -48,7 +49,7 @@ import {
   type WidgetSpec,
 } from './Engine/intents'
 import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt } from './Engine/docScan'
-import { lineIndexAt } from './Engine/markdownCode'
+import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
@@ -307,7 +308,7 @@ const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
-const drawn = new WeakMap<EditorView, Map<string, Token[]>>()
+const chunkTokens = drawnLast(tokenize)
 
 // On-screen chunks only — the whole-document parse is what made long docs lag.
 function visibleInlineTokens(view: EditorView, scan: DocScan): Token[] {
@@ -315,16 +316,11 @@ function visibleInlineTokens(view: EditorView, scan: DocScan): Token[] {
     lineIndexAt(scan, from),
     lineIndexAt(scan, to),
   ])
-  const last = drawn.get(view)
-  const now = new Map<string, Token[]>()
   const out: Token[] = []
-  for (const [a, b] of chunksOver(scan, spans)) {
-    const chunk = scan.text.slice(a, b)
-    const tokens = now.get(chunk) ?? last?.get(chunk) ?? tokenize(chunk)
-    now.set(chunk, tokens)
-    for (const tk of tokens) out.push(shiftToken(tk, a))
-  }
-  drawn.set(view, now)
+  chunkTokens(view, (read) => {
+    for (const [a, b] of chunksOver(scan, spans))
+      for (const tk of read(scan.text.slice(a, b))) out.push(shiftToken(tk, a))
+  })
   return out
 }
 

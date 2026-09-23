@@ -6,8 +6,10 @@ import { parseDelimiter } from '../Engine/Tables/codec'
 import { decodePayload } from '../Engine/Tables/clipboard'
 import { tableSelfEdit } from './sync'
 
-// With the fencing blank line gone, two tables fuse and the second one's header + delimiter become body rows, so the region carries a second delimiter row. Counts the tables starting in `[from, to)`.
-export function fusedTableCount(scan: DocScan, from = 0, to = scan.text.length + 1): number {
+// With the fencing blank line gone, two tables fuse and the second one's header + delimiter become body rows, so the region carries a second delimiter row.
+export function fusedTableCount(scan: DocScan, fromLine: number, toLine: number): number {
+  const from = scan.lineStarts[fromLine]
+  const to = scan.lineStarts[toLine]
   let n = 0
   for (const r of scan.tables) {
     if (r.from < from || r.from >= to) continue
@@ -54,8 +56,7 @@ export const tableMergeGuard = EditorState.transactionFilter.of((tr) => {
   const before = docScan(tr.startState.doc)
   const after = docScan.after(tr)
   const [a, e] = after.fresh
-  const b = carriedFrom(before, after)
-  const fused = (s: DocScan, end: number): number =>
-    fusedTableCount(s, s.lineStarts[a], s.lineStarts[end])
-  return fused(before, b) < fused(after, e) ? [] : tr
+  return fusedTableCount(before, a, carriedFrom(before, after)) < fusedTableCount(after, a, e)
+    ? []
+    : tr
 })

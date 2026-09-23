@@ -1,6 +1,7 @@
 // The citations section must reach the document's end — anything left standing after it literalizes every citation at once. Atomicity stops CM's own motion but never a programmatic dispatch, so this sits at the transaction layer.
 import type { EditorState } from '@codemirror/state'
-import { citationScan, lineEndOf, splitWithOffsets } from '../Engine/detect'
+import { citationEntries, splitWithOffsets } from '../Engine/detect'
+import { lineEndOf } from '../Engine/markdownCode'
 import type { CitationSlice } from '../Citations/citationEdits'
 import { docScan } from '../docCache'
 import type { GuardVerdict } from './calloutGuard'
@@ -8,8 +9,7 @@ import { verdictFilter } from './calloutGuard'
 
 function tailHolds(after: string, at: number): boolean {
   if (at >= after.length) return false
-  const s = citationScan(splitWithOffsets(after.slice(at)), [])
-  return s.firstLine === 0 && s.entries.length > 0
+  return citationEntries(splitWithOffsets(after.slice(at)), () => false)[0]?.line === 0
 }
 
 /** Two repairs, nothing else: an insertion at a citation line's first offset is clamped past its `[^label]:` (atomic skipping relocates only strictly-interior positions, so that seat stays reachable and invisible), and a change leaving the tail no longer reading as a run has its text relocated to the body above the section. */
