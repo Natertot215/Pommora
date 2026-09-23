@@ -3,13 +3,12 @@ import { isDeepStrictEqual } from 'node:util'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
-import { EditorState, type RangeSet, type RangeValue, Text } from '@codemirror/state'
+import { EditorState, type RangeSet, type RangeValue } from '@codemirror/state'
 import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
-import { docLineIntentsOf, docScan, docSpanTokens } from './docCache'
+import { docLineIntentsOf, docScan } from './docCache'
 import { docAtomics, markdownDecorations } from './decorations'
 import { docLineIntents } from './Engine/intents'
 import { scanDoc } from './Engine/docScan'
-import { tokenize } from './Engine/tokens'
 
 vi.mock('./Engine/docScan', async (original) => {
   const m = await original<typeof import('./Engine/docScan')>()
@@ -84,35 +83,6 @@ function type(view: EditorView, e: { from: number; to?: number; insert: string }
     userEvent: 'input.type',
   })
 }
-
-describe('docSpanTokens — the parse answers to the doc version and the span set, nothing else', () => {
-  const body = 'Intro **bold** `code` [[Link]]'
-
-  it('re-reads the same version and span set instead of parsing again', () => {
-    const doc = Text.of([body])
-    const derive = vi.fn(() => tokenize(body))
-    const first = docSpanTokens(doc, '0:30', derive)
-    const second = docSpanTokens(doc, '0:30', derive)
-    expect(derive).toHaveBeenCalledTimes(1)
-    expect(second).toBe(first)
-    expect(first).toEqual(tokenize(body))
-  })
-
-  it('re-derives when the span set moves', () => {
-    const doc = Text.of([body])
-    const derive = vi.fn(() => tokenize(body))
-    docSpanTokens(doc, '0:30', derive)
-    docSpanTokens(doc, '31:60', derive)
-    expect(derive).toHaveBeenCalledTimes(2)
-  })
-
-  it('never serves one version’s tokens to another holding the same text', () => {
-    const derive = vi.fn(() => tokenize(body))
-    docSpanTokens(Text.of([body]), '0:30', derive)
-    docSpanTokens(Text.of([body]), '0:30', derive)
-    expect(derive).toHaveBeenCalledTimes(2)
-  })
-})
 
 describe('docCache — every version steps from the last', () => {
   it('scans the document whole once, however it is then typed, undone, or rewritten', async () => {

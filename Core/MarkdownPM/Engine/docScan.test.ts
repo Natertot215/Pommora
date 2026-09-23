@@ -1,7 +1,10 @@
 import { isDeepStrictEqual } from 'node:util'
 import { describe, expect, it } from 'vitest'
-import { type DocScan, rescan, scanDoc } from './docScan'
+import type { Root, RootContent } from 'mdast'
+import { chunksOver, type DocScan, rescan, scanDoc } from './docScan'
 import { docLineIntents, stepLineIntents } from './intents'
+import { parse } from './parser'
+import { shiftToken, tokenize, type Token } from './tokens'
 
 // ── The generator ───────────────────────────────────────────────────────
 
@@ -201,4 +204,111 @@ describe('rescan — the incremental scan is the full scan', () => {
       }
     }
   }, 600_000)
+})
+
+const DEFINITION = /^ {0,3}\[[^\]]+\]:/
+const PROSE = [
+  ...LINES.filter((l) => !DEFINITION.test(l)),
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '*emphasis opens',
+  'and closes here*',
+  '**strong opens',
+  'strong closes**',
+  '~~struck',
+  'through~~',
+  'lazy *continuation',
+  '===',
+  '- item *opens',
+  '- item closes*',
+  '+ plus item',
+  '* star *opens',
+  '<span>inline html</span>',
+  '<https://example.com>',
+]
+
+function sameFences(text: string, scan: DocScan): boolean {
+  const lines = text.split('\n')
+  const parsed = new Set<number>()
+  const visit = (node: RootContent | Root): void => {
+    const at = node.position
+    if (node.type === 'code' && at && /^[ \t>]*(?:`{3,}|~{3,})/.test(lines[at.start.line - 1]))
+      for (let l = at.start.line; l <= at.end.line; l++) parsed.add(l - 1)
+    if ('children' in node) for (const child of node.children) visit(child)
+  }
+  visit(parse(text, scan))
+  return scan.lines.every((_, i) => (scan.fences[i] !== undefined) === parsed.has(i))
+}
+
+function chunked(text: string): Token[] {
+  const scan = scanDoc(text)
+  return chunksOver(scan, [[0, scan.lines.length - 1]]).flatMap(([a, b]) => {
+    const chunk = text.slice(a, b)
+    return tokenize(chunk, scanDoc(chunk)).map((tk) => shiftToken(tk, a))
+  })
+}
+
+const italics = (tokens: Token[]): [number, number][] =>
+  tokens.filter((t) => t.kind === 'italic').map((t) => t.range)
+
+describe('chunksOver — a chunk tokenizes as it does inside the whole document', () => {
+  it('matches the whole-document tokens, chunk by chunk', () => {
+    for (let seed = 1; seed <= 2000; seed++) {
+      const r = stream(seed)
+      const lines = Array.from({ length: 5 + Math.floor(r() * 40) }, () => pick(r, PROSE))
+      const text = lines.join('\n')
+      const scan = scanDoc(text)
+      if (!sameFences(text, scan)) continue
+      if (!isDeepStrictEqual(chunked(text), tokenize(text, scan)))
+        expect.fail(`seed ${seed}\n${JSON.stringify(text)}`)
+    }
+  }, 600_000)
+
+  it('reads a reference its definition sits outside the chunk as text — pinned difference', () => {
+    const text = '*a [b*][ref] c*\n\n[ref]: https://example.com'
+    expect(italics(tokenize(text, scanDoc(text)))).toEqual([[0, 15]])
+    expect(italics(chunked(text))).toEqual([[0, 6]])
+  })
+
+  it('follows the scan where its fences and the parser’s disagree — pinned difference', () => {
+    const text = '- a\n  ```\nb\n  ```\n\n*em*'
+    expect(italics(tokenize(text, scanDoc(text)))).toEqual([])
+    expect(italics(chunked(text))).toEqual([[text.indexOf('*em*'), text.length]])
+  })
+
+  it('bounds a chunk where no cut line sits within reach of the lines asked for', () => {
+    const prose = Array.from({ length: 1000 }, (_, i) => `line ${i}`)
+    const lines = (s: DocScan, [a, b]: [number, number]): [number, number] => [
+      s.lineStarts.indexOf(a),
+      s.lineStarts.indexOf(b + 1),
+    ]
+    const flat = scanDoc(prose.join('\n'))
+    expect(chunksOver(flat, [[300, 350]]).map((c) => lines(flat, c))).toEqual([[300, 351]])
+    prose[250] = ''
+    const cut = scanDoc(prose.join('\n'))
+    expect(chunksOver(cut, [[300, 350]]).map((c) => lines(cut, c))).toEqual([[251, 351]])
+    const block = (open: string, body: number): string =>
+      [
+        ...prose.slice(0, 100),
+        open,
+        ...prose.slice(0, body),
+        open.slice(0, 3),
+        ...prose.slice(0, 100),
+      ].join('\n')
+    const fenced = scanDoc(block('```js', 300))
+    expect(chunksOver(fenced, [[90, 150]]).map((c) => lines(fenced, c))).toEqual([[90, 100]])
+    expect(chunksOver(fenced, [[250, 420]]).map((c) => lines(fenced, c))).toEqual([[402, 421]])
+    const math = scanDoc(block('$$', 80))
+    expect(chunksOver(math, [[90, 150]]).map((c) => lines(math, c))).toEqual([[90, 182]])
+    expect(chunksOver(math, [[160, 200]]).map((c) => lines(math, c))).toEqual([[100, 201]])
+    const outline = scanDoc(
+      ['- Notes', ...prose.slice(0, 200).map((l) => `\t- ${l} **b**`)].join('\n'),
+    )
+    const [[from]] = chunksOver(outline, [[100, 150]])
+    expect(outline.lineStarts.indexOf(from)).toBe(0)
+  })
 })

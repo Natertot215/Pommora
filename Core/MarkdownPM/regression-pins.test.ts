@@ -17,8 +17,7 @@ import { calloutDeleteVerdict, type GuardVerdict } from './Guards/calloutGuard'
 import { headingSections } from './Engine/headingScan'
 import { headingSrc } from './Engine/headingScan'
 import { fenceRangesOf } from './Engine/detect'
-import { inCodeAt, scanDoc } from './Engine/docScan'
-import { sliceStartLine } from './decorations'
+import { chunksOver, type DocScan, inCodeAt, scanDoc } from './Engine/docScan'
 
 describe('codeMask — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {
@@ -300,7 +299,7 @@ describe('headingSections — fence-blind no more', () => {
   })
 })
 
-describe('the viewport slice opens where the block context is self-evident', () => {
+describe('a token chunk opens where the parser holds no state', () => {
   const lines = [
     'Intro **bold** `code` [[Link]]',
     '```ts',
@@ -322,36 +321,27 @@ describe('the viewport slice opens where the block context is self-evident', () 
   ]
   const doc = lines.join('\n')
   const scan = scanDoc(doc)
+  const cuts = (s: DocScan): number[] =>
+    chunksOver(s, [[0, s.lines.length - 1]]).map(([a]) => s.lineStarts.indexOf(a))
 
-  it('resumes past a fence it would otherwise open inside', () => {
-    expect(sliceStartLine(scan, 2)).toBe(4)
-    expect(sliceStartLine(scan, 3)).toBe(4)
-    expect(sliceStartLine(scan, 1)).toBe(1)
-    expect(sliceStartLine(scan, 8)).toBe(11)
+  it('never cuts inside a fence or an indented run', () => {
+    expect(cuts(scan)).toEqual([0, 5, 12, 16])
   })
 
-  it('backs up to the line owning an indented run', () => {
-    expect(sliceStartLine(scan, 14)).toBe(12)
-    expect(sliceStartLine(scan, 13)).toBe(12)
-    expect(sliceStartLine(scan, 12)).toBe(12)
+  it('a fence nothing closes holds nothing', () => {
+    const open = scanDoc('intro **bold**\n```js\ncode **not bold**\n\nmore')
+    expect(cuts(open)).toEqual([0, 4])
   })
 
-  it('a fence nothing closes is prose, so a slice opens on the line itself', () => {
-    const open = scanDoc('intro **bold**\n```js\ncode **not bold**\nmore')
-    for (const line of [0, 1, 2, 3]) expect(sliceStartLine(open, line)).toBe(line)
-  })
-
-  it('every viewport start yields the whole-document tokens (fence parity never inverts)', () => {
+  it('every cut yields the whole-document tokens', () => {
     const key = (t: { kind: string; range: [number, number] }, off = 0) =>
       `${t.kind}@${t.range[0] + off}`
-    const truth = tokenize(doc).map((t) => key(t))
-    for (let start = 0; start < lines.length; start++) {
-      const from = scan.lineStarts[start]
-      const a = scan.lineStarts[sliceStartLine(scan, start)]
-      const seen = tokenize(doc.slice(a))
-        .map((t) => key(t, a))
-        .filter((k) => Number(k.split('@')[1]) >= from)
-      expect(seen).toEqual(truth.filter((k) => Number(k.split('@')[1]) >= from))
+    const truth = tokenize(doc, scan).map((t) => key(t))
+    for (const start of cuts(scan)) {
+      const a = scan.lineStarts[start]
+      const tail = doc.slice(a)
+      const seen = tokenize(tail, scanDoc(tail)).map((t) => key(t, a))
+      expect(seen).toEqual(truth.filter((k) => Number(k.split('@')[1]) >= a))
     }
   })
 })
