@@ -3,7 +3,7 @@ import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
-import { useSession } from '../../Session/store'
+import { shownViewSearch, useSession } from '../../Session/store'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import { ImagePicker } from '../../Assets/ImagePicker'
@@ -36,9 +36,7 @@ export function Banner({
   const [editingHome, setEditingHome] = useState(false)
   const iconRef = useRef<SVGSVGElement>(null)
   const searchable = chrome === 'detail' && (owner.kind === 'collection' || owner.kind === 'set')
-  const query = useSession((s) =>
-    searchable ? (s.viewSearch[s.activeTabId]?.query ?? null) : null,
-  )
+  const query = useSession((s) => (searchable ? (shownViewSearch(s)?.query ?? null) : null))
   const summon = useSession((s) => (searchable ? s.viewSearchSummon : 0))
   const searchView = useSession((s) => s.searchView)
   const setViewQuery = useSession((s) => s.setViewQuery)

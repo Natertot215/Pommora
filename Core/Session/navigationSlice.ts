@@ -197,6 +197,16 @@ export const frozenOf = (s: SessionState): boolean => {
   return target !== undefined && target.kind !== 'newtab' && !sameShownTarget(s.selection, target)
 }
 
+/** A cold switch holds the last container on screen until the next page lands, so the held frame reads the search of the tab it belongs to. */
+export const shownViewSearch = (s: SessionState): ViewSearch | undefined => {
+  if (!frozenOf(s)) return s.viewSearch[s.activeTabId]
+  const { selection } = s
+  if (selection.kind !== 'collection' && selection.kind !== 'set') return undefined
+  const key = tabKey(selection)
+  const tabId = s.tabMru.find((id) => s.viewSearch[id]?.key === key)
+  return tabId === undefined ? undefined : s.viewSearch[tabId]
+}
+
 let pageFetchSeq = 0
 const COLD_SWAP_DEADLINE = 200
 // Cleared against the exact stamp the superseded fetch carried; a newer one replays the abandoned slide.
