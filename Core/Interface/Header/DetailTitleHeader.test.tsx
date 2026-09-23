@@ -102,6 +102,13 @@ describe('the title search', () => {
     expect(empty.change).toHaveBeenCalledWith(null)
   })
 
+  it('refocusing an open field leaves the search and its caret alone', async () => {
+    const s = search({ query: 'abc' })
+    await render(s)
+    act(() => q('.detail-title-search').focus())
+    expect(s.start).not.toHaveBeenCalled()
+  })
+
   it('a new summon focuses and selects the field; a standing one leaves focus alone', async () => {
     await render(search({ query: 'ab', summon: 1 }))
     expect(document.activeElement).not.toBe(q('.detail-title-search'))

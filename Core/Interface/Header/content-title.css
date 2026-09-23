@@ -51,11 +51,12 @@
   align-items: center;
   min-width: 0;
 }
-.detail-title-lead:has(.detail-title-input) {
-  flex: 1 1 auto;
+.detail-title-lead .detail-title-input {
+  field-sizing: content;
 }
 .detail-title-hint {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .detail-title-hint-run {
   display: inline-flex;
