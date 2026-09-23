@@ -1,7 +1,8 @@
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { isInsideWikilink } from '../Engine/parser'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
-import { inCalloutAt, inCodeAt, type DocScan } from '../Engine/docScan'
+import { inCalloutAt, inCodeAt, spanAt, type DocScan } from '../Engine/docScan'
+import { fenceAt, lineIndexAt } from '../Engine/markdownCode'
 import {
   parseListMarker,
   isSequenced,
@@ -280,7 +281,7 @@ const PAIRS: Record<string, PairSpec> = {
   '~': { close: '~', multi: '~~', group: 'pairMarkers' },
   '=': { close: '=', multi: '==', group: 'pairMarkers' },
   _: { close: '_', multi: '__', group: 'pairMarkers' },
-  '`': { close: '`', multi: '``', group: 'pairMarkers' },
+  '`': { close: '`', group: 'pairMarkers' },
   '(': { close: ')', multi: '))', group: 'pairBrackets' },
   '[': { close: ']', multi: ']]', group: 'pairBrackets' },
   '{': { close: '}', multi: '}}', group: 'pairBrackets' },
@@ -485,6 +486,64 @@ export function closeConstructOnEnter(
   if (selStart !== selEnd || settings.exitPairsOnEnter === false) return null
   const end = closerEndAt(scan, selStart)
   return end === null ? null : { from: selStart, to: selStart, insert: '', selection: end }
+}
+
+function blockCloser(
+  scan: DocScan,
+  i: number,
+  typed: boolean,
+): { prefix: string; closer: string } | null {
+  const line = scan.lines[i]
+  if (line.trim() === '$$') {
+    const at = scan.lineStarts[i]
+    const math = spanAt(scan.maths, at)
+    if (
+      scan.fences[i] !== undefined ||
+      spanAt(scan.tables, at) !== undefined ||
+      (math !== undefined && math[0] !== at)
+    )
+      return null
+    if (scan.mathOpen !== i && !(typed && scan.mathOpen > i)) return null
+    const prefix = line.slice(0, line.search(/\S/))
+    return { prefix, closer: `${prefix}$$` }
+  }
+  const own = fenceAt(line)
+  const f = scan.fences[i]
+  if (own === null || (f !== undefined && (f.role !== 'open' || !typed))) return null
+  if (f !== undefined) {
+    const last = lineIndexAt(scan, f.to)
+    const captured = scan.fenceLines.some((k) => {
+      const g = k > i && k < last ? fenceAt(scan.lines[k]) : null
+      return (
+        g !== null && g.marker === own.marker && g.depth === own.depth && g.length >= own.length
+      )
+    })
+    const next = scan.fenceLines.find((k) => k > last)
+    if (!captured && (next === undefined || scan.fences[next] !== undefined)) return null
+  }
+  const prefix = line.slice(0, own.markerEnd - own.length)
+  return { prefix, closer: prefix + own.marker.repeat(own.length) }
+}
+
+export function closeBlockOnEnter(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  settings: Personalization = {},
+  typed = false,
+): Edit | null {
+  if (selStart !== selEnd || settings.pairMarkers === false) return null
+  const i = lineIndexAt(scan, selStart)
+  const end = scan.lineStarts[i] + scan.lines[i].length
+  if (selStart !== end) return null
+  const block = blockCloser(scan, i, typed)
+  if (block === null) return null
+  return {
+    from: end,
+    to: end,
+    insert: `\n${block.prefix}\n${block.closer}`,
+    selection: end + 1 + block.prefix.length,
+  }
 }
 
 export function closeConstructOnShiftEnter(

@@ -1,13 +1,12 @@
-// Colors live in markdown-pm.css, scoped under .codeblock so a stray tag outside a fence styles nothing. A bare fence selects no language and stays the plain mono block.
+// Colors live in markdown-pm.css, scoped under .codeblock so a stray tag outside a fence styles nothing. A bare fence selects no language, and its text takes the raw-Markdown color.
+import { markdown } from '@codemirror/lang-markdown'
 import {
   HighlightStyle,
   LanguageDescription,
   LanguageSupport,
   StreamLanguage,
-  syntaxHighlighting,
-  syntaxTree,
 } from '@codemirror/language'
-import type { Range } from '@codemirror/state'
+import { type Range, StateEffect } from '@codemirror/state'
 import {
   Decoration,
   type DecorationSet,
@@ -15,7 +14,12 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { styleTags, tags as t } from '@lezer/highlight'
+import { highlightTree, styleTags, tags as t } from '@lezer/highlight'
+import { docScan } from './docCache'
+import type { FenceInfo } from './Engine/detect'
+import type { DocScan } from './Engine/docScan'
+import { lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
+import { perText } from './Engine/perText'
 import { CODE_LANGS } from './Engine/codeLangs'
 
 /** A legacy stream mode dressed as the language support a description hands back. */
@@ -124,32 +128,96 @@ export const codeLanguages = CODE_LANGS.map(({ name, alias }) =>
 
 export const CODE_LOADER_NAMES = Object.keys(LOADERS)
 
-const CHECK_INK = Decoration.mark({ class: 'syntax-md-check' })
+const blockParser = markdown({ codeLanguages }).language.parser
 
-/** `[x]` arrives from the parser as one token, so the check character can only be separated from its brackets after the parse. */
-const checkMarks = (view: EditorView): DecorationSet => {
-  const marks: Range<Decoration>[] = []
-  for (const { from, to } of view.visibleRanges)
-    syntaxTree(view.state).iterate({
-      from,
-      to,
-      enter: (n) => {
-        if (n.name === 'TaskMarker') marks.push(CHECK_INK.range(n.from + 1, n.to - 1))
-      },
-    })
-  return Decoration.set(marks)
+const loaded = StateEffect.define<null>()
+
+type Mark = readonly [from: number, to: number, cls: string]
+
+type Tree = ReturnType<typeof blockParser.parse>
+
+function readBlock(tree: Tree, from: number, to: number): Mark[] {
+  const out: Mark[] = []
+  highlightTree(tree, syntaxTokens, (a, b, cls) => out.push([a, b, cls]), from, to)
+  // `[x]` arrives from the parser as one token, so the check character can only be separated from its brackets after the parse.
+  tree.iterate({
+    from,
+    to,
+    enter: (n) => {
+      if (n.name === 'TaskMarker') out.push([n.from + 1, n.to - 1, 'syntax-md-check'])
+    },
+  })
+  return out
 }
 
-const taskMarkerInk = ViewPlugin.fromClass(
+const blockMarks = new WeakMap<EditorView, Map<string, Tree>>()
+
+const mark = perText((cls) => Decoration.mark({ class: cls }), 64)
+
+function paint(
+  view: EditorView,
+  scan: DocScan,
+  f: FenceInfo,
+  trees: Map<string, Tree>,
+  out: Range<Decoration>[],
+): number {
+  const open = lineIndexAt(scan, f.from)
+  const close = lineIndexAt(scan, f.to)
+  const indent = (line: string): number => /^[ \t]*/.exec(line)?.[0].length ?? 0
+  const cut = f.depth === 0 ? indent(scan.lines[open]) : 0
+  const lines = scan.lines
+    .slice(open, close + 1)
+    .map((line) => line.slice(Math.min(cut, indent(line))))
+  const text = lines.join('\n')
+  const desc = f.lang ? LanguageDescription.matchLanguageName(codeLanguages, f.lang, true) : null
+  if (desc && !desc.support)
+    desc.load().then(() => {
+      if (view.dom.isConnected) view.dispatch({ effects: loaded.of(null) })
+    })
+  const tree = trees.get(text) ?? blockMarks.get(view)?.get(text) ?? blockParser.parse(text)
+  if (!desc || desc.support) trees.set(text, tree)
+  const starts = lineOffsetsOf(lines)
+  const first = Math.max(0, lineIndexAt(scan, view.viewport.from) - open)
+  const last = Math.min(lines.length - 1, lineIndexAt(scan, view.viewport.to) - open)
+  const local = { lines, lineStarts: starts }
+  for (const [a, b, cls] of readBlock(tree, starts[first], starts[last] + lines[last].length))
+    for (let k = lineIndexAt(local, a); k < lines.length && starts[k] < b; k++) {
+      const from = Math.max(a, starts[k])
+      const to = Math.min(b, starts[k] + lines[k].length)
+      const shift =
+        scan.lineStarts[open + k] + scan.lines[open + k].length - lines[k].length - starts[k]
+      if (to > from) out.push(mark(cls).range(from + shift, to + shift))
+    }
+  return close
+}
+
+function colors(view: EditorView): DecorationSet {
+  const scan = docScan(view.state.doc)
+  const trees = new Map<string, Tree>()
+  const out: Range<Decoration>[] = []
+  let next = 0
+  for (const { from, to } of view.visibleRanges)
+    for (let i = Math.max(next, lineIndexAt(scan, from)), end = lineIndexAt(scan, to); i <= end; ) {
+      const f = scan.fences[i]
+      i = next = f === undefined ? i + 1 : paint(view, scan, f, trees, out) + 1
+    }
+  blockMarks.set(view, trees)
+  return Decoration.set(out, true)
+}
+
+export const codeHighlight = ViewPlugin.fromClass(
   class {
     deco: DecorationSet
     constructor(view: EditorView) {
-      this.deco = checkMarks(view)
+      this.deco = colors(view)
     }
     update(u: ViewUpdate): void {
-      // Every fence language is a dynamic import, so the nested parse that first produces these nodes lands in a transaction that changed neither the document nor the viewport.
-      if (u.docChanged || u.viewportChanged || syntaxTree(u.startState) !== syntaxTree(u.state))
-        this.deco = checkMarks(u.view)
+      if (
+        u.docChanged ||
+        u.viewportChanged ||
+        u.transactions.some((tr) => tr.effects.some((e) => e.is(loaded)))
+      )
+        this.deco = colors(u.view)
     }
   },
   { decorations: (v) => v.deco },
@@ -181,5 +249,3 @@ const syntaxTokens = HighlightStyle.define([
   { tag: t.contentSeparator, class: 'syntax-md-rule' },
   { tag: t.labelName, class: 'syntax-md-info' },
 ])
-
-export const codeHighlight = [syntaxHighlighting(syntaxTokens), taskMarkerInk]

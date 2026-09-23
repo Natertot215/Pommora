@@ -1,5 +1,5 @@
 import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
-import { Prec } from '@codemirror/state'
+import { Prec, StateField } from '@codemirror/state'
 import {
   continueListOnEnter,
   continueBlockquoteOnEnter,
@@ -8,6 +8,7 @@ import {
   autoPair,
   autoDelete,
   closeConstructOnEnter,
+  closeBlockOnEnter,
   closeConstructOnShiftEnter,
   dashArrow,
   ellipsis,
@@ -23,6 +24,7 @@ import {
 } from './edits'
 import { renumberAfterNest, type ChangeSpec } from '../Engine/listDragModel'
 import { applyEdit } from './applyEdit'
+import { fenceAt } from '../Engine/markdownCode'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
@@ -55,12 +57,26 @@ const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edi
   return r ? { from: s.from, to: s.from, insert: '\n\n', selection: s.from + 2 } : null
 }
 
+const typedLine = StateField.define<number>({
+  create: () => -1,
+  update(at, tr) {
+    const line = tr.newDoc.lineAt(tr.newSelection.main.head).from
+    if (!tr.docChanged) return at === line ? at : -1
+    if (!tr.isUserEvent('input')) return -1
+    if (at === line) return line
+    const was = tr.startState.doc.lineAt(tr.startState.selection.main.head).text
+    return fenceAt(was) === null && was.trim() !== '$$' ? line : -1
+  },
+})
+
 const onEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state.doc)
+  const settings = settingsOf(view)
   return apply(
     view,
-    closeConstructOnEnter(scan, s.from, s.to, settingsOf(view)) ??
+    closeConstructOnEnter(scan, s.from, s.to, settings) ??
+      closeBlockOnEnter(scan, s.from, s.to, settings, view.state.field(typedLine) >= 0) ??
       tableBoundaryEnter(scan, s) ??
       continueListOnEnter(scan.text, s.from, s.to) ??
       continueBlockquoteOnEnter(scan, s.from, s.to),
@@ -130,6 +146,7 @@ export const wrapChords: KeyBinding[] = Object.entries({ "'": '"', 8: '*', 9: '(
 )
 
 export const markdownInput = [
+  typedLine,
   Prec.high(
     keymap.of([
       { key: 'Enter', run: commitAliasOnEnter },

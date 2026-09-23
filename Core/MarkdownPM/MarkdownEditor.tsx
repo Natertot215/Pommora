@@ -292,7 +292,12 @@ export function MarkdownEditor({
       markdownInput,
       formatGate.current.of(formatKeymap(lastCommands.current)),
       keymap.of([...defaultKeymap, ...historyKeymap]),
-      markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
+      markdown({
+        addKeymap: false,
+        pasteURLAsLink: false,
+        completeHTMLTags: false,
+        codeLanguages,
+      }),
       codeHighlight,
       EditorView.lineWrapping,
       // iOS soft-keyboard hints, no-ops on desktop — mobile scaffolding.
