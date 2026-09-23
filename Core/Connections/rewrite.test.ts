@@ -236,3 +236,25 @@ describe('the prefilter agrees with the rewriter', () => {
     }
   })
 })
+
+describe('the heading gate lets every heading reference through', () => {
+  it('rewrites each form it admits', () => {
+    const rewrites: [string, string, string][] = [
+      ['P', 'see [[P#Old]] here', 'see [[P#New]] here'],
+      ['P', '[[P#Old|alias]]', '[[P#New|alias]]'],
+      ['a]b', '[[a]b#Old]]', '[[a]b#New]]'],
+      ['P', '[x](P#Old)', '[x](P#New)'],
+      ['P(1)', '[x](P(1)#Old)', '[x](P(1)#New)'],
+      ['a\u2028b', '[[a\u2028b#Old]]', '[[a\u2028b#New]]'],
+    ]
+    for (const [page, body, want] of rewrites)
+      expect([body, rewriteHeadingConnections(body, page, 'Old', 'New')]).toEqual([body, want])
+  })
+
+  it('rewrites a bare fragment and a section run on the page itself', () => {
+    expect(rewriteHeadingConnections('[[#Old]]', 'P', 'Old', 'New', 'P')).toBe('[[#New]]')
+    expect(rewriteHeadingConnections('see §Old here', 'P', 'Old', 'New', 'P', ['Old'])).toBe(
+      'see §New here',
+    )
+  })
+})
