@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { valueOr } from '@pommora/core/Contract/result'
 import { pageMetaOf, useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { AssetImage } from '../Assets/AssetImage'
@@ -11,7 +10,6 @@ import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
 import { useWindowBannerSeat } from '../Interface/Windows/windowTabBanner'
-import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
@@ -32,29 +30,18 @@ export function PageHeader({
   chrome?: 'detail' | 'window'
 }): React.JSX.Element | null {
   const { id, path, title, cover } = page
-  const icon = useSession(pageMetaOf(id))?.icon
+  const meta = useSession(pageMetaOf(id))
+  const setting = useSession((s) => s.personalization.titleIcon) === true
+  const shown = meta?.title_icon ?? setting
   const coverSrc = useAssetUrl(cover)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const [iconHidden, setIconHidden] = useState(true)
-  useEffect(() => {
-    let alive = true
-    void host()
-      .ask('headingIcon:get')
-      .then((r) => {
-        if (alive) setIconHidden(valueOr(r, {})[id] ?? true)
-      })
-    return () => {
-      alive = false
-    }
-  }, [id])
 
-  const toggleHeadingIcon = (): void => {
-    const next = !iconHidden
-    setIconHidden(next)
-    void host().ask('headingIcon:set', id, next)
+  const toggleTitleIcon = (): void => {
+    const next = !shown
+    void mutate({ op: 'setPageMeta', path, patch: { title_icon: next === setting ? null : next } })
   }
 
   const bannerRef = useRef<HTMLDivElement>(null)
@@ -74,17 +61,17 @@ export function PageHeader({
   // A windowed page without a banner draws no header at all; the seat above still takes the strip's Add Banner.
   if (chrome === 'window' && !coverSrc) return null
 
-  const glyph = entityIcon('page', icon, defaultIcons)
+  const glyph = entityIcon('page', meta?.icon, defaultIcons)
   const titleHeader = (
     <DetailTitleHeader
       title={title}
       icon={glyph}
       iconRef={iconRef}
-      iconHidden={iconHidden}
+      iconHidden={!shown}
       onRename={(newName) => submitRename(path, 'page', newName)}
-      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: glyph !== undefined, iconHidden }))}
+      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: true, iconHidden: !shown }))}
       onEditIcon={() => setIconPickerOpen(true)}
-      onToggleIcon={toggleHeadingIcon}
+      onToggleIcon={toggleTitleIcon}
     />
   )
 
@@ -131,7 +118,7 @@ export function PageHeader({
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}
         triggerRef={iconRef}
-        value={icon}
+        value={meta?.icon}
         onSelect={(chosen) => void mutate({ op: 'setIcon', path, kind: 'page', icon: chosen })}
       />
     </div>

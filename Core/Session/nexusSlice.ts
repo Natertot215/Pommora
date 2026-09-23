@@ -137,9 +137,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
               host()
                 .ask('linkTitles:get')
                 .then((r) => set({ linkTitles: valueOr(r, {}) })),
-              host()
-                .ask('aliases:get')
-                .then((r) => set({ pageAliases: valueOr(r, {}) })),
             ])
             // A refetch must not re-read the sidecar: its debounced write trails the live tab set.
             if (get().activeTabId === '') {
