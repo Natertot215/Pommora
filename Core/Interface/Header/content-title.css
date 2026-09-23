@@ -54,13 +54,24 @@
   field-sizing: content;
 }
 .detail-title-lead .detail-title-text,
+.detail-title-slot,
 .detail-title-hint {
   flex: none;
 }
-.detail-title-hint-run {
+/* Doubled: the reveal's lead margin is a label's gap from its icon; the title sits flush, as the field does once it takes the title's place. */
+.detail-title-slot.detail-title-slot,
+.detail-title-lead.is-searching .detail-title-hint {
+  margin-left: 0;
+}
+/* A search that skips the hint replaces the title at once; its end still slides the title back. */
+.detail-title-lead.is-instant .detail-title-slot,
+.detail-title-lead.is-instant .detail-title-hint {
+  transition: none;
+}
+.detail-title-slot-run {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -68,6 +79,7 @@
 /* Doubled: the segment recipe states its own fill at the same weight. */
 .detail-title-hint-segment.detail-title-hint-segment {
   height: 1em; /* KNOB — the segment's height against the title's cap */
+  margin-left: 6px;
   background: var(--border-strong);
 }
 /* Doubled: `base` resets the font at the same weight. */
