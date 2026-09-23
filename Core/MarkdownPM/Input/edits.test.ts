@@ -256,17 +256,46 @@ describe('auto-pair + auto-delete', () => {
       ['`', 'a `word` b'],
       ['(', 'a (word) b'],
       ['[', 'a [word] b'],
-      ['{', 'a {word} b'],
+      ['{', 'a [word] b'],
     ] as const) {
       const e = wrapSelection(scanDoc(doc), 2, 6, ch, on)!
       expect(apply(doc, e)).toBe(out)
       expect([e.selection, e.head]).toEqual([3, 7])
     }
-    const once = apply(doc, wrapSelection(scanDoc(doc), 2, 6, '*', on)!)
-    expect(apply(once, wrapSelection(scanDoc(once), 3, 7, '*', on)!)).toBe('a **word** b')
     const spaced = wrapSelection(scanDoc(doc), 1, 7, '"', on)!
     expect(apply(doc, spaced)).toBe('a "word" b')
     expect([spaced.selection, spaced.head]).toEqual([3, 7])
+  })
+  it('repeating a wrap over its own result cycles instead of compounding', () => {
+    const on = { wrapSelections: true }
+    const cycle = (ch: string, ...states: string[]) => {
+      let doc = 'a word b'
+      let sel = 2
+      for (const want of states) {
+        const e = wrapSelection(scanDoc(doc), sel, sel + 4, ch, on)!
+        doc = apply(doc, e)
+        sel = e.selection
+        expect(doc).toBe(`a ${want} b`)
+        expect(e.head).toBe(sel + 4)
+      }
+    }
+    cycle('[', '[word]', '[[word]]', '{word}', '{{word}}', '[word]')
+    cycle('{', '[word]', '[[word]]', '{word}')
+    cycle('*', '*word*', '**word**', 'word', '*word*')
+    cycle('~', '~word~', '~~word~~', 'word')
+    cycle('=', '=word=', '==word==', 'word')
+    cycle('_', '_word_', '__word__', 'word')
+    cycle('`', '`word`', '``word``', 'word')
+    cycle('"', '"word"', "'word'", 'word')
+    cycle("'", '"word"', "'word'", 'word')
+    cycle('(', '(word)', '((word))')
+    expect(wrapSelection(scanDoc('x `*word*` y'), 4, 8, '*', on)).toBeNull()
+    expect(apply("rock'n'roll", wrapSelection(scanDoc("rock'n'roll"), 5, 6, '"', on)!)).toBe(
+      'rock\'"n"\'roll',
+    )
+    expect(apply('my__var__name', wrapSelection(scanDoc('my__var__name'), 4, 7, '_', on)!)).toBe(
+      'my___var___name',
+    )
   })
   it('Wrap Selections stays off by default, per group, in code, and for markers across lines', () => {
     expect(wrapSelection(scanDoc('a word'), 2, 6, '*')).toBeNull()
