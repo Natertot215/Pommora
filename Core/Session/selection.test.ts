@@ -112,7 +112,7 @@ describe('reconcileSelection', () => {
     expect(reconcileSelection(t, { kind: 'collection', id: 'gone' })).toEqual({ kind: 'none' })
   })
 
-  it('keeps a depth-1 Set selection by id; refreshes its path on move; drops a Sub-Set or a gone Set', () => {
+  it('keeps a Set selection by id at any depth; refreshes its path on move; drops it when gone', () => {
     const t: NexusTree = {
       ...tree([]),
       collections: [
@@ -137,13 +137,10 @@ describe('reconcileSelection', () => {
     }
     const set1: SelectionState = { kind: 'set', id: 's1', path: 'C/S' }
     expect(reconcileSelection(t, set1)).toBe(set1)
-    expect(reconcileSelection(t, { kind: 'set', id: 's1', path: 'C/Old' })).toEqual({
+    expect(reconcileSelection(t, { kind: 'set', id: 's2', path: 'C/S/Old' })).toEqual({
       kind: 'set',
-      id: 's1',
-      path: 'C/S',
-    })
-    expect(reconcileSelection(t, { kind: 'set', id: 's2', path: 'C/S/Sub' })).toEqual({
-      kind: 'none',
+      id: 's2',
+      path: 'C/S/Sub',
     })
     expect(reconcileSelection(t, { kind: 'set', id: 'gone', path: 'C/X' })).toEqual({
       kind: 'none',

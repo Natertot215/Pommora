@@ -27,7 +27,7 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
-import { findCollection, findSet, isDepth1Set } from '../../Nexus/treeIndex'
+import { findCollection, findSet } from '../../Nexus/treeIndex'
 import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
@@ -229,8 +229,7 @@ export function ViewTile({
   const embedded = entry.views[index]
   const source: CollectionNode | SetNode | undefined =
     embedded && tree
-      ? (findCollection(tree, embedded.source_id) ??
-        (isDepth1Set(tree, embedded.source_id) ? findSet(tree, embedded.source_id) : undefined))
+      ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
       : undefined
 
   const schema = source && tree ? resolveContainerSchema(tree, source) : []

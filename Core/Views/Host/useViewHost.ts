@@ -83,7 +83,7 @@ export function useViewHost(
     groupingKeyOf(view),
   )
 
-  // Host layers reset on the id STRINGS, never `[source]` identity, and `source.id` must be in the array: two containers still on the DEFAULT_VIEW_ID sentinel would leak layers on `[view.id]` alone.
+  // Host layers reset on the id STRINGS, never `[source]` identity, and `source.id` must be in the array: sibling sub-Sets below depth 1 share the DEFAULT_VIEW_ID sentinel and would leak layers on `[view.id]` alone.
   useEffect(() => {
     setOrderOverride(null)
     setHiddenOverride(null)

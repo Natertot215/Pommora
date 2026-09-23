@@ -21,7 +21,6 @@ import { navKey } from '../Navigation/navRecents'
 import { clearCache, readBodyBase, readPageDetail, setBodyBase } from './pageDetailCache'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
-import { makeTree } from '../Testing/testTree'
 
 // Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist, the mutation gateway, the applyTree accent read) so it runs in isolation.
 let channels: Record<string, ReturnType<typeof vi.fn>>
@@ -100,30 +99,6 @@ describe('store — tab wiring (Phase 0)', () => {
     expect(s.tabs[0].navStack).toEqual([ctx('a'), ctx('b')])
     expect(s.selection).toEqual({ kind: 'context', id: 'b' })
     expect(s.recents.map((r) => ('id' in r ? r.id : r.kind))).toEqual(['b'])
-  })
-
-  it('selecting a Sub-Set is refused — no selection, tab, or recent', async () => {
-    const t = makeTree()
-    const [col] = t.collections
-    const [set] = col.sets
-    const sub = {
-      kind: 'set' as const,
-      id: 's2',
-      title: 'Deep',
-      path: 'Notes/Ideas/Deep',
-      pages: [],
-    }
-    seed({
-      tree: { ...t, collections: [{ ...col, sets: [{ ...set, sets: [sub] }] }] },
-      tabs: [uTab('t1', ctx('a'), [ctx('a')], 0)],
-      activeTabId: 't1',
-    })
-    const before = useSession.getState()
-    await useSession.getState().select({ kind: 'set', id: 's2', path: sub.path }, { newTab: true })
-    const s = useSession.getState()
-    expect(s.selection).toBe(before.selection)
-    expect(s.tabs).toBe(before.tabs)
-    expect(s.recents).toBe(before.recents)
   })
 
   it('re-selecting the shown entity after Back is a dedup no-op — Forward preserved', async () => {
