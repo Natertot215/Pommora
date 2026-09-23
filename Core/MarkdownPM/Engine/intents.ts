@@ -385,14 +385,11 @@ function citationLines(
 ): [number, number][] {
   const toNew = (k: number): number => (k < a ? k : k >= b ? k - b + e : a)
   const toOld = (k: number): number => (k < a ? k : k - e + b)
-  const outside = ([from, to]: [number, number]): [number, number][] => {
-    const out: [number, number][] = []
-    if (from < Math.min(to, a)) out.push([from, Math.min(to, a)])
-    if (Math.max(from, e) < to) out.push([Math.max(from, e), to])
-    return out
-  }
+  const n = scan.lines.length
   const first = Math.min(toNew(was.citations.firstLine), scan.citations.firstLine)
-  const ranges = outside([first, scan.lines.length])
+  const ranges: [number, number][] = []
+  if (first < a) ranges.push([first, a])
+  if (Math.max(first, e) < n) ranges.push([Math.max(first, e), n])
   for (const [line, held] of scan.citations.markersAt) {
     if ((line >= a && line < e) || line >= first) continue
     const before = was.citations.markersAt.get(toOld(line))
@@ -482,18 +479,8 @@ export function decorationsFor(
 ): DecoIntent[] {
   const s = scan ?? scanDoc(text)
   const intents: DecoIntent[] = tokenIntents(tokens, active)
-  const n = s.lines.length
-  const listLevels = new Array<number>(n).fill(-1)
-  const listKinds = new Array<string>(n).fill('')
-  for (let i = 0; i < n; i++) {
-    const li = lineIntentsInto(s, i, selStart, intents, scope)
-    if (li) {
-      listLevels[i] = li.level
-      listKinds[i] = railTypeClass(li) ?? ''
-    }
-  }
-  for (const rails of railIntents(s.lineStarts, listLevels, listKinds))
-    if (rails) for (const it of rails) intents.push(it)
+  for (const it of assembleLineIntents(s, docLineIntents(s, scope), selStart, undefined, scope))
+    intents.push(it)
   return intents
 }
 

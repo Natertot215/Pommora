@@ -310,5 +310,11 @@ describe('chunksOver — a chunk tokenizes as it does inside the whole document'
     )
     const [[from]] = chunksOver(outline, [[100, 150]])
     expect(outline.lineStarts.indexOf(from)).toBe(0)
+    expect(
+      chunksOver(outline, [
+        [0, 40],
+        [40, 150],
+      ]).map(([a]) => outline.lineStarts.indexOf(a)),
+    ).toEqual([0])
   })
 })

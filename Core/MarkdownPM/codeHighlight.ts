@@ -16,7 +16,7 @@ import {
 } from '@codemirror/view'
 import { highlightTree, styleTags, tags as t } from '@lezer/highlight'
 import { docScan } from './docCache'
-import type { FenceInfo } from './Engine/detect'
+import { type FenceInfo, lineEndOf } from './Engine/detect'
 import type { DocScan } from './Engine/docScan'
 import { lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
@@ -184,8 +184,7 @@ function paint(
     for (let k = lineIndexAt(local, a); k < lines.length && starts[k] < b; k++) {
       const from = Math.max(a, starts[k])
       const to = Math.min(b, starts[k] + lines[k].length)
-      const shift =
-        scan.lineStarts[open + k] + scan.lines[open + k].length - lines[k].length - starts[k]
+      const shift = lineEndOf(scan, open + k) - lineEndOf(local, k)
       if (to > from) out.push(mark(cls).range(from + shift, to + shift))
     }
   return close
