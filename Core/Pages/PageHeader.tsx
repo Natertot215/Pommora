@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { valueOr } from '@pommora/core/Contract/result'
-import { useSession } from '../Session/store'
+import { pageMetaOf, useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { AssetImage } from '../Assets/AssetImage'
 import { ImagePicker } from '../Assets/ImagePicker'
@@ -20,7 +20,6 @@ export interface HeaderPage {
   path: string
   title: string
   cover?: string
-  icon?: string
 }
 
 export function PageHeader({
@@ -32,7 +31,8 @@ export function PageHeader({
   onBannerDone: () => void
   chrome?: 'detail' | 'window'
 }): React.JSX.Element | null {
-  const { id, path, title, cover, icon } = page
+  const { id, path, title, cover } = page
+  const icon = useSession(pageMetaOf(id))?.icon
   const coverSrc = useAssetUrl(cover)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const submitRename = useSession((s) => s.submitRename)

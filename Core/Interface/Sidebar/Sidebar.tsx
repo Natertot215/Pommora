@@ -40,7 +40,7 @@ import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '@pommora/core/Settings/experimental'
-import { useSession } from '../../Session/store'
+import { pageMetaOf, useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../Glance/glanceLink'
 import { glanceShown } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
@@ -102,6 +102,7 @@ function PageRow({
   onSelectPage: (page: PageNode, e?: React.MouseEvent) => void
 }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const ownIcon = useSession(pageMetaOf(page.id))?.icon
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
@@ -129,7 +130,7 @@ function PageRow({
       >
         <div ref={rowRef}>
           <Leaf
-            icon={entityIcon('page', page.icon, defaultIcons)}
+            icon={entityIcon('page', ownIcon, defaultIcons)}
             title={page.title}
             depth={depth}
             selected={isPageSelected(selection, page.id)}
@@ -143,7 +144,7 @@ function PageRow({
         open={iconPath === page.path}
         onClose={endIcon}
         triggerRef={rowRef}
-        value={page.icon}
+        value={ownIcon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: page.path, kind: 'page', icon })}
       />
       {ghost.anchorId === page.id && <GhostLeaf depth={depth} kind="page" label="New Page" />}

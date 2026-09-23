@@ -760,7 +760,7 @@ function DateBucketList({
   const granularity = group.date_granularity ?? 'month'
   const present = useMemo(() => {
     const set = new Set<string>()
-    for (const row of flattenContainer(source, values).rows) {
+    for (const row of flattenContainer(source, values, {}).rows) {
       const key = bucketKey(row, group.property_id, schema, granularity)
       if (key) set.add(key)
     }

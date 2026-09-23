@@ -51,7 +51,7 @@ export function matrixTree(tree: NexusTree): MatrixTree {
       pages.push({
         id: p.id,
         title: p.title,
-        icon: p.icon,
+        icon: tree.pageMetadata[p.id]?.icon,
         folderId: node.id,
         spaceIds: spaceIdsOf(p.contextValues),
       })
@@ -108,7 +108,7 @@ export function matrixWalk(held: MatrixTree, reply: MatrixGraphReply): MatrixWal
 
   return {
     input: { pages: held.pages, folders: held.folders, spaces: held.spaces, connections },
-    rows: held.seats.map((s) => toRow(s.page, s.folderId, reply.values)),
+    rows: held.seats.map((s) => toRow(s.page, s.folderId, reply.values, held.tree.pageMetadata)),
     spaceRows: held.spaceRows,
     schema: held.schema,
     setTree: held.setTree,

@@ -7,9 +7,10 @@ type SidecarRewrite = (raw: Raw, file: string) => Raw | null
 
 export const COLOR_KEY = '$color'
 export const ORDER_KEY = '$order'
+export const ICON_KEY = '$icon'
 
 // Each name here is a reserved property name or `$`-prefixed, so no property value can sit under one.
-const MODELED = new Set(['id', 'icon', 'banner', 'heading_icon_hidden', COLOR_KEY])
+const MODELED = new Set(['id', ICON_KEY, 'banner', 'heading_icon_hidden', COLOR_KEY])
 
 export interface SpaceRowOrder {
   contexts: string[]
@@ -30,7 +31,7 @@ export function spaceFieldsFrom(sc: Raw): {
     values[k] = v
   }
   return {
-    icon: asString(sc.icon),
+    icon: asString(sc[ICON_KEY]),
     banner: asString(sc.banner),
     headingIconHidden: sc.heading_icon_hidden === true,
     color: asString(sc[COLOR_KEY]),

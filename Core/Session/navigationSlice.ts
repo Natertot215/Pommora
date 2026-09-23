@@ -287,15 +287,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     if (search) set({ viewSearch: { ...rest, [newId]: search } })
   }
 
-  // Both live-slot writers find their page by PATH — a body save and an icon write route by file.
-  const patchReadyAt = (path: string, patch: (slot: ReadySlot) => ReadySlot): void =>
-    set((s) => {
-      for (const [id, slot] of Object.entries(s.pages))
-        if (slot.status === 'ready' && slot.detail.path === path)
-          return { pages: { ...s.pages, [id]: patch(slot) } }
-      return {}
-    })
-
   const applyTabResult = (r: { tabs: Tab[]; activeTabId: string; mru: string[] }): void => {
     const activeChanged = r.activeTabId !== get().activeTabId
     set({ tabs: r.tabs, activeTabId: r.activeTabId, tabMru: r.mru })
@@ -412,7 +403,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
   return {
     ...PER_NEXUS,
     viewSearchSummon: 0,
-    setPageBody: (path, body) => patchReadyAt(path, (slot) => ({ ...slot, body })),
+    setPageBody: (path, body) =>
+      set((s) => {
+        for (const [id, slot] of Object.entries(s.pages))
+          if (slot.status === 'ready' && slot.detail.path === path)
+            return { pages: { ...s.pages, [id]: { ...slot, body } } }
+        return {}
+      }),
     replaceBody: async (path) => {
       cancelPageSave(path)
       dropCacheDetail(path)
@@ -821,18 +818,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'delete':
           dropPageDetail(req.path)
           keepSlots((_, slot) => slot.target.path !== req.path)
-          break
-        case 'setIcon':
-          // Patch the open detail and drop any warm one, or the header re-reads the stale value.
-          if (req.kind === 'page') {
-            dropCacheDetail(req.path)
-            patchReadyAt(req.path, (slot) => {
-              const frontmatter = { ...slot.detail.frontmatter }
-              if (req.icon === null) delete frontmatter.icon
-              else frontmatter.icon = req.icon
-              return { ...slot, detail: { ...slot.detail, frontmatter } }
-            })
-          }
           break
         case 'setBanner':
           if (req.kind === 'page') dropCacheDetail(req.path)

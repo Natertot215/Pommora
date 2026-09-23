@@ -11,6 +11,7 @@ import { createNexusSlice } from './nexusSlice'
 import { createWindowSlice } from './windowSlice'
 import { createRenameSlice } from './mutationSlice'
 import type { SessionState } from './sessionState'
+import type { PageMeta } from '@pommora/core/Nexus/schemas'
 
 export type { PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'
 export type { SessionState } from './sessionState'
@@ -42,3 +43,8 @@ export const useSession = create<SessionState>()((...a) => ({
 /** Every surface that mounts an embed reads the nexus-wide scale HERE, so what an absent or out-of-range value means is settled once. */
 export const useEmbedScale = (): number =>
   useSession((s) => coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT))
+
+export const pageMetaOf =
+  (id: string | undefined) =>
+  (s: SessionState): PageMeta | undefined =>
+    id ? s.tree?.pageMetadata[id] : undefined

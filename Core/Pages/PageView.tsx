@@ -23,7 +23,7 @@ import { schedulePageSave } from '../Session/saveScheduler'
 import { changesTo, merge3 } from './merge3'
 import { syncLanding } from '../MarkdownPM/api'
 import { host } from '../Platform/dialer'
-import { coverOf, iconOf } from './pageDetail'
+import { coverOf } from './pageDetail'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
@@ -146,7 +146,6 @@ export function PageView({
             path: pageDetail.path,
             title: pageDetail.title,
             cover: coverOf(pageDetail),
-            icon: iconOf(pageDetail),
           }}
           onBannerDone={() => void reloadPage()}
         />

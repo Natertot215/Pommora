@@ -79,7 +79,7 @@ export const interfaceHandlers = {
     isIndexArray,
     'Table indices must be a non-negative-integer array.',
   ),
-  // Only whether the header draws the icon is chrome; the icon itself stays in frontmatter.
+  // Only whether the header draws the icon is chrome; the icon itself lives in the page's month file.
   'headingIcon:get': scopeGet<boolean>('headingIcon'),
   'headingIcon:set': scopeSet('headingIcon', isBoolean, 'Hidden must be a boolean.'),
   'citations:get': scopeGet<boolean>('citations'),

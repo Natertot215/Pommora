@@ -26,7 +26,7 @@ export function pageRowOf(
   const rider = fm.contextValues as Record<string, string[]> | undefined
   return {
     ...page,
-    icon: fm.icon,
+    icon: tree?.pageMetadata[page.id]?.icon,
     frontmatter: fm,
     createdAt: null,
     modifiedAt: null,

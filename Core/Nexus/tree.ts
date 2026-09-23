@@ -13,13 +13,15 @@ interface BaseNode {
   id: string
   kind: NodeKind
   title: string
-  icon?: string
 }
 
 /** Carries its nexus-relative POSIX path so a mutation can address it: the renderer sends `path` back and main resolves it under the session root. */
 interface PathNode extends BaseNode {
   path: string
-  /** From the sidecar; a page's banner rides its own frontmatter key instead. */
+}
+
+interface ChromeNode extends PathNode {
+  icon?: string
   banner?: string
   headingIconHidden?: boolean
 }
@@ -29,7 +31,7 @@ export interface PageNode extends PathNode {
   contextValues?: Record<string, string[]>
 }
 
-export interface SpaceNode extends PathNode {
+export interface SpaceNode extends ChromeNode {
   kind: 'space'
   contextId: string
   color?: string
@@ -42,7 +44,7 @@ export interface ContextGroup {
   spaces: SpaceNode[]
 }
 
-export interface SetNode extends PathNode {
+export interface SetNode extends ChromeNode {
   kind: 'set'
   sets?: SetNode[]
   pages: PageNode[]
@@ -52,7 +54,7 @@ export interface SetNode extends PathNode {
   activeView?: string
 }
 
-export interface CollectionNode extends PathNode {
+export interface CollectionNode extends ChromeNode {
   kind: 'collection'
   sets: SetNode[]
   pages: PageNode[]

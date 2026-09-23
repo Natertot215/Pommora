@@ -115,13 +115,14 @@ function walk(tree: NexusTree): NodeRecord[] {
       })
   }
   const addPage = (p: PageNode, parents: TrailNode[]): void => {
+    const ownIcon = tree.pageMetadata[p.id]?.icon
     nodes.push({
       key: navKey({ kind: 'page', id: p.id }),
       kind: 'page',
       id: p.id,
       title: p.title,
-      icon: entityIcon('page', p.icon, di),
-      ownIcon: p.icon,
+      icon: entityIcon('page', ownIcon, di),
+      ownIcon,
       path: p.path,
       parents,
     })
