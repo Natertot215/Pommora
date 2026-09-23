@@ -5,6 +5,7 @@ import { pageMetaOf, shownDetail, useSession } from '../Session/store'
 import { confirmDelete } from '../Interface/Confirm/confirmations'
 import {
   FooterIconButton,
+  FooterLockButton,
   MenuFooting,
   MenuItem,
   MenuScrollFrame,
@@ -17,8 +18,7 @@ import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { EDITOR_SCALE_DEFAULT, coerceScale } from '../Settings/personalization'
-import { ScalePicker } from '../Settings/ScalePicker'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { useExperimental } from '../Settings/experimental'
 
 const FOOTER_ACTIONS = [
@@ -40,15 +40,8 @@ export function PageMenu(): React.JSX.Element | null {
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [renaming, setRenaming] = useState(false)
-  const setPersonalization = useSession((st) => st.setPersonalization)
-  const editorScale = coerceScale(
-    useSession((st) => st.personalization.editorScale),
-    EDITOR_SCALE_DEFAULT,
-  )
-  const setEditorScale = (f: number): void => {
-    const next = coerceScale(f, EDITOR_SCALE_DEFAULT)
-    setPersonalization('editorScale', next === EDITOR_SCALE_DEFAULT ? undefined : next)
-  }
+  // A placeholder for Page Lock, a future feature: the toggle swaps its glyph and locks nothing.
+  const [locked, setLocked] = useState(false)
 
   if (!pageDetail) return null
 
@@ -74,7 +67,11 @@ export function PageMenu(): React.JSX.Element | null {
         footer={
           <MenuFooting
             leading={
-              <ScalePicker ariaLabel="Page Scale" value={editorScale} onPick={setEditorScale} />
+              <FooterLockButton
+                ariaLabel={lockLabel(locked, 'Page')}
+                locked={locked}
+                onToggle={() => setLocked(!locked)}
+              />
             }
             trailing={
               <FooterIconButton
