@@ -77,6 +77,12 @@ export type PageSlot =
 
 type ReadySlot = Extract<PageSlot, { status: 'ready' }>
 
+/** `key` is the tab's shown entity when the search opened; the entry drops once the tab shows anything else. */
+export interface ViewSearch {
+  key: string
+  query: string
+}
+
 export interface NavigationSlice {
   selection: SelectionState
   pages: Record<string, PageSlot>
@@ -124,6 +130,10 @@ export interface NavigationSlice {
   pendingTravel: PendingTravel | null
   setPendingTravel: (pendingTravel: PendingTravel) => void
   clearPendingTravel: () => void
+  viewSearch: Record<string, ViewSearch>
+  viewSearchSummon: number
+  searchView: () => boolean
+  setViewQuery: (query: string | null) => void
 }
 
 export interface PendingTravel {
@@ -204,6 +214,7 @@ const PER_NEXUS = {
   recents: [],
   navBanner: undefined,
   pendingTravel: null,
+  viewSearch: {},
 } satisfies Partial<NavigationSlice>
 
 export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
@@ -241,10 +252,22 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
   const pruneSlots = (): void => {
     const s = get()
     const live = new Set<string>()
+    const shown = new Map<string, string>()
     if (s.selection.kind === 'page') live.add(s.selection.id)
-    for (const t of [...s.tabs, ...s.pinnedTabs])
+    for (const t of [...s.tabs, ...s.pinnedTabs]) {
       if (t.target.kind === 'page') live.add(t.target.id)
+      shown.set(t.id, tabKey(t.target))
+    }
     keepSlots((id) => live.has(id))
+    const searches = Object.entries(s.viewSearch)
+    const held = searches.filter(([tabId, search]) => shown.get(tabId) === search.key)
+    if (held.length < searches.length) set({ viewSearch: Object.fromEntries(held) })
+  }
+
+  const retagTab = (oldId: string, newId: string): void => {
+    get().retagTabPins(oldId, newId)
+    const { [oldId]: search, ...rest } = get().viewSearch
+    if (search) set({ viewSearch: { ...rest, [newId]: search } })
   }
 
   // Both live-slot writers find their page by PATH — a body save and an icon write route by file.
@@ -297,8 +320,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
   const setPinned = (pinned: NavRef[], index: ReconcileIndex | null): void => {
     const next = derivePinnedTabs(pinned, index)
-    // A pinned tab whose id vanishes here is a tab close for the glance pins tagged to it (unpin, or its target deleted) — scrub them, the pinned-tab analog of closeTab. unpinTab retags before it reaches here, so its migration is already off the vanishing id.
-    for (const t of get().pinnedTabs) if (!next.some((n) => n.id === t.id)) get().scrubTabPins(t.id)
+    // A pinned tab whose id vanishes here is a tab close for the glance pins and the search tagged to it (unpin, or its target deleted) — scrub them, the pinned-tab analog of closeTab. unpinTab retags before it reaches here, so its migration is already off the vanishing id.
+    for (const t of get().pinnedTabs) {
+      if (next.some((n) => n.id === t.id)) continue
+      get().scrubTabPins(t.id)
+      const { [t.id]: search, ...rest } = get().viewSearch
+      if (search) set({ viewSearch: rest })
+    }
     set((s) => ({ pinned, pinnedTabs: sameTabs(s.pinnedTabs, next) ? s.pinnedTabs : next }))
   }
 
@@ -325,7 +353,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     for (const t of covered) {
       dropCacheTab(t.id)
       // Pins survive the re-key (unlike the warm cache, which is dropped): a graduated tab keeps its pins under the pinned id.
-      if (t.target.kind !== 'newtab') get().retagTabPins(t.id, pinTabId(t.target))
+      if (t.target.kind !== 'newtab') retagTab(t.id, pinTabId(t.target))
     }
     if (activeCovered && activeCovered.target.kind !== 'newtab') {
       const pinId = pinTabId(activeCovered.target)
@@ -366,6 +394,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
   return {
     ...PER_NEXUS,
+    viewSearchSummon: 0,
     setPageBody: (path, body) => patchReadyAt(path, (slot) => ({ ...slot, body })),
     replaceBody: async (path) => {
       cancelPageSave(path)
@@ -463,7 +492,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       )
       const tab: Tab = existing ?? { id: makeTabId(), target, navStack: [target], navIndex: 0 }
       // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins on a dead tab), and BEFORE unpinTarget — its setPinned scrub drops the vanishing pin: id's pins, so the migration must already have moved them off it.
-      get().retagTabPins(pinId, tab.id)
+      retagTab(pinId, tab.id)
       get().unpinTarget(navKey(target))
       if (!existing) set((s) => ({ tabs: insertUnpinned(s.tabs, s.activeTabId, tab) }))
       if (get().activeTabId === pinId)
@@ -803,5 +832,23 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
     setPendingTravel: (pendingTravel) => set({ pendingTravel }),
     clearPendingTravel: () => set({ pendingTravel: null }),
+    searchView: () => {
+      const { selection, activeTabId, viewSearch, viewSearchSummon } = get()
+      if (selection.kind !== 'collection' && selection.kind !== 'set') return false
+      set({
+        viewSearch: {
+          ...viewSearch,
+          [activeTabId]: viewSearch[activeTabId] ?? { key: tabKey(selection), query: '' },
+        },
+        viewSearchSummon: viewSearchSummon + 1,
+      })
+      return true
+    },
+    setViewQuery: (query) => {
+      const { activeTabId, viewSearch } = get()
+      const { [activeTabId]: open, ...rest } = viewSearch
+      if (!open) return
+      set({ viewSearch: query === null ? rest : { ...rest, [activeTabId]: { ...open, query } } })
+    },
   }
 }

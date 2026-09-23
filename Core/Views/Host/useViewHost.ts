@@ -12,7 +12,7 @@ import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import { useSession } from '../../Session/store'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView, useViewTileScope } from '../ViewTileScope'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
@@ -24,6 +24,7 @@ import { resolveBandHead } from '../Bands/GroupBand'
 import { resolveContainerSchema } from '../Pipeline/pickView'
 import { bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
+import { searchGroups } from '../Pipeline/search'
 import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride } from '../../Properties/valueOverride'
@@ -42,6 +43,8 @@ interface ViewHostUpward {
 }
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
+
+const NO_COLLAPSE = new Set<string>()
 
 const stylesCaughtUp = (
   patch: Record<string, ColumnStyle>,
@@ -63,6 +66,10 @@ export function useViewHost(
   const select = useSession((s) => s.select)
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
+  const tile = useViewTileScope()
+  const query = useSession((s) => (tile ? undefined : s.viewSearch[s.activeTabId]?.query))
+  const needle = query?.trim().toLowerCase() ?? ''
+  const searching = needle !== ''
 
   // The loaded values never re-read on a write, so a changed row re-groups only because this optimistic patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Overrides | null>(null)
@@ -144,7 +151,7 @@ export function useViewHost(
         manualOverride,
         structuralOrder ? undefined : view.manual_order,
       )
-  const dragDisabled = !(canReorderWithin || canReassign || canRelocate)
+  const dragDisabled = searching || !(canReorderWithin || canReassign || canRelocate)
 
   const effectiveValues = useMemo(() => {
     if (!valueOverride) return values
@@ -160,7 +167,12 @@ export function useViewHost(
     return out
   }, [values, valueOverride])
   const contextIds = contextIdsOf(tree)
-  const { columns, groups, setTree, rows } = useMemo(() => {
+  const {
+    columns,
+    groups: resolvedGroups,
+    setTree,
+    rows,
+  } = useMemo(() => {
     const { rows, setTree } = flattenContainer(source, effectiveValues)
     return {
       ...resolveView({
@@ -176,6 +188,15 @@ export function useViewHost(
       rows,
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
+  const titles = useMemo(
+    () => (searching ? new Map(rows.map((r) => [r.id, r.title.toLowerCase()])) : null),
+    [rows, searching],
+  )
+  const groups = useMemo(
+    () => (titles ? searchGroups(resolvedGroups, needle, titles) : resolvedGroups),
+    [resolvedGroups, needle, titles],
+  )
+  const shownCollapsed = searching ? NO_COLLAPSE : collapsed
   // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
   const sortReassign = useMemo(() => {
     if (groupPropId !== undefined || sortKeys !== 1) return undefined
@@ -235,6 +256,7 @@ export function useViewHost(
     void saveFolded(patch, opts)
   }
   const toggleCollapse = (key: string): void => {
+    if (searching) return
     const next = new Set(collapsed)
     if (next.has(key)) next.delete(key)
     else next.add(key)
@@ -339,7 +361,7 @@ export function useViewHost(
     groupPropId,
     groupPropType,
     setPaths,
-    collapsed,
+    collapsed: shownCollapsed,
     toggleCollapse,
     viewRootRef: upward.viewRootRef,
     onCreated: (created) => upward.onCreated.current(created),
@@ -368,7 +390,7 @@ export function useViewHost(
     rowBand,
     paintOrder,
     bandLabel,
-    collapsed,
+    collapsed: shownCollapsed,
     toggleCollapse,
     structuralGrouping,
     subGrouped,
@@ -380,6 +402,7 @@ export function useViewHost(
     reassignBySortRun,
     structuralOrder,
     dragDisabled,
+    searching,
     manualOrder,
     setManualOverride,
     setOrderOverride,

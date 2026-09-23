@@ -533,6 +533,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             labelFor={bandLabel}
             onDrop={interactions.onBandDrop}
             nestable={!host.flat}
+            disabled={host.searching}
           >
             {groups.map((g) => {
               const isCollapsed = !flatMode && collapsed.has(g.key)

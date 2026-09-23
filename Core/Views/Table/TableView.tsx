@@ -587,6 +587,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         labelFor={bandLabel}
         onDrop={interactions.onBandDrop}
         nestable={!flat}
+        disabled={host.searching}
       >
         <TableRowDnd
           rows={paintOrder}
