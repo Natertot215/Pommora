@@ -79,17 +79,12 @@ export const interfaceHandlers = {
     isIndexArray,
     'Table indices must be a non-negative-integer array.',
   ),
-  // Only whether the header draws the icon is chrome; the icon itself lives in the page's month file.
-  'headingIcon:get': scopeGet<boolean>('headingIcon'),
-  'headingIcon:set': scopeSet('headingIcon', isBoolean, 'Hidden must be a boolean.'),
   'citations:get': scopeGet<boolean>('citations'),
   'citations:set': scopeSet(
     'citations',
     (v: unknown): v is boolean | null => isBoolean(v) || v === null,
     'Shown must be a boolean.',
   ),
-  'aliases:get': scopeGet<string[]>('aliases'),
-  'aliases:set': scopeSet('aliases', isStringArray, 'Aliases must be a string array.'),
 
   'error:show': async (ctx, message: unknown) => {
     if (typeof message === 'string')

@@ -2,6 +2,8 @@
 import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
+import { makeTree } from '@pommora/core/Testing/testTree'
+import type { PageMeta } from '@pommora/core/Nexus/schemas'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from '../Session/store'
@@ -35,10 +37,10 @@ beforeEach(() => {
   updateReply = { ok: true, value: { hash: machine().sha256Hex('live'), stale: false } }
   captured = vi.fn(async () => ok(null))
   updated = vi.fn(async () => updateReply)
+  mutated = vi.fn(async () => ok({}))
+  menuPick = null
   const empty = { get: vi.fn(async () => ok({})), set: vi.fn(async () => undefined) }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'headingIcon:get': empty.get,
-    'headingIcon:set': empty.set,
     'folds:get': empty.get,
     'folds:set': empty.set,
     'embedHeights:get': empty.get,
@@ -52,7 +54,8 @@ beforeEach(() => {
     'sync:captureLocal': captured,
     'editor:format-state': vi.fn(),
     'menu:action': vi.fn(() => () => undefined),
-    menu: vi.fn(async () => ok(null)),
+    mutate: mutated,
+    menu: vi.fn(async () => ok(menuPick)),
   })
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -71,6 +74,8 @@ let onDisk: string
 let updateReply: unknown
 let captured: ReturnType<typeof vi.fn>
 let updated: ReturnType<typeof vi.fn>
+let mutated: ReturnType<typeof vi.fn>
+let menuPick: string | null
 
 const PATH = 'Notes/a.md'
 
@@ -188,5 +193,67 @@ describe('a landing under the open page', () => {
       await flushPageSave(PATH)
     })
     expect(view.state.doc.toString()).toBe('alpha ONE\nbeta\ngamma\ndelta')
+  })
+})
+
+describe('the title icon follows Show Icon In Title unless the page overrides it', () => {
+  const treeWith = (pageMetadata: Record<string, PageMeta>) => ({ ...makeTree(), pageMetadata })
+
+  const mount = async (titleIcon?: boolean, meta: Record<string, PageMeta> = {}): Promise<void> => {
+    useSession.setState({
+      tree: treeWith(meta),
+      personalization: { titleIcon },
+      pages: slot('live', 'live'),
+    })
+    await act(async () => {
+      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+    })
+  }
+
+  const hidden = (): boolean =>
+    container.querySelector('.detail-title-icon')?.classList.contains('is-hidden') === true
+
+  const toggle = async (): Promise<void> => {
+    menuPick = 'toggleIcon'
+    await act(async () => {
+      container
+        .querySelector('.detail-title-text')
+        ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+  }
+
+  const wrote = (title_icon: boolean | null) =>
+    expect(mutated).toHaveBeenLastCalledWith({
+      op: 'setPageMeta',
+      path: 'Notes/a.md',
+      patch: { title_icon },
+    })
+
+  it('hides the icon while the setting was never touched and nothing overrides it', async () => {
+    await mount()
+    expect(hidden()).toBe(true)
+  })
+
+  it('showing then hiding a page stores the override, then deletes it', async () => {
+    await mount()
+    await toggle()
+    wrote(true)
+    await act(async () => useSession.setState({ tree: treeWith({ a: { title_icon: true } }) }))
+    expect(hidden()).toBe(false)
+    await toggle()
+    wrote(null)
+  })
+
+  it('turning the setting on shows a page without an override', async () => {
+    await mount(false)
+    expect(hidden()).toBe(true)
+    await act(async () => useSession.setState({ personalization: { titleIcon: true } }))
+    expect(hidden()).toBe(false)
+  })
+
+  it('hiding a page while the setting is on stores a false override', async () => {
+    await mount(true)
+    await toggle()
+    wrote(false)
   })
 })

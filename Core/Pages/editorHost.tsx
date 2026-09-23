@@ -7,7 +7,7 @@ import { citationMenuModel } from '@pommora/core/MarkdownPM/Citations/citationMe
 import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { mapWarmSeam, type WarmSeam } from '../MarkdownPM/warmSeam'
-import { citationsVisible, useSession } from '../Session/store'
+import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { host } from '../Platform/dialer'
@@ -17,6 +17,7 @@ import { glanceLink } from '../Interface/Glance/glanceLink'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 import { openWebLink } from '../Web/openWebLink'
+import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
 
 interface EditorHostOptions {
   pageId?: string
@@ -52,6 +53,17 @@ function buildEditorHost(
   connRef: { readonly current: ConnectionsApi | undefined },
 ): EditorHost {
   const state = useSession.getState
+  const worn = (id: string): string[] => pageMetaOf(id)(state())?.aliases ?? []
+  const wear = (id: string, next: string[] | null): void => {
+    const tree = state().tree
+    const path = tree && pagesByIdOf(tree).get(id)?.path
+    if (next && path)
+      void host().ask('mutate', {
+        op: 'setPageMeta',
+        path,
+        patch: { aliases: next.length ? next : null },
+      })
+  }
   return {
     settings: () => {
       const { personalization: p, commands } = state()
@@ -81,9 +93,9 @@ function buildEditorHost(
       }
     },
     aliases: {
-      list: (id) => state().pageAliases[id] ?? [],
-      remember: (id, alias) => state().rememberAlias(id, alias),
-      forget: (id, alias) => state().forgetAlias(id, alias),
+      list: worn,
+      remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
+      forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
     },
     linkTitles: {
       get: (url) => state().linkTitles[url] ?? null,
@@ -158,8 +170,8 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
   const headingLinkStyle = useSession((s) => s.personalization.headingLinkStyle)
   const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
-  const aliases = useSession((s) => s.pageAliases)
   const commands = useSession((s) => s.commands)
+  const pageMetadata = useSession((s) => s.tree?.pageMetadata)
   return useMemo(
     () => buildEditorHost({ pageId, inert }, connRef),
     [
@@ -170,8 +182,8 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
       cbLineCount,
       headingLinkStyle,
       inPageHeadingResolution,
-      aliases,
       commands,
+      pageMetadata,
     ],
   )
 }

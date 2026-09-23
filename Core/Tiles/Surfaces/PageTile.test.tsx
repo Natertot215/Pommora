@@ -31,7 +31,6 @@ beforeEach(() => {
       ok: true,
       value: detail({ path: 'Notes/a.md', body: 'fetched' }),
     })),
-    'headingIcon:get': vi.fn(async () => ({ ok: true, value: {} })),
   })
   container = document.createElement('div')
   document.body.appendChild(container)

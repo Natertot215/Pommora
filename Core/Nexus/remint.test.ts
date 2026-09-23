@@ -181,8 +181,6 @@ describe('the re-mint writes', () => {
     await writeFile(join(root, 'Library', 'Notes copy.md'), originalBytes)
     writeKey('folds', PAGE, ['intro'])
     writeKey('headingCols', PAGE, [0])
-    writeKey('aliases', PAGE, ['the notes'])
-    writeKey('headingIcon', PAGE, true)
 
     await runOpenLedger(root)
 
@@ -201,8 +199,6 @@ describe('the re-mint writes', () => {
     expect(readKey('folds', PAGE)).toEqual(['intro'])
     expect(readKey('folds', fresh)).toEqual(['intro'])
     expect(readKey('headingCols', fresh)).toEqual([0])
-    expect(readKey('aliases', fresh)).toEqual(['the notes'])
-    expect(readKey('headingIcon', fresh)).toBe(true)
 
     // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off disk, through admission, into the projection — not through the in-memory fix-up.
     await runOpenLedger(root)

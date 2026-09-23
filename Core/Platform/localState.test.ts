@@ -22,17 +22,17 @@ describe('keyed scopes', () => {
     expect(readScope('embedZooms')).toEqual({})
   })
 
-  it('a page’s remembered aliases round-trip and are forgotten one at a time', () => {
-    writeKey('aliases', 'page-1', ['the notes', 'my draft'])
-    writeKey('aliases', 'page-1', ['my draft'])
-    expect(readScope<string[]>('aliases')).toEqual({ 'page-1': ['my draft'] })
+  it('a page’s folds round-trip and are overwritten in place', () => {
+    writeKey('folds', 'page-1', ['intro', 'outro'])
+    writeKey('folds', 'page-1', ['outro'])
+    expect(readScope<string[]>('folds')).toEqual({ 'page-1': ['outro'] })
   })
 
   it('null clears the key rather than storing an empty container', () => {
-    writeKey('headingIcon', 'page-1', 'star')
-    writeKey('headingIcon', 'page-2', 'flag')
-    writeKey('headingIcon', 'page-1', null)
-    expect(readScope<string>('headingIcon')).toEqual({ 'page-2': 'flag' })
+    writeKey('citations', 'page-1', true)
+    writeKey('citations', 'page-2', false)
+    writeKey('citations', 'page-1', null)
+    expect(readScope<boolean>('citations')).toEqual({ 'page-2': false })
   })
 })
 

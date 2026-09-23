@@ -672,6 +672,7 @@ export const FRAMES = roster([
             label: 'Outliner Lines',
             hint: 'Show indent rails on nested lists in the editor.',
           },
+          { kind: 'toggle', key: 'titleIcon', label: 'Show Icon In Title' },
         ],
       },
       {

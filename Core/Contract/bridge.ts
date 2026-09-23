@@ -86,12 +86,8 @@ export interface Asks {
   }
   'tableHeadingCols:get': { args: []; reply: Result<Record<string, number[]>> }
   'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
-  'headingIcon:get': { args: []; reply: Result<Record<string, boolean>> }
-  'headingIcon:set': { args: [pageId: string, hidden: boolean]; reply: Result<null> }
   'citations:get': { args: []; reply: Result<Record<string, boolean>> }
   'citations:set': { args: [pageId: string, shown: boolean | null]; reply: Result<null> }
-  'aliases:get': { args: []; reply: Result<Record<string, string[]>> }
-  'aliases:set': { args: [pageId: string, aliases: string[]]; reply: Result<null> }
 
   'views:save': {
     args: [containerPath: string, kind: 'collection' | 'set', view: SavedView]

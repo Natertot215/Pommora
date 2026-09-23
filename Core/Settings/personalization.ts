@@ -194,6 +194,7 @@ export const personalizationSchema = z.object({
   repairOnOpen: flag(),
   capitalizeMetadata: flag(),
   outlinerLines: flag(),
+  titleIcon: flag(),
   codeblockLineCount: flag(),
   navCloseOnSelect: flag(),
   removeTitleOnLinkChange: flag(),
