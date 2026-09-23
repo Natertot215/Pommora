@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { shownDetail, useSession } from '../Session/store'
+import { pageMetaOf, shownDetail, useSession } from '../Session/store'
 import { confirmDelete } from '../Interface/Confirm/confirmations'
 import {
   FooterIconButton,
@@ -31,6 +31,7 @@ const FOOTER_ACTIONS = [
 
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
+  const ownIcon = useSession(pageMetaOf(pageDetail?.id))?.icon
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
@@ -66,8 +67,6 @@ export function PageMenu(): React.JSX.Element | null {
     else if (action === 'title:delete')
       await confirmDelete({ path: pageDetail.path, kind: 'page', title: pageDetail.title })
   }
-  const ownIcon =
-    typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined
 
   return (
     <>

@@ -54,7 +54,7 @@ describe('resolveView — Sort By: Location (cards)', () => {
     })
 
   it('Group: None + Sort By: Location (Location order) → one flat band in filesystem order', () => {
-    const { rows, setTree } = flattenContainer(withSets, {})
+    const { rows, setTree } = flattenContainer(withSets, {}, {})
     const view = cardsView({
       group: { kind: 'flat' },
       sort: [{ property_id: LOCATION_SORT, direction: 'ascending' }],
@@ -66,7 +66,7 @@ describe('resolveView — Sort By: Location (cards)', () => {
   })
 
   it('the reserved location primary contributes nothing to a table (no flattenStructural)', () => {
-    const { rows, setTree } = flattenContainer(withSets, {})
+    const { rows, setTree } = flattenContainer(withSets, {}, {})
     const view = cardsView({
       group: { kind: 'flat' },
       sort: [{ property_id: LOCATION_SORT, direction: 'ascending' }],
@@ -93,6 +93,7 @@ describe('resolveView — full pipeline over the fixture', () => {
     const { rows, setTree } = flattenContainer(
       collection([page('p1'), page('p2'), page('p3'), page('p4')]),
       values,
+      {},
     )
     const { columns, groups } = resolveView({
       rows,
@@ -157,7 +158,7 @@ describe('resolveView — full pipeline over the fixture', () => {
       a: { [ID_KEY]: 'a', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
       b: { [ID_KEY]: 'b', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
     })
-    const { rows, setTree } = flattenContainer(collection([page('a'), page('b')]), values)
+    const { rows, setTree } = flattenContainer(collection([page('a'), page('b')]), values, {})
     const { groups } = resolveView({ rows, setTree, view, schema })
     expect(groups.find((g) => g.key === 'in_progress')?.items.map((r) => r.id)).toEqual(['b', 'a'])
   })
@@ -190,7 +191,7 @@ describe('resolveView — group_order', () => {
       group: { kind: 'structural' },
       group_order: ['sB', 'sA'],
     }
-    const { rows, setTree } = flattenContainer(col, {})
+    const { rows, setTree } = flattenContainer(col, {}, {})
     const { groups } = resolveView({ rows, setTree, view, schema: [] })
     expect(groups.map((g) => g.key)).toEqual(['sB', 'sA', '_ungrouped'])
   })
@@ -222,7 +223,7 @@ describe('resolveView — group_order', () => {
       structural_order_mode: 'location',
       group_order: ['sB', 'sA'],
     }
-    const { rows, setTree } = flattenContainer(col, {})
+    const { rows, setTree } = flattenContainer(col, {}, {})
     const { groups } = resolveView({ rows, setTree, view, schema: [] })
     expect(groups.map((g) => g.key)).toEqual(['sA', 'sB'])
     expect(view.group_order).toEqual(['sB', 'sA'])
@@ -241,6 +242,7 @@ describe('resolveView — group_order', () => {
       pageValues({
         p1: { [ID_KEY]: 'p1' },
       }),
+      {},
     )
     expect(() => resolveView({ rows, setTree, view, schema })).not.toThrow()
   })
@@ -290,7 +292,7 @@ describe('resolveView — group_order', () => {
         hide_empty_groups: false,
       },
     }
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     // Location ignores group_order (fs order stands) and the view-level tail placement holds top.
     const located = resolveView({
       rows,
@@ -347,14 +349,14 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   const keys = (groups: { key: string }[]): string[] => groups.map((g) => g.key)
 
   it('keeps every empty band while no filter is applied', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({ rows, setTree, view: view(), schema: [] })
     expect(keys(groups)).toEqual(['sOuter', 'sBare'])
     expect(keys(groups[0].children ?? [])).toEqual(['sInner'])
   })
 
   it('keeps every empty band when the filter is on but excludes nothing', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -367,7 +369,7 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   })
 
   it('drops a parent whose own rows AND every descendant were filtered out', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -380,7 +382,7 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   })
 
   it('keeps a parent that survives on its own row and drops the emptied child', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -394,7 +396,7 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   })
 
   it('keeps a parent holding no rows of its own when a descendant survives', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -409,7 +411,7 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   })
 
   it('prunes the flattened cards bands too', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -425,7 +427,7 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   })
 
   it('a parked filter prunes nothing — rules and mode survive, application stops', () => {
-    const { rows, setTree } = flattenContainer(nested, values)
+    const { rows, setTree } = flattenContainer(nested, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -475,7 +477,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
   })
   const selInput = () => {
-    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), selValues)
+    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), selValues, {})
     return { rows, setTree, schema: selectSchema }
   }
   const nested: CollectionNode = {
@@ -517,7 +519,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   })
 
   it('a hidden set leaves with its whole subtree (structural)', () => {
-    const { rows, setTree } = flattenContainer(nested, {})
+    const { rows, setTree } = flattenContainer(nested, {}, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -528,7 +530,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   })
 
   it('cards flatten excludes a hidden NESTED set’s pages from the parent band', () => {
-    const { rows, setTree } = flattenContainer(nested, {})
+    const { rows, setTree } = flattenContainer(nested, {}, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -540,7 +542,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   })
 
   it('a flat/None view never loses pages to a stale hidden set id', () => {
-    const { rows, setTree } = flattenContainer(nested, {})
+    const { rows, setTree } = flattenContainer(nested, {}, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -569,7 +571,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
       p3: { [ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
     })
-    const { rows, setTree } = flattenContainer(twoSets, values)
+    const { rows, setTree } = flattenContainer(twoSets, values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -591,7 +593,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
       p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
     })
-    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), values)
+    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), values, {})
     const { groups } = resolveView({
       rows,
       setTree,
@@ -616,7 +618,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       view: view({ group: propertyGroup(), hide_empty_groups: true }),
     })
     expect(keys(prop.groups)).toEqual(['Alpha', 'Beta'])
-    const { rows, setTree } = flattenContainer(nested, {})
+    const { rows, setTree } = flattenContainer(nested, {}, {})
     const structural = resolveView({
       rows,
       setTree,

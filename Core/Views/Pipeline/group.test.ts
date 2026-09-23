@@ -65,13 +65,26 @@ const statusSchema: PropertyDefinition[] = [
   },
 ]
 
+describe('flattenContainer — page icons', () => {
+  it('a page row takes its icon from pageMetadata', () => {
+    const { rows } = flattenContainer(
+      collection([], [page('p1'), page('p2')]),
+      {},
+      {
+        p1: { icon: 'star' },
+      },
+    )
+    expect(rows.map((r) => r.icon)).toEqual(['star', undefined])
+  })
+})
+
 describe('flattenContainer + structural grouping', () => {
   it('groups a Collection by its Sets, nests Sub-Sets, roots loose pages in a trailing band', () => {
     const sub = set('sub', [page('p_sub')])
     const setA = set('setA', [page('p_a')], [sub])
     const setB = set('setB', [page('p_b')])
     const col = collection([setA, setB], [page('p_root')])
-    const { rows, setTree } = flattenContainer(col, {})
+    const { rows, setTree } = flattenContainer(col, {}, {})
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
 
     expect(groups.map((g) => [g.key, g.kind])).toEqual([
@@ -90,7 +103,7 @@ describe('flattenContainer + structural grouping', () => {
     const setA = set('setA', [page('p_a')], [sub])
     const setB = set('setB', [page('p_b')])
     const col = collection([setA, setB], [page('p_root')])
-    const { rows, setTree } = flattenContainer(col, {})
+    const { rows, setTree } = flattenContainer(col, {}, {})
     const groups = resolveGroups(
       rows,
       { kind: 'structural' },
@@ -116,7 +129,7 @@ describe('flattenContainer + structural grouping', () => {
 
   it('flattenStructural: a manual sorter spans the whole flat band (a cross-level order sticks)', () => {
     const setA = set('setA', [page('p_a')], [set('sub', [page('p_sub')])])
-    const { rows, setTree } = flattenContainer(collection([setA], []), {})
+    const { rows, setTree } = flattenContainer(collection([setA], []), {}, {})
     const order = ['p_sub', 'p_a']
     const bySpec = (r: ViewRow[]): ViewRow[] =>
       [...r].sort((x, y) => order.indexOf(x.id) - order.indexOf(y.id))
@@ -139,7 +152,7 @@ describe('flattenContainer + structural grouping', () => {
     const setA = set('setA', [page('p_a')], [sub])
     const setB = set('setB', [page('p_b')])
     const col = collection([setA, setB], [page('p_root')])
-    const { rows, setTree } = flattenContainer(col, {})
+    const { rows, setTree } = flattenContainer(col, {}, {})
     const groups = resolveGroups(
       rows,
       { kind: 'structural' },
@@ -160,7 +173,7 @@ describe('flattenContainer + structural grouping', () => {
 
   it('locationFlatten wins over a property group (mutually exclusive)', () => {
     const col = collection([set('setA', [page('p_a')])], [page('p_root')])
-    const { rows, setTree } = flattenContainer(col, {})
+    const { rows, setTree } = flattenContainer(col, {}, {})
     const groups = resolveGroups(
       rows,
       {
@@ -187,21 +200,21 @@ describe('flattenContainer + structural grouping', () => {
       [page('p_own')],
       [set('subX', [page('p_x')]), set('subY', [page('p_y')])],
     )
-    const { rows, setTree } = flattenContainer(container, {})
+    const { rows, setTree } = flattenContainer(container, {}, {})
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
     expect(keys(groups)).toEqual(['subX', 'subY', '_ungrouped'])
     expect(itemIds(groups[2])).toEqual(['p_own'])
   })
 
   it('still shows an empty Set as a disclosure group', () => {
-    const { rows, setTree } = flattenContainer(collection([set('empty', [])], []), {})
+    const { rows, setTree } = flattenContainer(collection([set('empty', [])], []), {}, {})
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
     expect(keys(groups)).toEqual(['empty'])
     expect(groups[0].items).toEqual([])
   })
 
   it('with zero Sets yields a single headerless band, and nothing for an empty container', () => {
-    const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), {})
+    const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), {}, {})
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
     expect(keys(groups)).toEqual(['_ungrouped'])
     expect(groups[0].kind).toBe('ungrouped')
@@ -213,6 +226,7 @@ describe('flattenContainer + structural grouping', () => {
     const { rows, setTree } = flattenContainer(
       collection([], [page('b'), page('a'), page('c')]),
       {},
+      {},
     )
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
     const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, byId)
@@ -220,7 +234,7 @@ describe('flattenContainer + structural grouping', () => {
   })
 
   it('marks groups collapsed from the collapsed set', () => {
-    const { rows, setTree } = flattenContainer(collection([set('s1', [page('p1')])], []), {})
+    const { rows, setTree } = flattenContainer(collection([set('s1', [page('p1')])], []), {}, {})
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, ['s1'])
     expect(groups[0].isCollapsed).toBe(true)
   })
@@ -228,14 +242,18 @@ describe('flattenContainer + structural grouping', () => {
 
 describe('toRow stamps', () => {
   it("carries the batch entry's stamps and nulls them when the entry lacks them", () => {
-    const { rows } = flattenContainer(collection([], [page('p1'), page('p2'), page('p3')]), {
-      p1: {
-        frontmatter: { [ID_KEY]: 'p1' },
-        createdAt: '2024-01-02T03:04:05.000Z',
-        modifiedAt: '2024-06-07T08:09:10.000Z',
+    const { rows } = flattenContainer(
+      collection([], [page('p1'), page('p2'), page('p3')]),
+      {
+        p1: {
+          frontmatter: { [ID_KEY]: 'p1' },
+          createdAt: '2024-01-02T03:04:05.000Z',
+          modifiedAt: '2024-06-07T08:09:10.000Z',
+        },
+        p2: { frontmatter: { [ID_KEY]: 'p2' }, createdAt: null, modifiedAt: null },
       },
-      p2: { frontmatter: { [ID_KEY]: 'p2' }, createdAt: null, modifiedAt: null },
-    })
+      {},
+    )
     expect(rows[0]).toMatchObject({
       createdAt: '2024-01-02T03:04:05.000Z',
       modifiedAt: '2024-06-07T08:09:10.000Z',
@@ -255,6 +273,7 @@ describe('flat grouping', () => {
   it('drops set structure into one band of all rows', () => {
     const { rows, setTree } = flattenContainer(
       collection([set('s1', [page('p1')])], [page('p2')]),
+      {},
       {},
     )
     const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, null)
@@ -280,14 +299,14 @@ describe('property grouping — status manual order', () => {
   }
 
   it('orders buckets by manual order — an empty bucket renders as an empty band, no-value tail at bottom', () => {
-    const { rows, setTree } = flattenContainer(col, values)
+    const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, base, statusSchema, setTree, null)
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
     expect(groups.find((g) => g.key === 'opt_open')?.items).toEqual([])
   })
 
   it('a stale manual-order key (deleted option) never renders a ghost band; live empty options do', () => {
-    const { rows, setTree } = flattenContainer(col, values)
+    const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(
       rows,
       { ...base, order: ['gone_opt', ...(base.order ?? [])] },
@@ -299,7 +318,7 @@ describe('property grouping — status manual order', () => {
   })
 
   it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
-    const { rows, setTree } = flattenContainer(col, values)
+    const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(
       rows,
       { ...base, hide_empty_groups: true },
@@ -331,7 +350,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
   )
 
   it('sets stay top bands; sub-set pages roll up and bucket by the property (no sub-set band)', () => {
-    const { rows, setTree } = flattenContainer(col, values)
+    const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, [], 'bottom', sub)
     const setA = groups.find((g) => g.key === 'setA')!
     expect(setA.kind).toBe('structural-set')
@@ -344,7 +363,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
   })
 
   it('composite keys keep collapse per-set', () => {
-    const { rows, setTree } = flattenContainer(col, values)
+    const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(
       rows,
       structural,
@@ -380,7 +399,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
       ],
       [page('p_loose')],
     )
-    const { rows, setTree } = flattenContainer(col2, values2)
+    const { rows, setTree } = flattenContainer(col2, values2, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, [], 'top', manual)
     expect(groups[0]).toMatchObject({ key: '_ungrouped', kind: 'ungrouped' })
     expect(itemIds(groups[0])).toEqual(['p_loose'])
@@ -402,13 +421,13 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     })
     const col3 = collection([set('setA', [page('p_z'), page('p_a2')])], [])
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
-    const { rows, setTree } = flattenContainer(col3, values3)
+    const { rows, setTree } = flattenContainer(col3, values3, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, byId, [], 'bottom', sub)
     expect(itemIds(groups[0].children![0])).toEqual(['p_a2', 'p_z'])
   })
 
   it('an unmappable sub-group property falls back to plain structural', () => {
-    const { rows, setTree } = flattenContainer(col, values)
+    const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, [], 'bottom', {
       property_id: 'prop_gone',
       order_mode: 'configured',
@@ -421,6 +440,7 @@ describe('ungrouped placement (the view-level knob)', () => {
   it('structural: top placement leads with the loose tail', () => {
     const { rows, setTree } = flattenContainer(
       collection([set('s1', [page('p1')])], [page('p_root')]),
+      {},
       {},
     )
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, [], 'top')
@@ -435,7 +455,7 @@ describe('ungrouped placement (the view-level knob)', () => {
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
       p2: { [ID_KEY]: 'p2' },
     })
-    const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), values)
+    const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), values, {})
     const group: GroupConfig = {
       kind: 'property',
       property_id: 'prop_status',
@@ -449,6 +469,7 @@ describe('ungrouped placement (the view-level knob)', () => {
   it('default stays bottom (legacy behavior)', () => {
     const { rows, setTree } = flattenContainer(
       collection([set('s1', [page('p1')])], [page('p_root')]),
+      {},
       {},
     )
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
@@ -486,6 +507,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
       values,
+      {},
     )
     expect(
       keys(resolveGroups(rows, cfg({ order_mode: 'configured' }), selSchema, setTree, null)),
@@ -505,6 +527,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
       values,
+      {},
     )
     const groups = resolveGroups(
       rows,
@@ -542,6 +565,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
       values,
+      {},
     )
     const groups = resolveGroups(
       rows,
@@ -565,7 +589,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_due: '2026-06-27' }, dueSchema) },
     })
-    const { rows, setTree } = flattenContainer(collection([], [page('p1')]), values)
+    const { rows, setTree } = flattenContainer(collection([], [page('p1')]), values, {})
     const groups = resolveGroups(
       rows,
       {
@@ -587,6 +611,7 @@ describe('property grouping — non-groupable fallback', () => {
   it('falls back to structural for number and multi_select group properties', () => {
     const { rows, setTree } = flattenContainer(
       collection([set('s1', [page('p1')])], [page('p2')]),
+      {},
       {},
     )
     const numGroups = resolveGroups(

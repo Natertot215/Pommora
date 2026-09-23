@@ -72,6 +72,7 @@ const setTree = (values?: Record<string, unknown>, contextOrder?: string[]): voi
           ],
         },
       ],
+      pageMetadata: {},
       collections: [
         {
           kind: 'collection',

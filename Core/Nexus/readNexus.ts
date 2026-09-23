@@ -130,7 +130,6 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
     const node = makePageNode({
       id: admission.state === 'member' ? admission.id : adoptedId(relFile),
       title: basenameNoMd(basename(absFile)),
-      icon: asString(fm.icon),
       path: relFile,
     })
     retainContextKeys(node, fm)

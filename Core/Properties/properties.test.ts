@@ -148,6 +148,10 @@ describe('invalidPropertyName', () => {
     expect(invalidPropertyName('pageid')).toBe(false)
     expect(invalidPropertyName('Budget ($)')).toBe(false)
   })
+
+  it('takes icon as an ordinary name', () => {
+    expect(invalidPropertyName('icon')).toBe(false)
+  })
 })
 
 describe('isRegisteredPropertyName', () => {

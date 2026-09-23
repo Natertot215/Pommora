@@ -48,7 +48,7 @@ function pagePickerItems(
 ): PagePickerItem[] {
   const pageItem = (p: PageNode): PagePickerItem => ({
     label: p.title,
-    icon: entityIcon('page', p.icon, defaultIcons),
+    icon: entityIcon('page', tree.pageMetadata[p.id]?.icon, defaultIcons),
     pick: p.id,
   })
   const setItem = (s: SetNode): PagePickerItem => ({

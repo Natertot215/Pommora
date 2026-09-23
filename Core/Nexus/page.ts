@@ -27,7 +27,6 @@ export async function createPage(
   parentDir: string,
   name: string,
   opts: {
-    icon?: string
     body?: string
     values?: { def: PropertyDefinition; value: PropertyValue }[]
   } = {},
@@ -38,7 +37,6 @@ export async function createPage(
   if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
   const id = newContentId('page')
   const modeled: Record<string, unknown> = { [ID_KEY]: id }
-  if (opts.icon) modeled.icon = opts.icon
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
     if (isBlankValue(value)) continue

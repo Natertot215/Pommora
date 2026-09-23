@@ -18,7 +18,7 @@ const MARK_KIND = new Map<string, ContentKind>(
   (Object.entries(KIND_MARK) as [ContentKind, string][]).map(([kind, mark]) => [mark, kind]),
 )
 
-export const PAGE_MODELED_KEYS = [ID_KEY, 'icon', 'banner'] as const
+export const PAGE_MODELED_KEYS = [ID_KEY, 'banner'] as const
 
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
 

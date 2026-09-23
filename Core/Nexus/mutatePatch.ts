@@ -124,6 +124,8 @@ async function routeMutation(
   switch (req.op) {
     // Field writes land through the writer's own normalization, so confirm by re-reading the one file that changed (a Context's icon lives in its registry, a structural walk input).
     case 'setIcon':
+      if (req.kind === 'page') return patchPageMetaFromDisk(root, req.path)
+      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
     case 'setDisclosureLock':
     case 'setActiveView':
       return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'

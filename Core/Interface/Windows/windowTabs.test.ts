@@ -25,6 +25,7 @@ const tree = {
       })),
     },
   ],
+  pageMetadata: {},
   collections: [
     {
       kind: 'collection',

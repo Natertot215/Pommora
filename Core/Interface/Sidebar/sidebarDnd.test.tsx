@@ -17,6 +17,7 @@ import { buildIndex } from './sidebarDndModel'
 stubPointerCapture()
 
 const tree = {
+  pageMetadata: {},
   collections: [
     {
       kind: 'collection',
@@ -161,6 +162,7 @@ describe('sidebar drag — Esc abort', () => {
 
 describe('sidebar drag — page↔Set seam', () => {
   const seamTree = {
+    pageMetadata: {},
     collections: [
       {
         kind: 'collection',
@@ -234,6 +236,7 @@ describe('sidebar drag — page↔Set seam', () => {
 
   it('still reparents a page into a Set in a DIFFERENT container', async () => {
     const crossTree = {
+      pageMetadata: {},
       collections: [
         {
           kind: 'collection',
@@ -281,6 +284,7 @@ describe('sidebar drag — page↔Set seam', () => {
 // Rects are stubbed — what's under test is which measured row the line derives from, not the pixel.
 describe('sidebar drag — the line marks where the drop lands', () => {
   const hostTree = {
+    pageMetadata: {},
     collections: [
       {
         kind: 'collection',

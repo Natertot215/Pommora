@@ -10,7 +10,7 @@ import type {
 } from '@pommora/core/Views/views'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { pad } from '@pommora/uix/Utilities/pad'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { PageFrontmatter, PageMeta } from '@pommora/core/Nexus/schemas'
 import { optionValues, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
@@ -98,12 +98,13 @@ export function toRow(
   page: PageNode,
   parentSetId: string | undefined,
   values: Record<string, PageValues>,
+  pageMetadata: Record<string, PageMeta>,
 ): ViewRow {
   const v = values[page.id]
   return {
     id: page.id,
     title: page.title,
-    icon: page.icon,
+    icon: pageMetadata[page.id]?.icon,
     path: page.path,
     ...(parentSetId !== undefined ? { parentSetId } : {}),
     frontmatter: frontmatterOf(values, page.id),
@@ -116,10 +117,11 @@ export function toRow(
 export function flattenContainer(
   node: CollectionNode | SetNode,
   valuesByPageId: Record<string, PageValues>,
+  pageMetadata: Record<string, PageMeta>,
 ): { rows: ViewRow[]; setTree: SetTreeNode[] } {
   const rows: ViewRow[] = []
   const walk = (container: CollectionNode | SetNode, parentSetId: string | undefined): void => {
-    for (const p of container.pages) rows.push(toRow(p, parentSetId, valuesByPageId))
+    for (const p of container.pages) rows.push(toRow(p, parentSetId, valuesByPageId, pageMetadata))
     for (const child of container.sets ?? []) walk(child, child.id)
   }
   walk(node, undefined)

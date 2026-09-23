@@ -173,7 +173,7 @@ export function useViewHost(
     setTree,
     rows,
   } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(source, effectiveValues)
+    const { rows, setTree } = flattenContainer(source, effectiveValues, tree?.pageMetadata ?? {})
     return {
       ...resolveView({
         rows,
@@ -187,7 +187,16 @@ export function useViewHost(
       setTree,
       rows,
     }
-  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
+  }, [
+    source,
+    effectiveValues,
+    tree?.pageMetadata,
+    liveView,
+    schema,
+    manualOrder,
+    contextIds,
+    flattenStructural,
+  ])
   const titles = useMemo(
     () => (searching ? new Map(rows.map((r) => [r.id, r.title.toLowerCase()])) : null),
     [rows, searching],

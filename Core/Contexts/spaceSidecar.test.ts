@@ -5,7 +5,7 @@ describe('spaceFieldsFrom', () => {
   it('reads the four modeled fields and leaves values undefined when nothing is left', () => {
     const fields = spaceFieldsFrom({
       id: 'sp1',
-      icon: 'folder',
+      $icon: 'folder',
       banner: 'Loose/b.png',
       heading_icon_hidden: true,
       $color: 'mint',
@@ -23,7 +23,7 @@ describe('spaceFieldsFrom', () => {
   it('collects exactly the unmodeled, unwrapped keys into values', () => {
     const fields = spaceFieldsFrom({
       id: 'sp1',
-      icon: 'folder',
+      $icon: 'folder',
       $color: 'mint',
       '<Areas>': ['Home'],
       Status: 'Active',
@@ -33,6 +33,14 @@ describe('spaceFieldsFrom', () => {
       Status: 'Active',
       $order: { contexts: ['g1'], properties: ['prop_a'] },
     })
+  })
+})
+
+describe('spaceFieldsFrom — the glyph key', () => {
+  it('reads the glyph from $icon and a bare icon key as a property value', () => {
+    const fields = spaceFieldsFrom({ id: 'sp1', $icon: 'folder', icon: 'Draft' })
+    expect(fields.icon).toBe('folder')
+    expect(fields.values).toEqual({ icon: 'Draft' })
   })
 })
 

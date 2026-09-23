@@ -153,16 +153,6 @@ describe('the writers maintain the rows', () => {
     await expectMaintained()
   })
 
-  it('an icon write re-indexes the page it touched', async () => {
-    const r = await handleMutate(
-      { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' },
-      deps,
-    )
-    expect(r.ok).toBe(true)
-    expect(queryKeyHolders('icon')).toEqual(['Notes/Daily/Alpha.md'])
-    await expectMaintained()
-  })
-
   it('a delete clears the rows; a restore reseeds them', async () => {
     const del = await handleMutate(
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },

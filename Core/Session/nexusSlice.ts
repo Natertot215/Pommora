@@ -252,7 +252,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             patched = reorderChildrenInTree(cur, '', req.order) ?? cur
             break
           case 'setIcon':
-            patched = patchNodeInTree(cur, req.path, { icon: req.icon })
+            if (req.kind !== 'page') patched = patchNodeInTree(cur, req.path, { icon: req.icon })
             break
           case 'setDisclosureLock':
             patched = patchNodeInTree(cur, req.path, { disclosureLocked: req.locked })

@@ -13,13 +13,8 @@ const joinPath = (parent: string, name: string): string => (parent ? `${parent}/
 
 // The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
 
-export function makePageNode(f: {
-  id: string
-  title: string
-  path: string
-  icon?: string
-}): PageNode {
-  return { kind: 'page', id: f.id, title: f.title, icon: f.icon, path: f.path }
+export function makePageNode(f: { id: string; title: string; path: string }): PageNode {
+  return { kind: 'page', id: f.id, title: f.title, path: f.path }
 }
 
 export function makeSpaceNode(f: {
@@ -506,6 +501,7 @@ export function patchNodeInTree(
   },
 ): NexusTree | null {
   return updateNodeInTree(tree, path, (node) => {
+    if (node.kind === 'page') return node
     const next = { ...node }
     // A cleared icon keeps its key, undefined-valued: `stabilize` counts keys.
     if ('icon' in patch) next.icon = patch.icon ?? undefined

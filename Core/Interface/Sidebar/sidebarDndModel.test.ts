@@ -57,6 +57,7 @@ const tree = {
     },
   ],
   nexus: {},
+  pageMetadata: {},
   personalization: { defaultIcons: {} },
 } as unknown as NexusTree
 

@@ -50,7 +50,7 @@ export const host = style({
     '--matrix-space-icon-tint': 'var(--tint-solid)',
     '--matrix-inactive': 'var(--state-inactive)',
     '--matrix-hairline': 'var(--width-200)',
-    '--matrix-ring-width': 'var(--width-150)',
+    '--matrix-ring-width': 'var(--width-200)',
   },
 })
 

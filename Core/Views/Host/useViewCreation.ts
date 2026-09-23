@@ -117,7 +117,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     anchorId: string | null,
     where: 'above' | 'below' | 'first',
   ): void => {
-    const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
+    const allIds = flattenContainer(latest.source, latest.effectiveValues, {}).rows.map((r) => r.id)
     // The live view already folds a held override, so the next create composes on this one.
     const next = tieOrderWith(latest.view.manual_order, allIds, createdId, anchorId, where)
     latest.setManualOverride(next)

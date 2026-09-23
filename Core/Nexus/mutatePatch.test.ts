@@ -182,6 +182,24 @@ describe('confirmMutation', () => {
     expect(getLiveTree()?.pageMetadata).toEqual({ [ULID_A]: { locked: true } })
   })
 
+  it('a page setIcon confirms by one month-file read — zero walks, the tree holds the icon', async () => {
+    await updatePageMetadata(root, ULID_A, { icon: 'star' })
+    const reads = vi.spyOn(machine(), 'readText')
+    try {
+      const pushed = await confirmMutation(
+        root,
+        { op: 'setIcon', path: 'Notes/A.md', kind: 'page', icon: 'star' },
+        {},
+      )
+      expect(pushed).not.toBeNull()
+      expect(reads.mock.calls).toEqual([[metadataShardPath(root, shardOf(ULID_A)!)]])
+    } finally {
+      reads.mockRestore()
+    }
+    expect(walkSpy).not.toHaveBeenCalled()
+    expect(getLiveTree()?.pageMetadata).toEqual({ [ULID_A]: { icon: 'star' } })
+  })
+
   it('setPageMeta on an ID-less page leaves the tree holding its new ID and entry', async () => {
     await writeFile(abs('Notes', 'B.md'), 'beta\n')
     await refreshTree(root)

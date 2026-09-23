@@ -34,6 +34,7 @@ const mkTree = (...ids: string[]): NexusTree =>
   ({
     nexus: { name: 'T' },
     contexts: [],
+    pageMetadata: {},
     collections: [
       {
         kind: 'collection',

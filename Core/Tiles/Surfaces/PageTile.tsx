@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { titleFromPath } from '@pommora/core/Connections/connections'
-import { coverOf, iconOf, type PageDetail } from '@pommora/core/Pages/pageDetail'
+import { coverOf, type PageDetail } from '@pommora/core/Pages/pageDetail'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
@@ -28,7 +28,6 @@ interface EmbedEntry {
   id?: string
   title?: string
   cover?: string
-  icon?: string
 }
 
 const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
@@ -37,7 +36,6 @@ const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   id: detail.id,
   title: detail.title,
   cover: coverOf(detail),
-  icon: iconOf(detail),
 })
 
 export function PageTile({
@@ -115,7 +113,7 @@ export function PageTile({
   // Merge the identity keys only — nulling would unmount the live editor mid-edit and race the debounced body write.
   const refreshIdentity = (): void => {
     void fetchPageDetail(path).then((detail) => {
-      if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail), icon: iconOf(detail) } : l))
+      if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail) } : l))
     })
   }
   const header = ((): React.ReactNode => {
@@ -130,7 +128,6 @@ export function PageTile({
               path,
               title: entry.title ?? titleFromPath(path),
               cover: entry.cover,
-              icon: entry.icon,
             }}
             onBannerDone={refreshIdentity}
             chrome="window"

@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import { rm, readFile, readdir } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
+import { setSpaceProperty } from './setProperty'
+import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -165,7 +167,7 @@ describe('a global delete reaches a Space sidecar', () => {
     const file = await seedSpace('Pommora', {
       id: 'sp1',
       Priority: ['hi'],
-      icon: 'box',
+      $icon: 'box',
       $order: { properties: ['Priority', 'Other'] },
     })
 
@@ -174,8 +176,37 @@ describe('a global delete reaches a Space sidecar', () => {
     expect((await bundle(id)).values.sp1).toEqual(['hi'])
     const raw = await readSpaceSidecar(file)
     expect('Priority' in raw).toBe(false)
-    expect(raw.icon).toBe('box')
+    expect(raw.$icon).toBe('box')
     expect(raw.$order).toEqual({ properties: ['Other'] })
+  })
+
+  it('a property named icon sets and deletes as a value, leaving every Space its glyph', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'icon',
+      type: 'url',
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('setup failed')
+    const pom = await seedSpace('Pommora', { id: 'sp1', $icon: 'box' })
+    const atlas = await seedSpace('Atlas', {
+      id: 'sp2',
+      $icon: 'map',
+      icon: 'https://draft.example',
+    })
+
+    const set = await setSpaceProperty(dirname(pom), await liveDef(c.value.id), {
+      kind: 'url',
+      value: 'https://final.example',
+    })
+    expect(set.ok).toBe(true)
+    const pomFields = spaceFieldsFrom(await readSpaceSidecar(pom))
+    expect(pomFields.icon).toBe('box')
+    expect(pomFields.values).toEqual({ icon: 'https://final.example' })
+
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+    expect(await readSpaceSidecar(pom)).toEqual({ id: 'sp1', $icon: 'box' })
+    expect(spaceFieldsFrom(await readSpaceSidecar(atlas)).icon).toBe('map')
+    expect('icon' in (await readSpaceSidecar(atlas))).toBe(false)
   })
 
   it('marks the record partial for a sidecar holding the key with no id', async () => {

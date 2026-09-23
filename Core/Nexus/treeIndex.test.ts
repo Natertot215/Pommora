@@ -100,6 +100,17 @@ describe('searchEntriesOf', () => {
   })
 })
 
+describe('page icons', () => {
+  it('a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new index', () => {
+    const t = makeTree()
+    const iconed: NexusTree = { ...t, pageMetadata: { p1: { icon: 'star' } } }
+    expect(resolveIndexOf(iconed).get('page:p1')?.icon).toBe('star')
+    expect(pagesByIdOf(iconed).get('p1')?.icon).toBe('star')
+    expect(resolveIndexOf(iconed)).not.toBe(resolveIndexOf(t))
+    expect(resolveIndexOf(t).get('page:p1')?.icon).not.toBe('star')
+  })
+})
+
 describe('the connections projections', () => {
   it('pagesOf lists every page at every depth; pagesByIdOf keys them', () => {
     const t = makeTree()

@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
-import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
+import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { readSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
+import {
+  readSpaceSidecar,
+  seedSpaceSidecar,
+  tempRoot,
+  noModeBits,
+  windows,
+} from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate, type MutateDeps } from './mutate'
 import { setActiveViewOp } from '../Pages/setActiveView'
@@ -1136,6 +1142,21 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
     expect(sc.id).toBe('pt')
   })
 
+  it('a Space keeps its glyph under $icon, beside a property value named icon', async () => {
+    const file = await seedSpaceSidecar(root, 'Projects', 'Pom', { id: 'sp1', icon: 'box' })
+    const path = '.nexus/contexts/Projects/Pom'
+    const set = await handleMutate({ op: 'setIcon', path, kind: 'space', icon: 'star' }, nexusDeps)
+    expect(set.ok).toBe(true)
+    expect(await readSpaceSidecar(file)).toEqual({ id: 'sp1', icon: 'box', $icon: 'star' })
+
+    const cleared = await handleMutate(
+      { op: 'setIcon', path, kind: 'space', icon: null },
+      nexusDeps,
+    )
+    expect(cleared.ok).toBe(true)
+    expect(await readSpaceSidecar(file)).toEqual({ id: 'sp1', icon: 'box' })
+  })
+
   it('refuses an icon on a sidecar with no id rather than reseeding one', async () => {
     await writeFile(join(root, 'Notes/_pagecollection.json'), JSON.stringify({ views: [] }))
     const r = await handleMutate(
@@ -1528,5 +1549,30 @@ describe('handleMutate — setPageMeta', () => {
     expect(r).toEqual({ ok: true, value: {} })
     const id = splitFrontmatter(await read('Notes/Daily/Gamma.md'))[ID_KEY] as string
     expect(await month(id)).toEqual({ pages: { [id]: { title_icon: true } } })
+  })
+
+  it('a page icon lands in its month and leaves the page file’s bytes and mtime alone', async () => {
+    const page = join(root, 'Notes', 'Daily', 'Alpha.md')
+    const bytes = await read('Notes/Daily/Alpha.md')
+    const { mtimeMs } = await stat(page)
+    const set = await handleMutate(
+      { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' },
+      nexusDeps,
+    )
+    expect(set).toEqual({ ok: true, value: {} })
+    expect(await month(A_ID)).toEqual({ pages: { [A_ID]: { icon: 'star' } } })
+
+    await handleMutate(
+      { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { locked: true } },
+      nexusDeps,
+    )
+    const cleared = await handleMutate(
+      { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: null },
+      nexusDeps,
+    )
+    expect(cleared).toEqual({ ok: true, value: {} })
+    expect(await month(A_ID)).toEqual({ pages: { [A_ID]: { locked: true } } })
+    expect(await read('Notes/Daily/Alpha.md')).toBe(bytes)
+    expect((await stat(page)).mtimeMs).toBe(mtimeMs)
   })
 })
