@@ -46,3 +46,49 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+.detail-title-body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.detail-title-lead {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.detail-title-lead:has(.detail-title-input) {
+  flex: 1 1 auto;
+}
+/* Doubled: `base` resets color at the same weight. */
+.detail-title-hint.detail-title-hint {
+  flex: none;
+  color: var(--label-tertiary);
+}
+.detail-title-hint-run {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/* Doubled: the segment recipe states its own fill at the same weight. */
+.detail-title-hint-segment.detail-title-hint-segment {
+  height: 0.8em; /* KNOB — the segment's height against the title's cap */
+  background: var(--border-strong);
+}
+.detail-title-input.detail-title-search {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+}
+.detail-title-clear {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
+  display: inline-flex;
+  color: var(--label-secondary);
+}
