@@ -6,7 +6,11 @@ import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { type BannerMenuAction, bannerMenuItems } from '@pommora/core/Actions/identityMenus'
+import {
+  type BannerMenuAction,
+  bannerMenuItems,
+  withSearchRow,
+} from '@pommora/core/Actions/identityMenus'
 
 export function useBannerMenu(
   path: string,
@@ -20,7 +24,7 @@ export function useBannerMenu(
     autoEdit?: boolean
   },
 ): {
-  openMenu: () => Promise<void>
+  openMenu: (onSearch?: () => void) => Promise<void>
   run: (action: BannerMenuAction) => Promise<void>
   addOrChange: () => Promise<void>
   editing: boolean
@@ -66,9 +70,11 @@ export function useBannerMenu(
         await setBanner(null)
     }
   }
-  const openMenu = async (): Promise<void> => {
-    const action = await holdGhost(() => popMenu(bannerMenuItems({ noun, add, noRemove })))
-    if (action) await run(action)
+  const openMenu = async (onSearch?: () => void): Promise<void> => {
+    const items = bannerMenuItems({ noun, add, noRemove })
+    const action = await holdGhost(() => popMenu(onSearch ? withSearchRow(items) : items))
+    if (action === 'search') onSearch?.()
+    else if (action) await run(action)
   }
   const onSave = async (crop: Crop): Promise<void> => {
     closeEditor()

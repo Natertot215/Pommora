@@ -17,7 +17,7 @@ import { useBannerMenu } from './useBannerMenu'
 import { useWindowBannerSeat } from '../Windows/windowTabBanner'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
+import { titleMenuItems, withSearchRow } from '@pommora/core/Actions/identityMenus'
 
 export function Banner({
   owner,
@@ -35,6 +35,14 @@ export function Banner({
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [editingHome, setEditingHome] = useState(false)
   const iconRef = useRef<SVGSVGElement>(null)
+  const searchable = chrome === 'detail' && (owner.kind === 'collection' || owner.kind === 'set')
+  const query = useSession((s) =>
+    searchable ? (s.viewSearch[s.activeTabId]?.query ?? null) : null,
+  )
+  const summon = useSession((s) => (searchable ? s.viewSearchSummon : 0))
+  const searchView = useSession((s) => s.searchView)
+  const setViewQuery = useSession((s) => s.setViewQuery)
+  const search = searchable ? { query, summon, start: searchView, change: setViewQuery } : undefined
 
   const iconHidden = owner.headingIconHidden === true
   const toggleHeadingIcon = (): Promise<boolean> =>
@@ -91,14 +99,19 @@ export function Banner({
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
   const titleHeader = owner.kind !== 'homepage' && (
     <DetailTitleHeader
+      key={owner.path}
       title={owner.name}
       icon={entityIcon(owner.kind, owner.icon, defaultIcons)}
       iconHidden={iconHidden}
       iconRef={iconRef}
       onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}
-      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: true, iconHidden }))}
+      requestMenu={() => {
+        const items = titleMenuItems({ toggleIcon: true, iconHidden })
+        return popMenu(search ? withSearchRow(items) : items)
+      }}
       onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={() => void toggleHeadingIcon()}
+      search={search}
     />
   )
   const iconPicker = owner.kind !== 'homepage' && (
@@ -137,7 +150,7 @@ export function Banner({
       className={cx(`banner${homeClass}${surfaceClass}`, chrome === 'window' && 'window-banner')}
       onContextMenu={(e) => {
         e.preventDefault()
-        void openMenu()
+        void openMenu(search?.start)
       }}
     >
       <AssetImage value={owner.banner} className="banner-img" eager />
@@ -164,6 +177,7 @@ export function Banner({
           className={cx(
             'banner-title',
             chrome === 'window' && 'window-banner-title',
+            search && 'is-searchable',
             'title-shadow',
           )}
         >

@@ -260,7 +260,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     }
     keepSlots((id) => live.has(id))
     const searches = Object.entries(s.viewSearch)
-    const held = searches.filter(([tabId, search]) => shown.get(tabId) === search.key)
+    const held = searches.filter(
+      ([tabId, search]) =>
+        shown.get(tabId) === search.key && (search.query.trim() !== '' || tabId === s.activeTabId),
+    )
     if (held.length < searches.length) set({ viewSearch: Object.fromEntries(held) })
   }
 

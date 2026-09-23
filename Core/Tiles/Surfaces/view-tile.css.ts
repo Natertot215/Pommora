@@ -1,5 +1,5 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
-import { titleReveal } from '@pommora/uix/Animations/animations.css'
+import { titleActionFade, titleReveal } from '@pommora/uix/Animations/animations.css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { duration } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
@@ -126,16 +126,7 @@ globalStyle(`${newViewReveal} ${accessoryButton}`, { color: c.label.secondary })
 
 globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 
-const LOCK_FADE = 'opacity var(--duration-base) var(--ease-base)'
-export const bandLock = style({
-  display: 'inline-flex',
-  transition: `${LOCK_FADE}, visibility 0s`,
-})
-export const bandLockHidden = style({
-  opacity: 0,
-  visibility: 'hidden',
-  transition: `${LOCK_FADE}, visibility 0s var(--duration-base)`,
-})
+export const bandLock = style([titleActionFade, { display: 'inline-flex' }])
 // The lock's own visibility governs it, not the tile-hover reveal its button class carries.
 globalStyle(`${bandLock} ${settingsBtn}`, { opacity: 1 })
 

@@ -1,10 +1,26 @@
-import { type Ref, useState } from 'react'
+import { type Ref, useEffect, useRef, useState } from 'react'
 import type { TitleMenuAction } from '@pommora/core/Actions/identityMenus'
 import { Icon } from '@pommora/uix/Symbols'
+import { Button } from '@pommora/uix/Buttons/Button'
+import { labelSlot, labelSlotHidden } from '@pommora/uix/Buttons/button-base.css'
+import { segment } from '@pommora/uix/Elements/segment.css'
+import { titleActionFade, titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base } from '@pommora/uix/Fields/fields.css'
+import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
 import { cx } from '@pommora/uix/Utilities/cx'
 import './content-title.css'
+
+const HINT_GRACE_MS = 150
+
+/** `query` is null while the title rests, and a string — empty or not — while its search is open. */
+export interface TitleSearch {
+  query: string | null
+  summon: number
+  start: () => void
+  change: (query: string | null) => void
+}
 
 interface Props {
   title: string
@@ -12,10 +28,11 @@ interface Props {
   iconRef?: Ref<SVGSVGElement>
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
-  requestMenu: () => Promise<TitleMenuAction | null>
+  requestMenu: () => Promise<TitleMenuAction | 'search' | null>
   onEditIcon: () => void
   onToggleIcon?: () => void
   iconHidden?: boolean
+  search?: TitleSearch
 }
 
 export function DetailTitleHeader({
@@ -27,17 +44,65 @@ export function DetailTitleHeader({
   onEditIcon,
   onToggleIcon,
   iconHidden,
+  search,
 }: Props): React.JSX.Element {
   const [editing, setEditing] = useState(false)
+  const searching = search?.query != null
+  const hint = useHoverDwell(search !== undefined && !searching && !editing, false, HINT_GRACE_MS)
+  const field = useRef<HTMLInputElement>(null)
+  // The field fades out on the query it held, so ending a search never flashes its placeholder.
+  const heldQuery = useRef('')
+  if (search?.query != null) heldQuery.current = search.query
+  const seenSummon = useRef(search?.summon)
+  useEffect(() => {
+    if (search?.summon === seenSummon.current) return
+    seenSummon.current = search?.summon
+    field.current?.focus()
+    field.current?.select()
+  }, [search?.summon])
+  useEffect(() => {
+    if (!searching) field.current?.blur()
+  }, [searching])
 
   const openMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
     const action = await requestMenu()
-    if (action === 'rename') setEditing(true)
-    else if (action === 'editIcon') onEditIcon()
+    if (action === 'rename') {
+      search?.change(null)
+      setEditing(true)
+    } else if (action === 'editIcon') onEditIcon()
     else if (action === 'toggleIcon') onToggleIcon?.()
+    else if (action === 'search') search?.start()
   }
+
+  const label = (
+    // A refused rename needs no revert — the field unmounts on commit and the resting span shows the live title until the tree confirms.
+    <RenamableLabel
+      renames="title"
+      editing={editing}
+      value={title}
+      className={cx(base, 'detail-title-input')}
+      onCommit={(next) => {
+        setEditing(false)
+        void onRename(next)
+      }}
+      onCancel={() => setEditing(false)}
+    >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the title is a right-click affordance and a pointer door to its search — the keyboard reaches the search through the Search command */}
+      <span
+        className={cx(
+          'detail-title-text',
+          search && titleActionFade,
+          searching && titleActionFadeHidden,
+        )}
+        onContextMenu={openMenu}
+        onClick={search?.start}
+      >
+        {title}
+      </span>
+    </RenamableLabel>
+  )
 
   return (
     <div className="detail-title">
@@ -53,23 +118,66 @@ export function DetailTitleHeader({
           onContextMenu={editing ? undefined : openMenu}
         />
       )}
-      {/* A refused rename needs no revert — the field unmounts on commit and the resting span shows the live title until the tree confirms. */}
-      <RenamableLabel
-        renames="title"
-        editing={editing}
-        value={title}
-        className={cx(base, 'detail-title-input')}
-        onCommit={(next) => {
-          setEditing(false)
-          void onRename(next)
-        }}
-        onCancel={() => setEditing(false)}
-      >
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-        <span className="detail-title-text" onContextMenu={openMenu}>
-          {title}
-        </span>
-      </RenamableLabel>
+      {search ? (
+        <div className="detail-title-body">
+          <span
+            className="detail-title-lead"
+            onPointerEnter={() => hint.hover(true)}
+            onPointerLeave={() => hint.hover(false)}
+          >
+            {label}
+            <button
+              type="button"
+              tabIndex={-1}
+              className={cx(base, labelSlot, !hint.on && labelSlotHidden, 'detail-title-hint')}
+              onClick={search.start}
+              onContextMenu={openMenu}
+            >
+              <span className="detail-title-hint-run">
+                <span className={cx(segment, 'detail-title-hint-segment')} aria-hidden />
+                Search
+              </span>
+            </button>
+          </span>
+          <SearchField
+            inputRef={field}
+            value={search.query ?? heldQuery.current}
+            onValueChange={search.change}
+            className={cx(
+              base,
+              'detail-title-input',
+              'detail-title-search',
+              titleActionFade,
+              !searching && titleActionFadeHidden,
+            )}
+            onKeyDown={(e) => {
+              if (e.key !== 'Escape') return
+              e.preventDefault()
+              search.change(null)
+            }}
+            onBlur={() => {
+              if (!search.query?.trim()) search.change(null)
+            }}
+            onContextMenu={(e) => e.stopPropagation()}
+          />
+          <span
+            className={cx(
+              'detail-title-clear',
+              titleActionFade,
+              !search.query?.trim() && titleActionFadeHidden,
+            )}
+          >
+            <Button
+              size="button-inline"
+              icon="x"
+              iconSize="headline"
+              onClick={() => search.change(null)}
+            />
+          </span>
+        </div>
+      ) : (
+        label
+      )}
     </div>
   )
 }

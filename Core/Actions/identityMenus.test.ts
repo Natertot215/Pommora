@@ -4,6 +4,7 @@ import {
   iconFavoriteMenuItems,
   nexusIconMenuItems,
   titleMenuItems,
+  withSearchRow,
 } from './identityMenus'
 
 const shape = (items: { label: string; separatorBefore?: boolean }[]): string[] =>
@@ -67,6 +68,18 @@ describe('the title menu', () => {
       { label: 'Show Icon', action: 'toggleIcon' },
     ])
     expect(titleMenuItems({ toggleIcon: true }).at(-1)?.label).toBe('Hide Icon')
+  })
+})
+
+describe('the search row', () => {
+  it('leads the rows it is given, over a divider', () => {
+    expect(shape(withSearchRow(titleMenuItems({ toggleIcon: true })))).toEqual([
+      'Search',
+      '—',
+      'Rename',
+      'Edit Icon',
+      'Hide Icon',
+    ])
   })
 })
 

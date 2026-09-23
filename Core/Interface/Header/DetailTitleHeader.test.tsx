@@ -1,0 +1,143 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { labelSlotHidden } from '@pommora/uix/Buttons/button-base.css'
+import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
+import { DetailTitleHeader, type TitleSearch } from './DetailTitleHeader'
+
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+let host: HTMLDivElement
+let root: Root
+beforeEach(() => {
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  root = createRoot(host)
+})
+afterEach(() => {
+  vi.useRealTimers()
+  act(() => root.unmount())
+  host.remove()
+})
+
+const search = (over: Partial<TitleSearch> = {}): TitleSearch => ({
+  query: null,
+  summon: 0,
+  start: vi.fn(),
+  change: vi.fn(),
+  ...over,
+})
+const render = (s?: TitleSearch): Promise<void> =>
+  act(async () => {
+    root.render(
+      <DetailTitleHeader
+        title="Ideas"
+        onRename={vi.fn()}
+        requestMenu={async () => null}
+        onEditIcon={vi.fn()}
+        search={s}
+      />,
+    )
+  })
+const q = (sel: string): HTMLElement => host.querySelector(sel) as HTMLElement
+const hidden = (sel: string): boolean => q(sel).classList.contains(titleActionFadeHidden)
+
+describe('the title search', () => {
+  it('leaves a title without a search as it was', async () => {
+    await render()
+    expect(host.querySelector('.detail-title-search')).toBeNull()
+    expect(host.querySelector('.detail-title-hint')).toBeNull()
+  })
+
+  it('slides the hint out on the dwell, and a plain, ⌘, or ⇧ click on it or the title starts the search', async () => {
+    vi.useFakeTimers()
+    const s = search()
+    await render(s)
+    expect(q('.detail-title-hint').classList.contains(labelSlotHidden)).toBe(true)
+    await act(async () => {
+      q('.detail-title-text').dispatchEvent(
+        new MouseEvent('pointerover', { bubbles: true, relatedTarget: document.body }),
+      )
+      vi.advanceTimersByTime(1500)
+    })
+    expect(q('.detail-title-hint').classList.contains(labelSlotHidden)).toBe(false)
+    act(() => q('.detail-title-hint').click())
+    act(() => q('.detail-title-text').click())
+    act(() => {
+      q('.detail-title-text').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, metaKey: true }),
+      )
+      q('.detail-title-text').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, shiftKey: true }),
+      )
+    })
+    expect(s.start).toHaveBeenCalledTimes(4)
+  })
+
+  it('an open search shows the field over the hidden title, and the X only once text is typed', async () => {
+    await render(search({ query: '' }))
+    expect(hidden('.detail-title-search')).toBe(false)
+    expect(hidden('.detail-title-text')).toBe(true)
+    expect(hidden('.detail-title-clear')).toBe(true)
+    await render(search({ query: 'ab' }))
+    expect(hidden('.detail-title-clear')).toBe(false)
+  })
+
+  it('Escape, the X, and an empty blur end it', async () => {
+    const s = search({ query: 'ab' })
+    await render(s)
+    const input = q('.detail-title-search') as HTMLInputElement
+    act(() => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    act(() => q('.detail-title-clear button').click())
+    expect(s.change).toHaveBeenNthCalledWith(1, null)
+    expect(s.change).toHaveBeenNthCalledWith(2, null)
+    const empty = search({ query: '' })
+    await render(empty)
+    act(() => {
+      input.focus()
+      input.blur()
+    })
+    expect(empty.change).toHaveBeenCalledWith(null)
+  })
+
+  it('a blank blur ends it, and picking Rename ends it first', async () => {
+    const blank = search({ query: '  ' })
+    await render(blank)
+    const input = q('.detail-title-search') as HTMLInputElement
+    act(() => {
+      input.focus()
+      input.blur()
+    })
+    expect(blank.change).toHaveBeenCalledWith(null)
+    const s = search({ query: 'ab' })
+    await act(async () => {
+      root.render(
+        <DetailTitleHeader
+          title="Ideas"
+          onRename={vi.fn()}
+          requestMenu={async () => 'rename'}
+          onEditIcon={vi.fn()}
+          search={s}
+        />,
+      )
+    })
+    await act(async () => {
+      q('.detail-title-hint').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(s.change).toHaveBeenCalledWith(null)
+    expect(host.querySelector('input.detail-title-input:not(.detail-title-search)')).not.toBeNull()
+  })
+
+  it('a new summon focuses and selects the field; a standing one leaves focus alone', async () => {
+    await render(search({ query: 'ab', summon: 1 }))
+    expect(document.activeElement).not.toBe(q('.detail-title-search'))
+    await render(search({ query: 'ab', summon: 2 }))
+    const input = q('.detail-title-search') as HTMLInputElement
+    expect(document.activeElement).toBe(input)
+    expect(input.selectionStart).toBe(0)
+    expect(input.selectionEnd).toBe(2)
+  })
+})

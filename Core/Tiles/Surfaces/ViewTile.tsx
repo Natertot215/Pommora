@@ -38,6 +38,7 @@ import type { MutateEntry } from '../tileKinds'
 import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { labelSlot, labelSlotHidden, labelText } from '@pommora/uix/Buttons/button-base.css'
+import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
 import {
   SEGMENT_ICON,
   segment,
@@ -480,7 +481,7 @@ export function ViewTile({
   )
 
   const bandLock = !locked && (
-    <span className={cx(s.bandLock, !dwell.on && !lockLingers && s.bandLockHidden)}>
+    <span className={cx(s.bandLock, !dwell.on && !lockLingers && titleActionFadeHidden)}>
       <button
         type="button"
         className={settingsBtn}

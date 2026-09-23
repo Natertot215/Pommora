@@ -38,3 +38,13 @@ export const windowOut = style({
   animation: `${windowOutFrames} ${duration.fast} ${easing.baseEase} forwards`,
   pointerEvents: 'none',
 })
+
+const TITLE_ACTION_FADE = 'opacity var(--duration-base) var(--ease-base)'
+
+export const titleActionFade = style({ transition: `${TITLE_ACTION_FADE}, visibility 0s` })
+
+export const titleActionFadeHidden = style({
+  opacity: 0,
+  visibility: 'hidden',
+  transition: `${TITLE_ACTION_FADE}, visibility 0s var(--duration-base)`,
+})

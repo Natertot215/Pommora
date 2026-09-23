@@ -1,4 +1,4 @@
-import type { ActionItem } from './menuModel'
+import { type ActionItem, afterSeparator } from './menuModel'
 import { iconLabel } from './toggleLabels'
 
 type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
@@ -56,6 +56,10 @@ export function titleMenuItems(
       ? [{ label: iconLabel(!opts.iconHidden), action: 'toggleIcon' as const }]
       : []),
   ]
+}
+
+export function withSearchRow<A>(rows: ActionItem<A>[]): ActionItem<A | 'search'>[] {
+  return [{ label: 'Search', action: 'search' }, ...afterSeparator(rows)]
 }
 
 export function iconFavoriteMenuItems(favorited: boolean): ActionItem<IconFavoriteMenuAction>[] {

@@ -824,6 +824,13 @@ describe('store — view search', () => {
     expect(useSession.getState().viewSearch).toEqual({})
   })
 
+  it('an empty search closes once its tab is left', () => {
+    onContainer()
+    useSession.getState().searchView()
+    useSession.getState().activateTab('t2')
+    expect(useSession.getState().viewSearch).toEqual({})
+  })
+
   it('clears with its pinned tab when the pin is removed', () => {
     const pinId = pinTabId(col('c1'))
     seed({

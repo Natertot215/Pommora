@@ -57,6 +57,24 @@ function Probe({
 const mount = (el: React.ReactNode): Promise<void> => act(async () => root.render(el))
 
 describe('useBannerMenu', () => {
+  it('leads with Search when given an onSearch, and runs it on pick', async () => {
+    const onSearch = vi.fn()
+    let labels: string[] = []
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      menu: (req: { items: { label: string }[] }) => {
+        labels = req.items.map((i) => i.label)
+        return Promise.resolve(ok('search'))
+      },
+    })
+    await mount(<Probe />)
+    await act(async () => {
+      await api.openMenu(onSearch)
+    })
+    expect(labels[0]).toBe('Search')
+    expect(onSearch).toHaveBeenCalledOnce()
+    expect(api.editing).toBe(false)
+  })
+
   it("opens the editor on 'edit' and pops through the ghost wrap", async () => {
     const ghost = vi.fn((fn: () => Promise<unknown>) => fn())
     ;(window as { nexus?: unknown }).nexus = stubDialer({
