@@ -12,7 +12,8 @@ import {
   lineEndOf,
   markersFor,
 } from '../Engine/detect'
-import { lineIndexAt, scanDoc } from '../Engine/docScan'
+import { scanDoc } from '../Engine/docScan'
+import { lineIndexAt } from '../Engine/markdownCode'
 import { diffAsSingleReplace } from '../Engine/listDragModel'
 
 export type CitationSlice = DocLines & { citations: CitationScan }

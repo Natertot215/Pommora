@@ -19,7 +19,6 @@ export interface FenceInfo {
   from: number
   to: number
   depth: number
-  closed: boolean
   lang?: string
   markerEnd: number
   ordinal?: number
@@ -41,20 +40,17 @@ export function splitWithOffsets(text: string): DocLines {
 export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const span of fenceSpans(lines)) {
-    const { open, close, closed } = span
+    const { open, close } = span
     const base = {
       from: lineStarts[open],
       to: lineStarts[close] + lines[close].length,
       depth: span.fence.depth,
-      closed,
       lang: fenceLang(span.fence) || undefined,
       markerEnd: span.fence.markerEnd,
     }
     out[open] = { role: 'open', ...base }
-    const contentEnd = closed ? close : close + 1
-    for (let k = open + 1; k < contentEnd; k++)
-      out[k] = { role: 'content', ...base, ordinal: k - open }
-    if (closed) out[close] = { role: 'close', ...base }
+    for (let k = open + 1; k < close; k++) out[k] = { role: 'content', ...base, ordinal: k - open }
+    out[close] = { role: 'close', ...base }
   }
   return out
 }
@@ -72,8 +68,8 @@ const inExcluded = (at: number, excluded: [number, number][]): boolean =>
 export function blockMathRanges(
   { lines, lineStarts }: DocLines,
   excluded: [number, number][],
-): [number, number][] {
-  const out: [number, number][] = []
+): { ranges: [number, number][]; open: number } {
+  const ranges: [number, number][] = []
   let open = -1
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim() !== '$$') continue
@@ -81,9 +77,38 @@ export function blockMathRanges(
     if (open < 0) {
       open = i
     } else {
-      out.push([lineStarts[open], lineStarts[i] + lines[i].length])
+      ranges.push([lineStarts[open], lineStarts[i] + lines[i].length])
       open = -1
     }
+  }
+  return { ranges, open }
+}
+
+const HTML_RAW: [RegExp, RegExp][] = [
+  [/^ {0,3}<(?:script|pre|style|textarea)(?:[ \t>]|$)/i, /<\/(?:script|pre|style|textarea)>/i],
+  [/^ {0,3}<!--/, /-->/],
+  [/^ {0,3}<\?/, /\?>/],
+  [/^ {0,3}<![A-Za-z]/, />/],
+  [/^ {0,3}<!\[CDATA\[/, /\]\]>/],
+]
+const HTML_OPEN = /^ {0,3}<[A-Za-z/!?]/
+
+export function htmlBlocks(
+  { lines, lineStarts }: DocLines,
+  fences: readonly (FenceInfo | undefined)[],
+): [number, number][] {
+  const out: [number, number][] = []
+  for (let i = 0; i < lines.length; i++) {
+    if (fences[i] || !HTML_OPEN.test(lines[i])) continue
+    let j = i
+    for (let k = i; k < lines.length && (k <= j || lines[k].trim() !== ''); k++) {
+      const end = HTML_RAW.find(([open]) => open.test(lines[k]))?.[1]
+      let e = k
+      if (end) while (e < lines.length - 1 && !end.test(lines[e])) e++
+      j = Math.max(j, e)
+    }
+    out.push([lineStarts[i], lineStarts[j] + lines[j].length])
+    i = j
   }
   return out
 }
@@ -121,7 +146,6 @@ export interface MarkerRef {
 export interface CitationScan {
   entries: CitationEntry[]
   markers: MarkerRef[]
-  mask: Uint8Array
   /** Indexes over the arrays above rather than copies: filtering the flat lists per line is the cost the one-scan discipline avoids. */
   entryAt: Map<number, CitationEntry>
   markersAt: Map<number, MarkerRef[]>
@@ -145,58 +169,85 @@ export function foldLabel(label: string): string {
   return label.toLowerCase().toUpperCase()
 }
 
+export interface LineRef {
+  col: number
+  end: number
+  label: string
+}
+
+export function lineRefs(line: string, lineStart: number, inCode: CodeMask): LineRef[] | undefined {
+  if (!line.includes('[^')) return undefined
+  const headEnd = citationHeadRe.exec(line)?.[0].length
+  let out: LineRef[] | undefined
+  for (const m of line.matchAll(markerRegex())) {
+    const end = m.index + m[0].length
+    if (headEnd !== undefined && end <= headEnd) continue
+    if (inCode(lineStart + m.index)) continue
+    out ??= []
+    out.push({ col: m.index, end, label: m[1] })
+  }
+  return out
+}
+
 export function citationScan(
   d: DocLines,
   excluded: [number, number][],
   inCode: CodeMask = codeMask(d.text),
 ): CitationScan {
+  return assembleCitations(
+    d,
+    (k) => inExcluded(d.lineStarts[k], excluded),
+    d.lines.map((line, i) => lineRefs(line, d.lineStarts[i], inCode)),
+  )
+}
+
+const CONTINUATION_INDENT = /^(?: {4}|\t)/
+
+export function assembleCitations(
+  d: DocLines,
+  excluded: (line: number) => boolean,
+  refs: readonly (LineRef[] | undefined)[],
+): CitationScan {
   const { lines, lineStarts } = d
   const blank = (k: number): boolean => lines[k].trim() === ''
   const breaks = (k: number): boolean =>
-    inExcluded(lineStarts[k], excluded) ||
+    excluded(k) ||
     isHeadingLine(lines[k]) ||
     isThematicBreakLine(lines[k]) ||
     isBlockquoteLine(lines[k]) ||
     parseListMarker(lines[k]) !== null
-
-  const spans: Omit<CitationEntry, 'ordinal'>[] = []
-  for (let i = 0; i < lines.length; i++) {
-    const head = citationHeadRe.exec(lines[i])
-    if (!head || inExcluded(lineStarts[i], excluded)) continue
-    let lastLine = i
-    let k = i + 1
-    while (k < lines.length) {
-      let m = k
-      while (m < lines.length && blank(m)) m++
-      if (m >= lines.length || citationHeadRe.test(lines[m]) || breaks(m)) break
-      if (m > k && !/^(?: {4}|\t)/.test(lines[m])) break
-      lastLine = m
-      k = m + 1
+  const aboveBlanks = (k: number): number => {
+    let p = k
+    while (p >= 0 && blank(p)) p--
+    return p
+  }
+  const headOf = (end: number): number => {
+    let h = end
+    while (!citationHeadRe.test(lines[h])) {
+      if (breaks(h)) return -1
+      const p = aboveBlanks(h - 1)
+      if (p < 0 || (p < h - 1 && !CONTINUATION_INDENT.test(lines[h]))) return -1
+      h = p
     }
-    spans.push({
-      line: i,
-      lastLine,
-      label: head[1],
-      contentStart: lineStarts[i] + head[0].length,
-    })
-    i = lastLine
+    return excluded(h) ? -1 : h
   }
 
-  const mask = new Uint8Array(lines.length)
-  let firstLine = lines.length
-  let entries: CitationEntry[] = []
-  const allBlank = (from: number, to: number): boolean => {
-    for (let k = from; k <= to; k++) if (!blank(k)) return false
-    return true
+  const entries: CitationEntry[] = []
+  for (let end = aboveBlanks(lines.length - 1); end >= 0; ) {
+    const h = headOf(end)
+    if (h < 0) break
+    const head = citationHeadRe.exec(lines[h])!
+    entries.push({
+      line: h,
+      lastLine: end,
+      label: head[1],
+      contentStart: lineStarts[h] + head[0].length,
+      ordinal: null,
+    })
+    end = aboveBlanks(h - 1)
   }
-  const last = spans[spans.length - 1]
-  if (last && allBlank(last.lastLine + 1, lines.length - 1)) {
-    let start = spans.length - 1
-    while (start > 0 && allBlank(spans[start - 1].lastLine + 1, spans[start].line - 1)) start--
-    firstLine = spans[start].line
-    entries = spans.slice(start).map((s) => ({ ...s, ordinal: null }))
-    mask.fill(1, firstLine)
-  }
+  entries.reverse()
+  const firstLine = entries[0]?.line ?? lines.length
 
   // A marker inside code binds nothing and takes no number — counting them here would print numbers that skip.
   const firstFor = new Map<string, CitationEntry>()
@@ -211,27 +262,23 @@ export function citationScan(
   const markersAt = new Map<number, MarkerRef[]>()
   let next = 1
   for (let i = 0; i < firstLine; i++) {
-    const headEnd = citationHeadRe.exec(lines[i])?.[0].length
-    const re = markerRegex()
-    let m = re.exec(lines[i])
-    for (; m !== null; m = re.exec(lines[i])) {
-      const from = lineStarts[i] + m.index
-      if (headEnd !== undefined && m.index + m[0].length <= headEnd) continue
-      if (inCode(from)) continue
-      const entry = firstFor.get(foldLabel(m[1]))
+    const onLine = refs[i]
+    if (!onLine) continue
+    const held: MarkerRef[] = []
+    for (const r of onLine) {
+      const entry = firstFor.get(foldLabel(r.label))
       if (entry && entry.ordinal === null) entry.ordinal = next++
       const ref: MarkerRef = {
         line: i,
-        from,
-        to: from + m[0].length,
-        label: m[1],
+        from: lineStarts[i] + r.col,
+        to: lineStarts[i] + r.end,
+        label: r.label,
         ordinal: entry?.ordinal ?? null,
       }
       markers.push(ref)
-      const onLine = markersAt.get(i)
-      if (onLine) onLine.push(ref)
-      else markersAt.set(i, [ref])
+      held.push(ref)
     }
+    markersAt.set(i, held)
   }
 
   return {
@@ -239,7 +286,6 @@ export function citationScan(
     markers,
     entryAt,
     markersAt,
-    mask,
     firstLine,
     anchorLine: entries.length > 0 && firstLine > 0 ? firstLine - 1 : -1,
   }
@@ -309,15 +355,12 @@ export interface CalloutLine {
   prefixEnd: number
 }
 
-/** A `[!type]` lookalike inside a CLOSED fence is code, never a head. Callers holding a fence scan pass it. */
+/** A `[!type]` lookalike inside a fence is code, never a head. */
 export function calloutLines(
   lines: string[],
   fences: (FenceInfo | undefined)[] = scanFencedCode(lines, lineOffsetsOf(lines)),
 ): (CalloutLine | undefined)[] {
-  const codeAt = (k: number): boolean => {
-    const f = fences[k]
-    return f?.closed === true && f.role === 'content'
-  }
+  const codeAt = (k: number): boolean => fences[k]?.role === 'content'
   const out: (CalloutLine | undefined)[] = new Array(lines.length)
   let i = 0
   while (i < lines.length) {

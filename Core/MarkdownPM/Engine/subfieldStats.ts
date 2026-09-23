@@ -1,9 +1,8 @@
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
-import { inlineSpans } from './markdownCode'
+import { inlineSpans, lineIndexAt } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
-import { lineIndexAt, scanDoc, type DocScan } from './docScan'
+import { scanDoc, type DocScan } from './docScan'
 import { perText } from './perText'
-import { scanOf, TEXT_SLOTS } from './scanCache'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
@@ -79,24 +78,16 @@ function tableProse(scan: DocScan): Map<number, string> {
   return drawn
 }
 
-// THE editor's own scan of this very text, rather than a second, narrower one that could answer a construct differently.
-export const computeStats = (body: string): PageStats => statsOf(body, scanOf)
-
-/** One answer per body string: the footer mounts two items needing the same figures on one render, and the prose pass walks the whole document. */
-export const pageStats = perText(computeStats, TEXT_SLOTS)
-
-/** A highlight is a fresh string on every drag frame, so it scans outside the shared cache: that cache holds four documents and the editor reads its own document from it. */
-export const selectionStats = (text: string): PageStats => statsOf(text, scanDoc)
-
-function statsOf(body: string, read: (text: string) => DocScan): PageStats {
+// The scan the editor runs, over this text, rather than a second, narrower one that could answer a construct differently.
+export function computeStats(body: string): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
-  const scan = read(body)
+  const scan = scanDoc(body)
   const { lines, fences, citations: cited } = scan
   const drawn = tableProse(scan)
   const prose = stripInline(
     lines
       .map((line, i) =>
-        fences[i] || cited.mask[i] ? GONE : (drawn.get(i) ?? stripLineChrome(line)),
+        fences[i] || i >= cited.firstLine ? GONE : (drawn.get(i) ?? stripLineChrome(line)),
       )
       .join('\n'),
   )
@@ -113,3 +104,8 @@ function statsOf(body: string, read: (text: string) => DocScan): PageStats {
     citations: cited.entries.length,
   }
 }
+
+const BODY_SLOTS = 4
+
+/** One answer per body string: the footer mounts two items needing the same figures on one render, and the prose pass walks the whole document. */
+export const pageStats = perText(computeStats, BODY_SLOTS)

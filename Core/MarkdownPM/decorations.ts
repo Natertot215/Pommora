@@ -48,7 +48,8 @@ import {
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
-import { type DocScan, codeBlockTextAt, inCodeAt, lineIndexAt } from './Engine/docScan'
+import { type DocScan, codeBlockTextAt, inCodeAt } from './Engine/docScan'
+import { lineIndexAt } from './Engine/markdownCode'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
@@ -327,7 +328,9 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   const spans: [number, number][] = []
   for (const { from, to } of view.visibleRanges) {
     const a = scan.lineStarts[sliceStartLine(scan, doc.lineAt(from).number - 1)]
-    const end = doc.lineAt(to).to
+    const last = doc.lineAt(to)
+    const fence = scan.fences[last.number - 1]
+    const end = fence ? fence.from - 1 : last.to
     const b = scan.maths.find(([f, t]) => end >= f && end < t)?.[1] ?? end
     if (a >= b) continue
     const prev = spans[spans.length - 1]
@@ -338,10 +341,7 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   return docSpanTokens(doc, key, () => {
     const out: Token[] = []
     for (const [a, b] of spans) {
-      const maths = scan.maths
-        .filter(([f, t]) => f >= a && t <= b)
-        .map(([f, t]): [number, number] => [f - a, t - a])
-      for (const tk of tokenize(text.slice(a, b), maths)) out.push(shiftToken(tk, a))
+      for (const tk of tokenize(text.slice(a, b))) out.push(shiftToken(tk, a))
     }
     return out
   })

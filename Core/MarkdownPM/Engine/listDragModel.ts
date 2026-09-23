@@ -7,7 +7,7 @@ import {
   type ListMarker,
 } from './detect'
 import { lineOffsetsOf, quoteDepthOf } from './markdownCode'
-import { scanOf } from './scanCache'
+import { type DocScan, spanAt } from './docScan'
 import { lineStartAt, lineEndAt } from '../Input/edits'
 
 export interface ChangeSpec {
@@ -34,14 +34,14 @@ export interface SubBlock extends BlockRange {
   level: number
 }
 
-export function subBlockAt(doc: string, pos: number): SubBlock | null {
+export function subBlockAt(scan: DocScan, pos: number): SubBlock | null {
+  const doc = scan.text
   const from = lineStartAt(doc, pos)
   const headEnd = lineEndAt(doc, from)
   const head = parseListMarker(doc.slice(from, headEnd))
   if (head === null) return null
   const headDepth = quoteDepthOf(doc.slice(from, headEnd))
 
-  const maths = scanOf(doc).maths
   let to = headEnd
   for (let p = headEnd; p < doc.length; ) {
     const fs = p + 1
@@ -49,7 +49,7 @@ export function subBlockAt(doc: string, pos: number): SubBlock | null {
     const fline = doc.slice(fs, fe)
     // A line inside a math range whose opener rides this sub-block is formula content, mirroring blockModel's absorb rule.
     const inJoinedMath = (): boolean => {
-      const r = maths.find(([f, t]) => fs >= f && fs <= t)
+      const r = spanAt(scan.maths, fs)
       return r !== undefined && r[0] >= from && r[0] <= to
     }
     if (quoteDepthOf(fline) !== headDepth && !inJoinedMath()) break

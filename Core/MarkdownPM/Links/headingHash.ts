@@ -1,6 +1,6 @@
 import { linkAt } from '@pommora/core/Connections/connections'
-import type { DocScan } from '../Engine/docScan'
-import { inCodeAt, lineIndexAt } from '../Engine/docScan'
+import { type DocScan, inCodeAt } from '../Engine/docScan'
+import { lineIndexAt } from '../Engine/markdownCode'
 import type { Edit } from '../Input/edits'
 
 function titleSpanAt(line: string, rel: number): [number, number] | null {

@@ -14,7 +14,8 @@ import {
   type MarkdownScope,
 } from './detect'
 import { codeLanguageName } from './codeLangs'
-import { type DocScan, lineIndexAt, quotePrefixWidth, scanDoc } from './docScan'
+import { type DocScan, quotePrefixWidth, scanDoc } from './docScan'
+import { lineIndexAt } from './markdownCode'
 
 function calloutNestedQuote(
   lines: string[],
@@ -131,7 +132,7 @@ function pageChrome(
   selStart: number,
   intents: DecoIntent[],
 ): number | null {
-  const { lines, lineStarts, fences, callouts, maths } = scan
+  const { lines, lineStarts, fences, callouts, maths, quotes } = scan
   const line = lines[i]
   const ls = lineStarts[i]
   const le = ls + line.length
@@ -139,8 +140,6 @@ function pageChrome(
   // Display math is formula source: a `- b` term must never become a bullet with a live drag glyph inside the formula.
   const inMathLine = (k: number): boolean =>
     maths.some(([f, t]) => lineStarts[k] >= f && lineStarts[k] <= t)
-
-  const quoteChromeAt = (k: number): boolean => scan.quotes[k] && !scan.literal[k]
 
   const fence = fences[i]
   const co = callouts[i]
@@ -153,11 +152,7 @@ function pageChrome(
     base = co.prefixEnd
     const inner = line.slice(base)
     const qm = blockquotePrefixRe.exec(inner)
-    if (
-      qm &&
-      isBlockquoteLine(inner) &&
-      (fence === undefined || !fence.closed || fence.depth > 1)
-    ) {
+    if (qm && isBlockquoteLine(inner) && (fence === undefined || fence.depth > 1)) {
       const first = !calloutNestedQuote(lines, callouts, i - 1)
       const last = !calloutNestedQuote(lines, callouts, i + 1)
       intents.push({
@@ -169,12 +164,12 @@ function pageChrome(
       intents.push({ kind: 'lineWidget', from: ls, className: 'md-blockquote-nested-bar' })
       base += qm[0].length
     }
-  } else if (quoteChromeAt(i)) {
+  } else if (quotes[i]) {
     const full = blockquotePrefixRe.exec(line)
     const bm = full && line.slice(full[0].length).trim() === '' ? oneQuoteLevelRe.exec(line) : full
     if (bm) {
-      const first = i === 0 || !quoteChromeAt(i - 1)
-      const last = i === lines.length - 1 || !quoteChromeAt(i + 1)
+      const first = i === 0 || !quotes[i - 1]
+      const last = i === lines.length - 1 || !quotes[i + 1]
       intents.push({
         kind: 'line',
         from: ls,
@@ -185,7 +180,7 @@ function pageChrome(
   }
 
   if (fence) {
-    if (fence.closed && base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
+    if (base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
     const innerStart = ls + base
     const caretOnLine = selStart >= ls && selStart <= le
     intents.push({
@@ -217,7 +212,7 @@ function pageChrome(
   }
 
   // A citation row returns like a fence line, so it never enters the list vocabulary; its label can never be revealed — a caret in five hidden characters would break it.
-  if (scan.citations.mask[i]) {
+  if (i >= scan.citations.firstLine) {
     const entry = scan.citations.entryAt.get(i)
     if (!entry) return null
     const dim = entry.ordinal === null ? ' md-citation-dim' : ''

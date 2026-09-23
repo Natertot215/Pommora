@@ -1,7 +1,8 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from './parser'
-import { codeMask, inlineSpans } from './markdownCode'
+import { inlineSpans, type CodeMask } from './markdownCode'
+import { type DocScan, inCodeAt, scanDoc } from './docScan'
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
@@ -204,16 +205,16 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
   return tokens
 }
 
-export function tokenize(text: string, maths: readonly [number, number][] = []): Token[] {
-  const ast = parse(text)
+export function tokenize(text: string, scan: DocScan = scanDoc(text)): Token[] {
+  const ast = parse(text, scan)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
-  const inCode = codeMask(text)
-  const scan = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
+  const inCode: CodeMask = (p) => inCodeAt(scan, p)
+  const matches = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
   // Code tokenizes FIRST so a [[link]] in code renders and clicks as literal code, not a live connection.
   const code = inlineCodeTokens(text, inCode)
-  const embeds = scan({
+  const embeds = matches({
     kind: 'embed',
     re: pageEmbedPattern(),
     open: 3,
@@ -221,23 +222,23 @@ export function tokenize(text: string, maths: readonly [number, number][] = []):
   })
   // `[[Title]](target)` stays a connection trailed by literal parens, matching Obsidian. CommonMark would read it as a link labeled `[Title]`, which the rename cascade's grammar can't match, so its target would rot silently.
   const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
-  const links = scan({
+  const links = matches({
     kind: 'link',
     re: markdownLinkRegex(),
     open: 1,
     close: 1,
   }).filter(notOverlapping([...embeds, ...wikis, ...code]))
-  const cites = scan({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
+  const cites = matches({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
     notOverlapping([...embeds, ...wikis, ...code]),
   )
-  const highlights = scan({
+  const highlights = matches({
     kind: 'highlight',
     re: highlightRegex(),
     open: 2,
     close: 2,
   }).filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
-  const blockTex = blockLatexTokens(text, maths).filter(notOverlapping(code))
-  const inlineTex = scan({
+  const blockTex = blockLatexTokens(text, scan.maths).filter(notOverlapping(code))
+  const inlineTex = matches({
     kind: 'inlineLatex',
     re: inlineLatexRegex(),
     open: 1,
