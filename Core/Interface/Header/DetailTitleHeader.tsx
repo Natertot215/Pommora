@@ -129,7 +129,7 @@ export function DetailTitleHeader({
                   value={search.query ?? ''}
                   onValueChange={search.change}
                   className={cx(base, 'detail-title-search')}
-                  onFocus={search.start}
+                  onFocus={searching ? undefined : search.start}
                   onKeyDown={(e) => {
                     if (e.key !== 'Escape') return
                     e.preventDefault()
