@@ -116,7 +116,7 @@ Cards show every visible property through the shared chip and cell renderers, an
 
 #### II. Grouping, Location & Set Cards
 
-Cards never indent: structural grouping renders one flat band per top-level Set with its whole subtree gathered inside, a property grouping replaces those with bucket bands. No sub-grouping applies. **Group By: None** renders one headerless list, and **Sort By: Location** orders at the resolve level with a Location (filesystem, drag off) or Custom (manual, drag on) order; the two together are the flat, filesystem-ordered list. Each card's **location footing** is a NavTrail of its Set ancestry, governed by **Hide Location**; under structural grouping it drops the leading crumb the band already names. A **Set Cards** switch adds a leading row of larger cards, one per Set, each navigating to it and reorderable by drag, which writes the container's set order.
+Cards never indent: structural grouping renders one flat band per top-level Set with its whole subtree gathered inside, a property grouping replaces those with bucket bands. No sub-grouping applies. **Group By: None** renders one headerless list, and **Sort By: Location** orders at the resolve level with a Location (filesystem, drag off) or Custom (manual, drag on) order; the two together are the flat, filesystem-ordered list. Each card's **location footing** is a NavTrail of its Set ancestry, governed by **Hide Location**; under structural grouping it drops the leading crumb the band already names. A **Set Cards** switch adds a leading row of larger cards to a Collection's view, one per Set, each navigating to it and reorderable by drag, which writes the container's set order.
 
 #### II. Drag & Menus
 
