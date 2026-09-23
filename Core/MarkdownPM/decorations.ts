@@ -41,6 +41,7 @@ import { resolutionNudge } from './Embeds/embedWidget'
 import { linkRest, linkTyping } from './Gestures/linkGestures'
 import {
   assembleLineIntents,
+  type DecoIntent,
   GLYPH_CLASS,
   NO_CARET,
   railClass,
@@ -125,14 +126,11 @@ class BulletWidget extends WidgetType {
 }
 
 class CheckboxWidget extends WidgetType {
-  constructor(
-    readonly bracketFrom: number,
-    readonly checked: boolean,
-  ) {
+  constructor(readonly checked: boolean) {
     super()
   }
   eq(o: CheckboxWidget): boolean {
-    return o.checked === this.checked && o.bracketFrom === this.bracketFrom
+    return o.checked === this.checked
   }
   toDOM(): HTMLElement {
     const zone = document.createElement('span')
@@ -299,7 +297,7 @@ function widgetFor(spec: WidgetSpec): WidgetType {
     case 'bullet':
       return new BulletWidget()
     case 'checkbox':
-      return new CheckboxWidget(spec.bracketFrom, spec.checked)
+      return new CheckboxWidget(spec.checked)
     case 'citeRef':
       return new CiteRefWidget(spec.ordinal)
   }
@@ -353,14 +351,39 @@ interface Built {
   atomic: DecorationSet
 }
 
-// NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker.
-const docAtomics = perScopedDoc((doc, scope) => {
+function atomicsOn(
+  perLine: readonly DecoIntent[][],
+  from: number,
+  to: number,
+): Range<Decoration>[] {
   const ranges: Range<Decoration>[] = []
-  for (const line of docLineIntentsOf(doc, scope).perLine)
-    for (const it of line)
+  for (let i = from; i < to; i++)
+    for (const it of perLine[i])
       if (it.kind === 'atomic' && it.to > it.from) ranges.push(atomicSpan.range(it.from, it.to))
-  return Decoration.set(ranges, true)
-})
+  return ranges
+}
+
+// NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker. A new version maps the last one's set and re-reads only the lines its intents re-derived.
+export const docAtomics = perScopedDoc(
+  (doc, scope) => {
+    const { perLine } = docLineIntentsOf(doc, scope)
+    return Decoration.set(atomicsOn(perLine, 0, perLine.length), true)
+  },
+  (prev, tr, scope) => {
+    const { perLine, fresh } = docLineIntentsOf.after(tr, scope)
+    const { lineStarts, lines } = docScan.after(tr)
+    let set = prev.map(tr.changes)
+    for (const [a, e] of fresh)
+      set = set.update({
+        filter: () => false,
+        filterFrom: lineStarts[a],
+        filterTo: lineStarts[e - 1] + lines[e - 1].length,
+        add: atomicsOn(perLine, a, e),
+        sort: true,
+      })
+    return set
+  },
+)
 
 function atomicFor(
   doc: Text,
@@ -415,7 +438,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     intents.push(it)
   const ranges: Range<Decoration>[] = []
   const caretAtomics: Range<Decoration>[] = []
-  const caretLine = head < 0 ? null : view.state.doc.lineAt(head)
+  const line = head < 0 ? null : view.state.doc.lineAt(head)
+  const caretLine =
+    line && line.to >= view.viewport.from && line.from <= view.viewport.to ? line : null
   for (const it of intents) {
     if (it.kind === 'line') {
       const spec =
@@ -597,15 +622,21 @@ const markerSeat = (scope: MarkdownScope): Extension =>
   EditorState.transactionFilter.of((tr) => {
     if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
     const head = tr.selection.main.head
-    const seat = seatPastMarker(docLineIntentsOf(tr.newDoc, scope), docScan(tr.newDoc), head, scope)
+    const seat = seatPastMarker(docLineIntentsOf.after(tr, scope), docScan.after(tr), head, scope)
     return seat === null || seat === head ? tr : [tr, { selection: EditorSelection.cursor(seat) }]
+  })
+
+const stepDocs = (scope: MarkdownScope): Extension =>
+  EditorState.transactionExtender.of((tr) => {
+    if (tr.docChanged) docAtomics.after(tr, scope)
+    return null
   })
 
 export function markdownDecorations(
   getConn: () => ConnectionsApi | undefined,
   scope: MarkdownScope = 'page',
 ): Extension {
-  return [decorationPlugin(getConn, scope), markerSeat(scope)]
+  return [stepDocs(scope), decorationPlugin(getConn, scope), markerSeat(scope)]
 }
 
 function decorationPlugin(

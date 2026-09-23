@@ -1,16 +1,24 @@
 // CM's Text.toString() re-joins the rope on every call, and extensions re-scanning the result per keystroke was the lag source.
-import type { Text } from '@codemirror/state'
-import { docLineIntents } from './Engine/intents'
+import type { Text, Transaction } from '@codemirror/state'
+import { docLineIntents, stepLineIntents } from './Engine/intents'
 import type { MarkdownScope } from './Engine/detect'
-import { scanDoc } from './Engine/docScan'
+import { rescan, scanDoc } from './Engine/docScan'
 import { headingOutlineOf } from './Engine/headingScan'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import type { Token } from './Engine/tokens'
 
+interface PerDoc<T> {
+  (doc: Text): T
+  after(tr: Transaction): T
+}
+
 /** Keyed on the immutable `Text`, so an old version's entry collects with the history rather than being invalidated. */
-export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
+export function perDoc<T>(
+  derive: (doc: Text) => T,
+  step?: (prev: T, tr: Transaction) => T,
+): PerDoc<T> {
   const held = new WeakMap<Text, T>()
-  return (doc) => {
+  const of = (doc: Text): T => {
     let v = held.get(doc)
     if (v === undefined) {
       v = derive(doc)
@@ -18,22 +26,61 @@ export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
     }
     return v
   }
+  const after = (tr: Transaction): T => {
+    const prev = held.get(tr.startState.doc)
+    if (step && prev !== undefined && !held.has(tr.newDoc)) held.set(tr.newDoc, step(prev, tr))
+    return of(tr.newDoc)
+  }
+  return Object.assign(of, { after })
 }
 
 export const docString = perDoc((doc) => doc.toString())
 
-export const docScan = perDoc((doc) => scanDoc(docString(doc)))
+function changedSpan(tr: Transaction): [number, number] {
+  let from = tr.startState.doc.length
+  let to = 0
+  tr.changes.iterChangedRanges((fromA, toA) => {
+    from = Math.min(from, fromA)
+    to = Math.max(to, toA)
+  })
+  return [from, to]
+}
+
+export const docScan = perDoc(
+  (doc) => scanDoc(docString(doc)),
+  (prev, tr) => rescan(prev, ...changedSpan(tr), docString(tr.newDoc)),
+)
+
+interface PerScopedDoc<T> {
+  (doc: Text, scope?: MarkdownScope): T
+  after(tr: Transaction, scope?: MarkdownScope): T
+}
 
 /** One cache per vocabulary: `perDoc` keys on the text alone, and the same text read as a page and as a cell derives differently. */
 export function perScopedDoc<T>(
   derive: (doc: Text, scope: MarkdownScope) => T,
-): (doc: Text, scope?: MarkdownScope) => T {
-  const page = perDoc((doc) => derive(doc, 'page'))
-  const cell = perDoc((doc) => derive(doc, 'cell'))
-  return (doc, scope = 'page') => (scope === 'cell' ? cell(doc) : page(doc))
+  step: (prev: T, tr: Transaction, scope: MarkdownScope) => T,
+): PerScopedDoc<T> {
+  const of = (scope: MarkdownScope): PerDoc<T> =>
+    perDoc(
+      (doc) => derive(doc, scope),
+      (prev, tr) => step(prev, tr, scope),
+    )
+  const page = of('page')
+  const cell = of('cell')
+  return Object.assign(
+    (doc: Text, scope: MarkdownScope = 'page') => (scope === 'cell' ? cell(doc) : page(doc)),
+    {
+      after: (tr: Transaction, scope: MarkdownScope = 'page') =>
+        scope === 'cell' ? cell.after(tr) : page.after(tr),
+    },
+  )
 }
 
-export const docLineIntentsOf = perScopedDoc((doc, scope) => docLineIntents(docScan(doc), scope))
+export const docLineIntentsOf = perScopedDoc(
+  (doc, scope) => docLineIntents(docScan(doc), scope),
+  (prev, tr, scope) => stepLineIntents(prev, docScan(tr.startState.doc), docScan.after(tr), scope),
+)
 
 export const docOutline = perDoc((doc) => headingOutlineOf(docScan(doc)))
 
