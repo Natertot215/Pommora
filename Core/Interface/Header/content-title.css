@@ -1,4 +1,5 @@
 .detail-title {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -78,7 +79,10 @@
   font-weight: var(--weight-emphasized);
 }
 .detail-title-clear {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
   display: inline-flex;
-  margin-left: auto;
   color: var(--label-secondary);
 }

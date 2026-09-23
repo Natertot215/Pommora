@@ -13,6 +13,7 @@ import {
   windowTargetOf,
   shownDetail,
   shownPage,
+  shownViewSearch,
   useSession,
 } from './store'
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
@@ -816,6 +817,21 @@ describe('store — view search', () => {
     expect(useSession.getState().viewSearch).toEqual({
       [freshId]: { key: 'collection:c1', query: 'ab' },
     })
+  })
+
+  it('a cold switch to an unloaded page keeps the held container searched until the page lands', () => {
+    channels['page:open'] = vi.fn(() => new Promise(() => {}))
+    const page: SelectTarget = { kind: 'page', id: 'p9', path: 'Notes/Z.md' }
+    seed({
+      tabs: [uTab('t1', col('c1'), [col('c1')], 0), uTab('t2', page, [page], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't2'],
+      selection: col('c1'),
+      viewSearch: { t1: { key: 'collection:c1', query: 'ab' } },
+    })
+    useSession.getState().activateTab('t2')
+    expect(useSession.getState().selection).toEqual(col('c1'))
+    expect(shownViewSearch(useSession.getState())?.query).toBe('ab')
   })
 
   it('clears with its tab', () => {

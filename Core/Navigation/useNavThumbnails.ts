@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { ThumbRect } from '@pommora/core/Interface/chrome'
-import { pageBody, shownPage, useSession } from '../Session/store'
+import { pageBody, shownPage, shownViewSearch, useSession } from '../Session/store'
 import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'
 import { host } from '../Platform/dialer'
@@ -34,7 +34,7 @@ export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
   const shownStatus = useSession((s) => shownPage(s)?.status)
   const navOpen = useSession((s) => s.navOpen)
-  const searching = useSession((s) => s.viewSearch[s.activeTabId] !== undefined)
+  const searching = useSession((s) => shownViewSearch(s) !== undefined)
   const bumpThumb = useSession((s) => s.bumpThumb)
 
   useEffect(() => {
