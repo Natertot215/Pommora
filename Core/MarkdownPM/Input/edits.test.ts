@@ -7,6 +7,7 @@ import {
   autoPair,
   autoDelete,
   closeConstructOnEnter,
+  closeBlockOnEnter,
   closeConstructOnShiftEnter,
   dashArrow,
   ellipsis,
@@ -357,6 +358,86 @@ describe('close construct on Enter', () => {
   it('does NOT close a new pair following an already-closed one (parity, not presence)', () => {
     expect(closeConstructOnEnter(scanDoc('**a****b**'), 5, 5)).toBeNull()
     expect(closeConstructOnEnter(scanDoc('"a""b"'), 3, 3)).toBeNull()
+  })
+})
+
+describe('backticks pair once', () => {
+  const typed = (keys: string): { doc: string; caret: number } => {
+    let doc = ''
+    let caret = 0
+    for (const ch of keys) {
+      const e = autoPair(scanDoc(doc), caret, caret, ch)
+      if (e) {
+        doc = apply(doc, e)
+        caret = e.selection
+      } else {
+        doc = doc.slice(0, caret) + ch + doc.slice(caret)
+        caret += 1
+      }
+    }
+    return { doc, caret }
+  }
+
+  it('reads three backticks at a line start as exactly the fence being typed', () => {
+    expect(typed('`')).toEqual({ doc: '``', caret: 1 })
+    expect(typed('``')).toEqual({ doc: '``', caret: 2 })
+    expect(typed('```')).toEqual({ doc: '```', caret: 3 })
+    expect(typed('````')).toEqual({ doc: '````', caret: 4 })
+  })
+})
+
+describe('close a block on Enter', () => {
+  const enter = (doc: string, at = doc.length, typed = false, settings = {}): string | null => {
+    const e = closeBlockOnEnter(scanDoc(doc), at, at, settings, typed)
+    return e && `${apply(doc, e).slice(0, e.selection)}|${apply(doc, e).slice(e.selection)}`
+  }
+
+  it('closes a display-math block nothing closes', () => {
+    expect(enter('$$')).toBe('$$\n|\n$$')
+    expect(enter('  $$ ')).toBe('  $$ \n  |\n  $$')
+  })
+
+  it('closes a math block just typed above another, whose opener it took', () => {
+    const doc = 'intro\n$$\n\ntext\n$$\nx^2\n$$'
+    const at = doc.indexOf('$$') + 2
+    expect(enter(doc, at, true)).toBe('intro\n$$\n|\n$$\n\ntext\n$$\nx^2\n$$')
+    expect(enter(doc, at)).toBeNull()
+  })
+
+  it('leaves a balanced math block to plain Enter', () => {
+    const doc = '$$\nx^2\n$$'
+    expect(enter(doc, 2)).toBeNull()
+    expect(enter(doc)).toBeNull()
+    expect(enter('$$\nx\n$$\n\ntext\n$$', 7, true)).toBeNull()
+  })
+
+  it('closes a fence nothing closes, in the fence’s own prefix and length', () => {
+    expect(enter('```')).toBe('```\n|\n```')
+    expect(enter('```ts')).toBe('```ts\n|\n```')
+    expect(enter('> ````')).toBe('> ````\n> |\n> ````')
+  })
+
+  it('closes a fence just typed above another, whether it took the closer or the opener', () => {
+    const bare = '```\nprose\n\n```\ncode\n```'
+    expect(enter(bare, 3, true)).toBe('```\n|\n```\nprose\n\n```\ncode\n```')
+    const tagged = '```\nprose\n\n```js\ncode\n```'
+    expect(enter(tagged, 3, true)).toBe('```\n|\n```\nprose\n\n```js\ncode\n```')
+  })
+
+  it('leaves an existing block’s opener to plain Enter, samples and all', () => {
+    expect(enter('```js\ncode\n```', 5, true)).toBeNull()
+    expect(enter('````md\n```js\nx\n```\n````', 6, true)).toBeNull()
+  })
+
+  it('leaves a finished block’s opener to plain Enter once the typing has moved on, whatever sits below', () => {
+    expect(enter('```js\ncode\n```\n\n```', 5)).toBeNull()
+  })
+
+  it('stands down mid-line, inside a table, and with pairing off', () => {
+    expect(enter('```ts', 4)).toBeNull()
+    expect(enter('| a |\n| --- |\n$$')).toBeNull()
+    expect(enter('```latex\n$$\n```\n\ntext\n$$', 11, true)).toBeNull()
+    expect(enter('$$', 2, false, { pairMarkers: false })).toBeNull()
   })
 })
 

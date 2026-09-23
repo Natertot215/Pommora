@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
+import { EditorState } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { CODE_LANGS, codeLanguageName } from './codeLangs'
-import { CODE_LOADER_NAMES } from '../codeHighlight'
+import { CODE_LOADER_NAMES, codeHighlight, codeLanguages } from '../codeHighlight'
 import { CODE_TAGS } from '../codeGlyphs'
 
 describe('the code-language roster', () => {
@@ -47,5 +50,30 @@ describe('a fence word', () => {
   it('answers nothing for a word no language carries', () => {
     expect(codeLanguageName('brainfuck')).toBeNull()
     expect(codeLanguageName('')).toBeNull()
+  })
+})
+
+describe('a code block’s colors', () => {
+  const painted = async (doc: string): Promise<string[]> => {
+    const view = new EditorView({
+      state: EditorState.create({ doc, extensions: [codeHighlight] }),
+      parent: document.body,
+    })
+    await codeLanguages.find((l) => l.name === 'JavaScript')?.load()
+    await new Promise((r) => setTimeout(r, 0))
+    const words = [...view.contentDOM.querySelectorAll('.syntax-keyword')].map(
+      (e) => e.textContent ?? '',
+    )
+    view.destroy()
+    return words
+  }
+
+  it('come from the language its fence names', async () => {
+    expect(await painted('```js\nconst a = 1\n```')).toEqual(['const'])
+  })
+
+  it('stay off prose the fences don’t hold', async () => {
+    expect(await painted('const a = 1\n\n```js\nlet b\n```')).toEqual(['let'])
+    expect(await painted('```js\nconst a = 1')).toEqual([])
   })
 })
