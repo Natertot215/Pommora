@@ -20,6 +20,8 @@ import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { dropTileBodies, flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
+  holdSaves,
+  releaseSaves,
   flushAllPageSaves,
   flushAllSessionSaves,
   flushPageSave,
@@ -85,6 +87,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // Closed before the root can flip even if the adopt is canceled: data safety over persistence.
       set({ navOpen: false, pageWindow: null })
       await flushAllSaves()
+      holdSaves()
       const opened = await attempt()
       if (!opened.ok) {
         set({ status: 'error', error: opened.error })
@@ -96,6 +99,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
     } catch (e) {
       set({ status: 'error', error: caught(e) })
+    } finally {
+      releaseSaves()
     }
   }
 

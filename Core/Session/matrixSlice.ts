@@ -13,10 +13,10 @@ import {
   type MatrixLink,
 } from '@pommora/core/Matrix/matrixGraph'
 import type { Positions } from '@pommora/core/Matrix/matrixLayout'
-import { ok, type Result } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { host as dialer } from '../Platform/dialer'
+import { sessionWriter } from './saveScheduler'
 import type { Slice } from './sessionState'
 
 export type MatrixLoad =
@@ -38,7 +38,7 @@ export interface MatrixSlice {
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
   saveMatrixLayout: (positions: Positions) => void
-  saveMatrixFrame: (frame: Frame) => Promise<Result<unknown>>
+  saveMatrixFrame: (frame: Frame) => void
   unloadMatrix: () => void
   resetMatrix: () => void
 }
@@ -64,16 +64,15 @@ const sameLinks = (a: MatrixLink[], b: MatrixLink[]): boolean => {
 // KNOB — pushes inside this window fold into one refetch.
 const REFETCH_MS = 150
 
+// The layout rides the session writer, so a burst of saves coalesces, lands on close and quit, and is held or cancelled across a Nexus switch like every other session save.
+const FRAME_KEY = 'matrix-frame'
+const LAYOUT_KEY = 'matrix-layout'
+
 export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   let pendingPaths = new Set<string>()
   let refetch: ReturnType<typeof setTimeout> | null = null
   // Bumped whenever the store lets its graph go, so an answer asked for before that lands nowhere.
   let generation = 0
-
-  const logged = (what: string, reply: Promise<Result<unknown>>): Promise<void> =>
-    reply.then((ack) => {
-      if (!ack.ok) console.error(`${what} failed:`, ack.error.message)
-    })
 
   // A renamed or moved page answers under its new path, so the rows it held under the old one go by id as well as by path.
   const merge = (
@@ -171,7 +170,11 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     patchMatrix: (patch) => {
       set((s) => ({ matrixConfig: applyPatch(s.matrixConfig, patch) }))
-      void logged('matrix write', dialer().ask('matrix:write', patch))
+      void dialer()
+        .ask('matrix:write', patch)
+        .then((ack) => {
+          if (!ack.ok) console.error('matrix write failed:', ack.error.message)
+        })
     },
 
     // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
@@ -201,17 +204,21 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       const next: Positions = { ...matrixPositions, ...positions }
       for (const id of Object.keys(next)) if (!live.has(id)) delete next[id]
       set({ matrixPositions: next })
-      void logged('matrix layout save', dialer().ask('matrixLayout:save', { positions: next }))
+      sessionWriter.schedule(LAYOUT_KEY, () =>
+        dialer().ask('matrixLayout:save', { positions: next }),
+      )
     },
 
+    // Not written back to `matrixFrame`: only a first build reads it, and every first build follows a load that read it fresh.
     saveMatrixFrame: (frame) => {
-      if (get().matrixLoad.kind !== 'loaded') return Promise.resolve(ok(null))
-      set({ matrixFrame: frame })
-      return dialer().ask('matrixLayout:save', { frame })
+      if (get().matrixLoad.kind !== 'loaded') return
+      sessionWriter.schedule(FRAME_KEY, () => dialer().ask('matrixLayout:save', { frame }))
     },
 
-    // The last surface closing: the graph and its refetches go, and the config stays for the menus that patch it.
+    // The last surface closing: its owed saves land, the graph and its refetches go, and the config stays for the menus that patch it.
     unloadMatrix: () => {
+      void sessionWriter.flush(FRAME_KEY)
+      void sessionWriter.flush(LAYOUT_KEY)
       letGo()
       set({ ...HELD, matrixLoad: UNLOADED })
     },
