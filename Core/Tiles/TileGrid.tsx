@@ -354,7 +354,6 @@ export function TileGrid({
         event: e,
         activation: 0,
         capture: true,
-        swallowActiveEscape: true,
         onActivate: () => true,
         onDragMove: (ev) => {
           const dx = ev.clientX - sx
@@ -432,7 +431,6 @@ export function TileGrid({
         el: e.currentTarget,
         event: e,
         capture: true,
-        swallowActiveEscape: true,
         onActivate: () => true,
         onDragMove: (ev) => {
           moved = true

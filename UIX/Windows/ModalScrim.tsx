@@ -17,7 +17,7 @@ export function ModalScrim({
   children?: ReactNode
 }): React.JSX.Element | null {
   const wrapRef = useRef<HTMLDivElement>(null)
-  const { mounted, closing } = useExitPresence(open)
+  const { mounted, closing } = useExitPresence(open, 'fast')
   const held = useHeld(children, open)
   useDismissal(mounted && !closing, false, { layer: () => wrapRef.current, dismiss })
   if (!mounted) return null

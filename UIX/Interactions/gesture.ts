@@ -18,8 +18,6 @@ export type PointerGestureSpec = {
   onWindowScroll?: (e: Event) => void
   scrollTarget?: () => Element | null
   onDisclose?: () => void
-  /** For a dismissable host whose own Escape must not fire mid-drag. */
-  swallowActiveEscape?: boolean
 }
 
 /** Only an ancestor scroller shifts `el`; an inner one must not cost a re-measure. */
@@ -48,9 +46,7 @@ function detach(g: LiveGesture): void {
   window.removeEventListener('pointercancel', g.handlers.cancel)
   window.removeEventListener('blur', g.handlers.blur)
   window.removeEventListener('scroll', g.handlers.scroll, { capture: true })
-  window.removeEventListener('keydown', g.handlers.key, {
-    capture: g.spec.swallowActiveEscape ?? false,
-  })
+  window.removeEventListener('keydown', g.handlers.key, { capture: true })
   try {
     g.spec.el.releasePointerCapture(g.spec.event.pointerId)
   } catch {}
@@ -132,7 +128,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
       },
       key: (ev: KeyboardEvent) => {
         if (ev.key !== 'Escape') return
-        if (spec.swallowActiveEscape && g.active) {
+        if (g.active) {
           ev.stopImmediatePropagation()
           ev.preventDefault()
         }
@@ -157,9 +153,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   window.addEventListener('pointercancel', g.handlers.cancel)
   window.addEventListener('blur', g.handlers.blur)
   window.addEventListener('scroll', g.handlers.scroll, { capture: true, passive: true })
-  window.addEventListener('keydown', g.handlers.key, {
-    capture: spec.swallowActiveEscape ?? false,
-  })
+  window.addEventListener('keydown', g.handlers.key, { capture: true })
   if (spec.onDisclose) beginDragDisclose(spec.onDisclose)
   return {
     abort: () => {

@@ -156,7 +156,6 @@ export function ImagePicker({
       event: e,
       activation: 0,
       capture: true,
-      swallowActiveEscape: true,
       onActivate: () => {
         setDragging(true)
         return true

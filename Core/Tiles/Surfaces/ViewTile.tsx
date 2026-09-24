@@ -39,6 +39,7 @@ import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { labelSlot, labelSlotHidden, labelText } from '@pommora/uix/Buttons/button-base.css'
 import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
+import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import {
   SEGMENT_ICON,
   segment,
@@ -70,9 +71,11 @@ function usePillPresence(views: SavedView[]): {
   entering: Set<string>
   exiting: string | null
   beginExit: (id: string) => void
-  onAnimEnd: (id: string, commitDelete: () => void) => void
+  onAnimEnd: (id: string) => void
+  deleteView: { current: (id: string) => void }
 } {
   const [exiting, setExiting] = useState<string | null>(null)
+  const deleteView = useRef((_id: string) => {})
   const [entering, setEntering] = useState<Set<string>>(() => new Set())
   const prevIdsRef = useRef<Set<string> | null>(null)
   const ids = views.map((v) => v.id)
@@ -90,15 +93,18 @@ function usePillPresence(views: SavedView[]): {
     prevIdsRef.current = cur
   }, [idKey])
 
-  const onAnimEnd = (id: string, commitDelete: () => void): void => {
-    if (exiting === id) {
-      commitDelete()
-      setExiting(null)
-    } else if (entering.has(id)) {
+  const exited = useSettleFallback(exiting !== null, 'menu', () => {
+    if (exiting) deleteView.current(exiting)
+    setExiting(null)
+  })
+
+  const onAnimEnd = (id: string): void => {
+    if (exiting === id) exited()
+    else if (entering.has(id)) {
       setEntering((s0) => (s0.has(id) ? new Set([...s0].filter((x) => x !== id)) : s0))
     }
   }
-  return { entering, exiting, beginExit: setExiting, onAnimEnd }
+  return { entering, exiting, beginExit: setExiting, onAnimEnd, deleteView }
 }
 
 // KNOB — how long the band's lock stays after locking before it fades
@@ -370,6 +376,8 @@ export function ViewTile({
     })
     notifyDeleted(name, () => restoreViewAt(i, removed))
   }
+  presence.deleteView.current = deleteView
+
   const reorderViews = (activeId: string, overId: string): void => {
     if (locked) return
     mutateEntry(entry.id, (raw) => {
@@ -543,7 +551,7 @@ export function ViewTile({
             renameNode={renaming === i ? renameField(i) : null}
             onSwitch={() => patchEntry({ active: i })}
             onMenu={(e) => void rowMenu(i, e, true)}
-            onAnimEnd={() => presence.onAnimEnd(v.id, () => deleteView(v.id))}
+            onAnimEnd={() => presence.onAnimEnd(v.id)}
           />
         ))}
       </SortableZone>

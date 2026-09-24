@@ -31,7 +31,7 @@ const DRAG_SURFACES =
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)
-  const { mounted, closing } = useExitPresence(navOpen)
+  const { mounted, closing } = useExitPresence(navOpen, 'fast')
   if (!mounted) return null
   return <NavWindowBody closing={closing} />
 }

@@ -79,8 +79,6 @@ export function useStatusReorder(
     // The groups live in a height-capped menu frame — the edge loop reaches past its fold.
     armFrom: () => container.current,
     alsoBlock: 'button',
-    // An active drag's Escape must cancel the DRAG, not dismiss the hosting dropdown.
-    swallowActiveEscape: true,
     watch: order,
   })
 

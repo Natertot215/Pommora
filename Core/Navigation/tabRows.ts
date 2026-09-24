@@ -1,9 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { duration, ms } from '@pommora/uix/Animations/motion'
+import { exitWait } from '@pommora/uix/Animations/useExitPresence'
 import type { Carried } from '@pommora/uix/Interactions/drag'
 import { isWindowTarget, type TabTarget, type WindowTabTarget, type WindowTarget } from './navRef'
-
-const EXIT_MS = ms(duration.base) + ms(duration.fast)
 
 interface TabClose<E> {
   liveEntries: E[]
@@ -19,19 +17,23 @@ export function useTabClose<E extends { tab: { id: string } }>(
   close: (id: string) => void,
 ): TabClose<E> {
   const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: E; index: number }>>(new Map())
+  const timers = useRef(new Set<number>())
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
   const requestClose = (id: string): void => {
     const index = entries.findIndex((e) => e.tab.id === id)
     const entry = entries[index]
     if (!entry) return
     setGhosts((m) => new Map(m).set(id, { entry, index }))
     close(id)
-    setTimeout(() => {
+    const t = window.setTimeout(() => {
+      timers.current.delete(t)
       setGhosts((m) => {
         const next = new Map(m)
         next.delete(id)
         return next
       })
-    }, EXIT_MS)
+    }, exitWait('base'))
+    timers.current.add(t)
   }
   const liveEntries = useMemo(() => entries.filter((e) => !ghosts.has(e.tab.id)), [entries, ghosts])
   const renderEntries = useMemo<{ entry: E; ghost: boolean }[]>(() => {

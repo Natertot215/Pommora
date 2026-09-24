@@ -36,7 +36,6 @@ import {
 } from '@pommora/uix/Menus'
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-base.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { duration } from '@pommora/uix/Animations/motion'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { IconChoice } from '../../Assets/IconChoice'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
@@ -145,7 +144,7 @@ function ListGroups({
           />
           <span>All Properties</span>
         </button>
-        <Reveal open={allOpen} duration={duration.base}>
+        <Reveal open={allOpen} duration="base">
           <div>
             {unassigned.map((d) => (
               <Reveal key={d.id} open enterOnMount={enteringAll(d.id)} fill>

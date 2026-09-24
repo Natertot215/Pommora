@@ -1,6 +1,7 @@
 import { EmptyValue } from '../Elements/EmptyValue'
 import { useEffect, useRef, useState } from 'react'
 import { Reveal } from '../Animations/Reveal'
+import { useSettleFallback } from '../Animations/useExitPresence'
 import { Button } from '../Buttons/Button'
 import { Icon } from '../Symbols'
 import { DualSwitch } from '../Controls/DualSwitch'
@@ -69,6 +70,7 @@ export function CalendarPicker({
     return new Date(seed.getFullYear(), seed.getMonth(), 1)
   })
   const [slide, setSlide] = useState<{ dir: 1 | -1; from: Date } | null>(null)
+  const settleSlide = useSettleFallback(slide !== null, 'base', () => setSlide(null))
   const [start, setStart] = useState<string | null>(init ? init.slice(0, 10) : null)
   const [end, setEnd] = useState<string | null>(null)
   const [endOn, setEndOn] = useState(false)
@@ -200,7 +202,6 @@ export function CalendarPicker({
       event: e,
       activation: 0,
       capture: true,
-      swallowActiveEscape: true,
       onActivate: () => true,
       onDragMove: (ev) => {
         const at = dataKey(document.elementFromPoint(ev.clientX, ev.clientY))
@@ -493,7 +494,7 @@ export function CalendarPicker({
             s.track,
             slide ? (slide.dir === 1 ? s.trackLeft : s.trackRight) : undefined,
           )}
-          onAnimationEnd={() => setSlide(null)}
+          onAnimationEnd={settleSlide}
           onPointerDown={onGridPointerDown}
         >
           {slide ? (

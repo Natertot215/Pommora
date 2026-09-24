@@ -6,7 +6,7 @@ import { useSession } from '../../Session/store'
 export function IterationWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.iterationOpen)
   const closeIteration = useSession((s) => s.closeIteration)
-  const { mounted, closing } = useExitPresence(open)
+  const { mounted, closing } = useExitPresence(open, 'fast')
   if (!mounted) return null
   return (
     <WindowBase closing={closing} onClose={closeIteration} ariaLabel="Iteration" title="Iteration">

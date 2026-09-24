@@ -66,7 +66,7 @@ export function WindowTabStrip({
 
   const forced = useDragFamily() === TAB_FAMILY
   const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0 || forced
-  const titlePresence = useExitPresence(!showStrip)
+  const titlePresence = useExitPresence(!showStrip, 'base')
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the live node would swap text mid-collapse without this hold.
   const heldTitle = useHeld(title, !showStrip)
 

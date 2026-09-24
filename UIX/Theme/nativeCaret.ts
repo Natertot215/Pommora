@@ -1,5 +1,6 @@
 // CSS can recolor the native caret but never reshape it, so this paints the editor's bar and pills over the focused field.
 
+import { duration, ms } from '../Animations/motion'
 import { currentZoom } from '../Utilities/zoom'
 
 // Copied onto the measuring mirror so its text lays out exactly like the field's.
@@ -297,7 +298,7 @@ function schedule(): void {
 // A pane animating open moves in ways no listener above sees — transforms never touch the ResizeObserver's box — so a fresh focus re-measures until the bar holds still.
 let settleRaf = 0
 const SETTLE_STILL_FRAMES = 2
-const SETTLE_DEADLINE_MS = 400
+const SETTLE_DEADLINE_MS = ms(duration.slow) + 50 // the slowest bloom, plus slack
 function beginSettle(): void {
   cancelAnimationFrame(settleRaf)
   const startedAt = performance.now()

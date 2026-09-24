@@ -40,7 +40,7 @@ export function MenuDropdown({
     dismiss: () => setOpen(false),
     outsidePress: dismissOnOutside,
   })
-  const pane = useExitPresence(open)
+  const pane = useExitPresence(open, 'slow')
 
   // The pane is centered on the button, so the room to its right counts twice; a live rect, since a translated cluster must measure where it sits.
   useLayoutEffect(() => {

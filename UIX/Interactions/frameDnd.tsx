@@ -93,7 +93,6 @@ export function FrameDnd<D>({
     armFrom: () => box.current,
     // A row's + and the outline never arm a drag.
     alsoBlock: 'button',
-    swallowActiveEscape: true,
     watch: rows,
   })
 
