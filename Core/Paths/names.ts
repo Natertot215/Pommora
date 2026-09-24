@@ -27,11 +27,15 @@ export function nameError(name: string, role: NameRole): string | null {
   if (/[|#§]/.test(name)) return `"${name}" can't contain "|", "#", or "§".`
   if (role === 'page' && isMarkdownFile(name)) return `"${name}" can't end in ".md".`
   if (role === 'directory' && name.includes('.')) return `"${name}" can't contain a period.`
-  if (machine().platform === 'windows') {
-    if (/[<>:"?*]/.test(name)) return `"${name}" can't contain < > : " ? * on Windows.`
-    if (WINDOWS_DEVICE.test(name)) return `"${name}" is a reserved device name on Windows.`
-    if (/\.$/.test(name)) return `"${name}" can't end in a period on Windows.`
-  }
+  return platformNameError(name)
+}
+
+// The host decides only what it can create or hold; a name another host allowed still syncs everywhere else.
+export function platformNameError(name: string): string | null {
+  if (machine().platform !== 'windows') return null
+  if (/[<>:"?*]/.test(name)) return `"${name}" can't contain < > : " ? * on Windows.`
+  if (WINDOWS_DEVICE.test(name)) return `"${name}" is a reserved device name on Windows.`
+  if (/\.$/.test(name)) return `"${name}" can't end in a period on Windows.`
   return null
 }
 
