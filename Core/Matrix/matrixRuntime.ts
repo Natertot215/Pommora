@@ -97,6 +97,7 @@ class MatrixRuntime {
         this.unsubscribe = null
         if (this.sim?.awake) this.settled()
         this.clear()
+        useSession.getState().unloadMatrix()
       } else if (this.sim?.awake && !this.visible) this.settled()
     }
   }
@@ -132,7 +133,7 @@ class MatrixRuntime {
   private sync(): void {
     const s = useSession.getState()
     if (!s.tree) return
-    if (!s.matrixLoaded) {
+    if (s.matrixLoad.kind !== 'loaded') {
       if (this.built) this.clear()
       void s.loadMatrix()
       return
