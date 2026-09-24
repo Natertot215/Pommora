@@ -6,10 +6,11 @@ import { tableMenuItems } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { citationMenuModel } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { mapWarmSeam, type WarmSeam } from '../MarkdownPM/warmSeam'
+import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
 import { pagesByIdOf } from '../Nexus/treeIndex'
-import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
+import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
+import { warmSeamOf } from '../Navigation/warmTabs'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { cancelGlance, closeGlance, insideGlance } from '../Interface/Glance/glanceAction'
@@ -32,11 +33,8 @@ const nativeEditorMenu: EditorMenuApi = {
 }
 
 // The outer editor tears a tile's DOM down whenever it leaves the viewport; this holds the nested editor's doc, selection, history and scroll, keyed by the full host chain.
-const tileCache = new Map<string, { editorState: unknown; scrollTop: number }>()
-
 export function tileWarmSeam(chain: readonly string[]): WarmSeam {
-  const path = chain[chain.length - 1]
-  return mapWarmSeam(tileCache, chain.join('\n'), () => readPageDetail(path)?.body)
+  return warmSeamOf('embed', chain.join('\n'), () => knownBody(chain[chain.length - 1]))
 }
 
 const pickNode = (c: CollectionNode | SetNode): PickNode => ({

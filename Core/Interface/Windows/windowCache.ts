@@ -1,30 +1,22 @@
-// Module state, never render state: tab ids re-mint at every summon/restore, so the map lives and dies with the open window.
+import { dropCacheEntry, dropCacheOwner } from '../../Navigation/warmTabs'
 
-export interface WindowCacheEntry {
-  editorState?: unknown
-  scrollTop?: number
-  bodyScrollTop?: number
+// Module state, never render state: tab ids re-mint at every summon/restore, so the map lives and dies with the open window. A tab's editor state lives in the shared warm store under WINDOW_OWNER; only the window body's own scroll is kept here.
+export const WINDOW_OWNER = 'window'
+
+const bodyScroll = new Map<string, number>()
+
+export function captureBodyScroll(tabId: string, top: number): void {
+  bodyScroll.set(tabId, top)
 }
 
-const cache = new Map<string, WindowCacheEntry>()
-
-export function captureWindowCache(tabId: string, patch: WindowCacheEntry): void {
-  cache.set(tabId, { ...cache.get(tabId), ...patch })
-}
-
-export function readWindowCache(tabId: string): WindowCacheEntry | undefined {
-  return cache.get(tabId)
-}
+export const readBodyScroll = (tabId: string): number => bodyScroll.get(tabId) ?? 0
 
 export function dropWindowCache(tabId: string): void {
-  cache.delete(tabId)
+  bodyScroll.delete(tabId)
+  dropCacheEntry(WINDOW_OWNER, tabId)
 }
 
 export function clearWindowCache(): void {
-  cache.clear()
-}
-
-// Dev-only CDP probe (the store's __pommora twin) — lets a headless drive assert warm entries.
-if (import.meta.env.DEV && typeof window !== 'undefined') {
-  ;(window as unknown as { __pommoraCache: unknown }).__pommoraCache = cache
+  bodyScroll.clear()
+  dropCacheOwner(WINDOW_OWNER)
 }

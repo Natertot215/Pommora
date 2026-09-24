@@ -56,7 +56,7 @@ import {
   fetchPageDetail,
   setBodyBase,
 } from './pageDetailCache'
-import { dropCacheTab, readCache } from '../Navigation/warmTabs'
+import { dropCacheOwner, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { relDirname } from '../Paths/posix'
@@ -359,7 +359,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       tabMru: s.tabMru.filter((m) => !covered.some((c) => c.id === m)),
     })
     for (const t of covered) {
-      dropCacheTab(t.id)
+      dropCacheOwner(t.id)
       // Pins survive the re-key (unlike the warm cache, which is dropped): a graduated tab keeps its pins under the pinned id.
       if (t.target.kind !== 'newtab') retagTab(t.id, pinTabId(t.target))
     }
@@ -478,7 +478,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const s = get()
       const pinnedIds = s.pinnedTabs.map((t) => t.id)
       const res = closeTabModel(s.tabs, s.activeTabId, s.tabMru, pinnedIds, id, makeTabId())
-      dropCacheTab(id)
+      dropCacheOwner(id)
       get().scrubTabPins(id)
       applyTabResult(res)
     },
@@ -516,7 +516,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             tab.id,
           ),
         }))
-      dropCacheTab(pinId)
+      dropCacheOwner(pinId)
       persistTabs()
     },
 
@@ -765,7 +765,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (rec.changed) {
         for (const t of s.tabs)
           if (!rec.tabs.some((n) => n.id === t.id)) {
-            dropCacheTab(t.id)
+            dropCacheOwner(t.id)
             get().scrubTabPins(t.id)
           }
         applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })

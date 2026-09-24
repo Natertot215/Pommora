@@ -1,28 +1,14 @@
-import { fenceWarm } from '../Navigation/warmTabs'
-import { capSet } from '@pommora/uix/Utilities/capMap'
-
 /** The host binds `restore`/`capture` to a (tab, entity) identity at mount time — the mount-once effect freezes that binding, so a capture can never land under the NEXT tab's identity mid-switch. */
 export interface WarmSeam {
   restore: () => { editorState?: unknown; scrollTop?: number } | undefined
   capture: (state: { editorState: unknown; scrollTop: number }) => void
 }
 
-type WarmState = { editorState: unknown; scrollTop: number }
-
-/** A page edited since the capture invalidates the whole entry, since selection and history are positions into a document that no longer exists. */
-export function mapWarmSeam(
-  cache: Map<string, WarmState>,
-  key: string,
-  liveBody: () => string | undefined,
-  cap?: number,
-): WarmSeam {
-  return {
-    restore: () => {
-      const kept = fenceWarm(cache.get(key), liveBody())
-      if (!kept) cache.delete(key)
-      return kept
-    },
-    capture: (state) =>
-      cap === undefined ? void cache.set(key, state) : capSet(cache, key, state, cap),
-  }
+/** A page edited since the capture invalidates the whole entry, since selection and history are positions into a document that no longer exists; with no known body to judge by, an entry carrying editor state mounts cold. */
+export function fenceWarm<E extends { editorState?: unknown }>(
+  entry: E | undefined,
+  fresh: string | undefined,
+): E | undefined {
+  const doc = (entry?.editorState as { doc?: unknown } | undefined)?.doc
+  return doc === undefined || doc === fresh ? entry : undefined
 }
