@@ -326,13 +326,10 @@ export function MarkdownEditor({
           return false
         },
       }),
-      markdownFolding(
-        (keys) => prefs?.save('folds', keys),
-        () => {
-          const { citations } = hostRef.current
-          citations.set(!citations.shown())
-        },
-      ),
+      markdownFolding(() => {
+        const { citations } = hostRef.current
+        citations.set(!citations.shown())
+      }),
       EditorView.updateListener.of((u) => {
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
         if (u.focusChanged && u.view.hasFocus) claimEditorMenu(u.view)
@@ -425,9 +422,9 @@ export function MarkdownEditor({
       }
     }
     if (prefs)
-      void prefs.load().then((r) => {
-        if (r.ok) {
-          const { folds, embedHeights, embedZooms, headingCols } = r.value
+      void prefs.load().then((p) => {
+        if (p) {
+          const { folds, embedHeights, embedZooms, headingCols } = p
           applySavedFolds(view, folds)
           if (Object.keys(embedHeights).length > 0)
             view.dispatch({

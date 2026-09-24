@@ -69,7 +69,9 @@ export function PageTile({
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     const cached = readPageDetail(path)
     const slot = cached ? entryFrom(path, cached) : null
-    return { epoch, entry: typeof doc === 'string' ? { path, ...slot, body: doc } : slot }
+    if (typeof doc !== 'string') return { epoch, entry: slot }
+    const id = pageIdIndex(useSession.getState().tree).get(path)
+    return { epoch, entry: { path, id, ...slot, body: doc } }
   })
   if (seed.epoch !== epoch) {
     const fresh = readPageDetail(path)
@@ -83,8 +85,7 @@ export function PageTile({
   const failed = entry !== null && entry.body === null
 
   const embedScale = useEmbedScale()
-  const pageId = useSession((s) => entry?.id ?? pageIdIndex(s.tree).get(path))
-  const host = useEditorHost({ pageId, connections })
+  const host = useEditorHost({ pageId: entry?.id, connections })
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
   useEffect(() => {

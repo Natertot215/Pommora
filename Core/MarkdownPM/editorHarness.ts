@@ -6,6 +6,7 @@ import type { PickNode } from '@pommora/core/Actions/gripMenu'
 import { MarkdownEditor } from './MarkdownEditor'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import type { EditorHost, EditorSettings } from './api'
+import type { EditorPrefs } from '@pommora/core/Contract/bridge'
 import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
@@ -21,8 +22,21 @@ interface HarnessHost {
   pickTree?: PickNode[]
   openLink?: EditorHost['openLink']
   pageTitle?: string
+  pageSurface?: boolean
   prefs?: EditorHost['prefs']
 }
+
+export const NO_PREFS: EditorPrefs = {
+  folds: [],
+  embedHeights: {},
+  embedZooms: {},
+  headingCols: [],
+}
+
+export const prefsOf = (
+  seed: Partial<EditorPrefs> = {},
+  save: NonNullable<EditorHost['prefs']>['save'] = () => {},
+): EditorHost['prefs'] => ({ load: async () => ({ ...NO_PREFS, ...seed }), save })
 
 type HarnessProps = Partial<Omit<EditorProps, 'host'>> & {
   initialBody: string
@@ -108,6 +122,7 @@ function harnessHost(
     warmBody: (page) => state.bodies[page.id] ?? null,
     fetchBody: async (page) => state.bodies[page.id] ?? null,
     pageTitle: () => spec.pageTitle ?? null,
+    pageSurface: spec.pageSurface,
     prefs: spec.prefs,
   }
   return state

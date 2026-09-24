@@ -13,12 +13,13 @@ import { docScan, perDoc } from './docCache'
 import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'
 import { lineElementAt } from './lineDom'
+import { editorHost, mirrored } from './api'
 
 /** The reveal's beat plus slack for the frame that draws its final height — a travel timed earlier lands on the collapsed document. */
 export const FOLD_SETTLE_MS = ms(duration.fast) + 30
 
-/** Marks the mount-time re-apply, which the persist plugin reseeds from rather than echoing back to disk. */
-const initialFoldAnnotation = Annotation.define<boolean>()
+/** Carries the loaded keys on the mount-time re-apply, which the persist plugin records as saved rather than echoing back to disk. */
+const initialFoldAnnotation = Annotation.define<string[]>()
 
 export type FoldKind = 'heading' | 'citations'
 
@@ -354,41 +355,42 @@ export function applySavedFolds(view: EditorView, keys: string[]): void {
     const collapse = collapseEffect(view, r, false)
     if (collapse) effects.push(collapse)
   }
-  if (effects.length) view.dispatch({ effects, annotations: initialFoldAnnotation.of(true) })
+  if (effects.length) view.dispatch({ effects, annotations: initialFoldAnnotation.of(keys) })
 }
 
 /** The divider reports its press through `onCitationsToggle` rather than folding itself: the section's state is the page's visibility. */
-export function markdownFolding(
-  onFoldsChange: (keys: string[]) => void,
-  onCitationsToggle: () => void,
-): Extension {
+export function markdownFolding(onCitationsToggle: () => void): Extension {
   // The saved keys are read only at the next mount, so a heading renamed under its fold is re-derived where the editor is left as well as on each fold change.
   const persist = ViewPlugin.define((view) => {
-    const keysOf = (state: EditorState): string[] =>
-      foldedRegions(state)
+    const keys = (): string[] =>
+      foldedRegions(view.state)
         .filter((r) => persisted(r.kind))
         .map((r) => r.key)
     let saved = '[]'
-    const flush = (state: EditorState): void => {
-      const keys = keysOf(state)
-      const next = JSON.stringify(keys)
-      if (next === saved) return
-      saved = next
-      onFoldsChange(keys)
+    const flush = (): void => {
+      const next = keys()
+      const json = JSON.stringify(next)
+      if (json === saved) return
+      saved = json
+      view.state.facet(editorHost).prefs?.save('folds', next)
     }
     return {
       update(u) {
-        if (u.transactions.some((tr) => tr.annotation(initialFoldAnnotation)))
-          saved = JSON.stringify(keysOf(u.state))
+        const loaded = u.transactions
+          .find((tr) => tr.annotation(initialFoldAnnotation))
+          ?.annotation(initialFoldAnnotation)
+        if (loaded) saved = JSON.stringify(loaded)
         else if (
-          (u.focusChanged && !u.view.hasFocus) ||
+          (!view.hasFocus &&
+            (u.focusChanged ||
+              u.transactions.some((tr) => tr.docChanged && !tr.annotation(mirrored)))) ||
           u.transactions.some((tr) =>
             tr.effects.some((e) => e.is(foldEffect) || e.is(expandEffect) || e.is(dropEffect)),
           )
         )
-          flush(u.state)
+          flush()
       },
-      destroy: () => flush(view.state),
+      destroy: flush,
     }
   })
   // A fold can't survive the relocating edit (its body offsets remap to the replace span's ends), so a folded section unfolds at drag-start.
