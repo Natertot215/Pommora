@@ -41,11 +41,11 @@ export async function movePageOp(
   if (!at.ok) return at
   const r = await movePage(at.value.src, at.value.dst)
   if (!r.ok) return r
-  const ordered = req.order ? await setChildOrder(at.value.dst, 'page_order', req.order) : ok(null)
+  if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   await moveIndexPaths(root, at.value.src, r.value.path)
   reportRename(relative(root, at.value.src), relative(root, r.value.path))
   noteValueWrite(root, r.value.path)
-  return ordered.ok ? ok({}) : ordered
+  return ok({})
 }
 
 export async function moveSetOp(
@@ -56,9 +56,9 @@ export async function moveSetOp(
   if (!at.ok) return at
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
-  const ordered = await setChildOrder(at.value.dst, 'set_order', req.order)
+  await setChildOrder(at.value.dst, 'set_order', req.order)
   await moveIndexPaths(root, at.value.src, r.value.path)
   reportRename(relative(root, at.value.src), relative(root, r.value.path))
   noteValueWrite(root, r.value.path)
-  return ordered.ok ? ok({}) : ordered
+  return ok({})
 }

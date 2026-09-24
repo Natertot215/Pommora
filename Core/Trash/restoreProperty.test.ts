@@ -76,6 +76,20 @@ afterEach(async () => {
 })
 
 describe('restoring a deleted property', () => {
+  it('reassigns a Collection holding a view this build cannot decode', async () => {
+    const id = await seedPriority()
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    const file = join(notes, '_pagecollection.json')
+    const raw = JSON.parse(await readFile(file, 'utf8'))
+    raw.views = [
+      { id: 'view_x', name: 'X', type: 'table', sort: [{ property_id: 'p', direction: 'random' }] },
+    ]
+    await writeFile(file, JSON.stringify(raw))
+    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await readFile(file, 'utf8')).properties).toEqual([id])
+  })
+
   it('comes back defined, assigned where it was, and holding its values', async () => {
     const id = await seedPriority()
     const p1 = await createPage(notes, 'A', { body: 'b' })

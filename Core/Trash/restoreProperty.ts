@@ -1,12 +1,12 @@
 import { join } from '../Paths/posix'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from '../Properties/properties'
 import { fail, ok, type Result } from '../Contract/result'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { refreshTree } from '../Nexus/liveTree'
-import { readSidecar } from '../Files/sidecar'
+import { readJsonObject } from '../Files/atomicWrite'
+import { sidecarPath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { collectionFolders, assignInner } from '../Properties/assignment'
 import { updatePageProperty } from '../Nexus/page'
@@ -21,8 +21,8 @@ type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 async function foldersById(root: string): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   for (const folder of await collectionFolders(root)) {
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
-    if (typeof sidecar?.id === 'string') out.set(sidecar.id, folder)
+    const id = (await readJsonObject(sidecarPath(folder, 'collection')))?.id
+    if (typeof id === 'string') out.set(id, folder)
   }
   return out
 }

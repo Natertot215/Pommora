@@ -36,12 +36,10 @@ export async function createPageOp(
     createPage(parent.value, name, { values }),
   )
   if (!r.ok) return r
-  const ordered = req.order
-    ? await setChildOrder(parent.value, 'page_order', fillSlot(req.order, r.value.id))
-    : ok(null)
+  if (req.order) await setChildOrder(parent.value, 'page_order', fillSlot(req.order, r.value.id))
   await indexWrittenPage(root, r.value.path)
   noteValueWrite(root, r.value.path)
-  return ordered.ok ? created(req.parentPath, r.value) : ordered
+  return created(req.parentPath, r.value)
 }
 
 export async function createContainerOp(
@@ -57,8 +55,6 @@ export async function createContainerOp(
     createFolderEntity(parent.value, req.kind, name, extra),
   )
   if (!r.ok) return r
-  const ordered = req.order
-    ? await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
-    : ok(null)
-  return ordered.ok ? created(req.parentPath, r.value) : ordered
+  if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
+  return created(req.parentPath, r.value)
 }

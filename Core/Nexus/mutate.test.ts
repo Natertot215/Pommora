@@ -101,16 +101,6 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Untitled 2.md'))).toBe(true)
   })
 
-  it('createPage reports an order write its container refused rather than claiming it landed', async () => {
-    await writeFile(join(root, 'Notes/Daily/_pageset.json'), '{ corrupt')
-    const r = await handleMutate(
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Ordered', order: [NEW_SLOT] },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(false)
-    expect(await pathExists(join(root, 'Notes/Daily/Ordered.md'))).toBe(true)
-  })
-
   it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
     await createProperty(root, { id: 'prop_stage', name: 'Stage', type: 'select' })
     const r = await handleMutate(

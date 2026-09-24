@@ -13,6 +13,9 @@ const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
 // `isHttpLink` alone normalizes a schemeless string to https, admitting what the renderer refuses.
 const isWebUrl = (url: string): boolean => hasWebScheme(url) && isHttpLink(url)
 
+// A page's own subframes draw generated content — PDF previews, sandboxed editors — from these.
+const FRAME_CONTENT = /^(?:blob|data):/i
+
 // Best-effort by decision: the detection is server-side policy, not a UA sniff.
 function cleanedUA(): string {
   const name = app.getName().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -93,7 +96,8 @@ function wireAppLevel(): void {
 
     // Re-asserted per navigation in every frame: a guest re-aimed after a clean attach would otherwise sail through on the signed-in partition.
     contents.on('will-frame-navigate', (event) => {
-      if (!isWebUrl(event.url)) event.preventDefault()
+      if (!isWebUrl(event.url) && (event.isMainFrame || !FRAME_CONTENT.test(event.url)))
+        event.preventDefault()
     })
 
     // Guests inherit no host zoom and theirs is per-origin, so each commit re-stamps live.

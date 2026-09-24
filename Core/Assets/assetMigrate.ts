@@ -45,28 +45,31 @@ const hashOf = (bytes: Uint8Array): string => machine().sha256Hex(bytes)
 
 interface Slot {
   key: string
-  index?: number
+  entry?: string
 }
 
-const isConnection = (v: unknown): boolean => typeof v === 'string' && !!parseConnectionText(v)
+const isConnection = (v: unknown): v is string => typeof v === 'string' && !!parseConnectionText(v)
 
 // A banner may name its file by path; every other value names one only as a connection, alone or in a list.
 function slotsOf(fields: Record<string, unknown>): Slot[] {
   return Object.entries(fields).flatMap(([key, v]): Slot[] => {
     if (key === 'banner' || isConnection(v)) return [{ key }]
-    if (!Array.isArray(v)) return []
-    return v.flatMap((e, index) => (isConnection(e) ? [{ key, index }] : []))
+    return Array.isArray(v)
+      ? [...new Set(v.filter(isConnection))].map((entry) => ({ key, entry }))
+      : []
   })
 }
 
-const valueAt = (fields: Record<string, unknown>, { key, index }: Slot): unknown => {
+const valueAt = (fields: Record<string, unknown>, { key, entry }: Slot): unknown => {
   const v = fields[key]
-  return index === undefined ? v : Array.isArray(v) ? v[index] : undefined
+  if (entry === undefined) return v
+  return Array.isArray(v) && v.includes(entry) ? entry : undefined
 }
 
-const withLink = (fields: Record<string, unknown>, { key, index }: Slot, link: string): unknown => {
+const withLink = (fields: Record<string, unknown>, { key, entry }: Slot, link: string): unknown => {
   const v = fields[key]
-  return index === undefined || !Array.isArray(v) ? link : v.map((e, i) => (i === index ? link : e))
+  if (entry === undefined) return link
+  return Array.isArray(v) ? v.map((e) => (e === entry ? link : e)) : v
 }
 
 const ownerOf = (name: string, { key }: Slot): string =>
@@ -103,12 +106,12 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
       (await updateNexusConfig(root, 'homepage', (cur) => ({ ...cur, banner: link }))).ok,
   })
   for (const file of await sidecarsUnder(root)) {
-    const fields = (await readJsonObject(file)) ?? {}
-    for (const slot of slotsOf(fields))
+    const fields = async (): Promise<Record<string, unknown>> => (await readJsonObject(file)) ?? {}
+    for (const slot of slotsOf(await fields()))
       refs.push({
         store: relPosix(root, file),
         owner: ownerOf(basename(dirname(file)), slot),
-        read: async () => valueAt((await readJsonObject(file)) ?? {}, slot),
+        read: async () => valueAt(await fields(), slot),
         write: async (link) =>
           (await rmwJsonStrict(file, (cur) => ({ ...cur, [slot.key]: withLink(cur, slot, link) })))
             .ok,

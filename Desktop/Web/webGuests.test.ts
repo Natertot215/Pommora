@@ -76,12 +76,16 @@ describe('web guest permissions', () => {
       once: () => {},
     }
     appOn.get('web-contents-created')?.({}, guest)
-    const refuse = (url: string): boolean => {
+    const refuse = (url: string, isMainFrame = false): boolean => {
       const preventDefault = vi.fn()
-      on.get('will-frame-navigate')?.({ preventDefault, url })
+      on.get('will-frame-navigate')?.({ preventDefault, url, isMainFrame })
       return preventDefault.mock.calls.length > 0
     }
     expect(refuse('zoommtg://join?confno=1')).toBe(true)
+    expect(refuse('file:///etc/hosts')).toBe(true)
     expect(refuse('https://example.com/embed')).toBe(false)
+    expect(refuse('blob:https://example.com/0f3a')).toBe(false)
+    expect(refuse('data:application/pdf;base64,JVBERi0=')).toBe(false)
+    expect(refuse('data:text/html,<p>x</p>', true)).toBe(true)
   })
 })
