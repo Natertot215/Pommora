@@ -113,7 +113,7 @@ function buildEditorHost(
     pageSurface,
     prefs: pageId
       ? {
-          load: () => host().ask('editorPrefs:get', pageId),
+          load: async () => valueOr(await host().ask('editorPrefs:get', pageId), null),
           save: (...write) =>
             void persist(write[0], host().ask('editorPrefs:set', pageId, ...write), true),
         }

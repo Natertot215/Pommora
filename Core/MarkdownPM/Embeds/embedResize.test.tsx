@@ -2,11 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import type { EditorHost } from '../api'
-import { ok } from '@pommora/core/Contract/result'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { embedField, setEmbedHeights } from './embedWidget'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, prefsOf, stubEditorBridge } from '../editorHarness'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 
 stubEditorBridge()
@@ -18,18 +16,10 @@ const conn: ConnectionsApi = {
   open: () => {},
 }
 
-const heightPrefs = (
-  embedHeights: Record<string, number>,
-  save: NonNullable<EditorHost['prefs']>['save'],
-): EditorHost['prefs'] => ({
-  load: async () => ok({ folds: [], embedHeights, embedZooms: {}, headingCols: [] }),
-  save,
-})
-
 const hosted = {
   initialBody: 'intro\n\n![[Alpha]]\n\nbelow',
   connections: conn,
-  host: { prefs: heightPrefs({ p1: 480 }, () => {}) },
+  host: { prefs: prefsOf({ embedHeights: { p1: 480 } }) },
 }
 
 async function until(cond: () => boolean): Promise<boolean> {
@@ -66,9 +56,24 @@ describe('persisted tile heights', () => {
     expect(bare.dom.querySelector('.resize-edge-s')).toBeNull()
   })
 
+  it('a web tile takes the handle on the page surface alone', async () => {
+    const Watcher = class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    vi.stubGlobal('IntersectionObserver', Watcher)
+    vi.stubGlobal('ResizeObserver', Watcher)
+    const web = { initialBody: '![](https://www.example.com/a)' }
+    expect((await mount(web)).dom.querySelector('.resize-edge-s')).toBeNull()
+    const live = await mount({ ...web, host: { pageSurface: true } })
+    expect(live.dom.querySelector('.resize-edge-s')).not.toBeNull()
+    vi.unstubAllGlobals()
+  })
+
   it('a drag on the handle sizes the tile from its measured height and persists one integer', async () => {
     const save = vi.fn()
-    const view = await mount({ ...hosted, host: { prefs: heightPrefs({}, save) } })
+    const view = await mount({ ...hosted, host: { prefs: prefsOf({}, save) } })
     const span = view.dom.querySelector('.mdpm-embed-tile') as HTMLElement
     stubRect(span, { top: 0, bottom: 480.4 })
     const handle = span.querySelector('.resize-edge-s') as HTMLElement

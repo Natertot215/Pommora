@@ -28,20 +28,12 @@ export const scopeSet = (scope: Scope, valid: (v: unknown) => boolean, expected:
     return writeKey(scope, key, isEmptyValue(value) ? null : value) ? ok(null) : NO_STORE
   })
 
-const editorPrefSetters = {
-  folds: scopeSet('folds', isStringArray, 'Fold keys must be a string array.'),
-  embedHeights: scopeSet(
-    'embedHeights',
-    isHeightMap,
-    'Embed heights must map ids to positive numbers.',
-  ),
-  embedZooms: scopeSet('embedZooms', isHeightMap, 'Embed scales must map ids to positive numbers.'),
-  headingCols: scopeSet(
-    'headingCols',
-    isIndexArray,
-    'Table indices must be a non-negative-integer array.',
-  ),
-} satisfies Record<keyof EditorPrefs, unknown>
+const editorPrefShapes: Record<keyof EditorPrefs, (v: unknown) => boolean> = {
+  folds: isStringArray,
+  embedHeights: isHeightMap,
+  embedZooms: isHeightMap,
+  headingCols: isIndexArray,
+}
 
 export const interfaceHandlers = {
   'windows:load': withRoot(() => ok(readWindowsState())),
@@ -74,11 +66,15 @@ export const interfaceHandlers = {
     }),
   ),
   'editorPrefs:set': (ctx, pageId: string, ...[scope, value]: EditorPrefWrite) =>
-    editorPrefSetters[scope](ctx, pageId, value),
+    scopeSet(scope, editorPrefShapes[scope], `A ${scope} value has the wrong shape.`)(
+      ctx,
+      pageId,
+      value,
+    ),
   'citations:get': scopeGet<boolean>('citations'),
   'citations:set': scopeSet(
     'citations',
-    (v: unknown): v is boolean | null => typeof v === 'boolean' || v === null,
+    (v) => typeof v === 'boolean' || v === null,
     'Shown must be a boolean.',
   ),
 

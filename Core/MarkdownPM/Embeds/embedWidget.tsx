@@ -240,18 +240,12 @@ class WebpageTileWidget extends ReactWidget {
     readonly url: string,
     readonly label: string,
     readonly height: number | undefined,
-    readonly pageSurface: boolean,
   ) {
     super()
   }
 
   eq(o: WebpageTileWidget): boolean {
-    return (
-      o.url === this.url &&
-      o.label === this.label &&
-      o.height === this.height &&
-      o.pageSurface === this.pageSurface
-    )
+    return o.url === this.url && o.label === this.label && o.height === this.height
   }
 
   get estimatedHeight(): number {
@@ -268,19 +262,20 @@ class WebpageTileWidget extends ReactWidget {
     const capped = port > 0 ? clamp(port - WEB_FIT_MARGIN, TILE_MIN_PX, wanted) : wanted
     dom.style.height = `${capped}px`
     const host = view.state.facet(embedHost)
+    const editor = view.state.facet(editorHost)
     this.render(
       dom,
       tileTree(
-        view.state.facet(editorHost).renderTile({
+        editor.renderTile({
           kind: 'webpage',
           url: this.url,
           label: this.label,
-          visible: this.pageSurface && dom._visible === true,
+          visible: editor.pageSurface === true && dom._visible === true,
           tabInactive: host.tabActive?.() === false,
           zoom: zoomStep(view.state.field(embedField).zooms[this.url]).factor,
           refocusHost: () => view.focus(),
         }),
-        this.pageSurface
+        editor.pageSurface
           ? createElement(EmbedResizeHandle, { view, span: dom, targetId: this.url })
           : null,
       ),
@@ -291,7 +286,7 @@ class WebpageTileWidget extends ReactWidget {
     const dom = document.createElement('span') as WebTileDom
     dom.dataset.embedTarget = this.url
     dom._renderW = () => this.renderInto(dom, view)
-    if (this.pageSurface) {
+    if (view.state.facet(editorHost).pageSurface) {
       const o = observersFor(view)
       o.tiles.add(dom)
       o.io.observe(dom)
@@ -390,12 +385,7 @@ function buildTiles(
       from: w.from,
       to: w.to,
       deco: Decoration.replace({
-        widget: new WebpageTileWidget(
-          w.url,
-          w.label,
-          heights[w.url],
-          state.facet(editorHost).pageSurface === true,
-        ),
+        widget: new WebpageTileWidget(w.url, w.label, heights[w.url]),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
     })

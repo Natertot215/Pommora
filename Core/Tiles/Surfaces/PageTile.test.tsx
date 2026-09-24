@@ -5,6 +5,7 @@ import { act, createElement, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { bumpBodyEpoch, cachePageDetail, clearCache } from '../../Session/pageDetailCache'
 import { ok } from '@pommora/core/Contract/result'
+import { NO_PREFS } from '../../MarkdownPM/editorHarness'
 import { makeTree } from '@pommora/core/Testing/testTree'
 import { useSession } from '../../Session/store'
 import type { EditorHost } from '../../MarkdownPM/api'
@@ -106,9 +107,7 @@ describe('a warm tile whose detail left the cache', () => {
   afterEach(() => useSession.setState({ tree: null }))
 
   it('still seats the page’s prefs from the tree', async () => {
-    const get = vi.fn(async () =>
-      ok({ folds: [], embedHeights: {}, embedZooms: {}, headingCols: [] }),
-    )
+    const get = vi.fn(async () => ok(NO_PREFS))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'editorPrefs:get': get })
     useSession.setState({ tree: makeTree() })
     const warm = {

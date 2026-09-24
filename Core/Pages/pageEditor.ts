@@ -9,19 +9,20 @@ import { moveRange } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 import { pageBody, shownPage, useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 
 // Registered by the page surface at mount, so an embedded tile's or window's editor can never be picked up instead.
 let pageView: EditorView | null = null
-const heard = new Set<() => void>()
+const listeners = new Set<() => void>()
 
 const subscribePageEditor = (listener: () => void): (() => void) => {
-  heard.add(listener)
-  return () => heard.delete(listener)
+  listeners.add(listener)
+  return () => listeners.delete(listener)
 }
 
 export function registerPageEditor(view: EditorView | null): void {
   pageView = view
-  for (const listener of heard) listener()
+  for (const listener of listeners) listener()
 }
 
 // Re-read on each settled body and on each registration: the editor a page switch mounts registers after the render that showed its body.
@@ -39,7 +40,7 @@ export function travelPageTo(pos: number): void {
 export function renameHeadingAtOffset(from: number, next: string): void {
   const view = pageView
   if (!view) return
-  const line = view.state.doc.lineAt(Math.max(0, Math.min(from, view.state.doc.length)))
+  const line = view.state.doc.lineAt(clamp(from, 0, view.state.doc.length))
   const parts = headingParts(line.text)
   if (!parts) return
   const contentStart = line.from + parts.contentStart

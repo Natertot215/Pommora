@@ -2,6 +2,7 @@
 import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
+import { NO_PREFS } from '../MarkdownPM/editorHarness'
 import { makeTree } from '@pommora/core/Testing/testTree'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 import { act, createElement } from 'react'
@@ -36,9 +37,7 @@ beforeEach(() => {
   mutated = vi.fn(async () => ok({}))
   menuPick = null
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'editorPrefs:get': vi.fn(async () =>
-      ok({ folds: [], embedHeights: {}, embedZooms: {}, headingCols: [] }),
-    ),
+    'editorPrefs:get': vi.fn(async () => ok(NO_PREFS)),
     'editorPrefs:set': vi.fn(async () => ok(null)),
     'page:open': vi.fn(async (path: string) => ok(detail({ id: 'a', path, body: onDisk }))),
     'page:updateBody': updated,

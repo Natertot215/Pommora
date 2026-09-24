@@ -2,6 +2,7 @@
 import { detail } from '@pommora/core/Testing/fixtures'
 import { makeTree } from '@pommora/core/Testing/testTree'
 import { ok } from '@pommora/core/Contract/result'
+import { NO_PREFS } from '../MarkdownPM/editorHarness'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 import { describe, expect, it, vi } from 'vitest'
 import { act, createElement, isValidElement, type ReactElement } from 'react'
@@ -89,7 +90,7 @@ describe('useEditorHost', () => {
   })
 
   it('a page’s host loads and saves its prefs through the keyed pair, and an id-less host has none', async () => {
-    const prefs = { folds: ['A'], embedHeights: {}, embedZooms: {}, headingCols: [] }
+    const prefs = { ...NO_PREFS, folds: ['A'] }
     const get = vi.fn(async () => ok(prefs))
     const set = vi.fn(async () => ok(null))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -104,7 +105,7 @@ describe('useEditorHost', () => {
     const root = createRoot(document.createElement('div'))
     await act(async () => root.render(createElement(Probe, { pageId: 'p1' })))
     const paged = built[built.length - 1]
-    expect(await paged.prefs?.load()).toEqual(ok(prefs))
+    expect(await paged.prefs?.load()).toEqual(prefs)
     expect(get).toHaveBeenCalledWith('p1')
     paged.prefs?.save('folds', ['B'])
     expect(set).toHaveBeenCalledWith('p1', 'folds', ['B'])

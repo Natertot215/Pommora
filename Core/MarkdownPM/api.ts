@@ -6,7 +6,6 @@ import { Annotation, Facet, Transaction } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
-import type { Result } from '@pommora/core/Contract/result'
 import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
 import type { Commands } from '@pommora/core/Actions/commands'
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
@@ -121,9 +120,8 @@ export interface EditorHost {
   pageTitle(): string | null
   // The one surface whose web guests run live; nested and secondary editors show their faces.
   pageSurface?: boolean
-  // The page's per-machine folds, tile sizes, and table heading columns; absent off a page identity.
   prefs?: {
-    load(): Promise<Result<EditorPrefs>>
+    load(): Promise<EditorPrefs | null>
     save(...write: EditorPrefWrite): void
   }
 }

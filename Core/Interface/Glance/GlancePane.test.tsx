@@ -14,6 +14,7 @@ import type { GlanceTarget } from '../../MarkdownPM/api'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
+import { NO_PREFS } from '../../MarkdownPM/editorHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -37,10 +38,7 @@ const stubNexus = (extra: Record<string, unknown>): void => {
     'menu:action': () => () => {},
     'glance:load': glanceStore.load,
     'glance:save': glanceStore.save,
-    'editorPrefs:get': async () => ({
-      ok: true as const,
-      value: { folds: [], embedHeights: {}, embedZooms: {}, headingCols: [] },
-    }),
+    'editorPrefs:get': async () => ({ ok: true as const, value: NO_PREFS }),
     ...extra,
   })
 }

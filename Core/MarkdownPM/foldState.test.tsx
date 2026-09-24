@@ -5,6 +5,7 @@ import type { EditorView } from '@codemirror/view'
 import {
   cleanupEditor,
   mountEditor,
+  prefsOf,
   rerenderEditor,
   stubEditorBridge,
   harnessState,
@@ -25,8 +26,6 @@ import { headingSections } from './Engine/headingScan'
 import { scanDoc } from './Engine/docScan'
 import { splitWithOffsets } from './Engine/detect'
 import { citationScan } from '../Testing/markdownEngine'
-import { ok } from '../Contract/result'
-import type { EditorHost } from './api'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -208,34 +207,32 @@ describe('the citations section folds', () => {
   })
 })
 
-const foldPrefs = (folds: string[], saved: string[][]): EditorHost['prefs'] => ({
-  load: async () => ok({ folds, embedHeights: {}, embedZooms: {}, headingCols: [] }),
-  save: (...[scope, value]) => {
-    if (scope === 'folds') saved.push(value)
-  },
-})
+const mountSaving = async (initialBody: string, citationsShown?: boolean, folds: string[] = []) => {
+  const saved: string[][] = []
+  const view = await mountEditor({
+    initialBody,
+    citationsShown,
+    host: {
+      prefs: prefsOf({ folds }, (scope, value) => {
+        if (scope === 'folds') saved.push(value)
+      }),
+    },
+  })
+  return { view, saved }
+}
 
 describe('the section never joins the fold store', () => {
-  it('a folded section leaves the saved key set to the headings alone', async () => {
-    const saved: string[][] = []
-    const view = await mountEditor({
-      initialBody: CITED,
-      citationsShown: true,
-      host: { prefs: foldPrefs([], saved) },
-    })
+  it('folding the citations section rewrites nothing', async () => {
+    const { view, saved } = await mountSaving(CITED, true)
     await fold(view, 0)
     await fold(view, startOf(CITED, 2))
     expect(kinds(view).sort()).toEqual(['citations', 'heading'])
-    expect(saved[saved.length - 1]).toEqual(['Notes'])
+    await fold(view, startOf(CITED, 2))
+    expect(saved).toEqual([['Notes']])
   })
 
   it('seeding the section at mount writes nothing at all', async () => {
-    const saved: string[][] = []
-    await mountEditor({
-      initialBody: CITED,
-      citationsShown: false,
-      host: { prefs: foldPrefs(['Notes'], saved) },
-    })
+    const { saved } = await mountSaving(CITED, false, ['Notes'])
     expect(saved).toEqual([])
   })
 
@@ -247,16 +244,6 @@ describe('the section never joins the fold store', () => {
 })
 
 describe('the saved fold list', () => {
-  const mountSaving = async (initialBody: string, citationsShown?: boolean) => {
-    const saved: string[][] = []
-    const view = await mountEditor({
-      initialBody,
-      citationsShown,
-      host: { prefs: foldPrefs([], saved) },
-    })
-    return { view, saved }
-  }
-
   it('a heading renamed under its fold saves its new key when the editor blurs', async () => {
     const { view, saved } = await mountSaving(DOC)
     await fold(view, 0)
@@ -294,14 +281,6 @@ describe('the saved fold list', () => {
       )
     })
     expect(saved).toEqual([['One'], []])
-  })
-
-  it('folding the citations section rewrites nothing', async () => {
-    const { view, saved } = await mountSaving(CITED, true)
-    await fold(view, 0)
-    await fold(view, startOf(CITED, 2))
-    await fold(view, startOf(CITED, 2))
-    expect(saved).toEqual([['Notes']])
   })
 
   it('the first fold of an empty-text heading is saved', async () => {
