@@ -16,6 +16,7 @@ import {
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree, getLiveTree } from './liveTree'
+import { openSession } from './session'
 
 const page = (id: string, title: string, dir: string): PageNode => ({
   kind: 'page',
@@ -244,6 +245,7 @@ describe('the record rows', () => {
   let root: string
   beforeEach(async () => {
     root = tempRoot('pom-record-')
+    await openSession(root)
     installStores(memoryStores().stores)
   })
   afterEach(async () => {
@@ -285,6 +287,7 @@ describe('runOpenLedger — the open sequence', () => {
   let root: string
   beforeEach(async () => {
     root = tempRoot('pom-open-')
+    await openSession(root)
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'nexus.json'),

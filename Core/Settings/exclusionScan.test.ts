@@ -7,6 +7,7 @@ import { excludedArtifacts, clearExclusionData } from './exclusionScan'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import { openSession } from '../Nexus/session'
 
 let root: string
 const d = (p: string): Promise<string | undefined> => mkdir(join(root, p), { recursive: true })
@@ -38,6 +39,7 @@ const expectIdentityStripped = async (): Promise<string> => {
 
 beforeEach(async () => {
   root = tempRoot('pom-exscan-')
+  await openSession(root)
   await d('Archive/Set')
   await d('Archive/Tasks')
   await d('Archive/node_modules/pkg')

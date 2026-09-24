@@ -14,6 +14,7 @@ import { metadataShardPath } from '../Paths/paths'
 import { shardOf } from './ids'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
+import { openSession } from './session'
 
 vi.mock('./readNexus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./readNexus')>()
@@ -30,6 +31,7 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 
 beforeEach(async () => {
   root = tempRoot('pom-mutpatch-')
+  await openSession(root)
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await writeFile(

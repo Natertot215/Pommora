@@ -11,10 +11,12 @@ import {
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { dirname, join } from '../Paths/posix'
+import { openSession } from '../Nexus/session'
 
 let root: string
 beforeEach(async () => {
   root = tempRoot('pom-settings-')
+  await openSession(root)
   // The open path guarantees `.nexus/` exists before any settings write (identity mkdirs it).
   await mkdir(nexusDir(root), { recursive: true })
 })

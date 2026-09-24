@@ -28,6 +28,7 @@ import {
   sweepFileHistory,
   writeBody,
 } from './fileHistory'
+import { openSession } from '../Nexus/session'
 
 const PAGE = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const TASK = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
@@ -71,6 +72,7 @@ beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
   vi.setSystemTime(new Date('2026-09-02T12:00:00Z'))
   root = tempRoot('pom-history-')
+  await openSession(root)
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(abs('Notes'), { recursive: true })

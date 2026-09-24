@@ -7,6 +7,7 @@ import { dropLiveTree, refreshTree } from '../../Nexus/liveTree'
 import { installStores, NO_STORES, snapshotStore } from '../../Platform/stores'
 import { resetFileHistory } from '../../Pages/fileHistory'
 import { captureLoser } from './captures'
+import { openSession } from '../../Nexus/session'
 
 const PAGE = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
@@ -23,6 +24,7 @@ const settle = async (personalization: Record<string, unknown> = {}): Promise<vo
 
 beforeEach(async () => {
   root = tempRoot('pom-captures-')
+  await openSession(root)
   await mkdir(abs('.nexus'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(abs('Notes'), { recursive: true })

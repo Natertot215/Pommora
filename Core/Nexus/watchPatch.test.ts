@@ -22,6 +22,7 @@ import {
 import { findContainerWhere } from './treePatch'
 import type { CollectionNode, SetNode } from './tree'
 import { noteExternalEdit } from '../Pages/fileHistory'
+import { openSession } from './session'
 
 vi.mock('../Pages/fileHistory', () => ({ noteExternalEdit: vi.fn() }))
 
@@ -43,6 +44,7 @@ const ev = (event: WatchEvent['event'], ...segs: string[]): WatchEvent => ({
 // A sidecar-mode nexus with one Collection (one page), one Context group with one Space, and one un-adopted folder holding a loose note — the live tree's whole vocabulary in miniature.
 beforeEach(async () => {
   root = tempRoot('pom-watch-')
+  await openSession(root)
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
   await mkdir(abs('.nexus', 'assets'), { recursive: true })
   await mkdir(abs('.nexus', 'homepage'), { recursive: true })

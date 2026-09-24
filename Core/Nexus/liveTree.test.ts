@@ -6,6 +6,8 @@ import { pathExists } from '../Files/atomicWrite'
 
 vi.mock('./readNexus', () => ({ readNexus: vi.fn() }))
 vi.mock('../Files/atomicWrite', () => ({ pathExists: vi.fn() }))
+let open = '/r'
+vi.mock('./session', () => ({ sessionRoot: () => open }))
 
 const walk = vi.mocked(readNexus)
 const exists = vi.mocked(pathExists)
@@ -27,6 +29,7 @@ function deferred<V>(): {
 }
 
 beforeEach(() => {
+  open = '/r'
   dropLiveTree()
   walk.mockReset()
   exists.mockReset()
@@ -62,14 +65,29 @@ describe('refreshTree', () => {
   it('a root switch mid-walk discards the result', async () => {
     const d = deferred<NexusTree>()
     walk.mockReturnValueOnce(d.promise)
+    open = '/a'
     const p = refreshTree('/a')
     dropLiveTree()
+    open = '/b'
     d.resolve(T('a'))
     await p
     expect(getLiveTree()).toBeNull()
     const tB = T('b')
     walk.mockResolvedValueOnce(tB)
     expect(await refreshTree('/b')).toBe(tB)
+    expect(getLiveTree()).toBe(tB)
+  })
+
+  it('a walk of the previous root, asked after a switch, reads it without replacing the open walk', async () => {
+    open = '/b'
+    const dB = deferred<NexusTree>()
+    const tA = T('a')
+    const tB = T('b')
+    walk.mockReturnValueOnce(dB.promise).mockResolvedValueOnce(tA)
+    const opening = refreshTree('/b')
+    expect(await refreshTree('/a')).toBe(tA)
+    dB.resolve(tB)
+    expect(await opening).toBe(tB)
     expect(getLiveTree()).toBe(tB)
   })
 

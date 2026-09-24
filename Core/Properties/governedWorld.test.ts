@@ -9,6 +9,7 @@ import { assignedDefs } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
 import { createProperty } from './registryProperty'
+import { openSession } from '../Nexus/session'
 
 let root: string
 let notes: string
@@ -16,6 +17,7 @@ let statusId: string
 
 beforeEach(async () => {
   root = tempRoot('pom-world-')
+  await openSession(root)
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   const col = await createFolderEntity(root, 'collection', 'Notes')
