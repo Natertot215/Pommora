@@ -2,7 +2,7 @@ import { Menu, app, shell, BrowserWindow } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
 import { pruneRecents, readAppConfig, updateAppConfig } from '../Config/appConfig'
-import { push } from '../Bridge/ipc'
+import { type CurrentWindow, push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
@@ -11,22 +11,20 @@ import { setHostZoom, stepHostZoom } from '../Web/webGuests'
 import { interfaceScaleZoom } from '../Config/interfaceScale'
 import { isWindows, nativePath, posixPath } from '../Platform/hostPath'
 
-type AdoptFn = (path: string) => Promise<void>
-
-/** The captured `win` can be stale: the menu outlives a window lifecycle. */
-const menuTarget = (win: BrowserWindow): BrowserWindow | null => {
-  const w = BrowserWindow.getFocusedWindow() ?? win
-  return w.isDestroyed() ? null : w
+const menuTarget = (win: CurrentWindow): BrowserWindow | null => {
+  const w = BrowserWindow.getFocusedWindow() ?? win()
+  return w && !w.isDestroyed() ? w : null
 }
 
-const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
+const zoomStep = (win: CurrentWindow, dir: 1 | -1) => (): void => {
   const w = menuTarget(win)
   if (w) stepHostZoom(w.webContents, dir)
 }
 
+/** `openRecent` adopts host-side, for when no window is open to flush its saves first. */
 export async function installAppMenu(
-  win: BrowserWindow,
-  adopt: AdoptFn,
+  win: CurrentWindow,
+  openRecent: (path: string) => unknown,
   commands: Commands,
 ): Promise<void> {
   const userData = posixPath(app.getPath('userData'))
@@ -43,9 +41,9 @@ export async function installAppMenu(
   const recentItems: MenuItemConstructorOptions[] = recents.length
     ? recents.map((p) => ({
         label: basename(p),
-        click: async () => {
-          await adopt(p)
-          send('reload-state')
+        click: () => {
+          if (win()) push(win, 'nexus:openRecent', posixPath(p))
+          else void openRecent(posixPath(p))
         },
       }))
     : [{ label: 'No Recent Nexuses', enabled: false }]

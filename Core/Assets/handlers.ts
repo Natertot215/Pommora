@@ -1,4 +1,4 @@
-import { type Handlers, withRoot } from '../Contract/handlers'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, ok } from '../Contract/result'
 import { NOT_A_PROPERTY_DIR } from '../Contract/validators'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -21,10 +21,7 @@ import { assetSubfolder, validPropertyDir } from './assetRoots'
 const pickedPaths = new Set<string>()
 
 export const assetsHandlers = {
-  'assets:map': async () => {
-    const root = sessionRoot()
-    return ok(root === null ? EMPTY_ASSET_MAP : await liveAssetMap(root))
-  },
+  'assets:map': withRoot(async (root) => ok(await liveAssetMap(root)), ok(EMPTY_ASSET_MAP)),
 
   'assets:chooseDir': withRoot(async (root, ctx, scope?: 'nexus' | 'property', at?: unknown) => {
     const forProperty = scope === 'property'
@@ -46,7 +43,7 @@ export const assetsHandlers = {
     return below !== null && validPropertyDir(below, assetDir) ? ok(below) : NOT_A_PROPERTY_DIR
   }),
 
-  'assets:setDir': withRoot(async (root, ctx, dir: unknown) => {
+  'assets:setDir': withWriteRoot(async (root, ctx, dir: unknown) => {
     if (typeof dir !== 'string') return fail('operation-failed', 'A folder path is required.')
     const trimmed = dir.trim()
     let next = ''
@@ -62,7 +59,7 @@ export const assetsHandlers = {
       console.error('assets: the migration failed; references are unchanged:', e)
     }
     // The write's own echo is suppressed, so the structural re-arm an external edit would trigger never fires here.
-    await confirmSettingsWrite(ctx)
+    await confirmSettingsWrite(ctx, root)
     const tree = await refreshAfterWrite(root)
     await seedContentIndex(root)
     const assets = await refreshAssetMap(root)
@@ -88,7 +85,7 @@ export const assetsHandlers = {
     return ok(path)
   },
 
-  'assets:adopt': withRoot(async (root, ctx, source: string, subfolder?: string) => {
+  'assets:adopt': withWriteRoot(async (root, ctx, source: string, subfolder?: string) => {
     if (!pickedPaths.has(source)) return fail('invalid-path', 'That file was not picked here.')
     const adopted = await adoptFile(root, source, {
       allow: 'any',

@@ -1,6 +1,6 @@
 import type { Asks, Pushes } from './bridge'
-import { NO_NEXUS } from './result'
-import { sessionRoot } from '../Nexus/session'
+import { BUSY, NO_NEXUS } from './result'
+import { adopting, sessionRoot } from '../Nexus/session'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
 import type { TrashMode } from '../Trash/trashRow'
@@ -79,9 +79,19 @@ type Handler<K extends keyof Asks> = (
 
 export type Handlers = { [K in keyof Asks]: Handler<K> }
 
+type RootFn<A extends unknown[], R> = (root: string, ctx: HostContext, ...args: A) => R
+
+/** The one session gate for a read: refused with no Nexus open, or answered `whenClosed` by a read whose empty answer is deliberate. */
 export const withRoot =
-  <A extends unknown[], R>(fn: (root: string, ctx: HostContext, ...args: A) => R) =>
-  (ctx: HostContext, ...args: A): R | typeof NO_NEXUS => {
+  <A extends unknown[], R, C = typeof NO_NEXUS>(fn: RootFn<A, R>, whenClosed?: C) =>
+  (ctx: HostContext, ...args: A): R | C => {
     const root = sessionRoot()
-    return root === null ? NO_NEXUS : fn(root, ctx, ...args)
+    return root === null ? ((whenClosed ?? NO_NEXUS) as C) : fn(root, ctx, ...args)
   }
+
+/** The one session gate for a write: also refused while a Nexus switch is binding the new root. */
+export const withWriteRoot = <A extends unknown[], R>(fn: RootFn<A, R>) => {
+  const gated = withRoot(fn)
+  return (ctx: HostContext, ...args: A): R | typeof NO_NEXUS | typeof BUSY =>
+    adopting() ? BUSY : gated(ctx, ...args)
+}

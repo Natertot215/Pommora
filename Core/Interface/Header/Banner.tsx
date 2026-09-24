@@ -16,6 +16,7 @@ import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 import { useWindowBannerSeat } from '../Windows/windowTabBanner'
 import { host } from '../../Platform/dialer'
+import { flushAllSaves } from '../../Session/nexusSlice'
 import { popMenu } from '../../Actions/menuActions'
 import { titleMenuItems, withSearchRow } from '@pommora/core/Actions/identityMenus'
 
@@ -138,10 +139,11 @@ export function EntityBanner({
   }
 
   // The homepage IS the nexus, so its title renames the root folder via renameNexus rather than submitRename.
+  // Saves land first: the rename re-adopts the root, and every write is refused until it finishes.
   const commitHome = (next: string): void => {
     setEditingHome(false)
-    void host()
-      .ask('nexus:rename', next)
+    void flushAllSaves()
+      .then(() => host().ask('nexus:rename', next))
       .then(async (res) => {
         if (!res.ok) await host().ask('error:show', res.error.message)
       })

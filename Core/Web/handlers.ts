@@ -1,6 +1,6 @@
 import { isValidLink, normalizeLinkUrl } from '../Connections/links'
-import type { Handlers } from '../Contract/handlers'
-import { fail, NO_NEXUS, ok, type Result } from '../Contract/result'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+import { fail, ok, type Result } from '../Contract/result'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, writeKey } from '../Platform/localState'
 
@@ -17,27 +17,23 @@ function ensureCache(root: string): void {
 }
 
 export const webHandlers = {
-  'linkTitles:get': async (): Promise<Result<LinkTitleCache>> => {
-    const root = sessionRoot()
-    if (!root) return ok({})
+  'linkTitles:get': withRoot(async (root): Promise<Result<LinkTitleCache>> => {
     ensureCache(root)
     return ok({ ...cache })
-  },
+  }, ok({})),
 
-  'linkTitles:fetch': async (ctx, url: unknown) => {
+  'linkTitles:fetch': withWriteRoot(async (root, ctx, url: unknown) => {
     if (typeof url !== 'string') return fail('operation-failed', 'invalid url')
-    const root = sessionRoot()
-    if (!root) return NO_NEXUS
     ensureCache(root)
     const hit = cache[url]
     if (hit) return ok({ title: hit })
     const title = await ctx.fetchTitle(url)
-    if (title && cacheRoot === root) {
+    if (title && cacheRoot === root && sessionRoot() === root) {
       cache[url] = title
       writeKey('linkTitle', url, title)
     }
     return ok({ title })
-  },
+  }),
 
   'link:open': async (ctx, url: unknown) => {
     if (typeof url !== 'string' || !isValidLink(url)) return ok(null)

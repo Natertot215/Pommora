@@ -1,8 +1,6 @@
-import type { Handlers } from '../Contract/handlers'
-import { BUSY, fail, NO_NEXUS, ok, type Result } from '../Contract/result'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+import { fail, ok, type Result } from '../Contract/result'
 import { isUlid } from '../Nexus/ids'
-import { adopting } from '../Nexus/handlers'
-import { sessionRoot } from '../Nexus/session'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { coerceTileHost, type TileDocPatch, tilePatchProblem } from './tiles'
 import {
@@ -19,10 +17,11 @@ import {
 type TileCtx = { root: string; dir: string }
 
 // Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must never carry path segments.
-async function tileHostAnd(host: unknown, tileId?: unknown): Promise<Result<TileCtx>> {
-  if (adopting()) return BUSY
-  const root = sessionRoot()
-  if (root === null) return NO_NEXUS
+async function tileHostAnd(
+  root: string,
+  host: unknown,
+  tileId?: unknown,
+): Promise<Result<TileCtx>> {
   const h = coerceTileHost(host)
   const dir = h ? await hostDir(root, h) : null
   if (!dir) return fail('not-found', 'Unknown tile host.')
@@ -33,67 +32,85 @@ async function tileHostAnd(host: unknown, tileId?: unknown): Promise<Result<Tile
 
 const onTile =
   <T>(fn: (tile: TileCtx, tileId: string, arg?: unknown) => Promise<Result<T>>) =>
-  async (_ctx: unknown, host: unknown, tileId: unknown, arg?: unknown): Promise<Result<T>> => {
-    const tile = await tileHostAnd(host, tileId)
+  async (
+    root: string,
+    _ctx: unknown,
+    host: unknown,
+    tileId: unknown,
+    arg?: unknown,
+  ): Promise<Result<T>> => {
+    const tile = await tileHostAnd(root, host, tileId)
     return tile.ok ? fn(tile.value, tileId as string, arg) : tile
   }
 
 export const tilesHandlers = {
-  'tiles:get': async (_ctx, host: unknown) => {
-    const tile = await tileHostAnd(host)
+  'tiles:get': withRoot(async (root, _ctx, host: unknown) => {
+    const tile = await tileHostAnd(root, host)
     return tile.ok ? ok(await readTileDocAt(tile.value.dir)) : tile
-  },
+  }),
 
-  'tiles:save': async (_ctx, host: unknown, patch: unknown) => {
-    const tile = await tileHostAnd(host)
+  'tiles:save': withWriteRoot(async (root, _ctx, host: unknown, patch: unknown) => {
+    const tile = await tileHostAnd(root, host)
     if (!tile.ok) return tile
     if (!patch || typeof patch !== 'object')
       return fail('operation-failed', 'Invalid tile-doc patch.')
     const problem = tilePatchProblem(patch as TileDocPatch)
     if (problem) return fail('operation-failed', problem)
     return writeTileDocAt(tile.value.dir, (cur) => ({ ...cur, ...(patch as TileDocPatch) }))
-  },
+  }),
 
-  'tiles:createMarkdown': async (_ctx, host: unknown) => {
-    const tile = await tileHostAnd(host)
+  'tiles:createMarkdown': withWriteRoot(async (root, _ctx, host: unknown) => {
+    const tile = await tileHostAnd(root, host)
     return tile.ok ? ok({ id: await createMarkdownTile(tile.value.dir) }) : tile
-  },
-
-  'tiles:removeTile': onTile(async ({ root, dir }, tileId) => {
-    await removeTile(root, dir, tileId)
-    return ok(null)
   }),
 
-  'tiles:readMarkdown': onTile(async ({ dir }, tileId) => {
-    const body = await readMarkdownTile(dir, tileId)
-    return body.ok ? ok({ body: body.value }) : body
-  }),
+  'tiles:removeTile': withWriteRoot(
+    onTile(async ({ root, dir }, tileId) => {
+      await removeTile(root, dir, tileId)
+      return ok(null)
+    }),
+  ),
 
-  'tiles:writeMarkdown': onTile(async ({ dir }, tileId, body) => {
-    if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
-    await writeMarkdownTile(dir, tileId, body)
-    return ok(null)
-  }),
+  'tiles:readMarkdown': withRoot(
+    onTile(async ({ dir }, tileId) => {
+      const body = await readMarkdownTile(dir, tileId)
+      return body.ok ? ok({ body: body.value }) : body
+    }),
+  ),
 
-  'tiles:convertToPage': onTile(async ({ root, dir }, tileId, pageId) => {
-    if (typeof pageId !== 'string' || pageId.length === 0)
-      return fail('operation-failed', 'Invalid page id.')
-    await convertTileToPage(root, dir, tileId, pageId)
-    return ok(null)
-  }),
+  'tiles:writeMarkdown': withWriteRoot(
+    onTile(async ({ dir }, tileId, body) => {
+      if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
+      await writeMarkdownTile(dir, tileId, body)
+      return ok(null)
+    }),
+  ),
 
-  'tiles:convertToView': onTile(async ({ root, dir }, tileId, views) => {
-    const list = Array.isArray(views) ? views : null
-    const valid =
-      list?.length &&
-      list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
-    if (!valid) return fail('operation-failed', 'Invalid view list.')
-    await convertTileToView(root, dir, tileId, list as unknown[])
-    return ok(null)
-  }),
+  'tiles:convertToPage': withWriteRoot(
+    onTile(async ({ root, dir }, tileId, pageId) => {
+      if (typeof pageId !== 'string' || pageId.length === 0)
+        return fail('operation-failed', 'Invalid page id.')
+      await convertTileToPage(root, dir, tileId, pageId)
+      return ok(null)
+    }),
+  ),
 
-  'tiles:duplicateTile': onTile(async ({ dir }, tileId) => {
-    const id = await duplicateTile(dir, tileId)
-    return id ? ok({ id }) : fail('not-found', 'No such tile.')
-  }),
+  'tiles:convertToView': withWriteRoot(
+    onTile(async ({ root, dir }, tileId, views) => {
+      const list = Array.isArray(views) ? views : null
+      const valid =
+        list?.length &&
+        list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
+      if (!valid) return fail('operation-failed', 'Invalid view list.')
+      await convertTileToView(root, dir, tileId, list as unknown[])
+      return ok(null)
+    }),
+  ),
+
+  'tiles:duplicateTile': withWriteRoot(
+    onTile(async ({ dir }, tileId) => {
+      const id = await duplicateTile(dir, tileId)
+      return id ? ok({ id }) : fail('not-found', 'No such tile.')
+    }),
+  ),
 } satisfies Partial<Handlers>

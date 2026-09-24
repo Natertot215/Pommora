@@ -36,7 +36,7 @@ export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: fa
 const bodies = new Map<string, string>()
 const bodyListeners = new Map<string, Set<() => void>>()
 
-export const tileBodyWriter = createBodyWriter()
+export const tileBodyWriter = createBodyWriter('the tile')
 
 export const writeTileBody = (tileId: string, text: string): void => {
   capSet(bodies, tileId, text, BODY_CAP)
@@ -254,6 +254,7 @@ export function dropAllTileDocs(): void {
   docs.clear()
   bodies.clear()
   removing.clear()
+  tileBodyWriter.cancelAll()
   for (const doc of live) {
     if (doc.timer) clearTimeout(doc.timer)
     doc.timer = null

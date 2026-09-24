@@ -1,9 +1,7 @@
-import type { Handlers } from '../Contract/handlers'
-import { BUSY, fail, NO_NEXUS, ok, type Result } from '../Contract/result'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+import { fail, NO_STORE, ok } from '../Contract/result'
 import { isGlanceSize, isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
-import { adopting } from '../Nexus/handlers'
 import { isPlainObject } from '../Properties/propertyValue'
-import { sessionRoot } from '../Nexus/session'
 import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
 import { type DevicePrefs, packDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
 import type { GlanceSize } from './Windows/windowRecord'
@@ -14,48 +12,35 @@ const isEmptyValue = (v: unknown): boolean =>
   (Array.isArray(v) && v.length === 0) ||
   (isPlainObject(v) && Object.keys(v).length === 0)
 
-export function scopeGet<T>(scope: Scope): () => Result<Record<string, T>> {
-  return () => ok(readScope<T>(scope))
-}
+export const scopeGet = <T>(scope: Scope) => withRoot(() => ok(readScope<T>(scope)), ok({}))
 
-export function scopeSet<T>(
-  scope: Scope,
-  valid: (v: unknown) => v is T,
-  expected: string,
-): (ctx: unknown, key: string, value: T) => Result<null> {
-  return (_ctx, key, value) => {
+export const scopeSet = <T>(scope: Scope, valid: (v: unknown) => v is T, expected: string) =>
+  withWriteRoot((_root, _ctx, key: string, value: T) => {
     if (!valid(value)) return fail('operation-failed', expected)
-    if (!writeKey(scope, key, isEmptyValue(value) ? null : value)) return NO_NEXUS
-    return ok(null)
-  }
-}
+    return writeKey(scope, key, isEmptyValue(value) ? null : value) ? ok(null) : NO_STORE
+  })
 
 export const interfaceHandlers = {
-  'windows:load': () => (sessionRoot() === null ? NO_NEXUS : ok(readWindowsState())),
-  'windows:save': (_ctx, file: unknown) => {
-    if (adopting()) return BUSY
+  'windows:load': withRoot(() => ok(readWindowsState())),
+  'windows:save': withWriteRoot((_root, _ctx, file: unknown) => {
     const clean = sanitizeWindows(file)
     if (!clean) return fail('operation-failed', 'Bad windows file.')
-    return writeWindowsState(clean) ? ok(null) : NO_NEXUS
-  },
+    return writeWindowsState(clean) ? ok(null) : NO_STORE
+  }),
 
-  'glance:load': () =>
-    sessionRoot() === null ? NO_NEXUS : ok(readValue<GlanceSize>('glancePane')),
-  'glance:save': (_ctx, size: unknown) => {
-    if (adopting()) return BUSY
+  'glance:load': withRoot(() => ok(readValue<GlanceSize>('glancePane'))),
+  'glance:save': withWriteRoot((_root, _ctx, size: unknown) => {
     if (!isGlanceSize(size)) return fail('operation-failed', 'A glance size needs finite w and h.')
-    return writeValue('glancePane', { w: size.w, h: size.h }) ? ok(null) : NO_NEXUS
-  },
+    return writeValue('glancePane', { w: size.w, h: size.h }) ? ok(null) : NO_STORE
+  }),
 
-  'devicePrefs:load': () =>
-    sessionRoot() === null ? NO_NEXUS : ok(readValue<DevicePrefs>('devicePrefs')),
-  'devicePrefs:save': async (ctx, prefs: unknown) => {
-    if (adopting()) return BUSY
+  'devicePrefs:load': withRoot(() => ok(readValue<DevicePrefs>('devicePrefs'))),
+  'devicePrefs:save': withWriteRoot(async (_root, ctx, prefs: unknown) => {
     const scale = readInterfaceScale()
-    if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_NEXUS
+    if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_STORE
     if (readInterfaceScale() !== scale) await ctx.applyZoom()
     return ok(null)
-  },
+  }),
 
   'folds:get': scopeGet<string[]>('folds'),
   'folds:set': scopeSet('folds', isStringArray, 'Fold keys must be a string array.'),

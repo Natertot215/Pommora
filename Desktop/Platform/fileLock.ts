@@ -30,3 +30,7 @@ export function serializeOnFile<T>(path: string, fn: () => Promise<T>): Promise<
   )
   return run
 }
+
+/** Settles once every locked write queued so far has landed. */
+export const drainFileLocks = (): Promise<void> =>
+  Promise.all(fileChains.values()).then(() => undefined)

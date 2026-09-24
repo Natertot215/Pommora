@@ -1,4 +1,4 @@
-import { type Handlers, withRoot } from '../Contract/handlers'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -7,7 +7,6 @@ import { rootSegs } from '../Paths/exclusion'
 import { relPosix } from '../Paths/paths'
 import { confirmSettingsWrite } from '../Nexus/confirm'
 import { refreshAfterWrite } from '../Nexus/liveTree'
-import { sessionRoot } from '../Nexus/session'
 import { sweepFileHistory } from '../Pages/fileHistory'
 import { nexusFolderRefusal } from './codec'
 import { clearExclusionData } from './exclusionScan'
@@ -24,13 +23,13 @@ import {
 
 export const settingsHandlers = {
   // Duplicates collapse on the case-folded path the matcher compares, so `archive` and `Archive` are one folder while the spelling the user typed is what's stored.
-  'exclusions:set': withRoot(async (root, ctx, folders: unknown) => {
+  'exclusions:set': withWriteRoot(async (root, ctx, folders: unknown) => {
     const sanitized = sanitizeExclusions(folders)
     if (!sanitized.ok) return sanitized
     const next = sanitized.value
     await writeExcludedFolders(root, next)
     // The write's own echo is suppressed, so the re-arm an external edit would trigger never fires here.
-    await confirmSettingsWrite(ctx)
+    await confirmSettingsWrite(ctx, root)
     const tree = await refreshAfterWrite(root)
     await seedContentIndex(root)
     ctx.push('nexus:changed', tree)
@@ -49,7 +48,7 @@ export const settingsHandlers = {
     return refusal ? fail('invalid-path', refusal) : ok(rootSegs(raw).join('/'))
   }),
 
-  'exclusions:clear': withRoot(async (root) => {
+  'exclusions:clear': withWriteRoot(async (root) => {
     const { excluded, assetDir } = await readWatchScope(root)
     if (excluded.length === 0) return ok(null)
     const result = await clearExclusionData(root, excluded, assetDir)
@@ -62,35 +61,35 @@ export const settingsHandlers = {
     return ok((await readWatchScope(root)).excluded.length)
   }),
 
-  'personalization:set': withRoot(async (root, ctx, key: unknown, value: unknown) => {
+  'personalization:set': withWriteRoot(async (root, ctx, key: unknown, value: unknown) => {
     if (typeof key !== 'string' || !key)
       return fail('operation-failed', 'Invalid personalization key.')
     await writePersonalization(root, key, value)
     // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
-    await confirmSettingsWrite(ctx)
+    await confirmSettingsWrite(ctx, root)
     if (key === 'webZoomFactor') await ctx.applyZoom()
     if (key === 'historyDays') void sweepFileHistory(root)
     return ok(null)
   }),
 
-  'subfield:get': async (): Promise<Result<SubfieldConfig | null>> => {
-    const root = sessionRoot()
-    return ok(root === null ? null : await readSubfield(root))
-  },
+  'subfield:get': withRoot(
+    async (root): Promise<Result<SubfieldConfig | null>> => ok(await readSubfield(root)),
+    ok(null),
+  ),
 
-  'subfield:set': withRoot(async (root, _ctx, config: unknown) => {
+  'subfield:set': withWriteRoot(async (root, _ctx, config: unknown) => {
     if (!config || typeof config !== 'object')
       return fail('operation-failed', 'Invalid subfield config.')
     await writeSubfield(root, config as SubfieldConfig)
     return ok(null)
   }),
 
-  'navViewModes:get': async (): Promise<Result<NavViewModes | null>> => {
-    const root = sessionRoot()
-    return ok(root === null ? null : await readNavViewModes(root))
-  },
+  'navViewModes:get': withRoot(
+    async (root): Promise<Result<NavViewModes | null>> => ok(await readNavViewModes(root)),
+    ok(null),
+  ),
 
-  'navViewModes:set': withRoot(async (root, _ctx, modes: unknown) => {
+  'navViewModes:set': withWriteRoot(async (root, _ctx, modes: unknown) => {
     if (!modes || typeof modes !== 'object')
       return fail('operation-failed', 'Invalid nav view modes.')
     await writeNavViewModes(root, modes as NavViewModes)

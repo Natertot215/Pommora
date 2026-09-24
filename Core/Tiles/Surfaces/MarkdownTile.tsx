@@ -11,6 +11,7 @@ import {
   writeTileBody,
 } from '../tileDocStore'
 import { host as dialer } from '../../Platform/dialer'
+import { ok } from '@pommora/core/Contract/result'
 
 export function MarkdownTile({
   host,
@@ -94,10 +95,10 @@ export function MarkdownTile({
     // Synchronous, before the debounce and before any await: the slot must hold what was typed by the time the next pointerdown moves the edit to another mount.
     writeTileBody(tileId, next)
     mine.current = next
-    tileBodyWriter.schedule(tileId, next, () => {
+    tileBodyWriter.schedule(tileId, () => {
       settleTileBody(tileId)
       return suppressRef.current?.(tileId)
-        ? Promise.resolve({ ok: true })
+        ? Promise.resolve(ok(null))
         : dialer().ask('tiles:writeMarkdown', host, tileId, next)
     })
   }
