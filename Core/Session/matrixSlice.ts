@@ -3,7 +3,6 @@ import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
   type MatrixConfig,
-  mergeConfig,
   type MatrixPatch,
   SECTIONS,
 } from '@pommora/core/Matrix/matrixConfig'
@@ -15,6 +14,7 @@ import {
 import type { LayoutPatch, Positions } from '@pommora/core/Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
+import { stabilize } from '../Nexus/treeStabilize'
 import { host as dialer } from '../Platform/dialer'
 import { sessionWriter } from './saveScheduler'
 import type { Slice } from './sessionState'
@@ -187,8 +187,8 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
     applyMatrixChanged: (config) => {
-      const merged = mergeConfig(get().matrixConfig, config)
-      if (merged !== get().matrixConfig) set({ matrixConfig: merged })
+      const kept = stabilize(config, get().matrixConfig)
+      if (kept !== get().matrixConfig) set({ matrixConfig: kept })
     },
 
     refetchMatrixPages: (pageIds) => {
