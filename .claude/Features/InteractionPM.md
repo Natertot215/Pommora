@@ -47,7 +47,7 @@ The interaction layer in `UIX/Interactions/` and `UIX/Animations/`: content-agno
 
 #### II. The Caret
 
-One text-insertion identity for the whole app: every CodeMirror surface mounts the caret layer, and the same bar paints over the native text fields, the inline-rename inputs among them, from a global caret layer (`caret.css`, `nativeCaret.ts`, `Core/MarkdownPM/caret.ts`). The drawn caret fades on a symmetric cycle via twin keyframes, swapped on selection change to restart the cycle without reflow; on a fresh focus the overlay settles by re-measuring each frame until the bar holds still.
+One text-insertion identity for the whole app: every CodeMirror surface mounts the caret layer, and the same bar paints over the native text fields, the inline-rename inputs among them, from a caret layer seated in the focused field's parent, so it travels with the field (`caret.css`, `nativeCaret.ts`, `Core/MarkdownPM/caret.ts`). The drawn caret fades on a symmetric cycle via twin keyframes, swapped on selection change to restart the cycle without reflow; on a fresh focus the overlay settles by re-measuring each frame until the bar holds still.
 
 **SOURCE:** `UIX/Theme/caret.css`
 
