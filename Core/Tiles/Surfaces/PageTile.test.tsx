@@ -4,9 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { bumpBodyEpoch, cachePageDetail, clearCache } from '../../Session/pageDetailCache'
+import { ok } from '@pommora/core/Contract/result'
+import { makeTree } from '@pommora/core/Testing/testTree'
+import { useSession } from '../../Session/store'
+import type { EditorHost } from '../../MarkdownPM/api'
+
+const seen = vi.hoisted(() => ({ host: null as EditorHost | null }))
 
 vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
-  MarkdownEditor: (p: { initialBody: string }) => {
+  MarkdownEditor: (p: { initialBody: string; host: EditorHost }) => {
+    seen.host = p.host
     const [body] = useState(p.initialBody)
     return createElement('div', { className: 'stub-editor' }, body)
   },
@@ -92,5 +99,33 @@ describe('the window rung', () => {
     await mount('window', {})
     expect(container.querySelector('.page-tile.is-window-chrome')).not.toBeNull()
     expect(container.querySelector('.mdpm-header')).toBeNull()
+  })
+})
+
+describe('a warm tile whose detail left the cache', () => {
+  afterEach(() => useSession.setState({ tree: null }))
+
+  it('still seats the page’s prefs from the tree', async () => {
+    const get = vi.fn(async () =>
+      ok({ folds: [], embedHeights: {}, embedZooms: {}, headingCols: [] }),
+    )
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'editorPrefs:get': get })
+    useSession.setState({ tree: makeTree() })
+    const warm = {
+      restore: () => ({ editorState: { doc: 'warm' }, scrollTop: 0 }),
+      capture: () => {},
+    }
+    await act(async () => {
+      root.render(
+        createElement(PageTile, {
+          path: 'Notes/Alpha.md',
+          editing: false,
+          onBeginEdit: () => {},
+          warm,
+        }),
+      )
+    })
+    await seen.host?.prefs?.load()
+    expect(get).toHaveBeenCalledWith('p1')
   })
 })

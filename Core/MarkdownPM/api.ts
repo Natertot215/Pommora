@@ -6,6 +6,8 @@ import { Annotation, Facet, Transaction } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
+import type { Result } from '@pommora/core/Contract/result'
+import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
 import type { Commands } from '@pommora/core/Actions/commands'
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
 import type { GripMenuAction, GripMenuContext, PickNode } from '@pommora/core/Actions/gripMenu'
@@ -31,11 +33,6 @@ export function mirrorBody(view: EditorView, body: string): void {
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string; heading?: string }
   | { kind: 'site'; url: string }
-
-export interface EditorPref<T> {
-  load: () => Promise<T>
-  save: (value: T) => void
-}
 
 export interface EditorMenuApi {
   pushState: (s: FormatState) => void
@@ -122,6 +119,13 @@ export interface EditorHost {
   fetchBody(page: ConnPage): Promise<string | null>
   // The live tree's title for the surface's own page, read fresh rather than from a capped cache; null off a page identity.
   pageTitle(): string | null
+  // The one surface whose web guests run live; nested and secondary editors show their faces.
+  pageSurface?: boolean
+  // The page's per-machine folds, tile sizes, and table heading columns; absent off a page identity.
+  prefs?: {
+    load(): Promise<Result<EditorPrefs>>
+    save(...write: EditorPrefWrite): void
+  }
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })

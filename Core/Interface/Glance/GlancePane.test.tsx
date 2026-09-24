@@ -37,6 +37,10 @@ const stubNexus = (extra: Record<string, unknown>): void => {
     'menu:action': () => () => {},
     'glance:load': glanceStore.load,
     'glance:save': glanceStore.save,
+    'editorPrefs:get': async () => ({
+      ok: true as const,
+      value: { folds: [], embedHeights: {}, embedZooms: {}, headingCols: [] },
+    }),
     ...extra,
   })
 }

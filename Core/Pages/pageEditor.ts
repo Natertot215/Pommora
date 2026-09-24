@@ -1,18 +1,34 @@
-import { reportRefusal, persist } from '@pommora/core/Interface/Notifications/notifications'
+import { useSyncExternalStore } from 'react'
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { EditorView } from '@codemirror/view'
+import type { OutlineHeading } from '../MarkdownPM/Engine/headingScan'
 import { travelTo } from '../MarkdownPM/travel'
 import { docOutline, docScan } from '../MarkdownPM/docCache'
 import { blockAt } from '../MarkdownPM/Engine/blockModel'
 import { moveRange } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
-import { valueOr } from '../Contract/result'
+import { pageBody, shownPage, useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 
 // Registered by the page surface at mount, so an embedded tile's or window's editor can never be picked up instead.
 let pageView: EditorView | null = null
+const heard = new Set<() => void>()
+
+const subscribePageEditor = (listener: () => void): (() => void) => {
+  heard.add(listener)
+  return () => heard.delete(listener)
+}
 
 export function registerPageEditor(view: EditorView | null): void {
   pageView = view
+  for (const listener of heard) listener()
+}
+
+// Re-read on each settled body and on each registration: the editor a page switch mounts registers after the render that showed its body.
+export function usePageOutline(): OutlineHeading[] {
+  useSession((st) => pageBody(shownPage(st)))
+  const view = useSyncExternalStore(subscribePageEditor, () => pageView)
+  return view ? docOutline(view.state.doc) : []
 }
 
 export function travelPageTo(pos: number): void {
@@ -32,18 +48,6 @@ export function renameHeadingAtOffset(from: number, next: string): void {
 
 export async function renameHeading(pageId: string, old: string, next: string): Promise<void> {
   reportRefusal(await host().ask('connections:headingRenamed', pageId, old, next))
-  const keys = valueOr(await host().ask('folds:get'), {})[pageId]
-  if (!keys?.length) return
-  // A duplicate's key is `${text} ${n}`; a longer heading that happens to start with the text is its own.
-  const shifted = keys.map((k) =>
-    k === old
-      ? next
-      : /^ \d+$/.test(k.slice(old.length)) && k.startsWith(old)
-        ? `${next}${k.slice(old.length)}`
-        : k,
-  )
-  if (shifted.some((k, i) => k !== keys[i]))
-    await persist('folds', host().ask('folds:set', pageId, shifted), true)
 }
 
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {

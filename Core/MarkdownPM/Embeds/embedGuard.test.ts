@@ -3,6 +3,8 @@ import { EditorState, type TransactionSpec } from '@codemirror/state'
 import { embedExclusions, embedField, embedTiles } from './embedWidget'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { editorHost } from '../api'
+import { testHost } from '../editorHarness'
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
@@ -12,7 +14,10 @@ const conn: ConnectionsApi = {
 const mk = (doc: string): EditorState =>
   EditorState.create({
     doc,
-    extensions: [embedTiles({ getConn: () => conn, ancestors: ['Host.md'] })],
+    extensions: [
+      editorHost.of(testHost()),
+      embedTiles({ getConn: () => conn, ancestors: ['Host.md'] }),
+    ],
   })
 
 const conn2: ConnectionsApi = {

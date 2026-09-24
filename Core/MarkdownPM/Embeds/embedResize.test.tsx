@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
+import type { EditorHost } from '../api'
+import { ok } from '@pommora/core/Contract/result'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { embedField, setEmbedHeights } from './embedWidget'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
@@ -16,10 +18,18 @@ const conn: ConnectionsApi = {
   open: () => {},
 }
 
+const heightPrefs = (
+  embedHeights: Record<string, number>,
+  save: NonNullable<EditorHost['prefs']>['save'],
+): EditorHost['prefs'] => ({
+  load: async () => ok({ folds: [], embedHeights, embedZooms: {}, headingCols: [] }),
+  save,
+})
+
 const hosted = {
   initialBody: 'intro\n\n![[Alpha]]\n\nbelow',
   connections: conn,
-  embedHeights: { load: async () => ({ p1: 480 }), save: () => {} },
+  host: { prefs: heightPrefs({ p1: 480 }, () => {}) },
 }
 
 async function until(cond: () => boolean): Promise<boolean> {
@@ -58,7 +68,7 @@ describe('persisted tile heights', () => {
 
   it('a drag on the handle sizes the tile from its measured height and persists one integer', async () => {
     const save = vi.fn()
-    const view = await mount({ ...hosted, embedHeights: { load: async () => ({}), save } })
+    const view = await mount({ ...hosted, host: { prefs: heightPrefs({}, save) } })
     const span = view.dom.querySelector('.mdpm-embed-tile') as HTMLElement
     stubRect(span, { top: 0, bottom: 480.4 })
     const handle = span.querySelector('.resize-edge-s') as HTMLElement
@@ -71,6 +81,6 @@ describe('persisted tile heights', () => {
     expect(await until(() => !handle.classList.contains('is-active'))).toBe(true)
     expect(span.style.height).toBe('520px')
     expect(save).toHaveBeenCalledOnce()
-    expect(save).toHaveBeenCalledWith({ p1: 520 })
+    expect(save).toHaveBeenCalledWith('embedHeights', { p1: 520 })
   })
 })

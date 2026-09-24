@@ -4,7 +4,9 @@ import type { HostContext } from '../Contract/handlers'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { scopeGet, scopeSet } from './handlers'
+import { writeKey } from '../Platform/localState'
+import { host } from '../Platform/dialer'
+import { interfaceHandlers, scopeGet, scopeSet } from './handlers'
 
 const ctx = {} as HostContext
 
@@ -41,3 +43,24 @@ describe('the citations override refuses what it cannot store and clears on a nu
     expect(valueOr(get(ctx), {})).toEqual({})
   })
 })
+
+describe('editor prefs read one page’s rows', () => {
+  it('fills the scopes a page never wrote, and refuses a value its scope can’t hold', async () => {
+    writeKey('folds', 'p1', ['A'])
+    writeKey('folds', 'p2', ['B'])
+    expect(valueOr(await interfaceHandlers['editorPrefs:get'](ctx, 'p1'), null)).toEqual({
+      folds: ['A'],
+      embedHeights: {},
+      embedZooms: {},
+      headingCols: [],
+    })
+    expect(interfaceHandlers['editorPrefs:set'](ctx, 'p1', 'headingCols', ['x'] as never).ok).toBe(
+      false,
+    )
+  })
+})
+
+// Compiled by the typecheck and never run: the write's scope/value tuple refuses a mismatched pair.
+const _mismatchedPair = (): unknown =>
+  // @ts-expect-error
+  host().ask('editorPrefs:set', 'p', 'folds', { a: 1 })

@@ -35,16 +35,11 @@ beforeEach(() => {
   updated = vi.fn(async () => updateReply)
   mutated = vi.fn(async () => ok({}))
   menuPick = null
-  const empty = { get: vi.fn(async () => ok({})), set: vi.fn(async () => undefined) }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'folds:get': empty.get,
-    'folds:set': empty.set,
-    'embedHeights:get': empty.get,
-    'embedHeights:set': empty.set,
-    'embedZooms:get': empty.get,
-    'embedZooms:set': empty.set,
-    'tableHeadingCols:get': empty.get,
-    'tableHeadingCols:set': empty.set,
+    'editorPrefs:get': vi.fn(async () =>
+      ok({ folds: [], embedHeights: {}, embedZooms: {}, headingCols: [] }),
+    ),
+    'editorPrefs:set': vi.fn(async () => ok(null)),
     'page:open': vi.fn(async (path: string) => ok(detail({ id: 'a', path, body: onDisk }))),
     'page:updateBody': updated,
     'sync:captureLocal': captured,

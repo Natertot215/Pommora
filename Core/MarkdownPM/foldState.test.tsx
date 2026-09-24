@@ -25,6 +25,8 @@ import { headingSections } from './Engine/headingScan'
 import { scanDoc } from './Engine/docScan'
 import { splitWithOffsets } from './Engine/detect'
 import { citationScan } from '../Testing/markdownEngine'
+import { ok } from '../Contract/result'
+import type { EditorHost } from './api'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -206,13 +208,20 @@ describe('the citations section folds', () => {
   })
 })
 
+const foldPrefs = (folds: string[], saved: string[][]): EditorHost['prefs'] => ({
+  load: async () => ok({ folds, embedHeights: {}, embedZooms: {}, headingCols: [] }),
+  save: (...[scope, value]) => {
+    if (scope === 'folds') saved.push(value)
+  },
+})
+
 describe('the section never joins the fold store', () => {
   it('a folded section leaves the saved key set to the headings alone', async () => {
     const saved: string[][] = []
     const view = await mountEditor({
       initialBody: CITED,
       citationsShown: true,
-      folds: { load: async () => [], save: (keys) => saved.push(keys) },
+      host: { prefs: foldPrefs([], saved) },
     })
     await fold(view, 0)
     await fold(view, startOf(CITED, 2))
@@ -225,7 +234,7 @@ describe('the section never joins the fold store', () => {
     await mountEditor({
       initialBody: CITED,
       citationsShown: false,
-      folds: { load: async () => ['Notes'], save: (keys) => saved.push(keys) },
+      host: { prefs: foldPrefs(['Notes'], saved) },
     })
     expect(saved).toEqual([])
   })
@@ -234,6 +243,71 @@ describe('the section never joins the fold store', () => {
     const view = await mountEditor({ initialBody: CITED })
     expect(citeRegion(view)?.key.charCodeAt(0)).toBe(0)
     expect(headingSections(scanDoc(CITED)).map((h) => h.key)).toEqual(['Notes'])
+  })
+})
+
+describe('the saved fold list', () => {
+  const mountSaving = async (initialBody: string, citationsShown?: boolean) => {
+    const saved: string[][] = []
+    const view = await mountEditor({
+      initialBody,
+      citationsShown,
+      host: { prefs: foldPrefs([], saved) },
+    })
+    return { view, saved }
+  }
+
+  it('a heading renamed under its fold saves its new key when the editor blurs', async () => {
+    const { view, saved } = await mountSaving(DOC)
+    await fold(view, 0)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ changes: { from: 2, to: 5, insert: 'Uno' } })
+    })
+    expect(saved).toEqual([['One']])
+    await act(async () => {
+      view.contentDOM.blur()
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    expect(saved).toEqual([['One'], ['Uno']])
+  })
+
+  it('…and when the editor is torn down without a blur', async () => {
+    const { view, saved } = await mountSaving(DOC)
+    await fold(view, 0)
+    await act(async () => {
+      view.dispatch({ changes: { from: 2, to: 5, insert: 'Uno' } })
+    })
+    await cleanupEditor()
+    expect(saved[saved.length - 1]).toEqual(['Uno'])
+  })
+
+  it('opening a fold writes once, and its reveal ending writes nothing', async () => {
+    const { view, saved } = await mountSaving(DOC)
+    await fold(view, 0)
+    await fold(view, 0)
+    const reveal = view.dom.querySelector('.mdpm-fold-reveal')
+    expect(reveal).not.toBeNull()
+    await act(async () => {
+      reveal?.dispatchEvent(
+        Object.assign(new Event('transitionend'), { propertyName: 'grid-template-rows' }),
+      )
+    })
+    expect(saved).toEqual([['One'], []])
+  })
+
+  it('folding the citations section rewrites nothing', async () => {
+    const { view, saved } = await mountSaving(CITED, true)
+    await fold(view, 0)
+    await fold(view, startOf(CITED, 2))
+    await fold(view, startOf(CITED, 2))
+    expect(saved).toEqual([['Notes']])
+  })
+
+  it('the first fold of an empty-text heading is saved', async () => {
+    const { view, saved } = await mountSaving('# \nbody\nmore')
+    await fold(view, 0)
+    expect(saved).toEqual([['']])
   })
 })
 

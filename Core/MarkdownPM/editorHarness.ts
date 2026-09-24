@@ -21,6 +21,7 @@ interface HarnessHost {
   pickTree?: PickNode[]
   openLink?: EditorHost['openLink']
   pageTitle?: string
+  prefs?: EditorHost['prefs']
 }
 
 type HarnessProps = Partial<Omit<EditorProps, 'host'>> & {
@@ -107,6 +108,7 @@ function harnessHost(
     warmBody: (page) => state.bodies[page.id] ?? null,
     fetchBody: async (page) => state.bodies[page.id] ?? null,
     pageTitle: () => spec.pageTitle ?? null,
+    prefs: spec.prefs,
   }
   return state
 }

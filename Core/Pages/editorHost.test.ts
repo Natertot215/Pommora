@@ -87,6 +87,31 @@ describe('useEditorHost', () => {
     expect(isValidElement(tile) && (tile.props as { connections: unknown }).connections).toBe(connB)
     act(() => root.unmount())
   })
+
+  it('a page’s host loads and saves its prefs through the keyed pair, and an id-less host has none', async () => {
+    const prefs = { folds: ['A'], embedHeights: {}, embedZooms: {}, headingCols: [] }
+    const get = vi.fn(async () => ok(prefs))
+    const set = vi.fn(async () => ok(null))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'editorPrefs:get': get,
+      'editorPrefs:set': set,
+    })
+    const built: EditorHost[] = []
+    const Probe = ({ pageId }: { pageId?: string }): null => {
+      built.push(useEditorHost({ pageId }))
+      return null
+    }
+    const root = createRoot(document.createElement('div'))
+    await act(async () => root.render(createElement(Probe, { pageId: 'p1' })))
+    const paged = built[built.length - 1]
+    expect(await paged.prefs?.load()).toEqual(ok(prefs))
+    expect(get).toHaveBeenCalledWith('p1')
+    paged.prefs?.save('folds', ['B'])
+    expect(set).toHaveBeenCalledWith('p1', 'folds', ['B'])
+    await act(async () => root.render(createElement(Probe, {})))
+    expect(built[built.length - 1].prefs).toBeUndefined()
+    act(() => root.unmount())
+  })
 })
 
 describe('the alias memory', () => {

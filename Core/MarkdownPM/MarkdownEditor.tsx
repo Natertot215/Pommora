@@ -64,7 +64,7 @@ import { BlockMenu } from './Menus/BlockMenu'
 import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
-import { type EditorHost, type EditorPref, editorHost, mirrorBody, mirrored } from './api'
+import { type EditorHost, editorHost, mirrorBody, mirrored } from './api'
 import './markdown-pm.css'
 
 export const EDITOR_BASE_PT = 15
@@ -81,10 +81,6 @@ interface Props {
   scale?: number
   connections?: ConnectionsApi
   embedAncestors?: readonly string[]
-  embedHeights?: EditorPref<Record<string, number>>
-  embedZooms?: EditorPref<Record<string, number>>
-  folds?: EditorPref<string[]>
-  tableHeadingColumns?: EditorPref<number[]>
   autoFocus?: boolean
   readOnly?: boolean
   edgeFade?: boolean
@@ -109,10 +105,6 @@ export function MarkdownEditor({
   scale = EDITOR_SCALE_DEFAULT,
   connections,
   embedAncestors,
-  embedHeights,
-  embedZooms,
-  folds,
-  tableHeadingColumns,
   autoFocus = false,
   readOnly = false,
   edgeFade = false,
@@ -143,14 +135,6 @@ export function MarkdownEditor({
   connectionsRef.current = connections
   const embedAncestorsRef = useRef<readonly string[]>(embedAncestors ?? [])
   embedAncestorsRef.current = embedAncestors ?? []
-  const embedHeightsRef = useRef(embedHeights)
-  embedHeightsRef.current = embedHeights
-  const embedZoomsRef = useRef(embedZooms)
-  embedZoomsRef.current = embedZooms
-  const foldsRef = useRef(folds)
-  foldsRef.current = folds
-  const tableHeadingColsRef = useRef(tableHeadingColumns)
-  tableHeadingColsRef.current = tableHeadingColumns
   const activeRef = useRef(active)
   activeRef.current = active
   const registerRef = useRef(register)
@@ -263,6 +247,7 @@ export function MarkdownEditor({
     const acCtls = [acCtl, block.ctl]
     const parent = editorRef.current
     if (!parent) return
+    const prefs = hostRef.current.prefs
     const extensions = [
       editorHost.of(hostRef.current),
       // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
@@ -298,13 +283,11 @@ export function MarkdownEditor({
       markdownDecorations(() => connectionsRef.current),
       tableWidgetExtension(
         () => connectionsRef.current,
-        (indices) => tableHeadingColsRef.current?.save(indices),
+        prefs && ((indices) => prefs.save('headingCols', indices)),
       ),
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
-        saveHeights: embedHeightsRef.current ? (h) => embedHeightsRef.current?.save(h) : undefined,
-        saveZooms: embedZoomsRef.current ? (z) => embedZoomsRef.current?.save(z) : undefined,
         tabActive: () => activeRef.current,
       }),
       listDragExtension,
@@ -344,7 +327,7 @@ export function MarkdownEditor({
         },
       }),
       markdownFolding(
-        (keys) => foldsRef.current?.save(keys),
+        (keys) => prefs?.save('folds', keys),
         () => {
           const { citations } = hostRef.current
           citations.set(!citations.shown())
@@ -441,28 +424,28 @@ export function MarkdownEditor({
         onArrivedRef.current?.()
       }
     }
-    const foldsLoad = foldsRef.current?.load()
-    const heightsLoad = embedHeightsRef.current?.load()
-    const zoomsLoad = embedZoomsRef.current?.load()
-    const colsLoad = tableHeadingColsRef.current?.load()
-    if (foldsLoad || heightsLoad || zoomsLoad || colsLoad)
-      void Promise.allSettled([foldsLoad, heightsLoad, zoomsLoad, colsLoad]).then(
-        ([keys, h, z, cols]) => {
-          if (keys.status === 'fulfilled' && keys.value) applySavedFolds(view, keys.value)
-          if (h.status === 'fulfilled' && h.value && Object.keys(h.value).length > 0)
+    if (prefs)
+      void prefs.load().then((r) => {
+        if (r.ok) {
+          const { folds, embedHeights, embedZooms, headingCols } = r.value
+          applySavedFolds(view, folds)
+          if (Object.keys(embedHeights).length > 0)
             view.dispatch({
-              effects: setEmbedHeights.of({ ...h.value, ...view.state.field(embedField).heights }),
+              effects: setEmbedHeights.of({
+                ...embedHeights,
+                ...view.state.field(embedField).heights,
+              }),
             })
-          if (z.status === 'fulfilled' && z.value && Object.keys(z.value).length > 0) {
+          if (Object.keys(embedZooms).length > 0) {
             view.dispatch({
-              effects: setEmbedZooms.of({ ...z.value, ...view.state.field(embedField).zooms }),
+              effects: setEmbedZooms.of({ ...embedZooms, ...view.state.field(embedField).zooms }),
             })
             refreshTileZooms(view, false)
           }
-          if (cols.status === 'fulfilled' && cols.value) applySavedHeadingCols(view, cols.value)
-          land()
-        },
-      )
+          applySavedHeadingCols(view, headingCols)
+        }
+        land()
+      })
     else requestAnimationFrame(land)
     const unsubMenu = hostRef.current.menus.format?.onAction((action) => {
       if (ownsEditorMenu(view)) applyEditorAction(view, action)
