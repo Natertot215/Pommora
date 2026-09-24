@@ -1,7 +1,7 @@
-import { markdownLinkRegex } from '@pommora/core/Connections/links'
-import { inlineSpans, lineIndexAt, quotePrefix } from './markdownCode'
+import { lineIndexAt, quotePrefix } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
-import { scanDoc, type DocScan } from './docScan'
+import { chunksOver, scanDoc, type DocScan } from './docScan'
+import { holdsTokens, type Token, tokenize } from './tokens'
 import { perText } from './perText'
 import {
   calloutHeadPrefixLen,
@@ -31,26 +31,74 @@ function proseStart(line: string): number {
   return base + (headingParts(inner)?.contentStart ?? parseListMarker(inner)?.contentStart ?? 0)
 }
 
-/** An inline `![label](url)` keeps its bang: the editor has no image renderer and draws it as prose beside an ordinary link. */
-function stripCodeSpans(line: string): string {
-  let prose = ''
-  let at = 0
-  for (const [a, b, run] of inlineSpans(line)) {
-    if (b > line.length) break
-    prose += line.slice(at, a - run) + GONE
-    at = b + run
+type Hidden = readonly [from: number, to: number, fill: string]
+
+/** What the editor draws in place of a token's source: code as nothing, marks, links, and embeds as their shown text, while citation markers and math stay as written. */
+function hiddenOf(tk: Token): Hidden[] {
+  switch (tk.kind) {
+    case 'inlineCode':
+      return [[tk.range[0], tk.range[1], GONE]]
+    case 'citationRef':
+    case 'inlineLatex':
+    case 'blockLatex':
+      return []
+    default:
+      return tk.markerRanges.map(([a, b]) => [a, b, ''])
   }
-  return prose + line.slice(at)
 }
 
-function stripInline(text: string): string {
-  return text
-    .split('\n')
-    .map(stripCodeSpans)
-    .join('\n')
-    .replace(/!?\[\[([^\]|\r\n]*)(?:\|([^\]\r\n]*))?\]\]/g, (_m, title, alias) => alias || title)
-    .replace(markdownLinkRegex(), (_m, label) => label)
-    .replace(/[*_~]/g, '')
+const NOTHING_HIDDEN: Hidden[] = []
+
+// By chunk text, the editor's own unit: an edit re-tokenizes only the chunk it changed.
+const tokenHidden = perText(
+  (text: string) =>
+    tokenize(text)
+      .flatMap(hiddenOf)
+      .sort((a, b) => a[0] - b[0]),
+  8192,
+)
+
+const hiddenIn = (text: string): Hidden[] =>
+  holdsTokens(text) ? tokenHidden(text) : NOTHING_HIDDEN
+
+/** `text` from `from` to `to` as drawn; `hidden` is sorted by start and read from `h` on. */
+function drawnSlice(
+  text: string,
+  from: number,
+  to: number,
+  hidden: readonly Hidden[],
+  h = 0,
+): string {
+  let out = ''
+  let at = from
+  for (let j = h; j < hidden.length; j++) {
+    const [a, b, fill] = hidden[j]
+    if (a >= to) break
+    if (b <= at) continue
+    if (a > at) out += text.slice(at, a)
+    out += fill
+    at = b
+  }
+  return out + text.slice(at, Math.max(at, to))
+}
+
+/** A block with no chunk cut would otherwise tokenize whole on every keystroke inside it; past this many lines it tokenizes line by line. */
+const CHUNK_LINES = 40
+
+/** The line spans a count tokenizes: tables draw their cells, so their lines stay out. */
+function proseRuns(scan: DocScan, first: number, last: number): [number, number][] {
+  const runs: [number, number][] = []
+  let from = first
+  for (const region of scan.tables) {
+    const top = lineIndexAt(scan, region.from)
+    const bottom = lineIndexAt(scan, region.to)
+    if (bottom < from) continue
+    if (top > last) break
+    if (top > from) runs.push([from, top - 1])
+    from = bottom + 1
+  }
+  if (from <= last) runs.push([from, last])
+  return runs
 }
 
 function tableProse(scan: DocScan): Map<number, string> {
@@ -59,7 +107,8 @@ function tableProse(scan: DocScan): Map<number, string> {
     const last = lineIndexAt(scan, region.to)
     for (let i = lineIndexAt(scan, region.from); i <= last; i++) drawn.set(i, '')
     for (const row of region.rows) {
-      drawn.set(lineIndexAt(scan, row.from), row.cells.map((c) => c.text).join(GONE))
+      const cells = row.cells.map((c) => drawnSlice(c.text, 0, c.text.length, hiddenIn(c.text)))
+      drawn.set(lineIndexAt(scan, row.from), cells.join(GONE))
     }
   }
   return drawn
@@ -82,18 +131,35 @@ export function rangeStats(scan: DocScan, from: number, to: number): PageStats {
   // A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line.
   if (last > first && to === lineStarts[last]) last--
   const drawn = tableProse(scan)
+  const hidden: Hidden[] = []
+  const take = (at: number, text: string): void => {
+    for (const [s, e, fill] of hiddenIn(text)) hidden.push([at + s, at + e, fill])
+  }
+  for (const [a, b] of chunksOver(
+    scan,
+    proseRuns(scan, first, Math.min(last, cited.firstLine - 1)),
+  )) {
+    const top = lineIndexAt(scan, a)
+    const bottom = lineIndexAt(scan, b)
+    if (bottom - top < CHUNK_LINES) take(a, scan.text.slice(a, b))
+    else for (let i = top; i <= bottom; i++) take(lineStarts[i], lines[i])
+  }
+  let h = 0
   const rows: string[] = []
   for (let i = first; i <= last; i++) {
-    const line = lines[i]
     const shown = fences[i] || i >= cited.firstLine ? GONE : drawn.get(i)
     if (shown !== undefined) {
       rows.push(shown)
       continue
     }
-    const start = Math.max(proseStart(line), from - lineStarts[i])
-    rows.push(line.slice(start, Math.max(start, to - lineStarts[i])))
+    const ls = lineStarts[i]
+    const start = ls + Math.max(proseStart(lines[i]), from - ls)
+    while (h < hidden.length && hidden[h][1] <= start) h++
+    rows.push(
+      drawnSlice(scan.text, start, Math.max(start, Math.min(to, ls + lines[i].length)), hidden, h),
+    )
   }
-  const prose = stripInline(rows.join('\n'))
+  const prose = rows.join('\n')
 
   const characters = prose.replace(/\n/g, '').length
   // An empty string rather than GONE, so a marker glued to its word (`sentence[^1].`) stays one word.

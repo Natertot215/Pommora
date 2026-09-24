@@ -203,6 +203,9 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
   return tokens
 }
 
+/** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
+export const holdsTokens = (text: string): boolean => /[*_~`=$[]/.test(text)
+
 export function tokenize(text: string): Token[] {
   const scan = scanDoc(text)
   const ast = parse(text, scan)

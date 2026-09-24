@@ -253,3 +253,25 @@ describe('rangeStats — a selection counts as the document reads it', () => {
     expect(at(doc, '[^2]:').citations).toBe(1)
   })
 })
+
+describe('computeStats — marks count as the tokenizer draws them', () => {
+  it('drops the markers the editor hides, highlights included', () => {
+    expect(computeStats('a **b** c').characters).toBe(5)
+    expect(computeStats('a ==b== c').characters).toBe(5)
+    expect(computeStats('a ~~b~~ c').characters).toBe(5)
+  })
+
+  it('keeps a literal mark the editor draws', () => {
+    expect(computeStats('snake_case').characters).toBe(10)
+    expect(computeStats('a * b').words).toBe(3)
+  })
+
+  it('reads a link and a connection as their shown text', () => {
+    expect(computeStats('see [label](https://x.y) and [[Page|alias]]').words).toBe(4)
+  })
+
+  it('a selection cutting a mark keeps only the drawn part it holds', () => {
+    const doc = 'one **two** three'
+    expect(rangeStats(scanDoc(doc), doc.indexOf('two'), doc.length).characters).toBe(9)
+  })
+})
