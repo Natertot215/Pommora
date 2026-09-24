@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
-  factorRow,
+  steppedRow,
   FooterIconButton,
   FooterLockButton,
   MenuFooting,
@@ -91,7 +91,7 @@ export function MatrixMenu(): React.JSX.Element {
     {
       title: 'Link Forces',
       rows: FORCES.map(({ key, label }) =>
-        factorRow(undefined, label, {
+        steppedRow(undefined, label, {
           steps: FORCE_STEPS[key],
           value: forces[key],
           coerce: (typed) => clampForce(key, typed),

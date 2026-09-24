@@ -31,7 +31,7 @@ const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
 // Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` before `coerce`.
-export function factorPickerProps({
+export function steppedPickerProps({
   steps,
   value,
   unit = FACTOR,

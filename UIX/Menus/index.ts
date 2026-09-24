@@ -16,7 +16,7 @@ export {
 export {
   MenuIndex,
   MenuRowView,
-  factorRow,
+  steppedRow,
   pickerRow,
   type PickerRowLook,
   type MenuRow,
