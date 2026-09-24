@@ -245,6 +245,11 @@ export function MarkdownTable({
     }
     const clear = (): void => onClearCells?.(rect.r0, rect.c0, rect.r1, rect.c1)
     const onKey = (e: KeyboardEvent): void => {
+      // Only a key aimed at the editor hosting this table, or at nothing, is the rectangle's; a parked tab's host is inert.
+      const editor = wrapRef.current?.closest('.cm-editor')
+      const aimed =
+        e.target === document.body || (e.target instanceof Node && editor?.contains(e.target))
+      if (!aimed || editor?.closest('[inert]')) return
       const mod = isCmd(e)
       if (e.key === 'Backspace' || e.key === 'Delete') {
         claim(e)
