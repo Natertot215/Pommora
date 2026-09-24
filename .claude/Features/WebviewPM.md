@@ -19,7 +19,7 @@ One renderer adjudicator, `Core/Web/openWebLink.ts`, decides where every externa
 
 ### Web Sessions
 
-Every web surface shares one persistent session partition per machine: sign in to a site in any of them and every other one is signed in, surviving restarts. There is nothing to manage and no settings surface. The session uses a cleaned user agent with a variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom, times **Webpage Zoom**, times the tile's own Scale where one is set, stamped from main on every navigation.
+Every web surface shares one persistent session partition per machine: sign in to a site in any of them and every other one is signed in, surviving restarts. There is nothing to manage and no settings surface. A guest may go fullscreen and write sanitized text to the clipboard, and every other permission request is denied without a prompt; a navigation in any frame is held to the same web-scheme check as an attach. The session uses a cleaned user agent with a variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom, times **Webpage Zoom**, times the tile's own Scale where one is set, stamped from main on every navigation.
 
 ### The Browser Window
 

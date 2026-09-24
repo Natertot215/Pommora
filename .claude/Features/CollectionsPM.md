@@ -46,7 +46,7 @@ Collections sit as siblings at the Nexus root with no wrapper folder. Discovery 
 
 ### CRUD
 
-Collections and Sets share the generic folder-entity CRUD in `Core/Nexus/folderEntity.ts`: create writes the folder and its sidecar, rename is a folder rename, and update preserves foreign sidecar keys. A create under a taken name disambiguates with a numeric suffix, while a rename onto a taken name is refused. Delete moves the folder and everything under it to the trash. Reorder persists parent-side on each drag — a container's sidecar holds its Sets' and Pages' order, and the top-level Collection order lives in `.nexus/state.json`.
+Collections and Sets share the generic folder-entity CRUD in `Core/Nexus/folderEntity.ts`: create writes the folder and its sidecar, and rename is a folder rename. Every later sidecar write edits only the key it owns on the file as stored, so keys and values another build or tool wrote stay as written. A create under a taken name disambiguates with a numeric suffix, while a rename onto a taken name is refused. Delete moves the folder and everything under it to the trash. Reorder persists parent-side on each drag — a container's sidecar holds its Sets' and Pages' order, and the top-level Collection order lives in `.nexus/state.json`.
 
 ---
 
