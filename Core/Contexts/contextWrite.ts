@@ -16,7 +16,7 @@ import { assignedDefs, collectionFolderOf, collectionFolders } from '../Properti
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
-import { ok, fail, type Result } from '../Contract/result'
+import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { adoptedId, newId } from '../Nexus/ids'
 import { createDisambiguated, nameError } from '../Paths/names'
@@ -71,7 +71,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
         const sc = await readJsonStrict(join(dir, e.name, SPACE_SIDECAR))
         if (!sc.ok) {
           if (sc.error.code === 'not-found') continue
-          return fail('operation-failed', `Unreadable Space sidecar: ${e.name}`)
+          return fault(`Unreadable Space sidecar: ${e.name}`)
         }
         const rel = spaceDirRel(def.title, e.name)
         const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
@@ -192,8 +192,7 @@ export async function setSpaceContext(
 ): Promise<Result<null>> {
   const a = world.spaceById.get(spaceId)
   if (!a) return fail('not-found', 'Unknown Space.')
-  if (targetSpaceIds.includes(spaceId))
-    return fail('operation-failed', 'A Space can’t link itself.')
+  if (targetSpaceIds.includes(spaceId)) return fault('A Space can’t link itself.')
   const titles = targetTitles(world, targetSpaceIds)
   if (!titles.ok) return titles
   const applied = applyTarget(world, contextId, titles.value)

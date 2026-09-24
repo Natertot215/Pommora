@@ -1,5 +1,5 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, NO_STORE, ok } from '../Contract/result'
+import { NO_STORE, ok, fault } from '../Contract/result'
 import { isGlanceSize, isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
 import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
@@ -16,7 +16,7 @@ export const scopeGet = <T>(scope: Scope) => withRoot(() => ok(readScope<T>(scop
 
 export const scopeSet = <T>(scope: Scope, valid: (v: unknown) => v is T, expected: string) =>
   withWriteRoot((_root, _ctx, key: string, value: T) => {
-    if (!valid(value)) return fail('operation-failed', expected)
+    if (!valid(value)) return fault(expected)
     return writeKey(scope, key, isEmptyValue(value) ? null : value) ? ok(null) : NO_STORE
   })
 
@@ -24,13 +24,13 @@ export const interfaceHandlers = {
   'windows:load': withRoot(() => ok(readWindowsState())),
   'windows:save': withWriteRoot((_root, _ctx, file: unknown) => {
     const clean = sanitizeWindows(file)
-    if (!clean) return fail('operation-failed', 'Bad windows file.')
+    if (!clean) return fault('Bad windows file.')
     return writeWindowsState(clean) ? ok(null) : NO_STORE
   }),
 
   'glance:load': withRoot(() => ok(readValue<GlanceSize>('glancePane'))),
   'glance:save': withWriteRoot((_root, _ctx, size: unknown) => {
-    if (!isGlanceSize(size)) return fail('operation-failed', 'A glance size needs finite w and h.')
+    if (!isGlanceSize(size)) return fault('A glance size needs finite w and h.')
     return writeValue('glancePane', { w: size.w, h: size.h }) ? ok(null) : NO_STORE
   }),
 
@@ -69,11 +69,6 @@ export const interfaceHandlers = {
     'Shown must be a boolean.',
   ),
 
-  'error:show': async (ctx, message: unknown) => {
-    if (typeof message === 'string')
-      await ctx.message('error', 'Couldn’t complete that action.', message)
-    return ok(null)
-  },
   'clipboard:write': async (ctx, text: unknown) => {
     if (typeof text === 'string') await ctx.clipboard.write(text)
     return ok(null)

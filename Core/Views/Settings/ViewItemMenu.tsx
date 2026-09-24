@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
-import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
+import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
 import { duplicateView } from '../duplicateView'
 import { restoreView } from '../restoreView'
 import { Icon } from '@pommora/uix/Symbols'
@@ -27,7 +27,7 @@ export function ViewItemMenu({
   const deleteView = async (): Promise<void> => {
     if (!(await askDeleteView())) return
     const res = await host().ask('views:delete', source.path, source.kind, view.id)
-    if (!res.ok) return void notifyError(res.error.message)
+    if (!reportRefusal(res)) return
     notifyDeleted(view.name, () => restoreView(source.path, source.kind, view, views))
     onDeleted?.()
   }

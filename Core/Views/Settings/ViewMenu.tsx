@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
@@ -38,9 +39,11 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
     e.preventDefault()
     const action = await popMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
     if (action !== 'toggle-title') return
-    await host().ask('container:configure', node.path, node.kind, {
-      view_button: labeled ? 'icon' : 'labeled',
-    })
+    reportRefusal(
+      await host().ask('container:configure', node.path, node.kind, {
+        view_button: labeled ? 'icon' : 'labeled',
+      }),
+    )
   }
 
   return (

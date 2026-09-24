@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { kindOf } from '../Nexus/identityMark'
-import { errText, fail, ok, type Result } from '../Contract/result'
+import { errText, fail, ok, type Result, fault } from '../Contract/result'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { bodyHash, splitEnvelope } from '../Files/pageFile'
@@ -151,7 +151,7 @@ export async function retireFileHistory(root: string): Promise<void> {
   resetFileHistory()
 }
 
-const NO_STORE = fail('operation-failed', 'File history is unavailable.')
+const NO_STORE = fault('File history is unavailable.')
 
 const withStore = <T>(run: (db: SnapshotStore) => Result<T>): Result<T> => {
   const db = snapshotStore()

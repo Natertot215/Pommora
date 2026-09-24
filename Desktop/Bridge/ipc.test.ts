@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BrowserWindow } from 'electron'
 import type { Handlers, HostContext } from '@pommora/core/Contract/handlers'
-import { fail, ok, type Result } from '@pommora/core/Contract/result'
+import { fail, ok, type Result, fault } from '@pommora/core/Contract/result'
 import { serveIpc } from './ipc'
 
 const { handleReg, onReg } = vi.hoisted(() => ({
@@ -51,7 +51,7 @@ describe('serveIpc registers and answers through the envelope', () => {
     serveIpc(handlers, {} as never, host)
 
     const answer = (await handleReg.get('boom')?.(event)) as Result<never>
-    expect(answer).toEqual(fail('operation-failed', 'no'))
+    expect(answer).toEqual(fault('no'))
   })
 
   it('a handler that returns a Result passes it through untouched', async () => {

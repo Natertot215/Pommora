@@ -1,5 +1,5 @@
 import type { TileDoc } from './tiles'
-import { errText, fail, ok, type Result } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import { newId } from '../Nexus/ids'
 import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
 import { tileDocPath } from '../Paths/paths'
@@ -38,6 +38,6 @@ export async function writeTileDocAt(
     )
     return written.ok ? ok(null) : fail(written.error.code, written.error.message)
   } catch (e) {
-    return fail('operation-failed', errText(e))
+    return fault(e)
   }
 }

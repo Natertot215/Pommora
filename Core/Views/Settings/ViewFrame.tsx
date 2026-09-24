@@ -3,7 +3,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
-import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
+import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
 import { duplicateView } from '../duplicateView'
 import { restoreView } from '../restoreView'
 import { viewGlyph } from '../viewIcon'
@@ -84,7 +84,9 @@ export function ViewFrame({
     void mutate({ op: 'setActiveView', path: node.path, kind: node.kind, viewId: id })
   }
   const createView = async (): Promise<void> => {
-    await host().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema))
+    reportRefusal(
+      await host().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema)),
+    )
   }
 
   const paneRows: FrameRow[] = rows.map((v) => ({ id: v.id, group: 'assigned' as const }))
@@ -93,10 +95,7 @@ export function ViewFrame({
     if (drop.kind !== 'reorder-assigned' || views.length < 2) return
     const order = rows.map((v) => v.id).filter((id) => id !== drop.propId)
     order.splice(drop.toIndex, 0, drop.propId)
-    void (async () => {
-      const res = await host().ask('views:reorder', node.path, node.kind, order)
-      if (!res.ok) return void host().ask('error:show', res.error.message)
-    })()
+    void host().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
   }
 
   const commitRename = (v: SavedView, next: string): void => {
@@ -125,7 +124,7 @@ export function ViewFrame({
   const deleteRow = async (v: SavedView): Promise<void> => {
     if (!(await askDeleteView())) return
     const res = await host().ask('views:delete', node.path, node.kind, v.id)
-    if (!res.ok) return void notifyError(res.error.message)
+    if (!reportRefusal(res)) return
     notifyDeleted(v.name, () => restoreView(node.path, node.kind, v, views))
   }
 

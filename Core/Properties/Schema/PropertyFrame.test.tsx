@@ -53,7 +53,6 @@ beforeEach(() => {
     'property:delete': destroySpy,
     menu: async (req: unknown) =>
       ok(await (propertyMenuSpy as (r: unknown) => Promise<unknown>)(req)),
-    'error:show': vi.fn(async () => {}),
   })
   useSession.setState({
     load: loadSpy as never,

@@ -1,6 +1,6 @@
 import { isValidLink, normalizeLinkUrl } from '../Connections/links'
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, ok, type Result } from '../Contract/result'
+import { ok, type Result, fault } from '../Contract/result'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, writeKey } from '../Platform/localState'
 
@@ -23,7 +23,7 @@ export const webHandlers = {
   }, ok({})),
 
   'linkTitles:fetch': withWriteRoot(async (root, ctx, url: unknown) => {
-    if (typeof url !== 'string') return fail('operation-failed', 'invalid url')
+    if (typeof url !== 'string') return fault('invalid url')
     ensureCache(root)
     const hit = cache[url]
     if (hit) return ok({ title: hit })

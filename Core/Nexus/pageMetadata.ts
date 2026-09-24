@@ -1,6 +1,6 @@
 import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { isMarkdownFile, listEntries } from '../Files/walk'
-import { errText, fail, fault, ok, type Result } from '../Contract/result'
+import { fail, fault, ok, type Result } from '../Contract/result'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { machine } from '../Platform/machine'
 import { isPlainObject } from '../Properties/propertyValue'
@@ -134,7 +134,7 @@ export async function dropPageMetadata(
         return { ...cur, pages }
       },
       false,
-    ).catch((e) => fault(errText(e)))
+    ).catch(fault)
     if (!written.ok)
       console.error(`metadata: ${shard} kept dropped entries:`, written.error.message)
   }
@@ -156,9 +156,7 @@ export async function copyPageMetadata(
   for (const [from, to] of pairs) {
     const entry = sources.get(from)
     if (!entry) continue
-    const copied = await updatePageMetadata(root, to, entry as PageMetaPatch).catch((e) =>
-      fault(errText(e)),
-    )
+    const copied = await updatePageMetadata(root, to, entry as PageMetaPatch).catch(fault)
     if (!copied.ok) console.error(`metadata: the copy to ${to} refused:`, copied.error.message)
   }
 }

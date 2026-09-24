@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
@@ -146,21 +147,15 @@ const TABS: NumberUnit = { scale: 1, suffix: ' Tabs' }
 
 const clearExclusions = async (): Promise<boolean> => {
   const count = await host().ask('exclusions:count')
-  if (!count.ok) {
-    host().ask('error:show', count.error.message)
-    return false
-  }
+  if (!reportRefusal(count)) return false
   if (count.value === 0 || !(await askClearExclusions(count.value))) return false
   const r = await host().ask('exclusions:clear')
-  if (!r.ok) host().ask('error:show', r.error.message)
-  return r.ok && r.value !== null
+  return reportRefusal(r) && r.value !== null
 }
 
 const clearHistory = async (): Promise<boolean> => {
   if (!(await askClearHistory())) return false
-  const r = await host().ask('history:clear')
-  if (!r.ok) host().ask('error:show', r.error.message)
-  return r.ok
+  return reportRefusal(await host().ask('history:clear'))
 }
 
 interface Section {

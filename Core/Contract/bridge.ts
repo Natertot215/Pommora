@@ -244,10 +244,8 @@ export interface Asks {
   'trash:list': { args: []; reply: Result<TrashRow[]> }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: Result<{ trashMode: TrashMode; permanentDelete: boolean }> }
-  'trash:report': { args: [message: string, detail: string]; reply: Result<null> }
 
   mutate: { args: [req: MutateRequest]; reply: MutateReply }
-  'error:show': { args: [message: string]; reply: Result<null> }
   'link:open': { args: [url: string]; reply: Result<null> }
   'webGuestZoom:set': { args: [guestId: number, factor: number]; reply: Result<null> }
   'webGuestMedia:pause': { args: [guestId: number]; reply: Result<null> }

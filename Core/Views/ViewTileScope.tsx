@@ -3,9 +3,10 @@
 import { createContext, useContext } from 'react'
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import { fail, ok, type Result } from '@pommora/core/Contract/result'
+import { ok, type Result, fault } from '@pommora/core/Contract/result'
 import { pickViewState, type SavedView, type ViewState } from '@pommora/core/Views/views'
 import { saveViewAdopting } from './Host/viewMint'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 
 export const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
 
@@ -39,8 +40,19 @@ export function resolveViewWrite(
   return { kind: 'refused' }
 }
 
-/** Callers pass the full next view: the scope's `view` may be stale mid-gesture. */
-export function saveViewIn(
+/** Callers pass the full next view: the scope's `view` may be stale mid-gesture. A refusal reaches the user here, so no caller reports it again. */
+export async function saveViewIn(
+  scope: ViewTileScopeValue | null,
+  source: CollectionNode | SetNode,
+  view: SavedView,
+  opts?: { viewState?: boolean },
+): Promise<Result<{ id: string }>> {
+  const r = await writeView(scope, source, view, opts)
+  reportRefusal(r)
+  return r
+}
+
+function writeView(
   scope: ViewTileScopeValue | null,
   source: CollectionNode | SetNode,
   view: SavedView,
@@ -48,7 +60,7 @@ export function saveViewIn(
 ): Promise<Result<{ id: string }>> {
   if (!scope) return saveViewAdopting(source, view)
   const write = resolveViewWrite(scope.locked, view, opts)
-  if (write.kind === 'refused') return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
+  if (write.kind === 'refused') return Promise.resolve(fault(VIEW_CONFIG_LOCKED))
   if (write.kind === 'state') scope.persistState(write.state)
   else scope.persistConfig(write.view)
   return Promise.resolve(ok({ id: view.id }))

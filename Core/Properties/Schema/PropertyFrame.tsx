@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -243,40 +244,29 @@ export function PropertyFrame({
     />
   )
 
-  const commit = async (res: WriteResult): Promise<boolean> => {
-    if (!res.ok) {
-      await host().ask('error:show', res.error.message)
-      return false
-    }
-    return true
-  }
-
   const create = async (type: PropertyType): Promise<void> => {
     const res = await host().ask('schema:add', collectionPath, {
       id: '',
       name: `New ${propertyTypeLabel(type)}`,
       type,
     })
-    if (res.ok) {
-      openDetail({ kind: 'edit', id: res.value.id })
-    } else await host().ask('error:show', res.error.message)
+    if (reportRefusal(res)) openDetail({ kind: 'edit', id: res.value.id })
   }
   const rename = async (id: string, name: string): Promise<void> => {
     const before = registry.find((d) => d.id === id)?.name
     const after = normalizePropertyName(name)
-    if (await commit(await host().ask('schema:rename', collectionPath, id, name)))
+    if (reportRefusal(await host().ask('schema:rename', collectionPath, id, name)))
       if (before !== undefined && before !== after) bumpValuesEpoch(before, after)
   }
   const remove = async (id: string): Promise<void> => {
-    if (await commit(await host().ask('schema:delete', collectionPath, id))) backToList()
-  }
-  const assign = async (id: string): Promise<void> => {
-    await commit(await host().ask('schema:assign', collectionPath, id))
+    if (reportRefusal(await host().ask('schema:delete', collectionPath, id))) backToList()
   }
   // Every property write is the same round trip; only the channel and its arguments differ.
   const write = async (res: Promise<WriteResult>): Promise<void> => {
-    await commit(await res)
+    reportRefusal(await res)
   }
+  const assign = (id: string): Promise<void> =>
+    write(host().ask('schema:assign', collectionPath, id))
   const saveOptions = (id: string, next: Option[]): Promise<void> =>
     write(host().ask('property:setOptions', id, next))
   const saveStatusGroups = (id: string, next: StatusGroup[]): Promise<void> =>
@@ -293,11 +283,10 @@ export function PropertyFrame({
     write(host().ask('property:setIcon', id, icon))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const next = { ...activeView.column_styles?.[propId], ...patch }
-    const res = await saveView({
+    await saveView({
       ...activeView,
       column_styles: { ...activeView.column_styles, [propId]: next },
     })
-    if (!res.ok) await host().ask('error:show', res.error.message)
   }
   const renameOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
     write(host().ask('property:renameOption', id, oldValue, newTitle))
@@ -311,12 +300,12 @@ export function PropertyFrame({
     write(host().ask('property:removeStatusOption', id, value))
   const clearStatusOption = (id: string, value: string): Promise<void> =>
     write(host().ask('property:clearStatusOption', id, value))
-  const handleDrop = async (drop: PaneDrop): Promise<void> => {
-    const r =
+  const handleDrop = (drop: PaneDrop): Promise<void> =>
+    write(
       drop.kind === 'reorder-assigned'
-        ? await host().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
+        ? host().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
         : drop.kind === 'reorder-nexus'
-          ? await host().ask(
+          ? host().ask(
               'registry:reorder',
               drop.propId,
               nexusReorderIndex(
@@ -327,10 +316,9 @@ export function PropertyFrame({
               ),
             )
           : drop.kind === 'assign'
-            ? await host().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
-            : await host().ask('schema:delete', collectionPath, drop.propId)
-    await commit(r)
-  }
+            ? host().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
+            : host().ask('schema:delete', collectionPath, drop.propId),
+    )
 
   const paneRows: FrameRow[] = [
     ...props.map((d) => ({ id: d.id, group: 'assigned' as const })),
@@ -348,7 +336,7 @@ export function PropertyFrame({
     else if (
       action === 'property:destroy' &&
       (await askDestroyProperty(def.name)) &&
-      (await commit(await host().ask('property:delete', def.id)))
+      reportRefusal(await host().ask('property:delete', def.id))
     ) {
       bumpTrashRevision()
       backToList()
@@ -363,7 +351,7 @@ export function PropertyFrame({
     )
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
-      await commit(await host().ask('schema:delete', collectionPath, d.id))
+      reportRefusal(await host().ask('schema:delete', collectionPath, d.id))
   }
 
   const typePicker = (
@@ -458,7 +446,8 @@ export function PropertyFrame({
           void host()
             .ask('assets:chooseDir', 'property', def.file_directory)
             .then((picked) => {
-              if (picked.ok && picked.value !== null) void saveFileDirectory(def.id, picked.value)
+              if (reportRefusal(picked) && picked.value !== null)
+                void saveFileDirectory(def.id, picked.value)
             })
         }}
       />

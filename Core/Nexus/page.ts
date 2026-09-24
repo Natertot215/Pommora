@@ -12,7 +12,7 @@ import {
 } from '../Properties/propertyValue'
 import type { GovernedWorld } from '../Contexts/contextResolve'
 import { PAGE_MODELED_KEYS } from './identityMark'
-import { errText, ok, fail, type Result } from '../Contract/result'
+import { ok, fail, type Result, fault } from '../Contract/result'
 import { pathExists, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
@@ -83,7 +83,7 @@ export async function updatePageBody(
     try {
       return ok(await writePageFile(absFile, {}, [], body))
     } catch (e) {
-      return fail('operation-failed', errText(e))
+      return fault(e)
     }
   })
 }

@@ -1,5 +1,5 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, ok, type Result } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import { isUlid } from '../Nexus/ids'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
@@ -53,10 +53,9 @@ export const tilesHandlers = {
   'tiles:save': withWriteRoot(async (root, _ctx, host: unknown, patch: unknown) => {
     const tile = await tileHostAnd(root, host)
     if (!tile.ok) return tile
-    if (!patch || typeof patch !== 'object')
-      return fail('operation-failed', 'Invalid tile-doc patch.')
+    if (!patch || typeof patch !== 'object') return fault('Invalid tile-doc patch.')
     const problem = tilePatchProblem(patch as TileDocPatch)
-    if (problem) return fail('operation-failed', problem)
+    if (problem) return fault(problem)
     return writeTileDocAt(tile.value.dir, (cur) => ({ ...cur, ...(patch as TileDocPatch) }))
   }),
 
@@ -82,15 +81,14 @@ export const tilesHandlers = {
   'tiles:writeMarkdown': withWriteRoot(
     onTile(async ({ root, dir }, tileId, body, baseHash) => {
       if (typeof body !== 'string' || typeof baseHash !== 'string')
-        return fail('operation-failed', 'A body and its base hash are required.')
+        return fault('A body and its base hash are required.')
       return ok(await writeMarkdownTile(root, dir, tileId, body, baseHash))
     }),
   ),
 
   'tiles:convertToPage': withWriteRoot(
     onTile(async ({ root, dir }, tileId, pageId) => {
-      if (typeof pageId !== 'string' || pageId.length === 0)
-        return fail('operation-failed', 'Invalid page id.')
+      if (typeof pageId !== 'string' || pageId.length === 0) return fault('Invalid page id.')
       await convertTileToPage(root, dir, tileId, pageId)
       return ok(null)
     }),
@@ -102,7 +100,7 @@ export const tilesHandlers = {
       const valid =
         list?.length &&
         list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
-      if (!valid) return fail('operation-failed', 'Invalid view list.')
+      if (!valid) return fault('Invalid view list.')
       await convertTileToView(root, dir, tileId, list as unknown[])
       return ok(null)
     }),

@@ -180,26 +180,30 @@ async function withKeys(
       void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS), token)
     }, delay)
   }
-  const outcome = await call(host, binding, 'info', { nexusId })
-  if (token !== generation) return
-  if (outcome.status === 404) {
-    setStatus(ctx, {
-      state: 'off',
-      reason: 'pending',
-      why: 'Waiting for approval from another device.',
-    })
-    return again()
+  try {
+    const outcome = await call(host, binding, 'info', { nexusId })
+    if (token !== generation) return
+    if (outcome.status === 404) {
+      setStatus(ctx, {
+        state: 'off',
+        reason: 'pending',
+        why: 'Waiting for approval from another device.',
+      })
+      return again()
+    }
+    const info = outcome.reply?.info ?? null
+    const ring = await loadRing(host, nexusId, info, null)
+    if (token !== generation) return
+    if (ring !== null) return await begin(ctx, host, root, nexusId, binding, ring, token)
+    if (info !== null) {
+      setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
+      return
+    }
+    setStatus(ctx, { state: 'off', reason: 'server', why: answered(outcome) })
+    again()
+  } catch (e) {
+    if (token === generation) setStatus(ctx, { state: 'error', why: errText(e) })
   }
-  const info = outcome.reply?.info ?? null
-  const ring = await loadRing(host, nexusId, info, null)
-  if (token !== generation) return
-  if (ring !== null) return begin(ctx, host, root, nexusId, binding, ring, token)
-  if (info !== null) {
-    setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
-    return
-  }
-  setStatus(ctx, { state: 'off', reason: 'server', why: answered(outcome) })
-  again()
 }
 
 export async function startSession(ctx: HostContext, root: string, nexusId: string): Promise<void> {

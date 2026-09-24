@@ -183,17 +183,55 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
   })
 
-  it('all-or-nothing: an unreadable registry means a Context delete records nothing, and the delete still lands', async () => {
+  it('an unreadable registry refuses a Context delete before anything moves', async () => {
     await writeFile(contextsRegistryFile(root), '{corrupt')
     const r = await handleMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
-    expect(r.ok).toBe(true)
-    // A recordless folder is not a bundle — the listing never offers it, and it degrades to hand-restore rather than to a record restore would trust.
+    expect(r.ok).toBe(false)
     expect(await listBundles(root)).toHaveLength(0)
-    expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
+    expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(true)
+  })
+
+  it.skipIf(noModeBits)(
+    'a member sweep cut short puts the registry entry back, so the Context can be deleted again',
+    async () => {
+      const { chmod } = await import('node:fs/promises')
+      await chmod(join(root, 'Notes', 'Daily'), 0o555)
+      try {
+        const r = await handleMutate(
+          root,
+          { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+          nexusDeps,
+        )
+        expect(r.ok).toBe(false)
+      } finally {
+        await chmod(join(root, 'Notes', 'Daily'), 0o755)
+      }
+      const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+      expect(reg.contexts.map((c: { title: string }) => c.title)).toContain('Projects')
+      const retried = await handleMutate(
+        root,
+        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+        nexusDeps,
+      )
+      expect(retried.ok).toBe(true)
+    },
+  )
+
+  it('system trash mode refuses the same Context delete', async () => {
+    await writeFile(contextsRegistryFile(root), '{corrupt')
+    const trashToSystem = vi.fn(async () => {})
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+      { trashMode: 'system', trashToSystem },
+    )
+    expect(r.ok).toBe(false)
+    expect(trashToSystem).not.toHaveBeenCalled()
+    expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(true)
   })
 
   it('writeRecord → readRecord round-trips exactly; a malformed record reads null', async () => {

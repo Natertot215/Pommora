@@ -3,7 +3,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import { patchOverride, retireSettled, type Overrides } from './valueOverride'
 
 const fm = (id: string): PageFrontmatter => ({ id }) as never
-const inFlight = new Promise(() => {})
+const inFlight = new Promise<boolean>(() => {})
 const overrides: Overrides = {
   a: { fm: fm('a'), write: inFlight },
   b: { fm: fm('b'), write: null },
@@ -32,13 +32,13 @@ describe('patchOverride', () => {
     const set: Parameters<typeof patchOverride>[0] = (next) => {
       state = typeof next === 'function' ? next(state) : next
     }
-    let land: () => void = () => {}
-    const settled = new Promise<void>((r) => {
+    let land: (landed: boolean) => void = () => {}
+    const settled = new Promise<boolean>((r) => {
       land = r
     })
     patchOverride(set, 'a', fm('a'), settled)
     expect(state).toEqual({ a: { fm: fm('a'), write: settled } })
-    land()
+    land(true)
     await settled
     await Promise.resolve()
     expect(state).toEqual({ a: { fm: fm('a'), write: null } })
@@ -49,7 +49,7 @@ describe('patchOverride', () => {
     const set: Parameters<typeof patchOverride>[0] = (next) => {
       state = typeof next === 'function' ? next(state) : next
     }
-    const first = Promise.resolve()
+    const first = Promise.resolve(true)
     patchOverride(set, 'a', fm('a'), first)
     patchOverride(set, 'a', fm('a2'), inFlight)
     await first
@@ -63,11 +63,23 @@ describe('patchOverride', () => {
     const set: Parameters<typeof patchOverride>[0] = (next) => {
       state = typeof next === 'function' ? next(state) : next
     }
-    const settled = Promise.resolve()
+    const settled = Promise.resolve(true)
     patchOverride(set, 'a', fm('a'), settled)
     state = null
     await settled
     await Promise.resolve()
     expect(state).toBeNull()
+  })
+
+  it('a refused write takes its override with it, leaving the others', async () => {
+    let state: Overrides | null = { b: overrides.b }
+    const set: Parameters<typeof patchOverride>[0] = (next) => {
+      state = typeof next === 'function' ? next(state) : next
+    }
+    const refused = Promise.resolve(false)
+    patchOverride(set, 'a', fm('a'), refused)
+    await refused
+    await Promise.resolve()
+    expect(state).toEqual({ b: overrides.b })
   })
 })

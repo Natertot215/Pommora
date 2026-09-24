@@ -5,6 +5,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
+import { groupValueUndo } from './valueUndo'
 
 const schema: PropertyDefinition[] = [
   {
@@ -70,8 +71,8 @@ describe('assignValue', () => {
     })
   })
 
-  it('records a revert that writes the prior value back', () => {
-    assignValue(
+  it('records a revert that writes the prior value back', async () => {
+    await assignValue(
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
@@ -92,9 +93,9 @@ describe('assignValue', () => {
     })
   })
 
-  it('reverts a blank prior as a clear, and pushes no second entry', () => {
+  it('reverts a blank prior as a clear, and pushes no second entry', async () => {
     row = rowOf({ id: 'page1' })
-    assignValue(
+    await assignValue(
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
@@ -161,8 +162,8 @@ describe('assignValue', () => {
     expect(cmdZ()).toBe(false)
   })
 
-  it('a revert whose row is gone writes nothing and drains', () => {
-    assignValue(
+  it('a revert whose row is gone writes nothing and drains', async () => {
+    await assignValue(
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
@@ -174,5 +175,38 @@ describe('assignValue', () => {
     expect(cmdZ()).toBe(false)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('a refused write records nothing to undo', async () => {
+    mutate.mockResolvedValueOnce(false)
+    await assignValue(
+      writer,
+      row,
+      { id: 'prop_tag', kind: 'property' },
+      { kind: 'select', value: 'blue' },
+    )
+    expect(cmdZ()).toBe(false)
+  })
+
+  it('a sweep undoes as one step, even though its writes land later', async () => {
+    const other = rowOf({ id: 'page2', Tag: ['red'] })
+    live.rowOf = (id) => (id === row.id ? row : id === other.id ? other : undefined)
+    const writes: Promise<boolean>[] = []
+    groupValueUndo(() => {
+      for (const r of [row, other])
+        writes.push(
+          assignValue(
+            writer,
+            r,
+            { id: 'prop_tag', kind: 'property' },
+            { kind: 'select', value: 'blue' },
+          ) as Promise<boolean>,
+        )
+    })
+    await Promise.all(writes)
+    mutate.mockClear()
+    expect(cmdZ()).toBe(true)
+    expect(mutate).toHaveBeenCalledTimes(2)
+    expect(cmdZ()).toBe(false)
   })
 })

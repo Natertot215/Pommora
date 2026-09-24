@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from '@pommora/core/Contract/result'
+import { ok, type Result, fault } from '@pommora/core/Contract/result'
 import { flushPageSave } from '../Session/saveScheduler'
 import { livePagePath } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
@@ -13,5 +13,5 @@ export async function restoreSnapshot(target: PageTarget, ts: number): Promise<R
   if (!r.ok) return r
   return (await replaceBody(r.value.path))
     ? ok(null)
-    : fail('operation-failed', 'The page was restored but could not be reread.')
+    : fault('The page was restored but could not be reread.')
 }

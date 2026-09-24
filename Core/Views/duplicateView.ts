@@ -1,5 +1,5 @@
 import { copyName, DEFAULT_VIEW_ID, type SavedView } from './views'
-import { notifyError } from '../Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import { host } from '../Platform/dialer'
 
 export const duplicateView = async (
@@ -16,11 +16,10 @@ export const duplicateView = async (
       siblings.map((v) => v.name),
     ),
   })
-  if (!res.ok) return void notifyError(res.error.message)
+  if (!reportRefusal(res)) return
   // A save appends, so the copy is walked back to the seat after its original.
   const ids = siblings.map((v) => v.id).filter((id) => id !== res.value.id)
   const at = ids.indexOf(view.id)
   ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
-  const back = await host().ask('views:reorder', containerPath, kind, ids)
-  if (!back.ok) notifyError(back.error.message)
+  reportRefusal(await host().ask('views:reorder', containerPath, kind, ids))
 }

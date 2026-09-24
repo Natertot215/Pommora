@@ -11,15 +11,13 @@ import { stubDialer } from '../vitest.setup'
 
 let host: HTMLDivElement
 let root: Root
-let setExclusions: ReturnType<typeof vi.fn>
+let exclusionsSet: ReturnType<typeof vi.fn>
 
 const render = async (excluded: string[]): Promise<void> => {
-  setExclusions = vi.fn(async () => ({ ok: true, value: excluded }))
-  useSession.setState({
-    tree: { excluded } as never,
-    setExclusions: setExclusions as never,
-  })
+  exclusionsSet = vi.fn(async () => ({ ok: true, value: excluded }))
+  useSession.setState({ tree: { excluded } as never })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'exclusions:set': exclusionsSet,
     'exclusions:choose': vi.fn(async () => ({ ok: true, value: 'Picked' })),
   })
   host = document.createElement('div')
@@ -120,7 +118,7 @@ describe('ExcludedDirectoriesRow', () => {
         }),
       )
     })
-    expect(setExclusions).toHaveBeenCalledWith(['Vault A'])
+    expect(exclusionsSet).toHaveBeenCalledWith(['Vault A'])
   })
 
   it('committing a field writes the whole list with that entry replaced', async () => {
@@ -132,6 +130,6 @@ describe('ExcludedDirectoriesRow', () => {
     await act(async () => {
       input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     })
-    expect(setExclusions).toHaveBeenCalledWith(['Renamed', 'Vault A'])
+    expect(exclusionsSet).toHaveBeenCalledWith(['Renamed', 'Vault A'])
   })
 })

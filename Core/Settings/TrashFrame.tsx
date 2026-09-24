@@ -19,6 +19,7 @@ import { formatDate, nexusDateFormat } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
+import { notifyReport } from '../Interface/Notifications/notifications'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
@@ -39,11 +40,6 @@ export function countPhrase(rows: TrashRow[]): string {
   const kind = kinds.size === 1 ? [...kinds][0] : null
   if (rows.length === 1) return `1 ${kind ?? 'item'}`
   return `${rows.length} ${kind === null ? 'items' : PLURALS[kind]}`
-}
-
-interface Refusal {
-  row: TrashRow
-  why: string
 }
 
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
@@ -106,13 +102,12 @@ function TrashBody(): React.JSX.Element {
     targets: TrashRow[],
     req: (row: TrashRow) => MutateRequest,
     reloads: boolean,
-  ): Promise<{ done: TrashRow[]; refused: Refusal[] }> => {
+  ): Promise<{ done: TrashRow[]; refused: TrashRow[] }> => {
     const done: TrashRow[] = []
-    const refused: Refusal[] = []
+    const refused: TrashRow[] = []
     for (const row of targets) {
       const res = await host().ask('mutate', req(row))
-      if (res.ok) done.push(row)
-      else refused.push({ row, why: res.error.message })
+      ;(res.ok ? done : refused).push(row)
     }
     if (done.length > 0 && reloads) await load()
     await refresh()
@@ -127,17 +122,12 @@ function TrashBody(): React.JSX.Element {
       true,
     )
     const homeless = targets.filter((r) => !r.homeResolves)
-    void host().ask(
-      'trash:report',
-      `Restored ${countPhrase(done)}.`,
-      [
-        homeless.length > 0 &&
-          `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
-        ...refused.map((r) => `${r.row.title}: ${r.why}`),
-      ]
-        .filter(Boolean)
-        .join('\n') || 'Everything went back where it came from.',
-    )
+    const unmet = [
+      homeless.length > 0 &&
+        `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
+      refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
+    ].filter(Boolean)
+    notifyReport([`Restored ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
   }
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
@@ -147,13 +137,8 @@ function TrashBody(): React.JSX.Element {
       (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
       false,
     )
-    void host().ask(
-      'trash:report',
-      `Deleted ${countPhrase(done)}.`,
-      refused.length === 0
-        ? 'They have left the trash for good.'
-        : refused.map((r) => `${r.row.title}: ${r.why}`).join('\n'),
-    )
+    const unmet = refused.length > 0 ? ` ${countPhrase(refused)} couldn’t be deleted.` : ''
+    notifyReport(`Deleted ${countPhrase(done)}.${unmet}`, unmet !== '')
   }
 
   const openColumnMenu = async (): Promise<void> => {

@@ -24,7 +24,7 @@ import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
-import { notifyRemovedTile } from '../Interface/Notifications/notifications'
+import { notifyRemovedTile, reportRefusal } from '../Interface/Notifications/notifications'
 import { findCollection, findCollectionForSet, findSet } from '../Nexus/treeIndex'
 import { mintDefaultView } from '@pommora/core/Views/views'
 import { viewGlyph } from '../Views/viewIcon'
@@ -161,7 +161,10 @@ export function TileHost({
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
       setEditingId((cur) => (cur === id ? null : cur))
-      void dialer().ask('tiles:convertToPage', host, id, pageId).then(refreshEntries)
+      void dialer()
+        .ask('tiles:convertToPage', host, id, pageId)
+        .then(reportRefusal)
+        .then(refreshEntries)
     },
     [refreshEntries, host],
   )
@@ -181,6 +184,7 @@ export function TileHost({
       setEditingId((cur) => (cur === id ? null : cur))
       void dialer()
         .ask('tiles:convertToView', host, id, [{ source_id: pick.source_id, config }])
+        .then(reportRefusal)
         .then(refreshEntries)
     },
     [tree, refreshEntries, host],
@@ -210,7 +214,7 @@ export function TileHost({
       void dialer()
         .ask('tiles:duplicateTile', host, id)
         .then((r) => {
-          if (!r.ok) return
+          if (!reportRefusal(r)) return
           refreshEntries()
           commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
         })
@@ -225,7 +229,7 @@ export function TileHost({
         markTileRemoving(id)
         setEditingId((cur) => (cur === id ? null : cur))
         commitLayout((cur) => removeLeaf(cur, id))
-        void dialer().ask('tiles:removeTile', host, id).then(refreshEntries)
+        void dialer().ask('tiles:removeTile', host, id).then(reportRefusal).then(refreshEntries)
         notifyRemovedTile()
       })
     },
@@ -354,7 +358,7 @@ export function TileHost({
       void dialer()
         .ask('tiles:createMarkdown', host)
         .then((r) => {
-          if (!r.ok) return
+          if (!reportRefusal(r)) return
           refreshEntries()
           commitLayout((cur) =>
             target.kind === 'wedge'

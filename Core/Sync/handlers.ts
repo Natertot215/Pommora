@@ -1,5 +1,5 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
-import { BUSY, fail, NO_STORE, ok, type Result } from '../Contract/result'
+import { BUSY, fail, NO_STORE, ok, type Result, fault } from '../Contract/result'
 import { isString } from '../Contract/validators'
 import { captureLoser } from './Arrival/captures'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -47,10 +47,7 @@ const NO_RECORD: Trouble = {
   why: 'The server holds no key record for this nexus.',
 }
 
-const NO_DEVICE = fail(
-  'operation-failed',
-  'This device has no identity; the keychain refused at launch.',
-)
+const NO_DEVICE = fault('This device has no identity; the keychain refused at launch.')
 
 interface Ready {
   nexusId: string
@@ -216,14 +213,13 @@ const act = (route: 'approve' | 'revoke') =>
       const r = await ready(root, ctx)
       if (!r.ok) return r
       const deviceId = typeof raw === 'string' ? raw.trim() : ''
-      if (deviceId.length === 0) return fail('operation-failed', 'A device id is required.')
+      if (deviceId.length === 0) return fault('A device id is required.')
       const { nexusId, device, host, binding } = r.value
-      if (binding === null) return fail('operation-failed', 'This nexus is bound to no server.')
+      if (binding === null) return fault('This nexus is bound to no server.')
       let password: string | null = null
       if (route === 'revoke') {
         password = await host.secrets.get(passwordName(nexusId))
-        if (password === null)
-          return fail('operation-failed', 'The Nexus password is needed to rotate the ring.')
+        if (password === null) return fault('The Nexus password is needed to rotate the ring.')
       }
       const listing = await call(host, binding, 'devices', { nexusId })
       const devices = listing.reply?.devices
@@ -301,7 +297,7 @@ export const syncHandlers = {
       const r = await ready(root, ctx)
       if (!r.ok) return r
       const address = typeof raw === 'string' ? raw.trim() : ''
-      if (address.length === 0) return fail('operation-failed', 'A server address is required.')
+      if (address.length === 0) return fault('A server address is required.')
       const password = given(raw2)
       const pin = given(raw3)
       const { nexusId, device, host, binding } = r.value
@@ -314,26 +310,19 @@ export const syncHandlers = {
         x25519: host.device.x25519,
       })
       if (outcome.status !== 200)
-        return fail(
-          'operation-failed',
-          `The server refused or did not answer: ${outcome.error ?? outcome.status}.`,
-        )
+        return fault(`The server refused or did not answer: ${outcome.error ?? outcome.status}.`)
       const asked = await call(host, target, 'info', { nexusId })
       if (asked.status === 0)
-        return fail(
-          'operation-failed',
-          `The server did not answer for its keys: ${asked.error ?? 'no reply'}.`,
-        )
+        return fault(`The server did not answer for its keys: ${asked.error ?? 'no reply'}.`)
       const record = asked.reply?.info ?? null
       if (record !== null) {
         if ((await loadRing(host, nexusId, record, password)) === null)
-          return fail(
-            'operation-failed',
+          return fault(
             password === null ? 'A Nexus password is required.' : 'The Nexus password is wrong.',
           )
         if (password !== null) await host.secrets.set(passwordName(nexusId), password)
       } else if (asked.status === 404 && outcome.reply?.approved === true) {
-        if (password === null) return fail('operation-failed', 'A Nexus password is required.')
+        if (password === null) return fault('A Nexus password is required.')
         const kdf = freshKdfParams()
         const key = mintKey()
         const entries = [
@@ -353,10 +342,7 @@ export const syncHandlers = {
           },
         })
         if (created.status !== 200)
-          return fail(
-            'operation-failed',
-            `The server refused the key record: ${created.error ?? created.status}.`,
-          )
+          return fault(`The server refused the key record: ${created.error ?? created.status}.`)
         await host.secrets.set(passwordName(nexusId), password)
         await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
@@ -392,8 +378,7 @@ export const syncHandlers = {
   }),
 
   'sync:captureLocal': withWriteRoot(async (root, _ctx, rel: unknown, text: unknown) => {
-    if (!isString(rel) || !isString(text))
-      return fail('operation-failed', 'A path and its text are required.')
+    if (!isString(rel) || !isString(text)) return fault('A path and its text are required.')
     await captureLoser(root, rel, new TextEncoder().encode(text), 'merge-lost')
     return ok(null)
   }),

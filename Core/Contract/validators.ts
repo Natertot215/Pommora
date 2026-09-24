@@ -11,9 +11,9 @@ import {
   type NumberConfig,
 } from '../Properties/properties'
 import { isPlainObject } from '../Properties/propertyValue'
-import { fail } from './result'
+import { fail, fault } from './result'
 
-export const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
+export const NEEDS_CONFIG_PATCH = fault('A config patch is required.')
 export const NOT_A_PROPERTY_DIR = fail('invalid-path', NOT_A_PROPERTY_DIR_MESSAGE)
 
 export const isString = (v: unknown): v is string => typeof v === 'string'

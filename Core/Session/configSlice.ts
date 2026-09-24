@@ -1,4 +1,4 @@
-import type { Result } from '@pommora/core/Contract/result'
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import type { Personalization } from '@pommora/core/Settings/personalization'
@@ -18,9 +18,6 @@ export interface ConfigSlice {
   toggleCitations: (pageId: string) => void
   /** Clears the row when `shown` matches the nexus-wide default, so nothing that discloses the section can pin a row forever. */
   setCitationsVisible: (pageId: string, shown: boolean) => void
-  setAssetDirectory: (dir: string) => Promise<void>
-  /** Returns the channel's Result so the pane can surface a refusal; the stored list arrives back through the tree the write patches. */
-  setExclusions: (folders: string[]) => Promise<Result<string[]>>
 }
 
 /** An absent key means hidden. `citationsVisible` is where the fallback happens; the toggle's write compares against it. */
@@ -45,7 +42,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
           : s.tree,
     }))
     applyPersonalizationKey(key, value)
-    void host().ask('personalization:set', key, value)
+    void persist('the setting', host().ask('personalization:set', key, value))
   },
 
   commands: DEFAULT_COMMANDS,
@@ -53,7 +50,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   devicePrefs: {},
   setDevicePref: (key, value) => {
     set((s) => ({ devicePrefs: { ...s.devicePrefs, [key]: value } }))
-    void host().ask('devicePrefs:save', get().devicePrefs)
+    void persist('the setting', host().ask('devicePrefs:save', get().devicePrefs))
   },
 
   citationsShown: {},
@@ -69,12 +66,6 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
       else next[pageId] = stored
       return { citationsShown: next }
     })
-    void host().ask('citations:set', pageId, stored)
+    void persist('the footnote setting', host().ask('citations:set', pageId, stored), true)
   },
-
-  // The tree leaf is what the field reads, patched on the write's own confirm — a refusal needs no local rollback.
-  setAssetDirectory: async (dir) => {
-    await host().ask('assets:setDir', dir)
-  },
-  setExclusions: (folders) => host().ask('exclusions:set', folders),
 })

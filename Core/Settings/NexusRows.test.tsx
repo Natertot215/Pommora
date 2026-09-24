@@ -143,15 +143,10 @@ describe('NexusRows', () => {
   })
 
   it('a refused Connect keeps the draft and reports the message', async () => {
-    const show = vi.fn()
-    await render({
-      'sync:state': reply(unbound),
-      'sync:connect': refuse('nope'),
-      'error:show': show,
-    })
+    await render({ 'sync:state': reply(unbound), 'sync:connect': refuse('nope') })
     await commit('Server address', 'http://typed:1')
     await act(async () => button('Connect')?.click())
-    expect(show).toHaveBeenCalledWith('nope')
+    expect(useSession.getState().notification).toMatchObject({ message: 'nope', tone: 'error' })
     expect(fieldText('Server address')).toBe('http://typed:1')
   })
 
@@ -172,9 +167,9 @@ describe('NexusRows', () => {
   })
 
   it('a refused state on mount reports nothing and keeps the nexus identity rows', async () => {
-    const show = vi.fn()
-    await render({ 'sync:state': refuse('no identity'), 'error:show': show })
-    expect(show).not.toHaveBeenCalled()
+    useSession.setState({ notification: null })
+    await render({ 'sync:state': refuse('no identity') })
+    expect(useSession.getState().notification).toBeNull()
     expect(host.textContent).toContain(NEXUS_ID)
     expect(host.textContent).toContain('Nexus Password')
     expect(host.textContent).not.toContain('This Device')

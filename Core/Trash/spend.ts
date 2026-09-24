@@ -4,7 +4,7 @@ import { contextKey } from '../Contexts/contexts'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
-import { errText, fail, ok, type Result } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { reconcile } from '../Properties/reconcile'
@@ -132,9 +132,9 @@ async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, s
 async function openBundle(root: string, bundleAbs: string): Promise<Result<RecordFile>> {
   const trashPrefix = `${join(root, TRASH_DIR)}/`
   if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
-    return fail('operation-failed', 'Only a trash record can be spent.')
+    return fault('Only a trash record can be spent.')
   const record = await readRecord(bundleAbs)
-  return record ? ok(record) : fail('operation-failed', 'That deletion record is unreadable.')
+  return record ? ok(record) : fault('That deletion record is unreadable.')
 }
 
 async function trashedPageIds(record: ArtifactRecord, artifactAbs: string): Promise<string[]> {
@@ -198,7 +198,7 @@ function withDestination(
         return fail('not-found', 'That place no longer exists.')
       return ok({ ...record, parent: { kind: 'container', id: destination.id } })
     default:
-      return fail('operation-failed', NO_DESTINATION)
+      return fault(NO_DESTINATION)
   }
 }
 
@@ -210,7 +210,7 @@ export async function restoreArtifact(
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   if (opened.value.entity === 'property') {
-    if (destination) return fail('operation-failed', NO_DESTINATION)
+    if (destination) return fault(NO_DESTINATION)
     const rebuilt = await restoreProperty(root, opened.value)
     if (!rebuilt.ok) return rebuilt
     recordWrite(bundleAbs)
@@ -226,7 +226,7 @@ export async function restoreArtifact(
   if (!rehomed.ok) return rehomed
   const record = rehomed.value
   const resolution = resolveRecord(record, basename(artifactAbs), tree)
-  if ('refuse' in resolution) return fail('operation-failed', REFUSAL_TEXT[resolution.refuse])
+  if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
   const { dir, finalName, finalTitle } = resolution.place
 
   const targetAbs = join(root, dir, finalName)
@@ -238,7 +238,7 @@ export async function restoreArtifact(
     dirname(targetAbs) !== join(root, dir) ||
     basename(targetAbs) !== finalName
   )
-    return fail('operation-failed', 'That restore record points outside the nexus.')
+    return fault('That restore record points outside the nexus.')
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
@@ -275,7 +275,7 @@ export async function restoreArtifact(
       await mutateRegistryFile(root, (cur) => ({
         contexts: cur.contexts.filter((c) => !(c.id === record.registry.id && c.title === title)),
       }))
-    return fail('operation-failed', errText(e))
+    return fault(e)
   }
   recordWrite(bundleAbs)
   await machine().remove(bundleAbs)

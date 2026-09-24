@@ -1,3 +1,4 @@
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { HostPlatform } from '@pommora/core/Contract/bridge'
 import type { NavViewMode } from '@pommora/core/Interface/chrome'
 import type { Slice } from './sessionState'
@@ -51,12 +52,16 @@ const PER_NEXUS = {
 export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
   const persistSubfield = (): void => {
     const s = get()
-    void host().ask('subfield:set', { expanded: s.subfieldExpanded })
+    void persist('the layout', host().ask('subfield:set', { expanded: s.subfieldExpanded }), true)
   }
 
   const persistNavModes = (): void => {
     const s = get()
-    void host().ask('navViewModes:set', { window: s.navWindowMode, view: s.navViewMode })
+    void persist(
+      'the layout',
+      host().ask('navViewModes:set', { window: s.navWindowMode, view: s.navViewMode }),
+      true,
+    )
   }
 
   return {

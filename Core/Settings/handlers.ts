@@ -1,5 +1,5 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, ok, type Result } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { seedContentIndex } from '../Index/indexSeed'
 import type { NavViewModes, SubfieldConfig } from '../Interface/chrome'
@@ -62,8 +62,7 @@ export const settingsHandlers = {
   }),
 
   'personalization:set': withWriteRoot(async (root, ctx, key: unknown, value: unknown) => {
-    if (typeof key !== 'string' || !key)
-      return fail('operation-failed', 'Invalid personalization key.')
+    if (typeof key !== 'string' || !key) return fault('Invalid personalization key.')
     await writePersonalization(root, key, value)
     // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
     await confirmSettingsWrite(ctx, root)
@@ -78,8 +77,7 @@ export const settingsHandlers = {
   ),
 
   'subfield:set': withWriteRoot(async (root, _ctx, config: unknown) => {
-    if (!config || typeof config !== 'object')
-      return fail('operation-failed', 'Invalid subfield config.')
+    if (!config || typeof config !== 'object') return fault('Invalid subfield config.')
     await writeSubfield(root, config as SubfieldConfig)
     return ok(null)
   }),
@@ -90,8 +88,7 @@ export const settingsHandlers = {
   ),
 
   'navViewModes:set': withWriteRoot(async (root, _ctx, modes: unknown) => {
-    if (!modes || typeof modes !== 'object')
-      return fail('operation-failed', 'Invalid nav view modes.')
+    if (!modes || typeof modes !== 'object') return fault('Invalid nav view modes.')
     await writeNavViewModes(root, modes as NavViewModes)
     return ok(null)
   }),

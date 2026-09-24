@@ -1,6 +1,6 @@
 import { validPropertyDir } from '../Assets/assetRoots'
 import { type Handlers, type HostContext, withWriteRoot } from '../Contract/handlers'
-import { fail, ok, type Result } from '../Contract/result'
+import { ok, type Result, fault } from '../Contract/result'
 import {
   isOptionArray,
   narrowFileConfig,
@@ -34,26 +34,19 @@ import {
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
 
-const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
-const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
-const NEEDS_ID_AND_INDEX = fail(
-  'operation-failed',
-  'propertyId (string) and toIndex (number) are required.',
-)
-const NEEDS_RENAME_ARGS = fail(
-  'operation-failed',
-  'propertyId, oldValue, and newTitle are required.',
-)
-const NEEDS_OPTION_ARRAY = fail('operation-failed', 'Options must be an array of { value, label }.')
-const NEEDS_STATUS_GROUPS = fail('operation-failed', 'Status groups must be an array.')
+const NEEDS_PROPERTY_ID = fault('A property id is required.')
+const NEEDS_ID_AND_VALUE = fault('A property id and value are required.')
+const NEEDS_ID_AND_INDEX = fault('propertyId (string) and toIndex (number) are required.')
+const NEEDS_RENAME_ARGS = fault('propertyId, oldValue, and newTitle are required.')
+const NEEDS_OPTION_ARRAY = fault('Options must be an array of { value, label }.')
+const NEEDS_STATUS_GROUPS = fault('Status groups must be an array.')
 
 // containerPath is the schema-owning Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
   root: string,
   containerPath: unknown,
 ): Promise<Result<{ folder: string; rel: string }>> {
-  if (typeof containerPath !== 'string')
-    return fail('operation-failed', 'A container path is required.')
+  if (typeof containerPath !== 'string') return fault('A container path is required.')
   const resolved = await resolveUnderRoot(root, containerPath)
   return resolved.ok ? ok({ folder: resolved.value, rel: containerPath }) : resolved
 }
@@ -123,7 +116,7 @@ export const propertiesHandlers = {
     const c = await resolveSchemaFolder(root, containerPath)
     if (!c.ok) return c
     const parsed = propertyDefinition.safeParse(def)
-    if (!parsed.success) return fail('operation-failed', 'Invalid property definition.')
+    if (!parsed.success) return fault('Invalid property definition.')
     const created = await createProperty(root, parsed.data)
     if (!created.ok) return created
     const assigned = await assignProperty(root, c.value.folder, created.value.id)
@@ -140,7 +133,7 @@ export const propertiesHandlers = {
       const c = await resolveSchemaFolder(root, containerPath)
       if (!c.ok) return c
       if (typeof propertyId !== 'string' || typeof newName !== 'string')
-        return fail('operation-failed', 'propertyId and newName must be strings.')
+        return fault('propertyId and newName must be strings.')
       const r = await editProperty(root, propertyId, { name: newName })
       if (r.ok) await confirmRegistryWrite(ctx, root)
       return r
@@ -152,7 +145,7 @@ export const propertiesHandlers = {
       const c = await resolveSchemaFolder(root, containerPath)
       if (!c.ok) return c
       if (typeof propertyId !== 'string' || typeof toIndex !== 'number')
-        return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
+        return fault('propertyId (string) and toIndex (number) are required.')
       const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
       if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
       return r

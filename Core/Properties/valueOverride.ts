@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 
-type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
+type OverrideEntry = { fm: PageFrontmatter; write: Promise<boolean> | null }
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
@@ -9,13 +9,17 @@ export const patchOverride = (
   set: SetOverrides,
   pageId: string,
   fm: PageFrontmatter,
-  write: Promise<unknown>,
+  write: Promise<boolean>,
 ): void => {
   set((prev) => ({ ...prev, [pageId]: { fm, write } }))
-  void write.finally(() =>
+  // A refused write never pushes the values that would retire its override, so the override leaves with the refusal.
+  void write.then((landed) =>
     set((prev) => {
       const entry = prev?.[pageId]
-      return entry?.write === write ? { ...prev, [pageId]: { fm: entry.fm, write: null } } : prev
+      if (entry?.write !== write) return prev
+      if (landed) return { ...prev, [pageId]: { fm: entry.fm, write: null } }
+      const { [pageId]: _, ...rest } = prev as Overrides
+      return Object.keys(rest).length ? rest : null
     }),
   )
 }

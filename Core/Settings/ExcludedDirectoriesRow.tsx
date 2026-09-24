@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { PathField } from '@pommora/uix/Fields/PathField'
@@ -20,7 +21,6 @@ export function ExcludedDirectoriesRow({
   hint?: string
 }): React.JSX.Element {
   const stored = useSession((s) => s.tree?.excluded ?? [])
-  const setExclusions = useSession((s) => s.setExclusions)
   const [open, setOpen] = useState(false)
   const [drafting, setDrafting] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -37,9 +37,7 @@ export function ExcludedDirectoriesRow({
     if (busy) return false
     setBusy(true)
     try {
-      const r = await setExclusions(list)
-      if (!r.ok) await host().ask('error:show', r.error.message)
-      return r.ok
+      return reportRefusal(await host().ask('exclusions:set', list))
     } finally {
       setBusy(false)
     }
@@ -55,7 +53,7 @@ export function ExcludedDirectoriesRow({
     void host()
       .ask('exclusions:choose')
       .then((r) => {
-        if (r.ok && r.value !== null) apply(r.value)
+        if (reportRefusal(r) && r.value !== null) apply(r.value)
       })
   }
 
