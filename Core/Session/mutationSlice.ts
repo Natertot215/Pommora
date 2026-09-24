@@ -62,6 +62,7 @@ export interface RenameSlice {
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
   submitPropertyRename: (newName: string) => Promise<boolean>
+  resetRename: () => void
 }
 
 let nextRenameToken = 1
@@ -75,6 +76,17 @@ const RENAME_CLEARED = {
   renamingHost: null,
   renameWinner: null,
 } satisfies Partial<RenameSlice>
+const PER_NEXUS = {
+  ...RENAME_CLEARED,
+  renameClaims: [],
+  iconPath: null,
+  iconHost: null,
+  colorPath: null,
+  colorHost: null,
+  peekSignal: null,
+  renamingProperty: null,
+  valuesEpoch: null,
+} satisfies Partial<RenameSlice>
 
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
   const live = claims.filter((c) => c.path === fence.renamingPath)
@@ -87,8 +99,7 @@ function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number 
 }
 
 export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
-  ...RENAME_CLEARED,
-  renameClaims: [],
+  ...PER_NEXUS,
   claimRename: (path, host) => {
     if (path !== get().renamingPath) return null
     const token = nextRenameToken++
@@ -155,15 +166,10 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     })
   },
 
-  iconPath: null,
-  iconHost: null,
   beginIcon: (path, host) => set({ iconPath: path, iconHost: host ?? 'sidebar' }),
   endIcon: () => set({ iconPath: null, iconHost: null }),
-  colorPath: null,
-  colorHost: null,
   beginColor: (path, host) => set({ colorPath: path, colorHost: host }),
   endColor: () => set({ colorPath: null, colorHost: null }),
-  peekSignal: null,
   signalPeek: (parentPath, childId) =>
     set((s) => ({ peekSignal: { parentPath, childId, nonce: (s.peekSignal?.nonce ?? 0) + 1 } })),
 
@@ -206,8 +212,6 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     )
   },
 
-  renamingProperty: null,
-  valuesEpoch: null,
   bumpValuesEpoch: (oldKey, newKey) =>
     set((st) => ({
       valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename', oldKey, newKey },
@@ -233,4 +237,5 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     if (before !== undefined && before !== after) get().bumpValuesEpoch(before, after)
     return true
   },
+  resetRename: () => set(PER_NEXUS),
 })

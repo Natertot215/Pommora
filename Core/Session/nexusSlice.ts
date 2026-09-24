@@ -80,6 +80,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetCaches()
     s.resetGlance()
     s.resetMatrix()
+    s.resetRename()
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
