@@ -16,7 +16,7 @@ import {
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
-  factorRow,
+  steppedRow,
   pickerRow,
 } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
@@ -175,7 +175,7 @@ export function LayoutFrame({
                 (v) => write({ format: v }),
                 CARD_ROW_LOOK,
               ),
-              factorRow(
+              steppedRow(
                 'scaling',
                 'Card Scale',
                 {

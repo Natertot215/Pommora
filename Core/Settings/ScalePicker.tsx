@@ -1,4 +1,4 @@
-import { factorPickerProps, PickerControl } from '@pommora/uix/Pickers/PickerControl'
+import { steppedPickerProps, PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { coerceScale, SCALE_STEPS } from './personalization'
 
 export function ScalePicker({
@@ -15,7 +15,7 @@ export function ScalePicker({
       ariaLabel={ariaLabel}
       solid
       chevronLead
-      {...factorPickerProps({
+      {...steppedPickerProps({
         steps: SCALE_STEPS,
         value,
         coerce: (typed) => coerceScale(typed, value),

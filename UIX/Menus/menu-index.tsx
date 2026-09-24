@@ -4,7 +4,7 @@ import type { IconSize } from '../Theme/theme-vars.css'
 import { DualSwitch } from '../Controls/DualSwitch'
 import { ColorSwatch } from '../Controls/ColorSwatch'
 import { Slider } from '../Controls/Slider'
-import { factorPickerProps, PickerControl, type PickerOption } from '../Pickers/PickerControl'
+import { steppedPickerProps, PickerControl, type PickerOption } from '../Pickers/PickerControl'
 import { cx } from '../Utilities/cx'
 import { Reveal } from '../Animations/Reveal'
 import { AccessoryButton, MenuItem, MenuSeparator } from './menu-row'
@@ -77,13 +77,13 @@ export const pickerRow = <T extends string>(
   className: look?.className,
 })
 
-export const factorRow = (
+export const steppedRow = (
   glyph: string | undefined,
   label: string,
-  spec: Parameters<typeof factorPickerProps>[0],
+  spec: Parameters<typeof steppedPickerProps>[0],
   look?: PickerRowLook,
 ): MenuRow => {
-  const { value, options, onPick, typeable } = factorPickerProps(spec)
+  const { value, options, onPick, typeable } = steppedPickerProps(spec)
   return pickerRow(glyph, label, value, options, onPick, { ...look, typeable })
 }
 

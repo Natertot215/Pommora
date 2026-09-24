@@ -15,7 +15,7 @@ import {
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
-import { factorPickerProps } from '@pommora/uix/Pickers/PickerControl'
+import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
@@ -238,7 +238,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Elem
       row={settingsRow(row, {
         kind: 'picker',
         ariaLabel: row.label,
-        ...factorPickerProps({
+        ...steppedPickerProps({
           steps,
           value: stored,
           unit: row.unit ?? PERCENT,
