@@ -11,12 +11,16 @@ import {
   duplicateTile,
   readMarkdownTile,
   removeTile,
+  restoreTile,
   rewriteTileConnections,
   writeMarkdownTile,
 } from './tilesFile'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
+import type { MutateDeps } from '../Nexus/mutate'
+
+const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const home = (): string => tileHostDir(root)
@@ -179,11 +183,52 @@ describe('markdown tile lifecycle', () => {
   it('remove drops the entry and trashes the file; foreign entries survive', async () => {
     await seed(home(), [{ id: 'alien', type: 'widget', keep: true }])
     const id = await createMarkdownTile(home())
-    await removeTile(root, home(), id)
+    await write(home(), id, 'kept text')
+    const removed = await removeTile(root, home(), id, nexusDeps)
+    expect(removed).toEqual(ok({ entry: { id, type: 'markdown' }, body: 'kept text' }))
     expect(await entries()).toEqual([{ id: 'alien', type: 'widget', keep: true }])
     expect(await pathExists(tileFilePath(home(), id))).toBe(false)
     const trashed = await readdir(join(root, '.trash'), { recursive: true })
     expect(trashed.some((f) => f.includes(id))).toBe(true)
+  })
+
+  it('a removed tile restores with its text, and never over a file already there', async () => {
+    const id = await createMarkdownTile(home())
+    await write(home(), id, 'kept text')
+    const removed = await removeTile(root, home(), id, nexusDeps)
+    if (!removed.ok) throw new Error('remove refused')
+    expect(await restoreTile(home(), removed.value)).toEqual(ok(null))
+    expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
+    expect(await entries()).toEqual([{ id, type: 'markdown' }])
+    expect((await restoreTile(home(), removed.value)).ok).toBe(false)
+    expect(await entries()).toHaveLength(1)
+  })
+
+  it('a restore seats the tile in its band on disk, and leaves a board already holding it alone', async () => {
+    const id = await createMarkdownTile(home())
+    const band = (tile: string) => ({ node: { kind: 'tile', id: tile, h: 80 } })
+    await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [band('a'), band('b')] } }))
+    const removed = await removeTile(root, home(), id, nexusDeps)
+    if (!removed.ok) throw new Error('remove refused')
+    await restoreTile(home(), { ...removed.value, at: { band: 1, h: 120 } })
+    expect((await readTileDocAt(home())).layout).toEqual({
+      bands: [band('a'), { node: { kind: 'tile', id, h: 120 } }, band('b')],
+    })
+    expect((await restoreTile(home(), { entry: { id: 'x', type: 'page' } })).ok).toBe(false)
+  })
+
+  it('a removed tile file goes to the system trash in System mode', async () => {
+    const id = await createMarkdownTile(home())
+    const sent: string[] = []
+    await removeTile(root, home(), id, {
+      trashMode: 'system',
+      trashToSystem: async (p) => {
+        sent.push(p)
+        await machine().remove(p)
+      },
+    })
+    expect(sent).toEqual([tileFilePath(home(), id)])
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
   })
 
   it('an entry op leaves the layout and lock alone', async () => {
@@ -197,9 +242,13 @@ describe('markdown tile lifecycle', () => {
   it('convert to view stamps a payload-local config id and trashes the markdown file', async () => {
     const id = await createMarkdownTile(home())
     await seed(home(), [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }])
-    await convertTileToView(root, home(), id, [
-      { source_id: 'src1', config: { id: 'source-view-id', name: 'Table', foreign: true } },
-    ])
+    await convertTileToView(
+      root,
+      home(),
+      id,
+      [{ source_id: 'src1', config: { id: 'source-view-id', name: 'Table', foreign: true } }],
+      nexusDeps,
+    )
     const entry = (await entries())[0]
     expect(entry.type).toBe('view')
     expect(entry.style).toBe('borderless')
@@ -244,7 +293,7 @@ describe('markdown tile lifecycle', () => {
 
   it('removing a non-markdown tile touches no files', async () => {
     await seed(home(), [{ id: 'p1', type: 'page', page_id: 'x' }])
-    await removeTile(root, home(), 'p1')
+    await removeTile(root, home(), 'p1', nexusDeps)
     expect(await entries()).toEqual([])
     expect(await pathExists(join(root, '.trash'))).toBe(false)
   })

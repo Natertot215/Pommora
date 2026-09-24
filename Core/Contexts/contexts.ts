@@ -7,15 +7,15 @@ export type ContextDef = { id: string; title: string; singular?: string; icon?: 
 /** Array position IS the display order — no ordinal semantics anywhere. */
 export type ContextsRegistry = { contexts: ContextDef[] }
 
+export const contextEntry = z.looseObject({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  singular: z.string().min(1).optional(),
+  icon: z.string().optional(),
+})
+
 export const contextsRegistry: z.ZodType<ContextsRegistry> = z.looseObject({
-  contexts: z.array(
-    z.looseObject({
-      id: z.string().min(1),
-      title: z.string().min(1),
-      singular: z.string().min(1).optional(),
-      icon: z.string().optional(),
-    }),
-  ),
+  contexts: z.array(contextEntry),
 })
 
 export function contextKey(title: string): string {

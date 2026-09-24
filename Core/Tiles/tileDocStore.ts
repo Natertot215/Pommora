@@ -112,8 +112,7 @@ const put = (doc: TileDoc, next: Partial<TileDocState>): void => {
 const adopt = (doc: TileDoc, raw: { layout: unknown; tiles: unknown[]; locked: boolean }): void => {
   if (at(doc.host) !== doc) return
   const layout = decodeLayout(raw.layout) ?? emptyLayout()
-  // A tile the disk holds again is alive, whatever a removal marked before.
-  for (const id of tileIds(layout)) removing.delete(id)
+  revive(layout)
   put(doc, {
     layout,
     tiles: raw.tiles,
@@ -122,7 +121,13 @@ const adopt = (doc: TileDoc, raw: { layout: unknown; tiles: unknown[]; locked: b
   })
 }
 
+// A tile a layout holds again is alive, whatever a removal marked before: the disk brought it back, or an Undo did.
+const revive = (layout: TileLayout): void => {
+  if (removing.size) for (const id of tileIds(layout)) removing.delete(id)
+}
+
 const writeLayout = (doc: TileDoc, layout: TileLayout): void => {
+  revive(layout)
   put(doc, { layout })
   sessionWriter.schedule(layoutKey(doc), () => save(doc, { layout: encodeLayout(layout) }))
 }

@@ -653,6 +653,33 @@ describe('restore — the record spends, headless', () => {
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
+  it('a tag that can’t go back is named, and the record stays', async () => {
+    await handleMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
+    await writeFile(alpha, `---\nID: ${PAGE_A}\nbroken: [\n---\nbody`)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r).toEqual({ ok: true, value: { unrestored: ['Alpha'] } })
+    expect(await pathExists(join(root, listed.bundlePath, '_record.json'))).toBe(true)
+  })
+
+  it('a root gone since is no reason to keep the record', async () => {
+    await handleMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    await rm(join(root, 'Notes', 'Daily', 'Alpha.md'))
+    const [listed] = await listBundles(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
+  })
+
   it('a Context round-trips: the registry entry appends and membership re-applies', async () => {
     await handleMutate(
       root,
@@ -801,6 +828,7 @@ describe('restore — the gate-four pins', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     expect(await pathExists(join(bundle, '_record.json'))).toBe(true)
+    expect(await pathExists(join(root, '.nexus', 'properties.json'))).toBe(false)
   })
 })
 

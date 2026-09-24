@@ -9,7 +9,7 @@ const map: AssetMap = {
     'banner.png': ['file-assets/Banner.png'],
     'img.png': ['file-assets/a/IMG.png', 'file-assets/b/IMG.png'],
   },
-  version: 7,
+  versions: { 'file-assets/Banner.png': 7 },
 }
 
 describe('resolveAssetValue', () => {
@@ -89,8 +89,11 @@ describe('assetUrl', () => {
 })
 
 describe('resolveAssetUrl', () => {
-  it('carries the map version so a re-saved file is re-requested', () => {
+  it('carries the file’s own version so only a re-saved file is re-requested', () => {
     expect(resolveAssetUrl('[[Banner.png]]', map)).toBe(`${assetUrl('file-assets/Banner.png')}?v=7`)
+    expect(resolveAssetUrl('file-assets/a/IMG.png', map)).toBe(
+      `${assetUrl('file-assets/a/IMG.png')}?v=0`,
+    )
   })
   it('leaves a web address unversioned — it is not ours to bust', () => {
     expect(resolveAssetUrl('https://example.com/a.png', map)).toBe('https://example.com/a.png')

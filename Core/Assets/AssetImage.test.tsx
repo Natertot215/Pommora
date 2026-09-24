@@ -16,7 +16,7 @@ import { AssetImage, cropFor } from './AssetImage'
 let ver = 100
 const freshMap = (): AssetMap => ({
   files: { 'cover.png': ['file-assets/Cover.png'] },
-  version: ver++,
+  versions: { 'file-assets/Cover.png': ver++ },
 })
 const treeWith = (crops: Record<string, Crop>): NexusTree => ({ crops }) as unknown as NexusTree
 

@@ -19,7 +19,7 @@ import { formatDate, nexusDateFormat } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
-import { notifyReport } from '../Interface/Notifications/notifications'
+import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
@@ -33,6 +33,7 @@ const PLURALS: Record<TrashRow['kind'], string> = {
   set: 'sets',
   space: 'spaces',
   context: 'contexts',
+  property: 'properties',
 }
 
 export function countPhrase(rows: TrashRow[]): string {
@@ -102,21 +103,23 @@ function TrashBody(): React.JSX.Element {
     targets: TrashRow[],
     req: (row: TrashRow) => MutateRequest,
     reloads: boolean,
-  ): Promise<{ done: TrashRow[]; refused: TrashRow[] }> => {
+  ): Promise<{ done: TrashRow[]; refused: TrashRow[]; unrestored: string[] }> => {
     const done: TrashRow[] = []
     const refused: TrashRow[] = []
+    const unrestored: string[] = []
     for (const row of targets) {
       const res = await host().ask('mutate', req(row))
       ;(res.ok ? done : refused).push(row)
+      if (res.ok) unrestored.push(...(res.value.unrestored ?? []))
     }
     if (done.length > 0 && reloads) await load()
     await refresh()
-    return { done, refused }
+    return { done, refused, unrestored }
   }
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused } = await many(
+    const { done, refused, unrestored } = await many(
       addressable,
       (row) => ({ op: 'restore', bundlePath: row.bundlePath }),
       true,
@@ -126,6 +129,7 @@ function TrashBody(): React.JSX.Element {
       homeless.length > 0 &&
         `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
       refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
+      unrestored.length > 0 && unrestoredLine(unrestored),
     ].filter(Boolean)
     notifyReport([`Restored ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
   }
@@ -235,7 +239,9 @@ function TrashBody(): React.JSX.Element {
                 checked={checked.has(row.bundlePath)}
                 onToggle={() => toggle(row.bundlePath)}
                 onMenu={() => void openMenu(row)}
-                icon={entityIcon(row.kind, undefined, defaultIcons)}
+                icon={
+                  row.kind === 'property' ? 'tag' : entityIcon(row.kind, undefined, defaultIcons)
+                }
                 defaultIcons={defaultIcons}
                 when={
                   row.deletedAt === null

@@ -53,7 +53,7 @@ describe('buildAssetMap', () => {
   })
 
   it('a missing or empty directory is an empty map, never a throw', async () => {
-    await expect(buildAssetMap(root, 'nope')).resolves.toEqual({ files: {}, version: 0 })
+    await expect(buildAssetMap(root, 'nope')).resolves.toEqual({ files: {}, versions: {} })
     await mkdir(join(root, 'file-assets'), { recursive: true })
     expect((await buildAssetMap(root, 'file-assets')).files).toEqual({})
   })
@@ -94,7 +94,7 @@ describe('resolveAssetName', () => {
       'a.png': ['file-assets/a.png'],
       'dup.png': ['file-assets/x/dup.png', 'file-assets/y/dup.png'],
     },
-    version: 0,
+    versions: {},
   }
   it('answers a path, nothing, or a refusal to choose', () => {
     expect(resolveAssetName(map, 'A.png')).toBe('file-assets/a.png')
@@ -115,14 +115,15 @@ describe('patchAssetMap', () => {
     ).toBeUndefined()
   })
 
-  it('a re-save under an unchanged name bumps the version so the image is re-requested', async () => {
+  it('a re-save under an unchanged name bumps only that file’s version', async () => {
     await put('file-assets', 'a.png')
+    await put('file-assets', 'b.png')
     const built = await buildAssetMap(root, 'file-assets')
     const changed = patchAssetMap(built, 'file-assets/a.png', 'change', 'file-assets')
     expect(changed.files).toEqual(built.files)
-    expect(changed.version).toBeGreaterThan(built.version)
-    expect(patchAssetMap(built, 'file-assets/b.png', 'add', 'file-assets').version).toBe(
-      built.version,
+    expect(changed.versions).toEqual({ 'file-assets/a.png': 1 })
+    expect(patchAssetMap(changed, 'file-assets/c.png', 'add', 'file-assets').versions).toBe(
+      changed.versions,
     )
   })
 

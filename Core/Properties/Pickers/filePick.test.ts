@@ -35,7 +35,7 @@ beforeEach(() => {
     }),
   }
   useSession.setState({
-    assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, version: 1 },
+    assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, versions: {} },
     tree: { assetDirectory: 'file-assets' } as never,
   })
 })
@@ -111,9 +111,10 @@ describe('runFilePick', () => {
     expect(adoptFile).not.toHaveBeenCalled()
   })
 
-  it('a refused adoption leaves the value alone — the reference follows the bytes', async () => {
+  it('a refused adoption leaves the value alone and says why — the reference follows the bytes', async () => {
     adoptFile.mockResolvedValueOnce({ ok: false, error: { code: 'invalid-path', message: 'no' } })
     expect(await runFilePick(def(), held(['[[Old.pdf]]']), 0)).toBeUndefined()
+    expect(useSession.getState().notification?.message).toBe('no')
   })
 })
 

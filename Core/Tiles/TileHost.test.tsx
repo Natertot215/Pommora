@@ -6,6 +6,8 @@ import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../MarkdownPM/editorHarness'
 import { TileHost } from './TileHost'
 import { dropAllTileDocs, isTileRemoving, markTileRemoving, readTileBody } from './tileDocStore'
+import { useSession } from '../Session/store'
+import { makeTree } from '../Testing/testTree'
 
 vi.stubGlobal(
   'ResizeObserver',
@@ -120,5 +122,49 @@ describe('the host over the renderer table', () => {
     expect(isTileRemoving('m')).toBe(true)
     await act(async () => root.render(null))
     expect(writeMarkdown).not.toHaveBeenCalled()
+  })
+
+  it('a removed tile comes back on Undo, its text and its place with it', async () => {
+    const removed = { entry: { id: 'm', type: 'markdown' }, body: 'hello' }
+    const restoreTile = vi.fn(async () => ({ ok: true, value: null }))
+    const saves: unknown[] = []
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({ ok: true, value: doc }),
+      'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
+        if (patch.layout) saves.push(patch.layout)
+        return { ok: true, value: null }
+      },
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+      'tiles:removeTile': async () => ({ ok: true, value: removed }),
+      'tiles:restoreTile': restoreTile,
+      menu: async () => ({ ok: true, value: 'tile:delete' }),
+    })
+    useSession.setState((st) => ({
+      tree: makeTree(),
+      devicePrefs: { ...st.devicePrefs, nativeMenus: true },
+      personalization: { ...st.personalization, confirmDeletion: false },
+      notification: null,
+    }))
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    await act(async () => {
+      ;(host.querySelector('.tile-handle') as HTMLElement).click()
+    })
+    expect(await until(() => useSession.getState().notification !== null)).toBe(true)
+    expect(useSession.getState().notification?.message).toBe('Deleted Markdown Tile')
+    expect(host.querySelectorAll('.tile')).toHaveLength(3)
+
+    await act(async () => {
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true }),
+      )
+    })
+    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    expect(restoreTile).toHaveBeenCalledWith(
+      { kind: 'homepage' },
+      { ...removed, at: { band: 0, h: 100 } },
+    )
+    expect(saves.at(-1)).toEqual(doc.layout)
   })
 })

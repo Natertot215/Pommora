@@ -1,5 +1,6 @@
 import { join } from '../Paths/posix'
-import type { PropertyDefinition } from '../Properties/properties'
+import { propertyDefinition } from '../Properties/properties'
+import { titleFromPath } from '../Connections/connections'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
@@ -27,18 +28,18 @@ async function foldersById(root: string): Promise<Map<string, string>> {
   return out
 }
 
-export function restoreProperty(root: string, record: PropertyRecord): Promise<Result<null>> {
+/** Answers the titles of what didn't take its value back. */
+export function restoreProperty(root: string, record: PropertyRecord): Promise<Result<string[]>> {
   return serializeSchemaOp(() => restoreInner(root, record))
 }
 
-async function restoreInner(root: string, record: PropertyRecord): Promise<Result<null>> {
+async function restoreInner(root: string, record: PropertyRecord): Promise<Result<string[]>> {
   if ((await readRegistry(root)).defs[record.id])
     return fail('exists', 'Something in the nexus already carries this identity.')
+  const parsed = propertyDefinition.safeParse({ ...record.def, id: record.id })
+  if (!parsed.success) return fault('That deleted property’s definition no longer reads.')
 
-  const created = await createProperty(root, {
-    ...(record.def as unknown as PropertyDefinition),
-    id: record.id,
-  })
+  const created = await createProperty(root, parsed.data)
   if (!created.ok) return created
   const def = (await readRegistry(root)).defs[record.id]
   if (!def) return fault('The restored property could not be read back.')
@@ -50,25 +51,18 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
   }
 
   const roots = projectBaseline(await refreshTree(root)).entries
-  let dropped = 0
+  const unrestored: string[] = []
   for (const [id, raw] of Object.entries(record.values)) {
     const entry = roots[id]
-    if (entry?.kind !== 'page' && entry?.kind !== 'space') {
-      dropped++
-      continue
-    }
+    if (entry?.kind !== 'page' && entry?.kind !== 'space') continue
     const reconciled = reconcilePropertyValue(def, raw, false)
-    if (isBlankValue(reconciled.value)) {
-      dropped++
-      continue
-    }
     const abs = join(root, entry.path)
-    const written =
-      entry.kind === 'page'
+    const written = isBlankValue(reconciled.value)
+      ? null
+      : entry.kind === 'page'
         ? await machine().lock(abs, () => updatePageProperty(root, abs, def, reconciled.value))
         : await setSpaceProperty(abs, def, reconciled.value)
-    if (!written.ok) dropped++
+    if (!written?.ok) unrestored.push(titleFromPath(entry.path))
   }
-  if (dropped) console.warn(`restore: ${dropped} value(s) of ${def.name} no longer validate`)
-  return ok(null)
+  return ok(unrestored)
 }

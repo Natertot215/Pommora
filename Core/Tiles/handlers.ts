@@ -1,9 +1,10 @@
-import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { isUlid } from '../Nexus/ids'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { coerceTileHost, type TileDocPatch, tilePatchProblem } from './tiles'
+import { coerceTileHost, type RemovedTile, type TileDocPatch, tilePatchProblem } from './tiles'
+import { mutateDeps } from '../Nexus/mutate'
 import {
   convertTileToPage,
   convertTileToView,
@@ -12,6 +13,7 @@ import {
   hostDir,
   readMarkdownTile,
   removeTile,
+  restoreTile,
   writeMarkdownTile,
 } from './tilesFile'
 
@@ -32,16 +34,22 @@ async function tileHostAnd(
 }
 
 const onTile =
-  <T>(fn: (tile: TileCtx, tileId: string, ...args: unknown[]) => Promise<Result<T>>) =>
+  <T>(
+    fn: (
+      tile: TileCtx & { ctx: HostContext },
+      tileId: string,
+      ...args: unknown[]
+    ) => Promise<Result<T>>,
+  ) =>
   async (
     root: string,
-    _ctx: unknown,
+    ctx: HostContext,
     host: unknown,
     tileId: unknown,
     ...args: unknown[]
   ): Promise<Result<T>> => {
     const tile = await tileHostAnd(root, host, tileId)
-    return tile.ok ? fn(tile.value, tileId as string, ...args) : tile
+    return tile.ok ? fn({ ...tile.value, ctx }, tileId as string, ...args) : tile
   }
 
 export const tilesHandlers = {
@@ -65,11 +73,15 @@ export const tilesHandlers = {
   }),
 
   'tiles:removeTile': withWriteRoot(
-    onTile(async ({ root, dir }, tileId) => {
-      await removeTile(root, dir, tileId)
-      return ok(null)
-    }),
+    onTile(async ({ root, dir, ctx }, tileId) =>
+      removeTile(root, dir, tileId, await mutateDeps(root, ctx)),
+    ),
   ),
+
+  'tiles:restoreTile': withWriteRoot(async (root, _ctx, host: unknown, removed: RemovedTile) => {
+    const tile = await tileHostAnd(root, host)
+    return tile.ok ? restoreTile(tile.value.dir, removed) : tile
+  }),
 
   'tiles:readMarkdown': withRoot(
     onTile(async ({ dir }, tileId) => {
@@ -87,22 +99,20 @@ export const tilesHandlers = {
   ),
 
   'tiles:convertToPage': withWriteRoot(
-    onTile(async ({ root, dir }, tileId, pageId) => {
+    onTile(async ({ root, dir, ctx }, tileId, pageId) => {
       if (typeof pageId !== 'string' || pageId.length === 0) return fault('Invalid page id.')
-      await convertTileToPage(root, dir, tileId, pageId)
-      return ok(null)
+      return convertTileToPage(root, dir, tileId, pageId, await mutateDeps(root, ctx))
     }),
   ),
 
   'tiles:convertToView': withWriteRoot(
-    onTile(async ({ root, dir }, tileId, views) => {
+    onTile(async ({ root, dir, ctx }, tileId, views) => {
       const list = Array.isArray(views) ? views : null
       const valid =
         list?.length &&
         list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
       if (!valid) return fault('Invalid view list.')
-      await convertTileToView(root, dir, tileId, list as unknown[])
-      return ok(null)
+      return convertTileToView(root, dir, tileId, list as unknown[], await mutateDeps(root, ctx))
     }),
   ),
 

@@ -155,6 +155,7 @@ type TileMenuSource = 'pages' | 'views'
 
 interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
+  label: string
   fileBacked: boolean
   menuRows: ReadonlyArray<{ label: string; source: TileMenuSource }>
 }
@@ -162,14 +163,27 @@ interface TileKind<E extends TileEntry = TileEntry> {
 export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: T }>> } = {
   markdown: {
     schema: markdownEntry,
+    label: 'Markdown Tile',
     fileBacked: true,
     menuRows: [
       { label: 'Link View', source: 'views' },
       { label: 'Link Page', source: 'pages' },
     ],
   },
-  page: { schema: pageEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'pages' }] },
-  view: { schema: viewEntry, fileBacked: false, menuRows: [] },
+  page: {
+    schema: pageEntry,
+    label: 'Page Tile',
+    fileBacked: false,
+    menuRows: [{ label: 'Source', source: 'pages' }],
+  },
+  view: { schema: viewEntry, label: 'View Tile', fileBacked: false, menuRows: [] },
+}
+
+/** What a removal took, so an Undo can put it back: the raw entry, a file-backed tile's text, and the band it returns to. */
+export interface RemovedTile {
+  entry: unknown
+  body?: string
+  at?: { band: number; h: number }
 }
 
 type EntrySchemas = [z.ZodType<TileEntry>, z.ZodType<TileEntry>, ...z.ZodType<TileEntry>[]]

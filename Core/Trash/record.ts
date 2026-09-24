@@ -4,6 +4,7 @@ import { hiddenName } from '../Paths/exclusion'
 import { mintBundle } from './bundle'
 import { readJsonObject, writeJson } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
+import { contextEntry } from '../Contexts/contexts'
 
 /** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
 const RECORD_FILENAME = '_record.json'
@@ -47,12 +48,7 @@ const recordFile = z.discriminatedUnion('entity', [
   }),
   z.looseObject({
     entity: z.literal('context'),
-    registry: z.looseObject({
-      id: z.string(),
-      title: z.string(),
-      singular: z.string().optional(),
-      icon: z.string().optional(),
-    }),
+    registry: contextEntry,
     membership: z.array(z.looseObject({ root: memberRoot, spaces: z.array(spaceRef) })),
     partial: z.literal(true).optional(),
   }),

@@ -51,11 +51,11 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ folder: resolved.value, rel: containerPath }) : resolved
 }
 
-const registryOp = <A extends unknown[]>(
+const registryOp = <A extends unknown[], T = null>(
   narrow: (args: unknown[]) => A | Result<never>,
-  write: (root: string, ...args: A) => Promise<Result<null>>,
+  write: (root: string, ...args: A) => Promise<Result<T>>,
 ) =>
-  withWriteRoot(async (root, ctx, ...args: unknown[]): Promise<Result<null>> => {
+  withWriteRoot(async (root, ctx, ...args: unknown[]): Promise<Result<T>> => {
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
     const r = await write(root, ...narrowed)

@@ -1,5 +1,5 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, ok, fault } from '../Contract/result'
+import { ok, fault } from '../Contract/result'
 import { NOT_A_PROPERTY_DIR } from '../Contract/validators'
 import { seedContentIndex } from '../Index/indexSeed'
 import { assetSubRoot } from '../Paths/nexusPaths'
@@ -8,6 +8,7 @@ import { assetsDir, relPosix } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { confirmSettingsWrite, pushAssetWrites } from '../Nexus/confirm'
 import { refreshAfterWrite } from '../Nexus/liveTree'
+import { mutateDeps } from '../Nexus/mutate'
 import { adoptFile } from './adoptFile'
 import { sessionRoot } from '../Nexus/session'
 import { EMPTY_ASSET_MAP } from '../Nexus/tree'
@@ -16,9 +17,6 @@ import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
 import { liveAssetMap, refreshAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
 import { assetSubfolder, validPropertyDir } from './assetRoots'
-
-// Bounded by the pick, not the root — the renderer never names a path the host did not choose.
-const pickedPaths = new Set<string>()
 
 export const assetsHandlers = {
   'assets:map': withRoot(async (root) => ok(await liveAssetMap(root)), ok(EMPTY_ASSET_MAP)),
@@ -54,7 +52,7 @@ export const assetsHandlers = {
     }
     await writeAssetDirectory(root, next)
     try {
-      await migrateAssets(root)
+      await migrateAssets(root, await mutateDeps(root, ctx))
     } catch (e) {
       console.error('assets: the migration failed; references are unchanged:', e)
     }
@@ -75,18 +73,12 @@ export const assetsHandlers = {
     const picked = await ctx.pick(opts?.any ? 'file' : 'image', {
       defaultPath: at?.ok ? at.value : (root ?? undefined),
     })
-    if (picked) pickedPaths.add(picked)
     return ok(picked)
   },
 
-  'nexus:pasteImage': async (ctx) => {
-    const path = await ctx.pasteImage()
-    if (path) pickedPaths.add(path)
-    return ok(path)
-  },
+  'nexus:pasteImage': async (ctx) => ok(await ctx.pasteImage()),
 
   'assets:adopt': withWriteRoot(async (root, ctx, source: string, subfolder?: string) => {
-    if (!pickedPaths.has(source)) return fail('invalid-path', 'That file was not picked here.')
     const adopted = await adoptFile(root, source, {
       allow: 'any',
       ...(subfolder ? { subfolder } : {}),

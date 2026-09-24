@@ -31,7 +31,7 @@ export async function buildAssetMap(root: string, assetDir: string): Promise<Ass
     else files[name] = [rel]
   }
   for (const paths of Object.values(files)) paths.sort()
-  return { files, version: 0 }
+  return { files, versions: {} }
 }
 
 export function patchAssetMap(
@@ -43,14 +43,15 @@ export function patchAssetMap(
   if (!indexable(rel, assetDir)) return map
   const name = nameOf(rel)
   if (!name) return map
-  // Only a re-save under an unchanged name needs the version: an add or an unlink already hands every affected consumer a different path.
-  if (event === 'change') return { ...map, version: map.version + 1 }
+  // Only a re-save under an unchanged name needs a version: an add or an unlink already hands every affected consumer a different path.
+  if (event === 'change')
+    return { ...map, versions: { ...map.versions, [rel]: (map.versions[rel] ?? 0) + 1 } }
   const held = map.files[name] ?? []
   const paths =
     event === 'add' ? [...held.filter((p) => p !== rel), rel].sort() : held.filter((p) => p !== rel)
   const files = { ...map.files, [name]: paths }
   if (!paths.length) delete files[name]
-  return { files, version: map.version }
+  return { files, versions: map.versions }
 }
 
 /** A symbol, not a sentinel string: `string | 'ambiguous'` collapses to `string`, so a caller testing `typeof hit === 'string'` would take the refusal for a path and delete by it. */
@@ -90,7 +91,8 @@ export async function liveAssetMap(root: string): Promise<AssetMap> {
 export async function refreshAssetMap(root: string): Promise<AssetMap> {
   const prior = held?.root === root ? held.map : null
   const { assetDir } = await readWatchScope(root)
-  const map = stabilize(await buildAssetMap(root, assetDir), prior)
+  const built = await buildAssetMap(root, assetDir)
+  const map = stabilize({ ...built, versions: prior?.versions ?? built.versions }, prior)
   held = { root, assetDir, map }
   return map
 }

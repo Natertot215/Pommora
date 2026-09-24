@@ -36,5 +36,5 @@ export function resolveAssetUrl(value: string | null | undefined, map: AssetMap)
   const res = resolveAssetValue(value, map)
   if (res.kind === 'external') return res.url
   if (res.kind === 'unresolved') return null
-  return `${assetUrl(res.rel)}?v=${map.version}`
+  return `${assetUrl(res.rel)}?v=${map.versions[res.rel] ?? 0}`
 }

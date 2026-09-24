@@ -135,31 +135,29 @@ describe('trashRows — a bundle as the browser reads it', () => {
     expect(space).toMatchObject({ historical: true, crumbs: [{ title: 'Projects' }] })
   })
 
-  it('a property record becomes no row at all', async () => {
+  it('a property record lists under its name, with nowhere to be placed and a home to return to', async () => {
     await writePropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
-      def: { id: 'prop_x' },
+      def: { id: 'prop_x', name: 'Stage' },
       values: {},
     })
     await del('Notes/Daily/Alpha.md', 'page')
-    const listed = await listBundles(root)
-    expect(listed).toHaveLength(2)
-    expect((await rows()).map((r) => r.kind)).toEqual(['page'])
+    const property = (await rows()).find((r) => r.kind === 'property')
+    expect(property).toMatchObject({ title: 'Stage', crumbs: [], homeResolves: true })
+    expect(property?.deletedAt).toEqual(expect.any(Number))
   })
 
-  // The discriminator does the excluding, not the missing artifact — a property bundle holds no artifact today, so a filter keyed on that would pass this test while excluding nothing.
-  it('excludes a property record even when something sits beside it', () => {
+  it('a property record with no readable name lists under its id', () => {
     expect(
       trashRowOf(
         {
           bundlePath: '.trash/s__property-prop_x.deleted',
-          artifactName: 'anything',
           record: { entity: 'property', id: 'prop_x', def: { id: 'prop_x' }, values: {} },
         },
         { collections: [], contexts: [] } as unknown as NexusTree,
-      ),
-    ).toBeNull()
+      )?.title,
+    ).toBe('prop_x')
   })
 
   it('reads the deletion time out of the bundle stamp, newest first', async () => {

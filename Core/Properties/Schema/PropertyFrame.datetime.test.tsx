@@ -38,7 +38,7 @@ beforeEach(() => {
     'schema:reorder': vi.fn(async () => ({ ok: true, value: null })),
     'schema:delete': vi.fn(async () => ({ ok: true, value: null })),
     'schema:assign': vi.fn(async () => ({ ok: true, value: null })),
-    'property:delete': vi.fn(async () => ({ ok: true, value: null })),
+    'property:delete': vi.fn(async () => ({ ok: true, value: {} })),
     'views:save': saveSpy,
     menu: vi.fn(async () => ok(null)),
   })

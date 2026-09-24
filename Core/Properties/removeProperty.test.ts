@@ -92,18 +92,25 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
   })
 
-  // A page carrying no identity key must still be stripped, or Remove leaks the very value it ran to clear — and it must not be cached under a synthetic id it would never be found by again.
-  it('strips an identity-less page too, caching nothing for it', async () => {
+  it('stamps an identity-less holder before caching it, so re-assigning brings its value back', async () => {
     const raw = await readFile(pageA, 'utf8')
     await writeFile(pageA, raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), ''))
     expect(await pageValue(pageA)).toEqual(['active'])
 
-    const r = await removeProperty(root, folder, propId)
-    expect(r.ok).toBe(true)
+    expect((await removeProperty(root, folder, propId)).ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()
-    expect(await pageValue(pageB)).toBeUndefined()
-    const vals = Object.values((await cacheBlock())?.values ?? {})
-    expect(vals).toEqual([['done']])
+    expect(splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY]).toBeTruthy()
+    await assignProperty(root, folder, propId)
+    expect(await pageValue(pageA)).toEqual(['active'])
+    expect(await pageValue(pageB)).toEqual(['done'])
+  })
+
+  it('a copy sharing an id keeps its value in place, where the cache can’t hold a second', async () => {
+    const copy = join(folder, 'A copy.md')
+    await writeFile(copy, await readFile(pageA, 'utf8'))
+    await removeProperty(root, folder, propId)
+    expect([await pageValue(pageA), await pageValue(copy)]).toContainEqual(['active'])
+    expect(Object.values((await cacheBlock())?.values ?? {})).toHaveLength(2)
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
@@ -225,12 +232,5 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect(fm.Tags).toEqual(['alpha'])
     const def = (await readRegistry(root)).defs[tags.value.id]
     expect(def.select_options?.map((o) => o.value)).toEqual(['alpha'])
-  })
-
-  it('a member page without an id still gets STRIPPED on Remove — only the caching needs identity (breaker L-2)', async () => {
-    const orphan = join(folder, 'Orphan.md')
-    await writeFile(orphan, `---\n${liveDef.name}: active\n---\n\nbody\n`)
-    await removeProperty(root, folder, propId)
-    expect(await pageValue(orphan)).toBeUndefined()
   })
 })

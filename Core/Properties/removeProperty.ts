@@ -14,7 +14,8 @@ import { updatePageProperty } from '../Nexus/page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepAdmits } from '../Files/pageFile'
-import { ok, type Result } from '../Contract/result'
+import { ok, type Result, valueOr } from '../Contract/result'
+import { ensurePageId } from '../Nexus/adopt'
 
 export function removeProperty(
   root: string,
@@ -36,16 +37,19 @@ async function removeInner(
   if (!def) return ok(null)
   const key = def.name
 
-  const files = await folderCorpus(root, collectionFolder)
   const values: Record<string, unknown> = {}
-  for (const file of files) {
+  const holders: string[] = []
+  for (const file of await folderCorpus(root, collectionFolder)) {
     const content = await readTextOrNull(file)
     if (content === null) continue
     const fields = splitFrontmatter(content)
-    const id = contentId(fields)
     const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
-    if (id) values[id] = raw
+    const id = contentId(fields) ?? valueOr(await ensurePageId(file), null)
+    // A holder the cache can't key keeps its value in place, dormant, as a move between Collections leaves one.
+    if (!id || id in values) continue
+    values[id] = raw
+    holders.push(file)
   }
   // Cache + unassign FIRST under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
   const written = await patchSidecar(collectionFolder, 'collection', (cur) =>
@@ -57,7 +61,7 @@ async function removeInner(
   )
   if (!written.ok) return written
   const text = (content: string): string | null => stripPageMember(content, key)
-  await sweepGovernedRoots(root, files, { text })
+  await sweepGovernedRoots(root, holders, { text })
   return ok(null)
 }
 

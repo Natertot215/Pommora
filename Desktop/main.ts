@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { extname, join, sep } from 'node:path'
@@ -145,6 +145,13 @@ const userData = (): string => posixPath(app.getPath('userData'))
 let mainWindow: BrowserWindow | null = null
 const currentWindow = (): BrowserWindow | null => mainWindow
 let device: HostDevice | null = null
+
+let lastPaste: string | null = null
+const dropPaste = (): void => {
+  if (lastPaste) rmSync(lastPaste, { force: true })
+  lastPaste = null
+}
+
 async function refreshMenu(): Promise<void> {
   const root = sessionRoot()
   const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
@@ -235,9 +242,10 @@ function hostContext(win: BrowserWindow | null): HostContext {
     async pasteImage() {
       const image = clipboard.readImage()
       if (image.isEmpty()) return null
-      const path = join(tmpdir(), `pommora-paste-${Date.now()}.png`)
-      await writeFile(path, image.toPNG())
-      return posixPath(path)
+      dropPaste()
+      lastPaste = join(tmpdir(), `pommora-paste-${Date.now()}.png`)
+      await writeFile(lastPaste, image.toPNG())
+      return posixPath(lastPaste)
     },
     clipboard: {
       read: async () => clipboard.readText(),
@@ -396,6 +404,7 @@ app.on('before-quit', (e) => {
   quitting = 'flushing'
   stopWatcher()
   const quit = (): void => {
+    dropPaste()
     closeSessionDb()
     quitting = 'ready'
     app.quit()

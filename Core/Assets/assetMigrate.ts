@@ -14,7 +14,8 @@ import {
   updateNexusConfig,
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive } from '../Files/walk'
-import { trashFileFlat } from '../Trash/bundle'
+import { discardFile } from '../Trash/bundle'
+import type { MutateDeps } from '../Nexus/mutate'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
 import { AMBIGUOUS, buildAssetMap, indexable, refreshAssetMap, resolveAssetName } from './assetMap'
@@ -151,7 +152,10 @@ async function sidecarsUnder(root: string): Promise<string[]> {
   return out.sort()
 }
 
-export async function migrateAssets(root: string): Promise<AssetMigration | null> {
+export async function migrateAssets(
+  root: string,
+  deps: MutateDeps,
+): Promise<AssetMigration | null> {
   const { assetDir } = await readWatchScope(root)
   if (assetDir === ASSETS_DIR_REL) return null
 
@@ -200,7 +204,6 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
     }
   }
 
-  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root)
   await refreshAssetMap(root)
 
   const rekeys: [string, string][] = []
@@ -209,7 +212,7 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
     if (toRel) rekeys.push([from, toRel])
   }
   if (rekeys.length) {
-    // Best-effort: a corrupt crops.json must not block the change after the originals were trashed.
+    // Best-effort: a corrupt crops.json must not block the change once references moved.
     await updateCrops(root, (b) => {
       const next = { ...b }
       for (const [fromRel, toRel] of rekeys) {
@@ -220,15 +223,17 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
       return next
     }).catch(() => {})
   }
+  // Last, so a discard the system trash refuses leaves the move itself whole.
+  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root, deps)
   return result
 }
 
-async function sweepLegacyRoot(root: string): Promise<number> {
+async function sweepLegacyRoot(root: string, deps: MutateDeps): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
   const files = (await listFilesRecursive(dir)).filter((abs) =>
     indexable(relPosix(root, abs), ASSETS_DIR_REL),
   )
-  for (const abs of files) await trashFileFlat(root, abs)
+  for (const abs of files) await discardFile(root, abs, deps)
   for (const entry of await listEntries(dir)) {
     if (entry.kind === 'dir') await machine().remove(join(dir, entry.name))
   }

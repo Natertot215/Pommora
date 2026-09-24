@@ -42,7 +42,10 @@ beforeEach(() => {
   assignSpy = vi.fn(async () => ({ ok: true, value: null }))
   renameSpy = vi.fn(async () => ({ ok: true, value: null }))
   propertyMenuSpy = vi.fn(async () => null)
-  destroySpy = vi.fn(async () => ({ ok: true, value: null }))
+  destroySpy = vi.fn(async () => ({
+    ok: true,
+    value: { trashed: { bundlePath: '.trash/s__property-prop_status.deleted' } },
+  }))
   schemaDeleteSpy = vi.fn(async () => ({ ok: true, value: null }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
@@ -294,6 +297,10 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
     expect(destroySpy).toHaveBeenCalledWith('prop_status')
     expect(useSession.getState().pendingConfirm).toBeNull()
+    expect(useSession.getState().notification).toMatchObject({
+      message: 'Deleted “Status”',
+      action: { label: 'Undo' },
+    })
   })
 
   it('⋮ Delete cancelled leaves the property alone', async () => {

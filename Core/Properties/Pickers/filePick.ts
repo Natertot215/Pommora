@@ -10,6 +10,7 @@ import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
 
 /** Written by the file cell on each chip and read back by the file effect. */
 export const FILE_CHIP_INDEX_ATTR = 'data-file-chip-index'
@@ -51,7 +52,7 @@ async function adoptInto(
   source: string,
 ): Promise<PropertyValue | undefined> {
   const adopted = await host().ask('assets:adopt', source, def.file_directory)
-  if (!adopted.ok) return undefined
+  if (!reportRefusal(adopted)) return undefined
   const next =
     chip === null
       ? [...files, adopted.value]

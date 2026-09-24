@@ -9,6 +9,9 @@ import { liveAssetMap, resolveAssetName } from './assetMap'
 import { parseConnectionText } from '../Connections/connections'
 import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
+import type { MutateDeps } from '../Nexus/mutate'
+
+const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
@@ -43,7 +46,7 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/a/banner-abcdef12.png' }),
     )
-    expect(await migrateAssets(root)).toBeNull()
+    expect(await migrateAssets(root, nexusDeps)).toBeNull()
     expect(await pathExists(join(root, '.nexus/assets/a/banner-abcdef12.png'))).toBe(true)
   })
 
@@ -60,7 +63,7 @@ describe('migrateAssets', () => {
         JSON.stringify({ id: dir, banner: `.nexus/assets/${key}/IMG_0073.jpeg` }),
       )
     }
-    const r = await migrateAssets(root)
+    const r = await migrateAssets(root, nexusDeps)
     expect(r?.moved).toHaveLength(1)
     expect(r?.rewritten).toBe(3)
     expect(await readdir(join(root, 'file-assets'))).toEqual(['IMG_0073.jpeg'])
@@ -79,7 +82,7 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/two/banner-mxplrbde.jpg' }),
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     expect(JSON.parse(await read('.nexus/homepage/homepage.json')).banner).toBe(
       '[[Purplish Dark Sky.png]]',
     )
@@ -100,7 +103,7 @@ describe('migrateAssets', () => {
         profile_image: '.nexus/assets/id/profile-bbbbbb22.png',
       }),
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     expect(JSON.parse(await read('.nexus/state.json')).navigation.banner).toBe(
       '[[nexus-banner.jpg]]',
     )
@@ -114,11 +117,25 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     expect(await readdir(join(root, 'file-assets'))).toEqual(['kept.png'])
     expect(await pathExists(join(root, 'file-assets/orphan.png'))).toBe(false)
     const trashed = await readdir(join(root, '.trash'), { recursive: true })
     expect(trashed.some((n) => String(n).includes('orphan.png'))).toBe(true)
+  })
+
+  it('sends swept leftovers to the system trash in System mode', async () => {
+    await asset('dead/orphan.png', 'orphan-bytes')
+    const sent: string[] = []
+    await migrateAssets(root, {
+      trashMode: 'system',
+      trashToSystem: async (p) => {
+        sent.push(p)
+        await rm(p)
+      },
+    })
+    expect(sent).toEqual([join(root, '.nexus/assets/dead/orphan.png')])
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
   })
 
   it('empties .nexus/assets of images and thumbnails, keeping only its own crops config', async () => {
@@ -128,7 +145,7 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     expect(await readdir(join(root, '.nexus/assets')).catch(() => [])).toEqual(['crops.json'])
   })
 
@@ -139,7 +156,7 @@ describe('migrateAssets', () => {
       join(root, 'Notes', 'Alpha.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\nbanner: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     const after = await read('Notes/Alpha.md')
     expect(after).toMatch(/banner: ["']\[\[Alpha Banner\.png\]\]["']/)
     expect(after).toContain('the body')
@@ -160,7 +177,7 @@ describe('migrateAssets', () => {
       join(space, SPACE_SIDECAR),
       JSON.stringify({ id: 'sp', Attachment: '[[Spec.pdf]]' }),
     )
-    const r = await migrateAssets(root)
+    const r = await migrateAssets(root, nexusDeps)
     expect(r?.skipped).toEqual([])
     expect((await readdir(join(root, 'file-assets'))).sort()).toEqual(['Plan.pdf', 'Spec.pdf'])
     const fm = splitFrontmatter(await read('Notes/Alpha.md'))
@@ -183,7 +200,7 @@ describe('migrateAssets', () => {
       join(root, '.nexus', 'assets', 'crops.json'),
       JSON.stringify({ byImage: { '.nexus/assets/a/Photo.png': { x: 0.3, y: 0.4, zoom: 2 } } }),
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     expect(JSON.parse(await read('.nexus/assets/crops.json')).byImage).toEqual({
       'file-assets/Photo.png': { x: 0.3, y: 0.4, zoom: 2 },
     })
@@ -200,7 +217,7 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/two/banner-dddddd44.jpg' }),
     )
-    await migrateAssets(root)
+    await migrateAssets(root, nexusDeps)
     const map = await liveAssetMap(root)
     for (const value of [
       JSON.parse(await read('.nexus/homepage/homepage.json')).banner,
@@ -220,8 +237,8 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/one/Solo.png' }),
     )
-    await migrateAssets(root)
-    expect(await migrateAssets(root)).toBeNull()
+    await migrateAssets(root, nexusDeps)
+    expect(await migrateAssets(root, nexusDeps)).toBeNull()
     expect(JSON.parse(await read('Notes/_pagecollection.json')).banner).toBe('[[Solo.png]]')
     expect(await readdir(join(root, 'file-assets'))).toEqual(['Solo.png'])
   })
@@ -236,7 +253,7 @@ describe('migrateAssets', () => {
       join(root, '.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: '.nexus/assets/gone/missing.png' }),
     )
-    const r = await migrateAssets(root)
+    const r = await migrateAssets(root, nexusDeps)
     expect(r?.skipped.map((s) => s.store)).toEqual(['homepage.json'])
     expect(JSON.parse(await read('Notes/_pagecollection.json')).banner).toBe('[[kept.png]]')
     expect(r?.trashed).toBe(0)
@@ -250,7 +267,7 @@ describe('migrateAssets', () => {
       join(root, 'Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'pt', banner: '[[Twin.png]]' }),
     )
-    const r = await migrateAssets(root)
+    const r = await migrateAssets(root, nexusDeps)
     expect(r?.skipped).toHaveLength(1)
     expect(r?.moved).toEqual([])
     expect(await pathExists(join(root, '.nexus/assets/a/Twin.png'))).toBe(true)
@@ -272,7 +289,7 @@ describe('migrateAssets', () => {
       )
       await chmod(join(root, 'Locked'), 0o555)
       try {
-        const r = await migrateAssets(root)
+        const r = await migrateAssets(root, nexusDeps)
         expect(r?.rewritten).toBe(1)
         expect(r?.skipped.map((x) => x.store)).toEqual(['Locked/_pagecollection.json'])
         expect(r?.trashed).toBe(0)

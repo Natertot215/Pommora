@@ -17,6 +17,7 @@ import { assignProperty } from '../Properties/assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { deleteProperty } from '../Properties/deleteProperty'
+import { removeProperty } from '../Properties/removeProperty'
 import { createProperty } from '../Properties/registryProperty'
 
 const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -170,9 +171,28 @@ describe('restoring a deleted property', () => {
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
-    expect(r.ok).toBe(true)
+    expect(r).toEqual({ ok: true, value: { unrestored: ['A'] } })
     expect(await valueOn(good.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
+  })
+
+  it('a value a Remove had cached comes back, dormant on its page', async () => {
+    const id = await seedPriority()
+    const page = await createPage(tasks, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    await updatePageProperty(root, page.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'lo',
+    })
+    expect((await removeProperty(root, tasks, id)).ok).toBe(true)
+    expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
+
+    const deleted = await deleteProperty(root, id)
+    expect(deleted.ok && deleted.value.trashed?.bundlePath).toBe(await onlyBundlePath())
+    await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    // Home again, dormant while its Collection no longer assigns it, as a move between Collections leaves a value.
+    expect(await assigns(tasks, id)).toBe(false)
+    expect(await valueOn(page.value.path, 'Priority')).toEqual(['lo'])
   })
 
   it('a page and a collection gone since the delete are skipped, and the rest still lands', async () => {

@@ -7,6 +7,7 @@ import {
   type TileHostRef,
   type TileStyle,
   type PagePickerItem,
+  TILE_KINDS,
   type ViewPick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
@@ -15,7 +16,7 @@ import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
-import { getTile } from './Layout/model'
+import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
@@ -23,7 +24,7 @@ import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
-import { notifyRemovedTile, reportRefusal } from '../Interface/Notifications/notifications'
+import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
 import { findCollection, findCollectionForSet, findSet } from '../Nexus/treeIndex'
 import { mintDefaultView } from '@pommora/core/Views/views'
 import { viewGlyph } from '../Views/viewIcon'
@@ -213,17 +214,44 @@ export function TileHost({
   )
   const confirmRemove = useCallback(
     (id: string) => {
+      const kind = entries.get(id)?.type
+      const nexus = useSession.getState().tree?.nexus.id
       void askRemoveTile().then((ok) => {
-        if (!ok) return
+        if (!ok || !kind) return
         // Order is load-bearing: suppress the tile's editor flush, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
         markTileRemoving(id)
         setEditingId((cur) => (cur === id ? null : cur))
-        commitLayout((cur) => removeLeaf(cur, id))
-        void dialer().ask('tiles:removeTile', host, id).then(reportRefusal).then(refreshEntries)
-        notifyRemovedTile()
+        let before = emptyLayout()
+        let after: TileLayout | null = null
+        commitLayout((cur) => {
+          before = cur
+          after = removeLeaf(cur, id)
+          return after
+        })
+        const at = (): { band: number; h: number } => ({
+          band: findTile(before, id)?.band ?? before.bands.length,
+          h: getTile(before, id)?.h ?? NEW_TILE_H,
+        })
+        // Untouched since, the board returns exactly; otherwise the tile comes back as its own band where it stood, and nothing placed since moves.
+        const putBack = (): void => {
+          const { band, h } = at()
+          commitLayout((cur) => (cur === after ? before : insertBand(cur, band, id, h)))
+        }
+        void dialer()
+          .ask('tiles:removeTile', host, id)
+          .then((r) => {
+            refreshEntries()
+            if (!reportRefusal(r)) return putBack()
+            notifyUndoable(`Deleted ${TILE_KINDS[kind].label}`, async () => {
+              if (useSession.getState().tree?.nexus.id !== nexus) return
+              const back = await dialer().ask('tiles:restoreTile', host, { ...r.value, at: at() })
+              refreshEntries()
+              if (reportRefusal(back)) putBack()
+            })
+          })
       })
     },
-    [commitLayout, refreshEntries, host],
+    [entries, commitLayout, refreshEntries, host],
   )
 
   const tileClassName = useCallback(

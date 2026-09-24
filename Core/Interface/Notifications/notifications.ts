@@ -33,8 +33,20 @@ export const persist = (
     else notifyReport(line, true)
   })
 
-export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): void => {
-  const message = `Deleted “${title}”`
+export const unrestoredLine = (titles: string[]): string =>
+  `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
+
+export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): void =>
+  notifyUndoable(`Deleted “${title}”`, undo)
+
+/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
+export const notifyTrashed = (title: string, bundlePath?: string): void =>
+  notifyDeleted(
+    title,
+    bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
+  )
+
+export function notifyUndoable(message: string, undo?: () => void | Promise<void>): void {
   if (!undo) {
     post({ message, tone: 'normal' })
     return
@@ -55,5 +67,3 @@ export const notifyDeleted = (title: string, undo?: () => void | Promise<void>):
     return true
   })
 }
-
-export const notifyRemovedTile = (): void => post({ message: 'Removed the tile', tone: 'normal' })

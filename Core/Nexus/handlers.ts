@@ -13,7 +13,6 @@ import type { MutateRequest } from './mutateRequest'
 import { machine } from '../Platform/machine'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
-import { readPermanentDelete } from '../Settings/settings'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
 import { renameHeadingCascade } from './cascade'
@@ -21,7 +20,7 @@ import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from '
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
 import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
-import { handleMutate, type MutateDeps } from './mutate'
+import { handleMutate, mutateDeps } from './mutate'
 import { confirmBy, confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, whileAdopting } from './session'
@@ -96,15 +95,6 @@ export async function adoptNexus(
   })
 }
 
-async function mutateDeps(root: string, ctx: HostContext): Promise<MutateDeps> {
-  return {
-    trashMode: await ctx.trashMode(),
-    trashToSystem: (p) =>
-      machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
-    permanentDelete: await readPermanentDelete(root),
-  }
-}
-
 export const nexusHandlers = {
   'nexus:state': withRoot(
     async (root): Promise<Result<NexusState>> =>
@@ -119,7 +109,7 @@ export const nexusHandlers = {
     return ok(true)
   },
 
-  // The one place a renderer-origin path enters; accepted only if it's an existing directory.
+  // A renderer-origin path, accepted only if it's an existing directory.
   'nexus:openPath': async (ctx, p: unknown) => {
     if (typeof p !== 'string' || p.length === 0) return ok(false)
     const stat = await machine()

@@ -15,7 +15,7 @@ import { stubDialer } from '../vitest.setup'
 let ver = 200
 const freshMap = (): AssetMap => ({
   files: { 'cover.png': ['file-assets/Cover.png'] },
-  version: ver++,
+  versions: { 'file-assets/Cover.png': ver++ },
 })
 const treeWith = (crops: Record<string, Crop>): NexusTree => ({ crops }) as unknown as NexusTree
 
@@ -233,7 +233,7 @@ describe('ImagePicker', () => {
   it('holds Save while a re-picked image adopts, then releases even when the value is unchanged', async () => {
     const bothMap = {
       files: { 'cover.png': ['file-assets/Cover.png'], 'new.png': ['file-assets/New.png'] },
-      version: ver++,
+      versions: { 'file-assets/Cover.png': ver, 'file-assets/New.png': ver++ },
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
     ;(window as { nexus?: unknown }).nexus = stubDialer({
@@ -264,7 +264,7 @@ describe('ImagePicker', () => {
   it('holds Save after a re-pick until the seat’s value reaches the adopted image', async () => {
     const bothMap = {
       files: { 'cover.png': ['file-assets/Cover.png'], 'new.png': ['file-assets/New.png'] },
-      version: ver++,
+      versions: { 'file-assets/Cover.png': ver, 'file-assets/New.png': ver++ },
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
     ;(window as { nexus?: unknown }).nexus = stubDialer({
