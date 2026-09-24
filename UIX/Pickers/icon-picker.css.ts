@@ -22,7 +22,7 @@ export const search = style([input, { textAlign: 'left' }, focusRing()])
 
 export const separator = style([separatorLine, { flex: '0 0 auto' }])
 
-export const favorites = style({
+export const iconFavorites = style({
   width: '100%',
   flex: '0 0 auto',
   boxSizing: 'border-box',
@@ -32,7 +32,7 @@ export const favorites = style({
   overflow: 'hidden',
 })
 
-export const favScroll = style({
+export const iconFavScroll = style({
   display: 'flex',
   gap: 2,
   overflowX: 'auto',

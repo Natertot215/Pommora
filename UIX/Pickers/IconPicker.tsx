@@ -26,13 +26,13 @@ export interface IconPickerProps {
   triggerRef?: RefObject<Element | null>
   value?: string
   onSelect?: (id: string) => void
-  favorites: IconFavorites
+  iconFavorites: IconFavorites
 }
 
 export type IconFavorites = {
   ids: string[]
   onChange: (next: string[]) => void
-  onMenu?: (isFavorite: boolean) => Promise<'toggle' | null>
+  onMenu?: (isIconFavorite: boolean) => Promise<'toggle' | null>
 }
 
 export function IconPicker({
@@ -41,9 +41,9 @@ export function IconPicker({
   triggerRef,
   value,
   onSelect,
-  favorites,
+  iconFavorites,
 }: IconPickerProps): React.JSX.Element | null {
-  const favs = favorites.ids
+  const iconFavs = iconFavorites.ids
 
   const [query, setQuery] = useState('')
   const set = useSyncExternalStore(subscribeFullIconSet, fullIconSet, fullIconSet)
@@ -60,30 +60,32 @@ export function IconPicker({
     [onSelect, onClose],
   )
 
-  const toggleFav = useCallback(
+  const toggleIconFav = useCallback(
     (id: string) => {
-      favorites.onChange(favs.includes(id) ? favs.filter((f) => f !== id) : [...favs, id])
+      iconFavorites.onChange(
+        iconFavs.includes(id) ? iconFavs.filter((f) => f !== id) : [...iconFavs, id],
+      )
     },
-    [favs, favorites.onChange],
+    [iconFavs, iconFavorites.onChange],
   )
-  const reorderFavs = useCallback(
+  const reorderIconFavs = useCallback(
     (a: string, o: string) => {
       const next = reorder(
-        favs.map((id) => ({ id })),
+        iconFavs.map((id) => ({ id })),
         a,
         o,
       ).map((x) => x.id)
-      favorites.onChange(next)
+      iconFavorites.onChange(next)
     },
-    [favs, favorites.onChange],
+    [iconFavs, iconFavorites.onChange],
   )
 
   const openContext = useCallback(
     async (e: MouseEvent, id: string) => {
       e.preventDefault()
-      if ((await favorites.onMenu?.(favs.includes(id))) === 'toggle') toggleFav(id)
+      if ((await iconFavorites.onMenu?.(iconFavs.includes(id))) === 'toggle') toggleIconFav(id)
     },
-    [favs, favorites.onMenu, toggleFav],
+    [iconFavs, iconFavorites.onMenu, toggleIconFav],
   )
 
   // A state-backed callback ref, so the virtualizer re-runs the moment the element mounts.
@@ -94,7 +96,7 @@ export function IconPicker({
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
     if (listEl) setScrollMargin(listEl.offsetTop)
-  }, [listEl, favs.length, open])
+  }, [listEl, iconFavs.length, open])
 
   const rowCount = Math.ceil(filtered.length / COLS)
   const rowVirt = useVirtualizer({
@@ -115,15 +117,15 @@ export function IconPicker({
       contentClassName={s.content}
     >
       <SearchField className={s.search} value={query} onValueChange={setQuery} />
-      {favs.length === 0 && <div className={s.separator} />}
+      {iconFavs.length === 0 && <div className={s.separator} />}
 
       <div ref={setScrollEl} className={cx(s.grid, 'over-scroll')}>
-        {favs.length > 0 && (
-          <div className={s.favorites}>
-            <div className={cx(s.favScroll, 'over-scroll-x')}>
-              <SortableZone items={favs} onReorder={reorderFavs}>
-                {favs.map((id) => (
-                  <FavCell
+        {iconFavs.length > 0 && (
+          <div className={s.iconFavorites}>
+            <div className={cx(s.iconFavScroll, 'over-scroll-x')}>
+              <SortableZone items={iconFavs} onReorder={reorderIconFavs}>
+                {iconFavs.map((id) => (
+                  <IconFavCell
                     key={id}
                     id={id}
                     selected={id === value}
@@ -188,7 +190,7 @@ function GridCell({
   )
 }
 
-function FavCell({
+function IconFavCell({
   id,
   selected,
   onPick,

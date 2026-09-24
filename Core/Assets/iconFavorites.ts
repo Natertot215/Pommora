@@ -7,11 +7,15 @@ import { iconFavoriteMenuItems } from '@pommora/core/Actions/identityMenus'
 const NONE: string[] = []
 
 export function useIconFavorites(): IconFavorites {
-  const ids = useSession((st) => st.personalization.favoriteIcons) ?? NONE
+  const ids = useSession((st) => st.personalization.iconFavorites) ?? NONE
   const setPersonalization = useSession((st) => st.setPersonalization)
   const onChange = useCallback(
-    (next: string[]) => setPersonalization('favoriteIcons', next.length ? next : undefined),
+    (next: string[]) => setPersonalization('iconFavorites', next.length ? next : undefined),
     [setPersonalization],
   )
-  return { ids, onChange, onMenu: (isFavorite) => popMenu(iconFavoriteMenuItems(isFavorite)) }
+  return {
+    ids,
+    onChange,
+    onMenu: (isIconFavorite) => popMenu(iconFavoriteMenuItems(isIconFavorite)),
+  }
 }

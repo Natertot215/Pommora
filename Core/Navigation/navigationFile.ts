@@ -26,18 +26,12 @@ const refList = (v: unknown): NavRef[] | undefined => {
   return refs.length ? refs : undefined
 }
 
-const FILE_KEYS = ['pinned', 'favorites'] as const
-
-const asList = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
-
 export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
   const obj = navigationOf(await readJsonObject(statePath(root)))
   const { assetDir } = await readWatchScope(root)
   const file: Omit<NavigationState, 'recents'> = {}
-  for (const key of FILE_KEYS) {
-    const refs = refList(obj[key])
-    if (refs) file[key] = refs
-  }
+  const pinned = refList(obj.pinned)
+  if (pinned) file.pinned = pinned
   if (isAssetPath(obj.banner, assetDir)) file.banner = obj.banner
   return file
 }
@@ -56,21 +50,19 @@ export async function writeNavigationState(
     const recents = cleanRefs(patch.recents ?? [])
     writeValue('recents', recents.length ? recents : null)
   }
-  const touchesFile = FILE_KEYS.some((k) => k in patch) || 'banner' in patch
-  if (!touchesFile) return
+  if (!('pinned' in patch) && !('banner' in patch)) return
   const written = await updateNexusConfig(root, 'state', (state) => {
     const base = navigationOf(state)
-    const navigation: Record<string, unknown> = { ...base }
-    for (const key of FILE_KEYS) {
-      const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
-      if (refs.length) navigation[key] = refs
-      else delete navigation[key]
-    }
+    const pinned = refList('pinned' in patch ? patch.pinned : base.pinned)
     // The reader drops a banner outside the asset folder, so the write keeps any path it's given.
     const banner = 'banner' in patch ? patch.banner : base.banner
     return {
       ...state,
-      navigation: setOrDrop(navigation, 'banner', typeof banner === 'string' && banner),
+      navigation: setOrDrop(
+        setOrDrop(base, 'pinned', pinned),
+        'banner',
+        typeof banner === 'string' && banner,
+      ),
     }
   })
   if (!written.ok) throw new Error(written.error.message)

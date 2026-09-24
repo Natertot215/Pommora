@@ -52,7 +52,6 @@ export function isNavRef(v: unknown, kinds: ReadonlySet<string> = NAV_KINDS): v 
 
 export interface NavigationState {
   pinned?: NavRef[]
-  favorites?: NavRef[]
   recents?: NavRef[]
   banner?: string
 }

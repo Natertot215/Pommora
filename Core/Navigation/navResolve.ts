@@ -1,4 +1,4 @@
-// An entry that no longer resolves is RENDER-pruned, never dropped from storage — a cross-nexus switch resolves everything to null, and auto-deleting would wipe durable favorites.
+// An entry that no longer resolves is RENDER-pruned, never dropped from storage — a cross-nexus switch resolves everything to null, and auto-deleting would wipe durable pins.
 
 import type { NavRef, WindowTarget } from '@pommora/core/Navigation/navRef'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
@@ -13,7 +13,6 @@ export interface ResolvedNav {
   title: string
   icon: string
   path: TrailSegment[]
-  pinned?: boolean
 }
 
 export type NavCore = { icon: string; title: string; path: TrailSegment[] }
@@ -33,19 +32,8 @@ export function resolveWith(index: ResolveIndex, entry: NavRef): ResolvedNav | n
   }
 }
 
-export function resolveRecents(index: ResolveIndex, recents: NavRef[]): ResolvedNav[] {
-  return recents.map((r) => resolveWith(index, r)).filter((r): r is ResolvedNav => r !== null)
-}
-
-export function resolveFavorites(index: ResolveIndex, favorites: NavRef[]): ResolvedNav[] {
-  return favorites.map((f) => resolveWith(index, f)).filter((r): r is ResolvedNav => r !== null)
-}
-
-export function resolvePins(index: ResolveIndex, pins: NavRef[]): ResolvedNav[] {
-  return pins
-    .map((p) => resolveWith(index, p))
-    .filter((r): r is ResolvedNav => r !== null)
-    .map((r) => ({ ...r, pinned: true }))
+export function resolveAll(index: ResolveIndex, refs: NavRef[]): ResolvedNav[] {
+  return refs.map((r) => resolveWith(index, r)).filter((r): r is ResolvedNav => r !== null)
 }
 
 // A nav row's `path` is a breadcrumb, not a file path — a glance needs the file path from the id→path map.
