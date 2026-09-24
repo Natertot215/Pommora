@@ -6,6 +6,7 @@ import {
   splitWithOffsets,
   type FenceInfo,
 } from './detect'
+import type { DocScan } from './docScan'
 
 /** `DocScan` satisfies it structurally, so a caller holding the cached whole-document scan asks without re-splitting. */
 interface HeadingSrc {
@@ -13,16 +14,6 @@ interface HeadingSrc {
   lineStarts: number[]
   headings: readonly boolean[]
   fences: readonly (FenceInfo | undefined)[]
-}
-
-export function headingSrc(text: string): HeadingSrc {
-  const { lines, lineStarts } = splitWithOffsets(text)
-  return {
-    lines,
-    lineStarts,
-    headings: lines.map(isHeadingLine),
-    fences: scanFencedCode(lines, lineStarts),
-  }
 }
 
 interface HeadingSection {
@@ -51,7 +42,7 @@ function scanHeadings({ lines, headings, fences }: HeadingSrc): ScannedHeading[]
     const text = m.content.trim()
     const n = (seen.get(text) ?? 0) + 1
     seen.set(text, n)
-    heads.push({ idx: i, level: m.hashes.length, text, key: n === 1 ? text : `${text} ${n}` })
+    heads.push({ idx: i, level: m.hashes.length, text, key: n === 1 ? text : `${text}\u0000${n}` })
   }
   return heads
 }
@@ -73,7 +64,15 @@ export function headingOutlineOf(src: HeadingSrc): OutlineHeading[] {
   }))
 }
 
-export const headingOutline = (doc: string): OutlineHeading[] => headingOutlineOf(headingSrc(doc))
+export function headingOutline(doc: string): OutlineHeading[] {
+  const { lines, lineStarts } = splitWithOffsets(doc)
+  return headingOutlineOf({
+    lines,
+    lineStarts,
+    headings: lines.map(isHeadingLine),
+    fences: scanFencedCode(lines, lineStarts),
+  })
+}
 
 export function sectionEnd(headings: readonly { level: number }[], start: number): number {
   for (let n = start + 1; n < headings.length; n++)
@@ -81,26 +80,26 @@ export function sectionEnd(headings: readonly { level: number }[], start: number
   return headings.length
 }
 
-const sectionCache = new WeakMap<HeadingSrc, HeadingSection[]>()
+const sectionCache = new WeakMap<DocScan, HeadingSection[]>()
 
 /** A section reaching no body lines is dropped but still consumes its ordinal, so duplicate-text keys stay stable. */
-export function headingSections(src: HeadingSrc): HeadingSection[] {
-  const held = sectionCache.get(src)
+export function headingSections(scan: DocScan): HeadingSection[] {
+  const held = sectionCache.get(scan)
   if (held) return held
-  const { lines, lineStarts: starts } = src
-  const heads = scanHeadings(src)
+  const { lines, lineStarts: starts, citations } = scan
+  const heads = scanHeadings(scan)
 
   const out: HeadingSection[] = []
   for (let h = 0; h < heads.length; h++) {
     const { idx, level, key } = heads[h]
     const next = sectionEnd(heads, h)
-    const endLine = next < heads.length ? heads[next].idx - 1 : lines.length - 1
+    const endLine = next < heads.length ? heads[next].idx - 1 : citations.firstLine - 1
     const from = starts[idx]
     const lineEnd = from + lines[idx].length
     const to = starts[endLine] + lines[endLine].length
     // Strictly more than one line past the heading: a body of one empty line hands out a chevron over a fold whose widget never renders.
     if (to > lineEnd + 1) out.push({ from, lineEnd, level, key, to })
   }
-  sectionCache.set(src, out)
+  sectionCache.set(scan, out)
   return out
 }

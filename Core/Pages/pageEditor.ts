@@ -1,8 +1,8 @@
 import { reportRefusal, persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { EditorView } from '@codemirror/view'
-import { headingOutline, sectionEnd } from '../MarkdownPM/Engine/headingScan'
 import { travelTo } from '../MarkdownPM/travel'
-import { docString } from '../MarkdownPM/docCache'
+import { docOutline, docScan } from '../MarkdownPM/docCache'
+import { blockAt } from '../MarkdownPM/Engine/blockModel'
 import { moveRange } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 import { valueOr } from '../Contract/result'
@@ -49,17 +49,14 @@ export async function renameHeading(pageId: string, old: string, next: string): 
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
   const view = pageView
   if (!view) return
-  const doc = docString(view.state.doc)
-  const heads = headingOutline(doc)
-  const h = heads.findIndex((x) => x.key === dragKey)
-  if (h < 0) return
-  const end = sectionEnd(heads, h)
-  const from = heads[h].from
-  const sectionEndPos = end < heads.length ? heads[end].from : doc.length
-  // Stop at the section's last non-blank character — the mover re-fences with one blank, so carrying the trailing blank too would compound an extra blank on every reorder.
-  const range = { from, to: from + doc.slice(from, sectionEndPos).trimEnd().length }
+  const scan = docScan(view.state.doc)
+  const heads = docOutline(view.state.doc)
+  const drag = heads.find((x) => x.key === dragKey)
   const at =
-    beforeKey === null ? doc.length : (heads.find((x) => x.key === beforeKey)?.from ?? doc.length)
-  const changes = moveRange(doc, range, { at })
+    beforeKey === null
+      ? scan.lineStarts[scan.citations.firstLine]
+      : heads.find((x) => x.key === beforeKey)?.from
+  if (!drag || at === undefined) return
+  const changes = moveRange(scan.text, blockAt(scan, drag.from)!, { at })
   if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
 }
