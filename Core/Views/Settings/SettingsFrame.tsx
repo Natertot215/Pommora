@@ -12,7 +12,7 @@ import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeI
 import { pickView } from '../Pipeline/pickView'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
-import { VisibilityList } from './HiddenFrame'
+import { VisibilityFrame } from './VisibilityFrame'
 import { LayoutFrame } from './LayoutFrame'
 import { VIEW_ROWS, ViewLeaf, type ViewRow, type ViewRowId } from './ViewLeaf'
 import { ScalePicker } from '@pommora/core/Settings/ScalePicker'
@@ -189,7 +189,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         )
       case 'visibility':
         return (
-          <VisibilityList
+          <VisibilityFrame
             source={node}
             schema={schema}
             view={view}

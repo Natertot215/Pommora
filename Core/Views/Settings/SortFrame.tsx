@@ -11,10 +11,15 @@ import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/
 import { useSaveView } from '../ViewTileScope'
 import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { CustomList, PropertyPreview, SUB_LOOK } from './GroupFrame'
+import { CustomList, PropertyPreview, SUB_LOOK } from './OptionOrderList'
 import { bucketOrder } from '../Pipeline/group'
-import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
-import * as gp from './group-frame.css'
+import {
+  STAMP_TARGETS,
+  schemaTargets,
+  TITLE_TARGET,
+  targetOption,
+} from '../../Properties/Cells/PropertyTypes'
+import * as oo from './option-order.css'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 type Direction = SortCriterion['direction']
@@ -71,24 +76,6 @@ function directionOptions(
   }
 }
 
-interface SortTarget {
-  id: string
-  label: string
-  icon: PickerOption<string>['icon']
-}
-
-function sortTargets(schema: PropertyDefinition[], capitalize: boolean): SortTarget[] {
-  return [
-    TITLE_TARGET,
-    ...STAMP_TARGETS,
-    ...schemaTargets(
-      schema,
-      (d) => SORTABLE_PANE.has(declaredType(d.id, schema) ?? ''),
-      capitalize,
-    ),
-  ]
-}
-
 export function SortFrame({
   source,
   view,
@@ -108,7 +95,11 @@ export function SortFrame({
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
   const capitalize = useCapitalizeMetadata()
-  const targets = sortTargets(schema, capitalize)
+  const targets = [
+    TITLE_TARGET,
+    ...STAMP_TARGETS,
+    ...schemaTargets(schema, (d) => SORTABLE_PANE.has(d.type), capitalize),
+  ]
   const targetById = new Map(targets.map((t) => [t.id, t]))
   const nameOf = (c: SortCriterion): string =>
     c.property_id === LOCATION_SORT
@@ -138,11 +129,9 @@ export function SortFrame({
     save([primary, { property_id: id, direction: 'ascending' }])
   }
 
-  const primaryType = primary ? declaredType(primary.property_id, schema) : undefined
+  const primaryDef = primary && schema.find((d) => d.id === primary.property_id)
   const finiteDef =
-    primaryType === 'select' || primaryType === 'status'
-      ? schema.find((d) => d.id === primary?.property_id)
-      : undefined
+    primaryDef?.type === 'select' || primaryDef?.type === 'status' ? primaryDef : undefined
 
   const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
   const seededOrder = (): string[] =>
@@ -157,9 +146,7 @@ export function SortFrame({
     ...(VIEW_KINDS[view.type].flat
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
       : []),
-    ...targets
-      .filter((t) => t.id !== sub?.property_id)
-      .map((t) => ({ value: t.id, label: t.label, icon: t.icon })),
+    ...targets.filter((t) => t.id !== sub?.property_id).map(targetOption),
     ...(primary && !targets.some((t) => t.id === primary.property_id)
       ? [{ value: primary.property_id, label: nameOf(primary), icon: 'tag' as const }]
       : []),
@@ -167,9 +154,7 @@ export function SortFrame({
 
   const subOptions: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
-    ...targets
-      .filter((t) => t.id !== primary?.property_id)
-      .map((t) => ({ value: t.id, label: t.label, icon: t.icon })),
+    ...targets.filter((t) => t.id !== primary?.property_id).map(targetOption),
   ]
 
   return (
@@ -240,7 +225,7 @@ export function SortFrame({
           {finiteDef && (
             <>
               <MenuSeparator flush />
-              <div className={`${gp.middle} over-scroll`}>
+              <div className={`${oo.middle} over-scroll`}>
                 {primary.order ? (
                   <CustomList
                     group={{ order_mode: 'manual', order: primary.order }}

@@ -15,7 +15,7 @@ import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/f
 import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
 import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from '../hiddenFrameModel'
+import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
@@ -98,7 +98,7 @@ function VisibilityGroups({
   )
 }
 
-export function VisibilityList({
+export function VisibilityFrame({
   source,
   schema,
   view,
@@ -133,7 +133,7 @@ export function VisibilityList({
   const handleDrop = (drop: PaneDrop): void => {
     if (drop.kind === 'unassign') save(hideShown(view, drop.propId))
     else if (drop.kind === 'reorder-assigned' || drop.kind === 'assign')
-      save(placeInShown(view, shownIds, shownIds, drop.propId, drop.toIndex))
+      save(placeInShown(view, shownIds, drop.propId, drop.toIndex))
   }
 
   const paneRows: FrameRow[] = [

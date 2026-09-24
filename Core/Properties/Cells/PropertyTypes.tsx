@@ -3,6 +3,7 @@ import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@pommora/core/Properties/prope
 import { asRenderableIcon, Icon, type IconName } from '@pommora/uix/Symbols'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { displayPropertyName, RESERVED_LABEL } from './columnLabel'
+import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
 interface TypeMeta {
   label: string
@@ -91,3 +92,9 @@ export const schemaTargets = (
     label: displayPropertyName(d.name, capitalize),
     icon: propertyIcon(d),
   }))
+
+export const targetOption = (t: PaneTarget): PickerOption<string> => ({
+  value: t.id,
+  label: t.label,
+  icon: t.icon,
+})
