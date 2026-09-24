@@ -95,7 +95,7 @@ Several rules hold across every entity and are stated here rather than per featu
 
 Every file write goes through an atomic path — temp file plus rename in the host (`Desktop/Platform/nodeMachine.ts`), behind the machine seam Core writes through — leaving either the whole old file or the whole new file after a crash. Pages write through the YAML-and-Markdown engine, which places the body directly after the closing fence and re-serializes only the modeled keys; sidecars, Contexts, Settings, and the Homepage write as JSON. Atomicity prevents a torn file; serialization prevents a lost update: every read-modify-write runs under a lock keyed on the file it rewrites (`Desktop/Platform/fileLock.ts`) and reads fresh inside that lock, so two writers to one file queue. A page's path key is shared by its body write, its property writes, and its rename or move; a container's sidecar key is taken by every writer of that file. The locks are process state, and the app holds a single-instance lock, so a relaunch raises the existing window.
 
-Autosave belongs to one path-keyed flush registry shared by every editor host: edits debounce per page path, any path flushes on demand, and everything flushes on teardown, Nexus switch, and window close.
+Autosave belongs to one path-keyed flush registry shared by every editor host: edits debounce per page path, any path flushes on demand, everything flushes on teardown, Nexus switch, quit, and window close, and a save the host refuses is dropped and reported once.
 
 #### II. The Device-Local Database
 
@@ -171,7 +171,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Warm tab state | Serialized editor state — text, caret, undo history — plus scroll, for every tab beyond the parked ones | Twenty entries per tab, then the oldest goes; closing the tab; an outside edit to that page |
 | Retained web guests | A scrolled-out or parked site stays alive, paused, keeping its scroll, typed input, and playing media | Five hidden guests, then the least recent is torn down |
 | Embed tile and Page Window warmth | The same editor state for tiles inside a page and for window tabs | The page's body changing since capture; closing the Page Window |
-| Pending page saves | A typed body waiting on its debounce, flushed on unmount, Nexus switch, and window close | The write landing |
+| Pending page saves | A typed body waiting on its debounce, flushed on unmount, Nexus switch, quit, and window close | The write landing |
 
 Deliberately never kept: the window opens at one size every launch, and floating windows re-center rather than reopening where they were left, since a remembered position strands chrome off screen when the display changes.
 
