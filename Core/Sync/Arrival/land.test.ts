@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import type { TileHostRef } from '../../Tiles/tiles'
 import { tempRoot } from '../../Testing/hostFs'
-import { makeTree } from '../../Testing/testTree'
 import { memoryStores } from '../../Testing/memoryStores'
-import { dropLiveTree, seedLiveTree } from '../../Nexus/liveTree'
+import { dropLiveTree } from '../../Nexus/liveTree'
 import {
   type CaptureStore,
   installStores,
@@ -24,7 +22,6 @@ const REMOTE_DEVICE = 'bbbb'
 const MTIME = Date.UTC(2026, 8, 1, 12)
 
 let root: string
-let pushes: TileHostRef[]
 let host: SyncHost
 let mem: ReturnType<typeof memoryStores>
 
@@ -69,16 +66,12 @@ const rename = (from: string, path: string, seq = 3): Change => ({
 beforeEach(async () => {
   root = tempRoot('pom-land-')
   await mkdir(join(root, '.nexus'), { recursive: true })
-  pushes = []
   host = {
     device: { id: LOCAL_DEVICE } as SyncHost['device'],
     transport: (() => {
       throw new Error('no transport')
     }) as unknown as SyncHost['transport'],
     secrets: {} as SyncHost['secrets'],
-    push: ((_k: string, payload: TileHostRef) => {
-      pushes.push(payload)
-    }) as unknown as SyncHost['push'],
   }
   mem = memoryStores()
   installStores(mem.stores)
@@ -151,14 +144,6 @@ describe('landWrite', () => {
       personalization: { accent: 'lavender' },
       pinned: ['A.md'],
     })
-  })
-
-  it('pushes tiles:changed for a landed tile body', async () => {
-    seedLiveTree(makeTree())
-    const bytes = utf8('tile\n')
-    await landWrite(host, root, write('.nexus/homepage/t1.md', bytes), bytes)
-    await landWrite(host, root, write('.nexus/contexts/Realms/Work/t2.md', bytes, 2), bytes)
-    expect(pushes).toEqual([{ kind: 'homepage' }, { kind: 'space', id: 'a1' }])
   })
 
   it('records no echo', async () => {

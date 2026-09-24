@@ -34,6 +34,8 @@ interface TileDoc {
 export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: null }
 
 const bodies = new Map<string, string>()
+// The hash of the text each tile's file last held as far as this window knows: a read or an acknowledged save sets it, and a save carries it.
+const bases = new Map<string, string>()
 const bodyListeners = new Map<string, Set<() => void>>()
 
 export const tileBodyWriter = createBodyWriter('the tile')
@@ -44,9 +46,28 @@ export const writeTileBody = (tileId: string, text: string): void => {
 
 export const readTileBody = (tileId: string): string | null => bodies.get(tileId) ?? null
 
+export const readTileBase = (tileId: string): string => bases.get(tileId) ?? ''
+
+export const setTileBase = (tileId: string, hash: string): void => {
+  capSet(bases, tileId, hash, BODY_CAP)
+}
+
 // A sibling mount re-seeds once per debounced save, never per keystroke.
 export const settleTileBody = (tileId: string): void => {
   for (const fn of bodyListeners.get(tileId) ?? []) fn()
+}
+
+/** The file moved without this window's typing: every mount that isn't editing reads it again. */
+export const dropTileBodies = (ids: Iterable<string>): void => {
+  for (const id of ids) {
+    bodies.delete(id)
+    settleTileBody(id)
+  }
+}
+
+/** A cascading page rename rewrote links inside tile files. */
+export const refreshTileBodies = (): void => {
+  for (const doc of docs.values()) dropTileBodies(tileIds(doc.state.layout))
 }
 
 export const subscribeTileBody = (tileId: string, fn: () => void): (() => void) => {
@@ -144,6 +165,7 @@ function create(host: TileHostRef): TileDoc {
   docs.set(key, doc)
   doc.off = dialer().on('tiles:changed', (changed) => {
     if (tileHostKey(changed) !== key) return
+    dropTileBodies(tileIds(doc.state.layout))
     if (doc.holds > 0) doc.heldPush = true
     else void reload(doc)
   })
@@ -164,6 +186,7 @@ async function retire(doc: TileDoc): Promise<void> {
     docs.delete(tileHostKey(doc.host))
     for (const id of tileIds(doc.state.layout)) {
       bodies.delete(id)
+      bases.delete(id)
       removing.delete(id)
     }
   }
@@ -253,6 +276,7 @@ export function dropAllTileDocs(): void {
   const live = [...docs.values()]
   docs.clear()
   bodies.clear()
+  bases.clear()
   removing.clear()
   tileBodyWriter.cancelAll()
   for (const doc of live) {

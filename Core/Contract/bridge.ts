@@ -177,11 +177,11 @@ export interface Asks {
   'tiles:removeTile': { args: [host: TileHostRef, tileId: string]; reply: Result<null> }
   'tiles:readMarkdown': {
     args: [host: TileHostRef, tileId: string]
-    reply: Result<{ body: string }>
+    reply: Result<{ body: string; hash: string }>
   }
   'tiles:writeMarkdown': {
-    args: [host: TileHostRef, tileId: string, body: string]
-    reply: Result<null>
+    args: [host: TileHostRef, tileId: string, body: string, baseHash: string]
+    reply: Result<BodyWrite>
   }
   'tiles:convertToPage': {
     args: [host: TileHostRef, tileId: string, pageId: string]

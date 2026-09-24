@@ -27,10 +27,12 @@ import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import {
   applyWatchEvents,
+  tileHostAt,
   touchesCorpus,
   type WatchEvent,
   type WatchEventName,
 } from '@pommora/core/Nexus/watchPatch'
+import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 
 const SETTLE_MS = 200
 
@@ -75,7 +77,6 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
   // A later start, or a session switch, superseded this one during the settings read.
   if (start !== starts || sessionRoot() !== root) return
   const skip = syncIgnoredUnder(root, scope)
-  const isTileBody = tileBodyOf(root)
   watcher = chokidar.watch(root, {
     ignored: (path: string) => skip(posixPath(path)),
     ignoreInitial: true,
@@ -87,7 +88,6 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     (hostPath: string): void => {
       const path = posixPath(hostPath)
       emitWatch(event, path)
-      if (isTileBody(path)) return
       // The app's own writes echo back and confirm through their own channels: a bytes-less echo stops here, and one recorded with its bytes is dropped at the settle while the file still holds them. The two live config files and the metadata month files skip the early stop because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
       if (isConfigPath(root, path, 'state'))
         pushConfig(root, win, 'nav:changed', readNavigationFile)
@@ -134,7 +134,17 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
   const noted = batch
   batch = []
   try {
-    const events = await dropOwnEchoes(noted)
+    const isTileBody = tileBodyOf(root)
+    const moved = await dropOwnEchoes(noted)
+    // A tile body is no part of the tree: an outside edit to one re-reads its host's tiles.
+    const tileHosts = new Map<string, TileHostRef>()
+    const held = getLiveTree()
+    for (const e of moved) {
+      const ref = isTileBody(e.absPath) && held && tileHostAt(held, relPosix(root, e.absPath))
+      if (ref) tileHosts.set(tileHostKey(ref), ref)
+    }
+    for (const ref of tileHosts.values()) push(win, 'tiles:changed', ref)
+    const events = moved.filter((e) => !isTileBody(e.absPath))
     if (!events.length) return
     const before = getLiveTree()
     const assetsBefore = getHeldAssetMap(root)

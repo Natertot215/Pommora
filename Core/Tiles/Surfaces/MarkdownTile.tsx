@@ -4,7 +4,10 @@ import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import {
+  dropTileBodies,
+  readTileBase,
   readTileBody,
+  setTileBase,
   settleTileBody,
   subscribeTileBody,
   tileBodyWriter,
@@ -47,35 +50,39 @@ export function MarkdownTile({
     } else setSeed((s) => ({ ...s, editing }))
   }
 
+  // The file on disk re-seeds the editor under a new key.
+  const reread = useRef<() => void>(() => {})
   useEffect(() => {
+    let live = true
+    reread.current = () =>
+      void dialer()
+        .ask('tiles:readMarkdown', host, tileId)
+        .then((r) => {
+          if (!live) return
+          if (r.ok) setTileBase(tileId, r.value.hash)
+          mine.current = null
+          setSeed((s) => ({
+            no: s.no + 1,
+            editing: s.editing,
+            text: r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null,
+          }))
+        })
     // Another mount's typing is newer than the file, so the slot leads the disk whenever it holds this tile.
     const held = readTileBody(tileId)
-    if (held !== null) {
-      setSeed((s) => ({ no: s.no + 1, editing: s.editing, text: held }))
-      return
-    }
-    let live = true
-    void dialer()
-      .ask('tiles:readMarkdown', host, tileId)
-      .then((r) => {
-        if (!live) return
-        setSeed((s) => ({
-          no: s.no + 1,
-          editing: s.editing,
-          text: r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null,
-        }))
-      })
+    if (held !== null) setSeed((s) => ({ no: s.no + 1, editing: s.editing, text: held }))
+    else reread.current()
     return () => {
       live = false
     }
   }, [tileId])
 
-  // A mount that is not editing follows the typing mount in place, once per landed save; its editor keeps its scroll and its key.
+  // A mount that is not editing follows the typing mount in place, once per landed save; its editor keeps its scroll and its key. An emptied slot means the file moved on without this window, so it reads the file again.
   useEffect(() => {
     if (editing) return
     return subscribeTileBody(tileId, () => {
       const held = readTileBody(tileId)
-      if (held === null || held === mine.current) return
+      if (held === null) return reread.current()
+      if (held === mine.current) return
       mine.current = null
       setSeed((s) => (held === s.text ? s : { ...s, text: held }))
     })
@@ -95,11 +102,18 @@ export function MarkdownTile({
     // Synchronous, before the debounce and before any await: the slot must hold what was typed by the time the next pointerdown moves the edit to another mount.
     writeTileBody(tileId, next)
     mine.current = next
-    tileBodyWriter.schedule(tileId, () => {
+    tileBodyWriter.schedule(tileId, async () => {
       settleTileBody(tileId)
-      return suppressRef.current?.(tileId)
-        ? Promise.resolve(ok(null))
-        : dialer().ask('tiles:writeMarkdown', host, tileId, next)
+      if (suppressRef.current?.(tileId)) return ok(null)
+      const r = await dialer().ask('tiles:writeMarkdown', host, tileId, next, readTileBase(tileId))
+      if (r.ok && !r.value.stale) setTileBase(tileId, r.value.hash)
+      // The host kept the refused text as a capture; the file on disk is what every mount shows from here.
+      else if (r.ok) {
+        tileBodyWriter.cancel(tileId)
+        dropTileBodies([tileId])
+        reread.current()
+      }
+      return r
     })
   }
 

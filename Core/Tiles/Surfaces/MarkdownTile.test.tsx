@@ -28,16 +28,20 @@ vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
   },
 }))
 
-import { dropAllTileDocs, readTileBody } from '../tileDocStore'
+import { dropAllTileDocs, dropTileBodies, readTileBody } from '../tileDocStore'
 import { MarkdownTile } from './MarkdownTile'
 import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const HOST = { kind: 'space', id: 'sp1' } as const
-const write = vi.fn(async () => ({ ok: true, value: null }))
+const write = vi.fn(async (_h: unknown, _id: string, body: string, _base: string) => ({
+  ok: true,
+  value: { stale: false, hash: `h:${body}` },
+}))
 
 let container: HTMLDivElement
 let root: Root
+let onDisk: string
 const editors = (): HTMLElement[] =>
   [...container.querySelectorAll('.stub-editor')] as HTMLElement[]
 const text = (n = 0): string | undefined => editors()[n]?.textContent ?? undefined
@@ -59,8 +63,12 @@ beforeEach(() => {
   dropAllTileDocs()
   write.mockClear()
   seeds.length = 0
+  onDisk = 'on disk'
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'tiles:readMarkdown': vi.fn(async () => ({ ok: true, value: { body: 'on disk' } })),
+    'tiles:readMarkdown': vi.fn(async () => ({
+      ok: true,
+      value: { body: onDisk, hash: `h:${onDisk}` },
+    })),
     'tiles:writeMarkdown': write,
   })
   container = document.createElement('div')
@@ -136,6 +144,28 @@ describe("a markdown tile's shared body", () => {
       await new Promise((r) => setTimeout(r, 500))
     })
     expect(readTileBody('t1')).toBe('on disk!!')
-    expect(write).toHaveBeenLastCalledWith(HOST, 't1', 'on disk!!')
+    expect(write).toHaveBeenLastCalledWith(HOST, 't1', 'on disk!!', 'h:on disk!')
+  })
+})
+
+describe('a tile file that moved without this window', () => {
+  it('a refused save re-reads the file into every mount', async () => {
+    await mountBoth(true, false)
+    onDisk = 'synced'
+    write.mockImplementationOnce(async () => ({ ok: true, value: { stale: true } }) as never)
+    await act(async () => {
+      editors()[0]?.click()
+      await new Promise((r) => setTimeout(r, 500))
+    })
+    expect(write).toHaveBeenCalledWith(HOST, 't1', 'on disk!', 'h:on disk')
+    expect(text(0)).toBe('synced')
+    expect(text(1)).toBe('synced')
+  })
+
+  it('an outside edit re-reads the file into a mount that is not editing', async () => {
+    await mount()
+    onDisk = 'renamed [[Link]]'
+    await act(async () => dropTileBodies(['t1']))
+    expect(text()).toBe('renamed [[Link]]')
   })
 })

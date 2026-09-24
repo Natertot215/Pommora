@@ -679,7 +679,7 @@ describe('store — a Nexus switch lands every owed save first', () => {
     channels['windows:save'] = vi.fn(async () => ok(null))
     schedulePageSave('Notes/A.md', 'typed')
     tileBodyWriter.schedule('t1', () =>
-      dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x'),
+      dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x', ''),
     )
     scheduleTabsSave({ tabs: [], activeTabId: '' } as unknown as StoredTabSet)
     await useSession.getState().choose()

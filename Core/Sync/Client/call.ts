@@ -10,7 +10,6 @@ export interface SyncHost {
   device: HostDevice
   transport: HostContext['transport']
   secrets: HostContext['secrets']
-  push: HostContext['push']
 }
 
 export interface SyncTarget {
@@ -21,7 +20,7 @@ export interface SyncTarget {
 export function syncHost(ctx: HostContext): SyncHost | null {
   const device = ctx.device
   if (device === null) return null
-  return { device, transport: ctx.transport, secrets: ctx.secrets, push: ctx.push }
+  return { device, transport: ctx.transport, secrets: ctx.secrets }
 }
 
 export type Refusal = { error: string } & Record<string, unknown>

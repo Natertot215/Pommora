@@ -33,7 +33,7 @@ function recorder(reply: Omit<TransportReply, 'bytes'> | Error): {
     if (reply instanceof Error) throw reply
     return replyOf(reply)
   }
-  return { host: { device, transport, secrets: memorySecrets(), push: () => {} }, signed, sent }
+  return { host: { device, transport, secrets: memorySecrets() }, signed, sent }
 }
 
 const connectBody = { nexusId: 'nx', publicKey: TEST_PUBLIC_KEY, name: 'Recorder' }

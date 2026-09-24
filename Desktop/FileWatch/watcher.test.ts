@@ -160,6 +160,20 @@ describe('a host document under the watcher', () => {
     expect(tiles).toHaveLength(1)
     expect(tiles[0][2]).toEqual({ kind: 'homepage' })
   })
+
+  it('pushes the host for an outside edit to a tile body, and nothing for its own write', async () => {
+    await startWatcher(root, win)
+    await mkdir(abs('.nexus', 'homepage'), { recursive: true })
+    recordWrite(abs('.nexus', 'homepage', `${ULID_B}.md`), 'typed')
+    await writeFile(abs('.nexus', 'homepage', `${ULID_B}.md`), 'typed')
+    emit('change', '.nexus', 'homepage', `${ULID_B}.md`)
+    await settleAll()
+    expect(pushMock.mock.calls.filter((c) => c[1] === 'tiles:changed')).toEqual([])
+    await writeFile(abs('.nexus', 'homepage', `${ULID_B}.md`), 'synced')
+    emit('change', '.nexus', 'homepage', `${ULID_B}.md`)
+    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'tiles:changed'))
+    expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['tiles:changed'])
+  })
 })
 
 describe('state.json under the watcher', () => {
