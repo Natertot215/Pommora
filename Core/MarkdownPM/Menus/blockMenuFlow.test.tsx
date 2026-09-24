@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
-import { itemSelected } from '@pommora/uix/Menus/menu-base.css'
+import { itemSelected, matchText } from '@pommora/uix/Menus/menu-base.css'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
@@ -53,9 +53,7 @@ async function press(view: EditorView, key: string): Promise<void> {
 }
 
 const marks = (): string[] =>
-  [...document.querySelectorAll('.mdpm-block-menu .mdpm-autocomplete-match')].map(
-    (m) => m.textContent ?? '',
-  )
+  [...document.querySelectorAll(`.mdpm-block-menu .${matchText}`)].map((m) => m.textContent ?? '')
 
 async function click(row: Element | undefined): Promise<void> {
   await act(async () => {

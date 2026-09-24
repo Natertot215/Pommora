@@ -108,6 +108,8 @@ export const itemSelected = style({
 
 export const itemEmphasized = style([text.body.emphasized])
 
+export const matchText = style({ fontWeight: font.weight.emphasized })
+
 export const rowDisabled = style({
   selectors: {
     '&&': { opacity: 'var(--state-inactive)', pointerEvents: 'none' },

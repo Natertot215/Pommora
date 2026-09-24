@@ -11,6 +11,7 @@ export {
   MenuFooting,
   FootingItem,
   MenuScrollFrame,
+  emphasizeMatch,
 } from './menu-row'
 export {
   MenuIndex,

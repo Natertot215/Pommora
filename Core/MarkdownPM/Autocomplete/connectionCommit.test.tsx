@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
+import { matchText } from '@pommora/uix/Menus/menu-base.css'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import {
@@ -125,7 +126,7 @@ describe('the picker stands down when it has nothing to add', () => {
     await act(async () => {
       view.dispatch({ changes: { from: 5, insert: 'ha' }, selection: { anchor: 7 } })
     })
-    const held = document.querySelector('.mdpm-ac .mdpm-autocomplete-match')
+    const held = document.querySelector(`.mdpm-ac .${matchText}`)
     expect(held).toBeTruthy()
     await act(async () => {
       held?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))

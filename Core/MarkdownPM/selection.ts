@@ -1,17 +1,16 @@
-// Seated BELOW the text so the tint sits behind the glyphs. Geometry only — fill, corner and bleed are text-selection.css.
+// Seated BELOW the text so the tint sits behind the glyphs. Geometry only — fill, corner and bleed are the kit's caret.css.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import type { SelectionRange } from '@codemirror/state'
+import { selCorner } from '@pommora/uix/Theme/nativeCaret'
+import { cx } from '@pommora/uix/Utilities/cx'
 import { clampToLine, cursorMarkers } from './caret'
 
-const CLS = 'mdpm-sel'
+const CLS = 'sel-pill'
 
 function caretEdge(view: EditorView, pos: number, assoc: 1 | -1): RectangleMarker | undefined {
   const [m] = cursorMarkers(view, CLS, pos, assoc)
   return m && clampToLine(view, CLS, m)
 }
-
-const corner = (i: number, n: number): string =>
-  n === 1 ? `${CLS}-solo` : i === 0 ? `${CLS}-head` : i === n - 1 ? `${CLS}-foot` : ''
 
 // CM hands back a contiguous, already-viewport-clipped ribbon, so only the OUTER bound is line-box tall where the caret is shorter; an edge the viewport clipped is a continuation and keeps its own box.
 function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[] {
@@ -23,7 +22,7 @@ function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[
     const top = i === 0 && head ? head.top : m.top
     const bottom = i === last && foot ? foot.top + foot.height : m.top + m.height
     return new RectangleMarker(
-      `${CLS} ${corner(i, pieces.length)}`.trim(),
+      cx(CLS, selCorner(i, pieces.length)),
       m.left,
       top,
       m.width,

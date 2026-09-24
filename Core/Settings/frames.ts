@@ -1,6 +1,6 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { NumberUnit, PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
 import {
@@ -138,12 +138,11 @@ export type Row =
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
-type NumberUnit = { scale: number; suffix: string }
-export const PERCENT: NumberUnit = { scale: 100, suffix: '%' }
-const DAYS: NumberUnit = { scale: 1, suffix: ' Days' }
-const MINUTES: NumberUnit = { scale: 1, suffix: ' Min' }
-const PIXELS: NumberUnit = { scale: 1, suffix: 'px' }
-const TABS: NumberUnit = { scale: 1, suffix: ' Tabs' }
+export const PERCENT: NumberUnit = { scale: 100, suffix: '%', digits: 0 }
+const DAYS: NumberUnit = { scale: 1, suffix: ' Days', digits: 0 }
+const MINUTES: NumberUnit = { scale: 1, suffix: ' Min', digits: 0 }
+const PIXELS: NumberUnit = { scale: 1, suffix: 'px', digits: 0 }
+const TABS: NumberUnit = { scale: 1, suffix: ' Tabs', digits: 0 }
 
 const clearExclusions = async (): Promise<boolean> => {
   const count = await host().ask('exclusions:count')

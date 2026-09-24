@@ -21,42 +21,48 @@ export const MenuDoorContext = createContext<MenuDoor | null>(null)
 const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
-const factorChoice = (f: number): PickerOption<string> => ({
-  value: String(f),
-  label: `${f.toFixed(2)}x`,
-})
+/** How a stepped value reads: multiplied by `scale`, fixed to `digits` decimals, followed by `suffix`. */
+export type NumberUnit = { scale: number; suffix: string; digits: number }
 
-/** Admits an off-step current value so a hand-typed factor still has a row to sit selected on. */
-export const stepsWith = (steps: readonly number[], current: number): number[] =>
+const FACTOR: NumberUnit = { scale: 1, suffix: 'x', digits: 2 }
+
+/** Admits an off-step current value so a hand-typed value still has a row to sit selected on. */
+const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
-// Every multiplier control — a list of factor rows, and the same field behind a right press.
+// Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` before `coerce`.
 export function factorPickerProps({
   steps,
   value,
+  unit = FACTOR,
   coerce,
   onPick,
 }: {
   steps: readonly number[]
   value: number
+  unit?: NumberUnit
   coerce: (typed: number) => number
-  onPick: (factor: number) => void
+  onPick: (value: number) => void
 }): {
   value: string
   options: PickerOption<string>[]
   onPick: (v: string) => void
   typeable: { text: string; suffix: string; onCommit: (written: string) => void }
 } {
+  const shown = (f: number): string => (f * unit.scale).toFixed(unit.digits)
   return {
     value: String(value),
-    options: stepsWith(steps, value).map(factorChoice),
+    options: stepsWith(steps, value).map((f) => ({
+      value: String(f),
+      label: `${shown(f)}${unit.suffix}`,
+    })),
     onPick: (v) => onPick(Number(v)),
     typeable: {
-      text: value.toFixed(2),
-      suffix: 'x',
+      text: shown(value),
+      suffix: unit.suffix,
       onCommit: (written) => {
-        const typed = Number.parseFloat(written.replace(/x/i, '').trim())
-        if (Number.isFinite(typed)) onPick(coerce(typed))
+        const typed = Number.parseFloat(written)
+        if (Number.isFinite(typed)) onPick(coerce(typed / unit.scale))
       },
     },
   }

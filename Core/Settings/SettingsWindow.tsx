@@ -15,7 +15,7 @@ import {
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
-import { stepsWith } from '@pommora/uix/Pickers/PickerControl'
+import { factorPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
@@ -228,34 +228,23 @@ function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Elem
   const setPersonalization = useSession((s) => s.setPersonalization)
   const setDevicePref = useSession((s) => s.setDevicePref)
   const steps = row.steps ?? SCALE_STEPS
-  const unit = row.unit ?? PERCENT
-  const shown = (value: number): number => Math.round(value * unit.scale)
   const commit = (value: number): void => {
     const next = value === row.fallback ? undefined : value
     if (row.kind === 'zoom') setPersonalization(row.key, next)
     else setDevicePref(row.key, next)
   }
-  const choices = stepsWith(steps, stored).map((f) => ({
-    value: String(f),
-    label: `${shown(f)}${unit.suffix}`,
-  }))
   return (
     <MenuRowView
       row={settingsRow(row, {
         kind: 'picker',
         ariaLabel: row.label,
-        value: String(stored),
-        options: choices,
-        onPick: (v) => commit(Number(v)),
-        typeable: {
-          text: String(shown(stored)),
-          suffix: unit.suffix,
-          onCommit: (written) => {
-            const typed = Number.parseFloat(written.replace(unit.suffix, '').trim())
-            if (Number.isFinite(typed))
-              commit(clamp(typed / unit.scale, steps[0], steps[steps.length - 1]))
-          },
-        },
+        ...factorPickerProps({
+          steps,
+          value: stored,
+          unit: row.unit ?? PERCENT,
+          coerce: (n) => clamp(n, steps[0], steps[steps.length - 1]),
+          onPick: commit,
+        }),
       })}
     />
   )
