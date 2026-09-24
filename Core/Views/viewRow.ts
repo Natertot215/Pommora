@@ -40,7 +40,6 @@ export interface ResolvedGroup {
   kind: GroupKind
   items: ViewRow[]
   children?: ResolvedGroup[]
-  isCollapsed: boolean
   bucket?: string
 }
 

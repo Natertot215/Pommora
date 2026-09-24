@@ -34,7 +34,6 @@ const fileTarget = (): PickTarget => ({ kind: 'file', def: fileDef, current: nul
 function Host(props: {
   target?: PickTarget | null
   chooser?: PickEntry[]
-  chooserInitial?: string
   anchorX?: number
   onCommit?: (value: unknown, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
@@ -52,7 +51,6 @@ function Host(props: {
         triggerRef={ref}
         target={props.target ?? null}
         chooser={props.chooser}
-        chooserInitial={props.chooserInitial}
         anchorX={props.anchorX}
         onCommit={props.onCommit ?? (() => {})}
         onReveal={props.onReveal}
@@ -198,7 +196,7 @@ describe('PropertyPicker panes', () => {
     expect(rowButton('Spaces')?.textContent).toContain('Areas')
   })
 
-  it('a targeted chooser entry slides to its value pane, chooserInitial pre-drills, and onCommit carries the entry', async () => {
+  it('a targeted chooser entry slides to its value pane and onCommit carries the entry', async () => {
     const onCommit = vi.fn()
     const chooser: PickEntry[] = [
       {
@@ -209,11 +207,12 @@ describe('PropertyPicker panes', () => {
         drillable: true,
       },
     ]
-    await render({
-      chooser,
-      chooserInitial: 'prop_sel',
-      onCommit,
-      resolveTarget: () => optionsTarget(),
+    await render({ chooser, onCommit, resolveTarget: () => optionsTarget() })
+    await act(async () => {
+      rowButton('Stage')?.click()
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30))
     })
     expect(portalText()).toContain('Alpha')
     const alpha = [

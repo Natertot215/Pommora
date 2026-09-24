@@ -35,7 +35,7 @@ import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 
-export interface ViewInteractionPolicy {
+interface ViewInteractionPolicy {
   ghost: {
     graceMs: number
     suppressed: () => boolean

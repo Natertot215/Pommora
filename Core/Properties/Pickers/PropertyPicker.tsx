@@ -62,7 +62,6 @@ export const syntheticContextDef = (id: string): PropertyDefinition => ({
 export function PropertyPicker({
   target,
   chooser,
-  chooserInitial,
   open,
   triggerRef,
   anchorX,
@@ -73,7 +72,6 @@ export function PropertyPicker({
 }: {
   target: PickTarget | null
   chooser?: PickEntry[]
-  chooserInitial?: string
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
   anchorX?: number
@@ -85,8 +83,8 @@ export function PropertyPicker({
   const held = useHeld(target, open)
   const [picked, setPicked] = useState<PickEntry | null>(null)
   useEffect(() => {
-    setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
-  }, [open, chooserInitial])
+    setPicked(null)
+  }, [open])
 
   const t = picked ? (resolveTarget?.(picked) ?? null) : held
   const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))

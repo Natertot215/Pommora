@@ -75,7 +75,6 @@ const group = (kind: ResolvedGroup['kind'], key: string, bucket?: string): Resol
   key,
   kind,
   items: [],
-  isCollapsed: false,
   ...(bucket !== undefined ? { bucket } : {}),
 })
 

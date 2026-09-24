@@ -16,19 +16,16 @@ const sg = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
   kind: 'structural-set',
   items: [],
   ...(children ? { children } : {}),
-  isCollapsed: false,
 })
 const prop = (key: string): ResolvedGroup => ({
   key,
   kind: 'property',
   items: [],
-  isCollapsed: false,
 })
 const ungrouped: ResolvedGroup = {
   key: '_ungrouped',
   kind: 'ungrouped',
   items: [],
-  isCollapsed: false,
 }
 
 // A[A1, A2], B[B1] + a loose tail — a 2-level fixture.

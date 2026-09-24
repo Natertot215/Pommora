@@ -110,7 +110,6 @@ describe('flattenContainer + structural grouping', () => {
       [],
       setTree,
       null,
-      [],
       'bottom',
       undefined,
       true,
@@ -139,7 +138,6 @@ describe('flattenContainer + structural grouping', () => {
       [],
       setTree,
       bySpec,
-      [],
       'bottom',
       undefined,
       true,
@@ -147,7 +145,7 @@ describe('flattenContainer + structural grouping', () => {
     expect(itemIds(groups[0])).toEqual(['p_sub', 'p_a'])
   })
 
-  it('locationFlatten (Sort by Location): concatenates every band into one force-open headerless band', () => {
+  it('locationFlatten (Sort by Location): concatenates every band into one headerless band', () => {
     const sub = set('sub', [page('p_sub')])
     const setA = set('setA', [page('p_a')], [sub])
     const setB = set('setB', [page('p_b')])
@@ -159,7 +157,6 @@ describe('flattenContainer + structural grouping', () => {
       [],
       setTree,
       null,
-      ['_ungrouped'],
       'bottom',
       undefined,
       true,
@@ -168,7 +165,6 @@ describe('flattenContainer + structural grouping', () => {
     expect(groups.map((g) => [g.key, g.kind])).toEqual([['_ungrouped', 'ungrouped']])
     // location order: setA's subtree (p_a, p_sub), then setB (p_b), then the root tail (bottom)
     expect(itemIds(groups[0])).toEqual(['p_a', 'p_sub', 'p_b', 'p_root'])
-    expect(groups[0].isCollapsed).toBe(false)
   })
 
   it('locationFlatten wins over a property group (mutually exclusive)', () => {
@@ -185,7 +181,6 @@ describe('flattenContainer + structural grouping', () => {
       statusSchema,
       setTree,
       null,
-      [],
       'bottom',
       undefined,
       false,
@@ -231,12 +226,6 @@ describe('flattenContainer + structural grouping', () => {
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
     const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, byId)
     expect(itemIds(groups[0])).toEqual(['a', 'b', 'c'])
-  })
-
-  it('marks groups collapsed from the collapsed set', () => {
-    const { rows, setTree } = flattenContainer(collection([set('s1', [page('p1')])], []), {}, {})
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, ['s1'])
-    expect(groups[0].isCollapsed).toBe(true)
   })
 })
 
@@ -351,7 +340,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
 
   it('sets stay top bands; sub-set pages roll up and bucket by the property (no sub-set band)', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
-    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, [], 'bottom', sub)
+    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
     const setA = groups.find((g) => g.key === 'setA')!
     expect(setA.kind).toBe('structural-set')
     expect(setA.children!.map((c) => ({ kind: c.kind, bucket: c.bucket }))).toEqual([
@@ -362,22 +351,13 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     expect(groups.some((g) => g.key === 'setA1')).toBe(false)
   })
 
-  it('composite keys keep collapse per-set', () => {
+  it("composite keys keep each set's bucket distinct", () => {
     const { rows, setTree } = flattenContainer(col, values, {})
-    const groups = resolveGroups(
-      rows,
-      structural,
-      statusSchema,
-      setTree,
-      null,
-      [subGroupKey('setA', 'done')],
-      'bottom',
-      sub,
-    )
+    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
     const setA = groups.find((g) => g.key === 'setA')!
     const setB = groups.find((g) => g.key === 'setB')!
-    expect(setA.children!.find((c) => c.bucket === 'done')!.isCollapsed).toBe(true)
-    expect(setB.children!.find((c) => c.bucket === 'done')!.isCollapsed).toBe(false)
+    expect(setA.children!.find((c) => c.bucket === 'done')!.key).toBe(subGroupKey('setA', 'done'))
+    expect(setB.children!.find((c) => c.bucket === 'done')!.key).toBe(subGroupKey('setB', 'done'))
   })
 
   it('manual sub-order is global; no-value pages sit per-set placed by the knob; loose root pages stay one flat tail', () => {
@@ -400,7 +380,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
       [page('p_loose')],
     )
     const { rows, setTree } = flattenContainer(col2, values2, {})
-    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, [], 'top', manual)
+    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'top', manual)
     expect(groups[0]).toMatchObject({ key: '_ungrouped', kind: 'ungrouped' })
     expect(itemIds(groups[0])).toEqual(['p_loose'])
     const setA = groups.find((g) => g.key === 'setA')!
@@ -422,13 +402,13 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const col3 = collection([set('setA', [page('p_z'), page('p_a2')])], [])
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
     const { rows, setTree } = flattenContainer(col3, values3, {})
-    const groups = resolveGroups(rows, structural, statusSchema, setTree, byId, [], 'bottom', sub)
+    const groups = resolveGroups(rows, structural, statusSchema, setTree, byId, 'bottom', sub)
     expect(itemIds(groups[0].children![0])).toEqual(['p_a2', 'p_z'])
   })
 
   it('an unmappable sub-group property falls back to plain structural', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
-    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, [], 'bottom', {
+    const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', {
       property_id: 'prop_gone',
       order_mode: 'configured',
     })
@@ -443,7 +423,7 @@ describe('ungrouped placement (the view-level knob)', () => {
       {},
       {},
     )
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, [], 'top')
+    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'top')
     expect(groups.map((g) => [g.key, g.kind])).toEqual([
       ['_ungrouped', 'ungrouped'],
       ['s1', 'structural-set'],
@@ -462,7 +442,7 @@ describe('ungrouped placement (the view-level knob)', () => {
       order_mode: 'configured',
       hide_empty_groups: false,
     }
-    const groups = resolveGroups(rows, group, statusSchema, setTree, null, [], 'top')
+    const groups = resolveGroups(rows, group, statusSchema, setTree, null, 'top')
     expect(keys(groups)).toEqual(['_ungrouped', 'not_started', 'opt_open', 'in_progress', 'done'])
   })
 

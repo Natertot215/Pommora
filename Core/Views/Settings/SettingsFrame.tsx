@@ -26,7 +26,6 @@ import {
   MenuRowView,
   MenuScrollFrame,
   MenuSeparator,
-  MenuCaption,
   MenuTopRow,
 } from '@pommora/uix/Menus'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -59,16 +58,6 @@ const ENTRIES: MenuEntry[] = [
   { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
 ]
 
-const CURRENT_LABEL: Record<FrameId, string> = {
-  configuration: 'Configuration',
-  properties: 'Properties',
-  visibility: 'Visibility',
-  layout: 'Layout',
-  group: 'Grouping',
-  filter: 'Filtering',
-  sort: 'Sorting',
-}
-
 export function SettingsFrame(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
@@ -88,10 +77,11 @@ export function SettingsFrame(): React.JSX.Element | null {
         ? findSet(tree, selection.id)
         : undefined
   const node = scope?.source ?? selectionNode
-  if (!node) return null
+  const schemaCollection =
+    node && (node.kind === 'collection' ? node : findCollectionForSet(tree, node.id))
+  if (!node || !schemaCollection) return null
 
-  const schemaCollection = node.kind === 'collection' ? node : findCollectionForSet(tree, node.id)
-  const schema = schemaCollection?.properties ?? []
+  const schema = schemaCollection.properties ?? []
   const view = scope?.view ?? pickView(node, schema)
   const entries = scope ? ENTRIES.filter((e) => e.id !== 'configuration') : ENTRIES
   const configLocked = scope?.locked ?? false
@@ -104,9 +94,8 @@ export function SettingsFrame(): React.JSX.Element | null {
   const back = (): void => setPane('root')
   const detailId = pane === 'root' ? lastDetail.current : pane
 
-  const openInValue: OpenIn = schemaCollection?.openIn ?? 'full-page'
+  const openInValue: OpenIn = schemaCollection.openIn ?? 'full-page'
   const setOpenIn = async (v: OpenIn): Promise<void> => {
-    if (!schemaCollection) return
     await host().ask('container:configure', schemaCollection.path, 'collection', { open_in: v })
   }
   const toggleOpenIn = (): void => {
@@ -118,14 +107,6 @@ export function SettingsFrame(): React.JSX.Element | null {
     const next = coerceScale(f, 1)
     void saveViewIn(scope, node, { ...view, view_scale: next === 1 ? undefined : next })
   }
-
-  const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
-  const schemaUnavailable = (
-    <>
-      {blankLeaf}
-      <MenuCaption>Schema unavailable.</MenuCaption>
-    </>
-  )
 
   const configurationLeaf = (
     <>
@@ -189,7 +170,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   )
   const plainRoot = <MenuScrollFrame footer={footing}>{root}</MenuScrollFrame>
 
-  const scopedRoot = scope && schemaCollection && (
+  const scopedRoot = scope && (
     <MenuScrollFrame
       footer={
         <MenuFooting
@@ -214,28 +195,20 @@ export function SettingsFrame(): React.JSX.Element | null {
     detailId === 'configuration' ? (
       configurationLeaf
     ) : detailId === 'properties' ? (
-      schemaCollection ? (
-        <PropertyFrame
-          collectionPath={schemaCollection.path}
-          schema={schema}
-          onBack={back}
-          source={node}
-        />
-      ) : (
-        schemaUnavailable
-      )
+      <PropertyFrame
+        collectionPath={schemaCollection.path}
+        schema={schema}
+        onBack={back}
+        source={node}
+      />
     ) : detailId === 'visibility' ? (
-      schemaCollection ? (
-        <VisibilityList
-          source={node}
-          schema={schema}
-          view={view}
-          onBack={back}
-          current="Visibility"
-        />
-      ) : (
-        schemaUnavailable
-      )
+      <VisibilityList
+        source={node}
+        schema={schema}
+        view={view}
+        onBack={back}
+        current="Visibility"
+      />
     ) : detailId === 'layout' ? (
       <LayoutFrame
         source={node}
@@ -249,7 +222,7 @@ export function SettingsFrame(): React.JSX.Element | null {
       <GroupFrame source={node} view={view} schema={schema} label="Settings" onBack={back} />
     ) : detailId === 'sort' ? (
       <SortFrame source={node} view={view} schema={schema} label="Settings" onBack={back} />
-    ) : detailId === 'filter' ? (
+    ) : (
       <FilterFrame
         key={view.id}
         locations={node.sets ?? []}
@@ -260,8 +233,6 @@ export function SettingsFrame(): React.JSX.Element | null {
         onBack={back}
         onCommit={(next) => void saveViewIn(scope, node, { ...view, ...next })}
       />
-    ) : (
-      blankLeaf
     )
 
   return (

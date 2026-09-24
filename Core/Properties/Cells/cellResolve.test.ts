@@ -71,16 +71,15 @@ describe('groupLabel', () => {
       key: 'set1',
       kind: 'structural-set',
       items: [],
-      isCollapsed: false,
     } as ResolvedGroup
     expect(groupLabel(g, view, ctx, setNames)).toBe('Inbox')
   })
   it('resolves a property group bucket to its option label', () => {
-    const g = { key: 'doing', kind: 'property', items: [], isCollapsed: false } as ResolvedGroup
+    const g = { key: 'doing', kind: 'property', items: [] } as ResolvedGroup
     expect(groupLabel(g, view, ctx, setNames)).toBe('Doing')
   })
   it('returns empty for the no-value band', () => {
-    const g = { key: UNGROUPED, kind: 'ungrouped', items: [], isCollapsed: false } as ResolvedGroup
+    const g = { key: UNGROUPED, kind: 'ungrouped', items: [] } as ResolvedGroup
     expect(groupLabel(g, view, ctx, setNames)).toBe('')
   })
 })

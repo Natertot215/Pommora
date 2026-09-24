@@ -94,7 +94,6 @@ type ValuePickerRequest = {
 type AddPickerRequest = {
   rowId: string
   anchor: HTMLElement
-  initialEntry: AddEntry | null
 }
 
 /** What a card asks the one root banner seat to do. */
@@ -257,20 +256,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── Value and add pickers ─────────────────────────────────────────────────
 
   const openValuePicker = (req: ValuePickerRequest): void => setValuePicker(req)
-  const openAddPicker = (req: AddPickerRequest): void => {
-    const t = req.initialEntry?.def?.type
-    if (req.initialEntry && !req.initialEntry.revealOnly && (t === 'datetime' || t === 'url')) {
-      setValuePicker({
-        rowId: req.rowId,
-        column: addColumn(req.initialEntry.id, tree),
-        kind: t === 'datetime' ? 'datetime' : 'link',
-        anchor: req.anchor,
-        revealOnCommit: true,
-      })
-      return
-    }
-    setAddPicker(req)
-  }
 
   const capitalize = useCapitalizeMetadata()
   const styleById = useColumnStyleMap(host)
@@ -357,7 +342,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     open: interactions.openPage,
     hide: hideProperty,
     openValuePicker,
-    openAddPicker,
+    openAddPicker: setAddPicker,
     hover: interactions.ghost.onHover,
     titleMenuContext: interactions.titleMenuContext,
     titleAction: interactions.runTitleAction,
@@ -639,7 +624,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 )
               : undefined
           }
-          chooserInitial={addPicker?.initialEntry?.id}
           resolveTarget={(e) => (addRow ? pickTarget(addRow, addColumn(e.id, tree)) : null)}
           open={valuePopup !== null || addPicker !== null}
           triggerRef={pickerAnchorRef}
@@ -1068,7 +1052,7 @@ const PageCard = memo(function PageCard({
     (e: React.MouseEvent): void => {
       e.stopPropagation()
       if (!isDragging && api.addableFor(row).length > 0 && textRef.current)
-        api.openAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
+        api.openAddPicker({ rowId: row.id, anchor: textRef.current })
     },
     [isDragging, api, row],
   )

@@ -130,7 +130,7 @@ describe('band drag gesture', () => {
 
   it('outline pointerdown never arms the gesture — a follow-up click still toggles', async () => {
     const toggleSpy = vi.fn()
-    const group: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [], isCollapsed: false }
+    const group: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [] }
     const view: SavedView = {
       id: 'v',
       name: 'V',
@@ -204,13 +204,12 @@ describe('band drag gesture', () => {
       })
       return (host.querySelector('.group-band-row') as HTMLElement).hasAttribute('data-empty')
     }
-    const bare: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [], isCollapsed: false }
+    const bare: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [] }
     expect(await mount(bare)).toBe(true)
     const child: ResolvedGroup = {
       key: 'A1',
       kind: 'structural-set',
       items: [],
-      isCollapsed: false,
     }
     expect(await mount({ ...bare, children: [child] })).toBe(false)
   })

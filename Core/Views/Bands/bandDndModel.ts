@@ -22,7 +22,7 @@ export interface BandSlot {
 /** Top/bottom fraction of a set band that reads as a before/after slot; the middle nests. */
 const NEST_ZONE = 0.3
 
-/** A ResolvedGroup's own isCollapsed is a snapshot; the render reads live state. The ungrouped tail is a non-entity: no band, no drag, no target. */
+/** The render reads live collapse state. The ungrouped tail is a non-entity: no band, no drag, no target. */
 export function flattenBands(groups: ResolvedGroup[], collapsed: Set<string>): Band[] {
   const out: Band[] = []
   const walk = (gs: ResolvedGroup[], depth: number, parentId: string | null): void => {
