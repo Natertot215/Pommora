@@ -205,7 +205,7 @@ export function SidebarDnd({
           : []
       return { measured, siblings, box }
     },
-    resolve: (id, point, s) => (escort?.loose() ? null : computeTarget(id, point.y, s)),
+    resolve: (id, point, s) => computeTarget(id, point.y, s),
     escort,
     escortSpec: (id, rect) => {
       const entry = index.byId.get(id)

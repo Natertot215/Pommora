@@ -1,9 +1,7 @@
-import type { CSSProperties } from 'react'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
@@ -14,8 +12,7 @@ import { formatDate, formatNumber, numberDivisor } from '../formatValue'
 import { OptionChip } from './OptionChip'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
-import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { CheckboxGlyph } from './checkboxLook'
+import { CheckboxGlyph } from './CheckboxGlyph'
 import type { ValueContext } from '../valueContext'
 import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
 
@@ -51,20 +48,14 @@ export function Cell({
   const def = ctx.schema.find((d) => d.id === column.id)
 
   // Keyed off the schema TYPE rather than value presence, so a checkbox toggles in place without first assigning the property.
-  if (dt === 'checkbox') {
-    const checked = v.kind === 'checkbox' && v.value
-    const color = def?.checkbox_color
-    return style.look === 'switch' ? (
-      <span
-        className="cell-switch"
-        style={{ ...(color ? { '--accent': solidColorCss(color) } : {}) } as CSSProperties}
-      >
-        <DualSwitch checked={checked} onChange={() => {}} ariaLabel="Checkbox value" />
-      </span>
-    ) : (
-      <CheckboxGlyph checked={checked} color={color} className="cell-checkbox" />
+  if (dt === 'checkbox')
+    return (
+      <CheckboxGlyph
+        checked={v.kind === 'checkbox' && v.value}
+        color={def?.checkbox_color}
+        look={style.look}
+      />
     )
-  }
 
   switch (v.kind) {
     case 'select': {

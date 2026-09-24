@@ -9,32 +9,16 @@ import {
   embedZoom,
   viewEmbedZoom,
 } from '@pommora/core/Settings/personalization'
-import type { CellKey } from '@pommora/uix/Theme/colors'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
-import { cellColor, cellPaint } from '@pommora/uix/Theme/ramp'
+import { cellColor, checkboxPaint, labelColorFor } from '@pommora/uix/Theme/ramp'
 
-/** Every sentinel — `accent`, `system`, `default` — reads as no cell, which `labelColorFor` already answers for. */
-function settingCell(setting: unknown): CellKey | null {
-  const key = typeof setting === 'string' ? labelColorFor(setting) : 'default'
-  return key === 'default' ? null : key
-}
-
-/** `null` for a setting whose deferral is the var's ABSENCE rather than a copy of what it would inherit. */
+/** `null` for a setting whose deferral is the var's ABSENCE rather than a copy of what it would inherit. Every sentinel — `accent`, `system`, `default` — reads as no cell, which `labelColorFor` already answers for. */
 function settingColorCss<I extends string | null>(setting: unknown, inherit: I): string | I {
-  const key = settingCell(setting)
-  return key === null ? inherit : cellColor(key)
+  const key = typeof setting === 'string' ? labelColorFor(setting) : 'default'
+  return key === 'default' ? inherit : cellColor(key)
 }
 
 /** A `null` REMOVES the var rather than setting it, for a cleared value whose stylesheet fallback is the live answer — writing a copy of that answer would freeze it where it stood. */
 type VarWriter = (value: unknown) => Record<string, string | null>
-
-/** Resolved through the chip's own recipe, so the greyscale row arrives with the darkness offset and borrowed outline it needs — painted raw its dark end is the page it sits on. */
-const checkboxVars: VarWriter = (value) => {
-  const key = settingCell(value)
-  if (key === null) return { '--checkbox-base': null, '--checkbox-border': null }
-  const { base, outline } = cellPaint(key)
-  return { '--checkbox-base': base, '--checkbox-border': outline ?? null }
-}
 
 // Unset REMOVES the var so the stylesheet's own size answers; a stored size lands in em of the page text.
 const headingVars: Partial<Record<keyof Personalization, VarWriter>> = {}
@@ -56,7 +40,11 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   editorScale: (v) => ({ '--editor-scale': String(coerceScale(v, EDITOR_SCALE_DEFAULT)) }),
   connectionColor: (v) => ({ '--connection': settingColorCss(v, 'var(--accent)') }),
   externalLinkColor: (v) => ({ '--link': settingColorCss(v, 'var(--system-accent)') }),
-  checkboxColor: checkboxVars,
+  checkboxColor: (v) =>
+    checkboxPaint(typeof v === 'string' ? v : undefined) ?? {
+      '--checkbox-base': null,
+      '--checkbox-outline': null,
+    },
   highlightColor: (v) => ({ '--highlight': settingColorCss(v, 'var(--accent)') }),
   // Cleared REMOVES `--code` rather than restating the theme's red: the stylesheet declares it at :root, so an absent inline var is what lets the theme keep answering as it moves.
   codeColor: (v) => ({ '--code': settingColorCss(v, null) }),

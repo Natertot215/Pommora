@@ -19,6 +19,7 @@ const KNOB_TRAVEL = TRACK_WIDTH - 2 * TRACK_BORDER - KNOB_WIDTH - 2 * KNOB_INSET
 
 export const track = style({
   position: 'relative',
+  display: 'inline-block',
   width: `${TRACK_WIDTH}px`,
   height: '19px',
   borderRadius: '10px',
@@ -30,7 +31,7 @@ export const track = style({
   transition: `background ${ease}`,
 })
 
-export const trackOn = style({ background: tintAt('var(--accent)', 'primary') })
+export const trackOn = style({ background: tintAt('var(--checkbox-base)', 'primary') })
 
 // Centered on the track so the border never offsets it.
 export const knob = style({

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import type { WindowTarget } from '@pommora/core/Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { duration, easing, ms } from '@pommora/uix/Animations/motion'
+import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { chromePartRect, publishChromePart } from '../chromeParts'
@@ -57,16 +57,10 @@ function PageWindowBody({
     const el = rootRef.current
     const to = chromePartRect('contentView')
     if (!el || !to) return
-    const from = el.getBoundingClientRect()
-    const dx = to.left + to.width / 2 - (from.left + from.width / 2)
-    const dy = to.top + to.height / 2 - (from.top + from.height / 2)
     el.animate(
       [
-        { transform: 'translate(0px, 0px) scale(1)', opacity: 1 },
-        {
-          transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width}, ${to.height / from.height})`,
-          opacity: 0,
-        },
+        { transform: 'none', opacity: 1 },
+        { transform: flipTransform(el.getBoundingClientRect(), to), opacity: 0 },
       ],
       { duration: ms(duration.base), easing: easing.baseEase, fill: 'forwards' },
     )

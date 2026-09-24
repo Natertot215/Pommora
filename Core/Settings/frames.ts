@@ -811,7 +811,7 @@ export const FRAMES = roster([
             kind: 'color',
             key: 'checkboxColor',
             label: 'Checkbox Color',
-            hint: 'The color a task checkbox fills and checks with. Cleared follows the accent.',
+            hint: 'The color checkboxes and switches fill with. Cleared follows the accent.',
             inherits: 'accent',
             inheritsVar: 'var(--accent)',
             greyscale: true,

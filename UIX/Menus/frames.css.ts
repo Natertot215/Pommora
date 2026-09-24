@@ -28,7 +28,6 @@ export const ICON = {
   editorMenu: 'body',
   doc: 'control',
   rootEntry: 'headline',
-  dropOutline: 'control',
   rowPlus: 'control',
   optionsAdd: 'control',
   optionEdit: 'body',

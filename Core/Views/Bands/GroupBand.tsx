@@ -10,16 +10,16 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { asRenderableIcon, Icon } from '@pommora/uix/Symbols'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { DropOutline } from '@pommora/uix/Menus'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { declaredType } from '../../Properties/value'
 import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
-import { CheckboxGlyph } from '../../Properties/Cells/checkboxLook'
+import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { formatBucketLabel } from '../../Properties/formatValue'
 import type { ValueContext } from '../../Properties/valueContext'
 import './group-band.css'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
-import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 
@@ -106,12 +106,15 @@ export function resolveBandHead(
     }
     case 'checkbox': {
       const on = value === 'true'
-      const color = def?.checkbox_color
       return {
         label,
         glyph: (
           <span className="group-name">
-            <CheckboxGlyph checked={on} color={color} />
+            <CheckboxGlyph
+              checked={on}
+              color={def?.checkbox_color}
+              look={view.column_styles?.[propId]?.look}
+            />
             {on ? 'On' : 'Off'}
           </span>
         ),
@@ -225,12 +228,7 @@ export function GroupBand({
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={collapsed ? 'Expand group' : 'Collapse group'}
             >
-              <Icon
-                name="chevron-right"
-                size="control"
-                className={cx(dropOutline, !collapsed && dropOutlineOpen)}
-                data-drop-outline
-              />
+              <DropOutline open={!collapsed} />
             </button>
             {/* biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content */}
             <span

@@ -38,6 +38,13 @@ export const easeBase = cubicBezier(0.25, 0.1, 0.25, 1)
 /** The JS form of `easing.baseSnap`. Change them together. */
 export const easeSnap = cubicBezier(0.22, 1, 0.36, 1)
 
+/** The transform that lays a box at `own` over `other`, centre on centre and scaled per axis — a FLIP's far end. */
+export function flipTransform(own: DOMRect, other: DOMRect): string {
+  const dx = other.left + other.width / 2 - (own.left + own.width / 2)
+  const dy = other.top + other.height / 2 - (own.top + own.height / 2)
+  return `translate(${dx}px, ${dy}px) scale(${other.width / own.width}, ${other.height / own.height})`
+}
+
 const SLIDE_PX = 14 // KNOB
 
 /** A swapped view enters from the side its navigation came from; `fade: false` moves a companion surface without dimming it. */

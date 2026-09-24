@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { duration, easing, ms } from '@pommora/uix/Animations/motion'
+import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
@@ -68,16 +68,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     const el = rootRef.current
     if (!from || !el) return
     for (const a of el.getAnimations()) a.cancel()
-    const to = el.getBoundingClientRect()
-    const dx = from.left + from.width / 2 - (to.left + to.width / 2)
-    const dy = from.top + from.height / 2 - (to.top + to.height / 2)
     el.animate(
-      [
-        {
-          transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})`,
-        },
-        { transform: 'translate(0px, 0px) scale(1)' },
-      ],
+      [{ transform: flipTransform(el.getBoundingClientRect(), from) }, { transform: 'none' }],
       { duration: ms(duration.base), easing: easing.baseEase },
     )
   }, [])

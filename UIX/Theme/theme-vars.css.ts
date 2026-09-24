@@ -3,7 +3,7 @@ import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
 import { CONN_LINK_MASK, FOLD_CHEVRON_MASK, GRIP_GLYPH } from '../Symbols/masks'
 import { duration, easing } from '../Animations/motion'
 import { STATE_OPACITY, vars as colorVars } from './color.css'
-import { DEFAULT_ACCENT, SHADOW_BASE, SHADOW_STRONG, TINT_STEPS, mixAt, tintAt } from './colors'
+import { DEFAULT_ACCENT, SHADOW_BASE, SHADOW_STRONG, TINT_STEPS, tintAt } from './colors'
 import { stack } from './stack'
 import { font } from './typography.css'
 
@@ -45,8 +45,6 @@ export const TILE_DEFAULT_PX = 320
 
 /** KNOB — a resizable tile's float gap above and below; a tile widget adds it back to the height it reports to CM6. */
 export const TILE_GAP_PX = 4
-
-const CHECKBOX_BASE = 'var(--checkbox-base, var(--accent))'
 
 const c = colorVars.color
 
@@ -97,9 +95,8 @@ globalStyle(':root', {
     '--system-accent': c.solid[DEFAULT_ACCENT],
     '--link': 'var(--system-accent)',
     '--connection': 'var(--accent)',
-    '--checkbox-fill': tintAt(CHECKBOX_BASE, 'primary'),
-    '--checkbox-border': tintAt(CHECKBOX_BASE, 'tertiary'),
-    '--checkbox-mark': mixAt(CHECKBOX_BASE, 'quaternary', c.label.primary),
+    '--checkbox-base': 'var(--accent)',
+    '--checkbox-outline': tintAt('var(--checkbox-base)', 'tertiary'),
 
     '--width-100': '1px',
     '--width-125': '1.25px',

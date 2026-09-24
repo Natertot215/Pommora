@@ -122,7 +122,7 @@ export function insertBand(
 ): TileLayout {
   if (findTile(layout, tileId)) return layout
   const next = cloneLayout(layout)
-  const at = Math.max(0, Math.min(index, next.bands.length))
+  const at = clamp(index, 0, next.bands.length)
   const band: Band = { node: { kind: 'tile', id: tileId, h: height } }
   next.bands.splice(at, 0, band)
   return next

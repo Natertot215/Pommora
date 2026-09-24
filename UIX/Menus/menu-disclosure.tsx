@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
+import { toggled } from '../Utilities/checkSet'
 import { Reveal } from '../Animations/Reveal'
 import { MenuItem } from './menu-row'
 import { PickerRow } from '../Pickers/picker-base'
@@ -17,12 +18,7 @@ export function useDisclosureSet(defaultOpen = false): {
   return useMemo(
     () => ({
       has: (id: string) => flipped.has(id) !== defaultOpen,
-      toggle: (id: string) =>
-        setFlipped((prev) => {
-          const next = new Set(prev)
-          if (!next.delete(id)) next.add(id)
-          return next
-        }),
+      toggle: (id: string) => setFlipped((prev) => toggled(prev, id)),
     }),
     [flipped, defaultOpen],
   )
@@ -31,7 +27,15 @@ export function useDisclosureSet(defaultOpen = false): {
 /** 'spacer' keeps a leaf's glyph in the chevron's column; 'none' renders nothing. */
 type DropOutlineKind = 'chevron' | 'spacer' | 'none'
 
-function dropOutlineGlyph(kind: DropOutlineKind, open: boolean, onToggle: () => void): ReactNode {
+export function DropOutline({
+  kind = 'chevron',
+  open = false,
+  onToggle,
+}: {
+  kind?: DropOutlineKind
+  open?: boolean
+  onToggle?: () => void
+}): React.JSX.Element | null {
   switch (kind) {
     case 'chevron':
       return (
@@ -40,11 +44,13 @@ function dropOutlineGlyph(kind: DropOutlineKind, open: boolean, onToggle: () => 
           size="control"
           className={cx(dropOutline, open && dropOutlineOpen)}
           data-drop-outline
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggle()
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
+          {...(onToggle && {
+            onClick: (e: React.MouseEvent) => {
+              e.stopPropagation()
+              onToggle()
+            },
+            onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+          })}
         />
       )
     case 'spacer':
@@ -90,7 +96,7 @@ export function DisclosureRow({
       onClick={onClick}
       leading={
         <span className={side}>
-          {dropOutlineGlyph(kind, open, onToggle)}
+          <DropOutline kind={kind} open={open} onToggle={onToggle} />
           {icon}
         </span>
       }
@@ -103,7 +109,7 @@ export function DisclosureRow({
       className={className}
       leading={
         <>
-          {dropOutlineGlyph(kind, open, onToggle)}
+          <DropOutline kind={kind} open={open} onToggle={onToggle} />
           {icon}
         </>
       }

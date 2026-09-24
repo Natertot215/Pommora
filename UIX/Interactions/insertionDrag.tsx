@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react'
 import { usePointerGesture } from './gesture'
-import { useDragSnapshot } from './snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET, toBox, type Box } from './shared'
 import type { Escort, EscortSpec } from './engine'
 import { DragGhost } from './DragGhost'
@@ -71,16 +70,26 @@ export function useInsertionDrag<Slot, Snap>(
   const stopScroll = useRef<(() => void) | null>(null)
   const live = useRef<Slot | null>(null)
   const [drag, setDrag] = useState<DragState<Slot> | null>(null)
-  const snap = useDragSnapshot<Snap>(() =>
-    dragged.current ? specRef.current.take(dragged.current.id) : null,
-  )
+  const snap = useRef<Snap | null>(null)
+  // The drop re-resolves while dirty, so a commit is never built against moved geometry.
+  const dirty = useRef(false)
+
+  function snapshot(): Snap | null {
+    if (dirty.current || snap.current === null) {
+      const next = dragged.current ? specRef.current.take(dragged.current.id) : null
+      if (next === null) return null
+      snap.current = next
+      dirty.current = false
+    }
+    return snap.current
+  }
 
   function resolveSlot(): void {
     const d = dragged.current
     if (!d) return
     const cfg = specRef.current
-    const s = snap.get()
-    const slot = s ? cfg.resolve(d.id, lastPoint.current, s) : null
+    const s = snapshot()
+    const slot = s && !cfg.escort?.loose() ? cfg.resolve(d.id, lastPoint.current, s) : null
     live.current = slot
     const mode = cfg.ghost ?? 'offset'
     setDrag({
@@ -97,20 +106,21 @@ export function useInsertionDrag<Slot, Snap>(
   }
 
   const invalidate = (): void => {
-    snap.markDirty()
+    dirty.current = true
     resolveSlot()
   }
 
   // A mid-drag list change re-renders rows; a release with no further move must still commit against the fresh slot.
   useEffect(() => {
-    if (dragged.current) invalidate()
-    else snap.markDirty()
+    dirty.current = true
+    if (dragged.current) resolveSlot()
   }, [spec.watch])
 
   const reset = (): void => {
     dragged.current = null
     live.current = null
-    snap.reset()
+    snap.current = null
+    dirty.current = false
     setDrag(null)
   }
 
@@ -149,14 +159,16 @@ export function useInsertionDrag<Slot, Snap>(
       scrollTarget: cfg.scrollTarget,
       onWindowScroll: invalidate,
       onDrop: () => {
-        if (specRef.current.escort?.drop()) {
+        const escort = specRef.current.escort
+        const wasLoose = escort?.loose()
+        if (escort?.drop() || wasLoose) {
           reset()
           return
         }
-        if (snap.isDirty()) resolveSlot()
+        if (dirty.current) resolveSlot()
         const d = dragged.current
         const slot = live.current
-        const s = snap.get()
+        const s = snapshot()
         if (d && slot !== null && s !== null) {
           specRef.current.commit(d.id, slot, s)
           announce(`Moved ${d.label}.`)
@@ -175,7 +187,7 @@ export function useInsertionDrag<Slot, Snap>(
       onDisclose: cfg.disclose
         ? () => {
             invalidate()
-            snap.markDirty()
+            dirty.current = true
           }
         : undefined,
     })

@@ -33,6 +33,7 @@ import {
   FootingItem,
   MenuSeparator,
   AccessoryButton,
+  DropOutline,
 } from '@pommora/uix/Menus'
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-base.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
@@ -58,7 +59,6 @@ import {
 } from '../Cells/PropertyTypes'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { askDestroyProperty } from '../../Interface/Confirm/confirmations'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
@@ -136,12 +136,7 @@ function ListGroups({
       <div className={cx(s.allSpacer, allOpen && s.allSpacerCollapsed)} aria-hidden />
       <div data-group="all" ref={allRef} className={cx(allHighlighted && s.allHighlight)}>
         <button type="button" className={cx(actionRow, s.allHeading)} onClick={onToggleAll}>
-          <Icon
-            name="chevron-right"
-            size={s.ICON.dropOutline}
-            className={cx(dropOutline, allOpen && dropOutlineOpen)}
-            data-drop-outline
-          />
+          <DropOutline open={allOpen} />
           <span>All Properties</span>
         </button>
         <Reveal open={allOpen} duration="base">
