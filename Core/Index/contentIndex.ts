@@ -1,4 +1,4 @@
-// A null answer means NO INDEX, never "no matches": every query caller falls back to its full scan on null, and an empty array is a genuine empty result it may trust.
+// A null answer means no index, and an empty array is a genuine empty result: the title, Context, and key-holder queries fall back to a scan on null, while the heading cascade and the Matrix graph wait for the index.
 
 import { errText } from '../Contract/result'
 import {
