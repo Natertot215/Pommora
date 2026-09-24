@@ -1,6 +1,8 @@
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { ReactNode } from 'react'
-import { Annotation, Facet } from '@codemirror/state'
+import { changesTo } from '../Pages/merge3'
+import { Annotation, Facet, Transaction } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { Commands } from '@pommora/core/Actions/commands'
@@ -13,6 +15,19 @@ import type {
 } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 
 export const syncLanding = Annotation.define<boolean>()
+
+export const mirrored = Annotation.define<boolean>()
+
+/** Another mount's text, already past its own guards, applied as the changed span only: no filter touches it, it stays out of undo history, and it never echoes back through `onChange`. */
+export function mirrorBody(view: EditorView, body: string): void {
+  const doc = view.state.doc.toString()
+  if (body === doc) return
+  view.dispatch({
+    changes: changesTo(doc, body),
+    annotations: [mirrored.of(true), Transaction.addToHistory.of(false)],
+    filter: false,
+  })
+}
 
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string; heading?: string }

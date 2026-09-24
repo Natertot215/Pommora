@@ -48,6 +48,58 @@ export function readPageDetail(path: string): PageDetail | undefined {
   return detailByPath.get(path)
 }
 
+/** The newest body this session knows for a path: a pending write's text leads the last one known on disk. */
+export const knownBody = (path: string): string | undefined =>
+  detailByPath.get(path)?.body ?? baseByPath.get(path)?.text
+
+/** One mounted editor of a path: `seq` and `basis` name the head it last held and the text it shows. */
+export interface BodyMount {
+  seq: number
+  basis: string
+  /** Applies the body while the editor still shows its basis; false leaves it behind, to merge on its next keystroke. */
+  follow: (body: string) => boolean
+}
+
+// Every mount of a path shares one head, the newest body any of them typed, so no mount's save can carry text older than another's.
+const heads = new Map<string, { seq: number; text: string; mounts: Set<BodyMount> }>()
+
+export const bodyHead = (path: string): { seq: number; text: string } | undefined => heads.get(path)
+
+const catchUp = (mount: BodyMount, head: { seq: number; text: string }): void => {
+  if (mount.seq === head.seq || !mount.follow(head.text)) return
+  mount.seq = head.seq
+  mount.basis = head.text
+}
+
+/** A mount seeded behind the head follows it at once. */
+export function attachBody(path: string, mount: BodyMount, seed: string): () => void {
+  const head = heads.get(path) ?? { seq: 0, text: knownBody(path) ?? seed, mounts: new Set() }
+  heads.set(path, head)
+  head.mounts.add(mount)
+  mount.seq = -1
+  mount.basis = seed
+  catchUp(mount, head)
+  return () => {
+    head.mounts.delete(mount)
+    if (!head.mounts.size && heads.get(path) === head) heads.delete(path)
+  }
+}
+
+/** `shown` is the publisher's own text when a merge put more on the head than its editor holds yet, which leaves it behind until it follows. */
+export function publishBody(path: string, mount: BodyMount, body: string, shown = body): void {
+  const head = heads.get(path)
+  if (!head) return
+  head.seq += 1
+  head.text = body
+  mount.seq = body === shown ? head.seq : -1
+  mount.basis = shown
+}
+
+export function followBody(path: string): void {
+  const head = heads.get(path)
+  if (head) for (const mount of head.mounts) catchUp(mount, head)
+}
+
 const inFlight = new Map<string, Promise<PageDetail | null>>()
 
 /** Concurrent callers share a single openPage round-trip. A drop or clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed the cache with a pre-write or previous-nexus detail. */

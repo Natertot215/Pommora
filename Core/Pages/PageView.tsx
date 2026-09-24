@@ -20,6 +20,7 @@ import { registerPageEditor, renameHeading } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { schedulePageSave } from '../Session/saveScheduler'
+import { useBodyMount } from './bodyMount'
 import { changesTo, merge3 } from './merge3'
 import { syncLanding } from '../MarkdownPM/api'
 import { host } from '../Platform/dialer'
@@ -123,6 +124,7 @@ export function PageView({
       setPageBody(path, body)
     }, STATS_DEBOUNCE_MS)
   }
+  const seat = useBodyMount(path, (body) => pushLiveBody(path, body))
 
   if (!slot) return <div className="detail-placeholder">Loading page…</div>
   if (slot.status === 'error')
@@ -152,7 +154,7 @@ export function PageView({
       }
       onChange={(body) => {
         pushLiveBody(pageDetail.path, body)
-        schedulePageSave(pageDetail.path, body)
+        seat.save(body)
       }}
       connections={connections}
       onSelection={publishSelection}
@@ -177,6 +179,7 @@ export function PageView({
       }}
       register={(view) => {
         editorRef.current = view
+        seat.register(view)
         if (!parked) registerPageEditor(view)
       }}
       // A warm entry whose captured path diverges from the mounting page's mounts cold — id-keyed warmth must never revive a stale-path doc.
