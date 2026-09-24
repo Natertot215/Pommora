@@ -312,6 +312,22 @@ describe('startSession', () => {
     expect(currentSession()).toBeNull()
   })
 
+  it('sets no status from an info reply that arrives after a switch', async () => {
+    let release = (): void => {}
+    const held = new Promise<{ status: number; body: string }>((resolve) => {
+      release = () => resolve({ status: 404, body: '' })
+    })
+    hub.intercept = (req) => (req.url.endsWith('/info') ? held : null)
+
+    const started = startSession(ctx, root, NEXUS)
+    while (sent('/info').length === 0) await turn(20)
+    await stopSession(ctx)
+    release()
+    await started
+
+    expect(statuses().at(-1)).toEqual({ state: 'off' })
+  })
+
   it('starts from its cached ring when the hub is unreachable', async () => {
     await startSession(ctx, root, NEXUS)
     await stopSession(ctx)

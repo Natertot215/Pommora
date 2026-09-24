@@ -1,8 +1,9 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, NO_STORE, ok, type Result } from '../Contract/result'
+import { BUSY, fail, NO_STORE, ok, type Result } from '../Contract/result'
 import { isString } from '../Contract/validators'
 import { captureLoser } from './Arrival/captures'
 import { liveTreeOf } from '../Nexus/liveTree'
+import { sessionRoot } from '../Nexus/session'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { deleteBase, readAllBases } from './Client/base'
@@ -359,6 +360,7 @@ export const syncHandlers = {
         await host.secrets.set(passwordName(nexusId), password)
         await loadRing(host, nexusId, { ring: entries, kdf }, null)
       }
+      if (sessionRoot() !== root) return BUSY
       const scope: SyncScope = { ...target, cursor: kept ? binding.cursor : 0 }
       if (!kept) {
         await stopSession(ctx)

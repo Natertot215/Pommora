@@ -439,6 +439,98 @@ describe('base rows', () => {
   })
 })
 
+describe('a Nexus opened during the network wait', () => {
+  const row = {
+    path: 'Notes/One.md',
+    mtimeMs: 1,
+    size: 1,
+    hash: 'h',
+    blobSha: 'b',
+    version: 1,
+    baseBytes: null,
+  }
+
+  it('keeps its sync session, binding, and bases from a connect started before it', async () => {
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    let release!: () => void
+    const held = new Promise<void>((wake) => {
+      release = wake
+    })
+    const answer: Answer = (req) =>
+      new URL(req.url).pathname === '/connect'
+        ? held.then(() => hubAnswer(hub)(req))
+        : hubAnswer(hub)(req)
+    const pushed: string[] = []
+    const ctx = { ...host(answer), push: (channel: string) => pushed.push(channel) }
+
+    const connecting = syncHandlers['sync:connect'](ctx as HostContext, ADDRESS, PASSWORD)
+    await turn()
+    await openSession('/y')
+    installStores(memoryStores().stores)
+    upsertBase(row)
+    release()
+
+    expect((await refuse(connecting)).code).toBe('busy')
+    expect(pushed).toEqual([])
+    expect(readValue('sync')).toBeNull()
+    expect(readAllBases()).toEqual([row])
+  })
+
+  it.each([
+    ['a disconnect', (ctx: HostContext) => syncHandlers['sync:disconnect'](ctx)],
+    [
+      'a rebind',
+      (ctx: HostContext) => syncHandlers['sync:connect'](ctx, 'http://127.0.0.1:7474', PASSWORD),
+    ],
+  ])('keeps its binding and bases from %s whose stop shares the wait of a switch', async (_, act) => {
+    walkable = tempRoot('pom-sync-unbind-')
+    await mkdir(join(walkable, '.nexus'), { recursive: true })
+    await writeFile(join(walkable, '.nexus', 'nexus.json'), JSON.stringify({ id: NEXUS }))
+    await mkdir(join(walkable, 'Notes'))
+    await writeFile(
+      join(walkable, 'Notes', 'One.md'),
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDRW\n---\nbody`,
+    )
+    await openSession(walkable)
+    seedLiveTree(makeTree())
+    const hub = newHub([record(deviceA, true)])
+    await seedInfo(hub, [deviceA])
+    let release!: () => void
+    const held = new Promise<void>((wake) => {
+      release = wake
+    })
+    let stores = 0
+    const answer: Answer = (req) => {
+      const path = new URL(req.url).pathname
+      if (path.startsWith('/blob/')) return found({ sha256: 'b' })
+      if (path !== '/store') return hubAnswer(hub)(req)
+      stores += 1
+      return held.then(() => found({ outcomes: [], seq: 0 }))
+    }
+    const ctx = host(answer)
+    const connecting = syncHandlers['sync:connect'](ctx, ADDRESS, PASSWORD)
+    for (let tries = 0; tries < 200 && stores === 0; tries += 1) await turn()
+    expect(stores).toBe(1)
+
+    const acting = act(ctx)
+    for (let tries = 0; tries < 200 && currentSession() !== null; tries += 1) await turn()
+    const opened = memoryStores().stores
+    const switching = (async () => {
+      await stopSession(ctx)
+      await openSession('/y')
+      installStores(opened)
+      upsertBase(row)
+    })()
+    release()
+    await Promise.all([connecting, switching])
+
+    await unwrap(acting)
+    expect(readValue('sync')).toBeNull()
+    expect(readAllBases()).toEqual([row])
+  })
+})
+
 describe('sync:now', () => {
   it('answers the loop status from sync:state', async () => {
     const hub = newHub([record(deviceA, true)])
