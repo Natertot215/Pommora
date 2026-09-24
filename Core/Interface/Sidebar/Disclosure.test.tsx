@@ -123,4 +123,32 @@ describe('a locked disclosure', () => {
     expect(onSelect).toHaveBeenCalledTimes(1)
     expect(setDevicePref).not.toHaveBeenCalled()
   })
+
+  it('peeks a newcomer signalled after it mounts, and not one signalled before', () => {
+    useSession.setState({
+      devicePrefs: {},
+      peekSignal: { parentPath: 'Notes', childId: 'p1', nonce: 1 },
+    })
+    act(() =>
+      root.render(
+        <SidebarDnd index={buildIndex(tree)} onCommit={() => {}}>
+          <Disclosure
+            icon="folder-closed"
+            title="Locked"
+            depth={0}
+            defaultOpen={false}
+            persistKey="k"
+            dragId="k"
+            locked
+            selfPath="Notes"
+          >
+            <span key="p1">First</span>
+          </Disclosure>
+        </SidebarDnd>,
+      ),
+    )
+    expect(host.querySelector('.children-peek')).toBeNull()
+    act(() => useSession.getState().signalPeek('Notes', 'p1'))
+    expect(host.querySelector('.children-peek')).not.toBeNull()
+  })
 })

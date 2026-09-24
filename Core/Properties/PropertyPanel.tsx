@@ -35,8 +35,8 @@ import { buildValueContext, type ValueContext } from './valueContext'
 import { sharedValueClickAction } from './Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { validateLink } from './Cells/linkResolve'
-import { displayPropertyName, useCapitalizeMetadata } from './Cells/columnLabel'
-import { propertyIcon } from './Cells/PropertyTypes'
+import { useCapitalizeMetadata } from './Cells/columnLabel'
+import { type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { useOptionReorder } from './Schema/useOptionReorder'
 import { resolveRowOrder } from './rowOrder'
@@ -55,7 +55,7 @@ import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/conn
 import * as s from './property-panel.css'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
-type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
+type Field = PaneTarget & { def: PropertyDefinition | null }
 
 const GROUPS = [
   { key: 'contexts', label: 'Contexts', add: 'Add Context' },
@@ -190,12 +190,7 @@ export function PropertyPanel({
   }
 
   const contextFields: Field[] = contextRows.map((t) => ({ ...t, def: null }))
-  const schemaFields: Field[] = schema.map((d) => ({
-    id: d.id,
-    label: displayPropertyName(d.name, capitalize),
-    icon: propertyIcon(d),
-    def: d,
-  }))
+  const schemaFields: Field[] = schemaTargets(schema, () => true, capitalize)
   const held = (f: Field): boolean =>
     f.def
       ? (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined

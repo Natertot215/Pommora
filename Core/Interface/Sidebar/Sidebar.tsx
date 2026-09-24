@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  memo,
   useMemo,
   useRef,
   useState,
@@ -13,11 +14,10 @@ import {
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
 import { isCmd } from '@pommora/uix/Interactions/chords'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
+import type { IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
-import { MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import type {
   CollectionNode,
@@ -27,8 +27,7 @@ import type {
   SetNode,
   SpaceNode,
 } from '@pommora/core/Nexus/tree'
-import type { Placement, SidebarMode } from '@pommora/core/Settings/personalization'
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import type { SidebarMode } from '@pommora/core/Settings/personalization'
 import {
   DEFAULT_NEW_NAME,
   type MutableKind,
@@ -47,7 +46,6 @@ import { glanceShown } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
-import { dropOutlineSpacer } from '@pommora/uix/Menus/listed-outline.css'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure } from './Disclosure'
@@ -79,31 +77,32 @@ function showContextFor(
   )
 }
 
-function isCollectionSelected(sel: SelectionState, id: string): boolean {
-  return sel.kind === 'collection' && sel.id === id
+function selectRow(
+  node: { kind: MutableKind; id: string; path: string },
+  e?: React.MouseEvent,
+): void {
+  const s = useSession.getState()
+  const target = contextTargetToSelect(node)
+  if (target.kind === 'page' && collectionOfPage(s.tree, target.path)?.openIn === 'page-preview') {
+    if (e && isCmd(e)) void s.select(target, { newTab: true })
+    else s.openWindowTab(target)
+    return
+  }
+  void s.select(target)
 }
 
-function isSetSelected(sel: SelectionState, id: string): boolean {
-  return sel.kind === 'set' && sel.id === id
-}
-
-function isPageSelected(sel: SelectionState, id: string): boolean {
-  return sel.kind === 'page' && sel.id === id
-}
-
-function PageRow({
-  page,
+const LeafRow = memo(function LeafRow({
+  node,
   depth,
-  selection,
-  onSelectPage,
+  ghostLabel,
 }: {
-  page: PageNode
+  node: PageNode | SpaceNode
   depth: number
-  selection: SelectionState
-  onSelectPage: (page: PageNode, e?: React.MouseEvent) => void
+  ghostLabel: string
 }): React.JSX.Element {
+  const selected = useSession((s) => s.selection.kind === node.kind && s.selection.id === node.id)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const ownIcon = useSession(pageMetaOf(page.id))?.icon
+  const pageIcon = useSession(pageMetaOf(node.kind === 'page' ? node.id : undefined))?.icon
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
@@ -111,37 +110,40 @@ function PageRow({
   return (
     <>
       <DragRow
-        id={page.id}
+        id={node.id}
         onPointerEnter={(e) => {
-          api?.onHover(page.id, true)
-          hoverGlance(
-            { kind: 'page', id: page.id, path: page.path },
-            e.currentTarget,
-            'location',
-            e.shiftKey,
-          )
+          api?.onHover(node.id, true)
+          if (node.kind === 'page')
+            hoverGlance(
+              { kind: 'page', id: node.id, path: node.path },
+              e.currentTarget,
+              'location',
+              e.shiftKey,
+            )
         }}
         onPointerLeave={() => {
-          api?.onHover(page.id, false)
-          leaveGlance()
+          api?.onHover(node.id, false)
+          if (node.kind === 'page') leaveGlance()
         }}
       >
         <div ref={rowRef}>
           <Leaf
-            icon={entityIcon('page', ownIcon, defaultIcons)}
-            title={page.title}
+            icon={entityIcon(node.kind, node.kind === 'page' ? pageIcon : node.icon, defaultIcons)}
+            title={node.title}
             depth={depth}
-            selected={isPageSelected(selection, page.id)}
-            onSelect={(e) => onSelectPage(page, e)}
-            onContextMenu={() => void holdGhost(() => showContextFor(page, rowRef.current))}
-            rename={{ path: page.path, kind: page.kind }}
+            selected={selected}
+            onSelect={(e) => selectRow(node, e)}
+            onContextMenu={() => void holdGhost(() => showContextFor(node, rowRef.current))}
+            rename={{ path: node.path, kind: node.kind }}
           />
         </div>
       </DragRow>
-      {ghost.anchorId === page.id && <GhostLeaf depth={depth} kind="page" label="New Page" />}
+      {ghost.anchorId === node.id && (
+        <GhostLeaf depth={depth} kind={node.kind} label={ghostLabel} />
+      )}
     </>
   )
-}
+})
 
 const SIDEBAR_GHOST_DWELL_MS = 2500 // KNOB
 const SIDEBAR_GHOST_GRACE_MS = 0 // KNOB
@@ -183,232 +185,66 @@ function GhostLeaf({
           e.stopPropagation()
         }}
       >
-        <MenuItem
-          className="row"
-          indent={depth}
-          leading={<span className={dropOutlineSpacer} data-drop-outline-spacer />}
-        >
-          <Icon
-            name={entityIcon(kind, undefined, defaultIcons)}
-            size="headline"
-            className="row-icon"
-          />
-          {label}
-        </MenuItem>
+        <Leaf icon={entityIcon(kind, undefined, defaultIcons)} title={label} depth={depth} />
       </div>
     </Reveal>
   )
 }
 
-function ContainerRow({
-  node,
-  depth,
-  selected,
-  onSelect,
-  directChildren,
-  children,
-}: {
-  node: {
-    id: string
-    icon?: string
-    title: string
-    path: string
-    kind: MutableKind
-    disclosureLocked?: boolean
-  }
-  depth: number
-  selected?: boolean
-  onSelect?: () => void
-  directChildren: { id: string; path: string }[]
-  children: React.ReactNode
-}): React.JSX.Element {
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const mutate = useSession((s) => s.mutate)
-  const icon = entityIcon(
-    node.kind === 'collection' ? 'collection' : 'set',
-    node.icon,
-    defaultIcons,
-  )
-  const openIcon: IconName | undefined = icon === 'folder-closed' ? 'folder-open' : undefined
-  return (
-    <Disclosure
-      dragId={node.id}
-      persistKey={node.id}
-      icon={icon}
-      openIcon={openIcon}
-      title={node.title}
-      depth={depth}
-      defaultOpen={false}
-      selected={selected}
-      onSelect={onSelect}
-      onContextMenu={() => showContextFor(node)}
-      rename={{ path: node.path, kind: node.kind }}
-      selfPath={node.path}
-      directChildren={directChildren}
-      locked={node.disclosureLocked === true}
-      onSetLock={(locked) =>
-        void mutate({
-          op: 'setDisclosureLock',
-          path: node.path,
-          kind: node.kind as 'collection' | 'set',
-          locked,
-        })
-      }
-    >
-      {children}
-    </Disclosure>
-  )
-}
-
-function placeChildren(
-  folders: React.JSX.Element[],
-  pages: React.JSX.Element[],
-  placement: Placement,
-): React.JSX.Element[] {
-  return placement === 'bottom' ? [...pages, ...folders] : [...folders, ...pages]
-}
-
-function SetRow({
-  set,
-  depth,
-  selectable,
-  selection,
-  onSelectSet,
-  onSelectPage,
-}: {
-  set: SetNode
-  depth: number
-  selectable: boolean
-  selection: SelectionState
-  onSelectSet: (set: SetNode) => void
-  onSelectPage: (page: PageNode) => void
-}): React.JSX.Element {
-  const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
-  return (
-    <ContainerRow
-      node={set}
-      depth={depth}
-      selected={selectable && isSetSelected(selection, set.id)}
-      onSelect={selectable ? () => onSelectSet(set) : undefined}
-      directChildren={[...(set.sets ?? []), ...set.pages].map((c) => ({ id: c.id, path: c.path }))}
-    >
-      {placeChildren(
-        (set.sets ?? []).map((s) => (
-          <SetRow
-            key={s.id}
-            set={s}
-            depth={depth + 1}
-            selectable={false}
-            selection={selection}
-            onSelectSet={onSelectSet}
-            onSelectPage={onSelectPage}
-          />
-        )),
-        set.pages.map((p) => (
-          <PageRow
-            key={p.id}
-            page={p}
-            depth={depth + 1}
-            selection={selection}
-            onSelectPage={onSelectPage}
-          />
-        )),
-        subSetPlacement,
-      )}
-    </ContainerRow>
-  )
-}
-
-function CollectionRow({
-  col,
-  depth,
-  selection,
-  onSelectCollection,
-  onSelectSet,
-  onSelectPage,
-}: {
-  col: CollectionNode
-  depth: number
-  selection: SelectionState
-  onSelectCollection: (col: CollectionNode) => void
-  onSelectSet: (set: SetNode) => void
-  onSelectPage: (page: PageNode) => void
-}): React.JSX.Element {
-  const setPlacement = useSession((s) => s.personalization.setPlacement ?? 'top')
-  return (
-    <ContainerRow
-      node={col}
-      depth={depth}
-      selected={isCollectionSelected(selection, col.id)}
-      onSelect={() => onSelectCollection(col)}
-      directChildren={[...col.sets, ...col.pages].map((c) => ({ id: c.id, path: c.path }))}
-    >
-      {placeChildren(
-        col.sets.map((s) => (
-          <SetRow
-            key={s.id}
-            set={s}
-            depth={depth + 1}
-            selectable
-            selection={selection}
-            onSelectSet={onSelectSet}
-            onSelectPage={onSelectPage}
-          />
-        )),
-        col.pages.map((p) => (
-          <PageRow
-            key={p.id}
-            page={p}
-            depth={depth + 1}
-            selection={selection}
-            onSelectPage={onSelectPage}
-          />
-        )),
-        setPlacement,
-      )}
-    </ContainerRow>
-  )
-}
-
-function SpaceRow({
-  node,
-  ghostLabel,
-}: {
-  node: SpaceNode
-  ghostLabel: string
-}): React.JSX.Element {
-  const select = useSession((s) => s.select)
-  const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const ghost = useContext(SidebarGhost)
-  const api = useContext(SidebarGhostApi)
-  const holdGhost = useContext(GhostSuppress)
-  const rowRef = useRef<HTMLDivElement>(null)
-  return (
-    <>
-      <DragRow
-        id={node.id}
-        onPointerEnter={() => api?.onHover(node.id, true)}
-        onPointerLeave={() => api?.onHover(node.id, false)}
+// An arrow rather than a named function, so the recursion inside renders the memoized row.
+const ContainerRow = memo(
+  ({
+    node,
+    depth,
+    selectable,
+  }: {
+    node: CollectionNode | SetNode
+    depth: number
+    selectable: boolean
+  }): React.JSX.Element => {
+    const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+    const mutate = useSession((s) => s.mutate)
+    const placement = useSession(
+      (s) =>
+        s.personalization[node.kind === 'collection' ? 'setPlacement' : 'subSetPlacement'] ?? 'top',
+    )
+    const selected = useSession(
+      (s) => selectable && s.selection.kind === node.kind && s.selection.id === node.id,
+    )
+    const sets = node.sets ?? []
+    const icon = entityIcon(node.kind, node.icon, defaultIcons)
+    const openIcon: IconName | undefined = icon === 'folder-closed' ? 'folder-open' : undefined
+    const folders = sets.map((s) => (
+      <ContainerRow key={s.id} node={s} depth={depth + 1} selectable={node.kind === 'collection'} />
+    ))
+    const pages = node.pages.map((p) => (
+      <LeafRow key={p.id} node={p} depth={depth + 1} ghostLabel="New Page" />
+    ))
+    return (
+      <Disclosure
+        dragId={node.id}
+        persistKey={node.id}
+        icon={icon}
+        openIcon={openIcon}
+        title={node.title}
+        depth={depth}
+        defaultOpen={false}
+        selected={selected}
+        onSelect={selectable ? () => selectRow(node) : undefined}
+        onContextMenu={() => showContextFor(node)}
+        rename={{ path: node.path, kind: node.kind }}
+        selfPath={node.path}
+        directChildren={[...sets, ...node.pages]}
+        locked={node.disclosureLocked === true}
+        onSetLock={(locked) =>
+          void mutate({ op: 'setDisclosureLock', path: node.path, kind: node.kind, locked })
+        }
       >
-        <div ref={rowRef}>
-          <Leaf
-            icon={entityIcon('space', node.icon, defaultIcons)}
-            title={node.title}
-            depth={1}
-            selected={selected}
-            onSelect={() => void select({ kind: 'space', id: node.id })}
-            onContextMenu={() =>
-              void holdGhost(() => showContextFor({ ...node, kind: 'space' }, rowRef.current))
-            }
-            rename={{ path: node.path, kind: 'space' }}
-          />
-        </div>
-      </DragRow>
-      {ghost.anchorId === node.id && <GhostLeaf depth={1} kind="space" label={ghostLabel} />}
-    </>
-  )
-}
+        {placement === 'bottom' ? [...pages, ...folders] : [...folders, ...pages]}
+      </Disclosure>
+    )
+  },
+)
 
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -448,7 +284,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       }}
     >
       {group.spaces.map((s) => (
-        <SpaceRow key={s.id} node={s} ghostLabel={newLabel} />
+        <LeafRow key={s.id} node={s} depth={1} ghostLabel={newLabel} />
       ))}
     </Disclosure>
   )
@@ -494,29 +330,10 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
 }
 
 export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
-  const selection = useSession((s) => s.selection)
-  const select = useSession((s) => s.select)
   const mutate = useSession((s) => s.mutate)
   const setPlacement = useSession((s) => s.personalization.setPlacement ?? 'top')
   const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
   const mode: SidebarMode = useSession((s) => sidebarModeOf(s.personalization))
-
-  const onSelectCollection = (col: CollectionNode): void => {
-    void select({ kind: 'collection', id: col.id })
-  }
-  const onSelectSet = (set: SetNode): void => {
-    void select({ kind: 'set', id: set.id, path: set.path })
-  }
-  const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
-    const owner = collectionOfPage(tree, page.path)
-    if (owner?.openIn === 'page-preview') {
-      if (e && isCmd(e))
-        void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
-      else useSession.getState().openWindowTab({ kind: 'page', id: page.id, path: page.path })
-      return
-    }
-    void select({ kind: 'page', id: page.id, path: page.path })
-  }
 
   const newContextMenu = (): void => {
     void useSession
@@ -558,9 +375,11 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
 
   const signalPeek = useSession((s) => s.signalPeek)
   const onCommit = (req: MutateRequest, id: string): void => {
-    // Pulses the landing container so a locked one can peek the newcomer.
-    if (req.op === 'movePage' || req.op === 'moveSet') signalPeek(req.newParentPath, id)
-    void mutate(req)
+    void mutate(req).then((moved) => {
+      // Pulses the landing container so a locked one can peek the newcomer.
+      if (moved && (req.op === 'movePage' || req.op === 'moveSet'))
+        signalPeek(req.newParentPath, id)
+    })
   }
   const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
   useEffect(() => clearGhost(), [mode, clearGhost])
@@ -611,17 +430,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   )
 
   const collectionsLayer = dndLayer(
-    tree.collections.map((c) => (
-      <CollectionRow
-        key={c.id}
-        col={c}
-        depth={0}
-        selection={selection}
-        onSelectCollection={onSelectCollection}
-        onSelectSet={onSelectSet}
-        onSelectPage={onSelectPage}
-      />
-    )),
+    tree.collections.map((c) => <ContainerRow key={c.id} node={c} depth={0} selectable />),
   )
 
   const modeCtx =
