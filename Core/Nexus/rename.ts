@@ -28,9 +28,9 @@ export async function renameOp(
   }
   const oldTitle = basenameNoMd(basename(abs))
   const relParent = req.path.split('/').slice(0, -1).join('/')
-  const renamedReply = (landedPath: string): MutateReply => {
+  const renamedReply = (landedPath: string, tiles?: string[]): MutateReply => {
     const file = basename(landedPath)
-    return ok({ renamed: { path: relJoin(relParent, file), name: basenameNoMd(file) } })
+    return ok({ renamed: { path: relJoin(relParent, file), name: basenameNoMd(file) }, tiles })
   }
   if (req.fromCreate) {
     const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
@@ -50,10 +50,8 @@ export async function renameOp(
     await renamePage(r.value.path, oldTitle)
     return fault('Rename cascade failed; the rename was reverted.')
   }
-  try {
-    await rewriteTileConnections(root, oldTitle, req.newName)
-  } catch {}
+  const tiles = await rewriteTileConnections(root, oldTitle, req.newName).catch(() => [])
   await moveIndexPaths(root, abs, r.value.path)
   reportRename(relative(root, abs), relative(root, r.value.path))
-  return renamedReply(r.value.path)
+  return renamedReply(r.value.path, tiles)
 }

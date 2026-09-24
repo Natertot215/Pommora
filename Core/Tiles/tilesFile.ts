@@ -175,18 +175,22 @@ async function markdownTileFiles(root: string): Promise<{ id: string; file: stri
   return out
 }
 
+/** The ids of the tiles it rewrote, which the window re-reads. */
 export async function rewriteTileConnections(
   root: string,
   oldTitle: string,
   newTitle: string,
-): Promise<void> {
+): Promise<string[]> {
   const oldKey = normalizeTitle(oldTitle)
-  for (const { file } of await markdownTileFiles(root)) {
+  const rewrote: string[] = []
+  for (const { id, file } of await markdownTileFiles(root)) {
     // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
-    await rewritePageSerialized(file, (body) => {
+    const wrote = await rewritePageSerialized(file, (body) => {
       if (!mentionsTitle(body, oldKey)) return null
       const next = rewriteConnections(body, oldTitle, newTitle)
       return next !== body ? next : null
     })
+    if (wrote) rewrote.push(id)
   }
+  return rewrote
 }

@@ -58,6 +58,8 @@ export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir
 export interface WatchEvent {
   event: WatchEventName
   absPath: string
+  /** The hash of the app's own write this event may echo. */
+  written?: string
 }
 
 export type WatchClass =

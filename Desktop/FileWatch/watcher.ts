@@ -14,7 +14,7 @@ import {
 import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
-import { dropOwnEchoes, isRecentWrite } from '@pommora/core/Files/writeEcho'
+import { dropOwnEchoes, isRecentWrite, writtenHash } from '@pommora/core/Files/writeEcho'
 import { isMetadataShardRel } from '@pommora/core/Paths/nexusPaths'
 import { relPosix } from '@pommora/core/Paths/paths'
 import type { Pushes } from '@pommora/core/Contract/bridge'
@@ -91,7 +91,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       else if (isConfigPath(root, path, 'matrix'))
         pushConfig(root, win, 'matrix:changed', readMatrixFile)
       else if (!isMetadataShardRel(relPosix(root, path)) && isRecentWrite(path)) return
-      batch.push({ event, absPath: path })
+      batch.push({ event, absPath: path, written: writtenHash(path) })
       if (debounce) clearTimeout(debounce)
       // Chained, so two settles never reseed the index or re-arm the watcher at once.
       debounce = setTimeout(() => {

@@ -34,8 +34,8 @@ interface TileDoc {
 export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: null }
 
 const bodies = new Map<string, string>()
-// The hash of the text each tile's file last held as far as this window knows: a read or an acknowledged save sets it, and a save carries it.
-const bases = new Map<string, string>()
+// The text each tile's file last held as far as this window knows, with its hash: a read or an acknowledged save sets it, a save carries the hash, and a refused save merges against the text.
+const bases = new Map<string, TileBase>()
 const bodyListeners = new Map<string, Set<() => void>>()
 
 export const tileBodyWriter = createBodyWriter('the tile')
@@ -46,11 +46,14 @@ export const writeTileBody = (tileId: string, text: string): void => {
 
 export const readTileBody = (tileId: string): string | null => bodies.get(tileId) ?? null
 
-export const readTileBase = (tileId: string): string => bases.get(tileId) ?? ''
-
-export const setTileBase = (tileId: string, hash: string): void => {
-  capSet(bases, tileId, hash, BODY_CAP)
+export interface TileBase {
+  text: string
+  hash: string
 }
+
+export const readTileBase = (tileId: string): TileBase | undefined => bases.get(tileId)
+
+export const setTileBase = (tileId: string, base: TileBase): void => void bases.set(tileId, base)
 
 // A sibling mount re-seeds once per debounced save, never per keystroke.
 export const settleTileBody = (tileId: string): void => {
@@ -63,11 +66,6 @@ export const dropTileBodies = (ids: Iterable<string>): void => {
     bodies.delete(id)
     settleTileBody(id)
   }
-}
-
-/** A cascading page rename rewrote links inside tile files. */
-export const refreshTileBodies = (): void => {
-  for (const doc of docs.values()) dropTileBodies(tileIds(doc.state.layout))
 }
 
 export const subscribeTileBody = (tileId: string, fn: () => void): (() => void) => {

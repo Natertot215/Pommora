@@ -13,7 +13,7 @@ import {
   readBodyBase,
   setBodyBase,
 } from '../Session/pageDetailCache'
-import { cancelPageSave, schedulePageSave } from '../Session/saveScheduler'
+import { cancelPageSave, schedulePageSave, settlePageSave } from '../Session/saveScheduler'
 import { host } from '../Platform/dialer'
 import { merge3 } from './merge3'
 
@@ -72,6 +72,8 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
 
 /** An outside change to a page some editor holds merges into the shared head once, every mount follows the merge in place, and only text the disk doesn't hold yet is saved. */
 export async function absorbLanding(path: string): Promise<void> {
+  // The page's own save in flight names the base its typing grew from.
+  await settlePageSave(path)
   const base = readBodyBase(path)?.text
   dropCacheDetail(path)
   const fresh = await fetchPageDetail(path)

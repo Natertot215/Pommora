@@ -46,6 +46,8 @@ export interface BodyMount {
 type BodyHead = { seq: number; text: string }
 const heads = new Map<string, BodyHead & { mounts: Set<BodyMount> }>()
 
+export const heldPaths = (): string[] => [...heads.keys()]
+
 export const bodyHead = (path: string): BodyHead | undefined => heads.get(path)
 
 const catchUp = (mount: BodyMount, head: BodyHead): void => {
