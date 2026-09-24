@@ -2,47 +2,51 @@
 
 import type { WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
 import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
+import type { Result } from '@pommora/core/Contract/result'
+import { notifyError } from '../Interface/Notifications/notifications'
 import { readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
 import { host } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 400
 
-type Ack = { ok: boolean }
-type Save = () => Promise<Ack>
+type Save = () => Promise<Result<unknown>>
 
 interface BodyWriter {
-  schedule: (key: string, body: string, save: Save) => void
+  schedule: (key: string, save: Save) => void
   flush: (key: string) => Promise<void>
   flushAll: () => Promise<void>
   cancel: (key: string) => void
+  cancelAll: () => void
 }
 
-export function createBodyWriter(): BodyWriter {
-  const pending = new Map<
-    string,
-    { body: string; save: Save; timer: ReturnType<typeof setTimeout> }
-  >()
+/** A refused save is dropped, never retried: the next edit schedules the whole body again. `what` names the lost write in the one notice a refusal posts; a writer without it drops quietly. */
+export function createBodyWriter(what?: string): BodyWriter {
+  const pending = new Map<string, { save: Save; timer: ReturnType<typeof setTimeout> }>()
 
   const flush = (key: string): Promise<void> => {
     const p = pending.get(key)
     if (!p) return Promise.resolve()
     clearTimeout(p.timer)
     pending.delete(key)
-    return p.save().then((ack) => {
-      if (!ack.ok && !pending.has(key)) schedule(key, p.body, p.save)
+    return p.save().then((r) => {
+      if (!r.ok && what) notifyError(`Couldn’t save ${what}: ${r.error.message}`)
     })
   }
 
-  const schedule = (key: string, body: string, save: Save): void => {
+  const schedule = (key: string, save: Save): void => {
     const prev = pending.get(key)
     if (prev) clearTimeout(prev.timer)
-    pending.set(key, { body, save, timer: setTimeout(() => void flush(key), SAVE_DEBOUNCE_MS) })
+    pending.set(key, { save, timer: setTimeout(() => void flush(key), SAVE_DEBOUNCE_MS) })
   }
 
   const cancel = (key: string): void => {
     const p = pending.get(key)
     if (p) clearTimeout(p.timer)
     pending.delete(key)
+  }
+
+  const cancelAll = (): void => {
+    for (const key of [...pending.keys()]) cancel(key)
   }
 
   const flushAll = (): Promise<void> =>
@@ -55,10 +59,10 @@ export function createBodyWriter(): BodyWriter {
     })
   }
 
-  return { schedule, flush, flushAll, cancel }
+  return { schedule, flush, flushAll, cancel, cancelAll }
 }
 
-const pageWriter = createBodyWriter()
+const pageWriter = createBodyWriter('the page')
 
 let staleSink: ((path: string, body: string) => void) | null = null
 
@@ -68,7 +72,7 @@ export function setStaleSaveSink(fn: ((path: string, body: string) => void) | nu
 
 export function schedulePageSave(path: string, body: string): void {
   writeThroughBody(path, body)
-  pageWriter.schedule(path, body, async () => {
+  pageWriter.schedule(path, async () => {
     writeThroughBody(path, body)
     const r = await host().ask('page:updateBody', path, body, readBodyBase(path)?.hash ?? '')
     if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash })
@@ -95,13 +99,19 @@ export function flushAllPageSaves(): Promise<void> {
 const sessionWriter = createBodyWriter()
 
 export function scheduleTabsSave(set: StoredTabSet): void {
-  sessionWriter.schedule('tabs', '', () => host().ask('tabs:save', set))
+  sessionWriter.schedule('tabs', () => host().ask('tabs:save', set))
 }
 
 export function scheduleWindowsSave(file: WindowsFile): void {
-  sessionWriter.schedule('windows', '', () => host().ask('windows:save', file))
+  sessionWriter.schedule('windows', () => host().ask('windows:save', file))
 }
 
 export function flushAllSessionSaves(): Promise<void> {
   return sessionWriter.flushAll()
+}
+
+/** Once the root has flipped, anything the old Nexus still owed would land in the new one. */
+export function cancelAllSaves(): void {
+  pageWriter.cancelAll()
+  sessionWriter.cancelAll()
 }

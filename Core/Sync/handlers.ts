@@ -1,5 +1,5 @@
-import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
-import { fail, ok, type Result } from '../Contract/result'
+import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
+import { fail, NO_STORE, ok, type Result } from '../Contract/result'
 import { isString } from '../Contract/validators'
 import { captureLoser } from './Arrival/captures'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -49,11 +49,6 @@ const NO_RECORD: Trouble = {
 const NO_DEVICE = fail(
   'operation-failed',
   'This device has no identity; the keychain refused at launch.',
-)
-
-const NO_STORE = fail(
-  'operation-failed',
-  'This nexus cannot record the binding; its database is unavailable.',
 )
 
 interface Ready {
@@ -215,44 +210,47 @@ async function rotateRing(
 }
 
 const act = (route: 'approve' | 'revoke') =>
-  withRoot(async (root: string, ctx: HostContext, raw: unknown): Promise<Result<SyncState>> => {
-    const r = await ready(root, ctx)
-    if (!r.ok) return r
-    const deviceId = typeof raw === 'string' ? raw.trim() : ''
-    if (deviceId.length === 0) return fail('operation-failed', 'A device id is required.')
-    const { nexusId, device, host, binding } = r.value
-    if (binding === null) return fail('operation-failed', 'This nexus is bound to no server.')
-    let password: string | null = null
-    if (route === 'revoke') {
-      password = await host.secrets.get(passwordName(nexusId))
-      if (password === null)
-        return fail('operation-failed', 'The Nexus password is needed to rotate the ring.')
-    }
-    const listing = await call(host, binding, 'devices', { nexusId })
-    const devices = listing.reply?.devices
-    if (devices === undefined)
-      return ok({ device, binding: bindingFrom(binding, listing), status: currentStatus() })
-    const work =
-      password === null
-        ? await shareRing(host, binding, nexusId, deviceId, devices)
-        : await rotateRing(host, binding, nexusId, password, deviceId, devices)
-    if (work.stop === true)
+  withWriteRoot(
+    async (root: string, ctx: HostContext, raw: unknown): Promise<Result<SyncState>> => {
+      const r = await ready(root, ctx)
+      if (!r.ok) return r
+      const deviceId = typeof raw === 'string' ? raw.trim() : ''
+      if (deviceId.length === 0) return fail('operation-failed', 'A device id is required.')
+      const { nexusId, device, host, binding } = r.value
+      if (binding === null) return fail('operation-failed', 'This nexus is bound to no server.')
+      let password: string | null = null
+      if (route === 'revoke') {
+        password = await host.secrets.get(passwordName(nexusId))
+        if (password === null)
+          return fail('operation-failed', 'The Nexus password is needed to rotate the ring.')
+      }
+      const listing = await call(host, binding, 'devices', { nexusId })
+      const devices = listing.reply?.devices
+      if (devices === undefined)
+        return ok({ device, binding: bindingFrom(binding, listing), status: currentStatus() })
+      const work =
+        password === null
+          ? await shareRing(host, binding, nexusId, deviceId, devices)
+          : await rotateRing(host, binding, nexusId, password, deviceId, devices)
+      if (work.stop === true)
+        return ok({
+          device,
+          binding: bindingFrom(binding, listing),
+          status: work.trouble === undefined ? currentStatus() : statusOf(work.trouble),
+        })
+      const running = currentSession()
+      const rotated = heldRing(nexusId)
+      if (running !== null && running.nexusId === nexusId && rotated !== null)
+        running.ring = rotated
+      const outcome = await call(host, binding, route, { nexusId, deviceId })
+      if (outcome.status !== 200 && outcome.status !== 0) return state(root, ctx)
       return ok({
         device,
-        binding: bindingFrom(binding, listing),
+        binding: bindingFrom(binding, outcome),
         status: work.trouble === undefined ? currentStatus() : statusOf(work.trouble),
       })
-    const running = currentSession()
-    const rotated = heldRing(nexusId)
-    if (running !== null && running.nexusId === nexusId && rotated !== null) running.ring = rotated
-    const outcome = await call(host, binding, route, { nexusId, deviceId })
-    if (outcome.status !== 200 && outcome.status !== 0) return state(root, ctx)
-    return ok({
-      device,
-      binding: bindingFrom(binding, outcome),
-      status: work.trouble === undefined ? currentStatus() : statusOf(work.trouble),
-    })
-  })
+    },
+  )
 
 const given = (raw: unknown): string | null =>
   typeof raw === 'string' && raw.length > 0 ? raw : null
@@ -260,7 +258,7 @@ const given = (raw: unknown): string | null =>
 export const syncHandlers = {
   'sync:state': withRoot((root, ctx) => state(root, ctx)),
 
-  'sync:renameDevice': withRoot(
+  'sync:renameDevice': withWriteRoot(
     async (root: string, ctx: HostContext, raw: unknown): Promise<Result<SyncState>> => {
       const r = await ready(root, ctx)
       if (!r.ok) return r
@@ -291,7 +289,7 @@ export const syncHandlers = {
     },
   ),
 
-  'sync:connect': withRoot(
+  'sync:connect': withWriteRoot(
     async (
       root: string,
       ctx: HostContext,
@@ -372,7 +370,7 @@ export const syncHandlers = {
     },
   ),
 
-  'sync:disconnect': withRoot(
+  'sync:disconnect': withWriteRoot(
     async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
       const r = await ready(root, ctx)
       if (!r.ok) return r
@@ -386,12 +384,12 @@ export const syncHandlers = {
   'sync:approve': act('approve'),
   'sync:revoke': act('revoke'),
 
-  'sync:now': withRoot(async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
+  'sync:now': withWriteRoot(async (root: string, ctx: HostContext): Promise<Result<SyncState>> => {
     await syncNow()
     return state(root, ctx)
   }),
 
-  'sync:captureLocal': withRoot(async (root, _ctx, rel: unknown, text: unknown) => {
+  'sync:captureLocal': withWriteRoot(async (root, _ctx, rel: unknown, text: unknown) => {
     if (!isString(rel) || !isString(text))
       return fail('operation-failed', 'A path and its text are required.')
     await captureLoser(root, rel, new TextEncoder().encode(text), 'merge-lost')

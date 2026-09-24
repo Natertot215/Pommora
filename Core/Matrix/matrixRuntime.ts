@@ -116,7 +116,7 @@ class MatrixRuntime {
   }
 
   private clear(): void {
-    this.flushFrame()
+    void this.flushFrame()
     this.frame = null
     this.built = null
     this.graph = EMPTY
@@ -238,12 +238,12 @@ class MatrixRuntime {
     this.setFrame(next)
   }
 
-  private flushFrame(): void {
+  flushFrame(): Promise<void> {
     const f = this.frame
-    if (this.save === null || f === null) return
+    if (this.save === null || f === null) return Promise.resolve()
     clearTimeout(this.save)
     this.save = null
-    useSession.getState().saveMatrixFrame(f)
+    return useSession.getState().saveMatrixFrame(f)
   }
 
   private fitted(): Frame | null {
@@ -373,7 +373,7 @@ class MatrixRuntime {
     if (this.save !== null) clearTimeout(this.save)
     this.save = setTimeout(() => {
       this.save = null
-      useSession.getState().saveMatrixFrame(f)
+      void useSession.getState().saveMatrixFrame(f)
     }, FRAME_SAVE_MS)
     this.invalidate()
   }

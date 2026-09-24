@@ -19,6 +19,10 @@ import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
 import { clearCache, readBodyBase, readPageDetail, setBodyBase } from './pageDetailCache'
+import { schedulePageSave, scheduleTabsSave } from './saveScheduler'
+import { tileBodyWriter } from '../Tiles/tileDocStore'
+import { host as dialer } from '../Platform/dialer'
+import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -490,22 +494,6 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     expect(p?.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'b' })
   })
 
-  it('a tree from a DIFFERENT nexus resets the session before any reconcile can leak state', async () => {
-    useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
-    await useSession.getState().applyTree(treeWith([{ id: 'b', path: 'Notes/B.md' }]))
-    expect(useSession.getState().windowsFile.pageSet).not.toBeNull()
-
-    // The menu's reload-state path: a foreign-root tree lands with NO openVia clear before it.
-    const base = treeWith([])
-    await useSession
-      .getState()
-      .applyTree({ ...base, nexus: { ...base.nexus, id: 'other', rootPath: '/other' } })
-    const s = useSession.getState()
-    expect(s.pageWindow).toBeNull()
-    expect(s.windowsFile).toEqual({ navSet: null, pageSet: null })
-    expect(s.activeTabId).toBe('')
-  })
-
   it('a Preview reconciles the remembered set against the live tree, then lands on its own tab', async () => {
     await useSession.getState().applyTree(
       treeWith([
@@ -655,6 +643,48 @@ describe('store — the mutate rail patches the tree before main confirms', () =
       .mutate({ op: 'setActiveView', path: 'Notes', kind: 'collection', viewId: 'view_b' })
     expect(done).toBe(true)
     expect(useSession.getState().tree?.collections[0]?.activeView).toBe('view_b')
+  })
+
+  it('a page rename lands the pending save on the old path first', async () => {
+    const order: string[] = []
+    channels['page:updateBody'] = vi.fn(async (path: string) => {
+      order.push(`save ${path}`)
+      return ok({ hash: 'h', stale: false })
+    })
+    channels.mutate = vi.fn(async () => {
+      order.push('mutate')
+      return ok({})
+    })
+    schedulePageSave('Notes/A.md', 'typed')
+    await useSession
+      .getState()
+      .mutate({ op: 'rename', path: 'Notes/A.md', kind: 'page', newName: 'B' })
+    expect(order).toEqual(['save Notes/A.md', 'mutate'])
+  })
+})
+
+describe('store — a Nexus switch lands every owed save first', () => {
+  it('writes the page, tile, and tab saves before asking to switch', async () => {
+    const order: string[] = []
+    const record = (what: string, value: unknown) =>
+      vi.fn(async () => {
+        order.push(what)
+        return ok(value)
+      })
+    channels['page:updateBody'] = record('page', { hash: 'h', stale: false })
+    channels['tiles:writeMarkdown'] = record('tile', null)
+    channels['tabs:save'] = record('tabs', null)
+    channels['nexus:choose'] = record('choose', false)
+    channels['matrixLayout:save'] = vi.fn(async () => ok(null))
+    channels['windows:save'] = vi.fn(async () => ok(null))
+    schedulePageSave('Notes/A.md', 'typed')
+    tileBodyWriter.schedule('t1', () =>
+      dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x'),
+    )
+    scheduleTabsSave({ tabs: [], activeTabId: '' } as unknown as StoredTabSet)
+    await useSession.getState().choose()
+    expect(order.slice(0, 3).sort()).toEqual(['page', 'tabs', 'tile'])
+    expect(order[3]).toBe('choose')
   })
 })
 

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { HostContext } from '../Contract/handlers'
 import { ok } from '../Contract/result'
 
 const { readScope, sessionRoot } = vi.hoisted(() => ({
@@ -7,7 +8,7 @@ const { readScope, sessionRoot } = vi.hoisted(() => ({
 }))
 
 vi.mock('../Platform/localState', () => ({ readScope, writeKey: vi.fn(() => true) }))
-vi.mock('../Nexus/session', () => ({ sessionRoot }))
+vi.mock('../Nexus/session', () => ({ sessionRoot, adopting: () => false }))
 
 const { webHandlers } = await import('./handlers')
 
@@ -20,7 +21,7 @@ describe('linkTitles:get answers the envelope, never a bare reply', () => {
   it('returns ok(cache) when the scope reads cleanly', async () => {
     sessionRoot.mockReturnValue('/root-clean')
     readScope.mockReturnValue({ 'https://x': 'X' })
-    expect(await webHandlers['linkTitles:get']()).toEqual(ok({ 'https://x': 'X' }))
+    expect(await webHandlers['linkTitles:get']({} as HostContext)).toEqual(ok({ 'https://x': 'X' }))
   })
 
   it('lets a scope read throw reject to the boundary rather than handing back a bare object', async () => {
@@ -28,6 +29,6 @@ describe('linkTitles:get answers the envelope, never a bare reply', () => {
     readScope.mockImplementation(() => {
       throw new Error('unreadable')
     })
-    await expect(webHandlers['linkTitles:get']()).rejects.toThrow('unreadable')
+    await expect(webHandlers['linkTitles:get']({} as HostContext)).rejects.toThrow('unreadable')
   })
 })

@@ -19,7 +19,7 @@ import type { HostContext, HostDevice, PickKind } from '@pommora/core/Contract/h
 import { handlers } from '@pommora/core/Contract/serve'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { flushNavigation } from '@pommora/core/Navigation/navigationFile'
-import { adoptNexus, openNexusSequence } from '@pommora/core/Nexus/handlers'
+import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlid } from '@pommora/core/Nexus/ids'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
@@ -36,7 +36,7 @@ import { installAppMenu } from './Actions/appMenu'
 import { installEditorContextMenu, setFormatState, setEditorCommands } from './Actions/editorMenu'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { popNativeMenu } from './Actions/menu'
-import { push, serveIpc, type TellHandlers } from './Bridge/ipc'
+import { push, serveIpc, settleAsks, type TellHandlers } from './Bridge/ipc'
 import { captureThumbnail, evictThumbnails } from './Capture/thumbnails'
 import {
   addRecent,
@@ -50,6 +50,7 @@ import { getSecret, setSecret } from './Config/secrets'
 import { interfaceScaleZoom } from './Config/interfaceScale'
 import { startWatcher, stopWatcher } from './FileWatch/watcher'
 import { isWindows, nativePath, posixPath } from './Platform/hostPath'
+import { drainFileLocks } from './Platform/fileLock'
 import { nodeMachine } from './Platform/nodeMachine'
 import { closeSessionDb, openSessionDb } from './Store/sessionDb'
 import { fetchPageTitle } from './Web/linkTitles'
@@ -143,14 +144,23 @@ function registerAssetProtocol(): void {
 const userData = (): string => posixPath(app.getPath('userData'))
 
 let mainWindow: BrowserWindow | null = null
+const currentWindow = (): BrowserWindow | null => mainWindow
 let device: HostDevice | null = null
 async function refreshMenu(): Promise<void> {
-  const win = mainWindow
-  if (!win) return
   const root = sessionRoot()
   const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
   setEditorCommands(commands)
-  await installAppMenu(win, (p) => adoptNexus(hostContext(null), posixPath(p)), commands)
+  await installAppMenu(
+    currentWindow,
+    async (p) => {
+      try {
+        await handlers['nexus:openPath'](hostContext(null), p)
+      } catch (e) {
+        console.error('Open Recent failed:', e)
+      }
+    },
+    commands,
+  )
 }
 
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
@@ -209,9 +219,7 @@ const PICK_PROPERTIES: Record<PickKind, OpenDialogOptions['properties']> = {
 
 function hostContext(win: BrowserWindow | null): HostContext {
   return {
-    push: (k, payload) => {
-      if (mainWindow) push(mainWindow, k, payload)
-    },
+    push: (k, payload) => push(currentWindow, k, payload),
     async pick(kind, opts) {
       const options: OpenDialogOptions = {
         properties: PICK_PROPERTIES[kind],
@@ -270,10 +278,8 @@ function hostContext(win: BrowserWindow | null): HostContext {
         root,
       ),
     async adopted(root, path) {
-      if (mainWindow) {
-        void startWatcher(root, mainWindow)
-        void applyDefaultZoom(mainWindow)
-      }
+      void startWatcher(root, currentWindow)
+      if (mainWindow) void applyDefaultZoom(mainWindow)
       try {
         // The RAW user-facing path, not the canonical root: a nexus under an iCloud-synced ~/Documents realpaths into the Mobile Documents container, which reads as gibberish in Open Recent and breaks restore if iCloud Desktop & Documents is later turned off.
         await updateAppConfig(userData(), (cur) => ({
@@ -286,12 +292,15 @@ function hostContext(win: BrowserWindow | null): HostContext {
       }
       void refreshMenu()
     },
-    watch: (root) => (mainWindow ? startWatcher(root, mainWindow) : Promise.resolve()),
+    watch: (root) => startWatcher(root, currentWindow),
     applyZoom: () => (mainWindow ? applyDefaultZoom(mainWindow) : Promise.resolve()),
   }
 }
 
+let windowFlushed: (() => void) | null = null
+
 const tells: TellHandlers = {
+  'app:flushed': () => windowFlushed?.(),
   'editor:format-state': (_win, state) => setFormatState(state),
   'win:dragBy': (win, dx, dy) => {
     if (!win || typeof dx !== 'number' || typeof dy !== 'number') return
@@ -350,13 +359,9 @@ app
     createWindow()
     void refreshMenu()
     const restored = sessionRoot()
-    if (restored && mainWindow) void startWatcher(restored, mainWindow)
+    if (restored) void startWatcher(restored, currentWindow)
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow()
-        const root = sessionRoot()
-        if (root && mainWindow) void startWatcher(root, mainWindow)
-      }
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
   })
   .catch((e) => {
@@ -368,20 +373,41 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Database writes commit synchronously, so close only tidies. Navigation intent is the one operational write still owed to disk: defer the quit, settle it, re-quit.
-let flushingBeforeQuit = false
+const FLUSH_WAIT_MS = 2000
+
+// Bounded, so a hung window or a long-running ask can't hold the quit.
+const bounded = (work: Promise<unknown>): Promise<unknown> =>
+  Promise.race([work, new Promise((resolve) => setTimeout(resolve, FLUSH_WAIT_MS))])
+
+const flushWindow = (): Promise<unknown> =>
+  mainWindow
+    ? bounded(
+        new Promise<void>((resolve) => {
+          windowFlushed = resolve
+          push(currentWindow, 'app:flush', null)
+        }),
+      )
+    : Promise.resolve()
+
+// Before-quit fires ahead of the window closing: its owed saves land first, then every ask and locked write in flight, and only then do the stores close. A second quit mid-flush waits on the first.
+let quitting: 'no' | 'flushing' | 'ready' = 'no'
 app.on('before-quit', (e) => {
-  if (flushingBeforeQuit) return
+  if (quitting === 'ready') return
   e.preventDefault()
-  flushingBeforeQuit = true
+  if (quitting === 'flushing') return
+  quitting = 'flushing'
   stopWatcher()
-  const root = sessionRoot()
   const quit = (): void => {
     closeSessionDb()
+    quitting = 'ready'
     app.quit()
   }
-  void Promise.all([flushNavigation(), root === null ? undefined : flushFileHistory(root)]).then(
-    quit,
-    quit,
-  )
+  void flushWindow()
+    .then(() => bounded(settleAsks()))
+    .then(drainFileLocks)
+    .then(() => {
+      const root = sessionRoot()
+      return Promise.all([flushNavigation(), root === null ? undefined : flushFileHistory(root)])
+    })
+    .then(quit, quit)
 })

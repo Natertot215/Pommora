@@ -265,12 +265,17 @@ export interface Tells {
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
   'win:resendFullscreen': []
+  // The quit handshake's answer: every save the window owed has landed.
+  'app:flushed': []
   // Handed to the guest a host-owned pointer covers — the only way it can still scroll beneath it.
   'web:wheel': [guestId: number, x: number, y: number, deltaX: number, deltaY: number]
 }
 
 export interface Pushes {
   'menu:action': string
+  // Open Recent routed through the window, so its pending saves land before the root flips.
+  'nexus:openRecent': string
+  'app:flush': null
   'nav:changed': Omit<NavigationState, 'recents'>
   'matrix:changed': MatrixConfig
   'assets:changed': AssetMap

@@ -40,6 +40,15 @@ async function freshStore(answer: () => Promise<unknown>): Promise<{
     'nav:write': vi.fn(async () => ok(null)),
     'tabs:save': vi.fn(async () => ok(null)),
     'index:headings': vi.fn(async () => ok({})),
+    'nexus:choose': vi.fn(async () => ok(true)),
+    'nexus:state': vi.fn(async () => ok({ status: 'open', tree: treeAt('/b') })),
+    'subfield:get': vi.fn(async () => ok(null)),
+    'navViewModes:get': vi.fn(async () => ok(null)),
+    'citations:get': vi.fn(async () => ok({})),
+    'linkTitles:get': vi.fn(async () => ok({})),
+    'nav:read': vi.fn(async () => ok(null)),
+    'windows:load': vi.fn(async () => ok(null)),
+    'tabs:load': vi.fn(async () => ok(null)),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   const { useSession } = await import('./store')
@@ -117,10 +126,10 @@ describe('the prefs are read once per nexus', () => {
     expect(prefsLoad).toHaveBeenCalledTimes(1)
   })
 
-  it('re-reads when a push carries a foreign root', async () => {
+  it('re-reads after switching Nexus', async () => {
     const { useSession, prefsLoad } = await freshStore(withPrefs({ panes: { sidebar: 300 } }))
     await useSession.getState().applyTree(treeAt('/a'))
-    await useSession.getState().applyTree(treeAt('/b'))
+    await useSession.getState().choose()
     expect(prefsLoad).toHaveBeenCalledTimes(2)
   })
 })
@@ -147,7 +156,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
     )
     await useSession.getState().applyTree(treeAt('/a'))
     expect(useSession.getState().devicePrefs).toEqual({ disclosure: { 'context:areas': true } })
-    await useSession.getState().applyTree(treeAt('/b'))
+    await useSession.getState().choose()
     expect(useSession.getState().devicePrefs).toEqual({})
   })
 })

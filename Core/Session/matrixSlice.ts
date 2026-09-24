@@ -26,7 +26,7 @@ export interface MatrixSlice {
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
   saveMatrixLayout: (positions: Positions) => void
-  saveMatrixFrame: (frame: Frame) => void
+  saveMatrixFrame: (frame: Frame) => Promise<void>
   resetMatrix: () => void
 }
 
@@ -46,11 +46,10 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   let refetch: ReturnType<typeof setTimeout> | null = null
   let triedTree: unknown = null
 
-  const logged = (what: string, reply: Promise<Result<unknown>>): void => {
-    void reply.then((ack) => {
+  const logged = (what: string, reply: Promise<Result<unknown>>): Promise<void> =>
+    reply.then((ack) => {
       if (!ack.ok) console.error(`${what} failed:`, ack.error.message)
     })
-  }
 
   // A renamed or moved page answers under its new path, so the rows it held under the old one go by id as well as by path.
   const merge = (
@@ -133,7 +132,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     patchMatrix: (patch) => {
       set((s) => ({ matrixConfig: applyPatch(s.matrixConfig, patch) }))
-      logged('matrix write', dialer().ask('matrix:write', patch))
+      void logged('matrix write', dialer().ask('matrix:write', patch))
     },
 
     // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
@@ -163,13 +162,13 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       const next: Positions = { ...matrixPositions, ...positions }
       for (const id of Object.keys(next)) if (!live.has(id)) delete next[id]
       set({ matrixPositions: next })
-      logged('matrix layout save', dialer().ask('matrixLayout:save', { positions: next }))
+      void logged('matrix layout save', dialer().ask('matrixLayout:save', { positions: next }))
     },
 
     saveMatrixFrame: (frame) => {
-      if (!get().matrixLoaded) return
+      if (!get().matrixLoaded) return Promise.resolve()
       set({ matrixFrame: frame })
-      logged('matrix layout save', dialer().ask('matrixLayout:save', { frame }))
+      return logged('matrix layout save', dialer().ask('matrixLayout:save', { frame }))
     },
 
     resetMatrix: () => {

@@ -1,4 +1,4 @@
-import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
+import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
 import { errText, fail, ok, type Result } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
@@ -24,14 +24,10 @@ import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
 import { handleMutate, type MutateDeps } from './mutate'
 import { confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
-import { openSession, sessionRoot } from './session'
+import { openSession, sessionRoot, whileAdopting } from './session'
 import type { NexusState } from './tree'
 import { livePathOf } from './valuesChanged'
 import { titleFromPath } from '../Connections/connections'
-
-// Renderer-initiated sidecar saves are dropped while the session root swaps, so a mid-adopt save can't land in the NEW nexus's sidecars. A count: the open path runs more than one pass.
-let adoptingDepth = 0
-export const adopting = (): boolean => adoptingDepth > 0
 
 async function prepareOpenedNexus(path: string): Promise<string | null> {
   let nexusId: string | null = null
@@ -92,32 +88,27 @@ export async function adoptNexus(
   path: string,
   latchRecord = true,
 ): Promise<void> {
-  adoptingDepth++
-  try {
+  await whileAdopting(async () => {
     const root = await openNexusSequence(ctx, path, latchRecord)
     await ctx.adopted(root, path)
-  } finally {
-    adoptingDepth--
-  }
+  })
 }
 
-async function mutateDeps(ctx: HostContext): Promise<MutateDeps> {
-  const root = sessionRoot()
+async function mutateDeps(root: string, ctx: HostContext): Promise<MutateDeps> {
   return {
     trashMode: await ctx.trashMode(),
     trashToSystem: (p) =>
       machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
-    permanentDelete: root === null ? false : await readPermanentDelete(root),
+    permanentDelete: await readPermanentDelete(root),
   }
 }
 
 export const nexusHandlers = {
-  'nexus:state': async (): Promise<Result<NexusState>> => {
-    const root = sessionRoot()
-    if (root === null) return ok({ status: 'empty' })
-    const tree = getLiveTree() ?? (await refreshTree(root))
-    return ok({ status: 'open', tree })
-  },
+  'nexus:state': withRoot(
+    async (root): Promise<Result<NexusState>> =>
+      ok({ status: 'open', tree: getLiveTree() ?? (await refreshTree(root)) }),
+    ok({ status: 'empty' }),
+  ),
 
   'nexus:choose': async (ctx) => {
     const chosen = await ctx.pick('folder', { message: 'Choose a nexus folder' })
@@ -138,7 +129,7 @@ export const nexusHandlers = {
   },
 
   // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session, stores, watcher, and recents at the new path.
-  'nexus:rename': withRoot(async (root, ctx, newName: unknown) => {
+  'nexus:rename': withWriteRoot(async (root, ctx, newName: unknown) => {
     if (typeof newName !== 'string') return fail('operation-failed', 'A name is required.')
     const trimmed = newName.trim()
     if (trimmed.length === 0) return fail('operation-failed', 'The name can’t be empty.')
@@ -160,26 +151,27 @@ export const nexusHandlers = {
     ok(readHeadings(isStringArray(paths) ? paths : undefined) ?? {}),
   ),
 
-  'connections:headingRenamed': withRoot(async (root, _ctx, pageId, oldHeading, newHeading) => {
-    const rel = livePathOf(root, pageId)
-    if (!rel) return ok({ touched: [] })
-    return renameHeadingCascade(root, titleFromPath(rel), oldHeading, newHeading, rel)
-  }),
+  'connections:headingRenamed': withWriteRoot(
+    async (root, _ctx, pageId, oldHeading, newHeading) => {
+      const rel = livePathOf(root, pageId)
+      if (!rel) return ok({ touched: [] })
+      return renameHeadingCascade(root, titleFromPath(rel), oldHeading, newHeading, rel)
+    },
+  ),
 
-  'path:reveal': async (ctx, p: unknown) => {
-    const root = sessionRoot()
-    if (root === null || typeof p !== 'string') return ok(null)
+  'path:reveal': withRoot(async (root, ctx, p: unknown) => {
+    if (typeof p !== 'string') return ok(null)
     const r = await resolveUnderRoot(root, p)
     if (r.ok) ctx.reveal(r.value)
     return ok(null)
-  },
+  }, ok(null)),
 
-  mutate: async (ctx, req: MutateRequest) => {
-    const reply = await handleMutate(req, await mutateDeps(ctx))
+  mutate: withWriteRoot(async (root, ctx, req: MutateRequest) => {
+    const reply = await handleMutate(req, await mutateDeps(root, ctx))
     if (reply.ok) {
-      await confirmWrite(ctx, (root) => confirmMutation(root, req, reply.value))
+      await confirmWrite(ctx, root, (root) => confirmMutation(root, req, reply.value))
       pushAssetWrites(ctx)
     }
     return reply
-  },
+  }),
 } satisfies Partial<Handlers>

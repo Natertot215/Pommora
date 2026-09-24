@@ -1,8 +1,6 @@
-import { type Handlers, withRoot } from '../Contract/handlers'
-import { BUSY, fail, NO_NEXUS, ok } from '../Contract/result'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+import { fail, NO_STORE, ok } from '../Contract/result'
 import { isRect, isString } from '../Contract/validators'
-import { adopting } from '../Nexus/handlers'
-import { sessionRoot } from '../Nexus/session'
 import { isPlainObject } from '../Properties/propertyValue'
 import { readNavigationState, writeNavigationState } from './navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
@@ -13,26 +11,21 @@ export const navigationHandlers = {
     return ok(await readNavigationState(root))
   }),
 
-  // Refused mid-adopt so a gesture on the old nexus's still-open UI can't land in the new one.
-  'nav:write': async (_ctx, patch: unknown) => {
-    if (adopting()) return BUSY
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
+  'nav:write': withWriteRoot(async (root, _ctx, patch: unknown) => {
     if (!isPlainObject(patch))
       return fail('operation-failed', 'Navigation patch must be an object.')
     await writeNavigationState(root, patch as Partial<NavigationState>)
     return ok(null)
-  },
+  }),
 
-  'tabs:load': () => (sessionRoot() === null ? NO_NEXUS : ok(readTabsState())),
-  'tabs:save': (_ctx, set: unknown) => {
-    if (adopting()) return BUSY
+  'tabs:load': withRoot(() => ok(readTabsState())),
+  'tabs:save': withWriteRoot((_root, _ctx, set: unknown) => {
     const clean = sanitizeTabSet(set)
     if (!clean) return fail('operation-failed', 'Bad tab set.')
-    return writeTabsState(clean) ? ok(null) : NO_NEXUS
-  },
+    return writeTabsState(clean) ? ok(null) : NO_STORE
+  }),
 
-  'capture:thumbnail': withRoot(
+  'capture:thumbnail': withWriteRoot(
     async (root, ctx, navKey: unknown, rect: unknown, scaleFactor: unknown) => {
       if (typeof navKey !== 'string' || !isRect(rect) || typeof scaleFactor !== 'number')
         return fail('operation-failed', 'Bad capture args.')
@@ -41,7 +34,7 @@ export const navigationHandlers = {
     },
   ),
 
-  'nav:evictThumbs': withRoot(async (root, ctx, liveKeys: unknown) => {
+  'nav:evictThumbs': withWriteRoot(async (root, ctx, liveKeys: unknown) => {
     if (!Array.isArray(liveKeys)) return fail('operation-failed', 'Live keys must be an array.')
     await ctx.thumbnails.evict(root, liveKeys.filter(isString))
     return ok(null)

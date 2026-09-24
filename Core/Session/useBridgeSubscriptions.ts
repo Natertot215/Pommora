@@ -5,18 +5,19 @@ import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
 import { dropDetailsWhere, notifyLanding, readBodyBase, readPageDetail } from './pageDetailCache'
+import { flushAllSaves } from './nexusSlice'
 import { setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
 
 export function useBridgeSubscriptions(): void {
-  const load = useSession((s) => s.load)
   const applyTree = useSession((s) => s.applyTree)
   const applyNavChanged = useSession((s) => s.applyNavChanged)
   const applyAssetMap = useSession((s) => s.applyAssetMap)
   const nexusRoot = useSession((s) => s.tree?.nexus.rootPath)
   const choose = useSession((s) => s.choose)
+  const openPath = useSession((s) => s.openPath)
   const toggleSidebar = useSession((s) => s.toggleSidebar)
   const newPage = useSession((s) => s.newPage)
   const openNewTab = useSession((s) => s.openNewTab)
@@ -111,10 +112,18 @@ export function useBridgeSubscriptions(): void {
         case 'toggle-sidebar':
           toggleSidebar()
           break
-        case 'reload-state':
-          void load()
-          break
       }
     })
-  }, [choose, newPage, openNewTab, toggleSidebar, load])
+  }, [choose, newPage, openNewTab, toggleSidebar])
+
+  useEffect(() => dialer().on('nexus:openRecent', (path) => void openPath(path)), [openPath])
+
+  useEffect(
+    () =>
+      dialer().on(
+        'app:flush',
+        () => void flushAllSaves().finally(() => dialer().tell('app:flushed')),
+      ),
+    [],
+  )
 }

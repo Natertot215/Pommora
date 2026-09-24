@@ -66,4 +66,12 @@ describe('schedulePageSave', () => {
     expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', '')
     expect(stale).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
   })
+
+  it('drops a refused save instead of retrying it', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    stub({ ok: false, error: { code: 'not-found', message: 'gone' } })
+    schedulePageSave(PATH, 'typed')
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(updateBody).toHaveBeenCalledTimes(1)
+  })
 })

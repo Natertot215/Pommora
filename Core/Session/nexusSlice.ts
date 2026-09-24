@@ -18,7 +18,13 @@ import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { flushAllTileDocs } from '../Tiles/tileDocStore'
-import { flushAllPageSaves, flushAllSessionSaves } from './saveScheduler'
+import { matrixRuntime } from '../Matrix/matrixRuntime'
+import {
+  cancelAllSaves,
+  flushAllPageSaves,
+  flushAllSessionSaves,
+  flushPageSave,
+} from './saveScheduler'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
 
@@ -33,6 +39,7 @@ export interface NexusSlice {
   applyTree: (tree: NexusTree) => Promise<void>
   loadHeadings: (paths?: string[]) => Promise<void>
   choose: () => Promise<void>
+  openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
   mutate: (
     req: MutateRequest,
@@ -42,6 +49,16 @@ export interface NexusSlice {
   ) => Promise<boolean>
 }
 
+/** Every save the window still owes, landed: awaited while the OLD root is bound before a switch, and before the host closes its stores on quit. */
+export async function flushAllSaves(): Promise<void> {
+  await Promise.all([
+    flushAllPageSaves(),
+    flushAllTileDocs(),
+    flushAllSessionSaves(),
+    matrixRuntime.flushFrame(),
+  ])
+}
+
 let systemAccentCache: string | null | undefined
 // Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
 let devicePrefsLoaded = false
@@ -49,6 +66,7 @@ let headingsLoaded = false
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const resetNexusSession = (): void => {
+    cancelAllSaves()
     devicePrefsLoaded = false
     headingsLoaded = false
     set({ headings: {} })
@@ -68,10 +86,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     try {
       // Closed before the root can flip even if the adopt is canceled: data safety over persistence.
       set({ navOpen: false, pageWindow: null })
-      // Awaited so main binds the OLD root: a late flush would overwrite a same-path file there.
-      await flushAllPageSaves()
-      await flushAllTileDocs()
-      await flushAllSessionSaves()
+      await flushAllSaves()
       const opened = await attempt()
       if (!opened.ok) {
         set({ status: 'error', error: opened.error })
@@ -160,9 +175,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     },
 
     applyTree: async (incoming) => {
-      // A reload-state adopt bypasses openVia's clear, so a foreign tree wipes session state here.
-      const prevRoot = get().tree?.nexus.rootPath
-      if (prevRoot !== undefined && prevRoot !== incoming.nexus.rootPath) resetNexusSession()
       // IPC strips identity, so without stabilize() every push would re-render every consumer.
       const tree = stabilize(incoming, get().tree)
       // Ahead of the ready paint so the panes land at their stored widths rather than settling after it. A width is seeded only when `panes` holds it; an absent key leaves the slice as it stands.
@@ -208,9 +220,23 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     },
 
     choose: () => openVia(() => host().ask('nexus:choose')),
+    openPath: (path) => openVia(() => host().ask('nexus:openPath', path)),
     openDropped: (file) => openVia(() => host().openDropped(file)),
 
     mutate: async (req, onCreated, onAdopted, onTrashed) => {
+      // A save queued for a path this op moves would land on the old path and be refused.
+      switch (req.op) {
+        case 'movePage':
+          await flushPageSave(req.path)
+          break
+        case 'rename':
+        case 'delete':
+          await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
+          break
+        case 'moveSet':
+          await flushAllPageSaves()
+          break
+      }
       const res = await host().ask('mutate', req)
       if (!res.ok) {
         await host().ask('error:show', res.error.message)

@@ -8,6 +8,7 @@ import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { push } from '../Bridge/ipc'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { syncIgnoredUnder, tileBodyOf } from '@pommora/core/Nexus/watchSettle'
+import chokidar from 'chokidar'
 import { startWatcher, stopWatcher } from './watcher'
 
 vi.mock('../Bridge/ipc', () => ({ push: vi.fn() }))
@@ -33,7 +34,9 @@ vi.mock('chokidar', () => ({
 
 const pushMock = vi.mocked(push)
 const rootMock = vi.mocked(sessionRoot)
-const win = { isDestroyed: () => false } as BrowserWindow
+const open = { isDestroyed: () => false } as BrowserWindow
+let live: BrowserWindow | null = open
+const win = (): BrowserWindow | null => live
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
@@ -62,6 +65,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await mkdir(abs('Loose'), { recursive: true })
   rootMock.mockReturnValue(root)
+  live = open
   pushMock.mockClear()
   handlers.clear()
   await refreshTree(root)
@@ -110,6 +114,30 @@ describe('the watcher settle', () => {
     expect(pushMock.mock.calls[0][2]).toBe(getLiveTree())
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md'])
     expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [] }])
+    expect(
+      getLiveTree()
+        ?.collections[0]?.pages.map((p) => p.title)
+        .sort(),
+    ).toEqual(['A', 'B'])
+  })
+})
+
+describe('overlapping watcher starts', () => {
+  it('arm one watcher: the last start wins', async () => {
+    const watch = vi.mocked(chokidar.watch)
+    watch.mockClear()
+    await Promise.all([startWatcher(root, win), startWatcher(root, win)])
+    expect(watch).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the watcher with the window closed', () => {
+  it('keeps patching the tree, so a reopened window reads what changed meanwhile', async () => {
+    await startWatcher(root, win)
+    live = null
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    emit('add', 'Notes', 'B.md')
+    await settleAll(() => getLiveTree()?.collections[0]?.pages.length === 2)
     expect(
       getLiveTree()
         ?.collections[0]?.pages.map((p) => p.title)

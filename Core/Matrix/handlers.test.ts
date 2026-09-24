@@ -73,33 +73,33 @@ describe('the layout channels', () => {
     expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1] } }).ok).toBe(false)
   })
 
-  it('reads a stored layout row by row, keeping every pair it understands', () => {
+  it('reads a stored layout row by row, keeping every pair it understands', async () => {
     writeValue('matrixLayout', { a: [1, 2], b: [3, 4, 1], c: [5], d: 'no' })
-    const reply = matrixHandlers['matrixLayout:load']()
+    const reply = await matrixHandlers['matrixLayout:load'](ctx)
     expect(reply.ok && reply.value.positions).toEqual({ a: [1, 2], b: [3, 4] })
   })
 
-  it('writes either half alone and loads both back', () => {
+  it('writes either half alone and loads both back', async () => {
     matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2] } })
     matrixHandlers['matrixLayout:save'](ctx, { frame: { cx: 5, cy: 6, w: 7, h: 8 } })
-    const reply = matrixHandlers['matrixLayout:load']()
+    const reply = await matrixHandlers['matrixLayout:load'](ctx)
     expect(reply).toEqual({
       ok: true,
       value: { positions: { a: [1, 2] }, frame: { cx: 5, cy: 6, w: 7, h: 8 } },
     })
   })
 
-  it('loads a stored row the save would have refused as nothing', () => {
+  it('loads a stored row the save would have refused as nothing', async () => {
     writeValue('matrixLayout', { a: [1] })
     writeValue('matrixFrame', { cx: 0, cy: 0, w: 0, h: 0 })
-    expect(matrixHandlers['matrixLayout:load']()).toEqual({
+    expect(await matrixHandlers['matrixLayout:load'](ctx)).toEqual({
       ok: true,
       value: { positions: {}, frame: null },
     })
   })
 
-  it('loads an unwritten layout as an empty map and no frame', () => {
-    expect(matrixHandlers['matrixLayout:load']()).toEqual({
+  it('loads an unwritten layout as an empty map and no frame', async () => {
+    expect(await matrixHandlers['matrixLayout:load'](ctx)).toEqual({
       ok: true,
       value: { positions: {}, frame: null },
     })

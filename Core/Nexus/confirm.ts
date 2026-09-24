@@ -17,12 +17,13 @@ export function pushValueChanges(ctx: HostContext, root: string): void {
   if (changes.length) ctx.push('values:changed', changes)
 }
 
+/** `root` is the one the write was gated on: a switch that landed meanwhile has nothing of this write to confirm. */
 export async function confirmWrite(
   ctx: HostContext,
+  root: string,
   work: (root: string) => Promise<NexusTree | null>,
 ): Promise<void> {
-  const root = sessionRoot()
-  if (root === null) return
+  if (sessionRoot() !== root) return
   pushConfirmed(ctx, await work(root))
   setTimeout(() => {
     if (sessionRoot() === root) pushValueChanges(ctx, root)
@@ -31,20 +32,24 @@ export async function confirmWrite(
 
 export async function confirmContainerWrite(
   ctx: HostContext,
+  root: string,
   containerPath: unknown,
 ): Promise<void> {
   if (typeof containerPath !== 'string') return
-  await confirmWrite(ctx, (root) =>
+  await confirmWrite(ctx, root, (root) =>
     confirmBy(root, () => patchContainerFromDisk(root, containerPath)),
   )
 }
 
 /** `containerPath` names the one Collection whose assignment list the write also moved; a bare call is a registry-only def edit, which the confirmer patches without opening a sidecar. */
-export const confirmRegistryWrite = (ctx: HostContext, containerPath?: string): Promise<void> =>
-  confirmWrite(ctx, (root) => confirmRegistry(root, containerPath))
+export const confirmRegistryWrite = (
+  ctx: HostContext,
+  root: string,
+  containerPath?: string,
+): Promise<void> => confirmWrite(ctx, root, (root) => confirmRegistry(root, containerPath))
 
-export const confirmSettingsWrite = (ctx: HostContext): Promise<void> =>
-  confirmWrite(ctx, (root) => confirmBy(root, () => patchSettingsFromDisk(root)))
+export const confirmSettingsWrite = (ctx: HostContext, root: string): Promise<void> =>
+  confirmWrite(ctx, root, (root) => confirmBy(root, () => patchSettingsFromDisk(root)))
 
 /** An asset a mutation adopted never reaches the watcher (its own write is echo-suppressed), so the write's channel is what tells the renderer. */
 export function pushAssetWrites(ctx: HostContext): void {
