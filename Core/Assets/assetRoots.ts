@@ -1,4 +1,4 @@
-// The one containment test the asset protocol and the banner delete-guard both cross — they hard-coded the same constant for opposite reasons, and two disagreeing tests is a defect neither one's own tests can see.
+// The one containment test the asset protocol and adoption both cross — two disagreeing copies would be a defect neither one's own tests can see.
 
 import { parseConnectionText } from '../Connections/connections'
 import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
@@ -29,11 +29,6 @@ export async function assetFilePath(root: string, value: unknown): Promise<strin
       ? value
       : null
   return typeof rel === 'string' ? rel : null
-}
-
-export async function assetFileToDelete(root: string, value: unknown): Promise<string | null> {
-  const rel = await assetFilePath(root, value)
-  return rel?.startsWith(`${ASSETS_DIR_REL}/`) ? rel : null
 }
 
 export const NOT_A_PROPERTY_DIR_MESSAGE = 'That folder can’t hold this property’s files.'
