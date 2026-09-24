@@ -123,7 +123,7 @@ Moving a Page **across Collections** never strips — its values ride along, the
 
 #### Contexts & Spaces
 
-`.nexus/contexts/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, `$color`, banner, its own relation keys, and its property values); its block document is a device-local row. There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
+`.nexus/contexts/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, `$color`, `$icon`, banner, its own relation keys, and its property values); its block document is a device-local row. There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
 
 A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's angle-bracket key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list. A Space-to-Space link rides the same angle-bracket keys and is stored on both Spaces' sidecars, so either file reads whole.
 
