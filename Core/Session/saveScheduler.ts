@@ -11,6 +11,9 @@ const SAVE_DEBOUNCE_MS = 400
 
 type Save = () => Promise<Result<unknown>>
 
+// Set while a Nexus switch is in flight: a save that fired then couldn't tell which root would take it.
+let held = false
+
 interface BodyWriter {
   schedule: (key: string, save: Save) => void
   flush: (key: string) => Promise<void>
@@ -32,6 +35,10 @@ export function createBodyWriter(what?: string): BodyWriter {
     const p = pending.get(key)
     if (!p) return Promise.resolve()
     clearTimeout(p.timer)
+    if (held) {
+      p.timer = setTimeout(() => void flush(key), SAVE_DEBOUNCE_MS)
+      return Promise.resolve()
+    }
     pending.delete(key)
     const run = p
       .save()
@@ -78,6 +85,15 @@ export function createBodyWriter(what?: string): BodyWriter {
   return { schedule, flush, settled, flushAll, cancel, cancelAll }
 }
 
+/** Everything owed is already landed when a switch holds; a save owed during it waits out the switch, then lands or is cancelled with the old Nexus. */
+export function holdSaves(): void {
+  held = true
+}
+
+export function releaseSaves(): void {
+  held = false
+}
+
 const pageWriter = createBodyWriter('the page')
 
 let staleSink: ((path: string, body: string) => void) | null = null
@@ -120,7 +136,7 @@ export function flushAllPageSaves(): Promise<void> {
   return pageWriter.flushAll()
 }
 
-// Tab and window sets, tile layouts, and the Matrix frame each write whole on every change; one debounced write per key coalesces a burst into the last state.
+// Tab and window sets, tile layouts, and the Matrix frame and positions each write whole on every change; one debounced write per key coalesces a burst into the last state.
 export const sessionWriter = createBodyWriter()
 
 export function scheduleTabsSave(set: StoredTabSet): void {

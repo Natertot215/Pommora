@@ -5,6 +5,7 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { makeTree } from '@pommora/core/Testing/testTree'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { stubDialer } from '../vitest.setup'
+import { cancelAllSaves } from './saveScheduler'
 import { useSession } from './store'
 
 const link = (path: string, pageId: string, target: string): MatrixLink => ({
@@ -61,6 +62,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cancelAllSaves()
   useSession.getState().resetMatrix()
   useSession.setState({ tree: null })
   vi.useRealTimers()
@@ -236,24 +238,39 @@ describe('the layout half', () => {
     await seatLoaded()
     useSession.getState().saveMatrixLayout({ p2: [3, 4], ghost: [5, 6] })
     expect(useSession.getState().matrixPositions).toEqual({ p1: [1, 2], p2: [3, 4] })
+    await vi.advanceTimersByTimeAsync(400)
     expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
       positions: { p1: [1, 2], p2: [3, 4] },
     })
     channels['matrixLayout:save'].mockClear()
     useSession.setState({ tree: null })
     useSession.getState().saveMatrixLayout({ p1: [9, 9] })
+    await vi.advanceTimersByTimeAsync(400)
     expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
   })
 
-  it('saves the frame alone once loaded', async () => {
+  it('saves the frame alone once loaded, the last of a burst', async () => {
     useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+    await vi.advanceTimersByTimeAsync(400)
     expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
     await seatLoaded()
+    useSession.getState().saveMatrixFrame({ cx: 0, cy: 0, w: 3, h: 4 })
     useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
-    expect(useSession.getState().matrixFrame).toEqual({ cx: 1, cy: 2, w: 3, h: 4 })
+    await vi.advanceTimersByTimeAsync(400)
+    expect(channels['matrixLayout:save']).toHaveBeenCalledExactlyOnceWith({
+      frame: { cx: 1, cy: 2, w: 3, h: 4 },
+    })
+  })
+
+  it('lands what it owes as it unloads', async () => {
+    await seatLoaded()
+    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+    useSession.getState().saveMatrixLayout({ p1: [5, 6] })
+    useSession.getState().unloadMatrix()
     expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
       frame: { cx: 1, cy: 2, w: 3, h: 4 },
     })
+    expect(channels['matrixLayout:save']).toHaveBeenCalledWith({ positions: { p1: [5, 6] } })
   })
 })
 

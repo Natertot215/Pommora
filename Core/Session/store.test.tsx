@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
@@ -685,6 +685,28 @@ describe('store — a Nexus switch lands every owed save first', () => {
     await useSession.getState().choose()
     expect(order.slice(0, 3).sort()).toEqual(['page', 'tabs', 'tile'])
     expect(order[3]).toBe('choose')
+  })
+
+  it('holds a save made while the switch is in flight, cancelling it on a switch and landing it on a cancel', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    onTestFinished(() => {
+      vi.useRealTimers()
+    })
+    const tabs = vi.fn(async () => ok(null))
+    channels['tabs:save'] = tabs
+    channels['nexus:state'] = vi.fn(async () => ok({ status: 'empty' }))
+    for (const switched of [true, false]) {
+      tabs.mockClear()
+      channels['nexus:choose'] = vi.fn(async () => {
+        scheduleTabsSave({ tabs: [], activeTabId: '' } as unknown as StoredTabSet)
+        await vi.advanceTimersByTimeAsync(1000)
+        return ok(switched)
+      })
+      await useSession.getState().choose()
+      expect(tabs).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(tabs).toHaveBeenCalledTimes(switched ? 0 : 1)
+    }
   })
 
   it('closes every rename field and picker the old Nexus left open', async () => {

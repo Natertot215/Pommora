@@ -83,7 +83,6 @@ const placeOf = (id: string): number[] => {
 
 function seed(over: Record<string, unknown> = {}): void {
   saveLayout = vi.fn()
-  saveFrame = vi.fn(async () => ok(null))
   useSession.setState({
     tree: makeTree(),
     matrixConfig: DEFAULT_MATRIX_CONFIG,
@@ -92,7 +91,6 @@ function seed(over: Record<string, unknown> = {}): void {
     matrixFrame: { cx: 0, cy: 0, w: 800, h: 600 },
     matrixLoad: { kind: 'loaded' },
     saveMatrixLayout: saveLayout as never,
-    saveMatrixFrame: saveFrame as never,
     ...over,
   } as never)
 }
@@ -108,9 +106,10 @@ const attach = (stage: Stage | null = STAGE): void => {
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   walks.count = 0
+  saveFrame = vi.fn(async () => ok(null))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'matrix:write': async () => ok(null),
-    'matrixLayout:save': async () => ok(null),
+    'matrixLayout:save': saveFrame,
   })
   visible = true
   vi.stubGlobal('requestAnimationFrame', (fn: () => void) => frames.push(fn))
@@ -283,7 +282,7 @@ describe('matrixRuntime', () => {
     flush()
     vi.runAllTimers()
     expect(saveFrame).toHaveBeenCalledTimes(1)
-    expect(saveFrame.mock.calls[0][0]).toEqual(matrixRuntime.frame)
+    expect(saveFrame.mock.calls[0][0]).toEqual({ frame: matrixRuntime.frame })
     expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
@@ -311,7 +310,9 @@ describe('matrixRuntime', () => {
     detach?.()
     detach = null
     expect(saveFrame).toHaveBeenCalledTimes(1)
-    expect(saveFrame.mock.calls[0][0]).toEqual({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(saveFrame.mock.calls[0][0]).toEqual({
+      frame: { cx: 20, cy: 0, w: STAGE.width, h: STAGE.height },
+    })
     vi.runAllTimers()
     expect(saveFrame).toHaveBeenCalledTimes(1)
   })

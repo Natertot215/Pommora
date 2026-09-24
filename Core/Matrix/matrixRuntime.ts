@@ -1,6 +1,5 @@
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { useSession } from '../Session/store'
-import { sessionWriter } from '../Session/saveScheduler'
 import type { Forces } from './Engine/forces'
 import { buildGraph, type Graph, type GraphNode, type GroupMode } from './Engine/graph'
 import { place } from './Engine/placement'
@@ -37,7 +36,6 @@ import type { Positions } from './matrixLayout'
 
 // KNOB — the hit slack past a node's edge, in world units.
 const HIT_SLACK = 4
-const FRAME_KEY = 'matrix-frame'
 export const FADE_MS = ms(duration.base)
 
 type Listener = () => void
@@ -116,7 +114,6 @@ class MatrixRuntime {
   }
 
   private clear(): void {
-    void sessionWriter.flush(FRAME_KEY)
     this.frame = null
     this.built = null
     this.graph = EMPTY
@@ -362,7 +359,7 @@ class MatrixRuntime {
   setFrame(f: Frame): void {
     if (f === this.frame) return
     this.frame = f
-    sessionWriter.schedule(FRAME_KEY, () => useSession.getState().saveMatrixFrame(f))
+    useSession.getState().saveMatrixFrame(f)
     this.invalidate()
   }
 
