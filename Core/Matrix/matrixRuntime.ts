@@ -48,7 +48,6 @@ const NO_STAGE: Stage = { x: 0, y: 0, width: 0, height: 0 }
 
 // Each stage is kept on what it reads: the tree for the walk, the links for the connections, and the values only while a filter judges them.
 interface Built {
-  tree: unknown
   held: MatrixTree
   links: unknown
   connections: GraphInput['connections']
@@ -146,7 +145,7 @@ class MatrixRuntime {
     const c = s.matrixConfig
     const { links, values } = s.matrixGraph
     const b = this.built
-    const held = b && b.tree === s.tree ? b.held : matrixTree(s.tree)
+    const held = b && b.held.tree === s.tree ? b.held : matrixTree(s.tree)
     const connections =
       b && b.held === held && b.links === links ? b.connections : matrixConnections(held, links)
     const judged =
@@ -155,7 +154,6 @@ class MatrixRuntime {
         : matrixVisible(held, values, c.filter)
     const visible = b && sameSet(b.visible, judged) ? b.visible : judged
     this.built = {
-      tree: s.tree,
       held,
       links,
       connections,
@@ -169,7 +167,6 @@ class MatrixRuntime {
     // A save that moved no link and changed no filter verdict leaves the picture as it stands.
     if (
       b &&
-      b.held === held &&
       b.connections === connections &&
       b.visible === visible &&
       b.group === c.group &&
@@ -184,11 +181,7 @@ class MatrixRuntime {
     const first = b === null
     const graph = buildGraph(
       { pages: held.pages, folders: held.folders, spaces: held.spaces, connections },
-      {
-        mode: c.group.mode,
-        hideUnlinked: !c.display.unlinked,
-        visible,
-      },
+      { mode: c.group.mode, hideUnlinked: !c.display.unlinked, visible },
     )
     const layout = new Map<string, { x: number; y: number }>()
     for (const [id, [x, y]] of Object.entries(s.matrixPositions)) layout.set(id, { x, y })
@@ -225,6 +218,7 @@ class MatrixRuntime {
       this.sim.alphaTarget = prev.alphaTarget
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
     if (b && b.group !== c.group) resettle(this.sim)
+    else if (b && !sameForces(b.forces[c.group.mode], c.forces[c.group.mode])) cool(this.sim)
     if (lostDrag) cool(this.sim)
     if (this.sim.drag) reheat(this.sim)
     if (first) {

@@ -18,7 +18,6 @@ export function iso(ms: number | null): string | null {
   return `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-// Views and the Matrix read a page's values alike: its frontmatter with the ID it's known by, its creation time from that ID, and its modified time.
 export function pageValuesOf(
   id: string,
   fm: Record<string, unknown>,

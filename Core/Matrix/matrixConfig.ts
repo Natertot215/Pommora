@@ -30,7 +30,7 @@ export const clampForce = (key: keyof Forces, v: number): number => {
   return clamp(v, steps[0], steps[steps.length - 1])
 }
 
-// A watcher push rebuilds every grouping's set, so the runtime reads these by value: by reference, tuning one grouping would re-solve the picture drawn under another.
+// A patch writes its grouping's block whole even when no value moved, so the runtime reads these by value rather than re-solving the picture for an unchanged set.
 export const sameForces = (a: Forces, b: Forces): boolean =>
   a.gravity === b.gravity &&
   a.spread === b.spread &&

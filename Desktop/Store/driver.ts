@@ -11,14 +11,14 @@ export const damagedStore = (errcode: number | undefined): boolean =>
   errcode === SQLITE_CORRUPT || errcode === SQLITE_NOTADB
 
 /** One commit for a batch. `node:sqlite` is synchronous, so nothing else interleaves between the BEGIN and the COMMIT. */
-export function inTransaction<T>(db: Db, fn: () => T): T {
+export function inTransaction(db: Db, write: () => void): void {
   db.exec('BEGIN')
   try {
-    const out = fn()
+    write()
     db.exec('COMMIT')
-    return out
   } catch (e) {
-    db.exec('ROLLBACK')
+    // SQLite ends a transaction itself on some failures, a full disk among them, and a second ROLLBACK would bury the error that caused it.
+    if (db.isTransaction) db.exec('ROLLBACK')
     throw e
   }
 }

@@ -20,11 +20,11 @@ import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { dropTileBodies, flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
-  holdSaves,
-  releaseSaves,
   flushAllPageSaves,
   flushAllSessionSaves,
   flushPageSave,
+  holdSaves,
+  releaseSaves,
 } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
@@ -96,6 +96,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (opened.value) {
         resetNexusSession()
         await get().load()
+        // The new tree is in: the Matrix may read the new root against it.
+        get().unloadMatrix()
       }
     } catch (e) {
       set({ status: 'error', error: caught(e) })
@@ -229,6 +231,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openDropped: (file) => openVia(() => host().openDropped(file)),
 
     mutate: async (req, onCreated, onAdopted, onTrashed) => {
+      const nexus = get().tree?.nexus.id
       // A save queued for a path this op moves would land on the old path and be refused.
       switch (req.op) {
         case 'movePage':
@@ -246,6 +249,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           await flushAllPageSaves()
           break
       }
+      // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
+      if (get().tree?.nexus.id !== nexus) return false
       const res = await host().ask('mutate', req)
       if (!res.ok) {
         await host().ask('error:show', res.error.message)

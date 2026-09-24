@@ -10,8 +10,7 @@ import { contextTargetToSelect, isOpenInTabs } from '../Navigation/tabsModel'
 import { nodesOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
-import { MatrixLabel } from './MatrixLabel'
-import { recordOf } from './matrixKind'
+import { MatrixLabel, recordOf } from './MatrixLabel'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 
@@ -47,13 +46,13 @@ export function MatrixView(): React.JSX.Element {
   }
 
   const menu = async (id: string): Promise<void> => {
-    const rec = recordOf(useSession.getState().tree, id)
+    const { tabs, pinned, tree } = useSession.getState()
+    const rec = recordOf(tree, id)
     if (!rec) return
     matrixRuntime.acting = surfaceId
     // Committed before the menu asks for it: the label seats its anchor on the node in the same pass.
     flushSync(() => setMenuId(rec.id))
     const anchor = anchorRef.current?.dataset.nodeId === rec.id ? anchorRef.current : undefined
-    const { tabs, pinned, tree } = useSession.getState()
     await showEntityMenu(
       {
         kind: rec.kind,
