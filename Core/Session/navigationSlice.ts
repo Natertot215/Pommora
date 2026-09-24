@@ -60,7 +60,7 @@ import { dropCacheOwner, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { relDirname } from '../Paths/posix'
-import { dropAllTileDocs } from '../Tiles/tileDocStore'
+import { dropAllTileDocs, refreshTileBodies } from '../Tiles/tileDocStore'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
@@ -810,6 +810,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           // Only a page rename's cascade rewrites bodies nexus-wide, and editorState's key survives the rename, so a warm restore would revive the pre-cascade body.
           if (req.kind !== 'page' || req.fromCreate) break
           refreshCache()
+          refreshTileBodies()
           keepSlots(() => false)
           const shown = get().selection
           if (shown.kind === 'page') void get().select(shown, { record: false })

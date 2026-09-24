@@ -1,8 +1,5 @@
 import { landBytes, parseJsonText } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
-import { getLiveTree } from '../../Nexus/liveTree'
-import { tileHostAt } from '../../Nexus/watchPatch'
-import { tileBodyUnder } from '../../Nexus/watchSettle'
 import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import type { CaptureReason } from '../../Platform/stores'
@@ -73,13 +70,6 @@ async function bytesToLand(
   return utf8(`${stableStringify(merged)}\n`)
 }
 
-function announceTile(host: SyncHost, rel: string): void {
-  if (!tileBodyUnder(rel.split('/'), rel)) return
-  const tree = getLiveTree()
-  const ref = tree && tileHostAt(tree, rel)
-  if (ref) host.push('tiles:changed', ref)
-}
-
 async function captureUnrecorded(
   root: string,
   rel: string,
@@ -112,7 +102,6 @@ export async function landWrite(
       change.seq,
       record.sha256,
     )
-    announceTile(host, change.path)
   })
 }
 

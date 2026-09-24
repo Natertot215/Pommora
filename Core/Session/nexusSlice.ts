@@ -17,7 +17,7 @@ import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
-import { flushAllTileDocs } from '../Tiles/tileDocStore'
+import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import { matrixRuntime } from '../Matrix/matrixRuntime'
 import {
   cancelAllSaves,
@@ -230,6 +230,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           await flushPageSave(req.path)
           break
         case 'rename':
+          // A page rename's cascade rewrites links inside tile files, so their pending saves land first.
+          if (req.kind === 'page' && !req.fromCreate) await tileBodyWriter.flushAll()
+          await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
+          break
         case 'delete':
           await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
           break

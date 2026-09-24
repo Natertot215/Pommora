@@ -1,6 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, ok, type Result } from '../Contract/result'
 import { isUlid } from '../Nexus/ids'
+import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { coerceTileHost, type TileDocPatch, tilePatchProblem } from './tiles'
 import {
@@ -31,16 +32,16 @@ async function tileHostAnd(
 }
 
 const onTile =
-  <T>(fn: (tile: TileCtx, tileId: string, arg?: unknown) => Promise<Result<T>>) =>
+  <T>(fn: (tile: TileCtx, tileId: string, ...args: unknown[]) => Promise<Result<T>>) =>
   async (
     root: string,
     _ctx: unknown,
     host: unknown,
     tileId: unknown,
-    arg?: unknown,
+    ...args: unknown[]
   ): Promise<Result<T>> => {
     const tile = await tileHostAnd(root, host, tileId)
-    return tile.ok ? fn(tile.value, tileId as string, arg) : tile
+    return tile.ok ? fn(tile.value, tileId as string, ...args) : tile
   }
 
 export const tilesHandlers = {
@@ -74,15 +75,15 @@ export const tilesHandlers = {
   'tiles:readMarkdown': withRoot(
     onTile(async ({ dir }, tileId) => {
       const body = await readMarkdownTile(dir, tileId)
-      return body.ok ? ok({ body: body.value }) : body
+      return body.ok ? ok({ body: body.value, hash: machine().sha256Hex(body.value) }) : body
     }),
   ),
 
   'tiles:writeMarkdown': withWriteRoot(
-    onTile(async ({ dir }, tileId, body) => {
-      if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
-      await writeMarkdownTile(dir, tileId, body)
-      return ok(null)
+    onTile(async ({ root, dir }, tileId, body, baseHash) => {
+      if (typeof body !== 'string' || typeof baseHash !== 'string')
+        return fail('operation-failed', 'A body and its base hash are required.')
+      return ok(await writeMarkdownTile(root, dir, tileId, body, baseHash))
     }),
   ),
 

@@ -12,7 +12,9 @@ import { trashFileFlat } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import { tileFilePath, tileHostDir } from '../Paths/paths'
+import { relPosix, tileFilePath, tileHostDir } from '../Paths/paths'
+import type { BodyWrite } from '../Pages/pageDetail'
+import { captureLoser } from '../Sync/Arrival/captures'
 
 export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
   if (host.kind === 'homepage') return tileHostDir(root)
@@ -129,10 +131,24 @@ export async function readMarkdownTile(dir: string, tileId: string): Promise<Res
   }
 }
 
-/** Locked on the file so the rename-cascade rewrite can't clobber a live edit. */
-export async function writeMarkdownTile(dir: string, tileId: string, body: string): Promise<void> {
+/** Locked on the file so the rename-cascade rewrite can't clobber a live edit; a file that moved past the text the editor started from refuses the write and keeps it as a capture, the way a refused page save is kept. */
+export async function writeMarkdownTile(
+  root: string,
+  dir: string,
+  tileId: string,
+  body: string,
+  baseHash: string,
+): Promise<BodyWrite> {
   const file = tileFilePath(dir, tileId)
-  await machine().lock(file, () => atomicWriteFile(file, body))
+  return machine().lock(file, async () => {
+    const held = await machine().readText(file)
+    if (held !== null && machine().sha256Hex(held) !== baseHash) {
+      await captureLoser(root, relPosix(root, file), new TextEncoder().encode(body), 'merge-lost')
+      return { stale: true }
+    }
+    await atomicWriteFile(file, body)
+    return { stale: false, hash: machine().sha256Hex(body) }
+  })
 }
 
 async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: string }[]> {
