@@ -1,7 +1,9 @@
 import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
 import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@pommora/core/Properties/properties'
 import { asRenderableIcon, Icon, type IconName } from '@pommora/uix/Symbols'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
+import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { displayPropertyName, RESERVED_LABEL } from './columnLabel'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
@@ -80,6 +82,9 @@ export const TITLE_TARGET: PaneTarget = {
 export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).flatMap(([id, type]) =>
   type ? [{ id, label: propertyTypeLabel(type), icon: propertyTypeIconName(type) }] : [],
 )
+
+export const contextPaneTargets = (tree: NexusTree | null): PaneTarget[] =>
+  [...contextsByIdOf(tree)].map(([id, c]) => ({ id, label: c.title, icon: c.icon }))
 
 export const schemaTargets = (
   schema: PropertyDefinition[],
