@@ -22,7 +22,6 @@ import { useEditorHost } from './editorHost'
 import { schedulePageSave } from '../Session/saveScheduler'
 import { useBodyMount } from './bodyMount'
 import { changesTo, merge3 } from './merge3'
-import { syncLanding } from '../MarkdownPM/api'
 import { host } from '../Platform/dialer'
 import { coverOf } from './pageDetail'
 
@@ -45,7 +44,9 @@ async function absorbLanding(path: string, view: EditorView | null): Promise<voi
   if (merged.text !== local) {
     view.dispatch({
       changes: changesTo(local, merged.text),
-      annotations: [syncLanding.of(true), Transaction.addToHistory.of(false)],
+      annotations: Transaction.addToHistory.of(false),
+      // Disk content is settled, so no guard may refuse or reshape it.
+      filter: false,
     })
     useSession.getState().setPageBody(path, merged.text)
   }

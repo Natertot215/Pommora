@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { EditorState, type Transaction } from '@codemirror/state'
 import { history, undo } from '@codemirror/commands'
 import { headingRenamed, headingRenameGuard } from './headingRenameGuard'
-import { editorHost, syncLanding } from '../api'
+import { editorHost } from '../api'
 import { testHost } from '../editorHarness'
 
 const stateWith = (doc: string): EditorState =>
@@ -67,12 +67,12 @@ describe('headingRenameGuard', () => {
     expect(effects[0].value).toEqual({ old: 'Setup', next: '', line: 1 })
   })
 
-  it('a syncLanding transaction stamps nothing', () => {
+  it('an unfiltered landing stamps nothing', () => {
     const doc = '## Setup\n[[#Setup]]'
     const state = stateWith(doc)
     const tr = state.update({
       changes: { from: 8, to: 8, insert: 'x' },
-      annotations: syncLanding.of(true),
+      filter: false,
     })
     expect(tr.effects.filter((e) => e.is(headingRenamed))).toHaveLength(0)
   })

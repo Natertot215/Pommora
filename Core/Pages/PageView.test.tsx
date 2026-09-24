@@ -181,6 +181,21 @@ describe('a landing under the open page', () => {
     expect(updated).toHaveBeenCalledWith(PATH, local, machine().sha256Hex(BASE))
   })
 
+  it('lands a rename inside an embed line that the embed guard would refuse from the keyboard', async () => {
+    const body = 'x\n![[Alpha]]\ny'
+    cachePageDetail(detail({ id: 'a', path: PATH, body }))
+    useSession.setState({ tree: makeTree(), pages: slot(body, body) })
+    await act(async () => {
+      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+    })
+    const view = viewOf()
+    onDisk = 'x\n![[Alpha Two]]\ny'
+    await act(async () => {
+      notifyLanding(PATH)
+    })
+    expect(view.state.doc.toString()).toBe(onDisk)
+  })
+
   it('routes a stale save through the same merge', async () => {
     const view = await mount()
     setStaleSaveSink(notifyLanding)
