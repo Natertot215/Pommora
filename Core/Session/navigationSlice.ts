@@ -807,7 +807,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     patchPagesFor: (req) => {
       switch (req.op) {
         case 'rename': {
-          // The cascade rewrites bodies nexus-wide and editorState's key survives the rename, so a warm restore would revive the pre-cascade body.
+          // Only a page rename's cascade rewrites bodies nexus-wide, and editorState's key survives the rename, so a warm restore would revive the pre-cascade body.
+          if (req.kind !== 'page' || req.fromCreate) break
           refreshCache()
           keepSlots(() => false)
           const shown = get().selection

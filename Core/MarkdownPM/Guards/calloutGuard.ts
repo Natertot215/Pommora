@@ -2,7 +2,6 @@
 import { type Annotation, EditorState, Transaction, type Extension } from '@codemirror/state'
 import type { calloutLines } from '../Engine/detect'
 import { tableSelfEdit } from '../Tables/sync'
-import { syncLanding } from '../api'
 import { docScan, docString } from '../docCache'
 
 /** The first four move the change's own endpoints; `rewrite` replaces it outright. */
@@ -67,8 +66,6 @@ export function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
   if (userEvent !== undefined) out.push(Transaction.userEvent.of(userEvent))
   const selfEdit = tr.annotation(tableSelfEdit)
   if (selfEdit !== undefined) out.push(tableSelfEdit.of(selfEdit))
-  const landing = tr.annotation(syncLanding)
-  if (landing !== undefined) out.push(syncLanding.of(landing))
   return out
 }
 
@@ -82,7 +79,7 @@ export function verdictFilter(
   ) => GuardVerdict,
 ): Extension {
   return EditorState.transactionFilter.of((tr) => {
-    if (!tr.docChanged || tr.annotation(syncLanding)) return tr
+    if (!tr.docChanged) return tr
     const doc = docString(tr.startState.doc)
     let cancel = false
     let repaired = false

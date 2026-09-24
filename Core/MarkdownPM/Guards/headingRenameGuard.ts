@@ -3,7 +3,7 @@ import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { rewriteHeadingConnections } from '@pommora/core/Connections/rewrite'
 import { headingParts } from '../Engine/detect'
-import { editorHost, syncLanding } from '../api'
+import { editorHost } from '../api'
 import { docHeadingKeys, docOutline, docSectionHeadings, docString } from '../docCache'
 import { changesTo } from '../../Pages/merge3'
 import { carriedAnnotations } from './calloutGuard'
@@ -60,7 +60,7 @@ const runOutline = (state: EditorState): readonly string[] | undefined =>
     : undefined
 
 export const headingRenameGuard: Extension = EditorState.transactionFilter.of((tr) => {
-  if (!tr.docChanged || tr.annotation(syncLanding)) return tr
+  if (!tr.docChanged) return tr
   const rename = headingRenameOf(tr)
   if (!rename) return tr
   const stamped = {

@@ -14,8 +14,6 @@ import type {
   CitationMenuContext,
 } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 
-export const syncLanding = Annotation.define<boolean>()
-
 export const mirrored = Annotation.define<boolean>()
 
 /** Another mount's text, already past its own guards, applied as the changed span only: no filter touches it, it stays out of undo history, and it never echoes back through `onChange`. */
