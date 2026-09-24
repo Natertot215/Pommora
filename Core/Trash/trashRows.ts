@@ -43,10 +43,19 @@ function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: Nex
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
-/** The filter is the record's own discriminator rather than the absence of an artifact: `listBundles` waives the artifact requirement for a property bundle on purpose, so testing for one would admit it as a titleless, dateless row that Delete All would then destroy unread. */
+/** A property record has no artifact to name it, so its title is its definition's own; it lived nowhere, so it always has a home to return to. */
 export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | null {
   const { record, bundlePath, artifactName } = bundle
-  if (record.entity === 'property' || !artifactName) return null
+  if (record.entity === 'property')
+    return {
+      bundlePath,
+      kind: 'property',
+      title: typeof record.def.name === 'string' ? record.def.name : record.id,
+      crumbs: [],
+      deletedAt: deletedAtOf(bundlePath),
+      homeResolves: true,
+    }
+  if (!artifactName) return null
   const live = liveCrumbs(record, tree)
   return {
     bundlePath,

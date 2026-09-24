@@ -4,6 +4,7 @@ import { machine } from '../Platform/machine'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import { pathExists } from '../Files/atomicWrite'
 import { recordWrite } from '../Files/writeEcho'
+import type { MutateDeps } from '../Nexus/mutate'
 
 export const BUNDLE_SUFFIX = '.deleted'
 
@@ -49,4 +50,17 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
   recordWrite(dest)
   await machine().rename(absPath, dest)
   return dest
+}
+
+/** A file the Trash can't list — a tile's text, an image sweep's leftover — still goes where Trash Mode sends deletions. */
+export async function discardFile(
+  nexusRoot: string,
+  absPath: string,
+  deps: MutateDeps,
+): Promise<void> {
+  if (deps.trashMode === 'nexus') await trashFileFlat(nexusRoot, absPath)
+  else {
+    recordWrite(absPath)
+    await deps.trashToSystem(absPath)
+  }
 }

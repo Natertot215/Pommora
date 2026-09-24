@@ -1,5 +1,5 @@
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
-import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import type { MutateOutcome, MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { FormatState } from '../Actions/editorMenu'
 import type { SavedView } from '../Views/views'
@@ -13,7 +13,7 @@ import type { GlanceSize, WindowsFile } from '../Interface/Windows/windowRecord'
 import type { NavViewModes, SubfieldConfig, ThumbRect } from '../Interface/chrome'
 import type { OpenIn, PageValues, ViewButton } from '../Views/viewRow'
 import type { Personalization } from '../Settings/personalization'
-import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView } from '../Tiles/tiles'
+import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView, RemovedTile } from '../Tiles/tiles'
 import type {
   FileConfig,
   LinkConfig,
@@ -132,7 +132,7 @@ export interface Asks {
     reply: Result<null>
   }
   'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
-  'property:delete': { args: [propertyId: string]; reply: Result<null> }
+  'property:delete': { args: [propertyId: string]; reply: Result<Pick<MutateOutcome, 'trashed'>> }
   'property:setOptions': {
     args: [propertyId: string, options: { value: string; label: string; color?: string }[]]
     reply: Result<null>
@@ -174,7 +174,8 @@ export interface Asks {
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<null> }
   'tiles:createMarkdown': { args: [host: TileHostRef]; reply: Result<{ id: string }> }
-  'tiles:removeTile': { args: [host: TileHostRef, tileId: string]; reply: Result<null> }
+  'tiles:removeTile': { args: [host: TileHostRef, tileId: string]; reply: Result<RemovedTile> }
+  'tiles:restoreTile': { args: [host: TileHostRef, removed: RemovedTile]; reply: Result<null> }
   'tiles:readMarkdown': {
     args: [host: TileHostRef, tileId: string]
     reply: Result<{ body: string; hash: string }>

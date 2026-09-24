@@ -3,7 +3,8 @@ import { escapes } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { TRASH_DIR } from '../Paths/nexusPaths'
-import type { RestoreDestination } from '../Nexus/mutateRequest'
+import type { MutateOutcome, RestoreDestination } from '../Nexus/mutateRequest'
+import { titleFromPath } from '../Connections/connections'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
@@ -161,7 +162,8 @@ export async function emptyBundle(
   if (!opened.ok) return opened
   if (opened.value.entity === 'property') {
     recordWrite(bundleAbs)
-    await machine().remove(bundleAbs)
+    if (deps.permanentDelete === true) await machine().remove(bundleAbs)
+    else await deps.trashToSystem(bundleAbs)
     return ok(null)
   }
   const artifactAbs = await bundleArtifact(bundleAbs)
@@ -202,20 +204,25 @@ function withDestination(
   }
 }
 
+type Restored = Pick<MutateOutcome, 'unrestored'>
+
+const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
+
 export async function restoreArtifact(
   root: string,
   bundleAbs: string,
   destination?: RestoreDestination,
-): Promise<Result<null>> {
+): Promise<Result<Restored>> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   if (opened.value.entity === 'property') {
     if (destination) return fault(NO_DESTINATION)
     const rebuilt = await restoreProperty(root, opened.value)
     if (!rebuilt.ok) return rebuilt
+    // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
-    return ok(null)
+    return ok(restored(rebuilt.value))
   }
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
@@ -277,10 +284,8 @@ export async function restoreArtifact(
       }))
     return fault(e)
   }
-  recordWrite(bundleAbs)
-  await machine().remove(bundleAbs)
-
   const roots = projectBaseline(tree).entries
+  const unspent: string[] = []
   if (record.entity === 'context') {
     if (title !== record.registry.title)
       await rekeyPassengers(targetAbs, record.registry.title, title)
@@ -293,7 +298,7 @@ export async function restoreArtifact(
         .filter((t): t is string => typeof t === 'string')
       if (titles.length) additions[m.root.id] = titles
     }
-    await reapply(root, roots, contextKey(title), additions)
+    unspent.push(...(await reapply(root, roots, contextKey(title), additions)))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
     const group = tree.contexts.find((g) => g.def.id === parentId)
@@ -303,22 +308,26 @@ export async function restoreArtifact(
           .filter((m): m is typeof m & { id: string } => typeof m.id === 'string')
           .map((m) => [m.id, [title]]),
       )
-      await reapply(root, roots, contextKey(group.def.title), additions)
+      unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions)))
     }
   }
-  return ok(null)
+  // The record outlives a partial re-tag, so what didn't come back stays written down.
+  if (!unspent.length) {
+    recordWrite(bundleAbs)
+    await machine().remove(bundleAbs)
+  }
+  return ok(restored(unspent.map((id) => titleFromPath(roots[id].path))))
 }
 
+/** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */
 async function reapply(
   root: string,
   roots: Record<string, { kind: string; path: string }>,
   key: string,
   additions: Record<string, string[]>,
-): Promise<void> {
+): Promise<string[]> {
   const { kept } = await reconcile(additions, (id, titles) =>
     addContextValues(root, roots[id], key, titles),
   )
-  const unspent = Object.keys(kept)
-  if (unspent.length)
-    console.warn(`restore: membership for ${key} did not re-apply to: ${unspent.join(', ')}`)
+  return Object.keys(kept).filter((id) => roots[id])
 }

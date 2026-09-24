@@ -15,7 +15,9 @@ import { contextsDir, sidecarPath, SPACE_SIDECAR } from '../Paths/paths'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 
 import { isPlainObject } from './propertyValue'
-import { fail, type Result } from '../Contract/result'
+import { fail, ok, type Result } from '../Contract/result'
+import { relative } from '../Paths/posix'
+import type { MutateOutcome } from '../Nexus/mutateRequest'
 
 async function snapshot(
   root: string,
@@ -23,9 +25,10 @@ async function snapshot(
   def: PropertyRegistry[string],
   folders: string[],
   files: string[],
-): Promise<void> {
+): Promise<string> {
   const key = def.name
   const values: Record<string, unknown> = {}
+  const pageIds = new Set<string>()
   const assignments: string[] = []
   let partial = false
   for (const folder of folders) {
@@ -34,6 +37,11 @@ async function snapshot(
     const holds = assignedIds(sidecar).includes(propertyId)
     if (holds && typeof sidecar?.id === 'string') assignments.push(sidecar.id)
     else if (holds) partial = true
+    // A Remove's cached values go with the purge, so the record keeps them; a page's own value outranks them below.
+    const cached = isPlainObject(sidecar?.property_cache)
+      ? sidecar.property_cache[propertyId]
+      : null
+    if (isPlainObject(cached) && isPlainObject(cached.values)) Object.assign(values, cached.values)
   }
   for (const file of files) {
     const content = await readTextOrNull(file)
@@ -41,9 +49,11 @@ async function snapshot(
     const fm = splitFrontmatter(content) as Record<string, unknown>
     if (!(key in fm)) continue
     const id = contentId(fm)
-    if (id && id in values) partial = true
-    if (id) values[id] = fm[key]
-    else partial = true
+    if (id && pageIds.has(id)) partial = true
+    if (id) {
+      pageIds.add(id)
+      values[id] = fm[key]
+    } else partial = true
   }
   for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
     const raw = await readJsonObject(file)
@@ -56,7 +66,7 @@ async function snapshot(
     if (!id || id in values) partial = true
     else values[id] = raw[key]
   }
-  await writePropertyBundle(root, {
+  return writePropertyBundle(root, {
     entity: 'property',
     id: propertyId,
     def,
@@ -66,11 +76,17 @@ async function snapshot(
   })
 }
 
-export function deleteProperty(root: string, propertyId: string): Promise<Result<null>> {
+export function deleteProperty(
+  root: string,
+  propertyId: string,
+): Promise<Result<Pick<MutateOutcome, 'trashed'>>> {
   return serializeSchemaOp(() => deleteInner(root, propertyId))
 }
 
-async function deleteInner(root: string, propertyId: string): Promise<Result<null>> {
+async function deleteInner(
+  root: string,
+  propertyId: string,
+): Promise<Result<Pick<MutateOutcome, 'trashed'>>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return fail('not-found', 'Property not found.')
   const key = def.name
@@ -78,14 +94,14 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
   const files = await keyHolderFiles(root, key, folders)
-  await snapshot(root, propertyId, def, folders, files)
+  const bundle = await snapshot(root, propertyId, def, folders, files)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   await writeSchemaJournal(root, record)
 
   const { skipped, removed } = await stripAndRemove(root, propertyId, key, folders, files)
   if (!skipped) await clearSchemaJournal(root, record)
-  return removed
+  return removed.ok ? ok({ trashed: { bundlePath: relative(root, bundle) } }) : removed
 }
 
 export async function stripAndRemove(

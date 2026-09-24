@@ -1,14 +1,24 @@
 import { join } from '../Paths/posix'
-import { knownTile, mintSeed, TILE_KINDS, type TileHostRef } from './tiles'
+import {
+  knownTile,
+  mintSeed,
+  NEW_TILE_H,
+  type RemovedTile,
+  TILE_KINDS,
+  type TileHostRef,
+} from './tiles'
+import { decodeLayout, encodeLayout } from './Layout/codec'
+import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '../Properties/propertyValue'
 import { normalizeTitle } from '../Connections/connections'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections } from '../Connections/rewrite'
-import { newId } from '../Nexus/ids'
+import { isUlid, newId } from '../Nexus/ids'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
-import { trashFileFlat } from '../Trash/bundle'
+import { discardFile } from '../Trash/bundle'
+import type { MutateDeps } from '../Nexus/mutate'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree } from '../Nexus/liveTree'
@@ -47,39 +57,95 @@ async function reviseTile(
   dir: string,
   tileId: string,
   patch: Record<string, unknown> | null,
-): Promise<void> {
-  let wasFileBacked = false
+  deps: MutateDeps,
+): Promise<Result<RemovedTile>> {
+  let entry: Record<string, unknown> | null = null
   const written = await setTiles(dir, (tiles) =>
     tiles.flatMap((b) => {
-      const entry = knownTile(b)
-      if (entry?.id !== tileId) return [b]
-      if (TILE_KINDS[entry.type].fileBacked) wasFileBacked = true
-      return patch ? [{ ...(b as Record<string, unknown>), ...patch }] : []
+      if (knownTile(b)?.id !== tileId) return [b]
+      entry = b as Record<string, unknown>
+      return patch ? [{ ...entry, ...patch }] : []
     }),
   )
-  if (written.ok && wasFileBacked) await trashTileFile(root, dir, tileId)
+  if (!written.ok) return written
+  const known = knownTile(entry)
+  if (!known) return fail('not-found', 'No such tile.')
+  if (!TILE_KINDS[known.type].fileBacked) return ok({ entry })
+  const body = await discardTileFile(root, dir, tileId, deps)
+  return ok(body === null ? { entry } : { entry, body })
 }
 
-/** Ordered against a still-pending editor flush, so a late body write can never land after the trash and resurrect it. */
-async function trashTileFile(root: string, dir: string, tileId: string): Promise<void> {
+/** Ordered against a still-pending editor flush, so a late body write can never land after the discard and resurrect it. */
+function discardTileFile(
+  root: string,
+  dir: string,
+  tileId: string,
+  deps: MutateDeps,
+): Promise<string | null> {
   const file = tileFilePath(dir, tileId)
-  await machine().lock(file, async () => {
-    if (await pathExists(file)) await trashFileFlat(root, file)
+  return machine().lock(file, async () => {
+    const body = await machine().readText(file)
+    if (body !== null) await discardFile(root, file, deps)
+    return body
   })
 }
 
-export async function removeTile(root: string, dir: string, tileId: string): Promise<void> {
-  await reviseTile(root, dir, tileId, null)
+export const removeTile = (
+  root: string,
+  dir: string,
+  tileId: string,
+  deps: MutateDeps,
+): Promise<Result<RemovedTile>> => reviseTile(root, dir, tileId, null, deps)
+
+/** File first, as a create is, and never over a file already there; the band lands with the entry, so a board no window holds still shows it. */
+export async function restoreTile(dir: string, removed: RemovedTile): Promise<Result<null>> {
+  const known = knownTile(removed.entry)
+  const { at, body = '' } = removed
+  if (
+    !known ||
+    !isUlid(known.id) ||
+    typeof body !== 'string' ||
+    (at && !(Number.isInteger(at.band) && Number.isFinite(at.h)))
+  )
+    return fault('Invalid tile.')
+  if (TILE_KINDS[known.type].fileBacked) {
+    const file = tileFilePath(dir, known.id)
+    const wrote = await machine().lock(file, async () => {
+      if (await pathExists(file)) return false
+      await atomicWriteFile(file, body)
+      return true
+    })
+    if (!wrote) return fail('exists', 'That tile is already back.')
+  }
+  return writeTileDocAt(dir, (cur) => {
+    const layout = decodeLayout(cur.layout)
+    return {
+      ...cur,
+      tiles: cur.tiles.some((b) => knownTile(b)?.id === known.id)
+        ? cur.tiles
+        : [...cur.tiles, removed.entry],
+      layout: layout
+        ? encodeLayout(
+            insertBand(layout, at?.band ?? layout.bands.length, known.id, at?.h ?? NEW_TILE_H),
+          )
+        : cur.layout,
+    }
+  })
 }
 
-export async function convertTileToPage(
+const settled = async (revised: Promise<Result<unknown>>): Promise<Result<null>> => {
+  const r = await revised
+  return r.ok ? ok(null) : r
+}
+
+export const convertTileToPage = (
   root: string,
   dir: string,
   tileId: string,
   pageId: string,
-): Promise<void> {
-  await reviseTile(root, dir, tileId, { type: 'page', page_id: pageId })
-}
+  deps: MutateDeps,
+): Promise<Result<null>> =>
+  settled(reviseTile(root, dir, tileId, { type: 'page', page_id: pageId }, deps))
 
 /** The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload — preserving one would silently re-couple a copied snapshot to its source. */
 function remintConfigIds(views: unknown[]): unknown[] {
@@ -96,14 +162,16 @@ export function copyEntry(raw: unknown): unknown {
   return { ...raw, views: remintConfigIds(raw.views) }
 }
 
-export async function convertTileToView(
+export const convertTileToView = (
   root: string,
   dir: string,
   tileId: string,
   views: unknown[],
-): Promise<void> {
-  await reviseTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 })
-}
+  deps: MutateDeps,
+): Promise<Result<null>> =>
+  settled(
+    reviseTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 }, deps),
+  )
 
 export async function duplicateTile(dir: string, tileId: string): Promise<string | null> {
   const doc = await readTileDocAt(dir)

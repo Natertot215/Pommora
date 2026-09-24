@@ -2,7 +2,7 @@ import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'
-import { notifyDeleted } from '../Notifications/notifications'
+import { notifyTrashed } from '../Notifications/notifications'
 import { host } from '../../Platform/dialer'
 
 const DELETE_FACTS_FALLBACK = { trashMode: DEFAULT_TRASH_MODE, permanentDelete: false }
@@ -53,22 +53,15 @@ export const confirmDelete = async (target: {
     .mutate({ op: 'delete', path: target.path, kind: target.kind }, undefined, undefined, (t) => {
       bundlePath = t?.bundlePath
     })
-  // A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name.
-  if (!ok) return
-  const bundle = bundlePath
-  notifyDeleted(target.title, bundle ? () => void undoTrashed(bundle) : undefined)
+  if (ok) notifyTrashed(target.title, bundlePath)
 }
-
-const undoTrashed = (bundlePath: string): Promise<boolean> =>
-  useSession.getState().mutate({ op: 'restore', bundlePath })
 
 export const askRemoveTile = (): Promise<boolean> =>
   waived()
     ? Promise.resolve(true)
     : ask({
         message: 'Remove this tile?',
-        detail:
-          'A markdown tile’s file moves to the nexus’s .trash (recoverable); embeds only remove the tile.',
+        detail: 'This action is only reversible within a short timeframe.',
         action: 'Remove',
         tone: 'destructive',
       })

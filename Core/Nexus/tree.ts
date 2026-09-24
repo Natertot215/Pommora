@@ -66,14 +66,14 @@ export interface CollectionNode extends ChromeNode {
   activeView?: string
 }
 
-/** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. `version` moves on every change, so a re-save under an unchanged name is re-requested. */
+/** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. A path's entry in `versions` moves when it's re-saved under an unchanged name, so only that file is re-requested. */
 export interface AssetMap {
   files: Record<string, string[]>
-  version: number
+  versions: Record<string, number>
 }
 
 /** What both processes stand in for a map with no listing behind it — main before a nexus is open, the renderer before the first push lands. */
-export const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
+export const EMPTY_ASSET_MAP: AssetMap = { files: {}, versions: {} }
 
 export interface ValueChange {
   rel: string

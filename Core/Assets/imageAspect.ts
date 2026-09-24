@@ -46,6 +46,9 @@ export function subscribeAspect(fn: () => void): () => void {
 
 export function useImageAspect(url: string | null | undefined): number | null | undefined {
   const [, bump] = useReducer((c: number) => c + 1, 0)
-  useEffect(() => subscribeAspect(bump), [])
+  useEffect(
+    () => (url && aspects.get(url) === undefined ? subscribeAspect(bump) : undefined),
+    [url],
+  )
   return url ? aspectFor(url) : undefined
 }

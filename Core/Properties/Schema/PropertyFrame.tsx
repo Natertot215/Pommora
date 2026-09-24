@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { notifyTrashed, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -332,13 +332,12 @@ export function PropertyFrame({
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.name }))
     if (action === 'property:remove') await remove(def.id)
-    else if (
-      action === 'property:destroy' &&
-      (await askDestroyProperty(def.name)) &&
-      reportRefusal(await host().ask('property:delete', def.id))
-    ) {
+    else if (action === 'property:destroy' && (await askDestroyProperty(def.name))) {
+      const deleted = await host().ask('property:delete', def.id)
+      if (!reportRefusal(deleted)) return
       bumpTrashRevision()
       backToList()
+      notifyTrashed(displayPropertyName(def.name, capitalize), deleted.value.trashed?.bundlePath)
     }
   }
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {

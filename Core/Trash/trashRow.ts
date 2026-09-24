@@ -15,7 +15,7 @@ export interface ClearReport {
 /** Main owns the parse: the renderer never sees a `.deleted` suffix, a folder stamp, or the record union. */
 export interface TrashRow {
   bundlePath: string
-  kind: EntityIconKind
+  kind: EntityIconKind | 'property'
   title: string
   /** Resolved live from the recorded parent id, so a renamed ancestor reads true. */
   crumbs: TrashCrumb[]

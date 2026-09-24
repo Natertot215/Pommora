@@ -10,6 +10,8 @@ export interface MutateOutcome {
   tiles?: string[]
   adopted?: string
   trashed?: { bundlePath: string }
+  /** The titles of what a restore brought back without all it held. */
+  unrestored?: string[]
 }
 export type MutateReply = Result<MutateOutcome>
 
