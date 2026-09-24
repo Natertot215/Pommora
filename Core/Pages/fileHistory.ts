@@ -114,7 +114,7 @@ export async function writeBody(
   const writtenHash = bodyHash(written)
   if (pageId) lastWritten.set(pageId, writtenHash)
   await indexWrittenPage(root, absPath)
-  noteValueWrite(root, absPath)
+  noteValueWrite(root, absPath, source === 'edit')
   if (pageId) {
     const previousHash = previous === null ? writtenHash : bodyHash(previous)
     if (previous !== null && previousHash !== writtenHash) {

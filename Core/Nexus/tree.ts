@@ -78,6 +78,8 @@ export const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
 export interface ValueChange {
   rel: string
   pageIds: string[]
+  /** The pages whose only write was their own editor's body save, which the window already holds. */
+  bodyOnly?: string[]
 }
 
 export type ValuesEpoch = { n: number } & (

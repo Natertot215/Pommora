@@ -44,10 +44,12 @@ export function useBridgeSubscriptions(): void {
     () =>
       dialer().on('values:changed', (changes) => {
         const changed = new Set(changes.flatMap((c) => c.pageIds))
+        // A page's own body save is already in the window's copy; dropping it would stop the write-through and the landing merge.
+        const held = new Set(changes.flatMap((c) => c.bodyOnly ?? []))
         const byPath = pageIdIndex(useSession.getState().tree)
         dropDetailsWhere((path) => {
           const id = byPath.get(path)
-          return id !== undefined && changed.has(id)
+          return id !== undefined && changed.has(id) && !held.has(id)
         })
         bumpContainerValues(changes)
         useSession.getState().refetchMatrixPages(changed)
