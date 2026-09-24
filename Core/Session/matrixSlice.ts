@@ -15,6 +15,7 @@ import type { PositionRows, Positions } from '@pommora/core/Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
+import { persist } from '../Interface/Notifications/notifications'
 import { host as dialer } from '../Platform/dialer'
 import { sessionWriter } from './saveScheduler'
 import type { Slice } from './sessionState'
@@ -191,11 +192,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     patchMatrix: (patch) => {
       set((s) => ({ matrixConfig: applyPatch(s.matrixConfig, patch) }))
-      void dialer()
-        .ask('matrix:write', patch)
-        .then((ack) => {
-          if (!ack.ok) console.error('matrix write failed:', ack.error.message)
-        })
+      void persist('the Matrix', dialer().ask('matrix:write', patch), true)
     },
 
     // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
