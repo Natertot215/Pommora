@@ -98,7 +98,7 @@ export const size = styleVariants(SIZE, (s) => ({
   },
 }))
 
-/** Defined AFTER `size` so the border-radius wins the cascade tie: a Segmented run reads as one pill split by dividers. */
+/** Defined after `button` so the border-radius wins the cascade tie: a Segmented run reads as one pill split by dividers. */
 export const inRun = style({ borderRadius: 0 })
 
 export const labeled = style({ vars: { '--btn-pad': 'var(--btn-label-pad)' } })

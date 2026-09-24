@@ -254,7 +254,7 @@ export function SidebarDnd({
 const sameOrder = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
 
-// All top-level groups held in `.nexus/state.json`. Sets have their own reparent-aware branch in computeTarget and never reach here.
+// Sets have their own reparent-aware branch in computeTarget and never reach here.
 function siblingGroup(draggedEntry: Entry, idx: Index): string[] {
   switch (draggedEntry.kind) {
     case 'collection':

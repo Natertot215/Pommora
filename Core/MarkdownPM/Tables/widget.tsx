@@ -283,7 +283,6 @@ class TableWidget extends ReactWidget {
     const onMenu = (ctx: TableMenuContext): void => {
       void host.menus.table(ctx).then((action) => {
         if (!action) return
-        // A `.nexus/`-persisted visual, not a source edit — toggling the field rebuilds this table's widget.
         if (action === 'col:toggle-heading') {
           view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
           return

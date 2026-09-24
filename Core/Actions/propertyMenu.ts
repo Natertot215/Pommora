@@ -1,6 +1,6 @@
 import type { ActionItem } from './menuModel'
 
-// Delete is deliberately reachable ONLY inside the property's own pane, behind main's confirm dialog.
+// Delete is offered only inside the property's own pane.
 
 type PropertyMenuContext =
   | { kind: 'editor'; name: string }
