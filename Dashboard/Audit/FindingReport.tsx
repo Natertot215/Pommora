@@ -183,7 +183,6 @@ export function FindingReport({
           )}
         </>
       )}
-      {f.sources && <p className="au-sources">Sources: {f.sources.replace(/`/g, '')}</p>}
     </article>
   )
 }

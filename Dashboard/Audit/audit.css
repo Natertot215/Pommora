@@ -254,11 +254,6 @@ code {
 .au-steps li + li {
   margin-top: 4px;
 }
-.au-finding .au-sources {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption-size);
-  color: var(--label-tertiary);
-}
 
 .au-heat th,
 .au-heat td {

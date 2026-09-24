@@ -28,7 +28,6 @@ export type Finding = {
   finding: string
   fixKind: string
   fix: string
-  sources: string
 }
 
 export type Group = {
@@ -97,11 +96,10 @@ function fields(meta: string): Partial<Record<FieldLabel, string>> {
   return out
 }
 
-// The meta line, then **Finding**, then **Fix | Kind**; the Finding paragraph's own [^N] reference is dropped.
+// The meta line, then **Finding**, then **Fix | Kind**.
 const BODY = /^([\s\S]*?)^\*\*Finding\*\*[ \t]*$([\s\S]*?)^\*\*Fix \| (.+?)\*\*[ \t]*$([\s\S]*)/m
-const REFERENCE = /\[\^[^\]]+\]/g
-// Every footnote sits at the end of the file as `[^N]: **F-###:** sources`, keyed by the finding it names.
-const DEFINITION = /^\[\^[^\]]+\]:[ \t]*\*\*(F-\d+):\*\*[ \t]*(.*)$/gm
+// The page carries no citations: every [^N] reference and the definitions gathered at the file's end are dropped.
+const FOOTNOTES = /^\[\^[^\]]+\]:.*$|\[\^[^\]]+\]/gm
 
 export function parseNet(value: string): number | undefined {
   const m = /[+-]?\s*\d[\d,]*/.exec(value.replace(/[−–]/g, '-'))
@@ -113,7 +111,7 @@ export function formatNet(n: number): string {
   return n < 0 ? `−${digits}` : n > 0 ? `+${digits}` : '0'
 }
 
-function finding(node: Outline, fallbackArea: string, sources: Map<string, string>): Finding {
+function finding(node: Outline, fallbackArea: string): Finding {
   const { code, name } = splitCode(node.title)
   const body = node.lines.join('\n')
   const [, meta = body, found = '', fixKind = '', fix = ''] = BODY.exec(body) ?? []
@@ -129,34 +127,27 @@ function finding(node: Outline, fallbackArea: string, sources: Map<string, strin
     origin: f.Origin ?? '',
     netText,
     net: parseNet(netText),
-    finding: flatten(found.replace(REFERENCE, '')),
+    finding: flatten(found),
     fixKind: fixKind.trim(),
     fix: flatten(fix),
-    sources: sources.get(code)?.trim() ?? '',
   }
 }
 
-function groups(
-  section: Outline | undefined,
-  prefix: string,
-  areaFallback: boolean,
-  sources: Map<string, string>,
-): Group[] {
+function groups(section: Outline | undefined, prefix: string, areaFallback: boolean): Group[] {
   return (section?.children ?? []).map((node, i) => ({
     id: `${prefix}-${i + 1}`,
     label: node.title,
     body: text(node),
-    findings: node.children.map((c) => finding(c, areaFallback ? node.title : '', sources)),
+    findings: node.children.map((c) => finding(c, areaFallback ? node.title : '')),
   }))
 }
 
 export function parseAudit(md: string): Audit {
-  const sources = new Map([...md.matchAll(DEFINITION)].map((m) => [m[1], m[2]]))
-  const root = outline(md.replace(DEFINITION, ''))
+  const root = outline(md.replace(FOOTNOTES, ''))
   const doc = root.children.find((c) => c.level === 2) ?? root
   const verdict = child(doc, 'verdict')
-  const workstreams = groups(child(doc, 'workstreams'), 'ws', false, sources)
-  const rideAlongs = groups(child(doc, 'ridealongs'), 'ra', true, sources)
+  const workstreams = groups(child(doc, 'workstreams'), 'ws', false)
+  const rideAlongs = groups(child(doc, 'ridealongs'), 'ra', true)
   if (!verdict && workstreams.length === 0 && rideAlongs.length === 0) {
     throw new Error('audit.md holds no Verdict, Workstreams or Ride-Alongs section.')
   }
