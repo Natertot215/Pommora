@@ -11,7 +11,6 @@ import { readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
 import { restoreCachedValues } from './removeProperty'
 import { serializeSchemaOp } from './schemaChain'
-import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { ok, fail, type Result } from '../Contract/result'
 
 export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
@@ -108,13 +107,7 @@ export function assignPropertyAt(
 export async function collectionFolders(root: string): Promise<string[]> {
   const held = getLiveTree()
   const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
-  const out: string[] = []
-  const visit = (node: CollectionNode | SetNode): void => {
-    if (node.kind === 'collection') out.push(join(root, node.path))
-    for (const s of node.sets ?? []) visit(s)
-  }
-  for (const c of tree.collections) visit(c)
-  return out
+  return tree.collections.map((c) => join(root, c.path))
 }
 
 export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> {

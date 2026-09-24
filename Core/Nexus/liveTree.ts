@@ -1,8 +1,9 @@
-// The walk is single-flight: concurrent refreshes share the in-flight promise. A walk that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a walk whose slot was dropped or superseded installs nothing.
+// The walk is single-flight: concurrent refreshes share the in-flight promise. A walk that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a walk whose slot was dropped or superseded installs nothing, and a root other than the open Nexus's is read without a slot, so a caller still working on it can't install it.
 
 import type { NexusTree } from './tree'
 import { pathExists } from '../Files/atomicWrite'
 import { readNexus } from './readNexus'
+import { sessionRoot } from './session'
 
 interface WalkSlot {
   root: string
@@ -43,6 +44,7 @@ export function seedLiveTree(t: NexusTree): void {
 }
 
 export function refreshTree(root: string): Promise<NexusTree> {
+  if (root !== sessionRoot()) return readNexus(root)
   if (slot && slot.root === root) return slot.promise
   const entry: WalkSlot = { root, promise: undefined as unknown as Promise<NexusTree> }
   entry.promise = runWalk(root, entry)
