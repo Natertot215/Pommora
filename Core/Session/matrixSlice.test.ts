@@ -28,6 +28,16 @@ const GRAPH: MatrixGraphReply = {
 let channels: Record<string, ReturnType<typeof vi.fn>>
 let tree: NexusTree
 
+const heldGraph = (): ((r: unknown) => void) => {
+  let land: (r: unknown) => void = () => {}
+  channels['matrix:graph'].mockReturnValue(
+    new Promise((resolve) => {
+      land = resolve
+    }),
+  )
+  return (r) => land(r)
+}
+
 const seatLoaded = async (): Promise<void> => {
   await useSession.getState().loadMatrix()
 }
@@ -90,12 +100,12 @@ describe('loadMatrix', () => {
   it('lands config, graph, and layout in one pass', async () => {
     await seatLoaded()
     const s = useSession.getState()
-    expect(s.matrixLoaded).toBe(true)
+    expect(s.matrixLoad.kind).toBe('loaded')
     expect(s.matrixGraph).toEqual(GRAPH)
     expect(s.matrixPositions).toEqual({ p1: [1, 2] })
   })
 
-  it('lands the config on a refused graph, stays unloaded, and asks again on the next pass', async () => {
+  it('lands the config on a refused graph and asks again only once the tree has moved', async () => {
     channels['matrix:read'].mockResolvedValue({
       ok: true,
       value: parseMatrixConfig({ display: { hideIcon: true } }),
@@ -105,36 +115,92 @@ describe('loadMatrix', () => {
       error: { code: 'operation-failed', message: 'The index is not ready.' },
     })
     await seatLoaded()
-    expect(useSession.getState().matrixLoaded).toBe(false)
+    expect(useSession.getState().matrixLoad.kind).toBe('waiting')
     expect(useSession.getState().matrixConfig.display.hideIcon).toBe(true)
+    await seatLoaded()
+    expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
+    useSession.setState({ tree: makeTree() })
     await seatLoaded()
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
   })
 
-  it('discards a reply that lands after the tree moved', async () => {
-    let land: (r: unknown) => void = () => {}
-    channels['matrix:graph'].mockReturnValue(
-      new Promise((resolve) => {
-        land = resolve
-      }),
-    )
+  it('keeps a reply that lands after an edit in the same Nexus, and starts no second load meanwhile', async () => {
+    const land = heldGraph()
     const pass = useSession.getState().loadMatrix()
     useSession.setState({ tree: makeTree() })
+    void useSession.getState().loadMatrix()
     land({ ok: true, value: GRAPH })
     await pass
-    expect(useSession.getState().matrixLoaded).toBe(false)
-    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+    expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
+    expect(useSession.getState().matrixLoad.kind).toBe('loaded')
+    expect(useSession.getState().matrixGraph).toEqual(GRAPH)
+  })
+
+  it('discards a reply that lands after the Matrix was let go', async () => {
+    for (const letGo of ['unloadMatrix', 'resetMatrix'] as const) {
+      const land = heldGraph()
+      const pass = useSession.getState().loadMatrix()
+      useSession.getState()[letGo]()
+      land({ ok: true, value: GRAPH })
+      await pass
+      expect(useSession.getState().matrixLoad.kind).not.toBe('loaded')
+      expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+      useSession.setState({ tree: makeTree() })
+    }
+  })
+
+  it('loads again after an unload on the same tree, and not after a reset until the tree moves', async () => {
+    await seatLoaded()
+    useSession.getState().unloadMatrix()
+    await seatLoaded()
+    expect(useSession.getState().matrixLoad.kind).toBe('loaded')
+    useSession.getState().resetMatrix()
+    await seatLoaded()
+    expect(useSession.getState().matrixLoad).toEqual({ kind: 'waiting', tree })
+    expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
   })
 })
 
 describe('the refetch lane', () => {
-  it('buffers a push that lands before the load and asks once it has', async () => {
+  it('drops a push with nothing loaded, and buffers one that races the load until it lands', async () => {
+    useSession.getState().refetchMatrixPaths(['Notes/Stale.md'])
+    const land = heldGraph()
+    const pass = useSession.getState().loadMatrix()
+    useSession.getState().refetchMatrixPaths(['Notes/Alpha.md'])
+    await vi.advanceTimersByTimeAsync(200)
+    expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
+    land({ ok: true, value: GRAPH })
+    await pass
+    await vi.advanceTimersByTimeAsync(0)
+    expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
+    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(['Notes/Alpha.md'])
+  })
+
+  it('stops refetching once unloaded', async () => {
+    await seatLoaded()
+    channels['matrix:graph'].mockClear()
+    useSession.getState().unloadMatrix()
     useSession.getState().refetchMatrixPaths(['Notes/Alpha.md'])
     await vi.advanceTimersByTimeAsync(200)
     expect(channels['matrix:graph']).not.toHaveBeenCalled()
+    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+  })
+
+  it('keeps the held links when a refetch moved none', async () => {
     await seatLoaded()
-    await vi.advanceTimersByTimeAsync(0)
-    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(['Notes/Alpha.md'])
+    const before = useSession.getState().matrixGraph.links
+    channels['matrix:graph'].mockResolvedValue({
+      ok: true,
+      value: {
+        links: [link('Notes/Alpha.md', 'p1', 'beta')],
+        values: { p1: { frontmatter: { ID: 'p1' }, createdAt: null, modifiedAt: 'later' } },
+      },
+    })
+    useSession.getState().refetchMatrixPaths(['Notes/Alpha.md'])
+    await vi.advanceTimersByTimeAsync(200)
+    const after = useSession.getState().matrixGraph
+    expect(after.links).toBe(before)
+    expect(after.values.p1.modifiedAt).toBe('later')
   })
 
   it('reads a page id through the tree and folds a burst into one ask', async () => {
@@ -201,6 +267,6 @@ describe('resetMatrix', () => {
     expect(s.matrixGraph).toEqual({ links: [], values: {} })
     expect(s.matrixPositions).toEqual({})
     expect(s.matrixFrame).toBeNull()
-    expect(s.matrixLoaded).toBe(false)
+    expect(s.matrixLoad).toEqual({ kind: 'waiting', tree })
   })
 })

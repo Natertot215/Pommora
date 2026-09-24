@@ -90,7 +90,7 @@ function seed(over: Record<string, unknown> = {}): void {
     matrixGraph: EMPTY_GRAPH_REPLY,
     matrixPositions: {},
     matrixFrame: { cx: 0, cy: 0, w: 800, h: 600 },
-    matrixLoaded: true,
+    matrixLoad: { kind: 'loaded' },
     saveMatrixLayout: saveLayout as never,
     saveMatrixFrame: saveFrame as never,
     ...over,
@@ -464,6 +464,20 @@ describe('matrixRuntime', () => {
     }
   })
 
+  it('lets the store unload its graph once the last surface closes', () => {
+    seed({ matrixGraph: linked() })
+    attach()
+    flush()
+    const second = { visible: () => true }
+    const detachSecond = matrixRuntime.attach(second)
+    detachSecond()
+    expect(useSession.getState().matrixLoad.kind).toBe('loaded')
+    detach?.()
+    detach = null
+    expect(useSession.getState().matrixLoad.kind).toBe('unloaded')
+    expect(useSession.getState().matrixGraph).toEqual(EMPTY_GRAPH_REPLY)
+  })
+
   it('clears the graph and asks the store to load once when the Nexus drops', async () => {
     const graphAsk = vi.fn(async () => fail('operation-failed', 'The index is not ready.'))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -474,7 +488,7 @@ describe('matrixRuntime', () => {
     seed()
     attach()
     flush()
-    useSession.setState({ matrixLoaded: false })
+    useSession.setState({ matrixLoad: { kind: 'unloaded' } })
     expect(matrixRuntime.graph.nodes).toHaveLength(0)
     expect(matrixRuntime.sim).toBeNull()
     useSession.setState({ matrixPositions: {} })
