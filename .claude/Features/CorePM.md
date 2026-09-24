@@ -26,7 +26,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   └── state.json                       | • Pins, favorites, and the NavView banner; Collection, Space, and panel Context order
 ├── // .trash                            | • Deleted entities, mirroring the chain they came from
 │   └── // <Collection>
-│       └── // <stamp>__<Page>           | • A deletion bundle — the artifact beside its record
+│       └── // <stamp>__<Page>.deleted   | • A deletion bundle — the artifact beside its record
 │           ├── [<Page>.md]
 │           └── _record.json
 ├── // <Collection>                      | • A Page Collection — identified by its sidecar, not its name
