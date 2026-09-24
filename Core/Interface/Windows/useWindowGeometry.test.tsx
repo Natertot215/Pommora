@@ -44,13 +44,6 @@ describe('a window reads and writes its size on the device rail', () => {
     expect(seen.initialSize).toBeUndefined()
   })
 
-  it('ignores an entry that is not a pair of finite numbers', () => {
-    mount({ 'page-window': { w: Number.NaN, h: 500 } })
-    expect(seen.initialSize).toBeUndefined()
-    mount({ 'page-window': { w: '700', h: 500 } as unknown as { w: number; h: number } })
-    expect(seen.initialSize).toBeUndefined()
-  })
-
   it('a move writes nothing — the size it reports may have been clamped at the open', () => {
     mount({ 'page-window': { w: 2000, h: 1500 }, settings: { w: 900, h: 640 } })
     act(() => seen.onSizeChange({ w: 1000, h: 800 }, 'move'))

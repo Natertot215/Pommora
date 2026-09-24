@@ -13,8 +13,6 @@ import { createRenameSlice } from './mutationSlice'
 import type { SessionState } from './sessionState'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 
-export type { PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'
-export type { SessionState } from './sessionState'
 export type { PageSlot } from './navigationSlice'
 export {
   frozenOf,

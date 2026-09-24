@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { bootWith, type Hub, NEXUS, signer } from './Testing/hub.ts'
-import { BLOB_CAP, blobPath, sha256Hex } from './wire.ts'
+import { BLOB_CAP, sha256Hex } from './wire.ts'
 
 const MEBIBYTE = Buffer.alloc(1024 * 1024, 7)
 const DIGEST = sha256Hex(MEBIBYTE)
@@ -46,7 +46,7 @@ describe('the hub blob routes', () => {
   })
 
   it('refuses a put whose signature is not over the path hash, before reading its bytes', async () => {
-    const put = await owner.put(NEXUS, 'k1', Buffer.from('elsewhere'), blobPath(NEXUS, DIGEST))
+    const put = await owner.put(NEXUS, 'k1', Buffer.from('elsewhere'), `/blob/${NEXUS}/${DIGEST}`)
     expect(put.status).toBe(401)
     expect(spoolFiles()).toEqual([])
   })

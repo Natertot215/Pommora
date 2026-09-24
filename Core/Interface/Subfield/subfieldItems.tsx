@@ -1,6 +1,7 @@
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { type PageTarget, useSession } from '../../Session/store'
+import { useSession } from '../../Session/store'
+import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'
 
 type SubfieldItemId = 'pageStats' | 'count'

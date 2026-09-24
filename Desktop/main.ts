@@ -83,7 +83,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: RENDERER_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
   {
     scheme: ASSET_SCHEME,
-    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
   },
 ])
 

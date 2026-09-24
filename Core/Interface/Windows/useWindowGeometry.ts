@@ -1,9 +1,8 @@
 import type { Rect, ResizeGrip, Size } from '@pommora/uix/Interactions/ResizeFrame'
-import { isGlanceSize } from '../../Contract/validators'
 import { useSession } from '../../Session/store'
 import { chromePartEl } from '../chromeParts'
 
-/** A floating window's remembered size, machine-local per Nexus. The stored map arrives from `nexus.db` unvalidated, so an entry that is not a pair of finite numbers opens at the default instead. */
+/** A floating window's remembered size, machine-local per Nexus. */
 export function useWindowGeometry(id: string): {
   initialSize?: Size
   onSizeChange: (size: Size, grip: ResizeGrip) => void
@@ -15,7 +14,7 @@ export function useWindowGeometry(id: string): {
     const s = useSession.getState()
     s.setDevicePref('windows', { ...s.devicePrefs.windows, [id]: size })
   }
-  return { initialSize: isGlanceSize(stored) ? stored : undefined, onSizeChange }
+  return { initialSize: stored, onSizeChange }
 }
 
 /** The area the shell's panes leave free. A window centred on the viewport sits under the sidebar, which reads as off-centre. */

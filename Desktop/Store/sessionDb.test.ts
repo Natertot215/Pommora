@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest'
 import { chmodSync, existsSync, readdirSync, rmSync } from 'node:fs'
 import { join } from '@pommora/core/Paths/posix'
 import { tempRoot, noModeBits } from '@pommora/core/Testing/hostFs'
-import { keyValueStore } from '@pommora/core/Platform/stores'
-import { closeSessionDb, openSessionDb, sessionDb, sessionVersionsDb } from './sessionDb'
+import { keyValueStore, snapshotStore } from '@pommora/core/Platform/stores'
+import { closeSessionDb, openSessionDb } from './sessionDb'
 import { VERSIONS_FILENAME } from './versionsDb'
 import { DB_FILENAME } from './open'
 
@@ -24,18 +24,17 @@ describe('sessionDb', () => {
 
   it('opens both stores in the store directory and closes both', () => {
     openSessionDb(dir, root)
-    expect(sessionDb()).not.toBeNull()
-    expect(sessionVersionsDb()).not.toBeNull()
+    expect(keyValueStore()).not.toBeNull()
+    expect(snapshotStore()).not.toBeNull()
     expect(existsSync(join(dir, DB_FILENAME))).toBe(true)
     expect(existsSync(join(dir, VERSIONS_FILENAME))).toBe(true)
     closeSessionDb()
-    expect(sessionDb()).toBeNull()
-    expect(sessionVersionsDb()).toBeNull()
+    expect(keyValueStore()).toBeNull()
+    expect(snapshotStore()).toBeNull()
   })
 
   it('opens nothing without a store directory', () => {
     openSessionDb(null, root)
-    expect(sessionDb()).toBeNull()
     expect(keyValueStore()).toBeNull()
     expect(readdirSync(root)).toEqual([])
   })
@@ -44,7 +43,6 @@ describe('sessionDb', () => {
     chmodSync(storage, 0o555)
     try {
       expect(() => openSessionDb(dir, root)).not.toThrow()
-      expect(sessionDb()).toBeNull()
       expect(keyValueStore()).toBeNull()
     } finally {
       chmodSync(storage, 0o755)

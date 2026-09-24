@@ -900,4 +900,4 @@ export const FRAMES = roster([
 
 export type CategoryKey = (typeof FRAMES)[number]['key']
 
-export const frameFor = (key: CategoryKey): Frame => FRAMES.find((l) => l.key === key) ?? FRAMES[0]
+export const frameFor = (key: CategoryKey): Frame => FRAMES.find((l) => l.key === key)!

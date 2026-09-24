@@ -17,7 +17,7 @@ export function canonical(method: string, path: string, bodySha256Hex: string, t
   return [method.toUpperCase(), path, bodySha256Hex, String(ts)].join('\n')
 }
 
-export const PATHS = {
+const PATHS = {
   connect: '/connect',
   devices: '/devices',
   approve: '/approve',
@@ -35,7 +35,7 @@ export const ROUTE_OF = Object.fromEntries(
 export const LOOPBACK = '127.0.0.1'
 
 export const JSON_CAP = 8192
-export const JSON_TIMEOUT_MS = 10_000
+const JSON_TIMEOUT_MS = 10_000
 
 export const META = {
   connect: { requires: 'none', cap: JSON_CAP, timeoutMs: JSON_TIMEOUT_MS },
@@ -53,8 +53,6 @@ const bare = (pattern: RegExp): string => pattern.source.replace(/^\^|\$$/g, '')
 export const BLOB_ROUTE = new RegExp(`^/blob/(${bare(ULID)})/(${bare(SHA256)})$`)
 export const BLOB_CAP = 50 * 1024 * 1024
 export const BLOB_TIMEOUT_MS = 300_000
-
-export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`
 
 const ROLE_ORDER = ['reader', 'editor', 'owner'] as const
 

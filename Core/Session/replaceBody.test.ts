@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, createElement } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from './store'
-import { clearCache, readBodyEpoch, readPageDetail } from './pageDetailCache'
+import { bumpBodyEpoch, clearCache, readPageDetail, useBodyEpoch } from './pageDetailCache'
 import { captureCache, readCache } from '../Navigation/warmTabs'
 import { schedulePageSave } from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
@@ -10,6 +12,20 @@ import { stubDialer } from '../vitest.setup'
 const opened = detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'restored' })
 
 let channels: Record<string, unknown>
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+const roots: Root[] = []
+const watchEpoch = (path: string): (() => number) => {
+  let seen = -1
+  const Probe = (): null => {
+    seen = useBodyEpoch(path)
+    return null
+  }
+  const root = createRoot(document.createElement('div'))
+  roots.push(root)
+  act(() => root.render(createElement(Probe)))
+  return () => seen
+}
 
 beforeEach(() => {
   clearCache()
@@ -17,6 +33,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
 })
 afterEach(() => {
+  for (const root of roots.splice(0)) act(() => root.unmount())
   vi.useRealTimers()
   clearCache()
 })
@@ -45,14 +62,15 @@ describe('replaceBody', () => {
         },
       },
     })
-    const before = readBodyEpoch('Notes/a.md')
-    await useSession.getState().replaceBody('Notes/a.md')
+    const epoch = watchEpoch('Notes/a.md')
+    const before = epoch()
+    await act(() => useSession.getState().replaceBody('Notes/a.md'))
     expect(readCache('t1', 'page:a')).toEqual({ editorState: { doc: 'stale' }, scrollTop: 4 })
     expect(readCache('t2', 'page:a')?.pageDetail).toBeUndefined()
     expect(readPageDetail('Notes/a.md')?.body).toBe('restored')
     const slot = useSession.getState().pages.a
     expect(slot?.status === 'ready' && slot.body).toBe('restored')
-    expect(readBodyEpoch('Notes/a.md')).toBe(before + 1)
+    expect(epoch()).toBe(before + 1)
   })
 
   it('drops the pending save before a slow refetch could let it land', async () => {
@@ -71,10 +89,22 @@ describe('replaceBody', () => {
       ok: false,
       error: { code: 'not-found', message: 'gone' },
     }))
-    const before = readBodyEpoch('Notes/a.md')
-    expect(await useSession.getState().replaceBody('Notes/a.md')).toBe(false)
+    const epoch = watchEpoch('Notes/a.md')
+    const before = epoch()
+    expect(await act(() => useSession.getState().replaceBody('Notes/a.md'))).toBe(false)
     await vi.advanceTimersByTimeAsync(1000)
     expect(updatePageBody).not.toHaveBeenCalled()
-    expect(readBodyEpoch('Notes/a.md')).toBe(before)
+    expect(epoch()).toBe(before)
+  })
+})
+
+describe('the body epoch', () => {
+  it('advances per path and re-renders its readers', () => {
+    const a = watchEpoch('Notes/epoch-a.md')
+    const b = watchEpoch('Notes/epoch-b.md')
+    const [aBefore, bBefore] = [a(), b()]
+    act(() => bumpBodyEpoch('Notes/epoch-a.md'))
+    expect(a()).toBe(aBefore + 1)
+    expect(b()).toBe(bBefore)
   })
 })

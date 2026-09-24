@@ -33,7 +33,7 @@ const syncCaption = (status: SyncStatus, clock: TimeFormat): string => {
     case 'off':
       return status.why ?? 'Off'
     case 'idle':
-      return `Last synced ${clockOf(new Date(status.lastAt ?? Date.now()), clock)}`
+      return `Last synced ${clockOf(new Date(status.lastAt), clock)}`
     case 'syncing':
       return 'Syncing…'
     case 'error':

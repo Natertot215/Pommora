@@ -10,7 +10,7 @@ import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import type { TLSSocket } from 'node:tls'
 import { start } from '../hub.ts'
 import { STORE_FILE } from '../Store/open.ts'
-import { blobPath, canonical, fingerprintOf, LOOPBACK, sha256Hex } from '../wire.ts'
+import { canonical, fingerprintOf, LOOPBACK, sha256Hex } from '../wire.ts'
 
 export const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 
@@ -127,7 +127,7 @@ export function signer(name: string) {
     at?: string,
     sealed = bytes,
   ): Promise<Outcome> {
-    const path = at ?? blobPath(nexusId, sha256Hex(sealed))
+    const path = at ?? `/blob/${nexusId}/${sha256Hex(sealed)}`
     return send(
       base + path,
       'PUT',
@@ -141,7 +141,7 @@ export function signer(name: string) {
   }
 
   function get(nexusId: string, sha256: string): Promise<Outcome> {
-    const path = blobPath(nexusId, sha256)
+    const path = `/blob/${nexusId}/${sha256}`
     const empty = Buffer.alloc(0)
     return send(base + path, 'GET', signed('GET', path, empty, Date.now()), empty)
   }

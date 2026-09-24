@@ -3,7 +3,6 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { makeTree, linkedSpacesTree } from '../Testing/testTree'
 import { reconcileWith } from '../Session/reconcileSelection'
 import {
-  containersByPathOf,
   navKeysOf,
   pageIndexOf,
   pagesByIdOf,
@@ -124,14 +123,6 @@ describe('the connections projections', () => {
     expect(idx.resolve('Alpha')).toMatchObject({ status: 'resolved' })
     expect(idx.resolve('Ghost')).toEqual({ status: 'phantom' })
     expect(idx.candidates('nes').map((p) => p.id)).toEqual(['p2'])
-  })
-})
-
-describe('containersByPathOf', () => {
-  it('maps collection and set paths to their display cores', () => {
-    const m = containersByPathOf(makeTree())
-    expect(m.get('Notes')).toMatchObject({ title: 'Notes', kind: 'collection' })
-    expect(m.get('Notes/Ideas')).toMatchObject({ title: 'Ideas', kind: 'set' })
   })
 })
 

@@ -15,7 +15,7 @@ export function Disclosure({
   openIcon,
   title,
   depth,
-  defaultOpen = true,
+  defaultOpen,
   persistKey,
   selected = false,
   onSelect,
@@ -36,13 +36,13 @@ export function Disclosure({
   openIcon?: IconName
   title: string
   depth: number
-  defaultOpen?: boolean
+  defaultOpen: boolean
   persistKey: string
   selected?: boolean
   onSelect?: () => void
   onContextMenu?: () => void
   rename?: RenameTarget
-  dragId?: string
+  dragId: string
   onBodyContextMenu?: () => void
   locked?: boolean
   onSetLock?: (locked: boolean) => void
@@ -198,18 +198,14 @@ export function Disclosure({
   )
   return (
     <>
-      {dragId ? (
-        <DragRow
-          id={dragId}
-          springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setAndSave(true) }}
-          onPointerEnter={onHeaderHover && (() => onHeaderHover(true))}
-          onPointerLeave={onHeaderHover && (() => onHeaderHover(false))}
-        >
-          {header}
-        </DragRow>
-      ) : (
-        header
-      )}
+      <DragRow
+        id={dragId}
+        springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setAndSave(true) }}
+        onPointerEnter={onHeaderHover && (() => onHeaderHover(true))}
+        onPointerLeave={onHeaderHover && (() => onHeaderHover(false))}
+      >
+        {header}
+      </DragRow>
       {belowHeader}
       <Reveal open={open || peekOnly} fill>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}

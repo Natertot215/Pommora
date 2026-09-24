@@ -2,17 +2,14 @@ import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import {
-  bumpBodyEpoch,
   cachePageDetail,
   clearCache,
   dropCacheDetail,
   dropPageDetail,
   fetchPageDetail,
   readBodyBase,
-  readBodyEpoch,
   readPageDetail,
   setBodyBase,
-  subscribeBodyEpoch,
   subscribeLanding,
   writeThroughBody,
 } from './pageDetailCache'
@@ -150,17 +147,5 @@ describe('fenceWarm', () => {
   it('keeps a scroll-only entry', () => {
     const scroll: { editorState?: unknown; scrollTop: number } = { scrollTop: 3 }
     expect(fenceWarm(scroll, 'two')).toBe(scroll)
-  })
-})
-
-describe('the body epoch', () => {
-  it('advances per path and notifies', () => {
-    const seen: number[] = []
-    const off = subscribeBodyEpoch(() => seen.push(readBodyEpoch('Notes/a.md')))
-    bumpBodyEpoch('Notes/a.md')
-    expect(readBodyEpoch('Notes/a.md')).toBe(1)
-    expect(readBodyEpoch('Notes/b.md')).toBe(0)
-    expect(seen).toEqual([1])
-    off()
   })
 })

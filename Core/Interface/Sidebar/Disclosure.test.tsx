@@ -6,6 +6,8 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { Sidebar } from './Sidebar'
 import { Disclosure } from './Disclosure'
+import { SidebarDnd } from './sidebarDnd'
+import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { DEFAULT_COMMANDS } from '../../Actions/commands'
@@ -101,17 +103,20 @@ describe('a locked disclosure', () => {
     useSession.setState({ devicePrefs: {}, setDevicePref: setDevicePref as never })
     act(() =>
       root.render(
-        <Disclosure
-          icon="folder-closed"
-          title="Locked"
-          depth={0}
-          defaultOpen={false}
-          persistKey="k"
-          locked
-          onSelect={onSelect}
-        >
-          <span>child</span>
-        </Disclosure>,
+        <SidebarDnd index={buildIndex(tree)} onCommit={() => {}}>
+          <Disclosure
+            icon="folder-closed"
+            title="Locked"
+            depth={0}
+            defaultOpen={false}
+            persistKey="k"
+            dragId="k"
+            locked
+            onSelect={onSelect}
+          >
+            <span>child</span>
+          </Disclosure>
+        </SidebarDnd>,
       ),
     )
     act(() => rowNamed('Locked').click())

@@ -8,8 +8,6 @@ export const photo = style({
   alignItems: 'center',
   justifyContent: 'center',
   flex: '0 0 auto',
-  width: '32px',
-  height: '32px',
   borderRadius: '50%',
   overflow: 'hidden',
   color: c.label.secondary,

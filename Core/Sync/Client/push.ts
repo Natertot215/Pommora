@@ -25,7 +25,7 @@ import { call, getBlob, putBlob } from './call'
 import type { Session } from './session'
 import { setStatus } from './status'
 
-export const BATCH = 200
+const BATCH = 200
 export const ITEM_CAP = 50 * 1024 * 1024
 
 const pathOf = (change: StoreChange): string =>
