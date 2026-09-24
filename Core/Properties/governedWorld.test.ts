@@ -4,7 +4,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import * as liveTree from '../Nexus/liveTree'
-import { assignProperty, collectionFolderOf } from './assignment'
+import { assignProperty, collectionFolderOf, collectionFolders } from './assignment'
 import { assignedDefs } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
@@ -72,20 +72,18 @@ describe('collectionFolderOf', () => {
     if (!inner.ok) throw new Error('setup')
     const page = await createPage(inner.value.path, 'Deep', { body: 'b' })
     if (!page.ok) throw new Error('setup')
-    expect(await collectionFolderOf(root, page.value.path)).toBe(notes)
-    expect(await collectionFolderOf(root, join(root, 'Tasks', 'T.md'))).toBeNull()
+    const folders = await collectionFolders(root)
+    expect(collectionFolderOf(folders, page.value.path)).toBe(notes)
+    expect(collectionFolderOf(folders, join(root, 'Tasks', 'T.md'))).toBeNull()
     expect(
-      await collectionFolderOf(
-        root,
-        join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
-      ),
+      collectionFolderOf(folders, join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json')),
     ).toBeNull()
   })
 
   it('never walks the disk while the live tree holds this root', async () => {
     await liveTree.refreshTree(root)
     const spy = vi.spyOn(liveTree, 'refreshTree')
-    for (let i = 0; i < 10; i++) await collectionFolderOf(root, join(notes, 'A.md'))
+    for (let i = 0; i < 10; i++) await collectionFolders(root)
     expect(spy).not.toHaveBeenCalled()
     spy.mockRestore()
   })

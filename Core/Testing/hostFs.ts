@@ -11,7 +11,7 @@ export const posixPath = (p: string): string => (windows ? p.replaceAll('\\', '/
 export const realpathPosix = async (p: string): Promise<string> => posixPath(await realpath(p))
 
 export const tempRoot = (prefix: string): string =>
-  posixPath(realpathSync(mkdtempSync(`${tmpdir()}/${prefix}`)))
+  posixPath(realpathSync.native(mkdtempSync(`${tmpdir()}/${prefix}`)))
 
 export const noModeBits = windows || process.getuid?.() === 0
 

@@ -305,6 +305,22 @@ describe('a host document changing on disk', () => {
     expect(shown('a')).toEqual(['a', 'synced'])
   })
 
+  it('sends a layout changed during the read and keeps it over what the read found', async () => {
+    let releaseGet: (() => void) | null = null
+    get.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseGet = () => resolve({ ok: true as const, value: disk })
+        }),
+    )
+    disk = docWith('a', 'synced')
+    await act(async () => push(HOST))
+    act(() => at('a').setLayout(insertBand(at('a').layout, 1, 'local', 100)))
+    await act(async () => releaseGet?.())
+    expect(save).toHaveBeenCalledOnce()
+    expect(shown('a')).toEqual(['a', 'local'])
+  })
+
   it('a later commit builds on the pushed layout, not the pre-push one', async () => {
     disk = docWith('a', 'b')
     await act(async () => push(HOST))

@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -10,6 +10,7 @@ import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
+import * as liveTree from '../Nexus/liveTree'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -80,6 +81,23 @@ describe('runRepairSweep', () => {
       'alpha',
       'zeta',
     ])
+  })
+
+  it('walks the tree once however many re-read pages it checks', async () => {
+    for (const title of ['Two', 'Three']) {
+      const p = await createPage(join(root, 'Col'), title, { body: 'b' })
+      if (!p.ok) throw new Error('page failed')
+      await writeFile(
+        p.value.path,
+        (await readFile(p.value.path, 'utf8')).replace(/\n---\n/, '\nStatus: Open\n---\n'),
+      )
+    }
+    await frontmatter('Status: Open')
+    await seedContentIndex(root)
+    const walks = vi.spyOn(liveTree, 'refreshTree')
+    await runRepairSweep(root)
+    expect(walks).toHaveBeenCalledTimes(1)
+    walks.mockRestore()
   })
 
   it('with the toggle off nothing is written', async () => {

@@ -15,7 +15,7 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { machine } from '../Platform/machine'
 import { sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { NEW_SLOT } from './mutateRequest'
+import { NEW_SLOT, type MutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
@@ -24,7 +24,7 @@ import { shardOf } from './ids'
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
-import { openSession, closeSession, sessionRoot } from './session'
+import { openSession, closeSession } from './session'
 import { flushValueWrites } from './valuesChanged'
 import { readNexus } from './readNexus'
 import { pathExists } from '../Files/atomicWrite'
@@ -182,27 +182,25 @@ describe('handleMutate — create', () => {
 
   it('movePage notes the moved page under its destination for the values push', async () => {
     await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
-    const live = sessionRoot()!
-    flushValueWrites(live)
+    flushValueWrites(root)
     const r = await handleMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(flushValueWrites(live).map((c) => c.rel)).toEqual(['Notes/Archive'])
+    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Notes/Archive'])
   })
 
   it('createPage notes the new page for the values push', async () => {
-    const live = sessionRoot()!
-    flushValueWrites(live)
+    flushValueWrites(root)
     const r = await handleMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Noted' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(flushValueWrites(live).map((c) => c.rel)).toEqual(['Notes/Daily'])
+    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Notes/Daily'])
   })
 })
 
@@ -737,7 +735,7 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('a malformed op returns a clean fault, not a throw', async () => {
-    const bogus = { op: 'bogus' } as unknown as Parameters<typeof handleMutate>[1]
+    const bogus = { op: 'bogus' } as unknown as MutateRequest
     const r = await handleMutate(root, bogus, nexusDeps)
     expect(r.ok).toBe(false)
     if (r.ok) return
@@ -896,7 +894,7 @@ describe('handleMutate — setBanner', () => {
     await liveAssetMap(root)
     const r = await setBanner(await pick('Live.png'))
     expect(r.ok).toBe(true)
-    const pushed = takeAssetMapPush(sessionRoot()!)
+    const pushed = takeAssetMapPush(root)
     expect(pushed).not.toBeNull()
     expect(resolveAssetName(pushed!, 'Live.png')).toBe('file-assets/Live.png')
   })

@@ -4,9 +4,9 @@ import type { HostContext } from '../Contract/handlers'
 import { writeJournal } from '../Contexts/contextJournal'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { join } from '../Paths/posix'
-import { writeValue } from '../Platform/localState'
+import { readValue, writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
-import { currentSession, stopSession } from '../Sync/Client/session'
+import { currentSession, startSession, stopSession } from '../Sync/Client/session'
 import { currentStatus } from '../Sync/Client/status'
 import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
@@ -120,6 +120,36 @@ describe('openNexusSequence', () => {
 
       expect(stores.stores.sync?.readBase('Library/Notes.md')).not.toBeNull()
       expect(later.stores.sync?.readBase('Library/Notes.md')).toBeNull()
+    } finally {
+      await rm(second, { recursive: true, force: true })
+    }
+  })
+
+  it('stops an old-Nexus sync start that shared its wait before the new stores bind', async () => {
+    const { second } = await secondNexus('pom-open-restart-')
+
+    let release!: () => void
+    const held = new Promise<void>((wake) => {
+      release = wake
+    })
+    made.hub.intercept = (req) =>
+      isStore(req) ? held.then(() => ({ status: 200, body: '{"outcomes":[],"seq":0}' })) : null
+
+    try {
+      await openNexusSequence(ctx, root, false)
+      await settledSession()
+      for (let tries = 0; tries < 100 && !made.hub.sent.some(isStore); tries += 1) await turn()
+      expect(made.hub.sent.some(isStore)).toBe(true)
+
+      const restarting = startSession(ctx, root, NEXUS)
+      const opening = openNexusSequence(ctx, second, false)
+      await turn()
+      release()
+      await Promise.all([restarting, opening])
+      await turn(100)
+
+      expect(readValue('sync')).toBeNull()
+      expect(currentSession()).toBeNull()
     } finally {
       await rm(second, { recursive: true, force: true })
     }

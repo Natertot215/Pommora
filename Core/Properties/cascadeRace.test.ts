@@ -1,6 +1,7 @@
-// The cascade and the cell-write path must serialize on the SAME per-file lock. They match only because openSession canonicalizes the root — on a symlinked-root ancestry (a macOS tmpdir IS /var→/private/var) a raw sessionRoot would split them into different buckets.
+// The cascade and the cell-write path must serialize on the SAME per-file lock. They match only because openSession canonicalizes the root — on a symlinked root a raw sessionRoot would split them into different buckets, so the test opens its Nexus through a symlink.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { symlinkSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -20,13 +21,17 @@ const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition =>
   type,
 })
 
+let realRoot: string
 let rawRoot: string
 beforeEach(async () => {
-  rawRoot = tempRoot('pom-race-')
+  realRoot = tempRoot('pom-race-')
+  rawRoot = `${realRoot}-link`
+  symlinkSync(realRoot, rawRoot, 'junction')
 })
 afterEach(async () => {
   closeSession()
-  await rm(rawRoot, { recursive: true, force: true })
+  await rm(rawRoot)
+  await rm(realRoot, { recursive: true, force: true })
 })
 
 async function setup(root: string, value: string): Promise<{ propertyId: string; rel: string }> {

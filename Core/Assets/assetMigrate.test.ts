@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
-import { openSession, closeSession, sessionRoot } from '../Nexus/session'
+import { openSession, closeSession } from '../Nexus/session'
 import { pathExists } from '../Files/atomicWrite'
 import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
@@ -201,7 +201,7 @@ describe('migrateAssets', () => {
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/two/banner-dddddd44.jpg' }),
     )
     await migrateAssets(root)
-    const map = await liveAssetMap(sessionRoot()!)
+    const map = await liveAssetMap(root)
     for (const value of [
       JSON.parse(await read('.nexus/homepage/homepage.json')).banner,
       JSON.parse(await read('Notes/_pagecollection.json')).banner,

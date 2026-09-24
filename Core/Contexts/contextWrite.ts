@@ -12,7 +12,7 @@ import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { getLiveTree } from '../Nexus/liveTree'
-import { assignedDefs, collectionFolderOf } from '../Properties/assignment'
+import { assignedDefs, collectionFolderOf, collectionFolders } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
@@ -126,7 +126,10 @@ export async function setPageContext(
   const { key, value } = applied.value
   const adoptions = await machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
+    const defs = await assignedDefs(
+      root,
+      collectionFolderOf(await collectionFolders(root), absFile),
+    )
     return ok(
       await setGovernedRootKeys(root, absFile, value ? { [key]: value } : {}, [key], {
         ...world,
@@ -160,7 +163,7 @@ export async function loadGovernedWorld(
   absFile: string,
   raw: Raw,
 ): Promise<GovernedWorld> {
-  const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
+  const defs = await assignedDefs(root, collectionFolderOf(await collectionFolders(root), absFile))
   const skipped: GovernedWorld = { ...NO_CONTEXT_WORLD, defs }
   const held = getLiveTree()
   if (!contextDriftPresent(raw, held?.nexus.rootPath === root ? held : null)) return skipped

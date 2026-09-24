@@ -110,9 +110,8 @@ export async function collectionFolders(root: string): Promise<string[]> {
   return tree.collections.map((c) => join(root, c.path))
 }
 
-export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> {
-  return (await collectionFolders(root)).find((f) => absFile.startsWith(`${f}/`)) ?? null
-}
+export const collectionFolderOf = (folders: string[], absFile: string): string | null =>
+  folders.find((f) => absFile.startsWith(`${f}/`)) ?? null
 
 export function reorderAssignment(
   collectionFolder: string,

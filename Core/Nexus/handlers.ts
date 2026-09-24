@@ -60,6 +60,8 @@ export async function openNexusSequence(
   // openSession canonicalized the root; every step below keys off that string.
   const root = sessionRoot() ?? path
   const nexusId = await prepareOpenedNexus(root)
+  // A sync start for the old root that shared the first stop's wait began after it; this stop retires it before the new stores bind.
+  await stopSession(ctx)
   ctx.openStores(root, nexusId)
   await replayPendingRename(root)
   if (root !== priorRoot) {
