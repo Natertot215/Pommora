@@ -4,7 +4,6 @@ import { contextKey } from '../Contexts/contexts'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import type { MutateOutcome, RestoreDestination } from '../Nexus/mutateRequest'
-import { titleFromPath } from '../Connections/connections'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
@@ -316,7 +315,7 @@ export async function restoreArtifact(
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  return ok(restored(unspent.map((id) => titleFromPath(roots[id].path))))
+  return ok(restored(unspent.map((id) => roots[id].title)))
 }
 
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */

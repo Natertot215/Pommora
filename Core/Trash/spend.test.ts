@@ -4,7 +4,7 @@ import { basename, join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { bundleArtifact, readRecord, writePropertyBundle } from './record'
 import { resolveRecord } from './resolve'
@@ -14,10 +14,11 @@ import { closeSession, openSession } from '../Nexus/session'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import type { TrashDeps } from './bundle'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
@@ -173,7 +174,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('system trash mode writes no bundle — the artifact leaves the nexus entirely', async () => {
-    const systemDeps: MutateDeps = { trashMode: 'system', trashToSystem: async () => {} }
+    const systemDeps: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
     const r = await handleMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
@@ -957,7 +958,7 @@ describe('restore — the attack folds', () => {
 describe('emptyBundle — giving a bundle up for good', () => {
   it('hands the artifact to the system trash and removes the spent bundle behind it', async () => {
     const handed: string[] = []
-    const deps: MutateDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
+    const deps: TrashDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
     await handleMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
@@ -975,7 +976,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
 
   it('with the switch on the artifact never reaches the system trash at all', async () => {
     const handed: string[] = []
-    const deps: MutateDeps = {
+    const deps: TrashDeps = {
       ...nexusDeps,
       permanentDelete: true,
       trashToSystem: async (p) => void handed.push(p),
@@ -1085,7 +1086,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
   it('refuses when the bundle holds more than the artifact, rather than erasing it', async () => {
     // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy reads as no artifact at all. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
     const handed: string[] = []
-    const deps: MutateDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
+    const deps: TrashDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
     await handleMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
@@ -1101,7 +1102,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
   })
 
   it('a system-trash handoff that rejects leaves the bundle whole', async () => {
-    const deps: MutateDeps = {
+    const deps: TrashDeps = {
       ...nexusDeps,
       trashToSystem: async () => {
         throw new Error('nope')

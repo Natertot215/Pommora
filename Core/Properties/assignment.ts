@@ -35,6 +35,14 @@ export async function assignedDefs(
   )
 }
 
+export function cachedValues(
+  sidecar: Record<string, unknown> | null,
+  propertyId: string,
+): Record<string, unknown> | null {
+  const block = isPlainObject(sidecar?.property_cache) ? sidecar.property_cache[propertyId] : null
+  return isPlainObject(block) && isPlainObject(block.values) ? block.values : null
+}
+
 // The one writer of a sidecar's `property_cache` block — an absent block value removes the entry, and an emptied cache leaves no key behind.
 export function patchCacheBlock(
   sidecar: Record<string, unknown>,

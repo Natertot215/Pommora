@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react'
+import { useSyncExternalStore } from 'react'
 
 // Filled behind a synchronous read: the paint path may not await, so a miss answers undefined and repaints once for however many URLs land in the same frame. null means an image that won't load.
 const aspects = new Map<string, number | null>()
@@ -45,10 +45,7 @@ export function subscribeAspect(fn: () => void): () => void {
 }
 
 export function useImageAspect(url: string | null | undefined): number | null | undefined {
-  const [, bump] = useReducer((c: number) => c + 1, 0)
-  useEffect(
-    () => (url && aspects.get(url) === undefined ? subscribeAspect(bump) : undefined),
-    [url],
-  )
-  return url ? aspectFor(url) : undefined
+  const aspect = useSyncExternalStore(subscribeAspect, () => (url ? aspects.get(url) : undefined))
+  if (url && aspect === undefined) begin(url)
+  return aspect
 }

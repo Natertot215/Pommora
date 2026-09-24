@@ -4,7 +4,9 @@ import { machine } from '../Platform/machine'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import { pathExists } from '../Files/atomicWrite'
 import { recordWrite } from '../Files/writeEcho'
-import type { MutateDeps } from '../Nexus/mutate'
+import type { HostContext } from '../Contract/handlers'
+import { readPermanentDelete } from '../Settings/settings'
+import type { TrashMode } from './trashRow'
 
 export const BUNDLE_SUFFIX = '.deleted'
 
@@ -52,11 +54,26 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
   return dest
 }
 
+export interface TrashDeps {
+  trashMode: TrashMode
+  trashToSystem: (absPath: string) => Promise<void>
+  permanentDelete?: boolean
+}
+
+export async function trashDeps(root: string, ctx: HostContext): Promise<TrashDeps> {
+  return {
+    trashMode: await ctx.trashMode(),
+    trashToSystem: (p) =>
+      machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
+    permanentDelete: await readPermanentDelete(root),
+  }
+}
+
 /** A file the Trash can't list — a tile's text, an image sweep's leftover — still goes where Trash Mode sends deletions. */
 export async function discardFile(
   nexusRoot: string,
   absPath: string,
-  deps: MutateDeps,
+  deps: TrashDeps,
 ): Promise<void> {
   if (deps.trashMode === 'nexus') await trashFileFlat(nexusRoot, absPath)
   else {

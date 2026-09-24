@@ -9,9 +9,9 @@ import { liveAssetMap, resolveAssetName } from './assetMap'
 import { parseConnectionText } from '../Connections/connections'
 import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
-import type { MutateDeps } from '../Nexus/mutate'
+import type { TrashDeps } from '../Trash/bundle'
 
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')

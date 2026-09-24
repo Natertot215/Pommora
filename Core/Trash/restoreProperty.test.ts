@@ -7,7 +7,7 @@ import { setSpaceProperty } from '../Properties/setProperty'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from '../Properties/properties'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from './spend'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -19,8 +19,9 @@ import { createPage, updatePageProperty } from '../Nexus/page'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { createProperty } from '../Properties/registryProperty'
+import type { TrashDeps } from './bundle'
 
-const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 let notes: string
@@ -176,7 +177,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
   })
 
-  it('a value a Remove had cached comes back, dormant on its page', async () => {
+  it('a value a Remove had cached goes back to its cache, and re-assigning brings it home', async () => {
     const id = await seedPriority()
     const page = await createPage(tasks, 'A', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
@@ -190,9 +191,23 @@ describe('restoring a deleted property', () => {
     const deleted = await deleteProperty(root, id)
     expect(deleted.ok && deleted.value.trashed?.bundlePath).toBe(await onlyBundlePath())
     await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
-    // Home again, dormant while its Collection no longer assigns it, as a move between Collections leaves a value.
     expect(await assigns(tasks, id)).toBe(false)
+    expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
+    await assignProperty(root, tasks, id)
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['lo'])
+  })
+
+  it('a page that held the key blank neither returns a value nor is named', async () => {
+    const id = await seedPriority()
+    const blank = await createPage(notes, 'Blank', { body: 'b' })
+    if (!blank.ok) throw new Error('page failed')
+    await writeFile(
+      blank.value.path,
+      (await readFile(blank.value.path, 'utf8')).replace(/^---\n/, '---\nPriority:\n'),
+    )
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toEqual({ ok: true, value: {} })
   })
 
   it('a page and a collection gone since the delete are skipped, and the rest still lands', async () => {

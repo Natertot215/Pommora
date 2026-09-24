@@ -4,6 +4,7 @@ import type { TrashCrumb, TrashRow } from './trashRow'
 import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { type ArtifactRecord, containerChain, resolveRecord } from './resolve'
 import type { ListedBundle } from './spend'
+import { propertyType } from '../Properties/properties'
 
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
 
@@ -46,15 +47,18 @@ function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: Nex
 /** A property record has no artifact to name it, so its title is its definition's own; it lived nowhere, so it always has a home to return to. */
 export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | null {
   const { record, bundlePath, artifactName } = bundle
-  if (record.entity === 'property')
+  if (record.entity === 'property') {
+    const type = propertyType.safeParse(record.def.type)
     return {
       bundlePath,
       kind: 'property',
       title: typeof record.def.name === 'string' ? record.def.name : record.id,
+      ...(type.success ? { propertyType: type.data } : {}),
       crumbs: [],
       deletedAt: deletedAtOf(bundlePath),
       homeResolves: true,
     }
+  }
   if (!artifactName) return null
   const live = liveCrumbs(record, tree)
   return {

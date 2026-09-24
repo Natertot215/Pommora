@@ -1,7 +1,6 @@
 import { basename, dirname, relative } from '../Paths/posix'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { pathExists } from '../Files/atomicWrite'
-import { recordWrite } from '../Files/writeEcho'
 import { deindexPath } from '../Index/indexSeed'
 import { fail, fault, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
@@ -9,7 +8,7 @@ import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
-import { mintBundle, settleBundle } from './bundle'
+import { discardFile, mintBundle, settleBundle } from './bundle'
 import {
   buildContextRecord,
   gatherContentRecord,
@@ -69,10 +68,7 @@ export async function deleteOp(
     await write(await gatherContentRecord(root, req.kind, abs))
   }
   if (bundle) await settleBundle(bundle, abs)
-  else {
-    recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
-    await deps.trashToSystem(abs)
-  }
+  else await discardFile(root, abs, deps)
   deindexPath(root, abs)
   return ok(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {})
 }

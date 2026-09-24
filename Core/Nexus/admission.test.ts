@@ -10,7 +10,7 @@ import { stampAdopted } from './adopt'
 import { agendaContext, resolveFolderKind } from './folderKind'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { renameCascade } from './cascade'
-import { handleMutate, type MutateDeps } from './mutate'
+import { handleMutate } from './mutate'
 import { openSession, closeSession } from './session'
 import {
   contextsDir,
@@ -20,9 +20,10 @@ import {
   NEXUS_CONFIG_FILES,
   SIDECAR_FILENAME,
 } from '../Paths/paths'
+import type { TrashDeps } from '../Trash/bundle'
 
 const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
-const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 

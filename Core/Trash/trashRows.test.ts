@@ -5,16 +5,17 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashRow } from './trashRow'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { writePropertyBundle } from './record'
 import { listBundles } from './spend'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
 import { trashRowOf, trashRows } from './trashRows'
+import type { TrashDeps } from './bundle'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 

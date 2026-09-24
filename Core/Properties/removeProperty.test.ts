@@ -13,6 +13,10 @@ import { readSidecar } from '../Files/sidecar'
 import { readRegistry } from './propertiesRegistry'
 import { splitFrontmatter } from '../Files/pageFile'
 import { pageCollectionSidecar } from '../Nexus/schemas'
+import { closeSession, openSession } from '../Nexus/session'
+import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { findPage } from '../Nexus/watchPatch'
+import { relPosix } from '../Paths/paths'
 import type { PropertyDefinition } from './properties'
 
 let root: string
@@ -95,22 +99,32 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it('stamps an identity-less holder before caching it, so re-assigning brings its value back', async () => {
     const raw = await readFile(pageA, 'utf8')
     await writeFile(pageA, raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), ''))
-    expect(await pageValue(pageA)).toEqual(['active'])
+    await openSession(root)
+    await refreshTree(root)
+    await writeFile(join(folder, 'Late.md'), `---\n${liveDef.name}: done\n---\n`)
 
     expect((await removeProperty(root, folder, propId)).ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()
-    expect(splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY]).toBeTruthy()
+    const stamped = String(splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY])
+    expect(findPage(getLiveTree()!, relPosix(root, pageA))?.id).toBe(stamped)
+    // A page the tree hasn't listed yet keeps its value where it is.
+    expect(await pageValue(join(folder, 'Late.md'))).toBe('done')
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toEqual(['active'])
     expect(await pageValue(pageB)).toEqual(['done'])
+    closeSession()
   })
 
-  it('a copy sharing an id keeps its value in place, where the cache can’t hold a second', async () => {
+  it('a copy sharing an id keeps its own value, and re-assigning fills the one Remove stripped', async () => {
     const copy = join(folder, 'A copy.md')
-    await writeFile(copy, await readFile(pageA, 'utf8'))
+    const raw = await readFile(pageA, 'utf8')
+    await writeFile(copy, raw.replace('- active', '- done'))
     await removeProperty(root, folder, propId)
-    expect([await pageValue(pageA), await pageValue(copy)]).toContainEqual(['active'])
-    expect(Object.values((await cacheBlock())?.values ?? {})).toHaveLength(2)
+    const [a, c] = [await pageValue(pageA), await pageValue(copy)]
+    expect([a, c].filter((v) => v === undefined)).toHaveLength(1)
+    await assignProperty(root, folder, propId)
+    expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
+    expect(await cacheBlock()).toBeUndefined()
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {

@@ -20,6 +20,8 @@ import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
+import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
+import { propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
@@ -96,7 +98,17 @@ function TrashBody(): React.JSX.Element {
     void refresh()
   }, [refresh, trashRevision])
 
-  const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
+  const capitalize = useCapitalizeMetadata()
+  const shown = useMemo(
+    () =>
+      filterRows(
+        (rows ?? []).map((r) =>
+          r.kind === 'property' ? { ...r, title: displayPropertyName(r.title, capitalize) } : r,
+        ),
+        query,
+      ),
+    [rows, query, capitalize],
+  )
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
   const many = async (
@@ -240,7 +252,9 @@ function TrashBody(): React.JSX.Element {
                 onToggle={() => toggle(row.bundlePath)}
                 onMenu={() => void openMenu(row)}
                 icon={
-                  row.kind === 'property' ? 'tag' : entityIcon(row.kind, undefined, defaultIcons)
+                  row.kind === 'property'
+                    ? ((row.propertyType && propertyTypeIconName(row.propertyType)) ?? 'tag')
+                    : entityIcon(row.kind, undefined, defaultIcons)
                 }
                 defaultIcons={defaultIcons}
                 when={

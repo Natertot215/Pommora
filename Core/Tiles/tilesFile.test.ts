@@ -18,9 +18,9 @@ import {
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
-import type { MutateDeps } from '../Nexus/mutate'
+import type { TrashDeps } from '../Trash/bundle'
 
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const home = (): string => tileHostDir(root)
@@ -192,7 +192,7 @@ describe('markdown tile lifecycle', () => {
     expect(trashed.some((f) => f.includes(id))).toBe(true)
   })
 
-  it('a removed tile restores with its text, and never over a file already there', async () => {
+  it('a removed tile restores with its text, once, and never over a file already there', async () => {
     const id = await createMarkdownTile(home())
     await write(home(), id, 'kept text')
     const removed = await removeTile(root, home(), id, nexusDeps)
@@ -200,7 +200,8 @@ describe('markdown tile lifecycle', () => {
     expect(await restoreTile(home(), removed.value)).toEqual(ok(null))
     expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
     expect(await entries()).toEqual([{ id, type: 'markdown' }])
-    expect((await restoreTile(home(), removed.value)).ok).toBe(false)
+    expect(await restoreTile(home(), { ...removed.value, body: 'other' })).toEqual(ok(null))
+    expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
     expect(await entries()).toHaveLength(1)
   })
 

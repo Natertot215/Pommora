@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { propertyDefinition } from '../Properties/properties'
-import { titleFromPath } from '../Connections/connections'
+import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
@@ -9,10 +9,10 @@ import { refreshTree } from '../Nexus/liveTree'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
-import { collectionFolders, assignInner } from '../Properties/assignment'
+import { collectionFolders, assignInner, patchCacheBlock } from '../Properties/assignment'
 import { updatePageProperty } from '../Nexus/page'
 import { setSpaceProperty } from '../Properties/setProperty'
-import { isBlankValue, reconcilePropertyValue } from '../Properties/propertyValue'
+import { isBlankRaw, isBlankValue, reconcilePropertyValue } from '../Properties/propertyValue'
 import { createProperty } from '../Properties/registryProperty'
 import { serializeSchemaOp } from '../Properties/schemaChain'
 
@@ -49,12 +49,17 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
     const folder = byId.get(collectionId)
     if (folder) await assignInner(root, folder, record.id)
   }
+  for (const [collectionId, values] of Object.entries(record.caches ?? {})) {
+    const folder = byId.get(collectionId)
+    if (folder)
+      await patchSidecar(folder, 'collection', (cur) => patchCacheBlock(cur, record.id, { values }))
+  }
 
   const roots = projectBaseline(await refreshTree(root)).entries
   const unrestored: string[] = []
   for (const [id, raw] of Object.entries(record.values)) {
     const entry = roots[id]
-    if (entry?.kind !== 'page' && entry?.kind !== 'space') continue
+    if ((entry?.kind !== 'page' && entry?.kind !== 'space') || isBlankRaw(raw)) continue
     const reconciled = reconcilePropertyValue(def, raw, false)
     const abs = join(root, entry.path)
     const written = isBlankValue(reconciled.value)
@@ -62,7 +67,7 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       : entry.kind === 'page'
         ? await machine().lock(abs, () => updatePageProperty(root, abs, def, reconciled.value))
         : await setSpaceProperty(abs, def, reconciled.value)
-    if (!written?.ok) unrestored.push(titleFromPath(entry.path))
+    if (!written?.ok) unrestored.push(entry.title)
   }
   return ok(unrestored)
 }

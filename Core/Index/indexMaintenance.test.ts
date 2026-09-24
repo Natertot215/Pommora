@@ -5,7 +5,7 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { rm, mkdir, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { openSession, closeSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -15,13 +15,14 @@ import { seedContentIndex } from './indexSeed'
 import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
 import { applyWatchEvents } from '../Nexus/watchPatch'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import type { TrashDeps } from '../Trash/bundle'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 
 let root: string
 let mem: ReturnType<typeof memoryStores>
-const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 const byPath = <T extends { path: string }>(rows: T[], ...keys: (keyof T)[]): T[] =>
   rows.sort((a, b) => {

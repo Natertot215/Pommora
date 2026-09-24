@@ -167,4 +167,31 @@ describe('the host over the renderer table', () => {
     )
     expect(saves.at(-1)).toEqual(doc.layout)
   })
+
+  it('a removal the host refuses puts the tile back', async () => {
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({ ok: true, value: doc }),
+      'tiles:save': async () => ({ ok: true, value: null }),
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+      'tiles:removeTile': async () => ({
+        ok: false,
+        error: { code: 'operation-failed', message: 'refused' },
+      }),
+      menu: async () => ({ ok: true, value: 'tile:delete' }),
+    })
+    useSession.setState((st) => ({
+      tree: makeTree(),
+      devicePrefs: { ...st.devicePrefs, nativeMenus: true },
+      personalization: { ...st.personalization, confirmDeletion: false },
+      notification: null,
+    }))
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    await act(async () => {
+      ;(host.querySelector('.tile-handle') as HTMLElement).click()
+    })
+    expect(await until(() => useSession.getState().notification?.message === 'refused')).toBe(true)
+    expect(host.querySelectorAll('.tile')).toHaveLength(4)
+  })
 })

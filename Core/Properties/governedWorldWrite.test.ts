@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import type { NexusTree } from '../Nexus/tree'
 import * as atomicWrite from '../Files/atomicWrite'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 
 import { closeSession, openSession } from '../Nexus/session'
@@ -17,6 +17,7 @@ import { contextDriftPresent } from '../Contexts/contextWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
 import { createProperty } from './registryProperty'
+import type { TrashDeps } from '../Trash/bundle'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
@@ -26,7 +27,7 @@ const sidecarReads = vi.mocked(atomicWrite.readJsonStrict)
 const spaceReads = () =>
   sidecarReads.mock.calls.filter(([p]) => String(p).endsWith('_space.json')).length
 
-const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 let root: string
 let notes: string
 let statusId: string

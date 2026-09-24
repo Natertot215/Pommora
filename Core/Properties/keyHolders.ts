@@ -6,6 +6,14 @@ import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 import { splitFrontmatter } from '../Files/pageFile'
+import { contentId } from '../Nexus/identityMark'
+import { ensurePageId } from '../Nexus/adopt'
+import { isAdoptedId } from '../Nexus/ids'
+import { getLiveTree } from '../Nexus/liveTree'
+import { findPage, patchPageFromDisk } from '../Nexus/watchPatch'
+import { relPosix } from '../Paths/paths'
+import { valueOr } from '../Contract/result'
+import { isBlankRaw } from './propertyValue'
 
 export async function keyHolderFiles(
   root: string,
@@ -35,4 +43,41 @@ export async function confirmedKeyHolders(
     if (raw && key in raw) holders.push(file)
   }
   return holders
+}
+
+/** The pages holding `key` that a value can be filed for by ID, those values, and the holders left as they are: a page the tree lists without an ID is given one first, and a holder whose ID another already took, or that the tree doesn't list, is kept. */
+export async function keyedHolders(
+  root: string,
+  files: string[],
+  key: string,
+): Promise<{ holders: string[]; values: Record<string, unknown>; kept: string[] }> {
+  const holders: string[] = []
+  const values: Record<string, unknown> = {}
+  const kept: string[] = []
+  const seen = new Set<string>()
+  for (const file of files) {
+    const content = await readTextOrNull(file)
+    if (content === null) continue
+    const fields = splitFrontmatter(content) as Record<string, unknown>
+    if (!(key in fields)) continue
+    const id = contentId(fields) ?? (await stampListed(root, file))
+    if (!id || seen.has(id)) {
+      kept.push(file)
+      continue
+    }
+    seen.add(id)
+    holders.push(file)
+    if (!isBlankRaw(fields[key])) values[id] = fields[key]
+  }
+  return { holders, values, kept }
+}
+
+async function stampListed(root: string, file: string): Promise<string | null> {
+  const rel = relPosix(root, file)
+  const tree = getLiveTree()
+  const listed = tree && findPage(tree, rel)
+  if (!listed || !isAdoptedId(listed.id)) return null
+  const id = valueOr(await ensurePageId(file), null)
+  if (id) await patchPageFromDisk(root, rel)
+  return id
 }

@@ -6,14 +6,15 @@ import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
 
 import { closeSession, openSession } from '../Nexus/session'
+import type { TrashDeps } from './bundle'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 let atSweep: unknown

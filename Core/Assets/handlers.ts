@@ -8,7 +8,7 @@ import { assetsDir, relPosix } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { confirmSettingsWrite, pushAssetWrites } from '../Nexus/confirm'
 import { refreshAfterWrite } from '../Nexus/liveTree'
-import { mutateDeps } from '../Nexus/mutate'
+
 import { adoptFile } from './adoptFile'
 import { sessionRoot } from '../Nexus/session'
 import { EMPTY_ASSET_MAP } from '../Nexus/tree'
@@ -17,6 +17,7 @@ import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
 import { liveAssetMap, refreshAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
 import { assetSubfolder, validPropertyDir } from './assetRoots'
+import { trashDeps } from '../Trash/bundle'
 
 export const assetsHandlers = {
   'assets:map': withRoot(async (root) => ok(await liveAssetMap(root)), ok(EMPTY_ASSET_MAP)),
@@ -52,9 +53,9 @@ export const assetsHandlers = {
     }
     await writeAssetDirectory(root, next)
     try {
-      await migrateAssets(root, await mutateDeps(root, ctx))
+      await migrateAssets(root, await trashDeps(root, ctx))
     } catch (e) {
-      console.error('assets: the migration failed; references are unchanged:', e)
+      console.error('assets: the migration stopped partway:', e)
     }
     // The write's own echo is suppressed, so the structural re-arm an external edit would trigger never fires here.
     await confirmSettingsWrite(ctx, root)

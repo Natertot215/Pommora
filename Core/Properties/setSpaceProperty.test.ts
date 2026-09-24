@@ -7,7 +7,8 @@ import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
 import { setPropertyOp } from './setProperty'
-import type { MutateContext, MutateDeps } from '../Nexus/mutate'
+import type { MutateContext } from '../Nexus/mutate'
+import type { TrashDeps } from '../Trash/bundle'
 import type { PropertyDefinition } from './properties'
 import type { PropertyValue } from './propertyValue'
 
@@ -15,7 +16,7 @@ let root: string
 let spaceRel: string
 let statusId: string
 
-const deps: MutateDeps = { trashMode: 'system', trashToSystem: async () => {} }
+const deps: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
 const ctx = (): MutateContext => ({ root, deps })
 
 const def = (

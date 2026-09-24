@@ -4,16 +4,17 @@ import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
-import { handleMutate, type MutateDeps } from '../Nexus/mutate'
+import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
 import { trashRows } from './trashRows'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
+import type { TrashDeps } from './bundle'
 
 let root: string
 const handed: string[] = []
-const deps: MutateDeps = {
+const deps: TrashDeps = {
   trashMode: 'nexus',
   trashToSystem: async (p) => void handed.push(p),
 }
@@ -275,7 +276,7 @@ describe('end to end — deleted, listed, restored', () => {
     )
     await del('Journal/Beta.md', 'page')
     row = await find('Beta')
-    const permanent: MutateDeps = { ...deps, permanentDelete: true }
+    const permanent: TrashDeps = { ...deps, permanentDelete: true }
     expect(
       (await handleMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
     ).toBe(true)

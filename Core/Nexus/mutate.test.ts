@@ -11,7 +11,7 @@ import {
   windows,
 } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
-import { handleMutate, type MutateDeps } from './mutate'
+import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
 import { sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
@@ -31,9 +31,10 @@ import { pathExists } from '../Files/atomicWrite'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
 import * as tap from '../Sync/Client/tap'
+import type { TrashDeps } from '../Trash/bundle'
 
 let root: string
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
+const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
 
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
 
@@ -689,7 +690,7 @@ describe('handleMutate — review-round hardening', () => {
 
   it('a replaced photo reaches no trash', async () => {
     const trashToSystem = vi.fn(async (_p: string) => {})
-    const deps: MutateDeps = { trashMode: 'system', trashToSystem }
+    const deps: TrashDeps = { trashMode: 'system', trashToSystem }
     await handleMutate(root, { op: 'setProfileImage', source: await pickImage('Old.png') }, deps)
     await handleMutate(root, { op: 'setProfileImage', source: await pickImage('New.png') }, deps)
     expect(trashToSystem).not.toHaveBeenCalled()
@@ -1309,6 +1310,14 @@ describe('adoptFile — the shared adoption seam', () => {
     for (const name of ['Q3|draft.pdf', 'Summary]].pdf'])
       expect(await adoptFile(root, await pick(name), { allow: 'any' })).toMatchObject({ ok: false })
     expect(await readdir(join(root, 'file-assets'))).toEqual([])
+  })
+
+  it('a typed path that isn’t absolute, or names nothing, is refused as unreadable', async () => {
+    for (const typed of ['~/Report.pdf', 'Report.pdf', join(root, 'nowhere.pdf')])
+      expect(await adoptFile(root, typed, { allow: 'any' })).toMatchObject({
+        ok: false,
+        error: { message: 'That file could not be read.' },
+      })
   })
 
   it('lands the file in the subfolder its property names, still answering by basename', async () => {

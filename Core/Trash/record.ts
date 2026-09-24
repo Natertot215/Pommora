@@ -44,6 +44,7 @@ const recordFile = z.discriminatedUnion('entity', [
     def: z.looseObject({ id: z.string() }),
     values: z.record(z.string(), z.unknown()),
     assignments: z.array(z.string()).optional(),
+    caches: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
     partial: z.literal(true).optional(),
   }),
   z.looseObject({
