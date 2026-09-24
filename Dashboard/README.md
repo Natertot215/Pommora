@@ -1,6 +1,6 @@
-# Dashboard — The Two Hosted Pages
+# Dashboard — The Hosted Pages
 
-Two plain browser pages built from the design system, each folded into a single HTML file and published as a claude.ai artifact. Neither is the Electron app: `vite build` runs here on its own (`build:dashboard` from the root), not through `electron-vite`.
+Three plain browser pages built from the design system, each folded into a single HTML file and published as a claude.ai artifact. None is the Electron app: `vite build` runs here on its own (`build:dashboard` from the root), not through `electron-vite`.
 
 ## Pommora Dashboard
 
@@ -14,9 +14,15 @@ Published at https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d1140
 
 Published at https://claude.ai/code/artifact/684b7af1-55b2-49cf-b2fa-1b3a6b15dd9c.
 
+## Pommora Audit
+
+`audit.html` → the codebase audit ledger. It fetches `audit.md`, published beside it, and renders `.claude/Planning/Codebase Audit.md` as one scrolling page: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger. Republishing the ledger file is the whole update.
+
+Published at https://claude.ai/artifact/1uvUvsHz3f3dABn7dUn9dd.
+
 ## Building
 
-`npm run dashboard` serves both pages at `/dashboard.html` and `/showcase.html`. `npm run build:dashboard` builds them one after the other into `dist/` — `vite-plugin-singlefile` inlines each page's script, stylesheet, fonts, and images, so each output is one file. The pages build one at a time because the plugin inlines every chunk into a single entry; the Vite mode names which page.
+`npm run dashboard` serves the pages at `/dashboard.html`, `/showcase.html`, and `/audit.html`. `npm run build:dashboard` builds them one after the other into `dist/` — `vite-plugin-singlefile` inlines each page's script, stylesheet, fonts, and images, so each output is one file. The pages build one at a time because the plugin inlines every chunk into a single entry; the Vite mode names which page.
 
 ## Publishing
 

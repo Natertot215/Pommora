@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --mode showcase"
+    "build": "vite build && vite build --mode showcase && vite build --mode audit"
   },
   "devDependencies": {
     "@pommora/uix": "*",

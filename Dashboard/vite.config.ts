@@ -4,11 +4,11 @@ import react from '@vitejs/plugin-react'
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
-// Two plain browser pages, decoupled from Electron. Each build folds every chunk, stylesheet, font,
+// Three plain browser pages, decoupled from Electron. Each build folds every chunk, stylesheet, font,
 // and image into its one page — the file an artifact publishes — so the pages build one at a time,
-// the mode naming which; the second build leaves the first's output standing.
+// the mode naming which; only the first build empties dist, so the later two leave its output standing.
 export default defineConfig(({ mode }) => {
-  const page = mode === 'showcase' ? 'showcase' : 'dashboard'
+  const page = mode === 'showcase' || mode === 'audit' ? mode : 'dashboard'
   return {
     plugins: [react(), vanillaExtractPlugin(), viteSingleFile()],
     build: {
