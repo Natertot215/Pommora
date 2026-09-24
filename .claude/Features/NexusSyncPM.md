@@ -62,7 +62,7 @@ A landed file is written atomically under the writer's modification time and rec
 
 Two kinds of file land through a merge rather than a replacement. The JSON files under `.nexus/` and the `_*.json` sidecars merge key by key against the last synced bytes: a key changed on one side takes that side, a key changed on both takes the newer writer's, and the merged bytes land under the current time. Some keys hold sections that merge a level deeper, key by key within them; a metadata month file merges per page and per field, so one device clearing a page's entry and another setting a field on it keeps that field.
 
-A page open in an editor absorbs its landing instead of reloading under the writer: the renderer takes the buffer as one side and the landed file as the other, and dispatches the difference as a changes-only transaction outside undo, so the caret keeps its position; a surface without that merge reloads, capturing any text its last acknowledged save does not hold. A body write is compare-and-swap, keyed to the hash the editor last loaded or saved, and a refusal routes to the same merge or reload rather than to a retry.
+A page open in any editor absorbs its landing instead of reloading under the writer: the renderer merges the landed file into the text its open editors share, and each of them takes the difference as a changes-only transaction outside undo, so every caret keeps its position; a page no editor holds reloads, capturing any text its last acknowledged save does not hold. A body write is compare-and-swap, keyed to the hash the editor last loaded or saved, and a refusal routes to the same merge or reload rather than to a retry.
 
 ### The Timeline
 
