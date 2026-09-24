@@ -1,7 +1,8 @@
 import { machine } from '../Platform/machine'
 
 // A write recorded with its bytes is an echo only while the file still holds them, so an outside write landing inside the window still reaches the watcher; a move or rename, recorded without bytes, is an echo for the whole window.
-const recent = new Map<string, { at: number; hash?: string }>()
+type Echo = { at: number; hash?: string }
+const recent = new Map<string, Echo>()
 const WINDOW_MS = 2000
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a blind spot for a genuine EXTERNAL write into that folder.
 const PREFIX_WINDOW_MS = 800
@@ -24,16 +25,16 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
   tap?.(absPath)
 }
 
-const held = (absPath: string, windowMs: number): { at: number; hash?: string } | undefined => {
+const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)
-  if (r === undefined || Date.now() - r.at <= windowMs) return r
+  if (r === undefined || Date.now() - r.at <= WINDOW_MS) return r
   recent.delete(absPath)
   return undefined
 }
 
 /** An echo known without reading the file: a bytes-less record, or a descendant of a folder just moved. */
 export function isRecentWrite(absPath: string): boolean {
-  const r = held(absPath, WINDOW_MS)
+  const r = held(absPath)
   if (r !== undefined) return r.hash === undefined
   // Only an exact ancestor can prefix-match, so walk absPath's parent directories instead of scanning every record: O(depth) lookups replace the O(N) scan.
   for (
@@ -51,7 +52,7 @@ export function isRecentWrite(absPath: string): boolean {
 export async function dropOwnEchoes<E extends { absPath: string }>(events: E[]): Promise<E[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
-      const hash = held(e.absPath, WINDOW_MS)?.hash
+      const hash = held(e.absPath)?.hash
       if (hash === undefined) return true
       const bytes = await machine().readBytes(e.absPath)
       return bytes === null || machine().sha256Hex(bytes) !== hash

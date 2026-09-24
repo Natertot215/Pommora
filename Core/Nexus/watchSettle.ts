@@ -1,6 +1,6 @@
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
-import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Paths/nexusPaths'
+import { NEXUS_DIR } from '../Paths/nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
@@ -8,8 +8,7 @@ import {
   rootSegs,
   type WatchScope,
 } from '../Paths/exclusion'
-import { isMarkdownFile } from '../Files/walk'
-import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
 import type { ValueChange } from './tree'
 import { getLiveTree } from './liveTree'
@@ -24,20 +23,6 @@ export function isConfigPath(
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES[file]
 }
 
-export function tileBodyUnder(segs: string[], rel: string): boolean {
-  return (
-    (segs[0] === NEXUS_DIR &&
-      segs[1] === HOMEPAGE_HOST_DIRNAME &&
-      segs.length >= 3 &&
-      segs[2] !== TILE_DOC_FILENAME &&
-      rel !== `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) ||
-    (segs[0] === NEXUS_DIR &&
-      segs[1] === CONTEXTS_DIRNAME &&
-      segs.length >= 5 &&
-      isMarkdownFile(segs[segs.length - 1]))
-  )
-}
-
 let tap: ((ev: WatchEvent) => void) | null = null
 
 export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void {
@@ -46,14 +31,6 @@ export function setWatchTap(fn: ((ev: WatchEvent) => void) | null): void {
 
 export function emitWatch(event: WatchEventName, absPath: string): void {
   if (tap) tap({ event, absPath })
-}
-
-export function tileBodyOf(root: string): (path: string) => boolean {
-  return (path) => {
-    const rel = relative(root, path)
-    if (!rel || escapes(rel)) return false
-    return tileBodyUnder(rel.split('/'), rel)
-  }
 }
 
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.

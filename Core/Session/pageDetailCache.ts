@@ -43,11 +43,12 @@ export interface BodyMount {
 }
 
 // Every mount of a path shares one head, the newest body any of them typed, so no mount's save can carry text older than another's.
-const heads = new Map<string, { seq: number; text: string; mounts: Set<BodyMount> }>()
+type BodyHead = { seq: number; text: string }
+const heads = new Map<string, BodyHead & { mounts: Set<BodyMount> }>()
 
-export const bodyHead = (path: string): { seq: number; text: string } | undefined => heads.get(path)
+export const bodyHead = (path: string): BodyHead | undefined => heads.get(path)
 
-const catchUp = (mount: BodyMount, head: { seq: number; text: string }): void => {
+const catchUp = (mount: BodyMount, head: BodyHead): void => {
   if (mount.seq === head.seq || !mount.follow(head.text)) return
   mount.seq = head.seq
   mount.basis = head.text
@@ -68,11 +69,9 @@ export function attachBody(path: string, mount: BodyMount, seed: string): () => 
 }
 
 /** `shown` is the publisher's own text when a merge put more on the head than its editor holds yet, which leaves it behind until it follows. */
-export function publishBody(path: string, mount: BodyMount, body: string, shown = body): void {
-  const head = heads.get(path)
+export function publishBody(path: string, mount: BodyMount, body: string, shown: string): void {
+  const head = advanceHead(path, body)
   if (!head) return
-  head.seq += 1
-  head.text = body
   mount.seq = body === shown ? head.seq : -1
   mount.basis = shown
 }
@@ -83,11 +82,12 @@ export function followBody(path: string): void {
 }
 
 /** Text that arrived from outside every mount becomes the head, leaving each of them behind it. */
-export function advanceHead(path: string, text: string): void {
+export function advanceHead(path: string, text: string): BodyHead | undefined {
   const head = heads.get(path)
   if (!head) return
   head.seq += 1
   head.text = text
+  return head
 }
 
 const inFlight = new Map<string, Promise<PageDetail | null>>()
