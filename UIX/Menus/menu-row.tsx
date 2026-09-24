@@ -52,7 +52,6 @@ export function MenuTopRow({
 type MenuItemProps = {
   leading?: ReactNode
   subLabel?: ReactNode
-  value?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
   overlay?: ReactNode
@@ -74,7 +73,6 @@ type MenuItemProps = {
 export function MenuItem({
   leading,
   subLabel,
-  value,
   detail,
   trailing,
   overlay,
@@ -96,7 +94,7 @@ export function MenuItem({
     ...(indent ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT } : undefined),
     ...(trailing != null ? { '--row-pad-trail': '0px' } : undefined),
   } as CSSProperties
-  const hasTrailing = value != null || detail != null || trailing != null
+  const hasTrailing = detail != null || trailing != null
   const act = disabled || inert ? undefined : onClick
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
@@ -126,7 +124,6 @@ export function MenuItem({
       </span>
       {hasTrailing && (
         <span className={s.side}>
-          {value != null && <span className={s.value}>{value}</span>}
           {detail != null && <span className={s.detail}>{detail}</span>}
           {trailing}
         </span>

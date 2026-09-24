@@ -2,7 +2,7 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import { useRef, useState } from 'react'
 import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
+import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf } from '../../Nexus/treeIndex'
@@ -13,12 +13,11 @@ import { pickView } from '../Pipeline/pickView'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { VisibilityList } from './HiddenFrame'
-import { GroupFrame } from './GroupFrame'
-import { SortFrame } from './SortFrame'
-import { FilterFrame } from './FilterFrame'
 import { LayoutFrame } from './LayoutFrame'
+import { VIEW_ROWS, ViewLeaf, type ViewRow, type ViewRowId } from './ViewLeaf'
 import { ScalePicker } from '@pommora/core/Settings/ScalePicker'
-import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import {
   FooterIconButton,
   FooterLockButton,
@@ -28,35 +27,27 @@ import {
   MenuScrollFrame,
   MenuSeparator,
   MenuTopRow,
+  pickerRow,
 } from '@pommora/uix/Menus'
+import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { saveViewIn, useViewTileScope } from '../ViewTileScope'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { host } from '../../Platform/dialer'
 
-type FrameId =
-  | 'configuration'
-  | 'properties'
-  | 'visibility'
-  | 'layout'
-  | 'filter'
-  | 'group'
-  | 'sort'
-interface MenuEntry {
-  id: FrameId
-  label: string
-  icon: IconName
-}
+type FrameId = 'configuration' | 'properties' | 'visibility' | ViewRowId
 
-const ENTRIES: MenuEntry[] = [
+const ENTRIES: ViewRow<FrameId>[] = [
   { id: 'configuration', label: 'Configuration', icon: 'sliders-horizontal' },
   { id: 'properties', label: 'Properties', icon: 'server' },
   { id: 'visibility', label: 'Visibility', icon: 'eye' },
-  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
-  { id: 'group', label: 'Group', icon: 'layers' },
-  { id: 'filter', label: 'Filter', icon: 'list-filter' },
-  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
+  ...VIEW_ROWS,
+]
+
+const OPEN_IN_OPTIONS: PickerOption<OpenIn>[] = [
+  { value: 'full-page', label: 'Full Page' },
+  { value: 'page-preview', label: 'Preview' },
 ]
 
 export function SettingsFrame(): React.JSX.Element | null {
@@ -66,7 +57,6 @@ export function SettingsFrame(): React.JSX.Element | null {
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
   const [pane, setPane] = useState<FrameId | 'root'>('root')
-  const lastDetail = useRef<FrameId>('properties')
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
 
@@ -88,19 +78,12 @@ export function SettingsFrame(): React.JSX.Element | null {
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 
-  const open = (id: FrameId): void => {
-    lastDetail.current = id
-    setPane(id)
-  }
   const back = (): void => setPane('root')
-  const detailId = pane === 'root' ? lastDetail.current : pane
+  const detailPane = pane === 'root' || frozen(pane) ? null : pane
 
-  const openInValue: OpenIn = schemaCollection.openIn ?? 'full-page'
-  const toggleOpenIn = (): void => {
+  const setOpenIn = (open_in: OpenIn): void => {
     void host()
-      .ask('container:configure', schemaCollection.path, 'collection', {
-        open_in: openInValue === 'page-preview' ? 'full-page' : 'page-preview',
-      })
+      .ask('container:configure', schemaCollection.path, 'collection', { open_in })
       .then(reportRefusal)
   }
 
@@ -114,16 +97,14 @@ export function SettingsFrame(): React.JSX.Element | null {
     <>
       <MenuTopRow label="Settings" current="Configuration" onBack={back} />
       <MenuRowView
-        row={{
-          kind: 'item',
-          icon: <Icon name="layout-grid" size={ICON.rootEntry} />,
-          label: 'Open In',
-          trailing: {
-            kind: 'value',
-            value: openInValue === 'page-preview' ? 'Preview' : 'Full Page',
-            onToggle: toggleOpenIn,
-          },
-        }}
+        row={pickerRow(
+          'layout-grid',
+          'Open In',
+          schemaCollection.openIn ?? 'full-page',
+          OPEN_IN_OPTIONS,
+          setOpenIn,
+          { iconSize: ICON.rootEntry },
+        )}
       />
     </>
   )
@@ -154,7 +135,7 @@ export function SettingsFrame(): React.JSX.Element | null {
               label: e.label,
               trailing: { kind: 'chevron' },
               disabled: frozen(e.id),
-              onSelect: () => open(e.id),
+              onSelect: () => setPane(e.id),
             })),
           },
         ]}
@@ -193,56 +174,60 @@ export function SettingsFrame(): React.JSX.Element | null {
     </MenuScrollFrame>
   )
 
-  const detail =
-    detailId === 'configuration' ? (
-      configurationLeaf
-    ) : detailId === 'properties' ? (
-      <PropertyFrame
-        collectionPath={schemaCollection.path}
-        schema={schema}
-        onBack={back}
-        source={node}
-      />
-    ) : detailId === 'visibility' ? (
-      <VisibilityList
-        source={node}
-        schema={schema}
-        view={view}
-        onBack={back}
-        current="Visibility"
-      />
-    ) : detailId === 'layout' ? (
-      <LayoutFrame
-        source={node}
-        view={view}
-        schema={schema}
-        door="flat"
-        onBack={back}
-        onClose={back}
-      />
-    ) : detailId === 'group' ? (
-      <GroupFrame source={node} view={view} schema={schema} label="Settings" onBack={back} />
-    ) : detailId === 'sort' ? (
-      <SortFrame source={node} view={view} schema={schema} label="Settings" onBack={back} />
-    ) : (
-      <FilterFrame
-        key={view.id}
-        locations={node.sets ?? []}
-        view={view}
-        schema={schema}
-        tree={tree}
-        label="Settings"
-        onBack={back}
-        onCommit={(next) => void saveViewIn(scope, node, { ...view, ...next })}
-      />
-    )
+  const detailFor = (id: FrameId): React.JSX.Element => {
+    switch (id) {
+      case 'configuration':
+        return configurationLeaf
+      case 'properties':
+        return (
+          <PropertyFrame
+            collectionPath={schemaCollection.path}
+            schema={schema}
+            onBack={back}
+            source={node}
+          />
+        )
+      case 'visibility':
+        return (
+          <VisibilityList
+            source={node}
+            schema={schema}
+            view={view}
+            onBack={back}
+            current="Visibility"
+          />
+        )
+      case 'layout':
+        return (
+          <LayoutFrame
+            source={node}
+            view={view}
+            schema={schema}
+            door="flat"
+            onBack={back}
+            onClose={back}
+          />
+        )
+      default:
+        return (
+          <ViewLeaf
+            id={id}
+            source={node}
+            view={view}
+            schema={schema}
+            label="Settings"
+            onBack={back}
+          />
+        )
+    }
+  }
 
   return (
     <>
       <FrameSlide
-        open={pane !== 'root' && !frozen(pane)}
+        open={detailPane !== null}
         root={scopedRoot || plainRoot}
-        detail={detail}
+        detail={detailPane && detailFor(detailPane)}
         minWidth={PANE_MIN_W}
         minHeight={PANE_MIN_H}
       />

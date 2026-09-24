@@ -45,7 +45,8 @@ import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { StatusEditor } from './StatusEditor'
 import { URLEditor } from './URLEditor'
-import { FrameSlide, PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
 import { frameSlot, nexusReorderIndex, type PaneDrop } from '../paneDrop'
@@ -65,8 +66,7 @@ import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 
-type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
-type SubView = { kind: 'list' } | DetailView
+type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
 type WriteResult = Result<null>
 
 /** Lives outside PropertyFrame so rows never remount on its re-renders. */
@@ -204,17 +204,11 @@ export function PropertyFrame({
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [allOpen, setAllOpen] = useState(false)
-  const lastDetail = useRef<DetailView>({ kind: 'type' })
 
   const props = schema.filter((d) => !isReservedPropertyId(d.id))
   const assignedIds = new Set(schema.map((d) => d.id))
   const unassigned = registry.filter((d) => !assignedIds.has(d.id) && !isReservedPropertyId(d.id))
   const backToList = (): void => setView({ kind: 'list' })
-  const openDetail = (v: DetailView): void => {
-    lastDetail.current = v
-    setView(v)
-  }
-  const detailView = view.kind === 'list' ? lastDetail.current : view
 
   const backHeader = (label: string, onClick: () => void): React.JSX.Element => (
     <MenuTopRow label={label} onBack={onClick} />
@@ -249,7 +243,7 @@ export function PropertyFrame({
       name: `New ${propertyTypeLabel(type)}`,
       type,
     })
-    if (reportRefusal(res)) openDetail({ kind: 'edit', id: res.value.id })
+    if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
   }
   const rename = async (id: string, name: string): Promise<void> => {
     const before = registry.find((d) => d.id === id)?.name
@@ -522,7 +516,7 @@ export function PropertyFrame({
               box={20}
               create
               ariaLabel="New Property"
-              onClick={() => openDetail({ kind: 'type' })}
+              onClick={() => setView({ kind: 'type' })}
             />
           }
         />
@@ -542,7 +536,7 @@ export function PropertyFrame({
             renamingProperty?.collectionPath === collectionPath ? renamingProperty.propertyId : null
           }
           onToggleAll={() => setAllOpen((o) => !o)}
-          onOpenEditor={(id) => openDetail({ kind: 'edit', id })}
+          onOpenEditor={(id) => setView({ kind: 'edit', id })}
           onAssign={(id) => void assign(id)}
           onRowMenu={(d, group) => void rowMenu(d, group)}
           onRenameCommit={(next) => void submitPropertyRename(next)}
@@ -552,7 +546,7 @@ export function PropertyFrame({
     </MenuScrollFrame>
   )
 
-  const editingId = detailView.kind === 'edit' ? detailView.id : undefined
+  const editingId = view.kind === 'edit' ? view.id : undefined
   const editingIcon = editingId ? registry.find((d) => d.id === editingId)?.icon : undefined
 
   return (
@@ -560,7 +554,7 @@ export function PropertyFrame({
       <FrameSlide
         open={view.kind !== 'list'}
         root={list}
-        detail={detailView.kind === 'type' ? typePicker : editor(detailView.id)}
+        detail={view.kind === 'list' ? null : view.kind === 'type' ? typePicker : editor(view.id)}
         minWidth={PANE_MIN_W}
         minHeight={PANE_MIN_H}
       />

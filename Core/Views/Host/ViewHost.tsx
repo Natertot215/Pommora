@@ -13,9 +13,10 @@ import { usePublishCount } from '../../Interface/Subfield/publish'
 const identity = (v: SavedView): SavedView => v
 const NO_SCHEMA: PropertyDefinition[] = []
 
-export const VIEW_RENDERERS: Partial<
-  Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>
-> = { table: TableView, cards: CardsView }
+const VIEW_RENDERERS: Partial<Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>> = {
+  table: TableView,
+  cards: CardsView,
+}
 
 export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   // Only the type and scale are needed to seat a renderer, and a minted default is a table whatever the schema — so the seat skips the schema walk the host performs.

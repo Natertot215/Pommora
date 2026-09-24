@@ -4,6 +4,7 @@ import { field as fieldBase, borderedField } from '@pommora/uix/Fields/fields.cs
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 import { rowBox, side } from '@pommora/uix/Menus/menu-base.css'
+import { PANE_MIN_H } from '@pommora/uix/Menus/frame-slide.css'
 
 const c = colorVars.color
 
@@ -16,15 +17,12 @@ const LEAD_GAP = '6px'
 /** KNOB — the trailing chevron's distance from its label. Tighter than the lead on purpose: the Operator cell is the row's compactness priority. */
 const TRAILING_GAP = '2px'
 
-/** KNOB — the frame's height floor (matches the hosts' leaf slider floor). */
-const FILTER_MIN_HEIGHT = '245px'
-
 /** KNOB — the clear-×'s breathing room off the row's trailing edge. */
 const REMOVE_INSET = '2px'
 
 export const frame = style({
   ...growToContent(FILTER_MAX_WIDTH),
-  minHeight: FILTER_MIN_HEIGHT,
+  minHeight: `${PANE_MIN_H}px`,
 })
 
 export const ruleList = style({

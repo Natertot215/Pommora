@@ -12,7 +12,6 @@ import { heading, headingCaps } from './menu-base.css'
 
 export type Trailing =
   | { kind: 'chevron' }
-  | { kind: 'value'; value: ReactNode; onToggle?: () => void }
   | { kind: 'switch'; checked: boolean; onChange: (next: boolean) => void; ariaLabel: string }
   | { kind: 'button'; icon: IconName; onClick: () => void; ariaLabel: string; disabled?: boolean }
   | ({ kind: 'slider' } & ComponentProps<typeof Slider>)
@@ -92,8 +91,6 @@ function trailingNode(t: Trailing): ReactNode {
   switch (t.kind) {
     case 'chevron':
       return <Icon name="chevron-right" />
-    case 'value':
-      return <Icon name="chevrons-up-down" size="control" />
     case 'switch':
       return <DualSwitch checked={t.checked} onChange={t.onChange} ariaLabel={t.ariaLabel} />
     case 'button':
@@ -147,12 +144,11 @@ function rowNode(row: MenuRow): React.JSX.Element {
           className={row.className}
           leading={row.icon}
           subLabel={row.caption}
-          value={t?.kind === 'value' ? t.value : undefined}
           trailing={t && trailingNode(t)}
           selected={row.selected}
           disabled={row.disabled}
           inert={row.inert}
-          onClick={(t?.kind === 'value' && t.onToggle) || row.onSelect}
+          onClick={row.onSelect}
         >
           {row.label}
         </MenuItem>

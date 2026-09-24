@@ -10,7 +10,7 @@ import {
   VIEW_TYPES,
   type ViewType,
 } from '@pommora/core/Views/views'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
+import { Icon } from '@pommora/uix/Symbols'
 import {
   MenuIndex,
   MenuSeparator,
@@ -20,41 +20,55 @@ import {
   pickerRow,
 } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { GroupFrame } from './GroupFrame'
-import { SortFrame } from './SortFrame'
-import { FilterFrame } from './FilterFrame'
+import { VIEW_ROWS, ViewLeaf, type ViewRowId } from './ViewLeaf'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { iconForTypeSwitch } from '../viewIcon'
-import { VIEW_RENDERERS } from '../Host/ViewHost'
 import { ViewItemMenu } from './ViewItemMenu'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
 
-const TABLE_SWITCHES: SwitchEntry[] = [
-  {
-    icon: 'columns-3-cog',
-    label: 'Column Icons',
-    key: 'hide_column_icons',
-    invert: true,
-    defaultOn: true,
-  },
-  { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
-  { icon: 'file-text', label: 'Page Icons', key: 'hide_page_icons', invert: true },
-]
+interface LayoutOptions {
+  switches: SwitchEntry[]
+  cardRows: boolean
+  leaf: 'visibility' | 'switches'
+}
 
-const CARD_SWITCHES: SwitchEntry[] = [
-  { icon: 'map', label: 'Hide Location', key: 'hide_location' },
-  { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
-  { icon: 'eye-off', label: 'Hide Icons', key: 'hide_page_icons' },
-  { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards', defaultOn: true },
-]
+const TABLE_LAYOUT: LayoutOptions = {
+  switches: [
+    {
+      icon: 'columns-3-cog',
+      label: 'Column Icons',
+      key: 'hide_column_icons',
+      invert: true,
+      defaultOn: true,
+    },
+    { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
+    { icon: 'file-text', label: 'Page Icons', key: 'hide_page_icons', invert: true },
+  ],
+  cardRows: false,
+  leaf: 'visibility',
+}
+
+const LAYOUT_OPTIONS: Partial<Record<ViewType, LayoutOptions>> = {
+  table: TABLE_LAYOUT,
+  cards: {
+    switches: [
+      { icon: 'map', label: 'Hide Location', key: 'hide_location' },
+      { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
+      { icon: 'eye-off', label: 'Hide Icons', key: 'hide_page_icons' },
+      { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards', defaultOn: true },
+    ],
+    cardRows: true,
+    leaf: 'switches',
+  },
+}
 
 function ViewSwitches({
   source,
@@ -95,21 +109,6 @@ const CARD_SCALE_MAX = CARD_SCALE_STEPS[CARD_SCALE_STEPS.length - 1]
 
 // KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
-const LEAF_MIN_WIDTH = 225
-const LEAF_MIN_HEIGHT = 245
-
-type Frame = 'layout' | 'group' | 'filter' | 'sort'
-const FRAME_ROWS: { id: Frame; label: string; icon: IconName }[] = [
-  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
-  { id: 'group', label: 'Group', icon: 'layers' },
-  { id: 'filter', label: 'Filter', icon: 'list-filter' },
-  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
-]
-const LEAF_CURRENT: Record<Exclude<Frame, 'layout'>, string> = {
-  group: 'Grouping',
-  filter: 'Filtering',
-  sort: 'Sorting',
-}
 
 export function LayoutFrame({
   source,
@@ -126,22 +125,20 @@ export function LayoutFrame({
   onBack: () => void
   onClose: () => void
 }): React.JSX.Element {
-  const tree = useSession((s) => s.tree)
-  const [frame, setFrame] = useState<Frame | null>(null)
+  const [frame, setFrame] = useState<ViewRowId | null>(null)
   const saveView = useSaveView(source)
   const write = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const rename = (name: string): void => {
     if (name && name !== view.name) write({ name })
   }
-  const cards = view.type === 'cards'
-  const switches = cards ? CARD_SWITCHES : TABLE_SWITCHES
+  const options = LAYOUT_OPTIONS[view.type] ?? TABLE_LAYOUT
   const setType = (type: ViewType): void => {
     if (type === view.type) return
     const icon = iconForTypeSwitch(view, type)
     write(icon ? { type, icon } : { type })
   }
 
-  const cardsRows = cards ? (
+  const cardsRows = options.cardRows ? (
     <>
       <MenuSeparator flush />
       <MenuIndex
@@ -182,57 +179,41 @@ export function LayoutFrame({
     </>
   ) : null
 
-  const leafPane =
-    frame === 'layout' ? (
-      cards ? (
-        <MenuScrollFrame
-          header={<MenuTopRow label="Views" current="Layout" onBack={() => setFrame(null)} />}
-          maxHeight={VIEWSETTINGS_MAX_HEIGHT}
-        >
-          <ViewSwitches source={source} view={view} switches={switches} />
-        </MenuScrollFrame>
-      ) : (
-        <VisibilityList
+  const closeLeaf = (): void => setFrame(null)
+  const leafFor = (id: ViewRowId): React.JSX.Element => {
+    if (id !== 'layout')
+      return (
+        <ViewLeaf
+          id={id}
           source={source}
-          schema={schema}
           view={view}
+          schema={schema}
           label="Views"
-          current="Layout"
-          maxHeight={VIEWSETTINGS_MAX_HEIGHT}
-          onBack={() => setFrame(null)}
-          footer={<ViewSwitches source={source} view={view} switches={switches} separated />}
+          onBack={closeLeaf}
         />
       )
-    ) : frame === 'group' ? (
-      <GroupFrame
+    if (options.leaf === 'switches')
+      return (
+        <MenuScrollFrame
+          header={<MenuTopRow label="Views" current="Layout" onBack={closeLeaf} />}
+          maxHeight={VIEWSETTINGS_MAX_HEIGHT}
+        >
+          <ViewSwitches source={source} view={view} switches={options.switches} />
+        </MenuScrollFrame>
+      )
+    return (
+      <VisibilityList
         source={source}
-        view={view}
         schema={schema}
-        label="Views"
-        onBack={() => setFrame(null)}
-      />
-    ) : frame === 'sort' ? (
-      <SortFrame
-        source={source}
         view={view}
-        schema={schema}
         label="Views"
-        onBack={() => setFrame(null)}
+        current="Layout"
+        maxHeight={VIEWSETTINGS_MAX_HEIGHT}
+        onBack={closeLeaf}
+        footer={<ViewSwitches source={source} view={view} switches={options.switches} separated />}
       />
-    ) : frame === 'filter' ? (
-      <FilterFrame
-        key={view.id}
-        locations={source.sets ?? []}
-        view={view}
-        schema={schema}
-        tree={tree}
-        label="Views"
-        onBack={() => setFrame(null)}
-        onCommit={(next) => void saveView({ ...view, ...next })}
-      />
-    ) : frame ? (
-      <MenuTopRow label="Views" current={LEAF_CURRENT[frame]} onBack={() => setFrame(null)} />
-    ) : null
+    )
+  }
 
   const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const grid = (
@@ -243,7 +224,7 @@ export function LayoutFrame({
           type="button"
           className={cx(vs.tile, t === view.type && vs.tileSelected)}
           aria-label={VIEW_KINDS[t].label}
-          onClick={() => t in VIEW_RENDERERS && setType(t)}
+          onClick={() => t in LAYOUT_OPTIONS && setType(t)}
         >
           <Icon name={VIEW_KINDS[t].icon} size="titleMedium" />
         </button>
@@ -275,9 +256,9 @@ export function LayoutFrame({
         <MenuIndex
           sections={[
             {
-              rows: FRAME_ROWS.map((r) => ({
+              rows: VIEW_ROWS.map((r) => ({
                 kind: 'item',
-                icon: <Icon name={r.icon} size="headline" />,
+                icon: <Icon name={r.icon} size={ICON.rootEntry} />,
                 label: r.label,
                 trailing: { kind: 'chevron' },
                 onSelect: () => setFrame(r.id),
@@ -286,7 +267,7 @@ export function LayoutFrame({
           ]}
         />
       ) : (
-        <ViewSwitches source={source} view={view} switches={switches} separated />
+        <ViewSwitches source={source} view={view} switches={options.switches} separated />
       )}
     </MenuScrollFrame>
   )
@@ -295,9 +276,9 @@ export function LayoutFrame({
     <FrameSlide
       open={frame !== null}
       root={mainFrame}
-      detail={leafPane}
-      minWidth={LEAF_MIN_WIDTH}
-      minHeight={LEAF_MIN_HEIGHT}
+      detail={frame && leafFor(frame)}
+      minWidth={PANE_MIN_W}
+      minHeight={PANE_MIN_H}
     />
   )
 }
