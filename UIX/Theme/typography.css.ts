@@ -28,9 +28,8 @@ export const font = createGlobalTheme(':root', {
 })
 
 type ScaleKey = keyof typeof font.scale
-type WeightKey = keyof typeof font.weight
 
-const ramp = (key: ScaleKey): Record<WeightKey, string> => {
+const ramp = (key: ScaleKey) => {
   const base = {
     fontFamily: font.family,
     fontSize: font.scale[key].size,
@@ -41,7 +40,6 @@ const ramp = (key: ScaleKey): Record<WeightKey, string> => {
     standard: style({ ...base, fontWeight: font.weight.standard }),
     emphasized: style({ ...base, fontWeight: font.weight.emphasized }),
     semibold: style({ ...base, fontWeight: font.weight.semibold }),
-    bold: style({ ...base, fontWeight: font.weight.bold }),
   }
 }
 

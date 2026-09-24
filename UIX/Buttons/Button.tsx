@@ -21,7 +21,6 @@ type ButtonProps = Look & {
   label?: ReactNode
   labelCollapsed?: boolean
   revealOnHover?: boolean
-  ghostRest?: boolean
   inRun?: boolean
   pressed?: boolean
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'>
@@ -37,7 +36,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     label,
     labelCollapsed,
     revealOnHover,
-    ghostRest,
     inRun,
     pressed,
     className,
@@ -60,7 +58,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         labeled && s.labeled,
         outline && s.outlined,
         revealOnHover && s.revealOnHover,
-        ghostRest && s.ghostRest,
         labeled && !icon && s.labelOnly,
         pressed && s.pressed,
         className,

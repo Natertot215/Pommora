@@ -101,9 +101,6 @@ export function pushDismissal(entry: DismissalEntry): DismissalHandle {
   }
 }
 
-export const pushEscape = (dismiss: () => void): DismissalHandle =>
-  pushDismissal({ layer: () => null, dismiss, outsidePress: false })
-
 const subscribe = (fn: () => void): (() => void) => {
   subscribers.add(fn)
   return () => subscribers.delete(fn)

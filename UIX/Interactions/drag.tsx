@@ -8,10 +8,7 @@ export {
   SortableZone,
   useDragFamily,
   useDragItem,
-  useDropSlot,
   useEscort,
-  type Escort,
-  type EscortSpec,
 } from './engine'
 
 export function reorder<T extends { id: string }>(

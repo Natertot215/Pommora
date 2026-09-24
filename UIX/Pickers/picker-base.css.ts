@@ -1,8 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
 import { stack } from '../Theme/stack'
-import { menuAnchor } from '../Menus/menuAnchor'
-import { FIELD_RING_VAR, fieldRing, ROW_RING } from '../Fields/fieldRing'
+import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { item, menuCompact } from '../Menus/menu-base.css'
 
 const c = colorVars.color
@@ -15,41 +14,10 @@ export const treePane = style({
   maxWidth: 260, // KNOB
 })
 
-const OPTION_RING = `${ROW_RING}px`
-
 export const optionRing = style({
   vars: { '--field-ring': 'var(--accent-stroke-hot)' },
   boxShadow: fieldRing(ROW_RING),
 })
-
-const SIDES = {
-  left: `inset ${OPTION_RING} 0 0 0 ${FIELD_RING_VAR}`,
-  right: `inset -${OPTION_RING} 0 0 0 ${FIELD_RING_VAR}`,
-  top: `inset 0 ${OPTION_RING} 0 0 ${FIELD_RING_VAR}`,
-  bottom: `inset 0 -${OPTION_RING} 0 0 ${FIELD_RING_VAR}`,
-}
-const COLLAPSED = '[data-reveal]:not([data-open])'
-const ABOVE = [`+ ${optionRing}`, `+ ${COLLAPSED} + ${optionRing}`]
-const BELOW = [`${optionRing} +`, `${optionRing} + ${COLLAPSED} +`]
-const SQUARE_TOP = { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
-const SQUARE_BOTTOM = { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
-
-globalStyle(ABOVE.map((a) => `${optionRing}:has(${a})`).join(', '), {
-  boxShadow: [SIDES.left, SIDES.right, SIDES.top].join(', '),
-  ...SQUARE_BOTTOM,
-})
-globalStyle(BELOW.map((b) => `${b} ${optionRing}`).join(', '), {
-  boxShadow: [SIDES.left, SIDES.right, SIDES.bottom].join(', '),
-  ...SQUARE_TOP,
-})
-globalStyle(BELOW.flatMap((b) => ABOVE.map((a) => `${b} ${optionRing}:has(${a})`)).join(', '), {
-  boxShadow: [SIDES.left, SIDES.right].join(', '),
-  ...SQUARE_TOP,
-  ...SQUARE_BOTTOM,
-})
-
-export const anchor = style(menuAnchor('center', stack.local.overlay))
-export const anchorUp = style(menuAnchor('up', stack.local.overlay))
 
 const CHOSEN_MARK = { color: 'var(--accent)', flex: 'none' } as const
 

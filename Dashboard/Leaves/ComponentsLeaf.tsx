@@ -56,7 +56,7 @@ export function ComponentsLeaf(): React.JSX.Element {
             <CalendarPicker range timeFormat="twelveHour" formatDateValue={showcaseDate} />
           </PopupButton>
           <PopupButton label="PickerMenu">
-            <PickerMenu solid>
+            <PickerMenu solid open>
               {PICKER_LABELS.map((o, i) => (
                 <PickerRow key={o.label} selected={i === 0} onClick={() => {}}>
                   <Label color={o.color} text={o.label} shape="tag" />
@@ -65,7 +65,7 @@ export function ComponentsLeaf(): React.JSX.Element {
             </PickerMenu>
           </PopupButton>
           <PopupButton label="PickerRow">
-            <PickerMenu solid>
+            <PickerMenu solid open>
               {POPOUT_LABELS.map((label, i) => (
                 <PickerRow key={label} selected={i === 0} onClick={() => {}}>
                   {label}

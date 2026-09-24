@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { GHOST_DWELL_MS } from './ghostCreate'
-import { type HoverDwell, useHoverDwell } from './hoverDwell'
+import { useHoverDwell } from './hoverDwell'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const GRACE = 150
 
-let api: HoverDwell
+let api: ReturnType<typeof useHoverDwell>
 let props = { active: true, held: false }
 
 function Probe(p: { active: boolean; held: boolean }): React.JSX.Element {

@@ -39,11 +39,9 @@ describe('MenuRowView', () => {
     expect((host.firstElementChild as HTMLElement).className).not.toContain('headingCaps')
   })
 
-  it('renders a separator and a caption', () => {
+  it('renders a separator', () => {
     row({ kind: 'separator' })
     expect(host.querySelector('[aria-hidden="true"]')).not.toBeNull()
-    row({ kind: 'caption', text: 'Nothing here.' })
-    expect(host.textContent).toBe('Nothing here.')
   })
 
   it('renders an item as a button row that selects', () => {
@@ -54,15 +52,6 @@ describe('MenuRowView', () => {
     expect(el.querySelector('svg')).not.toBeNull()
     el.click()
     expect(onSelect).toHaveBeenCalledOnce()
-  })
-
-  it('renders an action row on the action class', () => {
-    const onClick = vi.fn()
-    row({ kind: 'action', label: 'All Properties', onClick })
-    const el = host.querySelector('button') as HTMLElement
-    expect(el.className).toContain('actionRow')
-    el.click()
-    expect(onClick).toHaveBeenCalledOnce()
   })
 
   it('toggles a value row on the row itself', () => {
@@ -165,10 +154,9 @@ describe('MenuIndex', () => {
   })
 
   it('shows a titled section with no rows as its heading alone', () => {
-    render(<MenuIndex sections={[{ title: 'Files', caps: true, rows: [] }]} />)
+    render(<MenuIndex sections={[{ title: 'Files', rows: [] }]} />)
     expect(host.children.length).toBe(1)
     expect(host.textContent).toBe('Files')
-    expect((host.firstElementChild as HTMLElement).className).toContain('headingCaps')
   })
 
   it('renders each section as its heading then its rows', () => {

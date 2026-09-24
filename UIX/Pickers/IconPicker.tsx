@@ -26,7 +26,6 @@ export interface IconPickerProps {
   triggerRef?: RefObject<Element | null>
   value?: string
   onSelect?: (id: string) => void
-  direction?: 'down' | 'up' | 'left' | 'right'
   favorites: IconFavorites
 }
 
@@ -42,7 +41,6 @@ export function IconPicker({
   triggerRef,
   value,
   onSelect,
-  direction = 'down',
   favorites,
 }: IconPickerProps): React.JSX.Element | null {
   const favs = favorites.ids
@@ -112,7 +110,6 @@ export function IconPicker({
       open={open}
       onDismiss={onClose}
       triggerRef={triggerRef}
-      direction={direction}
       origin="center"
       bareSurface
       contentClassName={s.content}

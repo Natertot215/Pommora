@@ -7,8 +7,8 @@ import { Slider } from '../Controls/Slider'
 import { factorPickerProps, PickerControl, type PickerOption } from '../Pickers/PickerControl'
 import { cx } from '../Utilities/cx'
 import { Reveal } from '../Animations/Reveal'
-import { AccessoryButton, MenuCaption, MenuItem, MenuSeparator } from './menu-row'
-import { actionRow, heading, headingCaps, side, titleWrap } from './menu-base.css'
+import { AccessoryButton, MenuItem, MenuSeparator } from './menu-row'
+import { heading, headingCaps } from './menu-base.css'
 
 export type Trailing =
   | { kind: 'chevron' }
@@ -26,8 +26,6 @@ export type Trailing =
 export type MenuRow = (
   | { kind: 'heading'; label: string; caps?: boolean }
   | { kind: 'separator' }
-  | { kind: 'caption'; text: ReactNode }
-  | { kind: 'action'; label: string; trailing?: Trailing; onClick: () => void }
   | {
       kind: 'item'
       icon?: ReactNode
@@ -42,7 +40,7 @@ export type MenuRow = (
     }
 ) & { reveal?: boolean }
 
-export type MenuSection = { title?: string; caps?: boolean; rows: MenuRow[] }
+export type MenuSection = { title?: string; rows: MenuRow[] }
 
 export interface PickerRowLook {
   ariaLabel?: string
@@ -142,15 +140,6 @@ function rowNode(row: MenuRow): React.JSX.Element {
       return <div className={cx(heading, row.caps && headingCaps)}>{row.label}</div>
     case 'separator':
       return <MenuSeparator />
-    case 'caption':
-      return <MenuCaption>{row.text}</MenuCaption>
-    case 'action':
-      return (
-        <button type="button" className={actionRow} onClick={row.onClick}>
-          <span className={titleWrap}>{row.label}</span>
-          {row.trailing && <span className={side}>{trailingNode(row.trailing)}</span>}
-        </button>
-      )
     case 'item': {
       const t = row.trailing
       return (
@@ -182,9 +171,7 @@ export function MenuIndex({ sections }: { sections: MenuSection[] }): React.JSX.
       {sections.map((section) =>
         section.title || section.rows.length ? (
           <Fragment key={section.title ?? `section:${ordinal++}`}>
-            {section.title && (
-              <MenuRowView row={{ kind: 'heading', label: section.title, caps: section.caps }} />
-            )}
+            {section.title && <MenuRowView row={{ kind: 'heading', label: section.title }} />}
             {section.rows.map((row) => (
               <MenuRowView key={rowKey(row, ordinal++)} row={row} />
             ))}

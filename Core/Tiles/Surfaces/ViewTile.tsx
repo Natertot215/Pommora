@@ -643,7 +643,7 @@ export function ViewTile({
               {views.map((v, i) => (
                 <PickerRow
                   key={v.id}
-                  align="start"
+                  start
                   selected={i === index}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
                   onClick={renaming === i ? undefined : () => patchEntry({ active: i })}

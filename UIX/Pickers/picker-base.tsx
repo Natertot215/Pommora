@@ -11,11 +11,9 @@ import { createPortal } from 'react-dom'
 import { pickerBloom } from '../Animations/animations.css'
 import { useExitPresence } from '../Animations/useExitPresence'
 import { useHeld } from '../Animations/useExitPresence'
-import { GlassPane } from '../Glass/glass-pane'
 import { GlassSurface } from '../Glass/glass-surface'
 import { GlassWindow } from '../Glass/glass-window'
 import { rowDisabled } from '../Menus/menu-base.css'
-import { MenuScrollFrame } from '../Menus/menu-row'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
@@ -42,7 +40,7 @@ const FOCUSABLE =
 const tabStops = (root: HTMLElement): HTMLElement[] =>
   Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
 
-export type PickerDirection = 'down' | 'up' | 'left' | 'right'
+export type PickerDirection = 'down' | 'up'
 
 /** KNOB — how far past the trigger's center the near edge and the Bloom's origin sit. */
 const ANCHOR_RESERVE = 30
@@ -83,9 +81,6 @@ export function PickerMenu({
   anchorY,
   anchorHeight = 0,
   bounds,
-  header,
-  footer,
-  maxHeight,
   bareSurface = false,
   manageFocus = true,
   modal = true,
@@ -94,12 +89,12 @@ export function PickerMenu({
   onDirection,
 }: {
   children: ReactNode
-  open?: boolean
+  open: boolean
   onDismiss?: () => void
   triggerRef?: RefObject<Element | null>
   /** The Solid variation is a deliberate stacked-picker opt-in style; it's explicitly not part of the nearly identical GlassWindow. */
   solid?: boolean
-  glass?: 'surface' | 'pane' | 'window'
+  glass?: 'surface' | 'window'
   /** A frozen replica (a pinned glance) passes false so it appears in place rather than blooming in over the pane it replaced; it still blooms out on close. */
   enter?: boolean
   /** Fired once a close has played out and the menu has unmounted itself — the cue to remove the entry that drove `open`. */
@@ -110,9 +105,6 @@ export function PickerMenu({
   anchorY?: number
   anchorHeight?: number
   bounds?: { left: number; right: number }
-  header?: ReactNode
-  footer?: ReactNode
-  maxHeight?: number
   bareSurface?: boolean
   manageFocus?: boolean
   /** A glance surface passes false and lets the app's own dismissals through. */
@@ -121,19 +113,17 @@ export function PickerMenu({
   style?: CSSProperties
   onDirection?: (dir: PickerDirection) => void
 }): React.JSX.Element | null {
-  const selfManaged = open !== undefined
-  const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
-  const closing = selfManaged && exitClosing
+  const { mounted, closing } = useExitPresence(open)
   const paneRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<HTMLSpanElement>(null)
-  const drawsShield = useDismissal(selfManaged && mounted && modal, closing, {
+  const drawsShield = useDismissal(mounted && modal, closing, {
     layer: () => paneRef.current,
     trigger: () => triggerRef?.current ?? markerRef.current?.parentElement ?? null,
     dismiss: onDismiss,
     shield: onDismiss !== undefined,
   })
   const liveRef = useRef(false)
-  liveRef.current = open === true || closing
+  liveRef.current = open || closing
   useEffect(
     () => () => {
       // Point-anchored menus (a pinned glance) close by design through an instant unmount — no Bloom-out to skip, so the guard would be a false positive.
@@ -154,7 +144,7 @@ export function PickerMenu({
     }
   }, [mounted, closing, onExited])
 
-  const body = useHeld(children, open !== false)
+  const body = useHeld(children, open)
 
   const glassRef = useRef<HTMLDivElement>(null)
   const [pos, setPosState] = useState<Pos | null>(null)
@@ -162,10 +152,9 @@ export function PickerMenu({
     const next = snapped(raw)
     setPosState((prev) => (samePos(prev, next) ? prev : next))
   }
-  const [effDir, setEffDir] = useState<PickerDirection>(direction)
   const decidedDir = useRef<PickerDirection | null>(null)
   const decidedCenter = useRef<boolean | null>(null)
-  if (open === false && decidedDir.current !== null) {
+  if (!open && decidedDir.current !== null) {
     decidedDir.current = null
     decidedCenter.current = null
   }
@@ -190,7 +179,7 @@ export function PickerMenu({
 
   useLayoutEffect(() => {
     // Frozen through the Bloom-out: a detached or moved trigger must not re-measure to zeros and snap the fading pane away.
-    if (!mounted || open !== true) return
+    if (!mounted || !open) return
     const point =
       anchorX !== undefined && anchorY !== undefined
         ? {
@@ -214,25 +203,13 @@ export function PickerMenu({
       let eff = decidedDir.current ?? direction
       if (decidedDir.current === null) {
         if (direction === 'up' && t.top - GAP - ph < VIEWPORT_MARGIN) eff = 'down'
-        else if (direction === 'left' && t.left - GAP - pw < VIEWPORT_MARGIN) eff = 'down'
-        else if (direction === 'right' && t.right + GAP + pw > window.innerWidth - VIEWPORT_MARGIN)
-          eff = 'down'
         else if (direction === 'down' && t.bottom + GAP + ph > window.innerHeight - VIEWPORT_MARGIN)
           eff = 'up'
         decidedDir.current = eff
       }
-      setEffDir(eff)
       onDirection?.(eff)
       const edge = (along: number, at: number): number =>
         Math.min(Math.max(at, CORNER_CLEAR), Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
-      if (eff === 'left' || eff === 'right') {
-        const cy = t.top + t.height / 2
-        const bottom = Math.max(VIEWPORT_MARGIN, window.innerHeight - cy - ANCHOR_RESERVE)
-        const y = edge(ph, ph - ANCHOR_RESERVE)
-        if (eff === 'right') setPos({ left: t.right + GAP, bottom, origin: `0px ${y}px` })
-        else setPos({ right: window.innerWidth - t.left + GAP, bottom, origin: `${pw}px ${y}px` })
-        return
-      }
       const near = (x: number): string => `${edge(pw, x)}px ${eff === 'up' ? ph : 0}px`
       const vertical =
         eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
@@ -291,11 +268,11 @@ export function PickerMenu({
     onDirection,
   ])
 
-  const managed = selfManaged && manageFocus
+  const managed = manageFocus
   const focusReturn = useRef<HTMLElement | null>(null)
   const tookFocus = useRef(false)
   useLayoutEffect(() => {
-    if (!managed || open !== true) return
+    if (!managed || !open) return
     const from = document.activeElement
     focusReturn.current =
       from instanceof HTMLElement && !paneRef.current?.contains(from) ? from : null
@@ -303,7 +280,7 @@ export function PickerMenu({
 
   const placed = pos !== null
   useEffect(() => {
-    if (!managed || open !== true || closing || !placed || tookFocus.current) return
+    if (!managed || !open || closing || !placed || tookFocus.current) return
     tookFocus.current = true
     const pane = paneRef.current
     if (!pane || pane.contains(document.activeElement)) return
@@ -311,7 +288,7 @@ export function PickerMenu({
   }, [managed, open, closing, placed])
 
   useEffect(() => {
-    if (!managed || open !== true) return
+    if (!managed || !open) return
     return () => {
       tookFocus.current = false
       const back = focusReturn.current
@@ -335,8 +312,7 @@ export function PickerMenu({
     ;(e.shiftKey ? stops[stops.length - 1] : stops[0])?.focus()
   }
 
-  const up = effDir === 'up'
-  const Shell = { surface: GlassSurface, pane: GlassPane, window: GlassWindow }[glass]
+  const Shell = { surface: GlassSurface, window: GlassWindow }[glass]
   const pane = (
     <Shell
       ref={glassRef}
@@ -355,23 +331,9 @@ export function PickerMenu({
         } as CSSProperties
       }
     >
-      {maxHeight === undefined && !header && !footer ? (
-        body
-      ) : (
-        <MenuScrollFrame
-          maxHeight={maxHeight ?? s.PICKER_MAX_HEIGHT}
-          header={header}
-          footer={footer}
-        >
-          {body}
-        </MenuScrollFrame>
-      )}
+      {body}
     </Shell>
   )
-
-  if (!selfManaged) {
-    return <div className={up ? s.anchorUp : s.anchor}>{pane}</div>
-  }
 
   if (!mounted) return null
 
@@ -426,7 +388,7 @@ export function PickerRow({
   onContextMenu,
   selected = false,
   leading,
-  align,
+  start = false,
   disabled = false,
 }: {
   children: ReactNode
@@ -434,10 +396,9 @@ export function PickerRow({
   onContextMenu?: (e: React.MouseEvent) => void
   selected?: boolean
   leading?: ReactNode
-  align?: 'start' | 'center'
+  start?: boolean
   disabled?: boolean
 }): React.JSX.Element {
-  const readsLeft = align === 'start' || (align !== 'center' && leading != null)
   return (
     <button
       type="button"
@@ -446,7 +407,7 @@ export function PickerRow({
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      <span className={readsLeft ? s.leadingRow : s.centeredRow}>
+      <span className={start || leading != null ? s.leadingRow : s.centeredRow}>
         {leading != null && <span className={s.optionGlyph}>{leading}</span>}
         {children}
       </span>

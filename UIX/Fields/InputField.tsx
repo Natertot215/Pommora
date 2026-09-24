@@ -20,8 +20,6 @@ export interface FieldEdit {
 export function InputField({
   children,
   className,
-  onClick,
-  outline,
   capped,
   chrome = 'boxed',
   edit,
@@ -31,8 +29,6 @@ export function InputField({
 }: {
   children: ReactNode
   className?: string
-  onClick?: () => void
-  outline?: string
   capped?: boolean
   chrome?: 'boxed' | 'bordered'
   edit?: FieldEdit
@@ -55,7 +51,7 @@ export function InputField({
         restWidth.current = el.offsetWidth
         setEditing(true)
       }
-    : onClick
+    : undefined
   const content = capped ? (
     <span className={cx(s.contentRow, 'over-scroll-x', 'over-scroll-cap')}>{children}</span>
   ) : (
@@ -69,10 +65,7 @@ export function InputField({
         edit && s.editable,
         className,
       )}
-      style={{
-        ...(editing ? { minWidth: restWidth.current } : undefined),
-        ...(outline ? ({ '--field-ring': outline } as React.CSSProperties) : undefined),
-      }}
+      style={editing ? { minWidth: restWidth.current } : undefined}
       {...(activate ? { role: 'button', tabIndex: editing ? -1 : 0, 'aria-label': label } : {})}
       onClick={activate ? (e) => activate(e.currentTarget) : undefined}
       onKeyDown={activate ? (e) => onActivateKey(() => activate(e.currentTarget))(e) : undefined}

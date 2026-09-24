@@ -4,7 +4,6 @@
   --caret-width: 2px;
   --caret-color: var(--label-primary);
   --caret-gap: 1.3s;
-  --caret-dim: 0;
   --caret-cursor:
     url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="24"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5.6V18.4M4.4 4L7 5.6L9.6 4M4.4 20L7 18.4L9.6 20" stroke="%23fff" stroke-width="3"/><path d="M7 5.6V18.4M4.4 4L7 5.6L9.6 4M4.4 20L7 18.4L9.6 20" stroke="%23000" stroke-width="1.4"/></g></svg>')
     7 12,
@@ -31,7 +30,7 @@ textarea,
   }
   50%,
   90% {
-    opacity: var(--caret-dim, 0);
+    opacity: 0;
   }
   100% {
     opacity: 1;
@@ -44,7 +43,7 @@ textarea,
   }
   50%,
   90% {
-    opacity: var(--caret-dim, 0);
+    opacity: 0;
   }
   100% {
     opacity: 1;

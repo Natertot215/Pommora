@@ -10,6 +10,7 @@ import { PickerMenu, PickerRow } from './picker-base'
 import { cx } from '../Utilities/cx'
 import { pad } from '../Utilities/pad'
 import { rowBox } from '../Menus/menu-base.css'
+import { MenuScrollFrame } from '../Menus/menu-row'
 import * as s from './calendar-picker.css'
 import { clamp } from '../Utilities/clamp'
 
@@ -565,11 +566,12 @@ export function CalendarPicker({
         anchorX={menu?.at.x}
         anchorY={menu?.at.y}
         anchorHeight={menu?.at.h}
-        maxHeight={DROPDOWN_MAX_HEIGHT}
       >
-        {menu && (
-          <div className={s.menuList}>{menu.kind === 'month' ? monthRows() : yearRows()}</div>
-        )}
+        <MenuScrollFrame maxHeight={DROPDOWN_MAX_HEIGHT}>
+          {menu && (
+            <div className={s.menuList}>{menu.kind === 'month' ? monthRows() : yearRows()}</div>
+          )}
+        </MenuScrollFrame>
       </PickerMenu>
       <PickerMenu
         solid
@@ -580,9 +582,10 @@ export function CalendarPicker({
         anchorX={timeMenu?.at.x}
         anchorY={timeMenu?.at.y}
         anchorHeight={timeMenu?.at.h}
-        maxHeight={DROPDOWN_MAX_HEIGHT}
       >
-        {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.which, timeMenu.part)}</div>}
+        <MenuScrollFrame maxHeight={DROPDOWN_MAX_HEIGHT}>
+          {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.which, timeMenu.part)}</div>}
+        </MenuScrollFrame>
       </PickerMenu>
     </div>
   )

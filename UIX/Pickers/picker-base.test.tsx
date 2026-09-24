@@ -17,13 +17,11 @@ class ResizeObserverStub {
 function Host({
   open,
   manageFocus,
-  manual,
   bounds,
   origin,
 }: {
   open: boolean
   manageFocus?: boolean
-  manual?: boolean
   bounds?: { left: number; right: number }
   origin?: 'auto' | 'center' | 'left' | 'right'
 }): React.JSX.Element {
@@ -43,20 +41,16 @@ function Host({
       <button ref={ref} type="button" data-id="trigger">
         Trigger
       </button>
-      {manual ? (
-        <PickerMenu>{menu}</PickerMenu>
-      ) : (
-        <PickerMenu
-          open={open}
-          onDismiss={() => {}}
-          triggerRef={ref}
-          {...(bounds ? { bounds } : {})}
-          {...(origin ? { origin } : {})}
-          {...(manageFocus === undefined ? {} : { manageFocus })}
-        >
-          {menu}
-        </PickerMenu>
-      )}
+      <PickerMenu
+        open={open}
+        onDismiss={() => {}}
+        triggerRef={ref}
+        {...(bounds ? { bounds } : {})}
+        {...(origin ? { origin } : {})}
+        {...(manageFocus === undefined ? {} : { manageFocus })}
+      >
+        {menu}
+      </PickerMenu>
     </>
   )
 }
@@ -365,13 +359,6 @@ describe('PickerMenu focus contract', () => {
     await render(<Host open={false} manageFocus={false} />)
     find('trigger').focus()
     await render(<Host open manageFocus={false} />)
-    expect(document.activeElement).toBe(find('trigger'))
-  })
-
-  it('leaves manual mode out of the contract entirely', async () => {
-    await render(<Host open={false} manual />)
-    find('trigger').focus()
-    await render(<Host open manual />)
     expect(document.activeElement).toBe(find('trigger'))
   })
 })
