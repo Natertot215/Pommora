@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import {
-  parseTable,
   serialize,
   splitRow,
   parseDelimiter,
@@ -9,6 +8,7 @@ import {
   cellToSource,
   cellToDisplay,
 } from './codec'
+import { parseTable } from '../../../Testing/markdownEngine'
 
 describe('codec', () => {
   it('splitRow splits on unescaped pipes, keeps \\| in-cell', () => {

@@ -1,14 +1,7 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { perText } from './perText'
 import { parse } from './parser'
-import {
-  codeMask,
-  fenceLang,
-  fenceSpans,
-  lineEndOf,
-  lineOffsetsOf,
-  type CodeMask,
-} from './markdownCode'
+import { fenceLang, fenceSpans, lineEndOf, lineOffsetsOf, type CodeMask } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
@@ -198,15 +191,6 @@ export function lineRefs(line: string, lineStart: number, inCode: CodeMask): Lin
     out.push({ col: m.index, end, label: m[1] })
   }
   return out
-}
-
-export function citationScan(d: DocLines, excluded: [number, number][]): CitationScan {
-  const inCode = codeMask(d.text)
-  return assembleCitations(
-    d,
-    (k) => inExcluded(d.lineStarts[k], excluded),
-    d.lines.map((line, i) => lineRefs(line, d.lineStarts[i], inCode)),
-  )
 }
 
 const CONTINUATION_INDENT = /^(?: {4}|\t)/
@@ -433,7 +417,7 @@ export interface ListMarker {
 const LIST_MARKER_RE = /^([ \t]*)(?:(\d+|[A-Z])\.|([-+]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
 const ARROW_MARKER_RE = /^([ \t]*)→([ \t]+)/
 
-export type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
+type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
 
 export const isSequenced = (kind: ListKind): kind is SequencedKind =>
   kind === 'ordered' || kind === 'alphabetical'

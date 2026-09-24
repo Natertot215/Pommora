@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { WEB_RETAINED_MAX, webGuestRetention as r } from './webRetention'
+import { webGuestRetention as r } from './webRetention'
+
+const CAP = 5
 
 const id = (): symbol => Symbol()
 const held: symbol[] = []
@@ -9,11 +11,11 @@ const hide = (evicted: string[], name: string, sym = id()): symbol => {
   return sym
 }
 const fill = (evicted: string[]): void => {
-  for (let i = 0; i < WEB_RETAINED_MAX; i++) hide(evicted, `f${i}`)
+  for (let i = 0; i < CAP; i++) hide(evicted, `f${i}`)
 }
 
 afterEach(() => {
-  for (const sym of held.splice(0)) r.drop(sym)
+  for (const sym of held.splice(0)) r.show(sym)
 })
 
 describe('webGuestRetention', () => {
@@ -21,7 +23,6 @@ describe('webGuestRetention', () => {
     const evicted: string[] = []
     fill(evicted)
     expect(evicted).toEqual([])
-    expect(r.hiddenCount).toBe(WEB_RETAINED_MAX)
   })
 
   it('evicts the least-recently-hidden guest over the cap', () => {
@@ -29,13 +30,12 @@ describe('webGuestRetention', () => {
     fill(evicted)
     hide(evicted, 'late')
     expect(evicted).toEqual(['f0'])
-    expect(r.hiddenCount).toBe(WEB_RETAINED_MAX)
   })
 
   it('re-hiding refreshes recency instead of double-counting', () => {
     const evicted: string[] = []
     const a = hide(evicted, 'a')
-    for (let i = 0; i < WEB_RETAINED_MAX - 1; i++) hide(evicted, `f${i}`)
+    for (let i = 0; i < CAP - 1; i++) hide(evicted, `f${i}`)
     hide(evicted, 'a', a)
     hide(evicted, 'late')
     expect(evicted).toEqual(['f0'])
@@ -45,15 +45,6 @@ describe('webGuestRetention', () => {
     const evicted: string[] = []
     const a = hide(evicted, 'a')
     r.show(a)
-    fill(evicted)
-    expect(evicted).toEqual([])
-    expect(r.hiddenCount).toBe(WEB_RETAINED_MAX)
-  })
-
-  it('a dropped tile frees its slot', () => {
-    const evicted: string[] = []
-    const a = hide(evicted, 'a')
-    r.drop(a)
     fill(evicted)
     expect(evicted).toEqual([])
   })

@@ -35,7 +35,7 @@ interface TileSurface<E extends TileEntry = TileEntry> {
 
 export const inertTile = (): React.JSX.Element => <div className="tile-inert" />
 
-export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T }>> } = {
+const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T }>> } = {
   markdown: {
     render: ({ entry, id, host, editing, beginEdit, connections, suppressFlush }) => (
       <MarkdownTile

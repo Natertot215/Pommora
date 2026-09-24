@@ -4,8 +4,8 @@ import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
-import { decorationsFor } from '../Engine/intents'
 import { linkTokenAt, tokenize } from '../Engine/tokens'
+import { decorationsFor } from '../../Testing/markdownEngine'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {

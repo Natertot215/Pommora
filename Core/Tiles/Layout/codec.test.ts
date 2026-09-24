@@ -1,10 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { validateLayout } from './model'
-import { insertBand, splitAtTile, removeLeaf } from './ops'
+import type { TileLayout } from './model'
+import { removeLeaf } from './ops'
+import { validateLayout } from '../../Testing/tileLayouts'
 import { decodeLayout, encodeLayout } from './codec'
 
-const real = (): ReturnType<typeof splitAtTile> =>
-  splitAtTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'b', 0.3)
+const real = (): TileLayout => ({
+  bands: [
+    {
+      node: {
+        kind: 'row',
+        ratios: [1 - 0.3, 0.3],
+        children: [
+          { kind: 'tile', id: 'a', h: 200 },
+          { kind: 'tile', id: 'b', h: 200 },
+        ],
+      },
+    },
+  ],
+})
 
 describe('codec', () => {
   it('round-trips a real layout', () => {

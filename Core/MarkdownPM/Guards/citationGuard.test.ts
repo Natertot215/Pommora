@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState, type Extension } from '@codemirror/state'
 import { citationGuard, citationTailVerdict } from './citationGuard'
-import { citationScan, splitWithOffsets } from '../Engine/detect'
+import { splitWithOffsets } from '../Engine/detect'
 import { citationGesture, deleteMarkerChanges } from '../Citations/citationEdits'
 import { docScan } from '../docCache'
+import { citationScan } from '../../Testing/markdownEngine'
 
 const DOC = '# Notes\nbody[^a] here\n\n[^a]: the citation\n[^b]: another'
 

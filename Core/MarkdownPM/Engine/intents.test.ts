@@ -3,13 +3,13 @@ import { tokenize, activeTokenIndices } from './tokens'
 import { computeStats } from './subfieldStats'
 import {
   assembleLineIntents,
-  decorationsFor,
   docLineIntents,
   NO_CARET,
   tokenIntents,
   type DecoIntent,
 } from './intents'
 import { codeBlockTextAt, scanDoc } from './docScan'
+import { decorationsFor } from '../../Testing/markdownEngine'
 
 // The live build assembles line intents from the per-version cache, re-deriving only the caret-affected lines; this holds it byte-equivalent to the pure whole-doc reference at EVERY caret position, so a construct that gains a caret dependency without joining caretAffectedLines goes red here.
 describe('cached assembly ≡ pure derivation', () => {

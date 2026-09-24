@@ -4,8 +4,9 @@ import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { undo } from '@codemirror/commands'
 import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../editorHarness'
-import { citationScan, splitWithOffsets } from '../Engine/detect'
+import { splitWithOffsets } from '../Engine/detect'
 import { citationSeatAt } from './citationActions'
+import { citationScan } from '../../Testing/markdownEngine'
 
 class ResizeObserverStub {
   observe(): void {}

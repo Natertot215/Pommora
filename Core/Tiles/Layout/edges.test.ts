@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { insertBand, splitAtTile } from './ops'
+import { insertBand } from './ops'
+import { splitTile } from '../../Testing/tileLayouts'
 import { resolveEdge } from './edges'
 
 const build = () => {
   let l = insertBand({ bands: [] }, 0, 'a', 300)
-  l = splitAtTile(l, 'a', 'e', 'b')
-  l = splitAtTile(l, 'b', 's', 'c')
-  l = splitAtTile(l, 'c', 'e', 'd')
+  l = splitTile(l, 'a', 'e', 'b')
+  l = splitTile(l, 'b', 's', 'c')
+  l = splitTile(l, 'c', 'e', 'd')
   return l
 }
 
@@ -59,7 +60,7 @@ describe('resolveEdge', () => {
     expect(resolveEdge(bands, 'top', 'n')).toBeNull()
 
     const splitAbove = insertBand(
-      splitAtTile(insertBand({ bands: [] }, 0, 'x', 200), 'x', 'e', 'y'),
+      splitTile(insertBand({ bands: [] }, 0, 'x', 200), 'x', 'e', 'y'),
       1,
       'z',
       160,

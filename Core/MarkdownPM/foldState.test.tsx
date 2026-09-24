@@ -22,7 +22,8 @@ import type { ChangeSet } from '@codemirror/state'
 import { citationGesture, deleteMarkerChanges } from './Citations/citationEdits'
 import { docScan } from './docCache'
 import { headingSections, headingSrc } from './Engine/headingScan'
-import { citationScan, splitWithOffsets } from './Engine/detect'
+import { splitWithOffsets } from './Engine/detect'
+import { citationScan } from '../Testing/markdownEngine'
 
 class ResizeObserverStub {
   observe(): void {}

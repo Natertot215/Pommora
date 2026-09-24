@@ -5,13 +5,11 @@ export const DEFAULT_ZOOM = 1
 
 interface ZoomStep {
   factor: number
-  inline: string
   label: string
 }
 
 export const ZOOM_STEPS: ZoomStep[] = [...SCALE_STEPS].reverse().map((factor) => ({
   factor,
-  inline: `${factor}x`,
   label: `${factor.toFixed(2)}x`,
 }))
 

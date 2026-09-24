@@ -3,16 +3,12 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { CODE_LANGS, codeLanguageName } from './codeLangs'
-import { CODE_LOADER_NAMES, codeHighlight, codeLanguages } from '../codeHighlight'
+import { codeHighlight, codeLanguages } from '../codeHighlight'
 import { CODE_TAGS } from '../codeGlyphs'
 
 describe('the code-language roster', () => {
-  it('pairs every language with a loader', () => {
-    const missing = CODE_LANGS.map((l) => l.name).filter((n) => !CODE_LOADER_NAMES.includes(n))
-    expect(missing).toEqual([])
-  })
   it('keys every tag to a language that exists', () => {
-    const names = CODE_LANGS.map((l) => l.name)
+    const names: string[] = CODE_LANGS.map((l) => l.name)
     expect(Object.keys(CODE_TAGS).filter((n) => !names.includes(n))).toEqual([])
   })
   it('labels the tags that override their name', () => {

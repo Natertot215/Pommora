@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { insertBand, splitAtTile } from './ops'
+import type { TileLayout } from './model'
+import { insertBand } from './ops'
+import { splitTile } from '../../Testing/tileLayouts'
 import { computeGeometry } from './rects'
 import { snapAxis, xCandidates, yCandidates } from './snap'
 
@@ -19,7 +21,7 @@ describe('snapAxis', () => {
 describe('candidates', () => {
   it('collects tile edge positions, deduplicated', () => {
     let l = insertBand({ bands: [] }, 0, 'a', 200)
-    l = splitAtTile(l, 'a', 'e', 'b')
+    l = splitTile(l, 'a', 'e', 'b')
     l = insertBand(l, 1, 'c', 100)
     const geo = computeGeometry(l, 1000, 8)
     const xs = xCandidates(geo)
@@ -35,8 +37,20 @@ describe('candidates', () => {
   })
 
   it('keeps raw positions — a snap must land exactly on a fractional edge', () => {
-    let l = insertBand({ bands: [] }, 0, 'a', 200)
-    l = splitAtTile(l, 'a', 'e', 'b', 1 / 3)
+    const l: TileLayout = {
+      bands: [
+        {
+          node: {
+            kind: 'row',
+            ratios: [1 - 1 / 3, 1 / 3],
+            children: [
+              { kind: 'tile', id: 'a', h: 200 },
+              { kind: 'tile', id: 'b', h: 200 },
+            ],
+          },
+        },
+      ],
+    }
     const geo = computeGeometry(l, 1000, 8)
     const a = geo.tiles.get('a')
     if (!a) throw new Error('missing tile')

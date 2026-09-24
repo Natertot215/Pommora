@@ -336,7 +336,7 @@ describe('a token chunk opens where the parser holds no state', () => {
   it('every cut yields the whole-document tokens', () => {
     const key = (t: { kind: string; range: [number, number] }, off = 0) =>
       `${t.kind}@${t.range[0] + off}`
-    const truth = tokenize(doc, scan).map((t) => key(t))
+    const truth = tokenize(doc).map((t) => key(t))
     for (const start of cuts(scan)) {
       const a = scan.lineStarts[start]
       const tail = doc.slice(a)

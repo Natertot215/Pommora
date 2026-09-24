@@ -8,7 +8,8 @@ import {
   stubPointerCapture,
 } from '@pommora/uix/Interactions/pointerHarness'
 import { getTile, tileIds } from './Layout/model'
-import { insertBand, splitAtTile } from './Layout/ops'
+import { insertBand } from './Layout/ops'
+import { splitTile } from '../Testing/tileLayouts'
 import { TileGrid } from './TileGrid'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -180,7 +181,7 @@ describe('the grid on the gesture engine', () => {
   })
 
   it('a row draws as one column under the width and returns only past the margin', () => {
-    const rowBoard = splitAtTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'c')
+    const rowBoard = splitTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'c')
     act(() =>
       root.render(
         <TileGrid

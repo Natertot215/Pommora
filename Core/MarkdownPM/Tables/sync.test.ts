@@ -11,8 +11,9 @@ const structuralEditChange = (
   ...rest: [number, Parameters<typeof structuralEditIn>[2]]
 ): ReturnType<typeof structuralEditIn> => structuralEditIn(scanDoc(doc), ...rest)
 import { insertColumn, moveColumn } from '../Engine/Tables/operations'
-import { parseTable, unescapeCell, serialize } from '../Engine/Tables/codec'
+import { unescapeCell, serialize } from '../Engine/Tables/codec'
 import { emptyTable } from '../Engine/Tables/model'
+import { parseTable } from '../../Testing/markdownEngine'
 
 describe('cellCommitChange — minimal-diff cell edit (replace just the cell span, focus-safe)', () => {
   const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'

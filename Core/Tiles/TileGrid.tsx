@@ -34,7 +34,7 @@ import './tile-grid.css'
 interface TileGridProps {
   layout: TileLayout
   onLayoutChange: (layout: TileLayout) => void
-  renderTile: (id: string, rect: Rect) => React.ReactNode
+  renderTile: (id: string) => React.ReactNode
   tileClassName?: (id: string) => string | undefined
   tileStyle?: (id: string) => CSSProperties | undefined
   onBusyChange?: (busy: boolean) => void
@@ -102,7 +102,7 @@ const TileShell = memo(
     resizing: boolean
     extraClass?: string
     extraStyle?: CSSProperties
-    renderTile: (id: string, rect: Rect) => React.ReactNode
+    renderTile: (id: string) => React.ReactNode
     onHandleDown: (id: string, e: React.PointerEvent<HTMLElement>) => void
     onHandleMenu?: (id: string, e: React.MouseEvent) => void
     onEdgeDown: (id: string, edges: Edge[], e: React.PointerEvent<HTMLElement>) => void
@@ -169,7 +169,7 @@ const TileShell = memo(
             onPointerDown={(e) => onEdgeDown(id, edges, e)}
           />
         ))}
-        <div className="tile-base-body">{renderTile(id, rect)}</div>
+        <div className="tile-base-body">{renderTile(id)}</div>
       </div>
     )
   },

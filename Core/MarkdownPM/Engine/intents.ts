@@ -14,7 +14,7 @@ import {
   type MarkdownScope,
 } from './detect'
 import { codeLanguageName } from './codeLangs'
-import { carriedFrom, type DocScan, quotePrefixWidth, scanDoc, spanAt } from './docScan'
+import { carriedFrom, type DocScan, quotePrefixWidth, spanAt } from './docScan'
 import { lineIndexAt } from './markdownCode'
 
 function calloutNestedQuote(
@@ -49,7 +49,7 @@ export type WidgetSpec =
   | { type: 'checkbox'; checked: boolean }
   | { type: 'citeRef'; ordinal: number }
 
-export type RailIntent = {
+type RailIntent = {
   kind: 'rail'
   from: number
   level: number
@@ -467,21 +467,6 @@ export function seatPastMarker(
     )
       end = it.to
   return end
-}
-
-export function decorationsFor(
-  text: string,
-  tokens: Token[],
-  active: Set<number>,
-  selStart: number,
-  scan?: DocScan,
-  scope: MarkdownScope = 'page',
-): DecoIntent[] {
-  const s = scan ?? scanDoc(text)
-  const intents: DecoIntent[] = tokenIntents(tokens, active)
-  for (const it of assembleLineIntents(s, docLineIntents(s, scope), selStart, undefined, scope))
-    intents.push(it)
-  return intents
 }
 
 function pushConstruct(

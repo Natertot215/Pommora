@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ChangeSet, Text } from '@codemirror/state'
 import type { ChangeSpec } from '@codemirror/state'
 import { scanDoc } from '../Engine/docScan'
-import { citationScan, splitWithOffsets } from '../Engine/detect'
+import { splitWithOffsets } from '../Engine/detect'
 import type { CitationSlice } from './citationEdits'
 import {
   citationDeleteIntent,
@@ -11,6 +11,7 @@ import {
   deleteMarkerChanges,
   normalizeCitations,
 } from './citationEdits'
+import { citationScan } from '../../Testing/markdownEngine'
 
 const scanOf = (doc: string): CitationSlice => {
   const d = splitWithOffsets(doc)

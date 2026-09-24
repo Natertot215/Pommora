@@ -6,7 +6,7 @@ interface CodeLang {
 }
 
 /** Ordered as the fence words read rather than by family — this is a list someone scans for the language they are about to write. */
-export const CODE_LANGS: readonly CodeLang[] = [
+export const CODE_LANGS = [
   { name: 'JavaScript', alias: ['js', 'javascript', 'jsx'] },
   { name: 'TypeScript', alias: ['ts', 'typescript', 'tsx'] },
   { name: 'JSON', alias: ['json'] },
@@ -45,13 +45,16 @@ export const CODE_LANGS: readonly CodeLang[] = [
   { name: 'Protobuf', alias: ['protobuf', 'proto'] },
   { name: 'CMake', alias: ['cmake'] },
   { name: 'Properties', alias: ['properties', 'ini'] },
-]
+] as const satisfies readonly CodeLang[]
+
+export type CodeLangName = (typeof CODE_LANGS)[number]['name']
 
 /** Null where no language answers to the word: a fence that selected no parse wears no tag. */
 export function codeLanguageName(info: string): string | null {
   const word = info.trim().toLowerCase()
   if (!word) return null
   return (
-    CODE_LANGS.find((l) => l.name.toLowerCase() === word || l.alias.includes(word))?.name ?? null
+    CODE_LANGS.find((l) => l.name.toLowerCase() === word || l.alias.some((a) => a === word))
+      ?.name ?? null
   )
 }

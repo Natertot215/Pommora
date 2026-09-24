@@ -6,7 +6,7 @@ import { TILE_KINDS } from '@pommora/core/Tiles/tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
-import { renderTile, TILE_SURFACES, tileSourceInfo, type TileRenderContext } from './tileKinds'
+import { renderTile, tileSourceInfo, type TileRenderContext } from './tileKinds'
 import { tileMenuItems } from './tileHandleMenu'
 
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
@@ -23,8 +23,7 @@ const ctx = (entry: TileEntry, pages = new Map([[page.id, page]])): TileRenderCo
 const typeOf = (node: React.ReactNode): unknown => (isValidElement(node) ? node.type : node)
 
 describe('the renderer table', () => {
-  it('has one surface per kind and dispatches each to its component', () => {
-    expect(Object.keys(TILE_SURFACES).sort()).toEqual(Object.keys(TILE_KINDS).sort())
+  it('dispatches each kind to its component', () => {
     expect(typeOf(renderTile(ctx({ id: 'm', type: 'markdown' })))).toBe(MarkdownTile)
     expect(typeOf(renderTile(ctx({ id: 'p', type: 'page', page_id: 'p1' })))).toBe(PageTile)
     expect(typeOf(renderTile(ctx({ id: 'v', type: 'view', views: [{ source_id: 's' }] })))).toBe(

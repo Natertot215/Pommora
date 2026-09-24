@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ColumnNode, RowNode, TileLayout, TileLeaf } from './model'
-import { findTile, getTile, nodeHeight, tileIds, validateLayout } from './model'
+import { findTile, getTile, nodeHeight, tileIds } from './model'
 import {
   insertBand,
   moveTile,
@@ -9,9 +9,9 @@ import {
   resizeBandPair,
   resizeDivider,
   resizeStackPair,
-  splitAtTile,
   stretchTileHeight,
 } from './ops'
+import { splitTile, validateLayout } from '../../Testing/tileLayouts'
 import { computeGeometry } from './rects'
 
 const single = (): TileLayout => insertBand({ bands: [] }, 0, 'a', 200)
@@ -35,9 +35,9 @@ describe('insertBand', () => {
   })
 })
 
-describe('splitAtTile', () => {
+describe('splitTile placement', () => {
   it('splits east into a row: widths share, heights stay', () => {
-    const l = splitAtTile(single(), 'a', 'e', 'b')
+    const l = splitTile(single(), 'a', 'e', 'b')
     assertValid(l)
     const node = l.bands[0]?.node as RowNode
     expect(node.kind).toBe('row')
@@ -46,7 +46,7 @@ describe('splitAtTile', () => {
   })
 
   it('splits south into a column: the target height divides between the two', () => {
-    const l = splitAtTile(single(), 'a', 's', 'b')
+    const l = splitTile(single(), 'a', 's', 'b')
     assertValid(l)
     const node = l.bands[0]?.node as ColumnNode
     expect(node.kind).toBe('column')
@@ -55,7 +55,7 @@ describe('splitAtTile', () => {
   })
 
   it('splices as a sibling when the parent runs the same way', () => {
-    const l = splitAtTile(splitAtTile(single(), 'a', 'e', 'b'), 'b', 'e', 'c')
+    const l = splitTile(splitTile(single(), 'a', 'e', 'b'), 'b', 'e', 'c')
     assertValid(l)
     const node = l.bands[0]?.node as RowNode
     expect(node.children.map((c) => (c as TileLeaf).id)).toEqual(['a', 'b', 'c'])
@@ -65,7 +65,7 @@ describe('splitAtTile', () => {
   })
 
   it('column splices stack without touching sibling heights', () => {
-    const l = splitAtTile(splitAtTile(single(), 'a', 's', 'b'), 'b', 's', 'c')
+    const l = splitTile(splitTile(single(), 'a', 's', 'b'), 'b', 's', 'c')
     assertValid(l)
     const node = l.bands[0]?.node as ColumnNode
     expect(node.children.map((c) => (c as TileLeaf).id)).toEqual(['a', 'b', 'c'])
@@ -73,23 +73,17 @@ describe('splitAtTile', () => {
     expect((node.children[1] as TileLeaf).h).toBe(50)
     expect((node.children[2] as TileLeaf).h).toBe(50)
   })
-
-  it('rejects unknown targets and duplicate ids', () => {
-    const l = single()
-    expect(splitAtTile(l, 'ghost', 'e', 'b')).toBe(l)
-    expect(splitAtTile(l, 'a', 'e', 'a')).toBe(l)
-  })
 })
 
 describe('removeLeaf', () => {
   it('lets row siblings absorb the width and collapses the split', () => {
-    const l = removeLeaf(splitAtTile(single(), 'a', 'e', 'b'), 'b')
+    const l = removeLeaf(splitTile(single(), 'a', 'e', 'b'), 'b')
     assertValid(l)
     expect((l.bands[0]?.node as TileLeaf).id).toBe('a')
   })
 
   it('closes a column stack without touching sibling heights', () => {
-    const three = splitAtTile(splitAtTile(single(), 'a', 's', 'b'), 'b', 's', 'c')
+    const three = splitTile(splitTile(single(), 'a', 's', 'b'), 'b', 's', 'c')
     const l = removeLeaf(three, 'b')
     assertValid(l)
     const node = l.bands[0]?.node as ColumnNode
@@ -106,7 +100,7 @@ describe('removeLeaf', () => {
 
 describe('moveTile', () => {
   it('relocates across the tree, preserving the mover height', () => {
-    const three = splitAtTile(splitAtTile(single(), 'a', 'e', 'b'), 'b', 's', 'c')
+    const three = splitTile(splitTile(single(), 'a', 'e', 'b'), 'b', 's', 'c')
     const l = moveTile(three, 'c', 'a', 'n')
     assertValid(l)
     expect(tileIds(l).sort()).toEqual(['a', 'b', 'c'])
@@ -122,7 +116,7 @@ describe('moveTile', () => {
     expect(getTile(r, 'b')?.h).toBe(190)
     expect(getTile(r, 'c')?.h).toBe(120)
     expect(getTile(resizeBandPair(l, 0, -150, 64), 'a')?.h).toBe(64)
-    const split = splitAtTile(l, 'a', 'e', 'x')
+    const split = splitTile(l, 'a', 'e', 'x')
     expect(resizeBandPair(split, 0, -10, 64)).toBe(split)
   })
 
@@ -134,13 +128,13 @@ describe('moveTile', () => {
   })
 
   it('no-ops on self-drop and unknown ids', () => {
-    const l = splitAtTile(single(), 'a', 'e', 'b')
+    const l = splitTile(single(), 'a', 'e', 'b')
     expect(moveTile(l, 'a', 'a', 'e')).toBe(l)
     expect(moveTile(l, 'ghost', 'a', 'e')).toBe(l)
   })
 
   it('moves a tile out into its own band, keeping its height', () => {
-    const l = moveTileToBand(splitAtTile(single(), 'a', 's', 'b'), 'b', 1)
+    const l = moveTileToBand(splitTile(single(), 'a', 's', 'b'), 'b', 1)
     assertValid(l)
     expect(l.bands).toHaveLength(2)
     expect((l.bands[1]?.node as TileLeaf).h).toBe(100)
@@ -161,7 +155,7 @@ describe('moveTile', () => {
 
 describe('resizeDivider (row widths)', () => {
   it('redistributes the pair by pixel delta with a min clamp', () => {
-    const l = splitAtTile(single(), 'a', 'e', 'b')
+    const l = splitTile(single(), 'a', 'e', 'b')
     const resized = resizeDivider(l, { band: 0, path: [], index: 0 }, 100, 1000, 40)
     assertValid(resized)
     const node = resized.bands[0]?.node as RowNode
@@ -171,14 +165,14 @@ describe('resizeDivider (row widths)', () => {
   })
 
   it('no-ops when the pair cannot host two minimums', () => {
-    const l = splitAtTile(single(), 'a', 'e', 'b')
+    const l = splitTile(single(), 'a', 'e', 'b')
     expect(resizeDivider(l, { band: 0, path: [], index: 0 }, 10, 60, 40)).toBe(l)
   })
 })
 
 describe('stretchTileHeight', () => {
   it('grows exactly one tile; stacked and row neighbors never move', () => {
-    const l = splitAtTile(splitAtTile(single(), 'a', 'e', 'b'), 'a', 's', 'c')
+    const l = splitTile(splitTile(single(), 'a', 'e', 'b'), 'a', 's', 'c')
     const stretched = stretchTileHeight(l, 'a', 60, 64)
     assertValid(stretched)
     expect(getTile(stretched, 'a')?.h).toBe(160)
@@ -196,7 +190,7 @@ describe('stretchTileHeight', () => {
 
 describe('resizeStackPair (north negotiation)', () => {
   it('moves the shared boundary between stacked tiles, clamped both ways', () => {
-    const l = splitAtTile(single(), 'a', 's', 'b')
+    const l = splitTile(single(), 'a', 's', 'b')
     const moved = resizeStackPair(l, { band: 0, path: [], index: 0 }, 30, 40)
     expect(getTile(moved, 'a')?.h).toBe(130)
     expect(getTile(moved, 'b')?.h).toBe(70)
@@ -205,7 +199,7 @@ describe('resizeStackPair (north negotiation)', () => {
   })
 
   it('declines when a side is a nested split', () => {
-    const l = splitAtTile(splitAtTile(single(), 'a', 's', 'b'), 'b', 'e', 'c')
+    const l = splitTile(splitTile(single(), 'a', 's', 'b'), 'b', 'e', 'c')
     expect(resizeStackPair(l, { band: 0, path: [], index: 0 }, 30, 40)).toBe(l)
   })
 })
@@ -213,9 +207,9 @@ describe('resizeStackPair (north negotiation)', () => {
 describe('geometry invariants', () => {
   it('never overlaps tiles, even with ragged column ends', () => {
     let l = single()
-    l = splitAtTile(l, 'a', 'e', 'b')
-    l = splitAtTile(l, 'b', 's', 'c')
-    l = splitAtTile(l, 'a', 's', 'd')
+    l = splitTile(l, 'a', 'e', 'b')
+    l = splitTile(l, 'b', 's', 'c')
+    l = splitTile(l, 'a', 's', 'd')
     l = stretchTileHeight(l, 'd', 90, 64)
     l = insertBand(l, 1, 'e', 120)
     l = moveTile(l, 'c', 'a', 'w')
@@ -239,7 +233,7 @@ describe('geometry invariants', () => {
   })
 
   it('band heights derive from content', () => {
-    const l = stretchTileHeight(splitAtTile(single(), 'a', 's', 'b'), 'b', 100, 64)
+    const l = stretchTileHeight(splitTile(single(), 'a', 's', 'b'), 'b', 100, 64)
     expect(nodeHeight(l.bands[0]?.node as ColumnNode, 8)).toBe(100 + 8 + 200)
   })
 })

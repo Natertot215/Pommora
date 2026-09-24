@@ -128,7 +128,7 @@ export function WebTile({
     }
   }, [visible, id])
 
-  useEffect(() => () => webGuestRetention.drop(id), [id])
+  useEffect(() => () => webGuestRetention.show(id), [id])
 
   // Sent once the guest is attached (the id read throws before that), and re-sent on Scale change or remount; 1.0 must still be sent — it clears a previous factor's map entry.
   useEffect(() => {
@@ -160,7 +160,7 @@ export function WebTile({
     const fail = (): void => {
       setFailed(true)
       setGuest(false)
-      webGuestRetention.drop(id)
+      webGuestRetention.show(id)
     }
     const onFail = (e: Event): void => {
       // Subframe failures are the site's own business; -3 is the abort every redirect fires.

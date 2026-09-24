@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { TileLayout, TileLeaf } from './model'
-import { tileIds, validateLayout } from './model'
-import { insertBand, splitAtTile } from './ops'
+import { tileIds } from './model'
+import { insertBand } from './ops'
+import { splitTile, validateLayout } from '../../Testing/tileLayouts'
 import { computeGeometry } from './rects'
 import { stackedAt, stackLayout } from './stack'
 
 // band 0: row [ a | column[b, c] ] · band 1: d
 const board = (): TileLayout => {
   let l = insertBand({ bands: [] }, 0, 'a', 200)
-  l = splitAtTile(l, 'a', 'e', 'b')
-  l = splitAtTile(l, 'b', 's', 'c')
+  l = splitTile(l, 'a', 'e', 'b')
+  l = splitTile(l, 'b', 's', 'c')
   return insertBand(l, 1, 'd', 140)
 }
 
@@ -23,8 +24,8 @@ describe('stackLayout', () => {
 
   it('takes a nested row inside a column left to right at its place in the column', () => {
     let l = insertBand({ bands: [] }, 0, 'x', 100)
-    l = splitAtTile(l, 'x', 's', 'y')
-    l = splitAtTile(l, 'y', 'e', 'z')
+    l = splitTile(l, 'x', 's', 'y')
+    l = splitTile(l, 'y', 'e', 'z')
     expect(tileIds(stackLayout(l))).toEqual(['x', 'y', 'z'])
   })
 

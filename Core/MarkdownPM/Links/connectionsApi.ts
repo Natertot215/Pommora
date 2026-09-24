@@ -59,7 +59,7 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
   return isValidLink(rawTarget) ? { kind: 'external' } : { kind: 'invalid' }
 }
 
-export interface WikiLinkView {
+interface WikiLinkView {
   status: LinkStatus
   page: ConnPage | null
   bare: boolean

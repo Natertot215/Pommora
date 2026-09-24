@@ -259,7 +259,7 @@ describe('chunksOver — a chunk tokenizes as it does inside the whole document'
       const text = lines.join('\n')
       const scan = scanDoc(text)
       if (!sameFences(text, scan)) continue
-      if (!isDeepStrictEqual(chunked(text), tokenize(text, scan)))
+      if (!isDeepStrictEqual(chunked(text), tokenize(text)))
         expect.fail(`seed ${seed}\n${JSON.stringify(text)}`)
     }
   }, 600_000)

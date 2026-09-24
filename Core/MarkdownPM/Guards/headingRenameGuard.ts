@@ -8,7 +8,7 @@ import { docHeadingKeys, docOutline, docSectionHeadings, docString } from '../do
 import { changesTo } from '../../Pages/merge3'
 import { carriedAnnotations } from './calloutGuard'
 
-export interface HeadingRename {
+interface HeadingRename {
   old: string
   next: string
   line: number

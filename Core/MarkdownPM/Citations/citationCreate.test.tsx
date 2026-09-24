@@ -11,10 +11,11 @@ import {
   commitCitation,
   insertCitation,
 } from './citationActions'
-import { citationScan, splitWithOffsets } from '../Engine/detect'
+import { splitWithOffsets } from '../Engine/detect'
 import { citationText, deleteCitationChanges } from './citationEdits'
 import { foldedRegions } from '../folding'
 import { pasteAs } from '../Links/pasteLink'
+import { citationScan } from '../../Testing/markdownEngine'
 
 class ResizeObserverStub {
   observe(): void {}

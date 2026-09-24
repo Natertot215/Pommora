@@ -7,9 +7,9 @@ describe('tileZoom', () => {
   })
 
   it('derives both spellings', () => {
-    expect(zoomStep(1)).toMatchObject({ factor: DEFAULT_ZOOM, inline: '1x', label: '1.00x' })
-    expect(zoomStep(0.9)).toMatchObject({ inline: '0.9x', label: '0.90x' })
-    expect(zoomStep(0.5)).toMatchObject({ inline: '0.5x', label: '0.50x' })
+    expect(zoomStep(1)).toMatchObject({ factor: DEFAULT_ZOOM, label: '1.00x' })
+    expect(zoomStep(0.9)).toMatchObject({ label: '0.90x' })
+    expect(zoomStep(0.5)).toMatchObject({ label: '0.50x' })
   })
 
   it('styles every step but 1.0 with the one variable, identity-stable per step', () => {
