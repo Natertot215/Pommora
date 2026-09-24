@@ -93,6 +93,18 @@ describe('PickerMenu focus contract', () => {
     expect(document.activeElement).toBe(find('first'))
   })
 
+  it('takes focus again when a persistently mounted menu reopens', async () => {
+    await render(<Host open={false} />)
+    find('trigger').focus()
+    await render(<Host open />)
+    await render(<Host open={false} />)
+    await act(async () => new Promise((r) => setTimeout(r, 500)))
+    expect(document.activeElement).toBe(find('trigger'))
+    await render(<Host open />)
+    expect(document.activeElement).toBe(find('first'))
+    expect(document.activeElement?.closest('[data-picker-portal]')).not.toBeNull()
+  })
+
   it('hands focus back to the trigger on close', async () => {
     await render(<Host open={false} />)
     find('trigger').focus()

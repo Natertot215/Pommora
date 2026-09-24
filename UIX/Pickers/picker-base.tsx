@@ -279,12 +279,12 @@ export function PickerMenu({
 
   const placed = pos !== null
   useEffect(() => {
-    if (!manageFocus || !open || closing || !placed || tookFocus.current) return
-    tookFocus.current = true
     const pane = paneRef.current
-    if (!pane || pane.contains(document.activeElement)) return
+    if (!manageFocus || !open || closing || !placed || !pane || tookFocus.current) return
+    tookFocus.current = true
+    if (pane.contains(document.activeElement)) return
     ;(tabStops(pane)[0] ?? pane).focus()
-  }, [manageFocus, open, closing, placed])
+  }, [manageFocus, open, closing, placed, mounted])
 
   useEffect(() => {
     if (!manageFocus || !open) return
