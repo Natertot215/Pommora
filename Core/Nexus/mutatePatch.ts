@@ -129,16 +129,11 @@ async function routeMutation(
     case 'setDisclosureLock':
     case 'setActiveView':
       return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
-    // A banner replace drops the old crop through dropReplacedAsset, a crops.json write the watcher never sees, so the writer re-reads that leaf itself.
     case 'setBanner':
-    case 'setHeadingIconHidden': {
-      let own: 'ok' | 'refresh'
-      if (req.kind === 'homepage') own = await patchHomepageFromDisk(root)
-      else if (req.kind === 'navview') own = 'ok'
-      else own = (await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh'
-      if (own === 'refresh') return 'refresh'
-      return req.op === 'setBanner' ? patchCropsFromDisk(root) : 'ok'
-    }
+    case 'setHeadingIconHidden':
+      if (req.kind === 'homepage') return patchHomepageFromDisk(root)
+      if (req.kind === 'navview') return 'ok'
+      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
     case 'setContext':
       return isMarkdownFile(req.path) ? patchPage(root, req.path) : 'ok'
     case 'setPageMeta':
@@ -147,11 +142,7 @@ async function routeMutation(
       return patchCropsFromDisk(root)
     case 'reorderPanelContexts':
       return patchOrderFromDisk(root)
-    case 'setProfileImage': {
-      const own = await patchSettingsFromDisk(root)
-      if (own === 'refresh') return 'refresh'
-      return patchCropsFromDisk(root)
-    }
+    case 'setProfileImage':
     case 'setProfileIcon':
       return patchSettingsFromDisk(root)
     case 'restore':

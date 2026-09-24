@@ -5,18 +5,12 @@ import { relPosix } from '../Paths/paths'
 import { assetSubRoot } from '../Paths/nexusPaths'
 import { WEB_ADDRESS } from '../Paths/urlPath'
 import { neverWatched } from '../Paths/exclusion'
-import { setOrDrop } from '../Files/atomicWrite'
-import { readWatchScope, updateCrops } from '../Settings/settings'
+import { readWatchScope } from '../Settings/settings'
 import { connectionText, embeddableTitle } from '../Connections/connections'
 import { fault, ok, type Result } from '../Contract/result'
 import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
-import {
-  assetFileToDelete,
-  NOT_A_PROPERTY_DIR_MESSAGE,
-  underAssetRoot,
-  validPropertyDir,
-} from './assetRoots'
+import { NOT_A_PROPERTY_DIR_MESSAGE, underAssetRoot, validPropertyDir } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 
 const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
@@ -70,14 +64,3 @@ export const adoptImageSource = (root: string, source: string): Promise<Result<s
   WEB_ADDRESS.test(source)
     ? Promise.resolve(ok(source))
     : adoptFile(root, source, { allow: 'image' })
-
-export async function dropReplacedAsset(
-  root: string,
-  prev: string | null,
-  next: string | null,
-  trash: (absPath: string) => Promise<void>,
-): Promise<void> {
-  if (!prev || prev === (await assetFileToDelete(root, next))) return
-  await trash(join(root, prev)).catch(() => {})
-  await updateCrops(root, (b) => setOrDrop(b, prev, null)).catch(() => {})
-}

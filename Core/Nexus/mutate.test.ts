@@ -580,11 +580,10 @@ describe('handleMutate — review-round hardening', () => {
     expect(await pathExists(join(root, '.nexus/assets/Photo.png'))).toBe(true)
   })
 
-  it('a replaced photo under .nexus/assets is deleted; one under the configured root is not', async () => {
-    // default root (.nexus/assets): Pommora's own, so a replacement cleans it up
+  it('a replaced photo stays where it is, under either asset root', async () => {
     await handleMutate({ op: 'setProfileImage', source: await pickImage('First.png') }, nexusDeps)
     await handleMutate({ op: 'setProfileImage', source: await pickImage('Second.png') }, nexusDeps)
-    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(false)
+    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(true)
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
@@ -595,12 +594,12 @@ describe('handleMutate — review-round hardening', () => {
     expect(await pathExists(join(root, 'file-assets/Kept.png'))).toBe(true)
   })
 
-  it('setProfileImage null clears the field and deletes what Pommora minted', async () => {
-    await handleMutate({ op: 'setProfileImage', source: await pickImage('Gone.png') }, nexusDeps)
+  it('setProfileImage null clears the field and leaves the image', async () => {
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('Held.png') }, nexusDeps)
     const r = await handleMutate({ op: 'setProfileImage', source: null }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
-    expect(await pathExists(join(root, '.nexus/assets/Gone.png'))).toBe(false)
+    expect(await pathExists(join(root, '.nexus/assets/Held.png'))).toBe(true)
   })
 
   it('a non-image source is refused, writing nothing', async () => {
@@ -637,13 +636,12 @@ describe('handleMutate — review-round hardening', () => {
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[First.png]]')
   })
 
-  it('a replaced photo asset moves to the trash, not a hard delete', async () => {
+  it('a replaced photo reaches no trash', async () => {
     const trashToSystem = vi.fn(async (_p: string) => {})
     const deps: MutateDeps = { trashMode: 'system', trashToSystem }
     await handleMutate({ op: 'setProfileImage', source: await pickImage('Old.png') }, deps)
     await handleMutate({ op: 'setProfileImage', source: await pickImage('New.png') }, deps)
-    expect(trashToSystem).toHaveBeenCalledOnce()
-    expect(trashToSystem.mock.calls[0][0]).toContain('Old.png')
+    expect(trashToSystem).not.toHaveBeenCalled()
   })
 
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
@@ -872,11 +870,22 @@ describe('handleMutate — setBanner', () => {
     expect(await pathExists(join(assets, 'b', 'Twin.png'))).toBe(true)
   })
 
-  it('a replaced banner Pommora minted under .nexus/assets is still cleaned up', async () => {
+  it('a replaced banner leaves the image it stops naming in place', async () => {
     expect((await setBanner(await pick('First.png'))).ok).toBe(true)
-    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(true)
     expect((await setBanner(await pick('Second.png'))).ok).toBe(true)
-    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(false)
+    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(true)
+  })
+
+  it('clearing one banner leaves an image another banner still shows', async () => {
+    expect((await setBanner(await pick('Same.png'))).ok).toBe(true)
+    const set = await handleMutate(
+      { op: 'setBanner', path: 'Notes/Daily', kind: 'set', source: await pick('Same.png') },
+      nexusDeps,
+    )
+    expect(set.ok).toBe(true)
+    expect((await setBanner(null)).ok).toBe(true)
+    expect(await pathExists(join(root, '.nexus/assets/Same.png'))).toBe(true)
+    expect(JSON.parse(await read('Notes/Daily/_pageset.json')).banner).toBe('[[Same.png]]')
   })
 
   it('sets a banner on a set sidecar', async () => {
@@ -902,12 +911,12 @@ describe('handleMutate — setBanner', () => {
     expect(coll?.sets.find((s) => s.id === 'col')?.banner).toBe('[[Sub.png]]')
   })
 
-  it('clearing removes the field and deletes what Pommora minted', async () => {
-    expect((await setBanner(await pick('Gone.png'))).ok).toBe(true)
+  it('clearing removes the field and leaves the image', async () => {
+    expect((await setBanner(await pick('Kept.png'))).ok).toBe(true)
     const r = await setBanner(null)
     expect(r.ok).toBe(true)
     expect(await bannerOf()).toBeUndefined()
-    expect(await pathExists(join(root, '.nexus/assets/Gone.png'))).toBe(false)
+    expect(await pathExists(join(root, '.nexus/assets/Kept.png'))).toBe(true)
   })
 
   it('sets a page banner as the `banner` frontmatter key; clearing reverts', async () => {
@@ -1017,21 +1026,11 @@ describe('handleMutate — setCrop', () => {
     expect(JSON.parse(await read('.nexus/assets/crops.json')).plugin_field).toBe('keep')
   })
 
-  // Negative control: replacing a page's cover clears the old cover's crop (dropReplacedAsset) and leaves every other key untouched. Remove the updateCrops call in dropReplacedAsset and the first assertion goes red.
-  it('a replaced cover clears its old crop and leaves other keys untouched', async () => {
+  it('a replaced cover keeps its old crop, so picking that image again re-applies it', async () => {
     await setBannerPage(await pick('Cover.png'))
     await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 2 })
-    await setCrop('https://example.com/keep.png', { x: 0.5, y: 0.5, zoom: 1 })
     expect(await setBannerPage(await pick('Next.png'))).toMatchObject({ ok: true })
-    const crops = await cropsOf()
-    expect(crops?.['.nexus/assets/Cover.png']).toBeUndefined()
-    expect(crops?.['https://example.com/keep.png']).toEqual({ x: 0.5, y: 0.5, zoom: 1 })
-  })
-
-  it('a corrupt crops.json does not fail a banner replace (best-effort crop cleanup)', async () => {
-    await setBannerPage(await pick('Cover.png'))
-    await writeFile(join(root, '.nexus', 'assets', 'crops.json'), '[]')
-    expect((await setBannerPage(await pick('Next.png'))).ok).toBe(true)
+    expect((await cropsOf())?.['.nexus/assets/Cover.png']).toEqual({ x: 0.3, y: 0.4, zoom: 2 })
   })
 
   // Main-side half of the must-agree; the renderer-side (resolveAssetValue → cropKeyFor) is asserted in AssetImage.test — a single test can't import both across the process boundary.

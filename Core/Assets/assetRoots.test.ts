@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { assetFileToDelete, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
+import { assetFilePath, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
 import { isAssetPath } from '../Navigation/navigationFile'
 
 describe('underAssetRoot', () => {
@@ -46,7 +46,7 @@ describe('underAssetRoot', () => {
   })
 })
 
-describe('assetFileToDelete', () => {
+describe('assetFilePath', () => {
   let root: string
   const put = async (...segs: string[]): Promise<void> => {
     await mkdir(join(root, ...segs.slice(0, -1)), { recursive: true })
@@ -64,40 +64,40 @@ describe('assetFileToDelete', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  it('deletes what Pommora minted, by raw path', async () => {
-    expect(await assetFileToDelete(root, `${ASSETS_DIR_REL}/nx/b.jpg`)).toBe(
+  it('resolves a raw path under an asset root', async () => {
+    expect(await assetFilePath(root, `${ASSETS_DIR_REL}/nx/b.jpg`)).toBe(
       `${ASSETS_DIR_REL}/nx/b.jpg`,
     )
   })
 
-  it('deletes a wikilink resolving inside the default root, before one is configured', async () => {
+  it('resolves a wikilink inside the default root, before one is configured', async () => {
     await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify({}))
     await put(...ASSETS_DIR_REL.split('/'), 'Minted.png')
-    expect(await assetFileToDelete(root, '[[Minted.png]]')).toBe(`${ASSETS_DIR_REL}/Minted.png`)
+    expect(await assetFilePath(root, '[[Minted.png]]')).toBe(`${ASSETS_DIR_REL}/Minted.png`)
   })
 
-  it("never deletes a file in the user's own asset folder", async () => {
+  it("resolves a file in the user's own asset folder", async () => {
     await put('file-assets', 'Theirs.png')
-    expect(await assetFileToDelete(root, '[[Theirs.png]]')).toBeNull()
-    expect(await assetFileToDelete(root, 'file-assets/Theirs.png')).toBeNull()
+    expect(await assetFilePath(root, '[[Theirs.png]]')).toBe('file-assets/Theirs.png')
+    expect(await assetFilePath(root, 'file-assets/Theirs.png')).toBe('file-assets/Theirs.png')
   })
 
-  it('a wikilink several files answer to deletes nothing', async () => {
+  it('a wikilink several files answer to resolves to nothing', async () => {
     await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify({}))
     await put(...ASSETS_DIR_REL.split('/'), 'a', 'IMG.png')
     await put(...ASSETS_DIR_REL.split('/'), 'b', 'IMG.png')
-    expect(await assetFileToDelete(root, '[[IMG.png]]')).toBeNull()
+    expect(await assetFilePath(root, '[[IMG.png]]')).toBeNull()
   })
 
-  it('a wikilink naming nothing, or a path outside every root, deletes nothing', async () => {
-    expect(await assetFileToDelete(root, '[[Gone.png]]')).toBeNull()
-    expect(await assetFileToDelete(root, 'Notes/a.png')).toBeNull()
-    expect(await assetFileToDelete(root, 'file-assets/../out.png')).toBeNull()
+  it('a wikilink naming nothing, or a path outside every root, resolves to nothing', async () => {
+    expect(await assetFilePath(root, '[[Gone.png]]')).toBeNull()
+    expect(await assetFilePath(root, 'Notes/a.png')).toBeNull()
+    expect(await assetFilePath(root, 'file-assets/../out.png')).toBeNull()
   })
 
-  it('a non-string or empty value deletes nothing', async () => {
+  it('a non-string or empty value resolves to nothing', async () => {
     for (const v of [null, undefined, 42, '', '   '])
-      expect(await assetFileToDelete(root, v)).toBeNull()
+      expect(await assetFilePath(root, v)).toBeNull()
   })
 })
 
