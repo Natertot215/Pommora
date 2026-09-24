@@ -1,6 +1,6 @@
 import { perText } from '../perText'
 import { parse } from '../parser'
-import { codeMask, type CodeMask } from '../markdownCode'
+import type { CodeMask } from '../markdownCode'
 import type { DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, type CellSpan } from './codec'
@@ -29,7 +29,7 @@ const isTable = perText((block) => {
 /** Read per keystroke by the guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc version (`docCache.docScan`). */
 export function tableRegions(
   { text, lines, lineStarts }: DocLines,
-  inCode: CodeMask = codeMask(text),
+  inCode: CodeMask,
 ): TableRegion[] {
   const lineTo = (i: number): number => lineStarts[i] + lines[i].length
   const geom = (i: number): RowGeom => ({

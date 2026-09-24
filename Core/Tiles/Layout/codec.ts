@@ -1,4 +1,4 @@
-// Decoding is a parse rather than a repair: ops.ts renormalizes on every mutation and tilePatchProblem gates the shape at the IPC boundary, so anything that reached storage is already the tree validateLayout describes.
+// Decoding is a parse rather than a repair: ops.ts renormalizes on every mutation and tilePatchProblem gates the shape at the IPC boundary, so anything that reached storage is already a well-formed tree.
 
 import { rawLayoutSchema } from '@pommora/core/Tiles/tiles'
 import type { TileLayout } from './model'

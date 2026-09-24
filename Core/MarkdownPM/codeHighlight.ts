@@ -20,7 +20,7 @@ import type { FenceInfo } from './Engine/detect'
 import { type DocScan, indentWidth } from './Engine/docScan'
 import { lineEndOf, lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
-import { CODE_LANGS } from './Engine/codeLangs'
+import { CODE_LANGS, type CodeLangName } from './Engine/codeLangs'
 
 /** A legacy stream mode dressed as the language support a description hands back. */
 const stream = (mode: Promise<unknown>): Promise<LanguageSupport> =>
@@ -74,7 +74,7 @@ const loadMarkdown = (): Promise<LanguageSupport> =>
   )
 
 /** The specifier is written out per entry rather than built from the name: only a literal one is a chunk the bundler can split — from a template, all thirty-odd modes would land in the main bundle. */
-const LOADERS: Record<string, () => Promise<LanguageSupport>> = {
+const LOADERS: Record<CodeLangName, () => Promise<LanguageSupport>> = {
   JavaScript: () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true })),
   TypeScript: () =>
     import('@codemirror/lang-javascript').then((m) =>
@@ -121,12 +121,10 @@ const LOADERS: Record<string, () => Promise<LanguageSupport>> = {
     stream(import('@codemirror/legacy-modes/mode/properties').then((m) => m.properties)),
 }
 
-/** A name the loaders don't know would be a language the fence recognizes and then fails to parse, so the pairing is tested rather than trusted. */
+/** A name the loaders don't know would be a language the fence recognizes and then fails to parse, so LOADERS is keyed by the roster's names. */
 export const codeLanguages = CODE_LANGS.map(({ name, alias }) =>
   LanguageDescription.of({ name, alias: [...alias], load: LOADERS[name] }),
 )
-
-export const CODE_LOADER_NAMES = Object.keys(LOADERS)
 
 const blockParser = markdown({ codeLanguages }).language.parser
 

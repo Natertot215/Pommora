@@ -21,13 +21,7 @@ function replaceAt(node: LayoutNode, path: number[], next: LayoutNode): LayoutNo
   return node.kind === 'row' ? { ...node, children } : { kind: 'column', children }
 }
 
-function placeLeaf(
-  layout: TileLayout,
-  targetId: string,
-  edge: Edge,
-  leaf: TileLeaf,
-  share: number,
-): TileLayout {
+function placeLeaf(layout: TileLayout, targetId: string, edge: Edge, leaf: TileLeaf): TileLayout {
   const at = findTile(layout, targetId)
   if (!at || findTile(layout, leaf.id)) return layout
 
@@ -45,9 +39,9 @@ function placeLeaf(
     const insertAt = first ? childIndex : childIndex + 1
     parent.children.splice(insertAt, 0, leaf)
     if (parent.kind === 'row') {
-      const targetRatio = parent.ratios[childIndex] ?? 0
-      parent.ratios[childIndex] = targetRatio * (1 - share)
-      parent.ratios.splice(insertAt, 0, targetRatio * share)
+      const half = (parent.ratios[childIndex] ?? 0) / 2
+      parent.ratios[childIndex] = half
+      parent.ratios.splice(insertAt, 0, half)
       parent.ratios = renormalize(parent.ratios)
     }
     return next
@@ -57,34 +51,10 @@ function placeLeaf(
   const pair = first ? [leaf, target] : [target, leaf]
   const split: LayoutNode =
     dir === 'row'
-      ? { kind: 'row', ratios: first ? [share, 1 - share] : [1 - share, share], children: pair }
+      ? { kind: 'row', ratios: [0.5, 0.5], children: pair }
       : { kind: 'column', children: pair }
   band.node = replaceAt(band.node, at.path, split)
   return next
-}
-
-export function splitAtTile(
-  layout: TileLayout,
-  targetId: string,
-  edge: Edge,
-  newId: string,
-  share = 0.5,
-): TileLayout {
-  const target = getTile(layout, targetId)
-  if (!target) return layout
-  const vertical = edge === 'n' || edge === 's'
-  const leaf: TileLeaf = {
-    kind: 'tile',
-    id: newId,
-    h: vertical ? Math.round(target.h * share) : target.h,
-  }
-  const placed = placeLeaf(layout, targetId, edge, leaf, share)
-  if (placed === layout) return layout
-  if (vertical) {
-    const t = getTile(placed, targetId) as TileLeaf
-    t.h = Math.max(1, target.h - leaf.h)
-  }
-  return placed
 }
 
 /** A row placement (e/w) adopts the target's height, so a drop beside a tile lands flush instead of importing the mover's old height as a ragged end; stacking (n/s) keeps it. */
@@ -101,7 +71,7 @@ export function moveTile(
   const target = getTile(removed, targetId)
   if (!target) return layout
   const h = edge === 'e' || edge === 'w' ? target.h : mover.h
-  return placeLeaf(removed, targetId, edge, { kind: 'tile', id: tileId, h }, 0.5)
+  return placeLeaf(removed, targetId, edge, { kind: 'tile', id: tileId, h })
 }
 
 export function removeLeaf(layout: TileLayout, tileId: string): TileLayout {
@@ -141,7 +111,7 @@ export function attachBelow(
   newId: string,
   h: number,
 ): TileLayout {
-  return placeLeaf(layout, targetId, 's', { kind: 'tile', id: newId, h }, 0.5)
+  return placeLeaf(layout, targetId, 's', { kind: 'tile', id: newId, h })
 }
 
 export function insertBand(

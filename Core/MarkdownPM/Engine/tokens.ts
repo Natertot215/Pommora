@@ -2,7 +2,7 @@
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from './parser'
 import { inlineSpans, type CodeMask } from './markdownCode'
-import { type DocScan, inCodeAt, scanDoc } from './docScan'
+import { inCodeAt, scanDoc } from './docScan'
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
@@ -205,7 +205,8 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
   return tokens
 }
 
-export function tokenize(text: string, scan: DocScan = scanDoc(text)): Token[] {
+export function tokenize(text: string): Token[] {
+  const scan = scanDoc(text)
   const ast = parse(text, scan)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
