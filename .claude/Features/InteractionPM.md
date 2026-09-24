@@ -56,6 +56,7 @@ One text-insertion identity for the whole app: every CodeMirror surface mounts t
 | Bar Thickness | `--caret-width` | `2px` |
 | Fill | `--caret-color` | → `var(--label-primary)` |
 | Blink Cycle | `--caret-gap` | `1.3s` (a blink cycle, outside the duration scale) |
+| Blink | `--caret-blink` | the `caret-blink` animation over one `--caret-gap`, worn by the field bar and the editor's caret layer |
 | I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
 
 #### II. OverScroll

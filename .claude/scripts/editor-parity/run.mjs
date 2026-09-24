@@ -53,7 +53,7 @@ const UNDO = () => key('z', 'KeyZ', 90, 4)
 const REDO = () => key('z', 'KeyZ', 90, 12)
 
 // The caret and its overlay blink on a timer; a screenshot hides them so two runs of one build match pixel for pixel.
-await c.evaluate(`(() => { const s = document.createElement('style'); s.textContent = '.mdpm-caret-layer, .mdpm-caret, .mdpm-caret-overlay, .cm-cursorLayer { visibility: hidden !important }'; document.head.append(s) })()`)
+await c.evaluate(`(() => { const s = document.createElement('style'); s.textContent = '.mdpm-caret-layer, .caret-bar, .cm-cursorLayer { visibility: hidden !important }'; document.head.append(s) })()`)
 
 // ── Render snapshot: every line as runs of identically styled text, widgets as boxes ─────────────
 const SNAP = `(() => {
