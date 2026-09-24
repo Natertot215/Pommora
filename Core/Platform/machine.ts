@@ -37,7 +37,8 @@ export interface Machine {
 
 export interface KeyValueStore {
   get(scope: string, key: string): string | null
-  set(scope: string, key: string, value: string | null): void
+  /** One commit for every row; a null clears its key rather than storing it. */
+  write(scope: string, rows: Record<string, string | null>): void
   entries(scope: string): Record<string, string>
 }
 

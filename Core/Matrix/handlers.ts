@@ -1,7 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, NO_STORE, ok } from '../Contract/result'
 import { isStringArray } from '../Contract/validators'
-import { readValue, writeValue } from '../Platform/localState'
+import { readScope, readValue, writeKeys, writeValue } from '../Platform/localState'
 import { isPlainObject } from '../Properties/propertyValue'
 import type { Frame } from './Engine/viewport'
 import type { MatrixPatch } from './matrixConfig'
@@ -14,6 +14,9 @@ import {
   type MatrixLayout,
   type Positions,
 } from './matrixLayout'
+
+// A layout saved before positions took a row per node is one map under the scope's empty key. Reads merge it under the rows, and the first position save folds it into rows of their own, so the read path never writes.
+const legacyPositions = (): Positions => readPositions(readValue('matrixLayout'))
 
 export const matrixHandlers = {
   'matrix:read': withRoot(async (root) => ok(await readMatrixFile(root))),
@@ -32,10 +35,9 @@ export const matrixHandlers = {
   }),
 
   'matrixLayout:load': withRoot(() => {
-    const positions = readValue<Positions>('matrixLayout')
     const frame = readValue<Frame>('matrixFrame')
     return ok({
-      positions: readPositions(positions),
+      positions: readPositions({ ...legacyPositions(), ...readScope('matrixLayout') }),
       frame: isFrame(frame) ? frame : null,
     } satisfies MatrixLayout)
   }),
@@ -43,7 +45,9 @@ export const matrixHandlers = {
   'matrixLayout:save': withWriteRoot((_root, _ctx, patch: unknown) => {
     if (!isLayoutPatch(patch))
       return fail('operation-failed', 'A layout patch needs finite positions or a finite frame.')
-    if (patch.positions && !writeValue('matrixLayout', patch.positions)) return NO_STORE
+    const legacy = patch.positions && readValue('matrixLayout') !== null
+    const rows = legacy ? { ...legacyPositions(), ...patch.positions, '': null } : patch.positions
+    if (rows && !writeKeys('matrixLayout', rows)) return NO_STORE
     if (patch.frame && !writeValue('matrixFrame', patch.frame)) return NO_STORE
     return ok(null)
   }),

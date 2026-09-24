@@ -41,11 +41,20 @@ export function readScope<T>(scope: Scope): Record<string, T> {
   return out
 }
 
-export function writeKey(scope: Scope, key: string, value: unknown): boolean {
+export function writeKeys(scope: Scope, values: Record<string, unknown>): boolean {
   const store = keyValueStore()
   if (!store) return false
-  store.set(scope, key, value === null ? null : JSON.stringify(value))
+  store.write(
+    scope,
+    Object.fromEntries(
+      Object.entries(values).map(([key, v]) => [key, v === null ? null : JSON.stringify(v)]),
+    ),
+  )
   return true
+}
+
+export function writeKey(scope: Scope, key: string, value: unknown): boolean {
+  return writeKeys(scope, { [key]: value })
 }
 
 export function readKey<T>(scope: Scope, key: string): T | null {

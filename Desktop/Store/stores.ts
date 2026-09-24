@@ -9,7 +9,7 @@ import type {
   SnapshotStore,
   SyncStore,
 } from '@pommora/core/Platform/stores'
-import type { Db } from './driver'
+import { type Db, inTransaction } from './driver'
 import { INDEX_TABLES } from './ddl'
 import {
   addCapture,
@@ -23,6 +23,9 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 
+// A batch of paths binds as one JSON argument: a placeholder per path fails past SQLite's variable limit on a large sync or checkout.
+const PATHS_OF = '(SELECT value FROM json_each(?))'
+
 export const keyValueStore = (db: Db): KeyValueStore => ({
   get(scope, key) {
     const row = db
@@ -30,15 +33,16 @@ export const keyValueStore = (db: Db): KeyValueStore => ({
       .get(scope, key) as { value: string } | undefined
     return row?.value ?? null
   },
-  set(scope, key, value) {
-    if (value === null)
-      db.prepare('DELETE FROM local_state WHERE scope = ? AND key = ?').run(scope, key)
-    else
-      db.prepare('INSERT OR REPLACE INTO local_state (scope, key, value) VALUES (?, ?, ?)').run(
-        scope,
-        key,
-        value,
-      )
+  write(scope, rows) {
+    const drop = db.prepare('DELETE FROM local_state WHERE scope = ? AND key = ?')
+    const put = db.prepare(
+      'INSERT OR REPLACE INTO local_state (scope, key, value) VALUES (?, ?, ?)',
+    )
+    inTransaction(db, () => {
+      for (const [key, value] of Object.entries(rows))
+        if (value === null) drop.run(scope, key)
+        else put.run(scope, key, value)
+    })
   },
   entries(scope) {
     const rows = db.prepare('SELECT key, value FROM local_state WHERE scope = ?').all(scope) as {
@@ -123,9 +127,9 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       only
         ? db
             .prepare(
-              `SELECT path, heading FROM headings WHERE path IN (${only.map(() => '?').join(',')}) ORDER BY path, ordinal`,
+              `SELECT path, heading FROM headings WHERE path IN ${PATHS_OF} ORDER BY path, ordinal`,
             )
-            .all(...only)
+            .all(JSON.stringify(only))
         : db.prepare('SELECT path, heading FROM headings ORDER BY path, ordinal').all()
     ) as { path: string; heading: string }[]
     const out: Record<string, string[]> = {}
@@ -137,8 +141,8 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     return out
   },
   readMatrixGraph(only) {
-    const inClause = only ? ` AND path IN (${only.map(() => '?').join(',')})` : ''
-    const args = only ?? []
+    const inClause = only ? ` AND path IN ${PATHS_OF}` : ''
+    const args = only ? [JSON.stringify(only)] : []
     const links = db
       .prepare(
         `SELECT path, kind, target, qualifier, count FROM matrix_nodes WHERE kind IN ('body','citation','frontmatter')${inClause} ORDER BY path`,

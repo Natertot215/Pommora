@@ -290,9 +290,13 @@ class MatrixRuntime {
 
   private settled(): void {
     if (this.fitOnSettle) this.fitNow()
-    const positions: Positions = {}
-    for (const n of this.graph.nodes) positions[n.id] = [n.x, n.y]
-    useSession.getState().saveMatrixLayout(positions)
+    const { matrixPositions: held, saveMatrixLayout } = useSession.getState()
+    const moved: Positions = {}
+    for (const n of this.graph.nodes) {
+      const p = held[n.id]
+      if (!p || p[0] !== n.x || p[1] !== n.y) moved[n.id] = [n.x, n.y]
+    }
+    saveMatrixLayout(moved)
   }
 
   private animating(): boolean {
