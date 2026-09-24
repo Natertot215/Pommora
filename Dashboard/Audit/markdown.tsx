@@ -13,6 +13,7 @@ const BULLET = /^\s*[-*+]\s+(.*)$/
 const NUMBERED = /^\s*\d+[.)]\s+(.*)$/
 const TABLE_ROW = /^\s*\|/
 const TABLE_RULE = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
+const FIGURE = /^[\d\s~·.,:%+\-−–]*$/
 
 function parseBlocks(src: string): Block[] {
   const blocks: Block[] = []
@@ -77,6 +78,10 @@ function Table({ rows }: { rows: string[] }): React.JSX.Element {
   const hasHead = rows.length > 1 && TABLE_RULE.test(rows[1])
   const head = hasHead ? cells(rows[0]) : []
   const body = (hasHead ? rows.slice(2) : rows).map(cells)
+  const figure = (j: number): boolean => body.every((r) => FIGURE.test(r[j] ?? ''))
+  const cellClass = (head.length ? head : (body[0] ?? [])).map((_, j) =>
+    figure(j) ? 'au-num' : undefined,
+  )
   return (
     <div className="au-table-wrap">
       <table className="au-table">
@@ -84,7 +89,7 @@ function Table({ rows }: { rows: string[] }): React.JSX.Element {
           <thead>
             <tr>
               {head.map((c, i) => (
-                <th key={i}>
+                <th key={i} className={cellClass[i]}>
                   <Inline text={c} />
                 </th>
               ))}
@@ -95,7 +100,7 @@ function Table({ rows }: { rows: string[] }): React.JSX.Element {
           {body.map((r, i) => (
             <tr key={i}>
               {r.map((c, j) => (
-                <td key={j}>
+                <td key={j} className={cellClass[j]}>
                   <Inline text={c} />
                 </td>
               ))}

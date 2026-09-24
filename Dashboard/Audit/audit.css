@@ -5,7 +5,7 @@
 }
 
 .au-page {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px 96px;
   font-size: var(--text-body-size);
@@ -68,10 +68,20 @@
   font-size: var(--text-title-small-size);
   font-weight: var(--weight-bold);
 }
+.au-verdict {
+  margin: 0 0 14px;
+  padding: 18px 20px 6px;
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  border: var(--width-100) solid var(--border-base);
+}
 .au-verdict h4 {
-  margin: 24px 0 8px;
+  margin: 0 0 12px;
   font-size: var(--text-headline-size);
   font-weight: var(--weight-semibold);
+}
+.au-verdict .au-table-wrap {
+  background: var(--surface-primary);
 }
 
 .au-prose,
@@ -98,18 +108,48 @@
   overflow-x: auto;
   margin: 0 0 16px;
 }
+.au-prose .au-table-wrap {
+  border-radius: 10px;
+  border: var(--width-100) solid var(--border-base);
+}
 .au-table,
 .au-heat {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
+.au-table {
+  font-size: var(--text-callout-size);
+  line-height: 1.5;
+}
 .au-table th,
 .au-table td {
-  padding: 7px 12px 7px 0;
-  border-bottom: var(--width-100) solid var(--border-base);
+  min-width: 96px;
+  padding: 10px 14px;
+  border-bottom: var(--width-100) solid var(--border-faint);
   text-align: left;
   vertical-align: top;
+}
+.au-table thead th {
+  background: var(--surface-tertiary);
+  border-bottom-color: var(--border-base);
+}
+.au-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.au-table td:first-child {
+  min-width: 140px;
+  font-weight: var(--weight-emphasized);
+}
+.au-table td:not(:first-child) {
+  min-width: 220px;
+}
+.au-table th.au-num,
+.au-table td.au-num {
+  width: 1%;
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
 }
 .au-table th,
 .au-heat thead th {
