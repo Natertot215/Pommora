@@ -20,13 +20,14 @@ import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from '
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
 import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
-import { handleMutate, mutateDeps } from './mutate'
+import { handleMutate } from './mutate'
 import { confirmBy, confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, whileAdopting } from './session'
 import type { NexusState } from './tree'
 import { livePathOf } from './valuesChanged'
 import { titleFromPath } from '../Connections/connections'
+import { trashDeps } from '../Trash/bundle'
 
 async function prepareOpenedNexus(path: string): Promise<string | null> {
   let nexusId: string | null = null
@@ -160,7 +161,7 @@ export const nexusHandlers = {
   }, ok(null)),
 
   mutate: withWriteRoot(async (root, ctx, req: MutateRequest) => {
-    const reply = await handleMutate(root, req, await mutateDeps(root, ctx), () =>
+    const reply = await handleMutate(root, req, await trashDeps(root, ctx), () =>
       confirmWrite(ctx, root, () => confirmBy(root, async () => 'refresh')),
     )
     if (reply.ok) {

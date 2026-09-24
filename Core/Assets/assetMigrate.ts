@@ -15,12 +15,12 @@ import {
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive } from '../Files/walk'
 import { discardFile } from '../Trash/bundle'
-import type { MutateDeps } from '../Nexus/mutate'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
 import { AMBIGUOUS, buildAssetMap, indexable, refreshAssetMap, resolveAssetName } from './assetMap'
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
+import type { TrashDeps } from '../Trash/bundle'
 
 interface AssetMigration {
   moved: { from: string; to: string }[]
@@ -152,10 +152,7 @@ async function sidecarsUnder(root: string): Promise<string[]> {
   return out.sort()
 }
 
-export async function migrateAssets(
-  root: string,
-  deps: MutateDeps,
-): Promise<AssetMigration | null> {
+export async function migrateAssets(root: string, deps: TrashDeps): Promise<AssetMigration | null> {
   const { assetDir } = await readWatchScope(root)
   if (assetDir === ASSETS_DIR_REL) return null
 
@@ -228,7 +225,7 @@ export async function migrateAssets(
   return result
 }
 
-async function sweepLegacyRoot(root: string, deps: MutateDeps): Promise<number> {
+async function sweepLegacyRoot(root: string, deps: TrashDeps): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
   const files = (await listFilesRecursive(dir)).filter((abs) =>
     indexable(relPosix(root, abs), ASSETS_DIR_REL),

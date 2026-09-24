@@ -8,11 +8,10 @@ import { contextsDir } from '../Paths/paths'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
 import { fault, ok, type Result } from '../Contract/result'
-import type { HostContext } from '../Contract/handlers'
 import { emptyBundle, restoreArtifact } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
 import { seedContentIndex } from '../Index/indexSeed'
-import { readPermanentDelete, updateSettings } from '../Settings/settings'
+import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
 import { setCropOp } from '../Assets/setCrop'
 import { setBannerOp } from '../Pages/setBanner'
@@ -30,31 +29,16 @@ import {
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
 import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
-import type { TrashMode } from '../Trash/trashRow'
+import type { TrashDeps } from '../Trash/bundle'
 import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 
-export interface MutateDeps {
-  trashMode: TrashMode
-  trashToSystem: (absPath: string) => Promise<void>
-  permanentDelete?: boolean
-}
-
-export async function mutateDeps(root: string, ctx: HostContext): Promise<MutateDeps> {
-  return {
-    trashMode: await ctx.trashMode(),
-    trashToSystem: (p) =>
-      machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
-    permanentDelete: await readPermanentDelete(root),
-  }
-}
-
 export interface MutateContext {
   root: string
-  deps: MutateDeps
+  deps: TrashDeps
 }
 
 const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
@@ -63,7 +47,7 @@ const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 export async function handleMutate(
   root: string,
   req: MutateRequest,
-  deps: MutateDeps,
+  deps: TrashDeps,
   afterThrow?: () => Promise<void>,
 ): Promise<MutateReply> {
   try {

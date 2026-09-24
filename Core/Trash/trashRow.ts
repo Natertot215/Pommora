@@ -1,4 +1,5 @@
 import type { EntityIconKind } from '../Settings/personalization'
+import type { PropertyType } from '../Properties/properties'
 
 /** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live entity. */
 export interface TrashCrumb {
@@ -17,6 +18,8 @@ export interface TrashRow {
   bundlePath: string
   kind: EntityIconKind | 'property'
   title: string
+  /** A property row's type, which picks its icon. */
+  propertyType?: PropertyType
   /** Resolved live from the recorded parent id, so a renamed ancestor reads true. */
   crumbs: TrashCrumb[]
   /** Set when the recorded parent resolves to nothing and `crumbs` fell back to the frozen chain. */

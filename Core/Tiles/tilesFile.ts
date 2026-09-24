@@ -18,13 +18,13 @@ import { rewriteConnections } from '../Connections/rewrite'
 import { isUlid, newId } from '../Nexus/ids'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { discardFile } from '../Trash/bundle'
-import type { MutateDeps } from '../Nexus/mutate'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import { relPosix, tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { captureLoser } from '../Sync/Arrival/captures'
+import type { TrashDeps } from '../Trash/bundle'
 
 export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
   if (host.kind === 'homepage') return tileHostDir(root)
@@ -57,7 +57,7 @@ async function reviseTile(
   dir: string,
   tileId: string,
   patch: Record<string, unknown> | null,
-  deps: MutateDeps,
+  deps: TrashDeps,
 ): Promise<Result<RemovedTile>> {
   let entry: Record<string, unknown> | null = null
   const written = await setTiles(dir, (tiles) =>
@@ -80,12 +80,16 @@ function discardTileFile(
   root: string,
   dir: string,
   tileId: string,
-  deps: MutateDeps,
+  deps: TrashDeps,
 ): Promise<string | null> {
   const file = tileFilePath(dir, tileId)
   return machine().lock(file, async () => {
     const body = await machine().readText(file)
-    if (body !== null) await discardFile(root, file, deps)
+    // The entry is already gone, so a discard that fails leaves the file behind rather than the removal half-done.
+    if (body !== null)
+      await discardFile(root, file, deps).catch((e) =>
+        console.error('tiles: a removed tile’s file stayed:', e),
+      )
     return body
   })
 }
@@ -94,10 +98,10 @@ export const removeTile = (
   root: string,
   dir: string,
   tileId: string,
-  deps: MutateDeps,
+  deps: TrashDeps,
 ): Promise<Result<RemovedTile>> => reviseTile(root, dir, tileId, null, deps)
 
-/** File first, as a create is, and never over a file already there; the band lands with the entry, so a board no window holds still shows it. */
+/** File first, as a create is, never over the file its id names; the band lands with the entry, so a board no window holds still shows it. */
 export async function restoreTile(dir: string, removed: RemovedTile): Promise<Result<null>> {
   const known = knownTile(removed.entry)
   const { at, body = '' } = removed
@@ -110,12 +114,9 @@ export async function restoreTile(dir: string, removed: RemovedTile): Promise<Re
     return fault('Invalid tile.')
   if (TILE_KINDS[known.type].fileBacked) {
     const file = tileFilePath(dir, known.id)
-    const wrote = await machine().lock(file, async () => {
-      if (await pathExists(file)) return false
-      await atomicWriteFile(file, body)
-      return true
+    await machine().lock(file, async () => {
+      if (!(await pathExists(file))) await atomicWriteFile(file, body)
     })
-    if (!wrote) return fail('exists', 'That tile is already back.')
   }
   return writeTileDocAt(dir, (cur) => {
     const layout = decodeLayout(cur.layout)
@@ -143,7 +144,7 @@ export const convertTileToPage = (
   dir: string,
   tileId: string,
   pageId: string,
-  deps: MutateDeps,
+  deps: TrashDeps,
 ): Promise<Result<null>> =>
   settled(reviseTile(root, dir, tileId, { type: 'page', page_id: pageId }, deps))
 
@@ -167,7 +168,7 @@ export const convertTileToView = (
   dir: string,
   tileId: string,
   views: unknown[],
-  deps: MutateDeps,
+  deps: TrashDeps,
 ): Promise<Result<null>> =>
   settled(
     reviseTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 }, deps),

@@ -80,6 +80,8 @@ const removing = new Set<string>()
 
 export const markTileRemoving = (tileId: string): void => void removing.add(tileId)
 
+export const unmarkTileRemoving = (tileId: string): void => void removing.delete(tileId)
+
 export const isTileRemoving = (tileId: string): boolean => removing.has(tileId)
 
 const docs = new Map<string, TileDoc>()

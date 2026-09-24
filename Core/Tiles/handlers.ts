@@ -4,7 +4,7 @@ import { isUlid } from '../Nexus/ids'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { coerceTileHost, type RemovedTile, type TileDocPatch, tilePatchProblem } from './tiles'
-import { mutateDeps } from '../Nexus/mutate'
+
 import {
   convertTileToPage,
   convertTileToView,
@@ -16,6 +16,7 @@ import {
   restoreTile,
   writeMarkdownTile,
 } from './tilesFile'
+import { trashDeps } from '../Trash/bundle'
 
 type TileCtx = { root: string; dir: string }
 
@@ -74,7 +75,7 @@ export const tilesHandlers = {
 
   'tiles:removeTile': withWriteRoot(
     onTile(async ({ root, dir, ctx }, tileId) =>
-      removeTile(root, dir, tileId, await mutateDeps(root, ctx)),
+      removeTile(root, dir, tileId, await trashDeps(root, ctx)),
     ),
   ),
 
@@ -101,7 +102,7 @@ export const tilesHandlers = {
   'tiles:convertToPage': withWriteRoot(
     onTile(async ({ root, dir, ctx }, tileId, pageId) => {
       if (typeof pageId !== 'string' || pageId.length === 0) return fault('Invalid page id.')
-      return convertTileToPage(root, dir, tileId, pageId, await mutateDeps(root, ctx))
+      return convertTileToPage(root, dir, tileId, pageId, await trashDeps(root, ctx))
     }),
   ),
 
@@ -112,7 +113,7 @@ export const tilesHandlers = {
         list?.length &&
         list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
       if (!valid) return fault('Invalid view list.')
-      return convertTileToView(root, dir, tileId, list as unknown[], await mutateDeps(root, ctx))
+      return convertTileToView(root, dir, tileId, list as unknown[], await trashDeps(root, ctx))
     }),
   ),
 

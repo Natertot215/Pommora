@@ -35,6 +35,11 @@ export function pushValueUndo(revert: Revert): void {
   if (stack.push(revert) > DEPTH) stack.shift()
 }
 
+/** An undo reaches into the Nexus it was taken in, so a switch leaves none behind. */
+export const resetValueUndo = (): void => {
+  stack.length = 0
+}
+
 export function groupValueUndo(run: () => void): void {
   const collected: Revert[] = []
   group = collected

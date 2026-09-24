@@ -118,6 +118,10 @@ export function encodeValue(value: PropertyValue): unknown {
   }
 }
 
+/** Blank as a file spells it, before any definition reads it. */
+export const isBlankRaw = (raw: unknown): boolean =>
+  raw == null || raw === '' || (Array.isArray(raw) && raw.length === 0)
+
 export function isBlankValue(value: PropertyValue | null): boolean {
   if (value === null) return true
   switch (value.kind) {

@@ -87,7 +87,7 @@ const toPosixRel = (root: string, absPath: string): string | null => {
 const containerAt = (tree: NexusTree, dirRel: string): CollectionNode | SetNode | null =>
   findContainerWhere(tree, (n) => n.path === dirRel)
 
-function findPage(tree: NexusTree, rel: string): PageNode | null {
+export function findPage(tree: NexusTree, rel: string): PageNode | null {
   const container = containerAt(tree, relDirname(rel))
   return container?.pages.find((p) => p.path === rel) ?? null
 }

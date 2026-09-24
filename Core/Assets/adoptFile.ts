@@ -1,4 +1,4 @@
-import { basename, extname, join } from '../Paths/posix'
+import { basename, extname, isAbsolute, join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { relPosix } from '../Paths/paths'
@@ -12,6 +12,8 @@ import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
 import { NOT_A_PROPERTY_DIR_MESSAGE, underAssetRoot, validPropertyDir } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
+
+const UNREADABLE = 'That file could not be read.'
 
 const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
   a.length === b.length && a.every((v, i) => v === b[i])
@@ -43,14 +45,20 @@ export async function adoptFile(
   if (hit === AMBIGUOUS) return fault(`More than one file is named ${base}.`)
 
   // A pick from a hidden folder under the root would mint a reference that never resolves; it copies instead.
-  const srcRel = relPosix(await machine().realpath(root), await machine().realpath(absSource))
+  const source = isAbsolute(absSource)
+    ? await machine()
+        .realpath(absSource)
+        .catch(() => null)
+    : null
+  if (source === null) return fault(UNREADABLE)
+  const srcRel = relPosix(await machine().realpath(root), source)
   if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir))
     return ok(connectionText(base))
 
   const bytes = await machine()
     .readBytes(absSource)
     .catch(() => null)
-  if (!bytes) return fault('That file could not be read.')
+  if (!bytes) return fault(UNREADABLE)
   const held = hit
     ? await machine()
         .readBytes(join(root, hit))

@@ -37,7 +37,7 @@ import {
   tileSourceInfo,
 } from './tileKinds'
 import { tileMenuItems } from './tileHandleMenu'
-import { isTileRemoving, markTileRemoving } from './tileDocStore'
+import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
 import './tile-base.css'
@@ -215,7 +215,6 @@ export function TileHost({
   const confirmRemove = useCallback(
     (id: string) => {
       const kind = entries.get(id)?.type
-      const nexus = useSession.getState().tree?.nexus.id
       void askRemoveTile().then((ok) => {
         if (!ok || !kind) return
         // Order is load-bearing: suppress the tile's editor flush, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
@@ -235,16 +234,24 @@ export function TileHost({
         // Untouched since, the board returns exactly; otherwise the tile comes back as its own band where it stood, and nothing placed since moves.
         const putBack = (): void => {
           const { band, h } = at()
-          commitLayout((cur) => (cur === after ? before : insertBand(cur, band, id, h)))
+          const untouched = JSON.stringify(after)
+          commitLayout((cur) =>
+            JSON.stringify(cur) === untouched ? before : insertBand(cur, band, id, h),
+          )
         }
         void dialer()
           .ask('tiles:removeTile', host, id)
           .then((r) => {
             refreshEntries()
             if (!reportRefusal(r)) return putBack()
+            unmarkTileRemoving(id)
+            const body = readTileBody(id) ?? r.value.body
             notifyUndoable(`Deleted ${TILE_KINDS[kind].label}`, async () => {
-              if (useSession.getState().tree?.nexus.id !== nexus) return
-              const back = await dialer().ask('tiles:restoreTile', host, { ...r.value, at: at() })
+              const back = await dialer().ask('tiles:restoreTile', host, {
+                ...r.value,
+                ...(body === undefined ? {} : { body }),
+                at: at(),
+              })
               refreshEntries()
               if (reportRefusal(back)) putBack()
             })

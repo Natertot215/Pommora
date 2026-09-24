@@ -82,10 +82,7 @@ export function takeAssetMapPush(root: string): AssetMap | null {
 /** A changed `asset_directory` rebuilds: the held listing describes the folder it was taken from, so patching a new root's events into it would answer with paths that moved away. */
 export async function liveAssetMap(root: string): Promise<AssetMap> {
   const { assetDir } = await readWatchScope(root)
-  if (held?.root === root && held.assetDir === assetDir) return held.map
-  const map = await buildAssetMap(root, assetDir)
-  held = { root, assetDir, map }
-  return map
+  return held?.root === root && held.assetDir === assetDir ? held.map : refreshAssetMap(root)
 }
 
 export async function refreshAssetMap(root: string): Promise<AssetMap> {
