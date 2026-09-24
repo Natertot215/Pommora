@@ -4,7 +4,7 @@ import { pageIndexOf } from '../Nexus/treeIndex'
 import { spaceRowOf } from '../Properties/pageRow'
 import type { PropertyDefinition } from '../Properties/properties'
 import { declaredType } from '../Properties/value'
-import { applyFilter, FILTER_OPS } from '../Views/Pipeline/filter'
+import { applyFilter, OPERANDLESS_OPS } from '../Views/Pipeline/filter'
 import { buildSetTree, type SetTreeNode, toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
 import type { FilterGroup, FilterRule } from '../Views/views'
@@ -25,19 +25,6 @@ export interface MatrixTree {
   folders: GraphInput['folders']
   spaces: GraphInput['spaces']
   seats: Array<{ page: PageNode; folderId: string }>
-  spaceRows: ViewRow[]
-  schema: PropertyDefinition[]
-  setTree: SetTreeNode[]
-  contextIds: string[]
-}
-
-export interface MatrixWalk {
-  input: GraphInput
-  rows: ViewRow[]
-  spaceRows: ViewRow[]
-  schema: PropertyDefinition[]
-  setTree: SetTreeNode[]
-  contextIds: string[]
 }
 
 // The half that only the tree can change. A page save replaces the reply alone, and re-walking every collection for it is the whole nexus paid for one edit.
@@ -70,53 +57,22 @@ export function matrixTree(tree: NexusTree): MatrixTree {
     })),
   )
 
-  // Self-membership belongs to the filter and stays out of spaceRowOf, which the panel and the menus read.
-  const spaceRows: ViewRow[] = tree.contexts.flatMap((g) =>
-    g.spaces.map((s) => {
-      const row = spaceRowOf(tree, s)
-      return {
-        ...row,
-        contextValues: {
-          ...row.contextValues,
-          [g.def.id]: [...(row.contextValues?.[g.def.id] ?? []), s.id],
-        },
-      }
-    }),
-  )
-
-  return {
-    tree,
-    pages,
-    folders,
-    spaces,
-    seats,
-    spaceRows,
-    schema: tree.registry,
-    setTree: filterSetTree(tree),
-    contextIds: contextIdsOf(tree),
-  }
+  return { tree, pages, folders, spaces, seats }
 }
 
-export function matrixWalk(held: MatrixTree, reply: MatrixGraphReply): MatrixWalk {
+export function matrixConnections(
+  held: MatrixTree,
+  links: MatrixGraphReply['links'],
+): GraphInput['connections'] {
   const resolve = pageIndexOf(held.tree).resolve
   const connections: GraphInput['connections'] = []
-  for (const link of reply.links) {
+  for (const link of links) {
     const hit = resolve(link.target)
     if (hit.status === 'resolved' && hit.page)
       connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind as ConnectionKind })
   }
-
-  return {
-    input: { pages: held.pages, folders: held.folders, spaces: held.spaces, connections },
-    rows: held.seats.map((s) => toRow(s.page, s.folderId, reply.values, held.tree.pageMetadata)),
-    spaceRows: held.spaceRows,
-    schema: held.schema,
-    setTree: held.setTree,
-    contextIds: held.contextIds,
-  }
+  return connections
 }
-
-const ASKS_ABSENCE = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
 
 function answers(
   row: ViewRow,
@@ -133,7 +89,7 @@ function answers(
     case 'context':
       return true
     default: {
-      if (ASKS_ABSENCE.has(rule.op)) return true
+      if (OPERANDLESS_OPS.has(rule.op)) return true
       const name = schema.find((d) => d.id === rule.property_id)?.name
       return name !== undefined && name in row.frontmatter
     }
@@ -158,18 +114,34 @@ function pruneFilterFor(
   }
 }
 
+// Rows exist only for a filter to read, so a Matrix with none set builds none.
 export function matrixVisible(
-  walk: MatrixWalk,
+  held: MatrixTree,
+  values: MatrixGraphReply['values'],
   filter: MatrixConfig['filter'],
 ): ReadonlySet<string> | null {
   if (!filter.enabled || !filter.rules) return null
+  const { tree } = held
   const rules = filter.rules
+  const schema = tree.registry
+  const contextIds = contextIdsOf(tree)
+  const rows = held.seats.map((s) => toRow(s.page, s.folderId, values, tree.pageMetadata))
   const ids = new Set(
-    applyFilter(walk.rows, rules, walk.schema, walk.setTree, walk.contextIds).map((r) => r.id),
+    applyFilter(rows, rules, schema, filterSetTree(tree), contextIds).map((r) => r.id),
   )
-  for (const row of walk.spaceRows) {
-    const pruned = pruneFilterFor(row, rules, walk.schema, walk.contextIds)
-    if (applyFilter([row], pruned, walk.schema, [], walk.contextIds).length > 0) ids.add(row.id)
-  }
+  // Self-membership belongs to the filter and stays out of spaceRowOf, which the panel and the menus read.
+  for (const g of tree.contexts)
+    for (const s of g.spaces) {
+      const own = spaceRowOf(tree, s)
+      const row = {
+        ...own,
+        contextValues: {
+          ...own.contextValues,
+          [g.def.id]: [...(own.contextValues?.[g.def.id] ?? []), s.id],
+        },
+      }
+      const pruned = pruneFilterFor(row, rules, schema, contextIds)
+      if (applyFilter([row], pruned, schema, [], contextIds).length > 0) ids.add(row.id)
+    }
   return ids
 }

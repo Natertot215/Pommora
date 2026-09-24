@@ -44,7 +44,7 @@ const NO_OP = null
 type Verdict = boolean | typeof NO_OP
 
 /** The ops that are complete without an operand; everything else is unauthored until one arrives. */
-const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
+export const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
 
 /** Built ONCE per operand and membership-tested per row — never a per-row ancestor walk. Unknown set id → undefined → no-op pass. */
 type LocationIndex = (setId: string) => ReadonlySet<string> | undefined

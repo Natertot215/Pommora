@@ -81,10 +81,10 @@ function releasePins(sim: Simulation): void {
   sim.local = false
 }
 
+// Never reached while a node is held: the drag keeps `alphaTarget` above zero.
 function sleep(sim: Simulation): void {
   sim.awake = false
   sim.alpha = 0
-  sim.drag = null
   releasePins(sim)
   sim.tree = buildQuadtree(sim.graph.nodes)
 }
@@ -100,14 +100,17 @@ export function reheat(sim: Simulation): void {
   wake(sim, DRAG_ALPHA_TARGET)
 }
 
+const restTarget = (sim: Simulation): number => (sim.drag ? DRAG_ALPHA_TARGET : 0)
+
 // A mode change replaces every link, so the picture re-solves at full heat rather than relaxing out of the shape the last mode left it in.
 export function resettle(sim: Simulation): void {
-  sim.alphaTarget = 0
+  sim.alphaTarget = restTarget(sim)
   wake(sim, 1)
 }
 
+// A held node keeps the heat it needs to follow the pointer through anything that cools the rest.
 export function cool(sim: Simulation): void {
-  sim.alphaTarget = 0
+  sim.alphaTarget = restTarget(sim)
   wake(sim, DRAG_ALPHA_TARGET)
 }
 
