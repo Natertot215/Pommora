@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, type RefObject } from 'react'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useSession } from '../../Session/store'
-import { readPageDetail } from '../../Session/pageDetailCache'
-import { fenceWarm } from '../../Navigation/warmTabs'
-import { captureWindowCache, readWindowCache, type WindowCacheEntry } from './windowCache'
+import { knownBody } from '../../Session/pageDetailCache'
+import { warmSeamOf } from '../../Navigation/warmTabs'
+import { captureBodyScroll, readBodyScroll, WINDOW_OWNER } from './windowCache'
 
 // Liveness-gated — the editor's unmount capture trails the store's drop, and ungated it would re-insert one ghost editorState per close.
 
@@ -15,38 +15,39 @@ export function useWindowWarm(
 ): WarmSeam | undefined {
   const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
 
-  const captureIfLive = useCallback((tabId: string, entry: WindowCacheEntry): void => {
-    const win = useSession.getState().pageWindow
-    if (win?.tabs.some((t) => t.id === tabId)) captureWindowCache(tabId, entry)
-  }, [])
+  const isLive = useCallback(
+    (tabId: string): boolean =>
+      useSession.getState().pageWindow?.tabs.some((t) => t.id === tabId) ?? false,
+    [],
+  )
 
   const seam = useMemo<WarmSeam | undefined>(
     () =>
       activeTabId
-        ? {
-            restore: () =>
-              fenceWarm(
-                readWindowCache(activeTabId),
-                activePath === undefined ? undefined : readPageDetail(activePath)?.body,
-              ),
-            capture: (state) => captureIfLive(activeTabId, state),
-          }
+        ? warmSeamOf(
+            WINDOW_OWNER,
+            activeTabId,
+            () => (activePath === undefined ? undefined : knownBody(activePath)),
+            () => isLive(activeTabId),
+          )
         : undefined,
-    [activeTabId, activePath, captureIfLive],
+    [activeTabId, activePath, isLive],
   )
 
   useEffect(() => {
     const el = scrollerRef.current
     if (!el || !activeTabId) return
-    const onScroll = (): void => captureIfLive(activeTabId, { bodyScrollTop: el.scrollTop })
+    const onScroll = (): void => {
+      if (isLive(activeTabId)) captureBodyScroll(activeTabId, el.scrollTop)
+    }
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
-  }, [activeTabId, captureIfLive, scrollerRef])
+  }, [activeTabId, isLive, scrollerRef])
 
   // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board is read over IPC on its first activation, so `ready` is the second thing worth waiting for.
   useEffect(() => {
     if (!activeTabId || !ready) return
-    const saved = readWindowCache(activeTabId)?.bodyScrollTop ?? 0
+    const saved = readBodyScroll(activeTabId)
     let inner = 0
     const outer = requestAnimationFrame(() => {
       inner = requestAnimationFrame(() => {

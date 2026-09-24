@@ -9,7 +9,7 @@ import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
-import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
+import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useResizeFrame, type ResizeEdge } from '@pommora/uix/Interactions/ResizeFrame'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
@@ -17,7 +17,8 @@ import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
 import type { PinnedGlance } from '../../Session/glanceSlice'
 import { connectionsFor } from '../../Nexus/treeIndex'
 import { previewLingerMs } from '../../Settings/personalization'
-import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
+import { fetchPageDetail, knownBody, readPageDetail } from '../../Session/pageDetailCache'
+import { warmSeamOf } from '../../Navigation/warmTabs'
 import { useSession } from '../../Session/store'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
@@ -39,7 +40,6 @@ const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const RECT_SLOP = 6
 // KNOB — how many glanced pages keep their editor state and scroll between opens.
-const GLANCE_WARM_CAP = 10
 // A non-path host chain: no real page path can collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const
 const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']
@@ -80,10 +80,8 @@ export function setGlanceSize(next: GlanceSize): void {
   void host().ask('glance:save', sizeCache)
 }
 
-const warm = new Map<string, { editorState: unknown; scrollTop: number }>()
-
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
-  return mapWarmSeam(warm, id, () => readPageDetail(path)?.body, GLANCE_WARM_CAP)
+  return warmSeamOf('glance', id, () => knownBody(path))
 }
 
 const inRect = (r: DOMRect, x: number, y: number): boolean =>

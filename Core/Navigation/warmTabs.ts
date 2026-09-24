@@ -1,6 +1,7 @@
 // Module state, not store state: it survives React remounts while dying with the session.
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import { fenceWarm, type WarmSeam } from '../MarkdownPM/warmSeam'
 
 interface CacheEntry {
   editorState?: unknown
@@ -8,42 +9,37 @@ interface CacheEntry {
   pageDetail?: PageDetail
 }
 
-const CACHE_CAP_PER_TAB = 50
+const CACHE_CAP_PER_OWNER = 50
 
+// Every surface that returns an editor warm — a main tab, a window tab, the glance, an embed — keeps its entries under one owner here, so one clear reaches them all.
 const cache = new Map<string, Map<string, CacheEntry>>()
 
-export function captureCache(tabId: string, navKey: string, patch: Partial<CacheEntry>): void {
-  let tabMap = cache.get(tabId)
-  if (!tabMap) {
-    tabMap = new Map()
-    cache.set(tabId, tabMap)
+export function captureCache(owner: string, entity: string, patch: Partial<CacheEntry>): void {
+  let entries = cache.get(owner)
+  if (!entries) {
+    entries = new Map()
+    cache.set(owner, entries)
   }
-  const merged = { ...tabMap.get(navKey), ...patch }
-  capSet(tabMap, navKey, merged, CACHE_CAP_PER_TAB)
+  capSet(entries, entity, { ...entries.get(entity), ...patch }, CACHE_CAP_PER_OWNER)
 }
 
-export function readCache(tabId: string, navKey: string): CacheEntry | undefined {
-  return cache.get(tabId)?.get(navKey)
+export function readCache(owner: string, entity: string): CacheEntry | undefined {
+  return cache.get(owner)?.get(entity)
 }
 
-export function dropCacheTab(tabId: string): void {
-  cache.delete(tabId)
+export function dropCacheOwner(owner: string): void {
+  cache.delete(owner)
+}
+
+export function dropCacheEntry(owner: string, entity: string): void {
+  cache.get(owner)?.delete(entity)
 }
 
 /** A warm return would otherwise resurrect the pre-write value; editor state and scroll stay warm. */
 export function dropWarmDetail(path: string): void {
-  for (const tabMap of cache.values())
-    for (const entry of tabMap.values())
+  for (const entries of cache.values())
+    for (const entry of entries.values())
       if (entry.pageDetail?.path === path) delete entry.pageDetail
-}
-
-export function fenceWarm<E extends { editorState?: unknown }>(
-  entry: E | undefined,
-  fresh: string | undefined,
-): E | undefined {
-  if (!entry || fresh === undefined) return entry
-  const doc = (entry.editorState as { doc?: unknown } | undefined)?.doc
-  return doc === undefined || doc === fresh ? entry : undefined
 }
 
 // A surface unmounting because of a clear captures after it — the generation lets it tell.
@@ -53,4 +49,31 @@ export const cacheGeneration = (): number => generation
 export function clearWarm(): void {
   cache.clear()
   generation++
+}
+
+/** A seam over one owner's entry, fenced against the body `known` names; `live` refuses a capture that trails its owner's close, and a clear since the restore refuses it too. */
+export function warmSeamOf(
+  owner: string,
+  entity: string,
+  known: () => string | undefined,
+  live: () => boolean = () => true,
+): WarmSeam {
+  let restoredAt = generation
+  return {
+    restore: () => {
+      restoredAt = generation
+      const entry = readCache(owner, entity)
+      const kept = fenceWarm(entry, known())
+      if (entry && !kept) dropCacheEntry(owner, entity)
+      return kept
+    },
+    capture: (state) => {
+      if (restoredAt === generation && live()) captureCache(owner, entity, state)
+    },
+  }
+}
+
+// Dev-only CDP probe (the store's __pommora twin) — lets a headless drive assert warm entries.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  ;(window as unknown as { __pommoraCache: unknown }).__pommoraCache = cache
 }

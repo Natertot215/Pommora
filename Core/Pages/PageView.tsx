@@ -15,7 +15,8 @@ import {
   subscribeLanding,
   useBodyEpoch,
 } from '../Session/pageDetailCache'
-import { cacheGeneration, captureCache, fenceWarm, readCache } from '../Navigation/warmTabs'
+import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
+import { fenceWarm } from '../MarkdownPM/warmSeam'
 import { registerPageEditor, renameHeading } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'

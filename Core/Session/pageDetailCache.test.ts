@@ -14,7 +14,8 @@ import {
   writeThroughBody,
 } from './pageDetailCache'
 import { machine } from '../Platform/machine'
-import { captureCache, dropCacheTab, fenceWarm, readCache } from '../Navigation/warmTabs'
+import { captureCache, dropCacheOwner, readCache, warmSeamOf } from '../Navigation/warmTabs'
+import { fenceWarm } from '../MarkdownPM/warmSeam'
 import { stubDialer } from '../vitest.setup'
 
 beforeEach(() => clearCache()) // module state — never leaks across tests
@@ -44,10 +45,10 @@ describe('warmCache', () => {
     expect(readCache('t1', 'page:p2')).toBeUndefined()
   })
 
-  it('dropCacheTab clears one tab; clearCache clears everything', () => {
+  it('dropCacheOwner clears one tab; clearCache clears everything', () => {
     captureCache('t1', 'page:a', { scrollTop: 1 })
     captureCache('t2', 'page:b', { scrollTop: 2 })
-    dropCacheTab('t1')
+    dropCacheOwner('t1')
     expect(readCache('t1', 'page:a')).toBeUndefined()
     expect(readCache('t2', 'page:b')?.scrollTop).toBe(2)
     clearCache()
@@ -141,11 +142,35 @@ describe('fenceWarm', () => {
   it('drops an entry whose doc differs', () => {
     expect(fenceWarm(warm, 'two')).toBeUndefined()
   })
-  it('keeps an entry when no fresh body is known', () => {
-    expect(fenceWarm(warm, undefined)).toBe(warm)
+  it('drops an entry carrying editor state when no fresh body is known', () => {
+    expect(fenceWarm(warm, undefined)).toBeUndefined()
   })
-  it('keeps a scroll-only entry', () => {
+  it('keeps a scroll-only entry, known body or not', () => {
     const scroll: { editorState?: unknown; scrollTop: number } = { scrollTop: 3 }
     expect(fenceWarm(scroll, 'two')).toBe(scroll)
+    expect(fenceWarm(scroll, undefined)).toBe(scroll)
+  })
+})
+
+describe('warmSeamOf', () => {
+  const state = { editorState: { doc: 'hi' }, scrollTop: 3 }
+
+  it('one clear reaches every owner, and a capture trailing it stores nothing', () => {
+    const seam = warmSeamOf('embed', 'a', () => 'hi')
+    seam.capture(state)
+    expect(seam.restore()).toEqual(state)
+    clearCache()
+    seam.capture(state)
+    expect(readCache('embed', 'a')).toBeUndefined()
+  })
+
+  it('refuses a capture its owner no longer holds', () => {
+    warmSeamOf(
+      'window',
+      'gone',
+      () => 'hi',
+      () => false,
+    ).capture(state)
+    expect(readCache('window', 'gone')).toBeUndefined()
   })
 })

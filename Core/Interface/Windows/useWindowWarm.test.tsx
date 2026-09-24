@@ -7,7 +7,8 @@ import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import { cachePageDetail, clearCache } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { useWindowWarm } from './useWindowWarm'
-import { captureWindowCache, clearWindowCache } from './windowCache'
+import { captureBodyScroll, clearWindowCache, WINDOW_OWNER } from './windowCache'
+import { captureCache, readCache } from '../../Navigation/warmTabs'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -71,20 +72,21 @@ afterEach(async () => {
 })
 
 describe('useWindowWarm', () => {
-  it("fences the active tab's entry against the active path's fresh detail", async () => {
-    captureWindowCache('tab1', { editorState: { doc: 'old' }, scrollTop: 0 })
+  it("fences the active tab's entry against the active path's known body, dropping a stale one", async () => {
+    captureCache(WINDOW_OWNER, 'tab1', { editorState: { doc: 'old' }, scrollTop: 0 })
     cachePageDetail(detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'new' }))
     await act(async () => {
       root.render(createElement(Probe, { path: 'Notes/a.md' }))
     })
     expect(seam?.restore()).toBeUndefined()
-    cachePageDetail(detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'old' }))
-    expect(seam?.restore()).toEqual({ editorState: { doc: 'old' }, scrollTop: 0 })
+    expect(readCache(WINDOW_OWNER, 'tab1')).toBeUndefined()
+    captureCache(WINDOW_OWNER, 'tab1', { editorState: { doc: 'new' }, scrollTop: 0 })
+    expect(seam?.restore()).toEqual({ editorState: { doc: 'new' }, scrollTop: 0 })
   })
 
   it("restores the active tab's scroll for a tab carrying no page", async () => {
     onSpaceTab()
-    captureWindowCache('tab1', { bodyScrollTop: 240 })
+    captureBodyScroll('tab1', 240)
     const el = scroller()
     await act(async () => {
       root.render(createElement(ScrollProbe, { el, ready: true }))
@@ -95,7 +97,7 @@ describe('useWindowWarm', () => {
 
   it('holds the restore until the tab is ready, then lands it', async () => {
     onSpaceTab()
-    captureWindowCache('tab1', { bodyScrollTop: 240 })
+    captureBodyScroll('tab1', 240)
     const el = scroller()
     await act(async () => {
       root.render(createElement(ScrollProbe, { el, ready: false }))

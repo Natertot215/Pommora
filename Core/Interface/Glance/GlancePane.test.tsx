@@ -622,10 +622,19 @@ describe('warmth', () => {
   })
 
   it('holds a bounded number of pages, evicting the least recently captured', () => {
-    for (let i = 0; i < 11; i++) glanceWarmSeam(`cap-${i}`, `Notes/${i}.md`).capture(state('hi', i))
+    for (let i = 0; i < 51; i++) {
+      cachePageDetail({ ...alpha, path: `Notes/${i}.md`, body: 'hi' })
+      glanceWarmSeam(`cap-${i}`, `Notes/${i}.md`).capture(state('hi', i))
+    }
     expect(glanceWarmSeam('cap-0', 'Notes/0.md').restore()).toBeUndefined()
     expect(glanceWarmSeam('cap-1', 'Notes/1.md').restore()).toEqual(state('hi', 1))
-    expect(glanceWarmSeam('cap-10', 'Notes/10.md').restore()).toEqual(state('hi', 10))
+    expect(glanceWarmSeam('cap-50', 'Notes/50.md').restore()).toEqual(state('hi', 50))
+  })
+
+  it('a snapshot with no known body to judge it by mounts cold', () => {
+    const seam = glanceWarmSeam('w3', 'Notes/Unknown.md')
+    seam.capture(state('old', 5))
+    expect(seam.restore()).toBeUndefined()
   })
 
   it('the pane hands the tile a seam, so an open captures on close', async () => {

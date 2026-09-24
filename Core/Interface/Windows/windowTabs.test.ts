@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { windowTargetOf, useSession } from '../../Session/store'
 import type { SelectTarget } from '@pommora/core/Navigation/navRef'
-import { captureWindowCache, clearWindowCache, readWindowCache } from './windowCache'
+import { clearWindowCache, WINDOW_OWNER } from './windowCache'
+import { captureCache, readCache } from '../../Navigation/warmTabs'
 import { stubDialer } from '../../vitest.setup'
 
 const page = (id: string) => ({ kind: 'page' as const, id, path: `Notes/${id}.md` })
@@ -68,11 +69,11 @@ describe('windowTabs — the tab model (B-2/B-3)', () => {
   it('a Preview while a window stands ADDS a tab and leaves the warm cache alone', () => {
     useSession.getState().openWindowTab(page('x'))
     const xTab = useSession.getState().pageWindow!.tabs[0]
-    captureWindowCache(xTab.id, { scrollTop: 7 })
+    captureCache(WINDOW_OWNER, xTab.id, { scrollTop: 7 })
     useSession.getState().openWindowTab(page('z'))
     expect(ids()).toEqual(['x', 'z'])
     expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'z' })
-    expect(readWindowCache(xTab.id)?.scrollTop).toBe(7)
+    expect(readCache(WINDOW_OWNER, xTab.id)?.scrollTop).toBe(7)
   })
 
   it('a Space Preview opens a Space tab, deduped by id like a page', () => {
@@ -276,23 +277,23 @@ describe('windowTabs — warmth (B-8)', () => {
     useSession.getState().openWindowTab(page('x'))
     useSession.getState().openWindowTab(page('y'))
     const [xTab, yTab] = useSession.getState().pageWindow!.tabs
-    captureWindowCache(xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
-    captureWindowCache(yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
-    expect(readWindowCache(xTab.id)?.scrollTop).toBe(5)
+    captureCache(WINDOW_OWNER, xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
+    captureCache(WINDOW_OWNER, yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
+    expect(readCache(WINDOW_OWNER, xTab.id)?.scrollTop).toBe(5)
 
     useSession.getState().closeWindowTab(yTab.id)
-    expect(readWindowCache(yTab.id)).toBeUndefined()
-    expect(readWindowCache(xTab.id)?.scrollTop).toBe(5)
+    expect(readCache(WINDOW_OWNER, yTab.id)).toBeUndefined()
+    expect(readCache(WINDOW_OWNER, xTab.id)?.scrollTop).toBe(5)
 
     useSession.getState().closeWindow()
-    expect(readWindowCache(xTab.id)).toBeUndefined()
+    expect(readCache(WINDOW_OWNER, xTab.id)).toBeUndefined()
   })
 
   it('an overtake clears prior warmth — the entry is seeded after the Matrix stands', () => {
     useSession.getState().openMatrixWindow()
-    captureWindowCache('stale', { scrollTop: 7 })
+    captureCache(WINDOW_OWNER, 'stale', { scrollTop: 7 })
     useSession.getState().openWindowTab(page('z'))
-    expect(readWindowCache('stale')).toBeUndefined()
+    expect(readCache(WINDOW_OWNER, 'stale')).toBeUndefined()
   })
 })
 
