@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { notifyDeleted } from './notifications'
+import { notifyDeleted, persist, reportRefusal } from './notifications'
 import { useSession } from '../../Session/store'
 
 const cmdZ = (): boolean => {
@@ -52,5 +52,40 @@ describe('a delete notification', () => {
     expect(cmdZ()).toBe(true)
     expect(newer).toHaveBeenCalledTimes(1)
     expect(older).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the refusal reporter', () => {
+  const refused = {
+    ok: false as const,
+    error: { code: 'operation-failed' as const, message: 'disk full' },
+  }
+
+  beforeEach(() => useSession.setState({ notification: null }))
+
+  it('posts a refusal as an error notice and answers whether it went through', () => {
+    expect(reportRefusal({ ok: true, value: null })).toBe(true)
+    expect(useSession.getState().notification).toBeNull()
+    expect(reportRefusal(refused)).toBe(false)
+    expect(useSession.getState().notification).toMatchObject({
+      message: 'disk full',
+      tone: 'error',
+    })
+  })
+
+  it('names what a refused write lost, and logs it instead when quiet', async () => {
+    await persist('the setting', Promise.resolve(refused))
+    expect(useSession.getState().notification?.message).toBe('Couldn’t save the setting: disk full')
+    useSession.setState({ notification: null })
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await persist('folds', Promise.resolve(refused), true)
+    expect(useSession.getState().notification).toBeNull()
+    expect(log).toHaveBeenCalledWith('Couldn’t save folds: disk full')
+    log.mockRestore()
+  })
+
+  it('stays silent when the write lands', async () => {
+    await persist('the setting', Promise.resolve({ ok: true, value: null }))
+    expect(useSession.getState().notification).toBeNull()
   })
 })
