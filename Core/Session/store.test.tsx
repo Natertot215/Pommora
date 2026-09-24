@@ -686,6 +686,27 @@ describe('store — a Nexus switch lands every owed save first', () => {
     expect(order.slice(0, 3).sort()).toEqual(['page', 'tabs', 'tile'])
     expect(order[3]).toBe('choose')
   })
+
+  it('closes every rename field and picker the old Nexus left open', async () => {
+    channels['nexus:choose'] = vi.fn(async () => ok(true))
+    channels['nexus:state'] = vi.fn(async () => ok({ status: 'empty' }))
+    const s = useSession.getState()
+    s.beginRename('Notes', false, 'sidebar')
+    s.beginIcon('Notes', 'sidebar')
+    s.beginColor('Notes', 'sidebar')
+    s.beginPropertyRename({ collectionPath: 'Notes', propertyId: 'prop_status' })
+    s.signalPeek('Notes', 'p1')
+    await s.choose()
+    expect(useSession.getState()).toMatchObject({
+      renamingPath: null,
+      iconPath: null,
+      iconHost: null,
+      colorPath: null,
+      colorHost: null,
+      renamingProperty: null,
+      peekSignal: null,
+    })
+  })
 })
 
 describe('store — the headings map (Task 2.3)', () => {
