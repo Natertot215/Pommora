@@ -15,6 +15,7 @@ import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { Banner } from '../../Interface/Header/Banner'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
+import { pageIdIndex } from '../../Nexus/valuesChanged'
 
 import '../tile-base.css'
 import '../tile-title.css'
@@ -82,7 +83,8 @@ export function PageTile({
   const failed = entry !== null && entry.body === null
 
   const embedScale = useEmbedScale()
-  const host = useEditorHost({ pageId: entry?.id, connections })
+  const pageId = useSession((s) => entry?.id ?? pageIdIndex(s.tree).get(path))
+  const host = useEditorHost({ pageId, connections })
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
   useEffect(() => {

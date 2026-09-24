@@ -1,8 +1,16 @@
+import type { EditorPrefs, EditorPrefWrite } from '../Contract/bridge'
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { NO_STORE, ok, fault } from '../Contract/result'
 import { isGlanceSize, isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
-import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
+import {
+  readKey,
+  readScope,
+  readValue,
+  type Scope,
+  writeKey,
+  writeValue,
+} from '../Platform/localState'
 import { type DevicePrefs, packDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
 import type { GlanceSize } from './Windows/windowRecord'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './Windows/windowState'
@@ -14,11 +22,26 @@ const isEmptyValue = (v: unknown): boolean =>
 
 export const scopeGet = <T>(scope: Scope) => withRoot(() => ok(readScope<T>(scope)), ok({}))
 
-export const scopeSet = <T>(scope: Scope, valid: (v: unknown) => v is T, expected: string) =>
-  withWriteRoot((_root, _ctx, key: string, value: T) => {
+export const scopeSet = (scope: Scope, valid: (v: unknown) => boolean, expected: string) =>
+  withWriteRoot((_root, _ctx, key: string, value: unknown) => {
     if (!valid(value)) return fault(expected)
     return writeKey(scope, key, isEmptyValue(value) ? null : value) ? ok(null) : NO_STORE
   })
+
+const editorPrefSetters = {
+  folds: scopeSet('folds', isStringArray, 'Fold keys must be a string array.'),
+  embedHeights: scopeSet(
+    'embedHeights',
+    isHeightMap,
+    'Embed heights must map ids to positive numbers.',
+  ),
+  embedZooms: scopeSet('embedZooms', isHeightMap, 'Embed scales must map ids to positive numbers.'),
+  headingCols: scopeSet(
+    'headingCols',
+    isIndexArray,
+    'Table indices must be a non-negative-integer array.',
+  ),
+} satisfies Record<keyof EditorPrefs, unknown>
 
 export const interfaceHandlers = {
   'windows:load': withRoot(() => ok(readWindowsState())),
@@ -42,26 +65,16 @@ export const interfaceHandlers = {
     return ok(null)
   }),
 
-  'folds:get': scopeGet<string[]>('folds'),
-  'folds:set': scopeSet('folds', isStringArray, 'Fold keys must be a string array.'),
-  'embedHeights:get': scopeGet<Record<string, number>>('embedHeights'),
-  'embedHeights:set': scopeSet(
-    'embedHeights',
-    isHeightMap,
-    'Embed heights must map ids to positive numbers.',
+  'editorPrefs:get': withRoot((_root, _ctx, pageId: string) =>
+    ok<EditorPrefs>({
+      folds: readKey<string[]>('folds', pageId) ?? [],
+      embedHeights: readKey<Record<string, number>>('embedHeights', pageId) ?? {},
+      embedZooms: readKey<Record<string, number>>('embedZooms', pageId) ?? {},
+      headingCols: readKey<number[]>('headingCols', pageId) ?? [],
+    }),
   ),
-  'embedZooms:get': scopeGet<Record<string, number>>('embedZooms'),
-  'embedZooms:set': scopeSet(
-    'embedZooms',
-    isHeightMap,
-    'Embed scales must map ids to positive numbers.',
-  ),
-  'tableHeadingCols:get': scopeGet<number[]>('headingCols'),
-  'tableHeadingCols:set': scopeSet(
-    'headingCols',
-    isIndexArray,
-    'Table indices must be a non-negative-integer array.',
-  ),
+  'editorPrefs:set': (ctx, pageId: string, ...[scope, value]: EditorPrefWrite) =>
+    editorPrefSetters[scope](ctx, pageId, value),
   'citations:get': scopeGet<boolean>('citations'),
   'citations:set': scopeSet(
     'citations',

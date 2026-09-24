@@ -39,8 +39,6 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 interface EmbedHost {
   getConn: () => ConnectionsApi | undefined
   ancestors: readonly string[]
-  saveHeights?: (heights: Record<string, number>) => void
-  saveZooms?: (zooms: Record<string, number>) => void
   tabActive?: () => boolean
 }
 
@@ -98,7 +96,7 @@ function EmbedResizeHandle({
       }
       const heights = { ...view.state.field(embedField).heights, [targetId]: h }
       view.dispatch({ effects: setEmbedHeights.of(heights) })
-      view.state.facet(embedHost).saveHeights?.(heights)
+      view.state.facet(editorHost).prefs?.save('embedHeights', heights)
     },
   })
   return frame.edges(['s'])[0]
@@ -146,7 +144,6 @@ class EmbedTileWidget extends ReactWidget {
     else dom.style.removeProperty('height')
     dom.dataset.embedTarget = this.targetId
     applyTileZoom(dom, view.state.field(embedField).zooms[this.targetId])
-    const host = view.state.facet(embedHost)
     this.render(
       dom,
       tileTree(
@@ -160,7 +157,7 @@ class EmbedTileWidget extends ReactWidget {
             if (this.interactive) view.dispatch({ effects: setEmbedEditing.of(this.path) })
           },
         }),
-        this.interactive && host.saveHeights
+        this.interactive && view.state.facet(editorHost).prefs
           ? createElement(EmbedResizeHandle, { view, span: dom, targetId: this.targetId })
           : null,
       ),
@@ -283,7 +280,7 @@ class WebpageTileWidget extends ReactWidget {
           zoom: zoomStep(view.state.field(embedField).zooms[this.url]).factor,
           refocusHost: () => view.focus(),
         }),
-        this.pageSurface && host.saveHeights
+        this.pageSurface
           ? createElement(EmbedResizeHandle, { view, span: dom, targetId: this.url })
           : null,
       ),
@@ -397,7 +394,7 @@ function buildTiles(
           w.url,
           w.label,
           heights[w.url],
-          host.saveHeights !== undefined,
+          state.facet(editorHost).pageSurface === true,
         ),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
@@ -697,7 +694,7 @@ export function applyEmbedZoom(view: EditorView, pos: number, factor: number): v
   if (factor === DEFAULT_ZOOM) delete zooms[key]
   else zooms[key] = factor
   view.dispatch({ effects: setEmbedZooms.of(zooms) })
-  view.state.facet(embedHost).saveZooms?.(zooms)
+  view.state.facet(editorHost).prefs?.save('embedZooms', zooms)
   refreshTileZooms(view, true)
 }
 

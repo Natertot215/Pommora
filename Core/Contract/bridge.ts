@@ -27,6 +27,17 @@ import type { SyncState, SyncStatus } from '../Sync/Contract/wire'
 
 export type HostPlatform = 'windows' | 'posix'
 
+export interface EditorPrefs {
+  folds: string[]
+  embedHeights: Record<string, number>
+  embedZooms: Record<string, number>
+  headingCols: number[]
+}
+
+export type EditorPrefWrite = {
+  [S in keyof EditorPrefs]: [scope: S, value: EditorPrefs[S]]
+}[keyof EditorPrefs]
+
 /** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
 interface PickFileOptions {
   dir?: string
@@ -72,20 +83,8 @@ export interface Asks {
   'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
   'history:clear': { args: []; reply: Result<number> }
 
-  'folds:get': { args: []; reply: Result<Record<string, string[]>> }
-  'folds:set': { args: [pageId: string, keys: string[]]; reply: Result<null> }
-  'embedHeights:get': { args: []; reply: Result<Record<string, Record<string, number>>> }
-  'embedHeights:set': {
-    args: [pageId: string, heights: Record<string, number>]
-    reply: Result<null>
-  }
-  'embedZooms:get': { args: []; reply: Result<Record<string, Record<string, number>>> }
-  'embedZooms:set': {
-    args: [pageId: string, zooms: Record<string, number>]
-    reply: Result<null>
-  }
-  'tableHeadingCols:get': { args: []; reply: Result<Record<string, number[]>> }
-  'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
+  'editorPrefs:get': { args: [pageId: string]; reply: Result<EditorPrefs> }
+  'editorPrefs:set': { args: [pageId: string, ...write: EditorPrefWrite]; reply: Result<null> }
   'citations:get': { args: []; reply: Result<Record<string, boolean>> }
   'citations:set': { args: [pageId: string, shown: boolean | null]; reply: Result<null> }
 

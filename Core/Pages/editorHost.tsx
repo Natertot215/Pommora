@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { persist, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useMemo, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
@@ -25,6 +25,7 @@ interface EditorHostOptions {
   pageId?: string
   connections?: ConnectionsApi
   inert?: boolean
+  pageSurface?: boolean
 }
 
 /** The bridge's listener is per-caller, so every mounted editor hears every action; both directions answer to `subject`. */
@@ -48,7 +49,7 @@ const pickNode = (c: CollectionNode | SetNode): PickNode => ({
 
 /** Every member reads the store when called, so one host serves an editor for its whole mount; the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
 function buildEditorHost(
-  { pageId, inert }: EditorHostOptions,
+  { pageId, inert, pageSurface }: EditorHostOptions,
   connRef: { readonly current: ConnectionsApi | undefined },
 ): EditorHost {
   const state = useSession.getState
@@ -109,6 +110,14 @@ function buildEditorHost(
         if (pageId) state().setCitationsVisible(pageId, v)
       },
     },
+    pageSurface,
+    prefs: pageId
+      ? {
+          load: () => host().ask('editorPrefs:get', pageId),
+          save: (...write) =>
+            void persist(write[0], host().ask('editorPrefs:set', pageId, ...write), true),
+        }
+      : undefined,
     clipboard: {
       read: async () => valueOr(await host().ask('clipboard:read'), ''),
       write: async (text) => {
@@ -164,7 +173,12 @@ function buildEditorHost(
 }
 
 /** Re-identified on the store facts the editor renders from, so its effects follow a toggle made anywhere. */
-export function useEditorHost({ pageId, connections, inert }: EditorHostOptions): EditorHost {
+export function useEditorHost({
+  pageId,
+  connections,
+  inert,
+  pageSurface,
+}: EditorHostOptions): EditorHost {
   const connRef = useRef(connections)
   connRef.current = connections
   const shown = useSession((s) => citationsVisible(s, pageId))
@@ -173,11 +187,12 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
   const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
   const commands = useSession((s) => s.commands)
   return useMemo(
-    () => buildEditorHost({ pageId, inert }, connRef),
+    () => buildEditorHost({ pageId, inert, pageSurface }, connRef),
     [
       pageId,
       connections,
       inert,
+      pageSurface,
       shown,
       cbLineCount,
       headingLinkStyle,

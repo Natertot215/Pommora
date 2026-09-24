@@ -1,4 +1,4 @@
-import { EditorView, Decoration, WidgetType, type ViewUpdate } from '@codemirror/view'
+import { EditorView, Decoration, ViewPlugin, WidgetType } from '@codemirror/view'
 import {
   StateField,
   StateEffect,
@@ -17,7 +17,7 @@ import { lineElementAt } from './lineDom'
 /** The reveal's beat plus slack for the frame that draws its final height — a travel timed earlier lands on the collapsed document. */
 export const FOLD_SETTLE_MS = ms(duration.fast) + 30
 
-/** Marks the mount-time re-apply so the persist listener doesn't echo it back to disk. */
+/** Marks the mount-time re-apply, which the persist plugin reseeds from rather than echoing back to disk. */
 const initialFoldAnnotation = Annotation.define<boolean>()
 
 export type FoldKind = 'heading' | 'citations'
@@ -317,7 +317,6 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
   return Decoration.set(ranges, true)
 })
 
-/** The mount annotation is not optional: the persist listener writes the whole surviving key set on any un-annotated fold effect, and this runs before `applySavedFolds`. */
 export function applyCitationsVisibility(view: EditorView, shown: boolean, animate = true): void {
   const r = citationsRegion(view.state.doc)
   if (!r) return
@@ -325,7 +324,7 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean, anima
   const effect = shown ? expandEffect.of(r.anchor) : collapseEffect(view, r, animate)
   if (!effect) return
   if (!shown) blurCaretInBody(view, r)
-  view.dispatch({ effects: effect, annotations: initialFoldAnnotation.of(true) })
+  view.dispatch({ effects: effect })
   if (shown && animate)
     setTimeout(() => {
       if (view.dom.isConnected)
@@ -337,7 +336,7 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean, anima
 export function editAcrossCitations(view: EditorView, shown: boolean, dispatch: () => void): void {
   const r = citationsRegion(view.state.doc)
   if (r && closedAt(view.state.field(foldField), r.anchor))
-    view.dispatch({ effects: dropEffect.of(r.anchor), annotations: initialFoldAnnotation.of(true) })
+    view.dispatch({ effects: dropEffect.of(r.anchor) })
   dispatch()
   applyCitationsVisibility(view, shown, false)
 }
@@ -363,18 +362,34 @@ export function markdownFolding(
   onFoldsChange: (keys: string[]) => void,
   onCitationsToggle: () => void,
 ): Extension {
-  const persist = EditorView.updateListener.of((u: ViewUpdate) => {
-    const changed = u.transactions.some(
-      (tr) =>
-        !tr.annotation(initialFoldAnnotation) &&
-        tr.effects.some((e) => e.is(foldEffect) || e.is(expandEffect) || e.is(dropEffect)),
-    )
-    if (!changed) return
-    onFoldsChange(
-      foldedRegions(u.state)
+  // The saved keys are read only at the next mount, so a heading renamed under its fold is re-derived where the editor is left as well as on each fold change.
+  const persist = ViewPlugin.define((view) => {
+    const keysOf = (state: EditorState): string[] =>
+      foldedRegions(state)
         .filter((r) => persisted(r.kind))
-        .map((r) => r.key),
-    )
+        .map((r) => r.key)
+    let saved = '[]'
+    const flush = (state: EditorState): void => {
+      const keys = keysOf(state)
+      const next = JSON.stringify(keys)
+      if (next === saved) return
+      saved = next
+      onFoldsChange(keys)
+    }
+    return {
+      update(u) {
+        if (u.transactions.some((tr) => tr.annotation(initialFoldAnnotation)))
+          saved = JSON.stringify(keysOf(u.state))
+        else if (
+          (u.focusChanged && !u.view.hasFocus) ||
+          u.transactions.some((tr) =>
+            tr.effects.some((e) => e.is(foldEffect) || e.is(expandEffect) || e.is(dropEffect)),
+          )
+        )
+          flush(u.state)
+      },
+      destroy: () => flush(view.state),
+    }
   })
   // A fold can't survive the relocating edit (its body offsets remap to the replace span's ends), so a folded section unfolds at drag-start.
   const headingDrag = createBlockDragGesture({

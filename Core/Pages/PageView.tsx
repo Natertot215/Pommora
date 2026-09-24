@@ -1,7 +1,5 @@
-import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { useEffect, useRef } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
@@ -14,7 +12,6 @@ import { registerPageEditor, renameHeading } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { useBodyMount } from './bodyMount'
-import { host } from '../Platform/dialer'
 import { coverOf } from './pageDetail'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
@@ -74,7 +71,7 @@ export function PageView({
   }, [parked])
 
   const connections = usePreviewConnections(tree)
-  const editorHost = useEditorHost({ pageId, connections })
+  const editorHost = useEditorHost({ pageId, connections, pageSurface: true })
 
   // The debounced body write lives in the shared path-keyed autosave (saveScheduler) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
   const pushLiveBody = (path: string, body: string): void => {
@@ -121,34 +118,6 @@ export function PageView({
       onSelection={publishSelection}
       onHeadingRename={(old, next) => void renameHeading(pageDetail.id, old, next)}
       embedAncestors={[pageDetail.path]}
-      folds={{
-        load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],
-        save: (keys) => void persist('folds', host().ask('folds:set', pageDetail.id, keys), true),
-      }}
-      embedHeights={{
-        load: async () => valueOr(await host().ask('embedHeights:get'), {})[pageDetail.id] ?? {},
-        save: (heights) =>
-          void persist(
-            'embed heights',
-            host().ask('embedHeights:set', pageDetail.id, heights),
-            true,
-          ),
-      }}
-      embedZooms={{
-        load: async () => valueOr(await host().ask('embedZooms:get'), {})[pageDetail.id] ?? {},
-        save: (zooms) =>
-          void persist('embed zooms', host().ask('embedZooms:set', pageDetail.id, zooms), true),
-      }}
-      tableHeadingColumns={{
-        load: async () =>
-          valueOr(await host().ask('tableHeadingCols:get'), {})[pageDetail.id] ?? [],
-        save: (indices) =>
-          void persist(
-            'table heading columns',
-            host().ask('tableHeadingCols:set', pageDetail.id, indices),
-            true,
-          ),
-      }}
       register={(view) => {
         editorRef.current = view
         seat.register(view)
