@@ -228,8 +228,6 @@ export const accessoryButton = style({
   selectors: { '&&:disabled': { opacity: 'var(--state-ghost)' } },
 })
 
-export const value = style([text.control.standard, { color: c.label.control }])
-
 export const detail = style([
   text.footnote.emphasized,
   { flex: '0 1 auto', minWidth: 0, vars: { '--over-scroll-fade': 'var(--fade-base)' } },
@@ -238,11 +236,6 @@ export const detail = style([
 globalStyle(`${side}:has(${detail})`, { flex: '0 1 auto', minWidth: 0, maxWidth: '55%' })
 globalStyle(`${footing} ${accessoryButton}`, { color: c.label.secondary })
 globalStyle(`${footingBar} ${detail}`, { color: c.label.secondary })
-globalStyle(`${footingBar} ${value}`, {
-  fontSize: font.scale.footnote.size,
-  lineHeight: font.scale.footnote.line,
-  color: c.label.secondary,
-})
 
 export const menu = style({ display: 'flex', flexDirection: 'column', padding: '6px 0' })
 

@@ -10,8 +10,8 @@ import { useSession } from '../Session/store'
 import * as x from './exclusion-rows.css'
 import { host } from '../Platform/dialer'
 
-const PANE_MIN_W = 250
-const PANE_MAX_W = 500
+const EXCLUDED_MIN_W = 250
+const EXCLUDED_MAX_W = 500
 
 export function ExcludedDirectoriesRow({
   label,
@@ -99,7 +99,7 @@ export function ExcludedDirectoriesRow({
           onDismiss={dismiss}
           triggerRef={triggerRef}
           bareSurface
-          style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}
+          style={{ minWidth: EXCLUDED_MIN_W, maxWidth: EXCLUDED_MAX_W }}
         >
           <div className={x.paneList}>
             {stored.map((folder) => (

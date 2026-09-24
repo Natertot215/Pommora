@@ -54,15 +54,6 @@ describe('MenuRowView', () => {
     expect(onSelect).toHaveBeenCalledOnce()
   })
 
-  it('toggles a value row on the row itself', () => {
-    const onToggle = vi.fn()
-    row({ kind: 'item', label: 'Style', trailing: { kind: 'value', value: 'Compact', onToggle } })
-    const el = host.querySelector('[role="button"]') as HTMLElement
-    expect(el.textContent).toContain('Compact')
-    el.click()
-    expect(onToggle).toHaveBeenCalledOnce()
-  })
-
   it('keeps a switch trailing labelled on its button', () => {
     const onChange = vi.fn()
     row({

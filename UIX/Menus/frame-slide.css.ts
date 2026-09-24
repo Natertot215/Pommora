@@ -1,6 +1,10 @@
 import { style } from '@vanilla-extract/css'
 import { duration, easing } from '../Animations/motion'
 
+// KNOB — the floor a settings pane keeps under its slides.
+export const PANE_MIN_W = 225
+export const PANE_MIN_H = 245
+
 export const viewport = style({ position: 'relative', overflow: 'hidden' })
 
 /** Width only: height must track measured content instantly or it lag-chases an in-place growth. */
