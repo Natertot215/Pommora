@@ -64,4 +64,4 @@ A second family, keyed `file-type-<ext>` and drawn from Tabler's set (`fileTypes
 
 ### The Picker
 
-The Icon Picker a user opens to assign an entity's icon (`UIX/Pickers/IconPicker`) is a separate, wider surface exposing the entire Lucide set (`allSymbols.ts`), kebab-keyed and searchable, with a reorderable favorites strip that persists with the Nexus's personalization. A picked id is stored as its bare Lucide kebab id, and resolution reads the curated registry first, then the full set; a curated key that is also a Lucide id names that same glyph.
+The Icon Picker a user opens to assign an entity's icon (`UIX/Pickers/IconPicker`) is a separate, wider surface exposing the entire Lucide set (`allSymbols.ts`), kebab-keyed and searchable, with a reorderable icon-favorites strip that persists with the Nexus's personalization. A picked id is stored as its bare Lucide kebab id, and resolution reads the curated registry first, then the full set; a curated key that is also a Lucide id names that same glyph.

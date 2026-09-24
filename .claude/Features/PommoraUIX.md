@@ -367,7 +367,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | PickerMenu | `PickerMenu` · `PickerRow` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus.                   |
 | CalendarPicker | `CalendarPicker` | Date and time selection. |
 | ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
-| IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `UIX/Pickers/IconPicker`. |
+| IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable icon-favorites strip; the app binds icon favorites through `UIX/Pickers/IconPicker`. |
 | TextPicker | `TextPicker` | A typed-value picker in the shared pane. |
 | PickerControl | `PickerControl` · `labelOf` · `PickerOption` | The double-chevron picker: two options toggle in place; three or more open the list through the menu door the app supplies on `MenuDoorContext`; right-clicks write values into the field. |
 

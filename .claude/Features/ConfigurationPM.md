@@ -238,7 +238,7 @@ The `personalization` object in `settings.json` holds every key the Settings win
 | Key | Written by | Description |
 | --- | --- | --- |
 | `defaultIcons` | Hand-edited | The per-kind default icon, overriding the built-in seed; an entity's own icon still wins. |
-| `favoriteIcons` | The Icon Picker | The icons favorited in the picker, in display order. |
+| `iconFavorites` | The Icon Picker | The picker's icon favorites, in display order. |
 | `setPlacement` · `subSetPlacement` | Hand-edited | Whether a Collection's depth-1 Sets, and a Set's Sub-Sets, sit above (the default) or below their container's loose pages. The folder block stays contiguous. |
 | `sidebarMode` | The ribbon | The sidebar's active content mode, remembered across restarts. |
 | `ribbonOrder` | Drag-to-reorder | The ribbon's icon order below the pinned Homepage; a partial or stale value is repaired on read. |

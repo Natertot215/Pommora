@@ -27,7 +27,7 @@ diff --git a/Core/Actions/toggleLabels.ts b/Core/Actions/toggleLabels.ts
 index 16fb1544f..9b6063fa4 100644
 --- a/Core/Actions/toggleLabels.ts
 +++ b/Core/Actions/toggleLabels.ts
-@@ -8,6 +8,9 @@ export const favoriteLabel = (favorited: boolean): string => (favorited ? 'Unfav
+@@ -8,6 +8,9 @@
  
  export const iconLabel = (iconShown: boolean): string => (iconShown ? 'Hide Icon' : 'Show Icon')
  
