@@ -77,11 +77,11 @@ describe('navigation state — one contract, routed storage', () => {
     expect(await readNavigationState(root)).toEqual({})
   })
 
-  it('the banner gate: only a shared-assets path survives either direction', async () => {
+  it('the banner gate: only a shared-assets path reads back', async () => {
     await seedState({ navigation: { banner: '../taxes-2025.pdf' } })
     expect(await readNavigationFile(root)).toEqual({})
     await writeNavigationState(root, { banner: 'Notes/Alpha.md' })
-    expect('banner' in (await readState()).navigation).toBe(false)
+    expect(await readNavigationFile(root)).toEqual({})
     await writeNavigationState(root, { banner: '.nexus/assets/banner-x.jpg' })
     expect((await readNavigationFile(root)).banner).toBe('.nexus/assets/banner-x.jpg')
   })

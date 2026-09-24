@@ -11,16 +11,12 @@ import {
   rewritePageSerialized,
   rmwJsonStrict,
   readTextOrNull,
+  updateNexusConfig,
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive } from '../Files/walk'
 import { trashFileFlat } from '../Trash/bundle'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
-import {
-  readWatchScope,
-  updateCrops,
-  updateNexusConfig,
-  updateSettings,
-} from '../Settings/settings'
+import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
 import { AMBIGUOUS, buildAssetMap, indexable, refreshAssetMap, resolveAssetName } from './assetMap'
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'

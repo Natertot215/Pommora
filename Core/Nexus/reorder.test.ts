@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
+import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { setCollectionOrder, setSpaceOrder, setChildOrder, setPanelContextOrder } from './reorder'
@@ -72,13 +72,15 @@ describe('setCollectionOrder', () => {
     })
   })
 
-  it('fails against an unreadable state.json and leaves it byte-identical', async () => {
+  it('moves a corrupt state.json aside and lands the order, as a navigation write does', async () => {
     const statePath = nexusConfig(root, NEXUS_CONFIG_FILES.state)
     await mkdir(nexusDir(root), { recursive: true })
     await writeFile(statePath, '{ corrupt', 'utf8')
     const r = await setCollectionOrder(root, ['a'])
-    expect(r.ok).toBe(false)
-    expect(await readFile(statePath, 'utf8')).toBe('{ corrupt')
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await readFile(statePath, 'utf8')).order).toEqual({ collections: ['a'] })
+    const aside = (await readdir(nexusDir(root))).find((f) => f.includes('.bad-'))
+    expect(await readFile(join(nexusDir(root), aside ?? ''), 'utf8')).toBe('{ corrupt')
   })
 })
 

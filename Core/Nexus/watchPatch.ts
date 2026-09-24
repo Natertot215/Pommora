@@ -38,6 +38,7 @@ import {
   resolveEntityContexts,
 } from './readNexus'
 import { readSettings, type SettingsLeaves, scopeOf } from '../Settings/codec'
+import { errText } from '../Contract/result'
 import { coerceOpenIn } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
@@ -405,7 +406,12 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
 }
 
 async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {
-  const leaves = await readSettings(root)
+  // A damaged settings file leaves the held tree and the armed scope as they were until it reads again.
+  const leaves = await readSettings(root).catch((e) => {
+    console.error('settings: kept as last read:', errText(e))
+    return null
+  })
+  if (!leaves) return 'ok'
   return sameScope(scopeOf(leaves), watched) ? applySettingsLeaves(root, leaves) : 'refresh'
 }
 

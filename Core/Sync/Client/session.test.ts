@@ -77,6 +77,18 @@ describe('startSession', () => {
     expect(readValue<{ cursor: number }>('sync')?.cursor).toBe(0)
   })
 
+  it('turns sync off when file history is unavailable', async () => {
+    installStores({ ...stores, captures: null })
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(statuses().at(-1)).toEqual({
+      state: 'off',
+      why: 'File history is unavailable, so conflicts could not be kept.',
+    })
+    expect(currentSession()).toBeNull()
+  })
+
   it('reconciles once when the base table is empty', async () => {
     await hubWrite(hub, ring, 'Notes/One.md', page('one'))
 

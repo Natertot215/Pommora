@@ -1,7 +1,6 @@
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { setOrDrop } from '../Files/atomicWrite'
+import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { updateNexusConfig } from '../Settings/settings'
 import { fault, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'

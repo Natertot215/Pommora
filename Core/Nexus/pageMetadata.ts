@@ -2,7 +2,6 @@ import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { isMarkdownFile, listEntries } from '../Files/walk'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { machine } from '../Platform/machine'
 import { isPlainObject } from '../Properties/propertyValue'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL, SHARD_FILE_RE } from '../Paths/nexusPaths'
@@ -95,7 +94,6 @@ export async function updatePageMetadata(
 ): Promise<Result<null>> {
   const shard = shardOf(id)
   if (shard === null) return fault('That page has no ID Pommora can file.')
-  await machine().mkdir(join(root, METADATA_DIR_REL))
   const written = await updateNexusFile(
     metadataShardPath(root, shard),
     (cur) => {

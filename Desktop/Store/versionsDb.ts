@@ -1,9 +1,6 @@
-import { existsSync, renameSync } from 'node:fs'
 import { join } from '@pommora/core/Paths/posix'
 import { deflateSync, inflateSync } from 'node:zlib'
-import { errText } from '@pommora/core/Contract/result'
-import { damagedStore, openDb, type Db } from './driver'
-import { fileStamp } from '@pommora/core/Trash/bundle'
+import { checkIntact, openRebuildable, type Db } from './driver'
 import type { CaptureReason, SnapshotRow, SnapshotSource } from '@pommora/core/Platform/stores'
 
 export const VERSIONS_FILENAME = 'versions.db'
@@ -24,53 +21,11 @@ const DDL = `
     PRIMARY KEY (path, ts)
   );`
 
-function healthy(db: Db): boolean {
-  try {
-    const row = db.prepare('PRAGMA quick_check').get() as { quick_check: string } | undefined
-    return row?.quick_check === 'ok'
-  } catch {
-    return false
-  }
-}
-
-/** A damaged store is set aside under a dated name; nothing is deleted. */
-function quarantine(dbPath: string): void {
-  try {
-    renameSync(dbPath, dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`))
-  } catch {}
-}
-
-function withTable(db: Db | null): Db | null {
-  try {
-    db?.exec(DDL)
-    return db
-  } catch (e) {
-    console.error(
-      'versions.db: cannot create its table — file history will not record:',
-      errText(e),
-    )
-    db?.close()
-    return null
-  }
-}
-
 export function openVersionsDb(dir: string): Db | null {
-  const dbPath = join(dir, VERSIONS_FILENAME)
-  if (existsSync(dbPath)) {
-    const { db: existing, errcode } = openDb(dbPath)
-    if (existing && healthy(existing)) return withTable(existing)
-    // Locked or unreadable is left intact for the next launch, as nexus.db is; only a damaged file, or one that fails its check, is set aside.
-    if (!existing && !damagedStore(errcode)) return null
-    existing?.close()
-    quarantine(dbPath)
-    if (existsSync(dbPath)) {
-      console.error(
-        `versions.db: damaged and could not be set aside — file history is off: ${dbPath}`,
-      )
-      return null
-    }
-  }
-  return withTable(openDb(dbPath).db)
+  return openRebuildable(join(dir, VERSIONS_FILENAME), (db) => {
+    checkIntact(db)
+    db.exec(DDL)
+  })
 }
 
 export function addSnapshot(

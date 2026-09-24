@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, rm, readFile, rename, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from '@pommora/core/Paths/posix'
@@ -116,11 +116,22 @@ describe('openNexusDb', () => {
     second.close()
   })
 
-  it('leaves a file it could not open intact', async () => {
+  it('sets a damaged file aside and opens a fresh one', async () => {
     const dbPath = join(dir, DB_FILENAME)
     await writeFile(dbPath, 'not a database', 'utf8')
+    const db = opened()
+    expect(readMeta(db, 'index_generation')).toBe(String(INDEX_GENERATION))
+    db.close()
+    const aside = (await readdir(dir)).filter((f) => /^nexus\.corrupt-.*\.db$/.test(f))
+    expect(aside).toHaveLength(1)
+    expect(await readFile(join(dir, aside[0]), 'utf8')).toBe('not a database')
+  })
+
+  it('leaves a store it cannot open where it is', async () => {
+    const dbPath = join(dir, DB_FILENAME)
+    await mkdir(dbPath)
     expect(openNexusDb(dir, root)).toBeNull()
-    expect(await readFile(dbPath, 'utf8')).toBe('not a database')
+    expect(existsSync(dbPath)).toBe(true)
   })
 })
 

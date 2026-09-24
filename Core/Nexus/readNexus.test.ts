@@ -453,6 +453,18 @@ describe('readNexus — the walk names what it cannot read', () => {
     expect((await readNexus(root)).contextOrder).toBeUndefined()
   })
 
+  it('a damaged settings file fails the walk and names itself', async () => {
+    const r = tempRoot('pom-unread-settings-')
+    try {
+      d(join(r, '.nexus'))
+      w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxs', createdAt: '2026' }))
+      w(join(r, '.nexus', 'settings.json'), '{"excluded_folders":["Private"],}')
+      await expect(readNexus(r)).rejects.toThrow('settings.json')
+    } finally {
+      rmSync(r, { recursive: true, force: true })
+    }
+  })
+
   it('an unusable registry names itself — a blank Contexts layer is not mass deletion', async () => {
     const r = tempRoot('pom-unread-reg-')
     try {

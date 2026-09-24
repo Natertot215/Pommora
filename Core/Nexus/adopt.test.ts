@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from './identityMark'
-import { rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
+import { rm, mkdir, writeFile, readFile, readdir, stat, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { ensurePageId, stampAdopted } from './adopt'
@@ -151,6 +151,19 @@ describe('stampAdopted', () => {
     expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt')
     const daily = await set(join(root, 'Notes', 'Daily'))
     expect(daily?.id).toBeTruthy()
+  })
+
+  it('a damaged settings file stops the pass before it stamps a folder it may exclude', async () => {
+    await writeFile(
+      nexusConfig(root, NEXUS_CONFIG_FILES.settings),
+      '{"excluded_folders":["Private"],}',
+    )
+    await mkdir(join(root, 'Private'), { recursive: true })
+    const secret = join(root, 'Private', 'secret.md')
+    await writeFile(secret, '# secret\n\nbody')
+    await expect(stampAdopted(root)).rejects.toThrow('settings.json')
+    expect(await readFile(secret, 'utf8')).toBe('# secret\n\nbody')
+    expect(await readdir(join(root, 'Private'))).toEqual(['secret.md'])
   })
 
   it('a page whose frontmatter refuses the id write is skipped, not clobbered', async () => {

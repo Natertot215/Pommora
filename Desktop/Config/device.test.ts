@@ -1,5 +1,5 @@
 import { createHash, createPublicKey, verify } from 'node:crypto'
-import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from '@pommora/core/Paths/posix'
 import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -118,6 +118,15 @@ describe('ensureDevice', () => {
     const second = await ensureDevice(dir)
     expect(second.id).not.toBe(first.id)
     expect(reported).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the identity when the secret store is damaged', async () => {
+    const first = await ensureDevice(dir)
+    const before = (await readAppConfig(dir)).device
+    writeFileSync(join(dir, 'secrets.json'), '{ not json')
+    await expect(ensureDevice(dir)).rejects.toThrow()
+    expect((await readAppConfig(dir)).device).toEqual(before)
+    expect(before?.id).toBe(first.id)
   })
 
   it('mints nothing when the keychain is unavailable', async () => {

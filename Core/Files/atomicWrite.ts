@@ -7,6 +7,7 @@ import { machine } from '../Platform/machine'
 import { basename, dirname } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
+import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
 
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
   recordWrite(filePath, data)
@@ -93,35 +94,64 @@ export function rmwJsonStrict(
   seedOnAbsent?: () => Record<string, unknown>,
   onCorrupt?: (absPath: string) => Promise<void>,
 ): Promise<Result<Record<string, unknown>>> {
-  return machine().lock(absPath, async () => {
-    const read = await readJsonStrictly(absPath)
-    let base: Record<string, unknown>
-    if (read.kind === 'ok') base = read.value
-    else if (read.kind === 'absent' && seedOnAbsent) base = seedOnAbsent()
-    else if (read.kind === 'corrupt' && onCorrupt && seedOnAbsent) {
-      await onCorrupt(absPath)
-      base = seedOnAbsent()
-    } else return strictResult(read, absPath)
-    // A mutate that finds nothing to change returns null, so a sweep touching a file it doesn't alter neither rewrites nor re-dates it.
-    const next = mutate(base)
-    if (next === null) return ok(base)
-    await writeJson(absPath, next)
-    return ok(next)
-  })
+  return machine().lock(absPath, () => rmwLocked(absPath, mutate, seedOnAbsent, onCorrupt))
 }
 
-/** The primitive behind `updateNexusConfig` and every metadata month file: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one moves aside for a fresh file only where `replaceCorrupt` allows. */
+async function rmwLocked(
+  absPath: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
+  seedOnAbsent?: () => Record<string, unknown>,
+  onCorrupt?: (absPath: string) => Promise<void>,
+): Promise<Result<Record<string, unknown>>> {
+  const read = await readJsonStrictly(absPath)
+  let base: Record<string, unknown>
+  if (read.kind === 'ok') base = read.value
+  else if (read.kind === 'absent' && seedOnAbsent) base = seedOnAbsent()
+  else if (read.kind === 'corrupt' && onCorrupt && seedOnAbsent) {
+    await onCorrupt(absPath)
+    base = seedOnAbsent()
+  } else return strictResult(read, absPath)
+  // A mutate that finds nothing to change returns null, so a sweep touching a file it doesn't alter neither rewrites nor re-dates it.
+  const next = mutate(base)
+  if (next === null) return ok(base)
+  await writeJson(absPath, next)
+  return ok(next)
+}
+
+/** The primitive behind Pommora's app-authored JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one moves aside for a fresh file only where `replaceCorrupt` allows. */
 export function updateNexusFile(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
-  replaceCorrupt = true,
+  replaceCorrupt: boolean,
 ): Promise<Result<Record<string, unknown>>> {
-  return rmwJsonStrict(
-    absPath,
-    mutate,
-    () => ({}),
-    replaceCorrupt ? (bad) => machine().rename(bad, `${bad}.bad-${newId()}`) : undefined,
-  )
+  return machine().lock(absPath, async () => {
+    await machine().mkdir(dirname(absPath))
+    return rmwLocked(
+      absPath,
+      mutate,
+      () => ({}),
+      replaceCorrupt ? (bad) => machine().rename(bad, `${bad}.bad-${newId()}`) : undefined,
+    )
+  })
+}
+
+// A hand-authored or irreplaceable file refuses a write over its corrupt copy; an app-authored one the app can rebuild moves aside.
+const REPLACE_CORRUPT = {
+  identity: false,
+  settings: false,
+  properties: false,
+  state: true,
+  matrix: true,
+  homepage: true,
+  crops: true,
+} as const satisfies Record<keyof typeof NEXUS_CONFIG_FILES, boolean>
+
+export function updateNexusConfig(
+  root: string,
+  file: keyof typeof NEXUS_CONFIG_FILES,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+): Promise<Result<Record<string, unknown>>> {
+  return updateNexusFile(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, REPLACE_CORRUPT[file])
 }
 
 export function setOrDrop(

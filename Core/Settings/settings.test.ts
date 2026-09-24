@@ -10,7 +10,7 @@ import {
 } from './settings'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
-import { dirname, join } from '../Paths/posix'
+import { dirname } from '../Paths/posix'
 import { openSession } from '../Nexus/session'
 
 let root: string
@@ -72,13 +72,18 @@ describe('writeExcludedFolders', () => {
 })
 
 describe('an unreadable settings.json is never replaced', () => {
-  it('updateSettings moves an unreadable file aside and lands the write', async () => {
+  it('updateSettings refuses a corrupt file, names it, and leaves it byte-identical', async () => {
     await writeFile(path(), '{ corrupt', 'utf8')
-    await updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' }))
-    expect(JSON.parse(await readFile(path(), 'utf8')).profile_subtitle).toBe('x')
-    const aside = (await readdir(dirname(path()))).find((f) => f.includes('.bad-'))
-    expect(aside).toBeDefined()
-    expect(await readFile(join(dirname(path()), aside ?? ''), 'utf8')).toBe('{ corrupt')
+    await expect(
+      updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' })),
+    ).rejects.toThrow('settings.json')
+    expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
+    expect((await readdir(dirname(path()))).some((f) => f.includes('.bad-'))).toBe(false)
+  })
+
+  it('a corrupt file fails the settings read rather than reading as defaults', async () => {
+    await writeFile(path(), '{"excluded_folders":["Private"],}', 'utf8')
+    await expect(readWatchScope(root)).rejects.toThrow('settings.json')
   })
 })
 

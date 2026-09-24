@@ -80,7 +80,7 @@ export async function openNexusSequence(
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     void runRepairSweep(root).then(() => pushValueChanges(ctx, root))
   }
-  void startSession(ctx, root, (await liveTreeOf(root)).nexus.id)
+  if (nexusId !== null) void startSession(ctx, root, nexusId)
   return root
 }
 

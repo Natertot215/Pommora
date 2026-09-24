@@ -14,7 +14,7 @@ import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { frontmatterValues, nexusCorpus } from '../Index/indexSeed'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '../Properties/properties'
-import { readSettings } from '../Settings/codec'
+import { readLivePersonalization } from '../Settings/settings'
 
 export async function renameCascade(
   nexusRoot: string,
@@ -57,8 +57,7 @@ export async function renameHeadingCascade(
   const rels = queryHeadingMentions(titleKey, oldKey)
   if (!rels?.length) return ok({ touched: [] })
   const files = rels.filter((rel) => rel !== skipRel).map((rel) => join(nexusRoot, rel))
-  const runs =
-    (await readSettings(nexusRoot)).personalization.inPageHeadingResolution === 'automatic'
+  const runs = (await readLivePersonalization(nexusRoot)).inPageHeadingResolution === 'automatic'
   const text = (content: string, file: string): string | null => {
     const { body } = splitEnvelope(content)
     const next = rewriteHeadingConnections(

@@ -1,5 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { writeJournal } from '../Contexts/contextJournal'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -71,6 +71,7 @@ afterEach(async () => {
   closeSession()
   dropLiveTree()
   installStores(NO_STORES)
+  vi.restoreAllMocks()
   await turn(50)
   await rm(root, { recursive: true, force: true })
 })
@@ -86,6 +87,12 @@ describe('openNexusSequence', () => {
 
     expect(currentSession()).not.toBeNull()
     expect(currentStatus().state).not.toBe('off')
+  })
+
+  it('opens a Nexus whose identity file is damaged', async () => {
+    await writeFile(join(root, '.nexus', 'nexus.json'), '{"id": "')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(openNexusSequence(ctx, root, false)).resolves.toBe(root)
   })
 
   it('drains an in-flight push before the stores swap', async () => {
