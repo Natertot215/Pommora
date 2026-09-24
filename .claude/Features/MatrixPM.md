@@ -36,11 +36,11 @@ One integration step runs gravity toward the centre, charge-based spread through
 
 #### Waking
 
-Work is scoped to what changed. A Page created elsewhere joins among the nodes it already links to and only it moves, while the rest of the picture holds still. A dragged node wakes the graph around it; a released one is carried home by the same spring that followed the pointer, and the loop stays awake until it arrives. A node the layout has never seen is seated on a spiral outside the current extent, so a first open and a growing Nexus both open without overlap.
+Work is scoped to what changed. A save that moves no link and changes no filtered value leaves the picture as it stands. A Page created elsewhere joins among the nodes it already links to and only it moves, while the rest of the picture holds still. A dragged node wakes the graph around it; a released one is carried home by the same spring that followed the pointer, and the loop stays awake until it arrives. A node the layout has never seen is seated on a spiral outside the current extent, so a first open and a growing Nexus both open without overlap.
 
 #### Scale
 
-Every expensive step is bounded: the spread force approximates distant clusters rather than visiting them, labels are culled to one per cell so a dense field prints the largest node's title and drops the rest, and the layout is written once on settle rather than per frame. A bench ticks a synthetic Nexus against a budget as a gate.
+Every expensive step is bounded: the spread force approximates distant clusters rather than visiting them, labels are culled to one per cell so a dense field prints the largest node's title and drops the rest, and the layout is written once on settle, for the nodes that moved, rather than per frame. A closed Matrix holds nothing: its graph loads when the first surface opens and is let go with the last. A bench ticks a synthetic Nexus against a budget as a gate.
 
 ### The Surface
 
@@ -52,7 +52,7 @@ Hovering a node lights its links, raises its fill and its glyph, and eases the r
 
 The Matrix's choices travel with the Nexus in `.nexus/matrix.json`, written in four sections — group, filter, forces, and display — merged section by section, so a device that moved one section never clobbers another's; forces holds a block per grouping and a change to any of its four values writes that grouping's block whole. A hand edit from outside surfaces live through the file watcher.
 
-The picture's own geometry stays on the machine that made it: every node's place keyed by id, so a rename keeps a node where it was, and the world rectangle the picture is framed on. A row that no longer reads is dropped on its own rather than taking the rest of the layout with it, and a first open with nothing stored fits the graph once it settles.
+The picture's own geometry stays on the machine that made it: every node's place in a row of its own keyed by id, so a rename keeps a node where it was, and the world rectangle the picture is framed on. A row that no longer reads is dropped on its own rather than taking the rest of the layout with it, a node the Nexus no longer holds is let go when the Matrix opens, and a first open with nothing stored fits the graph once it settles.
 
 ### Prospects
 
