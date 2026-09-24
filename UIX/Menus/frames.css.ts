@@ -120,6 +120,16 @@ export const optionList = style({
 
 export const optionRow = style([rowBox, { justifyContent: 'space-between' }])
 
+/** KNOB — a pane's middle list region's scroll ceiling. */
+const MIDDLE_MAX_HEIGHT = '280px'
+
+export const middleRegion = style({
+  position: 'relative',
+  maxHeight: MIDDLE_MAX_HEIGHT,
+  overflowY: 'auto',
+  vars: { '--over-scroll-fade': 'var(--fade-base)' },
+})
+
 export const optionLead = style({
   display: 'flex',
   alignItems: 'center',

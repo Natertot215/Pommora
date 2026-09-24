@@ -10,7 +10,7 @@ import {
   VIEW_TYPES,
   type ViewType,
 } from '@pommora/core/Views/views'
-import { Icon } from '@pommora/uix/Symbols'
+import { Icon, type IconName } from '@pommora/uix/Symbols'
 import {
   MenuIndex,
   MenuSeparator,
@@ -25,7 +25,7 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityFrame } from './VisibilityFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { VIEW_ROWS, ViewLeaf, type ViewRowId } from './ViewLeaf'
+import { ViewLeaf, type ViewLeafId } from './ViewLeaf'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { iconForTypeSwitch } from '../viewIcon'
@@ -109,6 +109,20 @@ const CARD_SCALE_MAX = CARD_SCALE_STEPS[CARD_SCALE_STEPS.length - 1]
 
 // KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
+
+export type ViewRowId = 'layout' | ViewLeafId
+export interface ViewRow<Id extends string = ViewRowId> {
+  id: Id
+  label: string
+  icon: IconName
+}
+
+export const VIEW_ROWS: ViewRow[] = [
+  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
+  { id: 'group', label: 'Group', icon: 'layers' },
+  { id: 'filter', label: 'Filter', icon: 'list-filter' },
+  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
+]
 
 export function LayoutFrame({
   source,

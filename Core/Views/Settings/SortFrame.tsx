@@ -19,7 +19,7 @@ import {
   TITLE_TARGET,
   targetOption,
 } from '../../Properties/Cells/PropertyTypes'
-import * as oo from './option-order.css'
+import { middleRegion } from '@pommora/uix/Menus/frames.css'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 type Direction = SortCriterion['direction']
@@ -225,7 +225,7 @@ export function SortFrame({
           {finiteDef && (
             <>
               <MenuSeparator flush />
-              <div className={`${oo.middle} over-scroll`}>
+              <div className={`${middleRegion} over-scroll`}>
                 {primary.order ? (
                   <CustomList
                     group={{ order_mode: 'manual', order: primary.order }}
