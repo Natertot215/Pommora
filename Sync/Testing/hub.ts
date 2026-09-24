@@ -14,6 +14,8 @@ import { canonical, fingerprintOf, LOOPBACK, sha256Hex } from '../wire.ts'
 
 export const NEXUS = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 
+export const blobPath = (nexusId: string, sha256: string): string => `/blob/${nexusId}/${sha256}`
+
 export type Hub = { dataDir: string; port: number; pin: string | null; close(): Promise<void> }
 
 let base = ''
@@ -127,7 +129,7 @@ export function signer(name: string) {
     at?: string,
     sealed = bytes,
   ): Promise<Outcome> {
-    const path = at ?? `/blob/${nexusId}/${sha256Hex(sealed)}`
+    const path = at ?? blobPath(nexusId, sha256Hex(sealed))
     return send(
       base + path,
       'PUT',
@@ -141,7 +143,7 @@ export function signer(name: string) {
   }
 
   function get(nexusId: string, sha256: string): Promise<Outcome> {
-    const path = `/blob/${nexusId}/${sha256}`
+    const path = blobPath(nexusId, sha256)
     const empty = Buffer.alloc(0)
     return send(base + path, 'GET', signed('GET', path, empty, Date.now()), empty)
   }

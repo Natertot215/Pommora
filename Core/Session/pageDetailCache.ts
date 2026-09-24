@@ -98,15 +98,13 @@ export function bumpBodyEpoch(path: string): void {
   for (const fn of epochListeners) fn()
 }
 
-const readBodyEpoch = (path: string): number => bodyEpochs.get(path) ?? 0
-
 function subscribeBodyEpoch(fn: () => void): () => void {
   epochListeners.add(fn)
   return () => epochListeners.delete(fn)
 }
 
 export const useBodyEpoch = (path: string): number =>
-  useSyncExternalStore(subscribeBodyEpoch, () => readBodyEpoch(path))
+  useSyncExternalStore(subscribeBodyEpoch, () => bodyEpochs.get(path) ?? 0)
 
 export function refreshCache(): void {
   clearWarm()

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode, type RefObject } from 'react'
 import { FieldsLeaf } from './FieldsLeaf'
 import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
@@ -8,24 +8,36 @@ import { MenuSurface } from '@pommora/uix/Menus'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { Label } from '@pommora/uix/Labels/Label'
 
+type PopupMount = (
+  open: boolean,
+  close: () => void,
+  trigger: RefObject<HTMLButtonElement | null>,
+) => ReactNode
+
 function PopupButton({
   label,
   children,
 }: {
   label: string
-  children: ReactNode
+  children: ReactNode | PopupMount
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
   return (
     <div className="ds-popup">
       <button
+        ref={trigger}
         type="button"
         className={`ds-switcher-btn${open ? ' is-active' : ''}`}
         onClick={() => setOpen((o) => !o)}
       >
         {label}
       </button>
-      {open ? <div className="ds-popup-panel">{children}</div> : null}
+      {typeof children === 'function' ? (
+        children(open, () => setOpen(false), trigger)
+      ) : open ? (
+        <div className="ds-popup-panel">{children}</div>
+      ) : null}
     </div>
   )
 }
@@ -56,22 +68,26 @@ export function ComponentsLeaf(): React.JSX.Element {
             <CalendarPicker range timeFormat="twelveHour" formatDateValue={showcaseDate} />
           </PopupButton>
           <PopupButton label="PickerMenu">
-            <PickerMenu solid open>
-              {PICKER_LABELS.map((o, i) => (
-                <PickerRow key={o.label} selected={i === 0} onClick={() => {}}>
-                  <Label color={o.color} text={o.label} shape="tag" />
-                </PickerRow>
-              ))}
-            </PickerMenu>
+            {(open, close, trigger) => (
+              <PickerMenu solid open={open} onDismiss={close} triggerRef={trigger}>
+                {PICKER_LABELS.map((o, i) => (
+                  <PickerRow key={o.label} selected={i === 0} onClick={() => {}}>
+                    <Label color={o.color} text={o.label} shape="tag" />
+                  </PickerRow>
+                ))}
+              </PickerMenu>
+            )}
           </PopupButton>
           <PopupButton label="PickerRow">
-            <PickerMenu solid open>
-              {POPOUT_LABELS.map((label, i) => (
-                <PickerRow key={label} selected={i === 0} onClick={() => {}}>
-                  {label}
-                </PickerRow>
-              ))}
-            </PickerMenu>
+            {(open, close, trigger) => (
+              <PickerMenu solid open={open} onDismiss={close} triggerRef={trigger}>
+                {POPOUT_LABELS.map((label, i) => (
+                  <PickerRow key={label} selected={i === 0} onClick={() => {}}>
+                    {label}
+                  </PickerRow>
+                ))}
+              </PickerMenu>
+            )}
           </PopupButton>
           <PopupButton label="MenuSurface">
             <MenuSurface>

@@ -268,27 +268,26 @@ export function PickerMenu({
     onDirection,
   ])
 
-  const managed = manageFocus
   const focusReturn = useRef<HTMLElement | null>(null)
   const tookFocus = useRef(false)
   useLayoutEffect(() => {
-    if (!managed || !open) return
+    if (!manageFocus || !open) return
     const from = document.activeElement
     focusReturn.current =
       from instanceof HTMLElement && !paneRef.current?.contains(from) ? from : null
-  }, [managed, open])
+  }, [manageFocus, open])
 
   const placed = pos !== null
   useEffect(() => {
-    if (!managed || !open || closing || !placed || tookFocus.current) return
+    if (!manageFocus || !open || closing || !placed || tookFocus.current) return
     tookFocus.current = true
     const pane = paneRef.current
     if (!pane || pane.contains(document.activeElement)) return
     ;(tabStops(pane)[0] ?? pane).focus()
-  }, [managed, open, closing, placed])
+  }, [manageFocus, open, closing, placed])
 
   useEffect(() => {
-    if (!managed || !open) return
+    if (!manageFocus || !open) return
     return () => {
       tookFocus.current = false
       const back = focusReturn.current
@@ -298,7 +297,7 @@ export function PickerMenu({
       if (active && active !== document.body && !paneRef.current?.contains(active)) return
       back.focus({ preventScroll: true })
     }
-  }, [managed, open])
+  }, [manageFocus, open])
 
   const trapTab = (e: React.KeyboardEvent<HTMLDivElement>): void => {
     if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return
@@ -357,10 +356,10 @@ export function PickerMenu({
             ref={paneRef}
             className={s.layer}
             {...{ [PICKER_PORTAL_ATTR]: '' }}
-            tabIndex={managed ? -1 : undefined}
+            tabIndex={manageFocus ? -1 : undefined}
             onPointerDown={stopPointerBubble}
             onContextMenu={stopContextBubble}
-            onKeyDown={managed ? trapTab : undefined}
+            onKeyDown={manageFocus ? trapTab : undefined}
             style={{
               ...(pos?.top !== undefined ? { top: `${pos.top}px` } : null),
               ...(pos?.bottom !== undefined ? { bottom: `${pos.bottom}px` } : null),

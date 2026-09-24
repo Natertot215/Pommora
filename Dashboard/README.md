@@ -16,7 +16,7 @@ Published at https://claude.ai/code/artifact/684b7af1-55b2-49cf-b2fa-1b3a6b15dd9
 
 ## Pommora Audit
 
-`audit.html` → the codebase audit ledger. It fetches `audit.md`, published beside it, and renders `.claude/Planning/Codebase Audit.md` as one scrolling page: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger. Republishing the ledger file is the whole update.
+`audit.html` → the codebase audit ledger. It fetches `audit.md`, published beside it, and renders `.claude/Planning/Pommora Codebase Audit.md` as one scrolling page: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger. Republishing the ledger file is the whole update.
 
 Published at https://claude.ai/artifact/1uvUvsHz3f3dABn7dUn9dd.
 

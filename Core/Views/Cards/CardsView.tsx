@@ -255,8 +255,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── Value and add pickers ─────────────────────────────────────────────────
 
-  const openValuePicker = (req: ValuePickerRequest): void => setValuePicker(req)
-
   const capitalize = useCapitalizeMetadata()
   const styleById = useColumnStyleMap(host)
   const pickerAnchorRef = useRef<HTMLElement | null>(null)
@@ -341,7 +339,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setStyle: setStylePatch,
     open: interactions.openPage,
     hide: hideProperty,
-    openValuePicker,
+    openValuePicker: setValuePicker,
     openAddPicker: setAddPicker,
     hover: interactions.ghost.onHover,
     titleMenuContext: interactions.titleMenuContext,
