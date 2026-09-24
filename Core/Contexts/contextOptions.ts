@@ -29,14 +29,21 @@ export function contextOptionsFor(
   return excludeId ? opts.filter((o) => o.value !== excludeId) : opts
 }
 
-// Identity comes from the seam, never re-derived here: resolving the glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
 function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
-  return [...spacesByIdOf(tree)]
-    .filter(([, s]) => s.contextId === contextId)
-    .map(([id, s]) => ({
-      value: id,
-      label: s.title,
-      icon: s.icon,
-      ...(s.color ? { color: s.color } : {}),
-    }))
+  const group = tree.contexts?.find((g) => g.def.id === contextId)
+  // Identity comes from the seam, never re-derived here: resolving the glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
+  const byId = spacesByIdOf(tree)
+  return (group?.spaces ?? []).flatMap((s) => {
+    const identity = byId.get(s.id)
+    return identity
+      ? [
+          {
+            value: s.id,
+            label: identity.title,
+            icon: identity.icon,
+            ...(identity.color ? { color: identity.color } : {}),
+          },
+        ]
+      : []
+  })
 }

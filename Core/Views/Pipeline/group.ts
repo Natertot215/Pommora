@@ -36,11 +36,7 @@ const placeTail = (
   key: string = UNGROUPED,
 ): ResolvedGroup[] => {
   if (tail.length === 0) return groups
-  const band: ResolvedGroup = {
-    key,
-    kind: 'ungrouped',
-    items: applySort(tail, sorter),
-  }
+  const band: ResolvedGroup = { key, kind: 'ungrouped', items: applySort(tail, sorter) }
   return placement === 'top' ? [band, ...groups] : [...groups, band]
 }
 
@@ -366,13 +362,7 @@ export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
 
 function flat(rows: ViewRow[], sorter: Sorter | null): ResolvedGroup[] {
   if (rows.length === 0) return []
-  return [
-    {
-      key: UNGROUPED,
-      kind: 'ungrouped',
-      items: applySort(rows, sorter),
-    },
-  ]
+  return [{ key: UNGROUPED, kind: 'ungrouped', items: applySort(rows, sorter) }]
 }
 
 /** Every consumer must read this, never the raw `kind`, or they diverge from what the table actually draws. */
@@ -397,7 +387,7 @@ export function resolveGroups(
   flattenStructural = false,
   locationFlatten = false,
 ): ResolvedGroup[] {
-  // Sort by Location forces structural resolution and flattens every band into one — it wins over a property group and over collapse state.
+  // Sort by Location forces structural resolution and flattens every band into one — it wins over a property group.
   if (locationFlatten) return locationFlat(rows, setTree, sorter, placement)
   if (group?.kind === 'flat') return flat(rows, sorter)
   if (!groupsStructurally(group, schema))

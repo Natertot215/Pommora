@@ -95,11 +95,10 @@ export function SettingsFrame(): React.JSX.Element | null {
   const detailId = pane === 'root' ? lastDetail.current : pane
 
   const openInValue: OpenIn = schemaCollection.openIn ?? 'full-page'
-  const setOpenIn = async (v: OpenIn): Promise<void> => {
-    await host().ask('container:configure', schemaCollection.path, 'collection', { open_in: v })
-  }
   const toggleOpenIn = (): void => {
-    void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')
+    void host().ask('container:configure', schemaCollection.path, 'collection', {
+      open_in: openInValue === 'page-preview' ? 'full-page' : 'page-preview',
+    })
   }
 
   const viewScale = coerceScale(view.view_scale, 1)
