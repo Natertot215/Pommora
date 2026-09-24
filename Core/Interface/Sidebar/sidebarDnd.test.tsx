@@ -43,7 +43,7 @@ function Row({ id }: { id: string }): React.JSX.Element {
 
 let host: HTMLDivElement
 let root: Root
-let commitSpy: ReturnType<typeof vi.fn<(commit: MutateRequest) => void>>
+let commitSpy: ReturnType<typeof vi.fn<(commit: MutateRequest, id: string) => void>>
 
 beforeEach(async () => {
   host = document.createElement('div')
@@ -106,12 +106,15 @@ describe('sidebar drag — Esc abort', () => {
     await act(async () => {
       firePointer(row('p1'), 'pointerup')
     })
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
-      op: 'movePage',
-      path: 'C/P1.md',
-      newParentPath: 'C',
-      order: ['p2', 'p1'],
-    })
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith(
+      {
+        op: 'movePage',
+        path: 'C/P1.md',
+        newParentPath: 'C',
+        order: ['p2', 'p1'],
+      },
+      'p1',
+    )
   })
 
   it('detaches the keydown listener after the gesture settles', async () => {
@@ -209,12 +212,15 @@ describe('sidebar drag — page↔Set seam', () => {
     await act(async () => firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 }))
     await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 60 }))
     await act(async () => firePointer(row('p1'), 'pointerup'))
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
-      op: 'movePage',
-      path: 'C/P1.md',
-      newParentPath: 'C',
-      order: ['p2', 'p1'],
-    })
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith(
+      {
+        op: 'movePage',
+        path: 'C/P1.md',
+        newParentPath: 'C',
+        order: ['p2', 'p1'],
+      },
+      'p1',
+    )
   })
 
   it('reorders a page to the start when dragged onto a sibling Set above it (never reparents)', async () => {
@@ -226,12 +232,15 @@ describe('sidebar drag — page↔Set seam', () => {
     await act(async () => firePointer(row('p2'), 'pointerdown', { x: 4, y: 60 }))
     await act(async () => firePointer(row('p2'), 'pointermove', { x: 4, y: 12 }))
     await act(async () => firePointer(row('p2'), 'pointerup'))
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
-      op: 'movePage',
-      path: 'C/P2.md',
-      newParentPath: 'C',
-      order: ['p2', 'p1'],
-    })
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith(
+      {
+        op: 'movePage',
+        path: 'C/P2.md',
+        newParentPath: 'C',
+        order: ['p2', 'p1'],
+      },
+      'p2',
+    )
   })
 
   it('still reparents a page into a Set in a DIFFERENT container', async () => {
@@ -272,12 +281,15 @@ describe('sidebar drag — page↔Set seam', () => {
     await act(async () => firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 }))
     await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 36 }))
     await act(async () => firePointer(row('p1'), 'pointerup'))
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
-      op: 'movePage',
-      path: 'C/P1.md',
-      newParentPath: 'D/S2',
-      order: ['p1'],
-    })
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith(
+      {
+        op: 'movePage',
+        path: 'C/P1.md',
+        newParentPath: 'D/S2',
+        order: ['p1'],
+      },
+      'p1',
+    )
   })
 })
 
@@ -344,11 +356,14 @@ describe('sidebar drag — the line marks where the drop lands', () => {
     expect(line()?.style.top).toBe('72px')
 
     await act(async () => firePointer(row('p1'), 'pointerup'))
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
-      op: 'movePage',
-      path: 'C/P1.md',
-      newParentPath: 'D',
-      order: ['p1', 'q1', 'q2'],
-    })
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith(
+      {
+        op: 'movePage',
+        path: 'C/P1.md',
+        newParentPath: 'D',
+        order: ['p1', 'q1', 'q2'],
+      },
+      'p1',
+    )
   })
 })

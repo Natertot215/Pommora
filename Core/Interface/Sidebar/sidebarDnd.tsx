@@ -44,7 +44,7 @@ export function SidebarDnd({
   children,
 }: {
   index: Index
-  onCommit: (commit: MutateRequest) => void
+  onCommit: (commit: MutateRequest, id: string) => void
   setPlacement?: Placement
   subSetPlacement?: Placement
   children: ReactNode
@@ -218,7 +218,7 @@ export function SidebarDnd({
             : null
       return item && content ? { id, family: TAB_FAMILY, item, rect, home: toBox(content) } : null
     },
-    commit: (_id, slot) => onCommit(slot.commit),
+    commit: (id, slot) => onCommit(slot.commit, id),
     lineFor: (slot) => ({
       top: slot.lineY,
       left: BASE_INDENT + slot.depth * STEP_INDENT,

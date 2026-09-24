@@ -74,10 +74,6 @@ export function buildIndex(tree: NexusTree): Index {
   return { byId, collectionIds, spaceIdsByContext, contextGroupIds }
 }
 
-export function entryAtPath(idx: Index, path: string): Entry | undefined {
-  for (const e of idx.byId.values()) if (e.path === path) return e
-}
-
 export function setContainerOf(entry: Entry, idx: Index): Entry | null {
   switch (entry.kind) {
     case 'collection':
