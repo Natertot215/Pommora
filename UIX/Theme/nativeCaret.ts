@@ -1,5 +1,7 @@
 // CSS can recolor the native caret but never reshape it, so this paints the editor's bar and pills over the focused field.
 
+import { currentZoom } from '../Utilities/zoom'
+
 // Copied onto the measuring mirror so its text lays out exactly like the field's.
 const MIRROR_PROPS = [
   'boxSizing',
@@ -69,14 +71,14 @@ let styledEl: Field | null = null
 let styledH = 0
 let host: HTMLDivElement | null = null
 let hostParent: HTMLElement | null = null
-let hostIsolation = ''
+let hostIsolation: string | null = null
+const pills: HTMLDivElement[] = []
 
 function ensureNodes(): void {
   if (!bar) {
     bar = document.createElement('div')
     bar.className = 'mdpm-caret-overlay'
     bar.style.display = 'none'
-    document.body.appendChild(bar)
   }
   if (!mirror) {
     mirror = document.createElement('div')
@@ -186,7 +188,7 @@ function editableCaret(el: HTMLElement): CaretRect | null {
   return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el), rect.height) }
 }
 
-// A field row is no stacking context; isolating the parent gives the negative-z layer a floor.
+// Seated in the field's parent, so the bar and pills ride whatever moves the field — a dragged window included.
 function ensureHost(): HTMLDivElement | null {
   const parent = active?.parentElement
   if (!parent) return null
@@ -194,17 +196,29 @@ function ensureHost(): HTMLDivElement | null {
     releaseHost()
     host = document.createElement('div')
     host.className = 'mdpm-sel-host'
-    hostIsolation = parent.style.isolation
-    parent.style.isolation = 'isolate'
+    host.append(bar as HTMLDivElement)
     parent.prepend(host)
     hostParent = parent
   }
   return host
 }
 
+// A field row is no stacking context; isolating the parent gives the pills' negative-z layer a floor.
+function isolate(on: boolean): void {
+  if (!hostParent || on === (hostIsolation !== null)) return
+  if (on) {
+    hostIsolation = hostParent.style.isolation
+    hostParent.style.isolation = 'isolate'
+  } else {
+    hostParent.style.isolation = hostIsolation as string
+    hostIsolation = null
+  }
+}
+
 function releaseHost(): void {
+  isolate(false)
+  for (const p of pills.splice(0)) p.remove()
   host?.remove()
-  if (hostParent) hostParent.style.isolation = hostIsolation
   host = null
   hostParent = null
 }
@@ -212,18 +226,16 @@ function releaseHost(): void {
 const corner = (i: number, n: number): string =>
   n === 1 ? 'mdpm-sel-solo' : i === 0 ? 'mdpm-sel-head' : i === n - 1 ? 'mdpm-sel-foot' : ''
 
-function drawPills(rects: PillRect[]): void {
-  if (rects.length === 0) {
-    releaseHost()
-    return
-  }
-  const h = ensureHost()
-  if (!h) return
-  while (h.childElementCount > rects.length) h.lastElementChild?.remove()
-  while (h.childElementCount < rects.length) h.append(document.createElement('div'))
-  const base = h.getBoundingClientRect()
+function drawPills(
+  h: HTMLDivElement,
+  rects: PillRect[],
+  base: { left: number; top: number },
+): void {
+  isolate(rects.length > 0)
+  while (pills.length > rects.length) pills.pop()?.remove()
+  while (pills.length < rects.length) pills.push(h.appendChild(document.createElement('div')))
   rects.forEach((r, i) => {
-    const el = h.children[i] as HTMLDivElement
+    const el = pills[i] as HTMLDivElement
     el.className = `mdpm-sel ${corner(i, rects.length)}`.trim()
     el.style.left = `${r.x - base.left}px`
     el.style.top = `${r.y - base.top}px`
@@ -248,20 +260,30 @@ function caretRect(el: HTMLElement): CaretRect | null {
 function reposition(): void {
   raf = 0
   const b = bar as HTMLDivElement
-  if (!active?.isConnected) {
+  const el = active
+  const h = el?.isConnected ? ensureHost() : null
+  if (!el || !h) {
     b.style.display = 'none'
     releaseHost()
     return
   }
-  drawPills(selectionPills(active))
-  const c = caretRect(active)
+  // The mirror measures at no zoom, so a zoomed view's factor comes off the field-to-host gap alone.
+  const box = el.getBoundingClientRect()
+  const anchor = h.getBoundingClientRect()
+  const z = currentZoom(el)
+  const base = {
+    left: box.left - (box.left - anchor.left) / z,
+    top: box.top - (box.top - anchor.top) / z,
+  }
+  drawPills(h, selectionPills(el), base)
+  const c = caretRect(el)
   if (!c) {
     b.style.display = 'none'
     return
   }
   b.style.display = 'block'
-  b.style.left = `${c.x}px`
-  b.style.top = `${c.y}px`
+  b.style.left = `${c.x - base.left}px`
+  b.style.top = `${c.y - base.top}px`
   b.style.height = `${c.h}px`
   // The editor's keyframe swap restarts the fade; the name IS the state.
   b.style.animationName = b.style.animationName === 'mdpm-blink2' ? 'mdpm-blink' : 'mdpm-blink2'

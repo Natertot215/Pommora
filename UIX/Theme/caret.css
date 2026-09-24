@@ -51,7 +51,7 @@ textarea,
 }
 
 .mdpm-caret-overlay {
-  position: fixed;
+  position: absolute;
   width: var(--caret-width);
   margin-left: calc(var(--caret-width) / -2);
   background: var(--caret-color);
