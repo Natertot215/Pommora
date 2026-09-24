@@ -197,6 +197,7 @@ export function PropertyFrame({
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const renamingProperty = useSession((st) => st.renamingProperty)
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)
+  const bumpTrashRevision = useSession((st) => st.bumpTrashRevision)
   const cancelPropertyRename = useSession((st) => st.cancelPropertyRename)
   const submitPropertyRename = useSession((st) => st.submitPropertyRename)
   const [view, setView] = useState<SubView>({ kind: 'list' })
@@ -348,8 +349,10 @@ export function PropertyFrame({
       action === 'property:destroy' &&
       (await askDestroyProperty(def.name)) &&
       (await commit(await host().ask('property:delete', def.id)))
-    )
+    ) {
+      bumpTrashRevision()
       backToList()
+    }
   }
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {
     const action = await popMenu(

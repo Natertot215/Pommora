@@ -7,7 +7,7 @@ import {
 import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
 import { errText, valueOr } from '../Contract/result'
-import { assignedDefs, collectionFolderOf } from './assignment'
+import { assignedDefs, collectionFolderOf, collectionFolders } from './assignment'
 import { loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/contextWrite'
 import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
@@ -26,9 +26,10 @@ export async function runRepairSweep(root: string): Promise<void> {
     const base = valueOr(context, NO_CONTEXT_WORLD)
     const defsByFolder = new Map<string | null, ReadonlyMap<string, PropertyDefinition>>()
     const worlds = new Map<string, GovernedWorld>()
+    const folders = await collectionFolders(root)
     for (const rel of files) {
       const abs = join(root, rel)
-      const folder = await collectionFolderOf(root, abs)
+      const folder = collectionFolderOf(folders, abs)
       let defs = defsByFolder.get(folder)
       if (!defs) {
         defs = await assignedDefs(root, folder)

@@ -38,7 +38,6 @@ import type { Positions } from './matrixLayout'
 // KNOB — the hit slack past a node's edge, in world units.
 const HIT_SLACK = 4
 const FRAME_KEY = 'matrix-frame'
-// KNOB — pans and zooms inside this window fold into one frame write.
 export const FADE_MS = ms(duration.base)
 
 type Listener = () => void

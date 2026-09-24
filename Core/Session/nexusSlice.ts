@@ -35,6 +35,7 @@ export interface NexusSlice {
   headings: Record<string, string[]>
   /** Bumped by every delete, restore, and empty that lands, so an open Trash pane lists again. */
   trashRevision: number
+  bumpTrashRevision: () => void
   load: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
   applyTree: (tree: NexusTree) => Promise<void>
@@ -105,6 +106,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     syncStatus: null,
     headings: {},
     trashRevision: 0,
+    bumpTrashRevision: () => set((s) => ({ trashRevision: s.trashRevision + 1 })),
 
     applySyncStatus: (status) => set({ syncStatus: status }),
 
@@ -245,7 +247,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         return false
       }
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
-        set((s) => ({ trashRevision: s.trashRevision + 1 }))
+        get().bumpTrashRevision()
       // Instant optimistic patch; main's confirming push lands a beat later with no flicker.
       const cur = get().tree
       let patched: NexusTree | null = null
