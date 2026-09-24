@@ -43,69 +43,54 @@
   white-space: nowrap;
 }
 
-.banner-title .detail-title {
+.banner-title .detail-title,
+.banner-empty-title .detail-title {
   --detail-title-size: var(--text-title-small-size);
   min-width: 0;
 }
 .banner-title .detail-title-icon,
 .banner-title .detail-title-text,
+.banner-title .banner-title-text,
 .banner-title .detail-title-input.detail-title-input,
 .banner-title .detail-title-hint,
 .banner-title .detail-title-clear {
   pointer-events: auto;
 }
 .banner-title .detail-title-text,
-.banner-title .detail-title-input {
+.banner-title .detail-title-input.detail-title-input,
+.banner-empty-title .detail-title-text,
+.banner-empty-title .detail-title-input.detail-title-input {
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
 }
 
+/* The nexus photo wears the title icon's classes; a photo is cropped into a rounded square. */
 .banner-home-icon {
-  width: var(--detail-title-size);
-  height: var(--detail-title-size);
-  max-width: var(--detail-title-size);
-  min-width: 0;
-  flex: 0 0 auto;
   border-radius: 5px;
   object-fit: cover;
-  overflow: hidden;
-  color: var(--label-control);
-  transition:
-    max-width var(--duration-base) var(--ease-base),
-    opacity var(--duration-base) var(--ease-base),
-    transform var(--duration-base) var(--ease-base),
-    margin-right var(--duration-base) var(--ease-base);
-}
-.banner-home-icon.is-hidden {
-  max-width: 0;
-  opacity: 0;
-  transform: translateX(-6px);
-  margin-right: -8px;
-}
-.banner.is-homepage .banner-home-icon,
-.banner.is-homepage .banner-title-text {
-  pointer-events: auto;
 }
 .shell.is-resizing .banner-title {
   transition: none;
 }
 
+/* Inset like every other title divider: the margin holds the content edges, so the rule stops where the title starts. */
 .banner-empty {
   --banner-add-zone: 44px;
   --detail-divider-width: var(--width-175);
+  margin: 0 var(--content-start-right) 0 var(--content-start);
   padding: calc(var(--app-inset) + 1px + var(--toolbar-h))
-    calc(var(--side-pane-clearance) + var(--content-inset)) 14px var(--content-start);
+    calc(var(--content-inset) - var(--content-edge)) 14px 0;
   border-bottom: var(--detail-divider-width) solid var(--border-base);
   transition:
-    padding-left var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
+    margin-left var(--duration-base) var(--ease-base),
+    margin-right var(--duration-base) var(--ease-base);
 }
 .shell.is-resizing .banner-empty {
   transition: none;
 }
 
 .banner-empty.is-surface {
-  padding-right: var(--content-start-right);
+  padding-right: 0;
 }
 
 /* The app toolbar and the shell's sidebar are the main pane's; a floating window has neither, so the header keeps the plain edge and sits under the window's own band. */
@@ -117,16 +102,6 @@
 }
 .banner-empty-title {
   line-height: 1.2;
-}
-
-.banner-empty-title .detail-title {
-  --detail-title-size: var(--text-title-small-size);
-  min-width: 0;
-}
-.banner-empty-title .detail-title-text,
-.banner-empty-title .detail-title-input.detail-title-input {
-  font-weight: var(--weight-semibold);
-  color: var(--label-primary);
 }
 
 .add-banner-strip {

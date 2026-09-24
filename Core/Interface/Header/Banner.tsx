@@ -1,12 +1,11 @@
-import { useRef, useState } from 'react'
-import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
+import { type ReactNode, useRef, useState } from 'react'
+import type { BannerOwnerKind, MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
 import { shownViewSearch, useSession } from '../../Session/store'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
-import { ImagePicker } from '../../Assets/ImagePicker'
 import { isSurfaceKind, type BannerOwner } from '../../Nexus/treeIndex'
 import { DetailTitleHeader } from './DetailTitleHeader'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
@@ -19,7 +18,70 @@ import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { titleMenuItems, withSearchRow } from '@pommora/core/Actions/identityMenus'
 
+/** The one banner band: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
 export function Banner({
+  path,
+  kind,
+  value,
+  title,
+  empty,
+  chrome = 'detail',
+  className,
+  titleClassName = 'banner-title',
+  onTitleMenu,
+  onSearch,
+  onDone,
+  noRemove,
+}: {
+  path: string
+  kind: BannerOwnerKind
+  value: string | null | undefined
+  title: ReactNode
+  empty: (add: () => void) => ReactNode
+  chrome?: 'detail' | 'window'
+  className?: string
+  titleClassName?: string
+  onTitleMenu?: (e: React.MouseEvent) => void
+  onSearch?: () => void
+  onDone?: () => void
+  noRemove?: boolean
+}): ReactNode {
+  const src = useAssetUrl(value)
+  const frame = useRef<HTMLDivElement>(null)
+  const { openMenu, run, addOrChange, editor } = useBannerMenu(path, kind, {
+    value,
+    frame,
+    onDone,
+    noRemove,
+  })
+  useWindowBannerSeat(chrome === 'window', run)
+
+  if (!src) return empty(() => void addOrChange())
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
+    <div
+      ref={frame}
+      className={cx('banner', chrome === 'window' && 'window-banner', className)}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        void openMenu(onSearch)
+      }}
+    >
+      <AssetImage value={value} className="banner-img" eager />
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control */}
+      <div
+        className={cx(titleClassName, chrome === 'window' && 'window-banner-title', 'title-shadow')}
+        onContextMenu={onTitleMenu}
+      >
+        {title}
+      </div>
+      {editor}
+    </div>
+  )
+}
+
+/** A homepage, Collection, Set, or Space's banner, titled by its renamable name. */
+export function EntityBanner({
   owner,
   chrome = 'detail',
 }: {
@@ -30,7 +92,6 @@ export function Banner({
   const submitRename = useSession((s) => s.submitRename)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const nexus = useSession((s) => s.tree?.nexus)
-  const bannerSrc = useAssetUrl(owner.banner)
   const homePhotoSrc = useAssetUrl(nexus?.profileImage)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [editingHome, setEditingHome] = useState(false)
@@ -41,13 +102,17 @@ export function Banner({
   const searchView = useSession((s) => s.searchView)
   const setViewQuery = useSession((s) => s.setViewQuery)
   const search = searchable ? { query, summon, start: searchView, change: setViewQuery } : undefined
+  const home = owner.kind === 'homepage'
 
   const iconHidden = owner.headingIconHidden === true
   const toggleHeadingIcon = (): Promise<boolean> =>
     mutate({ op: 'setHeadingIconHidden', path: owner.path, kind: owner.kind, hidden: !iconHidden })
   // Always rendered (never conditionally removed) so hide/show slides it in/out rather than popping.
   const homeIcon = (): React.ReactNode => {
-    const cls = iconHidden ? 'banner-home-icon is-hidden' : 'banner-home-icon'
+    const cls = cx(
+      'detail-title-icon title-icon-reveal banner-home-icon',
+      iconHidden && 'is-hidden',
+    )
     if (homePhotoSrc) return <AssetImage value={nexus?.profileImage} className={cls} eager />
     return <Icon name={nexus?.profileIcon ?? DEFAULT_NEXUS_ICON} className={cls} />
   }
@@ -88,13 +153,8 @@ export function Banner({
       </span>
     </RenamableLabel>
   )
-  const bannerRef = useRef<HTMLDivElement>(null)
-  const { openMenu, run, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
-    useBannerMenu(owner.path, owner.kind, { value: owner.banner, frame: bannerRef })
-  useWindowBannerSeat(chrome === 'window', run)
 
-  const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
-  const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
+  const surfaceClass = isSurfaceKind(owner.kind) ? 'is-surface' : undefined
   const titleHeader = owner.kind !== 'homepage' && (
     <DetailTitleHeader
       key={owner.path}
@@ -112,7 +172,7 @@ export function Banner({
       search={search}
     />
   )
-  const iconPicker = owner.kind !== 'homepage' && (
+  const iconPicker = !home && (
     <IconChoice
       open={iconPickerOpen}
       onClose={() => setIconPickerOpen(false)}
@@ -128,61 +188,39 @@ export function Banner({
       }
     />
   )
-  if (!bannerSrc) {
-    return (
-      <div className={`banner-empty${homeClass}${surfaceClass}`}>
-        {chrome === 'detail' && <AddBannerButton onClick={() => void addOrChange()} />}
-        {owner.kind === 'homepage' ? (
-          homeTitle('banner-empty-title')
-        ) : (
-          <div className="banner-empty-title">{titleHeader}</div>
-        )}
-        {iconPicker}
-      </div>
-    )
-  }
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-    <div
-      ref={bannerRef}
-      className={cx(`banner${homeClass}${surfaceClass}`, chrome === 'window' && 'window-banner')}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        void openMenu(search?.start)
-      }}
-    >
-      <AssetImage value={owner.banner} className="banner-img" eager />
-      <ImagePicker
-        open={editing}
-        value={owner.banner ?? ''}
-        shape="rect"
-        boxAspect={boxAspect}
-        onCancel={closeEditor}
-        onSave={onSave}
-        onRepick={onRepick}
+    <>
+      <Banner
+        path={owner.path}
+        kind={owner.kind}
+        value={owner.banner}
+        chrome={chrome}
+        className={surfaceClass}
+        titleClassName={cx('banner-title', search && 'is-searchable')}
+        onTitleMenu={home ? (e) => void openHomeTitleMenu(e) : undefined}
+        onSearch={search?.start}
+        title={
+          home ? (
+            <>
+              {homeIcon()}
+              {homeTitle('banner-title-text')}
+            </>
+          ) : (
+            titleHeader
+          )
+        }
+        empty={(add) => (
+          <div className={cx('banner-empty', surfaceClass)}>
+            {chrome === 'detail' && <AddBannerButton onClick={add} />}
+            {home ? (
+              homeTitle('banner-empty-title')
+            ) : (
+              <div className="banner-empty-title">{titleHeader}</div>
+            )}
+          </div>
+        )}
       />
-      {owner.kind === 'homepage' ? (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-        <span
-          className="banner-title title-shadow"
-          onContextMenu={(e) => void openHomeTitleMenu(e)}
-        >
-          {homeIcon()}
-          {homeTitle('banner-title-text')}
-        </span>
-      ) : (
-        <div
-          className={cx(
-            'banner-title',
-            chrome === 'window' && 'window-banner-title',
-            search && 'is-searchable',
-            'title-shadow',
-          )}
-        >
-          {titleHeader}
-        </div>
-      )}
       {iconPicker}
-    </div>
+    </>
   )
 }

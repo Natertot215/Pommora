@@ -1,10 +1,11 @@
-import { type RefObject, useContext, useState } from 'react'
+import { type ReactNode, type RefObject, useContext, useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../../Session/store'
 import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'
+import { ImagePicker } from '../../Assets/ImagePicker'
 import { popMenu } from '../../Actions/menuActions'
 import {
   type BannerMenuAction,
@@ -27,12 +28,9 @@ export function useBannerMenu(
   openMenu: (onSearch?: () => void) => Promise<void>
   run: (action: BannerMenuAction) => Promise<void>
   addOrChange: () => Promise<void>
-  editing: boolean
   openEditor: () => void
   closeEditor: () => void
-  boxAspect: number
-  onSave: (crop: Crop) => Promise<void>
-  onRepick: (source: string) => Promise<string | undefined>
+  editor: ReactNode
 } {
   const { value, frame, noun, noRemove, onDone, autoEdit } = opts
   const mutate = useSession((s) => s.mutate)
@@ -80,17 +78,23 @@ export function useBannerMenu(
     closeEditor()
     if (await mutate({ op: 'setCrop', image: value ?? '', crop })) onDone?.()
   }
-  const onRepick = setBanner
 
   return {
     openMenu,
     run,
     addOrChange,
-    editing,
     openEditor,
     closeEditor,
-    boxAspect,
-    onSave,
-    onRepick,
+    editor: (
+      <ImagePicker
+        open={editing}
+        value={value ?? ''}
+        shape="rect"
+        boxAspect={boxAspect}
+        onCancel={closeEditor}
+        onSave={onSave}
+        onRepick={setBanner}
+      />
+    ),
   }
 }

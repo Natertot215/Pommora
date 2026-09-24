@@ -13,7 +13,7 @@ import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
 import { subscribeTileDoc } from '../../Tiles/tileDocStore'
 import { useTileDocReady } from '../../Tiles/useTileDoc'
-import { Banner } from '../Header/Banner'
+import { EntityBanner } from '../Header/Banner'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { Subfield } from '../Subfield/Subfield'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
@@ -44,7 +44,7 @@ function SpaceTabBody({
 }): React.JSX.Element {
   return (
     <>
-      <Banner owner={banner ? owner : { ...owner, banner: undefined }} chrome="window" />
+      <EntityBanner owner={banner ? owner : { ...owner, banner: undefined }} chrome="window" />
       <div className="tile-host-frame">
         <TileHost key={host.id} host={host} connections={connections} />
       </div>

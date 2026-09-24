@@ -42,7 +42,6 @@ import { assetUrl } from '../../Platform/assetScheme'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
-import { ImagePicker } from '../../Assets/ImagePicker'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { byOrder } from '@pommora/core/Nexus/treePatch'
 import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
@@ -327,12 +326,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   })()
   const {
     openMenu: openBannerMenu,
-    editing: bannerEditing,
     openEditor: openBannerEditor,
     closeEditor: closeBannerEditor,
-    boxAspect,
-    onSave,
-    onRepick,
+    editor: bannerEditor,
   } = useBannerMenu(bannerOwner?.path ?? '', bannerRequest?.kind ?? 'page', {
     value: bannerOwner?.value,
     frame: bannerFrameRef,
@@ -602,15 +598,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           <div className="cards-grid card-grid is-fill">{ghostCard}</div>
         )}
         {interactions.iconPicker}
-        <ImagePicker
-          open={bannerEditing}
-          value={bannerOwner?.value ?? ''}
-          shape="rect"
-          boxAspect={boxAspect}
-          onCancel={closeBannerEditor}
-          onSave={onSave}
-          onRepick={onRepick}
-        />
+        {bannerEditor}
         <TextPicker
           open={valuePicker?.kind === 'link'}
           onDismiss={() => setValuePicker(null)}

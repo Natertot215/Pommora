@@ -89,7 +89,7 @@
 .page-tile .mdpm-shell {
   timeline-scope: none;
 }
-.page-tile:not(.is-window-chrome) .mdpm-banner {
+.page-tile:not(.is-window-chrome) .banner {
   position: absolute;
   top: 0;
   left: 0;
@@ -97,22 +97,16 @@
   height: var(--embed-banner-h);
   z-index: 2;
   --header-zone: var(--embed-banner-h);
-  will-change: transform;
-  animation-name: mdpm-header-park;
-  animation-timing-function: linear;
-  animation-fill-mode: both;
-  animation-timeline: --mdpm-scroll;
-  animation-range: 0 var(--header-zone);
 }
 /* The banner sits out of flow, its height reserved as editor padding, because an in-flow band inside this clipped tile would strand the editor past the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height is the whole retarget. */
 .page-tile.has-banner .mdpm-editor .cm-content {
   padding-top: calc(var(--embed-banner-h) + 16px * var(--page-detail-scale));
 }
-.page-tile .mdpm-banner-img {
+.page-tile .banner-img {
   -webkit-user-drag: none;
 }
 /* This var exists because the page rung's band stands without .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
-.page-tile:not(.is-window-chrome) .mdpm-banner-overlay {
+.page-tile:not(.is-window-chrome) .banner-overlay {
   --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
   left: calc(16px * var(--page-detail-scale));
   right: calc(16px * var(--page-detail-scale));

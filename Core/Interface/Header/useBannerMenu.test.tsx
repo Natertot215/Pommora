@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
-import { act, useRef } from 'react'
+import { act, type ReactElement, useRef } from 'react'
+import type { ImagePicker } from '../../Assets/ImagePicker'
 import { createRoot, type Root } from 'react-dom/client'
 import { useBannerMenu } from './useBannerMenu'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
@@ -33,6 +34,8 @@ afterEach(async () => {
 })
 
 let api: ReturnType<typeof useBannerMenu>
+const editor = (): React.ComponentProps<typeof ImagePicker> =>
+  (api.editor as ReactElement<React.ComponentProps<typeof ImagePicker>>).props
 function Inner({ autoEdit }: { autoEdit?: boolean }): React.JSX.Element {
   const frame = useRef<HTMLDivElement>(null)
   api = useBannerMenu('Notes/A.md', 'page', { value: '[[Cover.png]]', frame, onDone, autoEdit })
@@ -72,7 +75,7 @@ describe('useBannerMenu', () => {
     })
     expect(labels[0]).toBe('Search')
     expect(onSearch).toHaveBeenCalledOnce()
-    expect(api.editing).toBe(false)
+    expect(editor().open).toBe(false)
   })
 
   it("opens the editor on 'edit' and pops through the ghost wrap", async () => {
@@ -81,12 +84,12 @@ describe('useBannerMenu', () => {
       menu: () => Promise.resolve(ok('edit')),
     })
     await mount(<Probe ghost={ghost} />)
-    expect(api.editing).toBe(false)
+    expect(editor().open).toBe(false)
     await act(async () => {
       await api.openMenu()
     })
     expect(ghost).toHaveBeenCalled()
-    expect(api.editing).toBe(true)
+    expect(editor().open).toBe(true)
   })
 
   it('onSave writes setCrop keyed by the seat’s stored value and closes the editor', async () => {
@@ -97,16 +100,16 @@ describe('useBannerMenu', () => {
     await act(async () => {
       await api.openMenu()
     })
-    expect(api.editing).toBe(true)
+    expect(editor().open).toBe(true)
     await act(async () => {
-      await api.onSave({ x: 0.2, y: 0.3, zoom: 1.5 })
+      await editor().onSave({ x: 0.2, y: 0.3, zoom: 1.5 })
     })
     expect(mutate).toHaveBeenCalledWith({
       op: 'setCrop',
       image: '[[Cover.png]]',
       crop: { x: 0.2, y: 0.3, zoom: 1.5 },
     })
-    expect(api.editing).toBe(false)
+    expect(editor().open).toBe(false)
   })
 
   it('autoEdit pops the crop editor after a fresh pick', async () => {
@@ -123,7 +126,7 @@ describe('useBannerMenu', () => {
       undefined,
       expect.any(Function),
     )
-    expect(api.editing).toBe(true)
+    expect(editor().open).toBe(true)
   })
 
   it('without autoEdit a fresh pick sets the image and leaves the editor closed', async () => {
@@ -136,14 +139,14 @@ describe('useBannerMenu', () => {
       await api.openMenu()
     })
     expect(mutate).toHaveBeenCalled()
-    expect(api.editing).toBe(false)
+    expect(editor().open).toBe(false)
   })
 
   it('onRepick adopts the source through setBanner', async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({})
     await mount(<Probe />)
     await act(async () => {
-      await api.onRepick('/abs/New.png')
+      await editor().onRepick?.('/abs/New.png')
     })
     expect(mutate).toHaveBeenCalledWith(
       { op: 'setBanner', path: 'Notes/A.md', kind: 'page', source: '/abs/New.png' },
