@@ -68,11 +68,12 @@ export function StatusEditor({
       iconChoice.editing,
   )
 
+  const values = statusOrder.flatMap((g) => g.values)
   const commitAdd = (groupId: string, raw: string, at: number): void => {
     setAdding(null)
     const g = groups.find((x) => x.id === groupId)
     onSetGroups(
-      addStatusOption(groups, groupId, raw.trim() || fallbackTitle('status', g?.label), at),
+      addStatusOption(groups, groupId, raw.trim() || fallbackTitle('status', values, g?.label), at),
     )
   }
   const commitGroupRename = (groupId: string, raw: string): void => {
@@ -82,7 +83,13 @@ export function StatusEditor({
   }
   const commitRename = (oldValue: string, raw: string, groupLabel: string): void => {
     setRenaming(null)
-    const title = raw.trim() || fallbackTitle('status', groupLabel)
+    const title =
+      raw.trim() ||
+      fallbackTitle(
+        'status',
+        values.filter((v) => v !== oldValue),
+        groupLabel,
+      )
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
   const openMenu = async (value: string, name: string, row: HTMLElement): Promise<void> => {

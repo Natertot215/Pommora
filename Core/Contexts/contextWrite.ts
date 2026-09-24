@@ -19,7 +19,7 @@ import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { adoptedId, newId } from '../Nexus/ids'
-import { createDisambiguated, nameError } from '../Paths/names'
+import { freeName, nameError } from '../Paths/names'
 import {
   atomicWriteFile,
   pathExists,
@@ -239,24 +239,19 @@ export async function createContextGroup(
 ): Promise<Result<{ id: string; path: string }>> {
   const why = nameError(name, 'directory')
   if (why) return fail('invalid-name', why)
-  const reg = await readRegistryStrict(root)
-  if (!reg.ok) return reg
-  // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently share one folder with the existing group.
-  const taken = new Set(reg.value.contexts.map((c) => normalizeTitle(c.title)))
-  return createDisambiguated(name, async (title) => {
-    if (taken.has(normalizeTitle(title))) return fail('exists', `"${title}" already exists.`)
-    const id = newId()
-    const written = await mutateRegistryFile(root, (cur) => {
-      if (cur.contexts.some((c) => c.title === title)) return cur
-      // No icon: a fresh group resolves to the kind's glyph and follows a nexus default; stamping one would outrank that override forever.
-      return { contexts: [...cur.contexts, { id, title }] }
-    })
-    if (!written.ok) return written
-    if (!written.value.contexts.some((c) => c.id === id))
-      return fail('exists', `"${title}" already exists.`)
-    await machine().mkdir(join(contextsDir(root), title))
-    return ok({ id, path: contextDirRel(title) })
+  const id = newId()
+  let title = name
+  const written = await mutateRegistryFile(root, (cur) => {
+    title = freeName(
+      name,
+      cur.contexts.map((c) => c.title),
+    )
+    // No icon: a fresh group resolves to the kind's glyph and follows a nexus default; stamping one would outrank that override forever.
+    return { contexts: [...cur.contexts, { id, title }] }
   })
+  if (!written.ok) return written
+  await machine().mkdir(join(contextsDir(root), title))
+  return ok({ id, path: contextDirRel(title) })
 }
 
 export async function createSpace(

@@ -29,7 +29,6 @@ export function RenamableLabel({
   ariaLabel?: string
   /** A value field rather than a name: clearing it is a commit — the caller's unset — not a cancel. */
   emptyCommits?: boolean
-  /** The one rename door every title shares: a double-click on the resting label. */
   onBegin?: () => void
   onCommit: (next: string) => void
   onCancel: () => void

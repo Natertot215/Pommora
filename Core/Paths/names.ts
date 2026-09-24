@@ -44,14 +44,26 @@ export function reservedAssetLeaf(rel: string): boolean {
   return foldKey(rel) === foldKey(CROPS_REL)
 }
 
-// The one place the app decides what a stepped-aside name looks like, so a page, a folder and an adopted file all read the same way.
+const STEP_SUFFIX = / \(\d+\)$/
+
+// The one place the app decides what a stepped-aside name looks like: the name as given, then its base counted up from 2, so re-stepping `Ideas (2)` reads `Ideas (3)`.
+const stepped = (name: string, n: number): string =>
+  n === 1 ? name : `${name.replace(STEP_SUFFIX, '')} (${n})`
+
+export function freeName(name: string, taken: Iterable<string>): string {
+  const held = new Set(Array.from(taken, foldKey))
+  let n = 1
+  while (held.has(foldKey(stepped(name, n)))) n++
+  return stepped(name, n)
+}
+
 export async function createDisambiguated<T>(
-  baseName: string,
+  name: string,
   attempt: (name: string) => Promise<Result<T>>,
 ): Promise<Result<T>> {
-  let last = await attempt(baseName)
+  let last = await attempt(name)
   for (let n = 2; n <= 50 && !last.ok && last.error.code === 'exists'; n++) {
-    last = await attempt(`${baseName} ${n}`)
+    last = await attempt(stepped(name, n))
   }
   return last
 }

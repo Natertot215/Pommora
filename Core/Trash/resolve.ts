@@ -2,7 +2,7 @@
 
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { titleFromPath } from '../Paths/posix'
-import { normalizeTitle } from '../Connections/connections'
+import { freeName } from '../Paths/names'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { RecordFile } from './record'
@@ -19,16 +19,6 @@ type Resolution = { place: Placement } | { refuse: Refusal }
 
 /** The property shape is artifact-less — there is nothing to place. */
 export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
-
-/** The create convention: a name already held — case- and form-insensitively — gains a counter. */
-const disambiguate = (base: string, taken: string[]): string => {
-  const held = taken.map(normalizeTitle)
-  const isTaken = (title: string): boolean => held.includes(normalizeTitle(title))
-  if (!isTaken(base)) return base
-  let n = 2
-  while (isTaken(`${base} ${n}`)) n++
-  return `${base} ${n}`
-}
 
 type Container = CollectionNode | SetNode
 
@@ -65,7 +55,7 @@ export function resolveRecord(
   if (recordId && live[recordId]) return { refuse: 'id-live' }
 
   if (record.entity === 'context') {
-    const finalTitle = disambiguate(
+    const finalTitle = freeName(
       record.registry.title,
       tree.contexts.map((g) => g.def.title),
     )
@@ -78,7 +68,7 @@ export function resolveRecord(
     if (parent.kind !== 'context') return { refuse: 'cannot-hold' }
     const group = tree.contexts.find((g) => g.def.id === parent.id)
     if (!group) return { refuse: 'parent-gone' }
-    const finalTitle = disambiguate(
+    const finalTitle = freeName(
       baseName,
       group.spaces.map((s) => s.title),
     )
@@ -94,7 +84,7 @@ export function resolveRecord(
       return { refuse: 'cannot-hold' }
     case 'root': {
       if (record.entity !== 'collection') return { refuse: 'cannot-hold' }
-      const finalName = disambiguate(
+      const finalName = freeName(
         baseName,
         tree.collections.map((c) => c.title),
       )
@@ -111,10 +101,10 @@ export function resolveRecord(
         ...(parent.sets ?? []).map((s) => s.title),
       ]
       if (record.entity === 'page') {
-        const finalTitle = disambiguate(titleFromPath(baseName), siblings)
+        const finalTitle = freeName(titleFromPath(baseName), siblings)
         return { place: { dir: parent.path, finalName: `${finalTitle}.md` } }
       }
-      return { place: { dir: parent.path, finalName: disambiguate(baseName, siblings) } }
+      return { place: { dir: parent.path, finalName: freeName(baseName, siblings) } }
     }
   }
 }

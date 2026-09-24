@@ -29,7 +29,6 @@ export interface TitleSearch {
 interface Props {
   title: string
   icon?: string
-  /** An asset standing in the icon's seat — the Nexus photo. */
   photo?: string | null
   iconRef?: Ref<SVGSVGElement>
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.

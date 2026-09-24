@@ -1,6 +1,7 @@
 // An option's `value` IS its title (value=label), so identity keys on the value string.
 
 import type { OptionAppearance, PropertyType, StatusGroup, StatusOption } from './properties'
+import { freeName } from '../Paths/names'
 
 export type Option = {
   value: string
@@ -11,8 +12,12 @@ export type Option = {
   group_id?: string
 }
 
-export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
-  return type === 'status' ? (groupLabel ?? 'Label') : 'Label'
+export function fallbackTitle(
+  type: PropertyType,
+  taken: readonly string[],
+  groupLabel?: string,
+): string {
+  return freeName(type === 'status' ? (groupLabel ?? 'Label') : 'Label', taken)
 }
 
 function mapOption<T extends { value: string }>(options: T[], value: string, fn: (o: T) => T): T[] {
