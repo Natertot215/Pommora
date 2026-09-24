@@ -1,6 +1,7 @@
 // CSS can recolor the native caret but never reshape it, so this paints the editor's bar and pills over the focused field.
 
 import { duration, ms } from '../Animations/motion'
+import { cx } from '../Utilities/cx'
 import { currentZoom } from '../Utilities/zoom'
 
 // Copied onto the measuring mirror so its text lays out exactly like the field's.
@@ -69,6 +70,7 @@ let started = false
 // A field that resizes AFTER focus strands the bar at its focus-time spot.
 let fieldRO: ResizeObserver | null = null
 let styledEl: Field | null = null
+let anchor: number | null = null
 let styledH = 0
 let host: HTMLDivElement | null = null
 let hostParent: HTMLElement | null = null
@@ -78,7 +80,7 @@ const pills: HTMLDivElement[] = []
 function ensureNodes(): void {
   if (!bar) {
     bar = document.createElement('div')
-    bar.className = 'mdpm-caret-overlay'
+    bar.className = 'caret-bar caret-overlay'
     bar.style.display = 'none'
   }
   if (!mirror) {
@@ -118,9 +120,26 @@ function seatMirror(el: Field): { m: HTMLDivElement; box: DOMRect } {
   return { m, box }
 }
 
+// The bar sits at the selection's moving end. A mouse selection on macOS reports 'none', so there the head is whichever end left the last painted anchor.
+export function caretHead(
+  {
+    selectionStart,
+    selectionEnd,
+    selectionDirection,
+    value,
+  }: Pick<Field, 'selectionStart' | 'selectionEnd' | 'selectionDirection' | 'value'>,
+  anchor: number | null,
+): number {
+  const start = selectionStart ?? value.length
+  const end = selectionEnd ?? value.length
+  if (selectionDirection === 'backward') return start
+  return selectionDirection === 'none' && end === anchor ? start : end
+}
+
 function fieldCaret(el: Field): CaretRect | null {
   const { m, box } = seatMirror(el)
-  const pos = el.selectionStart ?? el.value.length
+  const pos = caretHead(el, anchor)
+  anchor = pos === el.selectionEnd ? el.selectionStart : el.selectionEnd
   m.textContent = el.value.slice(0, pos)
   // The trailing span's LEFT edge marks the caret; a lone `.` boxes the end. Assumes left-aligned text.
   const span = document.createElement('span')
@@ -137,7 +156,7 @@ function fieldCaret(el: Field): CaretRect | null {
   return { x, y, h: styledH }
 }
 
-function mergeRows(rects: DOMRect[], h: number): PillRect[] {
+export function mergeRows(rects: DOMRect[], h: number): PillRect[] {
   const rows: PillRect[] = []
   for (const r of rects) {
     if (r.width <= 0) continue
@@ -181,9 +200,9 @@ function editableSelection(el: HTMLElement): PillRect[] {
 
 function editableCaret(el: HTMLElement): CaretRect | null {
   const sel = getSelection()
-  if (!sel?.rangeCount) return null
-  const r = sel.getRangeAt(0).cloneRange()
-  r.collapse(true)
+  if (!sel?.focusNode) return null
+  const r = document.createRange()
+  r.setStart(sel.focusNode, sel.focusOffset)
   const rect = r.getClientRects()[0] ?? r.getBoundingClientRect()
   if (!rect || (rect.height === 0 && rect.width === 0 && rect.left === 0)) return null // empty line — skip, don't mutate the DOM
   return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el), rect.height) }
@@ -196,7 +215,7 @@ function ensureHost(): HTMLDivElement | null {
   if (hostParent !== parent) {
     releaseHost()
     host = document.createElement('div')
-    host.className = 'mdpm-sel-host'
+    host.className = 'sel-host'
     host.append(bar as HTMLDivElement)
     parent.prepend(host)
     hostParent = parent
@@ -224,8 +243,14 @@ function releaseHost(): void {
   hostParent = null
 }
 
-const corner = (i: number, n: number): string =>
-  n === 1 ? 'mdpm-sel-solo' : i === 0 ? 'mdpm-sel-head' : i === n - 1 ? 'mdpm-sel-foot' : ''
+export const selCorner = (i: number, n: number): string =>
+  n === 1 ? 'sel-solo' : i === 0 ? 'sel-head' : i === n - 1 ? 'sel-foot' : ''
+
+// A keyframe swap restarts the fade, so a moved caret reads solid; the name IS the state.
+export function restartBlink(el: HTMLElement): void {
+  el.style.animationName =
+    el.style.animationName === 'caret-blink2' ? 'caret-blink' : 'caret-blink2'
+}
 
 function drawPills(
   h: HTMLDivElement,
@@ -237,7 +262,7 @@ function drawPills(
   while (pills.length < rects.length) pills.push(h.appendChild(document.createElement('div')))
   rects.forEach((r, i) => {
     const el = pills[i] as HTMLDivElement
-    el.className = `mdpm-sel ${corner(i, rects.length)}`.trim()
+    el.className = cx('sel-pill', selCorner(i, rects.length))
     el.style.left = `${r.x - base.left}px`
     el.style.top = `${r.y - base.top}px`
     el.style.width = `${r.w}px`
@@ -264,8 +289,7 @@ function reposition(): void {
   const el = active
   const h = el?.isConnected ? ensureHost() : null
   if (!el || !h) {
-    b.style.display = 'none'
-    releaseHost()
+    release()
     return
   }
   // The mirror measures at no zoom, so a zoomed view's factor comes off the field-to-host gap alone.
@@ -286,8 +310,18 @@ function reposition(): void {
   b.style.left = `${c.x - base.left}px`
   b.style.top = `${c.y - base.top}px`
   b.style.height = `${c.h}px`
-  // The editor's keyframe swap restarts the fade; the name IS the state.
-  b.style.animationName = b.style.animationName === 'mdpm-blink2' ? 'mdpm-blink' : 'mdpm-blink2'
+  restartBlink(b)
+}
+
+// Hidden directly: schedule() no-ops once `active` is null, so it can't do it for us.
+function release(): void {
+  active = null
+  styledEl = null
+  anchor = null
+  fieldRO?.disconnect()
+  cancelAnimationFrame(settleRaf)
+  releaseHost()
+  if (bar) bar.style.display = 'none'
 }
 
 function schedule(): void {
@@ -340,18 +374,10 @@ export function initNativeCaret(): void {
     schedule()
   })
   document.addEventListener('focusout', (e) => {
-    // Hidden directly: schedule() no-ops once `active` is null, so it can't do it for us.
-    if (e.target === active) {
-      active = null
-      styledEl = null
-      fieldRO?.disconnect()
-      cancelAnimationFrame(settleRaf)
-      releaseHost()
-      if (bar) bar.style.display = 'none'
-    }
+    if (e.target === active) release()
   })
   // Capture, so a field's own scroll (which doesn't bubble) is seen too.
-  for (const ev of ['input', 'keyup', 'click', 'pointerup', 'select', 'scroll']) {
+  for (const ev of ['input', 'keyup', 'click', 'pointerdown', 'pointerup', 'select', 'scroll']) {
     document.addEventListener(ev, schedule, true)
   }
   document.addEventListener('selectionchange', schedule)
@@ -359,5 +385,4 @@ export function initNativeCaret(): void {
     styledEl = null
     schedule()
   })
-  window.addEventListener('scroll', schedule, true)
 }

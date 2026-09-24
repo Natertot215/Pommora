@@ -1,29 +1,46 @@
-/* One text-insertion identity: the drawn blinking bar paired with the I-beam hover cursor. */
+/* One text-insertion identity: the drawn blinking bar and selection pills, paired with the I-beam hover cursor. Drawn rather than native: `caret-color` and `::selection` take only a color — no shape, corner, bleed, or height. */
 
 :root {
   --caret-width: 2px;
   --caret-color: var(--label-primary);
   --caret-gap: 1.3s;
+  --caret-blink: caret-blink var(--caret-gap) ease-in-out infinite;
   --caret-cursor:
     url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="24"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5.6V18.4M4.4 4L7 5.6L9.6 4M4.4 20L7 18.4L9.6 20" stroke="%23fff" stroke-width="3"/><path d="M7 5.6V18.4M4.4 4L7 5.6L9.6 4M4.4 20L7 18.4L9.6 20" stroke="%23000" stroke-width="1.4"/></g></svg>')
     7 12,
     text;
+  --text-selection: color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
+  --text-selection-idle: var(--fill-tertiary);
+  /* KNOB pair — the selection's corner and bleed. */
+  --text-selection-radius: 2px;
+  --text-selection-pad: 1.5px;
 }
 
-/* The browser caret is hidden so nativeCaret.ts paints the drawn bar at a JS-tracked position instead. */
-input:not([type]),
-input[type="text"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
-textarea,
-[contenteditable="true"] {
+/* The browser caret is hidden so nativeCaret.ts paints the drawn bar at a JS-tracked position instead; the native highlight goes only where a drawn one replaces it. */
+:is(
+  input:not([type]),
+  input[type="text"],
+  input[type="search"],
+  input[type="url"],
+  input[type="tel"],
+  textarea,
+  [contenteditable="true"]
+) {
   cursor: var(--caret-cursor);
   caret-color: transparent;
+
+  :root:not(.native-highlight) &:not([contenteditable], [readonly], [disabled])::selection,
+  :root:not(.native-highlight)
+    &[contenteditable]:not([data-drawn-caret], [data-drawn-caret] *)::selection,
+  :root:not(.native-highlight)
+    &[contenteditable]:not([data-drawn-caret], [data-drawn-caret] *)
+    ::selection {
+    background: transparent;
+  }
 }
 
-/* Two identical keyframes so caret.ts can swap names to restart the blink cycle on caret move, without a reflow. */
-@keyframes mdpm-blink {
+/* Two identical keyframes so a caret move can swap names to restart the blink cycle, without a reflow. */
+@keyframes caret-blink {
   0%,
   40% {
     opacity: 1;
@@ -36,7 +53,7 @@ textarea,
     opacity: 1;
   }
 }
-@keyframes mdpm-blink2 {
+@keyframes caret-blink2 {
   0%,
   40% {
     opacity: 1;
@@ -50,13 +67,52 @@ textarea,
   }
 }
 
-.mdpm-caret-overlay {
-  position: absolute;
+.caret-bar {
   width: var(--caret-width);
   margin-left: calc(var(--caret-width) / -2);
   background: var(--caret-color);
   border-radius: var(--radius-full);
+}
+
+.caret-overlay {
+  position: absolute;
   pointer-events: none;
   z-index: var(--z-caret);
-  animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
+  animation: var(--caret-blink);
+}
+
+.sel-pill {
+  position: absolute;
+  box-sizing: content-box;
+  padding-inline: var(--text-selection-pad);
+  margin-inline-start: calc(var(--text-selection-pad) * -1);
+  background: var(--text-selection);
+  pointer-events: none;
+}
+
+.sel-solo {
+  border-radius: var(--text-selection-radius);
+}
+.sel-head {
+  border-radius: var(--text-selection-radius) var(--text-selection-radius) 0 0;
+}
+.sel-foot {
+  border-radius: 0 0 var(--text-selection-radius) var(--text-selection-radius);
+}
+
+/* A zero-box anchor reports where local (0,0) landed, so the bar and pills place by delta; the pills alone sit beneath the text. */
+.sel-host {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.sel-host > .sel-pill {
+  z-index: -1;
+}
+
+:root.native-highlight .sel-pill {
+  display: none;
 }

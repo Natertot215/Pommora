@@ -1,25 +1,15 @@
-import { Fragment, useRef, type ReactNode } from 'react'
+import { Fragment } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
-import { MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
+import { useHeld } from '@pommora/uix/Animations/useExitPresence'
+import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
 import type { BlockMenuAction, BlockMenuMatch } from '@pommora/core/Actions/blockMenu'
 import { useKeepInView } from '../Autocomplete/useKeepInView'
 import { CLOSED_GEOMETRY } from '../Autocomplete/useConnectionAutocomplete'
 import type { BlockMenuState } from './useBlockMenu'
 
 const BLOCK_MENU_WIDTH = 140
-
-function emphasized(label: string, at: number | null, len: number): ReactNode {
-  if (at === null || len === 0) return label
-  return (
-    <>
-      {label.slice(0, at)}
-      <span className="mdpm-autocomplete-match">{label.slice(at, at + len)}</span>
-      {label.slice(at + len)}
-    </>
-  )
-}
 
 interface Props {
   open: boolean
@@ -32,10 +22,7 @@ interface Props {
 const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, citeSeat: false, ...CLOSED_GEOMETRY }
 
 export function BlockMenu({ open, state, matches, selected, onPick }: Props): React.JSX.Element {
-  const last = useRef({ state: CLOSED, matches, selected })
-  if (open && state) last.current = { state, matches, selected }
-
-  const v = last.current
+  const v = useHeld({ state: state ?? CLOSED, matches, selected }, open && state !== null)
   const matchLen = v.state.query.length
   const keepInView = useKeepInView(v.selected)
 
@@ -68,7 +55,7 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
                   onPick(row.action)
                 }}
               >
-                {emphasized(row.label, row.at, matchLen)}
+                {emphasizeMatch(row.label, row.at, matchLen)}
               </MenuItem>
             ))}
           </Fragment>

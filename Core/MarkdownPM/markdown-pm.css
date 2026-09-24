@@ -974,9 +974,6 @@
   min-width: 180px; /* KNOB */
   max-width: 320px; /* KNOB */
 }
-.mdpm-autocomplete-match {
-  font-weight: var(--weight-emphasized);
-}
 
 /* The drawn caret and selection layers; the full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme. */
 .cm-editor .cm-scroller .cm-content {
@@ -984,24 +981,20 @@
   caret-color: transparent;
 }
 .cm-focused > .cm-scroller > .mdpm-caret-layer {
-  animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
+  animation: var(--caret-blink);
 }
-.mdpm-caret {
+.mdpm-caret-layer .caret-bar {
   display: none;
-  width: var(--caret-width);
-  margin-left: calc(var(--caret-width) / -2);
-  background: var(--caret-color);
-  border-radius: var(--radius-full);
 }
-.cm-focused > .cm-scroller > .mdpm-caret-layer .mdpm-caret {
+.cm-focused > .cm-scroller > .mdpm-caret-layer .caret-bar {
   display: block;
 }
 
 /* Unfocused editors keep their selection painted; a field's pills instead don't exist until focus. */
-.mdpm-sel-layer .mdpm-sel {
+.mdpm-sel-layer .sel-pill {
   background: var(--text-selection-idle);
 }
-.cm-focused > .cm-scroller > .mdpm-sel-layer .mdpm-sel {
+.cm-focused > .cm-scroller > .mdpm-sel-layer .sel-pill {
   background: var(--text-selection);
 }
 :root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content::selection,

@@ -9,9 +9,11 @@ import {
   MenuItem,
   MenuScrollFrame,
   MenuTopRow,
+  emphasizeMatch,
   itemEmphasized,
 } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
 import { removeButton, revealFromHost } from '@pommora/uix/Interactions/hover-remove.css'
 import { side } from '@pommora/uix/Menus/menu-base.css'
@@ -54,11 +56,10 @@ export function AutocompletePane({
   onBack = () => {},
 }: Props): React.JSX.Element {
   const live = ac !== null && (candidates.length > 0 || loading)
-  // The last live geometry stays through the closing animation.
-  const last = useRef({ ac: CLOSED, candidates, index, viaChevron: false, headingRows, collapsed })
-  if (live) last.current = { ac, candidates, index, viaChevron, headingRows, collapsed }
-
-  const v = last.current
+  const v = useHeld(
+    { ac: ac ?? CLOSED, candidates, index, viaChevron, headingRows, collapsed },
+    live,
+  )
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
@@ -69,13 +70,6 @@ export function AutocompletePane({
   }, [ac])
   const headingSlide = v.ac.form === 'heading' && v.viaChevron
   const sliding = (v.ac.form === 'alias' && cameFrom.current.length > 0) || headingSlide
-
-  const matched = (row: AcRow): React.JSX.Element => (
-    <>
-      <span className="mdpm-autocomplete-match">{row.label.slice(0, matchLen)}</span>
-      {row.label.slice(matchLen)}
-    </>
-  )
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
@@ -128,7 +122,7 @@ export function AutocompletePane({
             onPick(row)
           }}
         >
-          {matched(row)}
+          {emphasizeMatch(row.label, 0, matchLen)}
         </MenuItem>
       ))}
     </MenuScrollFrame>
@@ -137,7 +131,7 @@ export function AutocompletePane({
   const headingRow = (row: AcRow, i: number, children?: React.ReactNode): React.JSX.Element => (
     <DisclosureRow
       key={row.value}
-      title={matched(row)}
+      title={emphasizeMatch(row.label, 0, matchLen)}
       icon={null}
       className={itemEmphasized}
       dropOutline={children ? 'chevron' : 'spacer'}
