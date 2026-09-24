@@ -34,6 +34,8 @@ export interface NexusSlice {
   error?: PommoraError
   syncStatus: SyncStatus | null
   headings: Record<string, string[]>
+  /** Bumped by every delete, restore, and empty that lands, so an open Trash pane lists again. */
+  trashRevision: number
   load: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
   applyTree: (tree: NexusTree) => Promise<void>
@@ -108,6 +110,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     error: undefined,
     syncStatus: null,
     headings: {},
+    trashRevision: 0,
 
     applySyncStatus: (status) => set({ syncStatus: status }),
 
@@ -247,6 +250,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         await host().ask('error:show', res.error.message)
         return false
       }
+      if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
+        set((s) => ({ trashRevision: s.trashRevision + 1 }))
       // Instant optimistic patch; main's confirming push lands a beat later with no flicker.
       const cur = get().tree
       let patched: NexusTree | null = null

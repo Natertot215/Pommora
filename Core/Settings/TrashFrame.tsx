@@ -61,7 +61,13 @@ export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
   return scored.sort((a, b) => b.score - a.score).map((s) => s.row)
 }
 
+// Keyed on the nexus so a switch with Settings open mounts a body with its own list.
 export function TrashFrame(): React.JSX.Element {
+  const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
+  return <TrashBody key={nexusId} />
+}
+
+function TrashBody(): React.JSX.Element {
   const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
   const columnDefault = nexusDateFormat(useSession((s) => s.personalization.dateFormat))
   const dateFormat = useSession((s) => s.personalization.trashDateFormat) ?? columnDefault
@@ -71,6 +77,7 @@ export function TrashFrame(): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
   const load = useSession((s) => s.load)
+  const trashRevision = useSession((s) => s.trashRevision)
   const [rows, setRows] = useState<TrashRow[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
@@ -90,14 +97,10 @@ export function TrashFrame(): React.JSX.Element {
 
   useEffect(() => {
     void refresh()
-  }, [refresh])
+  }, [refresh, trashRevision])
 
   const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
-
-  const one = async (req: MutateRequest): Promise<void> => {
-    if (await mutate(req)) await refresh()
-  }
 
   const many = async (
     targets: TrashRow[],
@@ -184,15 +187,15 @@ export function TrashFrame(): React.JSX.Element {
     if (!action) return
     if (action.startsWith('restoreTo:')) {
       const destination = { kind: destinationKind, id: action.slice('restoreTo:'.length) }
-      await one({ op: 'restore', bundlePath: row.bundlePath, destination })
+      await mutate({ op: 'restore', bundlePath: row.bundlePath, destination })
       return
     }
     switch (action) {
       case 'restore':
-        await one({ op: 'restore', bundlePath: row.bundlePath })
+        await mutate({ op: 'restore', bundlePath: row.bundlePath })
         break
       case 'delete':
-        if (await askEmptyTrash(1)) await one({ op: 'emptyBundle', bundlePath: row.bundlePath })
+        if (await askEmptyTrash(1)) await mutate({ op: 'emptyBundle', bundlePath: row.bundlePath })
         break
       case 'restoreAll':
         await restoreBatch(targets)
