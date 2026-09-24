@@ -1,59 +1,23 @@
 import { useEffect, useRef } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { Transaction } from '@codemirror/state'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
 import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { usePreviewConnections } from '../Session/pageConnections'
 import { navKey } from '../Navigation/navRecents'
-import {
-  dropCacheDetail,
-  fetchPageDetail,
-  readBodyBase,
-  setBodyBase,
-  subscribeLanding,
-  useBodyEpoch,
-} from '../Session/pageDetailCache'
+import { useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
 import { fenceWarm } from '../MarkdownPM/warmSeam'
 import { registerPageEditor, renameHeading } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
-import { schedulePageSave } from '../Session/saveScheduler'
 import { useBodyMount } from './bodyMount'
-import { changesTo, merge3 } from './merge3'
 import { host } from '../Platform/dialer'
 import { coverOf } from './pageDetail'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
-
-async function absorbLanding(path: string, view: EditorView | null): Promise<void> {
-  if (!view) {
-    await useSession.getState().replaceBody(path)
-    return
-  }
-  const base = readBodyBase(path)?.text
-  dropCacheDetail(path)
-  const fresh = await fetchPageDetail(path)
-  if (!fresh) return
-  const local = view.state.doc.toString()
-  const merged =
-    base === undefined ? { text: fresh.body, conflicted: true } : merge3(base, local, fresh.body)
-  if (merged.conflicted) void host().ask('sync:captureLocal', path, local)
-  if (merged.text !== local) {
-    view.dispatch({
-      changes: changesTo(local, merged.text),
-      annotations: Transaction.addToHistory.of(false),
-      // Disk content is settled, so no guard may refuse or reshape it.
-      filter: false,
-    })
-    useSession.getState().setPageBody(path, merged.text)
-  }
-  setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
-  if (merged.text !== fresh.body) schedulePageSave(path, merged.text)
-}
 
 export function PageView({
   tabId,
@@ -88,12 +52,6 @@ export function PageView({
       : undefined
   const bodyEpoch = useBodyEpoch(path)
   const publishSelection = usePublishSelection(path)
-  useEffect(() => {
-    if (!path || parked) return
-    return subscribeLanding(path, () => {
-      void absorbLanding(path, editorRef.current)
-    })
-  }, [path, parked])
   // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke must not write over it.
   useEffect(() => {
     clearTimeout(liveTimer.current)

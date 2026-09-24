@@ -2,13 +2,18 @@ import { useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { mirrorBody } from '../MarkdownPM/api'
 import {
+  advanceHead,
   attachBody,
   bodyHead,
   type BodyMount,
+  dropCacheDetail,
+  fetchPageDetail,
   followBody,
   publishBody,
+  readBodyBase,
+  setBodyBase,
 } from '../Session/pageDetailCache'
-import { schedulePageSave } from '../Session/saveScheduler'
+import { cancelPageSave, schedulePageSave } from '../Session/saveScheduler'
 import { host } from '../Platform/dialer'
 import { merge3 } from './merge3'
 
@@ -63,4 +68,23 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
     }
   })
   return seat
+}
+
+/** An outside change to a page some editor holds merges into the shared head once, every mount follows the merge in place, and only text the disk doesn't hold yet is saved. */
+export async function absorbLanding(path: string): Promise<void> {
+  const base = readBodyBase(path)?.text
+  dropCacheDetail(path)
+  const fresh = await fetchPageDetail(path)
+  const head = bodyHead(path)
+  if (!fresh || !head) return
+  const merged =
+    base === undefined
+      ? { text: fresh.body, conflicted: true }
+      : merge3(base, head.text, fresh.body)
+  if (merged.conflicted) void host().ask('sync:captureLocal', path, head.text)
+  setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
+  advanceHead(path, merged.text)
+  followBody(path)
+  if (merged.text === fresh.body) cancelPageSave(path)
+  else schedulePageSave(path, merged.text)
 }

@@ -4,7 +4,8 @@ import { valueOr } from '@pommora/core/Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
-import { dropDetailsWhere, notifyLanding, readBodyBase, readPageDetail } from './pageDetailCache'
+import { bodyHead, dropDetailsWhere, readBodyBase, readPageDetail } from './pageDetailCache'
+import { absorbLanding } from '../Pages/bodyMount'
 import { flushAllSaves } from './nexusSlice'
 import { setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
@@ -57,7 +58,8 @@ export function useBridgeSubscriptions(): void {
   const replaceBody = useSession((s) => s.replaceBody)
   useEffect(() => {
     const absorb = (path: string, unsaved = readPageDetail(path)?.body): void => {
-      if (notifyLanding(path) || unsaved === undefined) return
+      if (bodyHead(path)) return void absorbLanding(path)
+      if (unsaved === undefined) return
       if (unsaved !== readBodyBase(path)?.text)
         void dialer().ask('sync:captureLocal', path, unsaved)
       void replaceBody(path)

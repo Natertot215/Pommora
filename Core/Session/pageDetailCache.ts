@@ -10,30 +10,12 @@ const DETAIL_CAP = 50
 const detailByPath = new Map<string, PageDetail>()
 const baseByPath = new Map<string, { text: string; hash: string }>()
 
-const landingListeners = new Map<string, Set<() => void>>()
-
-export function subscribeLanding(path: string, fn: () => void): () => void {
-  const fns = landingListeners.get(path) ?? new Set<() => void>()
-  landingListeners.set(path, fns)
-  fns.add(fn)
-  return () => {
-    fns.delete(fn)
-    if (fns.size === 0) landingListeners.delete(path)
-  }
-}
-
-export function notifyLanding(path: string): boolean {
-  const fns = landingListeners.get(path)
-  if (!fns?.size) return false
-  for (const fn of fns) fn()
-  return true
-}
-
 const seat = (detail: PageDetail): void => capSet(detailByPath, detail.path, detail, DETAIL_CAP)
 
 export function cachePageDetail(detail: PageDetail): void {
   seat(detail)
-  if (!landingListeners.get(detail.path)?.size)
+  // A held page's base moves only with its own saves and landings, which merge against the base before it.
+  if (!heads.has(detail.path))
     baseByPath.set(detail.path, { text: detail.body, hash: detail.bodyHash })
 }
 
@@ -100,6 +82,14 @@ export function followBody(path: string): void {
   if (head) for (const mount of head.mounts) catchUp(mount, head)
 }
 
+/** Text that arrived from outside every mount becomes the head, leaving each of them behind it. */
+export function advanceHead(path: string, text: string): void {
+  const head = heads.get(path)
+  if (!head) return
+  head.seq += 1
+  head.text = text
+}
+
 const inFlight = new Map<string, Promise<PageDetail | null>>()
 
 /** Concurrent callers share a single openPage round-trip. A drop or clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed the cache with a pre-write or previous-nexus detail. */
@@ -147,12 +137,8 @@ const epochListeners = new Set<() => void>()
 
 /** A replaced body is the head from here: a mount remounting in a later commit must not follow the text it replaced. */
 export function bumpBodyEpoch(path: string): void {
-  const head = heads.get(path)
   const text = knownBody(path)
-  if (head && text !== undefined) {
-    head.seq += 1
-    head.text = text
-  }
+  if (text !== undefined) advanceHead(path, text)
   bodyEpochs.set(path, (bodyEpochs.get(path) ?? 0) + 1)
   for (const fn of epochListeners) fn()
 }
