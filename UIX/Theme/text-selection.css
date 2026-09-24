@@ -27,15 +27,17 @@
   border-radius: 0 0 var(--text-selection-radius) var(--text-selection-radius);
 }
 
-/* A zero-box anchor reports where local (0,0) landed, so pills place by delta. */
+/* A zero-box anchor reports where local (0,0) landed, so the bar and pills place by delta; the pills alone sit beneath the text. */
 .mdpm-sel-host {
   position: absolute;
   left: 0;
   top: 0;
   width: 0;
   height: 0;
-  z-index: -1;
   pointer-events: none;
+}
+.mdpm-sel-host > .mdpm-sel {
+  z-index: -1;
 }
 
 /* The native highlight goes only where a drawn one replaces it. */
