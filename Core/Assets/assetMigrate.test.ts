@@ -7,6 +7,8 @@ import { pathExists } from '../Files/atomicWrite'
 import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { parseConnectionText } from '../Connections/connections'
+import { splitFrontmatter } from '../Files/pageFile'
+import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 
 let root: string
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
@@ -142,6 +144,33 @@ describe('migrateAssets', () => {
     expect(after).toMatch(/banner: ["']\[\[Alpha Banner\.png\]\]["']/)
     expect(after).toContain('the body')
     expect(after).toContain('<Areas>:')
+  })
+
+  it('File property attachments move with the migration and are rewritten where they sit', async () => {
+    await asset('Spec.pdf', 'spec')
+    await asset('Plan.pdf', 'plan')
+    await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'pt' }))
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\nAttachment: "[[Spec.pdf]]"\nFiles:\n  - "[[Plan.pdf]]"\n  - "[[Beta]]"\nRelated: "[[Beta]]"\n---\n\nthe body',
+    )
+    const space = join(contextsDir(root), 'Areas', 'Home')
+    await mkdir(space, { recursive: true })
+    await writeFile(
+      join(space, SPACE_SIDECAR),
+      JSON.stringify({ id: 'sp', Attachment: '[[Spec.pdf]]' }),
+    )
+    const r = await migrateAssets(root)
+    expect(r?.skipped).toEqual([])
+    expect((await readdir(join(root, 'file-assets'))).sort()).toEqual(['Plan.pdf', 'Spec.pdf'])
+    const fm = splitFrontmatter(await read('Notes/Alpha.md'))
+    expect(fm.Attachment).toBe('[[Spec.pdf]]')
+    expect(fm.Files).toEqual(['[[Plan.pdf]]', '[[Beta]]'])
+    expect(fm.Related).toBe('[[Beta]]')
+    expect(JSON.parse(await readFile(join(space, SPACE_SIDECAR), 'utf8')).Attachment).toBe(
+      '[[Spec.pdf]]',
+    )
+    expect(resolveAssetName(await liveAssetMap(root), 'Spec.pdf')).toBe('file-assets/Spec.pdf')
   })
 
   it('re-keys a moved file’s crop to its new path', async () => {
