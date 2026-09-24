@@ -31,6 +31,13 @@ const hostOf = (url: string): string => {
 
 const webSession = (): Session => session.fromPartition(WEB_PARTITION)
 
+const GUEST_PERMISSIONS: ReadonlySet<string> = new Set(['fullscreen', 'clipboard-sanitized-write'])
+
+function limitPermissions(ses: Session, allowed: ReadonlySet<string>): void {
+  ses.setPermissionRequestHandler((_wc, permission, answer) => answer(allowed.has(permission)))
+  ses.setPermissionCheckHandler((_wc, permission) => allowed.has(permission))
+}
+
 const webviewGuests = (): WebContents[] =>
   webContents.getAllWebContents().filter((wc) => wc.getType() === 'webview')
 
@@ -62,6 +69,8 @@ function wireAppLevel(): void {
   appWired = true
 
   const ses = webSession()
+  limitPermissions(ses, GUEST_PERMISSIONS)
+  limitPermissions(session.defaultSession, new Set())
   const baseUA = cleanedUA()
   const googleUA = baseUA.replace(/\sChrome\/[\d.]+/, '')
   ses.setUserAgent(baseUA)
@@ -82,9 +91,9 @@ function wireAppLevel(): void {
       return { action: 'deny' }
     })
 
-    // Re-asserted per navigation: a guest re-aimed after a clean attach would otherwise sail through on the signed-in partition.
-    contents.on('will-navigate', (event, url) => {
-      if (!isWebUrl(url)) event.preventDefault()
+    // Re-asserted per navigation in every frame: a guest re-aimed after a clean attach would otherwise sail through on the signed-in partition.
+    contents.on('will-frame-navigate', (event) => {
+      if (!isWebUrl(event.url)) event.preventDefault()
     })
 
     // Guests inherit no host zoom and theirs is per-origin, so each commit re-stamps live.
