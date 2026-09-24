@@ -7,7 +7,6 @@ import {
   cleanupEditor,
   harnessState,
   mountEditor,
-  rerenderEditor,
   seedHost,
   stubEditorBridge,
 } from '../editorHarness'
@@ -83,7 +82,9 @@ describe('the alias picker', () => {
     await openPicker()
     expect(rows()).toBe(2)
     harnessState().aliases.p1 = ['one']
-    await rerenderEditor(props)
+    await act(async () => {
+      for (const cb of harnessState().aliasWatchers) cb()
+    })
     expect(rows()).toBe(1)
   })
 

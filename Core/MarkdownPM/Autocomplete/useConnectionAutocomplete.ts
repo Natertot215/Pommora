@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type RefObject } from 'react'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import {
   autocompleteQuery,
@@ -136,7 +136,9 @@ export function useConnectionAutocomplete(
     setCollapsed(new Set())
   }, [heading])
 
-  // The host re-identifies when an alias is forgotten, which is what shrinks the list under an unchanged query.
+  // A forgotten alias bumps the epoch, which is what shrinks the list under an unchanged query.
+  const [aliasEpoch, bumpAliases] = useReducer((n: number) => n + 1, 0)
+  useEffect(() => host.aliases.subscribe(bumpAliases), [host])
   const allHeadingRows = useMemo(
     () => (heading && query !== null ? headingRows(outline ?? [], query) : []),
     [heading, outline, query],
@@ -153,7 +155,7 @@ export function useConnectionAutocomplete(
     const exact = found.length === 1 && normalizeTitle(found[0].label) === normalizeTitle(query)
     if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
-  }, [query, form, title, host, heading, allHeadingRows, collapsed, backedTo])
+  }, [query, form, title, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)

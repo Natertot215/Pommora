@@ -32,6 +32,7 @@ const aliases: EditorHost['aliases'] = {
   forget: (id, alias) => {
     remembered[id] = (remembered[id] ?? []).filter((a) => a !== alias)
   },
+  subscribe: () => () => {},
 }
 
 beforeEach(() => {

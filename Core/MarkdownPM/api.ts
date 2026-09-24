@@ -78,6 +78,7 @@ export interface EditorHost {
     list(id: string): string[]
     remember(id: string, alias: string): void
     forget(id: string, alias: string): void
+    subscribe(cb: () => void): () => void
   }
   linkTitles: {
     get(url: string): string | null
