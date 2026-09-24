@@ -140,10 +140,8 @@ function inlineCodeTokens(text: string, inCode: (offset: number) => boolean): To
   const tokens: Token[] = []
   let lineStart = 0
   for (const line of text.split('\n')) {
-    for (const [a, b] of inlineSpans(line)) {
+    for (const [a, b, run] of inlineSpans(line)) {
       if (b > line.length) break
-      let run = 0
-      while (line[a - 1 - run] === '`') run++
       const open = a - run
       if (inCode(lineStart + open)) continue
       tokens.push({

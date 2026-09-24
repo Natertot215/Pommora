@@ -148,18 +148,18 @@ describe("closeConstructOnEnter — contractions don't poison quote parity", () 
 describe('continueListOnEnter — nested runs + empty-item continuation', () => {
   it('renumbers past a nested sublist instead of duplicating numbers', () => {
     const doc = '1. a\n\t1. child\n2. b'
-    const edit = continueListOnEnter(doc, 4, 4)
+    const edit = continueListOnEnter(scanDoc(doc), 4, 4)
     expect(edit).not.toBeNull()
     const next = doc.slice(0, edit!.from) + edit!.insert + doc.slice(edit!.to)
     expect(next).toBe('1. a\n2. \n\t1. child\n3. b')
   })
   it('continues on an empty item instead of exiting (no auto-exit)', () => {
-    const edit = continueListOnEnter('- ', 2, 2)
+    const edit = continueListOnEnter(scanDoc('- '), 2, 2)
     expect(edit).toEqual({ from: 2, to: 2, insert: '\n- ', selection: 5 })
   })
   it('continues an empty item inside a quote, keeping the `> `', () => {
     const doc = '> - '
-    const edit = continueListOnEnter(doc, 4, 4)
+    const edit = continueListOnEnter(scanDoc(doc), 4, 4)
     expect(edit).toEqual({ from: 4, to: 4, insert: '\n> - ', selection: 9 })
   })
 })
@@ -178,7 +178,7 @@ describe('continueBlockquoteOnEnter — empty quote line exits', () => {
 
 describe('outdentListOnShiftTab', () => {
   it('removes one indent level', () => {
-    expect(outdentListOnShiftTab('\t- item', 4, 4)).toEqual({
+    expect(outdentListOnShiftTab(scanDoc('\t- item'), 4, 4)).toEqual({
       from: 0,
       to: 1,
       insert: '',
@@ -186,7 +186,7 @@ describe('outdentListOnShiftTab', () => {
     })
   })
   it('no-ops at top level', () => {
-    expect(outdentListOnShiftTab('- item', 3, 3)).toBeNull()
+    expect(outdentListOnShiftTab(scanDoc('- item'), 3, 3)).toBeNull()
   })
 })
 

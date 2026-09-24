@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { computeStats } from './subfieldStats'
+import { computeStats, rangeStats } from './subfieldStats'
+import { scanDoc } from './docScan'
 
 /** Every masking substitution the counter makes must only ever REMOVE source characters; a placeholder that survives into the character count is the bug this suite pins. */
 describe('computeStats — masked constructs add no characters', () => {
@@ -227,5 +228,28 @@ describe('computeStats — a table counts as the prose its widget draws', () => 
       characters: 2,
       citations: 1,
     })
+  })
+})
+
+describe('rangeStats — a selection counts as the document reads it', () => {
+  const at = (doc: string, from: string, to: string | number = doc.length) =>
+    rangeStats(scanDoc(doc), doc.indexOf(from), typeof to === 'number' ? to : doc.indexOf(to))
+
+  it('a selection starting inside a table still reads its rows as cells', () => {
+    const doc = '| a | b |\n| - | - |\n| one | two |'
+    expect(at(doc, '| one').words).toBe(2)
+    expect(at(doc, '| a').words).toBe(4)
+  })
+
+  it('an end line the selection cuts keeps only its selected prose', () => {
+    const doc = '- first item\n- second item'
+    expect(at(doc, 'item', 'second')).toMatchObject({ lines: 2, words: 1 })
+    expect(at(doc, '- second')).toMatchObject({ lines: 1, words: 2 })
+  })
+
+  it('counts only the citations it holds', () => {
+    const doc = 'a [^1]\n\n[^1]: one\n[^2]: two'
+    expect(at(doc, 'a', '\n').citations).toBe(0)
+    expect(at(doc, '[^2]:').citations).toBe(1)
   })
 })

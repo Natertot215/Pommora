@@ -1,8 +1,15 @@
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { isInsideWikilink } from '../Engine/parser'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
-import { inCalloutAt, inCodeAt, spanAt, type DocScan } from '../Engine/docScan'
-import { fenceAt, lineEndOf, lineIndexAt } from '../Engine/markdownCode'
+import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
+import {
+  fenceAt,
+  isBlockquoteLine,
+  lineEndOf,
+  lineIndexAt,
+  quotePrefix,
+  type TextEdit,
+} from '../Engine/markdownCode'
 import {
   parseListMarker,
   isSequenced,
@@ -10,18 +17,15 @@ import {
   ordinalText,
   nestedUnder,
   MAX_NESTING_LEVEL,
-  blockquotePrefixRe,
   calloutHeadPrefixLen,
-  isBlockquoteLine,
+  headingParts,
+  type ListMarker,
   type MarkdownScope,
 } from '../Engine/detect'
 
 // A transform reading more than its own line takes the caller's whole-document scan (one per doc version): the string-form code and callout tests re-split and re-pair every fence per call.
 
-export interface Edit {
-  from: number
-  to: number
-  insert: string
+export interface Edit extends TextEdit {
   selection: number
   head?: number
 }
@@ -33,27 +37,40 @@ export const lineEndAt = (doc: string, pos: number): number => {
   return i === -1 ? doc.length : i
 }
 
-const lineMarkerRe = /^(\s*)(?:(?:\d+|[A-Z])\.|[-+→]|>|#{1,6})(?:[ \t]*\[[ xX]?\])?[ \t]+/
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
-// Gated to REAL blockquotes only (whitespace after `>`) so `>x` isn't read as quoted here while the renderer treats it as plain text.
 // A cell draws no quote, so a `>` there is prose and carries no prefix — otherwise the keys would nest inside a box the surface never shows.
 const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
-  scope === 'page' && isBlockquoteLine(line) ? (blockquotePrefixRe.exec(line)?.[0] ?? '') : ''
+  scope === 'page' ? quotePrefix(line) : ''
 
-export function continueListOnEnter(
-  doc: string,
+// A fenced line is code, whatever its text looks like; a cell holds no fence, and the page-shaped scan would pair one there.
+function listLineAt(
+  scan: DocScan,
   selStart: number,
   selEnd: number,
-  scope: MarkdownScope = 'page',
-): Edit | null {
+  scope: MarkdownScope,
+): { ls: number; lineEnd: number; line: string; pfx: string; lm: ListMarker } | null {
   if (selStart !== selEnd) return null
+  if (scope === 'page' && inFenceAt(scan, selStart)) return null
+  const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const lineEnd = lineEndAt(doc, selStart)
   const line = doc.slice(ls, lineEnd)
   const pfx = blockPrefix(line, scope)
   const lm = parseListMarker(line.slice(pfx.length))
-  if (lm === null) return null
+  return lm === null ? null : { ls, lineEnd, line, pfx, lm }
+}
+
+export function continueListOnEnter(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  scope: MarkdownScope = 'page',
+): Edit | null {
+  const at = listLineAt(scan, selStart, selEnd, scope)
+  if (at === null) return null
+  const { ls, lineEnd, line, pfx, lm } = at
+  const doc = scan.text
   if (selStart < ls + pfx.length + lm.contentStart) return null
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
@@ -111,15 +128,14 @@ export function continueBlockquoteOnEnter(
   if (selStart !== selEnd) return null
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
-  // Ungated on purpose: continues a `>x` line too, which blockPrefix's isBlockquoteLine gate would drop.
-  const m = blockquotePrefixRe.exec(doc.slice(ls, lineEndAt(doc, selStart)))
-  if (m === null || selStart < ls + m[0].length) return null
   const lineEnd = lineEndAt(doc, selStart)
+  const pfx = blockPrefix(doc.slice(ls, lineEnd))
+  if (pfx === '' || selStart < ls + pfx.length) return null
   // Callouts keep continuing — their documented exit is caret placement below the box, and stripping a body `> ` would split it.
-  if (doc.slice(ls + m[0].length, lineEnd).trim() === '' && !inCalloutAt(scan, selStart)) {
+  if (doc.slice(ls + pfx.length, lineEnd).trim() === '' && !inCalloutAt(scan, selStart)) {
     return { from: ls, to: lineEnd, insert: '', selection: ls }
   }
-  const insert = `\n${m[0].replace(/[ \t]+$/, '')} `
+  const insert = `\n${pfx.replace(/[ \t]+$/, '')} `
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
 }
 
@@ -152,9 +168,7 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
   // A plain `\n` would drop an un-prefixed line into the run and split the callout. A selection straddling the box edge falls back to it.
   if (inCalloutAt(scan, selStart) && inCalloutAt(scan, selEnd)) {
     const ls = lineStartAt(doc, selStart)
-    const pfx = (
-      blockquotePrefixRe.exec(doc.slice(ls, lineEndAt(doc, selStart)))?.[0] ?? '> '
-    ).replace(/[ \t]+$/, '')
+    const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, selStart))).replace(/[ \t]+$/, '')
     const insert = `\n${pfx} `
     return { from: selStart, to: selEnd, insert, selection: selStart + insert.length }
   }
@@ -162,38 +176,37 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
 }
 
 export function indentListOnTab(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
   scope: MarkdownScope = 'page',
 ): Edit | null {
-  if (selStart !== selEnd) return null
-  const ls = lineStartAt(doc, selStart)
-  const line = doc.slice(ls, lineEndAt(doc, selStart))
-  const pfx = blockPrefix(line, scope)
-  const lm = parseListMarker(line.slice(pfx.length))
-  if (lm === null || lm.level >= MAX_NESTING_LEVEL) return null
-  return { from: ls + pfx.length, to: ls + pfx.length, insert: '\t', selection: selStart + 1 }
+  const at = listLineAt(scan, selStart, selEnd, scope)
+  if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
+  const from = at.ls + at.pfx.length
+  return { from, to: from, insert: '\t', selection: selStart + 1 }
 }
 
 export function outdentListOnShiftTab(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
   scope: MarkdownScope = 'page',
 ): Edit | null {
-  if (selStart !== selEnd) return null
-  const ls = lineStartAt(doc, selStart)
-  const line = doc.slice(ls, lineEndAt(doc, selStart))
-  const pfx = blockPrefix(line, scope)
-  const inner = line.slice(pfx.length)
-  if (parseListMarker(inner) === null || !/^[ \t]/.test(inner)) return null
-  return {
-    from: ls + pfx.length,
-    to: ls + pfx.length + 1,
-    insert: '',
-    selection: Math.max(ls + pfx.length, selStart - 1),
-  }
+  const at = listLineAt(scan, selStart, selEnd, scope)
+  if (at === null) return null
+  const width = /^(?:\t| {1,2})/.exec(at.line.slice(at.pfx.length))?.[0].length
+  if (width === undefined) return null
+  const from = at.ls + at.pfx.length
+  return { from, to: from + width, insert: '', selection: Math.max(from, selStart - width) }
+}
+
+// A cell's `#` and `>` are prose, so only a list marker collapses there.
+function markerEndOf(line: string, scope: MarkdownScope): number | null {
+  const lm = parseListMarker(line)
+  if (lm) return lm.contentStart
+  if (scope === 'cell') return null
+  return headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
 }
 
 export function smartBackspace(
@@ -238,10 +251,8 @@ export function smartBackspace(
     }
   }
 
-  // A cell's `#` and `>` are prose, so only a list marker collapses there — `lineMarkerRe` would eat two characters of what the author typed.
-  const markerLen =
-    scope === 'cell' ? parseListMarker(line)?.contentStart : lineMarkerRe.exec(line)?.[0].length
-  if (markerLen === undefined) return null
+  const markerLen = markerEndOf(line, scope)
+  if (markerLen === null) return null
   const contentStart = ls + markerLen
   if (selStart !== contentStart) return null
   return { from: ls, to: contentStart, insert: '', selection: ls }

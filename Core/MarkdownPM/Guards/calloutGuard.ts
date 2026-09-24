@@ -3,6 +3,7 @@ import { type Annotation, EditorState, Transaction, type Extension } from '@code
 import type { calloutLines } from '../Engine/detect'
 import { tableSelfEdit } from '../Tables/sync'
 import { docScan, docString } from '../docCache'
+import type { TextEdit } from '../Engine/markdownCode'
 
 /** The first four move the change's own endpoints; `rewrite` replaces it outright. */
 export type GuardVerdict =
@@ -11,7 +12,7 @@ export type GuardVerdict =
   | { kind: 'clamp'; from: number }
   | { kind: 'extend'; to: number }
   /** A list, because a repair that MOVES text is two disjoint edits — the swept range removed where it was, and the text written where it can live. */
-  | { kind: 'rewrite'; edits: readonly { from: number; to: number; insert: string }[] }
+  | { kind: 'rewrite'; edits: readonly TextEdit[] }
 
 export function calloutDeleteVerdict(
   doc: string,
@@ -83,7 +84,7 @@ export function verdictFilter(
     const doc = docString(tr.startState.doc)
     let cancel = false
     let repaired = false
-    const changes: { from: number; to: number; insert: string }[] = []
+    const changes: TextEdit[] = []
     tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
       const v = verdict(doc, fromA, toA, inserted.toString(), tr.startState)
       if (v.kind === 'cancel') cancel = true

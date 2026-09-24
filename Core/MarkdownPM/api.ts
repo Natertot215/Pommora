@@ -1,6 +1,7 @@
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { ReactNode } from 'react'
 import { changesTo } from '../Pages/merge3'
+import { docString } from './docCache'
 import { Annotation, Facet, Transaction } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
@@ -18,7 +19,7 @@ export const mirrored = Annotation.define<boolean>()
 
 /** Another mount's text, already past its own guards, applied as the changed span only: no filter touches it, it stays out of undo history, and it never echoes back through `onChange`. */
 export function mirrorBody(view: EditorView, body: string): void {
-  const doc = view.state.doc.toString()
+  const doc = docString(view.state.doc)
   if (body === doc) return
   view.dispatch({
     changes: changesTo(doc, body),

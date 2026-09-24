@@ -113,6 +113,11 @@ describe('blockAt', () => {
     expect(slice(doc, blockAt(doc, doc.indexOf('para two')))).toBe('para two')
   })
 
+  it('a line of spaced dashes is a divider block', () => {
+    const doc = 'para\n\n- - -\n\nafter'
+    expect(blockAt(doc, doc.indexOf('- - -'))?.kind).toBe('hr')
+  })
+
   it('paragraph is the run of non-blank lines, bounded by a blank line', () => {
     const doc = 'line one\nline two\n\nother'
     const b = blockAt(doc, 0)

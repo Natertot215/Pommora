@@ -22,9 +22,9 @@ import {
   wrapSelection,
   type Edit,
 } from './edits'
-import { renumberAfterNest, type ChangeSpec } from '../Engine/listDragModel'
+import { renumberAfterNest } from '../Engine/listDragModel'
 import { applyEdit } from './applyEdit'
-import { fenceAt } from '../Engine/markdownCode'
+import { fenceAt, type TextEdit } from '../Engine/markdownCode'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
@@ -32,21 +32,21 @@ import { embedTileRanges } from '../Embeds/embedWidget'
 import type { DocScan } from '../Engine/docScan'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
-import { docScan, docString } from '../docCache'
+import { docScan } from '../docCache'
 import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
 
-const apply = (view: EditorView, edit: Edit | null, recount: ChangeSpec[] = []): boolean =>
+const apply = (view: EditorView, edit: Edit | null, recount: TextEdit[] = []): boolean =>
   applyEdit(view, edit, { recount, scrollIntoView: true })
 
 const nest =
-  (transform: (doc: string, selStart: number, selEnd: number) => Edit | null) =>
+  (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    const doc = docString(view.state.doc)
-    const edit = transform(doc, s.from, s.to)
-    if (edit) apply(view, edit, renumberAfterNest(doc, edit))
+    const scan = docScan(view.state.doc)
+    const edit = transform(scan, s.from, s.to)
+    if (edit) apply(view, edit, renumberAfterNest(scan.text, edit))
     return true
   }
 
@@ -78,7 +78,7 @@ const onEnter = (view: EditorView): boolean => {
     closeConstructOnEnter(scan, s.from, s.to, settings) ??
       closeBlockOnEnter(scan, s.from, s.to, settings, view.state.field(typedLine) >= 0) ??
       tableBoundaryEnter(scan, s) ??
-      continueListOnEnter(scan.text, s.from, s.to) ??
+      continueListOnEnter(scan, s.from, s.to) ??
       continueBlockquoteOnEnter(scan, s.from, s.to),
   )
 }

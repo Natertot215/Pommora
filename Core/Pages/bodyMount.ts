@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { mirrorBody } from '../MarkdownPM/api'
+import { docString } from '../MarkdownPM/docCache'
 import {
   advanceHead,
   attachBody,
@@ -34,8 +35,9 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
       seq: 0,
       basis: '',
       follow: (body) => {
-        const doc = view?.state.doc.toString()
-        if (!view || doc !== mount.basis) return false
+        if (!view) return false
+        const doc = docString(view.state.doc)
+        if (doc !== mount.basis) return false
         if (doc !== body) {
           mirrorBody(view, body)
           live.current.onFollow?.(body)
@@ -50,7 +52,7 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
         view = next
         if (!next) return
         at = live.current.path
-        leave = attachBody(at, mount, next.state.doc.toString())
+        leave = attachBody(at, mount, docString(next.state.doc))
       },
       save: (body) => {
         const head = bodyHead(at)

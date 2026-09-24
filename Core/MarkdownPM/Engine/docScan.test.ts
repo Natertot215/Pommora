@@ -326,4 +326,28 @@ describe('a fence under a quoted list item', () => {
     expect(inCodeAt(scan, text.indexOf('[[Old]]'))).toBe(true)
     expect(inCodeAt(scan, text.indexOf('after'))).toBe(false)
   })
+
+  it('pairs no fence written directly after `>`, a line the quote rule reads as prose', () => {
+    const text = '>```\n>[[Old]]\n>```'
+    const scan = scanDoc(text)
+    expect(scan.fences.every((f) => f === undefined)).toBe(true)
+    expect(inCodeAt(scan, text.indexOf('[[Old]]'))).toBe(false)
+  })
+
+  it('pairs a quoted fence across a CRLF page’s blank `>` line', () => {
+    const text = '> ```\r\n> [[A]]\r\n>\r\n> [[B]]\r\n> ```\r\nafter'
+    const scan = scanDoc(text)
+    expect(inCodeAt(scan, text.indexOf('[[A]]'))).toBe(true)
+    expect(inCodeAt(scan, text.indexOf('[[B]]'))).toBe(true)
+  })
+
+  it('pairs a quoted fence under an indented list item', () => {
+    const text = '- a\n  - b\n    > ```\n    > [[A]]\n    > ```'
+    expect(inCodeAt(scanDoc(text), text.indexOf('[[A]]'))).toBe(true)
+  })
+
+  it('keeps emphasis on the quote lines under a fence written directly after `>`', () => {
+    const kinds = tokenize('>```\n> **bold** and *it*').map((t) => t.kind)
+    expect(kinds).toEqual(['bold', 'italic'])
+  })
 })

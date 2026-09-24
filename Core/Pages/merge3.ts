@@ -1,27 +1,12 @@
 import { diff } from '@codemirror/merge'
+import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 
-interface Edit {
-  from: number
-  to: number
-  insert: string
-}
-
-export const changesTo = (base: string, other: string): Edit[] =>
+export const changesTo = (base: string, other: string): TextEdit[] =>
   diff(base, other).map((c) => ({
     from: c.fromA,
     to: c.toA,
     insert: other.slice(c.fromB, c.toB),
   }))
-
-function render(base: string, from: number, to: number, edits: Edit[]): string {
-  let out = ''
-  let at = from
-  for (const e of edits) {
-    out += base.slice(at, e.from) + e.insert
-    at = e.to
-  }
-  return out + base.slice(at, to)
-}
 
 export function merge3(
   base: string,
@@ -36,8 +21,8 @@ export function merge3(
   let l = 0
   let r = 0
   while (l < left.length || r < right.length) {
-    const runL: Edit[] = []
-    const runR: Edit[] = []
+    const runL: TextEdit[] = []
+    const runR: TextEdit[] = []
     const from = Math.min(
       l < left.length ? left[l].from : Number.POSITIVE_INFINITY,
       r < right.length ? right[r].from : Number.POSITIVE_INFINITY,
@@ -58,11 +43,11 @@ export function merge3(
     }
     text += base.slice(at, from)
     if (runL.length > 0 && runR.length > 0) {
-      const ours = render(base, from, to, runL)
-      const theirs = render(base, from, to, runR)
+      const ours = applyEdits(base, runL, from, to)
+      const theirs = applyEdits(base, runR, from, to)
       text += theirs
       if (ours !== theirs) conflicted = true
-    } else text += render(base, from, to, runL.length > 0 ? runL : runR)
+    } else text += applyEdits(base, runL.length > 0 ? runL : runR, from, to)
     at = to
   }
   return { text: text + base.slice(at), conflicted }

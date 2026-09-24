@@ -33,7 +33,8 @@ import { renumberAfterNest } from '../Engine/listDragModel'
 import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
 import { cellToSource } from '../Engine/Tables/codec'
 import { applyEdit } from '../Input/applyEdit'
-import { docLineIntentsOf, docScan, docString } from '../docCache'
+import { docLineIntentsOf, docScan } from '../docCache'
+import type { DocScan } from '../Engine/docScan'
 import { listGlyphOf, seatPastMarker } from '../Engine/intents'
 import { headingTargetOf } from '../Autocomplete/headingTarget'
 import { AC_MAX, aliasRows, pageRow } from '../Autocomplete/autocomplete'
@@ -72,16 +73,21 @@ const silentEdit = Annotation.define<boolean>()
 /** The list transforms are pure over the cell's own document; a null hands the key back to the table's navigation. */
 const listEdit =
   (
-    transform: (doc: string, selStart: number, selEnd: number, scope: MarkdownScope) => Edit | null,
+    transform: (
+      scan: DocScan,
+      selStart: number,
+      selEnd: number,
+      scope: MarkdownScope,
+    ) => Edit | null,
     recount = false,
   ) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    const doc = docString(view.state.doc)
-    const edit = transform(doc, s.from, s.to, 'cell')
+    const scan = docScan(view.state.doc)
+    const edit = transform(scan, s.from, s.to, 'cell')
     // The recount rides a NEST alone: continueListOnEnter renumbers the run it splits itself, and a second pass counts those items twice.
     return applyEdit(view, edit, {
-      recount: edit && recount ? renumberAfterNest(doc, edit) : [],
+      recount: edit && recount ? renumberAfterNest(scan.text, edit) : [],
     })
   }
 
@@ -210,7 +216,7 @@ export function CellEditor({
           editorHost.of(host),
           markdownDecorations(connections ?? noConn, 'cell'),
           listDragExtension,
-          listRenumberOnDelete,
+          listRenumberOnDelete('cell'),
           blockHandles('cell'),
           blockGripHover('cell'),
           blockDragExtension,

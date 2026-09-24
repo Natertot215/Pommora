@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state'
 import { listRenumberOnDelete } from './listRenumber'
 
 const del = (doc: string, from: number, to: number, userEvent = 'delete'): string =>
-  EditorState.create({ doc, extensions: [listRenumberOnDelete] })
+  EditorState.create({ doc, extensions: [listRenumberOnDelete('page')] })
     .update({
       changes: { from, to, insert: '' },
       userEvent,
@@ -31,6 +31,10 @@ describe('listRenumberOnDelete', () => {
 
   it('a non-delete edit is not judged', () => {
     expect(del(list, 5, 10, 'input')).toBe('1. a\n3. c')
+  })
+
+  it('a line deletion inside a code block renumbers nothing', () => {
+    expect(del('```\n1. a\n2. b\n3. c\n```', 4, 9)).toBe('```\n2. b\n3. c\n```')
   })
 
   it('a line deletion outside any run passes through', () => {

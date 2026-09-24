@@ -13,6 +13,15 @@ describe('subBlockAt × block math', () => {
     expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n- x\n  $$')
   })
 
+  it('a wrapped item carries its continuation inside a quote or callout too', () => {
+    for (const lead of ['', '> ', '> [!note] head\n> ']) {
+      const pfx = lead.split('\n').pop()!
+      const doc = `${lead}- a\n${pfx}  more\n${pfx}- b`
+      const b = subBlockAt(scanDoc(doc), doc.indexOf('- a'))
+      expect(doc.slice(b!.from, b!.to)).toBe(`${pfx}- a\n${pfx}  more`)
+    }
+  })
+
   it('top-level math glued below an item is never absorbed by the gesture', () => {
     const doc = '- one\n$$\nx\n\ny\n$$'
     const b = subBlockAt(scanDoc(doc), 0)
@@ -20,13 +29,13 @@ describe('subBlockAt × block math', () => {
   })
 })
 import { scanDoc } from './docScan'
+import { applyEdits } from './markdownCode'
 import { blockAt as blockAtIn } from './blockModel'
 
 const blockAt = (doc: string, pos: number) => blockAtIn(scanDoc(doc), pos)
 import {
   subBlockAt,
   dropChanges,
-  applyChanges,
   moveRange,
   renumberSequencedRun,
   renumberAfterNest,
@@ -40,7 +49,7 @@ function drop(doc: string, grab: number, at: number): string {
   if (!block) throw new Error('grab not on a list line')
   const slot: Slot = { at }
   const changes = dropChanges(doc, block, slot)
-  return changes ? applyChanges(doc, changes) : doc
+  return changes ? applyEdits(doc, changes) : doc
 }
 
 const lineStart = (doc: string, needle: string): number => doc.indexOf(needle)
@@ -76,7 +85,7 @@ describe('drag reorders source lines', () => {
 
 describe('a level change restarts the run it lands in', () => {
   const nest = (doc: string, edit: { from: number; to: number; insert: string }): string =>
-    applyChanges(applyChanges(doc, [edit]), renumberAfterNest(doc, edit))
+    applyEdits(applyEdits(doc, [edit]), renumberAfterNest(doc, edit))
 
   it('an indented item starts its nested run over, and the run it left closes up', () => {
     const doc = 'A. a\nB. b\nC. c'
@@ -155,13 +164,13 @@ describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
     const doc = '- a\n\t- nested\n- b'
     const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'))!
     const changes = dropChanges(doc, block, { at: doc.length, indent: '' })!
-    expect(applyChanges(doc, changes)).toBe('- a\n- b\n- nested')
+    expect(applyEdits(doc, changes)).toBe('- a\n- b\n- nested')
   })
   it('re-indents the whole sub-block, preserving relative nesting', () => {
     const doc = '- a\n\t- p\n\t\t- c\n- b'
     const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'))!
     const changes = dropChanges(doc, block, { at: doc.length, indent: '' })!
-    expect(applyChanges(doc, changes)).toBe('- a\n- b\n- p\n\t- c')
+    expect(applyEdits(doc, changes)).toBe('- a\n- b\n- p\n\t- c')
   })
 })
 
@@ -169,12 +178,12 @@ describe('click (no drag past threshold) toggles a checkbox, never reorders', ()
   it('unchecked → checked toggle change targets the box only', () => {
     const doc = '- [ ] todo\n- [ ] next'
     const c = checkboxToggleChange(doc, doc.indexOf('[ ]'))!
-    expect(applyChanges(doc, [c])).toBe('- [x] todo\n- [ ] next')
+    expect(applyEdits(doc, [c])).toBe('- [x] todo\n- [ ] next')
   })
   it('checked → unchecked', () => {
     const doc = '- [x] done'
     const c = checkboxToggleChange(doc, 2)!
-    expect(applyChanges(doc, [c])).toBe('- [ ] done')
+    expect(applyEdits(doc, [c])).toBe('- [ ] done')
   })
   it('returns null for a bullet (no toggle) so a click just places the caret', () => {
     expect(checkboxToggleChange('- plain', 0)).toBe(null)
@@ -185,11 +194,11 @@ describe('renumberSequencedRun', () => {
   it('produces minimal digit rewrites', () => {
     const doc = '3. a\n4. b\n5. c'
     const changes = renumberSequencedRun(doc, 0)
-    expect(applyChanges(doc, changes)).toBe('3. a\n4. b\n5. c')
+    expect(applyEdits(doc, changes)).toBe('3. a\n4. b\n5. c')
   })
   it('fixes a broken run', () => {
     const doc = '1. a\n1. b\n1. c'
-    expect(applyChanges(doc, renumberSequencedRun(doc, 0))).toBe('1. a\n2. b\n3. c')
+    expect(applyEdits(doc, renumberSequencedRun(doc, 0))).toBe('1. a\n2. b\n3. c')
   })
 })
 
@@ -198,7 +207,7 @@ describe('drag inside a callout (prefix-aware)', () => {
     const doc = '> [!callout] head\n> - one\n> - two'
     const block = subBlockAt(scanDoc(doc), doc.indexOf('one'))!
     const changes = dropChanges(doc, block, { at: doc.length, indent: '> ' })!
-    expect(applyChanges(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
+    expect(applyEdits(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
   })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
     const doc = '> - a\n\t- x'
@@ -215,7 +224,7 @@ describe('drag inside a callout (prefix-aware)', () => {
 describe('moveRange (blank-separated block move)', () => {
   const apply = (doc: string, range: { from: number; to: number }, at: number): string | null => {
     const c = moveRange(doc, range, { at })
-    return c ? applyChanges(doc, c) : null
+    return c ? applyEdits(doc, c) : null
   }
 
   it('moves a block to EOF without double-blanking the source or gluing the target', () => {
@@ -251,10 +260,10 @@ describe('moveRange (blank-separated block move)', () => {
     const doc = '# A\nbody\n\n# B\nx'
     const secA = blockAt(doc, 0)
     expect(secA).not.toBeNull()
-    const moved = applyChanges(doc, moveRange(doc, secA!, { at: doc.length })!)
+    const moved = applyEdits(doc, moveRange(doc, secA!, { at: doc.length })!)
     expect(moved).toBe('# B\nx\n\n# A\nbody')
     const secBack = blockAt(moved, moved.indexOf('# A'))
-    expect(applyChanges(moved, moveRange(moved, secBack!, { at: 0 })!)).toBe(doc)
+    expect(applyEdits(moved, moveRange(moved, secBack!, { at: 0 })!)).toBe(doc)
   })
 
   it('snaps a blank-line drop target to the next content block', () => {

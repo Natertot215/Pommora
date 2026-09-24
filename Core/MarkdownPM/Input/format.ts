@@ -1,9 +1,7 @@
 import { shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
 import {
-  blockquotePrefixRe,
   headingParts,
   calloutHeadPrefixLen,
-  isBlockquoteLine,
   isCalloutHead,
   ordinalText,
   parseListMarker,
@@ -11,6 +9,7 @@ import {
   stripQuotePrefix,
   type ListMarker,
 } from '../Engine/detect'
+import { isBlockquoteLine, quotePrefix, type TextEdit } from '../Engine/markdownCode'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 import { lineStartAt, lineEndAt, trimmedRange } from './edits'
 import { emptyTable } from '../Engine/Tables/model'
@@ -21,7 +20,7 @@ export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 
 export interface FormatEdit {
-  changes: { from: number; to: number; insert: string }[]
+  changes: TextEdit[]
   selection?: number
 }
 
@@ -140,11 +139,8 @@ function listMarkerText(kind: ListKind, n = 1): string {
 export function splitPrefix(line: string): { prefix: string; body: string } {
   const headLen = calloutHeadPrefixLen(line)
   if (headLen !== null) return { prefix: line.slice(0, headLen), body: line.slice(headLen) }
-  if (isBlockquoteLine(line)) {
-    const p = blockquotePrefixRe.exec(line)?.[0] ?? ''
-    return { prefix: p, body: line.slice(p.length) }
-  }
-  return { prefix: '', body: line }
+  const prefix = quotePrefix(line)
+  return { prefix, body: line.slice(prefix.length) }
 }
 
 /** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. Blank lines keep their seats. */

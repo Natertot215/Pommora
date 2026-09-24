@@ -308,7 +308,7 @@ export function MarkdownEditor({
         tabActive: () => activeRef.current,
       }),
       listDragExtension,
-      listRenumberOnDelete,
+      listRenumberOnDelete('page'),
       blockHandles(),
       blockGripHover(),
       blockDragExtension,

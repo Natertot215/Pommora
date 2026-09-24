@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { tokenize } from './tokens'
 import { scanDoc } from './docScan'
+import { isBlockquoteLine, quoteDepthOf } from './markdownCode'
 import {
   isThematicBreakLine,
   isHeadingLine,
-  isBlockquoteLine,
   isInlineMathContent,
   parseListMarker,
   indentLevel,
@@ -94,6 +94,11 @@ describe('parseListMarker (single marker source)', () => {
     expect(parseListMarker('-[x]done')).toBeNull()
     expect(parseListMarker('→go')).toBeNull()
   })
+  it('a line of spaced dashes is a divider, not a bullet', () => {
+    expect(parseListMarker('- - -')).toBeNull()
+    expect(parseListMarker('  -  -  -')).toBeNull()
+    expect(parseListMarker('- - x')!.kind).toBe('bullet')
+  })
   it('indentLevel: tabs + ⌊spaces/2⌋, capped at the max', () => {
     expect(indentLevel('')).toBe(0)
     expect(indentLevel('    ')).toBe(2)
@@ -115,6 +120,18 @@ describe('blockquote', () => {
   it('nested >> activates', () => {
     expect(isBlockquoteLine('>> a')).toBe(true)
     expect(isBlockquoteLine('>>a')).toBe(false)
+  })
+
+  it('four columns of indent read as indented code', () => {
+    expect(isBlockquoteLine('   > a')).toBe(true)
+    expect(isBlockquoteLine('    > a')).toBe(false)
+    expect(isBlockquoteLine('\t> a')).toBe(false)
+  })
+
+  it('every level needs its space: `> >a` is one level holding the prose `>a`', () => {
+    expect(quoteDepthOf('> > a')).toBe(2)
+    expect(quoteDepthOf('> >a')).toBe(1)
+    expect(quoteDepthOf('>\r')).toBe(1)
   })
 })
 

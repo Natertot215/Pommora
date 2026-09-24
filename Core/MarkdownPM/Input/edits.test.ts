@@ -15,6 +15,7 @@ import {
   bullet,
   sectionSign,
   indentListOnTab,
+  outdentListOnShiftTab,
   continueBlockquoteOnEnter,
   calloutShorthand,
   shiftEnterEdit,
@@ -28,47 +29,71 @@ const apply = (doc: string, e: Edit): string => doc.slice(0, e.from) + e.insert 
 describe('list continuation (Enter)', () => {
   it('continues a bullet, preserving indent', () => {
     const doc = '  - item'
-    const e = continueListOnEnter(doc, doc.length, doc.length)!
+    const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('  - item\n  - ')
   })
   it('increments an ordered marker', () => {
     const doc = '1. a'
-    const e = continueListOnEnter(doc, doc.length, doc.length)!
+    const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('1. a\n2. ')
   })
   it('advances an alphabetical marker and restarts at A past Z', () => {
     const doc = 'Y. a\nZ. b'
-    const e = continueListOnEnter(doc, 4, 4)!
+    const e = continueListOnEnter(scanDoc(doc), 4, 4)!
     expect(apply(doc, e)).toBe('Y. a\nZ. \nA. b')
   })
   it('leaves a numbered sibling out of an alphabetical renumber', () => {
     const doc = 'A. a\n1. b'
-    const e = continueListOnEnter(doc, 4, 4)!
+    const e = continueListOnEnter(scanDoc(doc), 4, 4)!
     expect(apply(doc, e)).toBe('A. a\nB. \n1. b')
   })
   it('renumbers the following siblings when inserting mid-list (1,2 → 1,2,3)', () => {
     const doc = '1. a\n2. b'
-    const e = continueListOnEnter(doc, 4, 4)!
+    const e = continueListOnEnter(scanDoc(doc), 4, 4)!
     expect(apply(doc, e)).toBe('1. a\n2. \n3. b')
     expect(e.selection).toBe(8)
   })
   it('renumbers a longer run (1,2,3 → insert at 1 → 1,2,3,4)', () => {
     const doc = '1. a\n2. b\n3. c'
-    const e = continueListOnEnter(doc, 4, 4)!
+    const e = continueListOnEnter(scanDoc(doc), 4, 4)!
     expect(apply(doc, e)).toBe('1. a\n2. \n3. b\n4. c')
   })
   it('continues a checkbox as a fresh unchecked box', () => {
     const doc = '- [x] done'
-    const e = continueListOnEnter(doc, doc.length, doc.length)!
+    const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('- [x] done\n- [ ] ')
   })
   it('continues even on an empty item — no auto-exit (Enter always breeds a bullet)', () => {
     const doc = '- '
-    const e = continueListOnEnter(doc, doc.length, doc.length)!
+    const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('- \n- ')
   })
   it('does not fire on a non-list line', () => {
-    expect(continueListOnEnter('plain', 5, 5)).toBeNull()
+    expect(continueListOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
+  })
+  it('leaves list-shaped lines inside a code block alone, on a page but not in a cell', () => {
+    const doc = '```\n1. one\n2. two\n- name: a\n```'
+    const scan = scanDoc(doc)
+    for (const line of ['1. one', '- name: a']) {
+      const end = doc.indexOf(line) + line.length
+      expect(continueListOnEnter(scan, end, end)).toBeNull()
+      expect(indentListOnTab(scan, end, end)).toBeNull()
+      expect(continueListOnEnter(scan, end, end, 'cell')).not.toBeNull()
+    }
+  })
+})
+
+describe('list outdent (Shift+Tab)', () => {
+  it('removes one level: a tab, or two spaces', () => {
+    const steps = ['    - x']
+    for (let doc = steps[0]; ; ) {
+      const e = outdentListOnShiftTab(scanDoc(doc), doc.length, doc.length)
+      if (!e) break
+      doc = apply(doc, e)
+      steps.push(doc)
+    }
+    expect(steps).toEqual(['    - x', '  - x', '- x'])
+    expect(apply('\t  - x', outdentListOnShiftTab(scanDoc('\t  - x'), 5, 5)!)).toBe('  - x')
   })
 })
 
@@ -91,6 +116,10 @@ describe('smart backspace (whole marker, all markers)', () => {
   })
   it('only fires at content-start, not mid-content', () => {
     expect(smartBackspace(scanDoc('- abc'), 4, 4)).toBeNull()
+  })
+  it('measures only what the editor draws as a marker', () => {
+    expect(smartBackspace(scanDoc('    # x'), 6, 6)).toBeNull()
+    expect(smartBackspace(scanDoc('>x'), 1, 1)).toBeNull()
   })
 })
 
@@ -595,20 +624,20 @@ describe('callout and exit settings', () => {
 describe('tab indent (list nesting)', () => {
   it('nests a bullet by inserting a tab at line start, caret follows', () => {
     const doc = '- item'
-    const e = indentListOnTab(doc, doc.length, doc.length)!
+    const e = indentListOnTab(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('\t- item')
     expect(e.selection).toBe(doc.length + 1)
   })
   it('counts 2 spaces as one level (4 spaces = level 2, still under the cap)', () => {
     const doc = '    - two'
-    expect(apply(doc, indentListOnTab(doc, doc.length, doc.length)!)).toBe('\t    - two')
+    expect(apply(doc, indentListOnTab(scanDoc(doc), doc.length, doc.length)!)).toBe('\t    - two')
   })
   it('caps at the max nesting level (3 tabs → no further indent)', () => {
-    expect(indentListOnTab('\t\t\t- deep', 9, 9)).toBeNull()
+    expect(indentListOnTab(scanDoc('\t\t\t- deep'), 9, 9)).toBeNull()
   })
   it('ignores non-list lines and selections', () => {
-    expect(indentListOnTab('plain text', 5, 5)).toBeNull()
-    expect(indentListOnTab('- item', 2, 4)).toBeNull()
+    expect(indentListOnTab(scanDoc('plain text'), 5, 5)).toBeNull()
+    expect(indentListOnTab(scanDoc('- item'), 2, 4)).toBeNull()
   })
 })
 
@@ -628,6 +657,10 @@ describe('blockquote continuation (Enter)', () => {
   it('falls through when the caret is in the marker, or on a non-quote line', () => {
     expect(continueBlockquoteOnEnter(scanDoc('> q'), 1, 1)).toBeNull()
     expect(continueBlockquoteOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
+  })
+  it('leaves a `>` glued to its text as prose, in its own paragraph or a quote’s', () => {
+    for (const doc of ['>run this', 'para\n>x', '> [!note] head\n>body', '> quote\n>lazy'])
+      expect(continueBlockquoteOnEnter(scanDoc(doc), doc.length, doc.length)).toBeNull()
   })
 })
 
@@ -695,19 +728,21 @@ describe('nested list behavior inside a callout', () => {
   const callout = (body: string): string => `> [!callout] head\n${body}`
   it('Enter continues a bullet inside the box (keeps the `>` prefix)', () => {
     const doc = callout('> - item')
-    expect(apply(doc, continueListOnEnter(doc, doc.length, doc.length)!)).toBe(
+    expect(apply(doc, continueListOnEnter(scanDoc(doc), doc.length, doc.length)!)).toBe(
       callout('> - item\n> - '),
     )
   })
   it('Enter continues + renumbers an ordered list inside the box', () => {
     const doc = callout('> 1. a')
-    expect(apply(doc, continueListOnEnter(doc, doc.length, doc.length)!)).toBe(
+    expect(apply(doc, continueListOnEnter(scanDoc(doc), doc.length, doc.length)!)).toBe(
       callout('> 1. a\n> 2. '),
     )
   })
   it('Tab indents the inner list after the prefix, not before the `>`', () => {
     const doc = callout('> - item')
-    expect(apply(doc, indentListOnTab(doc, doc.length, doc.length)!)).toBe(callout('> \t- item'))
+    expect(apply(doc, indentListOnTab(scanDoc(doc), doc.length, doc.length)!)).toBe(
+      callout('> \t- item'),
+    )
   })
   it('backspace deletes the inner marker (de-lists) but keeps the box', () => {
     const doc = callout('> - x')

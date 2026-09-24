@@ -1,6 +1,7 @@
 import type { EditorView } from '@codemirror/view'
 import { headingOutline, sectionEnd } from '../MarkdownPM/Engine/headingScan'
 import { travelTo } from '../MarkdownPM/travel'
+import { docString } from '../MarkdownPM/docCache'
 import { moveRange } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 import { valueOr } from '../Contract/result'
@@ -24,7 +25,7 @@ export function renameHeadingAtOffset(from: number, next: string): void {
   const line = view.state.doc.lineAt(Math.max(0, Math.min(from, view.state.doc.length)))
   const parts = headingParts(line.text)
   if (!parts) return
-  const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
+  const contentStart = line.from + parts.contentStart
   view.dispatch({ changes: { from: contentStart, to: line.to, insert: next } })
 }
 
@@ -46,7 +47,7 @@ export async function renameHeading(pageId: string, old: string, next: string): 
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
   const view = pageView
   if (!view) return
-  const doc = view.state.doc.toString()
+  const doc = docString(view.state.doc)
   const heads = headingOutline(doc)
   const h = heads.findIndex((x) => x.key === dragKey)
   if (h < 0) return

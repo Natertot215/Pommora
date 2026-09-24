@@ -8,6 +8,8 @@ import { insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteAs } from '../Links/pasteLink'
 import { trimmedRange } from '../Input/edits'
+import { applyEdit } from '../Input/applyEdit'
+import { docString } from '../docCache'
 import {
   toggleInline,
   setHeading,
@@ -52,7 +54,7 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
 /** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
 function insertLinkOverSelection(view: EditorView): boolean {
   const sel = view.state.selection.main
-  const [from, to] = trimmedRange(view.state.doc.toString(), sel.from, sel.to)
+  const [from, to] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
   const text = view.state.sliceDoc(from, to)
   if (!text.trim() || !isValidLink(text)) return false
   const insert = serializeLink({ url: normalizeLinkUrl(text), alias: text })
@@ -78,13 +80,7 @@ export function applyEditorAction(view: EditorView, raw: string): boolean {
     return true
   }
   const sel = view.state.selection.main
-  const edit = editFor(action, view.state.doc.toString(), sel.from, sel.to)
-  if (!edit) return false
-  view.dispatch({
-    changes: edit.changes,
-    selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,
-    userEvent: 'input',
-  })
+  if (!applyEdit(view, editFor(action, docString(view.state.doc), sel.from, sel.to))) return false
   view.focus()
   return true
 }

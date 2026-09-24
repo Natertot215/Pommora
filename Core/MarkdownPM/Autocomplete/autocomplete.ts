@@ -7,7 +7,7 @@ import {
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
-import { lineIndexAt } from '../Engine/markdownCode'
+import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
@@ -217,7 +217,7 @@ export function connectionInsert(
 }
 
 interface CommitEdit {
-  changes: { from: number; to: number; insert: string }[]
+  changes: TextEdit[]
   opensAlias?: boolean
   opensHeading?: boolean
   anchor: number

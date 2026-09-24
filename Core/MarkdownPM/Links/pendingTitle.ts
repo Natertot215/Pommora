@@ -2,6 +2,7 @@ import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { linkMarkdown } from '@pommora/core/MarkdownPM/Links/pasteDecision'
 import { editorHost } from '../api'
+import type { TextEdit } from '../Engine/markdownCode'
 
 // Page Title writes the Short Link first and swaps the label in when the fetch lands. To know WHICH link to swap when the same address is pasted twice, the rewrite tracks the range it inserted and only fires while the text there still matches exactly what was written.
 
@@ -50,7 +51,7 @@ const sweepOnTitles = ViewPlugin.fromClass(
       this.unsubscribe = titles.subscribe(() => {
         const pending = view.state.field(pendingTitles, false)
         if (!pending || pending.length === 0) return
-        const changes: { from: number; to: number; insert: string }[] = []
+        const changes: TextEdit[] = []
         const settled: PendingTitle[] = []
         for (const p of pending) {
           const title = titles.get(p.url)
