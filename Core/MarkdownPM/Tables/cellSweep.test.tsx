@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
@@ -29,17 +29,21 @@ const model: TableModel = {
   rows: [['one']],
 }
 
+let editor: HTMLDivElement
 let container: HTMLDivElement
 let root: Root
 let before: HTMLParagraphElement
 let after: HTMLParagraphElement
 
-async function mount(): Promise<void> {
+async function mount(props: Record<string, unknown> = {}): Promise<void> {
   before = document.createElement('p')
   before.textContent = 'prose above'
   document.body.appendChild(before)
+  editor = document.createElement('div')
+  editor.className = 'cm-editor'
+  document.body.appendChild(editor)
   container = document.createElement('div')
-  document.body.appendChild(container)
+  editor.appendChild(container)
   after = document.createElement('p')
   after.textContent = 'prose below'
   document.body.appendChild(after)
@@ -58,6 +62,7 @@ async function mount(): Promise<void> {
         onUndo: noop,
         onRedo: noop,
         onAppend: noop,
+        ...props,
       }),
     ),
   )
@@ -65,7 +70,7 @@ async function mount(): Promise<void> {
 
 afterEach(async () => {
   await act(async () => root.unmount())
-  container.remove()
+  editor.remove()
   before.remove()
   after.remove()
   roCallbacks.length = 0
@@ -156,5 +161,57 @@ describe('a swept cell rectangle', () => {
       )
     })
     expect(selectedCells()).toBe(0)
+  })
+
+  const press = async (target: EventTarget, key: string, meta = false): Promise<KeyboardEvent> => {
+    const e = new KeyboardEvent('keydown', { key, metaKey: meta, bubbles: true, cancelable: true })
+    await act(async () => {
+      target.dispatchEvent(e)
+    })
+    return e
+  }
+
+  it('answers Delete and ⌘C aimed at its own editor or at nothing', async () => {
+    const onClearCells = vi.fn()
+    const onCopyText = vi.fn()
+    await mount({ onClearCells, onCopyText })
+    await sweepDown()
+    expect((await press(document.body, 'Backspace')).defaultPrevented).toBe(true)
+    expect(onClearCells).toHaveBeenCalledOnce()
+    await press(editor, 'c', true)
+    expect(onCopyText).toHaveBeenCalledOnce()
+  })
+
+  it('leaves Delete, ⌘C, ⌘X, and ⌘V typed into an unrelated field to that field', async () => {
+    const onClearCells = vi.fn()
+    const onCopyText = vi.fn()
+    const readClipboard = vi.fn(async () => 'x')
+    await mount({ onClearCells, onCopyText, readClipboard })
+    await sweepDown()
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    try {
+      for (const [key, meta] of [
+        ['Backspace', false],
+        ['c', true],
+        ['x', true],
+        ['v', true],
+      ] as const)
+        expect((await press(input, key, meta)).defaultPrevented).toBe(false)
+      expect(onClearCells).not.toHaveBeenCalled()
+      expect(onCopyText).not.toHaveBeenCalled()
+      expect(readClipboard).not.toHaveBeenCalled()
+    } finally {
+      input.remove()
+    }
+  })
+
+  it('a parked tab keeps no claim on the keyboard', async () => {
+    const onClearCells = vi.fn()
+    await mount({ onClearCells })
+    await sweepDown()
+    editor.setAttribute('inert', '')
+    expect((await press(document.body, 'Backspace')).defaultPrevented).toBe(false)
+    expect(onClearCells).not.toHaveBeenCalled()
   })
 })
