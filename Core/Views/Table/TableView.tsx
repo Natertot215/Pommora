@@ -13,7 +13,7 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
-import { groupValueUndo } from '../../Properties/valueUndo'
+import { groupUndo } from '../../Session/undo'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
@@ -427,7 +427,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         {...(contextOptions ? { contextOptions } : {})}
         onPick={(commits) => {
           if (commits.length)
-            groupValueUndo(() => {
+            groupUndo(() => {
               for (const { index, next } of commits) commitValue(rows[index], col, next)
             })
         }}

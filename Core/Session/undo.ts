@@ -1,5 +1,5 @@
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
-import { useSession } from '../Session/store'
+import { useSession } from './store'
 
 type Revert = () => boolean
 
@@ -23,7 +23,7 @@ const onKey = (e: KeyboardEvent): void => {
   }
 }
 
-export function pushValueUndo(revert: Revert): void {
+export function pushUndo(revert: Revert): void {
   if (group) {
     group.push(revert)
     return
@@ -36,11 +36,11 @@ export function pushValueUndo(revert: Revert): void {
 }
 
 /** An undo reaches into the Nexus it was taken in, so a switch leaves none behind. */
-export const resetValueUndo = (): void => {
+export const resetUndo = (): void => {
   stack.length = 0
 }
 
-export function groupValueUndo(run: () => void): void {
+export function groupUndo(run: () => void): void {
   const collected: Revert[] = []
   group = collected
   try {
@@ -49,7 +49,7 @@ export function groupValueUndo(run: () => void): void {
     group = null
   }
   if (!collected.length) return
-  pushValueUndo(() => {
+  pushUndo(() => {
     let applied = false
     for (let i = collected.length - 1; i >= 0; i--) if (collected[i]()) applied = true
     return applied

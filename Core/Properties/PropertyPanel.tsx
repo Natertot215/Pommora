@@ -40,7 +40,7 @@ import { propertyIcon } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { useOptionReorder } from './Schema/useOptionReorder'
 import { resolveRowOrder } from './rowOrder'
-import { pushValueUndo } from './valueUndo'
+import { pushUndo } from '../Session/undo'
 import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
 import { host } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
@@ -224,7 +224,7 @@ export function PropertyPanel({
 
   const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
     send(next)
-    pushValueUndo(() => {
+    pushUndo(() => {
       if (!writer.current) return false
       send(prior)
       return true
