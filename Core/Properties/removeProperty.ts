@@ -83,19 +83,17 @@ export async function restoreCachedValues(
       if (!isBlankValue(held.value)) return false
       return (await updatePageProperty(root, file, def, value)).ok
     })
-  const { kept: survivors } = await reconcile(cached, async (pageId, raw) => {
+  const { spent } = await reconcile(cached, async (pageId, raw) => {
     const reconciled = reconcilePropertyValue(def, raw, false)
     if (isBlankValue(reconciled.value)) return false
     for (const file of byId.get(pageId) ?? []) if (await fill(file, reconciled.value)) return true
     return false
   })
-  const written = await patchSidecar(collectionFolder, 'collection', (cur) =>
-    patchCacheBlock(
-      cur,
-      propertyId,
-      Object.keys(survivors).length ? { values: survivors } : undefined,
-    ),
-  )
+  const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
+    const left = { ...(cachedValues(cur, propertyId) ?? {}) }
+    for (const id of spent) delete left[id]
+    return patchCacheBlock(cur, propertyId, Object.keys(left).length ? { values: left } : undefined)
+  })
   if (!written.ok) return written
   return ok(null)
 }
