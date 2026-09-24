@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-23-2026              | PM-145 | Metadata & Page Locking                              |
 | 09-22-2026 → 09-23      | PM-144 | View Search                                          |
 | 09-21-2026              | PM-143 | Space Windows                                        |
 | 09-21-2026              | PM-142 | Space Links                                          |
@@ -147,6 +148,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-145 || Metadata & Page Locking
+**DATE:** 09-23-2026
+
+Per-page state moved out of the per-device database and page frontmatter into synced metadata inside the Nexus: one `.nexus/metadata/MM-YYYY.json` file per month of page creation, holding entries only for pages with something set. A page's icon, the aliases it had been given, and its header-icon choice now travel with the Nexus and merge between devices per page and per field, and setting an icon no longer touches the page file. Show Icon In Title joined Pages & Writing as a Nexus-wide switch with per-page overrides, `icon` became an ordinary property name, and a Space's glyph moved to `$icon` so a property of that name no longer collides with it. Page Lock was deferred to a placeholder lock at the head of the page menu's footer, which took the Editor Scale picker's place. A one-time migration carried NexusOS's existing icon, aliases, and Space glyphs into the new layout.
+
+- **Commits:** `3f5909807^..cee5e8c37`
+- **Diff:** Net +268 | +609 / −341
 
 #### PM-144 || View Search
 **DATE:** 09-22-2026 → 09-23
