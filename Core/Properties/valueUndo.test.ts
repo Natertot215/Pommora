@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { groupValueUndo, pushValueUndo } from './valueUndo'
+import { groupValueUndo, pushValueUndo, resetValueUndo } from './valueUndo'
 
 const cmdZ = (target: EventTarget = window): boolean => {
   const e = new KeyboardEvent('keydown', {
@@ -40,6 +40,14 @@ describe('pushValueUndo', () => {
     pushValueUndo(() => false)
     expect(cmdZ()).toBe(true)
     expect(applied).toHaveBeenCalledTimes(1)
+  })
+
+  it('forgets every entry on a reset, as a Nexus switch does', () => {
+    const applied = vi.fn(() => true)
+    pushValueUndo(applied)
+    resetValueUndo()
+    expect(cmdZ()).toBe(false)
+    expect(applied).not.toHaveBeenCalled()
   })
 
   it('leaves the keypress alone when nothing applies', () => {

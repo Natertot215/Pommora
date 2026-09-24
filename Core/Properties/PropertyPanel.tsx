@@ -225,6 +225,7 @@ export function PropertyPanel({
   const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
     send(next)
     pushValueUndo(() => {
+      if (!writer.current) return false
       send(prior)
       return true
     })
