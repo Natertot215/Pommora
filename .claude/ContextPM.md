@@ -57,7 +57,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **A press on a second picker while one list is open reopens inside the first's bloom-out.** The stack dismisses the first on pointerdown, its shield drops at the start of the exit, and the release reaches the second trigger, so the second list draws before the first has finished leaving. Closing it costs the click-through an outside click keeps: either the shield stands through the exit or every dismissal swallows its release.
 - [ ] **The system menu's Format rows act on the page editor, not a focused table cell.** `host.menus.format.onAction` has one reader, `MarkdownEditor`, which applies the action to its own view; a cell reached by right-click takes the format chords but not the menu's rows. Routing the action to the view that holds focus, with a `pushState` from the cell, is the missing piece.
 - [ ] **`MenuDoorContext` does not cross `reactWidget`'s detached roots.** Latent rather than live: nothing rendered under an editor widget mounts a `PickerControl` today.
-- [ ] **`LayoutFrame.tsx` and `SettingsFrame.tsx` each declare the same four frame rows and three labels.** `SettingsFrame` imports `LayoutFrame`, so one shared table needs a third file; until then an icon changed in one drifts from the other.
 
 ### Recent Work
 
