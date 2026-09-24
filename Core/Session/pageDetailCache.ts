@@ -145,7 +145,14 @@ export function dropCacheDetail(path: string): void {
 const bodyEpochs = new Map<string, number>()
 const epochListeners = new Set<() => void>()
 
+/** A replaced body is the head from here: a mount remounting in a later commit must not follow the text it replaced. */
 export function bumpBodyEpoch(path: string): void {
+  const head = heads.get(path)
+  const text = knownBody(path)
+  if (head && text !== undefined) {
+    head.seq += 1
+    head.text = text
+  }
   bodyEpochs.set(path, (bodyEpochs.get(path) ?? 0) + 1)
   for (const fn of epochListeners) fn()
 }
@@ -169,4 +176,5 @@ export function refreshCache(): void {
 export function clearCache(): void {
   refreshCache()
   baseByPath.clear()
+  heads.clear()
 }

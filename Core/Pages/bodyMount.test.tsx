@@ -10,7 +10,14 @@ import { detail } from '@pommora/core/Testing/fixtures'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { testHost } from '../MarkdownPM/editorHarness'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { cachePageDetail, clearCache } from '../Session/pageDetailCache'
+import {
+  bumpBodyEpoch,
+  cachePageDetail,
+  clearCache,
+  dropCacheDetail,
+  readPageDetail,
+  useBodyEpoch,
+} from '../Session/pageDetailCache'
 import { flushPageSave } from '../Session/saveScheduler'
 import { stubDialer } from '../vitest.setup'
 import { useBodyMount } from './bodyMount'
@@ -161,5 +168,31 @@ describe('one head per page path', () => {
     await act(() => new Promise((r) => setTimeout(r, 20)))
     expect(b.state.doc.toString().startsWith('## Foob\n')).toBe(true)
     expect(renames.filter((r) => r.startsWith('b:'))).toEqual([])
+  })
+
+  it('a replaced body holds across editors that remount in separate React roots', async () => {
+    cachePageDetail(detail({ path: PATH, body: 'old' }))
+    // An embed renders into its own root, so its remount commits apart from the tab's.
+    const Keyed = ({ name }: { name: string }): React.JSX.Element => {
+      const epoch = useBodyEpoch(PATH)
+      return createElement(Mount, { key: epoch, name, seed: readPageDetail(PATH)?.body ?? '' })
+    }
+    const embed = createRoot(document.createElement('div'))
+    await act(async () => {
+      root.render(createElement(Keyed, { name: 'a' }))
+      embed.render(createElement(Keyed, { name: 'b' }))
+    })
+    disk = 'FRESH'
+    await act(async () => {
+      dropCacheDetail(PATH)
+      cachePageDetail(detail({ path: PATH, body: 'FRESH' }))
+      bumpBodyEpoch(PATH)
+    })
+    expect(views.a.state.doc.toString()).toBe('FRESH')
+    expect(views.b.state.doc.toString()).toBe('FRESH')
+    type(views.a, 5, '!')
+    await flush()
+    expect(disk).toBe('FRESH!')
+    await act(async () => embed.unmount())
   })
 })
