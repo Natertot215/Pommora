@@ -22,7 +22,7 @@ import {
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
-import { VisibilityList } from './HiddenFrame'
+import { VisibilityFrame } from './VisibilityFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { VIEW_ROWS, ViewLeaf, type ViewRowId } from './ViewLeaf'
@@ -202,7 +202,7 @@ export function LayoutFrame({
         </MenuScrollFrame>
       )
     return (
-      <VisibilityList
+      <VisibilityFrame
         source={source}
         schema={schema}
         view={view}

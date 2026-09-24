@@ -20,7 +20,7 @@ import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/P
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Cells/cellResolve'
-import { hideShown, unhide } from '../hiddenFrameModel'
+import { hideShown, unhide } from '../visibilityModel'
 import { resolveBandHead } from '../Bands/GroupBand'
 import { resolveContainerSchema } from '../Pipeline/pickView'
 import { bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'

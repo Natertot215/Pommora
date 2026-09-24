@@ -3,7 +3,7 @@ import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
-import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenFrameModel'
+import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './visibilityModel'
 
 const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID
 const [areas, projects] = ['ctx_areas', 'ctx_projects']
@@ -58,30 +58,23 @@ describe('hiddenListIds', () => {
 describe('placeInShown', () => {
   it('reorders a shown row, writing the full visible order verbatim with hidden ids trailing', () => {
     const v = view([title, 'a', 'b', 'h', 'c'], ['h'])
-    expect(placeInShown(v, [title, 'a', 'b', 'c'], ['a', 'b', 'c'], 'c', 0)).toEqual({
+    expect(placeInShown(v, [title, 'a', 'b', 'c'], 'c', 1)).toEqual({
       property_order: [title, 'c', 'a', 'b', 'h'],
       hidden_properties: ['h'],
     })
   })
 
-  it('anchors the section slot inside the full order — Title and Contexts hold their places', () => {
-    const v = view([title, 'a', projects, 'b'], [])
-    expect(placeInShown(v, [title, 'a', projects, 'b'], ['a', 'b'], 'b', 0).property_order).toEqual(
-      [title, 'b', 'a', projects],
-    )
-  })
-
   it('unhides a dragged-in row at the slot and lifts its flag', () => {
     const v = view([title, 'a', 'b', 'h'], ['h'])
-    expect(placeInShown(v, [title, 'a', 'b'], ['a', 'b'], 'h', 1)).toEqual({
+    expect(placeInShown(v, [title, 'a', 'b'], 'h', 2)).toEqual({
       property_order: [title, 'a', 'h', 'b'],
       hidden_properties: [],
     })
   })
 
-  it('appends past the last section row, before nothing — a hidden id never in property_order lands', () => {
+  it('appends past the last shown row — a hidden id never in property_order lands', () => {
     const v = view(['a'], ['h'])
-    expect(placeInShown(v, ['a'], ['a'], 'h', 1)).toEqual({
+    expect(placeInShown(v, ['a'], 'h', 1)).toEqual({
       property_order: ['a', 'h'],
       hidden_properties: [],
     })
@@ -89,7 +82,7 @@ describe('placeInShown', () => {
 
   it('reveals an unaccounted prop — drag-in writes it into property_order (then it shows)', () => {
     const v = view([title, 'a'], [])
-    expect(placeInShown(v, [title, 'a'], [title, 'a'], 'new', 2)).toEqual({
+    expect(placeInShown(v, [title, 'a'], 'new', 2)).toEqual({
       property_order: [title, 'a', 'new'],
       hidden_properties: [],
     })
@@ -97,11 +90,7 @@ describe('placeInShown', () => {
 
   it('preserves foreign property_order ids at the tail', () => {
     const v = view(['a', 'future_key', 'b'], [])
-    expect(placeInShown(v, ['a', 'b'], ['a', 'b'], 'b', 0).property_order).toEqual([
-      'b',
-      'a',
-      'future_key',
-    ])
+    expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
   })
 })
 

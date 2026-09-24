@@ -68,7 +68,6 @@ const propGroup = (property_id: string, extra: Partial<GroupConfig> = {}): Group
     kind: 'property',
     property_id,
     order_mode: 'configured',
-    hide_empty_groups: false,
     ...extra,
   }) as GroupConfig
 const group = (kind: ResolvedGroup['kind'], key: string, bucket?: string): ResolvedGroup => ({

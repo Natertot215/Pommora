@@ -176,7 +176,6 @@ describe('flattenContainer + structural grouping', () => {
         kind: 'property',
         property_id: 'x',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
       statusSchema,
       setTree,
@@ -284,7 +283,6 @@ describe('property grouping — status manual order', () => {
     property_id: 'prop_status',
     order_mode: 'manual',
     order: ['in_progress', 'opt_open', 'not_started', 'done'],
-    hide_empty_groups: false,
   }
 
   it('orders buckets by manual order — an empty bucket renders as an empty band, no-value tail at bottom', () => {
@@ -308,13 +306,7 @@ describe('property grouping — status manual order', () => {
 
   it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
-    const groups = resolveGroups(
-      rows,
-      { ...base, hide_empty_groups: true },
-      statusSchema,
-      setTree,
-      null,
-    )
+    const groups = resolveGroups(rows, base, statusSchema, setTree, null)
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
     expect(keys(pruneEmptyBuckets(groups))).toEqual([
       'in_progress',
@@ -440,7 +432,6 @@ describe('ungrouped placement (the view-level knob)', () => {
       kind: 'property',
       property_id: 'prop_status',
       order_mode: 'configured',
-      hide_empty_groups: false,
     }
     const groups = resolveGroups(rows, group, statusSchema, setTree, null, 'top')
     expect(keys(groups)).toEqual(['_ungrouped', 'not_started', 'opt_open', 'in_progress', 'done'])
@@ -474,7 +465,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     kind: 'property',
     property_id: 'prop_sel',
     order_mode: 'configured',
-    hide_empty_groups: false,
     ...over,
   })
 
@@ -515,7 +505,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         kind: 'property',
         property_id: 'prop_done',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
       cbSchema,
       setTree,
@@ -554,7 +543,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         property_id: 'prop_when',
         order_mode: 'configured',
         date_granularity: 'month',
-        hide_empty_groups: false,
       },
       dateSchema,
       setTree,
@@ -577,7 +565,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         property_id: 'prop_due',
         order_mode: 'configured',
         date_granularity: 'day',
-        hide_empty_groups: false,
       },
       dueSchema,
       setTree,
@@ -600,7 +587,6 @@ describe('property grouping — non-groupable fallback', () => {
         kind: 'property',
         property_id: 'prop_num',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
       [{ id: 'prop_num', name: 'Num', type: 'number' }],
       setTree,
@@ -614,7 +600,6 @@ describe('property grouping — non-groupable fallback', () => {
         kind: 'property',
         property_id: 'prop_tags',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
       [{ id: 'prop_tags', name: 'Tags', type: 'multi_select' }],
       setTree,

@@ -12,7 +12,7 @@ import {
   type FrameRow,
   type Region,
 } from '@pommora/uix/Interactions/frameDndModel'
-import { nexusReorderIndex, type PaneSlot } from '@pommora/core/Properties/paneDrop'
+import type { PaneSlot } from '@pommora/core/Properties/paneDrop'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 
@@ -34,13 +34,12 @@ export function hiddenListIds(
 
 export function placeInShown(
   view: SavedView,
-  fullVisibleIds: string[],
-  sectionIds: string[],
+  shownIds: string[],
   id: string,
   toIndex: number,
 ): VisibilityPatch {
-  const next = fullVisibleIds.filter((x) => x !== id)
-  next.splice(nexusReorderIndex(fullVisibleIds, sectionIds, id, toIndex), 0, id)
+  const next = shownIds.filter((x) => x !== id)
+  next.splice(toIndex, 0, id)
   return {
     property_order: [...next, ...view.property_order.filter((x) => !next.includes(x))],
     hidden_properties: view.hidden_properties.filter((x) => x !== id),

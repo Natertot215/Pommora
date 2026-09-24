@@ -58,9 +58,7 @@ export function resolveView(input: {
     useLocationFlat,
   )
   if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden)
-  const hideEmpty =
-    view.hide_empty_groups ?? (view.group?.kind === 'property' && view.group.hide_empty_groups)
-  if (hideEmpty) resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
+  if (view.hide_empty_groups) resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
   else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)
   return { columns, groups: orderGroups(resolved, locationOrdered ? undefined : view.group_order) }
 }

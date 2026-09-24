@@ -20,16 +20,13 @@ import {
   MenuScrollFrame,
   MenuFooting,
   useDisclosureSet,
-  heading,
   pickerRow,
-  type PickerRowLook,
 } from '@pommora/uix/Menus'
-import { footingLabel, footingSymbol, side } from '@pommora/uix/Menus/menu-base.css'
+import { footingLabel, footingSymbol } from '@pommora/uix/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { useSaveView } from '../ViewTileScope'
-import { declaredType } from '../../Properties/value'
 import { useContainerValues } from '../Host/useValuesEpoch'
 import {
   bucketKey,
@@ -46,12 +43,21 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSession } from '../../Session/store'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { propertyIcon } from '../../Properties/Cells/PropertyTypes'
+import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
 import * as gp from './group-frame.css'
+import * as oo from './option-order.css'
+import {
+  CustomList,
+  type HideControls,
+  PropertyPreview,
+  type PropertyGroupConfig,
+  rowEye,
+  SUB_LOOK,
+} from './OptionOrderList'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
-import { displayPropertyName, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
@@ -74,8 +80,6 @@ const GRANULARITY: PickerOption<DateGranularity>[] = [
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year' },
 ]
-
-export const SUB_LOOK: PickerRowLook = { className: gp.subRow, labelClassName: gp.subLabel }
 
 const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
@@ -109,33 +113,26 @@ export function GroupFrame({
   const group = view.group ?? { kind: 'structural' as const }
   const structural = groupsStructurally(group, schema)
   const flat = VIEW_KINDS[view.type].flat
-  const groupable = schema.filter((d) => GROUPABLE_PANE.has(declaredType(d.id, schema) ?? ''))
+  const propertyOptions = schemaTargets(schema, (d) => GROUPABLE_PANE.has(d.type), capitalize).map(
+    targetOption,
+  )
   const activeDef =
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
   const subGroup = structural && !flat ? view.sub_group : undefined
-  const dateHeadingProp =
-    group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime'
-      ? group.property_id
-      : subGroup && declaredType(subGroup.property_id, schema) === 'datetime'
-        ? subGroup.property_id
-        : undefined
+  const subDef = subGroup && schema.find((d) => d.id === subGroup.property_id)
+  const dateHeadingProp = [activeDef, subDef].find((d) => d?.type === 'datetime')?.id
 
-  const pickGroupBy = (target: 'location' | 'none' | PropertyDefinition): void => {
-    if (target === 'none') {
+  const pickGroupBy = (id: string): void => {
+    if (id === 'none') {
       if (group.kind !== 'flat') saveGroup({ kind: 'flat' })
       return
     }
-    if (target === 'location') {
+    if (id === 'location') {
       if (group.kind !== 'structural') saveGroup({ kind: 'structural' })
       return
     }
-    if (group.kind === 'property' && group.property_id === target.id) return
-    saveGroup({
-      kind: 'property',
-      property_id: target.id,
-      order_mode: 'configured',
-      hide_empty_groups: false,
-    })
+    if (group.kind === 'property' && group.property_id === id) return
+    saveGroup({ kind: 'property', property_id: id, order_mode: 'configured' })
   }
 
   const groupByValue =
@@ -147,23 +144,10 @@ export function GroupFrame({
   const groupByOptions: PickerOption<string>[] = [
     ...(flat ? [{ value: 'none', label: 'None', icon: 'circle-off' as const }] : []),
     { value: 'location', label: 'Location', icon: 'folder' as const },
-    ...groupable.map((d) => ({
-      value: d.id,
-      label: displayPropertyName(d.name, capitalize),
-      icon: propertyIcon(d),
-    })),
+    ...propertyOptions,
   ]
-  const pickGroupByValue = (v: string): void => {
-    if (v === 'none' || v === 'location') {
-      pickGroupBy(v)
-      return
-    }
-    const def = groupable.find((d) => d.id === v)
-    if (def) pickGroupBy(def)
-  }
 
   const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
-  const hideEmpty = view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
 
   const footings = (
     <MenuFooting>
@@ -172,7 +156,7 @@ export function GroupFrame({
         label="Hide Empty Groups"
         trailing={
           <DualSwitch
-            checked={hideEmpty}
+            checked={view.hide_empty_groups ?? false}
             onChange={(next) => save({ hide_empty_groups: next })}
             ariaLabel="Hide Empty Groups"
           />
@@ -232,9 +216,9 @@ export function GroupFrame({
       footer={footings}
     >
       <MenuRowView
-        row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupByValue)}
+        row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupBy)}
       />
-      {group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime' && (
+      {group.kind === 'property' && activeDef?.type === 'datetime' && (
         <MenuRowView
           row={pickerRow(
             'calendar',
@@ -251,7 +235,7 @@ export function GroupFrame({
             'arrow-up-down',
             'Order',
             group.order_mode,
-            orderOptionsFor(declaredType(group.property_id, schema)),
+            orderOptionsFor(activeDef?.type),
             (m) => saveGroup({ ...group, order_mode: m }),
           )}
         />
@@ -269,8 +253,19 @@ export function GroupFrame({
       )}
       {structural && !flat && (
         <>
-          <SubGroupRow subGroup={subGroup} groupable={groupable} onSave={saveSub} />
-          {subGroup && declaredType(subGroup.property_id, schema) === 'datetime' && (
+          <MenuRowView
+            row={pickerRow(
+              'layers',
+              'Sub-Group',
+              subGroup?.property_id ?? '_location',
+              [{ value: '_location', label: 'Location', icon: 'folder' }, ...propertyOptions],
+              (v) =>
+                saveSub(
+                  v === '_location' ? undefined : { property_id: v, order_mode: 'configured' },
+                ),
+            )}
+          />
+          {subGroup && subDef?.type === 'datetime' && (
             <MenuRowView
               row={pickerRow(
                 'calendar',
@@ -287,7 +282,7 @@ export function GroupFrame({
                 'arrow-up-down',
                 'Order',
                 subGroup.order_mode,
-                orderOptionsFor(declaredType(subGroup.property_id, schema)),
+                orderOptionsFor(subDef?.type),
                 (m) => saveSub({ ...subGroup, order_mode: m }),
                 SUB_LOOK,
               )}
@@ -296,9 +291,9 @@ export function GroupFrame({
         </>
       )}
       <MenuSeparator flush />
-      <div className={`${gp.middle} over-scroll`}>
+      <div className={`${oo.middle} over-scroll`}>
         {!structural && group.kind === 'property' ? (
-          declaredType(group.property_id, schema) === 'datetime' ? (
+          activeDef?.type === 'datetime' ? (
             <DateBucketList
               source={source}
               view={view}
@@ -328,7 +323,7 @@ export function GroupFrame({
           <LocationHierarchy
             source={source}
             view={view}
-            subDef={subGroup ? schema.find((d) => d.id === subGroup.property_id) : undefined}
+            subDef={subDef}
             onSaveView={save}
             hiddenSet={hiddenSet}
             onToggleHidden={toggleHidden}
@@ -336,128 +331,6 @@ export function GroupFrame({
         )}
       </div>
     </MenuScrollFrame>
-  )
-}
-
-type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
-
-interface HideControls {
-  hiddenSet?: ReadonlySet<string>
-  onToggleHidden?: (key: string) => void
-}
-
-function rowEye(
-  label: string,
-  hideKey: string,
-  { hiddenSet, onToggleHidden }: HideControls,
-): React.JSX.Element | null {
-  if (!onToggleHidden) return null
-  return (
-    <span className={side}>
-      <EyeToggle
-        hidden={hiddenSet?.has(hideKey) ?? false}
-        name={label}
-        onToggle={() => onToggleHidden(hideKey)}
-      />
-    </span>
-  )
-}
-
-export function PropertyPreview({
-  group,
-  def,
-  hiddenSet,
-  onToggleHidden,
-}: {
-  group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
-  def: PropertyDefinition | undefined
-} & HideControls): React.JSX.Element | null {
-  if (!def) return null
-  const type = def.type === 'status' ? 'status' : 'select'
-  const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
-    <div key={o.value} className={cx(optionRow, hiddenSet?.has(o.value) && hiddenRow)}>
-      <OptionChip type={type} option={o} />
-      {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
-    </div>
-  )
-  if (def.status_groups) {
-    const groups =
-      group.order_mode === 'reversed' ? [...def.status_groups].reverse() : def.status_groups
-    return (
-      <>
-        {groups.map((g) => (
-          <div key={g.id}>
-            <div className={heading}>{g.label}</div>
-            {(group.order_mode === 'reversed' ? [...g.options].reverse() : g.options).map((o) =>
-              chip(o.color ? o : { ...o, color: g.color }),
-            )}
-          </div>
-        ))}
-      </>
-    )
-  }
-  const all = optionsOf(def)
-  const ordered = bucketOrder(group, def, new Set(all.map((o) => o.value)))
-  const byValue = new Map(all.map((o) => [o.value, o]))
-  return <>{ordered.flatMap((v) => (byValue.has(v) ? [chip(byValue.get(v)!)] : []))}</>
-}
-
-export function CustomList({
-  group,
-  def,
-  onSave,
-  hiddenSet,
-  onToggleHidden,
-}: {
-  group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
-  def: PropertyDefinition | undefined
-  onSave: (order: string[]) => void
-} & HideControls): React.JSX.Element | null {
-  const { ordered, byValue, bands } = useMemo(() => {
-    const all = optionsOf(def)
-    const orderedValues = bucketOrder(group, def, new Set(all.map((o) => o.value)))
-    return {
-      ordered: orderedValues,
-      byValue: new Map(all.map((o) => [o.value, o])),
-      bands: orderedValues.map(
-        (v): Band => ({ id: v, kind: 'property', depth: 0, parentId: null }),
-      ),
-    }
-  }, [group, def])
-  const dnd = useGroupingListDrag({
-    bands,
-    nestable: false,
-    labelFor: (id) => byValue.get(id)?.label ?? id,
-    lineClassName: gp.dropLineInset,
-    onDrop: (draggedId, drop) => onSave(nextOrder(ordered, draggedId, drop.beforeId)),
-  })
-  if (!def) return null
-  const type = def.type === 'status' ? 'status' : 'select'
-  return (
-    <div ref={dnd.containerRef} className="drop-line-host">
-      <div className={heading}>Options</div>
-      {ordered.flatMap((v) => {
-        const o = byValue.get(v)
-        if (!o) return []
-        return [
-          <div
-            key={v}
-            ref={dnd.rowRef(v)}
-            {...dnd.rowHandle(v)}
-            className={cx(
-              optionRow,
-              hiddenSet?.has(v) && hiddenRow,
-              dnd.draggingId === v && gp.ghosted,
-            )}
-          >
-            <OptionChip type={type} option={o} />
-            {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
-          </div>,
-        ]
-      })}
-      {dnd.line}
-      {dnd.ghost}
-    </div>
   )
 }
 
@@ -487,7 +360,7 @@ function SpringableRow({
   }, [collapsed])
   return (
     <div
-      className={cx(className, dimmed && gp.ghosted)}
+      className={cx(className, dimmed && oo.ghosted)}
       ref={(node) => {
         el.current = node
         refCb(node)
@@ -518,7 +391,7 @@ function LocationHierarchy({
   const mutate = useSession((st) => st.mutate)
   const hideChevrons = useSession((st) => st.personalization.hideChevrons ?? false)
   const expanded = useDisclosureSet()
-  const flat = subDef !== undefined
+  const subGrouped = subDef !== undefined
 
   const subChips = useMemo(() => {
     if (!subDef) return []
@@ -560,7 +433,7 @@ function LocationHierarchy({
         paths.set(s.id, s.path)
         if (visible) {
           bands.push({ id: s.id, kind: 'set', depth, parentId })
-          if (flat && expanded.has(s.id)) {
+          if (subGrouped && expanded.has(s.id)) {
             for (const o of subChips)
               bands.push({
                 id: chipBandId(s.id, o.value),
@@ -570,12 +443,12 @@ function LocationHierarchy({
               })
           }
         }
-        index(s.sets, depth + 1, s.id, visible && !flat && expanded.has(s.id))
+        index(s.sets, depth + 1, s.id, visible && !subGrouped && expanded.has(s.id))
       }
     }
     index(source.sets, 0, null, true)
     return { allIds, childIds, paths, bands, chipValueOf }
-  }, [source.sets, flat, expanded, subChips])
+  }, [source.sets, subGrouped, expanded, subChips])
 
   const onDrop = (draggedId: string, drop: GroupingDrop): void => {
     if (chipValueOf.has(draggedId)) {
@@ -663,7 +536,7 @@ function LocationHierarchy({
     bands,
     nestable: true,
     labelFor,
-    lineClassName: gp.dropLineInset,
+    lineClassName: oo.dropLineInset,
     onDrop,
   })
   const subType = subDef?.type === 'status' ? 'status' : 'select'
@@ -679,7 +552,7 @@ function LocationHierarchy({
           optionRow,
           gp.subChip,
           hiddenSet?.has(subHiddenKey(o.value)) && hiddenRow,
-          dnd.draggingId === id && gp.ghosted,
+          dnd.draggingId === id && oo.ghosted,
         )}
       >
         <OptionChip type={subType} option={o} />
@@ -689,7 +562,9 @@ function LocationHierarchy({
   }
 
   const renderSet = (s: SetNode): React.JSX.Element => {
-    const body = flat ? subChips.map((o) => subChipRow(s.id, o)) : (s.sets ?? []).map(renderSet)
+    const body = subGrouped
+      ? subChips.map((o) => subChipRow(s.id, o))
+      : (s.sets ?? []).map(renderSet)
     const disclosable = body.length > 0
     const isHidden = hiddenSet?.has(s.id) ?? false
     return (
@@ -777,38 +652,11 @@ function DateBucketList({
         const label = formatBucketLabel(key, granularity, dateFormat, view.date_separator ?? 'dash')
         return (
           <div key={key} className={cx(optionRow, hiddenSet?.has(key) && hiddenRow)}>
-            <span className={gp.subLabel}>{label}</span>
+            <span className={oo.subLabel}>{label}</span>
             {rowEye(label, key, { hiddenSet, onToggleHidden })}
           </div>
         )
       })}
     </>
-  )
-}
-
-function SubGroupRow({
-  subGroup,
-  groupable,
-  onSave,
-}: {
-  subGroup: SubGroupConfig | undefined
-  groupable: PropertyDefinition[]
-  onSave: (sub: SubGroupConfig | undefined) => void
-}): React.JSX.Element {
-  const capitalize = useCapitalizeMetadata()
-  const options: PickerOption<string>[] = [
-    { value: '_location', label: 'Location', icon: 'folder' as const },
-    ...groupable.map((d) => ({
-      value: d.id,
-      label: displayPropertyName(d.name, capitalize),
-      icon: propertyIcon(d),
-    })),
-  ]
-  return (
-    <MenuRowView
-      row={pickerRow('layers', 'Sub-Group', subGroup?.property_id ?? '_location', options, (v) =>
-        onSave(v === '_location' ? undefined : { property_id: v, order_mode: 'configured' }),
-      )}
-    />
   )
 }

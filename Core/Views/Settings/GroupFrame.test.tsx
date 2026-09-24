@@ -114,7 +114,6 @@ describe('GroupFrame rows', () => {
           kind: 'property',
           property_id: 'prop_when',
           order_mode: 'configured',
-          hide_empty_groups: false,
         },
       }),
     )
@@ -219,7 +218,6 @@ describe('GroupFrame rows', () => {
           kind: 'property',
           property_id: 'prop_status',
           order_mode: 'configured',
-          hide_empty_groups: false,
         },
       }),
     )
@@ -230,7 +228,6 @@ describe('GroupFrame rows', () => {
           kind: 'property',
           property_id: 'prop_when',
           order_mode: 'configured',
-          hide_empty_groups: false,
         },
         column_styles: { prop_when: { date_format: 'monthDayYear' } },
       }),
@@ -244,7 +241,6 @@ describe('GroupFrame rows', () => {
         kind: 'property',
         property_id: 'prop_status',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
     })
     await mount(propView)
@@ -261,7 +257,7 @@ describe('GroupFrame rows', () => {
     expect(lastSaved().hidden_groups).toEqual([])
   })
 
-  it('the Hide Empty Groups switch writes the VIEW-level knob, config field untouched', async () => {
+  it('the Hide Empty Groups switch writes the view-level knob', async () => {
     await mount(view())
     const sw = host.querySelector('button[aria-label="Hide Empty Groups"]') as HTMLElement
     await act(async () => {
@@ -288,7 +284,6 @@ describe('GroupFrame rows', () => {
           kind: 'property',
           property_id: 'prop_status',
           order_mode: 'configured',
-          hide_empty_groups: false,
         },
       }),
     )
@@ -301,7 +296,6 @@ describe('GroupFrame rows', () => {
           kind: 'property',
           property_id: 'prop_status',
           order_mode: 'manual',
-          hide_empty_groups: false,
         },
       }),
     )
@@ -316,7 +310,6 @@ describe('GroupFrame rows', () => {
           kind: 'property',
           property_id: 'prop_gone',
           order_mode: 'configured',
-          hide_empty_groups: false,
         },
       }),
     )

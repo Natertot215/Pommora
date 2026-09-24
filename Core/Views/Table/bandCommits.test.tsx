@@ -101,7 +101,6 @@ const propertySource = (): CollectionNode =>
           kind: 'property',
           property_id: 'prop_status',
           order_mode: 'configured',
-          hide_empty_groups: false,
         },
       },
     ],
@@ -246,7 +245,6 @@ describe('property band reorder', () => {
       property_id: 'prop_status',
       order_mode: 'manual',
       order: ['not_started', 'complete', 'active'],
-      hide_empty_groups: false,
     })
     expect(lastSavedView().group_order).toBeUndefined()
     expect(mutateSpy).not.toHaveBeenCalled()

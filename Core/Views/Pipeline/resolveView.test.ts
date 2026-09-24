@@ -150,7 +150,6 @@ describe('resolveView — full pipeline over the fixture', () => {
         kind: 'property',
         property_id: 'prop_status',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
       sort: [{ property_id: '_title', direction: 'descending' }],
     }
@@ -289,7 +288,6 @@ describe('resolveView — group_order', () => {
         kind: 'property',
         property_id: 'prop_gone',
         order_mode: 'configured',
-        hide_empty_groups: false,
       },
     }
     const { rows, setTree } = flattenContainer(nested, values, {})
@@ -506,7 +504,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     kind: 'property' as const,
     property_id: 'prop_sel',
     order_mode: 'configured' as const,
-    hide_empty_groups: false,
   })
 
   it('a hidden option bucket drops with its rows; the others are untouched', () => {
@@ -603,7 +600,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
           property_id: 'prop_when',
           order_mode: 'configured',
           date_granularity: 'month',
-          hide_empty_groups: false,
         },
         hidden_groups: ['2025-07'],
       }),
@@ -626,22 +622,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       schema: [],
     })
     expect(keys(structural.groups)).toEqual(['sOuter', 'sB'])
-  })
-
-  it('the config-level flag still bites as fallback; an explicit view-level false overrides it', () => {
-    const legacy = resolveView({
-      ...selInput(),
-      view: view({ group: { ...propertyGroup(), hide_empty_groups: true } }),
-    })
-    expect(keys(legacy.groups)).toEqual(['Alpha', 'Beta'])
-    const overridden = resolveView({
-      ...selInput(),
-      view: view({
-        group: { ...propertyGroup(), hide_empty_groups: true },
-        hide_empty_groups: false,
-      }),
-    })
-    expect(keys(overridden.groups)).toEqual(['Alpha', 'Beta', 'Gamma'])
   })
 })
 

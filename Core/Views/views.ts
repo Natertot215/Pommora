@@ -91,7 +91,6 @@ export type GroupConfig =
       order_mode: GroupOrderMode
       order?: string[]
       date_granularity?: DateGranularity
-      hide_empty_groups: boolean
     }
 
 export interface SavedView {
@@ -204,7 +203,6 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
       order_mode: asEnum<GroupOrderMode>(obj.order_mode, GROUP_ORDER_MODE_SET) ?? 'configured',
       ...(order !== undefined ? { order } : {}),
       ...(granularity !== undefined ? { date_granularity: granularity } : {}),
-      hide_empty_groups: typeof obj.hide_empty_groups === 'boolean' ? obj.hide_empty_groups : false,
     }
   }
 

@@ -16,8 +16,7 @@
         "kind": "property",
         "property_id": "prop_status",
         "order_mode": "manual",
-        "order": ["in_progress", "opt_open", "not_started", "done"],
-        "hide_empty_groups": false
+        "order": ["in_progress", "opt_open", "not_started", "done"]
       },
       "sort": [
         {
