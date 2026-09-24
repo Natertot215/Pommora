@@ -3,7 +3,7 @@ import { docOutline, docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
 import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
-import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state'
+import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EDITOR_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
@@ -64,7 +64,7 @@ import { BlockMenu } from './Menus/BlockMenu'
 import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
-import { type EditorHost, type EditorPref, editorHost } from './api'
+import { type EditorHost, type EditorPref, editorHost, mirrorBody, mirrored } from './api'
 import './markdown-pm.css'
 
 export const EDITOR_BASE_PT = 15
@@ -72,8 +72,6 @@ export const EDITOR_BASE_PT = 15
 export function zoomFontSize(scale: number): number {
   return EDITOR_BASE_PT * coerceScale(scale, EDITOR_SCALE_DEFAULT)
 }
-
-const mirrored = Annotation.define<boolean>()
 
 interface Props {
   initialBody: string
@@ -189,11 +187,7 @@ export function MarkdownEditor({
 
   useEffect(() => {
     const view = viewRef.current
-    if (!view || body === undefined || body === view.state.doc.toString()) return
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: body },
-      annotations: mirrored.of(true),
-    })
+    if (view && body !== undefined) mirrorBody(view, body)
   }, [body])
 
   // The mount-time travel already consumed the first value; a later one arrives while the editor stays mounted.
@@ -274,10 +268,8 @@ export function MarkdownEditor({
       // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
       EditorView.editable.of(true),
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body is the one dispatch that passes.
-      EditorState.changeFilter.of(
-        (tr) => !(tr.startState.readOnly && tr.docChanged && !tr.annotation(mirrored)),
-      ),
+      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body skips filters and passes.
+      EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
       Prec.highest(
         keymap.of([
@@ -362,7 +354,8 @@ export function MarkdownEditor({
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
         if (u.focusChanged && u.view.hasFocus) claimEditorMenu(u.view)
         const doc = docString(u.state.doc)
-        if (u.docChanged) onChangeRef.current(doc)
+        if (u.transactions.some((tr) => tr.docChanged && !tr.annotation(mirrored)))
+          onChangeRef.current(doc)
 
         // Measured here off the live doc, and only where the range moved: the host's copy of the body trails the keystroke, and a slice of it would describe the text from before.
         if (onSelectionRef.current) {

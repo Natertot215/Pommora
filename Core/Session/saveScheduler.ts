@@ -4,7 +4,7 @@ import type { WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
 import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import type { Result } from '@pommora/core/Contract/result'
 import { notifyError } from '../Interface/Notifications/notifications'
-import { readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
+import { followBody, readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
 import { host } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 400
@@ -74,6 +74,7 @@ export function schedulePageSave(path: string, body: string): void {
   writeThroughBody(path, body)
   pageWriter.schedule(path, async () => {
     writeThroughBody(path, body)
+    followBody(path)
     const r = await host().ask('page:updateBody', path, body, readBodyBase(path)?.hash ?? '')
     if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash })
     else if (r.ok) staleSink?.(path, body)

@@ -6,7 +6,8 @@ import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import { PageHeader } from '../../Pages/PageHeader'
-import { flushPageSave, schedulePageSave } from '../../Session/saveScheduler'
+import { flushPageSave } from '../../Session/saveScheduler'
+import { useBodyMount } from '../../Pages/bodyMount'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
 import { renameHeading } from '../../Pages/pageEditor'
 import { useEmbedScale, useSession } from '../../Session/store'
@@ -87,6 +88,7 @@ export function PageTile({
   useEffect(() => {
     if (body !== null) onBodyRef.current?.(body)
   }, [body])
+  const seat = useBodyMount(path, (next) => onBodyRef.current?.(next))
 
   useEffect(() => {
     if (entry !== null) return
@@ -167,8 +169,9 @@ export function PageTile({
         initialBody={body}
         onChange={(next) => {
           onBodyRef.current?.(next)
-          schedulePageSave(path, next)
+          seat.save(next)
         }}
+        register={seat.register}
         host={host}
         connections={connections}
         onSelection={publishSelection}
