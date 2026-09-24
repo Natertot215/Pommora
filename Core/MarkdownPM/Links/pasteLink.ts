@@ -8,7 +8,7 @@ import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@pommora/core/Act
 import { DEFAULT_LINK_DISPLAY } from '@pommora/core/Properties/properties'
 import { linkDestinationAt } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
-import { docScan } from '../docCache'
+import { docScan, docString } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { trimmedRange } from '../Input/edits'
 import { insertCitation } from '../Citations/citationActions'
@@ -34,7 +34,7 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   const decision = decidePaste({
     clipboard: text,
     selectionText: view.state.sliceDoc(
-      ...trimmedRange(view.state.doc.toString(), sel.from, sel.to),
+      ...trimmedRange(docString(view.state.doc), sel.from, sel.to),
     ),
     pasteIntoText: settings.pasteLinkIntoText === true,
     inverse,
@@ -58,7 +58,7 @@ function insideCodeAtCaret(view: EditorView, pos: number): boolean {
 
 function writeLink(view: EditorView, link: LinkPaste): void {
   const sel = view.state.selection.main
-  const [from, selTo] = trimmedRange(view.state.doc.toString(), sel.from, sel.to)
+  const [from, selTo] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
   const to = from + link.text.length
   view.dispatch({
     changes: { from, to: selTo, insert: link.text },

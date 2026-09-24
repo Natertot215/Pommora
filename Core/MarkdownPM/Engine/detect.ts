@@ -1,17 +1,24 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { perText } from './perText'
 import { parse } from './parser'
-import { fenceLang, fenceSpans, lineEndOf, lineOffsetsOf, type CodeMask } from './markdownCode'
+import {
+  fenceLang,
+  fenceSpans,
+  isBlockquoteLine,
+  lineEndOf,
+  lineOffsetsOf,
+  quotePrefix,
+  quotePrefixWidth,
+  type CodeMask,
+} from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
 
-export const blockquotePrefixRe = /^[ \t]*(?:>[ \t]?)+/
-
-export const oneQuoteLevelRe = /^([ \t]*)>[ \t]?/
 export function stripQuotePrefix(line: string): string {
-  return line.replace(oneQuoteLevelRe, '$1')
+  if (!isBlockquoteLine(line)) return line
+  return /^ */.exec(line)![0] + line.slice(quotePrefixWidth(line, 1))
 }
 
 export interface FenceInfo {
@@ -367,10 +374,10 @@ export function calloutLines(
       !(isCalloutHead(lines[j]) && !codeLine(j))
     )
       j++
-    const headPrefix = blockquotePrefixRe.exec(lines[i])?.[0] ?? ''
+    const headPrefix = quotePrefix(lines[i])
     const tag = calloutTagRe.exec(lines[i].slice(headPrefix.length))
     for (let k = i; k < j; k++) {
-      const oneLevel = oneQuoteLevelRe.exec(lines[k])?.[0].length ?? 0
+      const oneLevel = quotePrefixWidth(lines[k], 1)
       out[k] = {
         first: k === i,
         last: k === j - 1,
@@ -383,8 +390,8 @@ export function calloutLines(
 }
 
 export function calloutHeadPrefixLen(line: string): number | null {
-  const pfx = blockquotePrefixRe.exec(line)?.[0]
-  if (!pfx || !isBlockquoteLine(line)) return null
+  const pfx = quotePrefix(line)
+  if (!pfx) return null
   const tag = calloutTagRe.exec(line.slice(pfx.length))
   return tag ? pfx.length + tag[0].length : null
 }
@@ -435,6 +442,7 @@ export const nestedUnder = (line: string, indent: string): boolean =>
   line.trim() !== '' && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
 
 export function parseListMarker(line: string): ListMarker | null {
+  if (isThematicBreakLine(line)) return null
   const arrow = ARROW_MARKER_RE.exec(line)
   if (arrow) {
     const markerStart = arrow[1].length
@@ -494,8 +502,8 @@ export function parseListMarker(line: string): ListMarker | null {
 }
 
 export function parseListMarkerPrefixed(line: string): ListMarker | null {
-  const pfx = blockquotePrefixRe.exec(line)?.[0]
-  if (!pfx || !isBlockquoteLine(line)) return parseListMarker(line)
+  const pfx = quotePrefix(line)
+  if (!pfx) return parseListMarker(line)
   const lm = parseListMarker(line.slice(pfx.length))
   if (!lm) return null
   const s = pfx.length
@@ -509,7 +517,6 @@ export function parseListMarkerPrefixed(line: string): ListMarker | null {
 }
 
 const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
-const blockquotePrefilter = /^[ \t]*>+([ \t]|$)/
 // A first-character test would pay a full parse for every `- item`, which is what made a bulleted page the expensive case.
 const thematicBreakPrefilter = /^[ ]{0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/
 
@@ -519,7 +526,6 @@ const parsesTo = (type: string): ((line: string) => boolean) =>
   perText((line) => parse(line).children.some((n) => n.type === type), LINE_CAP)
 const parsesThematicBreak = parsesTo('thematicBreak')
 const parsesHeading = parsesTo('heading')
-const parsesBlockquote = parsesTo('blockquote')
 
 export function isThematicBreakLine(line: string): boolean {
   return thematicBreakPrefilter.test(line) && parsesThematicBreak(line)
@@ -532,13 +538,17 @@ export function isHeadingLine(line: string): boolean {
 const headingPartsRe = /^([ ]{0,3})(#{1,6})([ \t]+)(.*)$/
 export function headingParts(
   line: string,
-): { indent: string; hashes: string; space: string; content: string } | null {
+): { indent: string; hashes: string; space: string; content: string; contentStart: number } | null {
   const m = headingPartsRe.exec(line)
-  return m ? { indent: m[1], hashes: m[2], space: m[3], content: m[4] } : null
-}
-
-export function isBlockquoteLine(line: string): boolean {
-  return blockquotePrefilter.test(line) && parsesBlockquote(line)
+  return m
+    ? {
+        indent: m[1],
+        hashes: m[2],
+        space: m[3],
+        content: m[4],
+        contentStart: line.length - m[4].length,
+      }
+    : null
 }
 
 export function isInlineMathContent(content: string): boolean {

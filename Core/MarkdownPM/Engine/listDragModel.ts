@@ -6,18 +6,21 @@ import {
   parseListMarkerPrefixed as parseListMarker,
   type ListMarker,
 } from './detect'
-import { lineEndOf, lineIndexAt, lineOffsetsOf, quoteDepthOf } from './markdownCode'
-import { type DocScan, inJoinedMath } from './docScan'
+import {
+  applyEdits,
+  lineEndOf,
+  lineIndexAt,
+  lineOffsetsOf,
+  quoteDepthOf,
+  quotePrefix,
+  quotePrefixWidth,
+  type TextEdit,
+} from './markdownCode'
+import { type DocScan, indentWidth, inJoinedMath } from './docScan'
 import { lineStartAt, lineEndAt } from '../Input/edits'
 
-export interface ChangeSpec {
-  from: number
-  to: number
-  insert: string
-}
-
 /** Shared by the extension's click handler so press-to-drag never flips the box. */
-export function checkboxToggleChange(doc: string, pos: number): ChangeSpec | null {
+export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
   const ls = lineStartAt(doc, pos)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
   if (lm?.kind !== 'checkbox' || !lm.box) return null
@@ -46,9 +49,9 @@ export function subBlockAt(scan: DocScan, pos: number): SubBlock | null {
     if (!inJoinedMath(scan, k, first, last)) {
       if (quoteDepthOf(lines[k]) !== depth) break
       const lm = parseListMarker(lines[k])
+      const body = lines[k].slice(quotePrefixWidth(lines[k], depth))
       // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
-      if (lm === null ? lines[k].trim() === '' || !/^[ \t]/.test(lines[k]) : lm.level <= head.level)
-        break
+      if (lm === null ? body.trim() === '' || !/^[ \t]/.test(body) : lm.level <= head.level) break
     }
     last = k
   }
@@ -60,15 +63,18 @@ export interface Slot {
   indent?: string
 }
 
-// The drop indent a block adopts is the target's lead, so dragging in or out of a callout re-prefixes correctly. Leading `[ \t]*` first so an indented `  > - x` strips its `>` too.
-const LEAD_RE = /^[ \t]*(?:>[ \t]?)*[ \t]*/
+// The drop indent a block adopts is the target's lead, so dragging in or out of a callout re-prefixes correctly.
+const leadOf = (line: string): string => {
+  const quote = quotePrefix(line).length
+  return line.slice(0, quote + indentWidth(line.slice(quote)))
+}
 
 /** Strips the head's lead by LENGTH off each line's own lead, so it can't silently skip a descendant that mixes tabs and spaces. */
 function reindentBlock(blockLines: string[], targetIndent: string | undefined): string[] {
   if (targetIndent === undefined) return blockLines
-  const headLen = (blockLines[0].match(LEAD_RE)?.[0] ?? '').length
+  const headLen = leadOf(blockLines[0]).length
   return blockLines.map((line) => {
-    const ws = line.match(LEAD_RE)?.[0] ?? ''
+    const ws = leadOf(line)
     return targetIndent + ws.slice(Math.min(headLen, ws.length)) + line.slice(ws.length)
   })
 }
@@ -144,12 +150,12 @@ function rebuildMove(
 }
 
 /** Tab and Shift+Tab move one item between levels, so both runs it touched count again: the one it joined and the one it left. `edit` is in `doc`'s coordinates; the changes returned are in the edited document's. */
-export function renumberAfterNest(doc: string, edit: ChangeSpec): ChangeSpec[] {
+export function renumberAfterNest(doc: string, edit: TextEdit): TextEdit[] {
   const ls = lineStartAt(doc, edit.from)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, ls)))
   if (lm === null) return []
   const left = doc.slice(ls, ls + lm.markerStart)
-  const next = applyChanges(doc, [edit])
+  const next = applyEdits(doc, [edit])
   let leftRow: number | null = null
   for (let p = lineEndAt(next, ls) + 1; p <= next.length; p = lineEndAt(next, p) + 1) {
     const t = next.slice(p, lineEndAt(next, p))
@@ -167,7 +173,7 @@ export function renumberAfterNest(doc: string, edit: ChangeSpec): ChangeSpec[] {
 }
 
 /** `arrived` names a line that joined the run from another level: its ordinal belonged to that level, so it never sets a top-level run's start. */
-export function renumberSequencedRun(doc: string, pos: number, arrived = -1): ChangeSpec[] {
+export function renumberSequencedRun(doc: string, pos: number, arrived = -1): TextEdit[] {
   if (pos < 0 || pos > doc.length) return []
   const ls = lineStartAt(doc, pos)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
@@ -208,7 +214,7 @@ export function renumberSequencedRun(doc: string, pos: number, arrived = -1): Ch
     lm.level > 0
       ? 1
       : Math.min(...(settled.length > 0 ? settled : rows).map((r) => ordinalOf(r.marker)))
-  const changes: ChangeSpec[] = []
+  const changes: TextEdit[] = []
   rows.forEach(({ from, marker }, i) => {
     const have = marker.ordinal ?? ''
     const want = ordinalText(kind, start + i)
@@ -218,7 +224,7 @@ export function renumberSequencedRun(doc: string, pos: number, arrived = -1): Ch
 }
 
 /** Both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then map back onto the original. */
-export function dropChanges(doc: string, block: BlockRange, slot: Slot): ChangeSpec[] | null {
+export function dropChanges(doc: string, block: BlockRange, slot: Slot): TextEdit[] | null {
   const moved = rebuildMove(doc, block, slot, 'exact')
   if (moved === null) return null
 
@@ -226,19 +232,19 @@ export function dropChanges(doc: string, block: BlockRange, slot: Slot): ChangeS
     ...renumberSequencedRun(moved.doc, moved.sourceAt),
     ...renumberSequencedRun(moved.doc, moved.destAt),
   ]
-  const finalDoc = applyChanges(moved.doc, dedupeChanges(renumber))
+  const finalDoc = applyEdits(moved.doc, dedupeChanges(renumber))
   return diffAsSingleReplace(doc, finalDoc)
 }
 
-export function moveRange(doc: string, range: BlockRange, slot: Slot): ChangeSpec[] | null {
+export function moveRange(doc: string, range: BlockRange, slot: Slot): TextEdit[] | null {
   const moved = rebuildMove(doc, range, slot, 'fenced')
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
 }
 
 // Two passes can touch the same run, so a duplicate edit at one offset is dropped.
-function dedupeChanges(changes: ChangeSpec[]): ChangeSpec[] {
+export function dedupeChanges(changes: TextEdit[]): TextEdit[] {
   const seen = new Set<number>()
-  const out: ChangeSpec[] = []
+  const out: TextEdit[] = []
   for (const c of changes) {
     if (seen.has(c.from)) continue
     seen.add(c.from)
@@ -247,18 +253,7 @@ function dedupeChanges(changes: ChangeSpec[]): ChangeSpec[] {
   return out
 }
 
-export function applyChanges(doc: string, changes: ChangeSpec[]): string {
-  const sorted = [...changes].sort((a, b) => a.from - b.from)
-  let out = ''
-  let cursor = 0
-  for (const c of sorted) {
-    out += doc.slice(cursor, c.from) + c.insert
-    cursor = c.to
-  }
-  return out + doc.slice(cursor)
-}
-
-export function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
+export function diffAsSingleReplace(a: string, b: string): TextEdit[] {
   if (a === b) return []
   let pre = 0
   const max = Math.min(a.length, b.length)

@@ -2,11 +2,8 @@ import type { Token, TokenKind } from './tokens'
 import {
   isThematicBreakLine,
   isHeadingLine,
-  isBlockquoteLine,
   isSequenced,
   parseListMarker,
-  blockquotePrefixRe,
-  oneQuoteLevelRe,
   headingParts,
   type CalloutLine,
   type CitationEntry,
@@ -14,8 +11,8 @@ import {
   type MarkdownScope,
 } from './detect'
 import { codeLanguageName } from './codeLangs'
-import { carriedFrom, type DocScan, quotePrefixWidth, spanAt } from './docScan'
-import { lineIndexAt } from './markdownCode'
+import { carriedFrom, type DocScan, spanAt } from './docScan'
+import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
 
 function calloutNestedQuote(
   lines: string[],
@@ -25,7 +22,7 @@ function calloutNestedQuote(
   const co = k >= 0 && k < lines.length ? callouts[k] : undefined
   if (!co) return false
   const inner = lines[k].slice(co.prefixEnd)
-  return blockquotePrefixRe.test(inner) && isBlockquoteLine(inner)
+  return isBlockquoteLine(inner)
 }
 
 export const GLYPH_CLASS = 'md-list-glyph'
@@ -149,8 +146,8 @@ function pageChrome(
     if (co.prefixEnd > 0) intents.push({ kind: 'atomic', from: ls, to: ls + co.prefixEnd })
     base = co.prefixEnd
     const inner = line.slice(base)
-    const qm = blockquotePrefixRe.exec(inner)
-    if (qm && isBlockquoteLine(inner) && (fence === undefined || fence.depth > 1)) {
+    const qm = quotePrefix(inner)
+    if (qm && (fence === undefined || fence.depth > 1)) {
       const first = !calloutNestedQuote(lines, callouts, i - 1)
       const last = !calloutNestedQuote(lines, callouts, i + 1)
       intents.push({
@@ -160,21 +157,18 @@ function pageChrome(
       })
       // The bar is a real element so it sits OVER the fill with its own caps; a fill `::after` would clip one.
       intents.push({ kind: 'lineWidget', from: ls, className: 'md-blockquote-nested-bar' })
-      base += qm[0].length
+      base += qm.length
     }
   } else if (quotes[i]) {
-    const full = blockquotePrefixRe.exec(line)
-    const bm = full && line.slice(full[0].length).trim() === '' ? oneQuoteLevelRe.exec(line) : full
-    if (bm) {
-      const first = i === 0 || !quotes[i - 1]
-      const last = i === lines.length - 1 || !quotes[i + 1]
-      intents.push({
-        kind: 'line',
-        from: ls,
-        className: `md-blockquote${first ? ' md-blockquote-first' : ''}${last ? ' md-blockquote-last' : ''}`,
-      })
-      base = bm[0].length
-    }
+    const full = quotePrefix(line)
+    const first = i === 0 || !quotes[i - 1]
+    const last = i === lines.length - 1 || !quotes[i + 1]
+    intents.push({
+      kind: 'line',
+      from: ls,
+      className: `md-blockquote${first ? ' md-blockquote-first' : ''}${last ? ' md-blockquote-last' : ''}`,
+    })
+    base = line.slice(full.length).trim() === '' ? quotePrefixWidth(line, 1) : full.length
   }
 
   if (fence) {
@@ -492,7 +486,7 @@ function pushConstruct(
     selStart <= innerStart + lm.markerEnd
 
   const bulletAbsorbs = base > 0 && !onMarker && glyph === 'bullet'
-  const hrAbsorbs = base > 0 && !caretOnLine && lm === null && isThematicBreakLine(inner)
+  const hrAbsorbs = base > 0 && !caretOnLine && isThematicBreakLine(inner)
   // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
   if (base > 0 && !bulletAbsorbs && !hrAbsorbs)
     intents.push({ kind: 'hide', from: ls, to: innerStart })
@@ -501,7 +495,7 @@ function pushConstruct(
     const hm = headingParts(inner)
     if (hm) {
       const level = hm.hashes.length
-      const contentStart = innerStart + hm.indent.length + hm.hashes.length + hm.space.length
+      const contentStart = innerStart + hm.contentStart
       intents.push({ kind: 'class', from: innerStart, to: le, className: `md-h${level}` })
       if (contentStart > innerStart)
         intents.push({

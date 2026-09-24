@@ -15,7 +15,7 @@ import {
   targetTitle,
 } from './links'
 import { readLink } from './linkValue'
-import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { applyEdits, codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { sectionRunsIn } from './scan'
 
 type LinkGroups = { page: string; heading?: string; alias?: string }
@@ -92,11 +92,12 @@ export function rewriteHeadingConnections(
   )
   if (!own || !outline) return afterMd
   const inCodeFinal = codeMask(afterMd)
-  let out = afterMd
-  for (const run of sectionRunsIn(afterMd, [...outline, oldHeading], inCodeFinal).reverse())
-    if (normalizeTitle(run.heading) === oldKey)
-      out = `${out.slice(0, run.from + 1)}${newHeading}${out.slice(run.to)}`
-  return out
+  return applyEdits(
+    afterMd,
+    sectionRunsIn(afterMd, [...outline, oldHeading], inCodeFinal)
+      .filter((run) => normalizeTitle(run.heading) === oldKey)
+      .map((run) => ({ from: run.from + 1, to: run.to, insert: newHeading })),
+  )
 }
 
 /** Empty when the frontmatter names nothing — the cascade reads that as "no field write". */

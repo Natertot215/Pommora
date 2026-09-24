@@ -2,6 +2,7 @@ import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
 import { inSealedBlockAt } from '../Engine/docScan'
+import type { TextEdit } from '../Engine/markdownCode'
 import { lineStartAt } from '../Input/edits'
 import { docScan, docString } from '../docCache'
 
@@ -9,7 +10,7 @@ export function embedInsertAfter(
   doc: string,
   blockTo: number,
   token: string,
-): { from: number; to: number; insert: string; caret: number } {
+): TextEdit & { caret: number } {
   const nextLineStart = blockTo + 1
   const nextLineEnd = doc.indexOf('\n', nextLineStart)
   const nextLine = doc.slice(nextLineStart, nextLineEnd === -1 ? doc.length : nextLineEnd)

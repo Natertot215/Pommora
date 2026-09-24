@@ -3,6 +3,7 @@ import type { DocScan } from '../Engine/docScan'
 import { modelFromRegion } from '../Engine/Tables/regions'
 import { cellToSource, serialize } from '../Engine/Tables/codec'
 import type { TableModel } from '../Engine/Tables/model'
+import type { TextEdit } from '../Engine/markdownCode'
 
 // Marks a transaction as the table widget editing its own source: the widget StateField remaps its decorations instead of rebuilding from the doc. This is what keeps cell focus across an edit.
 export const tableSelfEdit = Annotation.define<boolean>()
@@ -13,7 +14,7 @@ export function cellCommitChange(
   row: number,
   col: number,
   newText: string,
-): { from: number; to: number; insert: string } | null {
+): TextEdit | null {
   const region = scan.tables[tableIndex]
   const geom = region?.rows[row]
   if (!region || !geom) return null
@@ -32,7 +33,7 @@ export function structuralEditChange(
   scan: DocScan,
   tableIndex: number,
   transform: (m: TableModel) => TableModel,
-): { from: number; to: number; insert: string } | null {
+): TextEdit | null {
   const region = scan.tables[tableIndex]
   if (!region) return null
   const insert = serialize(transform(modelFromRegion(region)))

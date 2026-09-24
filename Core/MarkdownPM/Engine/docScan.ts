@@ -1,4 +1,12 @@
-import { codeAt, fenceAt, lineEndOf, lineIndexAt, type CodeMask } from './markdownCode'
+import {
+  codeAt,
+  fenceAt,
+  isBlockquoteLine,
+  lineEndOf,
+  lineIndexAt,
+  quotePrefixWidth,
+  type CodeMask,
+} from './markdownCode'
 import {
   assembleCitations,
   blockEmbedLines,
@@ -7,7 +15,6 @@ import {
   calloutLines,
   fenceRangesOf,
   htmlBlocks,
-  isBlockquoteLine,
   isHeadingLine,
   isThematicBreakLine,
   lineRefs,
@@ -317,14 +324,6 @@ export function inJoinedMath(scan: LineScan, i: number, first: number, last: num
 
 export const indentWidth = (line: string): number => /^[ \t]*/.exec(line)![0].length
 
-export function quotePrefixWidth(line: string, levels: number): number {
-  if (levels === 0) return 0
-  let w = indentWidth(line)
-  for (let k = 0; k < levels && line[w] === '>'; k++)
-    w += line[w + 1] === ' ' || line[w + 1] === '\t' ? 2 : 1
-  return w
-}
-
 export function codeBlockTextAt(scan: DocScan, pos: number): string {
   const start = lineIndexAt(scan, pos)
   const depth = scan.fences[start]?.depth ?? 0
@@ -343,6 +342,9 @@ export function inCodeAt(
 ): boolean {
   return codeAt(scan, (i) => scan.fences[i] !== undefined, pos)
 }
+
+export const inFenceAt = (scan: DocScan, pos: number): boolean =>
+  scan.fences[lineIndexAt(scan, pos)] !== undefined
 
 export function inCalloutAt(scan: DocScan, pos: number): boolean {
   if (pos < 0) return false

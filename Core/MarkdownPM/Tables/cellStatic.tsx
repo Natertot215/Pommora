@@ -20,7 +20,8 @@ import {
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
-import { applyChanges, checkboxToggleChange } from '../Engine/listDragModel'
+import { checkboxToggleChange } from '../Engine/listDragModel'
+import { applyEdits } from '../Engine/markdownCode'
 import {
   wikiLinkView,
   resolveMdTarget,
@@ -320,7 +321,7 @@ function StaticCellImpl({
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => onCommit(applyChanges(doc, [change]))
+    return () => onCommit(applyEdits(doc, [change]))
   }
 
   const claimCite = (e: React.MouseEvent): (() => void) | null => {

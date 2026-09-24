@@ -1,6 +1,32 @@
 // Unanchored at the end on purpose: `.` excludes `\r`, so `(.*)` stops at a CRLF line's carriage return, while a trailing `$` would fail past it and blank every fence.
-const FENCE_RE = /^([ \t]*(?:>[ \t]?)*[ \t]*)(`{3,}|~{3,})[ \t]*(.*)/
-const QUOTE_PREFIX_RE = /^[ \t]*(?:>[ \t]?)*/
+const FENCE_RE = /^([ \t]*)(`{3,}|~{3,})[ \t]*(.*)/
+// A quote marker is a run of `>` followed by whitespace or the line's end, so `>a` is prose at any depth.
+const QUOTE_MARKERS = String.raw`(?:>+(?:[ \t]|(?=\r?$)))+`
+// Four columns of indent make a line indented code rather than a quote.
+const QUOTE_PREFIX_RE = new RegExp(`^ {0,3}${QUOTE_MARKERS}`)
+// The fence grammar takes any indent, so a quote nested under an indented list item still quotes its fence.
+const FENCE_QUOTE_RE = new RegExp(String.raw`^[ \t]*${QUOTE_MARKERS}`)
+
+export interface TextEdit {
+  from: number
+  to: number
+  insert: string
+}
+
+export function applyEdits(
+  text: string,
+  edits: readonly TextEdit[],
+  from = 0,
+  to = text.length,
+): string {
+  let out = ''
+  let at = from
+  for (const e of [...edits].sort((a, b) => a.from - b.from)) {
+    out += text.slice(at, e.from) + e.insert
+    at = e.to
+  }
+  return out + text.slice(at, to)
+}
 
 interface Fence {
   depth: number
@@ -19,17 +45,37 @@ export function lineOffsetsOf(lines: string[]): number[] {
   return out
 }
 
+export const quotePrefix = (line: string): string => QUOTE_PREFIX_RE.exec(line)?.[0] ?? ''
+
+export const isBlockquoteLine = (line: string): boolean => QUOTE_PREFIX_RE.test(line)
+
+const fenceQuote = (line: string): string => FENCE_QUOTE_RE.exec(line)?.[0] ?? ''
+
+const depthOf = (quote: string): number => quote.split('>').length - 1
+
+export const quoteDepthOf = (line: string): number => depthOf(fenceQuote(line))
+
+export function quotePrefixWidth(line: string, levels: number): number {
+  if (levels === 0) return 0
+  const quote = fenceQuote(line)
+  let w = quote.length - quote.trimStart().length
+  for (let k = 0; k < levels && quote[w] === '>'; k++)
+    w += quote[w + 1] === ' ' || quote[w + 1] === '\t' ? 2 : 1
+  return w
+}
+
 export function fenceAt(line: string): Fence | null {
-  const m = FENCE_RE.exec(line)
+  const quote = fenceQuote(line)
+  const m = FENCE_RE.exec(line.slice(quote.length))
   if (!m) return null
   // A backtick fence's info string can't hold a backtick (ambiguous with an inline span).
   if (m[2][0] === '`' && m[3].includes('`')) return null
   return {
-    depth: quoteDepthOf(line),
+    depth: depthOf(quote),
     marker: m[2][0],
     length: m[2].length,
     info: m[3].trim(),
-    markerEnd: m[1].length + m[2].length,
+    markerEnd: quote.length + m[1].length + m[2].length,
   }
 }
 
@@ -44,10 +90,6 @@ function fenceCloses(open: Fence, candidate: Fence): boolean {
     candidate.length >= open.length &&
     candidate.info === ''
   )
-}
-
-export function quoteDepthOf(line: string): number {
-  return QUOTE_PREFIX_RE.exec(line)?.[0].match(/>/g)?.length ?? 0
 }
 
 interface FenceSpan {
@@ -80,8 +122,8 @@ function fencedLineMask(lines: string[]): Uint8Array {
 }
 
 // Marker positions are boundaries, not interior, so the closing backtick still type-overs. An unclosed opener claims the rest of the line, which is exactly when transforms must stay out.
-export function inlineSpans(line: string): [number, number][] {
-  const spans: [number, number][] = []
+export function inlineSpans(line: string): [number, number, number][] {
+  const spans: [number, number, number][] = []
   let i = 0
   while (i < line.length) {
     if (line[i] !== '`') {
@@ -107,10 +149,10 @@ export function inlineSpans(line: string): [number, number][] {
       j += runLen
     }
     if (closeStart === -1) {
-      spans.push([contentStart, line.length + 1])
+      spans.push([contentStart, line.length + 1, openLen])
       return spans
     }
-    spans.push([contentStart, closeStart])
+    spans.push([contentStart, closeStart, openLen])
     i = closeStart + openLen
   }
   return spans

@@ -14,6 +14,7 @@ import { embeddable } from '../Engine/embedClaims'
 import { HEADING_FOLD_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
+import { applyEdit } from '../Input/applyEdit'
 import { webpageEmbedUrlSpan } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { type EditorHost, editorHost } from '../api'
 import { inGripStrip } from '../lineDom'
@@ -102,7 +103,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
     const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
     const parts = headingParts(line.text)
     if (!parts || line.text !== opened.text) return
-    const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
+    const contentStart = line.from + parts.contentStart
     if (action === 'rename') focusRange(view, contentStart, line.to)
     else if (action === 'copyLink' && title !== null)
       void host.clipboard.write(connectionText(title, undefined, parts.content.trim()))
@@ -115,12 +116,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
     } else {
       // The grip addresses one block, so the range is that heading's own line — the selection belongs to the caret.
       const level = Number(action.slice('size:'.length)) as HeadingLevel
-      const edit = setHeading(doc, line.from, line.from, level)
-      view.dispatch({
-        changes: edit.changes,
-        selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,
-        userEvent: 'input',
-      })
+      applyEdit(view, setHeading(doc, line.from, line.from, level))
       view.focus()
     }
   })
