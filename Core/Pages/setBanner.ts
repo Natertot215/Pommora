@@ -2,7 +2,8 @@
 
 import { machine } from '../Platform/machine'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
-import { readJsonObject, readTextOrNull, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
+import { readJsonObject, readTextOrNull, setOrDrop } from '../Files/atomicWrite'
+import { patchSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
 import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
@@ -48,15 +49,17 @@ export async function setBannerOp(
     return landed(adopted.value)
   }
 
-  let cfgPath: string
-  if (req.kind === 'homepage') {
-    cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
-  } else {
+  let folder = ''
+  if (req.kind !== 'homepage') {
     const resolved = await resolveUnderRoot(root, req.path)
     if (!resolved.ok) return resolved
     if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
-    cfgPath = sidecarPath(resolved.value, req.kind)
+    folder = resolved.value
   }
+  const cfgPath =
+    req.kind === 'homepage'
+      ? nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
+      : sidecarPath(folder, req.kind)
   const prev = await assetFileToDelete(root, (await readJsonObject(cfgPath))?.banner)
   const adopted = await adopt()
   if (!adopted.ok) return adopted
@@ -65,7 +68,7 @@ export async function setBannerOp(
   const written =
     req.kind === 'homepage'
       ? await updateNexusConfig(root, 'homepage', patch)
-      : await rmwJsonStrict(cfgPath, patch)
+      : await patchSidecar(folder, req.kind, patch)
   if (!written.ok) return written
   await dropReplacedAsset(root, prev, adopted.value, deps.trashToSystem)
   return landed(adopted.value)

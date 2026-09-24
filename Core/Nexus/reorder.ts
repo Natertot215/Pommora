@@ -1,15 +1,7 @@
 import { machine } from '../Platform/machine'
-import type { z } from 'zod'
 import { rmwJsonStrict, pathExists } from '../Files/atomicWrite'
-import {
-  nexusDir,
-  nexusConfig,
-  NEXUS_CONFIG_FILES,
-  sidecarPath,
-  type SidecarKind,
-} from '../Paths/paths'
-import { updateFolderSidecar } from './folderEntity'
-import { pageCollectionSidecar, pageSetSidecar } from './schemas'
+import { patchSidecar } from '../Files/sidecar'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
 import { isPlainObject } from '../Properties/propertyValue'
@@ -51,33 +43,15 @@ export const setSpaceOrder = (
     spaces: { ...(isPlainObject(order.spaces) ? order.spaces : {}), [contextId]: clean },
   }))
 
-export async function setContainerOrder<S extends z.ZodType>(
-  absFolder: string,
-  kind: SidecarKind,
-  schema: S,
-  key: ContainerOrderKey,
-  ids: string[],
-): Promise<Result<z.infer<S>>> {
-  return updateFolderSidecar(absFolder, kind, schema, { [key]: persistable(ids) } as Partial<
-    z.infer<S>
-  >)
-}
-
-const CONTAINER_SIDECARS = [
-  { kind: 'collection' as const, schema: pageCollectionSidecar },
-  { kind: 'set' as const, schema: pageSetSidecar },
-]
-
 export async function setChildOrder(
   absFolder: string,
   key: ContainerOrderKey,
   ids: string[],
 ): Promise<Result<null>> {
-  for (const { kind, schema } of CONTAINER_SIDECARS) {
+  for (const kind of ['collection', 'set'] as const) {
     if (await pathExists(sidecarPath(absFolder, kind))) {
-      const r = await setContainerOrder(absFolder, kind, schema, key, ids)
-      if (!r.ok) return r
-      return ok(null)
+      const r = await patchSidecar(absFolder, kind, (cur) => ({ ...cur, [key]: persistable(ids) }))
+      return r.ok ? ok(null) : r
     }
   }
   return ok(null)

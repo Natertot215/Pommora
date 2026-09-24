@@ -8,7 +8,8 @@ import { readKey, writeKey } from '../Platform/localState'
 import { readBaseline, runOpenLedger } from './remintLedger'
 import type { Baseline } from './remintLedger'
 import { adjudicate } from './remint'
-import { withSidecarLock } from '../Files/sidecar'
+import { machine } from '../Platform/machine'
+import { sidecarPath } from '../Paths/paths'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -345,7 +346,7 @@ describe('the re-mint writes', () => {
     const copyFile = join(copyDir, '_pageset.json')
 
     let release = (): void => {}
-    const held = withSidecarLock(copyDir, 'set', async () => {
+    const held = machine().lock(sidecarPath(copyDir, 'set'), async () => {
       const cur = await readJsonStrict(copyFile)
       await new Promise<void>((r) => {
         release = r

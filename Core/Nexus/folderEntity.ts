@@ -1,12 +1,10 @@
 import { join, dirname, basename } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import type { z } from 'zod'
 import { newId } from './ids'
-import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
 import { recordWrite } from '../Files/writeEcho'
-import { pathExists, targetTaken } from '../Files/atomicWrite'
+import { pathExists, targetTaken, writeJson } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
-import type { SidecarKind } from '../Paths/paths'
+import { sidecarPath, type SidecarKind } from '../Paths/paths'
 import { ok, fail, type Result } from '../Contract/result'
 
 export async function createFolderEntity(
@@ -23,7 +21,7 @@ export async function createFolderEntity(
   await machine().mkdir(folder)
   // Suppress the new folder's addDir echo (the mkdir doesn't self-suppress like the sidecar write does) — an un-suppressed watcher swap mid-rename remounts the fresh row and drops the inline-rename keystrokes.
   recordWrite(folder)
-  await writeSidecar(folder, kind, { id, ...extra })
+  await writeJson(sidecarPath(folder, kind), { id, ...extra })
   return ok({ id, path: folder })
 }
 
@@ -55,19 +53,4 @@ export async function moveFolderEntity(
   recordWrite(target)
   await machine().rename(absFolder, target)
   return ok({ path: target })
-}
-
-export function updateFolderSidecar<S extends z.ZodType>(
-  absFolder: string,
-  kind: SidecarKind,
-  schema: S,
-  patch: Partial<z.infer<S>>,
-): Promise<Result<z.infer<S>>> {
-  return withSidecarLock(absFolder, kind, async () => {
-    const current = await readSidecar(absFolder, kind, schema)
-    if (current === null) return fail('not-found', 'Sidecar not found or invalid.')
-    const next = { ...current, ...patch }
-    await writeSidecar(absFolder, kind, next)
-    return ok(next)
-  })
 }

@@ -2,8 +2,8 @@
 
 import { basename } from '../Paths/posix'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
-import { rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
-import { sidecarPath } from '../Paths/paths'
+import { setOrDrop } from '../Files/atomicWrite'
+import { patchSidecar } from '../Files/sidecar'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { ICON_KEY } from '../Contexts/spaceSidecar'
 import { fault, ok } from '../Contract/result'
@@ -33,9 +33,8 @@ export async function setIconOp(
     }))
     return r.ok ? ok({}) : r
   }
-  const written = await rmwJsonStrict(sidecarPath(abs, req.kind), (cur) => {
-    if (typeof cur.id !== 'string') throw new Error('That item has no id.')
-    return setOrDrop(cur, req.kind === 'space' ? ICON_KEY : 'icon', req.icon)
-  })
+  const written = await patchSidecar(abs, req.kind, (cur) =>
+    setOrDrop(cur, req.kind === 'space' ? ICON_KEY : 'icon', req.icon),
+  )
   return written.ok ? ok({}) : written
 }

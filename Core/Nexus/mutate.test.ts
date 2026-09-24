@@ -12,8 +12,8 @@ import {
 } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate, type MutateDeps } from './mutate'
-import { setActiveViewOp } from '../Pages/setActiveView'
-import { withSidecarLock } from '../Files/sidecar'
+import { machine } from '../Platform/machine'
+import { sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { NEW_SLOT } from './mutateRequest'
 import type { Crop } from './schemas'
@@ -99,6 +99,16 @@ describe('handleMutate — create', () => {
     expect(first.ok && first.value.created?.path).toBe('Notes/Daily/Untitled.md')
     expect(second.ok && second.value.created?.path).toBe('Notes/Daily/Untitled 2.md')
     expect(await pathExists(join(root, 'Notes/Daily/Untitled 2.md'))).toBe(true)
+  })
+
+  it('createPage reports an order write its container refused rather than claiming it landed', async () => {
+    await writeFile(join(root, 'Notes/Daily/_pageset.json'), '{ corrupt')
+    const r = await handleMutate(
+      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Ordered', order: [NEW_SLOT] },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, 'Notes/Daily/Ordered.md'))).toBe(true)
   })
 
   it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
@@ -1450,19 +1460,15 @@ describe('handleMutate — setActiveView', () => {
   })
 
   it('takes the sidecar lock itself — nesting it inside one is refused', async () => {
-    const ctx = { root, deps: nexusDeps }
     const folder = await resolveUnderRoot(root, 'Notes/Daily')
     if (!folder.ok) throw new Error('unresolvable')
-    await expect(
-      withSidecarLock(folder.value, 'set', () =>
-        setActiveViewOp(ctx, {
-          op: 'setActiveView',
-          path: 'Notes/Daily',
-          kind: 'set',
-          viewId: 'view_x',
-        }),
+    const r = await machine().lock(sidecarPath(folder.value, 'set'), () =>
+      handleMutate(
+        { op: 'setActiveView', path: 'Notes/Daily', kind: 'set', viewId: 'view_x' },
+        nexusDeps,
       ),
-    ).rejects.toThrow(/Re-entrant file lock/)
+    )
+    expect(r.ok ? '' : r.error.message).toMatch(/Re-entrant file lock/)
   })
 })
 

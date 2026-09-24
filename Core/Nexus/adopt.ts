@@ -10,8 +10,9 @@ import {
   readTextOrNull,
   pathExists,
   rewritePageSerialized,
+  rmwJsonStrict,
 } from '../Files/atomicWrite'
-import { readSidecar, writeSidecar } from '../Files/sidecar'
+import { readSidecar } from '../Files/sidecar'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import { readIdentity } from './identity'
 import { asString } from './coerce'
@@ -31,6 +32,7 @@ import {
   NEXUS_CONFIG_FILES,
   SIDECAR_FILENAME,
   nexusConfig,
+  sidecarPath,
 } from '../Paths/paths'
 
 async function reHomeRegistered(
@@ -92,13 +94,19 @@ type ContainerKind = 'collection' | 'set'
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
 async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean> {
-  const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
-  if (!read.ok && read.error.code !== 'not-found') return false
-  if (read.ok && asString(read.value.id)) return false
-  if (!read.ok && (await migrateContainerSidecar(absDir, kind))) return true
-
-  await writeSidecar(absDir, kind, { ...valueOr(read, {}), id: newId() })
-  return true
+  const file = sidecarPath(absDir, kind)
+  if (!(await pathExists(file)) && (await migrateContainerSidecar(absDir, kind))) return true
+  let stamped = false
+  await rmwJsonStrict(
+    file,
+    (cur) => {
+      if (asString(cur.id)) return null
+      stamped = true
+      return { ...cur, id: newId() }
+    },
+    () => ({}),
+  )
+  return stamped
 }
 
 async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<boolean> {

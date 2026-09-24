@@ -9,7 +9,15 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { isUlid, idTime } from './ids'
 import { kindOf } from './identityMark'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
-import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
+import {
+  nexusConfig,
+  nexusDir,
+  NEXUS_CONFIG_FILES,
+  SIDECAR_FILENAME,
+  sidecarPath,
+} from '../Paths/paths'
+import { machine } from '../Platform/machine'
+import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 
 let root: string
 
@@ -34,6 +42,27 @@ const coll = (p: string) => readSidecar(p, 'collection', pageCollectionSidecar)
 const set = (p: string) => readSidecar(p, 'set', pageSetSidecar)
 
 describe('stampAdopted', () => {
+  it('stamps a folder under its sidecar lock, so a write held across the pass keeps both facts', async () => {
+    const notes = join(root, 'Notes')
+    const file = sidecarPath(notes, 'collection')
+    await writeFile(file, JSON.stringify({ icon: 'box' }))
+    let release = (): void => {}
+    const held = machine().lock(file, async () => {
+      const cur = await readJsonStrict(file)
+      await new Promise<void>((r) => {
+        release = r
+      })
+      if (cur.ok) await writeJson(file, { ...cur.value, banner: 'Wallpaper.png' })
+    })
+    const pass = stampAdopted(root)
+    await Promise.race([pass, new Promise((r) => setTimeout(r, 100))])
+    release()
+    await Promise.all([held, pass])
+    const after = JSON.parse(await readFile(file, 'utf8'))
+    expect(after).toMatchObject({ icon: 'box', banner: 'Wallpaper.png' })
+    expect(isUlid(after.id)).toBe(true)
+  })
+
   it('mints ULID sidecars for raw folders at every depth', async () => {
     const { stamped } = await stampAdopted(root)
     expect(stamped).toBeGreaterThan(0)

@@ -2,13 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import {
-  setCollectionOrder,
-  setSpaceOrder,
-  setContainerOrder,
-  setChildOrder,
-  setPanelContextOrder,
-} from './reorder'
+import { setCollectionOrder, setSpaceOrder, setChildOrder, setPanelContextOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
@@ -85,26 +79,6 @@ describe('setCollectionOrder', () => {
     const r = await setCollectionOrder(root, ['a'])
     expect(r.ok).toBe(false)
     expect(await readFile(statePath, 'utf8')).toBe('{ corrupt')
-  })
-})
-
-describe('setContainerOrder', () => {
-  it('persists page_order to a container sidecar, preserving other keys', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Notes', { icon: 'box' })
-    if (!c.ok) throw new Error('setup failed')
-    const r = await setContainerOrder(
-      c.value.path,
-      'collection',
-      pageCollectionSidecar,
-      'page_order',
-      ['p2', 'p1'],
-    )
-    expect(r.ok).toBe(true)
-    expect(await readSidecar(c.value.path, 'collection', pageCollectionSidecar)).toMatchObject({
-      id: c.value.id,
-      icon: 'box',
-      page_order: ['p2', 'p1'],
-    })
   })
 })
 

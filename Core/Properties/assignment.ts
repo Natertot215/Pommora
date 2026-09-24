@@ -2,30 +2,39 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import { isPlainObject } from './propertyValue'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { join } from '../Paths/posix'
-import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
+import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
+import { patchSidecar } from '../Files/sidecar'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { NO_DEFS } from '../Contexts/contextResolve'
+import { readRegistry } from './propertiesRegistry'
+import type { PropertyDefinition } from './properties'
 import { restoreCachedValues } from './removeProperty'
 import { serializeSchemaOp } from './schemaChain'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { ok, fail, type Result } from '../Contract/result'
 
-async function read(
-  folder: string,
-): Promise<{ sidecar: Record<string, unknown>; ids: string[] } | null> {
-  const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
-  if (sidecar === null) return null
-  return {
-    sidecar: sidecar as Record<string, unknown>,
-    ids: (sidecar.properties as string[] | undefined) ?? [],
-  }
-}
+export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
+  Array.isArray(raw?.properties)
+    ? raw.properties.filter((id): id is string => typeof id === 'string')
+    : []
 
-const write = async (
-  folder: string,
-  sidecar: Record<string, unknown>,
-  ids: string[],
-): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
+export async function assignedDefs(
+  root: string,
+  collectionFolder: string | null,
+): Promise<ReadonlyMap<string, PropertyDefinition>> {
+  if (collectionFolder === null) return NO_DEFS
+  const held = getLiveTree()
+  if (held?.nexus.rootPath === root) {
+    const node = held.collections.find((c) => join(root, c.path) === collectionFolder)
+    if (node) return new Map((node.properties ?? []).map((d) => [d.name, d]))
+  }
+  const registry = (await readRegistry(root)).defs
+  const assigned = assignedIds(await readJsonObject(sidecarPath(collectionFolder, 'collection')))
+  return new Map(
+    assigned.flatMap((id) => (registry[id] ? [[registry[id].name, registry[id]] as const] : [])),
+  )
+}
 
 // The one writer of a sidecar's `property_cache` block — an absent block value removes the entry, and an emptied cache leaves no key behind.
 export function patchCacheBlock(
@@ -49,32 +58,30 @@ export async function assignInner(
   propertyId: string,
 ): Promise<Result<null>> {
   // Restore stays OUTSIDE the sidecar lock: it walks every member page, long enough that holding the lock would stall every sibling sidecar write.
-  const appended = await withSidecarLock(collectionFolder, 'collection', async () => {
-    const r = await read(collectionFolder)
-    if (!r) return fail('not-found', 'Collection not found.')
-    if (r.ids.includes(propertyId)) return ok(false)
-    await write(collectionFolder, r.sidecar, [...r.ids, propertyId])
-    return ok(true)
+  let appended = false
+  const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
+    const ids = assignedIds(cur)
+    if (ids.includes(propertyId)) return null
+    appended = true
+    return { ...cur, properties: [...ids, propertyId] }
   })
-  if (!appended.ok) return appended
-  if (!appended.value) return ok(null)
+  if (!written.ok) return written
+  if (!appended) return ok(null)
   return restoreCachedValues(root, collectionFolder, propertyId)
 }
 
-function reorderInner(
+async function reorderInner(
   collectionFolder: string,
   propertyId: string,
   toIndex: number,
 ): Promise<Result<null>> {
-  return withSidecarLock(collectionFolder, 'collection', async () => {
-    const r = await read(collectionFolder)
-    if (!r) return fail('not-found', 'Collection not found.')
-    const from = r.ids.indexOf(propertyId)
-    if (from < 0) return fail('not-found', 'Property not assigned.')
-    const next = moveItem(r.ids, from, clamp(toIndex, 0, r.ids.length - 1))
-    await write(collectionFolder, r.sidecar, next)
-    return ok(null)
+  const written = await patchSidecar(collectionFolder, 'collection', (cur, refuse) => {
+    const ids = assignedIds(cur)
+    const from = ids.indexOf(propertyId)
+    if (from < 0) return refuse(fail('not-found', 'Property not assigned.'))
+    return { ...cur, properties: moveItem(ids, from, clamp(toIndex, 0, ids.length - 1)) }
   })
+  return written.ok ? ok(null) : written
 }
 
 export function assignProperty(

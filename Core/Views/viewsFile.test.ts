@@ -21,7 +21,7 @@ const view = (over: Partial<SavedView> & { id: string }): SavedView => ({
   ...over,
 })
 
-// Write a collection sidecar directly (not via writeSidecar) so foreign keys are controllable.
+// Write a collection sidecar directly so foreign keys are controllable.
 async function writeCollectionSidecar(obj: Record<string, unknown>): Promise<void> {
   await writeFile(join(folder, '_pagecollection.json'), JSON.stringify({ id: 'col', ...obj }))
 }
@@ -127,5 +127,45 @@ describe('view persistence CRUD', () => {
     expect(r.ok).toBe(true)
     const sidecar = JSON.parse(await readFile(join(folder, '_pageset.json'), 'utf8'))
     expect(sidecar.views.map((v: SavedView) => v.id)).toEqual(['view_s'])
+  })
+})
+
+describe('container writes keep what this build does not decode', () => {
+  const gantt = {
+    id: 'view_gantt',
+    name: 'Timeline',
+    type: 'gantt',
+    format: 'compact-v2',
+    property_order: [],
+    hidden_properties: [],
+  }
+  const raw = { open_in: 'side-peek', plugin_top: { keep: 1 } }
+
+  it('a view save, a page reorder, and a property assign leave every other key as written', async () => {
+    const { setChildOrder } = await import('../Nexus/reorder')
+    const { assignProperty } = await import('../Properties/assignment')
+    await writeCollectionSidecar({ ...raw, views: [gantt, view({ id: 'view_t' })] })
+    expect((await saveView(folder, 'collection', view({ id: 'view_t', name: 'Renamed' }))).ok).toBe(
+      true,
+    )
+    expect((await setChildOrder(folder, 'page_order', ['p2', 'p1'])).ok).toBe(true)
+    expect((await assignProperty(folder, folder, 'prop_x')).ok).toBe(true)
+    const after = await readRaw('_pagecollection.json')
+    expect(after).toMatchObject({ ...raw, page_order: ['p2', 'p1'], properties: ['prop_x'] })
+    expect((after.views as unknown[])[0]).toEqual(gantt)
+    expect((after.views as SavedView[])[1].name).toBe('Renamed')
+  })
+
+  it('a view whose sort direction this build does not know blocks no write in its container', async () => {
+    const { setChildOrder } = await import('../Nexus/reorder')
+    const sideways = view({ id: 'view_s' }) as unknown as Record<string, unknown>
+    sideways.sort = [{ property_id: 'p', direction: 'sideways' }]
+    await writeCollectionSidecar({ views: [sideways, view({ id: 'view_t' })] })
+    expect((await setChildOrder(folder, 'page_order', ['p1'])).ok).toBe(true)
+    expect((await saveView(folder, 'collection', view({ id: 'view_t', name: 'T2' }))).ok).toBe(true)
+    expect((await deleteView(folder, 'collection', 'view_t')).ok).toBe(true)
+    const after = await readRaw('_pagecollection.json')
+    expect(after.page_order).toEqual(['p1'])
+    expect(after.views).toEqual([sideways])
   })
 })

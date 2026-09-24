@@ -1,6 +1,6 @@
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { readJsonObject, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
-import { sidecarPath } from '../Paths/paths'
+import { setOrDrop } from '../Files/atomicWrite'
+import { patchSidecar } from '../Files/sidecar'
 import { updateNexusConfig } from '../Settings/settings'
 import { fault, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
@@ -20,9 +20,6 @@ export async function setHeadingIconHiddenOp(
   }
   const resolved = await resolveUnderRoot(root, req.path)
   if (!resolved.ok) return resolved
-  const cfgPath = sidecarPath(resolved.value, req.kind)
-  const id = (await readJsonObject(cfgPath))?.id
-  if (typeof id !== 'string') return fault('That item has no id.')
-  const written = await rmwJsonStrict(cfgPath, patch, () => ({ id }))
+  const written = await patchSidecar(resolved.value, req.kind, patch)
   return written.ok ? ok({}) : written
 }

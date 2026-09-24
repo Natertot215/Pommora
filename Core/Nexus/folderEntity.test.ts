@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { readdir, rm, stat } from 'node:fs/promises'
-import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { createFolderEntity, renameFolderEntity, updateFolderSidecar } from './folderEntity'
+import { createFolderEntity, renameFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { baseSidecar, pageCollectionSidecar } from './schemas'
 import { isUlid } from './ids'
@@ -77,30 +76,5 @@ describe('renameFolderEntity', () => {
     if (!c.ok) throw new Error('setup failed')
     expect((await renameFolderEntity(c.value.path, 'Notes')).ok).toBe(true)
     expect(await readdir(root)).toEqual(['Notes'])
-  })
-})
-
-describe('updateFolderSidecar', () => {
-  it('merges a patch while preserving foreign keys', async () => {
-    const c = await createFolderEntity(root, 'space', 'Money', {
-      icon: 'folder',
-      color: 'blue',
-      plugin: 'keep',
-    })
-    if (!c.ok) throw new Error('setup failed')
-    expect(
-      (await updateFolderSidecar(c.value.path, 'space', baseSidecar, { color: 'red' })).ok,
-    ).toBe(true)
-    expect(await readSidecar(c.value.path, 'space', baseSidecar)).toMatchObject({
-      id: c.value.id,
-      icon: 'folder',
-      color: 'red',
-      plugin: 'keep',
-    })
-  })
-
-  it('errors when the sidecar is missing', async () => {
-    const r = await updateFolderSidecar(join(root, 'nope'), 'space', baseSidecar, { color: 'red' })
-    expect(r.ok).toBe(false)
   })
 })

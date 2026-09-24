@@ -116,3 +116,33 @@ describe('serialization', () => {
     expect([...after.order].sort()).toEqual(['prop_a', 'prop_b'])
   })
 })
+
+describe('untouched definitions', () => {
+  it('a write to one definition leaves every other one byte-for-byte as written', async () => {
+    const future = {
+      id: 'prop_f',
+      name: 'Money',
+      type: 'number',
+      number_family: 'crypto',
+      number_denominator: 'sixteenths',
+    }
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_f', 'prop_a'],
+        defs: { prop_f: future, prop_a: def('prop_a', 'Priority') },
+        plugin_top: { keep: 1 },
+      }),
+    )
+    await mutateRegistry(root, (reg) => ({
+      next: { ...reg, defs: { ...reg.defs, prop_a: { ...reg.defs.prop_a, name: 'Urgency' } } },
+      result: undefined,
+    }))
+    const { readFile } = await import('node:fs/promises')
+    const after = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
+    expect(after.defs.prop_f).toEqual(future)
+    expect(after.defs.prop_a.name).toBe('Urgency')
+    expect(after.plugin_top).toEqual({ keep: 1 })
+  })
+})
