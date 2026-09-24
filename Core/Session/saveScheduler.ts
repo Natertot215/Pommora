@@ -120,8 +120,8 @@ export function flushAllPageSaves(): Promise<void> {
   return pageWriter.flushAll()
 }
 
-// Tab and window sets serialize the whole set on every activation; one debounced write per key coalesces a burst into the last state.
-const sessionWriter = createBodyWriter()
+// Tab and window sets, tile layouts, and the Matrix frame each write whole on every change; one debounced write per key coalesces a burst into the last state.
+export const sessionWriter = createBodyWriter()
 
 export function scheduleTabsSave(set: StoredTabSet): void {
   sessionWriter.schedule('tabs', () => host().ask('tabs:save', set))

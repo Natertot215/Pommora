@@ -9,7 +9,7 @@ import {
 } from '@pommora/core/Matrix/matrixConfig'
 import { EMPTY_GRAPH_REPLY, type MatrixGraphReply } from '@pommora/core/Matrix/matrixGraph'
 import type { Positions } from '@pommora/core/Matrix/matrixLayout'
-import type { Result } from '../Contract/result'
+import { ok, type Result } from '../Contract/result'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { host as dialer } from '../Platform/dialer'
 import type { Slice } from './sessionState'
@@ -26,7 +26,7 @@ export interface MatrixSlice {
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
   saveMatrixLayout: (positions: Positions) => void
-  saveMatrixFrame: (frame: Frame) => Promise<void>
+  saveMatrixFrame: (frame: Frame) => Promise<Result<unknown>>
   resetMatrix: () => void
 }
 
@@ -166,9 +166,9 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     },
 
     saveMatrixFrame: (frame) => {
-      if (!get().matrixLoaded) return Promise.resolve()
+      if (!get().matrixLoaded) return Promise.resolve(ok(null))
       set({ matrixFrame: frame })
-      return logged('matrix layout save', dialer().ask('matrixLayout:save', { frame }))
+      return dialer().ask('matrixLayout:save', { frame })
     },
 
     resetMatrix: () => {

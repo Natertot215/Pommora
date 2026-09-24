@@ -83,7 +83,7 @@ const placeOf = (id: string): number[] => {
 
 function seed(over: Record<string, unknown> = {}): void {
   saveLayout = vi.fn()
-  saveFrame = vi.fn()
+  saveFrame = vi.fn(async () => ok(null))
   useSession.setState({
     tree: makeTree(),
     matrixConfig: DEFAULT_MATRIX_CONFIG,
@@ -287,15 +287,15 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
-  it('fits a first open that carries positions once its settle lands', () => {
+  it('fits a first open that carries positions once its settle lands', async () => {
     matrixRuntime.setFrame({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
-    vi.runAllTimers()
+    await vi.runAllTimersAsync()
     seed({ matrixFrame: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach(null)
     flush()
     expect(saveFrame).not.toHaveBeenCalled()
     matrixRuntime.setStage(surface, STAGE)
-    vi.runAllTimers()
+    await vi.runAllTimersAsync()
     expect(saveFrame).toHaveBeenCalledTimes(1)
     expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
@@ -313,6 +313,17 @@ describe('matrixRuntime', () => {
     expect(saveFrame).toHaveBeenCalledTimes(1)
     expect(saveFrame.mock.calls[0][0]).toEqual({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
     vi.runAllTimers()
+    expect(saveFrame).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends a pan still pending when the window unloads', () => {
+    seed()
+    attach()
+    flush()
+    saveFrame.mockClear()
+    matrixRuntime.setFrame({ cx: 30, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(saveFrame).not.toHaveBeenCalled()
+    window.dispatchEvent(new Event('beforeunload'))
     expect(saveFrame).toHaveBeenCalledTimes(1)
   })
 

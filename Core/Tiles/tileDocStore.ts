@@ -1,11 +1,11 @@
 import { capSet } from '@pommora/uix/Utilities/capMap'
+import type { Result } from '@pommora/core/Contract/result'
 import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 import { decodeLayout, encodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { host as dialer } from '../Platform/dialer'
-import { createBodyWriter } from '../Session/saveScheduler'
+import { createBodyWriter, sessionWriter } from '../Session/saveScheduler'
 
-const SAVE_DEBOUNCE_MS = 300
 const BODY_CAP = 50
 
 export interface TileDocState {
@@ -22,8 +22,6 @@ interface TileDoc {
   state: TileDocState
   listeners: Set<() => void>
   off: () => void
-  timer: ReturnType<typeof setTimeout> | null
-  pending: TileLayout | null
   lastSave: Promise<unknown>
   holds: number
   queued: LayoutUpdate[]
@@ -92,9 +90,15 @@ const at = (host: TileHostRef): TileDoc | undefined => docs.get(tileHostKey(host
 const save = (
   doc: TileDoc,
   patch: { layout?: unknown; tiles?: unknown[]; locked?: boolean },
-): void => {
-  doc.lastSave = Promise.all([doc.lastSave, dialer().ask('tiles:save', doc.host, patch)])
+): Promise<Result<null>> => {
+  const sent = dialer().ask('tiles:save', doc.host, patch)
+  doc.lastSave = Promise.all([doc.lastSave, sent])
+  return sent
 }
+
+const layoutKey = (doc: TileDoc): string => `layout:${tileHostKey(doc.host)}`
+
+const flush = (doc: TileDoc): Promise<void> => sessionWriter.flush(layoutKey(doc))
 
 const notify = (doc: TileDoc): void => {
   for (const fn of doc.listeners) fn()
@@ -118,27 +122,19 @@ const adopt = (doc: TileDoc, raw: { layout: unknown; tiles: unknown[]; locked: b
   })
 }
 
-const flush = (doc: TileDoc): void => {
-  if (doc.timer) clearTimeout(doc.timer)
-  if (doc.pending) save(doc, { layout: encodeLayout(doc.pending) })
-  doc.timer = null
-  doc.pending = null
-}
-
 const writeLayout = (doc: TileDoc, layout: TileLayout): void => {
   put(doc, { layout })
-  if (doc.timer) clearTimeout(doc.timer)
-  doc.pending = layout
-  doc.timer = setTimeout(() => flush(doc), SAVE_DEBOUNCE_MS)
+  sessionWriter.schedule(layoutKey(doc), () => save(doc, { layout: encodeLayout(layout) }))
 }
 
-// A disk change is read only after the local write it may race has landed, so the user's own last action never silently reverts.
+// A disk change is read only after the local write it may race has landed, and a layout the user changed during the read sends before the read is weighed, so the user's own last action never silently reverts.
 const reload = async (doc: TileDoc): Promise<void> => {
-  flush(doc)
+  await flush(doc)
   const saved = doc.lastSave
   await saved
   const r = await dialer().ask('tiles:get', doc.host)
-  if (!r.ok || at(doc.host) !== doc || doc.lastSave !== saved || doc.pending !== null) return
+  await flush(doc)
+  if (!r.ok || at(doc.host) !== doc || doc.lastSave !== saved) return
   if (doc.holds > 0) {
     doc.heldPush = true
     return
@@ -153,8 +149,6 @@ function create(host: TileHostRef): TileDoc {
     state: EMPTY,
     listeners: new Set(),
     off: () => {},
-    timer: null,
-    pending: null,
     lastSave: Promise.resolve(),
     holds: 0,
     queued: [],
@@ -176,7 +170,7 @@ function create(host: TileHostRef): TileDoc {
 }
 
 async function retire(doc: TileDoc): Promise<void> {
-  flush(doc)
+  await flush(doc)
   await doc.lastSave
   // A remount inside the same commit — a host swapped in place, React's double-invoked effects — re-subscribes before this resolves, and keeps the document rather than re-reading the file.
   if (doc.listeners.size > 0) return
@@ -217,7 +211,7 @@ export function commitTileLayout(host: TileHostRef, update: LayoutUpdate): void 
     return
   }
   writeLayout(doc, update(doc.state.layout))
-  flush(doc)
+  void flush(doc)
 }
 
 // A gesture commits the tree it computed from its press-time snapshot, so while ANY mount holds one, a disk reload and a sibling's structural commit both wait.
@@ -229,7 +223,7 @@ export function holdTileDoc(host: TileHostRef, held: boolean): void {
   const queued = doc.queued
   doc.queued = []
   for (const update of queued) writeLayout(doc, update(doc.state.layout))
-  if (queued.length) flush(doc)
+  if (queued.length) void flush(doc)
   if (doc.heldPush) {
     doc.heldPush = false
     void reload(doc)
@@ -260,16 +254,15 @@ export function syncTileDocLock(host: TileHostRef, locked: boolean | undefined):
   save(doc, { locked })
 }
 
-// The Nexus-adopt path awaits this while the OLD root is still bound — a write after the flip would bind the new Nexus and overwrite a same-relative-path file.
+// The Nexus-adopt path awaits this while the OLD root is still bound — a write after the flip would bind the new Nexus and overwrite a same-relative-path file. Layouts land through the session writer's own flush.
 export function flushAllTileDocs(): Promise<void> {
-  const live = [...docs.values()]
-  for (const doc of live) flush(doc)
-  return Promise.all([...live.map((doc) => doc.lastSave), tileBodyWriter.flushAll()]).then(
-    () => undefined,
-  )
+  return Promise.all([
+    ...[...docs.values()].map((doc) => doc.lastSave),
+    tileBodyWriter.flushAll(),
+  ]).then(() => undefined)
 }
 
-// Drops without writing: the root has flipped, so anything still owed would land in the new Nexus, and a lingering mount's `retire` flushes what it finds — pending and queued are discarded here.
+// Drops without writing: the root has flipped, so anything still owed would land in the new Nexus, and a lingering mount's `retire` flushes what it finds — the session writer's pending layouts were cancelled before this, and queued updates are discarded here.
 export function dropAllTileDocs(): void {
   const live = [...docs.values()]
   docs.clear()
@@ -278,9 +271,6 @@ export function dropAllTileDocs(): void {
   removing.clear()
   tileBodyWriter.cancelAll()
   for (const doc of live) {
-    if (doc.timer) clearTimeout(doc.timer)
-    doc.timer = null
-    doc.pending = null
     doc.queued = []
     doc.off()
     doc.off = () => {}

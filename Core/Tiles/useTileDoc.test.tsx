@@ -6,7 +6,9 @@ import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { insertBand } from './Layout/ops'
 import { tileIds, type TileLayout } from './Layout/model'
 import { useSession } from '../Session/store'
-import { dropAllTileDocs, flushAllTileDocs, readTileBody, writeTileBody } from './tileDocStore'
+import { dropAllTileDocs, readTileBody, writeTileBody } from './tileDocStore'
+import { cancelAllSaves } from '../Session/saveScheduler'
+import { flushAllSaves } from '../Session/nexusSlice'
 import { type TileDocSession, useTileDoc, useTileDocReady } from './useTileDoc'
 import { stubDialer } from '../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -21,11 +23,14 @@ const docWith = (...ids: string[]): { layout: unknown; tiles: unknown[]; locked:
 
 let disk = docWith('a')
 let push: (host: TileHostRef) => void = () => {}
-let releaseSave: (() => void) | null = null
+const held: Array<() => void> = []
+const releaseSave = (): void => {
+  for (const release of held.splice(0)) release()
+}
 const save = vi.fn(
   () =>
     new Promise<{ ok: true; value: null }>((resolve) => {
-      releaseSave = () => resolve({ ok: true, value: null })
+      held.push(() => resolve({ ok: true, value: null }))
     }),
 )
 const get = vi.fn(async () => ({ ok: true as const, value: disk }))
@@ -62,7 +67,7 @@ const append = (cur: TileLayout, id: string): TileLayout =>
 
 beforeEach(async () => {
   disk = docWith('a')
-  releaseSave = null
+  cancelAllSaves()
   seats.clear()
   ready.clear()
   dropAllTileDocs()
@@ -90,9 +95,11 @@ beforeEach(async () => {
   )
   await tick()
 })
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount())
   host.remove()
+  // A released save lets the key's next one out, so drain until none is held: the writer outlives the test.
+  while (held.length > 0) await act(async () => releaseSave())
   dropAllTileDocs()
 })
 
@@ -115,7 +122,7 @@ describe('one document per host', () => {
     act(() => at('b').setLayout(append(at('b').layout, 'c')))
     expect(save).not.toHaveBeenCalled()
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 400))
+      await new Promise((r) => setTimeout(r, 500))
     })
     expect(save).toHaveBeenCalledOnce()
     expect(shown('a')).toEqual(['a', 'b', 'c'])
@@ -138,7 +145,7 @@ describe('one document per host', () => {
     expect(shown('a')).toEqual(['a', 'b'])
     await act(async () => root.render(null))
     expect(save).toHaveBeenCalledOnce()
-    await act(async () => releaseSave?.())
+    await act(async () => releaseSave())
     await tick()
     get.mockClear()
     await act(async () => root.render(<Probe seat="a" />))
@@ -146,12 +153,19 @@ describe('one document per host', () => {
     expect(get).toHaveBeenCalledOnce()
   })
 
+  it('sends a layout change still pending when the window unloads', () => {
+    act(() => at('a').setLayout(append(at('a').layout, 'b')))
+    expect(save).not.toHaveBeenCalled()
+    window.dispatchEvent(new Event('beforeunload'))
+    expect(save).toHaveBeenCalledOnce()
+  })
+
   it('a Nexus switch flushes every pending save before dropping', async () => {
     act(() => at('a').setLayout(append(at('a').layout, 'b')))
-    const flushed = flushAllTileDocs()
+    const flushed = flushAllSaves()
     expect(save).toHaveBeenCalledOnce()
     await act(async () => {
-      releaseSave?.()
+      releaseSave()
       await flushed
     })
     act(() => dropAllTileDocs())
@@ -239,7 +253,7 @@ describe('the gesture hold across mounts', () => {
     await tick()
     expect(shown('b')).toEqual(['a'])
     act(() => at('b').setBusy(false))
-    await act(async () => releaseSave?.())
+    await act(async () => releaseSave())
     await tick()
     expect(shown('b')).toEqual(['a', 'synced'])
   })
@@ -285,7 +299,7 @@ describe('a host document changing on disk', () => {
     await tick()
     expect(get).toHaveBeenCalledOnce()
     expect(shown('a')).toEqual(['a', 'local'])
-    await act(async () => releaseSave?.())
+    await act(async () => releaseSave())
     await tick()
     expect(get).toHaveBeenCalledTimes(2)
     expect(shown('a')).toEqual(['a', 'synced'])
@@ -328,7 +342,7 @@ describe('a host document changing on disk', () => {
     act(() => at('a').setBusy(false))
     await tick()
     expect(get).toHaveBeenCalledOnce()
-    await act(async () => releaseSave?.())
+    await act(async () => releaseSave())
     await tick()
     expect(get).toHaveBeenCalledTimes(2)
     expect(shown('a')).toEqual(['a', 'b'])
