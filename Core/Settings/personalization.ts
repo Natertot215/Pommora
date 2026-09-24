@@ -65,7 +65,7 @@ export const TAB_MAX_WIDTH = {
   max: TAB_MAX_WIDTH_STEPS[TAB_MAX_WIDTH_STEPS.length - 1],
   default: 250,
 } as const
-export const TAB_CACHE_STEPS = [5, 10, 15, 20] as const
+export const TAB_CACHE_STEPS = [5, 10, 15, 20, 25] as const
 export const TAB_CACHE = {
   min: TAB_CACHE_STEPS[0],
   max: TAB_CACHE_STEPS[TAB_CACHE_STEPS.length - 1],

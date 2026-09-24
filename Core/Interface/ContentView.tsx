@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
+import { cx } from '@pommora/uix/Utilities/cx'
+import type { SelectionState, Tab } from '@pommora/core/Navigation/navRef'
 import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
 import { useRevealNear } from '@pommora/uix/Interactions/revealBar'
 import { slideIn } from '@pommora/uix/Animations/motion'
@@ -18,12 +20,22 @@ import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 import { publishChromePart } from './chromeParts'
+import { type ContentHost, ContentHostContext } from './contentHost'
+import { navKey } from '../Navigation/navRecents'
 
-function DetailView(): React.JSX.Element | null {
-  const selection = useSession((s) => s.selection)
+type Host = ContentHost & { target: SelectionState }
+
+const HOMEPAGE: SelectionState = { kind: 'homepage' }
+const keyOf = (target: SelectionState): string =>
+  target.kind === 'none' ? target.kind : navKey(target)
+const shownAs = (target: Tab['target']): SelectionState =>
+  target.kind === 'newtab' ? { kind: 'none' } : target
+
+// Memoized on a host object that keeps its identity while its tab, key, and parking hold, so a parked view sits out every re-render of the pane.
+const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
-
-  switch (selection.kind) {
+  const { target } = host
+  switch (target.kind) {
     case 'none':
       return tree ? (
         <NavView />
@@ -37,9 +49,9 @@ function DetailView(): React.JSX.Element | null {
     case 'context':
       return <div className="detail" />
     case 'space':
-      return <SpaceView tree={tree} id={selection.id} />
+      return <SpaceView tree={tree} id={target.id} />
     case 'collection': {
-      const col = findCollection(tree, selection.id)
+      const col = findCollection(tree, target.id)
       return col ? (
         <ContainerView source={col} />
       ) : (
@@ -49,7 +61,7 @@ function DetailView(): React.JSX.Element | null {
       )
     }
     case 'set': {
-      const set = findSet(tree, selection.id)
+      const set = findSet(tree, target.id)
       return set ? (
         <ContainerView source={set} />
       ) : (
@@ -59,36 +71,56 @@ function DetailView(): React.JSX.Element | null {
       )
     }
     case 'page':
+      return <PageView tabId={host.tabId} pageId={target.id} parked={host.parked} />
     case 'matrix':
-      return null
+      return <MatrixView />
   }
-}
+})
 
-type Host = { tabId: string; pageId: string }
-
+/** The shown view, the homepage, an open Matrix, and the most recent tabs up to the Active Tab Cache, each mounted once and parked off screen while another shows. */
 function useHosts(): Host[] {
   const selection = useSession((s) => s.selection)
   const tabs = useSession((s) => s.tabs)
+  const pinnedTabs = useSession((s) => s.pinnedTabs)
   const tabMru = useSession((s) => s.tabMru)
-  const activeTabId = useSession((s) => s.activeTabId)
+  const hasTree = useSession((s) => s.tree !== null)
   const readyIds = useSession(readyPageIds)
+  const matrixOpen = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
   const warmTabs = useSession((s) => s.personalization.tabCache ?? TAB_CACHE.default)
+  const held = useRef(new Map<string, Host>())
   return useMemo(() => {
     const ready = new Set(readyIds.split(','))
-    const hosts: Host[] = []
-    if (selection.kind === 'page') hosts.push({ tabId: activeTabId, pageId: selection.id })
-    let parked = 0
-    for (const id of tabMru) {
-      if (parked >= warmTabs || id === activeTabId) continue
-      const target = tabs.find((t) => t.id === id)?.target
-      if (target?.kind !== 'page' || !ready.has(target.id)) continue
-      if (hosts.some((h) => h.pageId === target.id)) continue
-      hosts.push({ tabId: id, pageId: target.id })
-      parked++
+    const byId = new Map([...pinnedTabs, ...tabs].map((t) => [t.id, t]))
+    const recent = tabMru.flatMap((id) => byId.get(id) ?? [])
+    const tabShowing = (key: string): string =>
+      recent.find((t) => keyOf(shownAs(t.target)) === key)?.id ?? ''
+    const shown = keyOf(selection)
+    const hosts = new Map<string, Host>()
+    const add = (target: SelectionState, tabId = tabShowing(keyOf(target))): void => {
+      const key = keyOf(target)
+      if (hosts.has(key)) return
+      const parked = key !== shown
+      const was = held.current.get(key)
+      hosts.set(
+        key,
+        was?.tabId === tabId && was.parked === parked ? was : { tabId, key, parked, target },
+      )
     }
+    add(selection)
+    if (hasTree) add(HOMEPAGE)
+    if (matrixOpen) add(MATRIX_REF)
+    let warm = 0
+    for (const tab of recent) {
+      if (warm >= warmTabs) break
+      const target = shownAs(tab.target)
+      if (hosts.has(keyOf(target)) || (target.kind === 'page' && !ready.has(target.id))) continue
+      add(target, tab.id)
+      warm++
+    }
+    held.current = hosts
     // Fixed order, never most-recent-first: reordering keyed children moves their DOM, and a moved webview re-attaches, ending the very guest this exists to keep.
-    return hosts.sort((a, b) => (a.pageId < b.pageId ? -1 : 1))
-  }, [selection, tabs, tabMru, activeTabId, readyIds, warmTabs])
+    return [...hosts.values()].sort((a, b) => (a.key < b.key ? -1 : 1))
+  }, [selection, tabs, pinnedTabs, tabMru, hasTree, readyIds, matrixOpen, warmTabs])
 }
 
 export function ContentView(): React.JSX.Element {
@@ -98,10 +130,7 @@ export function ContentView(): React.JSX.Element {
   const frozen = useSession(frozenOf)
   const navSlide = useSession((s) => s.navSlide)
   const expanded = useSession((s) => s.subfieldExpanded)
-  const activeTabId = useSession((s) => s.activeTabId)
   const hosts = useHosts()
-  const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
-  const matrixParked = selectionKind !== 'matrix'
 
   const viewRef = useRef<HTMLDivElement>(null)
   const prevSelection = useRef(selection)
@@ -140,27 +169,13 @@ export function ContentView(): React.JSX.Element {
       onMouseLeave={reveal.onMouseLeave}
     >
       <div ref={viewRef} className={frozen ? 'content-view-view is-frozen' : 'content-view-view'}>
-        {hosts.map((h) => {
-          const parked = h.tabId !== activeTabId
-          return (
-            <div
-              key={h.pageId}
-              className={parked ? 'detail detail-page is-parked' : 'detail detail-page'}
-              aria-hidden={parked || undefined}
-            >
-              <PageView tabId={h.tabId} pageId={h.pageId} parked={parked} />
+        {hosts.map((h) => (
+          <ContentHostContext.Provider key={h.key} value={h}>
+            <div className={cx('detail-host', h.parked && 'is-parked')} inert={h.parked}>
+              <HostView host={h} />
             </div>
-          )
-        })}
-        {matrixTab && (
-          <div
-            className={matrixParked ? 'detail detail-matrix is-parked' : 'detail detail-matrix'}
-            aria-hidden={matrixParked || undefined}
-          >
-            <MatrixView parked={matrixParked} publishes={!matrixParked} />
-          </div>
-        )}
-        <DetailView />
+          </ContentHostContext.Provider>
+        ))}
       </div>
       {showSubfield && <ContentFooter />}
     </div>

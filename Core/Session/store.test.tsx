@@ -719,27 +719,29 @@ describe('store — view search', () => {
     expect(useSession.getState().viewSearch).toEqual({})
     onContainer()
     expect(useSession.getState().searchView()).toBe(true)
-    expect(useSession.getState().viewSearch).toEqual({ t1: { key: 'collection:c1', query: '' } })
+    expect(useSession.getState().viewSearch).toEqual({
+      t1: { key: 'collection:c1', query: '', summon: 1 },
+    })
   })
 
   it('a second summon keeps the query and raises the summon', () => {
     onContainer()
     useSession.getState().searchView()
     useSession.getState().setViewQuery('ab')
-    const before = useSession.getState().viewSearchSummon
+    const before = useSession.getState().viewSearch.t1?.summon ?? 0
     useSession.getState().searchView()
     expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
-    expect(useSession.getState().viewSearchSummon).toBe(before + 1)
+    expect(useSession.getState().viewSearch.t1?.summon).toBe(before + 1)
   })
 
   it('a null query ends it', () => {
-    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    onContainer({ t1: { key: 'collection:c1', query: 'ab', summon: 0 } })
     useSession.getState().setViewQuery(null)
     expect(useSession.getState().viewSearch).toEqual({})
   })
 
   it('survives a tab switch and clears when its tab shows something else', async () => {
-    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    onContainer({ t1: { key: 'collection:c1', query: 'ab', summon: 0 } })
     useSession.getState().activateTab('t2')
     useSession.getState().activateTab('t1')
     expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
@@ -748,10 +750,10 @@ describe('store — view search', () => {
   })
 
   it('follows its tab to the pinned id when the tab is pinned', () => {
-    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    onContainer({ t1: { key: 'collection:c1', query: 'ab', summon: 0 } })
     useSession.getState().pinTab('t1')
     expect(useSession.getState().viewSearch).toEqual({
-      [pinTabId(col('c1'))]: { key: 'collection:c1', query: 'ab' },
+      [pinTabId(col('c1'))]: { key: 'collection:c1', query: 'ab', summon: 0 },
     })
   })
 
@@ -763,13 +765,13 @@ describe('store — view search', () => {
       pinned: [toNavRef(col('c1'))],
       pinnedTabs: [{ id: pinId, target: col('c1'), navStack: [col('c1')], navIndex: 0 }],
       selection: col('c1'),
-      viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab' } },
+      viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab', summon: 0 } },
     })
     useSession.getState().unpinTab(pinId)
     const freshId = useSession.getState().tabs[0].id
     expect(freshId).not.toBe(pinId)
     expect(useSession.getState().viewSearch).toEqual({
-      [freshId]: { key: 'collection:c1', query: 'ab' },
+      [freshId]: { key: 'collection:c1', query: 'ab', summon: 0 },
     })
   })
 
@@ -781,7 +783,7 @@ describe('store — view search', () => {
       activeTabId: 't1',
       tabMru: ['t1', 't2'],
       selection: col('c1'),
-      viewSearch: { t1: { key: 'collection:c1', query: 'ab' } },
+      viewSearch: { t1: { key: 'collection:c1', query: 'ab', summon: 0 } },
     })
     useSession.getState().activateTab('t2')
     expect(useSession.getState().selection).toEqual(col('c1'))
@@ -796,7 +798,7 @@ describe('store — view search', () => {
       activeTabId: 't1',
       tabMru: ['t1', 't2'],
       selection: col('c1'),
-      viewSearch: { t1: { key: 'collection:c1', query: 'ab' } },
+      viewSearch: { t1: { key: 'collection:c1', query: 'ab', summon: 0 } },
     })
     useSession.getState().closeTab('t1')
     expect(useSession.getState().selection).toEqual(col('c1'))
@@ -804,7 +806,7 @@ describe('store — view search', () => {
   })
 
   it('clears with its tab', () => {
-    onContainer({ t1: { key: 'collection:c1', query: 'ab' } })
+    onContainer({ t1: { key: 'collection:c1', query: 'ab', summon: 0 } })
     useSession.getState().closeTab('t1')
     expect(useSession.getState().viewSearch).toEqual({})
   })
@@ -824,7 +826,7 @@ describe('store — view search', () => {
       pinned: [toNavRef(col('c1'))],
       pinnedTabs: [{ id: pinId, target: col('c1'), navStack: [col('c1')], navIndex: 0 }],
       selection: ctx('b'),
-      viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab' } },
+      viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab', summon: 0 } },
     })
     useSession.getState().unpinTarget(navKey(col('c1')))
     expect(useSession.getState().viewSearch).toEqual({})

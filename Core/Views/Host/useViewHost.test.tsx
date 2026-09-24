@@ -5,6 +5,7 @@ import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
+import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { propsAtRoot, pageValues } from '../../Testing/pageValues'
@@ -103,7 +104,11 @@ function Probe({ source, flatten }: { source: CollectionNode | SetNode; flatten:
 
 const mount = async (source: CollectionNode | SetNode, flatten = false): Promise<void> => {
   await act(async () => {
-    root.render(<Probe source={source} flatten={flatten} />)
+    root.render(
+      <ContentHostContext.Provider value={{ tabId: 't1', key: 'collection:col1', parked: false }}>
+        <Probe source={source} flatten={flatten} />
+      </ContentHostContext.Provider>,
+    )
   })
   await act(async () => {})
 }
@@ -572,7 +577,7 @@ describe('the root seat', () => {
 
 describe('view search', () => {
   const search = (query: string): void =>
-    useSession.setState({ viewSearch: { t1: { key: 'collection:col1', query } } })
+    useSession.setState({ viewSearch: { t1: { key: 'collection:col1', query, summon: 0 } } })
 
   it('narrows the groups, the lookups, and the count to title matches, dropping every group left empty', async () => {
     search('loose')

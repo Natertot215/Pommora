@@ -11,7 +11,8 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
-import { shownViewSearch, useSession } from '../../Session/store'
+import { useSession } from '../../Session/store'
+import { useContentHost } from '../../Interface/contentHost'
 import { useSaveView, useViewTileScope } from '../ViewTileScope'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
@@ -67,7 +68,8 @@ export function useViewHost(
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
   const tile = useViewTileScope()
-  const query = useSession((s) => (tile ? undefined : shownViewSearch(s)?.query))
+  const host = useContentHost()
+  const query = useSession((s) => (tile || !host ? undefined : s.viewSearch[host.tabId]?.query))
   const needle = query?.trim().toLowerCase() ?? ''
   const searching = needle !== ''
 

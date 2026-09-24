@@ -5,6 +5,7 @@ import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
 import { pageMoveContext } from '../Interface/Menus/pageMenuActions'
 import { usePublishCount } from '../Interface/Subfield/publish'
+import { useContentHost } from '../Interface/contentHost'
 import { contextTargetToSelect, isOpenInTabs } from '../Navigation/tabsModel'
 import type { NexusTree } from '../Nexus/tree'
 import { nodesOf, recordsByIdOf } from '../Nexus/treeIndex'
@@ -23,25 +24,15 @@ function recordOf(tree: NexusTree | null, id: string | null): MatrixRecord | nul
     : null
 }
 
-function PublishCount({ count }: { count: number }): null {
-  usePublishCount(count)
-  return null
-}
-
-export function MatrixView({
-  parked,
-  publishes,
-}: {
-  parked: boolean
-  publishes: boolean
-}): React.JSX.Element {
+export function MatrixView(): React.JSX.Element {
+  const parked = useContentHost()?.parked ?? false
   const tree = useSession((st) => st.tree)
   const select = useSession((st) => st.select)
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
   const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
   const hoveredId = useMatrixHover()
-  const count = useMatrixCount()
+  usePublishCount(useMatrixCount())
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
@@ -156,32 +147,29 @@ export function MatrixView({
 
   const labelId = shown?.held.id ?? null
   return (
-    <>
-      {publishes && <PublishCount count={count} />}
-      <MatrixCanvas
+    <MatrixCanvas
+      surface={surface}
+      parked={parked}
+      editing={editing}
+      labelId={labelId}
+      canvasRef={canvasRef}
+      onNodeDown={nodeDown}
+      onBackgroundDown={backgroundDown}
+      onMenu={(i) => void menu(i)}
+    >
+      <MatrixLabel
         surface={surface}
-        parked={parked}
+        rec={shown?.held ?? null}
+        closing={shown?.closing ?? false}
         editing={editing}
-        labelId={labelId}
-        canvasRef={canvasRef}
-        onNodeDown={nodeDown}
-        onBackgroundDown={backgroundDown}
-        onMenu={(i) => void menu(i)}
-      >
-        <MatrixLabel
-          surface={surface}
-          rec={shown?.held ?? null}
-          closing={shown?.closing ?? false}
-          editing={editing}
-          hosts={mine}
-          anchorRef={anchorRef}
-          onPointerDown={(e) => nodeDown(e, matrixRuntime.indexOf(labelId))}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            void menu(matrixRuntime.indexOf(labelId))
-          }}
-        />
-      </MatrixCanvas>
-    </>
+        hosts={mine}
+        anchorRef={anchorRef}
+        onPointerDown={(e) => nodeDown(e, matrixRuntime.indexOf(labelId))}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          void menu(matrixRuntime.indexOf(labelId))
+        }}
+      />
+    </MatrixCanvas>
   )
 }
