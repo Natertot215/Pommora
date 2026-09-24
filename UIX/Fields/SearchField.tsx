@@ -17,6 +17,7 @@ export function SearchField({
   inputRef,
   className,
   placeholder = SEARCH_PLACEHOLDER,
+  onKeyDown,
   ...rest
 }: Props): React.JSX.Element {
   return (
@@ -27,6 +28,12 @@ export function SearchField({
       className={cx(s.search, className)}
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
+      onKeyDown={(e) => {
+        onKeyDown?.(e)
+        if (e.key !== 'Escape' || e.defaultPrevented || !value) return
+        e.preventDefault()
+        e.currentTarget.blur()
+      }}
       spellCheck={false}
     />
   )

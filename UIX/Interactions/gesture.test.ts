@@ -2,6 +2,7 @@
 // The skeleton's `live` lock is module state with no reset seam, so every test loads a fresh module — the throwing-teardown test would otherwise strand the lock for the rest of the file.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { firePointer, stubPointerCapture } from './pointerHarness'
+import { pushDismissal } from './dismissalStack'
 import type { PointerGestureSpec } from './gesture'
 
 stubPointerCapture()
@@ -20,6 +21,8 @@ beforeEach(async () => {
   errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 afterEach(() => {
+  // A gesture a test leaves live would claim the next test's Escape from its stale module.
+  window.dispatchEvent(new Event('blur'))
   el.remove()
   errSpy.mockRestore()
 })
@@ -166,6 +169,25 @@ describe('gesture skeleton hardening', () => {
     firePointer(window, 'pointerup')
     expect(onDrop).not.toHaveBeenCalled()
     expect(gesture.beginPointerGesture(spec({}))).not.toBeNull()
+  })
+
+  it('Escape mid-drag cancels only the drag; below the threshold it reaches the dismissal stack', () => {
+    const dismiss = vi.fn()
+    const entry = pushDismissal({ layer: () => null, dismiss })
+    const pressEscape = (): boolean =>
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    const onAbort = vi.fn()
+    gesture.beginPointerGesture(spec({ onAbort }))
+    move(20, 20)
+    pressEscape()
+    expect(onAbort).toHaveBeenCalledOnce()
+    expect(dismiss).not.toHaveBeenCalled()
+    gesture.beginPointerGesture(spec({}))
+    pressEscape()
+    expect(dismiss).toHaveBeenCalledOnce()
+    entry.release()
   })
 
   it('pointercancel aborts an active drag', () => {

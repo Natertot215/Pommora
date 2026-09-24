@@ -30,7 +30,7 @@ interface BrowserGuest extends HTMLElement {
 
 export function WebWindow(): React.JSX.Element | null {
   const summon = useSession((s) => s.browserSummon)
-  const shown = useHeldPresence(summon)
+  const shown = useHeldPresence(summon, 'fast')
   if (!shown) return null
   return <WebWindowBody summon={shown.held} closing={shown.closing} />
 }

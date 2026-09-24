@@ -42,7 +42,7 @@ export function FrameSlide({
   }, [open])
 
   // The caller nulls `detail` the same render the slide-out starts; latching keeps the measured box stable.
-  const { mounted } = useExitPresence(open, SLIDE_MS)
+  const { mounted } = useExitPresence(open, 'base')
   const latchedDetail = useRef<ReactNode>(null)
   if (open) latchedDetail.current = detail
   const shownDetail = open ? detail : mounted ? latchedDetail.current : null

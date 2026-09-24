@@ -22,7 +22,7 @@ const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as co
 export function PageWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.pageWindow?.kind === 'page')
   const target = useSession(windowTargetOf)
-  const shown = useHeldPresence(target, open)
+  const shown = useHeldPresence(target, 'base', open)
   if (!shown) return null
   return <PageWindowBody target={shown.held} closing={shown.closing} />
 }

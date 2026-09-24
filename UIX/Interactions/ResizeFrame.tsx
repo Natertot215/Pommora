@@ -111,7 +111,6 @@ export function useResizeFrame<R extends Partial<Rect>>(
         event: e,
         activation: 0,
         capture: true,
-        swallowActiveEscape: true,
         onActivate: () => {
           setActive(grip)
           return true

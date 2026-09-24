@@ -35,7 +35,6 @@ interface InsertionDragSpec<Slot, Snap> {
   disabled?: () => boolean
   disclose?: boolean
   capture?: boolean
-  swallowActiveEscape?: boolean
   watch: unknown
 }
 
@@ -126,7 +125,6 @@ export function useInsertionDrag<Slot, Snap>(
       el,
       event: e,
       capture: cfg.capture,
-      swallowActiveEscape: cfg.swallowActiveEscape,
       onActivate: (ev) => {
         dragged.current = { id, grabX, label: cfg.label(id) }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }

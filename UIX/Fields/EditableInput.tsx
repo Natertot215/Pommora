@@ -34,14 +34,8 @@ export function EditableInput({
   const settled = useRef(false)
   const mirror = useRef<HTMLSpanElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  // Inside PickerMenu the field can't focus yet (visibility:hidden until measured).
   useEffect(() => {
-    if (!autoFocus) return
-    const el = inputRef.current
-    if (!el) return
-    el.focus()
-    const t = setTimeout(() => el.focus(), 60)
-    return () => clearTimeout(t)
+    if (autoFocus) inputRef.current?.focus()
   }, [autoFocus])
   const field = (
     <input

@@ -78,8 +78,6 @@ export function useGroupingListDrag({
     // A row's hide-eye is a button inside the drag surface — a shaky press on it must stay a click.
     alsoBlock: 'button',
     capture: false,
-    // An active drag's Escape must cancel the DRAG, not dismiss the hosting settings menu.
-    swallowActiveEscape: true,
     disclose: true,
     watch: bands,
   })

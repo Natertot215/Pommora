@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   knownTile,
   NEW_TILE_H,
@@ -17,8 +17,7 @@ import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
-import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
-import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/picker-base'
+import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
@@ -143,20 +142,11 @@ export function TileHost({
   const conn = connections ?? preview
   const openRoute = connections?.open
 
-  useEffect(() => {
-    if (!editingId) return
-    // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not swallow the click-out.
-    const onDown = (e: PointerEvent): void => {
-      const inside = (e.target as Element | null)?.closest?.(
-        `.tile.is-editing-tile, [${PICKER_PORTAL_ATTR}]`,
-      )
-      if (!inside) setEditingId(null)
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    return () => document.removeEventListener('pointerdown', onDown, true)
-  }, [editingId])
-
-  useEscape(editingId !== null, () => setEditingId(null))
+  const rootRef = useRef<HTMLDivElement>(null)
+  useDismissal(editingId !== null, false, {
+    layer: () => rootRef.current?.querySelector('.tile.is-editing-tile') ?? null,
+    dismiss: () => setEditingId(null),
+  })
 
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
@@ -373,7 +363,7 @@ export function TileHost({
   if (!ready) return null
 
   return (
-    <div className={`tile-host${hostLocked ? ' is-host-locked' : ''}`}>
+    <div ref={rootRef} className={`tile-host${hostLocked ? ' is-host-locked' : ''}`}>
       <TileGrid
         layout={layout}
         onLayoutChange={setLayout}

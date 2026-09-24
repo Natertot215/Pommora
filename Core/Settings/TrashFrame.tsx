@@ -194,17 +194,7 @@ function TrashBody(): React.JSX.Element {
   return (
     <div className={cx('trash-frame table is-clear', checked.size > 0 && 'has-checked')}>
       <div className="nav-search-row">
-        <SearchField
-          className={text.body.standard}
-          value={query}
-          onValueChange={setQuery}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape' && query) {
-              e.preventDefault()
-              setQuery('')
-            }
-          }}
-        />
+        <SearchField className={text.body.standard} value={query} onValueChange={setQuery} />
       </div>
 
       <div className={cx('trash-head', 'table-head')}>

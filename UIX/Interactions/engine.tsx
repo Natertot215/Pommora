@@ -102,7 +102,6 @@ type DragScratch = {
   home: Rect | null
   overlay: Overlay | null
   kdown: ((e: KeyboardEvent) => void) | null
-  liftKey: KeyboardEvent | null
 }
 const blankDrag = (): DragScratch => ({
   id: '',
@@ -127,7 +126,6 @@ const blankDrag = (): DragScratch => ({
   home: null,
   overlay: null,
   kdown: null,
-  liftKey: null,
 })
 
 const travel = (d: DragScratch, x: number, y: number): Point => ({
@@ -317,7 +315,7 @@ type EngineApi = {
   registerContainer: (zoneId: string, el: HTMLElement | null) => void
   registerItem: (zoneId: string, id: string, el: HTMLElement | null) => void
   begin: (zoneId: string, id: string, e: ReactPointerEvent) => void
-  liftKeyboard: (zoneId: string, id: string, liftKey: KeyboardEvent) => void
+  liftKeyboard: (zoneId: string, id: string) => void
   escort: Escort
 }
 type EngineState = {
@@ -600,7 +598,7 @@ export function DragGroup({
     stopScroll.current = null
     const d = drag.current
     if (d.kdown) {
-      document.removeEventListener('keydown', d.kdown)
+      window.removeEventListener('keydown', d.kdown, { capture: true })
       d.kdown = null
     }
   }
@@ -766,7 +764,7 @@ export function DragGroup({
   const onKeyboard = (e: KeyboardEvent): void => {
     const d = drag.current
     const f = frozen.current.get(d.zoneId)
-    if (!d.active || !f || e === d.liftKey) return
+    if (!d.active || !f) return
     if (e.key in ARROW_DIRS) {
       e.preventDefault()
       const next = keyboardNext(f.rects, d.pick, ARROW_DIRS[e.key])
@@ -792,15 +790,15 @@ export function DragGroup({
     }
   }
 
-  // React delegates keydown at the root container, so the lifting keypress still reaches the document listener below — held on the scratch for onKeyboard to skip.
-  const liftKeyboard = (zoneId: string, id: string, liftKey: KeyboardEvent): void => {
+  // Window capture runs ahead of the dismissal stack, and a listener added mid-dispatch never sees the lifting keypress.
+  const liftKeyboard = (zoneId: string, id: string): void => {
     if (drag.current.active) return
     pending.current?.()
-    drag.current = { ...blankDrag(), kdown: onKeyboard, liftKey }
+    drag.current = { ...blankDrag(), kdown: onKeyboard }
     const f = lift(zoneId, id)
     if (!f) return
     setKeyboard(true)
-    document.addEventListener('keydown', onKeyboard)
+    window.addEventListener('keydown', onKeyboard, { capture: true })
     announce(
       `Picked up ${labelOf(zoneId, id)}. Item ${drag.current.activeIdx + 1} of ${f.rects.length}.`,
     )
@@ -1124,7 +1122,7 @@ export function useDragItem(id: string): DragItem {
         if (e.target !== e.currentTarget) return
         if ((e.key === ' ' || e.key === 'Enter') && !isDragging && !disabled) {
           e.preventDefault()
-          api.liftKeyboard(zoneId, id, e.nativeEvent)
+          api.liftKeyboard(zoneId, id)
         }
       },
       role: 'button',

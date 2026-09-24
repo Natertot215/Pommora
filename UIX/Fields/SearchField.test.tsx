@@ -55,4 +55,23 @@ describe('SearchField — the field four surfaces share', () => {
     act(() => root.render(<SearchField value="" onValueChange={() => {}} inputRef={ref} />))
     expect(ref.current).toBe(field())
   })
+
+  it('Escape leaves a field holding a query and keeps it; an empty field lets Escape through', () => {
+    const pressEscape = (): KeyboardEvent => {
+      const e = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+      act(() => {
+        field().dispatchEvent(e)
+      })
+      return e
+    }
+    const onValueChange = vi.fn()
+    act(() => root.render(<SearchField value="ab" onValueChange={onValueChange} />))
+    field().focus()
+    expect(pressEscape().defaultPrevented).toBe(true)
+    expect(document.activeElement).not.toBe(field())
+    expect(onValueChange).not.toHaveBeenCalled()
+    act(() => root.render(<SearchField value="" onValueChange={onValueChange} />))
+    field().focus()
+    expect(pressEscape().defaultPrevented).toBe(false)
+  })
 })

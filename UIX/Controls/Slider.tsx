@@ -73,7 +73,6 @@ export function Slider({
             event: e,
             activation: 0,
             capture: true,
-            swallowActiveEscape: true,
             onActivate: () => true,
             onDragMove: (ev) => {
               last = valueAt(ev.clientX)

@@ -110,7 +110,7 @@ export function MatrixView(): React.JSX.Element {
       ? renamingId
       : ((mine ? (pickingId ?? menuId) : null) ?? hoveredId)
   // The overlay outlives its hover by one fade, and the canvas keeps skipping that title until the fade is over — otherwise the painted one lands under the leaving one. The live node shows at once; only a leaving one waits on the presence.
-  const shown = useHeldPresence(liveId)
+  const shown = useHeldPresence(liveId, 'slow')
   const labelId = liveId ?? shown?.held ?? null
   // The renamed node keeps the surface's focus while its field is open, and lets it go on the same fade any other hover leaves by.
   useEffect(() => {

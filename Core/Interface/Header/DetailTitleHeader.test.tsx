@@ -83,13 +83,22 @@ describe('the title search', () => {
     expect(hidden('.detail-title-clear')).toBe(false)
   })
 
-  it('Escape, the X, and a blank blur end it', async () => {
+  it('a second Escape, the X, and a blank blur end it', async () => {
     const s = search({ query: 'ab' })
     await render(s)
     const input = q('.detail-title-search') as HTMLInputElement
-    act(() => {
-      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-    })
+    const pressEscape = (at: Element): void => {
+      act(() => {
+        at.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+        )
+      })
+    }
+    input.focus()
+    pressEscape(input)
+    expect(s.change).not.toHaveBeenCalled()
+    expect(document.activeElement).not.toBe(input)
+    pressEscape(document.body)
     act(() => q('.detail-title-clear button').click())
     expect(s.change).toHaveBeenNthCalledWith(1, null)
     expect(s.change).toHaveBeenNthCalledWith(2, null)

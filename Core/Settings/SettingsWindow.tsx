@@ -50,7 +50,7 @@ const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
 
 export function SettingsWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.settingsOpen)
-  const { mounted, closing } = useExitPresence(open)
+  const { mounted, closing } = useExitPresence(open, 'fast')
   if (!mounted) return null
   return <NexusSettingsBody closing={closing} />
 }

@@ -113,7 +113,7 @@ export function PickerMenu({
   style?: CSSProperties
   onDirection?: (dir: PickerDirection) => void
 }): React.JSX.Element | null {
-  const { mounted, closing } = useExitPresence(open)
+  const { mounted, closing } = useExitPresence(open, 'menu')
   const paneRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<HTMLSpanElement>(null)
   const drawsShield = useDismissal(mounted && modal, closing, {

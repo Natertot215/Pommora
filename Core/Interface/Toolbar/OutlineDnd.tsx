@@ -85,8 +85,6 @@ export function OutlineDnd({
     ghost: 'grab',
     rowEl: (key) => rows.current.get(key),
     scrollTarget: () => contentRef.current,
-    // The outline dropdown owns Escape — swallow the drag-cancel Escape so a mid-drag abort doesn't also close the pane.
-    swallowActiveEscape: true,
     watch: flat,
   })
 

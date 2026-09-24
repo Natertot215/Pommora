@@ -9,6 +9,8 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
+import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
+import { useContentHost } from '../contentHost'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { cx } from '@pommora/uix/Utilities/cx'
 import './content-title.css'
@@ -65,6 +67,8 @@ export function DetailTitleHeader({
   useEffect(() => {
     if (!searching) field.current?.blur()
   }, [searching])
+  const parked = useContentHost()?.parked === true
+  useEscape(searching && !parked, () => search?.change(null))
 
   const openMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
@@ -154,11 +158,6 @@ export function DetailTitleHeader({
                         search.start()
                       }
                 }
-                onKeyDown={(e) => {
-                  if (e.key !== 'Escape') return
-                  e.preventDefault()
-                  search.change(null)
-                }}
                 onBlur={() => {
                   if (!search.query?.trim()) search.change(null)
                 }}

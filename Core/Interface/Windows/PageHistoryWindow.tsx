@@ -34,7 +34,7 @@ const HISTORY_ANCESTOR = 'page-history'
 
 export function PageHistoryWindow(): React.JSX.Element | null {
   const target = useSession((s) => s.historyTarget)
-  const shown = useHeldPresence(target)
+  const shown = useHeldPresence(target, 'fast')
   if (!shown) return null
   return <PageHistoryBody key={shown.held.id} target={shown.held} closing={shown.closing} />
 }

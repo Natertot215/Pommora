@@ -11,7 +11,7 @@ import { useMatrixCount } from './useMatrixRuntime'
 
 export function MatrixWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.pageWindow?.kind === 'matrix')
-  const { mounted, closing } = useExitPresence(open)
+  const { mounted, closing } = useExitPresence(open, 'fast')
   if (!mounted) return null
   return <MatrixWindowBody closing={closing} />
 }

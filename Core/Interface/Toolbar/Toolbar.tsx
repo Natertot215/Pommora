@@ -32,7 +32,7 @@ export function Toolbar({
     dismiss: () => setSettingsOpen(false),
     outsidePress: !matrixPane,
   })
-  const settingsP = useExitPresence(settingsOpen)
+  const settingsP = useExitPresence(settingsOpen, 'slow')
 
   useEffect(() => {
     const el = trioRef.current

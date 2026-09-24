@@ -10,6 +10,7 @@ import { announce } from '@pommora/uix/Interactions/a11y'
 import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { reorder } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
+import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { readZoom } from '@pommora/uix/Utilities/zoom'
 import { popMenu } from '../../Actions/menuActions'
@@ -472,10 +473,12 @@ export function useColumns(host: ViewHostApi) {
     })
   }
   /** The hide collapses the track to zero and the widen slides it out — both land on the same track transition. */
-  const onTrackTransitionEnd = (e: React.TransitionEvent): void => {
-    if (e.propertyName !== 'grid-template-columns') return
+  const settleTrack = useSettleFallback(collapsing !== null || sliding.size > 0, 'fast', () => {
     commitHide()
     setSliding((s) => (s.size ? new Set() : s))
+  })
+  const onTrackTransitionEnd = (e: React.TransitionEvent): void => {
+    if (e.propertyName === 'grid-template-columns') settleTrack()
   }
 
   return {
