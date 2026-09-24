@@ -46,15 +46,18 @@ export function reservedAssetLeaf(rel: string): boolean {
 
 const STEP_SUFFIX = / \(\d+\)$/
 
-// The one place the app decides what a stepped-aside name looks like: the name as given, then its base counted up from 2, so re-stepping `Ideas (2)` reads `Ideas (3)`.
-const stepped = (name: string, n: number): string =>
-  n === 1 ? name : `${name.replace(STEP_SUFFIX, '')} (${n})`
+// The one place the app decides what a stepped-aside name looks like.
+const stepped = (base: string, n: number): string => `${base} (${n})`
 
+// A copy of `Ideas (2)` beside a held `Ideas` counts on as `Ideas (3)`; `Taxes (2024)` keeps its own number.
 export function freeName(name: string, taken: Iterable<string>): string {
   const held = new Set(Array.from(taken, foldKey))
-  let n = 1
-  while (held.has(foldKey(stepped(name, n)))) n++
-  return stepped(name, n)
+  if (!held.has(foldKey(name))) return name
+  const bare = name.replace(STEP_SUFFIX, '')
+  const base = held.has(foldKey(bare)) ? bare : name
+  let n = 2
+  while (held.has(foldKey(stepped(base, n)))) n++
+  return stepped(base, n)
 }
 
 export async function createDisambiguated<T>(

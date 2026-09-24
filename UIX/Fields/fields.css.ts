@@ -130,8 +130,9 @@ export const contentRow = style({
   vars: { '--over-scroll-fade': CONTENT_FADE },
 })
 
-// One grid cell holds input and hidden mirror, so the field shrink-wraps through reflow — never a per-keystroke layout read.
 export const resting = style({ display: 'contents' })
+
+// One grid cell holds input and hidden mirror, so the field shrink-wraps through reflow — never a per-keystroke layout read.
 export const autoSizeWrap = style({ display: 'inline-grid' })
 
 export const autoSizeMirror = style({
