@@ -9,7 +9,7 @@ import {
   type Range,
 } from '@codemirror/state'
 import { duration, ms } from '@pommora/uix/Animations/motion'
-import { docScan } from './docCache'
+import { docScan, perDoc } from './docCache'
 import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'
 import { lineElementAt } from './lineDom'
@@ -58,34 +58,20 @@ function citationsRegion(doc: Text): FoldRegion | null {
   }
 }
 
-const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
-  heading: (doc) => {
-    const cut = citationsRegion(doc)?.lineEnd ?? -1
-    return headingSections(docScan(doc)).flatMap((s) => {
-      const to = cut < 0 ? s.to : Math.min(s.to, cut)
-      return to > s.lineEnd + 1
-        ? [
-            {
-              kind: 'heading' as const,
-              anchor: s.from,
-              anchorLine: s.from,
-              lineEnd: s.lineEnd,
-              to,
-              key: s.key,
-            },
-          ]
-        : []
-    })
-  },
-  citations: (doc) => {
-    const r = citationsRegion(doc)
-    return r ? [r] : []
-  },
-}
-
-export function regionsOf(doc: Text): FoldRegion[] {
-  return Object.values(KINDS).flatMap((of) => of(doc))
-}
+export const regionsOf = perDoc((doc): FoldRegion[] => {
+  const heads = headingSections(docScan(doc)).map(
+    (s): FoldRegion => ({
+      kind: 'heading',
+      anchor: s.from,
+      anchorLine: s.from,
+      lineEnd: s.lineEnd,
+      to: s.to,
+      key: s.key,
+    }),
+  )
+  const cite = citationsRegion(doc)
+  return cite ? [...heads, cite] : heads
+})
 
 // Each fold is a block widget over the body lines whose own DOM animates; a per-frame requestMeasure keeps the lines below tracking it.
 

@@ -46,6 +46,11 @@ describe('blockAt', () => {
     expect(slice(doc, b)).toBe('# A\nbody')
   })
 
+  it("the last heading's section stops above the citations run", () => {
+    const doc = '# A\nbody[^1]\n\n# B\nmore\n\n[^1]: note'
+    expect(slice(doc, blockAt(doc, doc.indexOf('# B')))).toBe('# B\nmore')
+  })
+
   it('a body-less heading is one line', () => {
     const doc = '# A\n# B\nx'
     const b = blockAt(doc, 0)

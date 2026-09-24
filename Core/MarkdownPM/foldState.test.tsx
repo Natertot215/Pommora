@@ -18,10 +18,11 @@ import {
   type FoldKind,
 } from './folding'
 import { commitCitation } from './Citations/citationActions'
-import type { ChangeSet } from '@codemirror/state'
+import { Text, type ChangeSet } from '@codemirror/state'
 import { citationGesture, deleteMarkerChanges } from './Citations/citationEdits'
 import { docScan } from './docCache'
-import { headingSections, headingSrc } from './Engine/headingScan'
+import { headingSections } from './Engine/headingScan'
+import { scanDoc } from './Engine/docScan'
 import { splitWithOffsets } from './Engine/detect'
 import { citationScan } from '../Testing/markdownEngine'
 
@@ -100,6 +101,25 @@ describe('the fold state machine', () => {
       applySavedFolds(view, ['Two', 'Nonexistent'])
     })
     expect(foldedRegions(view.state).map((r) => r.key)).toEqual(['Two'])
+  })
+
+  it('a saved fold of the real `Draft 2` restores only that heading', async () => {
+    const doc = '# Draft\na\n\n# Draft\nb\n\n# Draft 2\nc'
+    const at = doc.indexOf('# Draft 2')
+    const first = await mountEditor({ initialBody: doc })
+    await fold(first, at)
+    const keys = foldedRegions(first.state).map((r) => r.key)
+    await cleanupEditor()
+    const view = await mountEditor({ initialBody: doc })
+    await act(async () => {
+      applySavedFolds(view, keys)
+    })
+    expect(foldedRegions(view.state).map((r) => r.anchor)).toEqual([at])
+  })
+
+  it('the field and the chevrons read one region derivation per document', () => {
+    const doc = Text.of(DOC.split('\n'))
+    expect(regionsOf(doc)).toBe(regionsOf(doc))
   })
 
   it('toggling a folded section opens it', async () => {
@@ -213,22 +233,16 @@ describe('the section never joins the fold store', () => {
   it('its key is a sentinel no heading scan can spell', async () => {
     const view = await mountEditor({ initialBody: CITED })
     expect(citeRegion(view)?.key.charCodeAt(0)).toBe(0)
-    expect(headingSections(headingSrc(CITED)).map((h) => h.key)).toEqual(['Notes'])
+    expect(headingSections(scanDoc(CITED)).map((h) => h.key)).toEqual(['Notes'])
   })
 })
 
 describe('a heading stops where the citations section starts', () => {
-  it('every section reaching the boundary clamps, not just the last', async () => {
-    const view = await mountEditor({ initialBody: NESTED })
-    const cut = startOf(NESTED, 5)
-    const heads = regionsOf(view.state.doc).filter((r) => r.kind === 'heading')
-    expect(heads.map((h) => h.key)).toEqual(['Title', 'Sources'])
-    for (const h of heads) expect(h.to, h.key).toBe(cut)
-  })
-
-  it('and without the clamp both of them swallow it', () => {
-    const end = NESTED.length
-    expect(headingSections(headingSrc(NESTED)).map((h) => h.to)).toEqual([end, end])
+  it('the sections themselves stop at the run', () => {
+    expect(headingSections(scanDoc(NESTED)).map((h) => h.to)).toEqual([
+      startOf(NESTED, 5),
+      startOf(NESTED, 5),
+    ])
   })
 
   it('the region, the scan and the clamped heading agree on the boundary', async () => {
@@ -238,8 +252,6 @@ describe('a heading stops where the citations section starts', () => {
     expect(scan.firstLine).toBe(6)
     expect(r?.anchor).toBe(startOf(NESTED, scan.firstLine))
     expect(r?.lineEnd).toBe(r!.anchor - 1)
-    const heads = regionsOf(view.state.doc).filter((h) => h.kind === 'heading')
-    for (const h of heads) expect(h.to, h.key).toBe(startOf(NESTED, scan.anchorLine))
   })
 
   it('a heading immediately above a run yields one region, anchored on the heading', async () => {

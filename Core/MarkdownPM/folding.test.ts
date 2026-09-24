@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { headingOutline, headingSections, headingSrc } from './Engine/headingScan'
+import { headingOutline, headingSections } from './Engine/headingScan'
+import { scanDoc } from './Engine/docScan'
 
 // `#` is the first keystroke of every heading and the parser calls it a valid empty heading. The editor does not: it would hide itself to a blank line, take a chevron, open an unnamed outline row under an empty persisted fold key, and swallow the paragraphs below it into a draggable section.
 describe('a heading with no text is not a heading to this editor', () => {
   it('a bare marker opens no section and no outline row', () => {
     const doc = 'intro\n#\nbody a\nbody b'
-    expect(headingSections(headingSrc(doc))).toEqual([])
+    expect(headingSections(scanDoc(doc))).toEqual([])
     expect(headingOutline(doc)).toEqual([])
   })
   it('and the space alone is enough to make it one', () => {
@@ -19,7 +20,7 @@ describe('a heading with no text is not a heading to this editor', () => {
 describe('headingOutline — every heading, not just the foldable ones', () => {
   it('keeps a heading with no body beneath it (headingSections drops those)', () => {
     expect(headingOutline('# One\n# Two\nbody').map((h) => h.text)).toEqual(['One', 'Two'])
-    expect(headingSections(headingSrc('# One\n# Two\nbody')).map((s) => s.key)).toEqual(['Two'])
+    expect(headingSections(scanDoc('# One\n# Two\nbody')).map((s) => s.key)).toEqual(['Two'])
   })
   it('keeps a trailing heading at the document end', () => {
     expect(headingOutline('# One\nbody\n# Last').map((h) => h.text)).toEqual(['One', 'Last'])
@@ -35,14 +36,20 @@ describe('headingOutline — every heading, not just the foldable ones', () => {
     expect(headingOutline('# Real\n```\n# Not\n```\ntail').map((h) => h.text)).toEqual(['Real'])
   })
   it('duplicate text stays tellable apart by key, sharing the sections ordinal', () => {
-    expect(headingOutline('# Notes\nb\n# Notes\nb').map((h) => h.key)).toEqual(['Notes', 'Notes 2'])
+    expect(headingOutline('# Notes\nb\n# Notes\nb').map((h) => h.key)).toEqual([
+      'Notes',
+      'Notes\u00002',
+    ])
+  })
+  it("a heading whose own text ends in a number never shares a duplicate's key", () => {
+    expect(new Set(headingOutline('# Draft\n# Draft\n# Draft 2').map((h) => h.key)).size).toBe(3)
   })
 })
 
 describe('headingSections', () => {
   it('a heading folds down to the next equal-or-higher heading', () => {
     const doc = '# A\nbody\nmore\n# B\nx'
-    const s = headingSections(headingSrc(doc))
+    const s = headingSections(scanDoc(doc))
     expect(s).toHaveLength(2)
     expect(doc.slice(s[0].lineEnd, s[0].to)).toBe('\nbody\nmore')
     expect(doc.slice(s[1].lineEnd, s[1].to)).toBe('\nx')
@@ -50,7 +57,7 @@ describe('headingSections', () => {
 
   it('a subsection (deeper heading) is contained, not closing its parent', () => {
     const doc = '# Top\nintro\n## Sub\ndeep\n# Next\nend'
-    const s = headingSections(headingSrc(doc))
+    const s = headingSections(scanDoc(doc))
     const top = s.find((x) => x.key === 'Top')!
     const sub = s.find((x) => x.key === 'Sub')!
     expect(doc.slice(top.lineEnd, top.to)).toBe('\nintro\n## Sub\ndeep')
@@ -59,14 +66,14 @@ describe('headingSections', () => {
 
   it('runs to document end when no later heading closes it', () => {
     const doc = '# Only\na\nb'
-    const s = headingSections(headingSrc(doc))
+    const s = headingSections(scanDoc(doc))
     expect(s).toHaveLength(1)
     expect(s[0].to).toBe(doc.length)
   })
 
   it('drops a heading with no body (nothing to fold) but keeps ordinal stability', () => {
     const doc = '# Empty\n# Dupe\nx\n# Dupe\ny'
-    const keys = headingSections(headingSrc(doc)).map((s) => s.key)
-    expect(keys).toEqual(['Dupe', 'Dupe 2'])
+    const keys = headingSections(scanDoc(doc)).map((s) => s.key)
+    expect(keys).toEqual(['Dupe', 'Dupe\u00002'])
   })
 })

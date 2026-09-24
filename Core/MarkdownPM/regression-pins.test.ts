@@ -15,7 +15,6 @@ import { setHeading, setList } from './Input/format'
 import { subBlockAt, renumberSequencedRun } from './Engine/listDragModel'
 import { calloutDeleteVerdict, type GuardVerdict } from './Guards/calloutGuard'
 import { headingSections } from './Engine/headingScan'
-import { headingSrc } from './Engine/headingScan'
 import { fenceRangesOf } from './Engine/detect'
 import { chunksOver, type DocScan, inCodeAt, scanDoc } from './Engine/docScan'
 
@@ -292,7 +291,7 @@ describe('dashArrow — link-target guard (relative paths, anchors)', () => {
 describe('headingSections — fence-blind no more', () => {
   it('ignores # lines inside code fences', () => {
     const doc = '## Real\nprose\n```bash\n# comment\necho hi\n```\ntail'
-    const sections = headingSections(headingSrc(doc))
+    const sections = headingSections(scanDoc(doc))
     expect(sections).toHaveLength(1)
     expect(sections[0].key).toBe('Real')
     expect(sections[0].to).toBe(doc.length)

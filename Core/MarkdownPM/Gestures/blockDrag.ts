@@ -19,19 +19,15 @@ function bottomAbove(view: EditorView, at: number): number | null {
 type Cand = Boundary<{ left: number; right: number }>
 interface BlockShape {
   starts: number[]
-  docLength: number
+  end: number
   afterBlock: number
 }
 
 function blockShape(view: EditorView, block: { from: number; to: number }): BlockShape {
   const scan = docScan(view.state.doc)
   const starts = blockStarts(scan).map((b) => b.from)
-  const docLength = scan.text.length
-  return {
-    starts,
-    docLength,
-    afterBlock: starts.find((s) => s > block.to) ?? docLength,
-  }
+  const end = scan.lineStarts[scan.citations.firstLine]
+  return { starts, end, afterBlock: starts.find((s) => s > block.to) ?? end }
 }
 
 function collectCands(
@@ -41,7 +37,7 @@ function collectCands(
 ): Cand[] {
   const rect = view.contentDOM.getBoundingClientRect()
   const right = rect.right - (parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0)
-  const { starts, docLength } = shape
+  const { starts, end } = shape
   const out: Cand[] = []
   // `view.viewport`, never `visibleRanges` — a block widget puts a gap in the visible ranges and would lose the boundary above a table.
   const { from: top, to: bottom } = view.viewport
@@ -53,7 +49,7 @@ function collectCands(
     if (!c) continue
     const topY = lineElementAt(view, from)?.getBoundingClientRect().top ?? c.top
     out.push({ at: from, y: topY, slot: { left: c.left, right } })
-    const nextFrom = i + 1 < starts.length ? starts[i + 1] : docLength
+    const nextFrom = i + 1 < starts.length ? starts[i + 1] : end
     const botY = bottomAbove(view, nextFrom)
     if (botY !== null) out.push({ at: nextFrom, y: botY, slot: { left: c.left, right } })
   }
