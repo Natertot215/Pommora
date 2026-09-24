@@ -45,7 +45,7 @@ import { useSession } from '../../Session/store'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
-import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
+import { hiddenRow, middleRegion, optionRow } from '@pommora/uix/Menus/frames.css'
 import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
 import {
@@ -291,7 +291,7 @@ export function GroupFrame({
         </>
       )}
       <MenuSeparator flush />
-      <div className={`${oo.middle} over-scroll`}>
+      <div className={`${middleRegion} over-scroll`}>
         {!structural && group.kind === 'property' ? (
           activeDef?.type === 'datetime' ? (
             <DateBucketList

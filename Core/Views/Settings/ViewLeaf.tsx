@@ -1,7 +1,6 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import type { IconName } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import { GroupFrame } from './GroupFrame'
@@ -9,19 +8,6 @@ import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 
 export type ViewLeafId = 'group' | 'filter' | 'sort'
-export type ViewRowId = 'layout' | ViewLeafId
-export interface ViewRow<Id extends string = ViewRowId> {
-  id: Id
-  label: string
-  icon: IconName
-}
-
-export const VIEW_ROWS: ViewRow[] = [
-  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
-  { id: 'group', label: 'Group', icon: 'layers' },
-  { id: 'filter', label: 'Filter', icon: 'list-filter' },
-  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
-]
 
 export function ViewLeaf({
   id,
