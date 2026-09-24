@@ -38,7 +38,7 @@ import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { collectionOfPage } from '../../Properties/pageRow'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import { SidebarDnd, useSidebarRowEl } from './sidebarDnd'
-import { buildIndex, entryAtPath, type Index } from './sidebarDndModel'
+import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '@pommora/core/Settings/experimental'
 import { pageMetaOf, useSession } from '../../Session/store'
@@ -461,7 +461,8 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
   const mutate = useSession((s) => s.mutate)
   const rowEl = useSidebarRowEl()
   const trigger = useRef<HTMLElement | null>(null)
-  const entry = iconPath === null ? undefined : entryAtPath(index, iconPath)
+  const entry =
+    iconPath === null ? undefined : [...index.byId.values()].find((e) => e.path === iconPath)
   if (entry) trigger.current = rowEl(entry.id) ?? null
   const ownIcon = (): string | undefined => {
     switch (entry?.kind) {
@@ -556,12 +557,9 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   dndIndexRef.current = dndIndex
 
   const signalPeek = useSession((s) => s.signalPeek)
-  const onCommit = (req: MutateRequest): void => {
-    // Pulses the landing container so a locked one can peek the newcomer; id resolves via the pre-move path.
-    if (req.op === 'movePage' || req.op === 'moveSet') {
-      const moved = entryAtPath(dndIndexRef.current, req.path)
-      if (moved) signalPeek(req.newParentPath, moved.id)
-    }
+  const onCommit = (req: MutateRequest, id: string): void => {
+    // Pulses the landing container so a locked one can peek the newcomer.
+    if (req.op === 'movePage' || req.op === 'moveSet') signalPeek(req.newParentPath, id)
     void mutate(req)
   }
   const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
