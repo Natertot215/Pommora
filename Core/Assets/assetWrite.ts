@@ -1,11 +1,11 @@
-import { basename, extname, join } from '../Paths/posix'
+import { basename, extname, join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { connectionText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
 import { createDisambiguated, reservedAssetLeaf } from '../Paths/names'
-import { assetsDir, relPosix } from '../Paths/paths'
+import { assetsDir } from '../Paths/paths'
 
 export async function writeAssetFile(
   root: string,
@@ -14,7 +14,7 @@ export async function writeAssetFile(
   bytes: Uint8Array,
 ): Promise<Result<string>> {
   const dir = assetsDir(root, assetDir)
-  if (reservedAssetLeaf(relPosix(root, join(dir, base))))
+  if (reservedAssetLeaf(relative(root, join(dir, base))))
     return fail('reserved', `${base} is a reserved name at the assets root.`)
   await machine().mkdir(dir)
   const ext = extname(base)
@@ -26,7 +26,7 @@ export async function writeAssetFile(
       return fail('exists', `${file} already exists.`)
     await atomicWriteBinary(abs, bytes)
     // `atomicWriteBinary` records the write and the echo is dropped, so the map is the writer's to keep current or the banner renders blank.
-    patchHeldAssetMap(root, relPosix(root, abs), 'add')
+    patchHeldAssetMap(root, relative(root, abs), 'add')
     return ok(connectionText(file))
   })
 }

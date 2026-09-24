@@ -4,7 +4,7 @@ import { join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { ensureIdentity, readIdentity } from './identity'
 import { agendaContext, resolveFolderKind } from './folderKind'
-import { isUlid } from './ids'
+import { isUlidShaped } from './identityMark'
 import { pathExists } from '../Files/atomicWrite'
 import { valueOr } from '../Contract/result'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
@@ -31,7 +31,7 @@ describe('ensureIdentity', () => {
     expect(r.created).toBe(true)
     const j = await readId()
     expect(Object.keys(j).sort()).toEqual(['agenda_folders', 'createdAt', 'id'])
-    expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
+    expect(isUlidShaped(j.id)).toBe(true)
     expect(Number.isNaN(Date.parse(j.createdAt as string))).toBe(false)
   })
 
@@ -66,7 +66,7 @@ describe('ensureIdentity', () => {
     expect(r.created).toBe(false)
     const j = await readId()
     expect(j.note).toBe('keep me')
-    expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
+    expect(isUlidShaped(j.id)).toBe(true)
     expect(j.agenda_folders).toBeUndefined()
     expect(await pathExists(join(root, 'Tasks'))).toBe(false)
   })
@@ -143,8 +143,8 @@ describe('the agenda singleton seed', () => {
     // The registration IS the record — a config whose id it doesn't name is inert.
     expect(reg.tasks).toBe(task.id)
     expect(reg.events).toBe(event.id)
-    expect(isUlid(reg.tasks)).toBe(true)
-    expect(isUlid(reg.events)).toBe(true)
+    expect(isUlidShaped(reg.tasks)).toBe(true)
+    expect(isUlidShaped(reg.events)).toBe(true)
     // Identity only: what fills these folders is the Agenda work's to decide, not the seed's.
     expect(Object.keys(task)).toEqual(['id'])
     expect(Object.keys(event)).toEqual(['id'])

@@ -1,4 +1,4 @@
-import { join, relative } from './posix'
+import { join } from './posix'
 import {
   ASSETS_DIRNAME,
   CONTEXTS_DIR_REL,
@@ -7,8 +7,6 @@ import {
   NEXUS_DIR,
 } from './nexusPaths'
 import { rootSegs } from './exclusion'
-
-export const relPosix = (root: string, abs: string): string => relative(root, abs)
 
 const AGENDA_KINDS = ['task', 'event'] as const
 

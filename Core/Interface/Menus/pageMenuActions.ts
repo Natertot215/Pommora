@@ -1,7 +1,7 @@
-import { titleFromPath } from '@pommora/core/Connections/connections'
-import { pageLinkText, pagePathText, type PageMenuContext } from '@pommora/core/Actions/pageMenu'
+import { connectionText } from '@pommora/core/Connections/connections'
+import { pagePathText, type PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { relDirname } from '@pommora/core/Paths/posix'
+import { relDirname, titleFromPath } from '@pommora/core/Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
@@ -22,7 +22,7 @@ export function runPageSendAction(
     return true
   }
   if (action === 'title:copylink') {
-    void host().ask('clipboard:write', pageLinkText(titleFromPath(path)))
+    void host().ask('clipboard:write', connectionText(titleFromPath(path)))
     return true
   }
   if (action === 'title:copypath') {

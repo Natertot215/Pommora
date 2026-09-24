@@ -4,7 +4,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { createFolderEntity, renameFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { baseSidecar, pageCollectionSidecar } from './schemas'
-import { isUlid } from './ids'
+import { isUlidShaped } from './identityMark'
 
 let root: string
 beforeEach(async () => {
@@ -19,7 +19,7 @@ describe('createFolderEntity', () => {
     const r = await createFolderEntity(root, 'space', 'Health', { icon: 'folder', color: 'green' })
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(isUlid(r.value.id)).toBe(true)
+    expect(isUlidShaped(r.value.id)).toBe(true)
     expect(await readSidecar(r.value.path, 'space', baseSidecar)).toMatchObject({
       id: r.value.id,
       icon: 'folder',

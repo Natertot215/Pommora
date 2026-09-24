@@ -1,8 +1,12 @@
-import { embeddableTitle, pageEmbedText, pageLinkPattern } from '../Connections/connections'
+import {
+  embeddableTitle,
+  pageEmbedText,
+  pageLinkPattern,
+  connectionText,
+} from '../Connections/connections'
 import { MD_LINK, encodeLinkTarget, targetTitle } from '../Connections/links'
 import { isValidLink, WEB_ADDRESS } from '../Paths/urlPath'
 import { serializeLink } from '../Connections/linkValue'
-import { pageLinkText } from './pageMenu'
 import { linkPaste, type LinkPaste } from '../MarkdownPM/Links/pasteDecision'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 import { composeWebpageEmbedLine } from '../MarkdownPM/Embeds/webpageEmbed'
@@ -98,7 +102,7 @@ export function pasteAsWrite(
   if (!target || form === 'footnote') return null
   if ((form === 'embedPage' || form === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
-    if (form === 'connection') return { kind: 'text', text: pageLinkText(target.title) }
+    if (form === 'connection') return { kind: 'text', text: connectionText(target.title) }
     if (form === 'embedPage') return { kind: 'line', text: pageEmbedText(target.title) }
     // Through the serializer so a `]` escapes: inline, `Notes [WIP]` tokenizes as nothing.
     if (form === 'markdown')

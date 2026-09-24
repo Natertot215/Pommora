@@ -1,6 +1,6 @@
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SelectionState, SelectTarget } from '@pommora/core/Navigation/navRef'
-import { titleFromPath } from '@pommora/core/Connections/connections'
+import { titleFromPath } from '@pommora/core/Paths/posix'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf, type TrailNode } from '../../Nexus/treeIndex'
 import { findSpace } from '../../Nexus/treeIndex'

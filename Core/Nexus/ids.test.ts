@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { decodeTime } from 'ulidx'
-import { newId, isUlid, adoptedId, mintPropertyId, idTime, idAt, contentIdAt, shardOf } from './ids'
+import { isUlidShaped } from './identityMark'
+import { newId, adoptedId, mintPropertyId, idTime, idAt, contentIdAt, shardOf } from './ids'
 
-describe('newId / isUlid', () => {
+describe('newId / isUlidShaped', () => {
   it('mints valid, unique ULIDs', () => {
     const a = newId()
     const b = newId()
-    expect(isUlid(a)).toBe(true)
-    expect(isUlid(b)).toBe(true)
+    expect(isUlidShaped(a)).toBe(true)
+    expect(isUlidShaped(b)).toBe(true)
     expect(a).not.toBe(b)
   })
 
@@ -17,9 +18,9 @@ describe('newId / isUlid', () => {
   })
 
   it('rejects non-ULIDs', () => {
-    expect(isUlid('')).toBe(false)
-    expect(isUlid('not-a-ulid')).toBe(false)
-    expect(isUlid(adoptedId('x'))).toBe(false)
+    expect(isUlidShaped('')).toBe(false)
+    expect(isUlidShaped('not-a-ulid')).toBe(false)
+    expect(isUlidShaped(adoptedId('x'))).toBe(false)
   })
 })
 
@@ -89,7 +90,7 @@ describe('mintPropertyId', () => {
   it('mints a prop_<ulid> id whose suffix is a valid ULID', () => {
     const id = mintPropertyId()
     expect(id.startsWith('prop_')).toBe(true)
-    expect(isUlid(id.slice('prop_'.length))).toBe(true)
+    expect(isUlidShaped(id.slice('prop_'.length))).toBe(true)
   })
 
   it('mints unique ids', () => {

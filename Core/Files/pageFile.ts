@@ -7,8 +7,9 @@ import {
   isScalar,
   isSeq,
 } from 'yaml'
-import { basename, basenameNoMd, join } from '../Paths/posix'
-import { admitContentFile, contentId } from '../Nexus/identityMark'
+import { join, titleFromPath } from '../Paths/posix'
+import { admitContentFile, ID_KEY } from '../Nexus/identityMark'
+import { asString } from '../Nexus/coerce'
 import { adoptedId } from '../Nexus/ids'
 import type { PageDetail } from '../Pages/pageDetail'
 import { atomicWriteFile } from './atomicWrite'
@@ -42,7 +43,8 @@ export function splitFrontmatter(content: string): Record<string, unknown> {
   }
 }
 
-export const stampedId = (text: string): string | null => contentId(splitFrontmatter(text)) ?? null
+export const stampedId = (text: string): string | null =>
+  asString(splitFrontmatter(text)[ID_KEY]) ?? null
 
 /** Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser recovered, so writing it back destroys the rest. Broken is anything that can't round-trip, an alias token like `*word` included. */
 const mergeable = (doc: Document): boolean =>
@@ -158,8 +160,8 @@ export async function readPageDetail(rootPath: string, relPath: string): Promise
   if (content === null) throw new Error(`Page not found: ${relPath}`)
   const frontmatter = splitFrontmatter(content)
   return {
-    id: contentId(frontmatter) ?? adoptedId(relPath),
-    title: basenameNoMd(basename(relPath)),
+    id: asString(frontmatter[ID_KEY]) ?? adoptedId(relPath),
+    title: titleFromPath(relPath),
     path: relPath,
     frontmatter,
     body: splitEnvelope(content).body,

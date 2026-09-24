@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { admitContentFile, contentId, ID_KEY, kindOf, markId } from './identityMark'
+import { admitContentFile, ID_KEY, kindOf, markId } from './identityMark'
 
 const PAGE = '01KVGMT8BFP350FZZXAMG1QDRC'
 const TASK = '01KVGMT8BFT350FZZXAMG1QDRC'
@@ -24,31 +24,6 @@ describe('the kind mark', () => {
     expect(kindOf(UNMARKED)).toBeNull()
     expect(kindOf('research-bizops')).toBeNull()
     expect(kindOf('')).toBeNull()
-  })
-})
-
-describe('contentId', () => {
-  it('reads the id under the one key, whatever kind it marks', () => {
-    expect(contentId({ [ID_KEY]: PAGE })).toBe(PAGE)
-    expect(contentId({ [ID_KEY]: TASK })).toBe(TASK)
-    expect(contentId({ [ID_KEY]: EVENT })).toBe(EVENT)
-  })
-
-  it('is undefined when the key is absent — the adoptable case, not an error', () => {
-    expect(contentId({})).toBeUndefined()
-    expect(contentId({ icon: 'star' })).toBeUndefined()
-  })
-
-  it('is undefined for a non-string or empty value — YAML admits numbers, maps and lists', () => {
-    expect(contentId({ [ID_KEY]: 3 })).toBeUndefined()
-    expect(contentId({ [ID_KEY]: null })).toBeUndefined()
-    expect(contentId({ [ID_KEY]: { nested: true } })).toBeUndefined()
-    expect(contentId({ [ID_KEY]: ['a'] })).toBeUndefined()
-    expect(contentId({ [ID_KEY]: '' })).toBeUndefined()
-  })
-
-  it('returns a hand-authored id verbatim — it does not police shape', () => {
-    expect(contentId({ [ID_KEY]: 'research-bizops' })).toBe('research-bizops')
   })
 })
 

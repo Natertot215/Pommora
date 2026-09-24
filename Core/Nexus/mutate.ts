@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile } from '../Files/walk'
+import { isMarkdownFile } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { contextsDir } from '../Paths/paths'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'

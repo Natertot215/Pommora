@@ -4,8 +4,8 @@ import { NOT_A_PROPERTY_DIR } from '../Contract/validators'
 import { seedContentIndex } from '../Index/indexSeed'
 import { assetSubRoot } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { assetsDir, relPosix } from '../Paths/paths'
-import { join } from '../Paths/posix'
+import { assetsDir } from '../Paths/paths'
+import { join, relative } from '../Paths/posix'
 import { confirmSettingsWrite, pushAssetWrites } from '../Nexus/confirm'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 
@@ -38,7 +38,7 @@ export const assetsHandlers = {
     if (!chosen) return ok(null)
     if (!forProperty) return validateAssetDir(root, chosen)
     // Containment BEFORE the subtraction: a folder outside the asset root would otherwise have its leading segments sliced off and re-read as a plausible subfolder.
-    const below = assetSubfolder(relPosix(root, chosen), assetDir)
+    const below = assetSubfolder(relative(root, chosen), assetDir)
     return below !== null && validPropertyDir(below, assetDir) ? ok(below) : NOT_A_PROPERTY_DIR
   }),
 

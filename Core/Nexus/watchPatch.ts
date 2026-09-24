@@ -1,4 +1,4 @@
-import { basename, join, relDirname } from '../Paths/posix'
+import { basename, join, relDirname, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
 import { asString, asStringArray } from './coerce'
@@ -12,7 +12,6 @@ import {
 } from '../Paths/exclusion'
 import { adoptedId, isAdoptedId, shardOf } from './ids'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
-import { isMarkdownFile } from '../Files/walk'
 import { removePathIndex } from '../Index/contentIndex'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { renameHeadingCascade } from './cascade'
@@ -26,7 +25,6 @@ import {
   SPACE_SIDECAR,
   TILE_DOC_FILENAME,
   nexusConfig,
-  relPosix,
 } from '../Paths/paths'
 import type { TileHostRef } from '../Tiles/tiles'
 import {
@@ -80,7 +78,7 @@ export type WatchClass =
   | { kind: 'full-refresh' }
 
 const toPosixRel = (root: string, absPath: string): string | null => {
-  const rel = relPosix(root, absPath)
+  const rel = relative(root, absPath)
   return !rel || escapes(rel) ? null : rel
 }
 

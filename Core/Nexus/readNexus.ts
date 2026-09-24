@@ -1,4 +1,4 @@
-import { basename, basenameNoMd, join } from '../Paths/posix'
+import { basename, join, relJoin, titleFromPath } from '../Paths/posix'
 import { valueOr } from '../Contract/result'
 import { splitFrontmatter } from '../Files/pageFile'
 import { admitContentFile } from './identityMark'
@@ -129,16 +129,12 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
     if (admission.state === 'unknown') return null
     const node = makePageNode({
       id: admission.state === 'member' ? admission.id : adoptedId(relFile),
-      title: basenameNoMd(basename(absFile)),
+      title: titleFromPath(absFile),
       path: relFile,
     })
     retainContextKeys(node, fm)
     return { node, fm, mtimeMs: stat?.mtimeMs ?? null }
   })
-}
-
-async function readPage(absFile: string, relFile: string): Promise<PageNode | null> {
-  return (await readPageRecord(absFile, relFile))?.node ?? null
 }
 
 async function readDirectPages(
@@ -149,8 +145,8 @@ async function readDirectPages(
   const files = (await listEntries(absDir)).filter(isContentFile)
   const out = await Promise.all(
     files.map(async (e) => {
-      const rel = relDir ? `${relDir}/${e.name}` : e.name
-      const node = await readPage(join(absDir, e.name), rel).catch(() => null)
+      const rel = relJoin(relDir, e.name)
+      const node = (await readPageRecord(join(absDir, e.name), rel).catch(() => null))?.node ?? null
       if (node === null) unreadable.push(rel)
       return node
     }),
@@ -340,9 +336,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     }),
   )
   const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)
-  const orderedCollections = resolveOrder(allCollections, order.collections)
-
-  const collections = orderedCollections
+  const collections = resolveOrder(allCollections, order.collections)
 
   if (ctxRegistry && contexts) {
     const spacesByContext = new Map(contexts.map((g) => [g.def.id, g.spaces]))
@@ -359,7 +353,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
         visitSets(s.sets)
       }
     }
-    for (const c of orderedCollections) {
+    for (const c of collections) {
       c.pages.forEach(attach)
       visitSets(c.sets)
     }

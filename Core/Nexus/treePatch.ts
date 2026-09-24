@@ -1,15 +1,12 @@
 // The one set of tree transforms both processes apply — the renderer optimistically, main as canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
 
 import { NEW_SLOT, type MutateRequest } from './mutateRequest'
-import { titleFromPath } from '../Connections/connections'
 import { stabilize } from './treeStabilize'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SavedView } from '../Views/views'
-import { basename, relDirname } from '../Paths/posix'
-
-const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
+import { basename, isMarkdownFile, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 
 // The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
 
@@ -214,7 +211,7 @@ export function relocateNodeInTree(
   newParentPath: string,
 ): NexusTree | null {
   if (relDirname(path) === newParentPath) return null
-  const newPath = joinPath(newParentPath, basename(path))
+  const newPath = relJoin(newParentPath, basename(path))
   const pulled = extract(tree.collections, path)
   if (!pulled.node) return null
   const moved = reparentPaths(pulled.node, path, newPath)
@@ -351,8 +348,8 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
                 def: { ...g.def, title: req.newName },
                 spaces: g.spaces.map((s) => {
                   const groupDir = relDirname(s.path)
-                  const newDir = joinPath(relDirname(groupDir), req.newName)
-                  return { ...s, path: joinPath(newDir, basename(s.path)) }
+                  const newDir = relJoin(relDirname(groupDir), req.newName)
+                  return { ...s, path: relJoin(newDir, basename(s.path)) }
                 }),
               }
             : g,
@@ -364,7 +361,7 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
           ...g,
           spaces: g.spaces.map((s) =>
             s.id === req.spaceId
-              ? { ...s, title: req.newName, path: joinPath(relDirname(s.path), req.newName) }
+              ? { ...s, title: req.newName, path: relJoin(relDirname(s.path), req.newName) }
               : s,
           ),
         })),
@@ -469,15 +466,13 @@ function updateInContainers(
 export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
   const parent = relDirname(path)
   // Case-insensitive to match the walk's admit: a `.MD` page takes the canonical extension.
-  const newPath = /\.md$/i.test(path)
-    ? joinPath(parent, `${newName}.md`)
-    : joinPath(parent, newName)
+  const newPath = isMarkdownFile(path) ? relJoin(parent, `${newName}.md`) : relJoin(parent, newName)
   const next = updateNodeInTree(tree, path, (node) => {
     if (node.kind === 'page')
-      return { ...node, title: newName, path: joinPath(parent, `${newName}.md`) }
+      return { ...node, title: newName, path: relJoin(parent, `${newName}.md`) }
     if (node.kind === 'collection' || node.kind === 'set')
-      return { ...reparentPaths(node, path, joinPath(parent, newName)), title: newName }
-    return { ...node, title: newName, path: joinPath(parent, newName) }
+      return { ...reparentPaths(node, path, relJoin(parent, newName)), title: newName }
+    return { ...node, title: newName, path: relJoin(parent, newName) }
   })
   return repointUnreadable(next, path, newPath)
 }

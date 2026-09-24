@@ -1,12 +1,7 @@
 import { assetMatcher, excludedMatcher, type WatchScope } from '../Paths/exclusion'
 import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
-import { join, relative } from '../Paths/posix'
+import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
-
-// Case-insensitive: a walk that admits `.MD` while a sweep skips it leaves a page that never rewrites.
-export function isMarkdownFile(name: string): boolean {
-  return name.toLowerCase().endsWith('.md')
-}
 
 export function isContentFile(entry: DirEntry): boolean {
   return entry.kind === 'file' && !entry.name.startsWith('_') && isMarkdownFile(entry.name)

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   destinationRows,
-  pageLinkText,
   pageMetaMenuItems,
   pageMetaMenuSubset,
   pagePathText,
@@ -82,8 +81,7 @@ describe('the page menu', () => {
     ])
   })
 
-  it('copies a page as a connection, and as its location without the extension', () => {
-    expect(pageLinkText('Weekly Review')).toBe('[[Weekly Review]]')
+  it('copies a page as its location without the extension', () => {
     expect(pagePathText('Collection A/Set Alpha/Page A.md')).toBe('Collection A/Set Alpha/Page A')
     expect(pagePathText('Notes/Read.MD')).toBe('Notes/Read')
   })

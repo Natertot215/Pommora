@@ -1,5 +1,5 @@
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
-import { type ContentKind, isUlidShaped, markId } from './identityMark'
+import { type ContentKind, markId } from './identityMark'
 import { machine } from '../Platform/machine'
 
 const nextUlid = monotonicFactory()
@@ -36,11 +36,6 @@ export function shardOf(id: string): string | null {
   const d = new Date(t)
   const year = d.getUTCFullYear()
   return year > 9999 ? null : `${String(d.getUTCMonth() + 1).padStart(2, '0')}-${year}`
-}
-
-/** Case-SENSITIVE where the ulid library is not: an id becomes a folder name, and a case-insensitive filesystem would collide two ids the library calls equal. */
-export function isUlid(value: string): boolean {
-  return isUlidShaped(value)
 }
 
 export function mintPropertyId(): string {

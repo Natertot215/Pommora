@@ -1,13 +1,13 @@
-import { join } from '../Paths/posix'
+import { join, relative, isMarkdownFile } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { fail, ok, type Result } from '../Contract/result'
-import { isMarkdownFile, listEntries } from '../Files/walk'
+import { listEntries } from '../Files/walk'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { nexusFolderRefusal } from './codec'
-import { SIDECARS, relPosix } from '../Paths/paths'
+import { SIDECARS } from '../Paths/paths'
 
 export async function validateAssetDir(root: string, abs: string): Promise<Result<string>> {
-  const rel = relPosix(root, abs)
+  const rel = relative(root, abs)
   if (!rel) return fail('invalid-path', 'The nexus root itself cannot hold assets.')
   const resolved = await resolveUnderRoot(root, rel)
   if (!resolved.ok) return resolved

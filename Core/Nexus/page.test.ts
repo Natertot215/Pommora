@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ID_KEY } from './identityMark'
+import { ID_KEY, isUlidShaped } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
@@ -7,7 +7,6 @@ import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } 
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 
-import { isUlid } from './ids'
 import { closeSession, openSession } from './session'
 import { flushValueWrites } from './valuesChanged'
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
@@ -41,7 +40,7 @@ describe('createPage', () => {
     expect(r.value.path.endsWith('My Page.md')).toBe(true)
     const content = await readFile(r.value.path, 'utf8')
     const fm = splitFrontmatter(content)
-    expect(isUlid(fm[ID_KEY] as string)).toBe(true)
+    expect(isUlidShaped(fm[ID_KEY])).toBe(true)
     expect(Object.keys(fm)).toEqual([ID_KEY])
     expect(content).toBe(`---\n${ID_KEY}: ${r.value.id}\n---\nHello`)
   })
@@ -65,7 +64,7 @@ describe('createPage', () => {
     const fm = splitFrontmatter(await readFile(r.value.path, 'utf8'))
     expect(fm.status).toEqual(['doing'])
     expect('empty' in fm).toBe(false)
-    expect(isUlid(fm[ID_KEY] as string)).toBe(true)
+    expect(isUlidShaped(fm[ID_KEY])).toBe(true)
   })
 })
 

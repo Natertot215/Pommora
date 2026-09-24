@@ -1,8 +1,5 @@
 import { foldKey } from '../Paths/caseFold'
 
-export const titleFromPath = (path: string): string =>
-  (path.split('/').pop() ?? path).replace(/\.md$/i, '')
-
 export const pageEmbedPattern = (): RegExp =>
   /!\[\[(?<page>[^\]\r\n#]*)(?:#(?<heading>[^\]\r\n]*))?\]\]/dg
 

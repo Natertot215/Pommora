@@ -85,20 +85,14 @@ type ContainerKind = 'collection' | 'set'
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
-async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean> {
+async function stampFolder(absDir: string, kind: ContainerKind): Promise<void> {
   const file = sidecarPath(absDir, kind)
-  if (!(await pathExists(file)) && (await migrateContainerSidecar(absDir, kind))) return true
-  let stamped = false
+  if (!(await pathExists(file)) && (await migrateContainerSidecar(absDir, kind))) return
   await rmwJsonStrict(
     file,
-    (cur) => {
-      if (asString(cur.id)) return null
-      stamped = true
-      return { ...cur, id: newId() }
-    },
+    (cur) => (asString(cur.id) ? null : { ...cur, id: newId() }),
     () => ({}),
   )
-  return stamped
 }
 
 async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<boolean> {
@@ -121,29 +115,25 @@ async function stampTree(
   scope: WatchScope,
   kindCtx: FolderKindContext,
   root: string,
-): Promise<number> {
+): Promise<void> {
   const container = kind === 'collection' || kind === 'set'
   const memberKind: ContentKind = container ? 'page' : agendaKind(kind)
   // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud placeholder) costs only itself — letting it throw would silently abandon every folder after it in readdir order.
-  let count = container && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
+  if (container) await stampFolder(absDir, kind).catch(() => {})
 
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) {
-      if ((await stampPage(join(absDir, e.name), memberKind).catch(() => null)) !== null) count++
+      await stampPage(join(absDir, e.name), memberKind).catch(() => {})
     } else if (e.kind === 'dir' && container) {
       const childRel = `${relDir}/${e.name}`
       if (shouldSkipDir(e.name, childRel, scope)) continue
       const abs = join(absDir, e.name)
-      if (await reHomeRegistered(abs, root, kindCtx).catch(() => false)) {
-        count++
-        continue
-      }
+      if (await reHomeRegistered(abs, root, kindCtx).catch(() => false)) continue
       const childKind = await resolveFolderKind(abs, 'nested', kindCtx)
       if (childKind === 'unknown') continue
-      count += await stampTree(abs, childRel, childKind, scope, kindCtx, root).catch(() => 0)
+      await stampTree(abs, childRel, childKind, scope, kindCtx, root).catch(() => {})
     }
   }
-  return count
 }
 
 export async function ensureFolderId(root: string, absDir: string): Promise<void> {
@@ -154,12 +144,11 @@ export async function ensureFolderId(root: string, absDir: string): Promise<void
   if (kind === 'collection' || kind === 'set') await stampFolder(absDir, kind)
 }
 
-export async function stampAdopted(root: string): Promise<{ stamped: number }> {
+export async function stampAdopted(root: string): Promise<void> {
   const scope = scopeOf(await readSettings(root))
   const identity = valueOr(await readIdentity(root), null)
   const kindCtx = await agendaContext(root, identity, true)
 
-  let stamped = 0
   for (const e of await listEntries(root)) {
     if (e.kind !== 'dir') continue
     if (shouldSkipDir(e.name, e.name, scope)) continue
@@ -167,7 +156,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     const kind = await resolveFolderKind(abs, 'root', kindCtx)
     if (kind === 'unknown') continue
     if (kind !== 'collection') {
-      stamped += await stampTree(abs, e.name, kind, scope, kindCtx, root).catch(() => 0)
+      await stampTree(abs, e.name, kind, scope, kindCtx, root).catch(() => {})
       continue
     }
     // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
@@ -177,9 +166,8 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     ) {
       continue
     }
-    stamped += await stampTree(abs, e.name, 'collection', scope, kindCtx, root).catch(() => 0)
+    await stampTree(abs, e.name, 'collection', scope, kindCtx, root).catch(() => {})
   }
-  return { stamped }
 }
 
 async function isEmptyOfContent(

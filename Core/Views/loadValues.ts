@@ -1,5 +1,4 @@
-import { join } from '../Paths/posix'
-import { relPosix } from '../Paths/paths'
+import { join, relative } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { pageFrontmatter } from '../Nexus/schemas'
 import type { PageValues } from './viewRow'
@@ -50,7 +49,7 @@ export async function loadValues(
   const files = await corpus(rootPath, containerRelPath, pageIds)
   const records = await Promise.all(
     files.map((absFile) => {
-      const relFile = relPosix(rootPath, absFile)
+      const relFile = relative(rootPath, absFile)
       return readPageRecord(absFile, relFile).catch(() => null)
     }),
   )

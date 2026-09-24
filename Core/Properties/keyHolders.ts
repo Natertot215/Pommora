@@ -4,14 +4,15 @@ import { queryKeyHolders } from '../Index/contentIndex'
 import { corpusUnder, nexusCorpus } from '../Index/indexSeed'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
+import { relative } from '../Paths/posix'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 import { splitFrontmatter } from '../Files/pageFile'
-import { contentId } from '../Nexus/identityMark'
+import { ID_KEY } from '../Nexus/identityMark'
+import { asString } from '../Nexus/coerce'
 import { ensurePageId } from '../Nexus/adopt'
 import { isAdoptedId } from '../Nexus/ids'
 import { getLiveTree } from '../Nexus/liveTree'
 import { findPage, patchPageFromDisk } from '../Nexus/watchPatch'
-import { relPosix } from '../Paths/paths'
 import { valueOr } from '../Contract/result'
 import { isBlankRaw } from './propertyValue'
 
@@ -60,7 +61,7 @@ export async function keyedHolders(
     if (content === null) continue
     const fields = splitFrontmatter(content) as Record<string, unknown>
     if (!(key in fields)) continue
-    const id = contentId(fields) ?? (await stampListed(root, file))
+    const id = asString(fields[ID_KEY]) ?? (await stampListed(root, file))
     if (!id || seen.has(id)) {
       kept.push(file)
       continue
@@ -73,7 +74,7 @@ export async function keyedHolders(
 }
 
 async function stampListed(root: string, file: string): Promise<string | null> {
-  const rel = relPosix(root, file)
+  const rel = relative(root, file)
   const tree = getLiveTree()
   const listed = tree && findPage(tree, rel)
   if (!listed || !isAdoptedId(listed.id)) return null

@@ -1,4 +1,4 @@
-import { join } from '../Paths/posix'
+import { join, isMarkdownFile } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, parseContextKey, type ContextsRegistry } from './contexts'
 import {
@@ -28,7 +28,7 @@ import {
   setOrDrop,
 } from '../Files/atomicWrite'
 import { noteSidecarWrite } from '../Nexus/valuesChanged'
-import { isMarkdownFile, listEntries } from '../Files/walk'
+import { listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../Paths/paths'

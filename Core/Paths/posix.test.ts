@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dirname, isAbsolute, join, relative } from './posix'
+import { dirname, isAbsolute, isMarkdownFile, join, relative, titleFromPath } from './posix'
 
 describe('posix roots', () => {
   it('keeps a POSIX root through join and dirname', () => {
@@ -25,5 +25,14 @@ describe('posix roots', () => {
     for (const p of ['/etc', 'C:/x', 'C:\\x', '\\\\server\\share', '//server/share'])
       expect(isAbsolute(p)).toBe(true)
     for (const p of ['Notes/a.md', 'C:foo', '.']) expect(isAbsolute(p)).toBe(false)
+  })
+})
+
+describe('the markdown extension', () => {
+  it('reads `.md` in any case, and a title is the base name without it', () => {
+    expect(isMarkdownFile('Notes/Read.MD')).toBe(true)
+    expect(isMarkdownFile('Notes/mdfile')).toBe(false)
+    expect(titleFromPath('Notes/Set/Q3 Plan.Md')).toBe('Q3 Plan')
+    expect(titleFromPath('Loose.md')).toBe('Loose')
   })
 })

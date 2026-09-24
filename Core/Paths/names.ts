@@ -2,6 +2,7 @@ import type { Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { foldKey } from './caseFold'
 import { hiddenName } from './exclusion'
+import { isMarkdownFile } from './posix'
 import { CROPS_REL } from './nexusPaths'
 
 export type NameRole = 'page' | 'directory'
@@ -24,7 +25,7 @@ export function nameError(name: string, role: NameRole): string | null {
   // The walk hides these, so a file named this way could never be shown again.
   if (hiddenName(name)) return `"${name}" can't begin with a dot or underscore.`
   if (/[|#§]/.test(name)) return `"${name}" can't contain "|", "#", or "§".`
-  if (role === 'page' && /\.md$/i.test(name)) return `"${name}" can't end in ".md".`
+  if (role === 'page' && isMarkdownFile(name)) return `"${name}" can't end in ".md".`
   if (role === 'directory' && name.includes('.')) return `"${name}" can't contain a period.`
   if (machine().platform === 'windows') {
     if (/[<>:"?*]/.test(name)) return `"${name}" can't contain < > : " ? * on Windows.`

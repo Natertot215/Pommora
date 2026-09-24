@@ -1,4 +1,4 @@
-import { basename, dirname } from '../Paths/posix'
+import { basename, dirname, titleFromPath } from '../Paths/posix'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashCrumb, TrashRow } from './trashRow'
 import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
@@ -64,7 +64,7 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
   return {
     bundlePath,
     kind: record.entity,
-    title: record.entity === 'page' ? artifactName.replace(/\.md$/i, '') : artifactName,
+    title: record.entity === 'page' ? titleFromPath(artifactName) : artifactName,
     crumbs: live ?? frozenCrumbs(bundlePath),
     ...(live ? {} : { historical: true }),
     deletedAt: deletedAtOf(bundlePath),

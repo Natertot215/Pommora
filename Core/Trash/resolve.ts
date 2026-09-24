@@ -1,6 +1,7 @@
 // Where a recorded artifact re-enters: the placement resolved against the CURRENT tree, or the refusal that says why it cannot be placed.
 
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import { titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import { projectBaseline } from '../Nexus/remintLedger'
@@ -110,7 +111,7 @@ export function resolveRecord(
         ...(parent.sets ?? []).map((s) => s.title),
       ]
       if (record.entity === 'page') {
-        const finalTitle = disambiguate(baseName.replace(/\.md$/i, ''), siblings)
+        const finalTitle = disambiguate(titleFromPath(baseName), siblings)
         return { place: { dir: parent.path, finalName: `${finalTitle}.md` } }
       }
       return { place: { dir: parent.path, finalName: disambiguate(baseName, siblings) } }

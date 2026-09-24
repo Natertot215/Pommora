@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ID_KEY } from './identityMark'
+import { ID_KEY, isUlidShaped, kindOf } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, stat, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { ensurePageId, stampAdopted } from './adopt'
 import { readSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
-import { isUlid, idTime } from './ids'
-import { kindOf } from './identityMark'
+import { idTime } from './ids'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import {
   nexusConfig,
@@ -60,20 +59,19 @@ describe('stampAdopted', () => {
     await Promise.all([held, pass])
     const after = JSON.parse(await readFile(file, 'utf8'))
     expect(after).toMatchObject({ icon: 'box', banner: 'Wallpaper.png' })
-    expect(isUlid(after.id)).toBe(true)
+    expect(isUlidShaped(after.id)).toBe(true)
   })
 
   it('mints ULID sidecars for raw folders at every depth', async () => {
-    const { stamped } = await stampAdopted(root)
-    expect(stamped).toBeGreaterThan(0)
+    await stampAdopted(root)
 
     const notes = await coll(join(root, 'Notes'))
     const daily = await set(join(root, 'Notes', 'Daily'))
     const deep = await set(join(root, 'Notes', 'Daily', 'Deep'))
 
-    expect(notes?.id && isUlid(notes.id)).toBeTruthy()
-    expect(daily?.id && isUlid(daily.id)).toBeTruthy()
-    expect(deep?.id && isUlid(deep.id)).toBeTruthy()
+    expect(isUlidShaped(notes?.id)).toBe(true)
+    expect(isUlidShaped(daily?.id)).toBe(true)
+    expect(isUlidShaped(deep?.id)).toBe(true)
 
     // Each is its own identity — parentage is the folder nesting, never a stored field.
     expect(new Set([notes!.id, daily!.id, deep!.id]).size).toBe(3)
@@ -83,11 +81,11 @@ describe('stampAdopted', () => {
     await stampAdopted(root)
 
     const note1 = splitFrontmatter(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
-    expect(typeof note1[ID_KEY] === 'string' && isUlid(note1[ID_KEY])).toBeTruthy()
+    expect(isUlidShaped(note1[ID_KEY])).toBe(true)
     expect(note1.aliases).toEqual(['foo'])
 
     const day1 = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Day1.md'), 'utf8'))
-    expect(typeof day1[ID_KEY] === 'string' && isUlid(day1[ID_KEY])).toBeTruthy()
+    expect(isUlidShaped(day1[ID_KEY])).toBe(true)
   })
 
   it("an adopted page's id decodes to the file's mtime when that is older than now", async () => {
@@ -109,11 +107,18 @@ describe('stampAdopted', () => {
 
   it('is idempotent — a second run stamps nothing and leaves ids unchanged', async () => {
     await stampAdopted(root)
-    const firstId = (await coll(join(root, 'Notes')))!.id
+    const files = [
+      sidecarPath(join(root, 'Notes'), 'collection'),
+      sidecarPath(join(root, 'Notes', 'Daily'), 'set'),
+      sidecarPath(join(root, 'Notes', 'Daily', 'Deep'), 'set'),
+      join(root, 'Notes', 'Note1.md'),
+      join(root, 'Notes', 'Daily', 'Day1.md'),
+    ]
+    const read = () => Promise.all(files.map((f) => readFile(f, 'utf8')))
+    const first = await read()
 
-    const { stamped } = await stampAdopted(root)
-    expect(stamped).toBe(0)
-    expect((await coll(join(root, 'Notes')))!.id).toBe(firstId)
+    await stampAdopted(root)
+    expect(await read()).toEqual(first)
   })
 
   it('never touches an excluded folder', async () => {

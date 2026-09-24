@@ -9,11 +9,6 @@ describe('resolveOrder', () => {
     expect(r.map((x) => x.id)).toEqual(['a', 'b'])
   })
 
-  it('title fallback when requested (adopted entities)', () => {
-    const r = resolveOrder([mk('z9', 'Apple'), mk('a1', 'Zebra')], undefined, 'title')
-    expect(r.map((x) => x.title)).toEqual(['Apple', 'Zebra'])
-  })
-
   it('honors persisted order, then appends unreferenced by title', () => {
     const r = resolveOrder([mk('a', 'A'), mk('b', 'B'), mk('c', 'C')], ['c', 'a'])
     expect(r.map((x) => x.id)).toEqual(['c', 'a', 'b'])

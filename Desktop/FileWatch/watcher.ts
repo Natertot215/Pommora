@@ -16,7 +16,7 @@ import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { dropOwnEchoes, isRecentWrite, writtenHash } from '@pommora/core/Files/writeEcho'
 import { isMetadataShardRel } from '@pommora/core/Paths/nexusPaths'
-import { relPosix } from '@pommora/core/Paths/paths'
+import { relative } from '@pommora/core/Paths/posix'
 import type { Pushes } from '@pommora/core/Contract/bridge'
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
@@ -95,7 +95,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
         pushConfig(root, win, 'nav:changed', readNavigationFile)
       else if (isConfigPath(root, path, 'matrix'))
         pushConfig(root, win, 'matrix:changed', readMatrixFile)
-      else if (!isMetadataShardRel(relPosix(root, path)) && isRecentWrite(path)) return
+      else if (!isMetadataShardRel(relative(root, path)) && isRecentWrite(path)) return
       batch.push({ event, absPath: path, written: writtenHash(path) })
       if (debounce) clearTimeout(debounce)
       // Chained, so two settles never reseed the index or re-arm the watcher at once.

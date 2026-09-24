@@ -3,7 +3,8 @@ import { stabilize } from '../Nexus/treeStabilize'
 import { ASSETS_DIR_REL, CROPS_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
 import type { AssetMap } from '../Nexus/tree'
 import { neverWatched, rootSegs } from '../Paths/exclusion'
-import { assetsDir, relPosix } from '../Paths/paths'
+import { relative } from '../Paths/posix'
+import { assetsDir } from '../Paths/paths'
 import { listFilesRecursive } from '../Files/walk'
 import { readWatchScope } from '../Settings/settings'
 import type { WatchEventName } from '../Nexus/watchPatch'
@@ -23,7 +24,7 @@ const nameOf = (rel: string): string => normalizeTitle(rel.split('/').pop() ?? '
 export async function buildAssetMap(root: string, assetDir: string): Promise<AssetMap> {
   const abs = await listFilesRecursive(assetsDir(root, assetDir))
   const files: Record<string, string[]> = {}
-  for (const rel of abs.map((p) => relPosix(root, p)).filter((rel) => indexable(rel, assetDir))) {
+  for (const rel of abs.map((p) => relative(root, p)).filter((rel) => indexable(rel, assetDir))) {
     const name = nameOf(rel)
     if (!name) continue
     const held = files[name]
