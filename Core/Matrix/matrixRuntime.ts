@@ -333,25 +333,16 @@ class MatrixRuntime {
     return this.graph.nodes[this.indexOf(id)]
   }
 
-  hitTest(wx: number, wy: number): number {
-    if (!this.sim) return -1
-    return this.indexOf(nodeAt(this.sim, wx, wy, HIT_SLACK)?.id ?? null)
-  }
-
-  hoveredIndex(): number {
-    return this.indexOf(this.hoveredId)
+  hitTest(wx: number, wy: number): string | null {
+    return this.sim ? (nodeAt(this.sim, wx, wy, HIT_SLACK)?.id ?? null) : null
   }
 
   get draggingId(): string | null {
     return this.sim?.drag?.id ?? null
   }
 
-  draggingIndex(): number {
-    return this.indexOf(this.draggingId)
-  }
-
-  setHovered(i: number): void {
-    const id = this.graph.nodes[i]?.id ?? null
+  setHovered(node: string | null): void {
+    const id = node !== null && this.graph.index.has(node) ? node : null
     if (this.hoveredId === id) return
     this.hoveredId = id
     this.invalidate()
@@ -364,8 +355,8 @@ class MatrixRuntime {
     this.invalidate()
   }
 
-  beginDrag(i: number): void {
-    const n = this.graph.nodes[i]
+  beginDrag(id: string): void {
+    const n = this.nodeOf(id)
     if (!n || !this.sim || this.built?.display.locked) return
     this.sim.drag = { id: n.id, x: n.x, y: n.y }
     reheat(this.sim)

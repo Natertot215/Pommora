@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { duration, easeBase, ms } from '@pommora/uix/Animations/motion'
+import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { text } from '@pommora/uix/Theme'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -121,13 +122,20 @@ function readSpacePaint(host: HTMLElement, color: string): SpacePaint {
 // The modifier the label's glance arms on, since a canvas node has no pointer event of its own.
 export let lastShift = false
 
+// A canvas can't move under a still pointer, so its box is read once per hover or press, not per move; leaving, pressing, and a resize let it go.
+const boxes = new WeakMap<HTMLCanvasElement, { left: number; top: number; zoom: number }>()
+
 function screenPoint(
   canvas: HTMLCanvasElement,
   e: { clientX: number; clientY: number },
 ): [number, number] {
-  const box = canvas.getBoundingClientRect()
-  const z = currentZoom(canvas)
-  return [(e.clientX - box.left) / z, (e.clientY - box.top) / z]
+  let box = boxes.get(canvas)
+  if (!box) {
+    const { left, top } = canvas.getBoundingClientRect()
+    box = { left, top, zoom: currentZoom(canvas) }
+    boxes.set(canvas, box)
+  }
+  return [(e.clientX - box.left) / box.zoom, (e.clientY - box.top) / box.zoom]
 }
 
 export function toWorldPoint(
@@ -213,7 +221,6 @@ export function MatrixCanvas({
   labelId,
   canvasRef,
   onNodeDown,
-  onBackgroundDown,
   onMenu,
   children,
 }: {
@@ -222,9 +229,8 @@ export function MatrixCanvas({
   editing: boolean
   labelId: string | null
   canvasRef: React.RefObject<HTMLCanvasElement | null>
-  onNodeDown: (e: React.PointerEvent, index: number) => void
-  onBackgroundDown: (e: React.PointerEvent) => void
-  onMenu: (index: number) => void
+  onNodeDown: (e: React.PointerEvent, id: string) => void
+  onMenu: (id: string) => void
   children?: React.ReactNode
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -239,6 +245,7 @@ export function MatrixCanvas({
   const cellsRef = useRef(new Map<number, number>())
   const spacePaintsRef = useRef(new Map<string, SpacePaint>())
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
+  const begin = usePointerGesture()
 
   drawRef.current = (): void => {
     // The runtime's listeners are not surface-scoped, so a parked surface would repaint its whole graph on every frame another surface drives.
@@ -270,9 +277,9 @@ export function MatrixCanvas({
       spacePaints.set(color, made)
       return made
     }
-    const dragging = matrixRuntime.draggingIndex()
+    const dragging = matrixRuntime.indexOf(matrixRuntime.draggingId)
     // A held node keeps the focus even when the pointer outruns it, since it trails the cursor on its spring.
-    const focus = dragging >= 0 ? dragging : matrixRuntime.hoveredIndex()
+    const focus = dragging >= 0 ? dragging : matrixRuntime.indexOf(matrixRuntime.hoveredId)
     if (focus >= 0) subjectRef.current = nodes[focus].id
 
     const now = performance.now()
@@ -397,7 +404,7 @@ export function MatrixCanvas({
     }
 
     ctx.font = paint.titleFont
-    ctx.textAlign = 'left'
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillStyle = paint.title
     const cells = cellsRef.current
@@ -406,7 +413,7 @@ export function MatrixCanvas({
       const n = nodes[i]
       const [sx, sy] = toScreen(v, n.x, n.y + n.radius)
       ctx.globalAlpha = (isLit(i) ? 1 : dim) * arrival(i) * alphas[n.kind]
-      ctx.fillText(n.title, sx - ctx.measureText(n.title).width / 2, sy + s.TITLE_OFFSET)
+      ctx.fillText(n.title, sx, sy + s.TITLE_OFFSET)
       ctx.globalAlpha = 1
     }
   }
@@ -444,7 +451,7 @@ export function MatrixCanvas({
   }, [surface])
 
   useEffect(() => {
-    if (parked) matrixRuntime.setHovered(-1)
+    if (parked) matrixRuntime.setHovered(null)
     else matrixRuntime.resume()
   }, [parked])
 
@@ -457,6 +464,7 @@ export function MatrixCanvas({
     if (!host || !canvas) return
     let media: MediaQueryList | null = null
     const resize = (): void => {
+      boxes.delete(canvas)
       // The backing store is physical pixels: the device ratio compounded with the CSS zoom the interface scale renders the surface at.
       const scale = (window.devicePixelRatio || 1) * currentZoom(host)
       dprRef.current = scale
@@ -502,42 +510,57 @@ export function MatrixCanvas({
     return () => host.removeEventListener('wheel', onWheel)
   }, [canvasRef, surface])
 
-  const onCanvas = (e: { target: EventTarget }): boolean => e.target === canvasRef.current
+  const nodeAt = (e: React.PointerEvent | React.MouseEvent): string | null =>
+    matrixRuntime.hitTest(...toWorldPoint(surface, e.currentTarget as HTMLCanvasElement, e))
+
+  const backgroundDown = (e: React.PointerEvent): void => {
+    // Hoisted: `e.currentTarget` is null by the time a window-level move listener runs.
+    const el = e.currentTarget as HTMLElement
+    let last: [number, number] = [e.clientX, e.clientY]
+    begin({
+      el,
+      event: e,
+      onActivate: () => true,
+      onDragMove: (ev) => {
+        const z = currentZoom(el)
+        matrixRuntime.pan(surface, (ev.clientX - last[0]) / z, (ev.clientY - last[1]) / z)
+        last = [ev.clientX, ev.clientY]
+      },
+      onDrop: () => {},
+    })
+  }
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the canvas is the surface, and its nodes carry their own semantics through the overlay
     <div
       ref={hostRef}
       className={cx('over-scroll', s.host)}
-      onPointerDown={(e) => {
-        const canvas = canvasRef.current
-        if (!canvas || !onCanvas(e)) return
-        const [wx, wy] = toWorldPoint(surface, canvas, e)
-        const i = matrixRuntime.hitTest(wx, wy)
-        if (i >= 0) onNodeDown(e, i)
-        else onBackgroundDown(e)
-      }}
-      onPointerMove={(e) => {
-        lastShift = e.shiftKey
-        const canvas = canvasRef.current
-        if (!canvas || !onCanvas(e) || editing) return
-        const [wx, wy] = toWorldPoint(surface, canvas, e)
-        const i = matrixRuntime.hitTest(wx, wy)
-        if (i >= 0 || !glanceShown()) matrixRuntime.setHovered(i)
-      }}
       onPointerLeave={() => {
-        if (!editing && !glanceShown()) matrixRuntime.setHovered(-1)
-      }}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        const canvas = canvasRef.current
-        if (!canvas || !onCanvas(e)) return
-        const [wx, wy] = toWorldPoint(surface, canvas, e)
-        const i = matrixRuntime.hitTest(wx, wy)
-        if (i >= 0) onMenu(i)
+        if (canvasRef.current) boxes.delete(canvasRef.current)
+        if (!editing && !glanceShown()) matrixRuntime.setHovered(null)
       }}
     >
-      <canvas ref={canvasRef} className={s.canvas} />
+      <canvas
+        ref={canvasRef}
+        className={s.canvas}
+        onPointerDown={(e) => {
+          boxes.delete(e.currentTarget)
+          const id = nodeAt(e)
+          if (id !== null) onNodeDown(e, id)
+          else backgroundDown(e)
+        }}
+        onPointerMove={(e) => {
+          lastShift = e.shiftKey
+          if (editing) return
+          const id = nodeAt(e)
+          if (id !== null || !glanceShown()) matrixRuntime.setHovered(id)
+        }}
+        // Cancelled here alone, so the rename field and anything else laid over the canvas keeps the system's own menu.
+        onContextMenu={(e) => {
+          e.preventDefault()
+          const id = nodeAt(e)
+          if (id !== null) onMenu(id)
+        }}
+      />
       <div ref={stageRef} className={cx('detail', s.stage)} />
       {children}
     </div>

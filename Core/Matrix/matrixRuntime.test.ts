@@ -186,7 +186,7 @@ describe('matrixRuntime', () => {
     flush()
     const n = matrixRuntime.graph.nodes[0]
     const from = [n.x, n.y]
-    matrixRuntime.beginDrag(0)
+    matrixRuntime.beginDrag(matrixRuntime.graph.nodes[0].id)
     expect(n.pinned).toBe(false)
     matrixRuntime.moveDrag(from[0] + 400, from[1])
     step()
@@ -204,7 +204,7 @@ describe('matrixRuntime', () => {
     flush()
     const n = matrixRuntime.graph.nodes[0]
     const from = [n.x, n.y]
-    matrixRuntime.beginDrag(0)
+    matrixRuntime.beginDrag(matrixRuntime.graph.nodes[0].id)
     matrixRuntime.moveDrag(from[0] + 300, from[1] + 200)
     for (let i = 0; i < 30; i++) step()
     const carried = Math.hypot(n.x - from[0], n.y - from[1])
@@ -233,7 +233,7 @@ describe('matrixRuntime', () => {
     seed()
     attach()
     flush()
-    matrixRuntime.beginDrag(matrixRuntime.indexOf('p1'))
+    matrixRuntime.beginDrag('p1')
     matrixRuntime.moveDrag(400, 0)
     step()
     expect(matrixRuntime.sim?.alphaTarget).toBeGreaterThan(0)
@@ -250,7 +250,7 @@ describe('matrixRuntime', () => {
     attach()
     flush()
     const id = matrixRuntime.graph.nodes[0].id
-    matrixRuntime.beginDrag(0)
+    matrixRuntime.beginDrag(matrixRuntime.graph.nodes[0].id)
     matrixRuntime.moveDrag(400, 0)
     for (let i = 0; i < 10; i++) step()
     useSession.setState({ matrixGraph: { links: [], values: {} } })
@@ -443,7 +443,7 @@ describe('matrixRuntime', () => {
     seed({ matrixConfig: config({ locked: true }) })
     attach()
     flush()
-    matrixRuntime.beginDrag(0)
+    matrixRuntime.beginDrag(matrixRuntime.graph.nodes[0].id)
     expect(matrixRuntime.draggingId).toBeNull()
     expect(matrixRuntime.graph.nodes[0].pinned).toBe(false)
     matrixRuntime.endDrag()
@@ -600,14 +600,14 @@ describe('matrixRuntime', () => {
     seed()
     attach()
     flush()
-    matrixRuntime.setHovered(matrixRuntime.graph.index.get('p2') ?? -1)
-    expect(matrixRuntime.hoveredIndex()).toBeGreaterThanOrEqual(0)
+    matrixRuntime.setHovered('p2')
+    expect(matrixRuntime.hoveredId).toBe('p2')
     const shrunk = makeTree()
     shrunk.collections[0].sets[0].pages = []
     useSession.setState({ tree: shrunk })
-    expect(matrixRuntime.hoveredIndex()).toBe(-1)
+    expect(matrixRuntime.hoveredId).toBeNull()
     useSession.setState({ tree: makeTree() })
-    expect(matrixRuntime.hoveredIndex()).toBe(-1)
+    expect(matrixRuntime.hoveredId).toBeNull()
   })
 
   it('leaves the picture standing for a refetch that moved no link', () => {
@@ -640,7 +640,7 @@ describe('matrixRuntime', () => {
     seed({ matrixGraph: linked() })
     attach()
     flush()
-    matrixRuntime.beginDrag(matrixRuntime.indexOf('p1'))
+    matrixRuntime.beginDrag('p1')
     matrixRuntime.moveDrag(400, 400)
     useSession.setState({
       matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
