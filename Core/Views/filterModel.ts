@@ -6,10 +6,11 @@ import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/vie
 
 export type { MatchMode }
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { contextsByIdOf } from '../Contexts/contextIdentity'
+import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
 import { FILTER_OPS } from './Pipeline/filter'
 import {
+  contextPaneTargets,
   type PaneTarget,
   STAMP_TARGETS,
   schemaTargets,
@@ -189,8 +190,7 @@ export function filterTargets(
   hasLocations = true,
   capitalize = false,
 ): PaneTarget[] {
-  const contextsById = contextsByIdOf(tree)
-  const contextIds = [...contextsById.keys()]
+  const contextIds = contextIdsOf(tree)
   return [
     TITLE_TARGET,
     // Every Location operator needs a location to point at, so with none it's a target that can never complete.
@@ -198,11 +198,7 @@ export function filterTargets(
       ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' }]
       : []),
     ...STAMP_TARGETS,
-    ...[...contextsById].map(([id, identity]) => ({
-      id,
-      label: identity.title,
-      icon: identity.icon,
-    })),
+    ...contextPaneTargets(tree),
     ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0, capitalize),
   ]
 }

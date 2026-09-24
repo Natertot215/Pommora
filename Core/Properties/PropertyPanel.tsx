@@ -36,7 +36,7 @@ import { sharedValueClickAction } from './Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { validateLink } from './Cells/linkResolve'
 import { useCapitalizeMetadata } from './Cells/columnLabel'
-import { type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
+import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { useOptionReorder } from './Schema/useOptionReorder'
 import { resolveRowOrder } from './rowOrder'
@@ -44,7 +44,7 @@ import { pushUndo } from '../Session/undo'
 import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
 import { host } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
-import { contextIdentityOf, contextIdsOf, isContextColumnId } from '../Contexts/contextIdentity'
+import { isContextColumnId } from '../Contexts/contextIdentity'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
@@ -154,14 +154,6 @@ export function PropertyPanel({
     () => (tree ? buildValueContext(tree, schema, assetMap) : null),
     [tree, schema, assetMap],
   )
-  const contextRows = useMemo(
-    () =>
-      contextIdsOf(tree).flatMap((id) => {
-        const identity = contextIdentityOf(tree, id)
-        return identity ? [{ id, label: identity.title, icon: identity.icon }] : []
-      }),
-    [tree],
-  )
   const overrideFm = override?.[subjectId]?.fm
   const row = useMemo<ViewRow | null>(() => {
     if (isSpace) return tree && spaceNode ? spaceRowOf(tree, spaceNode, overrideFm) : null
@@ -189,7 +181,7 @@ export function PropertyPanel({
     if (row) assignValue(writer, row, { id, kind: isContextRow(id) ? 'context' : 'property' }, next)
   }
 
-  const contextFields: Field[] = contextRows.map((t) => ({ ...t, def: null }))
+  const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
   const schemaFields: Field[] = schemaTargets(schema, () => true, capitalize)
   const held = (f: Field): boolean =>
     f.def
