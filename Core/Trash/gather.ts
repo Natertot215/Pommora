@@ -1,7 +1,6 @@
 import { basename, dirname, join } from '../Paths/posix'
-import { splitFrontmatter } from '../Files/pageFile'
+import { stampedId } from '../Files/pageFile'
 import type { ContextsRegistry } from '../Contexts/contexts'
-import { contentId } from '../Nexus/identityMark'
 import type { Result } from '../Contract/result'
 import { ensureFolderId } from '../Nexus/adopt'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
@@ -38,7 +37,7 @@ export async function gatherContentRecord(
   const parent = await gatherParentRef(root, abs)
   const id =
     kind === 'page'
-      ? contentId(splitFrontmatter((await readTextOrNull(abs)) ?? ''))
+      ? stampedId((await readTextOrNull(abs)) ?? '')
       : await sidecarId(abs, SIDECAR_FILENAME[kind])
   return { entity: kind, ...(id ? { id } : {}), parent }
 }

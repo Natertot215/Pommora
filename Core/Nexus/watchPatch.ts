@@ -453,12 +453,12 @@ export async function patchMetadataFromDisk(
 
 export async function patchPageMetaFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
   const held = getLiveTree()
-  let page = held && findPage(held, rel)
-  if (page && isAdoptedId(page.id)) {
-    if ((await patchPageFromDisk(root, rel)) === 'refresh') return 'refresh'
-    const tree = getLiveTree()
-    page = tree && findPage(tree, rel)
+  let id = (held && findPage(held, rel))?.id ?? null
+  if (id !== null && isAdoptedId(id)) {
+    const patched = await patchPageFromDisk(root, rel)
+    if (patched === 'refresh') return 'refresh'
+    id = patched.id
   }
-  const shard = page ? shardOf(page.id) : null
+  const shard = id === null ? null : shardOf(id)
   return shard === null ? 'refresh' : patchMetadataFromDisk(root, shard)
 }

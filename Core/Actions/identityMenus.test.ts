@@ -63,17 +63,17 @@ describe('the banner menu', () => {
 describe('the title menu', () => {
   it('offers Rename, Edit Icon unless withheld, and the icon toggle named for its state', () => {
     expect(titleMenuItems().map((i) => i.label)).toEqual(['Rename', 'Edit Icon'])
-    expect(titleMenuItems({ toggleIcon: true, iconHidden: true, noEditIcon: true })).toEqual([
+    expect(titleMenuItems({ iconHidden: true, noEditIcon: true })).toEqual([
       { label: 'Rename', action: 'rename' },
       { label: 'Show Icon', action: 'toggleIcon' },
     ])
-    expect(titleMenuItems({ toggleIcon: true }).at(-1)?.label).toBe('Hide Icon')
+    expect(titleMenuItems({ iconHidden: false }).at(-1)?.label).toBe('Hide Icon')
   })
 })
 
 describe('the search row', () => {
   it('leads the rows it is given, over a divider', () => {
-    expect(shape(withSearchRow(titleMenuItems({ toggleIcon: true })))).toEqual([
+    expect(shape(withSearchRow(titleMenuItems({ iconHidden: false })))).toEqual([
       'Search',
       '—',
       'Rename',

@@ -30,8 +30,6 @@ export function scopeSet<T>(
   }
 }
 
-const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean'
-
 export const interfaceHandlers = {
   'windows:load': () => (sessionRoot() === null ? NO_NEXUS : ok(readWindowsState())),
   'windows:save': (_ctx, file: unknown) => {
@@ -82,7 +80,7 @@ export const interfaceHandlers = {
   'citations:get': scopeGet<boolean>('citations'),
   'citations:set': scopeSet(
     'citations',
-    (v: unknown): v is boolean | null => isBoolean(v) || v === null,
+    (v: unknown): v is boolean | null => typeof v === 'boolean' || v === null,
     'Shown must be a boolean.',
   ),
 

@@ -47,14 +47,14 @@ export function bannerMenuItems(
 }
 
 export function titleMenuItems(
-  opts: { toggleIcon?: boolean; iconHidden?: boolean; noEditIcon?: boolean } = {},
+  opts: { iconHidden?: boolean; noEditIcon?: boolean } = {},
 ): ActionItem<TitleMenuAction>[] {
   return [
     { label: 'Rename', action: 'rename' },
     ...(opts.noEditIcon ? [] : [{ label: 'Edit Icon', action: 'editIcon' as const }]),
-    ...(opts.toggleIcon
-      ? [{ label: iconLabel(!opts.iconHidden), action: 'toggleIcon' as const }]
-      : []),
+    ...(opts.iconHidden === undefined
+      ? []
+      : [{ label: iconLabel(!opts.iconHidden), action: 'toggleIcon' as const }]),
   ]
 }
 

@@ -42,6 +42,8 @@ export function splitFrontmatter(content: string): Record<string, unknown> {
   }
 }
 
+export const stampedId = (text: string): string | null => contentId(splitFrontmatter(text)) ?? null
+
 /** Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser recovered, so writing it back destroys the rest. Broken is anything that can't round-trip, an alias token like `*word` included. */
 const mergeable = (doc: Document): boolean =>
   doc.errors.length === 0 && (doc.contents == null || isMap(doc.contents))

@@ -1,5 +1,6 @@
 import { ulid } from 'ulidx'
 import { isMarkdownFile, listPathsUnder } from '../../Files/walk'
+import { stampedId } from '../../Files/pageFile'
 import { manifestAdmits } from '../../Paths/exclusion'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
@@ -18,7 +19,6 @@ import {
   recordBase,
   renameBase,
   type Snapshot,
-  stampedId,
   upsertBase,
 } from './base'
 import { call, getBlob, putBlob } from './call'

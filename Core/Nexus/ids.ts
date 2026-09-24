@@ -8,7 +8,7 @@ export function newId(): string {
   return nextUlid()
 }
 
-/** Not monotonic: the factory clamps a past seed to its last mint, which would erase the age. The seed is floored and clamped at zero because `stat` reports sub-millisecond floats on APFS (and a negative for a pre-epoch file) and the encoder throws on both — a throw here is swallowed per file by adopt's `.catch(() => false)`, so adoption would silently stamp nothing. */
+/** Not monotonic: the factory clamps a past seed to its last mint, which would erase the age. The seed is floored and clamped at zero because `stat` reports sub-millisecond floats on APFS (and a negative for a pre-epoch file) and the encoder throws on both — a throw here is swallowed per file by adopt's `.catch(() => null)`, so adoption would silently stamp nothing. */
 export function idAt(atMs: number): string {
   return ulid(Math.max(0, Math.floor(atMs)))
 }

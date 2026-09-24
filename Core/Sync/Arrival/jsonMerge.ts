@@ -64,7 +64,8 @@ export function mergeKeys(
     else if (level > 0 && objectOrAbsent(l) && objectOrAbsent(r)) {
       // A side that deleted the key merges as empty, so the other side's changes inside it survive.
       const from = isPlainObject(b) ? b : {}
-      const [lo, ro] = [l ?? {}, r ?? {}]
+      const lo = l ?? {}
+      const ro = r ?? {}
       const merged = mergeKeys(from, lo, ro, levelFor(unionKeys(from, lo, ro), level - 1), pick)
       if (Object.keys(merged).length > 0 || (l !== undefined && r !== undefined)) out[key] = merged
     } else take(pick() === 'local' ? local : remote, key)

@@ -1,5 +1,3 @@
-import { splitFrontmatter } from '../../Files/pageFile'
-import { contentId } from '../../Nexus/identityMark'
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { type BaseRecord, syncStore } from '../../Platform/stores'
@@ -70,5 +68,3 @@ export async function isDirty(root: string, rel: string): Promise<boolean> {
   if (base === null) return true
   return (await hashFile(join(root, rel))) !== base.hash
 }
-
-export const stampedId = (text: string): string | null => contentId(splitFrontmatter(text)) ?? null

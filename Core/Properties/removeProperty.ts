@@ -7,7 +7,7 @@ import { sidecarPath } from '../Paths/paths'
 import { readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
 import { folderCorpus } from '../Index/indexSeed'
 import { sweepGovernedRoots } from './governedSweep'
-import { splitFrontmatter } from '../Files/pageFile'
+import { splitFrontmatter, stampedId } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import { isBlankValue, isPlainObject, reconcilePropertyValue } from './propertyValue'
@@ -81,7 +81,7 @@ export async function restoreCachedValues(
   for (const file of await folderCorpus(root, collectionFolder)) {
     const content = await readTextOrNull(file)
     if (content === null) continue
-    const id = contentId(splitFrontmatter(content))
+    const id = stampedId(content)
     if (id) byId.set(id, file)
   }
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {

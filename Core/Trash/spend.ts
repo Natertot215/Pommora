@@ -14,10 +14,9 @@ import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
 import { isMarkdownFile, listEntries, listMarkdownFiles } from '../Files/walk'
-import { contentId } from '../Nexus/identityMark'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { machine } from '../Platform/machine'
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter, stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 import { SPACE_SIDECAR } from '../Paths/paths'
@@ -145,7 +144,7 @@ async function trashedPageIds(record: ArtifactRecord, artifactAbs: string): Prom
     case 'collection':
     case 'set': {
       const texts = await Promise.all((await listMarkdownFiles(artifactAbs)).map(readTextOrNull))
-      return texts.flatMap((text) => contentId(splitFrontmatter(text ?? '')) ?? [])
+      return texts.flatMap((text) => stampedId(text ?? '') ?? [])
     }
     default:
       return []

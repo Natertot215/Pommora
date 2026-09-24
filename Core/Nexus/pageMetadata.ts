@@ -15,7 +15,7 @@ import { stabilize } from './treeStabilize'
 import { findContainerWhere } from './treePatch'
 import type { NexusTree } from './tree'
 
-export type ShardRead =
+type ShardRead =
   | { kind: 'ok'; pages: Record<string, PageMeta> }
   | { kind: 'absent' }
   | { kind: 'unreadable' }
@@ -55,10 +55,10 @@ export async function readPageMetadata(root: string): Promise<Record<string, Pag
   const loaded = await Promise.all(
     shards.map(async (shard) => {
       const read = await readShard(root, shard)
-      return read.kind === 'ok' ? [[shard, read.pages] as const] : []
+      return [shard, read.kind === 'ok' ? read.pages : {}] as const
     }),
   )
-  return withShards({}, Object.fromEntries(loaded.flat()))
+  return withShards({}, Object.fromEntries(loaded))
 }
 
 function patchedEntry(
@@ -70,7 +70,7 @@ function patchedEntry(
     if (v === null || v === undefined) delete next[k]
     else next[k] = v
   }
-  return hasFields(next as PageMeta) ? next : undefined
+  return Object.keys(next).length > 0 ? next : undefined
 }
 
 const rawPages = (file: Record<string, unknown>): Record<string, unknown> =>

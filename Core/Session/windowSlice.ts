@@ -254,8 +254,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
           if (t.target.kind === 'navwindow') continue
           const r = reconcileWith(index, t.target)
           if (r.kind === 'none') deadIds.push(t.id)
-          else if (t.target.kind === 'page' && r.kind === 'page' && r !== t.target)
-            retarget.set(t.id, r)
+          else if (r.kind === 'page' && r !== t.target) retarget.set(t.id, r)
         }
         if (deadIds.length > 0 || retarget.size > 0) {
           for (const id of deadIds) dropWindowCache(id)
