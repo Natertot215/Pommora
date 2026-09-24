@@ -32,7 +32,6 @@ const placeTail = (
   groups: ResolvedGroup[],
   tail: ViewRow[],
   sorter: Sorter | null,
-  collapsed: Set<string>,
   placement: EmptyPlacement,
   key: string = UNGROUPED,
 ): ResolvedGroup[] => {
@@ -41,7 +40,6 @@ const placeTail = (
     key,
     kind: 'ungrouped',
     items: applySort(tail, sorter),
-    isCollapsed: collapsed.has(key),
   }
   return placement === 'top' ? [band, ...groups] : [...groups, band]
 }
@@ -217,7 +215,6 @@ function property(
   group: PropertyGroup,
   schema: PropertyDefinition[],
   sorter: Sorter | null,
-  collapsed: Set<string>,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const def = schema.find((d) => d.id === group.property_id)
@@ -242,19 +239,17 @@ function property(
       key,
       kind: 'property',
       items: applySort(items, sorter),
-      isCollapsed: collapsed.has(key),
     })
   }
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
   if (isCheckbox) return groups
-  return placeTail(groups, noValue, sorter, collapsed, placement)
+  return placeTail(groups, noValue, sorter, placement)
 }
 
 function structural(
   rows: ViewRow[],
   setTree: SetTreeNode[],
   sorter: Sorter | null,
-  collapsed: Set<string>,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const bySet = groupRows(rows, (r) => r.parentSetId)
@@ -266,11 +261,10 @@ function structural(
       kind: 'structural-set',
       items: applySort(bySet.get(node.id) ?? [], sorter),
       ...(children.length > 0 ? { children } : {}),
-      isCollapsed: collapsed.has(node.id),
     }
   }
   const groups = setTree.map(build)
-  return placeTail(groups, rootRows, sorter, collapsed, placement)
+  return placeTail(groups, rootRows, sorter, placement)
 }
 
 /** Cards never indent: each top-level set is ONE flat band, so a manual reorder spans the whole band instead of snapping back within a sub-set. */
@@ -278,7 +272,6 @@ function structuralFlat(
   rows: ViewRow[],
   setTree: SetTreeNode[],
   sorter: Sorter | null,
-  collapsed: Set<string>,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const byParent = groupRows(rows, (r) => r.parentSetId)
@@ -290,9 +283,8 @@ function structuralFlat(
       subtreeIds(node).flatMap((id) => byParent.get(id) ?? []),
       sorter,
     ),
-    isCollapsed: collapsed.has(node.id),
   }))
-  return placeTail(groups, rootRows, sorter, collapsed, placement)
+  return placeTail(groups, rootRows, sorter, placement)
 }
 
 function locationFlat(
@@ -301,10 +293,8 @@ function locationFlat(
   sorter: Sorter | null,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
-  const bands = structuralFlat(rows, setTree, sorter, new Set(), placement)
-  return [
-    { key: UNGROUPED, kind: 'ungrouped', items: bands.flatMap((g) => g.items), isCollapsed: false },
-  ]
+  const bands = structuralFlat(rows, setTree, sorter, placement)
+  return [{ key: UNGROUPED, kind: 'ungrouped', items: bands.flatMap((g) => g.items) }]
 }
 
 /** Set ids are ULIDs, never containing `/`, so one set's collapse never bleeds into its twin bucket in another set. */
@@ -316,7 +306,6 @@ function structuralSubGrouped(
   sub: SubGroupConfig,
   schema: PropertyDefinition[],
   sorter: Sorter | null,
-  collapsed: Set<string>,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const def = schema.find((d) => d.id === sub.property_id)
@@ -341,27 +330,18 @@ function structuralSubGrouped(
           bucket: b,
           kind: 'property',
           items: applySort(items, sorter),
-          isCollapsed: collapsed.has(key),
         },
       ]
     })
-    children = placeTail(
-      children,
-      noValue,
-      sorter,
-      collapsed,
-      placement,
-      subGroupKey(node.id, UNGROUPED),
-    )
+    children = placeTail(children, noValue, sorter, placement, subGroupKey(node.id, UNGROUPED))
     return {
       key: node.id,
       kind: 'structural-set',
       items: [],
       ...(children.length > 0 ? { children } : {}),
-      isCollapsed: collapsed.has(node.id),
     }
   })
-  return placeTail(groups, rootRows, sorter, collapsed, placement)
+  return placeTail(groups, rootRows, sorter, placement)
 }
 
 /** Compose bucket-first so a set whose sub-buckets all emptied goes with them. */
@@ -384,14 +364,13 @@ export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
   })
 }
 
-function flat(rows: ViewRow[], sorter: Sorter | null, collapsed: Set<string>): ResolvedGroup[] {
+function flat(rows: ViewRow[], sorter: Sorter | null): ResolvedGroup[] {
   if (rows.length === 0) return []
   return [
     {
       key: UNGROUPED,
       kind: 'ungrouped',
       items: applySort(rows, sorter),
-      isCollapsed: collapsed.has(UNGROUPED),
     },
   ]
 }
@@ -413,21 +392,19 @@ export function resolveGroups(
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
   sorter: Sorter | null,
-  collapsed: string[] = [],
   placement: EmptyPlacement = 'bottom',
   subGroup?: SubGroupConfig,
   flattenStructural = false,
   locationFlatten = false,
 ): ResolvedGroup[] {
-  const collapsedSet = new Set(collapsed)
   // Sort by Location forces structural resolution and flattens every band into one — it wins over a property group and over collapse state.
   if (locationFlatten) return locationFlat(rows, setTree, sorter, placement)
-  if (group?.kind === 'flat') return flat(rows, sorter, collapsedSet)
+  if (group?.kind === 'flat') return flat(rows, sorter)
   if (!groupsStructurally(group, schema))
-    return property(rows, group as PropertyGroup, schema, sorter, collapsedSet, placement)
-  if (flattenStructural) return structuralFlat(rows, setTree, sorter, collapsedSet, placement)
+    return property(rows, group as PropertyGroup, schema, sorter, placement)
+  if (flattenStructural) return structuralFlat(rows, setTree, sorter, placement)
   const t = subGroup ? declaredType(subGroup.property_id, schema) : undefined
   if (subGroup && t !== undefined && GROUPABLE.has(t))
-    return structuralSubGrouped(rows, setTree, subGroup, schema, sorter, collapsedSet, placement)
-  return structural(rows, setTree, sorter, collapsedSet, placement)
+    return structuralSubGrouped(rows, setTree, subGroup, schema, sorter, placement)
+  return structural(rows, setTree, sorter, placement)
 }

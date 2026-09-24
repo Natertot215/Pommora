@@ -52,7 +52,6 @@ export function resolveView(input: {
     schema,
     structuralGrouping && hidden.size > 0 ? pruneHiddenSets(setTree, hidden) : setTree,
     sorter,
-    view.collapsed_groups,
     view.ungrouped_placement ?? 'bottom',
     structuralGrouping ? view.sub_group : undefined,
     flattenStructural,

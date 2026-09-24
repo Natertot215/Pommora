@@ -2,7 +2,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../../Nexus/treeIndex'
-import { useActiveView } from '../Host/useActiveView'
+import { pickView } from '../Pipeline/pickView'
 import { ViewFrame } from './ViewFrame'
 import { viewGlyph } from '../viewIcon'
 import * as s from '../../Interface/Toolbar/toolbar-menu.css'
@@ -32,7 +32,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
     node.kind === 'collection'
       ? (node.properties ?? [])
       : (findCollectionForSet(tree, node.id)?.properties ?? [])
-  const view = useActiveView(node, schema)
+  const view = pickView(node, schema)
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()

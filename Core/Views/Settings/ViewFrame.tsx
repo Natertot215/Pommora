@@ -16,7 +16,7 @@ import { LayoutFrame } from './LayoutFrame'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import type { FrameRow, SlotFor } from '@pommora/uix/Interactions/frameDndModel'
 import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
-import { useSaveView, useViewTileScope } from '../ViewTileScope'
+import { useSaveView } from '../ViewTileScope'
 import { pickView } from '../Pipeline/pickView'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
@@ -65,7 +65,7 @@ export function ViewFrame({
   node: CollectionNode | SetNode
   schema: PropertyDefinition[]
   onClose: () => void
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(node)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -73,9 +73,6 @@ export function ViewFrame({
   const [iconFor, setIconFor] = useState<SavedView | null>(null)
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
-  const scope = useViewTileScope()
-  // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
-  if (scope) return null
   const views = node.views ?? []
   const active = pickView(node, schema)
   const rows = views.length ? views : [active]

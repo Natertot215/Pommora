@@ -53,7 +53,6 @@ interface ViewCreation {
   createFirst: () => Promise<boolean>
   createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<boolean>
   createAfter: (row: ViewRow) => Promise<boolean>
-  containerPages: (path: string) => string[]
 }
 
 /** `getCfg` is read only when a gesture fires, so the hook can sit above any loading/empty return while its config closes over later render-scope consts. */
@@ -202,6 +201,5 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     createFirst: () => addIn(cfg().source.path),
     createAdjacent,
     createAfter: (row) => createAdjacent(row, 'below'),
-    containerPages: containerPagesOf,
   }
 }
