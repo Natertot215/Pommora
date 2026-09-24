@@ -58,7 +58,7 @@ A landing pushes an unpushed edit first, and captures the local bytes, under the
 
 ### Landing
 
-A landed file is written atomically under the writer's modification time and records no write echo, leaving the receiving watcher to treat it as an ordinary external change. A landed rename moves the file and every base record beneath it; a delete removes the file and an emptied parent directory.
+A landed file is written atomically under the writer's modification time and records no write echo, leaving the receiving watcher to treat it as an ordinary external change. A landed rename moves the file and every base record beneath it; a delete removes the file and an emptied parent directory. A name is held to the rules of the device that creates it, so a path another platform allowed can reach a device that can't hold it: that device passes the change over and advances its cursor, a rename onto such a name takes the page off it, and the page stays on the hub and every device that can hold it.
 
 Two kinds of file land through a merge rather than a replacement. The JSON files under `.nexus/` and the `_*.json` sidecars merge key by key against the last synced bytes: a key changed on one side takes that side, a key changed on both takes the newer writer's, and the merged bytes land under the current time. Some keys hold sections that merge a level deeper, key by key within them; a metadata month file merges per page and per field, so one device clearing a page's entry and another setting a field on it keeps that field.
 
