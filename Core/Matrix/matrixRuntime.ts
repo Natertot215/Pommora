@@ -1,5 +1,6 @@
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { useSession } from '../Session/store'
+import { sessionWriter } from '../Session/saveScheduler'
 import type { Forces } from './Engine/forces'
 import { buildGraph, type Graph, type GraphNode, type GroupMode } from './Engine/graph'
 import { place } from './Engine/placement'
@@ -36,8 +37,8 @@ import type { Positions } from './matrixLayout'
 
 // KNOB — the hit slack past a node's edge, in world units.
 const HIT_SLACK = 4
+const FRAME_KEY = 'matrix-frame'
 // KNOB — pans and zooms inside this window fold into one frame write.
-const FRAME_SAVE_MS = 400
 export const FADE_MS = ms(duration.base)
 
 type Listener = () => void
@@ -81,7 +82,6 @@ class MatrixRuntime {
   private fitOnSettle = false
   private dirty = false
   private unsubscribe: (() => void) | null = null
-  private save: ReturnType<typeof setTimeout> | null = null
 
   attach(surface: Surface): () => void {
     this.surfaces.add(surface)
@@ -116,7 +116,7 @@ class MatrixRuntime {
   }
 
   private clear(): void {
-    void this.flushFrame()
+    void sessionWriter.flush(FRAME_KEY)
     this.frame = null
     this.built = null
     this.graph = EMPTY
@@ -236,14 +236,6 @@ class MatrixRuntime {
     if (next === null) return
     this.fitOnSettle = false
     this.setFrame(next)
-  }
-
-  flushFrame(): Promise<void> {
-    const f = this.frame
-    if (this.save === null || f === null) return Promise.resolve()
-    clearTimeout(this.save)
-    this.save = null
-    return useSession.getState().saveMatrixFrame(f)
   }
 
   private fitted(): Frame | null {
@@ -370,11 +362,7 @@ class MatrixRuntime {
   setFrame(f: Frame): void {
     if (f === this.frame) return
     this.frame = f
-    if (this.save !== null) clearTimeout(this.save)
-    this.save = setTimeout(() => {
-      this.save = null
-      void useSession.getState().saveMatrixFrame(f)
-    }, FRAME_SAVE_MS)
+    sessionWriter.schedule(FRAME_KEY, () => useSession.getState().saveMatrixFrame(f))
     this.invalidate()
   }
 

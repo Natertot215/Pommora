@@ -18,7 +18,6 @@ import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { dropTileBodies, flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
-import { matrixRuntime } from '../Matrix/matrixRuntime'
 import {
   cancelAllSaves,
   flushAllPageSaves,
@@ -53,12 +52,7 @@ export interface NexusSlice {
 
 /** Every save the window still owes, landed: awaited while the OLD root is bound before a switch, and before the host closes its stores on quit. */
 export async function flushAllSaves(): Promise<void> {
-  await Promise.all([
-    flushAllPageSaves(),
-    flushAllTileDocs(),
-    flushAllSessionSaves(),
-    matrixRuntime.flushFrame(),
-  ])
+  await Promise.all([flushAllPageSaves(), flushAllTileDocs(), flushAllSessionSaves()])
 }
 
 let systemAccentCache: string | null | undefined
