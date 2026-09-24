@@ -3,12 +3,12 @@ import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
-import { machine } from '../../Platform/machine'
+import { installMachine, machine } from '../../Platform/machine'
 import { readValue } from '../../Platform/localState'
 import { type CaptureStore, installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
-import { type FakeHub, hubSession, hubWrite } from '../../Testing/syncHub'
+import { type FakeHub, hubRename, hubSession, hubWrite } from '../../Testing/syncHub'
 import type { TestSecrets } from '../../Testing/syncDevice'
 import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
@@ -169,6 +169,45 @@ describe('pullOnce', () => {
     const [path, , reason, losing] = added.mock.calls[0]
     expect([path, reason]).toEqual(['Notes/One.md', 'local-lost'])
     expect(new TextDecoder().decode(losing)).toBe(page('saved'))
+  })
+
+  it('passes over a name a Windows host cannot hold, and the changes behind it still land', async () => {
+    await hubWrite(hub, ring, 'Notes/Why?.md', page('why'))
+    const next = await hubWrite(hub, ring, 'Notes/Next.md', page('next'))
+    const disk = machine()
+    installMachine({ ...disk, platform: 'windows' })
+    try {
+      expect(await pullOnce(session, 0)).toBe('applied')
+    } finally {
+      installMachine(disk)
+    }
+
+    expect(await machine().stat(abs('Notes/Why?.md'))).toBeNull()
+    expect(readBase('Notes/Why?.md')).toBeNull()
+    expect(await read('Notes/Next.md')).toBe(page('next'))
+    expect(cursor()).toBe(next)
+  })
+
+  it('a rename to a name a Windows host cannot hold takes the page off it, and a rename back lands it', async () => {
+    await hubWrite(hub, ring, 'Notes/Plan.md', page('plan'))
+    expect(await pullOnce(session, 0)).toBe('applied')
+    hubRename(hub, 'Notes/Plan.md', 'Notes/Q3: Plan.md')
+    const disk = machine()
+    installMachine({ ...disk, platform: 'windows' })
+    try {
+      expect(await pullOnce(session, 0)).toBe('applied')
+      expect(await machine().stat(abs('Notes/Plan.md'))).toBeNull()
+      expect(readBase('Notes/Plan.md')).toBeNull()
+      expect(await machine().stat(abs('Notes/Q3: Plan.md'))).toBeNull()
+
+      hubRename(hub, 'Notes/Q3: Plan.md', 'Notes/Q3 Plan.md')
+      expect(await pullOnce(session, 0)).toBe('applied')
+    } finally {
+      installMachine(disk)
+    }
+
+    expect(await read('Notes/Q3 Plan.md')).toBe(page('plan'))
+    expect(readBase('Notes/Q3 Plan.md')?.version).toBe(hub.seq)
   })
 
   it('answers resync when the cursor is past the head and leaves the cursor to reconcile', async () => {

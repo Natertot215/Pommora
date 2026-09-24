@@ -1,7 +1,7 @@
 import { join } from '../../Paths/posix'
 import { writeValue } from '../../Platform/localState'
 import { machine } from '../../Platform/machine'
-import { landDelete, landRename, landWrite, recordOf } from '../Arrival/land'
+import { holdable, landDelete, landRename, landWrite, recordOf } from '../Arrival/land'
 import type { Change, PullReply } from '../Contract/wire'
 import { isDirty, readBase } from './base'
 import { call, getBlob } from './call'
@@ -38,6 +38,7 @@ export async function landRemote(session: Session, change: Change): Promise<'ok'
 
 async function landChange(session: Session, change: Change): Promise<'ok' | 'missing' | 'held'> {
   if (holds(change)) return 'ok'
+  if (!holdable(change.path)) return leave(session.root, change)
   if (dirtyPending().has(change.path) || (await isDirty(session.root, change.path))) {
     await pushDirty(session, [change.path])
     if (holds(change)) return 'ok'
@@ -55,6 +56,12 @@ async function landChange(session: Session, change: Change): Promise<'ok' | 'mis
       return landed === null ? landRemote(session, change) : 'ok'
     }
   }
+}
+
+async function leave(root: string, change: Change): Promise<'ok'> {
+  if (change.kind === 'rename' && change.from !== undefined && holdable(change.from))
+    await landDelete(root, { ...change, path: change.from })
+  return 'ok'
 }
 
 type Waited = { kind: 'reply'; reply: PullReply } | { kind: 'done'; outcome: PullOutcome }

@@ -1,7 +1,7 @@
 import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { join } from '../../Paths/posix'
-import { machine } from '../../Platform/machine'
+import { installMachine, machine } from '../../Platform/machine'
 import { type CaptureStore, captureStore, installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
@@ -90,6 +90,22 @@ describe('reconcile', () => {
     expect(session.target.cursor).toBe(2)
   })
 
+  it('passes over a name a Windows host cannot hold', async () => {
+    await hubWrite(hub, ring, 'Notes/Why?.md', page('why'))
+    await hubWrite(hub, ring, 'Notes/Two.md', page('two'))
+    const disk = machine()
+    installMachine({ ...disk, platform: 'windows' })
+    try {
+      await reconcile(session)
+    } finally {
+      installMachine(disk)
+    }
+
+    expect(await here('Notes/Why?.md')).toBe(false)
+    expect(await read('Notes/Two.md')).toBe(page('two'))
+    expect(session.target.cursor).toBe(2)
+  })
+
   it('sets the cursor to the log top even below a cursor the hub refused', async () => {
     await hubWrite(hub, ring, 'Notes/One.md', page('one'))
     session.target = { ...session.target, cursor: 9 }
@@ -121,6 +137,23 @@ describe('reconcile', () => {
     expect(await read('Notes/Two.md')).toBe(page('one'))
     expect(paths()).toEqual(['Notes/Two.md'])
     expect(stores()).toEqual([])
+  })
+
+  it('a rename in the log to a name a Windows host cannot hold takes the local copy off it', async () => {
+    await hubWrite(hub, ring, 'Notes/Plan.md', page('plan'))
+    hubRename(hub, 'Notes/Plan.md', 'Notes/Q3: Plan.md')
+    await write('Notes/Plan.md', page('plan'))
+    const disk = machine()
+    installMachine({ ...disk, platform: 'windows' })
+    try {
+      await reconcile(session)
+    } finally {
+      installMachine(disk)
+    }
+
+    expect(await here('Notes/Plan.md')).toBe(false)
+    expect(await here('Notes/Q3: Plan.md')).toBe(false)
+    expect(paths()).toEqual([])
   })
 
   it('follows a rename chain to its last path', async () => {

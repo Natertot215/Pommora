@@ -6,7 +6,7 @@ import { join, isMarkdownFile } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { captureLoser } from '../Arrival/captures'
 import { isMergedJson } from '../Arrival/jsonMerge'
-import { landDelete, landRename, landWrite, newerSide, recordOf } from '../Arrival/land'
+import { holdable, landDelete, landRename, landWrite, newerSide, recordOf } from '../Arrival/land'
 import type { Change, ItemRecord, StoreChange, StoreOutcome } from '../Contract/wire'
 import { encryptItem } from '../Keys/item'
 import { newest, owned } from '../Keys/ring'
@@ -226,6 +226,7 @@ export async function resolveStale(
     return pushDirty(session, [rel])
   }
   if (head.kind === 'rename' && head.path !== rel) {
+    if (!holdable(head.path)) return landDelete(root, { ...head, path: rel })
     await landRename(root, head)
     return resolveStale(session, head.path, heads.get(head.path) ?? head, heads)
   }

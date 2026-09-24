@@ -1,5 +1,6 @@
 import { listPathsUnder } from '../../Files/walk'
 import { manifestAdmits, sameScope, type WatchScope } from '../../Paths/exclusion'
+import { holdable } from '../Arrival/land'
 import type { Change } from '../Contract/wire'
 import { deleteBase, readAllBases, readBase } from './base'
 import { call } from './call'
@@ -64,7 +65,7 @@ export async function reconcile(session: Session): Promise<void> {
   const here = new Set([...local, ...toPush])
   for (const [rel, head] of log.heads) {
     if (head.kind === 'delete' || head.path !== rel) continue
-    if (here.has(rel) || readBase(rel) !== null || !admits(rel)) continue
+    if (here.has(rel) || readBase(rel) !== null || !admits(rel) || !holdable(rel)) continue
     if ((await landRemote(session, head)) === 'missing')
       return setStatus(session.ctx, { state: 'error', why: `The hub holds no bytes for ${rel}.` })
   }

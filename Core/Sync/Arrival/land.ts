@@ -1,5 +1,6 @@
 import { landBytes, parseJsonText } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
+import { platformNameError } from '../../Paths/names'
 import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import type { CaptureReason } from '../../Platform/stores'
@@ -82,6 +83,10 @@ async function captureUnrecorded(
   if (hash !== readBase(rel)?.hash && hash !== landing) await captureLoser(root, rel, local, reason)
 }
 
+// A path another platform named but this host can't hold is passed over: it stays on the hub and every device that can hold it, and its cursor still advances here. A user-visible message about passed-over arrivals is a must-have to consider in any future sync work.
+export const holdable = (rel: string): boolean =>
+  rel.split('/').every((seg) => platformNameError(seg) === null)
+
 export async function landWrite(
   host: SyncHost,
   root: string,
@@ -130,7 +135,7 @@ export async function landRename(root: string, change: Change): Promise<void> {
   const from = join(root, fromRel)
   const to = join(root, change.path)
   await machine().lock(from, async () => {
-    const source = await machine().stat(from)
+    const source = holdable(fromRel) ? await machine().stat(from) : null
     if (source !== null) {
       if (!source.isDirectory) {
         const losing = await machine().readBytes(to)
