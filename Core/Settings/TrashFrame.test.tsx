@@ -5,6 +5,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { TrashRow } from '@pommora/core/Trash/trashRow'
 import { countPhrase, filterRows, TrashFrame } from './TrashFrame'
 import { stubDialer } from '../vitest.setup'
+import { useSession } from '../Session/store'
+import { makeTree } from '@pommora/core/Testing/testTree'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -95,5 +97,58 @@ describe('a Trash row', () => {
     await act(async () => box.click())
     expect(box.getAttribute('aria-checked')).toBe('true')
     expect(host.querySelector('.has-checked')).not.toBeNull()
+  })
+})
+
+describe('the Trash pane', () => {
+  let host: HTMLDivElement | null = null
+  let root: Root | null = null
+  let listed: TrashRow[]
+
+  const titles = (): string[] =>
+    [...(host?.querySelectorAll('[role="checkbox"]') ?? [])].map((n) =>
+      (n.getAttribute('aria-label') ?? '').replace('Select ', ''),
+    )
+  const nexus = (id: string): void => {
+    const tree = makeTree()
+    useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
+  }
+
+  beforeEach(async () => {
+    listed = [row({ title: 'Alpha' })]
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'trash:list': vi.fn(async () => ({ ok: true, value: listed })),
+      mutate: vi.fn(async () => ({ ok: true, value: {} })),
+      'theme:systemAccent': vi.fn(async () => ({ ok: true, value: null })),
+      'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
+      'index:headings': vi.fn(async () => ({ ok: true, value: {} })),
+    })
+    nexus('A')
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root?.render(<TrashFrame />))
+  })
+  afterEach(async () => {
+    await act(async () => root?.unmount())
+    host?.remove()
+    root = null
+    host = null
+    useSession.setState({ tree: null })
+  })
+
+  it("lists the opened Nexus's trash after a switch", async () => {
+    expect(titles()).toEqual(['Alpha'])
+    listed = [row({ title: 'Beta' })]
+    await act(async () => nexus('B'))
+    expect(titles()).toEqual(['Beta'])
+  })
+
+  it('lists a delete made elsewhere while it is open', async () => {
+    listed = [row({ title: 'Alpha' }), row({ title: 'Gamma' })]
+    await act(async () => {
+      await useSession.getState().mutate({ op: 'delete', path: 'Notes', kind: 'collection' })
+    })
+    expect(titles()).toEqual(['Alpha', 'Gamma'])
   })
 })
