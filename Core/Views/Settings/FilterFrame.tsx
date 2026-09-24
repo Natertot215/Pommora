@@ -485,7 +485,7 @@ export function FilterFrame({
       <PickerRow
         key={t.id}
         selected={t.id === current}
-        leading={<Icon name={t.icon ?? 'tag'} size="body" />}
+        leading={<Icon name={t.icon} size="body" />}
         onClick={() => {
           close()
           onPick(t.id)

@@ -31,6 +31,7 @@ type Snapshot = { measured: MeasuredRow[]; siblings: MeasuredRow[]; box: Box }
 type Value = {
   draggingId: string | null
   registerRow: (id: string, el: HTMLElement | null) => void
+  rowEl: (id: string) => HTMLElement | undefined
   begin: (id: string, e: ReactPointerEvent) => void
 }
 const Ctx = createContext<Value | null>(null)
@@ -49,6 +50,7 @@ export function SidebarDnd({
   children: ReactNode
 }): React.JSX.Element {
   const rows = useRef(new Map<string, HTMLElement>())
+  const rowEl = (id: string): HTMLElement | undefined => rows.current.get(id)
   const contentRef = useRef<HTMLDivElement | null>(null)
 
   const labelOf = (rowId: string): string => titleFromPath(index.byId.get(rowId)?.path ?? '')
@@ -224,7 +226,7 @@ export function SidebarDnd({
     }),
     label: labelOf,
     ghost: 'grab',
-    rowEl: (id) => rows.current.get(id),
+    rowEl,
     scrollTarget: () => contentRef.current,
     disclose: true,
     watch: index,
@@ -236,7 +238,7 @@ export function SidebarDnd({
   }
 
   const value = useMemo<Value>(
-    () => ({ draggingId: drag.dragging, registerRow, begin: drag.begin }),
+    () => ({ draggingId: drag.dragging, registerRow, rowEl, begin: drag.begin }),
     [drag.dragging, drag.begin],
   )
 
@@ -283,6 +285,12 @@ function reorderCommit(draggedEntry: Entry, order: string[]): MutateRequest | nu
     default:
       return null
   }
+}
+
+export function useSidebarRowEl(): (id: string) => HTMLElement | undefined {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error('useSidebarRowEl must be used inside <SidebarDnd>')
+  return ctx.rowEl
 }
 
 export function useSidebarDrag(id: string): {

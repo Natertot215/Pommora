@@ -95,10 +95,7 @@ export function OptionEditPopup({
       <IconChoice
         open={iconOpen}
         value={option.icon}
-        onSelect={(id) => {
-          setIconOpen(false)
-          onPickIcon(id)
-        }}
+        onSelect={onPickIcon}
         onClose={() => setIconOpen(false)}
         triggerRef={iconRef}
       />

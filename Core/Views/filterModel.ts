@@ -6,11 +6,15 @@ import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/vie
 
 export type { MatchMode }
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { Icon } from '@pommora/uix/Symbols'
 import { contextsByIdOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
 import { FILTER_OPS } from './Pipeline/filter'
-import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../Properties/Cells/PropertyTypes'
+import {
+  type PaneTarget,
+  STAMP_TARGETS,
+  schemaTargets,
+  TITLE_TARGET,
+} from '../Properties/Cells/PropertyTypes'
 
 export type Connector = 'and' | 'or'
 
@@ -179,25 +183,19 @@ export function operatorsFor(
   }
 }
 
-interface FilterTarget {
-  id: string
-  label: string
-  icon: React.ComponentProps<typeof Icon>['name'] | undefined
-}
-
 export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,
   hasLocations = true,
   capitalize = false,
-): FilterTarget[] {
+): PaneTarget[] {
   const contextsById = contextsByIdOf(tree)
   const contextIds = [...contextsById.keys()]
   return [
     TITLE_TARGET,
     // Every Location operator needs a location to point at, so with none it's a target that can never complete.
     ...(hasLocations
-      ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' as const }]
+      ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' }]
       : []),
     ...STAMP_TARGETS,
     ...[...contextsById].map(([id, identity]) => ({

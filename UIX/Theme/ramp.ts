@@ -134,13 +134,11 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
 export const cellRing = (key: CellKey): string =>
   cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')
 
-const ANCHORS: Readonly<Record<string, CellKey>> = ANCHOR_CELLS
-
 export function labelColorFor(color: string | undefined): CellKey | 'default' {
-  if (!color) return 'default'
-  const anchor = ANCHORS[color]
-  if (anchor) return anchor
-  return isColorKey(color) ? (color as CellKey) : 'default'
+  if (!color || !isColorKey(color)) return 'default'
+  return Object.hasOwn(ANCHOR_CELLS, color)
+    ? ANCHOR_CELLS[color as keyof typeof SPECTRUM]
+    : (color as CellKey)
 }
 
 /** A stored cell's CSS, or the runtime system accent when unset. */

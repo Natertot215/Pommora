@@ -16,7 +16,7 @@ import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirm
 import { cx } from '@pommora/uix/Utilities/cx'
 import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostOptionChip'
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
-import { OptionSlot, type OptionStyle } from './OptionRow'
+import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { heading } from '@pommora/uix/Menus'
@@ -45,6 +45,10 @@ export function StatusEditor({
   const [renaming, setRenaming] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const editBtnRef = useRef<HTMLButtonElement>(null)
+  const iconChoice = useOptionIconChoice(
+    (value) => groups.flatMap((g) => g.options).find((o) => o.value === value)?.icon,
+    (value, icon) => onSetGroups(setStatusOptionIcon(groups, value, icon)),
+  )
   const def = useMemo(() => ({ status_groups: groups }), [groups])
   const statusOrder = useMemo(
     () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
@@ -57,7 +61,11 @@ export function StatusEditor({
   )
   // One anchor per group — the shared mechanism holds a single ghost, so crossing into another group's list moves the slot rather than standing two up.
   const ghostApi = useGhostOptionAnchor(
-    adding !== null || renaming !== null || renamingGroup !== null || editing !== null,
+    adding !== null ||
+      renaming !== null ||
+      renamingGroup !== null ||
+      editing !== null ||
+      iconChoice.editing,
   )
 
   const commitAdd = (groupId: string, raw: string, at: number): void => {
@@ -77,9 +85,10 @@ export function StatusEditor({
     const title = raw.trim() || fallbackTitle('status', groupLabel)
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
-  const openMenu = async (value: string, name: string): Promise<void> => {
+  const openMenu = async (value: string, name: string, row: HTMLElement): Promise<void> => {
     const action = await popMenu(optionMenuModel())
     if (action === 'option:rename') setRenaming(value)
+    else if (action === 'option:edit-icon') iconChoice.begin(value, row)
     else if (action === 'option:remove') {
       if (await askRemoveOption(name)) onRemoveOption(value)
     } else if (action === 'option:clear') {
@@ -149,7 +158,7 @@ export function StatusEditor({
                     value={o.value}
                     drag={reorder}
                     ghost={ghostApi}
-                    onOpenMenu={() => void openMenu(o.value, o.label)}
+                    onOpenMenu={(row) => void openMenu(o.value, o.label, row)}
                     type="status"
                     look={look}
                     label={o.label}
@@ -179,6 +188,7 @@ export function StatusEditor({
           </div>
         </div>
       ))}
+      {iconChoice.picker}
     </div>
   )
 }

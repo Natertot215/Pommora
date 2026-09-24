@@ -612,9 +612,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   (e): PickEntry => ({
                     id: e.id,
                     name: e.name,
-                    icon: e.def
-                      ? propertyIcon(e.def)
-                      : (propertyTypeIconName(e.type) ?? 'square-dashed'),
+                    icon: e.def ? propertyIcon(e.def) : propertyTypeIconName(e.type),
                     revealOnly: e.revealOnly,
                     drillable: !e.revealOnly && isOptionsKind(e.type),
                     group: addColumn(e.id, tree).kind === 'context' ? 'Spaces' : 'Properties',
