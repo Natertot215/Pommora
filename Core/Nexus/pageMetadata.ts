@@ -96,16 +96,20 @@ export async function updatePageMetadata(
   const shard = shardOf(id)
   if (shard === null) return fault('That page has no ID Pommora can file.')
   await machine().mkdir(join(root, METADATA_DIR_REL))
-  const written = await updateNexusFile(metadataShardPath(root, shard), (cur) => {
-    const pages = { ...rawPages(cur) }
-    const raw = pages[id]
-    const had = isPlainObject(raw) ? raw : undefined
-    const entry = patchedEntry(had, patch)
-    if (stabilize(entry, had) === had) return null
-    if (entry) pages[id] = entry
-    else delete pages[id]
-    return { ...cur, pages }
-  })
+  const written = await updateNexusFile(
+    metadataShardPath(root, shard),
+    (cur) => {
+      const pages = { ...rawPages(cur) }
+      const raw = pages[id]
+      const had = isPlainObject(raw) ? raw : undefined
+      const entry = patchedEntry(had, patch)
+      if (stabilize(entry, had) === had) return null
+      if (entry) pages[id] = entry
+      else delete pages[id]
+      return { ...cur, pages }
+    },
+    false,
+  )
   return written.ok ? ok(null) : written
 }
 
@@ -121,12 +125,16 @@ export async function dropPageMetadata(
       return false
     })
   for (const [shard, gone] of byShard(ids.filter((id) => !held.has(id)))) {
-    const written = await updateNexusFile(metadataShardPath(root, shard), (cur) => {
-      const pages = { ...rawPages(cur) }
-      if (!gone.some((id) => id in pages)) return null
-      for (const id of gone) delete pages[id]
-      return { ...cur, pages }
-    }).catch((e) => fault(errText(e)))
+    const written = await updateNexusFile(
+      metadataShardPath(root, shard),
+      (cur) => {
+        const pages = { ...rawPages(cur) }
+        if (!gone.some((id) => id in pages)) return null
+        for (const id of gone) delete pages[id]
+        return { ...cur, pages }
+      },
+      false,
+    ).catch((e) => fault(errText(e)))
     if (!written.ok)
       console.error(`metadata: ${shard} kept dropped entries:`, written.error.message)
   }
@@ -136,18 +144,21 @@ export async function copyPageMetadata(
   root: string,
   pairs: readonly (readonly [string, string])[],
 ): Promise<void> {
-  const sources = new Map<string, PageMeta>()
+  const sources = new Map<string, Record<string, unknown>>()
   for (const [shard, froms] of byShard(pairs.map(([from]) => from))) {
-    const read = await readShard(root, shard)
+    const read = await readJsonStrict(metadataShardPath(root, shard))
+    if (!read.ok) continue
     for (const from of froms) {
-      const entry = read.kind === 'ok' ? read.pages[from] : undefined
-      if (entry) sources.set(from, entry)
+      const entry = rawPages(read.value)[from]
+      if (isPlainObject(entry)) sources.set(from, entry)
     }
   }
   for (const [from, to] of pairs) {
     const entry = sources.get(from)
     if (!entry) continue
-    const copied = await updatePageMetadata(root, to, entry).catch((e) => fault(errText(e)))
+    const copied = await updatePageMetadata(root, to, entry as PageMetaPatch).catch((e) =>
+      fault(errText(e)),
+    )
     if (!copied.ok) console.error(`metadata: the copy to ${to} refused:`, copied.error.message)
   }
 }

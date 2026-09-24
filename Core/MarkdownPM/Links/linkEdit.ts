@@ -1,4 +1,4 @@
-import { EditorView } from '@codemirror/view'
+import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import {
   aliasSpanAt,
@@ -96,18 +96,21 @@ function collapseAt(view: EditorView, at: number): void {
   view.dispatch({ changes: { from: at, to: at + 1 } })
 }
 
-// The slot the caret sits in, alias or heading, by its start: leaving one fires that slot's collapse or the alias memory, never the other slot's.
+// The slot the caret sits in, alias or heading, identified by its start: leaving one fires that slot's collapse or the alias memory, never the other slot's.
 interface Slot {
   start: number
+  end: number
   kind: 'alias' | 'heading'
 }
 
 function slotNear(state: EditorState, at: number): Slot | null {
   const { line, rel } = lineNear(state, at)
   const alias = aliasSpanAt(line.text, rel)
-  if (alias) return { start: line.from + alias[0], kind: 'alias' }
+  if (alias) return { start: line.from + alias[0], end: line.from + alias[1], kind: 'alias' }
   const h = linkAt(line.text, rel)?.heading
-  return h && rel >= h[0] && rel <= h[1] ? { start: line.from + h[0], kind: 'heading' } : null
+  return h && rel >= h[0] && rel <= h[1]
+    ? { start: line.from + h[0], end: line.from + h[1], kind: 'heading' }
+    : null
 }
 
 /** An empty alias takes its pipe with it, and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key. */
@@ -131,25 +134,41 @@ function leaveSlot(
 
 /** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret. Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
 export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extension {
+  let authored: number | null = null
+  const leave = (view: EditorView, at: number, slot: Slot, defer: boolean): void => {
+    leaveSlot(view, authored === slot.start ? getApi() : undefined, at, slot.kind, defer)
+    authored = null
+  }
   return [
     EditorView.domEventHandlers({
       blur(_event, view) {
-        // The same predicate the listener uses, or blurring anywhere inside a link would remember an alias nobody authored.
         const at = view.state.selection.main.head
         const slot = slotNear(view.state, at)
-        if (slot) leaveSlot(view, getApi(), at, slot.kind, false)
+        if (slot) leave(view, at, slot, false)
         return false
       },
     }),
     EditorView.updateListener.of((u) => {
-      if (!u.selectionSet) return
+      if (!u.docChanged && !u.selectionSet) return
       // The NEW document at the OLD caret, mapped forward — reading the old offset against the new text makes typing look like leaving.
       const was = u.changes.mapPos(u.startState.selection.main.head)
       const left = slotNear(u.state, was)
-      if (left === null) return
+      if (authored !== null) authored = u.changes.mapPos(authored)
+      if (left?.kind === 'alias' && typedInto(u, left)) authored = left.start
+      if (!u.selectionSet || left === null) return
       if (u.view.hasFocus && slotNear(u.state, u.state.selection.main.head)?.start === left.start)
         return
-      leaveSlot(u.view, getApi(), was, left.kind, true)
+      leave(u.view, was, left, true)
     }),
   ]
+}
+
+function typedInto(u: ViewUpdate, slot: Slot): boolean {
+  if (!u.transactions.some((tr) => tr.isUserEvent('input') || tr.isUserEvent('delete')))
+    return false
+  let touched = false
+  u.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+    if (fromB <= slot.end && toB >= slot.start) touched = true
+  })
+  return touched
 }

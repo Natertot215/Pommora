@@ -110,17 +110,17 @@ export function rmwJsonStrict(
   })
 }
 
-/** The primitive behind `updateNexusConfig` and every metadata month file: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
+/** The primitive behind `updateNexusConfig` and every metadata month file: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one moves aside for a fresh file only where `replaceCorrupt` allows. */
 export function updateNexusFile(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
+  replaceCorrupt = true,
 ): Promise<Result<Record<string, unknown>>> {
   return rmwJsonStrict(
     absPath,
     mutate,
     () => ({}),
-    // A corrupt file moves aside under the lock so the write after the empty read lands.
-    (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
+    replaceCorrupt ? (bad) => machine().rename(bad, `${bad}.bad-${newId()}`) : undefined,
   )
 }
 
