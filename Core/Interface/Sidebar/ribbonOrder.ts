@@ -1,12 +1,6 @@
 export type RibbonKey = 'matrix' | 'agenda' | 'contexts' | 'collections' | 'settings'
 
-export const DEFAULT_ORDER: RibbonKey[] = [
-  'matrix',
-  'agenda',
-  'contexts',
-  'collections',
-  'settings',
-]
+const DEFAULT_ORDER: RibbonKey[] = ['matrix', 'agenda', 'contexts', 'collections', 'settings']
 
 export function resolveOrder(persisted: string[] | undefined, experimental: boolean): RibbonKey[] {
   const order = experimental ? DEFAULT_ORDER : DEFAULT_ORDER.filter((k) => k !== 'agenda')

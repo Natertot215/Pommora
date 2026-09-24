@@ -41,12 +41,6 @@ export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   icon: string
 }
 
-interface ContainerCore {
-  title: string
-  icon?: string
-  kind: 'collection' | 'set'
-}
-
 interface TreeIndex {
   nodes: NodeRecord[]
   reconcile?: ReconcileIndex
@@ -56,7 +50,6 @@ interface TreeIndex {
   pagesById?: Map<string, ConnPage>
   recordsById?: Map<string, NodeRecord>
   pageIndex?: PageIndex
-  containers?: Map<string, ContainerCore>
   navKeys?: string[]
   ancestry?: Map<string, TrailNode[]>
   spaceLinks?: Map<string, Record<string, string[]>>
@@ -109,7 +102,6 @@ function walk(tree: NexusTree): NodeRecord[] {
         id: s.id,
         title: s.title,
         icon: entityIcon('space', s.icon, di),
-        ownIcon: s.icon,
         path: s.path,
         parents: [group],
       })
@@ -135,7 +127,6 @@ function walk(tree: NexusTree): NodeRecord[] {
         id: s.id,
         title: s.title,
         icon: entityIcon('set', s.icon, di),
-        ownIcon: s.icon,
         path: s.path,
         parents,
       }
@@ -152,7 +143,6 @@ function walk(tree: NexusTree): NodeRecord[] {
       id: col.id,
       title: col.title,
       icon: entityIcon('collection', col.icon, di),
-      ownIcon: col.icon,
       path: col.path,
       parents: [],
     }
@@ -288,18 +278,6 @@ export const connectionsFor = (
   tree: NexusTree | null,
   rest: Omit<ConnectionsApi, keyof PageIndex>,
 ): ConnectionsApi | undefined => (tree ? { ...pageIndexOf(tree), ...rest } : undefined)
-
-export function containersByPathOf(tree: NexusTree): ReadonlyMap<string, ContainerCore> {
-  const ix = indexFor(tree)
-  if (!ix.containers) {
-    const m = new Map<string, ContainerCore>()
-    for (const r of ix.nodes)
-      if (r.kind === 'collection' || r.kind === 'set')
-        m.set(r.path, { title: r.title, icon: r.ownIcon, kind: r.kind })
-    ix.containers = m
-  }
-  return ix.containers
-}
 
 /** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the records are the complete universe of capturable keys. */
 export function navKeysOf(tree: NexusTree): string[] {

@@ -80,9 +80,7 @@ function readExcludedLeaf(v: unknown): string[] {
 }
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {
-  const personalization = readPersonalization(
-    isPlainObject(settings.personalization) ? settings.personalization : {},
-  )
+  const personalization = readPersonalization(settings.personalization)
   return {
     excluded: readExcludedLeaf(settings.excluded_folders),
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),

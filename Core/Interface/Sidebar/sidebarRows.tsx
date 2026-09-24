@@ -44,7 +44,6 @@ export function Leaf({
   title,
   depth,
   selected = false,
-  chevronSpace = true,
   onSelect,
   onContextMenu,
   rename,
@@ -53,7 +52,6 @@ export function Leaf({
   title: string
   depth: number
   selected?: boolean
-  chevronSpace?: boolean
   onSelect?: (e: React.MouseEvent) => void
   onContextMenu?: () => void
   rename?: RenameTarget
@@ -65,9 +63,7 @@ export function Leaf({
       indent={depth}
       onClick={onSelect}
       onContextMenu={ctxHandler(onContextMenu)}
-      leading={
-        chevronSpace ? <span className={dropOutlineSpacer} data-drop-outline-spacer /> : null
-      }
+      leading={<span className={dropOutlineSpacer} data-drop-outline-spacer />}
     >
       <Icon name={icon} size="headline" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}

@@ -16,7 +16,8 @@ import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatVal
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
 import { livePagePath, connectionsFor, trailOf } from '../../Nexus/treeIndex'
-import { type PageTarget, useEmbedScale, useSession } from '../../Session/store'
+import { useEmbedScale, useSession } from '../../Session/store'
+import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
 import { host } from '../../Platform/dialer'
@@ -152,7 +153,7 @@ function PageHistoryBody({
 
   const list = (
     <div className="window-panel-column">
-      <div className="window-pane-scroll nav-list page-history-list">
+      <div className="window-pane-scroll nav-list">
         <MenuItem
           className="page-history-row"
           subLabel={modifiedAt === null ? undefined : when(modifiedAt)}
@@ -239,7 +240,7 @@ function PageHistoryBody({
       }}
     >
       <div
-        className="window-body page-window-body over-scroll page-tile-grows"
+        className="window-body over-scroll page-tile-grows"
         style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       >
         {body !== null && (

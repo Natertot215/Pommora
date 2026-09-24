@@ -20,7 +20,7 @@ import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { useWindowWarm } from './useWindowWarm'
 import { windowBannerShown } from './windowTabBanner'
 
-export interface WindowTabBodySlots {
+interface WindowTabBodySlots {
   body: React.ReactNode
   bodyRef: RefObject<HTMLDivElement | null>
   right: WindowBasePanel

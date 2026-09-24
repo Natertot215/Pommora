@@ -47,7 +47,6 @@ export interface WindowSlice {
   toggleNav: () => void
   /** The sequence makes every summon a distinct event, so re-clicking a link the window has navigated away from still re-aims it. */
   browserSummon: { url: string; seq: number } | null
-  browserSeq: number
   openBrowser: (url: string) => void
   closeBrowser: () => void
   reconcileWindow: (index: ReconcileIndex) => void
@@ -70,6 +69,7 @@ const PER_NEXUS = {
 
 export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
   let windowSlideSeq = 0
+  let browserSeq = 0
   const stampByOrder = (cur: WindowState, nextId: string): { dir: 'back' | 'fwd'; seq: number } => {
     const from = cur.tabs.findIndex((t) => t.id === cur.activeTabId)
     const to = cur.tabs.findIndex((t) => t.id === nextId)
@@ -236,12 +236,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
     browserSummon: null,
     // Monotonic across closes: living outside the summon object, a re-summon inside the window's exit presence still reads as a new event.
-    browserSeq: 0,
-    openBrowser: (url) =>
-      set((s) => {
-        const seq = s.browserSeq + 1
-        return { browserSeq: seq, browserSummon: { url, seq } }
-      }),
+    openBrowser: (url) => set({ browserSummon: { url, seq: ++browserSeq } }),
     closeBrowser: () => set({ browserSummon: null }),
 
     // A deleted page's flush would hit a dead path, which the crud guard refuses.

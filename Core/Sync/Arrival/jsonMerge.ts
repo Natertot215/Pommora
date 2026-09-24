@@ -5,7 +5,7 @@ import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
 import { basename } from '../../Paths/posix'
 
 export type Json = Record<string, unknown>
-export type Depth = Record<string, number>
+type Depth = Record<string, number>
 
 export function isMergedJson(rel: string): boolean {
   return rel.endsWith('.json') && (rel.startsWith(`${NEXUS_DIR}/`) || basename(rel).startsWith('_'))

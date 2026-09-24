@@ -15,7 +15,6 @@ export interface ConfigSlice {
   setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void
   /** Per-page footnote-section visibility for pages with an explicit answer; a page with no entry follows the nexus-wide default. The section's disclosure follows this, never the reverse. */
   citationsShown: Record<string, boolean>
-  setCitationsShown: (pageId: string, shown: boolean | null) => void
   toggleCitations: (pageId: string) => void
   /** Clears the row when `shown` matches the nexus-wide default, so nothing that discloses the section can pin a row forever. */
   setCitationsVisible: (pageId: string, shown: boolean) => void
@@ -63,17 +62,14 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
     s.setCitationsVisible(pageId, !citationsVisible(s, pageId))
   },
   setCitationsVisible: (pageId, shown) => {
-    const s = get()
-    s.setCitationsShown(pageId, shown === citationsDefault(s) ? null : shown)
-  },
-  setCitationsShown: (pageId, shown) => {
+    const stored = shown === citationsDefault(get()) ? null : shown
     set((s) => {
       const next = { ...s.citationsShown }
-      if (shown === null) delete next[pageId]
-      else next[pageId] = shown
+      if (stored === null) delete next[pageId]
+      else next[pageId] = stored
       return { citationsShown: next }
     })
-    void host().ask('citations:set', pageId, shown)
+    void host().ask('citations:set', pageId, stored)
   },
 
   // The tree leaf is what the field reads, patched on the write's own confirm — a refusal needs no local rollback.

@@ -98,9 +98,9 @@ export function bumpBodyEpoch(path: string): void {
   for (const fn of epochListeners) fn()
 }
 
-export const readBodyEpoch = (path: string): number => bodyEpochs.get(path) ?? 0
+const readBodyEpoch = (path: string): number => bodyEpochs.get(path) ?? 0
 
-export function subscribeBodyEpoch(fn: () => void): () => void {
+function subscribeBodyEpoch(fn: () => void): () => void {
   epochListeners.add(fn)
   return () => epochListeners.delete(fn)
 }

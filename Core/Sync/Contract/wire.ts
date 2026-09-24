@@ -148,12 +148,10 @@ export type SyncBinding = { address: string } & (
   | { state: 'unreachable'; why: string }
 )
 
-export interface SyncStatus {
-  state: 'off' | 'idle' | 'syncing' | 'error'
+export type SyncStatus = {
   reason?: 'password' | 'pending' | 'revoked' | 'server'
   why?: string
-  lastAt?: number
-}
+} & ({ state: 'off' | 'syncing' | 'error' } | { state: 'idle'; lastAt: number })
 
 export interface SyncState {
   device: SyncDevice

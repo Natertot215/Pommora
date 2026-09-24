@@ -6,7 +6,7 @@ import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
-import * as s from './nexus-header.css'
+import * as s from './nexus-photo.css'
 
 // KNOB — a glyph's share of the frame a photo fills.
 const GLYPH_SHARE = 0.85

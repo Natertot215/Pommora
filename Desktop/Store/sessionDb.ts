@@ -9,14 +9,6 @@ import { captureStore, contentIndexStore, keyValueStore, snapshotStore, syncStor
 let db: Db | null = null
 let versionsDb: Db | null = null
 
-export function sessionDb(): Db | null {
-  return db
-}
-
-export function sessionVersionsDb(): Db | null {
-  return versionsDb
-}
-
 const openQuietly = (open: () => Db | null, note: string): Db | null => {
   try {
     return open()

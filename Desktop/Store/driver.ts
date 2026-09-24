@@ -16,7 +16,6 @@ export function openDb(path: string): { db: Db | null; errcode?: number } {
   try {
     db = new DatabaseSync(path)
     db.exec('PRAGMA journal_mode = WAL')
-    db.exec('PRAGMA foreign_keys = ON')
     return { db }
   } catch (e) {
     db?.close()
