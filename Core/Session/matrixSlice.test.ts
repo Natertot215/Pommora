@@ -87,6 +87,16 @@ describe('the config half', () => {
     expect(useSession.getState().matrixConfig).not.toBe(before)
   })
 
+  it('keeps the reference for a push that differs only in key order', () => {
+    const before = useSession.getState().matrixConfig
+    const reversed = (o: object): object => Object.fromEntries(Object.entries(o).reverse())
+    const pushed = Object.fromEntries(
+      Object.entries(before).map(([section, v]) => [section, reversed(v)]),
+    ) as unknown as typeof before
+    useSession.getState().applyMatrixChanged(pushed)
+    expect(useSession.getState().matrixConfig).toBe(before)
+  })
+
   it('keeps every section a push leaves alone, so only what moved rebuilds', () => {
     const before = useSession.getState().matrixConfig
     useSession.getState().applyMatrixChanged(parseMatrixConfig({ display: { hideIcon: true } }))

@@ -1,9 +1,7 @@
 import { readMatrixGraph as readRows } from '../Index/contentIndex'
 import { ID_KEY } from '../Nexus/identityMark'
-import { idTime } from '../Nexus/ids'
-import { pageFrontmatter } from '../Nexus/schemas'
 import type { MatrixLinkRow } from '../Platform/stores'
-import { iso } from '../Views/loadValues'
+import { pageValuesOf } from '../Views/loadValues'
 import type { PageValues } from '../Views/viewRow'
 
 export interface MatrixLink extends MatrixLinkRow {
@@ -27,11 +25,7 @@ export function readMatrixGraph(paths?: string[]): MatrixGraphReply | null {
     const id = page.values[ID_KEY]
     if (typeof id !== 'string') continue
     idOf.set(path, id)
-    values[id] = {
-      frontmatter: pageFrontmatter.parse({ ...page.values, [ID_KEY]: id }),
-      createdAt: iso(idTime(id)),
-      modifiedAt: iso(page.mtimeMs),
-    }
+    values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }
   const links: MatrixLink[] = []
   for (const row of rows.links) {

@@ -112,16 +112,3 @@ export function applyPatch(config: MatrixConfig, patch: MatrixPatch): MatrixConf
 }
 
 export const SECTIONS = ['group', 'filter', 'forces', 'display'] as const
-
-// A pushed section that reads the same as the held one keeps the held reference, and an all-equal push keeps the config itself.
-export function mergeConfig(held: MatrixConfig, pushed: MatrixConfig): MatrixConfig {
-  const kept = <K extends keyof MatrixConfig>(key: K): MatrixConfig[K] =>
-    JSON.stringify(held[key]) === JSON.stringify(pushed[key]) ? held[key] : pushed[key]
-  const next: MatrixConfig = {
-    group: kept('group'),
-    filter: kept('filter'),
-    forces: kept('forces'),
-    display: kept('display'),
-  }
-  return SECTIONS.every((key) => next[key] === held[key]) ? held : next
-}

@@ -18,6 +18,19 @@ export function iso(ms: number | null): string | null {
   return `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
+// Views and the Matrix read a page's values alike: its frontmatter with the ID it's known by, its creation time from that ID, and its modified time.
+export function pageValuesOf(
+  id: string,
+  fm: Record<string, unknown>,
+  mtimeMs: number | null,
+): PageValues {
+  return {
+    frontmatter: pageFrontmatter.parse({ ...fm, [ID_KEY]: id }),
+    createdAt: iso(idTime(id)),
+    modifiedAt: iso(mtimeMs),
+  }
+}
+
 async function corpus(
   rootPath: string,
   containerRelPath: string,
@@ -45,11 +58,7 @@ export async function loadValues(
   const out: Record<string, PageValues> = {}
   for (const rec of records) {
     if (!rec) continue
-    out[rec.node.id] = {
-      frontmatter: pageFrontmatter.parse({ ...rec.fm, [ID_KEY]: rec.node.id }),
-      createdAt: iso(idTime(rec.node.id)),
-      modifiedAt: iso(rec.mtimeMs),
-    }
+    out[rec.node.id] = pageValuesOf(rec.node.id, rec.fm, rec.mtimeMs)
   }
   return out
 }
