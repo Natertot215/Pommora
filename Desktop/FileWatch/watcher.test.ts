@@ -199,6 +199,29 @@ describe('state.json under the watcher', () => {
   })
 })
 
+describe('a page the app just wrote', () => {
+  const own = `---\nID: ${ULID_A}\n---\n\nalpha\n`
+  const changedPages = (): unknown[] =>
+    pushMock.mock.calls.filter((c) => c[1] === 'pages:changed').map((c) => c[2])
+
+  it('drops its own echo', async () => {
+    await startWatcher(root, win)
+    recordWrite(abs('Notes', 'A.md'), own)
+    emit('change', 'Notes', 'A.md')
+    await settleAll()
+    expect(changedPages()).toEqual([])
+  })
+
+  it('lands an outside edit inside the echo window', async () => {
+    await startWatcher(root, win)
+    recordWrite(abs('Notes', 'A.md'), own)
+    await writeFile(abs('Notes', 'A.md'), `${own}outside\n`)
+    emit('change', 'Notes', 'A.md')
+    await settleAll(() => changedPages().length > 0)
+    expect(changedPages()).toEqual([['Notes/A.md']])
+  })
+})
+
 describe('a metadata month file under the watcher', () => {
   it('lands an outside edit inside the echo window', async () => {
     vi.useRealTimers()

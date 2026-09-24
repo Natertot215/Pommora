@@ -9,7 +9,7 @@ import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
 
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
-  recordWrite(filePath)
+  recordWrite(filePath, data)
   await machine().writeText(filePath, data)
 }
 
@@ -37,7 +37,7 @@ export async function landBytes(
 }
 
 export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
-  recordWrite(filePath)
+  recordWrite(filePath, data)
   await machine().writeBytes(filePath, data)
 }
 

@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { isRecentWrite, recordWrite, setWriteTap } from './writeEcho'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { dropOwnEchoes, isRecentWrite, recordWrite, setWriteTap } from './writeEcho'
 
 // WINDOW_MS is 2000; PREFIX_WINDOW_MS is 800. The module-level map has no reset, so each test uses a distinct root to keep records from bleeding across tests.
 beforeEach(() => {
@@ -54,5 +57,21 @@ describe('setWriteTap', () => {
     setWriteTap(null)
     recordWrite('/t6/c.md')
     expect(seen).toEqual(['/t6/a.md', '/t6/b.md'])
+  })
+})
+
+describe('an echo recorded with its bytes', () => {
+  it('is left to the content check, which drops it only while the file still holds them', async () => {
+    vi.useRealTimers()
+    const dir = mkdtempSync(join(tmpdir(), 'pom-echo-'))
+    const own = join(dir, 'own.md')
+    const theirs = join(dir, 'theirs.md')
+    recordWrite(own, 'mine')
+    recordWrite(theirs, 'mine')
+    writeFileSync(own, 'mine')
+    writeFileSync(theirs, 'an outside edit')
+    expect(isRecentWrite(own)).toBe(false)
+    const events = [{ absPath: own }, { absPath: theirs }, { absPath: join(dir, 'gone.md') }]
+    expect(await dropOwnEchoes(events)).toEqual([events[1], events[2]])
   })
 })
