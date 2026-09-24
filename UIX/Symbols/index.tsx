@@ -19,7 +19,6 @@ import {
   Columns3Cog,
   Command,
   Copy,
-  Earth,
   Ellipsis,
   EllipsisVertical,
   Eye,
@@ -35,14 +34,11 @@ import {
   GripHorizontal,
   GripVertical,
   Hash,
-  Heart,
   History,
   Image,
-  Import,
   LayoutDashboard,
   LayoutGrid,
   Laptop,
-  LayoutPanelLeft,
   Layers,
   Link,
   Link2,
@@ -99,7 +95,6 @@ import * as sym from './symbols.css'
 export const icons = {
   orbit: Orbit,
   atom: Atom,
-  earth: Earth,
   calendar: Calendar,
   clock: Clock,
   'clock-fading': ClockFading,
@@ -155,10 +150,8 @@ export const icons = {
   shuffle: Shuffle,
   pipette: Pipette,
   'wrap-text': WrapText,
-  heart: Heart,
   hash: Hash,
   'square-check': SquareCheck,
-  import: Import,
   link: Link,
   'link-2': Link2,
   send: Send,
@@ -171,7 +164,6 @@ export const icons = {
   'calendar-days': CalendarDays,
   'chart-gantt': ChartGantt,
   'chevrons-up-down': ChevronsUpDown,
-  'layout-panel-left': LayoutPanelLeft,
   'text-align-justify': TextAlignJustify,
   'view-table': Grid3x2,
   pommora: Pommora,
@@ -186,14 +178,13 @@ export const icons = {
 
 export type IconName = keyof typeof icons
 
-export const asIconName = (value: unknown): IconName | undefined =>
-  typeof value === 'string' && value in icons ? (value as IconName) : undefined
-
 // A renderable icon is a curated name or any id in the full Lucide roster. ICON_NAMES carries the
 // roster as bare strings, so this validates synchronously without the glyph set: a real (even not-yet-
 // loaded) id passes and its glyph arrives via LazyGlyph, while a bogus id falls to the caller's default.
 export const asRenderableIcon = (value: unknown): string | undefined =>
-  typeof value === 'string' && (value in icons || ICON_NAMES.has(value)) ? value : undefined
+  typeof value === 'string' && (Object.hasOwn(icons, value) || ICON_NAMES.has(value))
+    ? value
+    : undefined
 
 export const iconNameOr = (value: unknown, fallback: IconName): string =>
   asRenderableIcon(value) ?? fallback
@@ -247,9 +238,9 @@ export function Icon({
   const sized: LucideProps = isIconSize(size)
     ? { size: '1em', style: { ...style, fontSize: iconSizeVars[size] } }
     : { size, style }
-  const Curated = (icons as Record<string, LucideIcon>)[name]
-  if (Curated) return <Curated {...rest} {...sized} />
-  return <LazyGlyph name={name} {...rest} {...sized} />
+  if (!Object.hasOwn(icons, name)) return <LazyGlyph name={name} {...rest} {...sized} />
+  const Curated = icons[name as IconName]
+  return <Curated {...rest} {...sized} />
 }
 
 // Both faces stay mounted in one grid cell so a toggle cross-fades rather than swapping glyphs outright.

@@ -1,5 +1,5 @@
 import type { IconName } from '@pommora/uix/Symbols'
-import { asIconName, iconNameOr } from '@pommora/uix/Symbols'
+import { asRenderableIcon } from '@pommora/uix/Symbols'
 import type { EntityIconKind } from '../Settings/personalization'
 
 export const DEFAULT_NEXUS_ICON: IconName = 'pommora'
@@ -17,5 +17,5 @@ export function entityIcon(
   own: unknown,
   defaults: Partial<Record<EntityIconKind, string>> | undefined,
 ): string {
-  return iconNameOr(own, asIconName(defaults?.[kind]) ?? DEFAULT_ENTITY_ICONS[kind])
+  return asRenderableIcon(own) ?? asRenderableIcon(defaults?.[kind]) ?? DEFAULT_ENTITY_ICONS[kind]
 }

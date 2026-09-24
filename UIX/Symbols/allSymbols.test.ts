@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { ALL_ICONS, lucideGlyph, lucideIconNodes, searchIcons, toKebabIconId } from './allSymbols'
 import { ICON_NAMES } from './iconNames'
-import { icons } from './index'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { asRenderableIcon, Icon, icons } from './index'
 
 describe('toKebabIconId', () => {
   it('matches lucide canonical kebab for the tricky boundary cases', () => {
@@ -56,7 +58,24 @@ describe('lucideIconNodes', () => {
 
 describe('ICON_NAMES', () => {
   it('matches the resolvable set exactly, so eager validation agrees with lazy resolution', () => {
-    expect([...ICON_NAMES].sort((a, b) => a.localeCompare(b))).toEqual(ALL_ICONS.map((e) => e.id))
+    expect(
+      [...ICON_NAMES].sort((a, b) => a.localeCompare(b)),
+      'ICON_NAMES is stale — run `npm run icons:names`',
+    ).toEqual(ALL_ICONS.map((e) => e.id))
+  })
+})
+
+describe('asRenderableIcon', () => {
+  it('accepts curated and full-roster ids, and no name Object.prototype carries', () => {
+    expect(asRenderableIcon('pommora')).toBe('pommora')
+    expect(asRenderableIcon('anchor')).toBe('anchor')
+    for (const name of ['constructor', '__proto__', 'valueOf', 'hasOwnProperty'])
+      expect(asRenderableIcon(name)).toBeUndefined()
+  })
+
+  it('draws a name Object.prototype carries as the placeholder rather than throwing', () => {
+    for (const name of ['constructor', '__proto__', 'valueOf', 'hasOwnProperty'])
+      expect(renderToStaticMarkup(createElement(Icon, { name }))).toContain('<svg')
   })
 })
 

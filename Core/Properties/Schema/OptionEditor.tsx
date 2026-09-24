@@ -16,7 +16,7 @@ import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
-import { OptionSlot, type OptionStyle } from './OptionRow'
+import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading } from '@pommora/uix/Menus'
@@ -47,8 +47,11 @@ export function OptionEditor({
   const [adding, setAdding] = useState<number | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
-  const [iconEditing, setIconEditing] = useState<string | null>(null)
   const editBtnRef = useRef<HTMLButtonElement>(null)
+  const iconChoice = useOptionIconChoice(
+    (value) => options.find((o) => o.value === value)?.icon,
+    (value, icon) => onSetOptions(setOptionIcon(options, value, icon)),
+  )
   const optionOrder = useMemo(() => options.map((o) => o.value), [options])
   const entering = useEntrance(options, (o) => o.value)
   const reorder = useOptionReorder(
@@ -58,7 +61,7 @@ export function OptionEditor({
   )
   // Each option is its own anchor; an empty list has no chip to anchor to, so the list itself stands in for the first one.
   const ghostApi = useGhostOptionAnchor(
-    adding !== null || renaming !== null || editing !== null || iconEditing !== null,
+    adding !== null || renaming !== null || editing !== null || iconChoice.editing,
   )
 
   const commitAdd = (raw: string, at: number): void => {
@@ -87,22 +90,15 @@ export function OptionEditor({
     const title = raw.trim() || fallbackTitle(type)
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
-  const openMenu = async (o: Option): Promise<void> => {
-    const action = await popMenu(optionMenuModel(true))
+  const openMenu = async (o: Option, row: HTMLElement): Promise<void> => {
+    const action = await popMenu(optionMenuModel())
     if (action === 'option:rename') setRenaming(o.value)
-    else if (action === 'option:edit-icon') setIconEditing(o.value)
+    else if (action === 'option:edit-icon') iconChoice.begin(o.value, row)
     else if (action === 'option:remove') {
       if (await askRemoveOption(o.label)) onRemoveOption(o.value)
     } else if (action === 'option:clear') {
       if (await askClearOption(o.label)) onClearOption(o.value)
     }
-  }
-  const pickColor = (o: Option, color: string | undefined): void => {
-    onSetOptions(recolorOption(options, o.value, color))
-  }
-  const pickIcon = (o: Option, icon: string | undefined): void => {
-    setIconEditing(null)
-    onSetOptions(setOptionIcon(options, o.value, icon))
   }
 
   return (
@@ -132,7 +128,7 @@ export function OptionEditor({
                   value={o.value}
                   drag={reorder}
                   ghost={ghostApi}
-                  onOpenMenu={() => void openMenu(o)}
+                  onOpenMenu={(row) => void openMenu(o, row)}
                   type={type}
                   look={look}
                   label={o.label}
@@ -141,16 +137,14 @@ export function OptionEditor({
                   appearance={o.appearance}
                   renaming={renaming === o.value}
                   editing={isEditing}
-                  iconEditing={iconEditing === o.value}
                   editButtonRef={editBtnRef}
                   onCommitRename={(raw) => commitRename(o.value, raw)}
                   onCancelRename={() => setRenaming(null)}
                   onToggleEditing={() => setEditing((v) => (v === o.value ? null : o.value))}
                   onCloseEditing={() => setEditing(null)}
-                  onPickColor={(color) => pickColor(o, color)}
+                  onPickColor={(color) => onSetOptions(recolorOption(options, o.value, color))}
                   onPickAppearance={(a) => onSetOptions(setOptionAppearance(options, o.value, a))}
-                  onEditIcon={(icon) => pickIcon(o, icon)}
-                  onCloseIcon={() => setIconEditing(null)}
+                  onEditIcon={(icon) => onSetOptions(setOptionIcon(options, o.value, icon))}
                 />
               </Reveal>
               {slotAt(i + 1, o.value)}
@@ -160,6 +154,7 @@ export function OptionEditor({
         {options.length === 0 ? slotAt(0, LIST_ANCHOR) : null}
         {reorder.lineTop !== null ? <DropLine style={{ top: reorder.lineTop }} /> : null}
       </div>
+      {iconChoice.picker}
     </div>
   )
 }

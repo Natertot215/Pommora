@@ -36,8 +36,9 @@ import {
 } from '@pommora/core/Nexus/mutateRequest'
 import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { collectionOfPage } from '../../Properties/pageRow'
-import { SidebarDnd } from './sidebarDnd'
-import { buildIndex } from './sidebarDndModel'
+import { spaceNodeOf } from '../../Nexus/treeIndex'
+import { SidebarDnd, useSidebarRowEl } from './sidebarDnd'
+import { buildIndex, entryAtPath, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '@pommora/core/Settings/experimental'
 import { pageMetaOf, useSession } from '../../Session/store'
@@ -106,9 +107,6 @@ function PageRow({
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
-  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
-  const endIcon = useSession((s) => s.endIcon)
-  const mutate = useSession((s) => s.mutate)
   const rowRef = useRef<HTMLDivElement>(null)
   return (
     <>
@@ -140,13 +138,6 @@ function PageRow({
           />
         </div>
       </DragRow>
-      <IconChoice
-        open={iconPath === page.path}
-        onClose={endIcon}
-        triggerRef={rowRef}
-        value={ownIcon}
-        onSelect={(icon) => void mutate({ op: 'setIcon', path: page.path, kind: 'page', icon })}
-      />
       {ghost.anchorId === page.id && <GhostLeaf depth={depth} kind="page" label="New Page" />}
     </>
   )
@@ -389,9 +380,6 @@ function SpaceRow({
   const select = useSession((s) => s.select)
   const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
-  const endIcon = useSession((s) => s.endIcon)
-  const mutate = useSession((s) => s.mutate)
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
@@ -417,13 +405,6 @@ function SpaceRow({
           />
         </div>
       </DragRow>
-      <IconChoice
-        open={iconPath === node.path}
-        onClose={endIcon}
-        triggerRef={rowRef}
-        value={node.icon}
-        onSelect={(icon) => void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon })}
-      />
       {ghost.anchorId === node.id && <GhostLeaf depth={1} kind="space" label={ghostLabel} />}
     </>
   )
@@ -431,59 +412,83 @@ function SpaceRow({
 
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
-  const endIcon = useSession((s) => s.endIcon)
-  const mutate = useSession((s) => s.mutate)
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
-  const headerRef = useRef<HTMLDivElement>(null)
   const path = contextDirRel(group.def.title)
   const newLabel = createSpaceLabel(group.def)
   return (
-    <>
-      <Disclosure
-        icon={entityIcon('context', group.def.icon, defaultIcons)}
-        title={group.def.title}
-        depth={0}
-        defaultOpen
-        persistKey={`context:${group.def.id}`}
-        dragId={group.def.id}
-        headerRef={headerRef}
-        onContextMenu={() =>
-          void holdGhost(() =>
-            showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' }),
-          )
-        }
-        onHeaderHover={(entering) => api?.onHover(group.def.id, entering)}
-        belowHeader={
-          ghost.anchorId === group.def.id && <GhostLeaf depth={1} kind="space" label={newLabel} />
-        }
-        rename={{ path, kind: 'context' }}
-        onBodyContextMenu={() => {
-          void useSession.getState().createFromMenu(
-            [
-              {
-                label: newLabel,
-                req: { op: 'createSpace', contextId: group.def.id, name: newLabel },
-              },
-            ],
-            'sidebar',
-          )
-        }}
-      >
-        {group.spaces.map((s) => (
-          <SpaceRow key={s.id} node={s} ghostLabel={newLabel} />
-        ))}
-      </Disclosure>
-      <IconChoice
-        open={iconPath === path}
-        onClose={endIcon}
-        triggerRef={headerRef}
-        value={group.def.icon}
-        onSelect={(icon) => void mutate({ op: 'setIcon', path, kind: 'context', icon })}
-      />
-    </>
+    <Disclosure
+      icon={entityIcon('context', group.def.icon, defaultIcons)}
+      title={group.def.title}
+      depth={0}
+      defaultOpen
+      persistKey={`context:${group.def.id}`}
+      dragId={group.def.id}
+      onContextMenu={() =>
+        void holdGhost(() =>
+          showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' }),
+        )
+      }
+      onHeaderHover={(entering) => api?.onHover(group.def.id, entering)}
+      belowHeader={
+        ghost.anchorId === group.def.id && <GhostLeaf depth={1} kind="space" label={newLabel} />
+      }
+      rename={{ path, kind: 'context' }}
+      onBodyContextMenu={() => {
+        void useSession.getState().createFromMenu(
+          [
+            {
+              label: newLabel,
+              req: { op: 'createSpace', contextId: group.def.id, name: newLabel },
+            },
+          ],
+          'sidebar',
+        )
+      }}
+    >
+      {group.spaces.map((s) => (
+        <SpaceRow key={s.id} node={s} ghostLabel={newLabel} />
+      ))}
+    </Disclosure>
+  )
+}
+
+// The ref keeps the row through the picker's close, after the entry has gone.
+function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): React.JSX.Element {
+  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
+  const endIcon = useSession((s) => s.endIcon)
+  const mutate = useSession((s) => s.mutate)
+  const rowEl = useSidebarRowEl()
+  const trigger = useRef<HTMLElement | null>(null)
+  const entry = iconPath === null ? undefined : entryAtPath(index, iconPath)
+  if (entry) trigger.current = rowEl(entry.id) ?? null
+  const ownIcon = (): string | undefined => {
+    switch (entry?.kind) {
+      case 'contextGroup':
+        return tree.contexts.find((g) => g.def.id === entry.id)?.def.icon
+      case 'space':
+        return spaceNodeOf(tree, entry.id)?.icon
+      case 'page':
+        return tree.pageMetadata[entry.id]?.icon
+    }
+  }
+  return (
+    <IconChoice
+      open={entry !== undefined && trigger.current !== null}
+      onClose={endIcon}
+      triggerRef={trigger}
+      value={ownIcon()}
+      onSelect={(icon) => {
+        if (entry)
+          void mutate({
+            op: 'setIcon',
+            path: entry.path,
+            kind: entry.kind === 'contextGroup' ? 'context' : entry.kind,
+            icon,
+          })
+      }}
+    />
   )
 }
 
@@ -554,11 +559,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onCommit = (req: MutateRequest): void => {
     // Pulses the landing container so a locked one can peek the newcomer; id resolves via the pre-move path.
     if (req.op === 'movePage' || req.op === 'moveSet') {
-      for (const [cid, e] of dndIndexRef.current.byId)
-        if (e.path === req.path) {
-          signalPeek(req.newParentPath, cid)
-          break
-        }
+      const moved = entryAtPath(dndIndexRef.current, req.path)
+      if (moved) signalPeek(req.newParentPath, moved.id)
     }
     void mutate(req)
   }
@@ -602,6 +604,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       subSetPlacement={subSetPlacement}
     >
       <div className="section">{section}</div>
+      <SidebarIconChoice tree={tree} index={dndIndex} />
     </SidebarDnd>
   )
 

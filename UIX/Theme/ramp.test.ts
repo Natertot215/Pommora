@@ -171,6 +171,8 @@ describe('labelColorFor', () => {
     expect(labelColorFor('teal')).toBe('default')
     expect(labelColorFor('red-8')).toBe('default')
     expect(labelColorFor('')).toBe('default')
+    for (const name of ['constructor', '__proto__', 'valueOf', 'hasOwnProperty'])
+      expect(labelColorFor(name)).toBe('default')
   })
 
   // The accent sentinel is produced by the two consumers that own the accent fallback; it must not round-trip in from disk.

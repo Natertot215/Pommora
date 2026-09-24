@@ -1,4 +1,4 @@
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 
 import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
@@ -34,7 +34,6 @@ function OptionRow({
   def,
   renaming,
   editing,
-  iconEditing,
   editButtonRef,
   onCommitRename,
   onCancelRename,
@@ -43,7 +42,6 @@ function OptionRow({
   onPickColor,
   onPickAppearance,
   onEditIcon,
-  onCloseIcon,
 }: {
   type: string
   look: OptionStyle
@@ -55,7 +53,6 @@ function OptionRow({
   def?: Pick<PropertyDefinition, 'status_groups'>
   renaming: boolean
   editing: boolean
-  iconEditing?: boolean
   editButtonRef: React.RefObject<HTMLButtonElement | null>
   onCommitRename: (raw: string) => void
   onCancelRename: () => void
@@ -63,10 +60,8 @@ function OptionRow({
   onCloseEditing: () => void
   onPickColor: (color: string | undefined) => void
   onPickAppearance: (appearance: OptionAppearance) => void
-  onEditIcon?: (icon: string | undefined) => void
-  onCloseIcon?: () => void
+  onEditIcon: (icon: string | undefined) => void
 }): React.JSX.Element {
-  const iconAnchor = useRef<HTMLSpanElement>(null)
   const option = { value, label, color, icon, appearance }
   if (renaming) {
     return (
@@ -76,20 +71,6 @@ function OptionRow({
         onCommit={onCommitRename}
         onCancel={onCancelRename}
       />
-    )
-  }
-  if (iconEditing) {
-    return (
-      <span className={s.optionAnchor} ref={iconAnchor}>
-        <OptionChip type={type} look="compact" option={option} def={def} />
-        <IconChoice
-          open
-          value={icon}
-          onSelect={(id) => onEditIcon?.(id)}
-          onClose={() => onCloseIcon?.()}
-          triggerRef={iconAnchor}
-        />
-      </span>
     )
   }
   return (
@@ -118,7 +99,7 @@ function OptionRow({
           triggerRef={editButtonRef}
           onDismiss={onCloseEditing}
           onRename={onCommitRename}
-          onPickIcon={(id) => onEditIcon?.(id)}
+          onPickIcon={onEditIcon}
           onPickColor={onPickColor}
           onPickAppearance={onPickAppearance}
         />
@@ -141,7 +122,7 @@ export function OptionSlot({
 }: React.ComponentProps<typeof OptionRow> & {
   drag: RowDrag
   ghost: GhostAnchor
-  onOpenMenu: () => void
+  onOpenMenu: (row: HTMLElement) => void
 }): React.JSX.Element {
   const { value } = row
   return (
@@ -153,10 +134,40 @@ export function OptionSlot({
       onPointerDown={(e) => drag.onRowPointerDown(value, e)}
       onContextMenu={(e) => {
         e.preventDefault()
-        onOpenMenu()
+        onOpenMenu(e.currentTarget)
       }}
     >
       <OptionRow {...row} />
     </div>
   )
+}
+
+export function useOptionIconChoice(
+  iconOf: (value: string) => string | undefined,
+  commit: (value: string, icon: string) => void,
+): {
+  editing: boolean
+  begin: (value: string, row: HTMLElement) => void
+  picker: React.JSX.Element
+} {
+  const [value, setValue] = useState<string | null>(null)
+  const anchor = useRef<HTMLElement | null>(null)
+  return {
+    editing: value !== null,
+    begin: (next, row) => {
+      anchor.current = row
+      setValue(next)
+    },
+    picker: (
+      <IconChoice
+        open={value !== null}
+        value={value === null ? undefined : iconOf(value)}
+        onSelect={(icon) => {
+          if (value !== null) commit(value, icon)
+        }}
+        onClose={() => setValue(null)}
+        triggerRef={anchor}
+      />
+    ),
+  }
 }

@@ -6,7 +6,7 @@ describe('entityIcon — the one glyph resolution', () => {
     expect(entityIcon('page', 'star', { page: 'server' })).toBe('star')
   })
 
-  it('falls to the nexus override when the entity has none — overrides are curated-only', () => {
+  it('falls to the nexus override when the entity has none', () => {
     expect(entityIcon('page', undefined, { page: 'server' })).toBe('server')
   })
 
@@ -15,18 +15,20 @@ describe('entityIcon — the one glyph resolution', () => {
     expect(entityIcon('set', undefined, {})).toBe(DEFAULT_ENTITY_ICONS.set)
   })
 
-  it('an unrenderable own icon falls to the override, an uncurated override to the seed', () => {
+  it('an unrenderable own icon falls to the override, an unrenderable override to the seed', () => {
     expect(entityIcon('space', 'not-a-real-glyph-id', { space: 'server' })).toBe('server')
     expect(entityIcon('space', undefined, { space: 'not-a-real-glyph-id' })).toBe(
       DEFAULT_ENTITY_ICONS.space,
     )
   })
 
-  it('one uncurated-but-real glyph: rejected as an override, kept as an own icon', () => {
-    expect(entityIcon('context', undefined, { context: 'anchor' })).toBe(
-      DEFAULT_ENTITY_ICONS.context,
-    )
-    expect(entityIcon('context', 'anchor', { context: 'anchor' })).toBe('anchor')
+  it('an uncurated-but-real glyph renders as an override and as an own icon alike', () => {
+    expect(entityIcon('context', undefined, { context: 'anchor' })).toBe('anchor')
+    expect(entityIcon('context', 'anchor', undefined)).toBe('anchor')
+  })
+
+  it('a name Object.prototype carries is not an icon', () => {
+    expect(entityIcon('page', 'constructor', { page: '__proto__' })).toBe(DEFAULT_ENTITY_ICONS.page)
   })
 
   it('a Context and a Space no longer share a mark, and neither default moves the other', () => {

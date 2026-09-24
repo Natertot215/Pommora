@@ -1,7 +1,6 @@
 import {
   type MouseEvent,
   type RefObject,
-  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -52,41 +51,30 @@ export function IconPicker({
   }, [open])
   const filtered = useMemo(() => set?.searchIcons(query) ?? [], [set, query])
 
-  const pick = useCallback(
-    (id: string) => {
-      onSelect?.(id)
-      onClose()
-    },
-    [onSelect, onClose],
-  )
+  const pick = (id: string): void => {
+    onSelect?.(id)
+    onClose()
+  }
 
-  const toggleIconFav = useCallback(
-    (id: string) => {
-      iconFavorites.onChange(
-        iconFavs.includes(id) ? iconFavs.filter((f) => f !== id) : [...iconFavs, id],
-      )
-    },
-    [iconFavs, iconFavorites.onChange],
-  )
-  const reorderIconFavs = useCallback(
-    (a: string, o: string) => {
-      const next = reorder(
+  const toggleIconFav = (id: string): void => {
+    iconFavorites.onChange(
+      iconFavs.includes(id) ? iconFavs.filter((f) => f !== id) : [...iconFavs, id],
+    )
+  }
+  const reorderIconFavs = (a: string, o: string): void => {
+    iconFavorites.onChange(
+      reorder(
         iconFavs.map((id) => ({ id })),
         a,
         o,
-      ).map((x) => x.id)
-      iconFavorites.onChange(next)
-    },
-    [iconFavs, iconFavorites.onChange],
-  )
+      ).map((x) => x.id),
+    )
+  }
 
-  const openContext = useCallback(
-    async (e: MouseEvent, id: string) => {
-      e.preventDefault()
-      if ((await iconFavorites.onMenu?.(iconFavs.includes(id))) === 'toggle') toggleIconFav(id)
-    },
-    [iconFavs, iconFavorites.onMenu, toggleIconFav],
-  )
+  const openContext = async (e: MouseEvent, id: string): Promise<void> => {
+    e.preventDefault()
+    if ((await iconFavorites.onMenu?.(iconFavs.includes(id))) === 'toggle') toggleIconFav(id)
+  }
 
   // A state-backed callback ref, so the virtualizer re-runs the moment the element mounts.
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)

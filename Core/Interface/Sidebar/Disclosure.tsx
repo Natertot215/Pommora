@@ -27,7 +27,6 @@ export function Disclosure({
   onSetLock,
   selfPath,
   directChildren,
-  headerRef,
   onHeaderHover,
   belowHeader,
   children,
@@ -48,7 +47,6 @@ export function Disclosure({
   onSetLock?: (locked: boolean) => void
   selfPath?: string
   directChildren?: { id: string; path: string }[]
-  headerRef?: React.RefObject<HTMLDivElement | null>
   onHeaderHover?: (entering: boolean) => void
   belowHeader?: React.ReactNode
   children: React.ReactNode
@@ -131,8 +129,7 @@ export function Disclosure({
   }, [locked])
   useEffect(() => clearPeekTimer, [])
   const peekOnly = locked && !open && peekId !== null
-  const ownHeaderEl = useRef<HTMLDivElement | null>(null)
-  const headerEl = headerRef ?? ownHeaderEl
+  const headerEl = useRef<HTMLDivElement | null>(null)
   const childrenEl = useRef<HTMLDivElement | null>(null)
   // A move into the peeked child isn't a dismiss — only leaving both header and children collapses it.
   const dismissOnLeave = (e: React.MouseEvent): void => {

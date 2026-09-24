@@ -14,14 +14,13 @@ import { askEmptyTrash } from '../Interface/Confirm/confirmations'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { DEFAULT_TIME_FORMAT, type Personalization } from '@pommora/core/Settings/personalization'
 import type { TrashRow } from '@pommora/core/Trash/trashRow'
-import { PropertyTypeIcon } from '../Properties/Cells/PropertyTypes'
+import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { formatDate, nexusDateFormat } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
-import { propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
@@ -253,7 +252,9 @@ function TrashBody(): React.JSX.Element {
                 onMenu={() => void openMenu(row)}
                 icon={
                   row.kind === 'property'
-                    ? ((row.propertyType && propertyTypeIconName(row.propertyType)) ?? 'tag')
+                    ? row.propertyType
+                      ? propertyTypeIconName(row.propertyType)
+                      : 'tag'
                     : entityIcon(row.kind, undefined, defaultIcons)
                 }
                 defaultIcons={defaultIcons}

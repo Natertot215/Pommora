@@ -7,7 +7,7 @@ import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
 interface TypeMeta {
   label: string
-  icon?: IconName
+  icon: IconName
   creatable?: boolean
 }
 
@@ -27,11 +27,10 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
 
 export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[type].label
 
-export const propertyTypeIconName = (type: PropertyType): IconName | undefined =>
-  PROPERTY_TYPES[type].icon
+export const propertyTypeIconName = (type: PropertyType): IconName => PROPERTY_TYPES[type].icon
 
 export const propertyIcon = (def: PropertyDefinition): string =>
-  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
+  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)
 
 const CURRENCY_GLYPH: Record<string, string> = {
   USD: '$',
@@ -64,13 +63,13 @@ export function PropertyTypeIcon({
   size?: React.ComponentProps<typeof Icon>['size']
 }): React.JSX.Element {
   const name = (type === 'title' ? TITLE_META : PROPERTY_TYPES[type]).icon
-  return <Icon name={name ?? 'square-dashed'} size={size} />
+  return <Icon name={name} size={size} />
 }
 
-interface PaneTarget {
+export interface PaneTarget {
   id: string
   label: string
-  icon: string | undefined
+  icon: string
 }
 
 export const TITLE_TARGET: PaneTarget = {
