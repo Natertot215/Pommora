@@ -13,6 +13,7 @@ import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { useContentHost } from '../contentHost'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { AssetImage } from '../../Assets/AssetImage'
 import './content-title.css'
 
 const HINT_GRACE_MS = 150
@@ -28,6 +29,8 @@ export interface TitleSearch {
 interface Props {
   title: string
   icon?: string
+  /** An asset standing in the icon's seat — the Nexus photo. */
+  photo?: string | null
   iconRef?: Ref<SVGSVGElement>
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
@@ -41,6 +44,7 @@ interface Props {
 export function DetailTitleHeader({
   title,
   icon,
+  photo,
   iconRef,
   onRename,
   requestMenu,
@@ -70,14 +74,16 @@ export function DetailTitleHeader({
   const parked = useContentHost()?.parked === true
   useEscape(searching && !parked, () => search?.change(null))
 
+  const beginRename = (): void => {
+    search?.change(null)
+    setEditing(true)
+  }
   const openMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
     const action = await requestMenu()
-    if (action === 'rename') {
-      search?.change(null)
-      setEditing(true)
-    } else if (action === 'editIcon') onEditIcon()
+    if (action === 'rename') beginRename()
+    else if (action === 'editIcon') onEditIcon()
     else if (action === 'toggleIcon') onToggleIcon?.()
     else if (action === 'search') search?.start()
   }
@@ -89,6 +95,7 @@ export function DetailTitleHeader({
       editing={editing}
       value={title}
       className={cx(base, 'detail-title-input')}
+      onBegin={beginRename}
       onCommit={(next) => {
         setEditing(false)
         void onRename(next)
@@ -102,22 +109,21 @@ export function DetailTitleHeader({
     </RenamableLabel>
   )
 
+  const glyphClass = cx('detail-title-icon title-icon-reveal', iconHidden && 'is-hidden')
+  const glyphMenu = editing ? undefined : openMenu
   return (
     <div className="detail-title">
-      {icon && (
-        <Icon
-          ref={iconRef}
-          name={icon}
-          className={
-            iconHidden
-              ? 'detail-title-icon title-icon-reveal is-hidden'
-              : 'detail-title-icon title-icon-reveal'
-          }
-          onContextMenu={editing ? undefined : openMenu}
-        />
+      {photo ? (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance, as on the icon it stands in for
+        <span className={cx(glyphClass, 'detail-title-photo')} onContextMenu={glyphMenu}>
+          <AssetImage value={photo} eager />
+        </span>
+      ) : (
+        icon && <Icon ref={iconRef} name={icon} className={glyphClass} onContextMenu={glyphMenu} />
       )}
       {search ? (
         <>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: a click opens the search over the title, so a double-click's second press lands in the still-empty field */}
           <span
             className={cx(
               'detail-title-lead',
@@ -127,6 +133,7 @@ export function DetailTitleHeader({
             )}
             onPointerEnter={() => hint.hover(true)}
             onPointerLeave={() => hint.hover(false)}
+            onDoubleClick={search.query === '' ? beginRename : undefined}
           >
             <span className={cx(labelSlot, searching && labelSlotHidden, 'detail-title-slot')}>
               <span className="detail-title-slot-run">

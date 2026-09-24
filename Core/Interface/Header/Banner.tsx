@@ -1,7 +1,5 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { type ReactNode, useRef, useState } from 'react'
-import type { BannerOwnerKind, MutableKind } from '@pommora/core/Nexus/mutateRequest'
-import { Icon } from '@pommora/uix/Symbols'
+import type { BannerOwnerKind, MutableKind, RenameKind } from '@pommora/core/Nexus/mutateRequest'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
@@ -10,14 +8,10 @@ import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import { isSurfaceKind, type BannerOwner } from '../../Nexus/treeIndex'
 import { DetailTitleHeader } from './DetailTitleHeader'
-import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { base } from '@pommora/uix/Fields/fields.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 import { useWindowBannerSeat } from '../Windows/windowTabBanner'
-import { host } from '../../Platform/dialer'
-import { flushAllSaves } from '../../Session/nexusSlice'
 import { popMenu } from '../../Actions/menuActions'
 import { titleMenuItems, withSearchRow } from '@pommora/core/Actions/identityMenus'
 
@@ -31,7 +25,6 @@ export function Banner({
   chrome = 'detail',
   className,
   titleClassName = 'banner-title',
-  onTitleMenu,
   onSearch,
   onDone,
   noRemove,
@@ -44,7 +37,6 @@ export function Banner({
   chrome?: 'detail' | 'window'
   className?: string
   titleClassName?: string
-  onTitleMenu?: (e: React.MouseEvent) => void
   onSearch?: () => void
   onDone?: () => void
   noRemove?: boolean
@@ -71,10 +63,8 @@ export function Banner({
       }}
     >
       <AssetImage value={value} className="banner-img" eager />
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control */}
       <div
         className={cx(titleClassName, chrome === 'window' && 'window-banner-title', 'title-shadow')}
-        onContextMenu={onTitleMenu}
       >
         {title}
       </div>
@@ -97,7 +87,6 @@ export function EntityBanner({
   const nexus = useSession((s) => s.tree?.nexus)
   const homePhotoSrc = useAssetUrl(nexus?.profileImage)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const [editingHome, setEditingHome] = useState(false)
   const iconRef = useRef<SVGSVGElement>(null)
   const contentHost = useContentHost()
   const searchTab =
@@ -121,63 +110,23 @@ export function EntityBanner({
   const iconHidden = owner.headingIconHidden === true
   const toggleHeadingIcon = (): Promise<boolean> =>
     mutate({ op: 'setHeadingIconHidden', path: owner.path, kind: owner.kind, hidden: !iconHidden })
-  // Always rendered (never conditionally removed) so hide/show slides it in/out rather than popping.
-  const homeIcon = (): React.ReactNode => {
-    const cls = cx(
-      'detail-title-icon title-icon-reveal banner-home-icon',
-      iconHidden && 'is-hidden',
-    )
-    if (homePhotoSrc) return <AssetImage value={nexus?.profileImage} className={cls} eager />
-    return <Icon name={nexus?.profileIcon ?? DEFAULT_NEXUS_ICON} className={cls} />
-  }
-  const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
-    e.preventDefault()
-    e.stopPropagation()
-    // No Edit Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
-    const action = await popMenu(titleMenuItems({ iconHidden, noEditIcon: true }))
-    if (action === 'rename') setEditingHome(true)
-    else if (action === 'toggleIcon') await toggleHeadingIcon()
-  }
-
-  // The homepage IS the nexus, so its title renames the root folder via renameNexus rather than submitRename.
-  // Saves land first: the rename re-adopts the root, and every write is refused until it finishes.
-  const commitHome = (next: string): void => {
-    setEditingHome(false)
-    void flushAllSaves()
-      .then(() => host().ask('nexus:rename', next))
-      .then(reportRefusal)
-  }
-  const homeTitle = (className: string): React.ReactNode => (
-    <RenamableLabel
-      renames="title"
-      editing={editingHome}
-      value={owner.name}
-      className={cx(base, className)}
-      onCommit={commitHome}
-      onCancel={() => setEditingHome(false)}
-    >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: a double-click shortcut; the same action has a primary control */}
-      <span
-        className={className}
-        onDoubleClick={() => setEditingHome(true)}
-        title="Double-click to rename"
-      >
-        {owner.name}
-      </span>
-    </RenamableLabel>
-  )
-
   const surfaceClass = isSurfaceKind(owner.kind) ? 'is-surface' : undefined
-  const titleHeader = owner.kind !== 'homepage' && (
+  const titleHeader = (
     <DetailTitleHeader
       key={owner.path}
       title={owner.name}
-      icon={entityIcon(owner.kind, owner.icon, defaultIcons)}
+      icon={
+        owner.kind === 'homepage'
+          ? (nexus?.profileIcon ?? DEFAULT_NEXUS_ICON)
+          : entityIcon(owner.kind, owner.icon, defaultIcons)
+      }
+      photo={home && homePhotoSrc ? nexus?.profileImage : undefined}
       iconHidden={iconHidden}
       iconRef={iconRef}
-      onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}
+      onRename={(newName) => submitRename(owner.path, owner.kind as RenameKind, newName)}
       requestMenu={() => {
-        const items = titleMenuItems({ iconHidden })
+        // The Nexus icon is set from Settings and the ribbon, not this menu.
+        const items = titleMenuItems({ iconHidden, noEditIcon: home })
         return popMenu(search ? withSearchRow(items) : items)
       }}
       onEditIcon={() => setIconPickerOpen(true)}
@@ -210,26 +159,12 @@ export function EntityBanner({
         chrome={chrome}
         className={surfaceClass}
         titleClassName={cx('banner-title', search && 'is-searchable')}
-        onTitleMenu={home ? (e) => void openHomeTitleMenu(e) : undefined}
         onSearch={search?.start}
-        title={
-          home ? (
-            <>
-              {homeIcon()}
-              {homeTitle('banner-title-text')}
-            </>
-          ) : (
-            titleHeader
-          )
-        }
+        title={titleHeader}
         empty={(add) => (
           <div className={cx('banner-empty', surfaceClass)}>
             {chrome === 'detail' && <AddBannerButton onClick={add} />}
-            {home ? (
-              homeTitle('banner-empty-title')
-            ) : (
-              <div className="banner-empty-title">{titleHeader}</div>
-            )}
+            <div className="banner-empty-title">{titleHeader}</div>
           </div>
         )}
       />

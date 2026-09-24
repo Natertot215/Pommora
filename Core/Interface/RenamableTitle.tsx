@@ -12,6 +12,7 @@ export function RenamableTitle({
   renames = 'row',
   autoSize,
   host,
+  doubleClick = true,
 }: {
   path: string
   kind: MutableKind
@@ -20,6 +21,8 @@ export function RenamableTitle({
   renames?: 'title' | 'row'
   autoSize?: boolean
   host: RenameHost
+  /** Off where a double-click already means something else — a Set band opens its Set. */
+  doubleClick?: boolean
 }): React.JSX.Element {
   const target = useSession((s) => s.renamingPath === path)
   const renamingCreate = useSession((s) => s.renamingCreate)
@@ -27,6 +30,7 @@ export function RenamableTitle({
   const winner = useSession((s) => (s.renamingPath === path ? s.renameWinner : null))
   const cancelRename = useSession((s) => s.cancelRename)
   const submitRename = useSession((s) => s.submitRename)
+  const beginRename = useSession((s) => s.beginRename)
   const [token, setToken] = useState<number | null>(null)
   useEffect(() => {
     if (!target) return
@@ -46,6 +50,7 @@ export function RenamableTitle({
       value={title}
       className={className}
       autoSize={autoSize}
+      onBegin={doubleClick ? () => beginRename(path, false, host) : undefined}
       onCommit={(next) => void submitRename(path, kind, next)}
       onCancel={cancelRename}
     />

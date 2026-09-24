@@ -63,6 +63,7 @@ export function resolveBandHead(
               className={cx(base, 'band-title-input')}
               renames="title"
               host="detail"
+              doubleClick={false}
             />
           ) : (
             title
