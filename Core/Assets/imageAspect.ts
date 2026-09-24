@@ -45,7 +45,5 @@ export function subscribeAspect(fn: () => void): () => void {
 }
 
 export function useImageAspect(url: string | null | undefined): number | null | undefined {
-  const aspect = useSyncExternalStore(subscribeAspect, () => (url ? aspects.get(url) : undefined))
-  if (url && aspect === undefined) begin(url)
-  return aspect
+  return useSyncExternalStore(subscribeAspect, () => (url ? aspectFor(url) : undefined))
 }
