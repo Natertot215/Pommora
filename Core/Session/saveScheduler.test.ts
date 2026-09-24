@@ -75,3 +75,33 @@ describe('schedulePageSave', () => {
     expect(updateBody).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('one save in flight per page', () => {
+  it('holds the next save until the previous lands, then sends it on the base that save set', async () => {
+    let land: (v: unknown) => void = () => {}
+    const sent: [string, string][] = []
+    updateBody = vi.fn((_p: string, body: string, base: string) => {
+      sent.push([body, base])
+      return body === 'v1'
+        ? new Promise((r) => {
+            land = r
+          })
+        : Promise.resolve({ ok: true, value: { hash: machine().sha256Hex(body), stale: false } })
+    })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'page:updateBody': updateBody })
+    cachePageDetail(disk)
+    schedulePageSave(PATH, 'v1')
+    const first = flushPageSave(PATH)
+    schedulePageSave(PATH, 'v2')
+    const second = flushPageSave(PATH)
+    await Promise.resolve()
+    expect(sent).toEqual([['v1', disk.bodyHash]])
+    land({ ok: true, value: { hash: machine().sha256Hex('v1'), stale: false } })
+    await first
+    await second
+    expect(sent).toEqual([
+      ['v1', disk.bodyHash],
+      ['v2', machine().sha256Hex('v1')],
+    ])
+  })
+})
