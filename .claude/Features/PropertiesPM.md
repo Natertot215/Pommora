@@ -55,7 +55,7 @@ The **Status editor** edits in place: a Style toggle over a group-labeled option
 
 #### II. Checkbox
 
-A boolean with two per-view looks and one property-wide color. The look is **Checkbox** (a rounded box) or **Switch** (a DualSwitch); toggling on writes `true` and toggling off strips the key. The `checkbox_color` applies to the on state only — a checked box fills with it and a switch's on-track tints — while the off state stays neutral; an absent color follows the Nexus accent live. The editor pairs a ColorSwatch with a Style picker.
+A boolean with two per-view looks and one property-wide color. The look is **Checkbox** (a rounded box) or **Switch** (a DualSwitch); toggling on writes `true` and toggling off strips the key. The `checkbox_color` applies to the on state only — a checked box fills with it and a switch's on-track tints — while the off state stays neutral; an absent color follows the Nexus's Checkbox Color live. Cells, cards, group bands, and filter rows all draw the value in its color and the view's look. The editor pairs a ColorSwatch with a Style picker.
 
 #### II. Number
 
@@ -129,7 +129,7 @@ Neither Remove nor the global delete is cross-file atomic; each is a per-file fa
 
 **Repair.** Every governed write runs one reconcile over the file's root (`reconcileGovernedRoot` in `Core/Contexts/contextResolve.ts`) before it lands: an assigned property's value is re-encoded as its definition reads it — a scalar option becomes a one-element list, a Multi-Select option the definition doesn't hold is adopted into it, a checkbox `false` or an emptied value deletes its key — and a Context key's near-miss Space title is repaired to the canonical spelling while a value naming no Space is dropped. Files that changed while the app was closed are reached by the on-open sweep behind **Repair Properties On Open**: the index seed already knows which pages it re-read, and the sweep runs the same reconcile over exactly those, behind the window rather than before it, writing only where a shape moved and pushing the containers it touched.
 
-**Validation.** A created property's name is non-empty, unique nexus-wide (compared case-folded, because the name is the on-disk key), and may not start with `$`, which is reserved for system roles, or take a name a sidecar keeps for itself (`id`, `heading_icon_hidden`); a leading `_` is allowed. Select and Multi-select option titles are unique within their property, and a zero-option Select is legal. Each member value's shape must match its definition's type.
+**Validation.** A property's name is non-empty, unique nexus-wide (compared case-folded, because the name is the on-disk key), and may not start with `$`, which is reserved for system roles, or take a name a sidecar keeps for itself (`id`, `heading_icon_hidden`); a leading `_` is allowed. A create under a taken name steps aside with a numbered suffix, as any create does, while a rename onto one is refused. Select and Multi-select option titles are unique within their property, a blank option takes the first free `Label` or group label, and a zero-option Select is legal. Each member value's shape must match its definition's type.
 
 **Labels.** A value renders as a label — a chip whose shape names the property's kind: a pill for Status, a tag for the other options. The label vocabulary is the design system's.
 

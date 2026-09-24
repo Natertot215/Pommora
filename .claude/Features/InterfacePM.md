@@ -25,6 +25,8 @@ Pommora's leading pane: a **ribbon** of icons pinned to the left edge, and a **c
 
 **Row Labels.** A row's label truncates at rest and scrolls on hover to reveal its full name — the app-wide capped label — with content sliding off the left edge eclipsing into the glass through a soft mask. The inline rename field is dimensionally identical to the title it replaces, so nothing shifts when editing begins.
 
+**Renaming In Place.** A title that renames in place — a sidebar row, a page or banner heading, a view's name — opens its field on a double-click as well as from its menu's Rename; on a Collection or Set heading, whose click opens the view search, the double-click's second press closes the search and opens the field. The Homepage's title is the Nexus's name, so renaming it renames the Nexus folder, held to the same naming rules as any other folder.
+
 #### Creation
 
 Creation is right-click-first. A mode's empty area pops its native New menu — **New Collection** or **New Context** by mode — and right-clicking inside a Context group creates a Space labeled from that Context's singular. Right-clicking a row offers what that row can contain: a Collection and a Set both take a Page and a nested container. The menu picks and the store inserts optimistically, the new row landing with its naming field open while main's confirming push follows. Dwelling on a page row extends a ghost "New Page" row beneath it that creates below on click. A create always lands visible: the new row's rename forces its collapsed ancestors open — a disclosure-locked folder peeks the newcomer alone instead — and one naming field exists at a time across every surface.

@@ -84,7 +84,7 @@ Every change funnels through one dispatcher, `mutate` in `Core/Nexus/mutate.ts`:
 
 Several rules hold across every entity and are stated here rather than per feature:
 
-- **Names.** Create under a taken name disambiguates with a numeric suffix (`createDisambiguated`); rename onto a taken name is refused; both reject a name the walk could never surface.
+- **Names.** Create, copy, and restore under a taken name step aside to `Name (2)`, `Name (3)`, and onward through one rule in `Core/Paths/names.ts` — `freeName` against the titles already held, `createDisambiguated` against a write that answers `exists`; rename onto a taken name is refused; and a create or rename rejects a name the walk could never surface.
 - **No empties.** An emptied value deletes its key — a property, a Context tag, a color, a banner — never writing a placeholder.
 - **Foreign data survives.** Every rewrite of a page or sidecar edits the modeled keys in place and preserves every foreign key and YAML comment by value.
 - **Governed keys.** A frontmatter key is a property's when it exactly matches a registered property name (`isRegisteredPropertyName`, `Core/Properties/properties.ts`), and a Context's when it is a registered title wrapped as `<Title>` (`Core/Contexts/contexts.ts`); every other key is foreign and preserved by value. A property may not take a name Pommora's own keys use (`ID`, `banner`), a retired stamp name (`PageID`, `TaskID`, `EventID`, `created_at`, `modified_at`), or one starting with `<`.
