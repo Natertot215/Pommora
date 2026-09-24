@@ -11,7 +11,7 @@ import './page-header.css'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
-export interface HeaderPage {
+interface HeaderPage {
   id: string
   path: string
   title: string

@@ -1,13 +1,8 @@
 // The lone-line webpage-embed grammar. Every shipped link grammar refuses empty halves, so the
 // surfaces that must recognize a link mid-authoring read the empty-tolerant variant instead.
 
-import {
-  emptyTolerantLinkRegex,
-  escapeAlias,
-  hasWebScheme,
-  isValidLink,
-  unescapeAlias,
-} from '../../Connections/links'
+import { emptyTolerantLinkRegex, escapeAlias, unescapeAlias } from '../../Connections/links'
+import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
 import { linkDisplayText } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 
@@ -19,7 +14,7 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
   if (!m) return null
   if (m.index !== 1 || m.index + m[0].length !== line.length) return null
   const url = m[2]
-  if (!url || !hasWebScheme(url) || !isValidLink(url)) return null
+  if (!url || !WEB_ADDRESS.test(url) || !isValidLink(url)) return null
   return { label: unescapeAlias(m[1]), url }
 }
 

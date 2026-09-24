@@ -1,6 +1,6 @@
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
+import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
 import {
   PICKER_PORTAL_ATTR,
   PickerMenu,

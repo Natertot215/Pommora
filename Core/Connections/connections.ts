@@ -18,7 +18,7 @@ export function pageLinkPattern(): RegExp {
 
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-export interface LinkSpans {
+interface LinkSpans {
   full: [number, number]
   title: [number, number]
   heading: [number, number] | null
@@ -73,7 +73,7 @@ export function emptyHeadingHashAt(line: string, rel: number): number | null {
 
 const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')
 
-export interface ConnectionParts {
+interface ConnectionParts {
   title: string
   heading?: string
   alias?: string

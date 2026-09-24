@@ -1,14 +1,6 @@
 import { connectionText, parseConnectionText } from './connections'
-import {
-  MD_LINK,
-  escapeAlias,
-  isValidLink,
-  linkDomain,
-  normalizeLinkUrl,
-  targetFragment,
-  targetTitle,
-  unescapeAlias,
-} from './links'
+import { MD_LINK, escapeAlias, targetFragment, targetTitle, unescapeAlias } from './links'
+import { isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
 import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 

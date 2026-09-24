@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
-import { hasWebScheme, normalizeLinkUrl } from '@pommora/core/Connections/links'
+import { normalizeLinkUrl, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { linkTarget, linkTokenAt } from '../Engine/tokens'
 import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from './connectionsApi'
 import { MD_LINK_CLASS } from '../decorations'
@@ -75,7 +75,7 @@ export function dwellTarget(
     return () => glance.arm({ kind: 'page', id, path, heading: target.heading }, el)
   }
   const web = normalizeLinkUrl(url)
-  return hasWebScheme(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
+  return WEB_ADDRESS.test(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
 }
 
 // A link naming a page raises the same glance, which the connection handler can't do: its hit-test reads wikiLink tokens and this is a `link`.

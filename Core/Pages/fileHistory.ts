@@ -15,7 +15,7 @@ import { liveIdOf, livePathOf, noteValueWrite } from '../Nexus/valuesChanged'
 import { updatePageBody } from '../Nexus/page'
 import type { BodyWrite } from './pageDetail'
 
-export const SNAPSHOT_MAX_BYTES = 1_048_576
+const SNAPSHOT_MAX_BYTES = 1_048_576
 
 const lastTs = new Map<string, number>()
 const lastWritten = new Map<string, string>()
@@ -140,15 +140,11 @@ export async function flushFileHistory(root: string): Promise<void> {
   )
 }
 
-export function resetFileHistory(): void {
+export async function retireFileHistory(root: string): Promise<void> {
+  await flushFileHistory(root)
   disarmAll()
   lastTs.clear()
   lastWritten.clear()
-}
-
-export async function retireFileHistory(root: string): Promise<void> {
-  await flushFileHistory(root)
-  resetFileHistory()
 }
 
 const NO_STORE = fault('File history is unavailable.')

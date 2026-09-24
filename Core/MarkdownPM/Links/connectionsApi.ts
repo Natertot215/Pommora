@@ -7,7 +7,8 @@ import type {
   ConnUrlAction,
 } from '@pommora/core/Actions/connectionMenu'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
-import { isValidLink, targetFragment, targetTitle } from '@pommora/core/Connections/links'
+import { targetFragment, targetTitle } from '@pommora/core/Connections/links'
+import { isValidLink } from '@pommora/core/Paths/urlPath'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */

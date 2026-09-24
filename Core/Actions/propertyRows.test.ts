@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parsePropertyAction, propertiesRow, propertyBranchRows } from './propertyRows'
+import { parsePropertyAction, propertyBranchRows } from './propertyRows'
 
 const ROWS = [
   {
@@ -11,34 +11,33 @@ const ROWS = [
   { id: 'p2', name: 'Link' },
 ]
 
-describe('propertiesRow', () => {
+describe('propertyBranchRows', () => {
+  const [properties] = propertyBranchRows({ properties: ROWS })
+
   it('nests every row under one Properties branch', () => {
-    const row = propertiesRow(ROWS)
-    expect(row.label).toBe('Properties')
-    expect(row.submenu?.map((i) => i.label)).toEqual(['Areas', 'Select', 'Link'])
+    expect(properties.label).toBe('Properties')
+    expect(properties.submenu?.map((i) => i.label)).toEqual(['Areas', 'Select', 'Link'])
   })
 
   it('an options row carries its picks checked; a bare row stays a leaf', () => {
-    const [areas, , link] = propertiesRow(ROWS).submenu ?? []
+    const [areas, , link] = properties.submenu ?? []
     expect(areas.submenu).toEqual([{ label: 'Health', action: 'prop:ctx1:s1', checked: true }])
     expect(link.submenu).toBeUndefined()
     expect(link.action).toBe('prop:p2')
   })
 
-  it('takes a label for the Spaces half, over the same submenu', () => {
-    const row = propertiesRow(ROWS, 'Spaces')
-    expect(row.label).toBe('Spaces')
-    expect(row.submenu).toEqual(propertiesRow(ROWS).submenu)
+  it('labels the Spaces half over the same submenu', () => {
+    const [spaces] = propertyBranchRows({ spaces: ROWS })
+    expect(spaces.label).toBe('Spaces')
+    expect(spaces.submenu).toEqual(properties.submenu)
   })
 
   it('a property with no options to offer is disabled rather than an empty branch', () => {
-    const select = propertiesRow(ROWS).submenu?.[1]
+    const select = properties.submenu?.[1]
     expect(select).toMatchObject({ disabled: true })
     expect(select?.submenu).toBeUndefined()
   })
-})
 
-describe('propertyBranchRows', () => {
   it('draws Spaces then Properties, and leaves out an empty half', () => {
     const labels = (t: Parameters<typeof propertyBranchRows>[0]): string[] =>
       propertyBranchRows(t).map((i) => i.label)

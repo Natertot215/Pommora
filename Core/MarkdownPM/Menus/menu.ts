@@ -1,6 +1,6 @@
 import type { EditorView } from '@codemirror/view'
 import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
-import { isValidLink, normalizeLinkUrl } from '@pommora/core/Connections/links'
+import { isValidLink, normalizeLinkUrl } from '@pommora/core/Paths/urlPath'
 import { serializeLink } from '@pommora/core/Connections/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'

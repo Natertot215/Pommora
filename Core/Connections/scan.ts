@@ -6,7 +6,7 @@ import { readLink } from './linkValue'
 import { codeMask, type CodeMask } from '../MarkdownPM/Engine/markdownCode'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 
-export interface SectionRun {
+interface SectionRun {
   from: number
   to: number
   heading: string

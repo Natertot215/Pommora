@@ -16,15 +16,14 @@ import {
 } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
-  SNAPSHOT_MAX_BYTES,
   captureIfDue,
   clearHistory,
   deleteHistory,
   flushFileHistory,
   noteExternalEdit,
   readHistoryBody,
-  resetFileHistory,
   restoreSnapshot,
+  retireFileHistory,
   sweepFileHistory,
   writeBody,
 } from './fileHistory'
@@ -84,7 +83,7 @@ beforeEach(async () => {
   installStores(mem.stores)
 })
 afterEach(async () => {
-  resetFileHistory()
+  await retireFileHistory(root)
   installStores(NO_STORES)
   dropLiveTree()
   vi.useRealTimers()
@@ -119,7 +118,7 @@ describe('captureIfDue', () => {
   })
 
   it('the cap binds an edit alone; external and restore text lands at any size', async () => {
-    const big = 'x'.repeat(SNAPSHOT_MAX_BYTES + 1)
+    const big = 'x'.repeat(1_048_577)
     expect(await captureIfDue(root, PAGE, big, 'edit')).toBe(false)
     expect(await captureIfDue(root, PAGE, big, 'external')).toBe(true)
     nextMs()
@@ -290,22 +289,13 @@ describe('the quiet timer', () => {
     expect(bodyOf(OTHER, rows(OTHER)[0].ts)).toBe('b two')
     expect(vi.getTimerCount()).toBe(0)
   })
-
-  it('a reset leaves no timer', async () => {
-    await writeBody(root, file, 'two', 'edit')
-    resetFileHistory()
-    expect(vi.getTimerCount()).toBe(0)
-    await advance(2 * INTERVAL)
-    expect(rows()).toHaveLength(1)
-  })
 })
 
 describe('a switch of roots', () => {
   it('leaves the old store holding its rows and the new one empty', async () => {
     await writeBody(root, file, 'two', 'edit')
     nextMs()
-    await flushFileHistory(root)
-    resetFileHistory()
+    await retireFileHistory(root)
     expect(rows()).toHaveLength(2)
     installStores(memoryStores().stores)
     expect(rows()).toEqual([])

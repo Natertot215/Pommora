@@ -5,7 +5,7 @@ import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { dropLiveTree, refreshTree } from '../../Nexus/liveTree'
 import { installStores, NO_STORES, snapshotStore } from '../../Platform/stores'
-import { resetFileHistory } from '../../Pages/fileHistory'
+import { retireFileHistory } from '../../Pages/fileHistory'
 import { captureLoser } from './captures'
 import { openSession } from '../../Nexus/session'
 
@@ -35,7 +35,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  resetFileHistory()
+  await retireFileHistory(root)
   installStores(NO_STORES)
   dropLiveTree()
   await rm(root, { recursive: true, force: true })

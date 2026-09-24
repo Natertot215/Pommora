@@ -1,3 +1,5 @@
+export const LINK_RESOLVE_TIMEOUT_MS = 6000
+
 const MAX_BYTES = 65536 // the <title> lives in <head>; never pull a whole page down
 const NAMED: Record<string, string> = { lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
 

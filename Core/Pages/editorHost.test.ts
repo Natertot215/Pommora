@@ -4,7 +4,7 @@ import { makeTree } from '@pommora/core/Testing/testTree'
 import { ok } from '@pommora/core/Contract/result'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 import { describe, expect, it, vi } from 'vitest'
-import { act, createElement, isValidElement } from 'react'
+import { act, createElement, isValidElement, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { cachePageDetail } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
@@ -12,20 +12,42 @@ import { usePreviewConnections } from '../Session/pageConnections'
 import { stubDialer } from '../vitest.setup'
 import type { EditorHost } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { tileWarmSeam, useEditorHost } from './editorHost'
+import type { WarmSeam } from '../MarkdownPM/warmSeam'
+import { useEditorHost } from './editorHost'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-describe('tileWarmSeam', () => {
-  it('round-trips a capture per host chain', () => {
-    const seam = tileWarmSeam(['Host.md', 'Target.md'])
+describe('a page tile warm seam', () => {
+  const tileWarmSeam = async (chain: string[]): Promise<WarmSeam> => {
+    let seated: EditorHost | null = null
+    const Probe = (): null => {
+      const built = useEditorHost({})
+      seated ??= built
+      return null
+    }
+    const root = createRoot(document.createElement('div'))
+    await act(async () => root.render(createElement(Probe)))
+    act(() => root.unmount())
+    const tile = seated!.renderTile({
+      kind: 'page',
+      path: chain[chain.length - 1],
+      editing: false,
+      locked: false,
+      ancestors: chain.slice(0, -1),
+      onBeginEdit: () => {},
+    })
+    return (tile as ReactElement<{ warm: WarmSeam }>).props.warm
+  }
+
+  it('round-trips a capture per host chain', async () => {
+    const seam = await tileWarmSeam(['Host.md', 'Target.md'])
     cachePageDetail(detail({ path: 'Target.md', body: 'hello' }))
     seam.capture({ editorState: { doc: 'hello' }, scrollTop: 42 })
     expect(seam.restore()).toEqual({ editorState: { doc: 'hello' }, scrollTop: 42 })
-    expect(tileWarmSeam(['Other.md', 'Target.md']).restore()).toBeUndefined()
+    expect((await tileWarmSeam(['Other.md', 'Target.md'])).restore()).toBeUndefined()
   })
 
-  it('a foreign edit to the page drops the entry', () => {
-    const seam = tileWarmSeam(['Host.md', 'Edited.md'])
+  it('a foreign edit to the page drops the entry', async () => {
+    const seam = await tileWarmSeam(['Host.md', 'Edited.md'])
     cachePageDetail(detail({ path: 'Edited.md', body: 'v1' }))
     seam.capture({ editorState: { doc: 'v1' }, scrollTop: 10 })
     cachePageDetail(detail({ path: 'Edited.md', body: 'v2' }))
