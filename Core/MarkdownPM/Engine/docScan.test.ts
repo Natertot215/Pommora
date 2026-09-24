@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from 'node:util'
 import { describe, expect, it } from 'vitest'
 import type { Root, RootContent } from 'mdast'
-import { chunksOver, type DocScan, rescan, scanDoc } from './docScan'
+import { chunksOver, type DocScan, inCodeAt, rescan, scanDoc } from './docScan'
 import { docLineIntents, stepLineIntents } from './intents'
 import { parse } from './parser'
 import { shiftToken, tokenize, type Token } from './tokens'
@@ -50,6 +50,9 @@ const LINES = [
   '> > nested quote',
   '>',
   '> ```',
+  '> - quoted item',
+  '>  ```',
+  '>   ```',
   '```',
   '```js',
   '````',
@@ -312,5 +315,15 @@ describe('chunksOver — a chunk tokenizes as it does inside the whole document'
         [40, 150],
       ]).map(([a]) => outline.lineStarts.indexOf(a)),
     ).toEqual([0])
+  })
+})
+
+describe('a fence under a quoted list item', () => {
+  it('opens code for the scan exactly where the parser reads code', () => {
+    const text = '> [!note] Callout\n> - item\n>   ```\n>   npm i --save -[[Old]]\n>   ```\n> after'
+    const scan = scanDoc(text)
+    expect(sameFences(text, scan)).toBe(true)
+    expect(inCodeAt(scan, text.indexOf('[[Old]]'))).toBe(true)
+    expect(inCodeAt(scan, text.indexOf('after'))).toBe(false)
   })
 })

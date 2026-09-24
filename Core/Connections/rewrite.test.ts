@@ -62,6 +62,14 @@ describe('rewriteConnections — code is a sample, never a connection', () => {
     )
   })
 
+  it('leaves a link inside a fence under a quoted list item alone', () => {
+    const body =
+      '> [!note] Setup\n> - Install:\n>   ```\n>   npm i -[[Old]]\n>   ```\n> See [[Old]].'
+    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+      '> [!note] Setup\n> - Install:\n>   ```\n>   npm i -[[Old]]\n>   ```\n> See [[New]].',
+    )
+  })
+
   it('honors a ~~~ fence and treats a ``` line inside it as content', () => {
     const body = ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[Old]]'].join('\n')
     expect(rewriteConnections(body, 'Old', 'New')).toBe(
