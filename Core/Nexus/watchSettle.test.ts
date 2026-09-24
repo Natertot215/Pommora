@@ -4,7 +4,7 @@ import type { WatchScope } from '../Paths/exclusion'
 import type { NexusTree } from './tree'
 import { dropLiveTree, seedLiveTree } from './liveTree'
 import * as watchPatch from './watchPatch'
-import type { WatchEvent } from './watchPatch'
+import { tileBodyUnder, type WatchEvent } from './watchPatch'
 import {
   classifyBatch,
   emitWatch,
@@ -12,7 +12,6 @@ import {
   pagesChangedIn,
   setWatchTap,
   syncIgnoredUnder,
-  tileBodyOf,
   tilesChangedIn,
   valueChangesOf,
 } from './watchSettle'
@@ -20,6 +19,10 @@ import {
 const root = '/nexus'
 const scope: WatchScope = { excluded: [], assetDir: ASSETS_DIR_REL }
 const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
+const isTileBody = (abs: string): boolean => {
+  const rel = abs.slice(root.length + 1)
+  return tileBodyUnder(rel.split('/'), rel)
+}
 
 const tree = {
   nexus: { rootPath: root },
@@ -38,9 +41,8 @@ afterEach(() => {
 })
 
 describe('syncIgnoredUnder', () => {
-  it('reports a tile body, which tileBodyOf then names', () => {
+  it('reports a tile body, which tileBodyUnder then names', () => {
     const sync = syncIgnoredUnder(root, scope)
-    const isTileBody = tileBodyOf(root)
     for (const rel of TILE_BODIES) {
       expect(sync(`${root}/${rel}`)).toBe(false)
       expect(isTileBody(`${root}/${rel}`)).toBe(true)
@@ -62,9 +64,8 @@ describe('isConfigPath', () => {
   })
 })
 
-describe('tileBodyOf', () => {
+describe('tileBodyUnder', () => {
   it('names what the tree drops among the events the watcher reports', () => {
-    const isTileBody = tileBodyOf(root)
     for (const rel of TILE_BODIES) expect(isTileBody(`${root}/${rel}`)).toBe(true)
     expect(isTileBody(`${root}/.nexus/homepage/homepage.json`)).toBe(false)
     expect(isTileBody(`${root}/Notes/Page.md`)).toBe(false)

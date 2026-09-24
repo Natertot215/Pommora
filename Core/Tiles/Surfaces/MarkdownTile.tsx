@@ -90,6 +90,8 @@ export function MarkdownTile({
 
   const suppressRef = useRef(suppressFlush)
   suppressRef.current = suppressFlush
+  const editingRef = useRef(editing)
+  editingRef.current = editing
   useEffect(
     () => () => {
       if (suppressRef.current?.(tileId)) tileBodyWriter.cancel(tileId)
@@ -110,8 +112,9 @@ export function MarkdownTile({
       // The host kept the refused text as a capture; the file on disk is what every mount shows from here.
       else if (r.ok) {
         tileBodyWriter.cancel(tileId)
+        // Every mount not editing reads the file on the drop; an editing mount holds no subscription, so it reads here.
         dropTileBodies([tileId])
-        reread.current()
+        if (editingRef.current) reread.current()
       }
       return r
     })

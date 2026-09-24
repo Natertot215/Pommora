@@ -39,7 +39,6 @@ const GLANCE_MIN: GlanceSize = { w: 180, h: 100 }
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const RECT_SLOP = 6
-// KNOB — how many glanced pages keep their editor state and scroll between opens.
 // A non-path host chain: no real page path can collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const
 const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']

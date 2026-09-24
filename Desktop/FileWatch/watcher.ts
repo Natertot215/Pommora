@@ -8,7 +8,6 @@ import {
   isConfigPath,
   pagesChangedIn,
   syncIgnoredUnder,
-  tileBodyOf,
   tilesChangedIn,
   valueChangesOf,
 } from '@pommora/core/Nexus/watchSettle'
@@ -27,12 +26,10 @@ import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import {
   applyWatchEvents,
-  tileHostAt,
   touchesCorpus,
   type WatchEvent,
   type WatchEventName,
 } from '@pommora/core/Nexus/watchPatch'
-import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 
 const SETTLE_MS = 200
 
@@ -134,18 +131,7 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
   const noted = batch
   batch = []
   try {
-    const isTileBody = tileBodyOf(root)
-    const moved = await dropOwnEchoes(noted)
-    // A tile body is no part of the tree: an outside edit to one re-reads its host's tiles.
-    const tileHosts = new Map<string, TileHostRef>()
-    const held = getLiveTree()
-    for (const e of moved) {
-      const ref = isTileBody(e.absPath) && held && tileHostAt(held, relPosix(root, e.absPath))
-      if (ref) tileHosts.set(tileHostKey(ref), ref)
-    }
-    for (const ref of tileHosts.values()) push(win, 'tiles:changed', ref)
-    const events = moved.filter((e) => !isTileBody(e.absPath))
-    if (!events.length) return
+    const events = await dropOwnEchoes(noted)
     const before = getLiveTree()
     const assetsBefore = getHeldAssetMap(root)
     const { outcome, touched } = await applyWatchEvents(root, events, scope)

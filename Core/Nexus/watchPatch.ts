@@ -97,6 +97,21 @@ function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
   return null
 }
 
+// A tile body is no part of the tree; a change to one names its host, like the host's own document.
+export function tileBodyUnder(segs: string[], rel: string): boolean {
+  return (
+    (segs[0] === NEXUS_DIR &&
+      segs[1] === HOMEPAGE_HOST_DIRNAME &&
+      segs.length >= 3 &&
+      segs[2] !== TILE_DOC_FILENAME &&
+      rel !== `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) ||
+    (segs[0] === NEXUS_DIR &&
+      segs[1] === CONTEXTS_DIRNAME &&
+      segs.length >= 5 &&
+      isMarkdownFile(segs[segs.length - 1]))
+  )
+}
+
 export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   const segs = rel.split('/')
   if (segs[0] !== NEXUS_DIR) return null
@@ -138,7 +153,7 @@ export function classifyEvent(
     return { kind: 'full-refresh' }
   if (segs[0] === NEXUS_DIR) {
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
-    if (name === TILE_DOC_FILENAME) {
+    if (name === TILE_DOC_FILENAME || tileBodyUnder(segs, rel)) {
       const host = tileHostAt(tree, rel)
       return host ? { kind: 'tiles-leaf', host } : { kind: 'ignored' }
     }

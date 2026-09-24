@@ -9,12 +9,13 @@ import { contentIdAt } from './ids'
 import { readNexus } from './readNexus'
 import type { WatchScope } from '../Paths/exclusion'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
-import { syncIgnoredUnder, tileBodyOf } from './watchSettle'
+import { syncIgnoredUnder } from './watchSettle'
 import {
   applyWatchEvents,
   classifyEvent,
   patchContainerFromDisk,
   patchOrderFromDisk,
+  tileBodyUnder,
   touchesCorpus,
   type WatchEvent,
 } from './watchPatch'
@@ -492,8 +493,12 @@ describe('the asset root outranks every other skip', () => {
 
   it('the homepage config under its host folder stays watched, though tile bodies do not', () => {
     expect(syncIgnoredUnder(root, scope())(abs('.nexus', 'homepage', 'homepage.json'))).toBe(false)
-    expect(tileBodyOf(root)(abs('.nexus', 'homepage', 'homepage.json'))).toBe(false)
-    expect(tileBodyOf(root)(abs('.nexus', 'homepage', 'anything.md'))).toBe(true)
+    expect(
+      tileBodyUnder(['.nexus', 'homepage', 'homepage.json'], '.nexus/homepage/homepage.json'),
+    ).toBe(false)
+    expect(
+      tileBodyUnder(['.nexus', 'homepage', 'anything.md'], '.nexus/homepage/anything.md'),
+    ).toBe(true)
   })
 
   it('fifty files landing in the asset root patch the map once and never walk', async () => {

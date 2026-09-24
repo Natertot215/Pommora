@@ -7,7 +7,8 @@ import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/live
 import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { push } from '../Bridge/ipc'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { syncIgnoredUnder, tileBodyOf } from '@pommora/core/Nexus/watchSettle'
+import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
+import { tileBodyUnder } from '@pommora/core/Nexus/watchPatch'
 import chokidar from 'chokidar'
 import { startWatcher, stopWatcher } from './watcher'
 
@@ -259,7 +260,7 @@ describe('a metadata month file under the watcher', () => {
 describe('syncIgnoredUnder', () => {
   const ignored = (...segs: string[]): boolean =>
     syncIgnoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
-  const tileBody = (...segs: string[]): boolean => tileBodyOf('/nexus')(join('/nexus', ...segs))
+  const tileBody = (...segs: string[]): boolean => tileBodyUnder(segs, segs.join('/'))
 
   it('ignores a store, its journal, and a quarantined store wherever it sits, and nothing else under .nexus', () => {
     expect(ignored('.nexus', 'versions.db')).toBe(true)

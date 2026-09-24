@@ -15,11 +15,8 @@ const CACHE_CAP_PER_OWNER = 50
 const cache = new Map<string, Map<string, CacheEntry>>()
 
 export function captureCache(owner: string, entity: string, patch: Partial<CacheEntry>): void {
-  let entries = cache.get(owner)
-  if (!entries) {
-    entries = new Map()
-    cache.set(owner, entries)
-  }
+  const entries = cache.get(owner) ?? new Map<string, CacheEntry>()
+  cache.set(owner, entries)
   capSet(entries, entity, { ...entries.get(entity), ...patch }, CACHE_CAP_PER_OWNER)
 }
 

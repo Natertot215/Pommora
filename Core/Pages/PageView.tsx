@@ -75,7 +75,7 @@ export function PageView({
   const connections = usePreviewConnections(tree)
   const editorHost = useEditorHost({ pageId, connections })
 
-  // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
+  // The debounced body write lives in the shared path-keyed autosave (saveScheduler) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
   const pushLiveBody = (path: string, body: string): void => {
     clearTimeout(liveTimer.current)
     pendingLive.current = [path, body]
