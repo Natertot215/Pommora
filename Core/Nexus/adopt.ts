@@ -5,7 +5,6 @@ import { isContentFile, listEntries } from '../Files/walk'
 import { admitContentFile, ID_KEY, type ContentKind } from './identityMark'
 import { contentIdAt, newId } from './ids'
 import {
-  readJsonObject,
   readJsonStrict,
   readTextOrNull,
   pathExists,
@@ -19,21 +18,14 @@ import { asString } from './coerce'
 import { baseSidecar } from './schemas'
 import { recordWrite } from '../Files/writeEcho'
 import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
-import { readSettingsLeaves, scopeOf } from '../Settings/codec'
+import { readSettings, scopeOf } from '../Settings/codec'
 import {
   agendaContext,
   resolveFolderKind,
   type FolderKind,
   type FolderKindContext,
 } from './folderKind'
-import {
-  AGENDA_FOLDERS,
-  agendaKind,
-  NEXUS_CONFIG_FILES,
-  SIDECAR_FILENAME,
-  nexusConfig,
-  sidecarPath,
-} from '../Paths/paths'
+import { AGENDA_FOLDERS, agendaKind, SIDECAR_FILENAME, sidecarPath } from '../Paths/paths'
 
 async function reHomeRegistered(
   absDir: string,
@@ -163,8 +155,7 @@ export async function ensureFolderId(root: string, absDir: string): Promise<void
 }
 
 export async function stampAdopted(root: string): Promise<{ stamped: number }> {
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  const scope = scopeOf(readSettingsLeaves(settings))
+  const scope = scopeOf(await readSettings(root))
   const identity = valueOr(await readIdentity(root), null)
   const kindCtx = await agendaContext(root, identity, true)
 

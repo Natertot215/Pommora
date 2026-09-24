@@ -4,6 +4,7 @@ import { NEXUS_DIR } from '../../Paths/nexusPaths'
 import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
 import type { WatchScope } from '../../Paths/exclusion'
 import { readValue } from '../../Platform/localState'
+import { captureStore } from '../../Platform/stores'
 import { readWatchScope } from '../../Settings/settings'
 import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
@@ -217,6 +218,13 @@ export async function startSession(ctx: HostContext, root: string, nexusId: stri
   }
   const binding = readValue<SyncScope>('sync')
   if (binding === null) return
+  if (captureStore() === null) {
+    setStatus(ctx, {
+      state: 'off',
+      why: 'File history is unavailable, so conflicts could not be kept.',
+    })
+    return
+  }
   await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS, token)
 }
 

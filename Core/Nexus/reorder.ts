@@ -1,7 +1,6 @@
-import { machine } from '../Platform/machine'
-import { rmwJsonStrict, pathExists } from '../Files/atomicWrite'
+import { pathExists, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, sidecarPath } from '../Paths/paths'
+import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
 import { isPlainObject } from '../Properties/propertyValue'
@@ -18,12 +17,10 @@ async function writeStateOrder(
   patch: (order: Record<string, unknown>, clean: string[]) => Record<string, unknown>,
 ): Promise<Result<string[]>> {
   const clean = persistable(ids)
-  await machine().mkdir(nexusDir(nexusRoot))
-  const written = await rmwJsonStrict(
-    nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
-    (state) => ({ ...state, order: patch(isPlainObject(state.order) ? state.order : {}, clean) }),
-    () => ({}),
-  )
+  const written = await updateNexusConfig(nexusRoot, 'state', (state) => ({
+    ...state,
+    order: patch(isPlainObject(state.order) ? state.order : {}, clean),
+  }))
   return written.ok ? ok(clean) : written
 }
 

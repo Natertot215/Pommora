@@ -18,7 +18,6 @@ import { underAssetRoot } from '@pommora/core/Assets/assetRoots'
 import type { HostContext, HostDevice, PickKind } from '@pommora/core/Contract/handlers'
 import { handlers } from '@pommora/core/Contract/serve'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
-import { flushNavigation } from '@pommora/core/Navigation/navigationFile'
 import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlid } from '@pommora/core/Nexus/ids'
 import { sessionRoot } from '@pommora/core/Nexus/session'
@@ -406,7 +405,7 @@ app.on('before-quit', (e) => {
     .then(drainFileLocks)
     .then(() => {
       const root = sessionRoot()
-      return Promise.all([flushNavigation(), root === null ? undefined : flushFileHistory(root)])
+      return root === null ? undefined : flushFileHistory(root)
     })
     .then(quit, quit)
 })

@@ -6,7 +6,8 @@ import { asString } from '../Nexus/coerce'
 import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Paths/nexusPaths'
 import { normalizeSeg, rootSegs, type WatchScope } from '../Paths/exclusion'
 import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
-import { readJsonObject } from '../Files/atomicWrite'
+import { readJsonStrict } from '../Files/atomicWrite'
+import { valueOr } from '../Contract/result'
 import { type Personalization, personalizationSchema } from './personalization'
 
 type Json = Record<string, unknown>
@@ -97,5 +98,10 @@ export function scopeOf(leaves: Pick<SettingsLeaves, 'excluded' | 'assetDirector
   return { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
 }
 
-export const readSettings = async (root: string): Promise<SettingsLeaves> =>
-  readSettingsLeaves((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {})
+// Absent means defaults; a damaged file fails the read, since lenient defaults would switch folder exclusion off.
+export async function readSettings(root: string): Promise<SettingsLeaves> {
+  const read = await readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
+  if (!read.ok && read.error.code !== 'not-found')
+    throw new Error(`The settings file could not be read: ${read.error.message}`)
+  return readSettingsLeaves(valueOr(read, {}))
+}

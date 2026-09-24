@@ -1,7 +1,5 @@
-import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
-import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Paths/paths'
-import { newId } from '../Nexus/ids'
-import { machine } from '../Platform/machine'
+import { readJsonObject, updateNexusConfig } from '../Files/atomicWrite'
+import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
 import { isPlainObject } from '../Properties/propertyValue'
 import { type MatrixConfig, type MatrixPatch, parseMatrixConfig } from './matrixConfig'
 
@@ -12,20 +10,13 @@ export async function readMatrixFile(root: string): Promise<MatrixConfig> {
 }
 
 export async function writeMatrixFile(root: string, patch: MatrixPatch): Promise<void> {
-  await machine().mkdir(nexusDir(root))
-  const written = await rmwJsonStrict(
-    matrixPath(root),
-    (current) => {
-      const next: Record<string, unknown> = { ...current }
-      for (const [key, value] of Object.entries(patch)) {
-        const held = isPlainObject(current[key]) ? current[key] : {}
-        next[key] = { ...held, ...value }
-      }
-      return next
-    },
-    () => ({}),
-    // A corrupt file moves aside under the lock so the write after the empty read lands.
-    (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
-  )
+  const written = await updateNexusConfig(root, 'matrix', (current) => {
+    const next: Record<string, unknown> = { ...current }
+    for (const [key, value] of Object.entries(patch)) {
+      const held = isPlainObject(current[key]) ? current[key] : {}
+      next[key] = { ...held, ...value }
+    }
+    return next
+  })
   if (!written.ok) throw new Error(written.error.message)
 }

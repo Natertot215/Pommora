@@ -1,9 +1,7 @@
 import type { TileDoc } from './tiles'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import { newId } from '../Nexus/ids'
-import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
+import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { tileDocPath } from '../Paths/paths'
-import { machine } from '../Platform/machine'
 
 const EMPTY_DOC: TileDoc = { layout: undefined, tiles: [], locked: false }
 
@@ -27,14 +25,11 @@ export async function writeTileDocAt(
   mutate: (cur: TileDoc) => TileDoc,
 ): Promise<Result<null>> {
   try {
-    await machine().mkdir(dir)
-    const written = await rmwJsonStrict(
+    const written = await updateNexusFile(
       tileDocPath(dir),
       // A key this build doesn't model rides through, like a foreign key on an entry.
       (cur) => ({ ...cur, ...mutate(coerceTileDoc(cur)) }),
-      () => ({ ...EMPTY_DOC }),
-      // A corrupt document moves aside under the lock so the write after the empty read lands.
-      (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
+      true,
     )
     return written.ok ? ok(null) : fail(written.error.code, written.error.message)
   } catch (e) {

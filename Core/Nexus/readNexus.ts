@@ -17,7 +17,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
 import { adoptedId } from './ids'
 import { readPageMetadata } from './pageMetadata'
-import { readSettingsLeaves, scopeOf } from '../Settings/codec'
+import { readSettings, scopeOf } from '../Settings/codec'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { readIdentity } from './identity'
 import { isContentFile, listEntries } from '../Files/walk'
@@ -292,7 +292,7 @@ export async function readNexus(root: string): Promise<NexusTree> {
 async function walkNexus(root: string): Promise<NexusTree> {
   const [
     identityRead,
-    settings,
+    leaves,
     state,
     homepageConfig,
     cropsConfig,
@@ -301,7 +301,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     ctxRegistryRaw,
   ] = await Promise.all([
     readIdentity(root),
-    readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
+    readSettings(root),
     readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
     readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
     readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.crops)),
@@ -317,7 +317,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const id = asString(identity?.id) ?? adoptedId(root)
   const kindCtx = await agendaContext(root, identity)
 
-  const leaves = readSettingsLeaves(settings)
   const scope = scopeOf(leaves)
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null

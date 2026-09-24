@@ -24,6 +24,7 @@ import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { getLiveTree, refreshAfterWrite } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
+import { errText } from '@pommora/core/Contract/result'
 import {
   applyWatchEvents,
   touchesCorpus,
@@ -70,7 +71,11 @@ function pushConfig<K extends keyof Pushes>(
 export async function startWatcher(root: string, win: CurrentWindow): Promise<void> {
   stopWatcher()
   const start = starts
-  const scope = await readWatchScope(root)
+  const scope = await readWatchScope(root).catch((e) => {
+    console.error('watcher: not started:', errText(e))
+    return null
+  })
+  if (!scope) return
   // A later start, or a session switch, superseded this one during the settings read.
   if (start !== starts || sessionRoot() !== root) return
   const skip = syncIgnoredUnder(root, scope)

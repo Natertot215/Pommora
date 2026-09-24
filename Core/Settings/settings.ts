@@ -2,21 +2,19 @@ import type { Commands } from '../Actions/commands'
 import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personalization'
 import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import type { WatchScope } from '../Paths/exclusion'
-import { readJsonObject, updateNexusFile } from '../Files/atomicWrite'
+import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
-import { nexusFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
+import {
+  nexusFolderRefusal,
+  readSettings,
+  readSettingsLeaves,
+  scopeOf,
+  type SettingsLeaves,
+} from './codec'
 import { normalizeSeg, rootSegs } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { isPlainObject } from '../Properties/propertyValue'
-
-export function updateNexusConfig(
-  root: string,
-  file: keyof typeof NEXUS_CONFIG_FILES,
-  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
-): Promise<Result<Record<string, unknown>>> {
-  return updateNexusFile(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate)
-}
 
 export async function updateSettings(
   root: string,
@@ -42,16 +40,17 @@ async function liveLeaves(
   root: string,
 ): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory' | 'commands'>> {
   const tree = getLiveTree()
-  if (tree?.nexus.rootPath === root) return tree
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  return readSettingsLeaves(settings)
+  return tree?.nexus.rootPath === root ? tree : readSettings(root)
 }
 
+// Only the scope decides what the app may touch, so the rest reads as defaults while a damaged file can't be read.
+const leavesOrDefaults = (root: string) => liveLeaves(root).catch(() => readSettingsLeaves({}))
+
 export const readLivePersonalization = async (root: string): Promise<Personalization> =>
-  (await liveLeaves(root)).personalization
+  (await leavesOrDefaults(root)).personalization
 
 export const readLiveCommands = async (root: string): Promise<Commands> =>
-  (await liveLeaves(root)).commands
+  (await leavesOrDefaults(root)).commands
 
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))
@@ -89,14 +88,12 @@ export function writeSubfield(root: string, config: SubfieldConfig): Promise<voi
 
 /** An emptied value deletes the key rather than storing a blank — absent is what the default means, and the reader answers it either way. */
 export function writeAssetDirectory(root: string, dir: string): Promise<void> {
-  return updateSettings(root, ({ asset_directory: _drop, ...rest }) =>
-    dir ? { ...rest, asset_directory: dir } : rest,
-  )
+  return updateSettings(root, (cur) => setOrDrop(cur, 'asset_directory', dir))
 }
 
 export function writeExcludedFolders(root: string, folders: string[]): Promise<void> {
-  return updateSettings(root, ({ excluded_folders: _drop, ...rest }) =>
-    folders.length ? { ...rest, excluded_folders: folders } : rest,
+  return updateSettings(root, (cur) =>
+    setOrDrop(cur, 'excluded_folders', folders.length ? folders : null),
   )
 }
 

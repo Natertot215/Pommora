@@ -1,10 +1,8 @@
 import { isNavRef, toNavRef } from './navRef'
 import type { NavRef, NavigationState } from './navRef'
-import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
 import { readValue, writeValue } from '../Platform/localState'
-import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
-import { newId } from '../Nexus/ids'
-import { machine } from '../Platform/machine'
+import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { parseConnectionText } from '../Connections/connections'
 import { underAssetRoot } from '../Assets/assetRoots'
 import { readWatchScope } from '../Settings/settings'
@@ -50,8 +48,6 @@ export async function readNavigationState(root: string): Promise<NavigationState
   return recents ? { ...file, recents } : file
 }
 
-let inFlight: Promise<unknown> | null = null
-
 export async function writeNavigationState(
   root: string,
   patch: Partial<NavigationState>,
@@ -62,39 +58,20 @@ export async function writeNavigationState(
   }
   const touchesFile = FILE_KEYS.some((k) => k in patch) || 'banner' in patch
   if (!touchesFile) return
-  const write = (inFlight ?? Promise.resolve()).then(noop, noop).then(async () => {
-    const { assetDir } = await readWatchScope(root)
-    await machine().mkdir(nexusDir(root))
-    const written = await rmwJsonStrict(
-      statePath(root),
-      (state) => {
-        const base = navigationOf(state)
-        const navigation: Record<string, unknown> = { ...base }
-        for (const key of FILE_KEYS) {
-          const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
-          if (refs.length) navigation[key] = refs
-          else delete navigation[key]
-        }
-        const banner = 'banner' in patch ? patch.banner : base.banner
-        if (isAssetPath(banner, assetDir)) navigation.banner = banner
-        else delete navigation.banner
-        return { ...state, navigation }
-      },
-      () => ({}),
-      // A corrupt file moves aside under the lock so the write after the empty read lands.
-      (bad) => machine().rename(bad, `${bad}.bad-${newId()}`),
-    )
-    if (!written.ok) throw new Error(written.error.message)
+  const written = await updateNexusConfig(root, 'state', (state) => {
+    const base = navigationOf(state)
+    const navigation: Record<string, unknown> = { ...base }
+    for (const key of FILE_KEYS) {
+      const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
+      if (refs.length) navigation[key] = refs
+      else delete navigation[key]
+    }
+    // The reader drops a banner outside the asset folder, so the write keeps any path it's given.
+    const banner = 'banner' in patch ? patch.banner : base.banner
+    return {
+      ...state,
+      navigation: setOrDrop(navigation, 'banner', typeof banner === 'string' && banner),
+    }
   })
-  inFlight = write
-  try {
-    await write
-  } finally {
-    if (inFlight === write) inFlight = null
-  }
+  if (!written.ok) throw new Error(written.error.message)
 }
-
-export const flushNavigation = (): Promise<void> =>
-  inFlight ? inFlight.then(noop, noop) : Promise.resolve()
-
-const noop = (): void => {}

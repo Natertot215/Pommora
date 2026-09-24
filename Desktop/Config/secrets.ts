@@ -3,7 +3,7 @@
 
 import { join } from '@pommora/core/Paths/posix'
 import { safeStorage } from 'electron'
-import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
+import { readJsonStrict, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 
 const FILE = 'secrets.json'
 
@@ -16,8 +16,10 @@ function secretsPath(userDataDir: string): string {
 }
 
 export async function getSecret(userDataDir: string, name: string): Promise<string | null> {
-  const obj = await readJsonObject(secretsPath(userDataDir))
-  const value = obj?.[name]
+  // A damaged file throws rather than reading as no key, which would mint over the identity it holds.
+  const read = await readJsonStrict(secretsPath(userDataDir))
+  if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
+  const value = read.ok ? read.value[name] : undefined
   if (typeof value !== 'string') return null
   return safeStorage.decryptString(Buffer.from(value, 'base64'))
 }
