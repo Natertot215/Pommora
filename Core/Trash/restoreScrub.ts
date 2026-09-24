@@ -1,7 +1,7 @@
 // A bundle froze at its delete while the world moved on; replaying it verbatim would reintroduce governed keys nothing stands behind, so returning content is reconciled before it lands.
 
 import type { NexusTree } from '../Nexus/tree'
-import { assignedDefs } from '../Contexts/contextWrite'
+import { assignedDefs } from '../Properties/assignment'
 import {
   NO_DEFS,
   reconcileGovernedRoot,

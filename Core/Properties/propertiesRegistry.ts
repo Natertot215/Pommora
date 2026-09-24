@@ -50,30 +50,26 @@ export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   ]
 }
 
-async function writeRegistry(
-  root: string,
-  registry: { order: string[]; defs: Record<string, unknown> },
-): Promise<void> {
-  await machine().mkdir(nexusDir(root))
-  await writeJson(registryPath(root), registry)
-}
-
 export function mutateRegistry<T>(
   root: string,
   fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
 ): Promise<T> {
   return machine().lock(registryPath(root), async () => {
-    const { registry, unparsed } = normalizeRegistry(await readRegistryObject(root))
+    const raw = await readRegistryObject(root)
+    const { registry, unparsed } = normalizeRegistry(raw)
     const { next, result } = fn(registry)
     if (next) {
-      const defs: Record<string, unknown> = { ...next.defs }
-      for (const [id, raw] of Object.entries(unparsed)) if (!(id in defs)) defs[id] = raw
+      const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
+      const defs: Record<string, unknown> = { ...unparsed }
+      for (const [id, d] of Object.entries(next.defs))
+        defs[id] = d === registry.defs[id] ? rawDefs[id] : d
       // Unparsed ids keep their order membership too, appended, so a repaired def re-lists rather than vanishing from the pane.
       const order = [
         ...next.order,
         ...Object.keys(unparsed).filter((id) => !next.order.includes(id)),
       ]
-      await writeRegistry(root, { order, defs })
+      await machine().mkdir(nexusDir(root))
+      await writeJson(registryPath(root), { ...raw, order, defs })
     }
     return result
   })

@@ -10,10 +10,9 @@ import { tileDocPath } from '../Paths/paths'
 import { readKey, writeKey } from '../Platform/localState'
 import { newContentId, newId } from './ids'
 import { copyPageMetadata } from './pageMetadata'
-import { readJsonStrict, rewritePageSerialized, setOrDrop, writeJson } from '../Files/atomicWrite'
+import { rewritePageSerialized, setOrDrop } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { sidecarPath } from '../Paths/paths'
-import { withSidecarLock } from '../Files/sidecar'
+import { patchSidecar } from '../Files/sidecar'
 import type { Baseline, Projection } from './remintLedger'
 
 interface RemintTarget {
@@ -94,13 +93,12 @@ async function remintSidecar(
   oldId: string,
   fresh: string,
 ): Promise<boolean> {
-  const file = sidecarPath(absFolder, kind)
   const viewIds = new Map<string, string>()
+  let landed = false
   // Read fresh inside the lock: a container write that landed since the walk holds facts the stamp must carry forward, and a blind write would drop them.
-  const landed = await withSidecarLock(absFolder, kind, async () => {
-    const current = await readJsonStrict(file)
-    if (!current.ok || current.value.id !== oldId) return false
-    let next: Record<string, unknown> = { ...current.value, id: fresh }
+  await patchSidecar(absFolder, kind, (current) => {
+    if (current.id !== oldId) return null
+    let next: Record<string, unknown> = { ...current, id: fresh }
     if (Array.isArray(next.views))
       next.views = next.views.map((v) => {
         if (!isPlainObject(v)) return v
@@ -112,8 +110,8 @@ async function remintSidecar(
     // The copy must not inherit a selection it cannot resolve: a view id naming nothing in the copy's own namespace is dropped rather than carried.
     if (typeof next.active_view === 'string')
       next = setOrDrop(next, 'active_view', viewIds.get(next.active_view))
-    await writeJson(file, next)
-    return true
+    landed = true
+    return next
   })
   if (!landed) return false
   if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {

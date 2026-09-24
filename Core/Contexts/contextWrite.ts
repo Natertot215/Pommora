@@ -9,15 +9,11 @@ import {
   type GovernedWorld,
 } from './contextResolve'
 import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
-import { mintSeed, NEW_TILE_H } from '../Tiles/tiles'
+import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
-import type { PropertyDefinition } from '../Properties/properties'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 import { getLiveTree } from '../Nexus/liveTree'
-import { collectionFolderOf } from '../Properties/assignment'
+import { assignedDefs, collectionFolderOf } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
-import { readRegistry } from '../Properties/propertiesRegistry'
-import { readSidecar } from '../Files/sidecar'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result } from '../Contract/result'
@@ -53,24 +49,6 @@ interface SpaceRef {
 interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
   spaceById: Map<string, SpaceRef>
-}
-
-export async function assignedDefs(
-  root: string,
-  collectionFolder: string | null,
-): Promise<ReadonlyMap<string, PropertyDefinition>> {
-  if (collectionFolder === null) return NO_DEFS
-  const held = getLiveTree()
-  if (held?.nexus.rootPath === root) {
-    const node = held.collections.find((c) => join(root, c.path) === collectionFolder)
-    if (node) return new Map((node.properties ?? []).map((d) => [d.name, d]))
-  }
-  const registry = (await readRegistry(root)).defs
-  const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
-  const assigned = (sidecar?.properties as string[] | undefined) ?? []
-  return new Map(
-    assigned.flatMap((id) => (registry[id] ? [[registry[id].name, registry[id]] as const] : [])),
-  )
 }
 
 export const NO_CONTEXT_WORLD: Omit<GovernedWorld, 'defs'> = {
@@ -294,15 +272,7 @@ export async function createSpace(
   if (!created.ok) return created
   const tileIds = [newId(), newId(), newId(), newId()]
   for (const tid of tileIds) await atomicWriteFile(tileFilePath(created.value.path, tid), '')
-  const tile = (tid: string): Raw => ({ kind: 'tile', id: tid, h: NEW_TILE_H })
-  const band = (a: string, b: string): Raw => ({
-    node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(a), tile(b)] },
-  })
-  await writeTileDocAt(created.value.path, () => ({
-    layout: { bands: [band(tileIds[0], tileIds[1]), band(tileIds[2], tileIds[3])] },
-    tiles: tileIds.map((tid) => mintSeed('markdown', tid)),
-    locked: false,
-  }))
+  await writeTileDocAt(created.value.path, () => seedBoard(tileIds))
   return ok({
     id: created.value.id,
     path: spaceDirRel(def.title, name),

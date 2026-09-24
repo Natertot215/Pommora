@@ -1,20 +1,18 @@
 import { contentId } from '../Nexus/identityMark'
 import { splitFrontmatter } from '../Files/pageFile'
 import { writePropertyBundle } from '../Trash/record'
-import { patchCacheBlock } from './assignment'
+import { assignedIds, collectionFolders, patchCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
-import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
+import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
-import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
+import { contextsDir, sidecarPath, SPACE_SIDECAR } from '../Paths/paths'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 
 import { isPlainObject } from './propertyValue'
 import { fail, type Result } from '../Contract/result'
@@ -32,8 +30,8 @@ async function snapshot(
   let partial = false
   for (const folder of folders) {
     // Gathered before the unassign strips it — a property restored into no Collection is defined but belongs nowhere.
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
-    const holds = ((sidecar?.properties as string[] | undefined) ?? []).includes(propertyId)
+    const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
+    const holds = assignedIds(sidecar).includes(propertyId)
     if (holds && typeof sidecar?.id === 'string') assignments.push(sidecar.id)
     else if (holds) partial = true
   }
@@ -115,19 +113,13 @@ function stripKeyRewrite(key: string): Rewrite {
   }
 }
 
-function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
-  return withSidecarLock(folder, 'collection', async () => {
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
-    if (!sidecar) return
-    const assigned = (sidecar.properties as string[] | undefined) ?? []
-    const cacheAll = isPlainObject(sidecar.property_cache) ? sidecar.property_cache : undefined
-    const hadCache = cacheAll !== undefined && propertyId in cacheAll
-    if (!assigned.includes(propertyId) && !hadCache) return
-    const next: Record<string, unknown> = {
-      ...sidecar,
-      properties: assigned.filter((id) => id !== propertyId),
-    }
+async function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
+  await patchSidecar(folder, 'collection', (cur) => {
+    const assigned = assignedIds(cur)
+    const hadCache = isPlainObject(cur.property_cache) && propertyId in cur.property_cache
+    if (!assigned.includes(propertyId) && !hadCache) return null
+    const next = { ...cur, properties: assigned.filter((id) => id !== propertyId) }
     // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE, and assign only copies keys that are present.
-    await writeSidecar(folder, 'collection', hadCache ? patchCacheBlock(next, propertyId) : next)
+    return hadCache ? patchCacheBlock(next, propertyId) : next
   })
 }

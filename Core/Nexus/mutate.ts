@@ -1,6 +1,7 @@
 // Every renderer mutation resolves its session root here and routes to the module that owns the operation. Arms carrying only a resolve and one module call stay in place.
 
 import { setOrDrop } from '../Files/atomicWrite'
+import { patchSidecar } from '../Files/sidecar'
 import { isMarkdownFile } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { contextsDir } from '../Paths/paths'
@@ -16,8 +17,6 @@ import { setCropOp } from '../Assets/setCrop'
 import { setBannerOp } from '../Pages/setBanner'
 import { setIconOp } from '../Pages/setIcon'
 import { setHeadingIconHiddenOp } from '../Pages/setHeadingIconHidden'
-import { setDisclosureLockOp } from '../Pages/setDisclosureLock'
-import { setActiveViewOp } from '../Pages/setActiveView'
 import { setPropertyOp } from '../Properties/setProperty'
 import {
   createContextGroup,
@@ -110,11 +109,25 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'setIcon':
       return setIconOp(ctx, req)
 
-    case 'setDisclosureLock':
-      return setDisclosureLockOp(ctx, req)
+    case 'setDisclosureLock': {
+      const folder = await resolveUnderRoot(root, req.path)
+      if (!folder.ok) return folder
+      return done(
+        await patchSidecar(folder.value, req.kind, (cur) =>
+          setOrDrop(cur, 'disclosure_locked', req.locked),
+        ),
+      )
+    }
 
-    case 'setActiveView':
-      return setActiveViewOp(ctx, req)
+    case 'setActiveView': {
+      const folder = await resolveUnderRoot(root, req.path)
+      if (!folder.ok) return folder
+      return done(
+        await patchSidecar(folder.value, req.kind, (cur) =>
+          setOrDrop(cur, 'active_view', req.viewId),
+        ),
+      )
+    }
 
     case 'setProperty':
       return setPropertyOp(ctx, req)

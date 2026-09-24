@@ -1,38 +1,35 @@
 import type { z } from 'zod'
 import { sidecarPath, type SidecarKind } from '../Paths/paths'
-import { parseJsonText, readTextOrNull, writeJson } from './atomicWrite'
-import { machine } from '../Platform/machine'
-
-/** Reads FRESH inside the lock. Views, container config, within-folder orders, property assignment and the Remove cache all rewrite the same file whole, so they queue on one key or the last writer back silently drops whatever the others just set. */
-export function withSidecarLock<T>(
-  absFolder: string,
-  kind: SidecarKind,
-  fn: () => Promise<T>,
-): Promise<T> {
-  return machine().lock(sidecarPath(absFolder, kind), fn)
-}
+import { fail, type Result } from '../Contract/result'
+import { readJsonObject, rmwJsonStrict } from './atomicWrite'
 
 export async function readSidecar<S extends z.ZodType>(
   absFolder: string,
   kind: SidecarKind,
   schema: S,
 ): Promise<z.infer<S> | null> {
-  const text = await readTextOrNull(sidecarPath(absFolder, kind))
-  if (text === null) return null
-  let raw: unknown
-  try {
-    raw = parseJsonText(text)
-  } catch {
-    return null
-  }
+  const raw = await readJsonObject(sidecarPath(absFolder, kind))
+  if (raw === null) return null
   const parsed = schema.safeParse(raw)
   return parsed.success ? parsed.data : null
 }
 
-export async function writeSidecar(
+type Refuse = (why: Result<never>) => null
+
+export async function patchSidecar(
   absFolder: string,
   kind: SidecarKind,
-  value: unknown,
-): Promise<void> {
-  await writeJson(sidecarPath(absFolder, kind), value)
+  fn: (cur: Record<string, unknown>, refuse: Refuse) => Record<string, unknown> | null,
+): Promise<Result<Record<string, unknown>>> {
+  const refused: { why: Result<never> | null } = { why: null }
+  const refuse: Refuse = (why) => {
+    refused.why = why
+    return null
+  }
+  const written = await rmwJsonStrict(sidecarPath(absFolder, kind), (cur) =>
+    typeof cur.id === 'string'
+      ? fn(cur, refuse)
+      : refuse(fail('not-found', 'That item has no id.')),
+  )
+  return refused.why ?? written
 }

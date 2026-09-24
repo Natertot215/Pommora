@@ -177,6 +177,18 @@ const knownEntry = z.union(Object.values(TILE_KINDS).map((k) => k.schema) as Ent
 
 export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
 
+export function seedBoard([a, b, c, d]: readonly string[]): TileDoc {
+  const tile = (id: string): RawTile => ({ kind: 'tile', id, h: NEW_TILE_H })
+  const band = (left: string, right: string): { node: RawRow } => ({
+    node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(left), tile(right)] },
+  })
+  return {
+    layout: { bands: [band(a, b), band(c, d)] },
+    tiles: [a, b, c, d].map((id) => mintSeed('markdown', id)),
+    locked: false,
+  }
+}
+
 export interface DrillPickItem<T> {
   label: string
   icon?: string

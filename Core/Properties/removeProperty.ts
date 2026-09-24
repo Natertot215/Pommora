@@ -1,10 +1,9 @@
 import { contentId } from '../Nexus/identityMark'
-import { patchCacheBlock } from './assignment'
+import { assignedIds, patchCacheBlock } from './assignment'
 import { stripPageMember } from './pageValue'
-import { readSidecar } from '../Files/sidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
+import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
-import { readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
+import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { folderCorpus } from '../Index/indexSeed'
 import { sweepGovernedRoots } from './governedSweep'
 import { splitFrontmatter, stampedId } from '../Files/pageFile'
@@ -30,9 +29,8 @@ async function removeInner(
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
-  const ids = (sidecar?.properties as string[] | undefined) ?? []
-  if (!sidecar || !ids.includes(propertyId)) return ok(null)
+  const sidecar = await readJsonObject(sidecarPath(collectionFolder, 'collection'))
+  if (!assignedIds(sidecar).includes(propertyId)) return ok(null)
 
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
@@ -50,9 +48,9 @@ async function removeInner(
     if (id) values[id] = raw
   }
   // Cache + unassign FIRST under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
-  const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
+  const written = await patchSidecar(collectionFolder, 'collection', (cur) =>
     patchCacheBlock(
-      { ...cur, properties: ids.filter((id) => id !== propertyId) },
+      { ...cur, properties: assignedIds(cur).filter((id) => id !== propertyId) },
       propertyId,
       Object.keys(values).length ? { values } : undefined,
     ),
@@ -68,7 +66,7 @@ export async function restoreCachedValues(
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
+  const sidecar = await readJsonObject(sidecarPath(collectionFolder, 'collection'))
   if (!sidecar) return ok(null)
   const cacheAll = isPlainObject(sidecar.property_cache) ? sidecar.property_cache : undefined
   const block = cacheAll?.[propertyId]
@@ -97,7 +95,7 @@ export async function restoreCachedValues(
       return (await updatePageProperty(root, file, def, reconciled.value)).ok
     })
   })
-  const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
+  const written = await patchSidecar(collectionFolder, 'collection', (cur) =>
     patchCacheBlock(
       cur,
       propertyId,
