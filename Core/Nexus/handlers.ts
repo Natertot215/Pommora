@@ -19,7 +19,7 @@ import { stampAdopted } from './adopt'
 import { renameHeadingCascade } from './cascade'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
-import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
 import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
 import { handleMutate, type MutateDeps } from './mutate'
 import { confirmMutation } from './mutatePatch'
@@ -78,7 +78,7 @@ export async function openNexusSequence(
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     void runRepairSweep(root).then(() => pushValueChanges(ctx, root))
   }
-  void startSession(ctx, root, (getLiveTree() ?? (await refreshTree(root))).nexus.id)
+  void startSession(ctx, root, (await liveTreeOf(root)).nexus.id)
   return root
 }
 
@@ -106,7 +106,7 @@ async function mutateDeps(root: string, ctx: HostContext): Promise<MutateDeps> {
 export const nexusHandlers = {
   'nexus:state': withRoot(
     async (root): Promise<Result<NexusState>> =>
-      ok({ status: 'open', tree: getLiveTree() ?? (await refreshTree(root)) }),
+      ok({ status: 'open', tree: await liveTreeOf(root) }),
     ok({ status: 'empty' }),
   ),
 
@@ -169,8 +169,8 @@ export const nexusHandlers = {
   mutate: withWriteRoot(async (root, ctx, req: MutateRequest) => {
     const reply = await handleMutate(req, await mutateDeps(root, ctx))
     if (reply.ok) {
-      await confirmWrite(ctx, root, (root) => confirmMutation(root, req, reply.value))
-      pushAssetWrites(ctx)
+      await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
+      pushAssetWrites(ctx, root)
     }
     return reply
   }),

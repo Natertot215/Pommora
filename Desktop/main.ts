@@ -259,8 +259,10 @@ function hostContext(win: BrowserWindow | null): HostContext {
     },
     menu: (req) => (win ? popNativeMenu(win, req) : Promise.resolve(null)),
     thumbnails: {
-      capture: (root, navKey, rect, scaleFactor) =>
-        win ? captureThumbnail(win, root, navKey, rect, scaleFactor) : Promise.resolve(null),
+      capture: (root, nexusId, navKey, rect, scaleFactor) =>
+        win
+          ? captureThumbnail(win, root, nexusId, navKey, rect, scaleFactor)
+          : Promise.resolve(null),
       evict: evictThumbnails,
     },
     webGuests: { setZoom: setGuestTileZoom, pauseMedia: pauseGuestMedia },

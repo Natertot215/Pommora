@@ -1,10 +1,11 @@
-import { connectionText, normalizeTitle, parseConnectionText } from './connections'
+import { connectionText, parseConnectionText } from './connections'
 import {
   MD_LINK,
   escapeAlias,
   isValidLink,
   linkDomain,
   normalizeLinkUrl,
+  targetFragment,
   targetTitle,
   unescapeAlias,
 } from './links'
@@ -16,12 +17,12 @@ type LinkValue = { url: string; alias?: string }
 export type ResolveTitle = (rawTitle: string) => string | null
 
 export type LinkTarget =
-  | { kind: 'page'; title: string; alias?: string }
+  | { kind: 'page'; title: string; alias?: string; heading?: string }
   | { kind: 'url'; url: string; alias?: string }
 
 export function readLink(raw: string): LinkTarget {
   const conn = parseConnectionText(raw)
-  if (conn) return { kind: 'page', title: conn.title, alias: conn.alias }
+  if (conn) return { kind: 'page', ...conn }
   const { url, alias } = parseLink(raw)
   return { kind: 'url', url, alias }
 }
@@ -38,18 +39,18 @@ export function serializeLink(v: LinkValue): string {
 }
 
 function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
-  const named = (rawTitle: string, alias?: string): string | null => {
+  const named = (rawTitle: string, alias?: string, heading?: string): string | null => {
     const title = resolve?.(rawTitle)
-    return title ? connectionText(title, alias) : null
+    return title ? connectionText(title, alias, heading) : null
   }
   const conn = parseConnectionText(text)
-  if (conn) return named(conn.title, conn.alias)
+  if (conn) return named(conn.title, conn.alias, conn.heading)
   const m = MD_LINK.exec(text.trim())
   if (!m) return null
   const alias = unescapeAlias(m[1]).trim() || undefined
   const target = m[2].trim()
   const title = targetTitle(target)
-  if (title !== null) return named(title, alias)
+  if (title !== null) return named(title, alias, targetFragment(target) || undefined)
   return isValidLink(target) ? serializeLink({ url: normalizeLinkUrl(target), alias }) : null
 }
 
@@ -65,7 +66,9 @@ export function urlClickTarget(value: string | undefined): string | null {
 
 export function linkEditText(raw: string): string {
   const target = readLink(raw)
-  return target.kind === 'page' ? connectionText(target.title, target.alias) : target.url
+  return target.kind === 'page'
+    ? connectionText(target.title, target.alias, target.heading)
+    : target.url
 }
 
 export function linkAlias(raw: string): string | undefined {
@@ -95,7 +98,7 @@ export function urlValueFromRename(alias: string, current: string): PropertyValu
     kind: 'url',
     value:
       target.kind === 'page'
-        ? connectionText(target.title, named)
+        ? connectionText(target.title, named, target.heading)
         : serializeLink({ url: target.url, alias: named }),
   }
 }
@@ -113,9 +116,4 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
     default:
       return target.url
   }
-}
-
-export function linkNamesTitle(raw: string, normalizedKey: string): boolean {
-  const target = readLink(raw)
-  return target.kind === 'page' && normalizeTitle(target.title) === normalizedKey
 }

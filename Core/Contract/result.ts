@@ -41,7 +41,8 @@ export function fail(code: ErrorCode, message: string): Result<never> {
 
 export const fault = (message: string): Result<never> => fail('operation-failed', message)
 
-/** THE three session refusals — one spelling, one code, everywhere. A handler refuses through these or not at all. */
+/** THE two session refusals — one spelling, one code, everywhere. A handler refuses through these or not at all. */
 export const NO_NEXUS = fail('no-nexus', 'No nexus is open.')
 export const BUSY = fail('busy', 'Nexus switching.')
+/** An open Nexus whose device database didn't open: every store writer answers this for a refused write. */
 export const NO_STORE = fail('operation-failed', 'This nexus’s database is unavailable.')

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
+import { rewriteFrontmatterConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import {
   isCommittableLink,
   linkDisplayText,
   linkAlias,
   linkEditText,
-  linkNamesTitle,
   parseLink,
   readLink,
   serializeLink,
@@ -183,12 +183,41 @@ describe('internal links', () => {
       value: '[[Meeting Notes]]',
     })
   })
-  it('names the page it points at, and nothing else', () => {
-    expect(linkNamesTitle('[[Meeting Notes]]', 'meeting notes')).toBe(true)
-    expect(linkNamesTitle('https://example.com/Meeting Notes', 'meeting notes')).toBe(false)
+  it('a page rename rewrites the page it points at, and nothing else', () => {
+    expect(
+      rewriteFrontmatterConnections(
+        { A: '[[Meeting Notes]]', B: 'https://example.com/Meeting Notes' },
+        'meeting notes',
+        'New Title',
+      ),
+    ).toEqual({ A: '[[New Title]]' })
   })
-  it('reads a heading link as the page alone, with no heading', () => {
-    expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page' })
+  it('reads a heading link with its heading', () => {
+    expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page', heading: 'H' })
+  })
+  it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
+    const resolve = (raw: string): string | null =>
+      raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
+    expect(
+      rewriteFrontmatterConnections(
+        { Link: '[[Meeting Notes#Decisions]]' },
+        'meeting notes',
+        'New Title',
+      ),
+    ).toEqual({ Link: '[[New Title#Decisions]]' })
+    expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
+    expect(urlValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve)).toEqual({
+      kind: 'url',
+      value: '[[Meeting Notes#Decisions]]',
+    })
+    expect(urlValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, resolve)).toEqual({
+      kind: 'url',
+      value: '[[Meeting Notes#Decisions|Label]]',
+    })
+    expect(urlValueFromRename('Today', '[[Meeting Notes#Decisions]]')).toEqual({
+      kind: 'url',
+      value: '[[Meeting Notes#Decisions|Today]]',
+    })
   })
 })
 

@@ -6,7 +6,6 @@ import { nativeImage } from 'electron'
 import type { BrowserWindow, NativeImage } from 'electron'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import type { ThumbRect } from '@pommora/core/Interface/chrome'
-import { ensureIdentity } from '@pommora/core/Nexus/identity'
 import { atomicWriteBinary } from '@pommora/core/Files/atomicWrite'
 import { thumbKey, thumbRel, thumbsRel } from '@pommora/core/Paths/nexusPaths'
 import { assetUrl } from '@pommora/core/Platform/assetScheme'
@@ -51,13 +50,12 @@ const thumbsDir = (root: string, nexusId: string): string => join(root, thumbsRe
 export async function captureThumbnail(
   win: BrowserWindow,
   root: string,
+  nexusId: string,
   navKey: string,
   rect: ThumbRect,
   scaleFactor: number,
 ): Promise<string | null> {
   if (rect.width < 1 || rect.height < 1) return null
-  const { id: nexusId } = await ensureIdentity(root)
-  if (nexusId === null) return null
   const img = await win.webContents.capturePage()
   if (img.isEmpty()) return null
   const sf = scaleFactor > 0 ? scaleFactor : 1
@@ -86,9 +84,11 @@ export async function captureThumbnail(
 }
 
 /** The caller passes every navKey that still exists (∪ recents and pins as a fault guard), so only orphans are dropped, never a live cover. */
-export async function evictThumbnails(root: string, liveKeys: string[]): Promise<void> {
-  const { id: nexusId } = await ensureIdentity(root)
-  if (nexusId === null) return
+export async function evictThumbnails(
+  root: string,
+  nexusId: string,
+  liveKeys: string[],
+): Promise<void> {
   const dir = thumbsDir(root, nexusId)
   let names: string[]
   try {

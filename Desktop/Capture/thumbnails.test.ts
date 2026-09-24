@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, writeFile, readdir, rm } from 'node:fs/promises'
+import { mkdir, writeFile, readdir, rm, stat } from 'node:fs/promises'
 import { join } from '@pommora/core/Paths/posix'
 import { tempRoot } from '@pommora/core/Testing/hostFs'
 import { ensureIdentity } from '@pommora/core/Nexus/identity'
@@ -32,11 +32,12 @@ describe('evictThumbnails', () => {
     await mkdir(dir, { recursive: true })
     for (const name of ['page-a.jpg', 'page-b.jpg', 'collection-c.jpg'])
       await writeFile(join(dir, name), 'x')
-    await evictThumbnails(root, ['page:a', 'collection:c'])
+    await evictThumbnails(root, id, ['page:a', 'collection:c'])
     expect((await readdir(dir)).sort()).toEqual(['collection-c.jpg', 'page-a.jpg'])
   })
 
-  it('is a no-op when the folder is absent', async () => {
-    await expect(evictThumbnails(root, [])).resolves.toBeUndefined()
+  it('is a no-op when the folder is absent, and mints no identity', async () => {
+    await expect(evictThumbnails(root, 'nx1', [])).resolves.toBeUndefined()
+    await expect(stat(join(root, '.nexus', 'nexus.json'))).rejects.toThrow()
   })
 })
