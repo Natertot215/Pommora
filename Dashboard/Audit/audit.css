@@ -268,9 +268,11 @@
   gap: 8px;
 }
 .au-fix-quote {
-  margin: 0 0 8px 4px;
-  padding: 2px 0 2px 16px;
+  margin: 14px 0 8px;
+  padding: 10px 14px 10px 16px;
   border-left: 3px solid var(--border-base);
+  border-radius: 0 8px 8px 0;
+  background: var(--fill-quinary);
 }
 .au-fix-quote > :last-child {
   margin-bottom: 0;
