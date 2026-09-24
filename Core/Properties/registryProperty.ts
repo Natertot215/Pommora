@@ -2,12 +2,11 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { validateDefinition, validateName } from './schema'
 import { mintPropertyId } from '../Nexus/ids'
+import { freeName } from '../Paths/names'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
   hasSelectOptions,
-  invalidPropertyName,
-  isReservedKeyName,
   KEY_REFUSAL,
   normalizePropertyName,
   type PropertyDefinition,
@@ -26,9 +25,6 @@ import {
 } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 
-const nameRefusal = (name: string): string =>
-  isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix
-
 // Seeds only when the field is undefined; an EMPTY array is a deliberate state, or emptying a select's options then making any unrelated edit would resurrect the seed.
 function seeded(def: PropertyDefinition): PropertyDefinition {
   let d = def
@@ -44,16 +40,15 @@ export async function createProperty(
   root: string,
   def: PropertyDefinition,
 ): Promise<Result<{ id: string }>> {
+  let landed = ''
   const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
-    const candidate = seeded({
-      ...def,
-      name: normalizePropertyName(def.name ?? ''),
-      id: def.id || mintPropertyId(),
-    })
-    if (!candidate.name) return { result: fail('invalid-property', KEY_REFUSAL.empty) }
-    if (invalidPropertyName(candidate.name))
-      return { result: fail('invalid-property', nameRefusal(candidate.name)) }
-    const v = validateDefinition(candidate, Object.values(registry.defs))
+    const defs = Object.values(registry.defs)
+    landed = freeName(
+      normalizePropertyName(def.name ?? ''),
+      defs.map((d) => d.name),
+    )
+    const candidate = seeded({ ...def, name: landed, id: def.id || mintPropertyId() })
+    const v = validateDefinition(candidate, defs)
     if (!v.ok) return { result: v }
     return {
       next: {
@@ -66,10 +61,7 @@ export async function createProperty(
   // A landed create wearing a journaled delete's name or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
-    if (
-      journal?.op === 'delete' &&
-      (journal.name === normalizePropertyName(def.name ?? '') || journal.id === created.value.id)
-    )
+    if (journal?.op === 'delete' && (journal.name === landed || journal.id === created.value.id))
       await clearSchemaJournal(root, journal)
   }
   return created
@@ -133,9 +125,6 @@ export function editProperty(
       if (typeof changed.name === 'string') changed.name = normalizePropertyName(changed.name)
       const next = seeded({ ...current, ...changed, id: propertyId })
       if (next.name !== current.name) {
-        if (!next.name) return { result: fail('invalid-property', KEY_REFUSAL.empty) }
-        if (invalidPropertyName(next.name))
-          return { result: fail('invalid-property', nameRefusal(next.name)) }
         const v = validateName(next.name, Object.values(registry.defs), propertyId)
         if (!v.ok) return { result: v }
         rename = { from: current.name, to: next.name }

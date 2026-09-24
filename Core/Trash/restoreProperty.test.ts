@@ -123,7 +123,7 @@ describe('restoring a deleted property', () => {
     expect(await listBundles(root)).toHaveLength(0)
   })
 
-  it('refuses when the name has been taken since, and keeps the record', async () => {
+  it('steps aside when the name has been taken since', async () => {
     const id = await seedPriority()
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const impostor = await createProperty(root, {
@@ -134,9 +134,9 @@ describe('restoring a deleted property', () => {
     expect(impostor.ok).toBe(true)
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
-    expect(r.ok).toBe(false)
-    expect((await readRegistry(root)).defs[id]).toBeUndefined()
-    expect(await listBundles(root)).toHaveLength(1)
+    expect(r.ok).toBe(true)
+    expect((await readRegistry(root)).defs[id]?.name).toBe('Priority (2)')
+    expect(await listBundles(root)).toHaveLength(0)
   })
 
   it('refuses when the property id is live again', async () => {

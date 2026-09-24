@@ -67,7 +67,7 @@ describe('createContextGroup', () => {
   it('disambiguates a taken title, and accepts one carrying a sigil glyph', async () => {
     const dup = await createContextGroup(root, 'Projects')
     expect(dup.ok).toBe(true)
-    if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/Projects 2')
+    if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/Projects (2)')
     // The key is stripped positionally, so a glyph in the title round-trips — no ban needed.
     const glyph = await createContextGroup(root, 'No[pe]')
     expect(glyph.ok).toBe(true)
@@ -76,7 +76,7 @@ describe('createContextGroup', () => {
   it('uniqueness folds case — a case-variant twin would share one folder', async () => {
     const dup = await createContextGroup(root, 'projects')
     expect(dup.ok).toBe(true)
-    if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/projects 2')
+    if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/projects (2)')
   })
 
   it('refuses any title carrying a period — a dotted folder reads as a file and can shadow a config leaf', async () => {

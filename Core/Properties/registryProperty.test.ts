@@ -68,9 +68,12 @@ describe('createProperty', () => {
     ])
   })
 
-  it('refuses a duplicate title, folding case — the title IS the key values write under', async () => {
+  it('steps a taken title aside, folding case — the title IS the key values write under', async () => {
     await createProperty(root, def({ name: 'Priority', type: 'select' }))
-    expect((await createProperty(root, def({ name: 'priority', type: 'number' }))).ok).toBe(false)
+    const r = await createProperty(root, def({ name: 'priority', type: 'number' }))
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect((await readRegistry(root)).defs[r.value.id].name).toBe('priority (2)')
   })
 
   it('refuses a leading $, which is reserved for system-assigned roles', async () => {

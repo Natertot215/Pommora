@@ -90,7 +90,7 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
   })
 
-  it('disambiguates a colliding create name (Untitled → Untitled 2)', async () => {
+  it('disambiguates a colliding create name (Untitled → Untitled (2))', async () => {
     const first = await handleMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
@@ -102,8 +102,8 @@ describe('handleMutate — create', () => {
       nexusDeps,
     )
     expect(first.ok && first.value.created?.path).toBe('Notes/Daily/Untitled.md')
-    expect(second.ok && second.value.created?.path).toBe('Notes/Daily/Untitled 2.md')
-    expect(await pathExists(join(root, 'Notes/Daily/Untitled 2.md'))).toBe(true)
+    expect(second.ok && second.value.created?.path).toBe('Notes/Daily/Untitled (2).md')
+    expect(await pathExists(join(root, 'Notes/Daily/Untitled (2).md'))).toBe(true)
   })
 
   it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
@@ -239,8 +239,8 @@ describe('handleMutate — rename', () => {
     )
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value.renamed).toEqual({ path: 'Notes/Daily/Beta 2.md', name: 'Beta 2' })
-    expect(await pathExists(join(root, 'Notes/Daily/Beta 2.md'))).toBe(true)
+    expect(r.value.renamed).toEqual({ path: 'Notes/Daily/Beta (2).md', name: 'Beta (2)' })
+    expect(await pathExists(join(root, 'Notes/Daily/Beta (2).md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
   })
 
@@ -831,9 +831,9 @@ describe('handleMutate — setBanner', () => {
     const assets = await withAssetDir([['Sunset.png']])
     const r = await setBanner(await pick('Sunset.png', 'picked-bytes'))
     expect(r.ok).toBe(true)
-    expect(await bannerOf()).toBe('[[Sunset 2.png]]')
+    expect(await bannerOf()).toBe('[[Sunset (2).png]]')
     expect(await readFile(join(assets, 'Sunset.png'), 'utf8')).toBe('held-bytes')
-    expect(await readFile(join(assets, 'Sunset 2.png'), 'utf8')).toBe('picked-bytes')
+    expect(await readFile(join(assets, 'Sunset (2).png'), 'utf8')).toBe('picked-bytes')
   })
 
   it('a basename colliding with BYTE-IDENTICAL content is referenced, not copied twice', async () => {
@@ -857,8 +857,8 @@ describe('handleMutate — setBanner', () => {
     const assets = await withAssetDir([['sub', 'Sunset.png']])
     const r = await setBanner(await pick('Sunset.png', 'picked-bytes'))
     expect(r.ok).toBe(true)
-    expect(await bannerOf()).toBe('[[Sunset 2.png]]')
-    expect(await pathExists(join(assets, 'Sunset 2.png'))).toBe(true)
+    expect(await bannerOf()).toBe('[[Sunset (2).png]]')
+    expect(await pathExists(join(assets, 'Sunset (2).png'))).toBe(true)
   })
 
   it('a file that is not an image Pommora can show is refused', async () => {
@@ -1341,7 +1341,7 @@ describe('adoptFile — the shared adoption seam', () => {
       allow: 'any',
       subfolder: 'B',
     })
-    expect(second).toEqual({ ok: true, value: '[[Doc 2.pdf]]' })
+    expect(second).toEqual({ ok: true, value: '[[Doc (2).pdf]]' })
   })
 
   it('refuses a subfolder that climbs out of the asset root, writing nothing', async () => {

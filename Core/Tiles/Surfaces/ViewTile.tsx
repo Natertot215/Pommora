@@ -4,7 +4,6 @@ import type { EmbeddedView, ViewTileEntry } from '@pommora/core/Tiles/tiles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
-  copyName,
   DEFAULT_VIEW_ID,
   mintDefaultView,
   mintNewView,
@@ -12,6 +11,7 @@ import {
   type SavedView,
   type ViewState,
 } from '@pommora/core/Views/views'
+import { freeName } from '@pommora/core/Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
@@ -346,7 +346,7 @@ export function ViewTile({
       const config = {
         ...views[i],
         id: freeEmbedId(arr, entry.id),
-        name: copyName(
+        name: freeName(
           views[i].name,
           views.map((v) => v.name),
         ),

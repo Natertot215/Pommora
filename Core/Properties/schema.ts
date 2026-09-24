@@ -1,5 +1,7 @@
 import {
   hasSelectOptions,
+  invalidPropertyName,
+  isReservedKeyName,
   isReservedPropertyId,
   KEY_REFUSAL,
   type PropertyDefinition,
@@ -7,16 +9,21 @@ import {
 import { fail, ok, type Result } from '../Contract/result'
 import { normalizeTitle } from '../Connections/connections'
 
-/** Empty and reserved-prefix names are refused before this — `invalidPropertyName` owns that gate at the callers. */
+/** The whole name gate: non-empty, not a key Pommora manages, and unique nexus-wide, compared case-folded because the name is the on-disk key. */
 export function validateName(
   name: string,
   existing: PropertyDefinition[],
   excludeId?: string,
 ): Result<null> {
-  const trimmed = name.trim()
-  const lower = normalizeTitle(trimmed)
-  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.name) === lower)
-  if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(trimmed))
+  if (!name) return fail('invalid-property', KEY_REFUSAL.empty)
+  if (invalidPropertyName(name))
+    return fail(
+      'invalid-property',
+      isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix,
+    )
+  const folded = normalizeTitle(name)
+  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.name) === folded)
+  if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(name))
   return ok(null)
 }
 

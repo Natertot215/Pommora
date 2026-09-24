@@ -23,7 +23,6 @@ export const fillSlot = (order: string[], id: string): string[] =>
   order.map((x) => (x === NEW_SLOT ? id : x))
 
 export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
-/** The homepage's title is the Nexus folder's name. */
 export type RenameKind = MutableKind | 'homepage'
 
 export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'navview' | 'page'

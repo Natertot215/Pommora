@@ -489,7 +489,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       pages: [P({ id: 'page-o', title: 'Alpha', path: 'Notes/Journal/Alpha.md' })],
     })
     const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([taken])]))
-    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha 2.md' } })
+    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha (2).md' } })
   })
 
   it('a set title also blocks a page name — one folder cannot hold both', () => {
@@ -497,7 +497,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       sets: [journal({ id: 'set-inner', title: 'Alpha', path: 'Notes/Journal/Alpha' })],
     })
     const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([inner])]))
-    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha 2.md' } })
+    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha (2).md' } })
   })
 
   it('refuses when the parent is gone — a still-trashed parent is the same answer', () => {
@@ -553,7 +553,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       parent: { kind: 'root' as const },
     }
     const r = resolveRecord(record, 'Notes', treeOf([], [notes()]))
-    expect(r).toEqual({ place: { dir: '', finalName: 'Notes 2' } })
+    expect(r).toEqual({ place: { dir: '', finalName: 'Notes (2)' } })
   })
 
   it('a Space follows its Context to the Context’s CURRENT title, colliding titles disambiguated', () => {
@@ -582,7 +582,11 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     }
     const r = resolveRecord(record, 'Pommora', tree)
     expect(r).toEqual({
-      place: { dir: '.nexus/contexts/Ventures', finalName: 'Pommora 2', finalTitle: 'Pommora 2' },
+      place: {
+        dir: '.nexus/contexts/Ventures',
+        finalName: 'Pommora (2)',
+        finalTitle: 'Pommora (2)',
+      },
     })
   })
 
@@ -595,7 +599,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     }
     const r = resolveRecord(record, 'Projects', tree)
     expect(r).toEqual({
-      place: { dir: '.nexus/contexts', finalName: 'Projects 2', finalTitle: 'Projects 2' },
+      place: { dir: '.nexus/contexts', finalName: 'Projects (2)', finalTitle: 'Projects (2)' },
     })
   })
 
@@ -770,18 +774,18 @@ describe('restore — the gate-four pins', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     // Folder, registry entry, and membership key all wear the resolver's final title.
-    expect(await pathExists(join(contextsDir(root), 'Projects 2', 'Pommora', '_space.json'))).toBe(
-      true,
-    )
+    expect(
+      await pathExists(join(contextsDir(root), 'Projects (2)', 'Pommora', '_space.json')),
+    ).toBe(true)
     const after = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     expect(after.contexts).toContainEqual({
       id: 'ctx_projects',
-      title: 'Projects 2',
+      title: 'Projects (2)',
       singular: 'Project',
       icon: 'target',
     })
     const fm = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))
-    expect(fm['<Projects 2>']).toEqual(['Pommora'])
+    expect(fm['<Projects (2)>']).toEqual(['Pommora'])
     expect(fm['<Projects>']).toBeUndefined()
   })
 
@@ -918,10 +922,10 @@ describe('restore — the attack folds', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     const sap = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects 2', 'Sapphire', '_space.json'), 'utf8'),
+      await readFile(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'), 'utf8'),
     )
     // The passenger's key follows the final title — never left pointing at the impostor.
-    expect(sap['<Projects 2>']).toEqual(['Pommora'])
+    expect(sap['<Projects (2)>']).toEqual(['Pommora'])
     expect('<Projects>' in sap).toBe(false)
   })
 
@@ -949,9 +953,9 @@ describe('restore — the attack folds', () => {
       (await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
     const sap = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects 2', 'Sapphire', '_space.json'), 'utf8'),
+      await readFile(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'), 'utf8'),
     )
-    expect(sap.$order).toEqual({ contexts: ['Projects 2'] })
+    expect(sap.$order).toEqual({ contexts: ['Projects (2)'] })
   })
 })
 

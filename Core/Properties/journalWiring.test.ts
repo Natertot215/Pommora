@@ -226,11 +226,11 @@ describe('the create-side consumer', () => {
     })
   })
 
-  it('a REFUSED create never spends the record it did not displace', async () => {
-    // The crash state: the delete's def still stands, so a same-name create is a duplicate.
+  it('a create stepped aside from the journaled name never spends the record it did not displace', async () => {
+    // The crash state: the delete's def still stands, so a same-name create lands as Stage (2).
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
     const r = await createProperty(root, { id: '', name: 'Stage', type: 'select' })
-    expect(r.ok).toBe(false)
+    expect(r.ok).toBe(true)
     expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
   })
 })

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { createDisambiguated, nameError, reservedAssetLeaf } from './names'
+import { createDisambiguated, freeName, nameError, reservedAssetLeaf } from './names'
 import { CROPS_REL } from './nexusPaths'
 import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
@@ -83,13 +83,39 @@ describe('reservedAssetLeaf', () => {
   })
 })
 
+describe('freeName', () => {
+  it('keeps a free name as given', () => {
+    expect(freeName('Ideas', ['Notes'])).toBe('Ideas')
+  })
+
+  it('numbers a taken name from two', () => {
+    expect(freeName('Ideas', ['Ideas'])).toBe('Ideas (2)')
+  })
+
+  it('increments a numbered name rather than appending to it', () => {
+    expect(freeName('Ideas (2)', ['Ideas', 'Ideas (2)'])).toBe('Ideas (3)')
+  })
+
+  it('fills the lowest free number', () => {
+    expect(freeName('Ideas', ['Ideas', 'Ideas (2)', 'Ideas (4)'])).toBe('Ideas (3)')
+  })
+
+  it('counts a case variant as taken', () => {
+    expect(freeName('ideas', ['Ideas'])).toBe('ideas (2)')
+  })
+
+  it('leaves a bare trailing number as part of the name', () => {
+    expect(freeName('Chapter 2', ['Chapter 2'])).toBe('Chapter 2 (2)')
+  })
+})
+
 describe('createDisambiguated', () => {
   it('steps the name aside while the write reports it is taken', async () => {
-    const taken = new Set(['Untitled', 'Untitled 2'])
+    const taken = new Set(['Untitled', 'Untitled (2)'])
     const r = await createDisambiguated('Untitled', async (name) =>
       taken.has(name) ? fail('exists', 'taken') : ok(name),
     )
-    expect(r).toEqual(ok('Untitled 3'))
+    expect(r).toEqual(ok('Untitled (3)'))
   })
 
   it('stops at any error that is not a collision', async () => {

@@ -1,4 +1,5 @@
-import { copyName, DEFAULT_VIEW_ID, type SavedView } from './views'
+import { DEFAULT_VIEW_ID, type SavedView } from './views'
+import { freeName } from '../Paths/names'
 import { reportRefusal } from '../Interface/Notifications/notifications'
 import { host } from '../Platform/dialer'
 
@@ -11,7 +12,7 @@ export const duplicateView = async (
   const res = await host().ask('views:save', containerPath, kind, {
     ...view,
     id: DEFAULT_VIEW_ID,
-    name: copyName(
+    name: freeName(
       view.name,
       siblings.map((v) => v.name),
     ),
