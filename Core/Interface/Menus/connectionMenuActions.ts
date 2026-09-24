@@ -7,7 +7,7 @@ import {
   type ConnEditAction,
   type ConnMenuContext,
 } from '@pommora/core/Actions/connectionMenu'
-import { isValidLink } from '@pommora/core/Connections/links'
+import { isValidLink } from '@pommora/core/Paths/urlPath'
 import { connectionText } from '@pommora/core/Connections/connections'
 import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'

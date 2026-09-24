@@ -1,4 +1,4 @@
-import { isValidLink, normalizeLinkUrl } from '../Connections/links'
+import { isValidLink, normalizeLinkUrl } from '../Paths/urlPath'
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { sessionRoot } from '../Nexus/session'

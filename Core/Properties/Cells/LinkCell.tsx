@@ -5,7 +5,7 @@ import {
   type PropertyDefinition,
 } from '@pommora/core/Properties/properties'
 import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
-import { isHttpLink } from '@pommora/core/Connections/links'
+import { isHttpLink } from '@pommora/core/Paths/urlPath'
 import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'

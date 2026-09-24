@@ -13,7 +13,7 @@ import {
 } from '@pommora/core/Actions/editorMenu'
 import { type Commands, DEFAULT_COMMANDS, toAccelerator } from '@pommora/core/Actions/commands'
 import { HEADING_LEVELS } from '@pommora/core/Actions/gripMenu'
-import { isValidLink } from '@pommora/core/Connections/links'
+import { isValidLink } from '@pommora/core/Paths/urlPath'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
 
 let lastState: FormatState | null = null

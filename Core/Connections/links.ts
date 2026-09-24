@@ -1,9 +1,5 @@
-import { HAS_SCHEME, WEB_ADDRESS } from '../Paths/urlPath'
+import { HAS_SCHEME } from '../Paths/urlPath'
 import { normalizeTitle } from './connections'
-
-export const hasWebScheme = (url: string): boolean => WEB_ADDRESS.test(url)
-
-export const LINK_RESOLVE_TIMEOUT_MS = 6000
 
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
 
@@ -70,35 +66,4 @@ export function targetFragment(rawTarget: string): string {
 export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {
   const named = targetTitle(rawTarget)
   return named !== null && normalizeTitle(named) === normalizedKey
-}
-
-export function normalizeLinkUrl(url: string): string {
-  const u = url.trim()
-  return HAS_SCHEME.test(u) ? u : `https://${u}`
-}
-
-export function linkDomain(url: string): string {
-  try {
-    return new URL(normalizeLinkUrl(url)).hostname.replace(/^www\./i, '') || url.trim()
-  } catch {
-    return url.trim()
-  }
-}
-
-export function isHttpLink(url: string): boolean {
-  return isValidLink(url) && hasWebScheme(normalizeLinkUrl(url))
-}
-
-export function isValidLink(url: string): boolean {
-  const u = url.trim()
-  if (!u || /\s/.test(u)) return false
-  const n = normalizeLinkUrl(u)
-  if (/^mailto:/i.test(n)) return /^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(n)
-  if (!hasWebScheme(n)) return false
-  try {
-    const host = new URL(n).hostname
-    return host.length > 2 && host.includes('.') && !host.startsWith('.') && !host.endsWith('.')
-  } catch {
-    return false
-  }
 }

@@ -1,7 +1,7 @@
 // One owner for the guest-webview story: the attach gate, the shared session, popup routing, zoom.
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
-import { hasWebScheme, isHttpLink } from '@pommora/core/Connections/links'
+import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
 import { push } from '../Bridge/ipc'
@@ -11,7 +11,7 @@ import { isWindows } from '../Platform/hostPath'
 const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
 
 // `isHttpLink` alone normalizes a schemeless string to https, admitting what the renderer refuses.
-const isWebUrl = (url: string): boolean => hasWebScheme(url) && isHttpLink(url)
+const isWebUrl = (url: string): boolean => WEB_ADDRESS.test(url) && isHttpLink(url)
 
 // A page's own subframes draw generated content — PDF previews, sandboxed editors — from these.
 const FRAME_CONTENT = /^(?:blob|data):/i

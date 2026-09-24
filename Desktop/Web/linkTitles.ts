@@ -1,10 +1,6 @@
 import { net } from 'electron'
-import {
-  isHttpLink,
-  LINK_RESOLVE_TIMEOUT_MS,
-  normalizeLinkUrl,
-} from '@pommora/core/Connections/links'
-import { makeTitleScanner } from '@pommora/core/Web/titleScan'
+import { isHttpLink, normalizeLinkUrl } from '@pommora/core/Paths/urlPath'
+import { LINK_RESOLVE_TIMEOUT_MS, makeTitleScanner } from '@pommora/core/Web/titleScan'
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Pommora/1.0'

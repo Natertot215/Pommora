@@ -28,7 +28,7 @@ function optionBranch(row: PropertyMenuRow): Partial<ActionItem<PropertyAction>>
   }
 }
 
-export function propertiesRow(
+function propertiesRow(
   rows: readonly PropertyMenuRow[],
   label = 'Properties',
 ): ActionItem<PropertyAction> {

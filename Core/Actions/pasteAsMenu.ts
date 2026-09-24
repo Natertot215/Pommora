@@ -1,11 +1,6 @@
 import { embeddableTitle, pageEmbedText, pageLinkPattern } from '../Connections/connections'
-import {
-  MD_LINK,
-  encodeLinkTarget,
-  hasWebScheme,
-  isValidLink,
-  targetTitle,
-} from '../Connections/links'
+import { MD_LINK, encodeLinkTarget, targetTitle } from '../Connections/links'
+import { isValidLink, WEB_ADDRESS } from '../Paths/urlPath'
 import { serializeLink } from '../Connections/linkValue'
 import { pageLinkText } from './pageMenu'
 import { linkPaste, type LinkPaste } from '../MarkdownPM/Links/pasteDecision'
@@ -65,7 +60,7 @@ const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
 
 /** `![[…]]` can't carry a `]`, and a tile forms only over an explicit http(s) address. */
 function embeddableTarget(target: NonNullable<PasteAsTarget>): boolean {
-  return target.kind === 'page' ? embeddableTitle(target.title) : hasWebScheme(target.url)
+  return target.kind === 'page' ? embeddableTitle(target.title) : WEB_ADDRESS.test(target.url)
 }
 
 export function pasteAsRows(
