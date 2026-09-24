@@ -12,7 +12,7 @@ import {
   type MatrixGraphReply,
   type MatrixLink,
 } from '@pommora/core/Matrix/matrixGraph'
-import type { Positions } from '@pommora/core/Matrix/matrixLayout'
+import type { LayoutPatch, Positions } from '@pommora/core/Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { host as dialer } from '../Platform/dialer'
@@ -37,7 +37,7 @@ export interface MatrixSlice {
   applyMatrixChanged: (config: MatrixConfig) => void
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
-  saveMatrixLayout: (positions: Positions) => void
+  saveMatrixLayout: (rows: NonNullable<LayoutPatch['positions']>) => void
   saveMatrixFrame: (frame: Frame) => void
   unloadMatrix: () => void
   resetMatrix: () => void
@@ -73,6 +73,8 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   let refetch: ReturnType<typeof setTimeout> | null = null
   // Bumped whenever the store lets its graph go, so an answer asked for before that lands nowhere.
   let generation = 0
+  // Every position row not yet sent; each save hands the writer all of them, so the one that lands carries every move before it.
+  let unsaved: NonNullable<LayoutPatch['positions']> = {}
 
   // A renamed or moved page answers under its new path, so the rows it held under the old one go by id as well as by path.
   const merge = (
@@ -121,6 +123,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   const letGo = (): void => {
     generation += 1
     pendingPaths = new Set()
+    unsaved = {}
     cancelRefetch()
   }
 
@@ -159,12 +162,17 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
         set({ matrixLoad: { kind: 'waiting', tree } })
         return
       }
+      const positions = layout.ok ? layout.value.positions : {}
       set({
         matrixGraph: graph.value,
-        matrixPositions: layout.ok ? layout.value.positions : {},
+        matrixPositions: positions,
         matrixFrame: layout.ok ? layout.value.frame : null,
         matrixLoad: { kind: 'loaded' },
       })
+      // A node the tree has lost is let go once per load, not judged on every settle.
+      const live = recordsByIdOf(tree)
+      const lost = Object.keys(positions).filter((id) => !live.has(id))
+      get().saveMatrixLayout(Object.fromEntries(lost.map((id) => [id, null])))
       if (pendingPaths.size) void flush()
     },
 
@@ -197,16 +205,22 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
     refetchMatrixPaths: (paths) => queue(paths),
 
-    saveMatrixLayout: (positions) => {
-      const { tree, matrixLoad, matrixPositions } = get()
-      if (!tree || matrixLoad.kind !== 'loaded') return
-      const live = recordsByIdOf(tree)
-      const next: Positions = { ...matrixPositions, ...positions }
-      for (const id of Object.keys(next)) if (!live.has(id)) delete next[id]
+    saveMatrixLayout: (rows) => {
+      const ids = Object.keys(rows)
+      if (get().matrixLoad.kind !== 'loaded' || ids.length === 0) return
+      const next = { ...get().matrixPositions }
+      for (const id of ids) {
+        const p = rows[id]
+        if (p) next[id] = p
+        else delete next[id]
+      }
       set({ matrixPositions: next })
-      sessionWriter.schedule(LAYOUT_KEY, () =>
-        dialer().ask('matrixLayout:save', { positions: next }),
-      )
+      Object.assign(unsaved, rows)
+      const positions = unsaved
+      sessionWriter.schedule(LAYOUT_KEY, () => {
+        if (unsaved === positions) unsaved = {}
+        return dialer().ask('matrixLayout:save', { positions })
+      })
     },
 
     // Not written back to `matrixFrame`: only a first build reads it, and every first build follows a load that read it fresh.

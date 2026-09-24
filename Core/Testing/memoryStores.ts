@@ -27,13 +27,11 @@ const keyValue = (): KeyValueStore => {
   const scopes = new Map<string, Map<string, string>>()
   return {
     get: (scope, key) => scopes.get(scope)?.get(key) ?? null,
-    set: (scope, key, value) => {
-      if (value === null) {
-        scopes.get(scope)?.delete(key)
-        return
-      }
+    write: (scope, rows) => {
       const s = scopes.get(scope) ?? new Map<string, string>()
-      s.set(key, value)
+      for (const [key, value] of Object.entries(rows))
+        if (value === null) s.delete(key)
+        else s.set(key, value)
       scopes.set(scope, s)
     },
     entries: (scope) => Object.fromEntries(scopes.get(scope) ?? []),

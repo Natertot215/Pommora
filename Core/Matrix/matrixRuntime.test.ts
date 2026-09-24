@@ -557,6 +557,22 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.frame).toEqual(before)
   })
 
+  it('saves only the nodes a settle moved', () => {
+    seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
+    attach()
+    const grown = makeTree()
+    grown.collections[0].pages.push({
+      kind: 'page',
+      id: 'p3',
+      title: 'Gamma',
+      path: 'Notes/Gamma.md',
+    })
+    useSession.setState({ tree: grown })
+    flush()
+    expect(saveLayout).toHaveBeenCalledTimes(1)
+    expect(Object.keys(saveLayout.mock.calls[0][0])).toEqual(['p3'])
+  })
+
   it('carries a local settle across a rebuild, moving only the fresh nodes', () => {
     seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach()

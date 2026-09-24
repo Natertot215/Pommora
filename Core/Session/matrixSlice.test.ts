@@ -234,19 +234,31 @@ describe('the refetch lane', () => {
 })
 
 describe('the layout half', () => {
-  it('prunes ids the tree has lost and refuses with no tree', async () => {
-    await seatLoaded()
-    useSession.getState().saveMatrixLayout({ p2: [3, 4], ghost: [5, 6] })
-    expect(useSession.getState().matrixPositions).toEqual({ p1: [1, 2], p2: [3, 4] })
-    await vi.advanceTimersByTimeAsync(400)
-    expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
-      positions: { p1: [1, 2], p2: [3, 4] },
+  it('lets go of the nodes the tree has lost once, as it loads', async () => {
+    channels['matrixLayout:load'].mockResolvedValue({
+      ok: true,
+      value: { positions: { p1: [1, 2], ghost: [5, 6] }, frame: null },
     })
-    channels['matrixLayout:save'].mockClear()
-    useSession.setState({ tree: null })
-    useSession.getState().saveMatrixLayout({ p1: [9, 9] })
+    await seatLoaded()
+    expect(useSession.getState().matrixPositions).toEqual({ p1: [1, 2] })
     await vi.advanceTimersByTimeAsync(400)
-    expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
+    expect(channels['matrixLayout:save']).toHaveBeenCalledExactlyOnceWith({
+      positions: { ghost: null },
+    })
+  })
+
+  it('sends only the nodes that moved, every move of a burst in one save', async () => {
+    await seatLoaded()
+    useSession.getState().saveMatrixLayout({ p2: [3, 4] })
+    useSession.getState().saveMatrixLayout({ p1: [7, 8] })
+    expect(useSession.getState().matrixPositions).toEqual({ p1: [7, 8], p2: [3, 4] })
+    await vi.advanceTimersByTimeAsync(400)
+    expect(channels['matrixLayout:save']).toHaveBeenCalledExactlyOnceWith({
+      positions: { p2: [3, 4], p1: [7, 8] },
+    })
+    useSession.getState().saveMatrixLayout({ p2: [9, 9] })
+    await vi.advanceTimersByTimeAsync(400)
+    expect(channels['matrixLayout:save']).toHaveBeenLastCalledWith({ positions: { p2: [9, 9] } })
   })
 
   it('saves the frame alone once loaded, the last of a burst', async () => {

@@ -18,16 +18,16 @@ export function describeKeyValueStore(name: string, make: () => KeyValueStore): 
     })
 
     it('round-trips a keyed value and keeps scopes apart', () => {
-      store.set('folds', 'p1', 'a')
-      store.set('tabs', 'p1', 'b')
+      store.write('folds', { p1: 'a' })
+      store.write('tabs', { p1: 'b' })
       expect(store.get('folds', 'p1')).toBe('a')
       expect(store.entries('folds')).toEqual({ p1: 'a' })
       expect(store.entries('tabs')).toEqual({ p1: 'b' })
     })
 
     it('a null clears the key rather than storing it', () => {
-      store.set('folds', 'p1', 'a')
-      store.set('folds', 'p1', null)
+      store.write('folds', { p1: 'a' })
+      store.write('folds', { p1: null })
       expect(store.get('folds', 'p1')).toBeNull()
       expect(store.entries('folds')).toEqual({})
     })
@@ -37,9 +37,15 @@ export function describeKeyValueStore(name: string, make: () => KeyValueStore): 
       expect(store.entries('empty')).toEqual({})
     })
 
+    it('writes a batch of rows, clearing the nulls, in one call', () => {
+      store.write('folds', { p1: 'a', p2: 'b' })
+      store.write('folds', { p1: null, p3: 'c' })
+      expect(store.entries('folds')).toEqual({ p2: 'b', p3: 'c' })
+    })
+
     it('a rewrite replaces the value in place', () => {
-      store.set('folds', 'p1', 'a')
-      store.set('folds', 'p1', 'b')
+      store.write('folds', { p1: 'a' })
+      store.write('folds', { p1: 'b' })
       expect(store.get('folds', 'p1')).toBe('b')
     })
   })

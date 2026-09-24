@@ -9,6 +9,12 @@ export interface MatrixLayout {
   frame: Frame | null
 }
 
+// Positions are one row per node, so a save sends only the nodes that moved; a null clears a node the tree has lost.
+export interface LayoutPatch {
+  positions?: Record<string, [number, number] | null>
+  frame?: Frame
+}
+
 // The layout is machine-local and regenerative, so a row that no longer reads is dropped on its own rather than taking every other node's place with it.
 export function readPositions(v: unknown): Positions {
   if (!isPlainObject(v)) return {}
@@ -18,10 +24,12 @@ export function readPositions(v: unknown): Positions {
   return out
 }
 
-export const isPositions = (v: unknown): v is Positions =>
+const isPositionRows = (v: unknown): v is LayoutPatch['positions'] =>
   isPlainObject(v) &&
   Object.values(v).every(
-    (p) => Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1]),
+    (p) =>
+      p === null ||
+      (Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1])),
   )
 
 export const isFrame = (v: unknown): v is Frame =>
@@ -33,8 +41,8 @@ export const isFrame = (v: unknown): v is Frame =>
   v.w > 0 &&
   v.h > 0
 
-export const isLayoutPatch = (v: unknown): v is Partial<MatrixLayout> =>
+export const isLayoutPatch = (v: unknown): v is LayoutPatch =>
   isPlainObject(v) &&
-  (v.positions === undefined || isPositions(v.positions)) &&
+  (v.positions === undefined || isPositionRows(v.positions)) &&
   (v.frame === undefined || isFrame(v.frame)) &&
   (v.positions !== undefined || v.frame !== undefined)
