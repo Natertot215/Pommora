@@ -2,6 +2,7 @@ import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import {
+  attachBody,
   cachePageDetail,
   clearCache,
   dropCacheDetail,
@@ -10,7 +11,6 @@ import {
   readBodyBase,
   readPageDetail,
   setBodyBase,
-  subscribeLanding,
   writeThroughBody,
 } from './pageDetailCache'
 import { machine } from '../Platform/machine'
@@ -104,7 +104,7 @@ describe('the body base', () => {
   })
 
   it('keeps the body base across a cache refresh and the cap', () => {
-    const off = subscribeLanding('x/a.md', () => undefined)
+    const off = attachBody('x/a.md', { seq: 0, basis: '', follow: () => true }, 'hello')
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
     const base = readBodyBase('x/a.md')
     writeThroughBody('x/a.md', 'typed')

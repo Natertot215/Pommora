@@ -12,13 +12,9 @@ import { PageView } from './PageView'
 import { stubDialer } from '../vitest.setup'
 import { undo } from '@codemirror/commands'
 import { machine } from '../Platform/machine'
-import {
-  cachePageDetail,
-  clearCache,
-  dropPageDetail,
-  notifyLanding,
-} from '../Session/pageDetailCache'
+import { cachePageDetail, clearCache, dropPageDetail } from '../Session/pageDetailCache'
 import { flushPageSave, setStaleSaveSink } from '../Session/saveScheduler'
+import { absorbLanding } from './bodyMount'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -137,7 +133,7 @@ describe('a landing under the open page', () => {
     })
     const head = view.state.selection.main.head
     await act(async () => {
-      notifyLanding(PATH)
+      await absorbLanding(PATH)
     })
     expect(view.state.doc.toString()).toBe('alpha ONE\nbeta\ngamma\ndelta')
     expect(view.state.selection.main.head).toBe(head)
@@ -157,7 +153,7 @@ describe('a landing under the open page', () => {
     const local = view.state.doc.toString()
     dropPageDetail(PATH)
     await act(async () => {
-      notifyLanding(PATH)
+      await absorbLanding(PATH)
     })
     expect(captured).toHaveBeenCalledWith(PATH, local)
     expect(view.state.doc.toString()).toBe(onDisk)
@@ -172,7 +168,7 @@ describe('a landing under the open page', () => {
     const local = view.state.doc.toString()
     updated.mockClear()
     await act(async () => {
-      notifyLanding(PATH)
+      await absorbLanding(PATH)
     })
     expect(view.state.doc.toString()).toBe(local)
     await act(async () => {
@@ -191,14 +187,14 @@ describe('a landing under the open page', () => {
     const view = viewOf()
     onDisk = 'x\n![[Alpha Two]]\ny'
     await act(async () => {
-      notifyLanding(PATH)
+      await absorbLanding(PATH)
     })
     expect(view.state.doc.toString()).toBe(onDisk)
   })
 
   it('routes a stale save through the same merge', async () => {
     const view = await mount()
-    setStaleSaveSink(notifyLanding)
+    setStaleSaveSink((path) => void absorbLanding(path))
     onDisk = `${BASE}\ndelta`
     updateReply = { ok: true, value: { stale: true } }
     await act(async () => {

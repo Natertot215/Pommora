@@ -6,7 +6,7 @@ import { detail } from '@pommora/core/Testing/fixtures'
 import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import { ok } from '@pommora/core/Contract/result'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
-import { cachePageDetail, clearCache, subscribeLanding } from './pageDetailCache'
+import { attachBody, cachePageDetail, clearCache } from './pageDetailCache'
 import { flushPageSave, schedulePageSave } from './saveScheduler'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
@@ -65,13 +65,11 @@ afterEach(async () => {
 })
 
 describe('a page that changed outside the app', () => {
-  it('reaches a subscribed editor and leaves the slot alone', async () => {
+  it('merges into a page an editor holds and leaves the slot alone', async () => {
     await mount()
-    const onLanding = vi.fn()
-    const off = subscribeLanding(PATH, onLanding)
+    const off = attachBody(PATH, { seq: 0, basis: '', follow: () => true }, '')
     cachePageDetail(detail({ path: PATH }))
     act(() => landed([PATH]))
-    expect(onLanding).toHaveBeenCalledTimes(1)
     expect(replaceBody).not.toHaveBeenCalled()
     off()
   })

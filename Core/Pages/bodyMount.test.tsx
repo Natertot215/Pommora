@@ -20,7 +20,7 @@ import {
 } from '../Session/pageDetailCache'
 import { flushPageSave } from '../Session/saveScheduler'
 import { stubDialer } from '../vitest.setup'
-import { useBodyMount } from './bodyMount'
+import { absorbLanding, useBodyMount } from './bodyMount'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -94,9 +94,9 @@ beforeEach(() => {
     'sync:captureLocal': vi.fn(async () => ({ ok: true, value: null })),
     'index:headings': async () => ({ ok: true, value: {} }),
     'connections:headingRenamed': async () => ({ ok: true, value: { touched: [] } }),
-    'page:open': async () => ({
+    'page:open': async (path: string) => ({
       ok: true,
-      value: detail({ path: 'Notes/Alpha.md', body: 'inner' }),
+      value: detail({ path, body: path === PATH ? disk : 'inner' }),
     }),
   })
   container = document.createElement('div')
@@ -194,5 +194,16 @@ describe('one head per page path', () => {
     await flush()
     expect(disk).toBe('FRESH!')
     await act(async () => embed.unmount())
+  })
+
+  it('an outside edit merges once into the typing every mount holds', async () => {
+    const { a, b } = await mountTwo('B')
+    type(b, 0, 'y')
+    disk = 'Bz'
+    await act(() => absorbLanding(PATH))
+    expect(a.state.doc.toString()).toBe('yBz')
+    expect(b.state.doc.toString()).toBe('yBz')
+    await flush()
+    expect(disk).toBe('yBz')
   })
 })
