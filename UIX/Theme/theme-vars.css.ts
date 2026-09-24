@@ -3,7 +3,7 @@ import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
 import { CONN_LINK_MASK, FOLD_CHEVRON_MASK, GRIP_GLYPH } from '../Symbols/masks'
 import { duration, easing } from '../Animations/motion'
 import { STATE_OPACITY, vars as colorVars } from './color.css'
-import { DEFAULT_ACCENT, TINT_STEPS, mixAt, tintAt } from './colors'
+import { DEFAULT_ACCENT, SHADOW_BASE, SHADOW_STRONG, TINT_STEPS, mixAt, tintAt } from './colors'
 import { stack } from './stack'
 import { font } from './typography.css'
 
@@ -52,6 +52,8 @@ const c = colorVars.color
 
 globalStyle(':root', {
   vars: {
+    '--shadow-base': SHADOW_BASE,
+    '--shadow-strong': SHADOW_STRONG,
     '--system-black': c.system.black,
     '--bg-window': c.background.window,
     '--surface-primary': c.surface.primary,

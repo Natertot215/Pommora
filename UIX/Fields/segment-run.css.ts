@@ -27,7 +27,7 @@ export const segment = style({
   whiteSpace: 'nowrap',
 })
 
-/** The gap beside the glyph is the label's own — a FileLabel already spaces it. */
+/** The gap beside the glyph is the label's own — a PlainLabel already spaces it. */
 export const segmentIcon = style({ flexShrink: 0 })
 
 /** Measured against the FIELD rather than given a fixed height, so it stays proportional if the field's type or padding moves. */

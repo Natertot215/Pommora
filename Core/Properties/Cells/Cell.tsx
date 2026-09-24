@@ -7,9 +7,8 @@ import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
-import { SEGMENT_INDEX_ATTR } from '@pommora/uix/Fields/SegmentRun'
 import { resolveFileValue } from '../../Assets/assetUrl'
-import { fileValueWithout } from '../Pickers/filePick'
+import { FILE_CHIP_INDEX_ATTR, fileValueWithout } from '../Pickers/filePick'
 import { declaredType, fileName, resolveFieldValue } from '../value'
 import { formatDate, formatNumber, numberDivisor } from '../formatValue'
 import { OptionChip } from './OptionChip'
@@ -166,7 +165,7 @@ export function Cell({
             <span
               // Positional, never the value: two identical wikilinks would collide as keys and send the hover-× to the wrong one.
               key={String(i)}
-              {...{ [SEGMENT_INDEX_ATTR]: i }}
+              {...{ [FILE_CHIP_INDEX_ATTR]: i }}
             >
               <FileChip
                 name={fileName(f)}

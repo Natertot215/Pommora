@@ -1,4 +1,6 @@
 import type { CSSProperties } from 'react'
+import { Icon } from '../Symbols'
+import { svgFrame } from '../Symbols/svgFrame'
 import { solidColorCss } from '../Theme/ramp'
 import { cx } from '../Utilities/cx'
 import './checkbox.css'
@@ -27,10 +29,8 @@ export function Checkbox({
 }): React.JSX.Element {
   const compact = size === 'compact'
   const cls = cx(
-    'checkbox',
-    compact && 'checkbox-compact',
+    checkboxClass(state, compact),
     filled && 'checkbox-filled',
-    state && 'checkbox-checked',
     readOnly && 'checkbox-static',
     className,
   )
@@ -64,19 +64,13 @@ export function Checkbox({
   )
 }
 
-// Not from the icon registry: a stroke the icons don't offer, and the editor's widget emits this markup as a raw string.
+export const checkboxClass = (checked: boolean | undefined, compact = false): string =>
+  cx('checkbox', compact && 'checkbox-compact', checked && 'checkbox-checked')
+
 export const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
-  <svg
-    viewBox="0 0 24 24"
-    width={size}
-    height={size}
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
+  <Icon name="check" size={size} strokeWidth={3} aria-hidden />
 )
+
+/** The same mark as markup, for the editor's widgets that build DOM without React. */
+export const checkMarkSvg = (size: number): string =>
+  svgFrame('<path d="M20 6 9 17l-5-5"/>', { strokeWidth: 3, size })

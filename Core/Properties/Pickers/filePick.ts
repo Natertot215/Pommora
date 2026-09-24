@@ -8,13 +8,15 @@ import { relDirname } from '@pommora/core/Paths/posix'
 import { assetSubRoot } from '@pommora/core/Paths/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
-import { SEGMENT_INDEX_ATTR } from '@pommora/uix/Fields/SegmentRun'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 
+/** Written by the file cell on each chip and read back by the file effect. */
+export const FILE_CHIP_INDEX_ATTR = 'data-file-chip-index'
+
 export function fileChipIndex(target: EventTarget | null): number | null {
-  const el = target instanceof Element ? target.closest(`[${SEGMENT_INDEX_ATTR}]`) : null
-  const i = el ? Number(el.getAttribute(SEGMENT_INDEX_ATTR)) : Number.NaN
+  const el = target instanceof Element ? target.closest(`[${FILE_CHIP_INDEX_ATTR}]`) : null
+  const i = el ? Number(el.getAttribute(FILE_CHIP_INDEX_ATTR)) : Number.NaN
   return Number.isInteger(i) ? i : null
 }
 

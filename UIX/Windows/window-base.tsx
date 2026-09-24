@@ -10,7 +10,6 @@ import {
   onScreen,
   useResizeFrame,
   type Rect,
-  type ResizeGrip,
   type Size,
 } from '../Interactions/ResizeFrame'
 import { useEscape } from '../Interactions/dismissalStack'
@@ -61,8 +60,8 @@ interface WindowBaseProps {
   bounds?: WindowBounds
   /** Absent opens at `bounds.def`. Read once, at open. */
   initialSize?: Size
-  /** Carries the grip so the caller can tell a resize from a move — every drop reports, a move included. */
-  onSizeChange?: (size: Size, grip: ResizeGrip) => void
+  /** Only a resize reports: a move's size may be one clamped onto a smaller viewport at the open. */
+  onSizeChange?: (size: Size) => void
   /** Read once, at open. Absent centres on the viewport with its upper bias. */
   region?: () => Rect | null
   dragSurfaces?: string
@@ -123,7 +122,7 @@ export function WindowBase({
     min: bounds.min,
     onChange: (next, phase, grip) => {
       setGeo(next)
-      if (phase === 'drop') onSizeChange?.({ w: next.w, h: next.h }, grip)
+      if (phase === 'drop' && grip !== 'move') onSizeChange?.({ w: next.w, h: next.h })
     },
   })
   // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.

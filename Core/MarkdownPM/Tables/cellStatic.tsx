@@ -35,7 +35,7 @@ import { dwellTarget, followTarget } from '../Links/linkClicks'
 import { CITE_GLYPH } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
-import { CheckMark } from '@pommora/uix/Controls/Checkbox'
+import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
@@ -177,9 +177,7 @@ function MarkerGlyph({
   if (glyph === 'checkbox')
     return (
       <span className="md-list-checkbox-seat">
-        <span className={cx('checkbox', lm.checked && 'checkbox-checked')}>
-          {lm.checked && <CheckMark size={12} />}
-        </span>
+        <span className={checkboxClass(lm.checked)}>{lm.checked && <CheckMark size={12} />}</span>
       </span>
     )
   if (glyph === 'bullet') return <span className="md-list-bullet">•</span>

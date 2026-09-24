@@ -1,4 +1,4 @@
-import { forwardRef, Fragment, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
+import { Fragment, type ReactNode, type MouseEvent, type CSSProperties, type Ref } from 'react'
 import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
 import { Button } from '../Buttons/Button'
 import { Icon, type IconName, LockGlyph } from '../Symbols'
@@ -68,31 +68,30 @@ type MenuItemProps = {
   onMouseLeave?: (e: React.MouseEvent) => void
   className?: string
   children: ReactNode
+  ref?: Ref<HTMLDivElement>
 }
 
-export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuItem(
-  {
-    leading,
-    subLabel,
-    value,
-    detail,
-    trailing,
-    overlay,
-    selected = false,
-    disabled = false,
-    inert = false,
-    indent = 0,
-    onClick,
-    onContextMenu,
-    onPointerDown,
-    onMouseDown,
-    onMouseEnter,
-    onMouseLeave,
-    className,
-    children,
-  },
+export function MenuItem({
+  leading,
+  subLabel,
+  value,
+  detail,
+  trailing,
+  overlay,
+  selected = false,
+  disabled = false,
+  inert = false,
+  indent = 0,
+  onClick,
+  onContextMenu,
+  onPointerDown,
+  onMouseDown,
+  onMouseEnter,
+  onMouseLeave,
+  className,
+  children,
   ref,
-): React.JSX.Element {
+}: MenuItemProps): React.JSX.Element {
   const rowStyle = {
     ...(indent ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT } : undefined),
     ...(trailing != null ? { '--row-pad-trail': '0px' } : undefined),
@@ -135,7 +134,7 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
       {overlay}
     </div>
   )
-})
+}
 
 export function MenuSeparator({
   flush = false,
@@ -214,23 +213,29 @@ export function MenuFooting({
   )
 }
 
-export const AccessoryButton = forwardRef<
-  HTMLButtonElement,
-  {
-    icon: IconName
-    size: IconSize
-    ariaLabel: string
-    box?: number
-    onClick: () => void
-    className?: string
-    create?: boolean
-    disabled?: boolean
-    pressed?: boolean
-  }
->(function AccessoryButton(
-  { icon, size, ariaLabel, box, onClick, className, create = false, disabled = false, pressed },
+export function AccessoryButton({
+  icon,
+  size,
+  ariaLabel,
+  box,
+  onClick,
+  className,
+  create = false,
+  disabled = false,
+  pressed,
   ref,
-): React.JSX.Element {
+}: {
+  icon: IconName
+  size: IconSize
+  ariaLabel: string
+  box?: number
+  onClick: () => void
+  className?: string
+  create?: boolean
+  disabled?: boolean
+  pressed?: boolean
+  ref?: Ref<HTMLButtonElement>
+}): React.JSX.Element {
   return (
     <Button
       ref={ref}
@@ -250,22 +255,25 @@ export const AccessoryButton = forwardRef<
       }}
     />
   )
-})
+}
 
-export const FooterIconButton = forwardRef<
-  HTMLButtonElement,
-  {
-    icon: string | React.JSX.Element
-    ariaLabel: string
-    onClick?: () => void
-    disabled?: boolean
-    pressed?: boolean
-    quiet?: boolean
-  }
->(function FooterIconButton(
-  { icon, ariaLabel, onClick, disabled, pressed, quiet },
+export function FooterIconButton({
+  icon,
+  ariaLabel,
+  onClick,
+  disabled,
+  pressed,
+  quiet,
   ref,
-): React.JSX.Element {
+}: {
+  icon: string | React.JSX.Element
+  ariaLabel: string
+  onClick?: () => void
+  disabled?: boolean
+  pressed?: boolean
+  quiet?: boolean
+  ref?: Ref<HTMLButtonElement>
+}): React.JSX.Element {
   return (
     <Button
       ref={ref}
@@ -279,7 +287,7 @@ export const FooterIconButton = forwardRef<
       {typeof icon === 'string' ? <Icon name={icon} size="body" /> : icon}
     </Button>
   )
-})
+}
 
 export function FooterLockButton({
   ariaLabel,

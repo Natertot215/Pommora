@@ -26,7 +26,8 @@ export function WindowActions({
           icon="panel-right"
           iconSize="body"
           title="Side Pane"
-          aria-pressed={sidePaneOpen}
+          pressed={sidePaneOpen}
+          showSelection={false}
           onClick={onToggleSidePane}
         />
       )}

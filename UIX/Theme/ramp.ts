@@ -183,11 +183,12 @@ export function applySystemAccent(systemColor: string | null): void {
 
 /** For contexts without Electron's native accent, such as the showcase. */
 export function readCssAccentColor(): string | null {
-  if (typeof document === 'undefined') return null
+  if (typeof document === 'undefined' || !globalThis.CSS?.supports('color', 'AccentColor'))
+    return null
   const probe = document.createElement('span')
   probe.style.color = 'AccentColor'
   document.body.appendChild(probe)
   const rgb = getComputedStyle(probe).color
   probe.remove()
-  return rgb || null
+  return rgb
 }

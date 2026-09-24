@@ -45,7 +45,7 @@ const TABLE_SWITCHES: SwitchEntry[] = [
     invert: true,
     defaultOn: true,
   },
-  { icon: 'table', label: 'Hide Borders', key: 'hide_borders' },
+  { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
   { icon: 'file-text', label: 'Page Icons', key: 'hide_page_icons', invert: true },
 ]
 

@@ -1,14 +1,5 @@
-import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
-import {
-  GREY_DEFAULT,
-  SHADOW_BASE,
-  SHADOW_STRONG,
-  SPECTRUM,
-  SURFACE,
-  SYSTEM,
-  WINDOW_BG,
-  tintAt,
-} from './colors'
+import { createGlobalTheme } from '@vanilla-extract/css'
+import { GREY_DEFAULT, SPECTRUM, SURFACE, SYSTEM, WINDOW_BG, tintAt } from './colors'
 
 const primitive = createGlobalTheme(':root', { color: { system: SYSTEM } })
 const { grey, white, black } = primitive.color.system
@@ -49,14 +40,8 @@ const derived = createGlobalTheme(':root', {
   },
 })
 
-globalStyle(':root', {
-  vars: {
-    '--shadow-base': SHADOW_BASE,
-    '--shadow-strong': SHADOW_STRONG,
-  },
-})
-export const shadowStandardVar = 'var(--shadow-base)'
-export const shadowLiftVar = 'var(--shadow-strong)'
+export const shadowBaseVar = 'var(--shadow-base)'
+export const shadowStrongVar = 'var(--shadow-strong)'
 
 /** Opacity dims the element itself takes, unlike the state washes painted behind it. */
 export const STATE_OPACITY = { ghost: '0.65', inactive: '0.50' } as const

@@ -11,16 +11,26 @@ export function ToolbarTrio({
   if (flat)
     return (
       <div className="toolbar-trio toolbar-trio--flat">
-        <Segmented radius="var(--trio-radius)" segments={segments} trailingDivider />
+        <Segmented
+          radius="var(--trio-radius)"
+          segments={segments}
+          showSelection={false}
+          trailingDivider
+        />
       </div>
     )
   return (
     <div className="toolbar-trio">
       <div className="toolbar-trio-glass" aria-hidden inert>
-        <Segmented glass radius="var(--trio-radius)" segments={segments} />
+        <Segmented glass radius="var(--trio-radius)" segments={segments} showSelection={false} />
       </div>
       <div className="toolbar-trio-cover">
-        <Segmented radius="var(--trio-radius)" segments={segments} trailingDivider />
+        <Segmented
+          radius="var(--trio-radius)"
+          segments={segments}
+          showSelection={false}
+          trailingDivider
+        />
       </div>
     </div>
   )
