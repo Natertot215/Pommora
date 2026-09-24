@@ -96,6 +96,10 @@ function buildEditorHost(
       list: worn,
       remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
       forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
+      subscribe: (cb) =>
+        useSession.subscribe((s, prev) => {
+          if (s.tree?.pageMetadata !== prev.tree?.pageMetadata) cb()
+        }),
     },
     linkTitles: {
       get: (url) => state().linkTitles[url] ?? null,
@@ -171,7 +175,6 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
   const headingLinkStyle = useSession((s) => s.personalization.headingLinkStyle)
   const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
   const commands = useSession((s) => s.commands)
-  const pageMetadata = useSession((s) => s.tree?.pageMetadata)
   return useMemo(
     () => buildEditorHost({ pageId, inert }, connRef),
     [
@@ -183,7 +186,6 @@ export function useEditorHost({ pageId, connections, inert }: EditorHostOptions)
       headingLinkStyle,
       inPageHeadingResolution,
       commands,
-      pageMetadata,
     ],
   )
 }

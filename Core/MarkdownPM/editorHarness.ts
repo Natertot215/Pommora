@@ -35,6 +35,7 @@ interface HarnessState {
   bodies: Record<string, string>
   linkTitles: Record<string, string>
   titleWatchers: Set<() => void>
+  aliasWatchers: Set<() => void>
   citationsShown: boolean
   host: EditorHost
 }
@@ -57,6 +58,7 @@ function harnessHost(
     bodies: { ...spec.bodies },
     linkTitles: { ...spec.linkTitles },
     titleWatchers: new Set<() => void>(),
+    aliasWatchers: new Set<() => void>(),
     citationsShown: false,
   } as HarnessState
   state.host = {
@@ -70,6 +72,10 @@ function harnessHost(
       forget: (id, alias) => {
         state.aliases[id] = (state.aliases[id] ?? []).filter((a) => a !== alias)
         bump()
+      },
+      subscribe: (cb) => {
+        state.aliasWatchers.add(cb)
+        return () => state.aliasWatchers.delete(cb)
       },
     },
     linkTitles: {
