@@ -21,7 +21,7 @@ export const MenuDoorContext = createContext<MenuDoor | null>(null)
 const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
-export const factorChoice = (f: number): PickerOption<string> => ({
+const factorChoice = (f: number): PickerOption<string> => ({
   value: String(f),
   label: `${f.toFixed(2)}x`,
 })

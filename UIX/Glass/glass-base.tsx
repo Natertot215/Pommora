@@ -6,7 +6,6 @@ import { clamp } from '../Utilities/clamp'
 interface FrostParams {
   blur: number
   brightness: number
-  saturate: number
   borderAlpha: number
   topSpecular: number
   innerRing: number
@@ -25,7 +24,6 @@ const SOLID_FILL = 0.9
 export const SURFACE_FROST: FrostParams = {
   blur: 6,
   brightness: 90,
-  saturate: 100,
   borderAlpha: 0.12,
   topSpecular: 0.35,
   innerRing: 0.08,
@@ -39,7 +37,6 @@ export const WINDOW_FROST: FrostParams = { ...SURFACE_FROST, fill: SOLID_FILL }
 export const GHOST_FROST: FrostParams = {
   blur: 6,
   brightness: 100,
-  saturate: 100,
   borderAlpha: 0,
   topSpecular: 0,
   innerRing: 0,
@@ -70,7 +67,7 @@ export const frostRim = (p: FrostParams): string =>
 
 /** `rim: false` leaves the inset edges to a layer drawn above the content, as GlassWindow's is. */
 export function frostStyle(p: FrostParams, rim = true): CSSProperties {
-  const filter = `blur(${p.blur}px) brightness(${p.brightness}%)${p.saturate !== 100 ? ` saturate(${p.saturate}%)` : ''}`
+  const filter = `blur(${p.blur}px) brightness(${p.brightness}%)`
   const edges = [rim && frostRim(p), p.shadow ?? shadowStandardVar].filter(Boolean)
   return {
     background:

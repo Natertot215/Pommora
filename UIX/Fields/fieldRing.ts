@@ -6,7 +6,7 @@ import { tintAt } from '../Theme/colors'
 export const ROW_RING = 2
 
 /** The channel's one spelling. */
-export const FIELD_RING_VAR = 'var(--field-ring, transparent)'
+const FIELD_RING_VAR = 'var(--field-ring, transparent)'
 
 /** Compose this rather than restating the shadow, so channel and geometry can't drift. */
 export const fieldRing = (width = 2): string => `inset 0 0 0 ${width}px ${FIELD_RING_VAR}`

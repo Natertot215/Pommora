@@ -27,10 +27,10 @@ export function EyeToggle({
       }}
     >
       <span className={s.restGlyph}>
-        <Icon name={hidden ? 'eye-off' : 'eye'} size={s.EYE_ICON} />
+        <Icon name={hidden ? 'eye-off' : 'eye'} size="body" />
       </span>
       <span className={s.hoverGlyph}>
-        <Icon name={hidden ? 'eye' : 'eye-off'} size={s.EYE_ICON} />
+        <Icon name={hidden ? 'eye' : 'eye-off'} size="body" />
       </span>
     </Button>
   )

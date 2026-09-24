@@ -61,7 +61,6 @@ globalStyle(':root', {
     '--label-secondary': c.label.secondary,
     '--label-tertiary': c.label.tertiary,
     '--label-control': c.label.control,
-    '--fill-secondary': c.fill.secondary,
     '--fill-tertiary': c.fill.tertiary,
     '--fill-quaternary': c.fill.quaternary,
     '--fill-quinary': c.fill.quinary,

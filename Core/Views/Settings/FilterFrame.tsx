@@ -277,14 +277,15 @@ function LocationField({
         onDismiss={() => setOpen(false)}
         triggerRef={ref}
         origin="left"
-        maxHeight={PICKER_MAX_HEIGHT}
         contentClassName={treePane}
       >
-        {!open
-          ? null
-          : nodes.length === 0
-            ? emptyPicker('No Sets in this collection.')
-            : nodes.map(renderNode)}
+        <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+          {!open
+            ? null
+            : nodes.length === 0
+              ? emptyPicker('No Sets in this collection.')
+              : nodes.map(renderNode)}
+        </MenuScrollFrame>
       </PickerMenu>
     </>
   )
@@ -633,7 +634,7 @@ export function FilterFrame({
                   <PickerRow
                     key={o.label}
                     selected={o === current}
-                    align="start"
+                    start
                     {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
                     onClick={() => {
                       close()

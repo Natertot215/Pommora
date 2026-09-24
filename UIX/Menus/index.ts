@@ -23,13 +23,6 @@ export {
   type Trailing,
 } from './menu-index'
 export { DisclosureRow, useDisclosureSet } from './menu-disclosure'
-export {
-  MENU_MAX_HEIGHT,
-  heading,
-  headingCaps,
-  itemEmphasized,
-  menuCompact,
-  titleInput,
-} from './menu-base.css'
+export { heading, itemEmphasized, titleInput } from './menu-base.css'
 export { MenuSurface } from './menu-surface'
 export { MenuDropdown } from './menu-base'

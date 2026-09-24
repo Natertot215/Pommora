@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { GHOST_DWELL_MS } from './ghostCreate'
 
 /** Handlers are identity-stable for the hook's lifetime. */
-export interface HoverDwell {
+interface HoverDwell {
   on: boolean
   hover: (inside: boolean) => void
   /** Turns on at once, as though the pointer had dwelt. */
