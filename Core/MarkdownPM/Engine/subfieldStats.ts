@@ -3,6 +3,7 @@ import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { chunksOver, scanDoc, type DocScan } from './docScan'
 import { holdsTokens, type Token, tokenize } from './tokens'
 import { perText } from './perText'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import {
   calloutHeadPrefixLen,
   headingParts,
@@ -155,9 +156,7 @@ export function rangeStats(scan: DocScan, from: number, to: number): PageStats {
     const ls = lineStarts[i]
     const start = ls + Math.max(proseStart(lines[i]), from - ls)
     while (h < hidden.length && hidden[h][1] <= start) h++
-    rows.push(
-      drawnSlice(scan.text, start, Math.max(start, Math.min(to, ls + lines[i].length)), hidden, h),
-    )
+    rows.push(drawnSlice(scan.text, start, clamp(ls + lines[i].length, start, to), hidden, h))
   }
   const prose = rows.join('\n')
 

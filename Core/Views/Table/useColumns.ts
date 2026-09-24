@@ -12,7 +12,8 @@ import { reorder } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
-import { readZoom } from '@pommora/uix/Utilities/zoom'
+import { clamp } from '@pommora/uix/Utilities/clamp'
+import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { popMenu } from '../../Actions/menuActions'
 import { numberDivisor } from '../../Properties/formatValue'
 import { declaredType } from '../../Properties/value'
@@ -93,7 +94,7 @@ export function clampWidth(
   iconsShown = false,
 ): number {
   const { max } = widthFor(columnId, schema, contextIds)
-  return Math.max(minWidthFor(columnId, schema, look, contextIds, iconsShown), Math.min(max, width))
+  return clamp(width, minWidthFor(columnId, schema, look, contextIds, iconsShown), max)
 }
 
 // ── Alignment ───────────────────────────────────────────────────────────────
@@ -264,7 +265,8 @@ export function useColumns(host: ViewHostApi) {
       const pads = Number.parseFloat(cs.paddingLeft) + Number.parseFloat(cs.paddingRight)
       const gridEl = el.querySelector('.table-grid')
       setOverflowing(
-        reflowRef.current * (gridEl ? readZoom(gridEl) : 1) > el.clientWidth - pads + 1,
+        reflowRef.current * (gridEl ? currentZoom(gridEl) / currentZoom(el) : 1) >
+          el.clientWidth - pads + 1,
       )
     }
     check()
@@ -422,8 +424,7 @@ export function useColumns(host: ViewHostApi) {
       el: header,
       event: e,
       onActivate: (ev) => {
-        // Read computed so a scaled tile's drag maps 1:1 — not the --zoom token alone, and never back-solved from rendered width ÷ track width (that bakes in layout slack).
-        zoom = readZoom(grid)
+        zoom = currentZoom(grid)
         const hr = header.getBoundingClientRect()
         startCenter = hr.left + hr.width / 2
         startX = ev.clientX

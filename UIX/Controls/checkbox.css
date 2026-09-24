@@ -11,7 +11,8 @@
   border-style: solid;
   border-color: var(--border-base);
   background: transparent;
-  color: var(--checkbox-mark);
+  --checkbox-fill: color-mix(in srgb, var(--checkbox-base) var(--tint-primary), transparent);
+  color: color-mix(in srgb, var(--checkbox-base) var(--tint-quaternary), var(--label-primary));
   cursor: pointer;
 }
 .checkbox svg {
@@ -27,7 +28,7 @@
 }
 .checkbox-checked {
   background: var(--checkbox-fill);
-  border-color: var(--checkbox-border);
+  border-color: var(--checkbox-outline);
 }
 
 /* The static glyph leaves hover to its row; a checked box keeps its fill rather than washing out. */

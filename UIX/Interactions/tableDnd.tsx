@@ -77,7 +77,6 @@ export function TableRowDnd({
     resolve: (id, point, s) => {
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
-      if (escort?.via.loose()) return null
       const near = nearestByTop(s.rows, point.y)
       const group = near.group
       const crossing = group !== activeGroup

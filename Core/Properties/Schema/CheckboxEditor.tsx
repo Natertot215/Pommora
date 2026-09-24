@@ -21,7 +21,7 @@ export function CheckboxEditor({
   onSetColor: (color: string | undefined) => void
   onSetStyle: (look: CheckboxLook) => void
 }): React.JSX.Element {
-  const chosen = resolveColor(color, 'var(--accent)')
+  const chosen = resolveColor(color, 'var(--checkbox-base)')
 
   return (
     <div className={s.configEditor}>

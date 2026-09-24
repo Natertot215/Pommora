@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { MenuItem, titleInput } from '@pommora/uix/Menus'
+import { DropOutline, MenuItem, titleInput } from '@pommora/uix/Menus'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { useSidebarDrag } from './sidebarDnd'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../RenamableTitle'
-import { dropOutlineSpacer } from '@pommora/uix/Menus/listed-outline.css'
 
 export function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefined {
   return cb
@@ -63,7 +62,7 @@ export function Leaf({
       indent={depth}
       onClick={onSelect}
       onContextMenu={ctxHandler(onContextMenu)}
-      leading={<span className={dropOutlineSpacer} data-drop-outline-spacer />}
+      leading={<DropOutline kind="spacer" />}
     >
       <Icon name={icon} size="headline" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}

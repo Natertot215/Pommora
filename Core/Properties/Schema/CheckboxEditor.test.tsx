@@ -64,11 +64,11 @@ describe('CheckboxEditor', () => {
     expect(host.textContent).toContain('Style')
   })
 
-  // The swatch must paint the SAME accent var the checked box tints with — borrowing the OS accent made three surfaces claim three colors for one value.
-  it('shows the app accent in the swatch when unset', async () => {
+  // The swatch must paint the SAME var the checked box tints with — borrowing the OS accent made three surfaces claim three colors for one value.
+  it("shows the Nexus's checkbox color in the swatch when unset", async () => {
     await mount({})
     expect(host.textContent).not.toContain('Accent')
-    expect(swatchFill()).toContain('var(--accent)')
+    expect(swatchFill()).toContain('var(--checkbox-base)')
     expect(swatchFill()).not.toContain('--system-accent')
   })
 

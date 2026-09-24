@@ -102,11 +102,10 @@ describe('status looks', () => {
 })
 
 describe('checkbox looks', () => {
-  it('switch renders the real DualSwitch, checked from the value', () => {
+  it('switch renders the display-only DualSwitch, on from the value, with no tab stop', () => {
     mount(rowWith({ prop_done: true }), 'prop_done', { look: 'switch' })
-    const sw = host.querySelector('[role="switch"]')
-    expect(sw).toBeTruthy()
-    expect(sw?.getAttribute('aria-checked')).toBe('true')
+    expect(host.querySelector('button')).toBeNull()
+    expect(host.querySelector('.cell-switch > span')?.className).toMatch(/trackOn/)
   })
 
   it('checkbox keeps the chip square', () => {
@@ -121,9 +120,9 @@ describe('checkbox looks', () => {
     expect(host.querySelector('svg')).toBeNull()
   })
 
-  it('switch renders unchecked with no stored value', () => {
+  it('switch renders off with no stored value', () => {
     mount(rowWith({}), 'prop_done', { look: 'switch' })
-    expect(host.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
+    expect(host.querySelector('.cell-switch > span')?.className).not.toMatch(/trackOn/)
   })
 
   it('checked box tints from the property color via --checkbox-base', () => {
@@ -140,23 +139,23 @@ describe('checkbox looks', () => {
     expect(box?.className).not.toContain('checkbox-checked')
   })
 
-  it('a colorless checked box leaves --checkbox-base unset so it follows the accent recipe', () => {
+  it('a colorless checked box leaves --checkbox-base unset so it follows the Nexus', () => {
     mount(rowWith({ prop_done: true }), 'prop_done', { look: 'checkbox' })
     const box = host.querySelector('span')
     expect(box?.className).toContain('checkbox-checked')
     expect(box?.style.getPropertyValue('--checkbox-base')).toBe('')
   })
 
-  it('scopes --accent to the property color so the switch on-track tints', () => {
+  it('paints the switch in the property color through the same --checkbox-base as the box', () => {
     mount(rowWith({ prop_pin: true }), 'prop_pin', { look: 'switch' })
-    const wrap = host.querySelector('span')
-    expect(wrap?.style.getPropertyValue('--accent')).not.toBe('')
+    const track = host.querySelector<HTMLElement>('.cell-switch > span')
+    expect(track?.style.getPropertyValue('--checkbox-base')).not.toBe('')
   })
 
-  it('leaves --accent unset when no color is chosen so the switch inherits the configured accent', () => {
+  it('leaves --checkbox-base unset when no color is chosen so the switch follows the Nexus', () => {
     mount(rowWith({ prop_done: true }), 'prop_done', { look: 'switch' })
-    const wrap = host.querySelector('span')
-    expect(wrap?.style.getPropertyValue('--accent')).toBe('')
+    const track = host.querySelector<HTMLElement>('.cell-switch > span')
+    expect(track?.style.getPropertyValue('--checkbox-base')).toBe('')
   })
 })
 

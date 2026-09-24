@@ -31,7 +31,7 @@ import { condensedDate, formatDate } from '../../Properties/formatValue'
 import { contextOptionsFor, type ContextOption } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
 import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
-import { CheckboxGlyph } from '../../Properties/Cells/checkboxLook'
+import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
@@ -585,8 +585,13 @@ export function FilterFrame({
     const target = targetById.get(row.rule.property_id)
     const isCheckbox = declaredType(row.rule.property_id, schema, contextIds) === 'checkbox'
     const checkboxColor = defById.get(row.rule.property_id)?.checkbox_color
+    const checkboxLook = styleFor(row.rule.property_id, schema, view).look
     const checkboxBox = (o: OperatorChoice): React.JSX.Element => (
-      <CheckboxGlyph checked={o.impliedValue === 'true'} color={checkboxColor} />
+      <CheckboxGlyph
+        checked={o.impliedValue === 'true'}
+        color={checkboxColor}
+        look={checkboxLook}
+      />
     )
     return (
       <Reveal key={index} open enterOnMount={entering(String(index))} fill>

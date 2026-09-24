@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Icon } from '../Symbols'
 import { svgFrame } from '../Symbols/svgFrame'
-import { solidColorCss } from '../Theme/ramp'
+import { checkboxPaint } from '../Theme/ramp'
 import { cx } from '../Utilities/cx'
 import './checkbox.css'
 
@@ -34,7 +34,7 @@ export function Checkbox({
     readOnly && 'checkbox-static',
     className,
   )
-  const style = color ? ({ '--checkbox-base': solidColorCss(color) } as CSSProperties) : undefined
+  const style = checkboxPaint(color) as CSSProperties | undefined
   const mark = state ? <CheckMark size={compact ? 9 : 12} /> : null
 
   if (readOnly) {

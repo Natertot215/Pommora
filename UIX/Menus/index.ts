@@ -23,7 +23,7 @@ export {
   type MenuSection,
   type Trailing,
 } from './menu-index'
-export { DisclosureRow, useDisclosureSet } from './menu-disclosure'
+export { DisclosureRow, DropOutline, useDisclosureSet } from './menu-disclosure'
 export { heading, itemEmphasized, titleInput } from './menu-base.css'
 export { MenuSurface } from './menu-surface'
 export { MenuDropdown } from './menu-base'

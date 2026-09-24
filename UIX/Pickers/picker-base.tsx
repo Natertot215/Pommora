@@ -20,6 +20,7 @@ import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
+import { clamp } from '../Utilities/clamp'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
 import * as s from './picker-base.css'
 
@@ -209,7 +210,7 @@ export function PickerMenu({
       }
       onDirection?.(eff)
       const edge = (along: number, at: number): number =>
-        Math.min(Math.max(at, CORNER_CLEAR), Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
+        clamp(at, CORNER_CLEAR, Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
       const near = (x: number): string => `${edge(pw, x)}px ${eff === 'up' ? ph : 0}px`
       const vertical =
         eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
@@ -223,13 +224,14 @@ export function PickerMenu({
         return
       }
       if (origin === 'left') {
-        const left = Math.min(Math.max(edgeL, c - ANCHOR_RESERVE), Math.max(edgeL, edgeR - pw))
+        const left = clamp(c - ANCHOR_RESERVE, edgeL, Math.max(edgeL, edgeR - pw))
         setPos({ ...vertical, left, origin: near(ANCHOR_RESERVE) })
         return
       }
       const iw = window.innerWidth
-      const right = Math.min(
-        Math.max(iw - edgeR, iw - c - ANCHOR_RESERVE),
+      const right = clamp(
+        iw - c - ANCHOR_RESERVE,
+        iw - edgeR,
         Math.max(iw - edgeR, iw - edgeL - pw),
       )
       setPos({ ...vertical, right, origin: near(pw - ANCHOR_RESERVE) })

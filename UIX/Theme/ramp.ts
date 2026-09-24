@@ -131,6 +131,16 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   }
 }
 
+/** A checkbox or switch painted in a stored color, through the chip's recipe so a greyscale row keeps its darkness offset and borrowed outline; none for no color, which inherits the Nexus's. */
+export function checkboxPaint(
+  color: string | undefined,
+): { '--checkbox-base': string; '--checkbox-outline': string } | undefined {
+  const key = labelColorFor(color)
+  if (key === 'default') return undefined
+  const { base, outline } = cellPaint(key)
+  return { '--checkbox-base': base, '--checkbox-outline': outline ?? tintAt(base, 'tertiary') }
+}
+
 export const cellRing = (key: CellKey): string =>
   cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')
 

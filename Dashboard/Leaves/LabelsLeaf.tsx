@@ -152,7 +152,7 @@ function SwitchDemo({ color }: { color: LabelColorName }): React.JSX.Element {
     <span
       className="ds-switch-demo"
       title={color}
-      style={{ '--accent': solid } as React.CSSProperties}
+      style={{ '--checkbox-base': solid } as React.CSSProperties}
     >
       <DualSwitch checked={on} onChange={setOn} ariaLabel={color} />
     </span>

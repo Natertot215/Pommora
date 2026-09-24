@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import type { LinkConfig, LinkDisplay } from '@pommora/core/Properties/properties'
 import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
@@ -19,7 +18,7 @@ export function URLEditor({
   const link = resolveColor(color, 'var(--system-accent)')
 
   return (
-    <div className={s.configEditor} style={{ '--accent': link.css } as CSSProperties}>
+    <div className={s.configEditor}>
       <MenuIndex
         sections={[
           {

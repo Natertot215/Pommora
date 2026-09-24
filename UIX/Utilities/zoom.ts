@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react'
 
-/** The element's own rendered CSS zoom — a scaled surface's pointer math divides by it, and it is never back-solved from a rendered width, which bakes in layout slack. */
-export const readZoom = (el: Element): number =>
-  Number.parseFloat(getComputedStyle(el).getPropertyValue('zoom')) || 1
-
 /** The zoom the element renders at, every ancestor's compounded: a screen-space delta divides by it to land inside the element. */
 export const currentZoom = (el: Element): number => el.currentCSSZoom || 1
 
@@ -13,7 +9,7 @@ export function useElementZoom(ref: { readonly current: Element | null }): numbe
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const measure = (): void => setZoom(readZoom(el))
+    const measure = (): void => setZoom(currentZoom(el))
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)

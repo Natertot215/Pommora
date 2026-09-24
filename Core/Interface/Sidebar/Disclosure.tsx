@@ -2,10 +2,9 @@ import { Children, isValidElement, useEffect, useRef, useState } from 'react'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { MenuItem } from '@pommora/uix/Menus'
+import { DropOutline, MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useSession } from '../../Session/store'
-import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
 import { ctxHandler, DragRow, type RenameTarget, RowTitle } from './sidebarRows'
 
 const PEEK_LINGER_MS = 2500 // KNOB
@@ -180,14 +179,7 @@ export function Disclosure({
         dismissOnLeave(e)
       }}
       trailing={lockToggle}
-      leading={
-        <Icon
-          name="chevron-right"
-          size="control"
-          className={cx(dropOutline, open && dropOutlineOpen)}
-          data-drop-outline
-        />
-      }
+      leading={<DropOutline open={open} />}
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>
