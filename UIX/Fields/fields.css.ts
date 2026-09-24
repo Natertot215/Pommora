@@ -131,6 +131,8 @@ export const contentRow = style({
 })
 
 // One grid cell holds input and hidden mirror, so the field shrink-wraps through reflow — never a per-keystroke layout read.
+// Layout-transparent: the resting label keeps its parent's flow and truncation.
+export const resting = style({ display: 'contents' })
 export const autoSizeWrap = style({ display: 'inline-grid' })
 
 export const autoSizeMirror = style({

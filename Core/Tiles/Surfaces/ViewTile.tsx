@@ -162,7 +162,8 @@ function ViewPill({
   entering,
   exiting,
   labeled,
-  renameNode,
+  renaming,
+  label,
   onSwitch,
   onMenu,
   onAnimEnd,
@@ -172,7 +173,8 @@ function ViewPill({
   entering: boolean
   exiting: boolean
   labeled: boolean
-  renameNode: React.ReactNode | null
+  renaming: boolean
+  label: React.ReactNode
   onSwitch: () => void
   onMenu: (e: React.MouseEvent) => void
   onAnimEnd: () => void
@@ -190,13 +192,13 @@ function ViewPill({
         entering && segmentEntering,
         exiting && segmentExiting,
       )}
-      onClick={renameNode ? undefined : onSwitch}
+      onClick={renaming ? undefined : onSwitch}
       onContextMenu={onMenu}
       onAnimationEnd={onAnimEnd}
     >
       <Icon name={viewGlyph(view)} size={SEGMENT_ICON} />
-      <span className={cx(labelSlot, !renameNode && !labeled && labelSlotHidden)}>
-        <span className={labelText}>{renameNode ?? view.name}</span>
+      <span className={cx(labelSlot, !renaming && !labeled && labelSlotHidden)}>
+        <span className={labelText}>{label}</span>
       </span>
     </button>
   )
@@ -461,10 +463,10 @@ export function ViewTile({
     }
   }
 
-  const renameField = (i: number): React.JSX.Element => (
+  const viewLabel = (i: number): React.JSX.Element => (
     <RenamableLabel
       renames="title"
-      editing
+      editing={renaming === i}
       value={views[i].name}
       className={rowInput}
       autoSize
@@ -472,6 +474,7 @@ export function ViewTile({
         setRenaming(null)
         persistConfig(i, { ...views[i], name: next })
       }}
+      onBegin={() => setRenaming(i)}
       onCancel={() => setRenaming(null)}
     />
   )
@@ -548,7 +551,8 @@ export function ViewTile({
             entering={presence.entering.has(v.id)}
             exiting={presence.exiting === v.id}
             labeled={labeled}
-            renameNode={renaming === i ? renameField(i) : null}
+            renaming={renaming === i}
+            label={viewLabel(i)}
             onSwitch={() => patchEntry({ active: i })}
             onMenu={(e) => void rowMenu(i, e, true)}
             onAnimEnd={() => presence.onAnimEnd(v.id)}
@@ -597,14 +601,10 @@ export function ViewTile({
                     setTitleEditing(false)
                     commitTitle(next)
                   }}
+                  onBegin={locked ? undefined : () => setTitleEditing(true)}
                   onCancel={() => setTitleEditing(false)}
                 >
-                  {/* biome-ignore lint/a11y/noStaticElementInteractions: click-to-rename on the title text; the row carries its own context menu */}
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: the title's keyboard route is its edit field, entered by clicking the resting text */}
-                  <span
-                    className={`${s.titleText} md-h${titleLevel}`}
-                    onClick={locked ? undefined : () => setTitleEditing(true)}
-                  >
+                  <span className={`${s.titleText} md-h${titleLevel}`}>
                     {entry.display_title ?? source.title}
                   </span>
                 </RenamableLabel>
@@ -657,7 +657,7 @@ export function ViewTile({
                   onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
                   onContextMenu={(e) => void rowMenu(i, e, false)}
                 >
-                  {renaming === i ? renameField(i) : v.name}
+                  {viewLabel(i)}
                 </PickerRow>
               ))}
             </MenuScrollFrame>

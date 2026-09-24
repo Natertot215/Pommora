@@ -36,13 +36,6 @@
 .banner-title.is-searchable .detail-title {
   flex: 1 1 auto;
 }
-.banner-title-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .banner-title .detail-title,
 .banner-empty-title .detail-title {
   --detail-title-size: var(--text-title-small-size);
@@ -50,7 +43,6 @@
 }
 .banner-title .detail-title-icon,
 .banner-title .detail-title-text,
-.banner-title .banner-title-text,
 .banner-title .detail-title-input.detail-title-input,
 .banner-title .detail-title-hint,
 .banner-title .detail-title-clear {
@@ -64,11 +56,6 @@
   color: var(--label-primary);
 }
 
-/* The nexus photo wears the title icon's classes; a photo is cropped into a rounded square. */
-.banner-home-icon {
-  border-radius: 5px;
-  object-fit: cover;
-}
 .shell.is-resizing .banner-title {
   transition: none;
 }

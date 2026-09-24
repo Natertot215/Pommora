@@ -1,11 +1,12 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
-import { errText, ok, type Result, fault } from '../Contract/result'
+import { errText, fail, ok, type Result, fault } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readHeadings } from '../Index/contentIndex'
 import { isStringArray } from '../Contract/validators'
 import { targetTaken } from '../Files/atomicWrite'
+import { nameError } from '../Paths/names'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { basename, dirname, join, titleFromPath } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
@@ -126,13 +127,11 @@ export const nexusHandlers = {
   // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session, stores, watcher, and recents at the new path.
   'nexus:rename': withWriteRoot(async (root, ctx, newName: unknown) => {
     if (typeof newName !== 'string') return fault('A name is required.')
-    const trimmed = newName.trim()
-    if (trimmed.length === 0) return fault('The name can’t be empty.')
-    if (trimmed.includes('/') || trimmed.includes('\\'))
-      return fault('The name can’t contain a slash.')
-    if (trimmed === basename(root)) return fault('That’s already the nexus name.')
-    const newRoot = join(dirname(root), trimmed)
-    if (await targetTaken(root, newRoot)) return fault('A folder with that name already exists.')
+    const why = nameError(newName, 'directory')
+    if (why) return fail('invalid-name', why)
+    if (newName === basename(root)) return fault('That’s already the nexus name.')
+    const newRoot = join(dirname(root), newName)
+    if (await targetTaken(root, newRoot)) return fail('exists', `"${newName}" already exists.`)
     await retireFileHistory(root)
     await machine().rename(root, newRoot)
     await adoptNexus(ctx, newRoot, false)

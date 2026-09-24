@@ -9,10 +9,9 @@ import {
   useDisclosureSet,
 } from '@pommora/uix/Menus'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { pageBody, shownPage, useSession } from '../../Session/store'
+import { useSession } from '../../Session/store'
 import { viewSettingsScope } from './viewSettingsScope'
-import { renameHeadingAtOffset, travelPageTo } from '../../Pages/pageEditor'
-import { headingOutline } from '../../MarkdownPM/Engine/headingScan'
+import { renameHeadingAtOffset, travelPageTo, usePageOutline } from '../../Pages/pageEditor'
 import { outlineTree, type OutlineNode } from '../../MarkdownPM/Engine/outlineTree'
 import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
 import * as s from './toolbar-menu.css'
@@ -41,10 +40,9 @@ export function OutlineMenu(): React.JSX.Element | null {
   )
 }
 
-/** Mounted only while the menu is open, so a closed outline costs a page nothing — the derivation is a whole-document scan. */
+/** Mounted only while the menu is open, so a closed outline costs a page nothing. */
 function OutlinePane(): React.JSX.Element {
-  const body = useSession((st) => pageBody(shownPage(st)))
-  const flat = useMemo(() => headingOutline(body), [body])
+  const flat = usePageOutline()
   const tree = useMemo(() => outlineTree(flat), [flat])
   const disclosure = useDisclosureSet(true)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -92,22 +90,19 @@ function OutlineRow({
   return (
     <DisclosureRow
       title={
-        editing ? (
-          <RenamableLabel
-            renames="row"
-            editing
-            value={node.text}
-            className={titleInput}
-            autoSize
-            onCommit={(next) => {
-              setRenaming(null)
-              renameHeadingAtOffset(node.from, next)
-            }}
-            onCancel={() => setRenaming(null)}
-          />
-        ) : (
-          node.text
-        )
+        <RenamableLabel
+          renames="row"
+          editing={editing}
+          value={node.text}
+          className={titleInput}
+          autoSize
+          onBegin={() => setRenaming(node.key)}
+          onCommit={(next) => {
+            setRenaming(null)
+            renameHeadingAtOffset(node.from, next)
+          }}
+          onCancel={() => setRenaming(null)}
+        />
       }
       icon={null}
       className={itemEmphasized}

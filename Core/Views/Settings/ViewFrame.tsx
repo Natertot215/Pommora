@@ -185,6 +185,7 @@ export function ViewFrame({
                     editing={renamingId === v.id}
                     value={v.name}
                     className={titleInput}
+                    onBegin={() => setRenamingId(v.id)}
                     onCommit={(next) => commitRename(v, next)}
                     onCancel={() => setRenamingId(null)}
                   />

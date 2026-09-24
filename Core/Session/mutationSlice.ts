@@ -1,9 +1,9 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import {
   DEFAULT_NEW_NAME,
-  type MutableKind,
   type MutateRequest,
   type RenameHost,
+  type RenameKind,
 } from '@pommora/core/Nexus/mutateRequest'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
@@ -14,6 +14,7 @@ import { relDirname } from '@pommora/core/Paths/posix'
 import type { Slice } from './sessionState'
 import type { ValueChange, ValuesEpoch } from '@pommora/core/Nexus/tree'
 import { host } from '../Platform/dialer'
+import { flushAllSaves } from './nexusSlice'
 
 interface RenameClaim {
   token: number
@@ -38,7 +39,7 @@ export interface RenameSlice {
   releaseRename: (token: number) => void
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
-  submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
+  submitRename: (path: string, kind: RenameKind, newName: string) => Promise<boolean>
   iconPath: string | null
   iconHost: RenameHost | null
   beginIcon: (path: string, host?: RenameHost) => void
@@ -148,6 +149,11 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   submitRename: async (path, kind, newName) => {
     const fromCreate = get().renamingCreate && kind === 'page'
     set(RENAME_CLEARED)
+    // Not a mutate op: the rename re-adopts the root and refuses every write until it lands, so saves flush first.
+    if (kind === 'homepage') {
+      await flushAllSaves()
+      return reportRefusal(await host().ask('nexus:rename', newName))
+    }
     // Registry entities rename by id: a bare folder rename strands every member's title key.
     if (kind === 'space' || kind === 'context') {
       const groups = get().tree?.contexts ?? []
