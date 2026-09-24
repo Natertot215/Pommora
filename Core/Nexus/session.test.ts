@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { rmSync } from 'node:fs'
-import { realpathPosix, tempRoot } from '../Testing/hostFs'
+import { rmSync, symlinkSync } from 'node:fs'
+import { tempRoot } from '../Testing/hostFs'
 import { sessionRoot, openSession, closeSession } from './session'
 
 describe('session — open/close', () => {
@@ -18,10 +18,13 @@ describe('session — open/close', () => {
   })
 
   it('canonicalizes the root via realpath (so its lock key matches resolveUnderRoot)', async () => {
-    const raw = tempRoot('pom-sess-')
+    const real = tempRoot('pom-sess-')
+    const raw = `${real}-link`
+    symlinkSync(real, raw, 'junction')
     await openSession(raw)
-    expect(sessionRoot()).toBe(await realpathPosix(raw))
+    expect(sessionRoot()).toBe(real)
     closeSession()
-    rmSync(raw, { recursive: true, force: true })
+    rmSync(raw)
+    rmSync(real, { recursive: true, force: true })
   })
 })

@@ -23,7 +23,7 @@ const rows = async (): Promise<TrashRow[]> =>
 const del = (
   path: string,
   kind: 'page' | 'collection' | 'set' | 'space' | 'context',
-): Promise<MutateReply> => handleMutate({ op: 'delete', path, kind }, nexusDeps)
+): Promise<MutateReply> => handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
 
 beforeEach(async () => {
   root = tempRoot('pom-rows-')
@@ -103,6 +103,7 @@ describe('trashRows — a bundle as the browser reads it', () => {
   it('a renamed ancestor reads true, because the crumb resolves by id', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const renamed = await handleMutate(
+      root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journals' },
       nexusDeps,
     )
@@ -205,7 +206,11 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const [row] = await rows()
     expect(row.homeResolves).toBe(true)
-    const restored = await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, nexusDeps)
+    const restored = await handleMutate(
+      root,
+      { op: 'restore', bundlePath: row.bundlePath },
+      nexusDeps,
+    )
     expect(restored.ok).toBe(true)
     expect((await readNexus(root)).collections[0].sets[0].pages[0].title).toBe('Alpha')
   })
@@ -215,7 +220,11 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
     await del('Notes/Daily', 'set')
     const page = (await rows()).find((r) => r.kind === 'page') as TrashRow
     expect(page.homeResolves).toBe(false)
-    const restored = await handleMutate({ op: 'restore', bundlePath: page.bundlePath }, nexusDeps)
+    const restored = await handleMutate(
+      root,
+      { op: 'restore', bundlePath: page.bundlePath },
+      nexusDeps,
+    )
     expect(restored.ok).toBe(false)
   })
 })

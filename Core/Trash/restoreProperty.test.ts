@@ -85,7 +85,7 @@ describe('restoring a deleted property', () => {
       { id: 'view_x', name: 'X', type: 'table', sort: [{ property_id: 'p', direction: 'random' }] },
     ]
     await writeFile(file, JSON.stringify(raw))
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect(JSON.parse(await readFile(file, 'utf8')).properties).toEqual([id])
   })
@@ -109,7 +109,7 @@ describe('restoring a deleted property', () => {
     expect(await assigns(notes, id)).toBe(false)
     expect(await valueOn(p1.value.path, 'Priority')).toBeUndefined()
 
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
 
     const def = (await readRegistry(root)).defs[id]
@@ -131,7 +131,7 @@ describe('restoring a deleted property', () => {
     } as PropertyDefinition)
     expect(impostor.ok).toBe(true)
 
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(false)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
     expect(await listBundles(root)).toHaveLength(1)
@@ -148,7 +148,7 @@ describe('restoring a deleted property', () => {
     } as PropertyDefinition)
     expect(back.ok).toBe(true)
 
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(false)
     expect((await readRegistry(root)).defs[id]).toMatchObject({ name: 'Urgency' })
     expect(await listBundles(root)).toHaveLength(1)
@@ -169,7 +169,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toBe('nonsense')
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect(await valueOn(good.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
@@ -187,7 +187,7 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     await rm(tasks, { recursive: true, force: true })
 
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect(await assigns(notes, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
@@ -219,7 +219,7 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     expect('Priority' in (await sidecar())).toBe(false)
 
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect((await sidecar()).Priority).toEqual(['hi'])
   })
@@ -240,7 +240,7 @@ describe('restoring a deleted property', () => {
       value: ['alpha', 'zeta'],
     })
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
-    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha'])
     expect((await liveDef(c.value.id)).select_options?.map((o) => o.value)).toEqual(['alpha'])

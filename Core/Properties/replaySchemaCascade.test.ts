@@ -3,13 +3,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import {
-  realpathPosix,
-  tempRoot,
-  noModeBits,
-  seedSpaceSidecar,
-  readSpaceSidecar,
-} from '../Testing/hostFs'
+import { tempRoot, noModeBits, seedSpaceSidecar, readSpaceSidecar } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -39,7 +33,7 @@ afterEach(async () => {
 const PAGE_IDS = ['01ARZ3NDEKPSV4RRFFQ69G5FAA', '01ARZ3NDEKPSV4RRFFQ69G5FAB']
 
 async function seedNexus(): Promise<string> {
-  const root = await realpathPosix(tempRoot('pom-replay-'))
+  const root = tempRoot('pom-replay-')
   roots.push(root)
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))

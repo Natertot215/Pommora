@@ -5,7 +5,7 @@ import { nexusHandlers } from '../Nexus/handlers'
 import { closeSession, openSession, whileAdopting } from '../Nexus/session'
 import { readValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
-import { realpathPosix, tempRoot } from '../Testing/hostFs'
+import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { viewsHandlers } from '../Views/handlers'
 import type { HostContext } from './handlers'
@@ -15,7 +15,7 @@ let root: string
 const ctx = {} as HostContext
 
 beforeEach(async () => {
-  root = await realpathPosix(tempRoot('pom-session-gate-'))
+  root = tempRoot('pom-session-gate-')
   installStores(memoryStores().stores)
   await openSession(root)
 })

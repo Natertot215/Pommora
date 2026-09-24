@@ -1,4 +1,4 @@
-// Every renderer mutation resolves its session root here and routes to the module that owns the operation. Arms carrying only a resolve and one module call stay in place.
+// Every renderer mutation arrives here with the root the session gate holds and routes to the module that owns the operation. Arms carrying only a resolve and one module call stay in place.
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
@@ -7,7 +7,7 @@ import { machine } from '../Platform/machine'
 import { contextsDir } from '../Paths/paths'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
-import { errText, fault, ok, NO_NEXUS, type Result } from '../Contract/result'
+import { errText, fault, ok, type Result } from '../Contract/result'
 import { emptyBundle, restoreArtifact } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -35,7 +35,6 @@ import { movePageOp, moveSetOp } from './move'
 import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
-import { sessionRoot } from './session'
 
 export interface MutateDeps {
   trashMode: TrashMode
@@ -50,9 +49,11 @@ export interface MutateContext {
 
 const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 
-export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateReply> {
-  const root = sessionRoot()
-  if (root === null) return NO_NEXUS
+export async function handleMutate(
+  root: string,
+  req: MutateRequest,
+  deps: MutateDeps,
+): Promise<MutateReply> {
   try {
     return await dispatch({ root, deps }, req)
   } catch (e) {

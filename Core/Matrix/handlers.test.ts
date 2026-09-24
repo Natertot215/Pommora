@@ -4,7 +4,7 @@ import type { HostContext } from '../Contract/handlers'
 import { closeSession, openSession } from '../Nexus/session'
 import { writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
-import { realpathPosix, tempRoot } from '../Testing/hostFs'
+import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { matrixHandlers } from './handlers'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
@@ -13,7 +13,7 @@ let root: string
 const ctx = {} as HostContext
 
 beforeEach(async () => {
-  root = await realpathPosix(tempRoot('pom-matrix-handlers-'))
+  root = tempRoot('pom-matrix-handlers-')
   installStores(memoryStores().stores)
   await openSession(root)
 })

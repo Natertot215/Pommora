@@ -100,13 +100,18 @@ const tagOf = async (): Promise<unknown> =>
 
 describe('the record is written before the destruction it describes', () => {
   it('a content delete records before the artifact moves', async () => {
-    const r = await handleMutate({ op: 'delete', path: 'Notes/Alpha.md', kind: 'page' }, nexusDeps)
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })
   })
 
   it('a Space delete records before the sweep strips a single tag', async () => {
     const r = await handleMutate(
+      root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
     )
@@ -118,6 +123,7 @@ describe('the record is written before the destruction it describes', () => {
 
   it('a Context delete records before the sweep and the registry erase', async () => {
     const r = await handleMutate(
+      root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
@@ -133,6 +139,7 @@ describe('the record is written before the destruction it describes', () => {
 
   it('system-trash mode records nothing and mints no bundle', async () => {
     const r = await handleMutate(
+      root,
       { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
       { trashMode: 'system', trashToSystem: async () => {} },
     )
@@ -152,6 +159,7 @@ describe('one unparseable page never fails the sweep around it', () => {
     it(`a Context delete completes past ${name}, and leaves it byte-identical`, async () => {
       await writeFile(join(root, 'Notes', name), content)
       const r = await handleMutate(
+        root,
         { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
         nexusDeps,
       )
@@ -168,7 +176,11 @@ describe('one unparseable page never fails the sweep around it', () => {
 describe('a deletion cut short leaves evidence, never silence', () => {
   it('a content delete that dies before the settle keeps the artifact and skips the listing', async () => {
     settleFails = true
-    const r = await handleMutate({ op: 'delete', path: 'Notes/Alpha.md', kind: 'page' }, nexusDeps)
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
     // The record survives as evidence, and the listing refuses to offer an unfinished deletion.
@@ -179,6 +191,7 @@ describe('a deletion cut short leaves evidence, never silence', () => {
   it('a Space delete that dies before the settle still names what the sweep took', async () => {
     settleFails = true
     const r = await handleMutate(
+      root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
     )

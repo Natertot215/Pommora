@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, realpathSync } from 'node:fs'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
@@ -10,7 +10,8 @@ export const posixPath = (p: string): string => (windows ? p.replaceAll('\\', '/
 
 export const realpathPosix = async (p: string): Promise<string> => posixPath(await realpath(p))
 
-export const tempRoot = (prefix: string): string => posixPath(mkdtempSync(`${tmpdir()}/${prefix}`))
+export const tempRoot = (prefix: string): string =>
+  posixPath(realpathSync(mkdtempSync(`${tmpdir()}/${prefix}`)))
 
 export const noModeBits = windows || process.getuid?.() === 0
 

@@ -167,7 +167,7 @@ export const nexusHandlers = {
   }, ok(null)),
 
   mutate: withWriteRoot(async (root, ctx, req: MutateRequest) => {
-    const reply = await handleMutate(req, await mutateDeps(root, ctx))
+    const reply = await handleMutate(root, req, await mutateDeps(root, ctx))
     if (reply.ok) {
       await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
       pushAssetWrites(ctx, root)

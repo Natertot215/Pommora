@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { realpathPosix, tempRoot, noModeBits } from '../Testing/hostFs'
+import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
@@ -269,7 +269,7 @@ describe('updatePageProperty', () => {
   })
 
   it('notes the value write against the root it was handed, not the open session', async () => {
-    const open = await realpathPosix(tempRoot('pom-page-open-'))
+    const open = tempRoot('pom-page-open-')
     await mkdir(join(open, '.nexus'), { recursive: true })
     await writeFile(
       join(open, '.nexus', 'nexus.json'),
@@ -277,14 +277,13 @@ describe('updatePageProperty', () => {
     )
     await openSession(open)
     try {
-      const other = await realpathPosix(root)
-      const c = await createPage(join(other, 'Notes'), 'Elsewhere', { body: 'x' })
+      const c = await createPage(join(root, 'Notes'), 'Elsewhere', { body: 'x' })
       if (!c.ok) throw new Error('setup failed')
-      await updatePageProperty(other, c.value.path, defOf('prop_status'), {
+      await updatePageProperty(root, c.value.path, defOf('prop_status'), {
         kind: 'select',
         value: 'todo',
       })
-      expect(flushValueWrites(other).map((v) => v.rel)).toEqual(['Notes'])
+      expect(flushValueWrites(root).map((v) => v.rel)).toEqual(['Notes'])
     } finally {
       closeSession()
       await rm(open, { recursive: true, force: true })

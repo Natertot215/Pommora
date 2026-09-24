@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, symlink } from 'node:fs/promises'
 import { join } from './posix'
-import { realpathPosix, tempRoot, windows } from '../Testing/hostFs'
+import { tempRoot, windows } from '../Testing/hostFs'
 import { resolveUnderRoot } from './pathSafety'
 
 let root: string
@@ -22,7 +22,7 @@ describe('resolveUnderRoot', () => {
     const r = await resolveUnderRoot(root, 'Notes/a.md')
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value).toBe(join(await realpathPosix(root), 'Notes', 'a.md'))
+    expect(r.value).toBe(join(root, 'Notes', 'a.md'))
   })
 
   it('accepts the root itself', async () => {

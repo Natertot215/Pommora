@@ -118,7 +118,7 @@ describe('the nexus-wide write sweeps', () => {
 
   it('a Context RENAME sweeps a member but leaves an Unknown file alone', async () => {
     await openSession(root)
-    const made = await handleMutate({ op: 'createContextGroup', name: 'Projects' }, deps)
+    const made = await handleMutate(root, { op: 'createContextGroup', name: 'Projects' }, deps)
     expect(made.ok).toBe(true)
     if (!made.ok) return
     const contextId = made.value.created!.id
@@ -129,7 +129,11 @@ describe('the nexus-wide write sweeps', () => {
     await writeFile(join(root, 'Notes', 'Member.md'), tagged(ID_KEY, '01KVGMT8BFP350FZZXAMG1QDM1'))
     const before = await bytes('Contradicting.md')
 
-    const r = await handleMutate({ op: 'renameContext', contextId, newName: 'Ventures' }, deps)
+    const r = await handleMutate(
+      root,
+      { op: 'renameContext', contextId, newName: 'Ventures' },
+      deps,
+    )
     expect(r.ok).toBe(true)
     expect(await bytes('Member.md')).toContain('<Ventures>:')
     expect(await bytes('Contradicting.md')).toBe(before)
@@ -141,6 +145,7 @@ describe('the move backstop', () => {
     await openSession(root)
     await mkdir(join(root, 'Nowhere'), { recursive: true })
     const r = await handleMutate(
+      root,
       { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Nowhere' },
       deps,
     )
@@ -154,6 +159,7 @@ describe('the move backstop', () => {
   it('refuses a move onto the nexus root itself', async () => {
     await openSession(root)
     const r = await handleMutate(
+      root,
       { op: 'movePage', path: 'Notes/Member.md', newParentPath: '.' },
       deps,
     )
@@ -178,6 +184,7 @@ describe('the move backstop', () => {
     await openSession(root)
 
     const r = await handleMutate(
+      root,
       { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Tasks' },
       deps,
     )
@@ -196,6 +203,7 @@ describe('the move backstop', () => {
       JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDS1' }),
     )
     const r = await handleMutate(
+      root,
       { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Notes/Daily' },
       deps,
     )

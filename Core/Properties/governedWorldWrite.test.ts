@@ -105,6 +105,7 @@ describe('a property write reconciles the whole file', () => {
     if (!page.ok) throw new Error('setup')
     await writeFile(page.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Open\n---\nb\n`)
     const r = await handleMutate(
+      root,
       {
         op: 'setProperty',
         path: rel(page.value.path),
@@ -133,6 +134,7 @@ describe('a property write reconciles the whole file', () => {
     )
     const set = (path: string) =>
       handleMutate(
+        root,
         {
           op: 'setProperty',
           path: rel(path),
@@ -161,6 +163,7 @@ describe('a property write reconciles the whole file', () => {
     )
     await writeFile(join(contextsDir(root), 'Areas', 'Work', '_space.json'), '{corrupt')
     const r = await handleMutate(
+      root,
       {
         op: 'setProperty',
         path: rel(page.value.path),
@@ -174,6 +177,7 @@ describe('a property write reconciles the whole file', () => {
     expect(out.Priority).toBe(2)
     expect(out['<Areas>']).toEqual(['work'])
     const ctx = await handleMutate(
+      root,
       {
         op: 'setContext',
         path: rel(page.value.path),
@@ -201,6 +205,7 @@ describe('a property write reconciles the whole file', () => {
       `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAD\nTags:\n  - alpha\n  - zeta\n---\nb\n`,
     )
     await handleMutate(
+      root,
       {
         op: 'setProperty',
         path: rel(page.value.path),

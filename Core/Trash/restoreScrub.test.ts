@@ -25,11 +25,11 @@ const registry = (assigned: string[]): string =>
   JSON.stringify({ id: 'col-notes', properties: assigned })
 
 async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promise<void>) {
-  const d = await handleMutate({ op: 'delete', path: rel, kind }, nexusDeps)
+  const d = await handleMutate(root, { op: 'delete', path: rel, kind }, nexusDeps)
   expect(d.ok).toBe(true)
   await mutateWorld()
   const [listed] = await listBundles(root)
-  const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+  const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
   expect(r.ok).toBe(true)
 }
 
@@ -305,6 +305,7 @@ describe('a Space sidecar is a context root too', () => {
     expect(
       (
         await handleMutate(
+          root,
           { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
           nexusDeps,
         )
@@ -313,6 +314,7 @@ describe('a Space sidecar is a context root too', () => {
     expect(
       (
         await handleMutate(
+          root,
           { op: 'delete', path: '.nexus/contexts/Areas/Work', kind: 'space' },
           nexusDeps,
         )
@@ -323,6 +325,7 @@ describe('a Space sidecar is a context root too', () => {
     )
     expect(projects).toBeDefined()
     const r = await handleMutate(
+      root,
       { op: 'restore', bundlePath: projects?.bundlePath ?? '' },
       nexusDeps,
     )
@@ -343,12 +346,13 @@ describe('a Space sidecar is a context root too', () => {
       JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
     )
     await handleMutate(
+      root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
     expect(
-      (await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+      (await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
     expect((await sidecar('Projects/Sapphire'))['<Projects>']).toEqual(['Pommora'])
   })
@@ -363,6 +367,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
       `---\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody`,
     )
     const d = await handleMutate(
+      root,
       { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' },
       nexusDeps,
     )
@@ -370,7 +375,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
 
     const [listed] = await listBundles(root)
     expect(listed.record).toMatchObject({ entity: 'page', parent: { kind: 'container' } })
-    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Inbox', 'Idea.md'))).toBe(true)
   })
@@ -382,7 +387,11 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
       join(root, 'Notes', 'Broken', 'Idea.md'),
       `---\nID: 01KVGMT8BFP350FZZXAMG1QDVD\n---\nbody`,
     )
-    await handleMutate({ op: 'delete', path: 'Notes/Broken/Idea.md', kind: 'page' }, nexusDeps)
+    await handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Broken/Idea.md', kind: 'page' },
+      nexusDeps,
+    )
     const [listed] = await listBundles(root)
     // Honest rather than destructive: the folder keeps the schema and views it still holds.
     expect(listed.record).toMatchObject({ parent: { kind: 'unaddressable' } })

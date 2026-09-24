@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { realpathPosix, tempRoot, windows } from '../Testing/hostFs'
+import { tempRoot, windows } from '../Testing/hostFs'
 import {
   renameContextOp,
   renameSpaceOp,
@@ -33,7 +33,7 @@ const other = () => join(root, 'Notes', 'B.md')
 const csSidecar = () => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
 beforeEach(async () => {
-  root = await realpathPosix(tempRoot('pom-cascade-'))
+  root = tempRoot('pom-cascade-')
   await openSession(root)
   await mkdir(nexusDir(root), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })

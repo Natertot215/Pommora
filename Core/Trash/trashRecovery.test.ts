@@ -24,7 +24,7 @@ const find = async (title: string) => {
   return hit as NonNullable<typeof hit>
 }
 const del = async (path: string, kind: string) => {
-  const r = await handleMutate({ op: 'delete', path, kind } as never, deps)
+  const r = await handleMutate(root, { op: 'delete', path, kind } as never, deps)
   expect(r.ok, `delete ${path}`).toBe(true)
 }
 
@@ -96,7 +96,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Alpha')
     expect(row.homeResolves).toBe(true)
     expect(row.crumbs.map((c) => c.title)).toEqual(['Journal', 'Daily'])
-    const r = await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, deps)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha.md'))).toBe(true)
     expect(await rows()).toHaveLength(0)
@@ -107,6 +107,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (
         await handleMutate(
+          root,
           { op: 'rename', path: 'Journal', kind: 'collection', newName: 'Logbook' },
           deps,
         )
@@ -114,7 +115,9 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     const row = await find('Alpha')
     expect(row.crumbs.map((c) => c.title)).toEqual(['Logbook', 'Daily'])
-    expect((await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(true)
+    expect((await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(
+      true,
+    )
     expect(await pathExists(join(root, 'Logbook', 'Daily', 'Alpha.md'))).toBe(true)
   })
 
@@ -123,6 +126,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (
         await handleMutate(
+          root,
           { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
           deps,
         )
@@ -130,7 +134,9 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     const row = await find('Pommora')
     expect(row.crumbs).toEqual([{ kind: 'context', title: 'Ventures' }])
-    expect((await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(true)
+    expect((await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(
+      true,
+    )
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(
       true,
     )
@@ -142,6 +148,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (
         await handleMutate(
+          root,
           {
             op: 'restore',
             bundlePath: row.bundlePath,
@@ -159,10 +166,13 @@ describe('end to end — deleted, listed, restored', () => {
     row = await find('Alpha')
     expect(row.homeResolves).toBe(false)
     expect(row.historical).toBe(true)
-    expect((await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(false)
+    expect((await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(
+      false,
+    )
     expect(
       (
         await handleMutate(
+          root,
           {
             op: 'restore',
             bundlePath: row.bundlePath,
@@ -178,6 +188,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (
         await handleMutate(
+          root,
           {
             op: 'restore',
             bundlePath: setRow.bundlePath,
@@ -196,6 +207,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (
         await handleMutate(
+          root,
           {
             op: 'restore',
             bundlePath: spaceRow.bundlePath,
@@ -215,6 +227,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (
         await handleMutate(
+          root,
           {
             op: 'restore',
             bundlePath: row.bundlePath,
@@ -240,16 +253,18 @@ describe('end to end — deleted, listed, restored', () => {
     expect(addressable.map((r) => r.title).sort()).toEqual(['Daily', 'Health'])
     expect(homeless.map((r) => r.title)).toEqual(['Alpha'])
     for (const r of addressable)
-      expect((await handleMutate({ op: 'restore', bundlePath: r.bundlePath }, deps)).ok).toBe(true)
+      expect((await handleMutate(root, { op: 'restore', bundlePath: r.bundlePath }, deps)).ok).toBe(
+        true,
+      )
     expect((await rows()).map((r) => r.title)).toEqual(['Alpha'])
   })
 
   it('emptying hands the artifact over, and the switch decides whether it goes at all', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
-    expect((await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok).toBe(
-      true,
-    )
+    expect(
+      (await handleMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
+    ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(handed[0].endsWith('Alpha.md')).toBe(true)
     expect(await rows()).toHaveLength(0)
@@ -262,7 +277,7 @@ describe('end to end — deleted, listed, restored', () => {
     row = await find('Beta')
     const permanent: MutateDeps = { ...deps, permanentDelete: true }
     expect(
-      (await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
+      (await handleMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(await rows()).toHaveLength(0)

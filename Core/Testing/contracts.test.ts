@@ -1,4 +1,4 @@
-import { realpathPosix, tempRoot } from './hostFs'
+import { tempRoot } from './hostFs'
 import { describeMachine } from './machineContract'
 import { diskMachine, memoryMachine } from './machines'
 import { memoryStores } from './memoryStores'
@@ -17,7 +17,7 @@ describeMachine('memoryMachine', async () => ({
 
 describeMachine('diskMachine', async () => ({
   machine: diskMachine(),
-  root: await realpathPosix(tempRoot('pom-disk-machine-')),
+  root: tempRoot('pom-disk-machine-'),
 }))
 
 describeKeyValueStore('memoryStores key-value', () => memoryStores().stores.keyValue!)

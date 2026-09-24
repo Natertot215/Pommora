@@ -83,6 +83,7 @@ afterEach(async () => {
 describe('the writers maintain the rows', () => {
   it('a page rename moves its rows and re-points every mentioning page — cascade included', async () => {
     const r = await handleMutate(
+      root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       deps,
     )
@@ -94,6 +95,7 @@ describe('the writers maintain the rows', () => {
 
   it('a folder rename prefix-moves every row beneath it', async () => {
     const r = await handleMutate(
+      root,
       { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Weekly' },
       deps,
     )
@@ -105,6 +107,7 @@ describe('the writers maintain the rows', () => {
   it('a property write lands in page_values; a create is born indexed', async () => {
     await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
     const set = await handleMutate(
+      root,
       {
         op: 'setProperty',
         path: 'Notes/Daily/Alpha.md',
@@ -116,6 +119,7 @@ describe('the writers maintain the rows', () => {
     expect(set.ok).toBe(true)
     expect(queryKeyHolders('Stage')).toEqual(['Notes/Daily/Alpha.md'])
     const created = await handleMutate(
+      root,
       { op: 'createPage', parentPath: 'Notes', name: 'Fresh' },
       deps,
     )
@@ -125,6 +129,7 @@ describe('the writers maintain the rows', () => {
 
   it('a context write lands as a space row; a Space rename and delete each keep it current', async () => {
     const tagged = await handleMutate(
+      root,
       {
         op: 'setContext',
         path: 'Notes/Daily/Alpha.md',
@@ -137,6 +142,7 @@ describe('the writers maintain the rows', () => {
     expect(queryMembers('<Projects>', 'pommora')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const renamed = await handleMutate(
+      root,
       { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' },
       deps,
     )
@@ -145,6 +151,7 @@ describe('the writers maintain the rows', () => {
     expect(queryMembers('<Projects>', 'pom')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const deleted = await handleMutate(
+      root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pom', kind: 'space' },
       deps,
     )
@@ -155,6 +162,7 @@ describe('the writers maintain the rows', () => {
 
   it('a delete clears the rows; a restore reseeds them', async () => {
     const del = await handleMutate(
+      root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       deps,
     )
@@ -162,13 +170,18 @@ describe('the writers maintain the rows', () => {
     expect(queryMentions('beta')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const [listed] = await listBundles(root)
-    const restored = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, deps)
+    const restored = await handleMutate(
+      root,
+      { op: 'restore', bundlePath: listed.bundlePath },
+      deps,
+    )
     expect(restored.ok).toBe(true)
     await expectMaintained()
   })
 
   it('a page move re-keys its rows', async () => {
     const r = await handleMutate(
+      root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes' },
       deps,
     )
