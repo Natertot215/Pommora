@@ -181,6 +181,7 @@ async function withKeys(
     }, delay)
   }
   const outcome = await call(host, binding, 'info', { nexusId })
+  if (token !== generation) return
   if (outcome.status === 404) {
     setStatus(ctx, {
       state: 'off',
@@ -191,6 +192,7 @@ async function withKeys(
   }
   const info = outcome.reply?.info ?? null
   const ring = await loadRing(host, nexusId, info, null)
+  if (token !== generation) return
   if (ring !== null) return begin(ctx, host, root, nexusId, binding, ring, token)
   if (info !== null) {
     setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
