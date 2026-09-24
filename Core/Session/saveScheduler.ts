@@ -22,15 +22,26 @@ interface BodyWriter {
 /** A refused save is dropped, never retried: the next edit schedules the whole body again. `what` names the lost write in the one notice a refusal posts; a writer without it drops quietly. */
 export function createBodyWriter(what?: string): BodyWriter {
   const pending = new Map<string, { save: Save; timer: ReturnType<typeof setTimeout> }>()
+  // A key's next save waits for the one in flight, so it carries the base that save set rather than the one before it.
+  const inFlight = new Map<string, Promise<void>>()
 
   const flush = (key: string): Promise<void> => {
+    const prior = inFlight.get(key)
+    if (prior) return prior.then(() => flush(key))
     const p = pending.get(key)
     if (!p) return Promise.resolve()
     clearTimeout(p.timer)
     pending.delete(key)
-    return p.save().then((r) => {
-      if (!r.ok && what) notifyError(`Couldn’t save ${what}: ${r.error.message}`)
-    })
+    const run = p
+      .save()
+      .then((r) => {
+        if (!r.ok && what) notifyError(`Couldn’t save ${what}: ${r.error.message}`)
+      })
+      .finally(() => {
+        if (inFlight.get(key) === run) inFlight.delete(key)
+      })
+    inFlight.set(key, run)
+    return run
   }
 
   const schedule = (key: string, save: Save): void => {
@@ -50,7 +61,9 @@ export function createBodyWriter(what?: string): BodyWriter {
   }
 
   const flushAll = (): Promise<void> =>
-    Promise.all([...pending.keys()].map(flush)).then(() => undefined)
+    Promise.all([...new Set([...pending.keys(), ...inFlight.keys()])].map(flush)).then(
+      () => undefined,
+    )
 
   // beforeunload can't await, but the IPC send gets out before teardown.
   if (typeof window !== 'undefined') {
