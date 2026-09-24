@@ -15,7 +15,7 @@ import {
 import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
-import { isRecentWrite } from '@pommora/core/Files/writeEcho'
+import { dropOwnEchoes, isRecentWrite } from '@pommora/core/Files/writeEcho'
 import { isMetadataShardRel } from '@pommora/core/Paths/nexusPaths'
 import { relPosix } from '@pommora/core/Paths/paths'
 import type { Pushes } from '@pommora/core/Contract/bridge'
@@ -88,7 +88,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       const path = posixPath(hostPath)
       emitWatch(event, path)
       if (isTileBody(path)) return
-      // The app's own writes echo back and confirm through their own channels; the two live config files and the metadata month files skip that suppression because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
+      // The app's own writes echo back and confirm through their own channels: a bytes-less echo stops here, and one recorded with its bytes is dropped at the settle while the file still holds them. The two live config files and the metadata month files skip the early stop because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
       if (isConfigPath(root, path, 'state'))
         pushConfig(root, win, 'nav:changed', readNavigationFile)
       else if (isConfigPath(root, path, 'matrix'))
@@ -131,9 +131,11 @@ export function stopWatcher(): void {
 /** Patch what classifies, walk for the rest. Pushes only when the tree object moved — an index-only batch changes nothing anyone renders. */
 async function settle(root: string, win: CurrentWindow, scope: WatchScope): Promise<void> {
   if (sessionRoot() !== root) return
-  const events = batch
+  const noted = batch
   batch = []
   try {
+    const events = await dropOwnEchoes(noted)
+    if (!events.length) return
     const before = getLiveTree()
     const assetsBefore = getHeldAssetMap(root)
     const { outcome, touched } = await applyWatchEvents(root, events, scope)
