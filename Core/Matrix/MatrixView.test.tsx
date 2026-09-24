@@ -30,11 +30,12 @@ class ResizeObserverStub {
   disconnect(): void {}
 }
 
-let frames: Array<() => void> = []
+let frames = new Map<number, () => void>()
+let nextFrame = 0
 const drain = (limit = 50): void => {
-  for (let n = 0; frames.length > 0 && n < limit; n++) {
-    const queued = frames
-    frames = []
+  for (let n = 0; frames.size > 0 && n < limit; n++) {
+    const queued = [...frames.values()]
+    frames = new Map()
     act(() => {
       for (const fn of queued) fn()
     })
@@ -69,12 +70,15 @@ const fire = (el: EventTarget, e: Event): Event => {
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   observers.length = 0
-  frames = []
+  frames = new Map()
   vi.stubGlobal('ResizeObserver', ResizeObserverStub)
-  vi.stubGlobal('requestAnimationFrame', (fn: () => void) => frames.push(fn))
-  vi.stubGlobal('cancelAnimationFrame', () => {})
+  vi.stubGlobal('requestAnimationFrame', (fn: () => void) => {
+    frames.set(++nextFrame, fn)
+    return nextFrame
+  })
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
   vi.stubGlobal('matchMedia', () => ({ addEventListener() {}, removeEventListener() {} }))
-  HTMLCanvasElement.prototype.getContext = (() => null) as never
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
   vi.mocked(hoverGlance).mockClear()
   vi.mocked(leaveGlanceFrom).mockClear()
   vi.mocked(showEntityMenu).mockClear()
@@ -110,6 +114,7 @@ afterEach(() => {
   act(() => vi.runAllTimers())
   host.remove()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
@@ -169,16 +174,40 @@ describe('MatrixView', () => {
     expect(fire(canvas(), pointer('contextmenu', FAR)).defaultPrevented).toBe(true)
   })
 
-  it('reads the canvas box once per hover, and again after the pointer leaves', () => {
+  it('reads the canvas box once per hover, and again after a leave, a press, or a resize', () => {
     const box = vi.spyOn(canvas(), 'getBoundingClientRect')
     for (const x of [100, 110, 120])
       fire(canvas(), pointer('pointermove', { clientX: x, clientY: 20 }))
     expect(box).toHaveBeenCalledTimes(1)
-    fire(host.firstElementChild as Element, new MouseEvent('pointerout', { bubbles: true }))
-    act(() => {
-      host.firstElementChild?.dispatchEvent(new MouseEvent('pointerleave'))
-    })
-    fire(canvas(), pointer('pointermove', { clientX: 130, clientY: 20 }))
-    expect(box).toHaveBeenCalledTimes(2)
+    const moveAfter = (lets: () => void, reads: number): void => {
+      lets()
+      fire(canvas(), pointer('pointermove', { clientX: 130, clientY: 20 }))
+      expect(box).toHaveBeenCalledTimes(reads)
+    }
+    moveAfter(
+      () =>
+        fire(host.firstElementChild as Element, new MouseEvent('pointerout', { bubbles: true })),
+      2,
+    )
+    moveAfter(() => {
+      fire(canvas(), pointer('pointerdown', FAR))
+      fire(window, pointer('pointerup', FAR))
+    }, 3)
+    moveAfter(() => {
+      for (const o of observers) o([{ contentRect: { x: 0, y: 0, width: 800, height: 600 } }])
+    }, 4)
+    moveAfter(() => fire(window, new Event('resize')), 5)
+  })
+
+  it('leaves the hover where a gesture began', () => {
+    const held = (at: { clientX: number; clientY: number }) => {
+      const e = pointer('pointermove', at)
+      Object.defineProperty(e, 'buttons', { value: 1 })
+      return e
+    }
+    fire(canvas(), pointer('pointermove', FAR))
+    fire(canvas(), held(CENTRE))
+    drain()
+    expect(label()).toBeNull()
   })
 })

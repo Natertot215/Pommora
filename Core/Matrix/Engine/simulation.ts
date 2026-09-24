@@ -100,17 +100,15 @@ export function reheat(sim: Simulation): void {
   wake(sim, DRAG_ALPHA_TARGET)
 }
 
-const restTarget = (sim: Simulation): number => (sim.drag ? DRAG_ALPHA_TARGET : 0)
-
 // A mode change replaces every link, so the picture re-solves at full heat rather than relaxing out of the shape the last mode left it in.
 export function resettle(sim: Simulation): void {
-  sim.alphaTarget = restTarget(sim)
+  sim.alphaTarget = 0
   wake(sim, 1)
 }
 
 // A held node keeps the heat it needs to follow the pointer through anything that cools the rest.
 export function cool(sim: Simulation): void {
-  sim.alphaTarget = restTarget(sim)
+  sim.alphaTarget = sim.drag ? DRAG_ALPHA_TARGET : 0
   wake(sim, DRAG_ALPHA_TARGET)
 }
 

@@ -48,6 +48,16 @@ describeSnapshotStore('SQLite snapshots', () => snapshotStore(versionsDb))
 describeSyncStore('SQLite sync bases', () => syncStore(db))
 describeCaptureStore('SQLite captures', () => captureStore(versionsDb))
 
+describe('the key-value store over SQLite', () => {
+  it('writes a batch whole or not at all', () => {
+    const store = keyValueStore(db)
+    expect(() => store.write('folds', { a: 'x', b: {} as never })).toThrow()
+    expect(store.entries('folds')).toEqual({})
+    store.write('folds', { a: 'x' })
+    expect(store.entries('folds')).toEqual({ a: 'x' })
+  })
+})
+
 describe('the content index over SQLite', () => {
   it('reads a batch of paths past SQLite’s variable limit', () => {
     const store = contentIndexStore(db)

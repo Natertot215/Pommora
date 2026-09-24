@@ -11,8 +11,8 @@ const SAVE_DEBOUNCE_MS = 400
 
 type Save = () => Promise<Result<unknown>>
 
-// Set while a Nexus switch is in flight: a save that fired then couldn't tell which root would take it.
-let held = false
+// Set while a Nexus switch is in flight: a save that falls due then can't tell which root would take it, so it waits for the switch and then lands or is cancelled with the old Nexus.
+let hold: { depth: number; done: Promise<void>; release: () => void } | null = null
 
 interface BodyWriter {
   schedule: (key: string, save: Save) => void
@@ -30,15 +30,12 @@ export function createBodyWriter(what?: string): BodyWriter {
   const inFlight = new Map<string, Promise<void>>()
 
   const flush = (key: string): Promise<void> => {
+    if (hold && pending.has(key)) return hold.done.then(() => flush(key))
     const prior = inFlight.get(key)
     if (prior) return prior.then(() => flush(key))
     const p = pending.get(key)
     if (!p) return Promise.resolve()
     clearTimeout(p.timer)
-    if (held) {
-      p.timer = setTimeout(() => void flush(key), SAVE_DEBOUNCE_MS)
-      return Promise.resolve()
-    }
     pending.delete(key)
     const run = p
       .save()
@@ -85,13 +82,24 @@ export function createBodyWriter(what?: string): BodyWriter {
   return { schedule, flush, settled, flushAll, cancel, cancelAll }
 }
 
-/** Everything owed is already landed when a switch holds; a save owed during it waits out the switch, then lands or is cancelled with the old Nexus. */
+/** Everything owed is already landed when a switch holds. Holds nest, so a second switch started mid-switch keeps the first's owed saves waiting until both are done. */
 export function holdSaves(): void {
-  held = true
+  if (hold) {
+    hold.depth += 1
+    return
+  }
+  let release = (): void => {}
+  const done = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  hold = { depth: 1, done, release }
 }
 
 export function releaseSaves(): void {
-  held = false
+  if (!hold || --hold.depth > 0) return
+  const { release } = hold
+  hold = null
+  release()
 }
 
 const pageWriter = createBodyWriter('the page')
@@ -136,7 +144,7 @@ export function flushAllPageSaves(): Promise<void> {
   return pageWriter.flushAll()
 }
 
-// Tab and window sets, tile layouts, and the Matrix frame and positions each write whole on every change; one debounced write per key coalesces a burst into the last state.
+// Tab and window sets, tile layouts, and the Matrix frame each write whole on every change, and the Matrix positions send every row not yet sent; one debounced write per key coalesces a burst into the last state.
 export const sessionWriter = createBodyWriter()
 
 export function scheduleTabsSave(set: StoredTabSet): void {

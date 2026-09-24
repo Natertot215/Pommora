@@ -11,7 +11,7 @@ import {
   type MatrixGraphReply,
   type MatrixLink,
 } from '@pommora/core/Matrix/matrixGraph'
-import type { LayoutPatch, Positions } from '@pommora/core/Matrix/matrixLayout'
+import type { PositionRows, Positions } from '@pommora/core/Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
@@ -23,8 +23,10 @@ export type MatrixLoad =
   | { kind: 'unloaded' }
   | { kind: 'loading' }
   | { kind: 'loaded' }
-  // A Nexus switch or a refused graph: the next load waits for a tree other than this one.
-  | { kind: 'waiting'; tree: NexusTree | null }
+  // A Nexus switch between its reset and the new tree landing: the tree in hand still belongs to the Nexus it left.
+  | { kind: 'switching' }
+  // A refused graph (no index yet): the next load waits for the tree to move rather than asking on every store change.
+  | { kind: 'refused'; tree: NexusTree }
 
 export interface MatrixSlice {
   matrixConfig: MatrixConfig
@@ -37,13 +39,22 @@ export interface MatrixSlice {
   applyMatrixChanged: (config: MatrixConfig) => void
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
-  saveMatrixLayout: (rows: NonNullable<LayoutPatch['positions']>) => void
+  saveMatrixLayout: (rows: PositionRows) => void
   saveMatrixFrame: (frame: Frame) => void
   unloadMatrix: () => void
   resetMatrix: () => void
 }
 
 const UNLOADED: MatrixLoad = { kind: 'unloaded' }
+
+// Rows laid over held positions: a pair seats its node, and a null lets it go.
+function withRows(held: Positions, rows: PositionRows): Positions {
+  const next = { ...held }
+  for (const [id, p] of Object.entries(rows))
+    if (p) next[id] = p
+    else delete next[id]
+  return next
+}
 
 const HELD = {
   matrixGraph: EMPTY_GRAPH_REPLY,
@@ -74,7 +85,9 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   // Bumped whenever the store lets its graph go, so an answer asked for before that lands nowhere.
   let generation = 0
   // Every position row not yet sent; each save hands the writer all of them, so the one that lands carries every move before it.
-  let unsaved: NonNullable<LayoutPatch['positions']> = {}
+  let unsaved: PositionRows = {}
+  // Bumped by a Nexus switch, so a refusal that answers after it doesn't owe the old Nexus's rows to the new one.
+  let switches = 0
 
   // A renamed or moved page answers under its new path, so the rows it held under the old one go by id as well as by path.
   const merge = (
@@ -123,7 +136,6 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   const letGo = (): void => {
     generation += 1
     pendingPaths = new Set()
-    unsaved = {}
     cancelRefetch()
   }
 
@@ -136,7 +148,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       const { tree, matrixLoad } = get()
       const ready =
         matrixLoad.kind === 'unloaded' ||
-        (matrixLoad.kind === 'waiting' && matrixLoad.tree !== tree)
+        (matrixLoad.kind === 'refused' && matrixLoad.tree !== tree)
       if (tree === null || !ready) return
       const started = generation
       set({ matrixLoad: { kind: 'loading' } })
@@ -157,23 +169,24 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
         )
         get().applyMatrixChanged({ ...held, ...landed })
       }
-      // A refused graph (no index yet) waits for the tree to move rather than asking again on every store change.
       if (!graph.ok) {
-        set({ matrixLoad: { kind: 'waiting', tree } })
+        pendingPaths = new Set()
+        set({ matrixLoad: { kind: 'refused', tree } })
         return
       }
-      const positions = layout.ok ? layout.value.positions : {}
+      // Rows still owed to the store are newer than the ones it answered with.
+      const positions = withRows(layout.ok ? layout.value.positions : {}, unsaved)
       set({
         matrixGraph: graph.value,
         matrixPositions: positions,
         matrixFrame: layout.ok ? layout.value.frame : null,
         matrixLoad: { kind: 'loaded' },
       })
-      // A node the tree has lost is let go once per load, not judged on every settle.
+      // A node the tree has lost is let go once, as the layout loads.
       const live = recordsByIdOf(tree)
       const lost = Object.keys(positions).filter((id) => !live.has(id))
       get().saveMatrixLayout(Object.fromEntries(lost.map((id) => [id, null])))
-      if (pendingPaths.size) void flush()
+      void flush()
     },
 
     patchMatrix: (patch) => {
@@ -206,20 +219,17 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     refetchMatrixPaths: (paths) => queue(paths),
 
     saveMatrixLayout: (rows) => {
-      const ids = Object.keys(rows)
-      if (get().matrixLoad.kind !== 'loaded' || ids.length === 0) return
-      const next = { ...get().matrixPositions }
-      for (const id of ids) {
-        const p = rows[id]
-        if (p) next[id] = p
-        else delete next[id]
-      }
-      set({ matrixPositions: next })
+      if (get().matrixLoad.kind !== 'loaded' || Object.keys(rows).length === 0) return
+      set({ matrixPositions: withRows(get().matrixPositions, rows) })
       Object.assign(unsaved, rows)
       const positions = unsaved
-      sessionWriter.schedule(LAYOUT_KEY, () => {
+      const owedTo = switches
+      sessionWriter.schedule(LAYOUT_KEY, async () => {
         if (unsaved === positions) unsaved = {}
-        return dialer().ask('matrixLayout:save', { positions })
+        const sent = await dialer().ask('matrixLayout:save', { positions })
+        // A settle sends only what moved, so a refused save is owed again rather than lost; a switch since has left its Nexus behind.
+        if (!sent.ok && owedTo === switches) unsaved = { ...positions, ...unsaved }
+        return sent
       })
     },
 
@@ -229,7 +239,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       sessionWriter.schedule(FRAME_KEY, () => dialer().ask('matrixLayout:save', { frame }))
     },
 
-    // The last surface closing: its owed saves land, the graph and its refetches go, and the config stays for the menus that patch it.
+    // The last surface closing, or a switch landing: owed saves land, the graph and its refetches go, and the config stays for the menus that patch it.
     unloadMatrix: () => {
       void sessionWriter.flush(FRAME_KEY)
       void sessionWriter.flush(LAYOUT_KEY)
@@ -237,14 +247,12 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       set({ ...HELD, matrixLoad: UNLOADED })
     },
 
-    // The old tree is still installed when a switch resets, so the load waits for the new one.
+    // A switch's owed saves are already cancelled with the old Nexus, so the positions it owed go with them.
     resetMatrix: () => {
       letGo()
-      set({
-        matrixConfig: DEFAULT_MATRIX_CONFIG,
-        ...HELD,
-        matrixLoad: { kind: 'waiting', tree: get().tree },
-      })
+      switches += 1
+      unsaved = {}
+      set({ matrixConfig: DEFAULT_MATRIX_CONFIG, ...HELD, matrixLoad: { kind: 'switching' } })
     },
   }
 }

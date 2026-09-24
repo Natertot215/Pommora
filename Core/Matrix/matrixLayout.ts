@@ -10,8 +10,10 @@ export interface MatrixLayout {
 }
 
 // Positions are one row per node, so a save sends only the nodes that moved; a null clears a node the tree has lost.
+export type PositionRows = Record<string, [number, number] | null>
+
 export interface LayoutPatch {
-  positions?: Record<string, [number, number] | null>
+  positions?: PositionRows
   frame?: Frame
 }
 
@@ -24,7 +26,7 @@ export function readPositions(v: unknown): Positions {
   return out
 }
 
-const isPositionRows = (v: unknown): v is LayoutPatch['positions'] =>
+const isPositionRows = (v: unknown): v is PositionRows =>
   isPlainObject(v) &&
   Object.values(v).every(
     (p) =>

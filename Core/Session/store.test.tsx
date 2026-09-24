@@ -20,6 +20,7 @@ import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
 import { clearCache, readBodyBase, readPageDetail, setBodyBase } from './pageDetailCache'
 import { schedulePageSave, scheduleTabsSave } from './saveScheduler'
+import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
 import { host as dialer } from '../Platform/dialer'
 import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
@@ -700,13 +701,32 @@ describe('store — a Nexus switch lands every owed save first', () => {
       channels['nexus:choose'] = vi.fn(async () => {
         scheduleTabsSave({ tabs: [], activeTabId: '' } as unknown as StoredTabSet)
         await vi.advanceTimersByTimeAsync(1000)
+        expect(tabs).not.toHaveBeenCalled()
         return ok(switched)
       })
       await useSession.getState().choose()
-      expect(tabs).not.toHaveBeenCalled()
-      await vi.advanceTimersByTimeAsync(1000)
+      await vi.advanceTimersByTimeAsync(0)
       expect(tabs).toHaveBeenCalledTimes(switched ? 0 : 1)
     }
+  })
+
+  it('drops a page move whose flush waited out a switch, since its path named the Nexus it left', async () => {
+    const mutate = vi.fn(async () => ok({}))
+    channels.mutate = mutate
+    channels['page:updateBody'] = vi.fn(async () => ok({ hash: 'h', stale: false }))
+    channels['nexus:state'] = vi.fn(async () => ok({ status: 'empty' }))
+    useSession.setState({ tree: makeTree() })
+    let moved: Promise<boolean> = Promise.resolve(true)
+    channels['nexus:choose'] = vi.fn(async () => {
+      schedulePageSave('Notes/A.md', 'typed')
+      moved = useSession
+        .getState()
+        .mutate({ op: 'movePage', path: 'Notes/A.md', newParentPath: 'Notes/Ideas' })
+      return ok(true)
+    })
+    await useSession.getState().choose()
+    expect(await moved).toBe(false)
+    expect(mutate).not.toHaveBeenCalled()
   })
 
   it('closes every rename field and picker the old Nexus left open', async () => {

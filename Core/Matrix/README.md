@@ -37,7 +37,7 @@ drove the loop's own shape rather than a library's:
 | `matrixRuntime.ts` | The simulation's one owner — the frame loop, the rebuild guard, the stages, the fade, the layout and frame writes |
 | `matrixInput.ts` | The tree walk into a `GraphInput`, and what the filter leaves visible |
 | `matrixGraph.ts` | The index read behind `matrix:graph` and the shape of its reply |
-| `matrixConfig.ts` | The four sections, their patch, and the section merge |
+| `matrixConfig.ts` | The four sections and their patch |
 | `matrixFile.ts`, `handlers.ts` | `.nexus/matrix.json`, its per-key merge, and the channels over it |
 | `matrixLayout.ts` | The machine-local positions and frame, and the readers that validate them |
 | `matrixKind.ts` | The selection kind, its title, its icon, and a node's record shape |

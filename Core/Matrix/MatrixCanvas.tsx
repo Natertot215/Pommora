@@ -486,9 +486,13 @@ export function MatrixCanvas({
     ro.observe(host)
     resize()
     watchRatio()
+    // A floating window re-clamped into a smaller viewport moves without resizing.
+    const moved = (): void => void boxes.delete(canvas)
+    window.addEventListener('resize', moved)
     return () => {
       ro.disconnect()
       media?.removeEventListener('change', onRatio)
+      window.removeEventListener('resize', moved)
     }
   }, [canvasRef])
 
@@ -510,12 +514,12 @@ export function MatrixCanvas({
     return () => host.removeEventListener('wheel', onWheel)
   }, [canvasRef, surface])
 
-  const nodeAt = (e: React.PointerEvent | React.MouseEvent): string | null =>
-    matrixRuntime.hitTest(...toWorldPoint(surface, e.currentTarget as HTMLCanvasElement, e))
+  const nodeAt = (e: React.MouseEvent<HTMLCanvasElement>): string | null =>
+    matrixRuntime.hitTest(...toWorldPoint(surface, e.currentTarget, e))
 
-  const backgroundDown = (e: React.PointerEvent): void => {
+  const backgroundDown = (e: React.PointerEvent<HTMLCanvasElement>): void => {
     // Hoisted: `e.currentTarget` is null by the time a window-level move listener runs.
-    const el = e.currentTarget as HTMLElement
+    const el = e.currentTarget
     let last: [number, number] = [e.clientX, e.clientY]
     begin({
       el,
@@ -550,7 +554,8 @@ export function MatrixCanvas({
         }}
         onPointerMove={(e) => {
           lastShift = e.shiftKey
-          if (editing) return
+          // A held button is a drag or a pan in progress, which the hover leaves where it began.
+          if (editing || e.buttons !== 0) return
           const id = nodeAt(e)
           if (id !== null || !glanceShown()) matrixRuntime.setHovered(id)
         }}

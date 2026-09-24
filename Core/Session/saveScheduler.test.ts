@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { detail } from '@pommora/core/Testing/fixtures'
 import { machine } from '../Platform/machine'
 import { cachePageDetail, clearCache, readPageDetail } from './pageDetailCache'
-import { flushPageSave, schedulePageSave, setStaleSaveSink } from './saveScheduler'
+import {
+  flushPageSave,
+  holdSaves,
+  releaseSaves,
+  schedulePageSave,
+  setStaleSaveSink,
+} from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
 
 const PATH = 'Notes/a.md'
@@ -103,5 +109,36 @@ describe('one save in flight per page', () => {
       ['v1', disk.bodyHash],
       ['v2', machine().sha256Hex('v1')],
     ])
+  })
+})
+
+describe('holdSaves', () => {
+  it('lets a flush with nothing held through at once', async () => {
+    holdSaves()
+    let landed = false
+    await flushPageSave(PATH).then(() => {
+      landed = true
+    })
+    releaseSaves()
+    expect(landed).toBe(true)
+  })
+
+  it('keeps a flush waiting until every hold lifts, and then lands it', async () => {
+    stub({ ok: true, value: { hash: machine().sha256Hex('typed'), stale: false } })
+    cachePageDetail(disk)
+    holdSaves()
+    holdSaves()
+    schedulePageSave(PATH, 'typed')
+    let landed = false
+    const flushed = flushPageSave(PATH).then(() => {
+      landed = true
+    })
+    releaseSaves()
+    await Promise.resolve()
+    expect(updateBody).not.toHaveBeenCalled()
+    releaseSaves()
+    await flushed
+    expect(landed).toBe(true)
+    expect(updateBody).toHaveBeenCalledExactlyOnceWith(PATH, 'typed', disk.bodyHash)
   })
 })

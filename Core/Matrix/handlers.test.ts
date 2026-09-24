@@ -107,13 +107,13 @@ describe('the layout channels', () => {
   })
 
   it('reads a layout saved as one map, and folds it into rows on the first save', async () => {
-    writeValue('matrixLayout', { a: [1, 2], b: [3, 4] })
+    writeValue('matrixLayout', { a: [1, 2], b: [3, 4], c: [5, 5] })
     const before = await matrixHandlers['matrixLayout:load'](ctx)
-    expect(before.ok && before.value.positions).toEqual({ a: [1, 2], b: [3, 4] })
+    expect(before.ok && before.value.positions).toEqual({ a: [1, 2], b: [3, 4], c: [5, 5] })
     expect(readValue('matrixLayout')).not.toBeNull()
     matrixHandlers['matrixLayout:save'](ctx, { positions: { b: [9, 9], a: null } })
     expect(readValue('matrixLayout')).toBeNull()
-    expect(readScope('matrixLayout')).toEqual({ b: [9, 9] })
+    expect(readScope('matrixLayout')).toEqual({ b: [9, 9], c: [5, 5] })
   })
 
   it('loads an unwritten layout as an empty map and no frame', async () => {

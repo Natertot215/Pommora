@@ -14,9 +14,9 @@ vi.mock('./matrixInput', async (actual) => {
   const real = await actual<typeof import('./matrixInput')>()
   return {
     ...real,
-    matrixConnections: (...args: Parameters<typeof real.matrixConnections>) => {
+    matrixTree: (...args: Parameters<typeof real.matrixTree>) => {
       walks.count += 1
-      return real.matrixConnections(...args)
+      return real.matrixTree(...args)
     },
   }
 })
@@ -424,9 +424,14 @@ describe('matrixRuntime', () => {
     flush()
     const graph = matrixRuntime.graph
     const sim = matrixRuntime.sim
+    const paint = vi.fn()
+    const stop = matrixRuntime.subscribe(paint)
     useSession.setState({ matrixConfig: config({ hideIcon: true }) })
     useSession.setState({ matrixConfig: config({ hideIcon: true, hidePath: true }) })
     useSession.setState({ matrixConfig: config({ hideIcon: true, locked: true }) })
+    step()
+    stop()
+    expect(paint).toHaveBeenCalledTimes(1)
     expect(matrixRuntime.graph).toBe(graph)
     expect(matrixRuntime.sim).toBe(sim)
 
@@ -479,7 +484,7 @@ describe('matrixRuntime', () => {
     expect(useSession.getState().matrixGraph).toEqual(EMPTY_GRAPH_REPLY)
   })
 
-  it('clears the graph and asks the store to load once when the Nexus drops', async () => {
+  it('clears the graph and asks the store to load once when it unloads', async () => {
     const graphAsk = vi.fn(async () => fail('operation-failed', 'The index is not ready.'))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
@@ -633,11 +638,126 @@ describe('matrixRuntime', () => {
     flush()
     const graph = matrixRuntime.graph
     const sim = matrixRuntime.sim
-    const walked = walks.count
     useSession.setState({ matrixGraph: { links: reply.links, values: {} } })
-    expect(walks.count).toBe(walked)
     expect(matrixRuntime.graph).toBe(graph)
     expect(matrixRuntime.sim).toBe(sim)
+  })
+
+  it('leaves a filtered picture standing for a refetch that changed no verdict', () => {
+    const reply = linked()
+    seed({
+      matrixGraph: reply,
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        filter: {
+          rules: {
+            match: 'all' as const,
+            rules: [{ property_id: '_location', op: 'is_inside', value: 'c1' }],
+          },
+          enabled: true,
+        },
+      }),
+    })
+    attach()
+    flush()
+    const graph = matrixRuntime.graph
+    useSession.setState({
+      matrixGraph: {
+        links: reply.links,
+        values: { p2: { frontmatter: { ID: 'p2' }, createdAt: null, modifiedAt: 'later' } },
+      },
+    })
+    expect(matrixRuntime.graph).toBe(graph)
+  })
+
+  it('re-judges a filter when a value it reads arrives', () => {
+    const tree = makeTree()
+    tree.registry = [{ id: 'prop_rank', name: 'Rank', type: 'number' }]
+    const reply = linked()
+    seed({
+      tree,
+      matrixGraph: reply,
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        filter: {
+          rules: { match: 'all' as const, rules: [{ property_id: 'prop_rank', op: 'is_empty' }] },
+          enabled: true,
+        },
+      }),
+    })
+    attach()
+    flush()
+    expect(matrixRuntime.graph.index.has('p1')).toBe(true)
+    useSession.setState({
+      matrixGraph: {
+        links: reply.links,
+        values: { p1: { frontmatter: { ID: 'p1', Rank: 3 }, createdAt: null, modifiedAt: null } },
+      },
+    })
+    expect(matrixRuntime.graph.index.has('p1')).toBe(false)
+  })
+
+  it('re-judges a Location filter when a page moves across it', () => {
+    seed({
+      matrixGraph: linked(),
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        filter: {
+          rules: {
+            match: 'all' as const,
+            rules: [{ property_id: '_location', op: 'is_inside', value: 's1' }],
+          },
+          enabled: true,
+        },
+      }),
+    })
+    attach()
+    flush()
+    expect(matrixRuntime.graph.index.has('p2')).toBe(true)
+    useSession.setState({ tree: relocated() })
+    expect(matrixRuntime.graph.index.has('p2')).toBe(false)
+  })
+
+  it('reads nothing while a Nexus switch is between its reset and its landing', () => {
+    const graphAsk = vi.fn(async () => ok(EMPTY_GRAPH_REPLY))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
+      'matrix:graph': graphAsk,
+      'matrixLayout:load': async () => ok({ positions: {}, frame: null }),
+      'matrixLayout:save': async () => ok(null),
+    })
+    seed()
+    attach()
+    flush()
+    useSession.getState().resetMatrix()
+    expect(graphAsk).not.toHaveBeenCalled()
+    expect(matrixRuntime.graph.nodes).toHaveLength(0)
+    useSession.getState().unloadMatrix()
+    expect(graphAsk).toHaveBeenCalledTimes(1)
+  })
+
+  it('relaxes into forces pushed together with a rebuild', () => {
+    seed({ matrixGraph: linked() })
+    attach()
+    flush()
+    useSession.setState({
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        forces: { connection: { ...DEFAULT_MATRIX_CONFIG.forces.connection, strength: 0.9 } },
+        display: { unlinked: false },
+      }),
+    })
+    expect(matrixRuntime.sim?.awake).toBe(true)
+  })
+
+  it('keeps a held node following the pointer through a regroup', () => {
+    seed({ matrixGraph: linked() })
+    attach()
+    flush()
+    matrixRuntime.beginDrag('p1')
+    matrixRuntime.moveDrag(400, 400)
+    useSession.setState({
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, { group: { mode: 'location' } }),
+    })
+    flush(2000)
+    expect(matrixRuntime.sim?.drag?.id).toBe('p1')
+    expect(matrixRuntime.sim?.awake).toBe(true)
   })
 
   it('repaints when its stage moves', () => {

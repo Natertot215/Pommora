@@ -58,6 +58,7 @@ beforeEach(() => {
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.getState().resetMatrix()
+  useSession.getState().unloadMatrix()
   useSession.setState({ tree })
 })
 
@@ -126,14 +127,21 @@ describe('loadMatrix', () => {
       ok: false,
       error: { code: 'operation-failed', message: 'The index is not ready.' },
     })
-    await seatLoaded()
-    expect(useSession.getState().matrixLoad.kind).toBe('waiting')
+    const land = heldGraph()
+    const pass = useSession.getState().loadMatrix()
+    useSession.getState().refetchMatrixPaths(['Notes/Alpha.md'])
+    land({ ok: false, error: { code: 'operation-failed', message: 'The index is not ready.' } })
+    await pass
+    expect(useSession.getState().matrixLoad.kind).toBe('refused')
     expect(useSession.getState().matrixConfig.display.hideIcon).toBe(true)
     await seatLoaded()
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
+    channels['matrix:graph'].mockResolvedValue({ ok: true, value: GRAPH })
     useSession.setState({ tree: makeTree() })
     await seatLoaded()
+    await vi.advanceTimersByTimeAsync(200)
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
+    expect(channels['matrix:graph']).toHaveBeenLastCalledWith()
   })
 
   it('keeps a reply that lands after an edit in the same Nexus, and starts no second load meanwhile', async () => {
@@ -150,25 +158,31 @@ describe('loadMatrix', () => {
 
   it('discards a reply that lands after the Matrix was let go', async () => {
     for (const letGo of ['unloadMatrix', 'resetMatrix'] as const) {
+      channels['matrix:read'].mockResolvedValueOnce({
+        ok: true,
+        value: parseMatrixConfig({ display: { hideIcon: true } }),
+      })
       const land = heldGraph()
       const pass = useSession.getState().loadMatrix()
       useSession.getState()[letGo]()
       land({ ok: true, value: GRAPH })
       await pass
       expect(useSession.getState().matrixLoad.kind).not.toBe('loaded')
+      expect(useSession.getState().matrixConfig.display.hideIcon).toBe(false)
       expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
       useSession.setState({ tree: makeTree() })
     }
   })
 
-  it('loads again after an unload on the same tree, and not after a reset until the tree moves', async () => {
+  it('reads nothing between a switch’s reset and its landing, then loads on the same tree as reopening the open Nexus does', async () => {
     await seatLoaded()
+    useSession.getState().resetMatrix()
+    await seatLoaded()
+    expect(useSession.getState().matrixLoad.kind).toBe('switching')
+    expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
     useSession.getState().unloadMatrix()
     await seatLoaded()
     expect(useSession.getState().matrixLoad.kind).toBe('loaded')
-    useSession.getState().resetMatrix()
-    await seatLoaded()
-    expect(useSession.getState().matrixLoad).toEqual({ kind: 'waiting', tree })
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
   })
 })
@@ -284,6 +298,54 @@ describe('the layout half', () => {
     })
   })
 
+  it('keeps positions owed behind a save in flight through an unload and a reload', async () => {
+    let land: (r: unknown) => void = () => {}
+    channels['matrixLayout:save'].mockReturnValueOnce(
+      new Promise((resolve) => {
+        land = resolve
+      }),
+    )
+    await seatLoaded()
+    useSession.getState().saveMatrixLayout({ p1: [1, 1] })
+    await vi.advanceTimersByTimeAsync(400)
+    useSession.getState().saveMatrixLayout({ p2: [2, 2] })
+    useSession.getState().unloadMatrix()
+    await seatLoaded()
+    useSession.getState().saveMatrixLayout({ p1: [3, 3] })
+    land({ ok: true, value: null })
+    await vi.advanceTimersByTimeAsync(400)
+    expect(channels['matrixLayout:save']).toHaveBeenLastCalledWith({
+      positions: { p2: [2, 2], p1: [3, 3] },
+    })
+  })
+
+  it('owes a refused save again, and seats owed rows over a reload', async () => {
+    channels['matrixLayout:save'].mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'busy', message: 'Busy.' },
+    })
+    await seatLoaded()
+    useSession.getState().saveMatrixLayout({ p1: [7, 7] })
+    await vi.advanceTimersByTimeAsync(400)
+    useSession.getState().unloadMatrix()
+    channels['matrixLayout:save'].mockClear()
+    let finish: (r: unknown) => void = () => {}
+    channels['matrixLayout:save'].mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
+    await seatLoaded()
+    expect(useSession.getState().matrixPositions).toEqual({ p1: [7, 7] })
+    useSession.getState().saveMatrixLayout({ p2: [8, 8] })
+    await vi.advanceTimersByTimeAsync(400)
+    expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
+      positions: { p1: [7, 7], p2: [8, 8] },
+    })
+    finish({ ok: true, value: null })
+    await vi.advanceTimersByTimeAsync(0)
+  })
+
   it('lands what it owes as it unloads', async () => {
     await seatLoaded()
     useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
@@ -306,6 +368,6 @@ describe('resetMatrix', () => {
     expect(s.matrixGraph).toEqual({ links: [], values: {} })
     expect(s.matrixPositions).toEqual({})
     expect(s.matrixFrame).toBeNull()
-    expect(s.matrixLoad).toEqual({ kind: 'waiting', tree })
+    expect(s.matrixLoad).toEqual({ kind: 'switching' })
   })
 })
