@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { nexusDir, SIDECAR_FILENAME } from '../Paths/paths'
+import { nexusDir, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/paths'
 import { normalizeSavedViews } from './migrateConfig'
 
 let root: string
@@ -57,6 +57,30 @@ describe('normalizeSavedViews', () => {
     await normalizeSavedViews(root)
     expect(await viewsIn('Notes')).toEqual([
       { ...view('view_a', 'banner'), card_size: 0.75, format: 'compact' },
+    ])
+  })
+
+  it("renames the Table view's old glyph key in sidecars, trashed sidecars, and every tile document", async () => {
+    await seed('Notes', [
+      { ...view('view_a'), icon: 'table' },
+      { ...view('view_b'), icon: 'star' },
+    ])
+    const trashed = join('.trash', 'Old.deleted', 'Old')
+    await seed(trashed, [{ ...view('view_t'), icon: 'table' }])
+    const tileDoc = join(nexusDir(root), 'contexts', 'Areas', 'A', TILE_DOC_FILENAME)
+    await mkdir(join(tileDoc, '..'), { recursive: true })
+    const tile = (icon: string) => ({ config: { ...view('embed'), icon }, source_id: 's' })
+    await writeFile(
+      tileDoc,
+      JSON.stringify({ layout: [], tiles: [{ id: 't', views: [tile('table'), tile('star')] }] }),
+    )
+    await normalizeSavedViews(root)
+    expect((await viewsIn('Notes')).map((v) => v.icon)).toEqual(['view-table', 'star'])
+    expect((await viewsIn(trashed))[0].icon).toBe('view-table')
+    const doc = JSON.parse(await readFile(tileDoc, 'utf8'))
+    expect(doc.tiles[0].views.map((e: { config: { icon: string } }) => e.config.icon)).toEqual([
+      'view-table',
+      'star',
     ])
   })
 

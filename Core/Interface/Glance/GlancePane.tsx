@@ -465,7 +465,7 @@ export function GlancePane(): React.JSX.Element {
       onMouseDown={(e) => e.preventDefault()}
       onClick={onLock}
     >
-      <Icon name="lock-open" size="control" />
+      <Icon name="lock-outline" size="control" />
     </button>
   )
   // A locked pin holds its control always visible; unlocking flips it to the reveal-on-hover open lock and leaves the pane standing.

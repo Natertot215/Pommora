@@ -27,7 +27,7 @@ const AREA_ICON: Record<string, IconName> = {
   'Cross-Cutting': 'shapes',
   Desktop: 'laptop',
   Files: 'folder-open',
-  Index: 'table',
+  Index: 'view-table',
   Interface: 'app-window',
   MarkdownPM: 'type',
   Matrix: 'atom',

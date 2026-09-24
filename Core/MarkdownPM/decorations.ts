@@ -54,6 +54,8 @@ import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { editorHost } from './api'
+import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
+import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 
 export const MD_LINK_CLASS = 'md-link'
 
@@ -135,11 +137,8 @@ class CheckboxWidget extends WidgetType {
     const zone = document.createElement('span')
     zone.className = `md-list-checkbox-seat ${GLYPH_CLASS}`
     const box = document.createElement('span')
-    box.className = `checkbox${this.checked ? ' checkbox-checked' : ''}`
-    if (this.checked) {
-      box.innerHTML =
-        '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
-    }
+    box.className = checkboxClass(this.checked)
+    if (this.checked) box.innerHTML = checkMarkSvg(12)
     zone.appendChild(box)
     return zone
   }
@@ -171,14 +170,9 @@ class LineWidget extends WidgetType {
 }
 
 function mark(body: string, className: string): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('viewBox', '0 0 24 24')
-  svg.setAttribute('fill', 'none')
-  svg.setAttribute('stroke', 'currentColor')
-  svg.setAttribute('stroke-width', '2')
-  svg.setAttribute('stroke-linecap', 'round')
-  svg.setAttribute('stroke-linejoin', 'round')
-  svg.innerHTML = body
+  const t = document.createElement('template')
+  t.innerHTML = svgFrame(body)
+  const svg = t.content.firstElementChild as SVGSVGElement
   svg.setAttribute('class', className)
   return svg
 }

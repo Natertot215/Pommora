@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { InputField } from '@pommora/uix/Fields/InputField'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base, field, borderedField, input } from '@pommora/uix/Fields/fields.css'
-import { FileLabel } from '@pommora/uix/Labels/recipes'
+import { PlainLabel } from '@pommora/uix/Labels/recipes'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { NavTrail, pathSegments } from '@pommora/uix/Elements/NavTrail'
 import { Icon } from '@pommora/uix/Symbols'
@@ -42,8 +42,8 @@ export function FieldsLeaf(): React.JSX.Element {
           <NavTrail segments={pathSegments(path)} variant="option" />
         </InputField>
         <InputField capped>
-          <FileLabel name="Drafts" />
-          <FileLabel name="Archive/Old" />
+          <PlainLabel text="Drafts" />
+          <PlainLabel text="Archive/Old" />
           <input
             className={base}
             value={draft}

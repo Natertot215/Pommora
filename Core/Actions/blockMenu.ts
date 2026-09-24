@@ -47,7 +47,7 @@ const INSERT_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Blockquote', action: 'block:quote', icon: 'text-quote' },
   { label: 'Callout', action: 'block:callout', icon: 'message-square-quote' },
   { label: 'Code Block', action: 'block:code', icon: 'square-code' },
-  { label: 'Table', action: 'block:table', icon: 'table' },
+  { label: 'Table', action: 'block:table', icon: 'view-table' },
   { label: 'Divider', action: 'block:hr', icon: 'separator-horizontal' },
 ]
 

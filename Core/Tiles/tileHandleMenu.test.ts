@@ -50,7 +50,7 @@ describe('the tile menu model both renderers draw', () => {
 
   it('holds the pane open on the rows that change the tile in place', () => {
     const m = tileMenuItems(ctx())
-    expect(row(m, 'Lock')).toMatchObject({ icon: 'lock-open', stay: true })
+    expect(row(m, 'Lock')).toMatchObject({ icon: 'lock-outline', stay: true })
     expect(row(m, 'Style')?.submenu?.every((r) => r.stay)).toBe(true)
     expect(row(m, 'Scale')?.submenu?.every((r) => r.stay)).toBe(true)
     const locked = tileMenuItems(

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { shadowLiftVar, shadowStandardVar } from '../Theme/color.css'
+import { shadowStrongVar, shadowBaseVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { clamp } from '../Utilities/clamp'
 
@@ -44,7 +44,7 @@ export const GHOST_FROST: FrostParams = {
   depth: 0,
   rimBlur: 0,
   fill: 0.75,
-  shadow: shadowLiftVar,
+  shadow: shadowStrongVar,
 }
 
 export const hexA = (n: number): string =>
@@ -68,7 +68,7 @@ export const frostRim = (p: FrostParams): string =>
 /** `rim: false` leaves the inset edges to a layer drawn above the content, as GlassWindow's is. */
 export function frostStyle(p: FrostParams, rim = true): CSSProperties {
   const filter = `blur(${p.blur}px) brightness(${p.brightness}%)`
-  const edges = [rim && frostRim(p), p.shadow ?? shadowStandardVar].filter(Boolean)
+  const edges = [rim && frostRim(p), p.shadow ?? shadowBaseVar].filter(Boolean)
   return {
     background:
       p.fill != null

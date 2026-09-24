@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Icon } from '../Symbols'
 import { fileTypeIcon } from '../Symbols/fileTypes'
 import { cx } from '../Utilities/cx'
@@ -30,7 +29,7 @@ export function NeutralChip({
   )
 }
 
-/** Distinct from [[FileLabel]], which names a file inside a FIELD — a box around that would be a box in a box. */
+/** Distinct from [[PlainLabel]], which names a value inside a FIELD. */
 export function FileChip({
   name,
   unresolved,
@@ -53,24 +52,7 @@ export function FileChip({
   )
 }
 
-/** `icon` overrides the extension-derived glyph; `false` means none, which is what a path's segments want — one lead icon on the run. */
-export function FileLabel({
-  name,
-  icon,
-  ...rest
-}: Omit<Recipe, 'text' | 'icon' | 'color'> & {
-  name: string
-  icon?: ReactNode | false
-}): React.JSX.Element {
-  return (
-    <Label
-      shape="tag"
-      fill="none"
-      outline="none"
-      align="start"
-      text={name}
-      icon={icon ?? <Icon name={fileTypeIcon(name)} size="control" />}
-      {...rest}
-    />
-  )
+/** A chrome-less label: a name sitting inside a field, where a chip's box would be a box in a box. */
+export function PlainLabel(props: Omit<Recipe, 'color'>): React.JSX.Element {
+  return <Label shape="tag" fill="none" outline="none" align="start" {...props} />
 }

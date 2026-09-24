@@ -1,16 +1,14 @@
-import type { Rect, ResizeGrip, Size } from '@pommora/uix/Interactions/ResizeFrame'
+import type { Rect, Size } from '@pommora/uix/Interactions/ResizeFrame'
 import { useSession } from '../../Session/store'
 import { chromePartEl } from '../chromeParts'
 
 /** A floating window's remembered size, machine-local per Nexus. */
 export function useWindowGeometry(id: string): {
   initialSize?: Size
-  onSizeChange: (size: Size, grip: ResizeGrip) => void
+  onSizeChange: (size: Size) => void
 } {
   const stored = useSession((s) => s.devicePrefs.windows?.[id])
-  // A move reports the size it started at, and that size may have been clamped onto a smaller viewport at the open — storing it would shrink a window that was only dragged.
-  const onSizeChange = (size: Size, grip: ResizeGrip): void => {
-    if (grip === 'move') return
+  const onSizeChange = (size: Size): void => {
     const s = useSession.getState()
     s.setDevicePref('windows', { ...s.devicePrefs.windows, [id]: size })
   }

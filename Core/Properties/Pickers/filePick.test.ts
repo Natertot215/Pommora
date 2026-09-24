@@ -63,7 +63,7 @@ describe('fileChipIndex', () => {
 
   it('reads the position off the entry a click landed inside', () => {
     expect(
-      fileChipIndex(at('<span data-segment-index="2"><b class="x">Report.pdf</b></span>', '.x')),
+      fileChipIndex(at('<span data-file-chip-index="2"><b class="x">Report.pdf</b></span>', '.x')),
     ).toBe(2)
   })
 
@@ -74,7 +74,8 @@ describe('fileChipIndex', () => {
 
   it('reads DOWN from nothing — a row wrapping its labels is the value’s area, not a label', () => {
     // `closest` walks up, so the row a handler's `currentTarget` names can only answer null — which is why the clicked node travels separately from the element an editor anchors to.
-    const row = '<div class="row"><span data-segment-index="0"><b class="a">A.pdf</b></span></div>'
+    const row =
+      '<div class="row"><span data-file-chip-index="0"><b class="a">A.pdf</b></span></div>'
     expect(fileChipIndex(at(row, '.row'))).toBeNull()
     expect(fileChipIndex(at(row, '.a'))).toBe(0)
   })
@@ -150,7 +151,7 @@ describe('pickFileInto', () => {
 describe('fileValueMenu — the value menu the side panes pop', () => {
   const chipAt = (i: number): Element => {
     const host = document.createElement('div')
-    host.innerHTML = `<span data-segment-index="${i}"><b class="x">f</b></span>`
+    host.innerHTML = `<span data-file-chip-index="${i}"><b class="x">f</b></span>`
     return host.querySelector('.x') as Element
   }
 

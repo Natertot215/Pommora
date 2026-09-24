@@ -3,8 +3,8 @@ import { iconForTypeSwitch, viewGlyph } from './viewIcon'
 
 describe('iconForTypeSwitch', () => {
   it('re-icons a view that still carries the old default (table → cards)', () => {
-    expect(iconForTypeSwitch({ icon: 'table', type: 'table' }, 'cards')).toBe('cards-grid')
-    expect(iconForTypeSwitch({ icon: 'cards-grid', type: 'cards' }, 'table')).toBe('table')
+    expect(iconForTypeSwitch({ icon: 'view-table', type: 'table' }, 'cards')).toBe('cards-grid')
+    expect(iconForTypeSwitch({ icon: 'cards-grid', type: 'cards' }, 'table')).toBe('view-table')
   })
 
   it('treats an absent icon as the default', () => {

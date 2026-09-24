@@ -80,7 +80,7 @@ import {
   Zap,
   X,
 } from 'lucide-react'
-import { forwardRef, useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import {
   CardsGrid,
   ListRounded,
@@ -173,14 +173,14 @@ export const icons = {
   'chevrons-up-down': ChevronsUpDown,
   'layout-panel-left': LayoutPanelLeft,
   'text-align-justify': TextAlignJustify,
-  table: Grid3x2,
+  'view-table': Grid3x2,
   pommora: Pommora,
   'list-rounded': ListRounded,
   'cards-grid': CardsGrid,
   'progress-check': ProgressCheck,
   'columns-3-cog': Columns3Cog,
   locked: LockFilled,
-  'lock-open': LockOutline,
+  'lock-outline': LockOutline,
   ...fileTypeGlyphs,
 } satisfies Record<string, LucideIcon>
 
@@ -226,29 +226,31 @@ export const fullIconSet = (): FullIconSet | null => fullSet
 const iconSizeVars = sizeTokens.icon
 const isIconSize = (v: unknown): v is IconSize => typeof v === 'string' && v in iconSizeVars
 
-const LazyGlyph = forwardRef<SVGSVGElement, { name: string } & LucideProps>(function LazyGlyph(
-  { name, ...rest },
-  ref,
-): React.JSX.Element {
+function LazyGlyph({ name, ...rest }: { name: string } & LucideProps): React.JSX.Element {
   const set = useSyncExternalStore(subscribeFullIconSet, fullIconSet, fullIconSet)
   useEffect(() => {
     void loadFullIconSet()
   }, [])
   const Glyph = set?.lucideGlyph(name) ?? icons['square-dashed']
-  return <Glyph ref={ref} {...rest} />
-})
+  return <Glyph {...rest} />
+}
 
-export const Icon = forwardRef<
-  SVGSVGElement,
-  { name: string; size?: IconSize | LucideProps['size'] } & Omit<LucideProps, 'size'>
->(function Icon({ name, size = '1em', style, ...rest }, ref): React.JSX.Element {
+export function Icon({
+  name,
+  size = '1em',
+  style,
+  ...rest
+}: { name: string; size?: IconSize | LucideProps['size'] } & Omit<
+  LucideProps,
+  'size'
+>): React.JSX.Element {
   const sized: LucideProps = isIconSize(size)
     ? { size: '1em', style: { ...style, fontSize: iconSizeVars[size] } }
     : { size, style }
   const Curated = (icons as Record<string, LucideIcon>)[name]
-  if (Curated) return <Curated ref={ref} {...rest} {...sized} />
-  return <LazyGlyph ref={ref} name={name} {...rest} {...sized} />
-})
+  if (Curated) return <Curated {...rest} {...sized} />
+  return <LazyGlyph name={name} {...rest} {...sized} />
+}
 
 // Both faces stay mounted in one grid cell so a toggle cross-fades rather than swapping glyphs outright.
 export function LockGlyph({
@@ -267,7 +269,7 @@ export function LockGlyph({
         data-face={locked ? 'shown' : 'hidden'}
       />
       <Icon
-        name="lock-open"
+        name="lock-outline"
         size={size}
         className={cx(sym.glyphSwapFace, sym.lockOpenFace)}
         data-face={locked ? 'hidden' : 'shown'}

@@ -70,6 +70,7 @@ export function MenuDropdown({
     <Segmented
       glass
       segments={[segment]}
+      showSelection={false}
       className={classNames?.button}
       labelCollapsed={labelCollapsed}
     />

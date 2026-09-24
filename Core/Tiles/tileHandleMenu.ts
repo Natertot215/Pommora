@@ -110,7 +110,7 @@ export function tileMenuItems({
     { label: 'Delete', icon: 'x', action: 'tile:delete', disabled: locked },
     {
       label: containerLocked ? 'Locked' : lockLabel(locked),
-      icon: locked ? 'locked' : 'lock-open',
+      icon: locked ? 'locked' : 'lock-outline',
       action: 'tile:lock',
       separatorBefore: true,
       disabled: containerLocked,

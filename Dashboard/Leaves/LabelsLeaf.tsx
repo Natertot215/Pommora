@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { vars } from '@pommora/uix/Theme'
 import { Label } from '@pommora/uix/Labels/Label'
 import { fill, labelColor, roomy, shape, textCap } from '@pommora/uix/Labels/label-base.css'
-import { NeutralChip, FileChip, FileLabel } from '@pommora/uix/Labels/recipes'
+import { NeutralChip, FileChip, PlainLabel } from '@pommora/uix/Labels/recipes'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
 import type { LabelColorName } from '@pommora/uix/Labels/label-base.css'
@@ -164,7 +164,7 @@ const PENDING = ['Separator', 'Row']
 // The two colorless shapes, which the shape rows can't show: those fan a shape across every chip color, and a file carries none of its own — its name and its type glyph are the whole content.
 const FILE_SHAPES: Array<{ label: string; content: ReactNode }> = [
   { label: 'File · a file property’s value', content: <FileChip name="Q3 Report.pdf" /> },
-  { label: 'Plain · a name inside a field', content: <FileLabel name="Meeting Notes.md" /> },
+  { label: 'Plain · a name inside a field', content: <PlainLabel text="Meeting Notes" /> },
 ]
 
 /** Every removable label, since the melt is the one state a shape row can't show. */
@@ -184,7 +184,7 @@ function RemovableRow(): React.JSX.Element {
         <NeutralChip color="purple-4" title="Removable context" onRemove={drop('context')} />
       )}
       {live('file') && <FileChip name="Removable file.pdf" onRemove={drop('file')} />}
-      {live('plain') && <FileLabel name="Removable name.md" onRemove={drop('plain')} />}
+      {live('plain') && <PlainLabel text="Removable name" onRemove={drop('plain')} />}
     </div>
   )
 }

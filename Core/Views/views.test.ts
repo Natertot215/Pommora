@@ -276,7 +276,7 @@ describe('mint seam', () => {
     const v = mintNewView('Untitled', schema)
     expect(v.name).toBe('Untitled')
     expect(v.type).toBe('table')
-    expect(v.icon).toBe('table')
+    expect(v.icon).toBe('view-table')
     expect(v.property_order).toEqual([RESERVED_PROPERTY_ID.title])
     // Context columns take no entry — absence from property_order is what hides them.
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
@@ -285,7 +285,7 @@ describe('mint seam', () => {
     const v = mintDefaultView(schema)
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
     expect(v.property_order).toEqual([RESERVED_PROPERTY_ID.title])
-    expect(v.icon).toBe('table')
+    expect(v.icon).toBe('view-table')
   })
 })
 

@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { FileLabel } from './recipes'
+import { PlainLabel } from './recipes'
 
 let root: Root | undefined
 let host: HTMLElement
@@ -20,20 +20,20 @@ afterEach(() => {
   host?.remove()
 })
 
-describe('FileLabel', () => {
+describe('PlainLabel', () => {
   it('renders the name it is given', () => {
-    mount(<FileLabel name="Report.pdf" />)
+    mount(<PlainLabel text="Report.pdf" />)
     expect(host.textContent).toContain('Report.pdf')
   })
 
   it('offers no remove control until one is wired', () => {
-    mount(<FileLabel name="Report.pdf" />)
+    mount(<PlainLabel text="Report.pdf" />)
     expect(host.querySelector('button')).toBeNull()
   })
 
   it('wears the chip system’s remove ×, not a copy of it', () => {
     const onRemove = vi.fn()
-    mount(<FileLabel name="Report.pdf" onRemove={onRemove} />)
+    mount(<PlainLabel text="Report.pdf" onRemove={onRemove} />)
     const remove = host.querySelector('button')
     expect(remove?.getAttribute('aria-label')).toBe('Remove')
     act(() => {
@@ -43,7 +43,7 @@ describe('FileLabel', () => {
   })
 
   it('takes an explicit icon for the names that carry no extension', () => {
-    mount(<FileLabel name="Attachments" icon={<svg data-testid="folder" />} />)
+    mount(<PlainLabel text="Attachments" icon={<svg data-testid="folder" />} />)
     expect(host.querySelector('[data-testid="folder"]')).not.toBeNull()
   })
 })

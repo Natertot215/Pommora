@@ -13,12 +13,10 @@ describe('toKebabIconId', () => {
     expect(toKebabIconId('ALargeSmall')).toBe('a-large-small')
   })
 
-  it('reproduces the curated registry id for every plain-Lucide curated entry', () => {
-    // The curated set carries app aliases (`table`) + custom glyphs whose id ISN'T the Lucide kebab; for the rest, the registry key must equal toKebabIconId(the component's Lucide display name).
+  it('gives every curated key that is also a Lucide id that same Lucide glyph', () => {
     for (const [id, Glyph] of Object.entries(icons)) {
       const displayName = (Glyph as { displayName?: string }).displayName
-      if (!displayName || toKebabIconId(displayName) !== id) continue
-      expect(toKebabIconId(displayName)).toBe(id)
+      expect(!ICON_NAMES.has(id) || toKebabIconId(displayName ?? '') === id, id).toBe(true)
     }
   })
 })

@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react'
 import { frostStyle, notchGeometry, NOTCH_H, SURFACE_FROST, WINDOW_FROST } from './glass-base'
-import { shadowStandardVar } from '../Theme/color.css'
+import { shadowBaseVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { cx } from '../Utilities/cx'
 
@@ -125,7 +125,7 @@ function NotchedGlass({
             overflow: 'visible',
             pointerEvents: 'none',
             zIndex: 1,
-            filter: `drop-shadow(${shadowStandardVar})`,
+            filter: `drop-shadow(${shadowBaseVar})`,
           }}
         >
           <path

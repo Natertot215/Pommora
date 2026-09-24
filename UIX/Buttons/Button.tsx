@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, forwardRef, Fragment, type ReactNode } from 'react'
+import { type ButtonHTMLAttributes, Fragment, type ReactNode, type Ref } from 'react'
 import { segment } from '../Elements/segment.css'
 import { GlassControls } from '../Glass/glass-control'
 import { Icon } from '../Symbols'
@@ -23,28 +23,29 @@ type ButtonProps = Look & {
   revealOnHover?: boolean
   inRun?: boolean
   pressed?: boolean
+  showSelection?: boolean
+  ref?: Ref<HTMLButtonElement>
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'>
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  {
-    type = 'base',
-    size = 'button-small',
-    outline,
-    paddingX,
-    iconSize,
-    icon,
-    label,
-    labelCollapsed,
-    revealOnHover,
-    inRun,
-    pressed,
-    className,
-    style,
-    children,
-    ...rest
-  },
+export function Button({
+  type = 'base',
+  size = 'button-small',
+  outline,
+  paddingX,
+  iconSize,
+  icon,
+  label,
+  labelCollapsed,
+  revealOnHover,
+  inRun,
+  pressed,
+  showSelection = true,
+  className,
+  style,
+  children,
   ref,
-) {
+  ...rest
+}: ButtonProps): React.JSX.Element {
   const labeled = (label !== undefined && !labelCollapsed) || children !== undefined
   return (
     <button
@@ -59,7 +60,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         outline && s.outlined,
         revealOnHover && s.revealOnHover,
         labeled && !icon && s.labelOnly,
-        pressed && s.pressed,
+        pressed && showSelection && s.pressed,
         className,
       )}
       style={{
@@ -81,7 +82,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   )
-})
+}
 
 export type Segment = {
   icon?: string
@@ -102,10 +103,12 @@ export function Segmented({
   glass = false,
   labelCollapsed,
   trailingDivider,
+  showSelection,
   className,
   radius,
 }: Look & {
   segments: Segment[]
+  showSelection?: boolean
   glass?: boolean
   labelCollapsed?: boolean
   trailingDivider?: boolean
@@ -132,7 +135,8 @@ export function Segmented({
         disabled={seg.disabled}
         title={seg.title}
         aria-label={seg.title ?? seg.label}
-        aria-pressed={seg.active}
+        pressed={seg.active}
+        showSelection={showSelection}
       />
     </Fragment>
   ))

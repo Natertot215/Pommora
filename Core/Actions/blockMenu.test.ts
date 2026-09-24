@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ICON_NAMES } from '@pommora/uix/Symbols/iconNames'
+import { asRenderableIcon } from '@pommora/uix/Symbols'
 import { blockMenuSections, filterBlockMenu } from './blockMenu'
 
 const seated = blockMenuSections(true)
@@ -46,7 +46,7 @@ describe('the block menu catalog', () => {
 
   it('names an icon the registry resolves on every row', () => {
     for (const row of seated.flatMap((s) => s.rows)) {
-      expect(ICON_NAMES.has(row.icon ?? '')).toBe(true)
+      expect(asRenderableIcon(row.icon)).toBe(row.icon)
     }
   })
 })

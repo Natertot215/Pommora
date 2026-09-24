@@ -670,7 +670,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
 
   it('clicking the SECOND chip replaces that one — the click lands on the label, not the stamp', async () => {
     await mountTable(twoFiles())
-    const label = fileCell().querySelectorAll('[data-segment-index]')[1]?.querySelector('span')
+    const label = fileCell().querySelectorAll('[data-file-chip-index]')[1]?.querySelector('span')
     expect(label).toBeTruthy()
     await act(async () => {
       label?.dispatchEvent(new MouseEvent('click', { bubbles: true }))

@@ -16,7 +16,7 @@ interface ViewKind {
 
 export const VIEW_KINDS: Record<ViewType, ViewKind> = {
   // Table indents its structural groups until Table Flatten lands, at which point flatness becomes the view's own setting with the kind as its default.
-  table: { label: 'Table', icon: 'table', flat: false },
+  table: { label: 'Table', icon: 'view-table', flat: false },
   cards: { label: 'Cards', icon: 'cards-grid', flat: true },
   list: { label: 'List', icon: 'list-rounded', flat: false },
   gallery: { label: 'Gallery', icon: 'layout-dashboard', flat: false },

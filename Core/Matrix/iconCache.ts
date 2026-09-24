@@ -1,5 +1,6 @@
 import { type IconNode, loadFullIconSet } from '@pommora/uix/Symbols'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 
 const cache = new Map<string, HTMLImageElement | null>()
 const listeners = new Set<() => void>()
@@ -21,7 +22,7 @@ export function svgOf(nodes: IconNode, color: string): string {
           .join(' ')}/>`,
     )
     .join('')
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
+  return svgFrame(body, { stroke: color })
 }
 
 // KNOBs — the smallest and largest raster a glyph is cut at; a node zooming between two buckets takes the larger and scales it down.
