@@ -1,6 +1,6 @@
 import { type Handlers, withRoot } from '../Contract/handlers'
 import { ok, type Result } from '../Contract/result'
-import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
 import { readPermanentDelete } from '../Settings/settings'
 import { listBundles } from './spend'
@@ -9,7 +9,7 @@ import { trashRows } from './trashRows'
 
 export const trashHandlers = {
   'trash:list': withRoot(async (root) => {
-    return ok(trashRows(await listBundles(root), getLiveTree() ?? (await refreshTree(root))))
+    return ok(trashRows(await listBundles(root), await liveTreeOf(root)))
   }),
 
   'delete:facts': async (

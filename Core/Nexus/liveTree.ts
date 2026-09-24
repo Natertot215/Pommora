@@ -50,6 +50,10 @@ export function refreshTree(root: string): Promise<NexusTree> {
   return entry.promise
 }
 
+/** The held tree, or a walk of `root` when none is held yet. */
+export const liveTreeOf = (root: string): Promise<NexusTree> =>
+  Promise.resolve(getLiveTree() ?? refreshTree(root))
+
 async function runWalk(root: string, entry: WalkSlot): Promise<NexusTree> {
   for (;;) {
     const startEpoch = epoch

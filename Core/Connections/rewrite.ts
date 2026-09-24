@@ -14,7 +14,7 @@ import {
   targetNamesTitle,
   targetTitle,
 } from './links'
-import { linkNamesTitle, readLink } from './linkValue'
+import { readLink } from './linkValue'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { sectionRunsIn } from './scan'
 
@@ -107,8 +107,10 @@ export function rewriteFrontmatterConnections(
 ): Record<string, string> {
   const patch: Record<string, string> = {}
   for (const [key, value] of Object.entries(values)) {
-    if (typeof value === 'string' && linkNamesTitle(value, oldKey))
-      patch[key] = connectionText(newTitle, readLink(value).alias)
+    if (typeof value !== 'string') continue
+    const target = readLink(value)
+    if (target.kind === 'page' && normalizeTitle(target.title) === oldKey)
+      patch[key] = connectionText(newTitle, target.alias, target.heading)
   }
   return patch
 }

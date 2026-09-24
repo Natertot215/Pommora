@@ -1,6 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, NO_STORE, ok } from '../Contract/result'
 import { isRect, isString } from '../Contract/validators'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { isPlainObject } from '../Properties/propertyValue'
 import { readNavigationState, writeNavigationState } from './navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
@@ -29,14 +30,16 @@ export const navigationHandlers = {
     async (root, ctx, navKey: unknown, rect: unknown, scaleFactor: unknown) => {
       if (typeof navKey !== 'string' || !isRect(rect) || typeof scaleFactor !== 'number')
         return fail('operation-failed', 'Bad capture args.')
-      const url = await ctx.thumbnails.capture(root, navKey, rect, scaleFactor)
+      const nexusId = (await liveTreeOf(root)).nexus.id
+      const url = await ctx.thumbnails.capture(root, nexusId, navKey, rect, scaleFactor)
       return url ? ok({ url }) : fail('operation-failed', 'Capture produced no image.')
     },
   ),
 
   'nav:evictThumbs': withWriteRoot(async (root, ctx, liveKeys: unknown) => {
     if (!Array.isArray(liveKeys)) return fail('operation-failed', 'Live keys must be an array.')
-    await ctx.thumbnails.evict(root, liveKeys.filter(isString))
+    const nexusId = (await liveTreeOf(root)).nexus.id
+    await ctx.thumbnails.evict(root, nexusId, liveKeys.filter(isString))
     return ok(null)
   }),
 } satisfies Partial<Handlers>

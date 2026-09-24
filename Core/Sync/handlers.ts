@@ -2,7 +2,7 @@ import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Con
 import { fail, NO_STORE, ok, type Result } from '../Contract/result'
 import { isString } from '../Contract/validators'
 import { captureLoser } from './Arrival/captures'
-import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { deleteBase, readAllBases } from './Client/base'
@@ -59,7 +59,7 @@ interface Ready {
 }
 
 async function ready(root: string, ctx: HostContext): Promise<Result<Ready>> {
-  const tree = getLiveTree() ?? (await refreshTree(root))
+  const tree = await liveTreeOf(root)
   const host = syncHost(ctx)
   if (host === null) return NO_DEVICE
   return ok({

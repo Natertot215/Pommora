@@ -91,7 +91,7 @@ export const assetsHandlers = {
       allow: 'any',
       ...(subfolder ? { subfolder } : {}),
     })
-    if (adopted.ok) pushAssetWrites(ctx)
+    if (adopted.ok) pushAssetWrites(ctx, root)
     return adopted
   }),
 } satisfies Partial<Handlers>

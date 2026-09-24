@@ -51,11 +51,12 @@ export interface HostContext {
   thumbnails: {
     capture(
       root: string,
+      nexusId: string,
       navKey: string,
       rect: ThumbRect,
       scaleFactor: number,
     ): Promise<string | null>
-    evict(root: string, liveKeys: string[]): Promise<void>
+    evict(root: string, nexusId: string, liveKeys: string[]): Promise<void>
   }
   webGuests: { setZoom(guestId: number, factor: number): void; pauseMedia(guestId: number): void }
   trashMode(): Promise<TrashMode>

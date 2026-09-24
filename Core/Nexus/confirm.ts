@@ -21,10 +21,10 @@ export function pushValueChanges(ctx: HostContext, root: string): void {
 export async function confirmWrite(
   ctx: HostContext,
   root: string,
-  work: (root: string) => Promise<NexusTree | null>,
+  work: () => Promise<NexusTree | null>,
 ): Promise<void> {
   if (sessionRoot() !== root) return
-  pushConfirmed(ctx, await work(root))
+  pushConfirmed(ctx, await work())
   setTimeout(() => {
     if (sessionRoot() === root) pushValueChanges(ctx, root)
   }, 0)
@@ -36,7 +36,7 @@ export async function confirmContainerWrite(
   containerPath: unknown,
 ): Promise<void> {
   if (typeof containerPath !== 'string') return
-  await confirmWrite(ctx, root, (root) =>
+  await confirmWrite(ctx, root, () =>
     confirmBy(root, () => patchContainerFromDisk(root, containerPath)),
   )
 }
@@ -46,15 +46,13 @@ export const confirmRegistryWrite = (
   ctx: HostContext,
   root: string,
   containerPath?: string,
-): Promise<void> => confirmWrite(ctx, root, (root) => confirmRegistry(root, containerPath))
+): Promise<void> => confirmWrite(ctx, root, () => confirmRegistry(root, containerPath))
 
 export const confirmSettingsWrite = (ctx: HostContext, root: string): Promise<void> =>
-  confirmWrite(ctx, root, (root) => confirmBy(root, () => patchSettingsFromDisk(root)))
+  confirmWrite(ctx, root, () => confirmBy(root, () => patchSettingsFromDisk(root)))
 
 /** An asset a mutation adopted never reaches the watcher (its own write is echo-suppressed), so the write's channel is what tells the renderer. */
-export function pushAssetWrites(ctx: HostContext): void {
-  const root = sessionRoot()
-  if (root === null) return
+export function pushAssetWrites(ctx: HostContext, root: string): void {
   const moved = takeAssetMapPush(root)
   if (moved) ctx.push('assets:changed', moved)
 }
