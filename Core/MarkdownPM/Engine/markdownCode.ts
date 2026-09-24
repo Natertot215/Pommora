@@ -1,5 +1,5 @@
 // Unanchored at the end on purpose: `.` excludes `\r`, so `(.*)` stops at a CRLF line's carriage return, while a trailing `$` would fail past it and blank every fence.
-const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(`{3,}|~{3,})[ \t]*(.*)/
+const FENCE_RE = /^([ \t]*(?:>[ \t]?)*[ \t]*)(`{3,}|~{3,})[ \t]*(.*)/
 const QUOTE_PREFIX_RE = /^[ \t]*(?:>[ \t]?)*/
 
 interface Fence {
