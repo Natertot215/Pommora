@@ -5,7 +5,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
-import { groupValueUndo } from './valueUndo'
+import { groupUndo } from '../Session/undo'
 
 const schema: PropertyDefinition[] = [
   {
@@ -192,7 +192,7 @@ describe('assignValue', () => {
     const other = rowOf({ id: 'page2', Tag: ['red'] })
     live.rowOf = (id) => (id === row.id ? row : id === other.id ? other : undefined)
     const writes: Promise<boolean>[] = []
-    groupValueUndo(() => {
+    groupUndo(() => {
       for (const r of [row, other])
         writes.push(
           assignValue(

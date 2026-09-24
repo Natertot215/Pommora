@@ -1,5 +1,5 @@
 import type { Result } from '@pommora/core/Contract/result'
-import { pushValueUndo } from '@pommora/core/Properties/valueUndo'
+import { pushUndo } from '@pommora/core/Session/undo'
 import { useSession } from '../../Session/store'
 
 export interface Notification {
@@ -61,7 +61,7 @@ export function notifyUndoable(message: string, undo?: () => void | Promise<void
   }
   post({ message, tone: 'normal', action: { label: 'Undo', run: () => void once() } })
   const id = useSession.getState().notification?.id
-  pushValueUndo(() => {
+  pushUndo(() => {
     if (!once()) return false
     if (id !== undefined) useSession.getState().dismissNotification(id)
     return true

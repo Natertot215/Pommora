@@ -32,7 +32,7 @@ import {
   releaseSaves,
 } from './saveScheduler'
 import type { Slice } from './sessionState'
-import { resetValueUndo } from '../Properties/valueUndo'
+import { resetUndo } from './undo'
 import { host } from '../Platform/dialer'
 
 export interface NexusSlice {
@@ -86,7 +86,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetGlance()
     s.resetMatrix()
     s.resetRename()
-    resetValueUndo()
+    resetUndo()
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {

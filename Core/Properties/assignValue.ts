@@ -9,7 +9,7 @@ import {
 } from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { resolveFieldValue } from './value'
-import { pushValueUndo } from './valueUndo'
+import { pushUndo } from '../Session/undo'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
@@ -74,7 +74,7 @@ export function assignValue(
     const current = live?.rowOf(row.id)
     return !!live && !!current && write(live, current, column, prior) !== undefined
   }
-  pushValueUndo(() => {
+  pushUndo(() => {
     if (landed !== null) return landed && revert()
     void pending.then((ok) => ok && revert())
     return true
