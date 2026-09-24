@@ -51,7 +51,7 @@ The Context property type draws the Context entity kind's own glyph rather than 
 
 | Type | Icon |
 | --- | --- |
-| Table | `table` |
+| Table | `view-table` |
 | Cards | `cards-grid` (custom) |
 | List | `list-rounded` (custom) |
 | Gallery | `layout-dashboard` |
@@ -64,10 +64,4 @@ A second family, keyed `file-type-<ext>` and drawn from Tabler's set (`fileTypes
 
 ### The Picker
 
-The Icon Picker a user opens to assign an entity's icon (`UIX/Pickers/IconPicker`) is a separate, wider surface exposing the entire Lucide set (`allSymbols.ts`), kebab-keyed and searchable, with a reorderable favorites strip that persists with the Nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
-
----
-
-#### Known Issues
-
-- **Two curated keys shadow real Lucide ids.** `table` and `lock-open` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set; registry-first resolution renders Pommora's glyph instead of the one the picker cell showed.
+The Icon Picker a user opens to assign an entity's icon (`UIX/Pickers/IconPicker`) is a separate, wider surface exposing the entire Lucide set (`allSymbols.ts`), kebab-keyed and searchable, with a reorderable favorites strip that persists with the Nexus's personalization. A picked id is stored as its bare Lucide kebab id, and resolution reads the curated registry first, then the full set; a curated key that is also a Lucide id names that same glyph.

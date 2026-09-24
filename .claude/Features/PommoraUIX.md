@@ -93,8 +93,8 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 | Title  | Token                                 | Value                   |
 | ------ | ------------------------------------- | ----------------------- |
-| Base   | `shadowStandardVar` · `--shadow-base` | `0 8px 25px #00000040`  |
-| Strong | `shadowLiftVar` · `--shadow-strong`   | `0 12px 30px #00000065` |
+| Base   | `shadowBaseVar` · `--shadow-base`     | `0 8px 25px #00000040`  |
+| Strong | `shadowStrongVar` · `--shadow-strong` | `0 12px 30px #00000065` |
 
 #### Fades
 
@@ -208,7 +208,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Window    | `windowIn` · `windowOut`                                                      | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too. |
 | Reveal    | `Reveal`                                                                      | The `0fr ↔ 1fr` body open/close on the `fast` rung.                                                          |
 | PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode.             |
-| Exit      | `useExitPresence`                                                             | Keeps a surface mounted through its close; the held forms also keep the value it was showing.                |
+| Exit      | `useExitPresence` · `useSettleFallback`                                       | Keeps a surface mounted through its close, and settles an end-event wait whose transition never runs; the held forms also keep the value it was showing. |
 
 ### Buttons
 
@@ -271,11 +271,11 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | InputField     | `InputField` · `FieldEdit`                                                                                                                                                        | The field box — `boxed` or `bordered` chrome.                                                                                                                                                                 |
 | PathField      | `PathField` · `BrowseButton`                                                                                                                                                      | A folder path in a bordered field — the path as a trail, typed in place or chosen through the trailing browse; `BrowseButton` is that trailing action alone, for a field showing a file rather than a folder. |
-| SegmentRun     | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR`                                                                                                                              | Values standing side by side inside a field; segment-divided.                                                                                                                                                 |
+| SegmentRun     | `SegmentRun` · `SegmentEntry`                                                                                                                              | Values standing side by side inside a field; segment-divided.                                                                                                                                                 |
 | Chrome         | `field` · `input` · `borderedField` · `base` · `search` · `draftInput` · `editable` · `contentRow` · `leading` · `trailing` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, the draft and editable states, the content row with its leading and trailing slots, and the auto-sizing input trio.                                  |
 | Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                                                                                        | One inset-shadow channel; presets set its color.                                                                                                                                                              |
 | Placeholder    | `placeholder`                                                                                                                                                                     | The ghost-text tone.                                                                                                                                                                                          |
-| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`                                                                                                                                              | The controlled filter input the list surfaces share.                                                                                                                                                          |
+| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`                                                                                                                                              | The controlled filter input the list surfaces share; Escape leaves the field with its query kept.                                                                                                             |
 | EditableInput  | `EditableInput`                                                                                                                                                                   | Enter commits, Escape abandons, blur settles.                                                                                                                                                                 |
 | RenamableLabel | `RenamableLabel`                                                                                                                                                                  | The inline-rename swap.                                                                                                                                                                                       |
 
@@ -340,7 +340,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default` and `accent`. |
 | NeutralChip | `NeutralChip`               | A neutral-ground tag chip — color on border and text.                   |
 | FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
-| FileLabel  | `FileLabel`                  | A file or folder name inside a field, no chrome.                        |
+| PlainLabel | `PlainLabel`                 | A name inside a field, no chrome.                                       |
 
 ### Menus
 
