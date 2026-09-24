@@ -154,7 +154,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Show Footnotes By Default | `citationsShown` | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |
 | Jump To Citation On Creation | `jumpToCitation` | Carries the caret down to the citation a new footnote just made. | **On** · Off |
 | Highlight Color | `highlightColor` | The wash behind highlighted text. Cleared follows the accent. | Any ramp cell · **the accent** |
-| Checkbox Color | `checkboxColor` | The color a task checkbox fills and checks with, the greyscale row included. Cleared follows the accent. | Any ramp cell · **the accent** |
+| Checkbox Color | `checkboxColor` | The color checkboxes and switches fill with, the greyscale row included; a checkbox property's own color overrides it. Cleared follows the accent. | Any ramp cell · **the accent** |
 | Code Color | `codeColor` | Inline code and the wash behind it. | Any ramp cell, greyscale included · **red** |
 | Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a code block's content lines. | On · **Off** |
 | Mute Checked Items | `muteCheckedItems` | A checked task reads as done — dimmed and struck through. Drawn, never written. | On · **Off** |
