@@ -1,6 +1,5 @@
 import { isMarkdownFile } from '../../Files/walk'
-import { splitFrontmatter } from '../../Files/pageFile'
-import { contentId } from '../../Nexus/identityMark'
+import { stampedId } from '../../Files/pageFile'
 import { liveIdOf } from '../../Nexus/valuesChanged'
 import { join } from '../../Paths/posix'
 import { captureIfDue } from '../../Pages/fileHistory'
@@ -15,6 +14,6 @@ export async function captureLoser(
   captureStore()?.addCapture(rel, Date.now(), reason, bytes)
   if (!isMarkdownFile(rel)) return
   const text = new TextDecoder().decode(bytes)
-  const pageId = contentId(splitFrontmatter(text)) ?? liveIdOf(root, join(root, rel))
+  const pageId = stampedId(text) ?? liveIdOf(root, join(root, rel))
   if (pageId !== undefined) await captureIfDue(root, pageId, text, 'external')
 }

@@ -55,7 +55,7 @@ export function Banner({
     e.preventDefault()
     e.stopPropagation()
     // No Edit Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
-    const action = await popMenu(titleMenuItems({ toggleIcon: true, iconHidden, noEditIcon: true }))
+    const action = await popMenu(titleMenuItems({ iconHidden, noEditIcon: true }))
     if (action === 'rename') setEditingHome(true)
     else if (action === 'toggleIcon') await toggleHeadingIcon()
   }
@@ -104,7 +104,7 @@ export function Banner({
       iconRef={iconRef}
       onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}
       requestMenu={() => {
-        const items = titleMenuItems({ toggleIcon: true, iconHidden })
+        const items = titleMenuItems({ iconHidden })
         return popMenu(search ? withSearchRow(items) : items)
       }}
       onEditIcon={() => setIconPickerOpen(true)}

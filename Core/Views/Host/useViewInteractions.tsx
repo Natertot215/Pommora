@@ -337,7 +337,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const iconAnchor = useRef<HTMLElement | null>(null)
   const openIconPicker = (row: ViewRow, anchor: HTMLElement): void => {
     iconAnchor.current = anchor
-    setIconTarget({ path: row.path, icon: typeof row.icon === 'string' ? row.icon : undefined })
+    setIconTarget({ path: row.path, icon: row.icon })
     setIconOpen(true)
   }
   const iconPicker = (

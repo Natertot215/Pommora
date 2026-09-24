@@ -110,8 +110,8 @@ export function PageTile({
 
   if (failed) return <div className="page-tile page-tile-failed">{titleFromPath(path)}</div>
   if (body === null) return <div className="page-tile" />
-  // Merge the identity keys only — nulling would unmount the live editor mid-edit and race the debounced body write.
-  const refreshIdentity = (): void => {
+  // Merge the cover only — nulling would unmount the live editor mid-edit and race the debounced body write.
+  const refreshCover = (): void => {
     void fetchPageDetail(path).then((detail) => {
       if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail) } : l))
     })
@@ -129,7 +129,7 @@ export function PageTile({
               title: entry.title ?? titleFromPath(path),
               cover: entry.cover,
             }}
-            onBannerDone={refreshIdentity}
+            onBannerDone={refreshCover}
             chrome="window"
           />
         ) : null
@@ -139,7 +139,7 @@ export function PageTile({
             path={path}
             title={entry.title ?? titleFromPath(path)}
             cover={entry.cover}
-            onChanged={refreshIdentity}
+            onChanged={refreshCover}
           />
         ) : entry?.id ? (
           <EmbedCrumbs id={entry.id} />

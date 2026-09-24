@@ -69,7 +69,7 @@ export function PageHeader({
       iconRef={iconRef}
       iconHidden={!shown}
       onRename={(newName) => submitRename(path, 'page', newName)}
-      requestMenu={() => popMenu(titleMenuItems({ toggleIcon: true, iconHidden: !shown }))}
+      requestMenu={() => popMenu(titleMenuItems({ iconHidden: !shown }))}
       onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={toggleTitleIcon}
     />
