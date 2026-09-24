@@ -21,7 +21,7 @@ The same keyframes and curve on the `menu` token through `bloomOpen` and `bloomC
 
 #### II. Header Scroll-Park
 
-The page banner and title zone slides up under the toolbar on scroll: a scroll-timeline animation (`mdpm-header-park` in `Core/MarkdownPM/markdown-pm.css`) bound to the editor's scroller and ranged over `--header-zone`, the live header height. Compositor-driven, with no duration.
+The page banner and title zone slides up under the toolbar on scroll: a scroll-timeline animation (`header-park` in `Core/Pages/page-header.css`, shared by a page embed's banner) bound to the editor's scroller and ranged over `--header-zone`, the live header height. Compositor-driven, with no duration.
 
 #### II. Floating Windows
 
@@ -56,7 +56,6 @@ One text-insertion identity for the whole app: every CodeMirror surface mounts t
 | Bar Thickness | `--caret-width` | `2px` |
 | Fill | `--caret-color` | → `var(--label-primary)` |
 | Blink Cycle | `--caret-gap` | `1.3s` (a blink cycle, outside the duration scale) |
-| Dip Opacity | `--caret-dim` | `0` |
 | I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
 
 #### II. OverScroll

@@ -14,7 +14,6 @@ One gesture runs at a time. A press becomes a drag only once it travels far enou
 - **`SortableZone`** — one sortable list: standalone by default (a list, a row, a grid), or a member of the `DragGroup` above it. A zone given an `id` is addressable from the group's other zones and renders its own container, so an empty band is still a drop target. That container carries `--drag-floor`, the lifted item's height in its own px, while a drag is in flight.
 - **`DragGroup`** — the engine and its zone registry: a set of zones that hand items between each other, reporting each landing as `(activeId, toZone, toIndex)` or, between zones of one `family`, handing the source's carried item to the target's `receive` at the landing index, with an optional portal overlay for the lifted item.
 - **`useDragItem(id)`** — wires an item, returning the handle, the node ref, and the transform style.
-- **`useDropSlot()`** — the box the lifted item would land in, for whoever paints it.
 - **`reorder(items, activeId, overId)`** — the array commit helper a zone's `onReorder` applies.
 
 ### Core Principles

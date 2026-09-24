@@ -56,7 +56,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 | Title           | Token                                   | Value               |
 | --------------- | --------------------------------------- | ------------------- |
 | Fill Primary    | `fill.primary` · `--fill-primary`       | `system-grey` @ 20% |
-| Fill Secondary  | `fill.secondary` · `--fill-secondary`   | `system-grey` @ 15% |
+| Fill Secondary  | `fill.secondary`                        | `system-grey` @ 15% |
 | Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | `system-grey` @ 10% |
 | Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | `system-grey` @ 6%  |
 | Fill Quinary    | `fill.quinary` · `--fill-quinary`       | `system-grey` @ 4%  |
@@ -177,7 +177,7 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 
 **SOURCE:** `UIX/Theme/typography.css.ts`
 
-Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own.
+Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own.
 
 | Style        | Token              | Size / Line     | Character                                            |
 | ------------ | ------------------ | --------------- | ---------------------------------------------------- |
@@ -212,7 +212,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Buttons
 
-`UIX/Buttons/` — the one button recipe. `Button` is `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` for a toggle whose menu is open.
+`UIX/Buttons/` — the one button recipe. `Button` is `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` modifier; hover on every button, and `pressed` for a toggle whose menu is open.
 
 **Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
 
@@ -258,7 +258,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | NavTrail    | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
 | Segment     | `segment`                                                      | The between-values pill — `--segment-width` / `--segment-color` override it.                                                                                                                                                             |
 | ProgressBar | `ProgressBar`                                                  | A determinate bar on the accent.                                                                                                                                                                                                         |
-| EyeToggle   | `EyeToggle` · `EYE_ICON`                                       | The visibility eye — the current state's glyph at rest, the toggle previewed on hover.                                                                                                                                                   |
+| EyeToggle   | `EyeToggle`                                                    | The visibility eye — the current state's glyph at rest, the toggle previewed on hover.                                                                                                                                                   |
 | EmptyValue  | `EmptyValue`                                                   | The one "nothing here yet" mark for value slots.                                                                                                                                                                                         |
 
 The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`, and the `imageAspect.ts` aspect cache — are `Core/Assets/`, since each reaches the store for what it draws.
@@ -315,7 +315,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 | Title        | Export                                                  | What it is                                             |
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
-| Drag engine  | `DragGroup` · `SortableZone` · `useDragItem` · `useDropSlot` · `reorder` | The in-house DND: one engine (`engine.tsx`) behind the `drag.tsx` façade. |
+| Drag engine  | `DragGroup` · `SortableZone` · `useDragItem` · `reorder` | The in-house DND: one engine (`engine.tsx`) behind the `drag.tsx` façade. |
 | Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
 | Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
 | Snapshot     | `useDragSnapshot`                                       | The list held still for a drag's duration.             |
@@ -364,7 +364,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 | Title | Export | What it is |
 | ------------- | -------------------- | ------------------------------------------------------------------- |
-| PickerMenu | `PickerMenu` · `PickerRow` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. |
+| PickerMenu | `PickerMenu` · `PickerRow` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus.                   |
 | CalendarPicker | `CalendarPicker` | Date and time selection. |
 | ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `UIX/Pickers/IconPicker`. |
