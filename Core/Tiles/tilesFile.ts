@@ -1,4 +1,4 @@
-import { join } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import {
   knownTile,
   mintSeed,
@@ -15,13 +15,14 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { normalizeTitle } from '../Connections/connections'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections } from '../Connections/rewrite'
-import { isUlid, newId } from '../Nexus/ids'
+import { isUlidShaped } from '../Nexus/identityMark'
+import { newId } from '../Nexus/ids'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import { relPosix, tileFilePath, tileHostDir } from '../Paths/paths'
+import { tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { captureLoser } from '../Sync/Arrival/captures'
 import type { TrashDeps } from '../Trash/bundle'
@@ -107,7 +108,7 @@ export async function restoreTile(dir: string, removed: RemovedTile): Promise<Re
   const { at, body = '' } = removed
   if (
     !known ||
-    !isUlid(known.id) ||
+    !isUlidShaped(known.id) ||
     typeof body !== 'string' ||
     (at && !(Number.isInteger(at.band) && Number.isFinite(at.h)))
   )
@@ -212,7 +213,7 @@ export async function writeMarkdownTile(
   return machine().lock(file, async () => {
     const held = await machine().readText(file)
     if (held !== null && machine().sha256Hex(held) !== baseHash) {
-      await captureLoser(root, relPosix(root, file), new TextEncoder().encode(body), 'merge-lost')
+      await captureLoser(root, relative(root, file), new TextEncoder().encode(body), 'merge-lost')
       return { stale: true }
     }
     await atomicWriteFile(file, body)

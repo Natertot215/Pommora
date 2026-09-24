@@ -25,20 +25,16 @@ export function adjudicate(
   duplicates: Record<string, EntityRecord[]>,
   prior: Baseline | null,
   unreadablePaths: readonly string[],
-): { remint: RemintTarget[]; defer: string[] } {
+): RemintTarget[] {
   const remint: RemintTarget[] = []
-  const defer: string[] = []
   const unreadable = new Set(unreadablePaths)
   for (const [id, claims] of Object.entries(duplicates)) {
     const p = prior?.[id]
-    if (!p || unreadable.has(p.path) || !claims.some((c) => c.path === p.path)) {
-      defer.push(id)
-      continue
-    }
+    if (!p || unreadable.has(p.path) || !claims.some((c) => c.path === p.path)) continue
     for (const c of claims)
       if (c.path !== p.path) remint.push({ id: c.id, kind: c.kind, path: c.path })
   }
-  return { remint, defer }
+  return remint
 }
 
 interface RemintedEntity {
@@ -52,9 +48,8 @@ export async function runRemintPass(
   prior: Baseline | null,
   unreadablePaths: readonly string[],
 ): Promise<RemintedEntity[]> {
-  const { remint } = adjudicate(projection.duplicates, prior, unreadablePaths)
   const done: RemintedEntity[] = []
-  for (const target of remint) {
+  for (const target of adjudicate(projection.duplicates, prior, unreadablePaths)) {
     const fresh = target.kind === 'page' ? newContentId('page') : newId()
     if (!(await writeFreshId(root, target, fresh))) continue
     copyDeviceRows(target, fresh)

@@ -15,7 +15,8 @@ import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PropertyPanel } from '../Properties/PropertyPanel'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
+import { connectionText } from '@pommora/core/Connections/connections'
+import { pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
@@ -53,7 +54,7 @@ export function PageMenu(): React.JSX.Element | null {
     )
     if (action === 'title:rename') setRenaming(true)
     else if (action === 'title:copylink')
-      await host().ask('clipboard:write', pageLinkText(pageDetail.title))
+      await host().ask('clipboard:write', connectionText(pageDetail.title))
     else if (action === 'title:history')
       openHistory({ kind: 'page', id: pageDetail.id, path: pageDetail.path })
     else if (action === 'title:reveal') await host().ask('path:reveal', pageDetail.path)

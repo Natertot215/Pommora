@@ -10,7 +10,8 @@ import {
 } from '../Contexts/contextResolve'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../Files/walk'
+import { isMarkdownFile } from '../Paths/posix'
+import { listFilesRecursive, listMarkdownFiles } from '../Files/walk'
 
 import { SPACE_SIDECAR } from '../Paths/paths'
 import { sweepGovernedRoots } from '../Properties/governedSweep'

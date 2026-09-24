@@ -12,7 +12,7 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
 } from './treePatch'
-import { relDirname } from '../Paths/posix'
+import { relDirname, isMarkdownFile } from '../Paths/posix'
 import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
@@ -27,7 +27,6 @@ import {
   patchSettingsFromDisk,
   patchSpaceFromDisk,
 } from './watchPatch'
-import { isMarkdownFile } from '../Files/walk'
 import { flushSidecarWrites } from './valuesChanged'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */

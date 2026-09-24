@@ -49,10 +49,6 @@ export function manifestAdmits(
   }
 }
 
-export function normalizeSeg(s: string): string {
-  return foldKey(s)
-}
-
 /** Empties dropped, so `'a'`, `'/a/'` and `'a//'` all count the same — and that count is also the depth a path's own segments start at. */
 export function rootSegs(dir: string): string[] {
   return dir.split('/').filter(Boolean)
@@ -86,10 +82,10 @@ export function sameScope(a: WatchScope, b: WatchScope): boolean {
 }
 
 function prefixMatcher(paths: string[]): (segs: string[]) => boolean {
-  const prefixes = paths.map((p) => rootSegs(p).map(normalizeSeg)).filter((p) => p.length > 0)
+  const prefixes = paths.map((p) => rootSegs(p).map(foldKey)).filter((p) => p.length > 0)
   if (!prefixes.length) return () => false
   return (segs) => {
-    const norm = segs.filter(Boolean).map(normalizeSeg)
+    const norm = segs.filter(Boolean).map(foldKey)
     return prefixes.some((p) => p.every((seg, i) => norm[i] === seg))
   }
 }

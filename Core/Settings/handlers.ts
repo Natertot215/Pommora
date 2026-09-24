@@ -4,7 +4,7 @@ import { machine } from '../Platform/machine'
 import { seedContentIndex } from '../Index/indexSeed'
 import type { NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import { rootSegs } from '../Paths/exclusion'
-import { relPosix } from '../Paths/paths'
+import { relative } from '../Paths/posix'
 import { confirmSettingsWrite } from '../Nexus/confirm'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 import { sweepFileHistory } from '../Pages/fileHistory'
@@ -43,7 +43,7 @@ export const settingsHandlers = {
       message: 'Choose a folder to exclude',
     })
     if (!chosen) return ok(null)
-    const raw = relPosix(root, chosen)
+    const raw = relative(root, chosen)
     const refusal = nexusFolderRefusal(raw)
     return refusal ? fail('invalid-path', refusal) : ok(rootSegs(raw).join('/'))
   }),

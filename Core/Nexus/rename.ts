@@ -1,4 +1,4 @@
-import { basename, basenameNoMd, relative, relJoin } from '../Paths/posix'
+import { basename, titleFromPath, relative, relJoin } from '../Paths/posix'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
 import { fault, ok } from '../Contract/result'
@@ -26,11 +26,11 @@ export async function renameOp(
     reportRename(relative(root, abs), relative(root, r.value.path))
     return ok({})
   }
-  const oldTitle = basenameNoMd(basename(abs))
+  const oldTitle = titleFromPath(abs)
   const relParent = req.path.split('/').slice(0, -1).join('/')
   const renamedReply = (landedPath: string, tiles?: string[]): MutateReply => {
     const file = basename(landedPath)
-    return ok({ renamed: { path: relJoin(relParent, file), name: basenameNoMd(file) }, tiles })
+    return ok({ renamed: { path: relJoin(relParent, file), name: titleFromPath(file) }, tiles })
   }
   if (req.fromCreate) {
     const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))

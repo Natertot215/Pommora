@@ -2,8 +2,8 @@
 
 import { parseConnectionText } from '../Connections/connections'
 import { ASSETS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
-import { basename, basenameNoMd, dirname, extname, join } from '../Paths/posix'
-import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from '../Paths/paths'
+import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
+import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {
@@ -106,7 +106,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     const fields = async (): Promise<Record<string, unknown>> => (await readJsonObject(file)) ?? {}
     for (const slot of slotsOf(await fields()))
       refs.push({
-        store: relPosix(root, file),
+        store: relative(root, file),
         owner: ownerOf(basename(dirname(file)), slot),
         read: async () => valueAt(await fields(), slot),
         write: async (link) =>
@@ -123,7 +123,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     for (const slot of slotsOf(await frontmatter()))
       refs.push({
         store: rel,
-        owner: ownerOf(basenameNoMd(basename(rel)), slot),
+        owner: ownerOf(titleFromPath(rel), slot),
         read: async () => valueAt(await frontmatter(), slot),
         write: (link) =>
           rewritePageSerialized(file, (content) => {
@@ -228,7 +228,7 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
 async function sweepLegacyRoot(root: string, deps: TrashDeps): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
   const files = (await listFilesRecursive(dir)).filter((abs) =>
-    indexable(relPosix(root, abs), ASSETS_DIR_REL),
+    indexable(relative(root, abs), ASSETS_DIR_REL),
   )
   for (const abs of files) await discardFile(root, abs, deps)
   for (const entry of await listEntries(dir)) {

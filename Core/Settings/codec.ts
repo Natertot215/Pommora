@@ -4,7 +4,8 @@ import { COMMAND_IDS, type Commands, DEFAULT_COMMANDS } from '../Actions/command
 import { isPlainObject } from '../Properties/propertyValue'
 import { asString } from '../Nexus/coerce'
 import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Paths/nexusPaths'
-import { normalizeSeg, rootSegs, type WatchScope } from '../Paths/exclusion'
+import { foldKey } from '../Paths/caseFold'
+import { rootSegs, type WatchScope } from '../Paths/exclusion'
 import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
 import { readJsonStrict } from '../Files/atomicWrite'
 import { valueOr } from '../Contract/result'
@@ -54,7 +55,7 @@ export function nexusFolderRefusal(raw: string): string | null {
     segs.some((s) => s === '.' || s === '..')
   )
     return 'That folder’s name can’t be written as a nexus path.'
-  if (NON_CORPUS_TOP.has(normalizeSeg(segs[0]))) return 'That folder belongs to the app.'
+  if (NON_CORPUS_TOP.has(foldKey(segs[0]))) return 'That folder belongs to the app.'
   return null
 }
 
@@ -72,7 +73,7 @@ function readExcludedLeaf(v: unknown): string[] {
     const raw = item.trim()
     if (!raw || nexusFolderRefusal(raw)) continue
     const segs = rootSegs(raw)
-    const key = segs.map(normalizeSeg).join('/')
+    const key = segs.map(foldKey).join('/')
     if (seen.has(key)) continue
     seen.add(key)
     out.push(segs.join('/'))

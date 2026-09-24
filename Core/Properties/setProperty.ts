@@ -3,7 +3,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { readTextOrNull } from '../Files/atomicWrite'
 
-import { isMarkdownFile } from '../Files/walk'
+import { isMarkdownFile } from '../Paths/posix'
 import { loadGovernedWorld, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { fail, ok, type Result } from '../Contract/result'

@@ -1,7 +1,6 @@
 import type { Commands } from '../Actions/commands'
 import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personalization'
 import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
-import type { WatchScope } from '../Paths/exclusion'
 import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
@@ -12,7 +11,8 @@ import {
   scopeOf,
   type SettingsLeaves,
 } from './codec'
-import { normalizeSeg, rootSegs } from '../Paths/exclusion'
+import { foldKey } from '../Paths/caseFold'
+import { rootSegs, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { isPlainObject } from '../Properties/propertyValue'
 
@@ -130,7 +130,7 @@ export function sanitizeExclusions(folders: unknown): Result<string[]> {
     if (refusal) return fail('invalid-path', refusal)
     const segs = rootSegs(raw)
     const rel = segs.join('/')
-    const key = segs.map(normalizeSeg).join('/')
+    const key = segs.map(foldKey).join('/')
     if (seen.has(key)) continue
     seen.add(key)
     out.push(rel)

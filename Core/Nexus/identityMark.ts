@@ -20,6 +20,7 @@ const MARK_KIND = new Map<string, ContentKind>(
 
 export const PAGE_MODELED_KEYS = [ID_KEY, 'banner'] as const
 
+/** Case-SENSITIVE where the ulid library is not: an id becomes a folder name, and a case-insensitive filesystem would collide two ids the library calls equal. */
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
 
 export function isUlidShaped(value: unknown): value is string {
@@ -45,9 +46,4 @@ export function admitContentFile(fm: Record<string, unknown>, expected: ContentK
   if (!isUlidShaped(raw)) return { state: 'unknown', reason: 'malformed' }
   if (kindOf(raw) !== expected) return { state: 'unknown', reason: 'contradicting' }
   return { state: 'member', id: raw }
-}
-
-export function contentId(fm: Record<string, unknown>): string | undefined {
-  const v = fm[ID_KEY]
-  return typeof v === 'string' && v.length > 0 ? v : undefined
 }

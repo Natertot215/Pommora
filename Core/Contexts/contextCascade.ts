@@ -1,7 +1,8 @@
 import { basename, join } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, type ContextsRegistry } from './contexts'
-import { contentId } from '../Nexus/identityMark'
+import { ID_KEY } from '../Nexus/identityMark'
+import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, readJsonObject, targetTaken } from '../Files/atomicWrite'
@@ -86,7 +87,7 @@ async function sweepMembers(
 
 function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
   const isSpace = basename(file) === SPACE_SIDECAR
-  const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : contentId(raw)
+  const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : asString(raw[ID_KEY])
   return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }
 }
 

@@ -1,6 +1,6 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import { isUlid } from '../Nexus/ids'
+import { isUlidShaped } from '../Nexus/identityMark'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { coerceTileHost, type RemovedTile, type TileDocPatch, tilePatchProblem } from './tiles'
@@ -20,7 +20,7 @@ import { trashDeps } from '../Trash/bundle'
 
 type TileCtx = { root: string; dir: string }
 
-// Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must never carry path segments.
+// Tile ids gate on isUlidShaped — the id becomes a filename, so a renderer-supplied value must never carry path segments.
 async function tileHostAnd(
   root: string,
   host: unknown,
@@ -29,8 +29,7 @@ async function tileHostAnd(
   const h = coerceTileHost(host)
   const dir = h ? await hostDir(root, h) : null
   if (!dir) return fail('not-found', 'Unknown tile host.')
-  if (tileId !== undefined && (typeof tileId !== 'string' || !isUlid(tileId)))
-    return fail('not-found', 'Invalid tile id.')
+  if (tileId !== undefined && !isUlidShaped(tileId)) return fail('not-found', 'Invalid tile id.')
   return ok({ root, dir })
 }
 

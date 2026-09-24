@@ -1,16 +1,17 @@
 // The one place in the app that deliberately reads inside an excluded folder — every other enumerator prunes them.
 
-import { join } from '../Paths/posix'
+import { join, isMarkdownFile } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { parseContextKey } from '../Contexts/contexts'
-import { contentId, ID_KEY } from '../Nexus/identityMark'
+import { ID_KEY } from '../Nexus/identityMark'
+import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { getLiveTree } from '../Nexus/liveTree'
 import { ok, type Result } from '../Contract/result'
 import type { ClearReport } from '../Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText } from '../Properties/governedSweep'
 import { assetMatcher, rootSegs } from '../Paths/exclusion'
-import { isMarkdownFile, listEntries } from '../Files/walk'
+import { listEntries } from '../Files/walk'
 import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
 import { SIDECAR_FILENAME } from '../Paths/paths'
 
@@ -63,7 +64,7 @@ const clearRewrite =
       (k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null,
     )
     if (remove.length === 0) return null
-    const id = contentId(fm)
+    const id = asString(fm[ID_KEY])
     if (id) cleared.push(id)
     return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
   }

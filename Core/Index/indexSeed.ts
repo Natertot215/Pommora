@@ -1,8 +1,8 @@
-import { join, relative } from '../Paths/posix'
+import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { frontmatterMentions, linksIn } from '../Connections/scan'
-import { normalizeTitle, titleFromPath } from '../Connections/connections'
+import { normalizeTitle } from '../Connections/connections'
 import { headingOutline, headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
@@ -30,7 +30,7 @@ import {
 import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { corpusFiles, corpusFilesUnder, isMarkdownFile } from '../Files/walk'
+import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
 
 import { readWatchScope } from '../Settings/settings'
@@ -39,7 +39,7 @@ const NO_ROWS: PageIndexEntry = { matrix: [], headings: [], values: {} }
 
 function extractPageIndex(rel: string, content: string): PageIndexEntry {
   if (!sweepAdmitsBody(content)) return NO_ROWS
-  const values = frontmatterValues(content)
+  const values = splitFrontmatter(content)
   const own = titleFromPath(rel)
   const { body } = splitEnvelope(content)
   const scan = scanDoc(body)
@@ -81,10 +81,6 @@ function* spaceRelations(
   }
 }
 
-export function frontmatterValues(content: string): Record<string, unknown> {
-  return splitFrontmatter(content) as Record<string, unknown>
-}
-
 export async function nexusCorpus(root: string): Promise<string[]> {
   return corpusFiles(root, await readWatchScope(root))
 }
@@ -103,9 +99,8 @@ export async function folderCorpus(root: string, absFolder: string): Promise<str
 function relCorpusPath(root: string, abs: string): string | null {
   const rel = relative(root, abs)
   if (!rel || escapes(rel)) return null
-  const segs = rel.split('/')
-  if (NON_CORPUS_TOP.has(segs[0])) return null
-  return segs.join('/')
+  if (NON_CORPUS_TOP.has(rel.split('/')[0])) return null
+  return rel
 }
 
 let reread: { db: ContentIndexStore | null; rels: string[]; cold: boolean } = {

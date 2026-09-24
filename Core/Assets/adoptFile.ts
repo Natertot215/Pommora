@@ -1,7 +1,6 @@
-import { basename, extname, isAbsolute, join } from '../Paths/posix'
+import { basename, extname, isAbsolute, join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { relPosix } from '../Paths/paths'
 import { assetSubRoot } from '../Paths/nexusPaths'
 import { WEB_ADDRESS } from '../Paths/urlPath'
 import { neverWatched } from '../Paths/exclusion'
@@ -38,7 +37,7 @@ export async function adoptFile(
   if (
     opts.subfolder &&
     canonical.ok &&
-    !underAssetRoot(relPosix(await machine().realpath(root), canonical.value), assetDir)
+    !underAssetRoot(relative(await machine().realpath(root), canonical.value), assetDir)
   )
     return fault(NOT_A_PROPERTY_DIR_MESSAGE)
   const hit = resolveAssetName(await liveAssetMap(root), base)
@@ -51,7 +50,7 @@ export async function adoptFile(
         .catch(() => null)
     : null
   if (source === null) return fault(UNREADABLE)
-  const srcRel = relPosix(await machine().realpath(root), source)
+  const srcRel = relative(await machine().realpath(root), source)
   if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir))
     return ok(connectionText(base))
 

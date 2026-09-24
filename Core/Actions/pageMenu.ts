@@ -1,11 +1,6 @@
 import { type ActionItem, openOrder } from './menuModel'
 import { type PropertyAction, type PropertyMenuRow, propertyBranchRows } from './propertyRows'
-import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
-
-export function pageLinkText(title: string): string {
-  return connectionText(title)
-}
 
 export function pagePathText(nexusRelativePath: string): string {
   return nexusRelativePath.replace(/\.md$/i, '')

@@ -2,8 +2,7 @@
 
 import { getLiveTree } from './liveTree'
 import { escapes } from '../Paths/pathSafety'
-import { relDirname } from '../Paths/posix'
-import { relPosix } from '../Paths/paths'
+import { relDirname, relative } from '../Paths/posix'
 import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
@@ -12,7 +11,7 @@ let ledger: { root: string; byRel: Map<string, Map<string, boolean>> } | null = 
 
 export function noteValueWrite(root: string | null, absFile: string, body = false): void {
   if (root === null) return
-  const rel = relPosix(root, absFile)
+  const rel = relative(root, absFile)
   if (!rel || escapes(rel)) return
   if (ledger?.root !== root) ledger = { root, byRel: new Map() }
   const container = relDirname(rel)
@@ -30,7 +29,7 @@ export function noteSidecarWrite(absSpaceDir: string): void {
 
 export function flushSidecarWrites(root: string): string[] {
   const rels = [...sidecarWrites]
-    .map((abs) => relPosix(root, abs))
+    .map((abs) => relative(root, abs))
     .filter((rel) => rel && !escapes(rel))
   sidecarWrites.clear()
   return rels
@@ -77,7 +76,7 @@ export const liveIdIndex = (root: string): ReadonlyMap<string, string> =>
   liveIndices(root)?.byPath ?? new Map()
 
 export const liveIdOf = (root: string, absFile: string): string | undefined =>
-  liveIdIndex(root).get(relPosix(root, absFile))
+  liveIdIndex(root).get(relative(root, absFile))
 
 /** Null when the tree is not this root's, the id is absent, or two files claim it. */
 export const livePathOf = (root: string, id: string): string | null =>

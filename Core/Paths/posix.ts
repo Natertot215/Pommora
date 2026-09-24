@@ -67,6 +67,9 @@ export function relative(from: string, to: string): string {
 export const relJoin = (parent: string, child: string): string =>
   parent ? `${parent}/${child}` : child
 
-export function basenameNoMd(name: string): string {
-  return name.replace(/\.md$/i, '')
-}
+// Case-insensitive: a walk that admits `.MD` while a sweep skips it leaves a page that never rewrites.
+const MD_EXT = /\.md$/i
+
+export const isMarkdownFile = (name: string): boolean => MD_EXT.test(name)
+
+export const titleFromPath = (path: string): string => basename(path).replace(MD_EXT, '')

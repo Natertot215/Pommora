@@ -19,7 +19,7 @@ import type { HostContext, HostDevice, PickKind } from '@pommora/core/Contract/h
 import { handlers } from '@pommora/core/Contract/serve'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { openNexusSequence } from '@pommora/core/Nexus/handlers'
-import { isUlid } from '@pommora/core/Nexus/ids'
+import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { installMachine } from '@pommora/core/Platform/machine'
@@ -279,10 +279,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
     },
     transport,
     openStores: (root, nexusId) =>
-      openSessionDb(
-        nexusId !== null && isUlid(nexusId) ? `${userData()}/Nexuses/${nexusId}` : null,
-        root,
-      ),
+      openSessionDb(isUlidShaped(nexusId) ? `${userData()}/Nexuses/${nexusId}` : null, root),
     async adopted(root, path) {
       void startWatcher(root, currentWindow)
       if (mainWindow) void applyDefaultZoom(mainWindow)

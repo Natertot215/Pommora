@@ -1,5 +1,5 @@
-import { join } from '../Paths/posix'
-import { splitEnvelope, mergeFrontmatter } from '../Files/pageFile'
+import { join, titleFromPath } from '../Paths/posix'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { mentionsTitle } from '../Connections/scan'
 import {
@@ -7,11 +7,11 @@ import {
   rewriteFrontmatterConnections,
   rewriteHeadingConnections,
 } from '../Connections/rewrite'
-import { normalizeTitle, titleFromPath } from '../Connections/connections'
+import { normalizeTitle } from '../Connections/connections'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { ok, type Result } from '../Contract/result'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
-import { frontmatterValues, nexusCorpus } from '../Index/indexSeed'
+import { nexusCorpus } from '../Index/indexSeed'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '../Properties/properties'
 import { readLivePersonalization } from '../Settings/settings'
@@ -28,9 +28,7 @@ export async function renameCascade(
   const text = (content: string): string | null => {
     const { body } = splitEnvelope(content)
     const values = Object.fromEntries(
-      Object.entries(frontmatterValues(content)).filter(([k]) =>
-        isRegisteredPropertyName(k, names),
-      ),
+      Object.entries(splitFrontmatter(content)).filter(([k]) => isRegisteredPropertyName(k, names)),
     )
     const patch = rewriteFrontmatterConnections(values, oldKey, newTitle)
     const keys = Object.keys(patch)

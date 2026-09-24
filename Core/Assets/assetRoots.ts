@@ -2,14 +2,15 @@
 
 import { parseConnectionText } from '../Connections/connections'
 import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
-import { normalizeSeg, rootSegs } from '../Paths/exclusion'
+import { foldKey } from '../Paths/caseFold'
+import { rootSegs } from '../Paths/exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
 
 import { readWatchScope } from '../Settings/settings'
 
 const startsUnder = (segs: string[], root: string): boolean => {
-  const prefix = rootSegs(root).map(normalizeSeg)
-  return segs.length > prefix.length && prefix.every((seg, i) => normalizeSeg(segs[i]) === seg)
+  const prefix = rootSegs(root).map(foldKey)
+  return segs.length > prefix.length && prefix.every((seg, i) => foldKey(segs[i]) === seg)
 }
 
 export function underAssetRoot(rel: string, assetDir: string): boolean {
@@ -43,6 +44,6 @@ export function assetSubfolder(rel: string, assetDir: string): string | null {
   const prefix = rootSegs(assetDir)
   const segs = rootSegs(rel)
   if (segs.length < prefix.length) return null
-  if (!prefix.every((seg, i) => normalizeSeg(segs[i]) === normalizeSeg(seg))) return null
+  if (!prefix.every((seg, i) => foldKey(segs[i]) === foldKey(seg))) return null
   return segs.slice(prefix.length).join('/')
 }
