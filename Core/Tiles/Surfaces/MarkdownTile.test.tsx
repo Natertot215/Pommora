@@ -149,7 +149,7 @@ describe("a markdown tile's shared body", () => {
 })
 
 describe('a tile file that moved without this window', () => {
-  it('a refused save re-reads the file into every mount', async () => {
+  it('a refused save that conflicts with the file takes the file in every mount', async () => {
     await mountBoth(true, false)
     onDisk = 'synced'
     write.mockImplementationOnce(async () => ({ ok: true, value: { stale: true } }) as never)

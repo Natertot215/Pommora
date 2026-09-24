@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dropOwnEchoes, isRecentWrite, recordWrite, setWriteTap } from './writeEcho'
+import { dropOwnEchoes, isRecentWrite, recordWrite, setWriteTap, writtenHash } from './writeEcho'
 
 // WINDOW_MS is 2000; PREFIX_WINDOW_MS is 800. The module-level map has no reset, so each test uses a distinct root to keep records from bleeding across tests.
 beforeEach(() => {
@@ -61,7 +61,7 @@ describe('setWriteTap', () => {
 })
 
 describe('an echo recorded with its bytes', () => {
-  it('is left to the content check, which drops it only while the file still holds them', async () => {
+  it('is left to the content check, which drops it only while the file still holds the bytes its arrival named', async () => {
     vi.useRealTimers()
     const dir = mkdtempSync(join(tmpdir(), 'pom-echo-'))
     const own = join(dir, 'own.md')
@@ -71,7 +71,13 @@ describe('an echo recorded with its bytes', () => {
     writeFileSync(own, 'mine')
     writeFileSync(theirs, 'an outside edit')
     expect(isRecentWrite(own)).toBe(false)
-    const events = [{ absPath: own }, { absPath: theirs }, { absPath: join(dir, 'gone.md') }]
+    const events = [own, theirs, join(dir, 'gone.md')].map((absPath) => ({
+      absPath,
+      written: writtenHash(absPath),
+    }))
+    // A settle long past the window still judges by what arrival named.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.now() + 10_000)
     expect(await dropOwnEchoes(events)).toEqual([events[1], events[2]])
   })
 })

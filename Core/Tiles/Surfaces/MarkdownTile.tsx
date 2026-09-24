@@ -4,7 +4,6 @@ import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import {
-  dropTileBodies,
   readTileBase,
   readTileBody,
   setTileBase,
@@ -15,6 +14,7 @@ import {
 } from '../tileDocStore'
 import { host as dialer } from '../../Platform/dialer'
 import { ok } from '@pommora/core/Contract/result'
+import { merge3 } from '../../Pages/merge3'
 
 export function MarkdownTile({
   host,
@@ -47,7 +47,9 @@ export function MarkdownTile({
     if (held !== null && held !== (mine.current ?? seed.text)) {
       mine.current = held
       setSeed((s) => ({ no: s.no + 1, editing, text: held }))
-    } else setSeed((s) => ({ ...s, editing }))
+      // Leaving the edit, the tile rests on the newest typed text rather than the text it mounted with.
+    } else
+      setSeed((s) => ({ ...s, editing, text: editing ? s.text : (readTileBody(tileId) ?? s.text) }))
   }
 
   // The file on disk re-seeds the editor under a new key.
@@ -59,7 +61,7 @@ export function MarkdownTile({
         .ask('tiles:readMarkdown', host, tileId)
         .then((r) => {
           if (!live) return
-          if (r.ok) setTileBase(tileId, r.value.hash)
+          if (r.ok) setTileBase(tileId, { text: r.value.body, hash: r.value.hash })
           mine.current = null
           setSeed((s) => ({
             no: s.no + 1,
@@ -100,23 +102,47 @@ export function MarkdownTile({
     [editing, tileId],
   )
 
+  // Every other mount follows the slot; the editing mount holds no subscription, so it re-seeds itself.
+  const land = (text: string): void => {
+    writeTileBody(tileId, text)
+    settleTileBody(tileId)
+    if (!editingRef.current) return
+    mine.current = text
+    setSeed((s) => ({ no: s.no + 1, editing: s.editing, text }))
+  }
+
   const scheduleSave = (next: string): void => {
     // Synchronous, before the debounce and before any await: the slot must hold what was typed by the time the next pointerdown moves the edit to another mount.
     writeTileBody(tileId, next)
     mine.current = next
     tileBodyWriter.schedule(tileId, async () => {
+      // A drop since the keystroke may have emptied the slot; the save refills it before the others follow.
+      writeTileBody(tileId, next)
       settleTileBody(tileId)
       if (suppressRef.current?.(tileId)) return ok(null)
-      const r = await dialer().ask('tiles:writeMarkdown', host, tileId, next, readTileBase(tileId))
-      if (r.ok && !r.value.stale) setTileBase(tileId, r.value.hash)
-      // The host kept the refused text as a capture; the file on disk is what every mount shows from here.
-      else if (r.ok) {
-        tileBodyWriter.cancel(tileId)
-        // Every mount not editing reads the file on the drop; an editing mount holds no subscription, so it reads here.
-        dropTileBodies([tileId])
-        if (editingRef.current) reread.current()
+      const sent = await dialer().ask(
+        'tiles:writeMarkdown',
+        host,
+        tileId,
+        next,
+        readTileBase(tileId)?.hash ?? '',
+      )
+      if (!sent.ok) return sent
+      if (!sent.value.stale) {
+        setTileBase(tileId, { text: next, hash: sent.value.hash })
+        return sent
       }
-      return r
+      // The file moved without this window: the typing merges onto what the file holds now, and the merge saves in its place.
+      const fresh = await dialer().ask('tiles:readMarkdown', host, tileId)
+      if (!fresh.ok) return sent
+      const base = readTileBase(tileId)
+      const local = readTileBody(tileId) ?? next
+      const merged = base ? merge3(base.text, local, fresh.value.body).text : fresh.value.body
+      setTileBase(tileId, { text: fresh.value.body, hash: fresh.value.hash })
+      land(merged)
+      if (merged === fresh.value.body) tileBodyWriter.cancel(tileId)
+      else scheduleSave(merged)
+      return sent
     })
   }
 

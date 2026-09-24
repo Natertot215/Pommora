@@ -3,10 +3,11 @@ import type { PageMenuContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { Crop, PageMetaPatch } from './schemas'
 
-/** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
+/** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask; `tiles` names the markdown tiles its link cascade rewrote. */
 export interface MutateOutcome {
   created?: { id: string; path: string }
   renamed?: { path: string; name: string }
+  tiles?: string[]
   adopted?: string
   trashed?: { bundlePath: string }
 }

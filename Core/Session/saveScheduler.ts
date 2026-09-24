@@ -14,6 +14,7 @@ type Save = () => Promise<Result<unknown>>
 interface BodyWriter {
   schedule: (key: string, save: Save) => void
   flush: (key: string) => Promise<void>
+  settled: (key: string) => Promise<void>
   flushAll: () => Promise<void>
   cancel: (key: string) => void
   cancelAll: () => void
@@ -72,7 +73,9 @@ export function createBodyWriter(what?: string): BodyWriter {
     })
   }
 
-  return { schedule, flush, flushAll, cancel, cancelAll }
+  const settled = (key: string): Promise<void> => inFlight.get(key) ?? Promise.resolve()
+
+  return { schedule, flush, settled, flushAll, cancel, cancelAll }
 }
 
 const pageWriter = createBodyWriter('the page')
@@ -88,11 +91,19 @@ export function schedulePageSave(path: string, body: string): void {
   pageWriter.schedule(path, async () => {
     writeThroughBody(path, body)
     followBody(path)
-    const r = await host().ask('page:updateBody', path, body, readBodyBase(path)?.hash ?? '')
-    if (r.ok && !r.value.stale) setBodyBase(path, { text: body, hash: r.value.hash })
-    else if (r.ok) staleSink?.(path, body)
+    const sent = readBodyBase(path)?.hash ?? ''
+    const r = await host().ask('page:updateBody', path, body, sent)
+    // A landing that moved the base while this save was out keeps it; the save no longer names the file's last state.
+    if (r.ok && !r.value.stale) {
+      if (readBodyBase(path)?.hash === sent) setBodyBase(path, { text: body, hash: r.value.hash })
+    } else if (r.ok) staleSink?.(path, body)
     return r
   })
+}
+
+/** Resolves once the page's save in flight, if any, has landed and set its base. */
+export function settlePageSave(path: string): Promise<void> {
+  return pageWriter.settled(path)
 }
 
 /** Awaitable, so a host's close path lands the write before the world changes. */

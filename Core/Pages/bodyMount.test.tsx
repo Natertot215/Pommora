@@ -15,7 +15,9 @@ import {
   cachePageDetail,
   clearCache,
   dropCacheDetail,
+  heldPaths,
   readPageDetail,
+  refreshCache,
   useBodyEpoch,
 } from '../Session/pageDetailCache'
 import { flushPageSave } from '../Session/saveScheduler'
@@ -205,5 +207,45 @@ describe('one head per page path', () => {
     expect(b.state.doc.toString()).toBe('yBz')
     await flush()
     expect(disk).toBe('yBz')
+  })
+
+  it('an outside edit landing while the page’s own save is out keeps the typing after that save', async () => {
+    let release: () => void = () => {}
+    const updateBody = vi.fn(async (_p: string, body: string) => {
+      disk = body
+      await new Promise<void>((r) => {
+        release = r
+      })
+      return { ok: true, value: { hash: `h:${body}`, stale: false } }
+    })
+    const captured = vi.fn(async () => ({ ok: true, value: null }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'page:updateBody': updateBody,
+      'sync:captureLocal': captured,
+      'index:headings': async () => ({ ok: true, value: {} }),
+      'page:open': async (path: string) => ({ ok: true, value: detail({ path, body: disk }) }),
+    })
+    const { a } = await mountTwo('Hello\n\nother\n')
+    type(a, 5, ' wor')
+    const out = flushPageSave(PATH)
+    await act(async () => {})
+    type(a, 9, 'ld')
+    disk = `${disk}remote\n`
+    const landing = absorbLanding(PATH)
+    release()
+    await act(() => Promise.all([out, landing]))
+    expect(a.state.doc.toString()).toBe('Hello world\n\nother\nremote\n')
+    expect(captured).not.toHaveBeenCalled()
+  })
+
+  it('a cascade’s rewrite of a held page reaches every editor holding it', async () => {
+    const { a, b } = await mountTwo('see [[Old]]\n')
+    disk = 'see [[New]]\n'
+    refreshCache()
+    await act(async () => {
+      for (const path of heldPaths()) await absorbLanding(path)
+    })
+    expect(a.state.doc.toString()).toBe('see [[New]]\n')
+    expect(b.state.doc.toString()).toBe('see [[New]]\n')
   })
 })

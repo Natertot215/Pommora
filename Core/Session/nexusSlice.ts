@@ -17,7 +17,7 @@ import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
-import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
+import { dropTileBodies, flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import { matrixRuntime } from '../Matrix/matrixRuntime'
 import {
   cancelAllSaves,
@@ -268,6 +268,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           case 'rename':
             // The landed name, never the ask — a from-create rename may have disambiguated.
             patched = renameNodeInTree(cur, req.path, res.value.renamed?.name ?? req.newName)
+            dropTileBodies(res.value.tiles ?? [])
             break
           case 'delete':
             patched = removeNodeInTree(cur, req.path)

@@ -48,14 +48,18 @@ export function isRecentWrite(absPath: string): boolean {
   return false
 }
 
-/** Drops the events whose file still holds exactly what the app last wrote there. */
-export async function dropOwnEchoes<E extends { absPath: string }>(events: E[]): Promise<E[]> {
+/** The hash of the bytes the app just wrote at a path, taken as its event arrives. */
+export const writtenHash = (absPath: string): string | undefined => held(absPath)?.hash
+
+/** Drops the events whose file still holds exactly the bytes their arrival named, however late the settle runs. */
+export async function dropOwnEchoes<E extends { absPath: string; written?: string }>(
+  events: E[],
+): Promise<E[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
-      const hash = held(e.absPath)?.hash
-      if (hash === undefined) return true
+      if (e.written === undefined) return true
       const bytes = await machine().readBytes(e.absPath)
-      return bytes === null || machine().sha256Hex(bytes) !== hash
+      return bytes === null || machine().sha256Hex(bytes) !== e.written
     }),
   )
   return events.filter((_, i) => kept[i])
