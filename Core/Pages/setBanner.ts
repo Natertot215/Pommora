@@ -39,21 +39,22 @@ export async function setBannerOp(
     return landed(adopted.value)
   }
 
-  let folder = ''
-  if (req.kind !== 'homepage') {
-    const resolved = await resolveUnderRoot(root, req.path)
-    if (!resolved.ok) return resolved
-    if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
-    folder = resolved.value
+  if (req.kind === 'homepage') {
+    const adopted = await adopt()
+    if (!adopted.ok) return adopted
+    const written = await updateNexusConfig(root, 'homepage', (cur) =>
+      setOrDrop(cur, 'banner', adopted.value),
+    )
+    return written.ok ? landed(adopted.value) : written
   }
+
+  const resolved = await resolveUnderRoot(root, req.path)
+  if (!resolved.ok) return resolved
+  if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
   const adopted = await adopt()
   if (!adopted.ok) return adopted
-  const patch = (cur: Record<string, unknown>): Record<string, unknown> =>
-    setOrDrop(cur, 'banner', adopted.value)
-  const written =
-    req.kind === 'homepage'
-      ? await updateNexusConfig(root, 'homepage', patch)
-      : await patchSidecar(folder, req.kind, patch)
-  if (!written.ok) return written
-  return landed(adopted.value)
+  const written = await patchSidecar(resolved.value, req.kind, (cur) =>
+    setOrDrop(cur, 'banner', adopted.value),
+  )
+  return written.ok ? landed(adopted.value) : written
 }

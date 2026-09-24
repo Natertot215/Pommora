@@ -21,9 +21,9 @@ export async function patchSidecar(
   kind: SidecarKind,
   fn: (cur: Record<string, unknown>, refuse: Refuse) => Record<string, unknown> | null,
 ): Promise<Result<Record<string, unknown>>> {
-  const refused: { why: Result<never> | null } = { why: null }
+  let refused: Result<never> | null = null
   const refuse: Refuse = (why) => {
-    refused.why = why
+    refused = why
     return null
   }
   const written = await rmwJsonStrict(sidecarPath(absFolder, kind), (cur) =>
@@ -31,5 +31,5 @@ export async function patchSidecar(
       ? fn(cur, refuse)
       : refuse(fail('not-found', 'That item has no id.')),
   )
-  return refused.why ?? written
+  return refused ?? written
 }
