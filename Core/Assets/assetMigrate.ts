@@ -43,6 +43,35 @@ const INVENTED = /^(?:banner|profile)-[a-z0-9]{6,}$/i
 
 const hashOf = (bytes: Uint8Array): string => machine().sha256Hex(bytes)
 
+interface Slot {
+  key: string
+  index?: number
+}
+
+const isConnection = (v: unknown): boolean => typeof v === 'string' && !!parseConnectionText(v)
+
+// A banner may name its file by path; every other value names one only as a connection, alone or in a list.
+function slotsOf(fields: Record<string, unknown>): Slot[] {
+  return Object.entries(fields).flatMap(([key, v]): Slot[] => {
+    if (key === 'banner' || isConnection(v)) return [{ key }]
+    if (!Array.isArray(v)) return []
+    return v.flatMap((e, index) => (isConnection(e) ? [{ key, index }] : []))
+  })
+}
+
+const valueAt = (fields: Record<string, unknown>, { key, index }: Slot): unknown => {
+  const v = fields[key]
+  return index === undefined ? v : Array.isArray(v) ? v[index] : undefined
+}
+
+const withLink = (fields: Record<string, unknown>, { key, index }: Slot, link: string): unknown => {
+  const v = fields[key]
+  return index === undefined || !Array.isArray(v) ? link : v.map((e, i) => (i === index ? link : e))
+}
+
+const ownerOf = (name: string, { key }: Slot): string =>
+  `${name} ${key === 'banner' ? 'Banner' : key}`
+
 async function collectRefs(root: string): Promise<StoreRef[]> {
   const refs: StoreRef[] = []
   const homeFile = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
@@ -74,27 +103,35 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
       (await updateNexusConfig(root, 'homepage', (cur) => ({ ...cur, banner: link }))).ok,
   })
   for (const file of await sidecarsUnder(root)) {
-    refs.push({
-      store: relPosix(root, file),
-      owner: `${basename(dirname(file))} Banner`,
-      read: async () => (await readJsonObject(file))?.banner,
-      write: async (link) => (await rmwJsonStrict(file, (cur) => ({ ...cur, banner: link }))).ok,
-    })
+    const fields = (await readJsonObject(file)) ?? {}
+    for (const slot of slotsOf(fields))
+      refs.push({
+        store: relPosix(root, file),
+        owner: ownerOf(basename(dirname(file)), slot),
+        read: async () => valueAt((await readJsonObject(file)) ?? {}, slot),
+        write: async (link) =>
+          (await rmwJsonStrict(file, (cur) => ({ ...cur, [slot.key]: withLink(cur, slot, link) })))
+            .ok,
+      })
   }
 
   const scope = await readWatchScope(root)
   for (const rel of (await corpusFiles(root, scope)).sort()) {
     const file = join(root, rel)
-    refs.push({
-      store: rel,
-      owner: `${basenameNoMd(basename(rel))} Banner`,
-      read: async () => splitFrontmatter((await readTextOrNull(file)) ?? '').banner,
-      write: (link) =>
-        rewritePageSerialized(file, (content) => {
-          const { body } = splitEnvelope(content)
-          return mergeFrontmatter(content, { banner: link }, ['banner'], body)
-        }),
-    })
+    const frontmatter = async (): Promise<Record<string, unknown>> =>
+      splitFrontmatter((await readTextOrNull(file)) ?? '')
+    for (const slot of slotsOf(await frontmatter()))
+      refs.push({
+        store: rel,
+        owner: ownerOf(basenameNoMd(basename(rel)), slot),
+        read: async () => valueAt(await frontmatter(), slot),
+        write: (link) =>
+          rewritePageSerialized(file, (content) => {
+            const { body } = splitEnvelope(content)
+            const next = withLink(splitFrontmatter(content), slot, link)
+            return mergeFrontmatter(content, { [slot.key]: next }, [slot.key], body)
+          }),
+      })
   }
   return refs
 }
