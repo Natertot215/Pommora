@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode, type Ref } from 'react'
 import { GlassPane } from '@pommora/uix/Glass/glass-pane'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { Banner } from './Header/Banner'
+import { EntityBanner } from './Header/Banner'
 import { isSurfaceKind, type BannerOwner } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { navKey } from '../Navigation/navRecents'
@@ -39,7 +39,7 @@ export function InterfaceScaffold({
   const surface = owner !== null && isSurfaceKind(owner.kind)
   return (
     <div ref={ref} className={`detail-scroll${owner ? ' has-header' : ''}`}>
-      {owner ? <Banner owner={owner} /> : null}
+      {owner ? <EntityBanner owner={owner} /> : null}
       <div className={surface ? 'tile-host-frame' : 'detail-body'}>{children}</div>
     </div>
   )

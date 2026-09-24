@@ -1,0 +1,43 @@
+.mdpm-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding-bottom: 16px;
+}
+/* A page's header, and an embed's banner band, scroll up and park as its editor scrolls. */
+.header-park {
+  will-change: transform;
+  animation-name: header-park;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: --mdpm-scroll;
+  animation-range: 0 var(--header-zone, 90px);
+}
+@keyframes header-park {
+  to {
+    transform: translateY(calc(-1 * var(--header-zone, 90px)));
+  }
+}
+.mdpm-header .detail-title {
+  --detail-title-size: calc(var(--text-title-large-size) * var(--editor-scale, 1));
+}
+
+.mdpm-header:not(.has-banner) {
+  --banner-add-zone: 44px;
+  padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
+}
+.mdpm-header:not(.has-banner) .add-banner-strip {
+  padding-left: calc(var(--sidebar-clearance) + var(--content-inset));
+}
+.mdpm-header:not(.has-banner) .detail-title {
+  padding: 6px 0 14px calc(var(--sidebar-clearance) + var(--content-inset));
+}
+
+.banner-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: calc(var(--sidebar-clearance) + var(--content-inset));
+  right: 28px;
+}

@@ -11,10 +11,7 @@ import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pag
 import { renameHeading } from '../../Pages/pageEditor'
 import { useEmbedScale, useSession } from '../../Session/store'
 import { usePublishSelection } from '../../Interface/Subfield/publish'
-import { useAssetUrl } from '../../Assets/useAssetUrl'
-import { AssetImage } from '../../Assets/AssetImage'
-import { ImagePicker } from '../../Assets/ImagePicker'
-import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
+import { Banner } from '../../Interface/Header/Banner'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 
@@ -135,11 +132,15 @@ export function PageTile({
         ) : null
       case 'page':
         return entry?.cover ? (
-          <EmbedBanner
+          <Banner
             path={path}
-            title={entry.title ?? titleFromPath(path)}
-            cover={entry.cover}
-            onChanged={refreshCover}
+            kind="page"
+            value={entry.cover}
+            onDone={refreshCover}
+            className="header-park"
+            titleClassName="banner-overlay"
+            title={<span className="detail-title-text">{entry.title ?? titleFromPath(path)}</span>}
+            empty={() => null}
           />
         ) : entry?.id ? (
           <EmbedCrumbs id={entry.id} />
@@ -153,9 +154,7 @@ export function PageTile({
       style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return
-        if (
-          (e.target as HTMLElement).closest?.(`.mdpm-header, .mdpm-banner, [${PICKER_PORTAL_ATTR}]`)
-        )
+        if ((e.target as HTMLElement).closest?.(`.mdpm-header, .banner, [${PICKER_PORTAL_ATTR}]`))
           return
         const sel = window.getSelection()
         if (sel && !sel.isCollapsed) return
@@ -182,55 +181,6 @@ export function PageTile({
         arrive={arrive}
         onArrived={onArrived}
         onHeadingRename={(old, next) => entry?.id && void renameHeading(entry.id, old, next)}
-      />
-    </div>
-  )
-}
-
-function EmbedBanner({
-  path,
-  title,
-  cover,
-  onChanged,
-}: {
-  path: string
-  title: string
-  cover: string
-  onChanged: () => void
-}): React.JSX.Element | null {
-  const bannerRef = useRef<HTMLDivElement>(null)
-  const {
-    openMenu: bannerMenu,
-    editing,
-    closeEditor,
-    boxAspect,
-    onSave,
-    onRepick,
-  } = useBannerMenu(path, 'page', { value: cover, frame: bannerRef, onDone: onChanged })
-  const coverSrc = useAssetUrl(cover)
-  if (!coverSrc) return null
-  return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control
-    <div
-      ref={bannerRef}
-      className="mdpm-banner"
-      onContextMenu={(e) => {
-        e.preventDefault()
-        void bannerMenu()
-      }}
-    >
-      <AssetImage value={cover} className="mdpm-banner-img" eager />
-      <div className="mdpm-banner-overlay title-shadow">
-        <span className="detail-title-text">{title}</span>
-      </div>
-      <ImagePicker
-        open={editing}
-        value={cover}
-        shape="rect"
-        boxAspect={boxAspect}
-        onCancel={closeEditor}
-        onSave={onSave}
-        onRepick={onRepick}
       />
     </div>
   )

@@ -68,39 +68,6 @@
   font-size: calc(var(--editor-font-size, 15px) * var(--tile-zoom, 1) * var(--editor-scale, 1));
 }
 
-.mdpm-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  will-change: transform;
-  animation-name: mdpm-header-park;
-  animation-timing-function: linear;
-  animation-fill-mode: both;
-  animation-timeline: --mdpm-scroll;
-  animation-range: 0 var(--header-zone, 90px);
-  padding-bottom: 16px;
-}
-@keyframes mdpm-header-park {
-  to {
-    transform: translateY(calc(-1 * var(--header-zone, 90px)));
-  }
-}
-.mdpm-header .detail-title {
-  --detail-title-size: calc(var(--text-title-large-size) * var(--editor-scale, 1));
-}
-
-.mdpm-header:not(.has-banner) {
-  --banner-add-zone: 44px;
-  padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
-}
-.mdpm-header:not(.has-banner) .add-banner-strip {
-  padding-left: calc(var(--sidebar-clearance) + var(--content-inset));
-}
-.mdpm-header:not(.has-banner) .detail-title {
-  padding: 6px 0 14px calc(var(--sidebar-clearance) + var(--content-inset));
-}
 .mdpm-divider,
 .mdpm-editor .cm-line.md-citation-divider::after {
   border-bottom: var(--width-200) solid var(--border-base);
@@ -136,18 +103,6 @@
 .mdpm-editor .cm-line.md-citation-divider-off {
   opacity: 0;
   filter: blur(var(--citation-divider-blur));
-}
-
-.mdpm-banner {
-  position: relative;
-  height: 230px;
-  border-bottom: var(--width-175) solid var(--border-base);
-}
-.mdpm-banner-overlay {
-  position: absolute;
-  bottom: 12px;
-  left: calc(var(--sidebar-clearance) + var(--content-inset));
-  right: 28px;
 }
 
 /* Anchored to the heading line's own layout box, not a CM gutter — a gutter is positioned from CM's line-height model, which estimates off-screen variable-height blocks at a default height and drifts on scroll. KNOBS: --rail-inset, --fold-chevron-size, motion via --disclosure / --ease-base. */

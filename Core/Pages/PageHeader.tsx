@@ -2,14 +2,12 @@ import { useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { pageMetaOf, useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
-import { AssetImage } from '../Assets/AssetImage'
-import { ImagePicker } from '../Assets/ImagePicker'
 import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { useBannerMenu } from '../Interface/Header/useBannerMenu'
+import { Banner } from '../Interface/Header/Banner'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
-import { useWindowBannerSeat } from '../Interface/Windows/windowTabBanner'
+import './page-header.css'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
@@ -28,7 +26,7 @@ export function PageHeader({
   page: HeaderPage
   onBannerDone: () => void
   chrome?: 'detail' | 'window'
-}): React.JSX.Element | null {
+}): React.ReactNode {
   const { id, path, title, cover } = page
   const meta = useSession(pageMetaOf(id))
   const setting = useSession((s) => s.personalization.titleIcon) === true
@@ -44,22 +42,7 @@ export function PageHeader({
     void mutate({ op: 'setPageMeta', path, patch: { title_icon: next === setting ? null : next } })
   }
 
-  const bannerRef = useRef<HTMLDivElement>(null)
   const iconRef = useRef<SVGSVGElement>(null)
-  const {
-    openMenu: bannerMenu,
-    run,
-    addOrChange,
-    editing,
-    closeEditor,
-    boxAspect,
-    onSave,
-    onRepick,
-  } = useBannerMenu(path, 'page', { value: cover, frame: bannerRef, onDone: onBannerDone })
-  useWindowBannerSeat(chrome === 'window', run)
-
-  // A windowed page without a banner draws no header at all; the seat above still takes the strip's Add Banner.
-  if (chrome === 'window' && !coverSrc) return null
 
   const glyph = entityIcon('page', meta?.icon, defaultIcons)
   const titleHeader = (
@@ -74,46 +57,32 @@ export function PageHeader({
       onToggleIcon={toggleTitleIcon}
     />
   )
+  const banner = (
+    <Banner
+      path={path}
+      kind="page"
+      value={cover}
+      onDone={onBannerDone}
+      chrome={chrome}
+      titleClassName="banner-overlay"
+      title={titleHeader}
+      empty={(add) =>
+        chrome === 'window' ? null : (
+          <>
+            <AddBannerButton onClick={add} />
+            {titleHeader}
+            <div className="mdpm-divider" />
+          </>
+        )
+      }
+    />
+  )
+  // A windowed page without a banner draws no header at all; the band still holds the seat that takes the strip's Add Banner.
+  if (chrome === 'window' && !coverSrc) return banner
 
   return (
-    <div className={`mdpm-header${coverSrc ? ' has-banner' : ''}`}>
-      {coverSrc ? (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-        <div
-          ref={bannerRef}
-          className={cx('mdpm-banner', chrome === 'window' && 'window-banner')}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            void bannerMenu()
-          }}
-        >
-          <AssetImage value={cover} className="mdpm-banner-img" eager />
-          <div
-            className={cx(
-              'mdpm-banner-overlay',
-              chrome === 'window' && 'window-banner-title',
-              'title-shadow',
-            )}
-          >
-            {titleHeader}
-          </div>
-          <ImagePicker
-            open={editing}
-            value={cover ?? ''}
-            shape="rect"
-            boxAspect={boxAspect}
-            onCancel={closeEditor}
-            onSave={onSave}
-            onRepick={onRepick}
-          />
-        </div>
-      ) : (
-        <>
-          <AddBannerButton onClick={() => void addOrChange()} />
-          {titleHeader}
-          <div className="mdpm-divider" />
-        </>
-      )}
+    <div className={cx('mdpm-header header-park', coverSrc !== null && 'has-banner')}>
+      {banner}
       <IconChoice
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}
