@@ -36,13 +36,11 @@ describe('navigation state — one contract, routed storage', () => {
     await seedState({
       navigation: {
         pinned: [{ kind: 'page', id: 'p1' }, { kind: 'nope' }, 42],
-        favorites: [{ kind: 'homepage' }, { kind: 'space', id: 's1' }],
         banner: '.nexus/assets/b.jpg',
       },
     })
     expect(await readNavigationFile(root)).toEqual({
       pinned: [{ kind: 'page', id: 'p1' }],
-      favorites: [{ kind: 'homepage' }, { kind: 'space', id: 's1' }],
       banner: '.nexus/assets/b.jpg',
     })
   })
@@ -53,9 +51,9 @@ describe('navigation state — one contract, routed storage', () => {
     expect('pinned' in (await readState()).navigation).toBe(false)
   })
 
-  it('a patch touches only its own keys — the banner survives an arrays write and vice versa', async () => {
+  it('a patch touches only its own keys — the banner survives a pins write and vice versa', async () => {
     await writeNavigationState(root, { banner: '.nexus/assets/b.jpg' })
-    await writeNavigationState(root, { pinned: [{ kind: 'page', id: 'p1' }], favorites: [] })
+    await writeNavigationState(root, { pinned: [{ kind: 'page', id: 'p1' }] })
     expect(await readNavigationFile(root)).toEqual({
       pinned: [{ kind: 'page', id: 'p1' }],
       banner: '.nexus/assets/b.jpg',

@@ -6,7 +6,7 @@ import { makeTree } from '../Testing/testTree'
 const index = (): ReturnType<typeof searchEntriesOf> => searchEntriesOf(makeTree())
 
 describe('filterNav', () => {
-  it('empty query returns nothing (the surface shows recents/favorites instead)', () => {
+  it('empty query returns nothing (the surface shows recents instead)', () => {
     expect(filterNav(index(), '   ')).toEqual([])
   })
 

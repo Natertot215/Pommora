@@ -200,7 +200,7 @@ export const personalizationSchema = z.object({
   removeTitleOnLinkChange: flag(),
   aliasPickerOnCommit: flag(),
   defaultIcons: iconsByKind(),
-  favoriteIcons: nonEmptyStrings(),
+  iconFavorites: nonEmptyStrings(),
   setPlacement: oneOf(PLACEMENTS),
   subSetPlacement: oneOf(PLACEMENTS),
   newPagePlacement: oneOf(PLACEMENTS),

@@ -27,7 +27,7 @@ const RAIL = { min: 120, def: 200, max: 320 }
 
 // Matched against the press target itself, so child content — row internals, card bodies, the search input — never arms a window move.
 const DRAG_SURFACES =
-  '.navwindow-content, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
+  '.navwindow-content, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)
@@ -37,7 +37,7 @@ export function NavWindow(): React.JSX.Element | null {
 }
 
 function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
-  const { resolvedRecents, resolvedFavorites, resolvedPins, search, go } = useNavData()
+  const { resolvedRecents, resolvedPins, search, go } = useNavData()
   const closeNav = useSession((s) => s.closeNav)
   const geometry = useWindowGeometry('navwindow')
   const tree = useSession((s) => s.tree)
@@ -152,19 +152,14 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         mode: 'overlay',
         open: target === null,
         children: (
-          <>
-            <div className="navwindow-rail-list over-scroll">
-              <NavList items={resolvedFavorites} onSelect={goClose} onOpenNewTab={goNewTab} />
-            </div>
-            <Button
-              size="button-inline"
-              icon="chevrons-up-down"
-              iconSize="control"
-              label={viewMode === 'list' ? 'List' : 'Gallery'}
-              className="navwindow-style-toggle"
-              onClick={toggleViewMode}
-            />
-          </>
+          <Button
+            size="button-inline"
+            icon="chevrons-up-down"
+            iconSize="control"
+            label={viewMode === 'list' ? 'List' : 'Gallery'}
+            className="navwindow-style-toggle"
+            onClick={toggleViewMode}
+          />
         ),
       }}
       right={right}

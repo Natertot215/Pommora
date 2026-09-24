@@ -85,7 +85,9 @@ describe('the search row', () => {
 
 describe('the icon favorite menu', () => {
   it('is one toggle named for its direction', () => {
-    expect(iconFavoriteMenuItems(false)).toEqual([{ label: 'Favorite', action: 'toggle' }])
-    expect(iconFavoriteMenuItems(true)[0].label).toBe('Remove from Favorites')
+    expect(iconFavoriteMenuItems(false)).toEqual([
+      { label: 'Add to Icon Favorites', action: 'toggle' },
+    ])
+    expect(iconFavoriteMenuItems(true)[0].label).toBe('Remove from Icon Favorites')
   })
 })

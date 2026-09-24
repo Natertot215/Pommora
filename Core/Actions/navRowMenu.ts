@@ -6,7 +6,7 @@ import {
   pageMetaMenuSubset,
   pageSendActions,
 } from './pageMenu'
-import { favoriteLabel, openLabel, pinLabel } from './toggleLabels'
+import { openLabel, pinLabel } from './toggleLabels'
 import { isWindowTarget, type NavRef } from '../Navigation/navRef'
 
 export interface NavRowMenuContext extends PageMenuContext {
@@ -14,7 +14,6 @@ export interface NavRowMenuContext extends PageMenuContext {
   alreadyOpen: boolean
   kind: NavRef['kind']
   isPinned: boolean
-  isFavorite: boolean
 }
 
 type NavRowMenuAction =
@@ -22,8 +21,6 @@ type NavRowMenuAction =
   | 'open-window'
   | 'pin'
   | 'unpin'
-  | 'favorite'
-  | 'unfavorite'
   | 'remove'
   | PageSendAction
   | PageMoveAction
@@ -52,7 +49,6 @@ export function navRowMenuItems(ctx: NavRowMenuContext): ActionItem<NavRowMenuAc
       action: ctx.isPinned ? 'unpin' : 'pin',
       separatorBefore: items.length > 0,
     },
-    { label: favoriteLabel(ctx.isFavorite), action: ctx.isFavorite ? 'unfavorite' : 'favorite' },
     { label: 'Remove', action: 'remove', separatorBefore: true },
   )
   return items

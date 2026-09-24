@@ -30,11 +30,6 @@
   min-height: 0;
 }
 
-.navwindow-rail-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
 .navwindow-main {
   padding: var(--window-body-pad);
   display: flex;
@@ -55,6 +50,6 @@
   position: relative;
   z-index: 3;
   align-self: flex-start;
-  margin-top: 4px;
+  margin-top: auto;
   color: var(--label-secondary);
 }

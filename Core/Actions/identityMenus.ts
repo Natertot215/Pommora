@@ -62,6 +62,13 @@ export function withSearchRow<A>(rows: ActionItem<A>[]): ActionItem<A | 'search'
   return [{ label: 'Search', action: 'search' }, ...afterSeparator(rows)]
 }
 
-export function iconFavoriteMenuItems(favorited: boolean): ActionItem<IconFavoriteMenuAction>[] {
-  return [{ label: favorited ? 'Remove from Favorites' : 'Favorite', action: 'toggle' }]
+export function iconFavoriteMenuItems(
+  isIconFavorite: boolean,
+): ActionItem<IconFavoriteMenuAction>[] {
+  return [
+    {
+      label: isIconFavorite ? 'Remove from Icon Favorites' : 'Add to Icon Favorites',
+      action: 'toggle',
+    },
+  ]
 }

@@ -16,9 +16,8 @@ import {
 } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
-import { isOpenInTabs, liveTarget } from './tabsModel'
+import { isOpenInTabs, isPinned, liveTarget } from './tabsModel'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
-import { navKey } from './navRecents'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { EntityIcon } from '../Assets/EntityIcon'
@@ -47,8 +46,6 @@ export function NavRowMenu({
     opened.current = true
     const s = useSession.getState()
     const target = item.target
-    const isPinned = s.pinned.some((p) => navKey(p) === item.key)
-    const isFavorite = s.favorites.some((f) => navKey(f) === item.key)
     const livePage =
       target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
     const livePath = livePage?.kind === 'page' ? livePage.path : undefined
@@ -57,8 +54,7 @@ export function NavRowMenu({
         canOpenNewTab: onOpenNewTab !== undefined,
         alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
         kind: target.kind,
-        isPinned,
-        isFavorite,
+        isPinned: isPinned(target, s.pinned),
         ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
       }),
     ).then((action) => {
@@ -81,12 +77,6 @@ export function NavRowMenu({
         case 'unpin':
           st.unpinTarget(item.key)
           break
-        case 'favorite':
-          st.addFavorite(target)
-          break
-        case 'unfavorite':
-          st.removeFavorite(item.key)
-          break
         case 'remove':
           st.removeRecent(item.key)
           break
@@ -106,21 +96,25 @@ export function NavPinButton({
   it: ResolvedNav
   className?: string
 }): React.JSX.Element | null {
+  const pinned = isPinned(
+    it.target,
+    useSession((s) => s.pinned),
+  )
   const pinTarget = useSession((s) => s.pinTarget)
   const unpinTarget = useSession((s) => s.unpinTarget)
   if ('id' in it.target && it.target.id.startsWith('adopted-')) return null
   const toggle = (e: React.MouseEvent): void => {
     e.stopPropagation()
-    if (it.pinned) unpinTarget(it.key)
+    if (pinned) unpinTarget(it.key)
     else pinTarget(it.target)
   }
   return (
     <button
       type="button"
-      className={cx(className, it.pinned && 'is-pinned')}
+      className={cx(className, pinned && 'is-pinned')}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={toggle}
-      aria-label={pinLabel(it.pinned)}
+      aria-label={pinLabel(pinned)}
     >
       <Icon name="pin" size="body" />
     </button>

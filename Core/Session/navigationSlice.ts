@@ -112,7 +112,6 @@ export interface NavigationSlice {
   navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward') => void
   navSlide: NavSlide | null
   recents: NavRef[]
-  favorites: NavRef[]
   pinned: NavRef[]
   pinnedTabs: Tab[]
   navBanner: string | undefined
@@ -123,8 +122,6 @@ export interface NavigationSlice {
   thumbVersions: Record<string, number>
   bumpThumb: (key: string) => void
   evictThumbs: () => void
-  addFavorite: (target: NavRef | SelectTarget) => void
-  removeFavorite: (key: string) => void
   removeRecent: (key: string) => void
   setRecentsOrder: (keys: string[]) => void
   reconcileNavigation: (index: ReconcileIndex) => void
@@ -225,7 +222,6 @@ const PER_NEXUS = {
   tabMru: [],
   pinned: [],
   pinnedTabs: [],
-  favorites: [],
   recents: [],
   navBanner: undefined,
   pendingTravel: null,
@@ -535,11 +531,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const pinned = moveByKey(get().pinned, navKey, activeKey, overKey)
       if (pinned) commitPinned(pinned)
     },
-    // The push carries the file's keys: pinned, favorites, banner. Recents aren't in the file — the in-memory stream always leads.
+    // The push carries the file's keys: pinned and banner. Recents aren't in the file — the in-memory stream always leads.
     applyNavChanged: (nav) => {
       const tree = get().tree
       setPinned(nav.pinned ?? [], tree ? reconcileIndexOf(tree) : null)
-      set({ favorites: nav.favorites ?? [], navBanner: nav.banner })
+      set({ navBanner: nav.banner })
       graduatePinCovered()
       ensureLiveActive()
     },
@@ -553,21 +549,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const live = [...navKeysOf(tree), ...get().recents.map(navKey), ...get().pinned.map(navKey)]
       dropCapturedOutside(new Set(live))
       void dialer().ask('nav:evictThumbs', live)
-    },
-    addFavorite: (target) => {
-      // An agenda favorite resolves to null — an invisible row with no way to remove it.
-      if (target.kind === 'task' || target.kind === 'event') return
-      const ref = toNavRef(target)
-      const key = navKey(ref)
-      if (get().favorites.some((f) => navKey(f) === key)) return
-      const favorites = [...get().favorites, ref]
-      set({ favorites })
-      writeNav({ favorites })
-    },
-    removeFavorite: (key) => {
-      const favorites = get().favorites.filter((f) => navKey(f) !== key)
-      set({ favorites })
-      writeNav({ favorites })
     },
     removeRecent: (key) => {
       const next = removeRecentByKey(get().recents, key)
@@ -775,7 +756,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const tree = get().tree
       const index = tree ? reconcileIndexOf(tree) : null
       setPinned(pinned, index)
-      set({ favorites: nav?.favorites ?? [], recents: nav?.recents ?? [], navBanner: nav?.banner })
+      set({ recents: nav?.recents ?? [], navBanner: nav?.banner })
       get().evictThumbs()
       const seen = new Set<string>()
       const storedTabs = (stored?.tabs ?? []).filter((t) => {

@@ -3,9 +3,7 @@ import type { NavRef } from '@pommora/core/Navigation/navRef'
 import {
   pageTargetFromNav,
   type ResolvedNav,
-  resolveFavorites,
-  resolvePins,
-  resolveRecents,
+  resolveAll,
   resolveWith,
   windowTargetFromNav,
 } from './navResolve'
@@ -94,14 +92,14 @@ describe('resolveIndexOf + resolveWith (index built once, O(1) per entry)', () =
   })
 })
 
-describe('resolveRecents', () => {
-  it('preserves MRU order (pins are their own list now — no float)', () => {
-    const recents: NavRef[] = [
+describe('resolveAll', () => {
+  it('preserves stored order', () => {
+    const refs: NavRef[] = [
       { kind: 'page', id: 'p1' },
       { kind: 'page', id: 'p2' },
       { kind: 'collection', id: 'c1' },
     ]
-    expect(resolveRecents(resolveIndexOf(makeTree()), recents).map((r) => r.key)).toEqual([
+    expect(resolveAll(resolveIndexOf(makeTree()), refs).map((r) => r.key)).toEqual([
       'page:p1',
       'page:p2',
       'collection:c1',
@@ -109,39 +107,12 @@ describe('resolveRecents', () => {
   })
 
   it('drops gone entries from the render list only', () => {
-    const recents: NavRef[] = [
+    const refs: NavRef[] = [
       { kind: 'page', id: 'p1' },
       { kind: 'page', id: 'ghost' },
-    ]
-    expect(resolveRecents(resolveIndexOf(makeTree()), recents).map((r) => r.key)).toEqual([
-      'page:p1',
-    ])
-  })
-})
-
-describe('resolveFavorites', () => {
-  it('preserves stored order and prunes gone entries', () => {
-    const favorites: NavRef[] = [
-      { kind: 'collection', id: 'c1' },
-      { kind: 'collection', id: 'ghost' },
       { kind: 'context', id: 'a1' },
     ]
-    expect(resolveFavorites(resolveIndexOf(makeTree()), favorites).map((r) => r.key)).toEqual([
-      'collection:c1',
-    ])
-  })
-})
-
-describe('resolvePins', () => {
-  it('marks each pinned, preserves caller order, prunes gone entries', () => {
-    const pins: NavRef[] = [
-      { kind: 'collection', id: 'c1' },
-      { kind: 'collection', id: 'ghost' },
-      { kind: 'context', id: 'a1' },
-    ]
-    const out = resolvePins(resolveIndexOf(makeTree()), pins)
-    expect(out.map((r) => r.key)).toEqual(['collection:c1'])
-    expect(out.every((r) => r.pinned === true)).toBe(true)
+    expect(resolveAll(resolveIndexOf(makeTree()), refs).map((r) => r.key)).toEqual(['page:p1'])
   })
 })
 

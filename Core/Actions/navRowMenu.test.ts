@@ -9,11 +9,10 @@ const base: NavRowMenuContext = {
   alreadyOpen: false,
   kind: 'page',
   isPinned: false,
-  isFavorite: false,
 }
 
 describe('the nav row menu', () => {
-  it('opens, sends, pins, favorites, and removes, each group divided', () => {
+  it('opens, sends, pins, and removes, each group divided', () => {
     expect(shape({ ...base, currentParentPath: 'Notes' })).toEqual([
       'Preview',
       'New Tab',
@@ -24,14 +23,13 @@ describe('the nav row menu', () => {
       'View History',
       '—',
       'Pin',
-      'Favorite',
       '—',
       'Remove',
     ])
   })
 
   it('a recent without a live path offers no send block', () => {
-    expect(shape(base)).toEqual(['Preview', 'New Tab', '—', 'Pin', 'Favorite', '—', 'Remove'])
+    expect(shape(base)).toEqual(['Preview', 'New Tab', '—', 'Pin', '—', 'Remove'])
   })
 
   it('a container row without an opener starts at Pin', () => {
@@ -41,9 +39,8 @@ describe('the nav row menu', () => {
         canOpenNewTab: false,
         kind: 'collection',
         isPinned: true,
-        isFavorite: true,
       }),
-    ).toEqual(['Unpin', 'Unfavorite', '—', 'Remove'])
+    ).toEqual(['Unpin', '—', 'Remove'])
   })
 
   it('a Space row previews, and offers no send block', () => {
@@ -52,7 +49,6 @@ describe('the nav row menu', () => {
       'New Tab',
       '—',
       'Pin',
-      'Favorite',
       '—',
       'Remove',
     ])
