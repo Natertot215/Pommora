@@ -77,6 +77,19 @@ export function DetailTitleHeader({
     search?.change(null)
     setEditing(true)
   }
+  // The search takes the title's place at once, so a double-click's second press lands wherever the title was.
+  const openSearch = (): void => {
+    search?.start()
+    window.addEventListener(
+      'mousedown',
+      (e) => {
+        if (e.detail !== 2) return
+        e.preventDefault()
+        beginRename()
+      },
+      { capture: true, once: true },
+    )
+  }
   const openMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
@@ -102,7 +115,11 @@ export function DetailTitleHeader({
       onCancel={() => setEditing(false)}
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the title is a right-click affordance and a pointer door to its search — the keyboard reaches the search through the Search command */}
-      <span className="detail-title-text" onContextMenu={openMenu} onClick={search?.start}>
+      <span
+        className="detail-title-text"
+        onContextMenu={openMenu}
+        onClick={search ? openSearch : undefined}
+      >
         {title}
       </span>
     </RenamableLabel>
@@ -122,7 +139,6 @@ export function DetailTitleHeader({
       )}
       {search ? (
         <>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: a click opens the search over the title, so a double-click's second press lands in the still-empty field */}
           <span
             className={cx(
               'detail-title-lead',
@@ -132,7 +148,6 @@ export function DetailTitleHeader({
             )}
             onPointerEnter={() => hint.hover(true)}
             onPointerLeave={() => hint.hover(false)}
-            onDoubleClick={search.query === '' ? beginRename : undefined}
           >
             <span className={cx(labelSlot, searching && labelSlotHidden, 'detail-title-slot')}>
               <span className="detail-title-slot-run">

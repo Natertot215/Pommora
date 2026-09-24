@@ -104,6 +104,10 @@ describe('freeName', () => {
     expect(freeName('ideas', ['Ideas'])).toBe('ideas (2)')
   })
 
+  it('keeps a bracketed number of its own when its bare name is free', () => {
+    expect(freeName('Taxes (2024)', ['Taxes (2024)'])).toBe('Taxes (2024) (2)')
+  })
+
   it('leaves a bare trailing number as part of the name', () => {
     expect(freeName('Chapter 2', ['Chapter 2'])).toBe('Chapter 2 (2)')
   })

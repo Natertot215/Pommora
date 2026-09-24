@@ -160,3 +160,36 @@ describe('the title search', () => {
     expect(input.selectionEnd).toBe(2)
   })
 })
+
+describe('the double-click rename', () => {
+  it('a double-click on a title without a search opens its field', async () => {
+    await render()
+    act(() => {
+      q('.detail-title-text').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+    })
+    expect(host.querySelector('.detail-title-input')).not.toBeNull()
+  })
+
+  it('on a searchable title, the second press ends the search and opens the field wherever it lands', async () => {
+    const s = search()
+    await render(s)
+    act(() => q('.detail-title-text').click())
+    expect(s.start).toHaveBeenCalledTimes(1)
+    act(() => {
+      document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, detail: 2 }))
+    })
+    expect(s.change).toHaveBeenCalledWith(null)
+    expect(host.querySelector('.detail-title-input')).not.toBeNull()
+  })
+
+  it('a later single press after the click leaves the search open', async () => {
+    const s = search()
+    await render(s)
+    act(() => q('.detail-title-text').click())
+    act(() => {
+      document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, detail: 1 }))
+    })
+    expect(s.change).not.toHaveBeenCalled()
+    expect(host.querySelector('.detail-title-input')).toBeNull()
+  })
+})
