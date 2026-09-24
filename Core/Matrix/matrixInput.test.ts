@@ -55,6 +55,13 @@ describe('matrixInput', () => {
     expect(input.spaces.map((s) => s.id)).toEqual(['a1', 't1', 'pr1'])
   })
 
+  it('takes a page node’s icon from the page metadata', () => {
+    const tree = makeTree()
+    tree.pageMetadata = { p1: { icon: 'star' } }
+    const { input } = matrixInput(tree, replyOf([]), DEFAULT_MATRIX_CONFIG)
+    expect(input.pages.map((p) => p.icon)).toEqual(['star', undefined])
+  })
+
   it('draws a connection for a resolved target and none for ambiguous or phantom ones', () => {
     const resolved = matrixInput(makeTree(), replyOf([link('p2', 'Alpha')]), DEFAULT_MATRIX_CONFIG)
     expect(resolved.input.connections).toEqual([{ from: 'p2', to: 'p1', kind: 'body' }])

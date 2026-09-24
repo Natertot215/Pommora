@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdir, readdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL } from '../Paths/nexusPaths'
@@ -128,6 +128,51 @@ describe('the writer', () => {
     await dropPageMetadata(root, [SEP_A, AUG], null)
     expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_B]: { icon: 'b' } } })
     expect(await shardOnDisk('08-2026')).toEqual({ pages: {} })
+  })
+
+  const corruptSeptember = async (): Promise<string> => {
+    await mkdir(join(root, METADATA_DIR_REL), { recursive: true })
+    const bytes = `{ "pages": { "${SEP_B}": { "icon": "b" }, } }`
+    await writeFile(metadataShardPath(root, '09-2026'), bytes)
+    return bytes
+  }
+
+  const setAside = async (): Promise<string[]> =>
+    (await readdir(join(root, METADATA_DIR_REL))).filter((n) => n.includes('.bad-'))
+
+  it('a corrupt month refuses a patch and keeps its bytes', async () => {
+    const bytes = await corruptSeptember()
+    expect(await updatePageMetadata(root, SEP_A, { icon: 'a' })).toEqual({
+      ok: false,
+      error: { code: 'operation-failed', message: 'Corrupt JSON: 09-2026.json' },
+    })
+    expect(await readFile(metadataShardPath(root, '09-2026'), 'utf8')).toBe(bytes)
+    expect(await setAside()).toEqual([])
+  })
+
+  it('a corrupt month refuses a drop, logs, and keeps its bytes', async () => {
+    const bytes = await corruptSeptember()
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await dropPageMetadata(root, [SEP_B], null)
+    expect(logged).toHaveBeenCalledWith(
+      'metadata: 09-2026 kept dropped entries:',
+      'Corrupt JSON: 09-2026.json',
+    )
+    logged.mockRestore()
+    expect(await readFile(metadataShardPath(root, '09-2026'), 'utf8')).toBe(bytes)
+    expect(await setAside()).toEqual([])
+  })
+
+  it('copyPageMetadata carries fields this build does not model', async () => {
+    await mkdir(join(root, METADATA_DIR_REL), { recursive: true })
+    await writeFile(
+      metadataShardPath(root, '08-2026'),
+      JSON.stringify({ pages: { [AUG]: { icon: 'star', future_field: 7 } } }),
+    )
+    await copyPageMetadata(root, [[AUG, SEP_A]])
+    expect(await shardOnDisk('09-2026')).toEqual({
+      pages: { [SEP_A]: { icon: 'star', future_field: 7 } },
+    })
   })
 
   it('copyPageMetadata lands an August entry under a September ID in its own month', async () => {

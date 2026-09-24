@@ -3,7 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
-import { cleanupEditor, mountEditor, stubEditorBridge, seedHost } from '../editorHarness'
+import {
+  cleanupEditor,
+  harnessState,
+  mountEditor,
+  rerenderEditor,
+  seedHost,
+  stubEditorBridge,
+} from '../editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -50,6 +57,48 @@ describe('committing a connection leaves it reading as finished', () => {
     const { doc, head } = await pickFirst('[[Alp]] rest', 4)
     expect(doc).toBe('[[Alpha]] rest')
     expect(head).toBe(9)
+  })
+})
+
+describe('the alias picker', () => {
+  const props = {
+    initialBody: '[[Alpha|]]',
+    connections: conn,
+    host: { aliases: { p1: ['one', 'two'] } },
+  }
+
+  const openPicker = async () => {
+    const view = await mountEditor(props)
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    return view
+  }
+
+  const rows = (): number => document.querySelectorAll('.mdpm-ac .mdpm-ac-forget').length
+
+  it('drops a row the host stops remembering, under the same query', async () => {
+    await openPicker()
+    expect(rows()).toBe(2)
+    harnessState().aliases.p1 = ['one']
+    await rerenderEditor(props)
+    expect(rows()).toBe(1)
+  })
+
+  it('remembers the alias a pick writes', async () => {
+    const view = await openPicker()
+    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('[[Alpha|one]]')
+    expect(remember).toHaveBeenCalledTimes(1)
+    expect(remember).toHaveBeenCalledWith('p1', 'one')
   })
 })
 

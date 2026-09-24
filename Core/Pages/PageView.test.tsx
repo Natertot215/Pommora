@@ -251,6 +251,13 @@ describe('the title icon follows Show Icon In Title unless the page overrides it
     expect(hidden()).toBe(false)
   })
 
+  it('a page hidden under the setting stays hidden when the setting turns off', async () => {
+    await mount(true, { a: { title_icon: false } })
+    expect(hidden()).toBe(true)
+    await act(async () => useSession.setState({ personalization: { titleIcon: false } }))
+    expect(hidden()).toBe(true)
+  })
+
   it('hiding a page while the setting is on stores a false override', async () => {
     await mount(true)
     await toggle()

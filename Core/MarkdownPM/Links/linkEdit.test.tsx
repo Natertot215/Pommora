@@ -7,7 +7,7 @@ import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, harnessState, mountEditor, stubEditorBridge } from '../editorHarness'
 import { commitAliasOnEnter } from './linkEdit'
 
 class ResizeObserverStub {
@@ -162,6 +162,49 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
+  })
+})
+
+describe('the alias memory hears only what was authored', () => {
+  const caretTo = async (view: EditorView, anchor: number): Promise<void> => {
+    await act(async () => {
+      view.dispatch({ selection: { anchor } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+  }
+
+  it('walking the caret through existing aliases remembers nothing', async () => {
+    const view = await mountEditor({
+      initialBody: 'a [[Alpha|one]] [[Alpha|two]] b',
+      connections: conn,
+    })
+    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    await act(async () => view.focus())
+    await caretTo(view, 12)
+    await caretTo(view, 26)
+    await caretTo(view, 0)
+    await caretTo(view, 12)
+    view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+    expect(remember).not.toHaveBeenCalled()
+  })
+
+  it('typing an alias and leaving remembers it once', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
+    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    await act(async () => view.focus())
+    await caretTo(view, 10)
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 10, insert: 'new' },
+        selection: { anchor: 13 },
+        userEvent: 'input.type',
+      })
+    })
+    await caretTo(view, 0)
+    await caretTo(view, 12)
+    await caretTo(view, 0)
+    expect(remember).toHaveBeenCalledTimes(1)
+    expect(remember).toHaveBeenCalledWith('p1', 'new')
   })
 })
 
