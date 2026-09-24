@@ -16,7 +16,9 @@ function contentRect(pane: Element): ThumbRect {
   if (sidePane && sidePane.left > left && sidePane.left < right) right = sidePane.left
   const toolbar = chromePartRect('toolbar')
   const maskTop = toolbar ? Math.max(0, toolbar.bottom - p.top) : 0
-  const maskFill = pane.querySelector('.banner-img') ? 'banner' : 'window'
+  const maskFill = pane.querySelector('.detail-host:not(.is-parked) .banner-img')
+    ? 'banner'
+    : 'window'
   return { x: left, y: p.top, width: right - left, height: p.bottom - p.top, maskTop, maskFill }
 }
 

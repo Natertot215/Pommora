@@ -3,7 +3,8 @@ import type { BannerOwnerKind, MutableKind } from '@pommora/core/Nexus/mutateReq
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
-import { shownViewSearch, useSession } from '../../Session/store'
+import { useSession } from '../../Session/store'
+import { useContentHost } from '../contentHost'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import { isSurfaceKind, type BannerOwner } from '../../Nexus/treeIndex'
@@ -96,12 +97,23 @@ export function EntityBanner({
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [editingHome, setEditingHome] = useState(false)
   const iconRef = useRef<SVGSVGElement>(null)
-  const searchable = chrome === 'detail' && (owner.kind === 'collection' || owner.kind === 'set')
-  const query = useSession((s) => (searchable ? (shownViewSearch(s)?.query ?? null) : null))
-  const summon = useSession((s) => (searchable ? s.viewSearchSummon : 0))
+  const contentHost = useContentHost()
+  const searchTab =
+    chrome === 'detail' && (owner.kind === 'collection' || owner.kind === 'set')
+      ? contentHost?.tabId
+      : undefined
+  const open = useSession((s) => (searchTab === undefined ? undefined : s.viewSearch[searchTab]))
   const searchView = useSession((s) => s.searchView)
   const setViewQuery = useSession((s) => s.setViewQuery)
-  const search = searchable ? { query, summon, start: searchView, change: setViewQuery } : undefined
+  const search =
+    searchTab === undefined
+      ? undefined
+      : {
+          query: open?.query ?? null,
+          summon: open?.summon ?? 0,
+          start: searchView,
+          change: setViewQuery,
+        }
   const home = owner.kind === 'homepage'
 
   const iconHidden = owner.headingIconHidden === true

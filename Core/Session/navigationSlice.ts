@@ -77,10 +77,11 @@ export type PageSlot =
 
 type ReadySlot = Extract<PageSlot, { status: 'ready' }>
 
-/** `key` is the tab's shown entity when the search opened; the entry drops once the tab shows anything else. */
+/** `key` is the tab's shown entity when the search opened; the entry drops once the tab shows anything else. `summon` counts the tab's own summons, each one refocusing its field. */
 export interface ViewSearch {
   key: string
   query: string
+  summon: number
 }
 
 export interface NavigationSlice {
@@ -131,7 +132,6 @@ export interface NavigationSlice {
   setPendingTravel: (pendingTravel: PendingTravel) => void
   clearPendingTravel: () => void
   viewSearch: Record<string, ViewSearch>
-  viewSearchSummon: number
   searchView: () => boolean
   setViewQuery: (query: string | null) => void
 }
@@ -402,7 +402,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
   return {
     ...PER_NEXUS,
-    viewSearchSummon: 0,
     setPageBody: (path, body) =>
       set((s) => {
         for (const [id, slot] of Object.entries(s.pages))
@@ -835,15 +834,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     setPendingTravel: (pendingTravel) => set({ pendingTravel }),
     clearPendingTravel: () => set({ pendingTravel: null }),
     searchView: () => {
-      const { selection, activeTabId, viewSearch, viewSearchSummon } = get()
+      const { selection, activeTabId, viewSearch } = get()
       if (selection.kind !== 'collection' && selection.kind !== 'set') return false
-      set({
-        viewSearch: {
-          ...viewSearch,
-          [activeTabId]: viewSearch[activeTabId] ?? { key: tabKey(selection), query: '' },
-        },
-        viewSearchSummon: viewSearchSummon + 1,
-      })
+      const open = viewSearch[activeTabId] ?? { key: tabKey(selection), query: '', summon: 0 }
+      set({ viewSearch: { ...viewSearch, [activeTabId]: { ...open, summon: open.summon + 1 } } })
       return true
     },
     setViewQuery: (query) => {

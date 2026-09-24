@@ -38,7 +38,7 @@ function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element 
       footer={<Subfield page={null} count={count} selection={MATRIX_REF} />}
       footerLabel={footerLabel}
     >
-      <MatrixView parked={false} publishes={false} />
+      <MatrixView />
     </WindowBase>
   )
 }
