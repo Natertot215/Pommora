@@ -47,6 +47,16 @@ describe('the write leg of values:changed', () => {
     ])
   })
 
+  it('names the pages whose only write was a body edit', () => {
+    noteValueWrite(ROOT, join(ROOT, 'Notes/A.md'), true)
+    noteValueWrite(ROOT, join(ROOT, 'Notes/Deep/D.md'), true)
+    noteValueWrite(ROOT, join(ROOT, 'Notes/Deep/D.md'))
+    expect(flushValueWrites(ROOT)).toEqual([
+      { rel: 'Notes', pageIds: ['pA'], bodyOnly: ['pA'] },
+      { rel: 'Notes/Deep', pageIds: ['pD'] },
+    ])
+  })
+
   it('a flush drains the ledger', () => {
     noteValueWrite(ROOT, join(ROOT, 'Notes/A.md'))
     flushValueWrites(ROOT)

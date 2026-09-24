@@ -5,8 +5,9 @@ import { createRoot, type Root } from 'react-dom/client'
 import { detail } from '@pommora/core/Testing/fixtures'
 import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import { ok } from '@pommora/core/Contract/result'
-import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
-import { attachBody, cachePageDetail, clearCache } from './pageDetailCache'
+import { EMPTY_ASSET_MAP, type ValueChange } from '@pommora/core/Nexus/tree'
+import { makeTree } from '@pommora/core/Testing/testTree'
+import { attachBody, cachePageDetail, clearCache, readPageDetail } from './pageDetailCache'
 import { flushPageSave, schedulePageSave } from './saveScheduler'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
@@ -23,6 +24,7 @@ const Probe = (): null => {
 let container: HTMLDivElement
 let root: Root
 let landed: (paths: string[]) => void
+let pushValues: (changes: ValueChange[]) => void
 let pushStatus: (status: SyncStatus) => void
 let replaceBody: ReturnType<typeof vi.fn<(path: string) => Promise<boolean>>>
 let captured: ReturnType<typeof vi.fn<(path: string, text: string) => unknown>>
@@ -41,11 +43,16 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'host:platform': async () => ok('posix'),
     'assets:map': async () => ok(EMPTY_ASSET_MAP),
+    'values:changed': (cb: (changes: ValueChange[]) => void) => {
+      pushValues = cb
+      return () => undefined
+    },
     'pages:changed': (cb: (paths: string[]) => void) => {
       landed = cb
       return () => undefined
     },
     'page:updateBody': async () => ok({ stale: true }),
+    'page:open': async (path: string) => ok(detail({ path })),
     'index:headings': async () => ok({}),
     'sync:captureLocal': captured,
     'sync:changed': (cb: (status: SyncStatus) => void) => {
@@ -132,5 +139,18 @@ describe('a sync status the client pushes', () => {
     await mount()
     await act(async () => pushStatus({ state: 'syncing' }))
     expect(useSession.getState().syncStatus).toEqual({ state: 'syncing' })
+  })
+})
+
+describe('a values push', () => {
+  it('keeps the cached copy of a page whose only write was its own body save', async () => {
+    useSession.setState({ tree: makeTree() })
+    await mount()
+    const alpha = 'Notes/Alpha.md'
+    cachePageDetail(detail({ id: 'p1', path: alpha }))
+    act(() => pushValues([{ rel: 'Notes', pageIds: ['p1'], bodyOnly: ['p1'] }]))
+    expect(readPageDetail(alpha)).toBeDefined()
+    act(() => pushValues([{ rel: 'Notes', pageIds: ['p1'] }]))
+    expect(readPageDetail(alpha)).toBeUndefined()
   })
 })

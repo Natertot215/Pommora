@@ -7,17 +7,18 @@ import { relPosix } from '../Paths/paths'
 import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
-let ledger: { root: string; byRel: Map<string, Set<string>> } | null = null
+// Each file maps to whether every write it saw this flush was a body edit.
+let ledger: { root: string; byRel: Map<string, Map<string, boolean>> } | null = null
 
-export function noteValueWrite(root: string | null, absFile: string): void {
+export function noteValueWrite(root: string | null, absFile: string, body = false): void {
   if (root === null) return
   const rel = relPosix(root, absFile)
   if (!rel || escapes(rel)) return
   if (ledger?.root !== root) ledger = { root, byRel: new Map() }
   const container = relDirname(rel)
-  const files = ledger.byRel.get(container) ?? new Set<string>()
+  const files = ledger.byRel.get(container) ?? new Map<string, boolean>()
   ledger.byRel.set(container, files)
-  files.add(rel)
+  files.set(rel, body && (files.get(rel) ?? true))
 }
 
 // A sidecar write silences its own watcher echo, so its writer notes the folder here and the confirm patches that node.
@@ -87,11 +88,15 @@ export function flushValueWrites(root: string): ValueChange[] {
   const { byRel } = ledger
   ledger = null
   const byPath = liveIdIndex(root)
-  return [...byRel].map(([rel, files]) => ({
-    rel,
-    pageIds: [...files].flatMap((f) => {
+  return [...byRel].map(([rel, files]) => {
+    const pageIds: string[] = []
+    const bodyOnly: string[] = []
+    for (const [f, body] of files) {
       const id = byPath.get(f)
-      return id ? [id] : []
-    }),
-  }))
+      if (!id) continue
+      pageIds.push(id)
+      if (body) bodyOnly.push(id)
+    }
+    return bodyOnly.length ? { rel, pageIds, bodyOnly } : { rel, pageIds }
+  })
 }
