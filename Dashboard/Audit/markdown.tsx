@@ -100,7 +100,7 @@ function Table({ rows }: { rows: string[] }): React.JSX.Element {
           {body.map((r, i) => (
             <tr key={i}>
               {r.map((c, j) => (
-                <td key={j} className={cellClass[j]}>
+                <td key={j} className={cellClass[j]} data-label={head[j]}>
                   <Inline text={c} />
                 </td>
               ))}

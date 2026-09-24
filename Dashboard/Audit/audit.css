@@ -72,7 +72,7 @@
   margin: 0 0 14px;
   padding: 18px 20px 6px;
   border-radius: 10px;
-  background: var(--surface-secondary);
+  background: var(--fill-quaternary);
   border: var(--width-100) solid var(--border-base);
 }
 .au-verdict h4 {
@@ -267,6 +267,14 @@
   align-items: center;
   gap: 8px;
 }
+.au-fix-quote {
+  margin: 0 0 8px 4px;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid var(--border-base);
+}
+.au-fix-quote > :last-child {
+  margin-bottom: 0;
+}
 .au-steps {
   margin: 0 0 8px;
   padding-left: 22px;
@@ -370,6 +378,48 @@
 @media (max-width: 720px) {
   .au-page {
     padding: 28px 16px 72px;
+  }
+  .au-verdict {
+    padding: 14px 14px 4px;
+  }
+  .au-table thead {
+    display: none;
+  }
+  .au-table,
+  .au-table tbody,
+  .au-table tr,
+  .au-table td {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+  .au-table tr {
+    padding: 10px 14px;
+    border-bottom: var(--width-100) solid var(--border-faint);
+  }
+  .au-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .au-table td,
+  .au-table td:not(:first-child),
+  .au-table td.au-num {
+    width: auto;
+    padding: 2px 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+  }
+  .au-table td:first-child {
+    margin-bottom: 4px;
+  }
+  .au-table td.au-num {
+    display: inline-block;
+    margin-right: 16px;
+  }
+  .au-table td:not(:first-child)[data-label]::before {
+    content: attr(data-label) ": ";
+    color: var(--label-secondary);
+    font-weight: var(--weight-semibold);
   }
 }
 

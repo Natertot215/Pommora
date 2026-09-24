@@ -161,26 +161,28 @@ export function FindingReport({
             <strong>Fix</strong>
             <FixTag kind={f.fixKind} />
           </p>
-          {f.fix && (
-            <ol className="au-steps">
-              {steps.map((s, i) => (
-                <li key={i}>
-                  <Inline text={s} />
-                  {i === steps.length - 1 && f.size && (
-                    <>
-                      {' '}
-                      <em>({f.size})</em>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ol>
-          )}
-          {call && (
-            <p>
-              <strong>Nathan's call:</strong> <Inline text={call} />
-            </p>
-          )}
+          <blockquote className="au-fix-quote">
+            {f.fix && (
+              <ol className="au-steps">
+                {steps.map((s, i) => (
+                  <li key={i}>
+                    <Inline text={s} />
+                    {i === steps.length - 1 && f.size && (
+                      <>
+                        {' '}
+                        <em>({f.size})</em>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+            {call && (
+              <p>
+                <strong>Nathan's call:</strong> <Inline text={call} />
+              </p>
+            )}
+          </blockquote>
         </>
       )}
     </article>
