@@ -85,11 +85,12 @@ export const schemaTargets = (
   schema: PropertyDefinition[],
   qualifies: (def: PropertyDefinition) => boolean,
   capitalize = false,
-): PaneTarget[] =>
+): (PaneTarget & { def: PropertyDefinition })[] =>
   schema.filter(qualifies).map((d) => ({
     id: d.id,
     label: displayPropertyName(d.name, capitalize),
     icon: propertyIcon(d),
+    def: d,
   }))
 
 export const targetOption = (t: PaneTarget): PickerOption<string> => ({

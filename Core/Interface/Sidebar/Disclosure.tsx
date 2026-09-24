@@ -120,9 +120,12 @@ export function Disclosure({
     prevNaming.current = namingChildId
   }, [namingChildId])
   const peekNonce = useSession((s) => s.peekSignal?.nonce)
+  // A signal raised before this folder mounted is stale: a remount mustn't replay it.
+  const mountNonce = useRef(peekNonce)
   useEffect(() => {
     const sig = useSession.getState().peekSignal
-    if (locked && sig && sig.parentPath === selfPath) lingerPeek(sig.childId)
+    if (locked && sig && sig.nonce !== mountNonce.current && sig.parentPath === selfPath)
+      lingerPeek(sig.childId)
   }, [peekNonce])
   useEffect(() => {
     if (!locked) stopPeek()
