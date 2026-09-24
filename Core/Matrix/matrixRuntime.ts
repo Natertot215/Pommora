@@ -1,7 +1,13 @@
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { useSession } from '../Session/store'
 import type { Forces } from './Engine/forces'
-import { buildGraph, type Graph, type GraphNode, type GroupMode } from './Engine/graph'
+import {
+  buildGraph,
+  type Graph,
+  type GraphInput,
+  type GraphNode,
+  type GroupMode,
+} from './Engine/graph'
 import { place } from './Engine/placement'
 import {
   cool,
@@ -25,13 +31,7 @@ import {
   type Viewport,
 } from './Engine/viewport'
 import { type MatrixConfig, sameForces } from './matrixConfig'
-import {
-  matrixTree,
-  matrixVisible,
-  matrixWalk,
-  type MatrixTree,
-  type MatrixWalk,
-} from './matrixInput'
+import { matrixConnections, matrixTree, matrixVisible, type MatrixTree } from './matrixInput'
 import type { Positions } from './matrixLayout'
 
 // KNOB — the hit slack past a node's edge, in world units.
@@ -46,11 +46,13 @@ export interface Surface {
 
 const NO_STAGE: Stage = { x: 0, y: 0, width: 0, height: 0 }
 
+// Each stage is kept on what it reads: the tree for the walk, the links for the connections, and the values only while a filter judges them.
 interface Built {
   tree: unknown
-  reply: unknown
   held: MatrixTree
-  walk: MatrixWalk
+  links: unknown
+  connections: GraphInput['connections']
+  values: unknown
   visible: ReadonlySet<string> | null
   group: unknown
   filter: unknown
@@ -60,6 +62,9 @@ interface Built {
 
 const EMPTY: Graph = { nodes: [], links: [], index: new Map() }
 
+const sameSet = (a: ReadonlySet<string> | null, b: ReadonlySet<string> | null): boolean =>
+  a === b || (a !== null && b !== null && a.size === b.size && [...a].every((id) => b.has(id)))
+
 class MatrixRuntime {
   graph: Graph = EMPTY
   mode: GroupMode = 'connection'
@@ -67,7 +72,6 @@ class MatrixRuntime {
   frame: Frame | null = null
   hoveredId: string | null = null
   acting: string | null = null
-  private dragFrom: { id: string; x: number; y: number } | null = null
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
@@ -110,7 +114,7 @@ class MatrixRuntime {
 
   resume(): void {
     if (this.dirty) this.sync()
-    this.schedule()
+    this.invalidate()
   }
 
   private clear(): void {
@@ -122,7 +126,6 @@ class MatrixRuntime {
     this.fitOnSettle = false
     this.dirty = false
     this.hoveredId = null
-    this.dragFrom = null
     this.ghosts = []
     this.arrivals.clear()
   }
@@ -141,53 +144,60 @@ class MatrixRuntime {
     }
     this.dirty = false
     const c = s.matrixConfig
+    const { links, values } = s.matrixGraph
     const b = this.built
-    if (
-      b &&
-      b.tree === s.tree &&
-      b.reply === s.matrixGraph &&
-      b.group === c.group &&
-      b.filter === c.filter &&
-      b.display.unlinked === c.display.unlinked
-    ) {
-      // Only the active grouping's set reaches the simulation, so moving a slider for one the picture is not drawn under leaves it settled.
-      const forces = c.forces[c.group.mode]
-      if (!sameForces(b.forces[c.group.mode], forces)) this.setForces(forces)
-      if (b.display !== c.display) this.invalidate()
-      b.forces = c.forces
-      b.display = c.display
-      return
-    }
-    const first = b === null
     const held = b && b.tree === s.tree ? b.held : matrixTree(s.tree)
-    const walk =
-      b && b.held === held && b.reply === s.matrixGraph ? b.walk : matrixWalk(held, s.matrixGraph)
-    const visible =
-      b && b.walk === walk && b.filter === c.filter ? b.visible : matrixVisible(walk, c.filter)
+    const connections =
+      b && b.held === held && b.links === links ? b.connections : matrixConnections(held, links)
+    const judged =
+      b && b.held === held && b.filter === c.filter && b.values === values
+        ? b.visible
+        : matrixVisible(held, values, c.filter)
+    const visible = b && sameSet(b.visible, judged) ? b.visible : judged
     this.built = {
       tree: s.tree,
-      reply: s.matrixGraph,
       held,
-      walk,
+      links,
+      connections,
+      values,
       visible,
       group: c.group,
       filter: c.filter,
       forces: c.forces,
       display: c.display,
     }
-    const graph = buildGraph(walk.input, {
-      mode: c.group.mode,
-      hideUnlinked: !c.display.unlinked,
-      visible,
-    })
+    // A save that moved no link and changed no filter verdict leaves the picture as it stands.
+    if (
+      b &&
+      b.held === held &&
+      b.connections === connections &&
+      b.visible === visible &&
+      b.group === c.group &&
+      b.display.unlinked === c.display.unlinked
+    ) {
+      // Only the active grouping's set reaches the simulation, so moving a slider for one the picture is not drawn under leaves it settled.
+      const forces = c.forces[c.group.mode]
+      if (!sameForces(b.forces[c.group.mode], forces)) this.setForces(forces)
+      if (b.display !== c.display) this.invalidate()
+      return
+    }
+    const first = b === null
+    const graph = buildGraph(
+      { pages: held.pages, folders: held.folders, spaces: held.spaces, connections },
+      {
+        mode: c.group.mode,
+        hideUnlinked: !c.display.unlinked,
+        visible,
+      },
+    )
     const layout = new Map<string, { x: number; y: number }>()
     for (const [id, [x, y]] of Object.entries(s.matrixPositions)) layout.set(id, { x, y })
     for (const n of this.graph.nodes) layout.set(n.id, { x: n.x, y: n.y })
-    // Only a fresh walk can have moved a page, and only Location mode draws containment.
-    if (b && b.walk !== walk && c.group.mode === 'location') {
-      const was = new Map(b.walk.input.pages.map((p) => [p.id, p.folderId]))
+    // Only a new tree can have moved a page, and only Location mode draws containment.
+    if (b && b.held !== held && c.group.mode === 'location') {
+      const was = new Map(b.held.pages.map((p) => [p.id, p.folderId]))
       const born = performance.now()
-      for (const p of walk.input.pages) {
+      for (const p of held.pages) {
         const from = was.get(p.id)
         if (from === undefined || from === p.folderId) continue
         const n = this.nodeOf(p.id)
@@ -204,11 +214,10 @@ class MatrixRuntime {
     this.graph = graph
     this.mode = c.group.mode
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
-    const lostDrag = this.dragFrom !== null && !graph.index.has(this.dragFrom.id)
-    if (lostDrag) this.dragFrom = null
     this.sim = createSimulation(graph, c.forces[c.group.mode], settleAll)
     const carried = prev?.drag ?? null
     this.sim.drag = carried && graph.index.has(carried.id) ? carried : null
+    const lostDrag = carried !== null && this.sim.drag === null
     if (prev?.awake && !settleAll) {
       if (moving) wakeLocal(this.sim, new Set([...moving, ...fresh]))
       this.sim.awake = true
@@ -217,14 +226,14 @@ class MatrixRuntime {
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
     if (b && b.group !== c.group) resettle(this.sim)
     if (lostDrag) cool(this.sim)
-    if (this.dragFrom) reheat(this.sim)
+    if (this.sim.drag) reheat(this.sim)
     if (first) {
       this.frame = s.matrixFrame ?? this.frame
       // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when nothing was persisted.
       this.fitOnSettle = s.matrixFrame === null
       if (this.fitOnSettle && !this.sim.awake) this.fitNow()
     }
-    this.schedule()
+    this.invalidate()
   }
 
   // An empty graph has nothing to frame, so the fit stays owed until there is something to fit.
@@ -256,7 +265,8 @@ class MatrixRuntime {
     return false
   }
 
-  private schedule(): void {
+  // The one frame request: a step at rest only repaints, so hover, the frame, and a label move share it with the physics.
+  invalidate(): void {
     if (this.raf || !this.visible) return
     this.raf = requestAnimationFrame(() => {
       this.raf = 0
@@ -275,7 +285,7 @@ class MatrixRuntime {
     for (const fn of this.listeners) fn()
     if (this.wasAwake && !awake) this.settled()
     this.wasAwake = awake
-    if (awake || this.animating()) this.schedule()
+    if (awake || this.animating()) this.invalidate()
   }
 
   private settled(): void {
@@ -289,20 +299,11 @@ class MatrixRuntime {
     return this.ghosts.length > 0 || this.arrivals.size > 0
   }
 
-  // Any surface change that needs a paint but no physics: hover, the frame, a label move.
-  invalidate(): void {
-    if (this.raf || !this.visible) return
-    this.raf = requestAnimationFrame(() => {
-      this.raf = 0
-      if (this.sim?.awake || this.animating()) this.step()
-      else for (const fn of this.listeners) fn()
-    })
-  }
-
   // Each surface fits the shared frame into its own box, so a stage that moves or resizes reframes only its own picture. The first box to arrive is also what a frame is made from, so every frame past that carries a real extent.
   setStage(surface: Surface, next: Stage): void {
     this.stages.set(surface, next)
     if (this.frame === null && next.width > 0) this.frame = lifeSize(next)
+    this.invalidate()
   }
 
   private stageOf(surface: Surface): Stage {
@@ -342,7 +343,7 @@ class MatrixRuntime {
   }
 
   get draggingId(): string | null {
-    return this.dragFrom?.id ?? null
+    return this.sim?.drag?.id ?? null
   }
 
   draggingIndex(): number {
@@ -366,10 +367,9 @@ class MatrixRuntime {
   beginDrag(i: number): void {
     const n = this.graph.nodes[i]
     if (!n || !this.sim || this.built?.display.locked) return
-    this.dragFrom = { id: n.id, x: n.x, y: n.y }
     this.sim.drag = { id: n.id, x: n.x, y: n.y }
     reheat(this.sim)
-    this.schedule()
+    this.invalidate()
   }
 
   moveDrag(wx: number, wy: number): void {
@@ -382,26 +382,23 @@ class MatrixRuntime {
 
   // A drop and an abort are one ending: the node is let go where the springs have it and the layout relaxes around it.
   endDrag(): void {
-    if (!this.dragFrom) return
-    this.dragFrom = null
-    if (this.sim) {
-      this.sim.drag = null
-      cool(this.sim)
-    }
-    this.schedule()
+    if (!this.sim?.drag) return
+    this.sim.drag = null
+    cool(this.sim)
+    this.invalidate()
   }
 
   shuffle(): void {
     if (!this.sim) return
     shuffle(this.sim)
-    this.schedule()
+    this.invalidate()
   }
 
-  setForces(forces: Forces): void {
+  private setForces(forces: Forces): void {
     if (!this.sim) return
     this.sim.forces = forces
     cool(this.sim)
-    this.schedule()
+    this.invalidate()
   }
 }
 

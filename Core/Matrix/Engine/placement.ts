@@ -5,7 +5,7 @@ const SPIRAL_STEP = 60
 const PLACE_JITTER = 12
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 
-export type Layout = ReadonlyMap<string, { x: number; y: number }>
+type Layout = ReadonlyMap<string, { x: number; y: number }>
 
 export function spiral(i: number): { x: number; y: number } {
   const r = SPIRAL_STEP * Math.sqrt(0.5 + i)

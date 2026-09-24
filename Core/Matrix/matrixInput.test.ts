@@ -5,7 +5,7 @@ import { linkedSpacesTree, makeTree } from '../Testing/testTree'
 import type { FilterGroup } from '../Views/views'
 import { DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
-import { filterSetTree, matrixTree, matrixVisible, matrixWalk } from './matrixInput'
+import { filterSetTree, matrixConnections, matrixTree, matrixVisible } from './matrixInput'
 
 const link = (pageId: string, target: string): MatrixLink => ({
   pageId,
@@ -35,8 +35,11 @@ const withTwin = (): NexusTree => {
 }
 
 const matrixInput = (tree: NexusTree, reply: MatrixGraphReply, config: MatrixConfig) => {
-  const walk = matrixWalk(matrixTree(tree), reply)
-  return { input: walk.input, visible: matrixVisible(walk, config.filter) }
+  const held = matrixTree(tree)
+  return {
+    input: { ...held, connections: matrixConnections(held, reply.links) },
+    visible: matrixVisible(held, reply.values, config.filter),
+  }
 }
 
 describe('matrixInput', () => {
@@ -112,8 +115,15 @@ const spacesTree = (): NexusTree => {
 }
 
 const spacesVisible = (rules: FilterGroup): string[] => {
-  const walk = matrixWalk(matrixTree(spacesTree()), replyOf([]))
-  const visible = matrixVisible(walk, { ...DEFAULT_MATRIX_CONFIG.filter, rules, enabled: true })
+  const visible = matrixVisible(
+    matrixTree(spacesTree()),
+    {},
+    {
+      ...DEFAULT_MATRIX_CONFIG.filter,
+      rules,
+      enabled: true,
+    },
+  )
   return [...(visible ?? [])].filter((id) => id === 'a1' || id === 'b1').sort()
 }
 

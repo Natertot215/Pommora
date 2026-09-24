@@ -14,9 +14,9 @@ vi.mock('./matrixInput', async (actual) => {
   const real = await actual<typeof import('./matrixInput')>()
   return {
     ...real,
-    matrixWalk: (...args: Parameters<typeof real.matrixWalk>) => {
+    matrixConnections: (...args: Parameters<typeof real.matrixConnections>) => {
       walks.count += 1
-      return real.matrixWalk(...args)
+      return real.matrixConnections(...args)
     },
   }
 })
@@ -608,6 +608,49 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.hoveredIndex()).toBe(-1)
     useSession.setState({ tree: makeTree() })
     expect(matrixRuntime.hoveredIndex()).toBe(-1)
+  })
+
+  it('leaves the picture standing for a refetch that moved no link', () => {
+    const reply = linked()
+    seed({ matrixGraph: reply })
+    attach()
+    flush()
+    const graph = matrixRuntime.graph
+    const sim = matrixRuntime.sim
+    const walked = walks.count
+    useSession.setState({ matrixGraph: { links: reply.links, values: {} } })
+    expect(walks.count).toBe(walked)
+    expect(matrixRuntime.graph).toBe(graph)
+    expect(matrixRuntime.sim).toBe(sim)
+  })
+
+  it('repaints when its stage moves', () => {
+    seed()
+    attach()
+    flush()
+    const paint = vi.fn()
+    const stop = matrixRuntime.subscribe(paint)
+    matrixRuntime.setStage(surface, { ...STAGE, x: 240 })
+    step()
+    stop()
+    expect(paint).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps a held node following the pointer through a pushed forces change', () => {
+    seed({ matrixGraph: linked() })
+    attach()
+    flush()
+    matrixRuntime.beginDrag(matrixRuntime.indexOf('p1'))
+    matrixRuntime.moveDrag(400, 400)
+    useSession.setState({
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        forces: { connection: { ...DEFAULT_MATRIX_CONFIG.forces.connection, strength: 0.9 } },
+      }),
+    })
+    flush(2000)
+    expect(matrixRuntime.draggingId).toBe('p1')
+    expect(matrixRuntime.sim?.drag?.id).toBe('p1')
+    expect(matrixRuntime.sim?.awake).toBe(true)
   })
 
   it('wakes on a shuffle', () => {
