@@ -1,3 +1,4 @@
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { mirrorBody } from '../MarkdownPM/api'
@@ -59,7 +60,8 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
         let text = body
         if (head && mount.seq !== head.seq) {
           const merged = merge3(mount.basis, body, head.text)
-          if (merged.conflicted) void host().ask('sync:captureLocal', at, body)
+          if (merged.conflicted)
+            void persist('the conflicting version', host().ask('sync:captureLocal', at, body))
           text = merged.text
         }
         publishBody(at, mount, text, body)
@@ -85,7 +87,8 @@ export async function absorbLanding(path: string): Promise<void> {
     base === undefined
       ? { text: fresh.body, conflicted: true }
       : merge3(base, head.text, fresh.body)
-  if (merged.conflicted) void host().ask('sync:captureLocal', path, head.text)
+  if (merged.conflicted)
+    void persist('the conflicting version', host().ask('sync:captureLocal', path, head.text))
   setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
   advanceHead(path, merged.text)
   followBody(path)

@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
@@ -253,10 +254,7 @@ export function PropertyPanel({
     if (!collection) return
     const full = schema.map((d) => d.id)
     sendWithUndo(
-      (index) =>
-        void host()
-          .ask('schema:reorder', collection.path, id, index)
-          .then((r) => (r.ok ? undefined : host().ask('error:show', r.error.message))),
+      (index) => void host().ask('schema:reorder', collection.path, id, index).then(reportRefusal),
       nexusReorderIndex(full, shownIds, id, toIndex),
       full.indexOf(id),
     )

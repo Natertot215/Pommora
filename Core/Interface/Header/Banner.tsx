@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { type ReactNode, useRef, useState } from 'react'
 import type { BannerOwnerKind, MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { Icon } from '@pommora/uix/Symbols'
@@ -144,9 +145,7 @@ export function EntityBanner({
     setEditingHome(false)
     void flushAllSaves()
       .then(() => host().ask('nexus:rename', next))
-      .then(async (res) => {
-        if (!res.ok) await host().ask('error:show', res.error.message)
-      })
+      .then(reportRefusal)
   }
   const homeTitle = (className: string): React.ReactNode => (
     <RenamableLabel

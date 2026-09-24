@@ -2,7 +2,7 @@ import { basename, join } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, type ContextsRegistry } from './contexts'
 import { contentId } from '../Nexus/identityMark'
-import { ok, fail, errText, type Result } from '../Contract/result'
+import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, readJsonObject, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
@@ -201,7 +201,7 @@ export async function renameContextOp(
     }
   } catch (e) {
     await clearJournal(root, j)
-    return fail('operation-failed', errText(e))
+    return fault(e)
   }
 
   const cascade = await cascadeTitle(root, reg.value, j)
@@ -251,7 +251,7 @@ export async function renameSpaceOp(
     await machine().rename(ref.dir, target)
   } catch (e) {
     await clearJournal(root, j)
-    return fail('operation-failed', errText(e))
+    return fault(e)
   }
 
   const cascade = await cascadeTitle(root, world.value.registry, j)

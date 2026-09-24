@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
 import type { Handlers, HostContext } from '@pommora/core/Contract/handlers'
-import { errText, fail } from '@pommora/core/Contract/result'
+import { fault } from '@pommora/core/Contract/result'
 
 export type TellHandlers = {
   [K in keyof Tells]: (win: BrowserWindow | null, ...args: Tells[K]) => void
@@ -25,7 +25,7 @@ export function serveIpc(
         try {
           return await handler(host(BrowserWindow.fromWebContents(e.sender)), ...args)
         } catch (err) {
-          return fail('operation-failed', errText(err))
+          return fault(err)
         }
       })()
       running.add(reply)

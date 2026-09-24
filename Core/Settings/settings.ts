@@ -7,7 +7,7 @@ import { getLiveTree } from '../Nexus/liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { nexusFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
 import { normalizeSeg, rootSegs } from '../Paths/exclusion'
-import { fail, ok, type Result } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import { isPlainObject } from '../Properties/propertyValue'
 
 export function updateNexusConfig(
@@ -123,11 +123,11 @@ export function writePersonalization(root: string, key: string, value: unknown):
 
 /** Deduped on the case-folded path so `archive` and `Archive` are one folder while the typed casing is stored. The first refusal stops the whole write — a partial list is never stored. */
 export function sanitizeExclusions(folders: unknown): Result<string[]> {
-  if (!Array.isArray(folders)) return fail('operation-failed', 'A folder list is required.')
+  if (!Array.isArray(folders)) return fault('A folder list is required.')
   const seen = new Set<string>()
   const out: string[] = []
   for (const entry of folders) {
-    if (typeof entry !== 'string') return fail('operation-failed', 'A folder path is required.')
+    if (typeof entry !== 'string') return fault('A folder path is required.')
     const raw = entry.trim()
     const refusal = nexusFolderRefusal(raw)
     if (refusal) return fail('invalid-path', refusal)

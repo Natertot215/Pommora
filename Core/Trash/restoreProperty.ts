@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import type { PropertyDefinition } from '../Properties/properties'
-import { fail, ok, type Result } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
@@ -41,7 +41,7 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
   })
   if (!created.ok) return created
   const def = (await readRegistry(root)).defs[record.id]
-  if (!def) return fail('operation-failed', 'The restored property could not be read back.')
+  if (!def) return fault('The restored property could not be read back.')
 
   const byId = await foldersById(root)
   for (const collectionId of record.assignments ?? []) {

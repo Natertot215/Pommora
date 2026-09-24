@@ -1,3 +1,4 @@
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
 import {
@@ -76,7 +77,7 @@ export function glanceSize(): GlanceSize {
 export function setGlanceSize(next: GlanceSize): void {
   sizeLoad++
   sizeCache = clampSize(next)
-  void host().ask('glance:save', sizeCache)
+  void persist('the glance size', host().ask('glance:save', sizeCache), true)
 }
 
 export function glanceWarmSeam(id: string, path: string): WarmSeam {

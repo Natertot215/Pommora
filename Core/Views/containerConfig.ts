@@ -2,7 +2,7 @@
 
 import type { ContainerKind } from '../Nexus/schemas'
 import type { OpenIn, ViewButton } from './viewRow'
-import { ok, fail, type Result } from '../Contract/result'
+import { ok, type Result, fault } from '../Contract/result'
 import { patchSidecar } from '../Files/sidecar'
 
 export type ContainerConfigPatch = {
@@ -23,7 +23,7 @@ export async function setContainerConfig(
   patch: ContainerConfigPatch,
 ): Promise<Result<null>> {
   if (kind === 'set' && patch.open_in !== undefined) {
-    return fail('operation-failed', 'Open In is collection-owned.')
+    return fault('Open In is collection-owned.')
   }
   const written = await patchSidecar(folder, kind, (cur) => ({ ...cur, ...definedOnly(patch) }))
   return written.ok ? ok(null) : written

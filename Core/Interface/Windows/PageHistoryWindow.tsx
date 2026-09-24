@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
@@ -62,10 +63,7 @@ function PageHistoryBody({
 
   const refresh = useCallback(async (): Promise<void> => {
     const list = await host().ask('history:list', target.id)
-    if (!list.ok) {
-      host().ask('error:show', list.error.message)
-      return
-    }
+    if (!reportRefusal(list)) return
     setRows(list.value)
     const live = new Set(list.value)
     setChecked((prev) => retained(prev, live))
@@ -121,8 +119,7 @@ function PageHistoryBody({
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
-    if (!r.ok) host().ask('error:show', r.error.message)
-    else {
+    if (reportRefusal(r)) {
       setChecked((prev) => (prev.has(ts) ? toggled(prev, ts) : prev))
       setShown(null)
       setReload((n) => n + 1)
@@ -131,8 +128,7 @@ function PageHistoryBody({
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
     if (!(await askDeleteSnapshots())) return
-    const r = await host().ask('history:delete', target.id, [...ts])
-    if (!r.ok) host().ask('error:show', r.error.message)
+    reportRefusal(await host().ask('history:delete', target.id, [...ts]))
     await refresh()
   }
   const openMenu = async (ts: number): Promise<void> => {

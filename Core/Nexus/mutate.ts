@@ -7,7 +7,7 @@ import { machine } from '../Platform/machine'
 import { contextsDir } from '../Paths/paths'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
-import { errText, fault, ok, type Result } from '../Contract/result'
+import { fault, ok, type Result } from '../Contract/result'
 import { emptyBundle, restoreArtifact } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -49,15 +49,18 @@ export interface MutateContext {
 
 const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 
+/** A thrown write can stop partway through what it wrote, so `afterThrow` gets the chance to re-read the disk; a refusal returned as a result wrote nothing. */
 export async function handleMutate(
   root: string,
   req: MutateRequest,
   deps: MutateDeps,
+  afterThrow?: () => Promise<void>,
 ): Promise<MutateReply> {
   try {
     return await dispatch({ root, deps }, req)
   } catch (e) {
-    return fault(errText(e))
+    await afterThrow?.()
+    return fault(e)
   }
 }
 

@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState } from 'react'
 import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
@@ -96,9 +97,11 @@ export function SettingsFrame(): React.JSX.Element | null {
 
   const openInValue: OpenIn = schemaCollection.openIn ?? 'full-page'
   const toggleOpenIn = (): void => {
-    void host().ask('container:configure', schemaCollection.path, 'collection', {
-      open_in: openInValue === 'page-preview' ? 'full-page' : 'page-preview',
-    })
+    void host()
+      .ask('container:configure', schemaCollection.path, 'collection', {
+        open_in: openInValue === 'page-preview' ? 'full-page' : 'page-preview',
+      })
+      .then(reportRefusal)
   }
 
   const viewScale = coerceScale(view.view_scale, 1)

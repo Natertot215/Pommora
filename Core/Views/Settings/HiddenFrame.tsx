@@ -21,7 +21,6 @@ import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyT
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { host } from '../../Platform/dialer'
 
 function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   const def = schema.find((d) => d.id === id)
@@ -130,14 +129,11 @@ export function VisibilityList({
   const hiddenSet = new Set(hiddenIds)
   const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree), capitalize)
 
-  const save = async (patch: Partial<SavedView>): Promise<void> => {
-    const res = await saveView({ ...view, ...patch })
-    if (!res.ok) await host().ask('error:show', res.error.message)
-  }
+  const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const handleDrop = (drop: PaneDrop): void => {
-    if (drop.kind === 'unassign') void save(hideShown(view, drop.propId))
+    if (drop.kind === 'unassign') save(hideShown(view, drop.propId))
     else if (drop.kind === 'reorder-assigned' || drop.kind === 'assign')
-      void save(placeInShown(view, shownIds, shownIds, drop.propId, drop.toIndex))
+      save(placeInShown(view, shownIds, shownIds, drop.propId, drop.toIndex))
   }
 
   const paneRows: FrameRow[] = [
@@ -158,7 +154,7 @@ export function VisibilityList({
           hiddenSet={hiddenSet}
           schema={schema}
           nameFor={nameFor}
-          onToggle={(id, hidden) => void save(hidden ? unhide(view, id) : hideShown(view, id))}
+          onToggle={(id, hidden) => save(hidden ? unhide(view, id) : hideShown(view, id))}
         />
       </FrameDnd>
     </MenuScrollFrame>

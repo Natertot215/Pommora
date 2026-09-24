@@ -1,3 +1,4 @@
+import { reportRefusal, persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { EditorView } from '@codemirror/view'
 import { headingOutline, sectionEnd } from '../MarkdownPM/Engine/headingScan'
 import { travelTo } from '../MarkdownPM/travel'
@@ -30,7 +31,7 @@ export function renameHeadingAtOffset(from: number, next: string): void {
 }
 
 export async function renameHeading(pageId: string, old: string, next: string): Promise<void> {
-  await host().ask('connections:headingRenamed', pageId, old, next)
+  reportRefusal(await host().ask('connections:headingRenamed', pageId, old, next))
   const keys = valueOr(await host().ask('folds:get'), {})[pageId]
   if (!keys?.length) return
   // A duplicate's key is `${text} ${n}`; a longer heading that happens to start with the text is its own.
@@ -41,7 +42,8 @@ export async function renameHeading(pageId: string, old: string, next: string): 
         ? `${next}${k.slice(old.length)}`
         : k,
   )
-  if (shifted.some((k, i) => k !== keys[i])) await host().ask('folds:set', pageId, shifted)
+  if (shifted.some((k, i) => k !== keys[i]))
+    await persist('folds', host().ask('folds:set', pageId, shifted), true)
 }
 
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {

@@ -21,10 +21,4 @@ export const trashHandlers = {
       permanentDelete: root === null ? false : await readPermanentDelete(root),
     })
   },
-
-  'trash:report': async (ctx, message: unknown, detail: unknown) => {
-    if (typeof message === 'string' && typeof detail === 'string')
-      await ctx.message('info', message, detail)
-    return ok(null)
-  },
 } satisfies Partial<Handlers>

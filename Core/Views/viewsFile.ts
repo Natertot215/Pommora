@@ -2,7 +2,7 @@
 
 import type { ContainerKind } from '../Nexus/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from './views'
-import { ok, fail, type Result } from '../Contract/result'
+import { ok, fail, type Result, fault } from '../Contract/result'
 import { newId } from '../Nexus/ids'
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
@@ -55,7 +55,7 @@ export async function deleteView(
 ): Promise<Result<null>> {
   const written = await patchSidecar(folder, kind, (cur, refuse) => {
     const views = viewsOf(cur)
-    if (views.length <= 1) return refuse(fail('operation-failed', 'Cannot delete the last view.'))
+    if (views.length <= 1) return refuse(fault('Cannot delete the last view.'))
     const next = views.filter((v) => idOf(v) !== viewId)
     if (next.length === views.length) return refuse(fail('not-found', 'View not found.'))
     // A sidecar naming a view that is gone is legible nonsense; the absent key is the container's "no choice made", which pickView already reads.

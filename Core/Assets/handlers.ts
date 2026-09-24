@@ -1,5 +1,5 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, ok } from '../Contract/result'
+import { fail, ok, fault } from '../Contract/result'
 import { NOT_A_PROPERTY_DIR } from '../Contract/validators'
 import { seedContentIndex } from '../Index/indexSeed'
 import { assetSubRoot } from '../Paths/nexusPaths'
@@ -44,7 +44,7 @@ export const assetsHandlers = {
   }),
 
   'assets:setDir': withWriteRoot(async (root, ctx, dir: unknown) => {
-    if (typeof dir !== 'string') return fail('operation-failed', 'A folder path is required.')
+    if (typeof dir !== 'string') return fault('A folder path is required.')
     const trimmed = dir.trim()
     let next = ''
     if (trimmed) {

@@ -45,7 +45,6 @@ export interface HostContext {
   clipboard: { read(): Promise<string>; write(text: string): Promise<void> }
   reveal(absPath: string): void
   openExternal(url: string): Promise<void>
-  message(type: 'error' | 'info', message: string, detail: string): Promise<void>
   systemAccent(): string | null
   menu(req: MenuRequest): Promise<string | null>
   thumbnails: {

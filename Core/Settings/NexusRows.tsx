@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { InputField } from '@pommora/uix/Fields/InputField'
@@ -59,7 +60,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [syncLabel, markSynced] = useTimedLabel('Sync Now', 'Synced')
 
   // One channel in flight at a time: each reply is the whole state, so a second call would answer from a list the first has already replaced.
-  // `report` is what separates a user's action from the mount's own fetch: only an action the user took answers a refusal with a dialog.
+  // `report` is what separates a user's action from the mount's own fetch: only an action the user took answers a refusal with a notice.
   const run = useCallback(
     async (ask: () => Promise<Result<SyncState>>, report = true): Promise<boolean> => {
       if (inFlight.current) return false
@@ -68,7 +69,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
       try {
         const r = await ask()
         if (r.ok) setState(r.value)
-        else if (report) await host().ask('error:show', r.error.message)
+        else if (report) reportRefusal(r)
         return r.ok
       } finally {
         inFlight.current = false

@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '@pommora/core/Contract/result'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
@@ -252,10 +253,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== nexus) return false
       const res = await host().ask('mutate', req)
-      if (!res.ok) {
-        await host().ask('error:show', res.error.message)
-        return false
-      }
+      if (!reportRefusal(res)) return false
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
         get().bumpTrashRevision()
       // Instant optimistic patch; main's confirming push lands a beat later with no flicker.

@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { knownTile, mintSeed, TILE_KINDS, type TileHostRef } from './tiles'
-import { errText, fail, ok, type Result, valueOr } from '../Contract/result'
+import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '../Properties/propertyValue'
 import { normalizeTitle } from '../Connections/connections'
@@ -127,7 +127,7 @@ export async function readMarkdownTile(dir: string, tileId: string): Promise<Res
     const body = await machine().readText(tileFilePath(dir, tileId))
     return body === null ? fail('not-found', 'Tile file not found.') : ok(body)
   } catch (e) {
-    return fail('operation-failed', errText(e))
+    return fault(e)
   }
 }
 

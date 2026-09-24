@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import {
   DEFAULT_NEW_NAME,
   type MutableKind,
@@ -229,10 +230,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     // Captured BEFORE the ask: the confirming push can rename the registry first.
     const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
     const res = await host().ask('schema:rename', target.collectionPath, target.propertyId, newName)
-    if (!res.ok) {
-      await host().ask('error:show', res.error.message)
-      return false
-    }
+    if (!reportRefusal(res)) return false
     const after = normalizePropertyName(newName)
     if (before !== undefined && before !== after) get().bumpValuesEpoch(before, after)
     return true

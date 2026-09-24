@@ -1,5 +1,5 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
-import { errText, fail, ok, type Result } from '../Contract/result'
+import { errText, ok, type Result, fault } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -22,7 +22,7 @@ import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
 import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
 import { handleMutate, type MutateDeps } from './mutate'
-import { confirmMutation } from './mutatePatch'
+import { confirmBy, confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, whileAdopting } from './session'
 import type { NexusState } from './tree'
@@ -132,16 +132,14 @@ export const nexusHandlers = {
 
   // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session, stores, watcher, and recents at the new path.
   'nexus:rename': withWriteRoot(async (root, ctx, newName: unknown) => {
-    if (typeof newName !== 'string') return fail('operation-failed', 'A name is required.')
+    if (typeof newName !== 'string') return fault('A name is required.')
     const trimmed = newName.trim()
-    if (trimmed.length === 0) return fail('operation-failed', 'The name can’t be empty.')
+    if (trimmed.length === 0) return fault('The name can’t be empty.')
     if (trimmed.includes('/') || trimmed.includes('\\'))
-      return fail('operation-failed', 'The name can’t contain a slash.')
-    if (trimmed === basename(root))
-      return fail('operation-failed', 'That’s already the nexus name.')
+      return fault('The name can’t contain a slash.')
+    if (trimmed === basename(root)) return fault('That’s already the nexus name.')
     const newRoot = join(dirname(root), trimmed)
-    if (await targetTaken(root, newRoot))
-      return fail('operation-failed', 'A folder with that name already exists.')
+    if (await targetTaken(root, newRoot)) return fault('A folder with that name already exists.')
     await retireFileHistory(root)
     await machine().rename(root, newRoot)
     await adoptNexus(ctx, newRoot, false)
@@ -169,7 +167,9 @@ export const nexusHandlers = {
   }, ok(null)),
 
   mutate: withWriteRoot(async (root, ctx, req: MutateRequest) => {
-    const reply = await handleMutate(root, req, await mutateDeps(root, ctx))
+    const reply = await handleMutate(root, req, await mutateDeps(root, ctx), () =>
+      confirmWrite(ctx, root, () => confirmBy(root, async () => 'refresh')),
+    )
     if (reply.ok) {
       await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
       pushAssetWrites(ctx, root)

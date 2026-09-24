@@ -3,7 +3,7 @@
 import type { WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
 import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import type { Result } from '@pommora/core/Contract/result'
-import { notifyError } from '../Interface/Notifications/notifications'
+import { persist } from '../Interface/Notifications/notifications'
 import { followBody, readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
 import { host } from '../Platform/dialer'
 
@@ -23,8 +23,8 @@ interface BodyWriter {
   cancelAll: () => void
 }
 
-/** A refused save is dropped, never retried: the next edit schedules the whole body again. `what` names the lost write in the one notice a refusal posts; a writer without it drops quietly. */
-export function createBodyWriter(what?: string): BodyWriter {
+/** A refused save is dropped, never retried: the next edit schedules the whole body again. */
+export function createBodyWriter(what: string, quiet = false): BodyWriter {
   const pending = new Map<string, { save: Save; timer: ReturnType<typeof setTimeout> }>()
   // A key's next save waits for the one in flight, so it carries the base that save set rather than the one before it.
   const inFlight = new Map<string, Promise<void>>()
@@ -37,14 +37,9 @@ export function createBodyWriter(what?: string): BodyWriter {
     if (!p) return Promise.resolve()
     clearTimeout(p.timer)
     pending.delete(key)
-    const run = p
-      .save()
-      .then((r) => {
-        if (!r.ok && what) notifyError(`Couldn’t save ${what}: ${r.error.message}`)
-      })
-      .finally(() => {
-        if (inFlight.get(key) === run) inFlight.delete(key)
-      })
+    const run = persist(what, p.save(), quiet).finally(() => {
+      if (inFlight.get(key) === run) inFlight.delete(key)
+    })
     inFlight.set(key, run)
     return run
   }
@@ -145,7 +140,7 @@ export function flushAllPageSaves(): Promise<void> {
 }
 
 // Tab and window sets, tile layouts, and the Matrix frame each write whole on every change, and the Matrix positions send every row not yet sent; one debounced write per key coalesces a burst into the last state.
-export const sessionWriter = createBodyWriter()
+export const sessionWriter = createBodyWriter('the session', true)
 
 export function scheduleTabsSave(set: StoredTabSet): void {
   sessionWriter.schedule('tabs', () => host().ask('tabs:save', set))

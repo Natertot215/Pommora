@@ -1,4 +1,5 @@
 // Every push the host bridge makes into the running session. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { useEffect } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
@@ -63,7 +64,7 @@ export function useBridgeSubscriptions(): void {
       if (bodyHead(path)) return void absorbLanding(path)
       if (unsaved === undefined) return
       if (unsaved !== readBodyBase(path)?.text)
-        void dialer().ask('sync:captureLocal', path, unsaved)
+        void persist('the conflicting version', dialer().ask('sync:captureLocal', path, unsaved))
       void replaceBody(path)
     }
     setStaleSaveSink(absorb)

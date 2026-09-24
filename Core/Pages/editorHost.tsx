@@ -1,3 +1,4 @@
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useMemo, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
@@ -56,11 +57,9 @@ function buildEditorHost(
     const tree = state().tree
     const path = tree && pagesByIdOf(tree).get(id)?.path
     if (next && path)
-      void host().ask('mutate', {
-        op: 'setPageMeta',
-        path,
-        patch: { aliases: next.length ? next : null },
-      })
+      void host()
+        .ask('mutate', { op: 'setPageMeta', path, patch: { aliases: next.length ? next : null } })
+        .then(reportRefusal)
   }
   return {
     settings: () => {

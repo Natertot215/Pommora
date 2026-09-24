@@ -1,10 +1,11 @@
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import {
   type Creator,
   DEFAULT_NEW_NAME,
   type MutateRequest,
   type RenameHost,
 } from '@pommora/core/Nexus/mutateRequest'
-import { errText, fail, type PommoraError } from '@pommora/core/Contract/result'
+import { type PommoraError, fault } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
   type NavRef,
@@ -319,14 +320,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     syncActiveDetail()
   }
 
-  // The envelope never rejects, so a silently-dropped ack would be the only failure witness.
-  const writeNav = (patch: Partial<NavigationState>): void => {
-    void dialer()
-      .ask('nav:write', patch)
-      .then((ack) => {
-        if (!ack.ok) console.error('navigation write failed:', ack.error.message)
-      })
-  }
+  const writeNav = (patch: Partial<NavigationState>): void =>
+    void persist('navigation', dialer().ask('nav:write', patch), true)
 
   const setPinned = (pinned: NavRef[], index: ReconcileIndex | null): void => {
     const next = derivePinnedTabs(pinned, index)
@@ -682,7 +677,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           try {
             res = await dialer().ask('page:open', target.path)
           } catch (e) {
-            res = fail('operation-failed', errText(e))
+            res = fault(e)
           }
           clearTimeout(fallback)
           if (seq !== pageFetchSeq) return

@@ -63,11 +63,21 @@ export function assignValue(
   const resolved = resolveFieldValue(target, column.id, w.schema)
   const prior = isBlankValue(resolved) ? null : resolved
   const pending = write(w, target, column, value)
-  if (pending)
-    pushValueUndo(() => {
-      const live = writer.current
-      const current = live?.rowOf(row.id)
-      return !!live && !!current && write(live, current, column, prior) !== undefined
-    })
+  if (!pending) return pending
+  // Pushed now, so a sweep's group collects it; a refused write leaves nothing to revert.
+  let landed: boolean | null = null
+  void pending.then((ok) => {
+    landed = ok
+  })
+  const revert = (): boolean => {
+    const live = writer.current
+    const current = live?.rowOf(row.id)
+    return !!live && !!current && write(live, current, column, prior) !== undefined
+  }
+  pushValueUndo(() => {
+    if (landed !== null) return landed && revert()
+    void pending.then((ok) => ok && revert())
+    return true
+  })
   return pending
 }

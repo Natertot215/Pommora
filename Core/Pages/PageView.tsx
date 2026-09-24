@@ -1,3 +1,4 @@
+import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { useEffect, useRef } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { valueOr } from '@pommora/core/Contract/result'
@@ -122,20 +123,31 @@ export function PageView({
       embedAncestors={[pageDetail.path]}
       folds={{
         load: async () => valueOr(await host().ask('folds:get'), {})[pageDetail.id] ?? [],
-        save: (keys) => void host().ask('folds:set', pageDetail.id, keys),
+        save: (keys) => void persist('folds', host().ask('folds:set', pageDetail.id, keys), true),
       }}
       embedHeights={{
         load: async () => valueOr(await host().ask('embedHeights:get'), {})[pageDetail.id] ?? {},
-        save: (heights) => void host().ask('embedHeights:set', pageDetail.id, heights),
+        save: (heights) =>
+          void persist(
+            'embed heights',
+            host().ask('embedHeights:set', pageDetail.id, heights),
+            true,
+          ),
       }}
       embedZooms={{
         load: async () => valueOr(await host().ask('embedZooms:get'), {})[pageDetail.id] ?? {},
-        save: (zooms) => void host().ask('embedZooms:set', pageDetail.id, zooms),
+        save: (zooms) =>
+          void persist('embed zooms', host().ask('embedZooms:set', pageDetail.id, zooms), true),
       }}
       tableHeadingColumns={{
         load: async () =>
           valueOr(await host().ask('tableHeadingCols:get'), {})[pageDetail.id] ?? [],
-        save: (indices) => void host().ask('tableHeadingCols:set', pageDetail.id, indices),
+        save: (indices) =>
+          void persist(
+            'table heading columns',
+            host().ask('tableHeadingCols:set', pageDetail.id, indices),
+            true,
+          ),
       }}
       register={(view) => {
         editorRef.current = view

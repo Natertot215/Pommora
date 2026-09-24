@@ -79,10 +79,9 @@ interface ContextEvidence {
 export async function gatherContextEvidence(
   abs: string,
   title: string,
-  registry: Result<ContextsRegistry>,
+  registry: ContextsRegistry,
 ): Promise<ContextEvidence | null> {
-  if (!registry.ok) return null
-  const entry = registry.value.contexts.find((c) => c.title === title)
+  const entry = registry.contexts.find((c) => c.title === title)
   if (!entry) return null
   const spaceIds = new Map<string, string>()
   let unresolved = false

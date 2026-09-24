@@ -246,9 +246,6 @@ function hostContext(win: BrowserWindow | null): HostContext {
     },
     reveal: (p) => shell.showItemInFolder(nativePath(p)),
     openExternal: (url) => shell.openExternal(url),
-    async message(type, message, detail) {
-      if (win) await dialog.showMessageBox(win, { type, message, detail })
-    },
     systemAccent: () => {
       try {
         const c = systemPreferences.getAccentColor?.()
