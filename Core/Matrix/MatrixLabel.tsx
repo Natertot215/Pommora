@@ -15,13 +15,13 @@ import { spaceIdentityOf } from '../Contexts/contextIdentity'
 import { useSession } from '../Session/store'
 import { toScreen } from './Engine/viewport'
 import { lastShift } from './MatrixCanvas'
-import type { MatrixRecord } from './matrixKind'
+import { recordOf } from './matrixKind'
 import * as s from './matrix.css'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 
 export function MatrixLabel({
   surface,
-  rec,
+  id,
   closing,
   editing,
   hosts,
@@ -30,7 +30,7 @@ export function MatrixLabel({
   onContextMenu,
 }: {
   surface: Surface
-  rec: MatrixRecord | null
+  id: string | null
   closing: boolean
   editing: boolean
   hosts: boolean
@@ -48,15 +48,21 @@ export function MatrixLabel({
   const mutate = useSession((st) => st.mutate)
   const hidePath = useSession((st) => st.matrixConfig.display.hidePath)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
-  const [entered, setEntered] = useState(false)
+  const [entered, setEntered] = useState<string | null>(null)
   const labelRef = useRef<HTMLDivElement>(null)
-  const id = rec?.id ?? null
+  const rec = recordOf(tree, id)
+  const path = rec?.path
+  const kind = rec?.kind
 
-  // The opacity has to change after the first paint for the transition to run at all.
+  // Each node's label is its own element, and its opacity has to change after its first paint for the transition to run at all.
   useEffect(() => {
-    const id = requestAnimationFrame(() => setEntered(true))
-    return () => cancelAnimationFrame(id)
-  }, [])
+    if (id === null) return
+    const frame = requestAnimationFrame(() => setEntered(id))
+    return () => {
+      cancelAnimationFrame(frame)
+      setEntered(null)
+    }
+  }, [id])
 
   // Layout, not passive: the first transform lands before paint, so the label never flashes at the host's origin.
   useLayoutEffect(() => {
@@ -85,12 +91,13 @@ export function MatrixLabel({
     return matrixRuntime.subscribe(follow)
   }, [id, surface])
 
+  // Keyed on the node's identity, not its record, which every tree push rebuilds: a push mid-dwell would cancel the preview.
   useEffect(() => {
     const a = anchorRef.current
-    if (!a || editing || closing || !rec || rec.kind !== 'page') return
-    hoverGlance({ kind: 'page', id: rec.id, path: rec.path }, a, 'location', lastShift)
+    if (!a || editing || closing || id === null || kind !== 'page' || path === undefined) return
+    hoverGlance({ kind: 'page', id, path }, a, 'location', lastShift)
     return () => leaveGlanceFrom(a)
-  }, [rec, editing, closing])
+  }, [id, path, kind, editing, closing])
 
   if (!rec || !tree) return null
   const node = matrixRuntime.nodeOf(rec.id)
@@ -129,7 +136,11 @@ export function MatrixLabel({
           triggerRef={anchorRef}
         />
       )}
-      <div ref={labelRef} className={cx(s.label, s.labelFade, entered && !closing && s.labelShown)}>
+      <div
+        key={rec.id}
+        ref={labelRef}
+        className={cx(s.label, s.labelFade, entered === rec.id && !closing && s.labelShown)}
+      >
         <div className={cx(s.labelRow, text.footnote.emphasized)}>
           {!hideIcon && (
             <EntityIcon kind={rec.kind} icon={node.icon} size="footnote" className={s.labelGlyph} />
