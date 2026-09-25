@@ -6,12 +6,14 @@ import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
   assetMatcher,
   excludedMatcher,
-  hiddenName,
+  hiddenFolder,
+  outsideContent,
   sameScope,
   type WatchScope,
 } from '../Paths/exclusion'
 import { adoptedId, isAdoptedId, shardOf } from './ids'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { isContentName } from '../Files/walk'
 import { queryHeadingMentions, removePathIndex } from '../Index/contentIndex'
 import { normalizeTitle } from '../Connections/connections'
 import { indexWrittenPage } from '../Index/indexSeed'
@@ -127,8 +129,6 @@ export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   return space ? { kind: 'space', id: space.id } : null
 }
 
-const isContentName = (name: string): boolean => !name.startsWith('_') && isMarkdownFile(name)
-
 // Contexts and Spaces ARE the tree, and identity and the property registry are read onto it, so only these three can restructure it from under `.nexus`.
 const NEXUS_STRUCTURE: ReadonlySet<string> = new Set([
   `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.identity}`,
@@ -178,9 +178,8 @@ export function classifyEvent(
     }
     return bearsStructure(segs, rel) ? { kind: 'full-refresh' } : { kind: 'ignored' }
   }
-  if (ev.event === 'addDir')
-    return hiddenName(name) ? { kind: 'ignored' } : { kind: 'full-refresh' }
-  if (ev.event === 'unlinkDir') return { kind: 'full-refresh' }
+  if (ev.event === 'addDir' || ev.event === 'unlinkDir')
+    return hiddenFolder(name) ? { kind: 'ignored' } : { kind: 'full-refresh' }
   if (isContentName(name)) {
     if (dirRel !== '' && containerAt(tree, dirRel)) {
       return ev.event === 'unlink' ? { kind: 'page-remove', rel } : { kind: 'page-upsert', rel }
@@ -200,13 +199,10 @@ export function classifyEvent(
 }
 
 export function touchesCorpus(root: string, events: WatchEvent[], scope: WatchScope): boolean {
-  const isExcluded = excludedMatcher(scope.excluded)
-  const isAsset = assetMatcher(scope.assetDir)
   return events.some((ev) => {
     const rel = toPosixRel(root, ev.absPath)
     if (rel === null) return true
-    const segs = rel.split('/')
-    if (segs[0] === NEXUS_DIR || isAsset(segs) || isExcluded(segs)) return false
+    if (outsideContent(rel, scope)) return false
     return ev.event === 'addDir' || ev.event === 'unlinkDir' || isMarkdownFile(rel)
   })
 }

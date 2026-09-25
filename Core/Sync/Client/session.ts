@@ -12,7 +12,7 @@ import { answered, call, type SyncHost, syncHost } from './call'
 import { forgetKeys, loadRing } from './keyring'
 import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait, setCursor } from './pull'
 import { pushDirty, pushRename } from './push'
-import { admittedPaths, reconcile, rescope } from './reconcile'
+import { admittedPaths, dropUnadmittedBases, reconcile, rescope } from './reconcile'
 import { currentStatus, setStatus } from './status'
 import { dirtyPending, installTap, uninstallTap } from './tap'
 
@@ -146,6 +146,7 @@ async function begin(
       void working(self, () => pushRename(self, from, to))
     },
   })
+  dropUnadmittedBases(scope)
   if (readAllBases().length === 0) {
     setCursor(self, 0)
     await working(self, () => reconcile(self))

@@ -23,7 +23,7 @@ export async function adoptFile(
   opts: { allow: 'image' | 'any'; subfolder?: string },
 ): Promise<Result<string>> {
   const base = basename(absSource)
-  if (!base || !embeddableTitle(base) || neverWatched(base))
+  if (!base || !embeddableTitle(base) || neverWatched([base]))
     return fault('That file’s name can’t be written as a link.')
   if (opts.allow === 'image' && !(extname(base).toLowerCase() in ASSET_MIME))
     return fault('That file isn’t an image Pommora can show.')

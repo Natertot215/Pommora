@@ -1,10 +1,13 @@
-import { assetMatcher, excludedMatcher, type WatchScope } from '../Paths/exclusion'
-import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
+import { hiddenFolder, hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
 import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
 
+export function isContentName(name: string): boolean {
+  return !hiddenName(name) && isMarkdownFile(name)
+}
+
 export function isContentFile(entry: DirEntry): boolean {
-  return entry.kind === 'file' && !entry.name.startsWith('_') && isMarkdownFile(entry.name)
+  return entry.kind === 'file' && isContentName(entry.name)
 }
 
 export async function listEntries(dir: string): Promise<DirEntry[]> {
@@ -25,8 +28,14 @@ async function filesUnder(dir: string): Promise<string[]> {
   return out
 }
 
+// The pages under a folder the tree doesn't hold (a trash bundle's artifact), held to the same hidden-name rule as the content walk.
 export async function listMarkdownFiles(dir: string): Promise<string[]> {
-  return (await filesUnder(dir)).filter((abs) => isMarkdownFile(relative(dir, abs)))
+  const rels = await listPathsUnder(
+    dir,
+    dir,
+    (rel, kind) => !rel.split('/').some(hiddenFolder) && (kind === 'dir' || isMarkdownFile(rel)),
+  )
+  return rels.map((rel) => join(dir, rel))
 }
 
 export async function corpusFiles(root: string, scope: WatchScope): Promise<string[]> {
@@ -59,13 +68,11 @@ export async function corpusFilesUnder(
   absDir: string,
   scope: WatchScope,
 ): Promise<string[]> {
-  const isExcluded = excludedMatcher(scope.excluded)
-  const isAsset = assetMatcher(scope.assetDir)
-  return listPathsUnder(root, absDir, (rel, kind) => {
-    const segs = rel.split('/')
-    if (NON_CORPUS_TOP.has(segs[0]) || isAsset(segs) || isExcluded(segs)) return false
-    return kind === 'dir' || isMarkdownFile(segs[segs.length - 1])
-  })
+  return listPathsUnder(
+    root,
+    absDir,
+    (rel, kind) => !outsideContent(rel, scope) && (kind === 'dir' || isMarkdownFile(rel)),
+  )
 }
 
 export async function listFilesRecursive(dir: string, suffixes?: string[]): Promise<string[]> {

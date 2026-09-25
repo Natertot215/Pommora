@@ -46,10 +46,7 @@ export const settingsHandlers = {
   'exclusions:clear': withWriteRoot(async (root) => {
     const { excluded, assetDir } = await readWatchScope(root)
     if (excluded.length === 0) return ok(null)
-    const result = await clearExclusionData(root, excluded, assetDir)
-    if (!result.ok) return result
-    await seedContentIndex(root)
-    return ok(result.value)
+    return clearExclusionData(root, excluded, assetDir)
   }),
 
   'exclusions:count': withRoot(async (root) => {

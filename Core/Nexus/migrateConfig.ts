@@ -1,5 +1,5 @@
 import { pathExists, rmwJsonStrict } from '../Files/atomicWrite'
-import { listPathsUnder } from '../Files/walk'
+import { listFilesRecursive } from '../Files/walk'
 import { recordWrite } from '../Files/writeEcho'
 import {
   ASSETS_DIR_REL,
@@ -8,6 +8,7 @@ import {
   NEXUS_CONFIG_FILES,
   SIDECARS,
   TILE_DOC_FILENAME,
+  TRASH_DIR,
 } from '../Paths/nexusPaths'
 import { contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
@@ -75,7 +76,8 @@ const field = (
   return next ? { ...(o as Record<string, unknown>), [key]: next } : null
 }
 
-const renamedSidecar = (meta: unknown) => field(meta, 'views', (vs) => changed(vs, renamedView))
+export const renamedSidecar = (meta: unknown) =>
+  field(meta, 'views', (vs) => changed(vs, renamedView))
 
 const renamedTileDoc = (doc: unknown) =>
   field(doc, 'tiles', (tiles) =>
@@ -86,30 +88,11 @@ const renamedTileDoc = (doc: unknown) =>
     ),
   )
 
-async function rewrite(
-  abs: string,
-  fn: (json: Record<string, unknown>) => Record<string, unknown> | null,
-): Promise<void> {
-  await rmwJsonStrict(abs, (json) => {
-    const next = fn(json)
-    if (next !== null) recordWrite(abs)
-    return next
-  })
-}
-
+// Containers in scope ride the adoption pass (`stampFolder`); only the Trash and the tile documents are walked here.
 export async function normalizeSavedViews(root: string): Promise<void> {
-  const sidecars = await listPathsUnder(root, root, (rel, kind) => {
-    const segs = rel.split('/')
-    if (segs[0] === NEXUS_DIR) return false
-    return kind === 'dir' || SIDECARS.has(segs[segs.length - 1])
-  })
-  for (const rel of sidecars) await rewrite(join(root, rel), renamedSidecar)
-  for (const dir of [tileHostDir(root), join(root, CONTEXTS_DIR_REL)]) {
-    const tileDocs = await listPathsUnder(
-      root,
-      dir,
-      (rel, kind) => kind === 'dir' || rel.endsWith(`/${TILE_DOC_FILENAME}`),
-    )
-    for (const rel of tileDocs) await rewrite(join(root, rel), renamedTileDoc)
-  }
+  for (const file of await listFilesRecursive(join(root, TRASH_DIR), [...SIDECARS]))
+    await rmwJsonStrict(file, renamedSidecar)
+  for (const dir of [tileHostDir(root), join(root, CONTEXTS_DIR_REL)])
+    for (const file of await listFilesRecursive(dir, [TILE_DOC_FILENAME]))
+      await rmwJsonStrict(file, renamedTileDoc)
 }

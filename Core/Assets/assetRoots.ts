@@ -1,7 +1,7 @@
 import { parseConnectionText } from '../Connections/connections'
 import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
-import { remainderUnder, rootSegs } from '../Paths/exclusion'
+import { hiddenFolder, remainderUnder, rootSegs } from '../Paths/exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
 
 import { readWatchScope } from '../Settings/settings'
@@ -33,7 +33,11 @@ export const NOT_A_PROPERTY_DIR_MESSAGE = 'That folder can’t hold this propert
 export function validPropertyDir(subfolder: string, assetDir: string): boolean {
   if (!subfolder) return true
   const rel = assetSubRoot(assetDir, subfolder)
-  return underAssetRoot(rel, assetDir) && indexable(rel, assetDir)
+  return (
+    underAssetRoot(rel, assetDir) &&
+    indexable(rel, assetDir) &&
+    !rootSegs(subfolder).some(hiddenFolder)
+  )
 }
 
 export function assetSubfolder(rel: string, assetDir: string): string | null {

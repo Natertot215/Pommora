@@ -1,10 +1,10 @@
-import { relative } from '../Paths/posix'
+import { basename, relative } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { movePage } from './page'
-import { moveFolderEntity } from './folderEntity'
+import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { CONTAINER_KINDS, mutableTarget } from './liveTree'
 import { setChildOrder } from './reorder'
 import { noteValueWrite } from './valuesChanged'
@@ -43,6 +43,8 @@ export async function moveSetOp(
 ): Promise<MutateReply> {
   const at = await ends(root, req, 'set')
   if (!at.ok) return at
+  const refused = await landingRefusal(root, at.value.dst, basename(at.value.src))
+  if (refused) return refused
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
   await setChildOrder(at.value.dst, 'set_order', req.order)

@@ -1,6 +1,6 @@
 // The one place in the app that deliberately reads inside an excluded folder — every other enumerator prunes them.
 
-import { join, isMarkdownFile } from '../Paths/posix'
+import { basename, join, isMarkdownFile, relDirname } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { parseContextKey } from '../Contexts/contexts'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -10,8 +10,14 @@ import { getLiveTree } from '../Nexus/liveTree'
 import { fault, ok, type Result } from '../Contract/result'
 import type { ClearReport } from '../Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText, unsweptLine } from '../Properties/governedSweep'
-import { assetMatcher, rootSegs } from '../Paths/exclusion'
-import { listEntries } from '../Files/walk'
+import {
+  excludedMatcher,
+  hiddenFolder,
+  outsideContent,
+  rootSegs,
+  type WatchScope,
+} from '../Paths/exclusion'
+import { listPathsUnder } from '../Files/walk'
 import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
 import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
@@ -24,34 +30,20 @@ export async function excludedArtifacts(
   excluded: string[],
   assetDir: string,
 ): Promise<{ pages: string[]; sidecars: string[] }> {
-  const isAsset = assetMatcher(assetDir)
+  const scope: WatchScope = { excluded: [], assetDir }
+  const covered = excludedMatcher(excluded)
   const pages: string[] = []
   const sidecars: string[] = []
-
-  const walk = async (absDir: string, segs: string[]): Promise<void> => {
-    const entries = await listEntries(absDir)
-    if (entries.some((e) => e.kind === 'file' && AGENDA_CONFIGS.includes(e.name))) return
-    for (const e of entries) {
-      const next = [...segs, e.name]
-      if (isAsset(next)) continue
-      if (e.kind === 'dir') {
-        if (e.name === 'node_modules' || e.name.startsWith('.')) continue
-        await walk(join(absDir, e.name), next)
-      } else if (isMarkdownFile(e.name)) {
-        pages.push(join(absDir, e.name))
-      } else if (CONTAINER_SIDECARS.includes(e.name)) {
-        sidecars.push(join(absDir, e.name))
-      }
-    }
-  }
-
-  const seen = new Set<string>()
   for (const folder of excluded) {
     const segs = rootSegs(folder)
-    const abs = join(root, ...segs)
-    if (seen.has(abs)) continue
-    seen.add(abs)
-    await walk(abs, segs)
+    if (segs.some(hiddenFolder) || covered(segs.slice(0, -1))) continue
+    const rels = await listPathsUnder(root, join(root, ...segs), (rel, kind, siblings) => {
+      if (AGENDA_CONFIGS.some((name) => siblings.has(name))) return false
+      if (kind === 'file' && CONTAINER_SIDECARS.includes(basename(rel)))
+        return !outsideContent(relDirname(rel), scope)
+      return !outsideContent(rel, scope) && (kind === 'dir' || isMarkdownFile(rel))
+    })
+    for (const rel of rels) (isMarkdownFile(rel) ? pages : sidecars).push(join(root, rel))
   }
   return { pages, sidecars }
 }

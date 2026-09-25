@@ -30,7 +30,7 @@ import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
-import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
+import { outsideContent } from '../Paths/exclusion'
 
 import { readWatchScope } from '../Settings/settings'
 
@@ -98,11 +98,10 @@ export async function folderCorpus(root: string, absFolder: string): Promise<str
   return rels.map((rel) => join(root, rel))
 }
 
-function relCorpusPath(root: string, abs: string): string | null {
+async function relCorpusPath(root: string, abs: string): Promise<string | null> {
   const rel = relative(root, abs)
   if (!rel || escapes(rel)) return null
-  if (NON_CORPUS_TOP.has(rel.split('/')[0])) return null
-  return rel
+  return outsideContent(rel, await readWatchScope(root)) ? null : rel
 }
 
 let reread: { db: ContentIndexStore | null; rels: string[]; cold: boolean } = {
@@ -131,7 +130,7 @@ export async function indexWrittenPage(
   root: string,
   abs: string,
 ): Promise<HeadingRenameSeen | null> {
-  const rel = relCorpusPath(root, abs)
+  const rel = await relCorpusPath(root, abs)
   if (!rel || !isMarkdownFile(rel)) return null
   const st = await machine()
     .stat(abs)
@@ -159,19 +158,19 @@ export async function indexWrittenPage(
   return next ? { title, old: gone[0], next } : null
 }
 
-export function deindexPath(root: string, abs: string): void {
-  const rel = relCorpusPath(root, abs)
+export async function deindexPath(root: string, abs: string): Promise<void> {
+  const rel = await relCorpusPath(root, abs)
   if (!rel) return
   if (isMarkdownFile(rel)) removePathIndex(rel)
   else removePathPrefixIndex(rel)
 }
 
 export async function moveIndexPaths(root: string, oldAbs: string, newAbs: string): Promise<void> {
-  const oldRel = relCorpusPath(root, oldAbs)
-  const newRel = relCorpusPath(root, newAbs)
+  const oldRel = await relCorpusPath(root, oldAbs)
+  const newRel = await relCorpusPath(root, newAbs)
   if (!oldRel) return
   if (!newRel) {
-    deindexPath(root, oldAbs)
+    await deindexPath(root, oldAbs)
     return
   }
   if (isMarkdownFile(oldRel)) renamePathIndex(oldRel, newRel)

@@ -109,10 +109,15 @@ export async function reconcile(session: Session): Promise<void> {
   setCursor(session, log.top)
 }
 
-export async function rescope(session: Session, scope: WatchScope): Promise<void> {
-  if (sameScope(scope, session.scope)) return
+// A path the scope stops admitting stays on disk and on the hub; this device just stops syncing it.
+export function dropUnadmittedBases(scope: WatchScope): void {
   const admits = manifestAdmits(scope)
   for (const row of readAllBases()) if (!admits(row.path)) deleteBase(row.path)
+}
+
+export async function rescope(session: Session, scope: WatchScope): Promise<void> {
+  if (sameScope(scope, session.scope)) return
+  dropUnadmittedBases(scope)
   session.scope = scope
   setTapScope(scope)
   await reconcile(session)

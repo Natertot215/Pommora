@@ -9,6 +9,7 @@ import type {
   MutateRequest,
   RestoreDestination,
 } from '../Nexus/mutateRequest'
+import { landingRefusal } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
 import { seedContentIndex } from '../Index/indexSeed'
 import { fail, ok, type Result, fault } from '../Contract/result'
@@ -262,6 +263,10 @@ async function restoreArtifact(
     basename(targetAbs) !== finalName
   )
     return fault('That restore record points outside the nexus.')
+  if (record.entity === 'collection' || record.entity === 'set') {
+    const refused = await landingRefusal(root, join(root, dir), finalName)
+    if (refused) return refused
+  }
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
