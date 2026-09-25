@@ -6,6 +6,7 @@ import {
   TILE_KINDS,
   type TileType,
   tilePatchProblem,
+  type ViewTileEntry,
 } from './tiles'
 
 describe('knownTile', () => {
@@ -194,3 +195,11 @@ describe('the tile recipe', () => {
     expect(knownTile({ id: 'x', type: 'widget' })).toBeNull()
   })
 })
+
+// Compiled by the typecheck and never run: a field the decoder doesn't declare is no field of the type, at the entry or on its views.
+const _mistypedTileField = (t: ViewTileEntry): unknown[] => [
+  // @ts-expect-error
+  t.view_bands,
+  // @ts-expect-error
+  t.views[0].confg,
+]

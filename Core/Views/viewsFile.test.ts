@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import type { SavedView } from './views'
+import { savedView, type SavedView } from './views'
 import { saveView, reorderViews, deleteView } from './viewsFile'
 
 let folder: string
@@ -167,5 +167,35 @@ describe('container writes keep what this build does not decode', () => {
     const after = await readRaw('_pagecollection.json')
     expect(after.page_order).toEqual(['p1'])
     expect(after.views).toEqual([sideways])
+  })
+})
+
+describe('the saved view', () => {
+  it('keeps its own values this build does not recognize, and takes every key the save changed', async () => {
+    const stored = {
+      id: 'view_k',
+      name: 'Board',
+      type: 'kanban',
+      property_order: [],
+      hidden_properties: [],
+      card_banner: 'poster',
+      wrap_titles: true,
+      plugin_key: { keep: 1 },
+    }
+    await writeCollectionSidecar({ views: [stored] })
+    const { wrap_titles: _cleared, ...shown } = savedView.parse(stored)
+    expect((await saveView(folder, 'collection', { ...shown, name: 'Lanes' })).ok).toBe(true)
+    const after = await readRaw('_pagecollection.json')
+    expect(after.views).toEqual([
+      {
+        id: 'view_k',
+        name: 'Lanes',
+        type: 'kanban',
+        property_order: [],
+        hidden_properties: [],
+        card_banner: 'poster',
+        plugin_key: { keep: 1 },
+      },
+    ])
   })
 })

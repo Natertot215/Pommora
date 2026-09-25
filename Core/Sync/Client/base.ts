@@ -1,7 +1,7 @@
 import { join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { type BaseRecord, syncStore } from '../../Platform/stores'
-import { isMergedJson } from '../Arrival/jsonMerge'
+import { isMergedJson } from '../Arrival/mergePolicy'
 
 export interface Snapshot {
   mtimeMs: number

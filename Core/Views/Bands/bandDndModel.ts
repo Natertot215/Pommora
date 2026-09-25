@@ -5,6 +5,7 @@ import type { SavedView } from '@pommora/core/Views/views'
 import type { SetTreeNode } from '../Pipeline/group'
 import { nearestByTop } from '@pommora/uix/Interactions/insertionDrag'
 import { type MeasuredRow, nextOrder, walksTo } from '@pommora/uix/Interactions/reorderModel'
+import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
 
 export interface Band {
   id: string
@@ -107,11 +108,11 @@ export function structuralOrderAfterDrop(
   draggedId: string,
   beforeId: string | null,
 ): string[] {
-  const tree = new Set(fullTreeIds)
-  const kept = priorOrder.filter((id) => tree.has(id))
-  const listed = new Set(kept)
-  const seeded = [...kept, ...fullTreeIds.filter((id) => !listed.has(id))]
-  return nextOrder(seeded, draggedId, beforeId)
+  return nextOrder(
+    resolveRowOrder(fullTreeIds, (id) => id, priorOrder),
+    draggedId,
+    beforeId,
+  )
 }
 
 export function propertyOrderAfterDrop(

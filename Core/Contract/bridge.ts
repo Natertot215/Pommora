@@ -11,7 +11,9 @@ import type { MatrixGraphReply } from '../Matrix/matrixGraph'
 import type { LayoutPatch, MatrixLayout } from '../Matrix/matrixLayout'
 import type { WindowsFile } from '../Interface/Windows/windowRecord'
 import type { ThumbRect } from '../Interface/chrome'
-import type { OpenIn, PageValues, ViewButton } from '../Views/viewRow'
+import type { PageValues } from '../Views/viewRow'
+import type { ContainerConfigPatch } from '../Views/containerConfig'
+import type { Option } from '../Properties/optionModel'
 import type { Personalization } from '../Settings/personalization'
 import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView, RemovedTile } from '../Tiles/tiles'
 import type {
@@ -97,11 +99,7 @@ export interface Asks {
     reply: Result<null>
   }
   'container:configure': {
-    args: [
-      containerPath: string,
-      kind: 'collection' | 'set',
-      patch: { open_in?: OpenIn; view_button?: ViewButton },
-    ]
+    args: [containerPath: string, kind: 'collection' | 'set', patch: ContainerConfigPatch]
     reply: Result<null>
   }
   'view:loadValues': {
@@ -129,7 +127,7 @@ export interface Asks {
   'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
   'property:delete': { args: [propertyId: string]; reply: Result<Pick<MutateOutcome, 'trashed'>> }
   'property:setOptions': {
-    args: [propertyId: string, options: { value: string; label: string; color?: string }[]]
+    args: [propertyId: string, options: Option[]]
     reply: Result<null>
   }
   'property:setStatusGroups': {

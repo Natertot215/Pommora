@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { type Json, isMergedJson, mergeDepthFor, mergeKeys } from './jsonMerge'
+import { mergeKeys } from '../../Files/jsonMerge'
+import type { Json } from '../../Files/stableJson'
+import { isMergedJson, mergeDepthFor } from './mergePolicy'
 
 type Pick = () => 'local' | 'remote'
 

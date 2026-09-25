@@ -1,13 +1,14 @@
 // Entries ride raw through reads and writes so foreign tile types survive; `knownTile` types the ones this build understands.
 
 import { z } from 'zod'
-import { VIEW_BUTTONS, VIEW_STYLES, type ViewButton, type ViewStyle } from '../Views/viewRow'
+import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 
-interface RawTile {
-  kind: 'tile'
-  id: string
-  h: number
-}
+const rawTileSchema = z.object({
+  kind: z.literal('tile'),
+  id: z.string().min(1),
+  h: z.number(),
+})
+type RawTile = z.infer<typeof rawTileSchema>
 
 interface RawRow {
   kind: 'row'
@@ -19,12 +20,6 @@ interface RawColumn {
   kind: 'column'
   children: Array<RawTile | RawRow | RawColumn>
 }
-
-const rawTileSchema: z.ZodType<RawTile> = z.object({
-  kind: z.literal('tile'),
-  id: z.string().min(1),
-  h: z.number(),
-})
 
 const rawRowSchema: z.ZodType<RawRow> = z.lazy(() =>
   z
@@ -63,53 +58,9 @@ export function coerceTileHost(raw: unknown): TileHostRef | null {
   return null
 }
 
-export type TileStyle = 'bordered' | 'borderless'
-const styleField = z.enum(['bordered', 'borderless']).optional().catch(undefined)
-
-interface MarkdownTileEntry {
-  id: string
-  type: 'markdown'
-  style?: TileStyle
-  locked?: boolean
-  zoom?: number
-}
-
-interface PageTileEntry {
-  id: string
-  type: 'page'
-  page_id: string
-  style?: TileStyle
-  banner?: boolean
-  title?: boolean
-  locked?: boolean
-  zoom?: number
-}
-
-/** The config `id` is payload-local, minted at copy — never the source view's id. */
-export interface EmbeddedView {
-  source_id: string
-  config?: unknown
-}
-
-export interface ViewTileEntry {
-  id: string
-  type: 'view'
-  views: EmbeddedView[]
-  active?: number
-  style?: TileStyle
-  display_title?: string
-  display_icon?: string
-  title?: boolean
-  icon?: boolean
-  title_level?: number
-  view_button?: ViewButton
-  view_style?: ViewStyle
-  view_band?: boolean
-  locked?: boolean
-  zoom?: number
-}
-
-export type TileEntry = MarkdownTileEntry | PageTileEntry | ViewTileEntry
+const TILE_STYLES = ['bordered', 'borderless'] as const
+export type TileStyle = (typeof TILE_STYLES)[number]
+const styleField = z.enum(TILE_STYLES).optional().catch(undefined)
 
 const boolField = z.boolean().optional().catch(undefined)
 const zoomField = z.number().positive().optional().catch(undefined)
@@ -119,23 +70,24 @@ const chassisFields = {
   locked: boolField,
   zoom: zoomField,
 }
-const markdownEntry = z.looseObject({
+const markdownEntry = z.object({
   ...chassisFields,
   type: z.literal('markdown'),
 })
-const pageEntry = z.looseObject({
+const pageEntry = z.object({
   ...chassisFields,
   type: z.literal('page'),
   page_id: z.string().min(1),
   banner: boolField,
   title: boolField,
 })
-// Elements are looseObjects too — a strict element shape would strip nested foreign keys.
-const embeddedView = z.looseObject({
+const embeddedView = z.object({
   source_id: z.string().min(1),
   config: z.unknown().optional(),
 })
-const viewEntry = z.looseObject({
+/** The config `id` is payload-local, minted at copy — never the source view's id. */
+export type EmbeddedView = z.infer<typeof embeddedView>
+const viewEntry = z.object({
   ...chassisFields,
   type: z.literal('view'),
   views: z.array(embeddedView).min(1),
@@ -149,6 +101,9 @@ const viewEntry = z.looseObject({
   view_style: z.enum(VIEW_STYLES).optional().catch(undefined),
   view_band: boolField,
 })
+export type ViewTileEntry = z.infer<typeof viewEntry>
+
+export type TileEntry = z.infer<typeof markdownEntry> | z.infer<typeof pageEntry> | ViewTileEntry
 export type TileType = TileEntry['type']
 
 type TileMenuSource = 'pages' | 'views'
@@ -162,7 +117,7 @@ interface TileKind<E extends TileEntry = TileEntry> {
 
 export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: T }>> } = {
   markdown: {
-    schema: markdownEntry,
+    schema: markdownEntry.loose(),
     label: 'Markdown Tile',
     fileBacked: true,
     menuRows: [
@@ -171,12 +126,18 @@ export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: 
     ],
   },
   page: {
-    schema: pageEntry,
+    schema: pageEntry.loose(),
     label: 'Page Tile',
     fileBacked: false,
     menuRows: [{ label: 'Source', source: 'pages' }],
   },
-  view: { schema: viewEntry, label: 'View Tile', fileBacked: false, menuRows: [] },
+  view: {
+    // Elements are loose too — a strict element shape would strip nested foreign keys.
+    schema: viewEntry.extend({ views: z.array(embeddedView.loose()).min(1) }).loose(),
+    label: 'View Tile',
+    fileBacked: false,
+    menuRows: [],
+  },
 }
 
 /** What a removal took, so an Undo can put it back: the raw entry, a file-backed tile's text, and the band it returns to. */

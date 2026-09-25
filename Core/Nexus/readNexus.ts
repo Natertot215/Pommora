@@ -36,8 +36,7 @@ import {
   SIDECAR_FILENAME,
   SPACE_SIDECAR,
 } from '../Paths/nexusPaths'
-
-type Json = Record<string, unknown>
+import type { Json } from '../Files/stableJson'
 
 export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
   return {

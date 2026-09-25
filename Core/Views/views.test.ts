@@ -322,3 +322,8 @@ describe('filter codec', () => {
     expect(view.id).toBe('view_x')
   })
 })
+
+// Compiled by the typecheck and never run: a field the decoder doesn't declare is no field of the type.
+const _mistypedViewField = (v: SavedView): unknown =>
+  // @ts-expect-error
+  v.hide_boarders

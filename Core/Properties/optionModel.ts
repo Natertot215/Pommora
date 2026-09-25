@@ -1,17 +1,16 @@
 // An option's `value` IS its title (value=label), so identity keys on the value string.
 
-import type { OptionAppearance, PropertyType, StatusGroup, StatusOption } from './properties'
+import type {
+  OptionAppearance,
+  PropertyType,
+  SelectOption,
+  StatusGroup,
+  StatusOption,
+} from './properties'
 import { freeName } from '../Paths/names'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 
-export type Option = {
-  value: string
-  label: string
-  color?: string
-  icon?: string
-  appearance?: OptionAppearance
-  group_id?: string
-}
+export type Option = SelectOption & { group_id?: string }
 
 export function fallbackTitle(
   type: PropertyType,

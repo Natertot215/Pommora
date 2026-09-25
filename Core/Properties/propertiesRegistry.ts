@@ -2,9 +2,12 @@ import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { valueOr } from '../Contract/result'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { mergeKeys } from '../Files/jsonMerge'
+import type { Json } from '../Files/stableJson'
 import { machine } from '../Platform/machine'
 import { isPlainObject } from './propertyValue'
 import { propertyDefinition, type PropertyDefinition } from './properties'
+import { resolveRowOrder } from './rowOrder'
 
 export type PropertyRegistry = Record<string, PropertyDefinition>
 
@@ -25,9 +28,13 @@ function normalizeRegistry(obj: Record<string, unknown>): {
     // Only a plausible def (a plain object) rides through writes — a scalar under an id key is corrupt noise, and re-writing it is what would break the file-shape check above.
     else if (isPlainObject(value)) unparsed[id] = value
   }
-  const order = (Array.isArray(obj.order) ? obj.order : []).filter(
-    (x): x is string => typeof x === 'string' && x in defs,
-  )
+  const order = [
+    ...new Set(
+      (Array.isArray(obj.order) ? obj.order : []).filter(
+        (x): x is string => typeof x === 'string' && x in defs,
+      ),
+    ),
+  ]
   return { registry: { order, defs }, unparsed }
 }
 
@@ -41,15 +48,8 @@ export async function readRegistry(root: string): Promise<RegistryFile> {
   return normalizeRegistry(await readRegistryObject(root)).registry
 }
 
-export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
-  const listed = new Set(reg.order)
-  return [
-    ...reg.order.map((id) => reg.defs[id]),
-    ...Object.entries(reg.defs)
-      .filter(([key]) => !listed.has(key))
-      .map(([, d]) => d),
-  ]
-}
+export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
+  resolveRowOrder(Object.entries(reg.defs), ([key]) => key, reg.order).map(([, d]) => d)
 
 export function mutateRegistry<T>(
   root: string,
@@ -62,8 +62,10 @@ export function mutateRegistry<T>(
     if (next) {
       const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
       const defs: Record<string, unknown> = { ...unparsed }
-      for (const [id, d] of Object.entries(next.defs))
-        defs[id] = d === registry.defs[id] ? rawDefs[id] : d
+      for (const [id, d] of Object.entries(next.defs)) {
+        const stored = registry.defs[id]
+        defs[id] = stored ? mergeKeys(stored, d, rawDefs[id] as Json, {}, () => 'local') : d
+      }
       // Unparsed ids keep their order membership too, appended, so a repaired def re-lists rather than vanishing from the pane.
       const order = [
         ...next.order,

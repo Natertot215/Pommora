@@ -3,9 +3,7 @@
 import { NEW_SLOT, type MutateRequest } from './mutateRequest'
 import { stabilize } from './treeStabilize'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
-import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { PropertyDefinition } from '../Properties/properties'
-import type { SavedView } from '../Views/views'
 import { basename, isMarkdownFile, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 
 // The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
@@ -14,17 +12,7 @@ export function makePageNode(f: { id: string; title: string; path: string }): Pa
   return { kind: 'page', id: f.id, title: f.title, path: f.path }
 }
 
-export function makeSpaceNode(f: {
-  id: string
-  title: string
-  path: string
-  contextId: string
-  icon?: string
-  banner?: string
-  headingIconHidden?: boolean
-  color?: string
-  values?: Record<string, unknown>
-}): SpaceNode {
+export function makeSpaceNode(f: Omit<SpaceNode, 'kind' | 'contextValues'>): SpaceNode {
   return {
     kind: 'space',
     id: f.id,
@@ -39,20 +27,12 @@ export function makeSpaceNode(f: {
   }
 }
 
-export function makeSetNode(f: {
-  id: string
-  title: string
-  path: string
-  icon?: string
-  banner?: string
-  headingIconHidden?: boolean
+type ContainerInput<N extends SetNode | CollectionNode> = Omit<N, 'kind' | 'sets' | 'pages'> & {
   sets?: SetNode[]
   pages?: PageNode[]
-  views?: SavedView[]
-  viewButton?: ViewButton
-  disclosureLocked?: boolean
-  activeView?: string
-}): SetNode {
+}
+
+export function makeSetNode(f: ContainerInput<SetNode>): SetNode {
   return {
     kind: 'set',
     id: f.id,
@@ -70,22 +50,7 @@ export function makeSetNode(f: {
   }
 }
 
-export function makeCollectionNode(f: {
-  id: string
-  title: string
-  path: string
-  icon?: string
-  banner?: string
-  headingIconHidden?: boolean
-  properties?: PropertyDefinition[]
-  sets?: SetNode[]
-  pages?: PageNode[]
-  views?: SavedView[]
-  openIn?: OpenIn
-  viewButton?: ViewButton
-  disclosureLocked?: boolean
-  activeView?: string
-}): CollectionNode {
+export function makeCollectionNode(f: ContainerInput<CollectionNode>): CollectionNode {
   return {
     kind: 'collection',
     id: f.id,

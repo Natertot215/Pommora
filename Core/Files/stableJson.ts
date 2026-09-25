@@ -1,3 +1,5 @@
+export type Json = Record<string, unknown>
+
 /** Byte-stable across writes, so re-saving unchanged data produces identical bytes and two shapes of one value compare. */
 export function stableStringify(value: unknown): string {
   return JSON.stringify(sortKeys(value), null, 2)

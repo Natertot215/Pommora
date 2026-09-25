@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, writeFile, mkdir } from 'node:fs/promises'
+import { rm, writeFile, mkdir, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { mutateRegistry, orderedDefs, readRegistry } from './propertiesRegistry'
@@ -59,6 +59,11 @@ describe('hostile hand-edited files (breaker M-2/L-1)', () => {
   it('orderedDefs lists a key≠id desync exactly once', async () => {
     const desynced = { ...def('prop_b', 'Desync'), id: 'prop_b' }
     const reg = { order: ['prop_a'], defs: { prop_a: desynced } }
+    expect(orderedDefs(reg)).toHaveLength(1)
+  })
+
+  it('orderedDefs lists an id the order repeats exactly once', () => {
+    const reg = { order: ['prop_a', 'prop_a'], defs: { prop_a: def('prop_a', 'Twice') } }
     expect(orderedDefs(reg)).toHaveLength(1)
   })
 
@@ -139,10 +144,42 @@ describe('untouched definitions', () => {
       next: { ...reg, defs: { ...reg.defs, prop_a: { ...reg.defs.prop_a, name: 'Urgency' } } },
       result: undefined,
     }))
-    const { readFile } = await import('node:fs/promises')
     const after = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
     expect(after.defs.prop_f).toEqual(future)
     expect(after.defs.prop_a.name).toBe('Urgency')
     expect(after.plugin_top).toEqual({ keep: 1 })
+  })
+})
+
+describe('the edited definition', () => {
+  it('keeps its own values this build does not recognize, and takes every key the edit changed', async () => {
+    const stored = {
+      id: 'prop_f',
+      name: 'Money',
+      type: 'number',
+      icon: 'coins',
+      number_family: 'crypto',
+      plugin_key: { keep: 1 },
+    }
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({ order: ['prop_f'], defs: { prop_f: stored } }),
+    )
+    await mutateRegistry(root, (reg) => {
+      const { icon: _cleared, ...rest } = reg.defs.prop_f
+      return {
+        next: { ...reg, defs: { prop_f: { ...rest, name: 'Cash' } } },
+        result: undefined,
+      }
+    })
+    const after = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
+    expect(after.defs.prop_f).toEqual({
+      id: 'prop_f',
+      name: 'Cash',
+      type: 'number',
+      number_family: 'crypto',
+      plugin_key: { keep: 1 },
+    })
   })
 })

@@ -47,19 +47,6 @@ export const baseSidecar = z.looseObject({
   icon: z.string().optional(),
 })
 
-// `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
-export const pageCollectionSidecar = baseSidecar.extend({
-  banner: z.string().optional(),
-  set_order: ulidList,
-  page_order: ulidList,
-  properties: z.array(z.string()).optional(),
-  views: z.array(savedView).optional(),
-  open_in: openInField,
-  view_button: viewButtonField,
-  disclosure_locked: z.boolean().optional(),
-  active_view: z.string().optional(),
-})
-
 // Parentage is the folder nesting itself, never a stored field.
 export const pageSetSidecar = baseSidecar.extend({
   page_order: ulidList,
@@ -69,6 +56,12 @@ export const pageSetSidecar = baseSidecar.extend({
   view_button: viewButtonField,
   disclosure_locked: z.boolean().optional(),
   active_view: z.string().optional(),
+})
+
+// `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
+export const pageCollectionSidecar = pageSetSidecar.extend({
+  properties: z.array(z.string()).optional(),
+  open_in: openInField,
 })
 
 export const pageFrontmatter = z.looseObject({
