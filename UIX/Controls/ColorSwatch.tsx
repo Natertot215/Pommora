@@ -2,8 +2,7 @@ import { useRef, useState } from 'react'
 import { ColorPicker } from '../Pickers/ColorPicker'
 import type { LabelColorName } from '../Labels/label-base.css'
 import { cellPaint } from '../Theme/ramp'
-import { tintAt } from '../Theme/colors'
-import type { CellKey } from '@pommora/uix/Theme/colors'
+import { type CellKey, tintAt } from '../Theme/colors'
 import * as s from './color-swatch.css'
 
 /** Greyscale is resolved as a chip rather than painted raw. */

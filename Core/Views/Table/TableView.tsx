@@ -42,7 +42,7 @@ import { ColumnHeader } from './ColumnHeader'
 import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
-import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'
+import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/TableRowDnd'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'
 import {

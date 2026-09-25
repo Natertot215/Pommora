@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { type PropertyDefinition, optionsOf } from '@pommora/core/Properties/properties'
 import type { GroupConfig } from '@pommora/core/Views/views'
 import { heading, type PickerRowLook } from '@pommora/uix/Menus'
-import { side } from '@pommora/uix/Menus/menu-base.css'
+import { side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
@@ -13,7 +13,10 @@ import { bucketOrder } from '../Pipeline/group'
 import { useGroupingListDrag } from './groupDnd'
 import * as oo from './option-order.css'
 
-export const SUB_LOOK: PickerRowLook = { className: oo.subRow, labelClassName: oo.subLabel }
+export const SUB_LOOK: PickerRowLook = {
+  className: oo.subOrderRow,
+  labelClassName: oo.orderLabel,
+}
 
 export type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 

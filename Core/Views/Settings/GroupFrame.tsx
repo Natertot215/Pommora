@@ -635,7 +635,7 @@ function DateBucketList({
         const label = formatBucketLabel(key, granularity, dateFormat, view.date_separator ?? 'dash')
         return (
           <div key={key} className={cx(optionRow, hiddenSet?.has(key) && hiddenRow)}>
-            <span className={oo.subLabel}>{label}</span>
+            <span className={oo.orderLabel}>{label}</span>
             {rowEye(label, key, { hiddenSet, onToggleHidden })}
           </div>
         )

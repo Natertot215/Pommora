@@ -4,8 +4,8 @@ import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tre
 import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { FilterRule, SavedView } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
-import { SegmentRun } from '@pommora/uix/Fields/SegmentRun'
-import * as sr from '@pommora/uix/Fields/segment-run.css'
+import { FieldRun } from '@pommora/uix/Fields/FieldRun'
+import * as fr from '@pommora/uix/Fields/field-run.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import {
@@ -18,8 +18,8 @@ import {
   MenuTopRow,
   useDisclosureSet,
 } from '@pommora/uix/Menus'
-import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
@@ -252,7 +252,7 @@ function LocationField({
         {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
-          <SegmentRun
+          <FieldRun
             entries={shown.map((v) => {
               const node = byId.get(v)
               return {
@@ -263,7 +263,7 @@ function LocationField({
                     kind={node?.kind ?? 'set'}
                     icon={node?.icon}
                     size="body"
-                    className={sr.segmentIcon}
+                    className={fr.runItemIcon}
                   />
                 ),
                 onRemove: () => toggle(v),

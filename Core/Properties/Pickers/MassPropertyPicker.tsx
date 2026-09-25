@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
 import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { massPickCommits, massSelected } from './massAssign'
 import { pickShape, PropertyOptionRows, selectedValues } from './PropertyPicker'
 

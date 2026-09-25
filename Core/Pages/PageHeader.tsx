@@ -78,7 +78,7 @@ export function PageHeader({
       }
     />
   )
-  // A windowed page without a banner draws no header at all; the band still holds the seat that takes the strip's Add Banner.
+  // A windowed page without a banner draws no header at all; the banner's seat still takes the strip's Add Banner.
   if (chrome === 'window' && !coverSrc) return banner
 
   return (

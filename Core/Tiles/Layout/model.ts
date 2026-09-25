@@ -19,12 +19,12 @@ export interface TileLeaf {
 
 export type LayoutNode = RowNode | ColumnNode | TileLeaf
 
-export interface Band {
+export interface TileBand {
   node: LayoutNode
 }
 
 export interface TileLayout {
-  bands: Band[]
+  bands: TileBand[]
 }
 
 export type Edge = 'n' | 's' | 'e' | 'w'

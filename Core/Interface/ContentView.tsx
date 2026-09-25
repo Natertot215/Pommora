@@ -223,7 +223,7 @@ function ContentFooter({
         label={footerLabel(expanded)}
       />
       <CitationsToggle page={page} />
-      <div className="subfield-reveal reveal-band">
+      <div className="subfield-reveal reveal-bar">
         <Subfield page={page} count={count} lead={kind === 'none' ? <ViewTypeItem /> : undefined} />
       </div>
     </>

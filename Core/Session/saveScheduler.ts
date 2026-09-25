@@ -139,7 +139,7 @@ export function flushAllPageSaves(): Promise<void> {
   return pageWriter.flushAll()
 }
 
-// Tab and window sets, tile layouts, and the Matrix frame each write whole on every change, and the Matrix positions send every row not yet sent; one debounced write per key coalesces a burst into the last state.
+// Tab and window sets, tile layouts, and the Matrix lens each write whole on every change, and the Matrix positions send every row not yet sent; one debounced write per key coalesces a burst into the last state.
 export const sessionWriter = createBodyWriter('the session', true)
 
 export function scheduleTabsSave(set: StoredTabSet): void {

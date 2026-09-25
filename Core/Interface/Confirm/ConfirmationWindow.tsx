@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useSession } from '../../Session/store'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { GlassWindow } from '@pommora/uix/Glass/glass-window'
+import { GlassWindow } from '@pommora/uix/Glass/GlassWindow'
 import { ModalScrim } from '@pommora/uix/Windows/ModalScrim'
 import * as s from './confirmation-window.css'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'

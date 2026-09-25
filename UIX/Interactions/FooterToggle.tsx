@@ -1,7 +1,7 @@
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 
-/** The chevron that folds a footer bar, revealed from its host's reveal band. */
+/** The chevron that folds a footer bar, revealed from its host's reveal bar. */
 export function FooterToggle({
   open,
   onOpenChange,

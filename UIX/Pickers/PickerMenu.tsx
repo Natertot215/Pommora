@@ -11,8 +11,8 @@ import { createPortal } from 'react-dom'
 import { pickerBloom } from '../Animations/animations.css'
 import { useExitPresence } from '../Animations/useExitPresence'
 import { useHeld } from '../Animations/useExitPresence'
-import { GlassSurface } from '../Glass/glass-surface'
-import { GlassWindow } from '../Glass/glass-window'
+import { GlassSurface } from '../Glass/GlassSurface'
+import { GlassWindow } from '../Glass/GlassWindow'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */

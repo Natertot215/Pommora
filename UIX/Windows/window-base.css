@@ -8,7 +8,7 @@
 
   --window-toolbar-h: 36px;
   --window-panel-inset: var(--app-inset);
-  /* How much of the body each floating pane covers; content clears it, a band runs beneath it. They ride --io, so everything keyed to them moves in one frame. */
+  /* How much of the body each floating pane covers; content clears it, a banner runs beneath it. They ride --io, so everything keyed to them moves in one frame. */
   --window-clear-l: 0px;
   --window-clear-r: 0px;
   --window-panel-top: 16px;
@@ -19,7 +19,7 @@
   --slide-cluster-w: 36px; /* KNOB — the trailing cluster's width, the two-glyph case */
   --slide-breathing: calc(var(--surface-inset) * 2);
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
-  /* Half the right pane's clearance — the floating title rides the content column's center, not the frame's. */
+  /* Half the right pane's clearance — the floating title rides the content column's center, not the window's. */
   --window-title-shift: calc(var(--window-clear-r) / -2);
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
@@ -45,9 +45,9 @@
   --window-clear-r: calc(var(--io) * (var(--window-panel-r-w) + var(--window-panel-inset)));
 }
 
-/* The window banner — the one band a windowed Page, Space, and the Navigation Window's map tab draw: under the strip and any open pane, out to the glass, its title clearing the panes. Doubled with .window so it outranks each surface's own band rules. */
+/* The window banner — the one banner a windowed Page, Space, and the Navigation Window's map tab draw: under the strip and any open pane, out to the glass, its title clearing the panes. Doubled with .window so it outranks each surface's own banner rules. */
 .window .window-banner {
-  height: 140px; /* KNOB — the band's height */
+  height: 140px; /* KNOB — the banner's height */
   margin: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
     calc(-1 * var(--window-clear-l));
 }
@@ -58,7 +58,7 @@
   bottom: 12px;
   transition: none;
 }
-/* The toolbar strip is zero-height, so the move gesture needs this band; `z-index: 0` clears the body's flow without outranking it. */
+/* The toolbar strip is zero-height, so the move gesture needs this surface; `z-index: 0` clears the body's flow without outranking it. */
 .window-drag {
   position: absolute;
   top: 0;
@@ -104,7 +104,7 @@
   min-width: 0;
   min-height: 0;
   padding: var(--window-body-pad);
-  /* Content dissolves across the whole band it scrolls under; a window carrying no band keeps the kit's own edge fade. */
+  /* Content dissolves across the whole toolbar it scrolls under; a window carrying no toolbar keeps the kit's own edge fade. */
   --over-scroll-fade: max(var(--window-toolbar-h), var(--os-fade-default));
   overflow-y: auto;
   scrollbar-width: none;
@@ -186,7 +186,7 @@
   flex: 1;
   min-height: 0;
 }
-/* The detail column and the band beneath it — a panel sits beside both, at the window's full height. */
+/* The detail column and the bar beneath it — a panel sits beside both, at the window's full height. */
 .window-detail {
   display: flex;
   flex-direction: column;
@@ -267,18 +267,18 @@
   transition: height var(--duration-base) var(--ease-base);
 }
 .window.is-footer-open .window-footer {
-  height: var(--reveal-band-h);
+  height: var(--reveal-bar-h);
 }
 .window-footer-toggle {
-  /* The 16px is a KNOB — the chevron's inset from the band's trailing edge, clear of the se resize corner. */
+  /* The 16px is a KNOB — the chevron's inset from the bar's trailing edge, clear of the se resize corner. */
   right: calc(16px + var(--window-clear-r));
   z-index: 4;
   width: 40px;
-  height: calc(var(--reveal-band-h) + 2px);
+  height: calc(var(--reveal-bar-h) + 2px);
   padding: 0 6px 0 0;
 }
 .window.is-footer-open .window-footer-toggle {
-  bottom: var(--reveal-band-h);
+  bottom: var(--reveal-bar-h);
 }
 /* Their edges ride --io each frame, and a transition on left or right would chase it. */
 .window .window-footer-toggle,
@@ -291,12 +291,12 @@
 .window [data-reveal-lead] {
   left: var(--window-clear-l);
   z-index: 4;
-  height: var(--reveal-band-h);
+  height: var(--reveal-bar-h);
   padding: 0 12px 0 var(--window-footer-lead, 14px);
   justify-content: flex-start;
 }
 .window.is-footer-open [data-reveal-lead] {
-  bottom: var(--reveal-band-h);
+  bottom: var(--reveal-bar-h);
 }
 .window.is-footer-near-lead [data-reveal-lead],
 .window.is-footer-near .window-footer-toggle {

@@ -1,4 +1,4 @@
-import type { Size } from '@pommora/uix/Interactions/ResizeFrame'
+import type { Size } from '@pommora/uix/Interactions/useResizable'
 import { type ReconcileIndex, reconcileWith } from './reconcileSelection'
 import { makeTabId } from '../Navigation/tabsModel'
 import type { Slice } from './sessionState'

@@ -16,7 +16,7 @@ import { VisibilityFrame } from './VisibilityFrame'
 import { LayoutFrame, VIEW_ROWS, type ViewRow, type ViewRowId } from './LayoutFrame'
 import { ViewLeaf } from './ViewLeaf'
 import { ScalePicker } from '@pommora/core/Settings/ScalePicker'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import {
   FooterIconButton,

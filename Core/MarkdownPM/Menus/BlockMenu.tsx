@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'

@@ -4,7 +4,7 @@ import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { MenuItem } from '@pommora/uix/Menus'
-import { overlay } from '@pommora/uix/Menus/menu-base.css'
+import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
@@ -302,7 +302,7 @@ function TrashRowView({
 }): React.JSX.Element {
   return (
     <MenuItem
-      className="trash-row table-segment"
+      className="trash-row table-divider"
       leading={<Icon name={icon} size="headline" />}
       detail={
         <NavTrail

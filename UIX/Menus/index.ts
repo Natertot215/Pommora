@@ -12,7 +12,7 @@ export {
   FootingItem,
   MenuScrollFrame,
   emphasizeMatch,
-} from './menu-row'
+} from './MenuRows'
 export {
   MenuIndex,
   MenuRowView,
@@ -22,8 +22,8 @@ export {
   type MenuRow,
   type MenuSection,
   type Trailing,
-} from './menu-index'
-export { DisclosureRow, DropOutline, useDisclosureSet } from './menu-disclosure'
-export { heading, itemEmphasized, titleInput } from './menu-base.css'
-export { MenuSurface } from './menu-surface'
-export { MenuDropdown } from './menu-base'
+} from './MenuIndex'
+export { DisclosureRow, DropOutline, useDisclosureSet } from './DisclosureRow'
+export { heading, itemEmphasized, titleInput } from './menu-row.css'
+export { MenuSurface } from './MenuSurface'
+export { MenuDropdown } from './MenuDropdown'

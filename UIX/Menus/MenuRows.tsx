@@ -2,7 +2,7 @@ import { Fragment, type ReactNode, type MouseEvent, type CSSProperties, type Ref
 import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
 import { Button } from '../Buttons/Button'
 import { Icon, type IconName, LockGlyph } from '../Symbols'
-import * as s from './menu-base.css'
+import * as s from './menu-row.css'
 import { cx } from '../Utilities/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'

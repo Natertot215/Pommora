@@ -3,7 +3,7 @@ import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { field as fieldBase, borderedField } from '@pommora/uix/Fields/fields.css'
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
-import { rowBox, side } from '@pommora/uix/Menus/menu-base.css'
+import { rowBox, side } from '@pommora/uix/Menus/menu-row.css'
 import { PANE_MIN_H } from '@pommora/uix/Menus/frame-slide.css'
 
 const c = colorVars.color

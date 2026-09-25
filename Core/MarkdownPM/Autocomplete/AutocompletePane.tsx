@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import {
   DisclosureRow,
@@ -12,12 +12,12 @@ import {
   emphasizeMatch,
   itemEmphasized,
 } from '@pommora/uix/Menus'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
 import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { side } from '@pommora/uix/Menus/menu-base.css'
+import { side } from '@pommora/uix/Menus/menu-row.css'
 import { useKeepInView } from './useKeepInView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'

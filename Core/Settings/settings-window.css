@@ -1,6 +1,6 @@
 .settings-window {
   padding: var(--app-inset);
-  /* Each frame owns its own top — the Trash surface opens on a search row — so this window carries no title-bar band. */
+  /* Each frame owns its own top — the Trash surface opens on a search row — so this window carries no toolbar. */
   --window-toolbar-h: 0px;
 }
 

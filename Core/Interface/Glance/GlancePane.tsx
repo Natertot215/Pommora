@@ -6,7 +6,7 @@ import {
   PICKER_PORTAL_ATTR,
   PickerMenu,
   type PickerDirection,
-} from '@pommora/uix/Pickers/picker-base'
+} from '@pommora/uix/Pickers/PickerMenu'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -14,7 +14,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
-import { useResizeFrame, type ResizeEdge, type Size } from '@pommora/uix/Interactions/ResizeFrame'
+import { useResizable, type ResizeEdge, type Size } from '@pommora/uix/Interactions/useResizable'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { PinnedGlance } from '../../Session/glanceSlice'
@@ -142,7 +142,7 @@ export function GlancePane(): React.JSX.Element {
   const box = useHeld(live, !!shown)
 
   const selectingRef = useRef(false)
-  const frame = useResizeFrame({
+  const resize = useResizable({
     rect: box,
     min: GLANCE_MIN,
     max: maxSize,
@@ -157,7 +157,7 @@ export function GlancePane(): React.JSX.Element {
       geometry.onSizeChange(clampSize({ w: keep('w'), h: keep('h') }))
     },
   })
-  const resizing = frame.active !== null
+  const resizing = resize.active !== null
 
   useEffect(() => {
     const show = (next: GlanceRequest): void => {
@@ -497,7 +497,7 @@ export function GlancePane(): React.JSX.Element {
           )}
           {lockBtn}
         </div>
-        {frame.edges(dir === 'up' ? EDGES_UP : EDGES_DOWN)}
+        {resize.edges(dir === 'up' ? EDGES_UP : EDGES_DOWN)}
       </PickerMenu>
       {pinnedGlances
         .filter((p) => p.tabId === activeTabId)

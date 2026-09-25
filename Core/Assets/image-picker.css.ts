@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { strip } from '@pommora/uix/Controls/slider.css'
 import { text, vars } from '@pommora/uix/Theme'
-import { accessoryButton, detail, rowBox } from '@pommora/uix/Menus/menu-base.css'
+import { accessoryButton, detail, rowBox } from '@pommora/uix/Menus/menu-row.css'
 
 const c = vars.color
 

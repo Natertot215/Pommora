@@ -8,7 +8,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { PickerMenu } from './picker-base'
+import { PickerMenu } from './PickerMenu'
 import { SearchField } from '../Fields/SearchField'
 import { fullIconSet, Icon, loadFullIconSet, subscribeFullIconSet } from '../Symbols'
 import type { IconEntry } from '../Symbols/allSymbols'

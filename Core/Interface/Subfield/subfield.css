@@ -1,9 +1,9 @@
 .subfield {
-  height: var(--reveal-band-h);
+  height: var(--reveal-bar-h);
   display: flex;
   align-items: center;
   gap: 16px;
-  /* The band is the detail's width: a pane overlays it at full height, so the bar stops at each pane's edge rather than running beneath one and padding its contents clear. */
+  /* The bar is the detail's width: a pane overlays it at full height, so the bar stops at each pane's edge rather than running beneath one and padding its contents clear. */
   margin-left: var(--sidebar-clearance);
   margin-right: var(--side-pane-clearance);
   padding-left: var(--content-edge);
@@ -55,7 +55,7 @@
   transition: height var(--duration-base) var(--ease-base);
 }
 .content-view.subfield-open .subfield-reveal {
-  height: var(--reveal-band-h);
+  height: var(--reveal-bar-h);
 }
 .shell.is-resizing .subfield-reveal {
   transition: none;
@@ -65,11 +65,11 @@
   right: var(--side-pane-clearance);
   z-index: 2;
   width: 44px;
-  height: var(--reveal-band-h);
+  height: var(--reveal-bar-h);
   padding: 0 12px 0 0;
 }
 .content-view.subfield-open .subfield-toggle {
-  bottom: var(--reveal-band-h);
+  bottom: var(--reveal-bar-h);
 }
 .content-view.subfield-near .subfield-toggle {
   --reveal: 1;
@@ -79,16 +79,16 @@
   transition: none;
 }
 
-/* The footnotes disclosure faces the bar's own chevron across the same band and uses its spacing, so the hover pill reads as the same control on the other side of the bar. */
+/* The footnotes disclosure faces the bar's own chevron and uses its spacing, so the hover pill reads as the same control on the other side of the bar. */
 .footnotes-toggle {
   left: var(--sidebar-clearance);
   z-index: 2;
-  height: var(--reveal-band-h);
+  height: var(--reveal-bar-h);
   padding: 0 0 0 var(--content-edge);
   justify-content: flex-start;
 }
 .content-view.subfield-open .footnotes-toggle {
-  bottom: var(--reveal-band-h);
+  bottom: var(--reveal-bar-h);
 }
 .content-view.subfield-near-lead .footnotes-toggle {
   --reveal: 1;

@@ -2,7 +2,7 @@ import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { field, input as fieldInput } from '@pommora/uix/Fields/fields.css'
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
-import { footingBar } from '@pommora/uix/Menus/menu-base.css'
+import { footingBar } from '@pommora/uix/Menus/menu-row.css'
 import { tintAt } from '@pommora/uix/Theme/colors'
 
 const c = colorVars.color

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ProgressBar } from '../Elements/ProgressBar'
-import { GlassControl } from '../Glass/glass-control'
+import { GlassControl } from '../Glass/GlassControl'
 import { usePointerGesture } from '../Interactions/gesture'
 import * as s from './slider.css'
 import { cx } from '../Utilities/cx'

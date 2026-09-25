@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Segmented, type Segment } from '../Buttons/Button'
 import { useDismissal } from '../Interactions/dismissalStack'
 import { useExitPresence } from '../Animations/useExitPresence'
-import { MenuSurface } from './menu-surface'
+import { MenuSurface } from './MenuSurface'
 
 /** The open state lives here, not in `MenuSurface`, which stays state-free so the toolbar trio shares one dismiss region. */
 export function MenuDropdown({

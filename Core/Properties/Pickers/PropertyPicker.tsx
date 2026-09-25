@@ -6,11 +6,11 @@ import {
   optionsOf,
 } from '@pommora/core/Properties/properties'
 import { NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { MenuItem, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import type { PickKind } from './massAssign'

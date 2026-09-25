@@ -6,7 +6,7 @@ import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/noti
 import { restoreView } from '../restoreView'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { dialer } from '../../Platform/dialer'
 
 export function ViewItemMenu({

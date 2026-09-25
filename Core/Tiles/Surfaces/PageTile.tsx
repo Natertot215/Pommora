@@ -20,7 +20,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { cx } from '@pommora/uix/Utilities/cx'
 import '../tile-base.css'
 import '../tile-title.css'
-import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/picker-base'
+import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/PickerMenu'
 
 interface EmbedEntry {
   path: string

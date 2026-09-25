@@ -20,9 +20,9 @@ import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
-import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-base.css'
+import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -46,16 +46,16 @@ import { labelSlot, labelSlotHidden, labelText } from '@pommora/uix/Buttons/butt
 import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
 import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import {
-  SEGMENT_ICON,
-  segment,
-  segmentActive,
-  segmentDrop,
-  segmentEntering,
-  segmentExiting,
-  segmentTrail,
+  VIEW_PILL_ICON,
+  viewPill,
+  viewPillActive,
+  viewPillDrop,
+  viewPillEntering,
+  viewPillExiting,
+  viewPillTrail,
   settingsBtn,
   settingsBtnActive,
-} from '@pommora/uix/Elements/action-band.css'
+} from '@pommora/uix/Elements/view-strip.css'
 import * as s from './view-tile.css'
 import { popMenu } from '../../Actions/menuActions'
 import { viewsLabel } from '../../Actions/toggleLabels'
@@ -113,8 +113,8 @@ function usePillPresence(views: SavedView[]): {
   return { entering, exiting, beginExit: setExiting, onAnimEnd, deleteView }
 }
 
-// KNOB — how long the band's lock stays after locking before it fades
-const BAND_LOCK_LINGER_MS = 2000
+// KNOB — how long the strip's lock stays after locking before it fades
+const STRIP_LOCK_LINGER_MS = 2000
 
 type PeekAnchor = { kind: 'zone'; el: Element } | { kind: 'row'; first: Element } | null
 
@@ -154,7 +154,7 @@ const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = labelColorFor(v.color)
   if (key === 'default') return undefined
   const stroke = cellRing(key)
-  return { '--segment-stroke': stroke } as React.CSSProperties
+  return { '--view-pill-stroke': stroke } as React.CSSProperties
 }
 
 function ViewPill({
@@ -188,16 +188,16 @@ function ViewPill({
       {...handle}
       type="button"
       className={cx(
-        segment,
-        active && segmentActive,
-        entering && segmentEntering,
-        exiting && segmentExiting,
+        viewPill,
+        active && viewPillActive,
+        entering && viewPillEntering,
+        exiting && viewPillExiting,
       )}
       onClick={renaming ? undefined : onSwitch}
       onContextMenu={onMenu}
       onAnimationEnd={onAnimEnd}
     >
-      <Icon name={viewGlyph(view)} size={SEGMENT_ICON} />
+      <Icon name={viewGlyph(view)} size={VIEW_PILL_ICON} />
       <span className={cx(labelSlot, !renaming && !labeled && labelSlotHidden)}>
         <span className={labelText}>{label}</span>
       </span>
@@ -269,10 +269,10 @@ export function ViewTile({
     dwell: true,
     held: !viewsShown && anchoredOpen,
     engaged: viewsShown,
-    linger: { on: BAND_LOCK_LINGER_MS },
+    linger: { on: STRIP_LOCK_LINGER_MS },
   })
   const peekAnchor = useRef<PeekAnchor>(null)
-  const bandOpen = viewsShown || reveal.on
+  const stripOpen = viewsShown || reveal.on
   const hoverProps = {
     onPointerEnter: () => reveal.hover(true),
     onPointerLeave: () => reveal.hover(false),
@@ -517,8 +517,8 @@ export function ViewTile({
     </button>
   )
 
-  const bandLock = !locked && (
-    <span className={cx(s.bandLock, !reveal.on && titleActionFadeHidden)}>
+  const stripLock = !locked && (
+    <span className={cx(s.stripLock, !reveal.on && titleActionFadeHidden)}>
       <button
         type="button"
         className={settingsBtn}
@@ -550,15 +550,15 @@ export function ViewTile({
     <button
       ref={dropRef}
       type="button"
-      className={cx(segment, segmentActive, segmentDrop)}
+      className={cx(viewPill, viewPillActive, viewPillDrop)}
       style={strokeStyle(view)}
       onClick={() => setListOpen(true)}
     >
-      <Icon name={viewGlyph(view)} size={SEGMENT_ICON} />
+      <Icon name={viewGlyph(view)} size={VIEW_PILL_ICON} />
       <span className={cx(labelSlot, !labeled && labelSlotHidden)}>
         <span className={labelText}>{view.name}</span>
       </span>
-      <Icon name="chevrons-up-down" size="control" className={segmentTrail} />
+      <Icon name="chevrons-up-down" size="control" className={viewPillTrail} />
     </button>
   ) : (
     <>
@@ -628,22 +628,18 @@ export function ViewTile({
             </div>
           </div>
         </div>
-        <div className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)} {...hoverProps}>
+        <div className={cx(s.stripSpace, !stripOpen && s.stripSpaceHidden)} {...hoverProps}>
           <div className={s.spaceInner}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-            <div
-              className={s.switcherRow}
-              data-reveal-host=""
-              onContextMenu={(e) => void areaMenu(e)}
-            >
+            <div className={s.stripRow} data-reveal-host="" onContextMenu={(e) => void areaMenu(e)}>
               {switcher}
               <span className={spacer} />
               {!titleShown && configButton}
-              {bandLock}
+              {stripLock}
             </div>
           </div>
         </div>
-        <div className={cx(s.body, !bandOpen && s.bodyFlush, 'over-scroll')} {...bodyHover}>
+        <div className={cx(s.body, !stripOpen && s.bodyFlush, 'over-scroll')} {...bodyHover}>
           <div
             key={index}
             className={s.slideWrap}

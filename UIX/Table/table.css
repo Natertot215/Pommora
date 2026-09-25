@@ -113,7 +113,7 @@
 /* Absolutely placed so they add no track width; the radius reuses the bar width so the thin caps fully round. */
 .col-header:not(:last-child)::after,
 .col-header:first-child::before,
-.table-segment::after {
+.table-divider::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -122,10 +122,10 @@
   width: var(--heading-segment-width);
   height: var(--heading-segment-height);
   border-radius: var(--heading-segment-width);
-  background: var(--segment-tone, var(--heading-segment));
+  background: var(--heading-segment);
   pointer-events: none;
 }
-.table-segment {
+.table-divider {
   position: relative;
 }
 .col-header:first-child::before {

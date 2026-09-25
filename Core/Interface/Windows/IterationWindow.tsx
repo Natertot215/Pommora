@@ -1,5 +1,5 @@
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
-import { WindowBase } from '@pommora/uix/Windows/window-base'
+import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { useSession } from '../../Session/store'
 
 /** A blank floating surface summoned by its chord (App.tsx) for previewing a component in isolation. */

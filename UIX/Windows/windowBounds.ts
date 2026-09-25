@@ -1,5 +1,5 @@
-import type { WindowBounds } from './window-base'
-import type { WindowPanelBounds } from './window-panel'
+import type { WindowBounds } from './WindowBase'
+import type { WindowPanelBounds } from './WindowPanel'
 
 // KNOB — the window's opening size and resize floor. Exported so the showcase's replica reads the real numbers.
 export const SETTINGS_WIN: WindowBounds = { min: { w: 620, h: 420 }, def: { w: 850, h: 600 } }

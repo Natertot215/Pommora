@@ -1,5 +1,5 @@
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
-import { WindowBase } from '@pommora/uix/Windows/window-base'
+import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { footerLabel } from '../Actions/toggleLabels'
 import { Subfield } from '../Interface/Subfield/Subfield'
 import { shellRegion, useWindowGeometry } from '../Interface/Windows/useWindowGeometry'

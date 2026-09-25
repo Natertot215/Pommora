@@ -9,7 +9,7 @@ import {
   type MenuSection,
   pickerRow,
 } from '@pommora/uix/Menus'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { lockLabel } from '../Actions/toggleLabels'

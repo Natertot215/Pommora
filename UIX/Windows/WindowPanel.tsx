@@ -1,8 +1,8 @@
 import { useLayoutEffect, useState } from 'react'
-import { GlassPane } from '../Glass/glass-pane'
+import { GlassPane } from '../Glass/GlassPane'
 import { paneSlide } from '../Animations/paneSlide'
 import { cx } from '../Utilities/cx'
-import { useResizeFrame } from '../Interactions/ResizeFrame'
+import { useResizable } from '../Interactions/useResizable'
 
 export interface WindowPanelBounds {
   min: number
@@ -45,7 +45,7 @@ export function WindowPanel({
     onWidthChange?.(width)
   }, [width, onWidthChange])
 
-  const frame = useResizeFrame({
+  const resize = useResizable({
     rect: { w: width },
     min: { w: bounds.min },
     max: { w: bounds.max },
@@ -55,7 +55,7 @@ export function WindowPanel({
       setWidth(next.w)
     },
   })
-  const resizing = frame.active !== null
+  const resizing = resize.active !== null
   useLayoutEffect(() => {
     onResizingChange?.(resizing)
   }, [resizing, onResizingChange])
@@ -76,7 +76,7 @@ export function WindowPanel({
       {open && (
         <div
           className={cx('resize-strip', `window-panel-${side}-${mode}-resize`)}
-          onPointerDown={frame.start(side === 'left' ? 'e' : 'w')}
+          onPointerDown={resize.start(side === 'left' ? 'e' : 'w')}
           aria-hidden="true"
         />
       )}

@@ -1,7 +1,7 @@
 import { useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { cx } from '../Utilities/cx'
 import { usePointerGesture } from './gesture'
-import './resize-frame.css'
+import './resizable.css'
 import { clamp } from '../Utilities/clamp'
 
 export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
@@ -21,7 +21,7 @@ export const ALL_EDGES: readonly ResizeEdge[] = ['n', 's', 'e', 'w', 'nw', 'ne',
 
 const MOVE_KEEP: Size = { w: 80, h: 40 }
 
-export interface ResizeFrameSpec<R extends Partial<Rect>> {
+export interface ResizableSpec<R extends Partial<Rect>> {
   /** Read at press when given as a function — for a box whose size is measured, not held. */
   rect: R | (() => R)
   min?: Partial<Size>
@@ -33,14 +33,14 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
   onChange: (next: R, phase: ResizePhase, grip: ResizeGrip) => void
 }
 
-interface ResizeFrameHandle {
+interface ResizableHandle {
   start: (grip: ResizeGrip) => (e: ReactPointerEvent<HTMLElement>) => void
   active: ResizeGrip | null
   /** Rendered as direct children of the box they resize. */
   edges: (edges: readonly ResizeEdge[]) => React.JSX.Element[]
 }
 
-/** A grab's worth of the frame is kept on screen. */
+/** A grab's worth of the box is kept on screen. */
 export function onScreen(r: Rect): Rect {
   const w = Math.min(r.w, window.innerWidth)
   const h = Math.min(r.h, window.innerHeight)
@@ -53,7 +53,7 @@ export function onScreen(r: Rect): Rect {
 }
 
 function pull<R extends Partial<Rect>>(
-  spec: ResizeFrameSpec<R>,
+  spec: ResizableSpec<R>,
   from: R,
   grip: ResizeGrip,
   dx: number,
@@ -92,10 +92,8 @@ function pull<R extends Partial<Rect>>(
   return next
 }
 
-/** The host owns the rect; the frame clamps, reports each move, and hands back the start rect on Escape. */
-export function useResizeFrame<R extends Partial<Rect>>(
-  spec: ResizeFrameSpec<R>,
-): ResizeFrameHandle {
+/** The host owns the rect; the hook clamps, reports each move, and hands back the start rect on Escape. */
+export function useResizable<R extends Partial<Rect>>(spec: ResizableSpec<R>): ResizableHandle {
   const begin = usePointerGesture()
   const [active, setActive] = useState<ResizeGrip | null>(null)
 

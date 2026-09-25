@@ -3,7 +3,7 @@ import { vars } from '../Theme/color.css'
 import { size } from '../Theme/theme-vars.css'
 import { focusRing } from '../Fields/fieldRing'
 import { input } from '../Fields/fields.css'
-import { rowShell, separatorLine } from '../Menus/menu-base.css'
+import { rowShell, separatorLine } from '../Menus/menu-row.css'
 
 export const CELL = 34
 export const COLS = 5
