@@ -108,7 +108,7 @@ let mutateSpy: ReturnType<typeof vi.fn>
 let saveSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  mutateSpy = vi.fn(async () => true)
+  mutateSpy = vi.fn(async () => ({}))
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'view_1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,

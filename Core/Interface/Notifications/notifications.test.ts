@@ -7,33 +7,29 @@ import {
   persist,
   reportRefusal,
 } from './notifications'
-import { undoValue } from '../../Session/undo'
+import { resetUndo, undoValue } from '../../Session/undo'
 
-const cmdZ = (): boolean => undoValue(null)
-
-beforeEach(() => {
-  while (cmdZ()) {}
-})
+beforeEach(resetUndo)
 
 describe('a delete notification', () => {
   it('offers no Undo when the delete left nothing to restore', () => {
     notifyDeleted('Ideas')
     expect(currentNotification()?.action).toBeUndefined()
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('restores once whether the label or the chord asks', () => {
     const undo = vi.fn()
     notifyDeleted('Ideas', undo)
     void currentNotification()?.action?.run()
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
     expect(undo).toHaveBeenCalledTimes(1)
   })
 
   it('takes the chord and clears the label it spent', () => {
     const undo = vi.fn()
     notifyDeleted('Ideas', undo)
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(undo).toHaveBeenCalledTimes(1)
     expect(currentNotification()).toBeNull()
     void currentNotification()?.action?.run()
@@ -46,7 +42,7 @@ describe('a delete notification', () => {
     notifyDeleted('Older', older)
     notifyDeleted('Newer', newer)
     void currentNotification()?.action?.run()
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(newer).toHaveBeenCalledTimes(1)
     expect(older).toHaveBeenCalledTimes(1)
   })

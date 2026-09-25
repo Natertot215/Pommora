@@ -2,11 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { groupUndo, pushUndo, resetUndo, undoValue } from './undo'
 
-const cmdZ = (target: EventTarget | null = null): boolean => undoValue(target)
-
-beforeEach(() => {
-  while (cmdZ()) {}
-})
+beforeEach(resetUndo)
 
 describe('pushUndo', () => {
   it('pops the most recent entry first', () => {
@@ -19,8 +15,8 @@ describe('pushUndo', () => {
       order.push('second')
       return true
     })
-    expect(cmdZ()).toBe(true)
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(order).toEqual(['second', 'first'])
   })
 
@@ -29,7 +25,7 @@ describe('pushUndo', () => {
     pushUndo(applied)
     pushUndo(() => false)
     pushUndo(() => false)
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(applied).toHaveBeenCalledTimes(1)
   })
 
@@ -37,14 +33,14 @@ describe('pushUndo', () => {
     const applied = vi.fn(() => true)
     pushUndo(applied)
     resetUndo()
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
     expect(applied).not.toHaveBeenCalled()
   })
 
   it('leaves the keypress alone when nothing applies', () => {
     pushUndo(() => false)
-    expect(cmdZ()).toBe(false)
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('ignores a keypress inside a text surface', () => {
@@ -52,15 +48,15 @@ describe('pushUndo', () => {
     pushUndo(revert)
     const input = document.createElement('input')
     document.body.append(input)
-    expect(cmdZ(input)).toBe(false)
+    expect(undoValue(input)).toBe(false)
     const editor = document.createElement('div')
     editor.className = 'cm-editor'
     const inner = document.createElement('span')
     editor.append(inner)
     document.body.append(editor)
-    expect(cmdZ(inner)).toBe(false)
+    expect(undoValue(inner)).toBe(false)
     expect(revert).not.toHaveBeenCalled()
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
   })
 })
 
@@ -74,14 +70,14 @@ describe('groupUndo', () => {
           return true
         })
     })
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(order).toEqual(['c', 'b', 'a'])
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('pushes nothing when the run collected no reverts', () => {
     groupUndo(() => {})
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('applies when any member applies, and is stale when none do', () => {
@@ -89,11 +85,11 @@ describe('groupUndo', () => {
       pushUndo(() => false)
       pushUndo(() => true)
     })
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     groupUndo(() => {
       pushUndo(() => false)
       pushUndo(() => false)
     })
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 })

@@ -1,7 +1,16 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest'
-import { askClearOption, askDeleteView, askDestroyProperty, askRemoveOption } from './confirmations'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  askClearOption,
+  askDeleteView,
+  askDestroyProperty,
+  askRemoveOption,
+  confirmDelete,
+} from './confirmations'
 import { useSession } from '../../Session/store'
+import { currentNotification } from '../Notifications/notifications'
+import { stubDialer } from '../../vitest.setup'
+import { ok } from '@pommora/core/Contract/result'
 
 const asked: string[] = []
 
@@ -60,5 +69,18 @@ describe('what the Confirm Before Deletion switch governs', () => {
     await askDeleteView('tile')
     expect(asked[0]).toContain('from the container')
     expect(asked[1]).toContain('from the tile')
+  })
+})
+
+describe('a confirmed delete', () => {
+  it('offers an Undo that restores the bundle the delete answered with', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
+    })
+    const mutate = vi.fn(async () => ({ trashed: { bundlePath: '.trash/b1' } }))
+    useSession.setState({ mutate: mutate as never })
+    await confirmDelete({ path: 'Notes/A.md', kind: 'page', title: 'A' })
+    await currentNotification()?.action?.run()
+    expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
   })
 })

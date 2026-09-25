@@ -50,13 +50,10 @@ import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
-import { createMenuItems, createdRequest } from '../../Actions/createMenu'
 
 async function createFromMenu(item: Creator): Promise<void> {
-  const items = [item]
-  const action = await popMenu(createMenuItems(items))
-  const req = action && createdRequest(items, action)
-  if (req) await useSession.getState().createNamed(req, 'sidebar')
+  if (await popMenu([{ label: item.label, action: 'create' }]))
+    await useSession.getState().createNamed(item.req, 'sidebar')
 }
 
 function showContextFor(
@@ -346,9 +343,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     })
   }
   const newCollectionMenu = (): void => {
-    const label = 'New Collection'
     void createFromMenu({
-      label,
+      label: 'New Collection',
       req: { op: 'createContainer', parentPath: '', kind: 'collection', name: DEFAULT_NEW_NAME },
     })
   }

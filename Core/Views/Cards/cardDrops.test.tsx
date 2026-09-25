@@ -77,7 +77,7 @@ mountEachTest((h, r) => {
 let mutateSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  mutateSpy = vi.fn(async () => true)
+  mutateSpy = vi.fn(async () => ({}))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
     'views:save': async () => ({ ok: true, value: { id: 'view_1' } }),

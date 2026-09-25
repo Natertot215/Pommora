@@ -53,7 +53,7 @@ const clickRow = async (name: string): Promise<void> => {
 }
 
 beforeEach(() => {
-  mutate = vi.fn(async () => true)
+  mutate = vi.fn(async () => ({}))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'views:save': vi.fn(async () => ({ ok: true, value: { id: 'view_a' } })),
   })

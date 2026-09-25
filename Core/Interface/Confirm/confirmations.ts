@@ -5,13 +5,6 @@ import { useSession } from '../../Session/store'
 import { notifyDeleted } from '../Notifications/notifications'
 import { host } from '../../Platform/dialer'
 
-/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
-export const notifyTrashed = (title: string, bundlePath?: string): void =>
-  notifyDeleted(
-    title,
-    bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
-  )
-
 const DELETE_FACTS_FALLBACK = { trashMode: DEFAULT_TRASH_MODE, permanentDelete: false }
 
 export interface ConfirmRequest {
@@ -35,6 +28,13 @@ const ALWAYS_ASKS: ReadonlySet<MutableKind> = new Set<MutableKind>([
 const waived = (kind?: MutableKind): boolean =>
   (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
   useSession.getState().personalization.confirmDeletion === false
+
+/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
+export const notifyTrashed = (title: string, bundlePath?: string): void =>
+  notifyDeleted(
+    title,
+    bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
+  )
 
 export const confirmDelete = async (target: {
   path: string

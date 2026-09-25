@@ -303,7 +303,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     })
     for (const t of covered) {
       dropCacheOwner(t.id)
-      // Pins survive the re-key (unlike the warm cache, which is dropped): a graduated tab keeps its pins under the pinned id.
+      // Pins survive the re-key (unlike the warm cache, which is dropped): a graduated tab keeps its pins and search under the pinned id.
       if (t.target.kind !== 'newtab') retagTab(t.id, pinTabId(t.target))
     }
     if (activeCovered && activeCovered.target.kind !== 'newtab') {
@@ -313,8 +313,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     persistTabs()
   }
 
-  // False once a newer select superseded the cold fetch, which leaves the slots to that select.
-  const showPage = async (target: PageTarget): Promise<boolean> => {
+  const landPage = async (target: PageTarget): Promise<boolean> => {
     const land = (slot: PageSlot): void =>
       set((s) => ({ selection: target, pages: { ...s.pages, [target.id]: slot } }))
     const loaded = get().pages[target.id]
@@ -474,7 +473,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         (t) => t.target.kind !== 'newtab' && navKey(t.target) === navKey(target),
       )
       const tab: Tab = existing ?? { id: makeTabId(), target, navStack: [target], navIndex: 0 }
-      // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins on a dead tab), and BEFORE unpinTarget — its setPinned scrub drops the vanishing pin: id's pins, so the migration must already have moved them off it.
+      // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins and search on a dead tab), and BEFORE unpinTarget — its setPinned scrub drops the vanishing pin: id's pins and search, so the migration must already have moved them off it.
       retagTab(pinId, tab.id)
       get().unpinTarget(navKey(target))
       if (!existing) set((s) => ({ tabs: insertUnpinned(s.tabs, s.activeTabId, tab) }))
@@ -539,7 +538,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       listed.sort((a, b) => (pos.get(navKey(a)) ?? 0) - (pos.get(navKey(b)) ?? 0))
       let i = 0
       const next = s.recents.map((r) => (pos.has(navKey(r)) ? listed[i++] : r))
-      if (next.every((r, i) => r === s.recents[i])) return
+      if (next.every((r, at) => r === s.recents[at])) return
       commitRecents(next)
     },
 
@@ -612,7 +611,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           break
         }
         case 'page':
-          if (!(await showPage({ kind: 'page', id: target.id, path: target.path }))) return
+          if (!(await landPage({ kind: 'page', id: target.id, path: target.path }))) return
           break
       }
       pruneSlots()

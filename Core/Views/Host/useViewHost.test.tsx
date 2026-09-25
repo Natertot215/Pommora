@@ -129,7 +129,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: { collections: [], contexts: [], personalization: {} } as never,
-    mutate: vi.fn(async () => true) as never,
+    mutate: vi.fn(async () => ({})) as never,
     activeTabId: 't1',
     viewSearch: {},
   })
@@ -476,7 +476,7 @@ describe('settleOrders — a create composes with the live order', () => {
       mutate: vi.fn(async (_req: unknown, then?: (c: { id: string; path: string }) => void) => {
         n += 1
         then?.({ id: `p${n}`, path: `Col/New ${n}.md` })
-        return true
+        return {}
       }) as never,
     })
   })
@@ -539,7 +539,7 @@ describe('the root seat', () => {
   it('the standing ghost claims its create for the flight, so a double click mints one page', async () => {
     const empty = collection()
     ;(empty as unknown as { pages: unknown[] }).pages = []
-    useSession.setState({ mutate: vi.fn(() => new Promise<boolean>(() => {})) as never })
+    useSession.setState({ mutate: vi.fn(() => new Promise<unknown>(() => {})) as never })
     await mountSeat(empty)
     await clickGhost('.ghost-row')
     await clickGhost('.ghost-row')

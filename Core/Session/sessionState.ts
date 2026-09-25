@@ -11,7 +11,7 @@ import type { WindowSlice } from './windowSlice'
 import type { RenameSlice } from './renameSlice'
 import type { ViewSearchSlice } from './viewSearchSlice'
 
-/** Every slice sees the whole state, so features react to each other without private channels: any slice reads and may write any field, each slice owns its own reset, and the per-Nexus seeding lives in `nexusSlice.load`. */
+/** Every slice sees the whole state, so features react to each other without private channels: any slice reads and may write any field, and `nexusSlice` seeds a Nexus's state in `load` and clears it through each slice's reset. */
 export type SessionState = NexusSlice &
   NavigationSlice &
   WindowSlice &

@@ -20,7 +20,13 @@ import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
 import { captureCache, readCache } from '../Navigation/warmTabs'
-import { clearCache, readBodyBase, readPageDetail, setBodyBase } from './pageDetailCache'
+import {
+  clearCache,
+  dropPageDetail,
+  readBodyBase,
+  readPageDetail,
+  setBodyBase,
+} from './pageDetailCache'
 import { schedulePageSave, scheduleTabsSave } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
@@ -210,11 +216,33 @@ describe('store — warm tabs (B-2/B-3)', () => {
     expect(openPage()).toHaveBeenCalledWith('/a-renamed')
   })
 
-  it('a landed page slot seeds the shared detail cache, so a panel on that path reads without a fetch', async () => {
+  it('a cold page fetch seeds the shared detail cache, so a panel on that path reads without a fetch', async () => {
     openPage().mockImplementation(async () => ok(detail('a')))
     seed({ tabs: [uTab('t1', pg('a'), [pg('a')], 0)], activeTabId: 't1' })
     await useSession.getState().select(pg('a'), { record: false })
     expect(readPageDetail(pg('a').path)).toEqual(detail('a'))
+  })
+
+  it('a reload refreshes the shown slot and the shared cache while keeping the typed body', async () => {
+    openPage().mockImplementation(async () => ok(detail('a')))
+    seed({
+      selection: pg('a'),
+      pages: { a: { status: 'ready', target: pg('a'), detail: detail('a'), body: 'typed' } },
+    })
+    await useSession.getState().reloadPage()
+    expect(shownPage(useSession.getState())).toMatchObject({ status: 'ready', body: 'typed' })
+    expect(readPageDetail(pg('a').path)).toEqual(detail('a'))
+  })
+
+  it('a cold fetch a drop disowned mid-flight still lands its slot but leaves the cache unseeded', async () => {
+    const resolveB = pauseFetchOfB()
+    seed({ tabs: [uTab('t1', pg('b'), [pg('b')], 0)], activeTabId: 't1' })
+    const landing = useSession.getState().select(pg('b'), { record: false })
+    dropPageDetail(pg('b').path)
+    resolveB(ok(detail('b')))
+    await landing
+    expect(shownDetail(useSession.getState())?.id).toBe('b')
+    expect(readPageDetail(pg('b').path)).toBeUndefined()
   })
 
   it('a stale cold fetch resolving after a warm switch-back never clobbers the shown page', async () => {

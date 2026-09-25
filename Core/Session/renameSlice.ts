@@ -217,7 +217,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   },
 
   newPage: async () => {
-    const { tree, selection } = get()
+    const { tree, selection, personalization } = get()
     if (!tree) return
     let parentPath: string | null = null
     if (selection.kind === 'collection' || selection.kind === 'set')
@@ -225,13 +225,10 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     else if (selection.kind === 'page') parentPath = relDirname(selection.path)
     if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
     if (parentPath === null) return
-    const req = placeNew(
-      tree,
-      { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME },
-      get().personalization,
-    )
-    await get().mutate(req, (created) =>
-      get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
+    await get().mutate(
+      placeNew(tree, { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, personalization),
+      (created) =>
+        get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
     )
   },
 

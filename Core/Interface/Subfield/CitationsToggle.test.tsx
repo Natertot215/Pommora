@@ -5,11 +5,15 @@ import { createRoot, type Root } from 'react-dom/client'
 import { CitationsToggle } from './CitationsToggle'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
+import { ok } from '@pommora/core/Contract/result'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 const written: [string, boolean | null][] = []
 ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-  'citations:set': (id: string, v: boolean | null) => void written.push([id, v]),
+  'citations:set': (id: string, v: boolean | null) => {
+    written.push([id, v])
+    return Promise.resolve(ok(null))
+  },
 })
 
 const CITED = 'body[^a] here\n\n[^a]: the citation'

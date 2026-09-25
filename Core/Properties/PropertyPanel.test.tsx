@@ -48,7 +48,7 @@ const spaceNode = (values?: Record<string, unknown>): unknown => ({
 const setTree = (values?: Record<string, unknown>, contextOrder?: string[]): void => {
   useSession.setState({
     assetMap: {} as never,
-    mutate: vi.fn(async () => true) as never,
+    mutate: vi.fn(async () => ({})) as never,
     tree: {
       nexus: { id: 'nx' },
       personalization: { defaultIcons: {} },

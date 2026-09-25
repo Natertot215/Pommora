@@ -5,7 +5,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
-import { groupUndo, undoValue } from '../Session/undo'
+import { groupUndo, resetUndo, undoValue } from '../Session/undo'
 
 const schema: PropertyDefinition[] = [
   {
@@ -28,8 +28,6 @@ const rowOf = (fm: Record<string, unknown>): ViewRow => ({
   modifiedAt: null,
 })
 
-const cmdZ = (): boolean => undoValue(null)
-
 let apply: Mock<ValueWriter['apply']>
 let mutate: Mock<ValueWriter['mutate']>
 let row: ViewRow
@@ -42,7 +40,7 @@ beforeEach(() => {
   row = rowOf({ id: 'page1', Tag: ['red'] })
   live = { schema, mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
   writer = { current: live }
-  while (cmdZ()) {}
+  resetUndo()
 })
 
 describe('assignValue', () => {
@@ -70,7 +68,7 @@ describe('assignValue', () => {
       { kind: 'select', value: 'blue' },
     )
     row = rowOf({ id: 'page1', Tag: ['blue'] })
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith(
       'page1',
       { id: 'page1', Tag: ['red'] },
@@ -93,7 +91,7 @@ describe('assignValue', () => {
       { kind: 'select', value: 'blue' },
     )
     row = rowOf({ id: 'page1', Tag: ['blue'] })
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything())
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'setProperty',
@@ -101,7 +99,7 @@ describe('assignValue', () => {
       propertyId: 'prop_tag',
       value: null,
     })
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('patches the live row, not the one the caller captured', () => {
@@ -150,7 +148,7 @@ describe('assignValue', () => {
     assignValue(writer, row, { id: 'prop_tag', kind: 'property' }, null)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('a revert whose row is gone writes nothing and drains', async () => {
@@ -163,7 +161,7 @@ describe('assignValue', () => {
     apply.mockClear()
     mutate.mockClear()
     live.rowOf = () => undefined
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
   })
@@ -176,7 +174,7 @@ describe('assignValue', () => {
       { id: 'prop_tag', kind: 'property' },
       { kind: 'select', value: 'blue' },
     )
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 
   it('a sweep undoes as one step, even though its writes land later', async () => {
@@ -196,8 +194,8 @@ describe('assignValue', () => {
     })
     await Promise.all(writes)
     mutate.mockClear()
-    expect(cmdZ()).toBe(true)
+    expect(undoValue(null)).toBe(true)
     expect(mutate).toHaveBeenCalledTimes(2)
-    expect(cmdZ()).toBe(false)
+    expect(undoValue(null)).toBe(false)
   })
 })

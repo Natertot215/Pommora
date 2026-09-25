@@ -124,7 +124,7 @@ let contextMenuSpy: ReturnType<typeof vi.fn>
 let channels: Record<string, unknown>
 
 beforeEach(() => {
-  mutateSpy = vi.fn(async () => true)
+  mutateSpy = vi.fn(async () => ({}))
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   selectSpy = vi.fn(async () => {})
   contextMenuSpy = vi.fn(async () => null)
@@ -459,7 +459,7 @@ describe('band reparent', () => {
   })
 
   it('a FAILED moveSet commits nothing — no phantom group_order, no optimistic reorder', async () => {
-    mutateSpy.mockImplementation(async () => false)
+    mutateSpy.mockImplementation(async () => null)
     await mountTable(structuralSource())
     await dragBand(2, 12)
     await drop()
@@ -469,7 +469,7 @@ describe('band reparent', () => {
   })
 
   it('a persist landing during the reparent round-trip is not clobbered by the deferred commit', async () => {
-    let resolveMove: (v: boolean) => void = () => {}
+    let resolveMove: (v: unknown) => void = () => {}
     mutateSpy.mockImplementation(
       () =>
         new Promise((r) => {
@@ -486,7 +486,7 @@ describe('band reparent', () => {
     })
     const collapsedAtToggle = (saveSpy.mock.calls.at(-1)?.[2] as SavedView).collapsed_groups
     await act(async () => {
-      resolveMove(true)
+      resolveMove({})
     })
     const final = lastSavedView()
     expect(final.group_order).toEqual(['sA', 'sA1', 'sB'])

@@ -127,7 +127,7 @@ let openExternalSpy: ReturnType<typeof vi.fn>
 let channels: Record<string, unknown>
 
 beforeEach(() => {
-  mutateSpy = vi.fn(async () => true)
+  mutateSpy = vi.fn(async () => ({}))
   selectSpy = vi.fn(async () => {})
   openExternalSpy = vi.fn(async () => {})
   channels = {

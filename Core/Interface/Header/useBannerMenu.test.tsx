@@ -143,9 +143,11 @@ describe('useBannerMenu', () => {
   it('onRepick adopts the source through setBanner', async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({})
     await mount(<Probe />)
+    let adopted: string | undefined
     await act(async () => {
-      await editor().onRepick?.('/abs/New.png')
+      adopted = await editor().onRepick?.('/abs/New.png')
     })
+    expect(adopted).toBe('[[Picked.png]]')
     expect(mutate).toHaveBeenCalledWith({
       op: 'setBanner',
       path: 'Notes/A.md',
