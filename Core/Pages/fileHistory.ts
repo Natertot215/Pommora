@@ -4,6 +4,7 @@ import { errText, fail, ok, type Result, fault } from '../Contract/result'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { bodyHash, splitEnvelope } from '../Files/pageFile'
+import { utf8 } from '../Files/utf8'
 import {
   captureStore,
   type SnapshotSource,
@@ -31,8 +32,7 @@ async function capture(
 ): Promise<boolean> {
   try {
     if (kindOf(pageId) !== 'page') return false
-    if (source === 'edit' && new TextEncoder().encode(text).length > SNAPSHOT_MAX_BYTES)
-      return false
+    if (source === 'edit' && utf8(text).length > SNAPSHOT_MAX_BYTES) return false
     const now = Date.now()
     const { enabled, intervalMs } = await readFileHistoryConfig(root)
     if (!enabled) return false

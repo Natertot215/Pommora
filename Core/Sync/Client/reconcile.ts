@@ -79,7 +79,10 @@ export async function reconcile(session: Session): Promise<void> {
   const admits = manifestAdmits(session.scope)
   const log = await readLog(session)
   if (log === null)
-    return setStatus(session.ctx, { state: 'error', why: 'The hub did not answer the change log.' })
+    return setStatus(session.host, {
+      state: 'error',
+      why: 'The server did not answer the change log.',
+    })
   const local = await adoptHubCase(session, log.heads)
 
   const toPush: string[] = []
@@ -98,7 +101,10 @@ export async function reconcile(session: Session): Promise<void> {
     if (head.kind === 'delete' || head.path !== rel) continue
     if (here.has(rel) || readBase(rel) !== null || !admits(rel) || !holdable(rel)) continue
     if ((await landRemote(session, head)) === 'missing')
-      return setStatus(session.ctx, { state: 'error', why: `The hub holds no bytes for ${rel}.` })
+      return setStatus(session.host, {
+        state: 'error',
+        why: `The server holds no bytes for ${rel}.`,
+      })
   }
   setCursor(session, log.top)
 }

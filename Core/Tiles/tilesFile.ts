@@ -15,6 +15,7 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { newId } from '../Nexus/ids'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
+import { utf8 } from '../Files/utf8'
 import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
@@ -211,7 +212,7 @@ export async function writeMarkdownTile(
   return machine().lock(file, async () => {
     const held = await machine().readText(file)
     if (held !== null && machine().sha256Hex(held) !== baseHash) {
-      await captureLoser(root, relative(root, file), new TextEncoder().encode(body), 'merge-lost')
+      await captureLoser(root, relative(root, file), utf8(body), 'merge-lost')
       return { stale: true }
     }
     await atomicWriteFile(file, body)

@@ -1,4 +1,5 @@
 import type { HostContext, HostDevice } from '../../Contract/handlers'
+import { errText } from '../../Contract/result'
 import { machine } from '../../Platform/machine'
 import { blobPath, canonicalString, ROUTES } from '../Contract/canonical'
 import type { RouteTable, SignedHeaders } from '../Contract/wire'
@@ -10,6 +11,7 @@ export interface SyncHost {
   device: HostDevice
   transport: HostContext['transport']
   secrets: HostContext['secrets']
+  push: HostContext['push']
 }
 
 export interface SyncTarget {
@@ -20,7 +22,7 @@ export interface SyncTarget {
 export function syncHost(ctx: HostContext): SyncHost | null {
   const device = ctx.device
   if (device === null) return null
-  return { device, transport: ctx.transport, secrets: ctx.secrets }
+  return { device, transport: ctx.transport, secrets: ctx.secrets, push: ctx.push }
 }
 
 export type Refusal = { error: string } & Record<string, unknown>
@@ -29,6 +31,9 @@ export type CallOutcome<K extends keyof RouteTable> =
   | { status: 200; reply: RouteTable[K]['reply']; refusal?: never; error?: never }
   | { status: 0; reply: null; refusal?: never; error: string }
   | { status: number; reply: null; refusal?: Refusal; error?: never }
+
+export const answered = (outcome: { status: number; error?: string }): string =>
+  outcome.error ?? `The server answered ${outcome.status}.`
 
 async function signedHeaders(
   host: SyncHost,
@@ -85,7 +90,7 @@ export async function call<K extends keyof RouteTable>(
       return { status: 200, reply: JSON.parse(reply.body) as RouteTable[K]['reply'] }
     return { status: reply.status, reply: null, refusal: refusalOf(reply.body) }
   } catch (e) {
-    return { status: 0, reply: null, error: String(e) }
+    return { status: 0, reply: null, error: errText(e) }
   }
 }
 
@@ -111,7 +116,7 @@ export async function putBlob(
     })
     return { status: reply.status }
   } catch (e) {
-    return { status: 0, error: String(e) }
+    return { status: 0, error: errText(e) }
   }
 }
 

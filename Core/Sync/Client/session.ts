@@ -8,17 +8,16 @@ import { readWatchScope } from '../../Settings/settings'
 import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
 import { readAllBases } from './base'
-import { call, type SyncHost, syncHost } from './call'
+import { answered, call, type SyncHost, syncHost } from './call'
 import { forgetKeys, loadRing } from './keyring'
 import { applyPull, LONG_POLL_MS, type PullOutcome, pullOnce, pullWait, setCursor } from './pull'
-import { answered, pushDirty, pushRename } from './push'
+import { pushDirty, pushRename } from './push'
 import { admittedPaths, reconcile, rescope } from './reconcile'
 import { currentStatus, setStatus } from './status'
 import { dirtyPending, installTap, uninstallTap } from './tap'
 
 export interface Session {
   host: SyncHost
-  ctx: HostContext
   root: string
   nexusId: string
   target: SyncScope
@@ -50,14 +49,14 @@ function run<T>(work: () => Promise<T>): Promise<T> {
 
 function settled(self: Session): void {
   if (session !== self) return
-  if (currentStatus().state !== 'error') setStatus(self.ctx, { state: 'idle', lastAt: Date.now() })
+  if (currentStatus().state !== 'error') setStatus(self.host, { state: 'idle', lastAt: Date.now() })
 }
 
 function working<T>(self: Session, work: () => Promise<T>): Promise<T | undefined> {
-  setStatus(self.ctx, { state: 'syncing' })
+  setStatus(self.host, { state: 'syncing' })
   return run(async () => (session === self ? await work() : undefined))
     .catch((e: unknown) => {
-      setStatus(self.ctx, { state: 'error', why: errText(e) })
+      setStatus(self.host, { state: 'error', why: errText(e) })
       return undefined
     })
     .finally(() => settled(self))
@@ -65,9 +64,9 @@ function working<T>(self: Session, work: () => Promise<T>): Promise<T | undefine
 
 async function revoked(self: Session): Promise<void> {
   if (session !== self) return
-  await stopSession(self.ctx)
+  await stopSession(self.host)
   await forgetKeys(self.host, self.nexusId)
-  setStatus(self.ctx, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
+  setStatus(self.host, { state: 'off', reason: 'revoked', why: 'This device was revoked.' })
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((wake) => setTimeout(wake, ms))
@@ -78,7 +77,7 @@ async function polled(self: Session): Promise<PullOutcome> {
     if (waited.kind !== 'reply') return waited.outcome
     return session === self ? await run(() => applyPull(self, waited.reply)) : 'idle'
   } catch (e) {
-    setStatus(self.ctx, { state: 'error', why: errText(e) })
+    setStatus(self.host, { state: 'error', why: errText(e) })
     return 'error'
   }
 }
@@ -112,7 +111,6 @@ async function pulling(self: Session): Promise<void> {
 }
 
 async function begin(
-  ctx: HostContext,
   host: SyncHost,
   root: string,
   nexusId: string,
@@ -124,7 +122,6 @@ async function begin(
   if (token !== generation) return
   const self: Session = {
     host,
-    ctx,
     root,
     nexusId,
     target: binding,
@@ -165,7 +162,6 @@ async function begin(
 }
 
 async function withKeys(
-  ctx: HostContext,
   host: SyncHost,
   root: string,
   nexusId: string,
@@ -177,14 +173,14 @@ async function withKeys(
     retry = setTimeout(() => {
       if (token !== generation) return
       retry = null
-      void withKeys(ctx, host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS), token)
+      void withKeys(host, root, nexusId, binding, Math.min(delay * 2, LAST_RETRY_MS), token)
     }, delay)
   }
   try {
     const outcome = await call(host, binding, 'info', { nexusId })
     if (token !== generation) return
     if (outcome.status === 404) {
-      setStatus(ctx, {
+      setStatus(host, {
         state: 'off',
         reason: 'pending',
         why: 'Waiting for approval from another device.',
@@ -194,15 +190,15 @@ async function withKeys(
     const info = outcome.reply?.info ?? null
     const ring = await loadRing(host, nexusId, info, null)
     if (token !== generation) return
-    if (ring !== null) return await begin(ctx, host, root, nexusId, binding, ring, token)
+    if (ring !== null) return await begin(host, root, nexusId, binding, ring, token)
     if (info !== null) {
-      setStatus(ctx, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
+      setStatus(host, { state: 'off', reason: 'password', why: 'The Nexus password is needed.' })
       return
     }
-    setStatus(ctx, { state: 'off', reason: 'server', why: answered(outcome) })
+    setStatus(host, { state: 'off', reason: 'server', why: answered(outcome) })
     again()
   } catch (e) {
-    if (token === generation) setStatus(ctx, { state: 'error', why: errText(e) })
+    if (token === generation) setStatus(host, { state: 'error', why: errText(e) })
   }
 }
 
@@ -224,7 +220,7 @@ export async function startSession(ctx: HostContext, root: string, nexusId: stri
     })
     return
   }
-  await withKeys(ctx, host, root, nexusId, binding, FIRST_RETRY_MS, token)
+  await withKeys(host, root, nexusId, binding, FIRST_RETRY_MS, token)
 }
 
 export function stopSession(ctx: Pick<HostContext, 'push'>): Promise<void> {
