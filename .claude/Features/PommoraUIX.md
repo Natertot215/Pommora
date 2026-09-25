@@ -3,7 +3,7 @@
 
 The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. This document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. The composite shells built from it — the tile frame, the sidebar, the toolbar, the tab strip — are recorded in [[SurfacePM]], [[InterfacePM]], and [[NavigationPM]]. Values live in §Theme and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
-- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `UIX/Theme/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase page in `Dashboard/`; `UIX/Utilities/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
+- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `UIX/Theme/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase page in `Dashboard/`; `UIX/Utilities/` (`cx` · `clamp` · `pad` · `moveItem` · `tileMetrics`) is a runtime home with no catalog of its own.
 
 - **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
 
@@ -150,7 +150,7 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 
 #### Geometry
 
-**SOURCE:** `UIX/Theme/theme-vars.css.ts` · `Core/Interface/styles.css` · `UIX/Menus/menu-base.css.ts` · `UIX/Interactions/reveal-bar.css`
+**SOURCE:** `UIX/Theme/theme-vars.css.ts` · `UIX/Utilities/tileMetrics.ts` · `Core/Interface/styles.css` · `UIX/Menus/menu-base.css.ts` · `UIX/Interactions/reveal-bar.css`
 
 | Title             | Token                                                                                              | Value                                                                                                                                                                                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -261,6 +261,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Segment     | `segment`                                                      | The between-values pill — `--segment-width` / `--segment-color` override it.                                                                                                                                                             |
 | ProgressBar | `ProgressBar`                                                  | A determinate bar on the accent.                                                                                                                                                                                                         |
 | EyeToggle   | `EyeToggle`                                                    | The visibility eye — the current state's glyph at rest, the toggle previewed on hover.                                                                                                                                                   |
+| RenderBoundary | `RenderBoundary` | A region's guard against a drawing error: a throw inside draws nothing there, retried when `resetKey` changes, and the rest of the window keeps drawing. |
 | EmptyValue  | `EmptyValue`                                                   | The one "nothing here yet" mark for value slots.                                                                                                                                                                                         |
 
 The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`, and the `imageAspect.ts` aspect cache — are `Core/Assets/`, since each reaches the store for what it draws.
