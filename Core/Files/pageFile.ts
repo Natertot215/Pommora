@@ -17,15 +17,16 @@ import { machine } from '../Platform/machine'
 
 interface PageEnvelope {
   frontmatter: string
+  fenced: boolean
   body: string
 }
 
+// An empty block closes at its own fence, so a `---` rule below it stays in the body.
 export function splitEnvelope(content: string): PageEnvelope {
-  if (!content.startsWith('---')) return { frontmatter: '', body: content }
-  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/)
-  if (!m) return { frontmatter: '', body: content }
+  const m = content.match(/^---\r?\n(?:([\s\S]*?)\r?\n)??---[ \t]*\r?\n?/)
+  if (!m) return { frontmatter: '', fenced: false, body: content }
   const body = content.slice(m[0].length).replace(/^\r?\n/, '')
-  return { frontmatter: m[1], body }
+  return { frontmatter: m[1] ?? '', fenced: true, body }
 }
 
 export const bodyHash = (content: string): string =>
@@ -52,21 +53,26 @@ const mergeable = (doc: Document): boolean =>
 
 const serialized = (doc: Document): string | null => {
   try {
-    return doc.toString({ lineWidth: 0 })
+    return doc.contents === null || (isMap(doc.contents) && doc.contents.items.length === 0)
+      ? ''
+      : doc.toString({ lineWidth: 0 })
   } catch {
     return null
   }
 }
 
-export function frontmatterWritable(content: string): boolean {
+function frontmatterWritable(content: string): boolean {
   const doc = parseDocument(splitEnvelope(content).frontmatter)
   return mergeable(doc) && serialized(doc) !== null
 }
 
-/** `---\n<fm>---\n<body>` (fm must end in \n). No separator blank line — a note must never open with an empty line under Obsidian's properties panel; splitEnvelope still strips one legacy separator. */
+/** `---\n<fm>---\n<body>`. No separator blank line — a note must never open with an empty line under Obsidian's properties panel; splitEnvelope still strips one legacy separator. */
 export function assembleEnvelope(frontmatterYaml: string, body: string): string {
   const lf = (s: string): string => s.replaceAll('\r\n', '\n')
-  const fm = frontmatterYaml.endsWith('\n') ? frontmatterYaml : `${frontmatterYaml}\n`
+  const fm =
+    frontmatterYaml === '' || frontmatterYaml.endsWith('\n')
+      ? frontmatterYaml
+      : `${frontmatterYaml}\n`
   return `---\n${lf(fm)}---\n${lf(body)}`
 }
 
@@ -76,18 +82,18 @@ export function mergeFrontmatter(
   modeledKeys: readonly string[],
   body: string,
 ): string {
-  const { frontmatter } = splitEnvelope(existingContent)
+  const { frontmatter, fenced } = splitEnvelope(existingContent)
+  const envelope = (fm: string): string => (fenced || fm !== '' ? assembleEnvelope(fm, body) : body)
   // A body-only write never parses the frontmatter: an un-adopted note keeps exactly its own bytes, and a broken map is passed through rather than re-serialized from what it recovered.
-  if (modeledKeys.length === 0)
-    return frontmatter === '' ? body : assembleEnvelope(frontmatter, body)
+  if (modeledKeys.length === 0) return envelope(frontmatter)
   const doc = parseDocument(frontmatter)
   if (mergeable(doc)) {
     for (const key of modeledKeys) {
       if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
-      else doc.delete(key)
+      else if (doc.has(key)) doc.delete(key)
     }
     const out = serialized(doc)
-    if (out !== null) return assembleEnvelope(out, body)
+    if (out !== null) return envelope(out)
   }
   throw new Error(
     'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
