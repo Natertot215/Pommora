@@ -1,6 +1,7 @@
 // Entries ride raw through reads and writes so foreign tile types survive; `knownTile` types the ones this build understands.
 
 import { z } from 'zod'
+import { looseDecoder } from '../Files/decoders'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 
 const rawTileSchema = z.object({
@@ -81,12 +82,12 @@ const pageEntry = z.object({
   banner: boolField,
   title: boolField,
 })
-const embeddedView = z.object({
-  source_id: z.string().min(1),
-  config: z.unknown().optional(),
-})
-/** The config `id` is payload-local, minted at copy — never the source view's id. */
-export type EmbeddedView = z.infer<typeof embeddedView>
+const embeddedView = looseDecoder(
+  z.object({
+    source_id: z.string().min(1),
+    config: z.unknown().optional(),
+  }),
+)
 const viewEntry = z.object({
   ...chassisFields,
   type: z.literal('view'),
@@ -132,8 +133,7 @@ export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: 
     menuRows: [{ label: 'Source', source: 'pages' }],
   },
   view: {
-    // Elements are loose too — a strict element shape would strip nested foreign keys.
-    schema: viewEntry.extend({ views: z.array(embeddedView.loose()).min(1) }).loose(),
+    schema: viewEntry.loose(),
     label: 'View Tile',
     fileBacked: false,
     menuRows: [],
@@ -174,12 +174,13 @@ export interface DrillPickItem<T> {
 
 export type PagePickerItem = DrillPickItem<string>
 
-export interface ViewPick {
+interface ViewPick {
   source_id: string
   view_id?: string
-  custom?: boolean
 }
 export type ViewPickerItem = DrillPickItem<ViewPick>
+
+export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 
 export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)

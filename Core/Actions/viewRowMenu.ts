@@ -5,6 +5,7 @@ type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'duplicate' | 'del
 interface ViewRowMenuContext {
   titlesShown?: boolean
   deletable: boolean
+  duplicable: boolean
 }
 
 export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
@@ -15,7 +16,12 @@ export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAct
     ...(ctx.titlesShown === undefined
       ? []
       : [{ label: ctx.titlesShown ? 'Hide Titles' : 'Show Titles', action: 'titles' as const }]),
-    { label: 'Duplicate', action: 'duplicate', separatorBefore: true },
+    {
+      label: 'Duplicate',
+      action: 'duplicate',
+      separatorBefore: true,
+      disabled: !ctx.duplicable,
+    },
     { label: 'Delete', action: 'delete', disabled: !ctx.deletable },
   ]
 }

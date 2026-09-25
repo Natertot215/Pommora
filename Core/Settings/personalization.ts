@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { eachOf } from '../Files/decoders'
 import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
@@ -132,13 +133,7 @@ const stepped = (range: Ladder & { default: number }) =>
 const scaled = (fallback: number) => setting(bounded(SCALE), fallback, SCALE)
 const headingSize = (fallback: number) => setting(bounded(HEADING_SIZE), fallback)
 // Each entry stands on its own: a malformed one drops, and an empty list is the absent list.
-const nonEmptyStrings = () =>
-  setting(
-    z
-      .array(z.unknown())
-      .transform((a) => a.filter((v): v is string => typeof v === 'string' && v.length > 0))
-      .refine((a) => a.length > 0),
-  )
+const nonEmptyStrings = () => setting(eachOf(z.string().min(1)).refine((a) => a.length > 0))
 const iconsByKind = () =>
   setting(
     z

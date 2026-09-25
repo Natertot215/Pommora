@@ -4,8 +4,8 @@ import {
   type PagePickerItem,
   TILE_KINDS,
   type TileEntry,
+  type TilePick,
   type TileStyle,
-  type ViewPick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import { scaleRows, zoomStep } from './tileZoom'
@@ -20,9 +20,6 @@ type TileMenuAction =
   | `tile:zoom:${number}`
   | `tile:pick:${number}`
 
-// Rows name an index into `picks` because a menu row can't carry a view pick's three fields.
-type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
-
 export function tileMenuItems({
   entry,
   pageItems,
@@ -36,6 +33,7 @@ export function tileMenuItems({
   pageInfo?: { title: string; icon: string }
   containerLocked: boolean
 }): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
+  // Rows name an index into `picks` because a menu row can't carry a pick.
   const picks: TilePick[] = []
   const locked = (entry.locked ?? false) || containerLocked
   const drill = <T>(

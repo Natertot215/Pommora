@@ -4,14 +4,18 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'
 
-export interface MatrixConfig {
+export type MatrixConfig = {
   group: { mode: GroupMode }
   filter: { rules: FilterGroup | null; enabled: boolean }
   forces: Record<GroupMode, Forces>
   display: { unlinked: boolean; hideIcon: boolean; hidePath: boolean; locked: boolean }
 }
 
-export type MatrixPatch = { [S in keyof MatrixConfig]?: Partial<MatrixConfig[S]> }
+export type MatrixPatch = {
+  [S in Exclude<keyof MatrixConfig, 'forces'>]?: Partial<MatrixConfig[S]>
+} & {
+  forces?: { [M in GroupMode]?: Partial<Forces> }
+}
 
 const GRAVITY_STEPS = Array.from({ length: 20 }, (_, i) => (i + 1) / 10)
 const QUARTER_STEPS = [
@@ -30,7 +34,7 @@ const clampForce = (key: keyof Forces, v: number): number => {
   return clamp(v, steps[0], steps[steps.length - 1])
 }
 
-// A patch writes its grouping's block whole even when no value moved, so the runtime reads these by value rather than re-solving the picture for an unchanged set.
+// A patch spreads a new block for its grouping even when no value moved, so the runtime reads these by value rather than re-solving the picture for an unchanged set.
 export const sameForces = (a: Forces, b: Forces): boolean =>
   a.gravity === b.gravity &&
   a.spread === b.spread &&
@@ -101,12 +105,21 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
   }
 }
 
+function patchForces(
+  forces: MatrixConfig['forces'],
+  patch: NonNullable<MatrixPatch['forces']>,
+): MatrixConfig['forces'] {
+  const next = { ...forces }
+  for (const mode of GROUP_MODES) if (patch[mode]) next[mode] = { ...next[mode], ...patch[mode] }
+  return next
+}
+
 // A section not in the patch keeps its reference, so a consumer comparing sections by identity sees exactly what moved.
 export function applyPatch(config: MatrixConfig, patch: MatrixPatch): MatrixConfig {
   return {
     group: patch.group ? { ...config.group, ...patch.group } : config.group,
     filter: patch.filter ? { ...config.filter, ...patch.filter } : config.filter,
-    forces: patch.forces ? { ...config.forces, ...patch.forces } : config.forces,
+    forces: patch.forces ? patchForces(config.forces, patch.forces) : config.forces,
     display: patch.display ? { ...config.display, ...patch.display } : config.display,
   }
 }

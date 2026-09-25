@@ -14,11 +14,11 @@ import {
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
+import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import {
-  type Raw,
   type Rewrite,
   type RewriteText,
   type SweepResult,
@@ -34,7 +34,7 @@ import { nameError } from '../Paths/names'
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
-function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | null {
+function rewriteRoot(raw: Json, contextTitle: string, j: RenameJournal): Json | null {
   if (j.spaceId === undefined) {
     const oldKey = contextKey(j.oldTitle)
     const newKey = contextKey(j.newTitle)
@@ -45,7 +45,7 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
       Array.isArray(oldV) && Array.isArray(existing)
         ? [...existing, ...oldV.filter((v) => !existing.includes(v))]
         : oldV
-    const out: Raw = {}
+    const out: Json = {}
     for (const [k, v] of Object.entries(raw)) {
       if (k === oldKey) out[newKey] = moved
       else if (k !== newKey) out[k] = v
@@ -92,7 +92,7 @@ async function sweepMembers(
   )
 }
 
-function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
+function captureRoot(raw: Json, file: string, values: string[]): SweepCapture {
   const isSpace = basename(file) === SPACE_SIDECAR
   const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : asString(raw[ID_KEY])
   return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }

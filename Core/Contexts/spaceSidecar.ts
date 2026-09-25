@@ -1,9 +1,8 @@
 import { parseContextKey } from './contexts'
 import { asString } from '../Nexus/coerce'
 import { isPlainObject } from '../Properties/propertyValue'
-
-type Raw = Record<string, unknown>
-type SidecarRewrite = (raw: Raw, file: string) => Raw | null
+import type { Json } from '../Files/stableJson'
+import type { Rewrite } from '../Properties/governedSweep'
 
 export const COLOR_KEY = '$color'
 export const ORDER_KEY = '$order'
@@ -17,14 +16,14 @@ export interface SpaceRowOrder {
   properties: string[]
 }
 
-export function spaceFieldsFrom(sc: Raw): {
+export function spaceFieldsFrom(sc: Json): {
   icon?: string
   banner?: string
   headingIconHidden: boolean
   color?: string
-  values?: Raw
+  values?: Json
 } {
-  let values: Raw | undefined
+  let values: Json | undefined
   for (const [k, v] of Object.entries(sc)) {
     if (MODELED.has(k) || parseContextKey(k) !== null) continue
     values ??= {}
@@ -39,7 +38,7 @@ export function spaceFieldsFrom(sc: Raw): {
   }
 }
 
-export function readSpaceRowOrder(values: Raw | undefined): SpaceRowOrder {
+export function readSpaceRowOrder(values: Json | undefined): SpaceRowOrder {
   const order = values?.[ORDER_KEY]
   const list = (k: keyof SpaceRowOrder): string[] => {
     const entries = isPlainObject(order) ? order[k] : undefined
@@ -49,11 +48,11 @@ export function readSpaceRowOrder(values: Raw | undefined): SpaceRowOrder {
 }
 
 export function withOrderEntry(
-  inner: SidecarRewrite,
+  inner: Rewrite,
   list: keyof SpaceRowOrder,
   from: string,
   to: string | null,
-): SidecarRewrite {
+): Rewrite {
   return (raw, file) => {
     const keyed = inner(raw, file)
     const cur = keyed ?? raw

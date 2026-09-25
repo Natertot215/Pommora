@@ -7,7 +7,7 @@ export type ContextDef = { id: string; title: string; singular?: string; icon?: 
 /** Array position IS the display order — no ordinal semantics anywhere. */
 export type ContextsRegistry = { contexts: ContextDef[] }
 
-export const contextEntry = z.looseObject({
+export const contextEntry: z.ZodType<ContextDef> = z.looseObject({
   id: z.string().min(1),
   title: z.string().min(1),
   singular: z.string().min(1).optional(),

@@ -5,15 +5,19 @@ import {
   mergeViewEdit,
   mintViewId,
   ownsViewId,
+  savedView,
   type SavedView,
 } from './views'
 import { ok, fail, type Result, fault } from '../Contract/result'
-import { setOrDrop } from '../Files/atomicWrite'
+import { readJsonObject, setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar, type Refuse } from '../Files/sidecar'
 import { isPlainObject } from '../Properties/propertyValue'
+import type { Json } from '../Files/stableJson'
+import { freeName } from '../Paths/names'
+import { sidecarPath } from '../Paths/paths'
 
 interface ViewsDoc {
-  cur: Record<string, unknown>
+  cur: Json
   views: unknown[]
   ids: string[]
   resolve: (id: string) => string
@@ -22,12 +26,22 @@ interface ViewsDoc {
 // The positional ids each container's repairs replaced, so a write still in flight under one lands on the view it named.
 const repaired = new Map<string, Map<string, string>>()
 
+const answering = (
+  read: string[],
+  ids: string[],
+  minted: Map<string, string> | undefined,
+  id: string,
+): string => {
+  const at = read.indexOf(id)
+  return at >= 0 ? ids[at] : (minted?.get(id) ?? id)
+}
+
 // Every write first mints an id for each shown view still answering to a positional one, so a positional id never reaches the file; `resolve` carries a caller's id across the repair, and the selection follows it.
 function patchViews(
   folder: string,
   kind: ContainerKind,
-  fn: (doc: ViewsDoc, refuse: Refuse) => Record<string, unknown> | null,
-): Promise<Result<Record<string, unknown>>> {
+  fn: (doc: ViewsDoc, refuse: Refuse) => Json | null,
+): Promise<Result<Json>> {
   return patchSidecar(folder, kind, (raw, refuse) => {
     const views = Array.isArray(raw.views) ? [...raw.views] : []
     const read = containerViewIds(views)
@@ -40,11 +54,8 @@ function patchViews(
       views[i] = { ...v, id: ids[i] }
     })
     if (minted.size > 0) repaired.set(folder, minted)
-    const resolve = (id: string): string => {
-      const at = read.indexOf(id)
-      return at >= 0 ? ids[at] : (minted.get(id) ?? id)
-    }
-    const cur: Record<string, unknown> = { ...raw, views }
+    const resolve = (id: string): string => answering(read, ids, minted, id)
+    const cur: Json = { ...raw, views }
     if (typeof raw.active_view === 'string') cur.active_view = resolve(raw.active_view)
     return fn({ cur, views, ids, resolve }, refuse)
   })
@@ -67,11 +78,40 @@ export async function saveView(
   return written.ok ? ok({ id }) : written
 }
 
+/** A copy starts from the stored view, so what this build doesn't read is copied too; it lands right after its original. */
+export async function duplicateView(
+  folder: string,
+  kind: ContainerKind,
+  viewId: string,
+): Promise<Result<null>> {
+  const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }, refuse) => {
+    const at = ids.indexOf(resolve(viewId))
+    const src = views[at]
+    if (!isPlainObject(src)) return refuse(fail('not-found', 'View not found.'))
+    const names = views.map((v) => savedView.safeParse(v).data?.name ?? '')
+    views.splice(at + 1, 0, { ...src, id: mintViewId(), name: freeName(names[at], names) })
+    return { ...cur, views }
+  })
+  return written.ok ? ok(null) : written
+}
+
+export async function readStoredView(
+  folder: string,
+  kind: ContainerKind,
+  viewId: string,
+): Promise<Json | null> {
+  const raw = await readJsonObject(sidecarPath(folder, kind))
+  const views = Array.isArray(raw?.views) ? raw.views : []
+  const ids = containerViewIds(views)
+  const view = views[ids.indexOf(answering(ids, ids, repaired.get(folder), viewId))]
+  return isPlainObject(view) ? view : null
+}
+
 export async function setActiveView(
   folder: string,
   kind: ContainerKind,
   viewId: string,
-): Promise<Result<Record<string, unknown>>> {
+): Promise<Result<Json>> {
   return patchViews(folder, kind, ({ cur, resolve }) =>
     setOrDrop(cur, 'active_view', resolve(viewId)),
   )

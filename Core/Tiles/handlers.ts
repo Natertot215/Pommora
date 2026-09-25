@@ -6,8 +6,7 @@ import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { coerceTileHost, type RemovedTile, type TileDocPatch, tilePatchProblem } from './tiles'
 
 import {
-  convertTileToPage,
-  convertTileToView,
+  convertTile,
   createMarkdownTile,
   duplicateTile,
   hostDir,
@@ -98,22 +97,10 @@ export const tilesHandlers = {
     }),
   ),
 
-  'tiles:convertToPage': withWriteRoot(
-    onTile(async ({ root, dir, ctx }, tileId, pageId) => {
-      if (typeof pageId !== 'string' || pageId.length === 0) return fault('Invalid page id.')
-      return convertTileToPage(root, dir, tileId, pageId, await trashDeps(root, ctx))
-    }),
-  ),
-
-  'tiles:convertToView': withWriteRoot(
-    onTile(async ({ root, dir, ctx }, tileId, views) => {
-      const list = Array.isArray(views) ? views : null
-      const valid =
-        list?.length &&
-        list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
-      if (!valid) return fault('Invalid view list.')
-      return convertTileToView(root, dir, tileId, list as unknown[], await trashDeps(root, ctx))
-    }),
+  'tiles:convert': withWriteRoot(
+    onTile(async ({ root, dir, ctx }, tileId, pick) =>
+      convertTile(root, dir, tileId, pick, await trashDeps(root, ctx)),
+    ),
   ),
 
   'tiles:duplicateTile': withWriteRoot(

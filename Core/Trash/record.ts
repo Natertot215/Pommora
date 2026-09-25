@@ -16,41 +16,43 @@ const parentRef = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('unaddressable') }),
 ])
 
-const memberRoot = z.looseObject({ id: z.string().optional(), kind: z.enum(['page', 'space']) })
-const spaceRef = z.looseObject({ id: z.string().optional(), title: z.string() })
+const memberRoot = z.object({ id: z.string().optional(), kind: z.enum(['page', 'space']) })
+const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
 const contentRecord = <E extends string>(entity: E) =>
-  z.looseObject({
+  z.object({
     entity: z.literal(entity),
     id: z.string().optional(),
     parent: parentRef,
     partial: z.literal(true).optional(),
   })
 
+// The record itself is never rewritten from its decode; `def` and `registry` decode loose because a restore writes them back.
 const recordFile = z.discriminatedUnion('entity', [
   contentRecord('page'),
   contentRecord('collection'),
   contentRecord('set'),
-  z.looseObject({
+  z.object({
     entity: z.literal('space'),
     id: z.string(),
     parent: parentRef,
     members: z.array(memberRoot),
     partial: z.literal(true).optional(),
   }),
-  z.looseObject({
+  z.object({
     entity: z.literal('property'),
     id: z.string(),
+    // The definition as it stood, kept whole for the restore to decode.
     def: z.looseObject({ id: z.string() }),
     values: z.record(z.string(), z.unknown()),
     assignments: z.array(z.string()).optional(),
     caches: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
     partial: z.literal(true).optional(),
   }),
-  z.looseObject({
+  z.object({
     entity: z.literal('context'),
     registry: contextEntry,
-    membership: z.array(z.looseObject({ root: memberRoot, spaces: z.array(spaceRef) })),
+    membership: z.array(z.object({ root: memberRoot, spaces: z.array(spaceRef) })),
     partial: z.literal(true).optional(),
   }),
 ])

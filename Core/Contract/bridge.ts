@@ -16,7 +16,7 @@ import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { Option } from '../Properties/optionModel'
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
-import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView, RemovedTile } from '../Tiles/tiles'
+import type { TileDoc, TileDocPatch, TileHostRef, TilePick, RemovedTile } from '../Tiles/tiles'
 import type {
   FileConfig,
   LinkConfig,
@@ -90,6 +90,10 @@ export interface Asks {
   'views:save': {
     args: [containerPath: string, kind: 'collection' | 'set', view: SavedView]
     reply: Result<{ id: string }>
+  }
+  'views:duplicate': {
+    args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
+    reply: Result<null>
   }
   'views:reorder': {
     args: [containerPath: string, kind: 'collection' | 'set', orderedIds: string[]]
@@ -178,12 +182,8 @@ export interface Asks {
     args: [host: TileHostRef, tileId: string, body: string, baseHash: string]
     reply: Result<BodyWrite>
   }
-  'tiles:convertToPage': {
-    args: [host: TileHostRef, tileId: string, pageId: string]
-    reply: Result<null>
-  }
-  'tiles:convertToView': {
-    args: [host: TileHostRef, tileId: string, views: EmbeddedView[]]
+  'tiles:convert': {
+    args: [host: TileHostRef, tileId: string, pick: TilePick]
     reply: Result<null>
   }
   'tiles:duplicateTile': {

@@ -14,14 +14,19 @@ import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '../Properties/propertyValue'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { newId } from '../Nexus/ids'
-import { mintViewId } from '../Views/views'
+import { mintDefaultView, mintViewId } from '../Views/views'
+import { readStoredView } from '../Views/viewsFile'
+import { resolveContainerSchema } from '../Views/Pipeline/pickView'
+import type { Json } from '../Files/stableJson'
+import { findContainerWhere } from '../Nexus/treePatch'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { utf8 } from '../Files/utf8'
 import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
-import { getLiveTree } from '../Nexus/liveTree'
+import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import { tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { captureLoser } from '../Sync/Arrival/captures'
@@ -57,14 +62,14 @@ async function reviseTile(
   root: string,
   dir: string,
   tileId: string,
-  patch: Record<string, unknown> | null,
+  patch: Json | null,
   deps: TrashDeps,
 ): Promise<Result<RemovedTile>> {
-  let entry: Record<string, unknown> | null = null
+  let entry: Json | null = null
   const written = await setTiles(dir, (tiles) =>
     tiles.flatMap((b) => {
       if (knownTile(b)?.id !== tileId) return [b]
-      entry = b as Record<string, unknown>
+      entry = b as Json
       return patch ? [{ ...entry, ...patch }] : []
     }),
   )
@@ -138,40 +143,51 @@ const settled = async (revised: Promise<Result<unknown>>): Promise<Result<null>>
   return r.ok ? ok(null) : r
 }
 
-export const convertTileToPage = (
+export async function convertTile(
   root: string,
   dir: string,
   tileId: string,
-  pageId: string,
+  pick: unknown,
   deps: TrashDeps,
-): Promise<Result<null>> =>
-  settled(reviseTile(root, dir, tileId, { type: 'page', page_id: pageId }, deps))
+): Promise<Result<null>> {
+  const patch = await convertedEntry(root, pick)
+  return patch.ok ? settled(reviseTile(root, dir, tileId, patch.value, deps)) : patch
+}
+
+// A view pick naming no view takes the container's default.
+async function convertedEntry(root: string, pick: unknown): Promise<Result<Json>> {
+  if (!isPlainObject(pick)) return fault('Invalid pick.')
+  const { kind, value } = pick
+  if (kind === 'page')
+    return typeof value === 'string' && value !== ''
+      ? ok({ type: 'page', page_id: value })
+      : fault('Invalid page id.')
+  if (kind !== 'view' || !isPlainObject(value) || typeof value.source_id !== 'string')
+    return fault('Invalid pick.')
+  const tree = await liveTreeOf(root)
+  const source = findContainerWhere(tree, (c) => c.id === value.source_id)
+  if (!source) return fail('not-found', 'That view’s source is gone.')
+  let config: Json | null
+  if (typeof value.view_id === 'string') {
+    const folder = await resolveUnderRoot(root, source.path)
+    if (!folder.ok) return folder
+    config = await readStoredView(folder.value, source.kind, value.view_id)
+  } else config = mintDefaultView(resolveContainerSchema(tree, source))
+  if (!config) return fail('not-found', 'View not found.')
+  const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
+  return ok({ type: 'view', views, active: 0 })
+}
 
 /** The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload — preserving one would silently re-couple a copied snapshot to its source. */
-function remintConfigIds(views: unknown[]): unknown[] {
-  return views.map((v) => {
-    if (typeof v !== 'object' || v === null) return v
-    const el = v as Record<string, unknown>
-    if (typeof el.config !== 'object' || el.config === null) return el
-    return { ...el, config: { ...(el.config as Record<string, unknown>), id: mintViewId() } }
-  })
-}
-
 export function copyEntry(raw: unknown): unknown {
   if (!isPlainObject(raw) || raw.type !== 'view' || !Array.isArray(raw.views)) return raw
-  return { ...raw, views: remintConfigIds(raw.views) }
-}
-
-export const convertTileToView = (
-  root: string,
-  dir: string,
-  tileId: string,
-  views: unknown[],
-  deps: TrashDeps,
-): Promise<Result<null>> =>
-  settled(
-    reviseTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 }, deps),
+  const views = raw.views.map((v) =>
+    isPlainObject(v) && isPlainObject(v.config)
+      ? { ...v, config: { ...v.config, id: mintViewId() } }
+      : v,
   )
+  return { ...raw, views }
+}
 
 export async function duplicateTile(dir: string, tileId: string): Promise<string | null> {
   const doc = await readTileDocAt(dir)
@@ -184,7 +200,7 @@ export async function duplicateTile(dir: string, tileId: string): Promise<string
     if (!body.ok && body.error.code !== 'not-found') throw new Error(body.error.message)
     await atomicWriteFile(tileFilePath(dir, id), valueOr(body, ''))
   }
-  const copy = copyEntry({ ...(src as Record<string, unknown>), id })
+  const copy = copyEntry({ ...(src as Json), id })
   await setTiles(dir, (tiles) => [...tiles, copy])
   return id
 }

@@ -1,6 +1,7 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
+import { looseDecoder } from '../Files/decoders'
 import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from '../Nexus/identityMark'
 
 export const propertyType = z.enum([
@@ -42,68 +43,74 @@ export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as cons
 const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
 
-const selectOption = z.object({
-  value: z.string(),
-  label: z.string(),
-  icon: z.string().optional().catch(undefined),
-  color: z.string().optional().catch(undefined),
-  appearance: optionAppearance.optional().catch(undefined),
-})
+const selectOption = looseDecoder(
+  z.object({
+    value: z.string(),
+    label: z.string(),
+    icon: z.string().optional().catch(undefined),
+    color: z.string().optional().catch(undefined),
+    appearance: optionAppearance.optional().catch(undefined),
+  }),
+)
 export type SelectOption = z.infer<typeof selectOption>
 
 /** An OPEN set: a group is identified by its id, never by its position, so the count is deliberately uncapped. */
 const statusGroupId = z.string()
 export type StatusGroupId = z.infer<typeof statusGroupId>
 
-const statusOption = z.looseObject({
-  value: z.string(),
-  label: z.string(),
-  color: z.string().optional().catch(undefined),
-  icon: z.string().optional().catch(undefined),
-  appearance: optionAppearance.optional().catch(undefined),
-  group_id: statusGroupId,
-})
+const statusOption = looseDecoder(
+  z.object({
+    value: z.string(),
+    label: z.string(),
+    color: z.string().optional().catch(undefined),
+    icon: z.string().optional().catch(undefined),
+    appearance: optionAppearance.optional().catch(undefined),
+    group_id: statusGroupId,
+  }),
+)
 export type StatusOption = z.infer<typeof statusOption>
 
-const statusGroup = z.looseObject({
-  id: statusGroupId,
-  label: z.string(),
-  color: z.string().catch('grey'),
-  options: z.array(statusOption),
-})
+const statusGroup = looseDecoder(
+  z.object({
+    id: statusGroupId,
+    label: z.string(),
+    color: z.string().catch('grey'),
+    options: z.array(statusOption),
+  }),
+)
 export type StatusGroup = z.infer<typeof statusGroup>
 
-const contextTarget = z.looseObject({
-  context_id: z.string().optional(),
-})
+const contextTarget = looseDecoder(z.object({ context_id: z.string().optional() }))
 
-export const propertyDefinition = z.looseObject({
-  id: z.string(),
-  name: z.string(),
-  type: propertyType,
-  icon: z.string().optional(),
-  select_options: z.array(selectOption.loose()).optional(),
-  status_groups: z.array(statusGroup).optional(),
-  context_target: contextTarget.optional(),
-  link_underline: z.boolean().optional().catch(undefined),
-  // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
-  link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
-  link_color: z.string().optional().catch(undefined),
-  // The checkbox/switch LOOK is per-VIEW (column_styles), not here.
-  checkbox_color: z.string().optional().catch(undefined),
-  // Kept per-def rather than per-view so a format rides as an inert foreign key across rewrites.
-  number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
-  number_currency: z.string().optional().catch(undefined),
-  number_separators: z.boolean().optional().catch(undefined),
-  number_decimals: z
-    .union([z.literal('hidden'), z.number().int()])
-    .optional()
-    .catch(undefined),
-  number_fraction: z.boolean().optional().catch(undefined),
-  number_denominator: z.number().optional().catch(undefined),
-  // Relative to the asset root, so re-pointing the root moves every property's folder with it. Governs new writes only — files already on disk keep resolving where they sit.
-  file_directory: z.string().optional().catch(undefined),
-})
+export const propertyDefinition = looseDecoder(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    type: propertyType,
+    icon: z.string().optional(),
+    select_options: z.array(selectOption).optional(),
+    status_groups: z.array(statusGroup).optional(),
+    context_target: contextTarget.optional(),
+    link_underline: z.boolean().optional().catch(undefined),
+    // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
+    link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
+    link_color: z.string().optional().catch(undefined),
+    // The checkbox/switch LOOK is per-VIEW (column_styles), not here.
+    checkbox_color: z.string().optional().catch(undefined),
+    // Kept per-def rather than per-view so a format rides as an inert foreign key across rewrites.
+    number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
+    number_currency: z.string().optional().catch(undefined),
+    number_separators: z.boolean().optional().catch(undefined),
+    number_decimals: z
+      .union([z.literal('hidden'), z.number().int()])
+      .optional()
+      .catch(undefined),
+    number_fraction: z.boolean().optional().catch(undefined),
+    number_denominator: z.number().optional().catch(undefined),
+    // Relative to the asset root, so re-pointing the root moves every property's folder with it. Governs new writes only — files already on disk keep resolving where they sit.
+    file_directory: z.string().optional().catch(undefined),
+  }),
+)
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>

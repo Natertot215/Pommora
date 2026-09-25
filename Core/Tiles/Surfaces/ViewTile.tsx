@@ -365,12 +365,13 @@ export function ViewTile({
     const src = viewById(id)
     if (locked || !src) return
     const names = views.map((v) => v.name)
-    const config = { ...src, id: mintViewId(), name: freeName(src.name, names) }
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const i = viewAt(arr, id)
       const el = arr[i]
       if (!isPlainObject(el)) return raw
+      const stored = isPlainObject(el.config) ? el.config : src
+      const config = { ...stored, id: mintViewId(), name: freeName(src.name, names) }
       arr.splice(i + 1, 0, { ...el, config })
       return { ...raw, views: arr, active: i + 1 }
     })
@@ -462,7 +463,11 @@ export function ViewTile({
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
     const action = await popHeld(
-      viewRowMenuItems({ titlesShown: labeled, deletable: entry.views.length > 1 }),
+      viewRowMenuItems({
+        titlesShown: labeled,
+        deletable: entry.views.length > 1,
+        duplicable: true,
+      }),
     )
     switch (action) {
       case 'rename':
