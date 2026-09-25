@@ -25,8 +25,6 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
-import { popMenu } from '../Actions/menuActions'
-import { MenuDoorContext } from '@pommora/uix/Pickers/PickerControl'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { ValuePickPresenter } from './Menus/ValuePickPresenter'
 import { DragGroup, DropSlot } from '@pommora/uix/Interactions/drag'
@@ -106,113 +104,111 @@ export function App(): React.JSX.Element {
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
   return (
-    <MenuDoorContext.Provider value={popMenu}>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control */}
-      <div
-        className={
-          'shell' +
-          (sidebarHidden ? ' sidebar-hidden' : '') +
-          (ribbonVisible ? '' : ' ribbon-hidden') +
-          (trafficLights ? '' : ' no-traffic-lights') +
-          (sidePaneOpen ? ' side-pane-open' : '') +
-          (resizing ? ' is-resizing' : '')
-        }
-        style={
-          {
-            '--sidebar-width': `${sidebarWidth}px`,
-            '--side-pane-width': `${sidePaneWidth}px`,
-          } as CSSProperties
-        }
-        ref={publishChromePart('shell')}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault()
-          const file = e.dataTransfer.files[0]
-          if (file) void openDropped(file)
-        }}
-      >
-        <DragGroup stray="return" holdGap>
-          <DropSlot foreignOnly />
-          <div className="titlebar" />
-          {status === 'ready' && (
-            <Toolbar
-              sidePaneOpen={sidePaneOpen}
-              onToggleSidePane={() => setSidePaneOpen((v) => !v)}
-            />
-          )}
-          <main className="content-pane" ref={publishChromePart('contentPane')}>
-            <ContentView />
-          </main>
-          <Surface
-            ref={publishChromePart('sidebar')}
-            className={paneSlide({ side: 'left', mode: 'overlay' })}
-          >
-            {status === 'ready' && tree && <Ribbon />}
-            <Button
-              size="button-large"
-              paddingX="0"
-              className="sidebar-toggle sidebar-collapse"
-              onClick={toggleSidebar}
-              aria-label="Collapse sidebar"
-              title="Collapse sidebar"
-            >
-              <Icon name="log-out" size="titleSmall" className="flip-x" />
-            </Button>
-            {status === 'loading' && <div className="state">Loading Nexus…</div>}
-            {status === 'empty' && (
-              <div className="state">
-                No Nexus Open
-                <Button label="Open Folder…" className="open-btn" onClick={() => void choose()} />
-              </div>
-            )}
-            {status === 'error' && (
-              <div className="state state-error">
-                Couldn’t Open Nexus
-                <span className="state-detail">{error?.message}</span>
-              </div>
-            )}
-            {status === 'ready' && tree && <Sidebar tree={tree} />}
-          </Surface>
-          {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
-          {!sidebarHidden && (
-            <div
-              className="resize-strip sidebar-resize"
-              onPointerDown={sidebarFrame.start('e')}
-              aria-hidden="true"
-            />
-          )}
+    // biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control
+    <div
+      className={
+        'shell' +
+        (sidebarHidden ? ' sidebar-hidden' : '') +
+        (ribbonVisible ? '' : ' ribbon-hidden') +
+        (trafficLights ? '' : ' no-traffic-lights') +
+        (sidePaneOpen ? ' side-pane-open' : '') +
+        (resizing ? ' is-resizing' : '')
+      }
+      style={
+        {
+          '--sidebar-width': `${sidebarWidth}px`,
+          '--side-pane-width': `${sidePaneWidth}px`,
+        } as CSSProperties
+      }
+      ref={publishChromePart('shell')}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        if (file) void openDropped(file)
+      }}
+    >
+      <DragGroup stray="return" holdGap>
+        <DropSlot foreignOnly />
+        <div className="titlebar" />
+        {status === 'ready' && (
+          <Toolbar
+            sidePaneOpen={sidePaneOpen}
+            onToggleSidePane={() => setSidePaneOpen((v) => !v)}
+          />
+        )}
+        <main className="content-pane" ref={publishChromePart('contentPane')}>
+          <ContentView />
+        </main>
+        <Surface
+          ref={publishChromePart('sidebar')}
+          className={paneSlide({ side: 'left', mode: 'overlay' })}
+        >
+          {status === 'ready' && tree && <Ribbon />}
           <Button
             size="button-large"
             paddingX="0"
-            className="sidebar-toggle sidebar-expand"
+            className="sidebar-toggle sidebar-collapse"
             onClick={toggleSidebar}
-            aria-label="Show sidebar"
-            title="Show sidebar"
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
           >
-            <Icon name="log-out" size="titleSmall" />
+            <Icon name="log-out" size="titleSmall" className="flip-x" />
           </Button>
-          {status === 'ready' && <SidePane open={sidePaneOpen} />}
-          {status === 'ready' && <NavWindow />}
-          {status === 'ready' && <MatrixWindow />}
-          {status === 'ready' && <PageWindow />}
-          {status === 'ready' && <PageHistoryWindow />}
-          {status === 'ready' && <WebWindow />}
-          {status === 'ready' && <SettingsWindow />}
-          {status === 'ready' && <IterationWindow />}
-          <ConfirmationWindow />
-          <MenuPresenter />
-          <ValuePickPresenter />
-          <NotificationLabel />
-          {status === 'ready' && <GlancePane />}
-          {status === 'ready' && sidePaneOpen && (
-            <div
-              className="resize-strip side-pane-resize"
-              onPointerDown={sidePaneFrame.start('w')}
-              aria-hidden="true"
-            />
+          {status === 'loading' && <div className="state">Loading Nexus…</div>}
+          {status === 'empty' && (
+            <div className="state">
+              No Nexus Open
+              <Button label="Open Folder…" className="open-btn" onClick={() => void choose()} />
+            </div>
           )}
-        </DragGroup>
-      </div>
-    </MenuDoorContext.Provider>
+          {status === 'error' && (
+            <div className="state state-error">
+              Couldn’t Open Nexus
+              <span className="state-detail">{error?.message}</span>
+            </div>
+          )}
+          {status === 'ready' && tree && <Sidebar tree={tree} />}
+        </Surface>
+        {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
+        {!sidebarHidden && (
+          <div
+            className="resize-strip sidebar-resize"
+            onPointerDown={sidebarFrame.start('e')}
+            aria-hidden="true"
+          />
+        )}
+        <Button
+          size="button-large"
+          paddingX="0"
+          className="sidebar-toggle sidebar-expand"
+          onClick={toggleSidebar}
+          aria-label="Show sidebar"
+          title="Show sidebar"
+        >
+          <Icon name="log-out" size="titleSmall" />
+        </Button>
+        {status === 'ready' && <SidePane open={sidePaneOpen} />}
+        {status === 'ready' && <NavWindow />}
+        {status === 'ready' && <MatrixWindow />}
+        {status === 'ready' && <PageWindow />}
+        {status === 'ready' && <PageHistoryWindow />}
+        {status === 'ready' && <WebWindow />}
+        {status === 'ready' && <SettingsWindow />}
+        {status === 'ready' && <IterationWindow />}
+        <ConfirmationWindow />
+        <MenuPresenter />
+        <ValuePickPresenter />
+        <NotificationLabel />
+        {status === 'ready' && <GlancePane />}
+        {status === 'ready' && sidePaneOpen && (
+          <div
+            className="resize-strip side-pane-resize"
+            onPointerDown={sidePaneFrame.start('w')}
+            aria-hidden="true"
+          />
+        )}
+      </DragGroup>
+    </div>
   )
 }

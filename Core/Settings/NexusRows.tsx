@@ -10,10 +10,10 @@ import type { TimeFormat } from '@pommora/core/Properties/columnStyles'
 import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
 import { clockOf } from '../Properties/formatValue'
 import { SettingsFieldRow } from './SettingsFieldRow'
-import { useTimedLabel } from './ClearActionRow'
+import { useTimedLabel } from './useTimedLabel'
 import { useSession } from '../Session/store'
 import { useExperimental } from './experimental'
-import * as x from './exclusion-rows.css'
+import * as x from './settings-rows.css'
 import { host } from '../Platform/dialer'
 
 const fingerprint = (id: string): string => id.slice(0, 12)

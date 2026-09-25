@@ -5,7 +5,7 @@ import { hiddenName } from './exclusion'
 import { isMarkdownFile } from './posix'
 import { CROPS_REL } from './nexusPaths'
 
-export type NameRole = 'page' | 'directory'
+type NameRole = 'page' | 'directory'
 
 const WINDOWS_DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i
 

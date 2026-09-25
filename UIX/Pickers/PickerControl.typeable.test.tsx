@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { type MenuDoor, MenuDoorContext, PickerControl } from './PickerControl'
+import { type MenuDoor, PickerControl, setMenuDoor } from './PickerControl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -22,20 +22,19 @@ let host: HTMLDivElement
 let root: Root
 const onCommit = vi.fn()
 const door = vi.fn<MenuDoor>(async () => null)
+setMenuDoor(door)
 
 function mount(solid?: boolean): void {
   act(() => {
     root.render(
-      <MenuDoorContext.Provider value={door}>
-        <PickerControl
-          ariaLabel="Editor Scale"
-          value="1"
-          options={OPTIONS}
-          onPick={() => {}}
-          solid={solid}
-          typeable={{ text: '100', suffix: '%', onCommit }}
-        />
-      </MenuDoorContext.Provider>,
+      <PickerControl
+        ariaLabel="Editor Scale"
+        value="1"
+        options={OPTIONS}
+        onPick={() => {}}
+        solid={solid}
+        typeable={{ text: '100', suffix: '%', onCommit }}
+      />,
     )
   })
 }

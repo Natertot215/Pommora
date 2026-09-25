@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
 import { cx } from '../Utilities/cx'
 import { Icon } from '../Symbols'
@@ -17,7 +17,11 @@ export type MenuDoor = (
   options?: { solid?: boolean; compact?: boolean },
 ) => Promise<string | null>
 
-export const MenuDoorContext = createContext<MenuDoor | null>(null)
+let door: MenuDoor | null = null
+
+export const setMenuDoor = (next: MenuDoor): void => {
+  door = next
+}
 
 const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
@@ -83,7 +87,6 @@ export function PickerControl<T extends string>({
 }): React.JSX.Element {
   const [typing, setTyping] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
-  const door = useContext(MenuDoorContext)
   const isToggle = options.length === 2
 
   const onTrigger = (): void => {

@@ -16,13 +16,18 @@ import {
 describe('splitEnvelope / assembleEnvelope', () => {
   it('round-trips a canonical envelope', () => {
     const content = '---\nid: X\n---\nBody text'
-    expect(splitEnvelope(content)).toEqual({ frontmatter: 'id: X', body: 'Body text' })
+    expect(splitEnvelope(content)).toEqual({
+      frontmatter: 'id: X',
+      fenced: true,
+      body: 'Body text',
+    })
     expect(assembleEnvelope('id: X\n', 'Body text')).toBe(content)
   })
 
   it('reads a legacy envelope (separator blank line) to the same body', () => {
     expect(splitEnvelope('---\nid: X\n---\n\nBody text')).toEqual({
       frontmatter: 'id: X',
+      fenced: true,
       body: 'Body text',
     })
   })
@@ -32,12 +37,48 @@ describe('splitEnvelope / assembleEnvelope', () => {
   })
 
   it('treats a file with no opening fence as all body', () => {
-    expect(splitEnvelope('Just body')).toEqual({ frontmatter: '', body: 'Just body' })
+    expect(splitEnvelope('Just body')).toEqual({
+      frontmatter: '',
+      fenced: false,
+      body: 'Just body',
+    })
   })
 
   it('treats an unterminated fence as all body (lenient)', () => {
     const content = '---\nid: X'
-    expect(splitEnvelope(content)).toEqual({ frontmatter: '', body: content })
+    expect(splitEnvelope(content)).toEqual({ frontmatter: '', fenced: false, body: content })
+  })
+
+  it('reads an empty block as an empty block, not as body', () => {
+    expect(splitEnvelope('---\n---\nHello')).toEqual({
+      frontmatter: '',
+      fenced: true,
+      body: 'Hello',
+    })
+  })
+
+  it('closes an empty block at its own fence, leaving a later rule in the body', () => {
+    expect(splitEnvelope('---\n---\nfoo\n---\nbar').body).toBe('foo\n---\nbar')
+  })
+})
+
+describe('mergeFrontmatter — an empty or absent block', () => {
+  it('a body-only write keeps an empty block byte for byte', () => {
+    expect(mergeFrontmatter('---\n---\nold', {}, [], 'new')).toBe('---\n---\nnew')
+  })
+
+  it('a stamp fills an empty block in place', () => {
+    expect(mergeFrontmatter('---\n---\nHello', { ID: 'X' }, ['ID'], 'Hello')).toBe(
+      '---\nID: X\n---\nHello',
+    )
+  })
+
+  it('removing the last key leaves an empty block rather than {}', () => {
+    expect(mergeFrontmatter('---\nID: X\n---\nBody', {}, ['ID'], 'Body')).toBe('---\n---\nBody')
+  })
+
+  it('removing a key from a page with no block writes the body alone', () => {
+    expect(mergeFrontmatter('Body', {}, ['ID'], 'Body')).toBe('Body')
   })
 })
 

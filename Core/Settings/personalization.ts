@@ -26,13 +26,13 @@ export const TIME_FORMAT_LABELS: Record<TimeFormatSetting, string> = {
   twentyFourHour: '24 Hours',
 }
 
-export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
+const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
-export const PLACEMENTS = ['top', 'bottom'] as const
+const PLACEMENTS = ['top', 'bottom'] as const
 export type Placement = (typeof PLACEMENTS)[number]
 
-export const SIDEBAR_MODES = ['collections', 'contexts', 'agenda'] as const
+const SIDEBAR_MODES = ['collections', 'contexts', 'agenda'] as const
 export type SidebarMode = (typeof SIDEBAR_MODES)[number]
 
 export const TAB_OPEN_BEHAVIORS = ['overtake', 'newtab'] as const
@@ -77,7 +77,7 @@ const SCALE_MIN = SCALE_STEPS[0]
 const SCALE_MAX = SCALE_STEPS[SCALE_STEPS.length - 1]
 export const WEB_ZOOM_DEFAULT = 1
 export const EDITOR_SCALE_DEFAULT = 1
-export const clampScale = (n: number): number => clamp(n, SCALE_MIN, SCALE_MAX)
+const clampScale = (n: number): number => clamp(n, SCALE_MIN, SCALE_MAX)
 export function coerceScale(v: unknown, fallback: number): number {
   return typeof v !== 'number' || !Number.isFinite(v) ? fallback : clampScale(v)
 }
@@ -91,7 +91,7 @@ export const HEADING_SIZE_KEYS = [
   'heading5Size',
   'heading6Size',
 ] as const
-export type HeadingSizeKey = (typeof HEADING_SIZE_KEYS)[number]
+type HeadingSizeKey = (typeof HEADING_SIZE_KEYS)[number]
 export const HEADING_SIZE_DEFAULTS: Record<HeadingSizeKey, number> = {
   heading1Size: 1.8,
   heading2Size: 1.6,
@@ -102,7 +102,7 @@ export const HEADING_SIZE_DEFAULTS: Record<HeadingSizeKey, number> = {
 }
 export const HEADING_SIZE_MIN = 0.5
 export const HEADING_SIZE_MAX = 2.5
-export const clampHeadingSize = (n: number): number => clamp(n, HEADING_SIZE_MIN, HEADING_SIZE_MAX)
+const clampHeadingSize = (n: number): number => clamp(n, HEADING_SIZE_MIN, HEADING_SIZE_MAX)
 export function coerceHeadingSize(v: unknown, fallback: number): number {
   return typeof v !== 'number' || !Number.isFinite(v) ? fallback : clampHeadingSize(v)
 }
@@ -122,7 +122,7 @@ export function coerceInterfaceScale(v: unknown): number {
 }
 
 // One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
-export const PREVIEW_PERSISTENCE_VALUES = ['off', '1s', '5s', '10s', 'always'] as const
+const PREVIEW_PERSISTENCE_VALUES = ['off', '1s', '5s', '10s', 'always'] as const
 export type PreviewPersistence = (typeof PREVIEW_PERSISTENCE_VALUES)[number]
 export const PREVIEW_PERSISTENCE_DEFAULT: PreviewPersistence = '1s'
 

@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { type MenuDoor, MenuDoorContext } from '@pommora/uix/Pickers/PickerControl'
+import { type MenuDoor, setMenuDoor } from '@pommora/uix/Pickers/PickerControl'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
@@ -22,6 +22,7 @@ let root: Root
 let patch: ReturnType<typeof vi.fn>
 let picked: string | null = null
 const door = vi.fn<MenuDoor>(async () => picked)
+setMenuDoor(door)
 
 const control = (label: string): HTMLButtonElement =>
   host.querySelector(`button[aria-label="${label}"]`) as HTMLButtonElement
@@ -43,11 +44,7 @@ const mount = (display: Partial<typeof DEFAULT_MATRIX_CONFIG.display> = {}): voi
     patchMatrix: patch as never,
   } as never)
   act(() => {
-    root.render(
-      <MenuDoorContext.Provider value={door}>
-        <MatrixMenu />
-      </MenuDoorContext.Provider>,
-    )
+    root.render(<MatrixMenu />)
   })
 }
 

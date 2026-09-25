@@ -7,7 +7,7 @@ import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useSession } from '../Session/store'
-import * as x from './exclusion-rows.css'
+import * as x from './settings-rows.css'
 import { host } from '../Platform/dialer'
 
 const EXCLUDED_MIN_W = 250

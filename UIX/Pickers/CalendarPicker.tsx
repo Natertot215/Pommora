@@ -10,7 +10,7 @@ import { OverScroll } from '../Interactions/OverScroll'
 import { PickerMenu } from './picker-base'
 import { MenuItem } from '../Menus/menu-row'
 import { cx } from '../Utilities/cx'
-import { pad } from '../Utilities/pad'
+import { localDayKey, pad } from '../Utilities/pad'
 import { rowBox } from '../Menus/menu-base.css'
 import { MenuScrollFrame } from '../Menus/menu-row'
 import * as s from './calendar-picker.css'
@@ -34,9 +34,6 @@ const anchorOf = (el: HTMLElement): Anchor => {
   return { x: r.left + r.width / 2, y: r.top, h: r.height, el }
 }
 
-// Never toISOString: a UTC key shifts the day west of Greenwich; formatters read date-only as LOCAL midnight.
-const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-
 const dataKey = (el: Element | null | undefined): string | null =>
   el?.closest('[data-k]')?.getAttribute('data-k') ?? null
 
@@ -58,7 +55,7 @@ export function CalendarPicker({
 }): React.JSX.Element {
   const twelve = timeFormat === 'twelveHour'
   const now = new Date()
-  const todayKey = keyOf(now)
+  const todayKey = localDayKey(now)
   const init = value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : null
   const initHasTime = init?.includes('T') ?? false
 
@@ -242,10 +239,10 @@ export function CalendarPicker({
     const cellCount = rowsFor(month) * 7
     const ranged = start !== null && end !== null
     return (
-      <div className={s.days} key={keyOf(month)}>
+      <div className={s.days} key={localDayKey(month)}>
         {Array.from({ length: cellCount }, (_, i) => {
           const d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i)
-          const k = keyOf(d)
+          const k = localDayKey(d)
           const sel = k === start || k === end
           const mid = ranged && k > start && k < end
           const col = i % 7

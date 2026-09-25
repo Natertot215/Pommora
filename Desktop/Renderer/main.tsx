@@ -2,6 +2,8 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from '@pommora/core/Interface/App'
 import { initNativeCaret } from '@pommora/uix/Theme/nativeCaret'
+import { setMenuDoor } from '@pommora/uix/Pickers/PickerControl'
+import { popMenu } from '@pommora/core/Actions/menuActions'
 import '@fontsource-variable/inter'
 import '@pommora/uix/Theme'
 import '@pommora/uix/Interactions/autoscroll.css'
@@ -15,6 +17,8 @@ import '@pommora/core/Interface/interface.css'
 import '@pommora/core/Interface/Header/content-banner.css'
 import '@pommora/uix/Table/table-tokens.css'
 import '@pommora/uix/Table/table.css'
+
+setMenuDoor(popMenu)
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

@@ -6,15 +6,13 @@ import { idTime } from '../Nexus/ids'
 import { readPageRecord } from '../Nexus/readNexus'
 import { folderCorpus } from '../Index/indexSeed'
 import { liveIdIndex } from '../Nexus/valuesChanged'
-
-const pad = (n: number): string => String(n).padStart(2, '0')
+import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 
 // Local-clock form, the same shape the date picker writes — a stamp is filtered by calendar-day truncation and rendered through the local clock, and only one convention keeps those on one day.
 export function iso(ms: number | null): string | null {
   if (ms === null) return null
   const d = new Date(ms)
-  const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  return `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  return `${localDayKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 export function pageValuesOf(
