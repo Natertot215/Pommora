@@ -397,6 +397,32 @@ describe('filter codec', () => {
     expect((group.rules[1] as FilterGroup).match).toBe('all')
   })
 
+  it('a rule it cannot read drops alone, and the rest still filter', () => {
+    const view = savedView.parse({
+      id: 'view_x',
+      name: 'T',
+      filter: {
+        match: 'all',
+        rules: [
+          { property_id: 'prop_sel', op: 'is', value: 5 },
+          { property_id: 'prop_tags', op: 'contains_any', values: ['a'] },
+          { match: 'none', rules: [] },
+          {
+            match: 'any',
+            rules: [{ op: 'is' }, { property_id: 'prop_sel', op: 'is', value: 'x' }],
+          },
+        ],
+      },
+    })
+    expect(view.filter).toEqual({
+      match: 'all',
+      rules: [
+        { property_id: 'prop_tags', op: 'contains_any', values: ['a'] },
+        { match: 'any', rules: [{ property_id: 'prop_sel', op: 'is', value: 'x' }] },
+      ],
+    })
+  })
+
   it('a filter the schema no longer admits drops alone — the view survives unfiltered', () => {
     const view = savedView.parse({
       id: 'view_x',
