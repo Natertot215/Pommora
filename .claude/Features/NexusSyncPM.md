@@ -8,7 +8,7 @@ The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.js
 
 What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level. Any `.db` file and its journals stay home. The navigation thumbnail folders stay home as a cache that regenerates from the images that do travel, while `crops.json` beside them is authored and travels. The two cascade journals stay home as crash-recovery records of a heal already finished elsewhere. Every other dot-entry, `.obsidian`, `.git`, and `.claude` among them, stays home as belonging to another application.
 
-Two files are admitted by the manifest and still refused at the push: one over fifty megabytes, and one whose path is not in NFC form. A Markdown file carrying no `ID` key waits until adoption stamps it, and `excluded_folders` in `settings.json` is part of the manifest, so an exclusion change reaches every device at once.
+Two files are admitted by the manifest and still refused at the push: one whose sealed bytes would pass the hub's fifty-megabyte cap, and one whose path is not in NFC form. A Markdown file carrying no `ID` key waits until adoption stamps it, and `excluded_folders` in `settings.json` is part of the manifest, so an exclusion change reaches every device at once.
 
 ### Three Identities
 
@@ -46,7 +46,7 @@ Each Nexus carries one monotonic counter on the hub. An item's version is the se
 
 A store sends a batch of changes, each naming the version it was based on, and answers one typed outcome per change: accepted with its new version, stale with the hub's own head, or missing its blob. A pull asks for everything after a cursor and, when there is nothing newer, parks in a long poll until the counter moves or a wait budget expires, so the client's loop is one long poll rather than a stream.
 
-On each device the client keeps one base record per item — path, mtime, size, hashes, and version. A file whose floored mtime and size still match its base record is not read at all, which is what keeps a session start cheap. The client walks the Nexus at every session start and on resync; between sessions it listens, debouncing a burst of local changes into one push.
+On each device the client keeps one base record per item — path, mtime, size, hashes, and version. A file whose floored mtime and size still match its base record is not read at all, which keeps a session start, a resync, and an exclusion change cheap. The client walks the Nexus at every session start and on resync; between sessions it listens, debouncing a burst of local changes into one push.
 
 ### Conflict
 
@@ -58,7 +58,7 @@ A landing pushes an unpushed edit first, and captures the local bytes, under the
 
 ### Landing
 
-A landed file is written atomically under the writer's modification time and records no write echo, leaving the receiving watcher to treat it as an ordinary external change. A landed rename moves the file and every base record beneath it; a delete removes the file and an emptied parent directory. A name is held to the rules of the device that creates it, so a path another platform allowed can reach a device that can't hold it: that device passes the change over and advances its cursor, a rename onto such a name takes the page off it, and the page stays on the hub and every device that can hold it.
+A landed file is written atomically under the writer's modification time and records no write echo, leaving the receiving watcher to treat it as an ordinary external change. A landed rename moves one file and its base record, since a folder rename travels as one rename per file; a delete removes the file and an emptied parent directory. A name is held to the rules of the device that creates it, so a path another platform allowed can reach a device that can't hold it: that device passes the change over and advances its cursor, a rename onto such a name takes the page off it, and the page stays on the hub and every device that can hold it.
 
 Two kinds of file land through a merge rather than a replacement. The JSON files under `.nexus/` and the `_*.json` sidecars merge key by key against the last synced bytes: a key changed on one side takes that side, a key changed on both takes the newer writer's, and the merged bytes land under the current time. Some keys hold sections that merge a level deeper, key by key within them; a metadata month file merges per page and per field, so one device clearing a page's entry and another setting a field on it keeps that field.
 
