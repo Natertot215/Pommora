@@ -82,7 +82,7 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 | -------------------------------------- | -------------------------------------------------------------- |
 | Plain (paragraph, quote, callout, code) | Delete |
 | Heading | Rename · Copy Link · Size ▸ (Paragraph, H1–H6) · Delete — removes the heading line and keeps its body |
-| List | Type ▸ (Numbered, Alphabetical, Bulleted, Checklist, Arrowed) · Delete |
+| List | Type ▸ (Bulleted, Numbered, Alphabetical, Checklist, Arrowed) · Delete |
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
 
@@ -90,13 +90,13 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 
 ### Context Menu + Shortcuts
 
-Right-clicking text in the editor opens the operating system's own menu rather than an in-app one; where a surface answers the press itself — a block grip, a heading gutter, a citation, a connection — the renderer calls `preventDefault` on the `contextmenu` event, and that withholds the host's editor menu. The renderer sends a snapshot of the editor state — what's selected, what construct the caret is in, whether a footnote could bind here — over IPC, and `Desktop/Actions/editorMenu.ts` builds the native menu from it, so the standard edit roles, spelling, Speech, and Share all arrive native and every Pommora item's checked state and presence reflect where you clicked. Heading ▸ and Paste As ▸ come from shared models (`Core/Actions/gripMenu.ts`, `Core/Actions/pasteAsMenu.ts`) that both processes read, so the renderer and main can't disagree about what they offer:
+Right-clicking text in the editor opens the operating system's own menu rather than an in-app one; where a surface answers the press itself — a block grip, a heading gutter, a citation, a connection — the renderer calls `preventDefault` on the `contextmenu` event, and that withholds the host's editor menu. The renderer sends a snapshot of the editor state — what's selected, what construct the caret is in, whether a footnote could bind here — over IPC, and `Desktop/Actions/editorMenu.ts` builds the native menu from it, so the standard edit roles, spelling, Speech, and Share all arrive native and every Pommora item's checked state and presence reflect where you clicked. Its Pommora items come from shared models that both processes read — `Core/Actions/editorMenu.ts`, built from the block menu's rows so both menus share one label and order per block, and `Core/Actions/pasteAsMenu.ts` — so the renderer and main can't disagree about what they offer:
 
-- **Insert ▸** — Blockquote, Horizontal Rule, Code Block, Callout, Table, and — anywhere a marker can bind — Footnote.
+- **Insert ▸** — Blockquote, Callout, Code Block, Table, Horizontal Rule, and — anywhere a marker can bind — Footnote.
 - **Insert Link** — appears when the selection is itself an address, and points it at itself in place.
-- **Format ▸** — the inline marks, plus Connection and Link.
-- **Embed ▸** — Webpage or Internal Page.
-- **Heading ▸** — Paragraph and H1–H6. **Lists ▸** — Bullet List, Numbered List, Alphabetical List, Task List.
+- **Format ▸** — the inline marks, plus Connection and External Link.
+- **Embed ▸** — Internal Page or Webpage.
+- **Heading ▸** — Paragraph and H1–H6. **Lists ▸** — Bullet List, Numbered List, Alphabetical List, Task List, Arrowed List.
 - **Paste As ▸** — what the clipboard could become rather than what a plain paste would make of it.
 
 An address offers the three link forms, Plain Text, and Embedded Link on a blank line; a copied connection or markdown link offers Connection, Markdown Link, and Embedded Page; any text offers Footnote wherever a marker can bind.
