@@ -568,11 +568,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     const sectionHeadings = docSectionHeadings(view.state.doc)
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
     for (const { from: a, to: b } of view.visibleRanges)
-      for (const run of sectionRunsIn(
-        text.slice(a, b),
-        sectionHeadings,
-        (o) => inCodeAt(scan, a + o),
-        true,
+      for (const run of sectionRunsIn(text.slice(a, b), sectionHeadings, (o) =>
+        inCodeAt(scan, a + o),
       ))
         ranges.push(sectionMark.range(a + run.from, a + run.to))
   }

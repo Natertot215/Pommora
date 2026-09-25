@@ -36,7 +36,7 @@ import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
-import { headingRenameGuard, headingRenameSettle } from './Guards/headingRenameGuard'
+import { headingRenameSettle } from './Guards/headingRenameSettle'
 import { citationGuard } from './Guards/citationGuard'
 import { citationHost, citationOrder, citationSeatAt } from './Citations/citationActions'
 import { citationPointer, citationRowMenu, citationRowPointer } from './Citations/citationPointer'
@@ -301,8 +301,7 @@ export function MarkdownEditor({
       customCaret,
       customSelection,
       calloutGuard,
-      headingRenameGuard,
-      headingRenameSettle(() => onHeadingRenameRef.current),
+      headingRenameSettle.of(() => onHeadingRenameRef.current),
       citationGuard,
       connectionClicks(() => connectionsRef.current),
       citationHost.of({
@@ -448,6 +447,7 @@ export function MarkdownEditor({
       if (ownsEditorMenu(view)) applyEditorAction(view, action)
     })
     return () => {
+      view.plugin(headingRenameSettle)?.flush()
       unsubMenu?.()
       releaseEditorMenu(view)
       if (lastRangeRef.current) {

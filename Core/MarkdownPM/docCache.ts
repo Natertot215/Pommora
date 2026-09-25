@@ -96,8 +96,4 @@ export const docOutline = perDoc((doc) => headingOutlineOf(docScan(doc)))
 
 export const docHeadingKeys = perDoc((doc) => docOutline(doc).map((h) => normalizeTitle(h.text)))
 
-export const docSectionHeadings = perDoc((doc) =>
-  docOutline(doc)
-    .map((h) => h.text)
-    .sort((a, b) => b.length - a.length),
-)
+export const docSectionHeadings = perDoc((doc) => docOutline(doc).map((h) => h.text))
