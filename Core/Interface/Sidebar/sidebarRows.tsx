@@ -92,7 +92,7 @@ export function DragRow({
         discloseRef.current = node
         drag.ref(node)
       }}
-      className={`tree-item${drag.isDragging ? ' dragging' : ''}`}
+      className={cx('tree-item', drag.isDragging && 'dragging')}
       {...drag.handle}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}

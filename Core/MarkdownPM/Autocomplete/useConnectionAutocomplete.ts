@@ -19,6 +19,7 @@ import { restedOnLink } from '../Gestures/linkGestures'
 import type { HeadingTarget } from './headingTarget'
 import type { OutlineHeading } from '../Engine/headingScan'
 import { type EditorHost, editorHost } from '../api'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export interface CaretGeometry {
   caretX: number
@@ -108,8 +109,7 @@ export function useConnectionAutocomplete(
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
-  const candidatesForRef = useRef(candidatesFor)
-  candidatesForRef.current = candidatesFor
+  const candidatesForRef = useLatest(candidatesFor)
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
   const title = ac?.title

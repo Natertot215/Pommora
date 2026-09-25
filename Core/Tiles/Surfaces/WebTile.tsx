@@ -15,6 +15,7 @@ import { host } from '../../Platform/dialer'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import '../tile-base.css'
 import '../tile-title.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 type Guest = HTMLElement & {
   capturePage?: () => Promise<{ toDataURL(): string }>
@@ -59,12 +60,9 @@ export function WebTile({
   const [parting, setParting] = useState(false)
   const ref = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
-  const guestRef = useRef(guest)
-  guestRef.current = guest
-  const visibleRef = useRef(visible)
-  visibleRef.current = visible
-  const refocusRef = useRef(refocusHost)
-  refocusRef.current = refocusHost
+  const guestRef = useLatest(guest)
+  const visibleRef = useLatest(visible)
+  const refocusRef = useLatest(refocusHost)
   const id = useRef(Symbol('webguest')).current
 
   useEffect(() => {

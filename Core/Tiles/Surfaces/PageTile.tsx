@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { titleFromPath } from '@pommora/core/Paths/posix'
 import { coverOf, type PageDetail } from '@pommora/core/Pages/pageDetail'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
@@ -19,6 +19,8 @@ import { pageIdIndex } from '../../Nexus/valuesChanged'
 import '../tile-base.css'
 import '../tile-title.css'
 import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/picker-base'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 interface EmbedEntry {
   path: string
@@ -87,8 +89,7 @@ export function PageTile({
 
   const embedScale = useEmbedScale()
   const host = useEditorHost({ pageId: entry?.id, connections, preview })
-  const onBodyRef = useRef(onBody)
-  onBodyRef.current = onBody
+  const onBodyRef = useLatest(onBody)
   useEffect(() => {
     if (body !== null) onBodyRef.current?.(body)
   }, [body])
@@ -156,7 +157,12 @@ export function PageTile({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
-      className={`page-tile${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}${chrome === 'window' ? ' is-window-chrome' : ''}`}
+      className={cx(
+        'page-tile',
+        editing && 'is-editing',
+        chrome === 'page' && entry?.cover && 'has-banner',
+        chrome === 'window' && 'is-window-chrome',
+      )}
       style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return

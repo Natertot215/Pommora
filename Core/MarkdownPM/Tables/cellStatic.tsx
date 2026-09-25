@@ -1,4 +1,4 @@
-import { Fragment, memo, useRef } from 'react'
+import { Fragment, memo } from 'react'
 import { aliasedToken, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import {
@@ -30,6 +30,7 @@ import type { EditorHost } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 const cellTokens = perText(tokenize, 4096)
@@ -272,8 +273,7 @@ function StaticCellImpl({
   onSelect: (range: [number, number]) => void
 }): React.JSX.Element {
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
-  const live = useRef(text)
-  live.current = text
+  const live = useLatest(text)
 
   // Following waits for the click so a drag that starts on a link selects instead.
   const linkAt = (e: React.MouseEvent): ReturnType<typeof cellLinkTarget> =>

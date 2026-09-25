@@ -5,6 +5,7 @@ import {
   type NavigationState,
   type NavRef,
   isSingleton,
+  navKey,
   type PageTarget,
   type SelectionState,
   type SelectTarget,
@@ -15,13 +16,8 @@ import {
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { type ReconcileIndex, reconcileSelection, reconcileWith } from './reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
-import {
-  moveByKey,
-  navKey,
-  RECENTS_CAP,
-  recordRecent,
-  removeRecentByKey,
-} from '../Navigation/navRecents'
+import { RECENTS_CAP, recordRecent, removeRecentByKey } from '../Navigation/navRecents'
+import { moveByKey } from '@pommora/uix/Utilities/moveItem'
 import { dropCapturedOutside } from '../Navigation/thumbMarkers'
 import {
   activeUnpinnedTab,

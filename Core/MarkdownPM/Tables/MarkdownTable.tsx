@@ -22,6 +22,7 @@ import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
@@ -149,8 +150,7 @@ export function MarkdownTable({
 
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
-  const geomRef = useRef(geom)
-  geomRef.current = geom
+  const geomRef = useLatest(geom)
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
@@ -541,7 +541,12 @@ export function MarkdownTable({
 
   return (
     <div
-      className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}${sweeping ? ' mdpm-tbl-sweeping' : ''}`}
+      className={cx(
+        'mdpm-tbl-wrap',
+        drag && 'mdpm-tbl-dragging',
+        resize && 'mdpm-tbl-resizing',
+        sweeping && 'mdpm-tbl-sweeping',
+      )}
       data-reveal-host={addsHidden ? 'off' : ''}
       ref={wrapRef}
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
@@ -565,7 +570,12 @@ export function MarkdownTable({
             {model.header.map((text, ci) => (
               <th
                 key={ci}
-                className={`mdpm-tbl-cell ${alignClass(model.columns[ci]?.align ?? null)}${colDragged(ci) ? ' mdpm-tbl-subject' : ''}${selected(0, ci) ? ' mdpm-tbl-selected' : ''}`}
+                className={cx(
+                  'mdpm-tbl-cell',
+                  alignClass(model.columns[ci]?.align ?? null),
+                  colDragged(ci) && 'mdpm-tbl-subject',
+                  selected(0, ci) && 'mdpm-tbl-selected',
+                )}
                 style={{ transform: shift(drag, 'col', ci, colW(ci)) }}
               >
                 {cell(0, ci, text)}
@@ -583,7 +593,13 @@ export function MarkdownTable({
               {row.map((text, ci) => (
                 <td
                   key={ci}
-                  className={`mdpm-tbl-cell ${alignClass(model.columns[ci]?.align ?? null)}${colDragged(ci) ? ' mdpm-tbl-subject' : ''}${headingColumn && ci === 0 ? ' mdpm-tbl-heading-col' : ''}${selected(ri + 1, ci) ? ' mdpm-tbl-selected' : ''}`}
+                  className={cx(
+                    'mdpm-tbl-cell',
+                    alignClass(model.columns[ci]?.align ?? null),
+                    colDragged(ci) && 'mdpm-tbl-subject',
+                    headingColumn && ci === 0 && 'mdpm-tbl-heading-col',
+                    selected(ri + 1, ci) && 'mdpm-tbl-selected',
+                  )}
                   style={{ transform: shift(drag, 'col', ci, colW(ci)) }}
                 >
                   {cell(ri + 1, ci, text)}

@@ -12,7 +12,7 @@ import {
 } from '@pommora/uix/Cards/Card'
 import { TAB_FAMILY, type NavRef, type WindowTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
-import { navKey } from './navRecents'
+import { navKey } from './navRef'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { NavPinButton, showNavRowMenu } from './NavList'

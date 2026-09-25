@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { base } from '@pommora/uix/Fields/fields.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 /** The done-guard keeps Enter's commit from double-firing through the blur that follows it. */
 export function PropertyEditor({
@@ -26,10 +27,8 @@ export function PropertyEditor({
     fn()
   }
   // A non-blur teardown must not drop typed text; the changed-text guard keeps StrictMode's dev cleanup cycle from committing the untouched initial value.
-  const textRef = useRef(text)
-  textRef.current = text
-  const commitRef = useRef(onCommit)
-  commitRef.current = onCommit
+  const textRef = useLatest(text)
+  const commitRef = useLatest(onCommit)
   useEffect(
     () => () => {
       if (!done.current && textRef.current !== initial)

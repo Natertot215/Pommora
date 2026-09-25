@@ -15,6 +15,7 @@ import { rowBox } from '../Menus/menu-base.css'
 import { MenuScrollFrame } from '../Menus/menu-row'
 import * as s from './calendar-picker.css'
 import { clamp } from '../Utilities/clamp'
+import { useLatest } from '../Utilities/stableApi'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -89,8 +90,7 @@ export function CalendarPicker({
   const swipe = useRef(0)
   const swipeCooldown = useRef(false)
   const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
+  const onChangeRef = useLatest(onChange)
   const emitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingEmit = useRef<string | null | undefined>(undefined)
   const initial = useRef({ start, timeOn, startMin })

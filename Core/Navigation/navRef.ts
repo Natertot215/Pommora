@@ -29,6 +29,10 @@ export function toNavRef(t: NavRef | SelectTarget): NavRef {
   return isSingleton(t) ? { kind: t.kind } : { kind: t.kind, id: t.id }
 }
 
+export function navKey(t: NavRef | SelectTarget): string {
+  return 'id' in t ? `${t.kind}:${t.id}` : t.kind
+}
+
 const NAV_KINDS = new Set<string>([
   'homepage',
   'matrix',

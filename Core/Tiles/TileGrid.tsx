@@ -33,6 +33,7 @@ import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
 import './tile-base.css'
 import './tile-grid.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface TileGridProps {
   layout: TileLayout
@@ -276,8 +277,7 @@ export function TileGrid({
     boardStatic,
     isTileLocked,
   }
-  const live = useRef(now)
-  live.current = now
+  const live = useLatest(now)
 
   // The ref mirrors the state so the commit runs as a plain event side effect, never inside a state updater (React forbids cross-component updates there).
   const settleRef = useRef<Settle | null>(null)
@@ -532,9 +532,7 @@ export function TileGrid({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={gridRef}
-      className={`tile-grid${interacting ? ' is-interacting' : ''}${
-        boardStatic ? ' is-static' : ''
-      }`}
+      className={cx('tile-grid', interacting && 'is-interacting', boardStatic && 'is-static')}
       style={{ height: geometry.totalHeight + BOTTOM_PAD_PX }}
       onContextMenu={onGridContextMenu}
     >

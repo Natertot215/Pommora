@@ -27,6 +27,7 @@ import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import * as s from './image-picker.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { host } from '../Platform/dialer'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 const FRAME_H = 260 // KNOB — every frame's fixed height (the seat sets the width)
 const MIN_W = 220 // KNOB — narrowest the frame gets (a tall seat)
@@ -63,10 +64,8 @@ export function ImagePicker({
   const [dragging, setDragging] = useState(false)
   const [repicking, setRepicking] = useState(false)
   const [pendingValue, setPendingValue] = useState<string | null>(null)
-  const draftRef = useRef(draft)
-  draftRef.current = draft
-  const aspectRef = useRef(aspect)
-  aspectRef.current = aspect
+  const draftRef = useLatest(draft)
+  const aspectRef = useLatest(aspect)
   const frameRef = useRef<HTMLDivElement>(null)
   const gesture = usePointerGesture()
 

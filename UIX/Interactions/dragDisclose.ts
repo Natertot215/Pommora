@@ -2,6 +2,7 @@
 
 import { type RefObject, useEffect, useRef } from 'react'
 import { duration, ms } from '../Animations/motion'
+import { useLatest } from '../Utilities/stableApi'
 
 const DWELL_MS = 500
 
@@ -60,8 +61,7 @@ export function useDiscloseTarget(
   expand: () => void,
 ): RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement | null>(null)
-  const expandRef = useRef(expand)
-  expandRef.current = expand
+  const expandRef = useLatest(expand)
   useEffect(() => {
     const el = ref.current
     if (!collapsed || !el) return

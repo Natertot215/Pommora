@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import type { BannerMenuAction } from '@pommora/core/Actions/identityMenus'
 import type { WindowTarget } from '@pommora/core/Navigation/navRef'
 import { resolveAssetUrl } from '../../Assets/assetUrl'
@@ -7,6 +7,7 @@ import { coverOf } from '../../Pages/pageDetail'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import type { Personalization } from '../../Settings/personalization'
 import { useSession } from '../../Session/store'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 type BannerRun = (action: BannerMenuAction) => Promise<void>
 
@@ -44,8 +45,7 @@ export function runWindowBanner(tabId: string, action: BannerMenuAction): void {
 }
 
 export function useWindowBannerSeat(active: boolean, run: BannerRun): void {
-  const held = useRef(run)
-  held.current = run
+  const held = useLatest(run)
   const tabId = useSession((s) => (active ? s.pageWindow?.activeTabId : undefined))
   useEffect(() => {
     if (!tabId) return

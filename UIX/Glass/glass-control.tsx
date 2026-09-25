@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from 'react'
+import type { HTMLAttributes } from 'react'
 import { Glass, type GlassOptics } from '@samasante/liquid-glass'
 
 /** Apple "Liquid Glass" — real edge refraction, not a flat frost; layout is the consumer's. */
@@ -27,41 +27,21 @@ const CONTROL_OPTICS: Partial<GlassOptics> = {
   sheenDark: false,
 }
 
-export function GlassControls({
-  children,
-  style,
-  ...rest
-}: { children?: ReactNode } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
-  const r = style?.borderRadius
-  return (
-    <Glass
-      optics={CONTROL_OPTICS}
-      radius={typeof r === 'number' ? r : undefined}
-      style={style}
-      {...rest}
-    >
-      {children}
-    </Glass>
-  )
-}
-
-/** GlassControls tuned for small on-control segments like the switch knob. */
+/** Tuned for small on-control segments like the switch knob. */
 const SEGMENT_OPTICS = { ...CONTROL_OPTICS, brightness: 0, depth: 0 }
 
-export function GlassSegment({
-  children,
+export function GlassControl({
+  segment,
   style,
   ...rest
-}: { children?: ReactNode } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
+}: { segment?: boolean } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   const r = style?.borderRadius
   return (
     <Glass
-      optics={SEGMENT_OPTICS}
+      optics={segment ? SEGMENT_OPTICS : CONTROL_OPTICS}
       radius={typeof r === 'number' ? r : undefined}
       style={style}
       {...rest}
-    >
-      {children}
-    </Glass>
+    />
   )
 }

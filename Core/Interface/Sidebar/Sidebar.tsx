@@ -51,6 +51,7 @@ import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure, signalPeek } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/createActions'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 const NEW_COLLECTION: Creator = {
   label: 'New Collection',
@@ -349,8 +350,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     graceMs: SIDEBAR_GHOST_GRACE_MS,
     suppressed: () => useSession.getState().renamingPath !== null || glanceShown(),
   })
-  const dndIndexRef = useRef(dndIndex)
-  dndIndexRef.current = dndIndex
+  const dndIndexRef = useLatest(dndIndex)
 
   const onCommit = (req: MutateRequest, id: string): void => {
     void mutate(req).then((moved) => {

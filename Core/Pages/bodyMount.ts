@@ -1,5 +1,5 @@
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { mirrorBody } from '../MarkdownPM/api'
 import { docString } from '../MarkdownPM/docCache'
@@ -18,6 +18,7 @@ import {
 import { cancelPageSave, schedulePageSave, settlePageSave } from '../Session/saveScheduler'
 import { host } from '../Platform/dialer'
 import { merge3 } from './merge3'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface BodySeat {
   register: (view: EditorView | null) => void
@@ -26,8 +27,7 @@ interface BodySeat {
 
 /** Seats one editor of a page in its path's shared head. A keystroke typed while another mount's text hasn't reached this one merges onto the head before it saves. */
 export function useBodyMount(path: string, onFollow?: (body: string) => void): BodySeat {
-  const live = useRef({ path, onFollow })
-  live.current = { path, onFollow }
+  const live = useLatest({ path, onFollow })
   const [seat] = useState((): BodySeat => {
     let view: EditorView | null = null
     let at = path

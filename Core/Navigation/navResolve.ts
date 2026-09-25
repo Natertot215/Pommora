@@ -4,7 +4,7 @@ import type { NavRef, WindowTarget } from '@pommora/core/Navigation/navRef'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { pagesByIdOf } from '../Nexus/treeIndex'
-import { navKey } from './navRecents'
+import { navKey } from './navRef'
 
 export interface ResolvedNav {
   key: string

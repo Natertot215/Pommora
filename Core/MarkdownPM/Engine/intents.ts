@@ -13,6 +13,7 @@ import {
 import { codeLanguageName } from './codeLangs'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
 import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 function calloutNestedQuote(
   lines: string[],
@@ -82,7 +83,7 @@ export function railTypeClass(m: ListMarker): string | null {
 }
 
 export const railClass = (r: Pick<RailIntent, 'typeClass' | 'first' | 'last'>): string =>
-  `md-outline-rail ${r.typeClass}${r.first ? ' md-outline-first' : ''}${r.last ? ' md-outline-last' : ''}`
+  cx('md-outline-rail', r.typeClass, r.first && 'md-outline-first', r.last && 'md-outline-last')
 
 // The form a marker is DRAWN as, and the line class that carries it — one answer for the editor's decorations and the resting cell's DOM alike.
 // Null where the source parses as a marker but nothing draws one: a bullet holding an empty box is prose, and both renderers have to agree on that.
@@ -96,7 +97,7 @@ export function listGlyphOf(lm: ListMarker): ListGlyph | null {
 }
 
 export function listLineClass(lm: ListMarker): string {
-  if (lm.kind === 'checkbox') return `md-list-item md-list-task${lm.checked ? ' md-list-done' : ''}`
+  if (lm.kind === 'checkbox') return cx('md-list-item md-list-task', lm.checked && 'md-list-done')
   return isSequenced(lm.kind) ? 'md-list-item md-list-ordered' : 'md-list-item'
 }
 
@@ -149,7 +150,7 @@ function pageChrome(
     intents.push({
       kind: 'line',
       from: ls,
-      className: `md-callout${co.first ? ' md-callout-first' : ''}${co.last ? ' md-callout-last' : ''}`,
+      className: cx('md-callout', co.first && 'md-callout-first', co.last && 'md-callout-last'),
       attributes: co.first ? GRIP_HOST : undefined,
     })
     if (co.prefixEnd > 0) intents.push({ kind: 'atomic', from: ls, to: ls + co.prefixEnd })
@@ -162,7 +163,11 @@ function pageChrome(
       intents.push({
         kind: 'line',
         from: ls,
-        className: `md-blockquote-nested${first ? ' md-blockquote-nested-first' : ''}${last ? ' md-blockquote-nested-last' : ''}`,
+        className: cx(
+          'md-blockquote-nested',
+          first && 'md-blockquote-nested-first',
+          last && 'md-blockquote-nested-last',
+        ),
       })
       // The bar is a real element so it sits OVER the fill with its own caps; a fill `::after` would clip one.
       intents.push({ kind: 'lineWidget', from: ls, className: 'md-blockquote-nested-bar' })
@@ -175,7 +180,7 @@ function pageChrome(
     intents.push({
       kind: 'line',
       from: ls,
-      className: `md-blockquote${first ? ' md-blockquote-first' : ''}${last ? ' md-blockquote-last' : ''}`,
+      className: cx('md-blockquote', first && 'md-blockquote-first', last && 'md-blockquote-last'),
       attributes: first ? GRIP_HOST : undefined,
     })
     base = line.slice(full.length).trim() === '' ? quotePrefixWidth(line, 1) : full.length
@@ -188,7 +193,11 @@ function pageChrome(
     intents.push({
       kind: 'line',
       from: ls,
-      className: `codeblock${fence.role === 'open' ? ' codeblock-first' : ''}${fence.role === 'close' ? ' codeblock-last' : ''}`,
+      className: cx(
+        'codeblock',
+        fence.role === 'open' && 'codeblock-first',
+        fence.role === 'close' && 'codeblock-last',
+      ),
     })
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
@@ -218,13 +227,15 @@ function pageChrome(
   if (i >= scan.citations.firstLine) {
     const entry = scan.citations.entryAt.get(i)
     if (!entry) return null
-    const dim = entry.ordinal === null ? ' md-citation-dim' : ''
     const head = i === entry.line
     const contentStart = head ? entry.contentStart : ls
     intents.push({
       kind: 'line',
       from: ls,
-      className: `${head ? 'md-citation' : 'md-citation-continued'}${dim}`,
+      className: cx(
+        head ? 'md-citation' : 'md-citation-continued',
+        entry.ordinal === null && 'md-citation-dim',
+      ),
     })
     if (head) {
       intents.push({

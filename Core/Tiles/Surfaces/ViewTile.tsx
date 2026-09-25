@@ -57,6 +57,7 @@ import { popMenu } from '../../Actions/menuActions'
 import { viewsLabel } from '../../Actions/toggleLabels'
 import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 function coerceEmbeddedView(
   raw: unknown,
@@ -81,8 +82,7 @@ function usePillPresence(views: SavedView[]): {
   const prevIdsRef = useRef<Set<string> | null>(null)
   const ids = views.map((v) => v.id)
   const idKey = ids.join(',')
-  const idsRef = useRef(ids)
-  idsRef.current = ids
+  const idsRef = useLatest(ids)
 
   useEffect(() => {
     const prev = prevIdsRef.current

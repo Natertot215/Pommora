@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SavedView } from '@pommora/core/Views/views'
 import { type Band, propertyOrderAfterDrop, structuralOrderAfterDrop } from './bandDndModel'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export function groupingKeyOf(view: SavedView): string {
   const g = view.group
@@ -53,8 +54,7 @@ export function useBandOrdering(
     setBandPatch(null)
   }, [groupingKey])
   // A commit can fire after a filesystem round-trip, so the persist goes through a ref and merges the FIRE-TIME view state: a collapse or resize persist landing mid-flight must not be clobbered.
-  const persistRef = useRef(persist)
-  persistRef.current = persist
+  const persistRef = useLatest(persist)
   const commitBand = useCallback((patch: Partial<SavedView>): void => {
     setBandPatch((prev) => ({ ...prev, ...patch }))
     persistRef.current(patch)

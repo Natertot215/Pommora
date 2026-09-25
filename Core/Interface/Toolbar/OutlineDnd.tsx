@@ -9,6 +9,7 @@ import {
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import { sectionEnd, type OutlineHeading } from '../../MarkdownPM/Engine/headingScan'
 import { moveHeadingSection } from '../../Pages/pageEditor'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.
 const LINE_INSET_RIGHT = 12
@@ -40,8 +41,7 @@ export function OutlineDnd({
   flat: OutlineHeading[]
   children: ReactNode
 }): React.JSX.Element {
-  const flatRef = useRef(flat)
-  flatRef.current = flat
+  const flatRef = useLatest(flat)
   const rows = useRef(new Map<string, HTMLElement>())
   const contentRef = useRef<HTMLDivElement | null>(null)
 

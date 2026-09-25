@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { duration, ms } from './motion'
 import { SETTLE_FALLBACK } from '../Interactions/shared'
+import { useLatest } from '../Utilities/stableApi'
 
 type Exit = keyof typeof duration
 export const exitWait = (exit: Exit): number => ms(duration[exit]) + 30
@@ -27,8 +28,7 @@ export function useExitPresence(open: boolean, exit: Exit): { mounted: boolean; 
 
 /** Settles once per pending stretch, on the end event or after `exit` plus slack, whichever comes first: a transition that never runs never ends. */
 export function useSettleFallback(pending: boolean, exit: Exit, settle: () => void): () => void {
-  const latest = useRef(settle)
-  latest.current = settle
+  const latest = useLatest(settle)
   const armed = useRef(false)
   const once = useRef(() => {
     if (!armed.current) return

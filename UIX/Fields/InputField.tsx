@@ -68,7 +68,7 @@ export function InputField({
       style={editing ? { minWidth: restWidth.current } : undefined}
       {...(activate ? { role: 'button', tabIndex: editing ? -1 : 0, 'aria-label': label } : {})}
       onClick={activate ? (e) => activate(e.currentTarget) : undefined}
-      onKeyDown={activate ? (e) => onActivateKey(() => activate(e.currentTarget))(e) : undefined}
+      onKeyDown={activate ? onActivateKey(activate) : undefined}
     >
       {leading && <span className={s.leading}>{leading}</span>}
       {edit ? (

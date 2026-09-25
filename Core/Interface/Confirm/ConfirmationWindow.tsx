@@ -4,13 +4,13 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { GlassWindow } from '@pommora/uix/Glass/glass-window'
 import { ModalScrim } from '@pommora/uix/Windows/ModalScrim'
 import * as s from './confirmation-window.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export function ConfirmationWindow(): React.JSX.Element | null {
   const pending = useSession((st) => st.pendingConfirm)
   const open = pending !== null
   const panelRef = useRef<HTMLDivElement>(null)
-  const settleRef = useRef(pending?.settle)
-  settleRef.current = pending?.settle
+  const settleRef = useLatest(pending?.settle)
   const defaultRef = useRef(false)
   defaultRef.current = pending?.req.defaultsToCancel === true
 

@@ -29,6 +29,7 @@ import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { ValuePickPresenter } from './Menus/ValuePickPresenter'
 import { DragGroup, DropSlot } from '@pommora/uix/Interactions/drag'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -109,14 +110,14 @@ export function App(): React.JSX.Element {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control
     <div
-      className={
-        'shell' +
-        (sidebarHidden ? ' sidebar-hidden' : '') +
-        (ribbonVisible ? '' : ' ribbon-hidden') +
-        (trafficLights ? '' : ' no-traffic-lights') +
-        (sidePaneOpen ? ' side-pane-open' : '') +
-        (resizing ? ' is-resizing' : '')
-      }
+      className={cx(
+        'shell',
+        sidebarHidden && 'sidebar-hidden',
+        !ribbonVisible && 'ribbon-hidden',
+        !trafficLights && 'no-traffic-lights',
+        sidePaneOpen && 'side-pane-open',
+        resizing && 'is-resizing',
+      )}
       style={
         {
           '--sidebar-width': `${sidebarWidth}px`,
