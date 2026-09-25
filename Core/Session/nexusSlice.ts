@@ -10,13 +10,12 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import {
   insertCreatedInTree,
+  moveInTree,
   patchContextGroupsInTree,
   patchNodeInTree,
-  relocateNodeInTree,
   removeNodeInTree,
   renameNodeInTree,
   reorderChildrenInTree,
-  reorderPagesInTree,
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
@@ -274,19 +273,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (cur) {
         get().patchPagesFor(req)
         switch (req.op) {
-          case 'movePage': {
-            const moved = relocateNodeInTree(cur, req.path, req.newParentPath)
-            patched = req.order
-              ? (reorderPagesInTree(moved ?? cur, req.newParentPath, req.order) ?? moved)
-              : moved
+          case 'movePage':
+          case 'moveSet':
+            patched = moveInTree(cur, req)
             break
-          }
-          case 'moveSet': {
-            // A same-parent moveSet is a pure reorder; the patch keeps the drop from snapping back.
-            const moved = relocateNodeInTree(cur, req.path, req.newParentPath)
-            patched = reorderChildrenInTree(moved ?? cur, req.newParentPath, req.order) ?? moved
-            break
-          }
           case 'rename':
             // The landed name, never the ask — a from-create rename may have disambiguated.
             patched = renameNodeInTree(cur, req.path, res.value.renamed?.name ?? req.newName)
