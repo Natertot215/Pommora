@@ -68,7 +68,6 @@ export const isWindowTarget = (t: { kind: string }): t is WindowTarget =>
 
 export type WindowTabTarget = WindowTarget | { kind: 'navwindow' }
 
-/** `isPinned` is never stored — it is derived from the pinned refs; only unpinned tabs persist, as bare refs. */
 export interface Tab {
   id: string
   target: TabTarget

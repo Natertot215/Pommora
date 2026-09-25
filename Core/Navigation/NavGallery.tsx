@@ -123,11 +123,10 @@ function GalleryCard({
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
   drag?: DragItem
 }): React.JSX.Element {
-  const selection = useSession((s) => s.selection)
+  const active = useSession((s) => s.selection.kind !== 'none' && navKey(s.selection) === it.key)
   const version = useSession((s) => s.thumbVersions[it.key] ?? 0)
   const [failed, setFailed] = useState(false)
 
-  const active = selection.kind !== 'none' && navKey(selection) === it.key
   const src = `${assetUrl(thumbRel(nexusId, thumbKey(it.key)))}?v=${version}`
   // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not read as a navigation.
   const open = (): void => {

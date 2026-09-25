@@ -45,10 +45,9 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   // Placement freezes at open — new recents activity must not reshuffle the list under the cursor.
   const [frozenRecents, setFrozenRecents] = useState(resolvedRecents)
   const shownRecents = useMemo(() => {
-    const pinned = new Set(resolvedPins.map((p) => p.key))
     const live = new Set(resolvedRecents.map((r) => r.key))
-    return frozenRecents.filter((r) => live.has(r.key) && !pinned.has(r.key))
-  }, [frozenRecents, resolvedPins, resolvedRecents])
+    return frozenRecents.filter((r) => live.has(r.key))
+  }, [frozenRecents, resolvedRecents])
   // A drag commits the SHOWN order wholesale: the store's live order can lag the frozen view, so splicing against it would land elsewhere than the drop showed.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderShownRecent = (activeKey: string, overKey: string): void => {

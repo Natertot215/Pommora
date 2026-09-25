@@ -12,7 +12,6 @@ import { connectionText } from '@pommora/core/Connections/connections'
 import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { pagePathText } from '@pommora/core/Actions/pageMenu'
-import { openInAppBrowser } from '@pommora/core/Interface/Windows/WebWindow'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession, windowTargetOf } from '../../Session/store'
 import { host } from '../../Platform/dialer'
@@ -34,7 +33,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
     }
     void popMenu(connectionMenuModel(ctx)).then((action) => {
       if (action === null) return
-      if (action === 'link:window') openInAppBrowser(target.url)
+      if (action === 'link:window') useSession.getState().openBrowser(target.url)
       else if (action === 'link:browser') void host().ask('link:open', target.url)
       else if (action === 'title:copylink') void host().ask('clipboard:write', target.url)
       else if (isConnCellAction(action)) target.onCell?.(action)
