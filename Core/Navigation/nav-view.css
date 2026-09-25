@@ -12,8 +12,8 @@
   border-bottom: var(--detail-divider-width) solid var(--border-base);
   margin: 0 var(--content-start-right) 0 var(--content-start);
   transition:
-    margin-left var(--duration-base) var(--ease-base),
-    margin-right var(--duration-base) var(--ease-base);
+    margin-left var(--pane-slide) var(--ease-base),
+    margin-right var(--pane-slide) var(--ease-base);
 }
 .nav-view-search {
   width: 100%;
@@ -29,11 +29,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px calc(var(--side-pane-clearance) + var(--surface-lane)) 28px
-    calc(var(--sidebar-clearance) + var(--surface-lane));
-  transition:
-    padding-left var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
+  padding-block: 8px 28px;
+  --interface-inset: var(--surface-lane);
 }
 
 .nav-view .nav-list {

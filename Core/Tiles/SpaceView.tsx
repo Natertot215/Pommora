@@ -10,7 +10,7 @@ export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }):
   const owner = findSpace(tree, id)
   if (!owner)
     return (
-      <div className="detail">
+      <div className="detail interface-inset">
         <div className="detail-placeholder">Space not found</div>
       </div>
     )

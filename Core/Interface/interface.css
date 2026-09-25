@@ -14,14 +14,22 @@
   pointer-events: none;
 }
 
+/* Content held clear of the shell's panes: --interface-inset is its room past each pane's edge, and --interface-inset-lead the leading side's where the two differ. */
+.interface-inset {
+  padding-left: calc(
+    var(--sidebar-clearance) +
+    var(--interface-inset-lead, var(--interface-inset, var(--content-inset)))
+  );
+  padding-right: calc(var(--side-pane-clearance) + var(--interface-inset, var(--content-inset)));
+  transition:
+    padding-left var(--pane-slide) var(--ease-base),
+    padding-right var(--pane-slide) var(--ease-base);
+}
+
 .detail {
   height: 100%;
-  padding: 38px calc(var(--side-pane-clearance) + var(--content-inset)) 28px
-    calc(var(--sidebar-clearance) + var(--content-inset));
+  padding-block: 38px 28px;
   overflow-y: auto;
-  transition:
-    padding-left var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
 }
 
 /* One tab's view; full-bleed so a banner reaches the pane edges. */
@@ -42,30 +50,19 @@
   overflow-y: auto;
 }
 .detail-body {
-  padding: 38px calc(var(--side-pane-clearance) + var(--content-inset)) 28px
-    calc(var(--sidebar-clearance) + var(--content-inset));
-  transition:
-    padding-left var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
+  padding-block: 38px 28px;
 }
 .detail-scroll.has-header .detail-body {
   padding-top: 16px;
 }
 .detail-scroll.has-header .detail-body:has(.table-head) {
   padding-top: 0;
-  padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
+  --interface-inset-lead: calc(var(--content-inset) - var(--rail-inset));
 }
 /* Cards carry no grips/chevron lane, so no views gutter is reserved. */
 .detail-scroll.has-header .detail-body:has(.cards-view) {
   padding-top: 8px;
-  padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
-  padding-right: calc(var(--side-pane-clearance) + var(--surface-lane));
-}
-
-.shell.is-resizing .detail,
-.shell.is-resizing .detail-body,
-.shell.is-resizing .tile-host-frame {
-  transition: none;
+  --interface-inset: var(--surface-lane);
 }
 
 .detail-empty {

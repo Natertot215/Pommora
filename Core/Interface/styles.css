@@ -68,16 +68,15 @@ textarea,
   height: 100dvh;
   --io: 0;
   --io-l: 1;
+  --pane-slide: var(--duration-base);
   transition:
-    --io var(--duration-base) var(--ease-base),
-    --io-l var(--duration-base) var(--ease-base);
+    --io var(--pane-slide) var(--ease-base),
+    --io-l var(--pane-slide) var(--ease-base);
   overflow: clip;
   background: var(--main-bg);
   --content-inset: 24px;
   --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
   --side-pane-clearance: 0px;
-  --content-start: calc(var(--sidebar-clearance) + var(--content-edge));
-  --content-start-right: calc(var(--side-pane-clearance) + var(--content-edge));
   --surface-lane: 8px;
   --expand-left: 96px;
 }
@@ -93,7 +92,17 @@ textarea,
   --side-pane-clearance: calc(var(--app-inset) + var(--side-pane-width));
 }
 .shell.is-resizing {
-  transition: none;
+  --pane-slide: 0s;
+}
+/* A floating window has neither of the shell's panes. */
+.window {
+  --sidebar-clearance: 0px;
+  --side-pane-clearance: 0px;
+}
+.shell,
+.window {
+  --content-start: calc(var(--sidebar-clearance) + var(--content-edge));
+  --content-start-right: calc(var(--side-pane-clearance) + var(--content-edge));
 }
 
 .titlebar {
@@ -104,7 +113,7 @@ textarea,
   right: 0;
   height: var(--toolbar-h);
   z-index: var(--z-titlebar);
-  transition: left var(--duration-base) var(--ease-base);
+  transition: left var(--pane-slide) var(--ease-base);
 }
 .shell.sidebar-hidden .titlebar {
   left: 0;
@@ -117,9 +126,6 @@ textarea,
   width: calc(var(--app-inset) + var(--sidebar-width) - 48px);
   height: calc(var(--app-inset) + var(--toolbar-h));
   z-index: var(--z-titlebar);
-}
-.shell.is-resizing .titlebar {
-  transition: none;
 }
 
 .content-pane {

@@ -45,14 +45,14 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return tree ? (
         <NavView />
       ) : (
-        <div className="detail detail-empty">
+        <div className="detail detail-empty interface-inset">
           <span>Select a collection or page</span>
         </div>
       )
     case 'homepage':
       return <HomepageView tree={tree} />
     case 'context':
-      return <div className="detail" />
+      return <div className="detail interface-inset" />
     case 'space':
       return <SpaceView tree={tree} id={target.id} />
     case 'collection': {
@@ -60,7 +60,7 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return col ? (
         <ContainerView source={col} />
       ) : (
-        <div className="detail">
+        <div className="detail interface-inset">
           <div className="detail-placeholder">Collection not found</div>
         </div>
       )
@@ -70,7 +70,7 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return set ? (
         <ContainerView source={set} />
       ) : (
-        <div className="detail">
+        <div className="detail interface-inset">
           <div className="detail-placeholder">Set not found</div>
         </div>
       )

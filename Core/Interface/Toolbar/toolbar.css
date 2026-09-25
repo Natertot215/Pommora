@@ -24,14 +24,11 @@
   --slide-cluster-w: var(--trio-w);
   --slide-breathing: var(--trio-inset);
 
-  transition: left var(--duration-base) var(--ease-base);
+  transition: left var(--pane-slide) var(--ease-base);
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;
   padding-left: calc(var(--expand-left) + var(--button-large-height) + 7px);
-}
-.shell.is-resizing .app-toolbar {
-  transition: none;
 }
 
 .app-toolbar-cluster {

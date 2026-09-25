@@ -28,11 +28,12 @@
   --banner-add-zone: 44px;
   padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
 }
-.mdpm-header:not(.has-banner) .add-banner-strip {
+.mdpm-header:not(.has-banner) :is(.add-banner-strip, .detail-title) {
   padding-left: calc(var(--sidebar-clearance) + var(--content-inset));
+  transition: padding-left var(--pane-slide) var(--ease-base);
 }
 .mdpm-header:not(.has-banner) .detail-title {
-  padding: 6px 0 14px calc(var(--sidebar-clearance) + var(--content-inset));
+  padding-block: 6px 14px;
 }
 
 .banner-overlay {
@@ -40,4 +41,5 @@
   bottom: 12px;
   left: calc(var(--sidebar-clearance) + var(--content-inset));
   right: 28px;
+  transition: left var(--pane-slide) var(--ease-base);
 }

@@ -74,12 +74,6 @@ export const stage = style({
   inset: 0,
   pointerEvents: 'none',
   overflow: 'hidden',
-  // Both clearances key to the shell's own panes, which a floating window has neither of — its picture centres on the whole surface.
-  selectors: {
-    '.window &': {
-      vars: { '--sidebar-clearance': '0px', '--side-pane-clearance': '0px' },
-    },
-  },
 })
 
 export const anchor = style({

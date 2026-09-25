@@ -12,16 +12,8 @@
   border-top: var(--width-175) solid var(--border-base);
   -webkit-app-region: no-drag;
   transition:
-    margin-left var(--duration-base) var(--ease-base),
-    margin-right var(--duration-base) var(--ease-base);
-}
-.shell.is-resizing .subfield {
-  transition: none;
-}
-/* Both gutters key to the shell's own panes, which a floating window has neither of — its bar keeps the plain edge alone. */
-.window .subfield {
-  --sidebar-clearance: 0px;
-  --side-pane-clearance: 0px;
+    margin-left var(--pane-slide) var(--ease-base),
+    margin-right var(--pane-slide) var(--ease-base);
 }
 
 .subfield-crumbs {
