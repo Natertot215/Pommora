@@ -23,6 +23,11 @@ export const DATE_FORMAT_LABELS: Record<DateFormat, string> = {
   relative: 'Relative',
 }
 
+export const DATE_FORMAT_OPTIONS = DATE_FORMATS.map((value) => ({
+  value,
+  label: DATE_FORMAT_LABELS[value],
+}))
+
 export const TIME_FORMATS = ['none', 'twelveHour', 'twentyFourHour'] as const
 export type TimeFormat = (typeof TIME_FORMATS)[number]
 

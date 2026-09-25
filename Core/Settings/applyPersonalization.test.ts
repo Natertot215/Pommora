@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
+import { SETTING_DEFAULTS } from './personalization'
 import { applyPersonalizationKey } from './applyPersonalization'
 
 describe('the Embed Scale setting reaches the root', () => {
@@ -12,5 +13,23 @@ describe('the Embed Scale setting reaches the root', () => {
   it('writes the fallback for a cleared value', () => {
     applyPersonalizationKey('embedScale', undefined)
     expect(embedScale()).toBe('0.9')
+  })
+})
+
+describe('a cleared color leaves its var to the theme', () => {
+  it.each([
+    ['connectionColor', '--connection'],
+    ['externalLinkColor', '--link'],
+    ['highlightColor', '--highlight'],
+    ['codeColor', '--code'],
+  ] as const)('%s writes a pick and removes %s when cleared', (key, name) => {
+    const inline = (): string => document.documentElement.style.getPropertyValue(name)
+    applyPersonalizationKey(key, 'red')
+    expect(inline()).not.toBe('')
+    applyPersonalizationKey(key, undefined)
+    expect(inline()).toBe('')
+    applyPersonalizationKey(key, 'red')
+    applyPersonalizationKey(key, SETTING_DEFAULTS[key])
+    expect(inline()).toBe('')
   })
 })

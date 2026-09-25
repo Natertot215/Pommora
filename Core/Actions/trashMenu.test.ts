@@ -41,11 +41,14 @@ describe('the trash row menu', () => {
 })
 
 describe('the trash date column menu', () => {
-  it('offers the format set with the one in force, and the time toggle named for its move', () => {
-    const items = trashColumnMenuItems({ format: 'full', timeShown: true })
+  it('offers every date format with the one in force, and the time toggle named for its move', () => {
+    const items = trashColumnMenuItems({ format: 'relative', timeShown: true })
     expect(items[0].submenu?.map((r) => [r.action, r.checked])).toEqual([
       ['format:monthDayYear', false],
-      ['format:full', true],
+      ['format:dayMonthYear', false],
+      ['format:short', false],
+      ['format:full', false],
+      ['format:relative', true],
     ])
     expect(items[1]).toEqual({ label: 'Hide Time', action: 'toggleTime' })
     expect(trashColumnMenuItems({ format: 'full', timeShown: false })[1].label).toBe('Show Time')

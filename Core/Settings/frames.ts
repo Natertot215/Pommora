@@ -28,11 +28,7 @@ import {
   type SettingValue,
 } from '@pommora/core/Settings/personalization'
 import type { ColorSetting } from '@pommora/uix/Theme/colors'
-import {
-  DATE_FORMAT_LABELS,
-  DATE_FORMATS,
-  type DateFormat,
-} from '@pommora/core/Properties/columnStyles'
+import { DATE_FORMAT_OPTIONS, type DateFormat } from '@pommora/core/Properties/columnStyles'
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { host } from '../Platform/dialer'
@@ -94,7 +90,7 @@ export type Row =
   | (RowText & {
       kind: 'color'
       key: KeyOf<ColorSetting<InheritSentinel>>
-      inheritsVar: string
+      clearedVar: string
       greyscale?: boolean
     })
   | PickerControlRow<LinkDisplay>
@@ -157,10 +153,6 @@ type Frame = {
   | { Surface: () => React.JSX.Element; sections?: never }
 )
 
-const dateFormatOptions: readonly PickerOption<DateFormat>[] = DATE_FORMATS.map((value) => ({
-  value,
-  label: DATE_FORMAT_LABELS[value],
-}))
 const timeFormatOptions: readonly PickerOption<TimeFormatSetting>[] = TIME_FORMAT_SETTINGS.map(
   (value) => ({ value, label: TIME_FORMAT_LABELS[value] }),
 )
@@ -190,7 +182,7 @@ export const FRAMES = roster([
             key: 'dateFormat',
             label: 'Date Format',
             hint: 'How a date reads wherever a column has not chosen its own form.',
-            options: dateFormatOptions,
+            options: DATE_FORMAT_OPTIONS,
           },
           {
             kind: 'picker',
@@ -440,21 +432,21 @@ export const FRAMES = roster([
             key: 'accent',
             label: 'Accent Color',
             hint: 'The color every accented surface derives from. Cleared follows the system accent.',
-            inheritsVar: 'var(--system-accent)',
+            clearedVar: 'var(--system-accent)',
           },
           {
             kind: 'color',
             key: 'connectionColor',
             label: 'Internal Link Color',
             hint: 'Connections to other pages. Cleared follows the accent.',
-            inheritsVar: 'var(--accent)',
+            clearedVar: 'var(--connection)',
           },
           {
             kind: 'color',
             key: 'externalLinkColor',
             label: 'External Link Color',
             hint: 'Links out to the web. Cleared follows the system accent.',
-            inheritsVar: 'var(--system-accent)',
+            clearedVar: 'var(--link)',
           },
         ],
       },
@@ -719,7 +711,7 @@ export const FRAMES = roster([
             key: 'highlightColor',
             label: 'Highlight Color',
             hint: 'The wash behind highlighted text. Cleared follows the accent.',
-            inheritsVar: 'var(--accent)',
+            clearedVar: 'var(--highlight)',
           },
         ],
       },
@@ -731,7 +723,7 @@ export const FRAMES = roster([
             key: 'codeColor',
             label: 'Code Color',
             hint: 'Inline `code` and the wash behind it. Cleared reads red.',
-            inheritsVar: 'var(--code)',
+            clearedVar: 'var(--code)',
             greyscale: true,
           },
           {
@@ -750,7 +742,7 @@ export const FRAMES = roster([
             key: 'checkboxColor',
             label: 'Checkbox Color',
             hint: 'The color checkboxes and switches fill with. Cleared follows the accent.',
-            inheritsVar: 'var(--accent)',
+            clearedVar: 'var(--checkbox-base)',
             greyscale: true,
           },
           {

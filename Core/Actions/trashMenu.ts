@@ -2,7 +2,7 @@
 
 import type { ActionItem } from './menuModel'
 import { destinationRows, type MoveTarget } from './pageMenu'
-import { DATE_FORMAT_LABELS, type DateFormat } from '../Properties/columnStyles'
+import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '../Properties/columnStyles'
 
 type TrashMenuAction = 'restore' | 'delete' | 'restoreAll' | 'deleteAll' | `restoreTo:${string}`
 
@@ -33,9 +33,6 @@ export function trashMenuItems(ctx: TrashMenuContext): ActionItem<TrashMenuActio
   ]
 }
 
-/** A hand-edited settings file may still name any other `DateFormat`, and the column honors it. */
-const TRASH_DATE_FORMATS = ['monthDayYear', 'full'] as const satisfies readonly DateFormat[]
-
 type TrashColumnAction = `format:${DateFormat}` | 'toggleTime'
 
 interface TrashColumnContext {
@@ -47,7 +44,7 @@ export function trashColumnMenuItems(ctx: TrashColumnContext): ActionItem<TrashC
   return [
     {
       label: 'Format',
-      submenu: TRASH_DATE_FORMATS.map((f) => ({
+      submenu: DATE_FORMATS.map((f) => ({
         label: DATE_FORMAT_LABELS[f],
         action: `format:${f}`,
         checked: f === ctx.format,

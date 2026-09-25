@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
 import { NO_NEXUS, ok } from '@pommora/core/Contract/result'
 import { type DevicePrefs, packDevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const treeAt = (rootPath: string): NexusTree => ({
   nexus: { id: rootPath, rootPath, name: 'x', profileImage: null, profileSubtitle: '' },
@@ -264,9 +267,8 @@ describe('a nexus switch returns the panes to their defaults', () => {
   })
 })
 
-describe('the footer fold and the navigation layouts save as their non-default state', () => {
+describe('the navigation layouts save as their non-default state', () => {
   it.each([
-    'subfieldCollapsed',
     'navWindowGallery',
     'navViewGallery',
   ] as const)('%s saves true and drops back to absent at false', async (key) => {
@@ -278,5 +280,45 @@ describe('the footer fold and the navigation layouts save as their non-default s
     useSession.getState().setDevicePref(key, false)
     await flushed()
     expect(packDevicePrefs(prefsSave.mock.lastCall?.[0])).toEqual({})
+  })
+})
+
+describe('each footer remembers its own fold on this machine', () => {
+  type Fold = [boolean, (open: boolean) => void]
+  const mountFolds = async (
+    prefs: DevicePrefs,
+  ): Promise<{ folds: Record<string, Fold>; session: Awaited<ReturnType<typeof freshStore>> }> => {
+    const session = await freshStore(withPrefs(prefs))
+    const { useFold } = await import('./store')
+    await session.useSession.getState().applyTree(treeAt('/a'))
+    const folds: Record<string, Fold> = {}
+    function Probe(): null {
+      folds.main = useFold('footer')
+      folds.page = useFold('footer:page-window')
+      folds.matrix = useFold('footer:matrix')
+      return null
+    }
+    act(() => createRoot(document.createElement('div')).render(<Probe />))
+    return { folds, session }
+  }
+  const openOf = (folds: Record<string, Fold>): boolean[] =>
+    [folds.main, folds.page, folds.matrix].map(([open]) => open)
+
+  it('saves a window footer folded under its own id, leaving the others open', async () => {
+    const { folds, session } = await mountFolds({})
+    act(() => folds.page[1](false))
+    await session.flushed()
+    expect(session.prefsSave).toHaveBeenLastCalledWith({
+      disclosure: { 'footer:page-window': false },
+    })
+    expect(openOf(folds)).toEqual([true, false, true])
+    act(() => folds.page[1](true))
+    await session.flushed()
+    expect(packDevicePrefs(session.prefsSave.mock.lastCall?.[0])).toEqual({ disclosure: {} })
+  })
+
+  it('reads a stored fold back for its own window only', async () => {
+    const { folds } = await mountFolds({ disclosure: { 'footer:matrix': false } })
+    expect(openOf(folds)).toEqual([true, true, false])
   })
 })

@@ -51,3 +51,16 @@ export const pageMetaOf =
 
 export const useSetting = <K extends SettingKey>(key: K): SettingValue<K> =>
   useSession((s) => settingOf(s.personalization, key))
+
+/** A fold this machine remembers under `key`, stored only while it differs from `defaultOpen`. Read live, since a surface that outlives a Nexus switch must follow the new record. */
+export function useFold(key: string, defaultOpen = true): [boolean, (open: boolean) => void] {
+  const open = useSession((s) => s.devicePrefs.disclosure?.[key]) ?? defaultOpen
+  const setOpen = (next: boolean): void => {
+    const s = useSession.getState()
+    s.setDevicePref('disclosure', {
+      ...s.devicePrefs.disclosure,
+      [key]: next === defaultOpen ? undefined : next,
+    })
+  }
+  return [open, setOpen]
+}

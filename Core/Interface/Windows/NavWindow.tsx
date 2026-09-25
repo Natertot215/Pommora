@@ -9,7 +9,7 @@ import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { moveByKey } from '@pommora/uix/Utilities/moveItem'
 import { resolveIndexOf } from '../../Nexus/treeIndex'
-import { windowTargetOf, useSession, useSetting } from '../../Session/store'
+import { useFold, windowTargetOf, useSession, useSetting } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
 import { NavBanner } from '../../Navigation/NavBanner'
@@ -40,6 +40,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
   const closeNav = useSession((s) => s.closeNav)
   const geometry = useWindowGeometry('navwindow')
+  const [footerOpen, setFooterOpen] = useFold('footer:navwindow')
   const tree = useSession((s) => s.tree)
 
   // Placement freezes at open — new recents activity must not reshuffle the list under the cursor.
@@ -127,9 +128,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
       onEscape={() => (sidePaneOpen ? closeSidePane() : closeNav())}
       dragSurfaces={DRAG_SURFACES}
-      footer={footer ?? <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />}
-      footerLabel={footerLabel}
-      footerLead={footerLead}
+      footer={{
+        bar: footer ?? <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />,
+        open: footerOpen,
+        onOpenChange: setFooterOpen,
+        label: footerLabel,
+        lead: footerLead,
+      }}
       className={cx('navwindow', target !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={scan}

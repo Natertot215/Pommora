@@ -1,10 +1,17 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { navKey, type SelectionState, type Tab } from '@pommora/core/Navigation/navRef'
-import { frozenOf, readyPageIds, shownPage, useSession, useSetting } from '../Session/store'
+import {
+  frozenOf,
+  readyPageIds,
+  shownPage,
+  useFold,
+  useSession,
+  useSetting,
+} from '../Session/store'
 import { useRevealNear } from '@pommora/uix/Interactions/hoverReveal'
 import { slideIn } from '@pommora/uix/Animations/motion'
-import { Icon } from '@pommora/uix/Symbols'
+import { FooterToggle } from '@pommora/uix/Interactions/FooterToggle'
 import { findCollection, findSet } from '../Nexus/treeIndex'
 import { ContainerView } from '../Views/ContainerView'
 import { HomepageView } from '../Tiles/HomepageView'
@@ -127,7 +134,7 @@ export function ContentView(): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const frozen = useSession(frozenOf)
   const navSlide = useSession((s) => s.navSlide)
-  const expanded = useSession((s) => !s.devicePrefs.subfieldCollapsed)
+  const [expanded, setExpanded] = useFold('footer')
   const hosts = useHosts()
 
   const viewRef = useRef<HTMLDivElement>(null)
@@ -176,19 +183,26 @@ export function ContentView(): React.JSX.Element {
           </ContentHostContext.Provider>
         ))}
       </div>
-      {showSubfield && <ContentFooter expanded={expanded} remeasure={reveal.remeasure} />}
+      {showSubfield && (
+        <ContentFooter
+          expanded={expanded}
+          onExpandedChange={setExpanded}
+          remeasure={reveal.remeasure}
+        />
+      )}
     </div>
   )
 }
 
 function ContentFooter({
   expanded,
+  onExpandedChange,
   remeasure,
 }: {
   expanded: boolean
+  onExpandedChange: (open: boolean) => void
   remeasure: () => void
 }): React.JSX.Element {
-  const setDevicePref = useSession((s) => s.setDevicePref)
   const kind = useSession((s) => s.selection.kind)
   const count = useSession((s) => s.detailCount)
   const slot = useSession(shownPage)
@@ -199,17 +213,12 @@ function ContentFooter({
   useLayoutEffect(remeasure)
   return (
     <>
-      <button
-        type="button"
-        className="subfield-toggle reveal-toggle"
-        data-reveal-host=""
-        data-reveal-trail
-        onClick={() => setDevicePref('subfieldCollapsed', expanded)}
-        aria-label={footerLabel(expanded)}
-        title={footerLabel(expanded)}
-      >
-        <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="headline" />
-      </button>
+      <FooterToggle
+        className="subfield-toggle"
+        open={expanded}
+        onOpenChange={onExpandedChange}
+        label={footerLabel(expanded)}
+      />
       <CitationsToggle page={page} />
       <div className="subfield-reveal reveal-band">
         <Subfield page={page} count={count} lead={kind === 'none' ? <ViewTypeItem /> : undefined} />

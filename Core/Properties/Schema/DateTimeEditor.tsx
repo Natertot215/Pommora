@@ -1,6 +1,5 @@
 import {
-  DATE_FORMAT_LABELS,
-  DATE_FORMATS,
+  DATE_FORMAT_OPTIONS,
   type ColumnStyle,
   type DateFormat,
   type TimeFormat,
@@ -8,7 +7,6 @@ import {
 } from '@pommora/core/Properties/columnStyles'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
-const DATE_OPTIONS = DATE_FORMATS.map((value) => ({ value, label: DATE_FORMAT_LABELS[value] }))
 const WEEKDAY_OPTIONS: { value: WeekdayFormat; label: string }[] = [
   { value: 'long', label: 'Full' },
   { value: 'short', label: 'Short' },
@@ -40,7 +38,7 @@ export function DateTimeEditor({
           'calendar-days',
           'Date',
           dateFmt,
-          DATE_OPTIONS,
+          DATE_FORMAT_OPTIONS,
           (v) => onChange({ date_format: v }),
           { ...ROW_LOOK, ariaLabel: 'Date format' },
         )}

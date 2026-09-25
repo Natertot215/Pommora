@@ -8,7 +8,7 @@ import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { chromePartRect, publishChromePart } from '../chromeParts'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
-import { windowTargetOf, useSession } from '../../Session/store'
+import { useFold, windowTargetOf, useSession } from '../../Session/store'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
@@ -36,6 +36,7 @@ function PageWindowBody({
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)
   const geometry = useWindowGeometry('page-window')
+  const [footerOpen, setFooterOpen] = useFold('footer:page-window')
   const tree = useSession((s) => s.tree)
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
@@ -84,9 +85,17 @@ function PageWindowBody({
       }
       actions={actions}
       right={right}
-      footer={footer}
-      footerLabel={footerLabel}
-      footerLead={footerLead}
+      footer={
+        footer
+          ? {
+              bar: footer,
+              open: footerOpen,
+              onOpenChange: setFooterOpen,
+              label: footerLabel,
+              lead: footerLead,
+            }
+          : undefined
+      }
     >
       {body}
     </WindowBase>

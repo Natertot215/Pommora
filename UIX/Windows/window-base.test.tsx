@@ -4,7 +4,7 @@ import { act, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
 import type { Size } from '../Interactions/ResizeFrame'
-import { WindowBase } from './window-base'
+import { WindowBase, type WindowFooter } from './window-base'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -26,8 +26,7 @@ afterEach(() => {
 const mount = (props: {
   initialSize?: Size
   onSizeChange?: (s: Size) => void
-  footer?: React.ReactNode
-  footerLead?: React.ReactNode
+  footer?: WindowFooter
 }): HTMLElement => {
   act(() =>
     root.render(
@@ -39,6 +38,14 @@ const mount = (props: {
   return host.querySelector('.window') as HTMLElement
 }
 
+const footer = (fold: Partial<WindowFooter> = {}): WindowFooter => ({
+  bar: <span />,
+  open: true,
+  onOpenChange: () => undefined,
+  label: () => 'Fold',
+  ...fold,
+})
+
 const geo = (el: HTMLElement): Record<string, string> => ({
   left: el.style.left,
   top: el.style.top,
@@ -46,10 +53,16 @@ const geo = (el: HTMLElement): Record<string, string> => ({
   height: el.style.height,
 })
 
+// The click a browser sends after the release, which a drag swallows.
+const release = (): void => {
+  act(() => firePointer(window, 'pointerup'))
+  document.dispatchEvent(new MouseEvent('click'))
+}
+
 const grab = (el: HTMLElement, moves: readonly [number, number][]): void => {
   act(() => firePointer(el, 'pointerdown', { x: 0, y: 0 }))
   for (const [x, y] of moves) act(() => firePointer(window, 'pointermove', { x, y }))
-  act(() => firePointer(window, 'pointerup'))
+  release()
 }
 
 describe('a floating window opens at the size it is given', () => {
@@ -145,7 +158,7 @@ describe('a floating window reports its size once per drag', () => {
 
 describe('the footer reveal measures its toggles only while the pointer moves free', () => {
   it('a held move never measures, and the first free move after it measures once', () => {
-    const el = mount({ footer: <span />, footerLead: <button type="button" data-reveal-lead /> })
+    const el = mount({ footer: footer({ lead: <button type="button" data-reveal-lead /> }) })
     const boxes = [
       el,
       ...el.querySelectorAll<HTMLElement>('[data-reveal-trail], [data-reveal-lead]'),
@@ -154,7 +167,7 @@ describe('the footer reveal measures its toggles only while the pointer moves fr
     const drag = el.querySelector('.window-drag') as HTMLElement
     act(() => firePointer(drag, 'pointerdown', { x: 0, y: 0 }))
     for (const x of [10, 20, 30]) act(() => firePointer(drag, 'pointermove', { x, y: 0 }))
-    act(() => firePointer(window, 'pointerup'))
+    release()
     for (const m of measures) expect(m).not.toHaveBeenCalled()
     for (const x of [40, 50]) act(() => firePointer(el, 'pointermove', { x, y: -500, buttons: 0 }))
     for (const m of measures) expect(m).toHaveBeenCalledTimes(1)
@@ -165,7 +178,7 @@ describe('the footer toggle reveals within reach of itself', () => {
   const rect = (left: number, top: number, right: number, bottom: number): DOMRect =>
     ({ left, top, right, bottom, width: right - left, height: bottom - top }) as DOMRect
   const setup = (): { el: HTMLElement; trail: HTMLElement } => {
-    const el = mount({ footer: <span /> })
+    const el = mount({ footer: footer() })
     const trail = el.querySelector('[data-reveal-trail]') as HTMLElement
     vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 1000, 600))
     vi.spyOn(trail, 'getBoundingClientRect').mockReturnValue(rect(900, 552, 940, 576))
@@ -194,5 +207,16 @@ describe('the footer toggle reveals within reach of itself', () => {
     act(() => el.dispatchEvent(new Event('transitionend', { bubbles: true })))
     at(el, 920, 560)
     expect(el.classList.contains('is-footer-near')).toBe(false)
+  })
+})
+
+describe('the footer folds as its host says', () => {
+  it('draws the fold it is handed and reports a toggle rather than holding it', () => {
+    const onOpenChange = vi.fn()
+    const el = mount({ footer: footer({ open: false, onOpenChange }) })
+    expect(el.classList.contains('is-footer-open')).toBe(false)
+    act(() => (el.querySelector('.window-footer-toggle') as HTMLElement).click())
+    expect(onOpenChange).toHaveBeenCalledWith(true)
+    expect(el.classList.contains('is-footer-open')).toBe(false)
   })
 })

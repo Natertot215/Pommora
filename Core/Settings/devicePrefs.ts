@@ -1,15 +1,14 @@
-// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar folds, window sizes, the footer's fold and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar and footer folds, window sizes and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
 import { readValue } from '../Platform/localState'
 import { coerceTenthsScale } from './personalization'
 
-// packDevicePrefs drops a top-level `false`, so a flat flag names its non-default state (`subfieldCollapsed`), and a map that holds `false` values — a default-open group folded shut — nests.
+// packDevicePrefs drops a top-level `false`, so a flat flag names its non-default state (`navWindowGallery`), and a map that holds `false` values — a default-open group or footer folded shut — nests.
 export interface DevicePrefs {
   nativeMenus?: boolean
   interfaceScale?: number
   panes?: { sidebar?: number; sidePane?: number }
   disclosure?: Partial<Record<string, boolean>>
   windows?: Record<string, { w: number; h: number }>
-  subfieldCollapsed?: boolean
   navWindowGallery?: boolean
   navViewGallery?: boolean
 }

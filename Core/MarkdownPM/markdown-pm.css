@@ -203,11 +203,7 @@
 }
 .md-highlight {
   --highlight-bleed: 0.1em; /* KNOB — how far the wash bleeds past the words */
-  background: color-mix(
-    in srgb,
-    var(--highlight, var(--accent)) var(--tint-secondary),
-    transparent
-  );
+  background: color-mix(in srgb, var(--highlight) var(--tint-secondary), transparent);
   border-radius: var(--md-box-radius);
   padding: 0.1em var(--highlight-bleed);
   margin-inline: calc(-1 * var(--highlight-bleed));
