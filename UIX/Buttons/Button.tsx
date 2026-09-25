@@ -1,6 +1,7 @@
 import { type ButtonHTMLAttributes, Fragment, type ReactNode, type Ref } from 'react'
 import { segment } from '../Elements/segment.css'
 import { GlassControls } from '../Glass/glass-control'
+import { revealTarget } from '../Interactions/hover-reveal.css'
 import { Icon } from '../Symbols'
 import { type ButtonSize, type IconSize, vars } from '../Theme'
 import { cx } from '../Utilities/cx'
@@ -20,7 +21,7 @@ type ButtonProps = Look & {
   icon?: string
   label?: ReactNode
   labelCollapsed?: boolean
-  revealOnHover?: boolean
+  reveal?: boolean
   inRun?: boolean
   pressed?: boolean
   showSelection?: boolean
@@ -36,7 +37,7 @@ export function Button({
   icon,
   label,
   labelCollapsed,
-  revealOnHover,
+  reveal,
   inRun,
   pressed,
   showSelection = true,
@@ -58,7 +59,7 @@ export function Button({
         inRun && s.inRun,
         labeled && s.labeled,
         outline && s.outlined,
-        revealOnHover && s.revealOnHover,
+        reveal && revealTarget,
         labeled && !icon && s.labelOnly,
         pressed && showSelection && s.pressed,
         className,

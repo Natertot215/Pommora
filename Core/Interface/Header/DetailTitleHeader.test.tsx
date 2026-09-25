@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { labelSlotHidden } from '@pommora/uix/Buttons/button-base.css'
+import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
 import { DetailTitleHeader, type TitleSearch } from './DetailTitleHeader'
 
@@ -59,7 +60,7 @@ describe('the title search', () => {
       q('.detail-title-text').dispatchEvent(
         new MouseEvent('pointerover', { bubbles: true, relatedTarget: document.body }),
       )
-      vi.advanceTimersByTime(1500)
+      vi.advanceTimersByTime(REVEAL_DWELL_MS)
     })
     expect(q('.detail-title-hint').classList.contains(labelSlotHidden)).toBe(false)
     act(() => q('.detail-title-search').focus())

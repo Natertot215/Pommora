@@ -1,10 +1,7 @@
 import { useRef } from 'react'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import {
-  GHOST_DWELL_MS,
-  useGhostAnchor,
-  type GhostAnchor,
-} from '@pommora/uix/Interactions/ghostCreate'
+import { useGhostAnchor, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
+import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { base } from '@pommora/uix/Fields/fields.css'
@@ -20,7 +17,7 @@ export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
   const busyRef = useRef(busy)
   busyRef.current = busy
   return useGhostAnchor({
-    dwellMs: GHOST_DWELL_MS,
+    dwellMs: REVEAL_DWELL_MS,
     graceMs: GHOST_GRACE_MS,
     suppressed: () => busyRef.current,
   })

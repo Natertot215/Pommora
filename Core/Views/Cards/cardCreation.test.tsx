@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
-import { GHOST_DWELL_MS } from '@pommora/uix/Interactions/ghostCreate'
+import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../../Session/store'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
@@ -90,7 +90,7 @@ const dwellOn = async (id: string): Promise<void> => {
   await act(async () => {
     hover(card(id), true)
   })
-  await tick(GHOST_DWELL_MS)
+  await tick(REVEAL_DWELL_MS)
 }
 
 describe('the cards ghost — dwell, create, and exit', () => {

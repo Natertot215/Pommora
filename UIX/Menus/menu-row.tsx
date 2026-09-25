@@ -125,6 +125,7 @@ export function MenuItem({
         className,
       )}
       style={rowStyle}
+      data-reveal-host={inert ? undefined : ''}
       role={act ? 'button' : undefined}
       tabIndex={act ? 0 : undefined}
       onClick={act}

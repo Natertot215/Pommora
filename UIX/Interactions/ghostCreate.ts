@@ -1,7 +1,5 @@
 import { createContext, useEffect, useRef, useState } from 'react'
 
-export const GHOST_DWELL_MS = 1500 // KNOB
-
 export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
 // Watchdog for a consumer that never delivers `closed()`; a stranded `closing` reopens with no dwell.

@@ -1,5 +1,6 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
 import { titleReveal } from '../Animations/animations.css'
+import { REVEAL_FADE } from '../Interactions/hover-reveal.css'
 import { type ButtonSize, text, tintAt, vars } from '../Theme'
 
 const c = vars.color
@@ -78,7 +79,7 @@ export const button = style({
   color: 'var(--button-ink)',
   whiteSpace: 'nowrap',
   cursor: 'default',
-  transition: `background var(--duration-fast) var(--ease-base), color var(--duration-fast) var(--ease-base), opacity var(--duration-fast) var(--ease-base), padding-inline ${titleReveal}`,
+  transition: `background var(--duration-fast) var(--ease-base), color var(--duration-fast) var(--ease-base), ${REVEAL_FADE}, padding-inline ${titleReveal}`,
   selectors: {
     '&:hover:not(:disabled)': {
       background: `linear-gradient(${c.state.hover}, ${c.state.hover}), var(--button-fill)`,
@@ -164,12 +165,6 @@ export const type = styleVariants({
 })
 
 export const outlined = style({ boxShadow: `inset 0 0 0 ${OUTLINE_W} var(--button-outline)` })
-
-export const revealOnHover = style({
-  opacity: 0,
-  selectors: { '&:focus-visible': { opacity: 1 } },
-})
-globalStyle(`[data-reveal-host]:hover ${revealOnHover}`, { opacity: 1 })
 
 export const ghostRest = style({
   opacity: 'var(--state-ghost)',

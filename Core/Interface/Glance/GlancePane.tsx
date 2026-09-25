@@ -458,7 +458,7 @@ export function GlancePane(): React.JSX.Element {
         <div
           ref={cardRef}
           {...{ [GLANCE_BODY_ATTR]: '' }}
-          data-reveal-host
+          data-reveal-host=""
           className="glance-body"
           style={{ width: box.w, height: box.h }}
           onPointerDownCapture={(e) => {
@@ -522,7 +522,7 @@ export function GlancePane(): React.JSX.Element {
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
               <div
                 {...{ [GLANCE_BODY_ATTR]: '' }}
-                data-reveal-host
+                data-reveal-host=""
                 className="glance-body"
                 style={{ width: p.size.w, height: p.size.h }}
                 onClick={onFoldClick}

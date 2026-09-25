@@ -20,7 +20,7 @@ import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
-import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
+import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -109,9 +109,6 @@ function usePillPresence(views: SavedView[]): {
 
 // KNOB — how long the band's lock stays after locking before it fades
 const BAND_LOCK_LINGER_MS = 2000
-
-// KNOB — the beat that carries the pointer between reveal zones (title → band → heading row)
-const PEEK_GRACE_MS = 150
 
 type PeekAnchor = { kind: 'zone'; el: Element } | { kind: 'row'; first: Element } | null
 
@@ -250,29 +247,19 @@ export function ViewTile({
   const [menuOpen, setMenuOpen] = useState(false)
   const anchoredOpen =
     listOpen || cfgOpen || menuOpen || renaming !== null || iconFor !== null || colorFor !== null
-  const bandPeek = useHoverDwell(!viewsShown, anchoredOpen, PEEK_GRACE_MS)
-  const unlockOffer = useHoverDwell(viewsShown, false, PEEK_GRACE_MS)
-  const peekAnchor = useRef<PeekAnchor>(null)
-  const dwell = viewsShown ? unlockOffer : bandPeek
-  const bandOpen = viewsShown || bandPeek.on
-  const [lockLingers, setLockLingers] = useState(false)
-  useEffect(() => {
-    if (!lockLingers) return
-    const id = window.setTimeout(() => setLockLingers(false), BAND_LOCK_LINGER_MS)
-    return () => window.clearTimeout(id)
-  }, [lockLingers])
-  // The lock's press hands the pointer to whichever dwell the toggle activates, so the band and lock stay put until it leaves.
-  const lockPressed = useRef(false)
-  useEffect(() => {
-    if (!lockPressed.current) return
-    lockPressed.current = false
-    dwell.enter()
-  }, [viewsShown])
-  const hoverProps = (zone: typeof dwell) => ({
-    onPointerEnter: () => zone.hover(true),
-    onPointerLeave: () => zone.hover(false),
+  const reveal = useHoverReveal({
+    dwell: true,
+    held: !viewsShown && anchoredOpen,
+    engaged: viewsShown,
+    linger: { on: BAND_LOCK_LINGER_MS },
   })
-  const peekHover = viewsShown ? undefined : hoverProps(bandPeek)
+  const peekAnchor = useRef<PeekAnchor>(null)
+  const bandOpen = viewsShown || reveal.on
+  const hoverProps = {
+    onPointerEnter: () => reveal.hover(true),
+    onPointerLeave: () => reveal.hover(false),
+  }
+  const peekHover = viewsShown ? undefined : hoverProps
 
   // The anchor resolves once per entry into the body, so crossing cards reads no layout beyond the first row's.
   const bodyHover = viewsShown
@@ -282,11 +269,11 @@ export function ViewTile({
           const a = peekAnchor.current
           if (!a || !(a.kind === 'zone' ? a.el : a.first).isConnected)
             peekAnchor.current = resolvePeekAnchor(e.currentTarget)
-          bandPeek.hover(inPeekAnchor(peekAnchor.current, e.target))
+          reveal.hover(inPeekAnchor(peekAnchor.current, e.target))
         },
         onPointerLeave: () => {
           peekAnchor.current = null
-          bandPeek.hover(false)
+          reveal.hover(false)
         },
       }
 
@@ -492,15 +479,14 @@ export function ViewTile({
   )
 
   const bandLock = !locked && (
-    <span className={cx(s.bandLock, !dwell.on && !lockLingers && titleActionFadeHidden)}>
+    <span className={cx(s.bandLock, !reveal.on && titleActionFadeHidden)}>
       <button
         type="button"
         className={settingsBtn}
         aria-label={viewsLabel(viewsShown)}
         onClick={() => {
-          lockPressed.current = true
+          reveal.press()
           toggleViews()
-          setLockLingers(!viewsShown)
         }}
       >
         <LockGlyph locked={viewsShown} size="body" />
@@ -613,7 +599,7 @@ export function ViewTile({
             </div>
           </div>
         </div>
-        <div className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)} {...hoverProps(dwell)}>
+        <div className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)} {...hoverProps}>
           <div className={s.spaceInner}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
             <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
