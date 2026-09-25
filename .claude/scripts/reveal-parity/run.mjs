@@ -256,7 +256,7 @@ surface('tabs', async () => {
   return { ...res, from: { ...bannerless, ...banner, ...collectionBanner, ...nav } }
 })
 
-// The last distance along a ray where the control shows; a reach is contiguous, so the ray stops at its first miss once seen.
+// The last distance along a ray where the control shows. The whole ray is walked: crossing from one element to another can drop a reveal for a single step.
 async function reach(ctl, origin, dx, dy, settle = 250) {
   let last = -1
   for (let d = 0; d <= 360; d += 10) {
@@ -264,7 +264,6 @@ async function reach(ctl, origin, dx, dy, settle = 250) {
     await sleep(settle)
     const s = await sample(ctl)
     if (s.vis > 0.5) last = d
-    else if (last >= 0) break
   }
   await park()
   await sleep(SETTLE)
