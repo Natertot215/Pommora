@@ -93,7 +93,7 @@ export function advanceHead(path: string, text: string): BodyHead | undefined {
 
 const inFlight = new Map<string, Promise<Result<PageDetail>>>()
 
-/** Concurrent callers share a single openPage round-trip. A drop or clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed the cache with a pre-write or previous-nexus detail. */
+/** Concurrent callers share a single `page:open` round-trip. A drop or clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed the cache with a pre-write or previous-nexus detail. */
 export function fetchPageResult(path: string): Promise<Result<PageDetail>> {
   const pending = inFlight.get(path)
   if (pending) return pending

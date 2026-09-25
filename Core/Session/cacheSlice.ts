@@ -16,7 +16,7 @@ export interface CacheSlice {
   setHostLock: (host: TileHostRef, locked: boolean) => void
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
-  /** A view's values snapshot is fetched once per container open, so without this the renamed column reads blank; the key pair rides along to re-key the optimistic overrides. */
+  /** A view's values snapshot is fetched once per container open, so a property rename or a pushed value change bumps this to refresh it; a rename's key pair rides along to re-key the optimistic overrides. */
   valuesEpoch: ValuesEpoch | null
   bumpValuesEpoch: (oldKey: string, newKey: string) => void
   bumpContainerValues: (changes: ValueChange[]) => void

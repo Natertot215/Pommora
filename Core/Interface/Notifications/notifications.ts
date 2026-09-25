@@ -1,3 +1,4 @@
+// Store-free, since the slices report through these writers: the notice on screen lives here, beside them.
 import { useSyncExternalStore } from 'react'
 import type { Result } from '@pommora/core/Contract/result'
 import { pushUndo } from '@pommora/core/Session/undo'
@@ -19,7 +20,7 @@ const show = (next: Posted | null): void => {
   for (const fn of listeners) fn()
 }
 
-function subscribe(fn: () => void): () => void {
+function subscribeNotification(fn: () => void): () => void {
   listeners.add(fn)
   return () => listeners.delete(fn)
 }
@@ -27,7 +28,7 @@ function subscribe(fn: () => void): () => void {
 export const currentNotification = (): Posted | null => shown
 
 export const useNotification = (): Posted | null =>
-  useSyncExternalStore(subscribe, currentNotification)
+  useSyncExternalStore(subscribeNotification, currentNotification)
 
 export function dismissNotification(id: number): void {
   if (shown?.id === id) show(null)

@@ -52,7 +52,6 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
-  /** Answers what the change did, or null when it didn't land; `onCreated` runs before the newborn is shown. */
   mutate: (
     req: MutateRequest,
     onCreated?: (created: { id: string; path: string }) => void | Promise<void>,
@@ -81,7 +80,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetNavigation()
     s.resetWindow()
     s.resetChrome()
-    clearNotification()
     s.resetLayout()
     s.resetCaches()
     s.resetGlance()
@@ -89,6 +87,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetRename()
     s.resetViewSearch()
     resetUndo()
+    clearNotification()
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {

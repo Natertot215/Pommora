@@ -4,7 +4,6 @@ const DEPTH = 100
 const stack: Revert[] = []
 let group: Revert[] | null = null
 
-/** The value-undo chord's run: a text surface keeps its own undo, and a stale entry drains through to the one beneath it. */
 export function undoValue(target: EventTarget | null): boolean {
   if (target instanceof Element && target.closest('input,textarea,[contenteditable],.cm-editor'))
     return false
