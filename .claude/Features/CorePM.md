@@ -107,7 +107,7 @@ The schema grows without migrations — additive tables reach existing files on 
 
 #### II. File History
 
-**SOURCE:** `Core/Pages/fileHistory.ts` · `Desktop/Store/versionsDb.ts` · `Core/Pages/restoreSnapshot.ts`
+**SOURCE:** `Core/Pages/fileHistory.ts` · `Desktop/Store/versionsDb.ts` · `Core/Interface/Windows/PageHistoryWindow.tsx`
 
 A page accumulates snapshots of its whole file while it is edited, in `versions.db`, the second device-local file. The store holds two tables. `snapshots(page_id, ts, source, blob)` carries a page's entire text, frontmatter included, compressed with zlib in its wrapped form, keyed by the page's `ID` and the moment it was taken, and marked `edit`, `external`, or `restore` by what produced it. `captures(path, ts, reason, blob)` carries the bytes a sync conflict or a refused tile save left behind, keyed by relative path, for every kind of file rather than pages alone. It opens and closes beside `nexus.db` in the same folder. Either store, locked or unreadable, is left in place for the next launch; a damaged one, reported by SQLite as not a database or as a malformed image, is set aside as `<name>.corrupt-<stamp>.db` for a fresh store, and nothing is ever deleted. `versions.db` also sets aside a file that opens but fails its integrity check. Any `.db` file and its `-wal` and `-shm` journals are neither watched nor listed anywhere in the Nexus, and a SQLite file is refused as an attachment: it is not content.
 
