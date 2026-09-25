@@ -3,8 +3,6 @@ import {
   type AccentSetting,
   type CellKey,
   DEFAULT_ACCENT,
-  RAMP_FAMILIES,
-  RAMP_STEPS,
   type RampFamily,
   type RampStep,
   type SPECTRUM,
@@ -14,8 +12,6 @@ import {
 } from './colors'
 import { vars as colorVars } from './color.css'
 import type { LabelColorName } from '../Labels/label-base.css'
-
-export { RAMP_FAMILIES, RAMP_STEPS, type CellKey }
 
 const c = colorVars.color
 const WHITE = c.system.white

@@ -1,10 +1,13 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
 import { titleReveal } from '../Animations/animations.css'
 import { REVEAL_FADE } from '../Interactions/hover-reveal.css'
-import { type ButtonSize, text, tintAt, vars } from '../Theme'
+import { STATE_OPACITY, vars } from '../Theme/color.css'
+import { text } from '../Theme/typography.css'
+import { tintAt } from '../Theme/colors'
+import { type ButtonSize, size as sizeTokens } from '../Theme/theme-vars.css'
 
 const c = vars.color
-const icon = vars.size.icon
+const icon = sizeTokens.icon
 
 const OUTLINE_W = 'var(--width-125)'
 
@@ -84,7 +87,7 @@ export const button = style({
     '&:hover:not(:disabled)': {
       background: `linear-gradient(${c.state.hover}, ${c.state.hover}), var(--button-fill)`,
     },
-    '&:disabled': { opacity: 'var(--state-inactive)' },
+    '&:disabled': { opacity: STATE_OPACITY.inactive },
   },
 })
 
@@ -167,7 +170,7 @@ export const type = styleVariants({
 export const outlined = style({ boxShadow: `inset 0 0 0 ${OUTLINE_W} var(--button-outline)` })
 
 export const ghostRest = style({
-  opacity: 'var(--state-ghost)',
+  opacity: STATE_OPACITY.ghost,
   selectors: { '&:hover': { opacity: 1 } },
 })
 

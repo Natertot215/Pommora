@@ -18,6 +18,7 @@ import { NavPinButton, showNavRowMenu } from './NavList'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { useThumb } from '../Assets/useThumb'
+import './nav-list.css'
 
 export function NavGallery({
   pins,
@@ -63,15 +64,7 @@ export function NavGallery({
     <DraggableCard key={it.key} it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
   )
   return (
-    <div
-      className="nav-gallery"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--card-gap-v)',
-        padding: '0 var(--surface-inset)',
-      }}
-    >
+    <div className="nav-gallery nav-gallery-list">
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} onReorder={reorderPin} {...zone}>

@@ -1,4 +1,7 @@
 import { style } from '@vanilla-extract/css'
+import { vars } from '../Theme/color.css'
+
+export const SLIDER_KNOB_RADIUS = 9
 
 export const strip = style({
   position: 'relative',
@@ -22,8 +25,8 @@ export const knobFill = style({
   display: 'block',
   width: '26px',
   height: '18px',
-  borderRadius: '9px',
-  background: 'var(--label-control)',
+  borderRadius: `${SLIDER_KNOB_RADIUS}px`,
+  background: vars.color.label.control,
 })
 
 export const readout = style({ flexShrink: 0, fontVariantNumeric: 'tabular-nums' })

@@ -9,7 +9,7 @@ import { PageHeader } from '../../Pages/PageHeader'
 import { flushPageSave } from '../../Session/saveScheduler'
 import { useBodyMount } from '../../Pages/bodyMount'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
-import { useEmbedScale, useSession } from '../../Session/store'
+import { useSession } from '../../Session/store'
 import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { Banner } from '../../Interface/Header/Banner'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -87,7 +87,6 @@ export function PageTile({
   const body = entry?.body ?? null
   const failed = entry !== null && entry.body === null
 
-  const embedScale = useEmbedScale()
   const host = useEditorHost({ pageId: entry?.id, connections, preview })
   const onBodyRef = useLatest(onBody)
   useEffect(() => {
@@ -163,7 +162,6 @@ export function PageTile({
         chrome === 'page' && entry?.cover && 'has-banner',
         chrome === 'window' && 'is-window-chrome',
       )}
-      style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return
         if ((e.target as HTMLElement).closest?.(`.mdpm-header, .banner, [${PICKER_PORTAL_ATTR}]`))
@@ -187,7 +185,6 @@ export function PageTile({
         onSelection={publishSelection}
         readOnly={!editing}
         autoFocus
-        scale={embedScale}
         edgeFade
         warm={warm}
         embedAncestors={[...(ancestors ?? []), path]}

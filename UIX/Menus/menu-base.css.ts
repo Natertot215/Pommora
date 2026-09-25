@@ -1,5 +1,5 @@
 import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
-import { vars as colorVars } from '../Theme/color.css'
+import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import { font, text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
@@ -126,11 +126,11 @@ export const matchText = style({ fontWeight: font.weight.emphasized })
 
 export const rowDisabled = style({
   selectors: {
-    '&&': { opacity: 'var(--state-inactive)', pointerEvents: 'none' },
+    '&&': { opacity: STATE_OPACITY.inactive, pointerEvents: 'none' },
   },
 })
 
-export const rowDragging = style({ opacity: 'var(--state-ghost)' })
+export const rowDragging = style({ opacity: STATE_OPACITY.ghost })
 
 export const gutter = style({
   selectors: {
@@ -154,7 +154,7 @@ export const side = style({
   alignItems: 'center',
   gap: '4px',
   flex: '0 0 auto',
-  color: 'var(--label-secondary)',
+  color: c.label.secondary,
   selectors: {
     [`${topRow} &:has(> ${topBarTrailingLabel})`]: { flex: '0 1 auto', minWidth: 0 },
   },
@@ -230,6 +230,8 @@ export const footing = style([
 
 export const footingBar = style({ display: 'flex', flexDirection: 'column' })
 
+export const spacer = style({ flex: '1 1 auto' })
+
 export const footingLabel = style([
   text.footnote.emphasized,
   { selectors: { '&&': { color: c.label.secondary } } },
@@ -240,7 +242,7 @@ export const footingQuiet = style({ selectors: { '&&&': { color: c.label.tertiar
 export const accessoryButton = style({
   width: 'var(--accessory-box, 20px)',
   color: c.label.tertiary,
-  selectors: { '&&:disabled': { opacity: 'var(--state-ghost)' } },
+  selectors: { '&&:disabled': { opacity: STATE_OPACITY.ghost } },
 })
 
 export const detail = style([

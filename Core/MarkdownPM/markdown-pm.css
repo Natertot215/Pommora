@@ -6,6 +6,7 @@
 
 :root {
   --editor-scale: 1;
+  --embed-scale: 0.9;
   --h1-size: 1.8em;
   --h2-size: 1.6em;
   --h3-size: 1.4em;
@@ -18,7 +19,7 @@
 }
 
 .mdpm-shell {
-  --glyph-scale: calc(var(--page-detail-scale) * var(--tile-zoom, 1));
+  --glyph-scale: calc(var(--page-detail-scale) * var(--tile-zoom));
   --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
   --fold-chevron-size: calc(var(--text-headline-size) * var(--glyph-scale));
   --heading-space: 0.325; /* KNOB: the space above a heading, as a share of its size */
@@ -65,7 +66,7 @@
   --citation-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
   --citation-divider-gap: 14px; /* KNOB: the seam's breathing room */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
-  font-size: calc(var(--editor-font-size, 15px) * var(--tile-zoom, 1) * var(--editor-scale, 1));
+  font-size: calc(15px * var(--glyph-scale));
 }
 
 .mdpm-divider,
@@ -752,7 +753,7 @@
   position: absolute;
   left: var(--grip-x);
   top: calc(var(--callout-gap) + var(--grip-y));
-  transition: opacity var(--reveal-fade) var(--ease-base, ease);
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::after {
   top: var(--grip-y);
@@ -942,6 +943,10 @@
 .mdpm-autocomplete-slot {
   min-width: 180px; /* KNOB */
   max-width: 320px; /* KNOB */
+}
+
+.mdpm-block-menu {
+  width: 140px; /* KNOB */
 }
 
 /* The drawn caret and selection layers; the full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme. */

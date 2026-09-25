@@ -3,7 +3,7 @@ import { segment } from '../Elements/segment.css'
 import { GlassControl } from '../Glass/glass-control'
 import { revealTarget } from '../Interactions/hover-reveal.css'
 import { Icon } from '../Symbols'
-import { type ButtonSize, type IconSize, vars } from '../Theme'
+import { type ButtonSize, type IconSize, size as sizeTokens } from '../Theme/theme-vars.css'
 import { cx } from '../Utilities/cx'
 import * as s from './button-base.css'
 
@@ -66,7 +66,7 @@ export function Button({
       )}
       style={{
         ...(paddingX ? { paddingInline: paddingX } : null),
-        ...(icon && iconSize ? { fontSize: vars.size.icon[iconSize] } : null),
+        ...(icon && iconSize ? { fontSize: sizeTokens.icon[iconSize] } : null),
         ...style,
       }}
       aria-pressed={pressed}

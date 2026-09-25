@@ -1065,15 +1065,8 @@ export function DropSlot({ foreignOnly }: { foreignOnly?: boolean }): React.JSX.
   if (!slot) return null
   return createPortal(
     <div
-      className="drop-slot"
-      style={{
-        position: 'fixed',
-        left: slot.left,
-        top: slot.top,
-        width: slot.width,
-        height: slot.height,
-        zIndex: stack.top.dragSlot,
-      }}
+      className="drop-slot is-floating"
+      style={{ left: slot.left, top: slot.top, width: slot.width, height: slot.height }}
     />,
     document.body,
   )

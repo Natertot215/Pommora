@@ -69,7 +69,6 @@ export function WindowPanel({
           paneSlide({ side, mode, open }),
           className,
         )}
-        style={{ background: 'var(--state-muted)' }}
         aria-hidden={!open}
       >
         {children}

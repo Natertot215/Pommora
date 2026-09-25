@@ -21,7 +21,7 @@
   }
 }
 .mdpm-header .detail-title {
-  --detail-title-size: calc(var(--text-title-large-size) * var(--editor-scale, 1));
+  --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
 }
 
 .mdpm-header:not(.has-banner) {

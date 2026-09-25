@@ -1,6 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { menuAnchor } from '@pommora/uix/Menus/menuAnchor'
 import { stack } from '@pommora/uix/Theme/stack'
+import { vars } from '@pommora/uix/Theme/color.css'
 
 // ── KNOBS — the toolbar menu button geometry (tune here) ──
 const BUTTON = {
@@ -28,4 +29,4 @@ export const buttonSlot = style({ display: 'contents' })
 
 export const chrome = { wrapper, button, anchor }
 
-export const chevronButton = style({ color: 'var(--label-secondary)' })
+export const chevronButton = style({ color: vars.color.label.secondary })

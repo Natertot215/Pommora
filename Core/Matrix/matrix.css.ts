@@ -1,8 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { duration, easing } from '@pommora/uix/Animations/motion'
-import { hexA, SURFACE_FROST } from '@pommora/uix/Glass/glass-base'
-import { vars } from '@pommora/uix/Theme/color.css'
-import { PURE_WHITE } from '@pommora/uix/Theme/colors'
+import { GLASS_EDGE } from '@pommora/uix/Glass/glass-base'
+import { STATE_OPACITY, vars } from '@pommora/uix/Theme/color.css'
 
 const c = vars.color
 
@@ -36,11 +35,11 @@ export const host = style({
   vars: {
     '--matrix-fill': c.label.control,
     '--matrix-fill-lit': c.label.primary,
-    '--matrix-ring': `${PURE_WHITE}${hexA(SURFACE_FROST.borderAlpha)}`,
+    '--matrix-ring': GLASS_EDGE,
     '--matrix-ring-hover': 'var(--accent-stroke)',
     '--matrix-ring-drag': 'var(--accent-stroke-hot)',
     '--matrix-link': c.solid.greyDefault,
-    '--matrix-link-other': 'var(--border-base)',
+    '--matrix-link-other': c.border.base,
     '--matrix-link-hover': 'var(--accent-stroke)',
     '--matrix-title': c.label.primary,
     '--matrix-icon': c.solid.grey,
@@ -48,7 +47,7 @@ export const host = style({
     '--matrix-space-tint': 'var(--tint-tertiary)',
     '--matrix-space-lit-tint': 'var(--tint-primary)',
     '--matrix-space-icon-tint': 'var(--tint-solid)',
-    '--matrix-inactive': 'var(--state-inactive)',
+    '--matrix-inactive': STATE_OPACITY.inactive,
     '--matrix-hairline': 'var(--width-200)',
     '--matrix-ring-width': 'var(--width-200)',
   },

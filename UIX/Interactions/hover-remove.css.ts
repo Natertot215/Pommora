@@ -1,5 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { REVEAL_FADE } from './hover-reveal.css'
+import { vars } from '../Theme/color.css'
 
 // LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES only, the label pointer-inert.
 
@@ -29,10 +30,9 @@ export const removeZone = style({
   opacity: 'var(--reveal, 0)',
 })
 
-const crispRamp =
-  'linear-gradient(to right, transparent 0, var(--system-black) var(--over-scroll-fade, 0px), var(--system-black) calc(100% - 18px), transparent calc(100% - 8px))'
-const blurRamp =
-  'linear-gradient(to right, transparent calc(100% - 18px), var(--system-black) calc(100% - 8px))'
+const c = vars.color
+const crispRamp = `linear-gradient(to right, transparent 0, ${c.system.black} var(--over-scroll-fade, 0px), ${c.system.black} calc(100% - 18px), transparent calc(100% - 8px))`
+const blurRamp = `linear-gradient(to right, transparent calc(100% - 18px), ${c.system.black} calc(100% - 8px))`
 
 /** A twin sits inside the scroller, so its box rides the WINDOW the label is showing while its text stays put — `left` walks the box along, the matching negative indent walks the string back. */
 const overWindow = {

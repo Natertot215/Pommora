@@ -18,7 +18,7 @@ import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
-import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
+import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -610,7 +610,7 @@ export function ViewTile({
               onContextMenu={(e) => void areaMenu(e)}
             >
               {switcher}
-              <span className={s.spacer} />
+              <span className={spacer} />
               {!titleShown && configButton}
               {bandLock}
             </div>

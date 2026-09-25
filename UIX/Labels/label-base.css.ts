@@ -1,8 +1,8 @@
 import { globalStyle, style, styleVariants, type ComplexStyleRule } from '@vanilla-extract/css'
-import { RAMP_FAMILIES, RAMP_STEPS, cellColor, cellPaint, type CellKey } from '../Theme/ramp'
+import { RAMP_FAMILIES, RAMP_STEPS, type CellKey, mixAt, tintAt } from '../Theme/colors'
+import { cellColor, cellPaint } from '../Theme/ramp'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
-import { mixAt, tintAt } from '../Theme/colors'
 
 export const SIZE = {
   height: '20px',

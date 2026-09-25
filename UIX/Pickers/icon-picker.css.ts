@@ -1,5 +1,6 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '../Theme'
+import { vars } from '../Theme/color.css'
+import { size } from '../Theme/theme-vars.css'
 import { focusRing } from '../Fields/fieldRing'
 import { input } from '../Fields/fields.css'
 import { rowShell, separatorLine } from '../Menus/menu-base.css'
@@ -27,7 +28,7 @@ export const iconFavorites = style({
   flex: '0 0 auto',
   boxSizing: 'border-box',
   padding: '2px 4px',
-  border: 'var(--width-150) solid var(--border-base)',
+  border: `var(--width-150) solid ${vars.color.border.base}`,
   borderRadius: 8,
   overflow: 'hidden',
 })
@@ -70,7 +71,7 @@ export const cell = style([
     border: 'none',
     background: 'transparent',
     color: vars.color.label.control,
-    fontSize: vars.size.icon.titleSmall,
+    fontSize: size.icon.titleSmall,
   },
 ])
 

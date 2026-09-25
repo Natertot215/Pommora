@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
-import { shadowStrongVar, shadowBaseVar } from '../Theme/color.css'
-import { PURE_WHITE } from '../Theme/colors'
+import { shadowStrongVar, shadowBaseVar, vars } from '../Theme/color.css'
+import { PURE_WHITE, tintAt } from '../Theme/colors'
 import { clamp } from '../Utilities/clamp'
 
 interface FrostParams {
@@ -47,20 +47,17 @@ export const GHOST_FROST: FrostParams = {
   shadow: shadowStrongVar,
 }
 
-export const hexA = (n: number): string =>
-  Math.round(clamp(n, 0, 1) * 255)
-    .toString(16)
-    .padStart(2, '0')
-    .toUpperCase()
+const whiteAt = (share: number): string => tintAt(PURE_WHITE, Math.round(share * 100))
+
+export const GLASS_EDGE = whiteAt(SURFACE_FROST.borderAlpha)
 
 // Zero-valued pieces emit nothing, so an edge-free frost carries no phantom geometry.
 export const frostRim = (p: FrostParams): string =>
   [
     p.borderAlpha > 0 && OUTLINE_INSET,
-    p.topSpecular > 0 && `inset 0 1px 0 ${PURE_WHITE}${hexA(p.topSpecular)}`,
-    p.innerRing > 0 && `inset 0 0 0 1px ${PURE_WHITE}${hexA(p.innerRing)}`,
-    p.lowerRim > 0 &&
-      `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px ${PURE_WHITE}${hexA(p.lowerRim)}`,
+    p.topSpecular > 0 && `inset 0 1px 0 ${whiteAt(p.topSpecular)}`,
+    p.innerRing > 0 && `inset 0 0 0 1px ${whiteAt(p.innerRing)}`,
+    p.lowerRim > 0 && `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px ${whiteAt(p.lowerRim)}`,
   ]
     .filter(Boolean)
     .join(', ')
@@ -70,14 +67,13 @@ export function frostStyle(p: FrostParams, rim = true): CSSProperties {
   const filter = `blur(${p.blur}px) brightness(${p.brightness}%)`
   const edges = [rim && frostRim(p), p.shadow ?? shadowBaseVar].filter(Boolean)
   return {
-    background:
-      p.fill != null
-        ? `color-mix(in srgb, var(--bg-window) ${Math.round(p.fill * 100)}%, transparent)`
-        : 'transparent',
+    ...(p.fill != null && {
+      background: tintAt(vars.color.background.window, Math.round(p.fill * 100)),
+    }),
     backdropFilter: filter,
     WebkitBackdropFilter: filter,
     ...(p.borderAlpha > 0 && {
-      border: `var(--width-100) solid var(--glass-outline, ${PURE_WHITE}${hexA(p.borderAlpha)})`,
+      border: `var(--width-100) solid var(--glass-outline, ${whiteAt(p.borderAlpha)})`,
     }),
     boxShadow: edges.join(', '),
   }

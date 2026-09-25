@@ -30,7 +30,7 @@
   color: var(--label-control);
 }
 .detail-title-photo {
-  border-radius: 5px;
+  border-radius: 6px;
 }
 .detail-title-text,
 /* Doubled: the family reset also states `font`/`color` at this weight, and the title's own scale must win on specificity, not on stylesheet order. */
