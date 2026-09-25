@@ -2,12 +2,12 @@
 import { readValue } from '../Platform/localState'
 import { coerceInterfaceScale } from './personalization'
 
-// Nested rather than flat: packDevicePrefs drops a top-level `false` and a disclosure map is mostly false, while a truthy object survives whole.
+// Nested rather than flat: packDevicePrefs drops a top-level `false`, and a disclosure map holds a `false` for every default-open group folded shut, while a truthy object survives whole.
 export interface DevicePrefs {
   nativeMenus?: boolean
   interfaceScale?: number
   panes?: { sidebar?: number; sidePane?: number }
-  disclosure?: Record<string, boolean>
+  disclosure?: Partial<Record<string, boolean>>
   windows?: Record<string, { w: number; h: number }>
 }
 

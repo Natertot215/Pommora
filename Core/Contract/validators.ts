@@ -1,6 +1,5 @@
 import { NOT_A_PROPERTY_DIR_MESSAGE } from '../Assets/assetRoots'
 import type { ThumbRect } from '../Interface/chrome'
-import type { GlanceSize } from '../Interface/Windows/windowRecord'
 import { rootSegs } from '../Paths/exclusion'
 import type { Option } from '../Properties/optionModel'
 import {
@@ -22,8 +21,6 @@ export const isFiniteNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v)
 export const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
-export const isGlanceSize = (v: unknown): v is GlanceSize =>
-  isPlainObject(v) && ['w', 'h'].every((k) => isFiniteNumber(v[k]))
 export const isHeightMap = (v: unknown): v is Record<string, number> =>
   isPlainObject(v) && Object.values(v).every((h) => isFiniteNumber(h) && h > 0)
 export const isIndexArray = (v: unknown): v is number[] =>

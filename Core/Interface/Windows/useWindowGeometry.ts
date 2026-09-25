@@ -2,7 +2,7 @@ import type { Rect, Size } from '@pommora/uix/Interactions/ResizeFrame'
 import { useSession } from '../../Session/store'
 import { chromePartEl } from '../chromeParts'
 
-/** A floating window's remembered size, machine-local per Nexus. */
+/** A window's remembered size, machine-local per Nexus. */
 export function useWindowGeometry(id: string): {
   initialSize?: Size
   onSizeChange: (size: Size) => void

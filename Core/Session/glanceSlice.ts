@@ -1,4 +1,4 @@
-import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
+import type { Size } from '@pommora/uix/Interactions/ResizeFrame'
 import { type ReconcileIndex, reconcileWith } from './reconcileSelection'
 import { makeTabId } from '../Navigation/tabsModel'
 import type { Slice } from './sessionState'
@@ -11,7 +11,7 @@ export type PinnedGlance = {
   anchorX: number
   anchorY: number
   anchorHeight: number
-  size: GlanceSize
+  size: Size
   locked: boolean
 }
 

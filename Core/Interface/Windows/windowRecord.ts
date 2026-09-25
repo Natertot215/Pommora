@@ -1,10 +1,5 @@
 import type { NavRef } from '../../Navigation/navRef'
 
-export interface GlanceSize {
-  w: number
-  h: number
-}
-
 /** Bare refs only — ids are session-local and re-minted at restore. */
 export interface WindowSetRecord {
   tabs: { target: NavRef }[]

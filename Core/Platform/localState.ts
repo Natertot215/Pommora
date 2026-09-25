@@ -12,7 +12,6 @@ export type Scope =
   | 'windows'
   | 'recents'
   | 'record'
-  | 'glancePane'
   | 'matrixLayout'
   | 'matrixFrame'
   | 'devicePrefs'

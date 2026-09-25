@@ -55,7 +55,10 @@ export function Disclosure({
   const open = stored ?? defaultOpen
   const setAndSave = (next: boolean): void => {
     const s = useSession.getState()
-    s.setDevicePref('disclosure', { ...s.devicePrefs.disclosure, [persistKey]: next })
+    s.setDevicePref('disclosure', {
+      ...s.devicePrefs.disclosure,
+      [persistKey]: next === defaultOpen ? undefined : next,
+    })
   }
   const settleClick = useRef(false)
   const onHeaderPointerDown = rename
