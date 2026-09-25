@@ -3,6 +3,7 @@ import type { PageMenuContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { Crop, PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
+import { type ContextDef, createSpaceLabel } from '../Contexts/contexts'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
@@ -115,4 +116,11 @@ export function containerCreators(kind: MutableContainerKind, parentPath: string
     { label: 'New Page', req: { op: 'createPage', parentPath, name } },
     { label: `New ${nested}`, req: { op: 'createContainer', parentPath, kind: 'set', name } },
   ]
+}
+
+export function spaceCreator(
+  def: ContextDef,
+): Creator & { req: Extract<MutateRequest, { op: 'createSpace' }> } {
+  const label = createSpaceLabel(def)
+  return { label, req: { op: 'createSpace', contextId: def.id, name: label } }
 }

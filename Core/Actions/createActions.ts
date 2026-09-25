@@ -1,5 +1,9 @@
-import { DEFAULT_NEW_NAME, type MutateRequest, type RenameHost } from '../Nexus/mutateRequest'
-import { createSpaceLabel } from '../Contexts/contexts'
+import {
+  DEFAULT_NEW_NAME,
+  type MutateRequest,
+  type RenameHost,
+  spaceCreator,
+} from '../Nexus/mutateRequest'
 import { relDirname } from '../Paths/posix'
 import { orderWithSlot, placeNew } from '../Views/creationOrder'
 import { findContainerWhere } from '../Nexus/treePatch'
@@ -40,9 +44,8 @@ export async function newSpaceAdjacent(
     id,
     where,
   )
-  await mutate(
-    { op: 'createSpace', contextId: group.def.id, name: createSpaceLabel(group.def), order },
-    (created) => beginRename(created.path, true, host),
+  await mutate({ ...spaceCreator(group.def).req, order }, (created) =>
+    beginRename(created.path, true, host),
   )
 }
 

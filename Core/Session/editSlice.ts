@@ -38,9 +38,6 @@ export interface EditSlice {
   colorHost: RenameHost | null
   beginColor: (path: string, host: RenameHost) => void
   endColor: () => void
-  /** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
-  peekSignal: { parentPath: string; childId: string; nonce: number } | null
-  signalPeek: (parentPath: string, childId: string) => void
   renamingProperty: { collectionPath: string; propertyId: string } | null
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
@@ -66,7 +63,6 @@ const PER_NEXUS = {
   iconHost: null,
   colorPath: null,
   colorHost: null,
-  peekSignal: null,
   renamingProperty: null,
 } satisfies Partial<EditSlice>
 
@@ -159,8 +155,6 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
   endIcon: () => set({ iconPath: null, iconHost: null }),
   beginColor: (path, host) => set({ colorPath: path, colorHost: host }),
   endColor: () => set({ colorPath: null, colorHost: null }),
-  signalPeek: (parentPath, childId) =>
-    set((s) => ({ peekSignal: { parentPath, childId, nonce: (s.peekSignal?.nonce ?? 0) + 1 } })),
 
   beginPropertyRename: (target) => set({ renamingProperty: target }),
   cancelPropertyRename: () => set({ renamingProperty: null }),
