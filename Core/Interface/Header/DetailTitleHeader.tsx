@@ -1,4 +1,4 @@
-import { type Ref, useEffect, useRef, useState } from 'react'
+import { type RefObject, useEffect, useRef, useState } from 'react'
 import type { TitleMenuAction } from '@pommora/core/Actions/identityMenus'
 import { Icon } from '@pommora/uix/Symbols'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -30,13 +30,14 @@ interface Props {
   title: string
   icon?: string
   photo?: string | null
-  iconRef?: Ref<SVGSVGElement>
+  iconRef?: RefObject<Element | null>
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
   requestMenu: () => Promise<TitleMenuAction | 'search' | null>
   onEditIcon: () => void
   onToggleIcon?: () => void
   iconHidden?: boolean
+  iconEditing?: boolean
   search?: TitleSearch
 }
 
@@ -50,6 +51,7 @@ export function DetailTitleHeader({
   onEditIcon,
   onToggleIcon,
   iconHidden,
+  iconEditing,
   search,
 }: Props): React.JSX.Element {
   const [editing, setEditing] = useState(false)
@@ -125,17 +127,27 @@ export function DetailTitleHeader({
     </RenamableLabel>
   )
 
-  const glyphClass = cx('detail-title-icon title-icon-reveal', iconHidden && 'is-hidden')
+  const glyphClass = cx(
+    'detail-title-icon title-icon-reveal',
+    iconHidden && !iconEditing && 'is-hidden',
+  )
   const glyphMenu = editing ? undefined : openMenu
+  const glyphRef = (el: Element | null): void => {
+    if (iconRef) iconRef.current = el
+  }
   return (
     <div className="detail-title">
       {photo ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance, as on the icon it stands in for
-        <span className={cx(glyphClass, 'detail-title-photo')} onContextMenu={glyphMenu}>
+        <span
+          ref={glyphRef}
+          className={cx(glyphClass, 'detail-title-photo')}
+          onContextMenu={glyphMenu}
+        >
           <AssetImage value={photo} eager />
         </span>
       ) : (
-        icon && <Icon ref={iconRef} name={icon} className={glyphClass} onContextMenu={glyphMenu} />
+        icon && <Icon ref={glyphRef} name={icon} className={glyphClass} onContextMenu={glyphMenu} />
       )}
       {search ? (
         <>

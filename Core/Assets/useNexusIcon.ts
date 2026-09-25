@@ -4,36 +4,38 @@ import type { Crop } from '@pommora/core/Nexus/schemas'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
+import { type NexusIconAction, nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
 
 export function useNexusIcon() {
   const profileImage = useSession((st) => st.tree?.nexus.profileImage ?? null)
   const profileIcon = useSession((st) => st.tree?.nexus.profileIcon)
   const mutate = useSession((st) => st.mutate)
-  const [editing, setEditing] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [editor, setEditor] = useState<'glyph' | 'file' | 'crop' | null>(null)
+  const holds = {
+    hasPhoto: !!profileImage,
+    hasGlyph: !!asRenderableIcon(profileIcon),
+  }
 
-  const openEditor = (): void => setEditing(true)
-  const closeEditor = (): void => setEditing(false)
+  const closeEditor = (): void => setEditor(null)
 
-  const openMenu = async (): Promise<void> => {
-    const action = await popMenu(
-      nexusIconMenuItems({ hasPhoto: !!profileImage, hasGlyph: !!asRenderableIcon(profileIcon) }),
-    )
-    if (action === 'changeIcon') setPickerOpen(true)
+  const run = async (action: NexusIconAction | null): Promise<void> => {
+    if (action === 'editIcon') setEditor('glyph')
     else if (action === 'addPhoto') {
+      setEditor('file')
       const source = valueOr(await host().ask('nexus:pickFile'), null)
       if (source && (await mutate({ op: 'setProfileImage', source }))) {
         if (profileIcon) await mutate({ op: 'setProfileIcon', icon: null })
-        openEditor()
-      }
-    } else if (action === 'editPhoto') openEditor()
+        setEditor('crop')
+      } else closeEditor()
+    } else if (action === 'editPhoto') setEditor('crop')
     else if (action === 'resetIcon') {
       if (profileImage) await mutate({ op: 'setProfileImage', source: null })
       if (profileIcon) await mutate({ op: 'setProfileIcon', icon: null })
     }
   }
+
+  const openMenu = async (): Promise<void> => run(await popMenu(nexusIconMenuItems(holds)))
 
   const onSave = async (crop: Crop): Promise<void> => {
     closeEditor()
@@ -50,7 +52,7 @@ export function useNexusIcon() {
 
   // Clears the photo — otherwise it would still outrank the newly picked glyph in display.
   const selectGlyph = (id: string): void => {
-    setPickerOpen(false)
+    closeEditor()
     void (async () => {
       await mutate({ op: 'setProfileIcon', icon: id })
       if (profileImage) await mutate({ op: 'setProfileImage', source: null })
@@ -60,13 +62,13 @@ export function useNexusIcon() {
   return {
     profileImage,
     profileIcon,
+    holds,
+    editor,
+    run,
     openMenu,
-    editing,
     closeEditor,
     onSave,
     onRepick,
-    pickerOpen,
-    setPickerOpen,
     selectGlyph,
   }
 }

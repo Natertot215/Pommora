@@ -42,7 +42,7 @@ export function PageHeader({
     void mutate({ op: 'setPageMeta', path, patch: { title_icon: next === setting ? null : next } })
   }
 
-  const iconRef = useRef<SVGSVGElement>(null)
+  const iconRef = useRef<Element>(null)
 
   const glyph = entityIcon('page', meta?.icon, defaultIcons)
   const titleHeader = (
@@ -51,6 +51,7 @@ export function PageHeader({
       icon={glyph}
       iconRef={iconRef}
       iconHidden={!shown}
+      iconEditing={iconPickerOpen}
       onRename={(newName) => submitRename(path, 'page', newName)}
       requestMenu={() => popMenu(titleMenuItems({ iconHidden: !shown }))}
       onEditIcon={() => setIconPickerOpen(true)}

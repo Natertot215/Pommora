@@ -1,7 +1,7 @@
 import { type ActionItem, afterSeparator } from './menuModel'
 import { iconLabel } from './toggleLabels'
 
-type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
+export type NexusIconAction = 'editIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
 
 export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
 
@@ -9,28 +9,48 @@ export type BannerMenuAction = 'change' | 'edit' | 'remove'
 
 type IconFavoriteMenuAction = 'toggle'
 
-// The nexus holds an icon or a photo, so the one it holds leads as Edit and the other follows as Add. The seeded mark is neither: it offers both and restores nothing.
-export function nexusIconMenuItems(opts: {
+interface NexusIconHolds {
   hasPhoto: boolean
   hasGlyph: boolean
-}): ActionItem<NexusIconAction>[] {
+}
+
+// The nexus holds an icon or a photo, so the one it holds leads as Edit and the other follows as Add. The seeded mark is neither: it offers both and restores nothing.
+function nexusIconRows(opts: NexusIconHolds): {
+  edits: ActionItem<NexusIconAction>[]
+  reset: ActionItem<NexusIconAction>[]
+} {
   const icon: ActionItem<NexusIconAction> = {
     label: opts.hasGlyph ? 'Edit Icon' : 'Add Icon',
-    action: 'changeIcon',
+    action: 'editIcon',
   }
   const photo: ActionItem<NexusIconAction> = opts.hasPhoto
     ? { label: 'Edit Photo', action: 'editPhoto' }
     : { label: 'Add Photo', action: 'addPhoto' }
-  const rows = opts.hasPhoto ? [photo, icon] : [icon, photo]
-  if (!opts.hasPhoto && !opts.hasGlyph) return rows
-  return [
-    ...rows,
-    {
-      label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon',
-      action: 'resetIcon',
-      separatorBefore: true,
-    },
-  ]
+  return {
+    edits: opts.hasPhoto ? [photo, icon] : [icon, photo],
+    reset:
+      opts.hasPhoto || opts.hasGlyph
+        ? [
+            {
+              label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon',
+              action: 'resetIcon',
+              separatorBefore: true,
+            },
+          ]
+        : [],
+  }
+}
+
+export function nexusIconMenuItems(opts: NexusIconHolds): ActionItem<NexusIconAction>[] {
+  const { edits, reset } = nexusIconRows(opts)
+  return [...edits, ...reset]
+}
+
+export function nexusTitleMenuItems(
+  opts: NexusIconHolds & { iconHidden: boolean },
+): ActionItem<TitleMenuAction | NexusIconAction>[] {
+  const { edits, reset } = nexusIconRows(opts)
+  return [...titleMenuItems({ iconHidden: opts.iconHidden, iconRows: edits }), ...reset]
 }
 
 export function bannerMenuItems(
@@ -46,12 +66,12 @@ export function bannerMenuItems(
       ]
 }
 
-export function titleMenuItems(
-  opts: { iconHidden?: boolean; noEditIcon?: boolean } = {},
-): ActionItem<TitleMenuAction>[] {
+export function titleMenuItems<A = never>(
+  opts: { iconHidden?: boolean; iconRows?: ActionItem<A>[] } = {},
+): ActionItem<TitleMenuAction | A>[] {
   return [
     { label: 'Rename', action: 'rename' },
-    ...(opts.noEditIcon ? [] : [{ label: 'Edit Icon', action: 'editIcon' as const }]),
+    ...(opts.iconRows ?? [{ label: 'Edit Icon', action: 'editIcon' as const }]),
     ...(opts.iconHidden === undefined
       ? []
       : [{ label: iconLabel(!opts.iconHidden), action: 'toggleIcon' as const }]),

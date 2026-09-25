@@ -3,6 +3,7 @@ import {
   bannerMenuItems,
   iconFavoriteMenuItems,
   nexusIconMenuItems,
+  nexusTitleMenuItems,
   titleMenuItems,
   withSearchRow,
 } from './identityMenus'
@@ -61,13 +62,26 @@ describe('the banner menu', () => {
 })
 
 describe('the title menu', () => {
-  it('offers Rename, Edit Icon unless withheld, and the icon toggle named for its state', () => {
+  it('offers Rename, Edit Icon, and the icon toggle named for its state', () => {
     expect(titleMenuItems().map((i) => i.label)).toEqual(['Rename', 'Edit Icon'])
-    expect(titleMenuItems({ iconHidden: true, noEditIcon: true })).toEqual([
+    expect(titleMenuItems({ iconHidden: true })).toEqual([
       { label: 'Rename', action: 'rename' },
+      { label: 'Edit Icon', action: 'editIcon' },
       { label: 'Show Icon', action: 'toggleIcon' },
     ])
     expect(titleMenuItems({ iconHidden: false }).at(-1)?.label).toBe('Hide Icon')
+  })
+
+  it('on the homepage, stands the nexus rows in for Edit Icon and keeps the reset below the toggle', () => {
+    expect(
+      shape(nexusTitleMenuItems({ hasPhoto: false, hasGlyph: true, iconHidden: false })),
+    ).toEqual(['Rename', 'Edit Icon', 'Add Photo', 'Hide Icon', '—', 'Reset Icon'])
+    expect(
+      shape(nexusTitleMenuItems({ hasPhoto: false, hasGlyph: false, iconHidden: true })),
+    ).toEqual(['Rename', 'Add Icon', 'Add Photo', 'Show Icon'])
+    expect(
+      shape(nexusTitleMenuItems({ hasPhoto: true, hasGlyph: false, iconHidden: false })),
+    ).toEqual(['Rename', 'Edit Photo', 'Add Icon', 'Hide Icon', '—', 'Reset Photo'])
   })
 })
 

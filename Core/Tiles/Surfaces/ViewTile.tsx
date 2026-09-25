@@ -588,7 +588,7 @@ export function ViewTile({
                     s.titleIcon,
                     `md-h${titleLevel}`,
                     'title-icon-reveal',
-                    !iconShown && 'is-hidden',
+                    !iconShown && iconFor !== 'title' && 'is-hidden',
                   )}
                 />
                 <RenamableLabel

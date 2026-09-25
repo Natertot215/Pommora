@@ -4,9 +4,9 @@ import { embedAreaMenuItems, embedTitleMenuItems, viewButtonMenuItems } from './
 const labels = (rows: { label: string }[]): string[] => rows.map((r) => r.label)
 
 describe('the view embed’s title menu', () => {
-  it('offers Edit Icon only while an icon is shown', () => {
+  it('offers Edit Icon whether or not the icon is shown', () => {
     expect(labels(embedTitleMenuItems(true, 2, true))).toContain('Edit Icon')
-    expect(labels(embedTitleMenuItems(false, 2, true))).not.toContain('Edit Icon')
+    expect(labels(embedTitleMenuItems(false, 2, true))).toContain('Edit Icon')
   })
 
   it('marks the heading level the title is at, out of the full six', () => {

@@ -239,6 +239,21 @@ describe('the title icon follows Show Icon In Title unless the page overrides it
     expect(hidden()).toBe(true)
   })
 
+  it('slides a hidden icon in while its picker is open, and out once it closes', async () => {
+    await mount()
+    menuPick = 'editIcon'
+    await act(async () => {
+      container
+        .querySelector('.detail-title-text')
+        ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(hidden()).toBe(false)
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    })
+    expect(hidden()).toBe(true)
+  })
+
   it('showing then hiding a page stores the override, then deletes it', async () => {
     await mount()
     await toggle()

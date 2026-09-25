@@ -13,7 +13,13 @@ import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 import { useWindowBannerSeat } from '../Windows/windowTabBanner'
 import { popMenu } from '../../Actions/menuActions'
-import { titleMenuItems, withSearchRow } from '@pommora/core/Actions/identityMenus'
+import {
+  nexusTitleMenuItems,
+  titleMenuItems,
+  withSearchRow,
+} from '@pommora/core/Actions/identityMenus'
+import { NexusIconEditors } from '../../Assets/NexusIconEditors'
+import { useNexusIcon } from '../../Assets/useNexusIcon'
 
 /** The one banner band: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
 export function Banner({
@@ -84,10 +90,10 @@ export function EntityBanner({
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const nexus = useSession((s) => s.tree?.nexus)
-  const homePhotoSrc = useAssetUrl(nexus?.profileImage)
+  const nexusIcon = useNexusIcon()
+  const homePhotoSrc = useAssetUrl(nexusIcon.profileImage)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const iconRef = useRef<SVGSVGElement>(null)
+  const iconRef = useRef<Element>(null)
   const contentHost = useContentHost()
   const searchTab =
     chrome === 'detail' && (owner.kind === 'collection' || owner.kind === 'set')
@@ -117,24 +123,32 @@ export function EntityBanner({
       title={owner.name}
       icon={
         owner.kind === 'homepage'
-          ? (nexus?.profileIcon ?? DEFAULT_NEXUS_ICON)
+          ? (nexusIcon.profileIcon ?? DEFAULT_NEXUS_ICON)
           : entityIcon(owner.kind, owner.icon, defaultIcons)
       }
-      photo={home && homePhotoSrc ? nexus?.profileImage : undefined}
+      photo={home && homePhotoSrc ? nexusIcon.profileImage : undefined}
       iconHidden={iconHidden}
+      iconEditing={home ? nexusIcon.editor !== null : iconPickerOpen}
       iconRef={iconRef}
       onRename={(newName) => submitRename(owner.path, owner.kind as RenameKind, newName)}
-      requestMenu={() => {
-        // The Nexus icon is set from Settings and the ribbon, not this menu.
-        const items = titleMenuItems({ iconHidden, noEditIcon: home })
-        return popMenu(search ? withSearchRow(items) : items)
+      requestMenu={async () => {
+        if (!home) {
+          const items = titleMenuItems({ iconHidden })
+          return popMenu(search ? withSearchRow(items) : items)
+        }
+        const action = await popMenu(nexusTitleMenuItems({ ...nexusIcon.holds, iconHidden }))
+        if (action === null || action === 'rename' || action === 'toggleIcon') return action
+        void nexusIcon.run(action)
+        return null
       }}
       onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={() => void toggleHeadingIcon()}
       search={search}
     />
   )
-  const iconPicker = !home && (
+  const iconPicker = home ? (
+    <NexusIconEditors icon={nexusIcon} triggerRef={iconRef} />
+  ) : (
     <IconChoice
       open={iconPickerOpen}
       onClose={() => setIconPickerOpen(false)}
