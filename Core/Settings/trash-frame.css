@@ -76,9 +76,9 @@
   border-top: var(--table-border);
 }
 
-.trash-frame.has-checked .trash-check,
-.trash-check:focus-visible {
-  opacity: 1;
+.trash-frame.has-checked [data-reveal-host] {
+  --reveal: 1;
+  --reveal-hits: auto;
 }
 .trash-frame .trash-trail {
   padding-right: 8px; /* KNOB — with the cluster's 4px gap, mirrors --trash-date-inset across the divider */

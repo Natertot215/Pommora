@@ -2,7 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { type Linger, REVEAL_DWELL_MS, REVEAL_GRACE_MS, useHoverReveal } from './hoverReveal'
+import {
+  type Linger,
+  REVEAL_DWELL_MS,
+  REVEAL_GRACE_MS,
+  REVEAL_REACH,
+  useHoverReveal,
+  withinReach,
+} from './hoverReveal'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 type Props = {
@@ -238,5 +245,40 @@ describe('useHoverReveal without a dwell', () => {
     coarse(true)
     await render()
     expect(api.on).toBe(false)
+  })
+})
+
+describe('withinReach', () => {
+  const at = { left: 100, top: 100, right: 120, bottom: 110 }
+  const outward = { x: 1, y: 1 } as const
+  const r = REVEAL_REACH.inline
+
+  it('holds a point on its anchor', () => {
+    expect(withinReach(at, { size: 'inline', toward: outward }, 110, 105)).toBe(true)
+  })
+
+  it('rounds the far corner of an arc', () => {
+    expect(withinReach(at, { size: 'inline', toward: outward }, 120 + r, 110)).toBe(true)
+    expect(withinReach(at, { size: 'inline', toward: outward }, 120 + r * 0.8, 110 + r * 0.8)).toBe(
+      false,
+    )
+  })
+
+  it('makes an edge reach a band half as deep as it is wide', () => {
+    const e = REVEAL_REACH.edge
+    const edge = { size: 'edge', toward: { x: -1, y: -1 } } as const
+    expect(withinReach(at, edge, 100 - e, 100 - e / 2)).toBe(true)
+    expect(withinReach(at, edge, 100 - e, 100 - e / 2 - 1)).toBe(false)
+    expect(withinReach(at, edge, 100 - e - 1, 100)).toBe(false)
+  })
+
+  it('leaves out a point behind the anchor on either axis', () => {
+    expect(withinReach(at, { size: 'corner', toward: outward }, 99, 105)).toBe(false)
+    expect(withinReach(at, { size: 'corner', toward: outward }, 110, 99)).toBe(false)
+  })
+
+  it('scales with its surface', () => {
+    expect(withinReach(at, { size: 'inline', toward: outward }, 120 + r * 1.5, 110)).toBe(false)
+    expect(withinReach(at, { size: 'inline', toward: outward }, 120 + r * 1.5, 110, 2)).toBe(true)
   })
 })

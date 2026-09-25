@@ -3,7 +3,7 @@ import { Button } from '../Buttons/Button'
 import { GlassWindow } from '../Glass/glass-window'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
-import { useRevealNear } from '../Interactions/revealBar'
+import { useRevealNear } from '../Interactions/hoverReveal'
 import { windowIn, windowOut } from '../Animations/animations.css'
 import {
   ALL_EDGES,
@@ -248,6 +248,8 @@ export function WindowBase({
           <button
             type="button"
             className="window-footer-toggle reveal-toggle"
+            data-reveal-host=""
+            data-reveal-trail
             onClick={() => setFooterOpen((v) => !v)}
             aria-label={footerLabel?.(footerOpen)}
             title={footerLabel?.(footerOpen)}

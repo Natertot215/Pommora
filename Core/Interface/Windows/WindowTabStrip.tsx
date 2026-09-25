@@ -241,6 +241,7 @@ function WindowTabItem({
       style={drag?.style}
       {...drag?.handle}
       data-tab-id={entry.tab.id}
+      data-reveal-host=""
       className={cx(
         'tab',
         hoverRemoveHost,

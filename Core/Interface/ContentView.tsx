@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { SelectionState, Tab } from '@pommora/core/Navigation/navRef'
 import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
-import { useRevealNear } from '@pommora/uix/Interactions/revealBar'
+import { useRevealNear } from '@pommora/uix/Interactions/hoverReveal'
 import { slideIn } from '@pommora/uix/Animations/motion'
 import { Icon } from '@pommora/uix/Symbols'
 import { findCollection, findSet } from '../Nexus/treeIndex'
@@ -196,6 +196,8 @@ function ContentFooter(): React.JSX.Element {
       <button
         type="button"
         className="subfield-toggle reveal-toggle"
+        data-reveal-host=""
+        data-reveal-trail
         onClick={() => setExpanded(!expanded)}
         aria-label={footerLabel(expanded)}
         title={footerLabel(expanded)}

@@ -105,15 +105,11 @@
   background: none;
   color: var(--label-tertiary);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-base);
-}
-.card:hover .card-pin {
-  opacity: 1;
+  --reveal-fade: var(--duration-base);
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
 .card-pin.is-pinned {
   color: var(--accent);
-  opacity: 1;
 }
 
 .card-text {

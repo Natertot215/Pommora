@@ -27,6 +27,7 @@ const mount = (props: {
   initialSize?: Size
   onSizeChange?: (s: Size) => void
   footer?: React.ReactNode
+  footerLead?: React.ReactNode
 }): HTMLElement => {
   act(() =>
     root.render(
@@ -142,16 +143,20 @@ describe('a floating window reports its size once per drag', () => {
   })
 })
 
-describe('the footer reveal measures the window only while the pointer moves free', () => {
+describe('the footer reveal measures its toggles only while the pointer moves free', () => {
   it('a held move never measures, and the first free move after it measures once', () => {
-    const el = mount({ footer: <span /> })
-    const measure = vi.spyOn(el, 'getBoundingClientRect')
+    const el = mount({ footer: <span />, footerLead: <button type="button" data-reveal-lead /> })
+    const toggles = ['[data-reveal-trail]', '[data-reveal-lead]'].map((sel) =>
+      vi.spyOn(el.querySelector(sel) as HTMLElement, 'getBoundingClientRect'),
+    )
+    const root = vi.spyOn(el, 'getBoundingClientRect')
     const drag = el.querySelector('.window-drag') as HTMLElement
     act(() => firePointer(drag, 'pointerdown', { x: 0, y: 0 }))
     for (const x of [10, 20, 30]) act(() => firePointer(drag, 'pointermove', { x, y: 0 }))
     act(() => firePointer(window, 'pointerup'))
-    expect(measure).not.toHaveBeenCalled()
+    for (const measure of toggles) expect(measure).not.toHaveBeenCalled()
     for (const x of [40, 50]) act(() => firePointer(el, 'pointermove', { x, y: 0, buttons: 0 }))
-    expect(measure).toHaveBeenCalledTimes(1)
+    for (const measure of toggles) expect(measure).toHaveBeenCalledTimes(1)
+    expect(root).not.toHaveBeenCalled()
   })
 })

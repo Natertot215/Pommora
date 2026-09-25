@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 export const REVEAL_DWELL_MS = 1500 // KNOB
 export const REVEAL_GRACE_MS = 150 // KNOB
@@ -147,4 +153,74 @@ export function useHoverReveal({
   }, [api])
 
   return { on: dwell && coarse() ? active : active && on, hover: api.hover, press: api.press }
+}
+
+/** How near the pointer must come: inline controls in content, edge-docked toggles, corner handles. */
+export const REVEAL_REACH = { inline: 260, edge: 280, corner: 300 } as const // KNOB
+
+export type Reach = {
+  size: keyof typeof REVEAL_REACH
+  /** The directions the reach extends from its anchor; an edge reach is a band half as deep as it's wide, the others round their far corner. */
+  toward: { x: -1 | 1; y: -1 | 1 }
+}
+
+type Box = { left: number; top: number; right: number; bottom: number }
+
+/** `scale` resizes the reach with its surface, as the editor's font and zoom do. */
+export function withinReach(anchor: Box, reach: Reach, x: number, y: number, scale = 1): boolean {
+  const r = REVEAL_REACH[reach.size] * scale
+  if (reach.toward.x < 0 ? x > anchor.right : x < anchor.left) return false
+  if (reach.toward.y < 0 ? y > anchor.bottom : y < anchor.top) return false
+  const dx = Math.max(0, reach.toward.x < 0 ? anchor.left - x : x - anchor.right)
+  const dy = Math.max(0, reach.toward.y < 0 ? anchor.top - y : y - anchor.bottom)
+  return reach.size === 'edge' ? dx <= r && dy <= r / 2 : Math.hypot(dx, dy) <= r
+}
+
+const TRAIL: Reach = { size: 'edge', toward: { x: -1, y: -1 } }
+const LEAD: Reach = { size: 'edge', toward: { x: 1, y: -1 } }
+
+/** Tracked against the pointer, not invisible buttons, so the reveal area never swallows clicks beneath it. The toggles' rects are cached because a rect per move forces a layout; a held button may be moving the surface itself, so the cache drops until the pointer moves free, and a surface that moves under a still pointer calls `remeasure`. */
+export function useRevealNear(): {
+  near: boolean
+  nearLead: boolean
+  onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void
+  onPointerLeave: () => void
+  remeasure: () => void
+} {
+  const [near, setNear] = useState(false)
+  const [nearLead, setNearLead] = useState(false)
+  const anchors = useRef<{ trail?: DOMRect; lead?: DOMRect } | null>(null)
+  const remeasure = useCallback(() => {
+    anchors.current = null
+  }, [])
+  const show = (trail: boolean, lead: boolean): void => {
+    if (trail !== near) setNear(trail)
+    if (lead !== nearLead) setNearLead(lead)
+  }
+  return {
+    near,
+    nearLead,
+    onPointerMove: (e) => {
+      if (e.buttons !== 0) {
+        anchors.current = null
+        show(false, false)
+        return
+      }
+      if (!anchors.current) {
+        const rect = (sel: string): DOMRect | undefined =>
+          e.currentTarget.querySelector(sel)?.getBoundingClientRect()
+        anchors.current = { trail: rect('[data-reveal-trail]'), lead: rect('[data-reveal-lead]') }
+      }
+      const { trail, lead } = anchors.current
+      show(
+        !!trail && withinReach(trail, TRAIL, e.clientX, e.clientY),
+        !!lead && withinReach(lead, LEAD, e.clientX, e.clientY),
+      )
+    },
+    onPointerLeave: () => {
+      anchors.current = null
+      show(false, false)
+    },
+    remeasure,
+  }
 }

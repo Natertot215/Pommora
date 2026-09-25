@@ -206,7 +206,9 @@ export function LabelsLeaf(): React.JSX.Element {
             </div>
           ))}
           <div className="ds-chip-row">
-            <div className="ds-chip-rowlabel">Removable · hover the right third</div>
+            <div className="ds-chip-rowlabel">
+              Removable · hover the right third; on touch the × shows at rest
+            </div>
             <RemovableRow />
           </div>
           {FILE_SHAPES.map((s) => (

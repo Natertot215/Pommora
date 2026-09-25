@@ -90,6 +90,7 @@ export function NavPinButton({
     <button
       type="button"
       className={cx(className, pinned && 'is-pinned')}
+      data-reveal-held={pinned || undefined}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={toggle}
       aria-label={pinLabel(pinned)}

@@ -21,19 +21,14 @@
   border-radius: 4px;
   color: var(--label-secondary);
   cursor: default;
-  opacity: 0;
+  opacity: var(--reveal, 0);
   -webkit-app-region: no-drag;
   transition:
     bottom var(--duration-base) var(--ease-base),
     left var(--duration-base) var(--ease-base),
     right var(--duration-base) var(--ease-base),
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
-}
-
-.reveal-toggle:hover,
-.reveal-toggle:focus-visible {
-  opacity: 1;
 }
 
 .reveal-toggle:hover {
