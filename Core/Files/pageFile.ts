@@ -53,9 +53,15 @@ const mergeable = (doc: Document): boolean =>
 
 const serialized = (doc: Document): string | null => {
   try {
+    const out = doc.toString({ lineWidth: 0 })
+    // An empty block's only non-comment line is yaml's `{}` or `null` placeholder, so its comments are all that stays.
     return doc.contents === null || (isMap(doc.contents) && doc.contents.items.length === 0)
-      ? ''
-      : doc.toString({ lineWidth: 0 })
+      ? out
+          .split('\n')
+          .filter((l) => l.trimStart().startsWith('#'))
+          .map((l) => `${l}\n`)
+          .join('')
+      : out
   } catch {
     return null
   }

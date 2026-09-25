@@ -80,6 +80,22 @@ describe('mergeFrontmatter — an empty or absent block', () => {
   it('removing a key from a page with no block writes the body alone', () => {
     expect(mergeFrontmatter('Body', {}, ['ID'], 'Body')).toBe('Body')
   })
+
+  it('a comment-only block keeps its comment when an absent key is removed', () => {
+    expect(mergeFrontmatter('---\n# c\n---\nBody', {}, ['ID'], 'Body')).toBe('---\n# c\n---\nBody')
+  })
+
+  it('removing the last key keeps a trailing comment', () => {
+    expect(mergeFrontmatter('---\nID: X\n# trailing\n---\nBody', {}, ['ID'], 'Body')).toBe(
+      '---\n# trailing\n---\nBody',
+    )
+  })
+
+  it('a comment above the last key goes with it', () => {
+    expect(mergeFrontmatter('---\n# note\nID: X\n---\nBody', {}, ['ID'], 'Body')).toBe(
+      '---\n---\nBody',
+    )
+  })
 })
 
 describe('mergeFrontmatter — foreign preservation (the contract)', () => {
