@@ -19,8 +19,6 @@ const isEmptyValue = (v: unknown): boolean =>
   (Array.isArray(v) && v.length === 0) ||
   (isPlainObject(v) && Object.keys(v).length === 0)
 
-export const scopeGet = <T>(scope: Scope) => withRoot(() => ok(readScope<T>(scope)), ok({}))
-
 export const scopeSet = (scope: Scope, valid: (v: unknown) => boolean, expected: string) =>
   withWriteRoot((_root, _ctx, key: string, value: unknown) => {
     if (!valid(value)) return fault(expected)
@@ -64,7 +62,7 @@ export const interfaceHandlers = {
       pageId,
       value,
     ),
-  'citations:get': scopeGet<boolean>('citations'),
+  'citations:get': withRoot(() => ok(readScope<boolean>('citations')), ok({})),
   'citations:set': scopeSet(
     'citations',
     (v) => typeof v === 'boolean' || v === null,

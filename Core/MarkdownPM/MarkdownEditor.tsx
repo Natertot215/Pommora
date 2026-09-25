@@ -253,7 +253,7 @@ export function MarkdownEditor({
       // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
       EditorView.editable.of(true),
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body skips filters and passes.
+      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
       Prec.highest(
@@ -281,10 +281,7 @@ export function MarkdownEditor({
         'data-drawn-caret': '',
       }),
       markdownDecorations(() => connectionsRef.current),
-      tableWidgetExtension(
-        () => connectionsRef.current,
-        prefs && ((indices) => prefs.save('headingCols', indices)),
-      ),
+      tableWidgetExtension(() => connectionsRef.current),
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,

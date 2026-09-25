@@ -43,10 +43,9 @@ export const headingRenameSettle = ViewPlugin.define(
       if (!held) return
       const final = headingParts(state.doc.lineAt(held.from).text)?.content.trim() ?? ''
       if (!final || final === held.old) return
-      const keys = docHeadingKeys(state.doc)
-      const finalKey = normalizeTitle(final)
-      if (keys.includes(normalizeTitle(held.old)) || keys.filter((k) => k === finalKey).length > 1)
-        return
+      const pair = [normalizeTitle(final), normalizeTitle(held.old)]
+      // The renamed line is one of these keys, so a second means the old text survives or the new text doubles; a case-only rename's line counts once.
+      if (docHeadingKeys(state.doc).filter((k) => pair.includes(k)).length > 1) return
       const rewrite = (): void => {
         const now = view.state
         const host = now.facet(editorHost)

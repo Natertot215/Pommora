@@ -1,12 +1,5 @@
 import { Fragment, memo, useRef } from 'react'
-import {
-  aliasedToken,
-  headingOf,
-  linkTarget,
-  linkTokenAt,
-  tokenize,
-  type Token,
-} from '../Engine/tokens'
+import { aliasedToken, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import {
   CONTENT_CLASS,
@@ -24,8 +17,7 @@ import { applyEdits } from '../Engine/markdownCode'
 import {
   wikiLinkView,
   linkMenuTarget,
-  titleTarget,
-  resolveMdTarget,
+  tokenTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
   type MdTarget,
@@ -33,7 +25,7 @@ import {
 import { linkActionText, linkHalves } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
 import { dwellTarget, followTarget } from '../Links/linkClicks'
-import { CITE_GLYPH } from '../Citations/citationPointer'
+import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -112,9 +104,8 @@ export function renderCellContent(
         )
       }
     } else if (tk.kind === 'link') {
-      const url = linkTarget(text, tk)
       // Without the shared resolver a cell would call an encoded internal target broken and color the same link two ways.
-      const target = resolveMdTarget(conn, url)
+      const target = tokenTarget(conn, text, tk)
       out.push(
         target.kind === 'page' || target.kind === 'self' ? (
           <span
@@ -267,7 +258,6 @@ function StaticCellImpl({
   onActivate,
   onCommit,
   onSelect,
-  onCite,
 }: {
   host: EditorHost
   text: string
@@ -280,7 +270,6 @@ function StaticCellImpl({
   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
   onCommit: (text: string) => void
   onSelect: (range: [number, number]) => void
-  onCite?: (label: string, event: React.MouseEvent) => void
 }): React.JSX.Element {
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
   const live = useRef(text)
@@ -317,13 +306,12 @@ function StaticCellImpl({
   }
 
   const claimCite = (e: React.MouseEvent): (() => void) | null => {
-    if (!onCite) return null
     const el = (e.target as HTMLElement | null)?.closest?.(CITE_GLYPH) as HTMLElement | null
     const label = el?.dataset.citeLabel
     if (!label) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => onCite(label, e)
+    return () => followCitation(label, connections?.(), e)
   }
 
   const openMenu = (e: React.MouseEvent): boolean => {
@@ -405,12 +393,6 @@ function StaticCellImpl({
   )
 }
 
-function cellTarget(text: string, tk: Token, api: ConnectionsApi): MdTarget {
-  if (tk.kind === 'link') return resolveMdTarget(api, linkTarget(text, tk))
-  const [rs, re] = tk.resolveRange ?? tk.contentRange
-  return titleTarget(api, text.slice(rs, re), headingOf(text, tk))
-}
-
 function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
@@ -420,7 +402,7 @@ function cellLinkTarget(
   if (!el || !api || !el.closest('.mdpm-tbl-cell-static')) return null
   const span = linkSpanAt(eventTarget)
   const tk = span && linkTokenAt(text, span[0])
-  return tk ? { el, target: cellTarget(text, tk, api) } : null
+  return tk ? { el, target: tokenTarget(api, text, tk) } : null
 }
 
 /** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */
@@ -433,7 +415,7 @@ function menuTarget(
   onCommit: (text: string) => void,
   onSelect: (range: [number, number]) => void,
 ): ConnMenuTarget | null {
-  const target = cellTarget(text, tk, api)
+  const target = tokenTarget(api, text, tk)
   if (target.kind === 'page' && tk.kind === 'wikiLink')
     return {
       kind: 'page',

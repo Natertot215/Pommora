@@ -48,6 +48,7 @@ export function PageTile({
   chrome = 'none',
   arrive,
   onArrived,
+  preview,
 }: {
   path: string
   editing: boolean
@@ -60,6 +61,7 @@ export function PageTile({
   chrome?: 'none' | 'page' | 'window'
   arrive?: string
   onArrived?: () => void
+  preview?: boolean
 }): React.JSX.Element {
   const publishSelection = usePublishSelection(path)
   // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh slot before the remounting editor reads it.
@@ -84,7 +86,7 @@ export function PageTile({
   const failed = entry !== null && entry.body === null
 
   const embedScale = useEmbedScale()
-  const host = useEditorHost({ pageId: entry?.id, connections })
+  const host = useEditorHost({ pageId: entry?.id, connections, preview })
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
   useEffect(() => {

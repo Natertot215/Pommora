@@ -1,10 +1,9 @@
-import { landBytes, parseJsonText } from '../../Files/atomicWrite'
+import { landBytes, parseJsonObject } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
 import { platformNameError } from '../../Paths/names'
 import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import type { CaptureReason } from '../../Platform/stores'
-import { isPlainObject } from '../../Properties/propertyValue'
 import type { Change, ItemRecord } from '../Contract/wire'
 import {
   deleteBase,
@@ -34,14 +33,8 @@ export function newerSide(
 
 const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
 
-function parseObject(bytes: Uint8Array): Json | null {
-  try {
-    const value = parseJsonText(new TextDecoder().decode(bytes))
-    return isPlainObject(value) ? value : null
-  } catch {
-    return null
-  }
-}
+const parseObject = (bytes: Uint8Array): Json | null =>
+  parseJsonObject(new TextDecoder().decode(bytes))
 
 export function recordOf(change: Change): ItemRecord {
   if (!change.record) throw new Error(`Change ${change.seq} on ${change.path} carries no record.`)

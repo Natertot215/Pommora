@@ -47,16 +47,21 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
 
 export type FollowEvent = Pick<MouseEvent, 'target' | 'metaKey' | 'ctrlKey'>
 
-/** The one answer the body, a footnote marker, and a table cell resting or live all read. A cell is a document of its own, so the editor is found from the element: a heading link in a table travels in the page around it, from the table's seat. Null inside a glance: the pane is a glance surface by contract, so nothing follows there. */
+/** A cell is a document of its own, so the page editor is found from the element: a link or marker in a table answers to the page around it, from the table's seat. */
+export function pageEditorAt(el: Element): { seat: Element; view: EditorView | null } {
+  const seat = el.closest('.mdpm-tbl-widget') ?? el
+  const editor = seat.closest<HTMLElement>('.cm-editor')
+  return { seat, view: editor && EditorView.findFromDOM(editor) }
+}
+
+/** The one answer the body, a footnote marker, and a table cell resting or live all read. Null inside a glance: the pane is a glance surface by contract, so nothing follows there. */
 export function followTarget(
   target: MdTarget,
   api: ConnectionsApi | undefined,
   event: FollowEvent,
 ): (() => void) | null {
   const el = event.target as Element
-  const seat = el.closest('.mdpm-tbl-widget') ?? el
-  const editor = seat.closest<HTMLElement>('.cm-editor')
-  const view = editor && EditorView.findFromDOM(editor)
+  const { seat, view } = pageEditorAt(el)
   if (!view || target.kind === 'invalid') return null
   const host = view.state.facet(editorHost)
   if (host.glance?.contains(el)) return null

@@ -47,6 +47,15 @@ export async function atomicWriteBinary(filePath: string, data: Uint8Array): Pro
 export const parseJsonText = (text: string): unknown =>
   JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text)
 
+export function parseJsonObject(text: string): Record<string, unknown> | null {
+  try {
+    const v = parseJsonText(text)
+    return isPlainObject(v) ? v : null
+  } catch {
+    return null
+  }
+}
+
 export async function writeJson(filePath: string, value: unknown): Promise<void> {
   await atomicWriteFile(filePath, `${stableStringify(value)}\n`)
 }
@@ -150,7 +159,7 @@ const REPLACE_CORRUPT = {
 export function updateNexusConfig(
   root: string,
   file: keyof typeof NEXUS_CONFIG_FILES,
-  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
 ): Promise<Result<Record<string, unknown>>> {
   return updateNexusFile(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, REPLACE_CORRUPT[file])
 }
@@ -190,14 +199,8 @@ export async function readTextOrNull(absPath: string): Promise<string | null> {
 
 // READ PATH ONLY: null conflates absent with unreadable, so a write based on it would clobber a file it merely failed to read.
 export async function readJsonObject(absPath: string): Promise<Record<string, unknown> | null> {
-  try {
-    const text = await machine().readText(absPath)
-    if (text === null) return null
-    const v = parseJsonText(text)
-    return isPlainObject(v) ? v : null
-  } catch {
-    return null
-  }
+  const text = await readTextOrNull(absPath)
+  return text === null ? null : parseJsonObject(text)
 }
 
 export async function pathExists(p: string): Promise<boolean> {

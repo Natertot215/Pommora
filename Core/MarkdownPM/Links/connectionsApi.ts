@@ -1,5 +1,5 @@
 import type { LinkStatus } from '@pommora/core/Connections/connections'
-import { headingOf, type Token } from '../Engine/tokens'
+import { headingOf, linkTarget, type Token } from '../Engine/tokens'
 import type {
   ConnCellApply,
   ConnEditAction,
@@ -45,7 +45,7 @@ export type MdTarget =
   | { kind: 'page'; page: ConnPage; heading?: string }
   | { kind: 'self'; heading: string }
   | { kind: 'external'; url: string }
-  | { kind: 'invalid' }
+  | { kind: 'invalid'; ambiguous?: true }
 
 export function titleTarget(
   index: PageIndex | undefined,
@@ -54,9 +54,8 @@ export function titleTarget(
 ): MdTarget {
   if (title === '') return heading ? { kind: 'self', heading } : { kind: 'invalid' }
   const res = index?.resolve(title)
-  return res?.status === 'resolved' && res.page
-    ? { kind: 'page', page: res.page, heading: heading || undefined }
-    : { kind: 'invalid' }
+  if (res?.page) return { kind: 'page', page: res.page, heading: heading || undefined }
+  return res?.status === 'ambiguous' ? { kind: 'invalid', ambiguous: true } : { kind: 'invalid' }
 }
 
 /** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
@@ -64,6 +63,12 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
   const target = titleTarget(index, targetTitle(rawTarget) ?? '', targetFragment(rawTarget))
   if (target.kind !== 'invalid' || !isValidLink(rawTarget)) return target
   return { kind: 'external', url: rawTarget }
+}
+
+export function tokenTarget(index: PageIndex | undefined, text: string, tk: Token): MdTarget {
+  if (tk.kind === 'link') return resolveMdTarget(index, linkTarget(text, tk))
+  const [rs, re] = tk.resolveRange ?? tk.contentRange
+  return titleTarget(index, text.slice(rs, re), headingOf(text, tk))
 }
 
 export function linkMenuTarget(

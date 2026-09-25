@@ -1,6 +1,5 @@
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { ReactWidget, type ReactDom } from '../reactWidget'
-import { followCitation } from '../Citations/citationPointer'
 import { docScan } from '../docCache'
 import { foldLabel } from '../Engine/detect'
 import type { DocScan } from '../Engine/docScan'
@@ -339,9 +338,6 @@ class TableWidget extends ReactWidget {
         readClipboard={() => host.clipboard.read()}
         onMenu={onMenu}
         onTableDrag={tableDrag}
-        onCite={(label, event) =>
-          followCitation(view, label, view.state.facet(tableConnections)(), event)
-        }
         onUndo={() => undo(view)}
         onRedo={() => redo(view)}
         connections={view.state.facet(tableConnections)}
@@ -531,18 +527,9 @@ const widgetField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 })
 
-export function tableWidgetExtension(
-  connections?: ConnGetter,
-  onHeadingColsChange?: (indices: number[]) => void,
-): Extension {
+export function tableWidgetExtension(connections?: ConnGetter): Extension {
   // Loaded ahead so the first table to scroll in draws with its frame rather than after an import.
   if (!MarkdownTableComp) void loadTable()
-  const persist = EditorView.updateListener.of((u) => {
-    // Any change to the set is written back — a toggle, or a remap correcting stale ordinals so a reload can't re-apply them — but not a load, which is where the set came from.
-    if (u.startState.field(headingColField) === u.state.field(headingColField)) return
-    if (u.transactions.some((tr) => tr.effects.some((e) => e.is(setHeadingColsEffect)))) return
-    onHeadingColsChange?.([...u.state.field(headingColField)])
-  })
   // headingColField precedes widgetField so the widget reads the up-to-date set; atomicRanges makes the caret skip a table as one unit.
   return [
     headingColField,
@@ -551,6 +538,11 @@ export function tableWidgetExtension(
     tablePasteGuard,
     EditorView.atomicRanges.of((view) => view.state.field(widgetField)),
     connections ? tableConnections.of(connections) : [],
-    onHeadingColsChange ? persist : [],
+    // Any change to the set is written back — a toggle, or a remap correcting stale ordinals so a reload can't re-apply them — but not a load, which is where the set came from.
+    EditorView.updateListener.of((u) => {
+      if (u.startState.field(headingColField) === u.state.field(headingColField)) return
+      if (u.transactions.some((tr) => tr.effects.some((e) => e.is(setHeadingColsEffect)))) return
+      u.state.facet(editorHost).prefs?.save('headingCols', [...u.state.field(headingColField)])
+    }),
   ]
 }

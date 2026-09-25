@@ -1,6 +1,6 @@
 import { basename, titleFromPath, relative, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
-import { errText, ok } from '../Contract/result'
+import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
 import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
@@ -41,12 +41,5 @@ export async function renameOp(
   // The index moves first, so the renamed page's own links to its old title are found where it now lives.
   await moveIndexPaths(root, abs, r.value.path)
   reportRename(relative(root, abs), relative(root, r.value.path))
-  const cascade = await renameCascade(root, oldTitle, { title: req.newName }).catch(
-    (e): CascadeReport => ({
-      pages: [],
-      hosts: [],
-      warning: `Links to “${oldTitle}” weren't updated: ${errText(e)}`,
-    }),
-  )
-  return renamedReply(r.value.path, cascade)
+  return renamedReply(r.value.path, await renameCascade(root, oldTitle, { title: req.newName }))
 }

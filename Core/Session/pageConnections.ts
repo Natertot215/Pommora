@@ -5,7 +5,7 @@ import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import { useSession } from './store'
 import { pageIndexOf } from '../Nexus/treeIndex'
 
-/** `preview` follows the Open in Preview preference, `window` lands in the window's own tab strip, and `inert` resolves without following, for a glance or a page's history. */
+/** `preview` follows the Open in Preview preference, `window` lands in the window's own tab strip, and `inert` opens no page, for a glance or a page's history — its own headings and external links still follow. */
 export function useConnections(
   tree: NexusTree | null,
   mode: 'preview' | 'window' | 'inert',

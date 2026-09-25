@@ -682,7 +682,7 @@ export function dashArrow(
   if (selStart !== selEnd || inserted.length !== 1) return null
   const doc = scan.text
   const c = selStart
-  if (isLiteralAt(scan, c)) return null
+  if (!'-–←><'.includes(doc[c - 1]) || isLiteralAt(scan, c)) return null
   const dashes = settings.transformDashes !== false
   const arrows = settings.transformArrows !== false
 

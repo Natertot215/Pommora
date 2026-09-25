@@ -59,26 +59,22 @@ function connHitAt(
 ): ConnHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
-  const hit = api && wikiLinkAt(view, pos)
-  if (api && hit) {
-    const target = titleTarget(api, hit.title, hit.heading)
-    const el = (event.target as HTMLElement).closest?.(
-      '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol',
-    )
-    return {
-      hit,
-      target,
-      range: hit.range,
-      onText: el != null && pos >= hit.content[0] && pos <= hit.content[1],
-      // An ambiguous title leads nowhere yet still draws as a link.
-      hidesSyntax: target.kind !== 'invalid' || api.resolve(hit.title).status === 'ambiguous',
-      pos,
-    }
+  const wiki = api && wikiLinkAt(view, pos)
+  const hit = wiki || sectionRunAt(view, event)
+  if (!hit) return null
+  const target = titleTarget(api, hit.title, hit.heading)
+  const el = (event.target as HTMLElement).closest?.(
+    '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol',
+  )
+  return {
+    hit,
+    target,
+    range: hit.range,
+    onText: !wiki || (el != null && pos >= hit.content[0] && pos <= hit.content[1]),
+    // An ambiguous title leads nowhere yet still draws as a link.
+    hidesSyntax: !wiki || target.kind !== 'invalid' || target.ambiguous === true,
+    pos,
   }
-  const run = sectionRunAt(view, event)
-  if (!run) return null
-  const target = titleTarget(api, '', run.heading)
-  return { hit: run, target, range: run.range, onText: true, hidesSyntax: true, pos }
 }
 
 export function connectionClicks(getApi: GetApi): Extension {
