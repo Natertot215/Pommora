@@ -89,7 +89,6 @@ export const segmentTrail = style({
   selectors: { '&&': { color: c.label.secondary } },
 })
 
-/** Hidden at rest; the HOST binds its own reveal scope with a globalStyle raising opacity. */
 export const settingsBtn = style({
   border: 'none',
   background: 'none',

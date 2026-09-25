@@ -1,5 +1,5 @@
 // Content-anchored like the fold chevron so a grip can't drift below callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
-import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
+import { Decoration, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view'
 import { docScan } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
 import { blockAt, blockStarts } from '../Engine/blockModel'
@@ -48,16 +48,105 @@ export function blockHandles(scope: MarkdownScope = 'page'): Extension {
   })
 }
 
-type Tag = { el: HTMLElement; left: number; top: number; right: number; bottom: number }
+type Tag = { el: HTMLElement; box: DOMRect }
+type TagMeasure = { font: number; tags: Tag[] }
 const TAG_REACH: Reach = { size: 'inline', toward: { x: -1, y: 1 } }
 
-// Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page the code tags are hosts too: each reveals its copy mark while the pointer is within reach of it, scaled with the editor's font. `basePt` is the font size that reach is written for.
+class TagReveal {
+  tags: Tag[] | null = null
+  fontPx = 0
+  readonly pointer = { x: 0, y: 0, inside: false }
+  hot: HTMLElement | null = null
+  readonly request: { read: () => TagMeasure; write: (m: TagMeasure) => void }
+
+  constructor(
+    readonly view: EditorView,
+    readonly basePt: number,
+  ) {
+    this.request = {
+      read: () => ({
+        font: parseFloat(getComputedStyle(view.contentDOM).fontSize),
+        tags: Array.from(view.contentDOM.querySelectorAll<HTMLElement>('.codeblock-language'))
+          .filter((el) => el.closest('.cm-content') === view.contentDOM)
+          .map((el) => ({ el, box: el.getBoundingClientRect() })),
+      }),
+      write: (m) => {
+        this.fontPx = m.font
+        this.tags = m.tags
+        this.test()
+      },
+    }
+    view.contentDOM.addEventListener('pointermove', this.move)
+    view.contentDOM.addEventListener('pointerleave', this.leave)
+  }
+
+  readonly move = (e: PointerEvent): void => {
+    this.pointer.x = e.clientX
+    this.pointer.y = e.clientY
+    this.pointer.inside = true
+    if (this.tags) this.test()
+    else this.view.requestMeasure(this.request)
+  }
+
+  readonly leave = (): void => {
+    this.pointer.inside = false
+    this.tags = null
+    this.show(null)
+  }
+
+  moved(): void {
+    this.tags = null
+    if (this.pointer.inside) this.view.requestMeasure(this.request)
+  }
+
+  update(u: ViewUpdate): void {
+    if (u.docChanged || u.viewportChanged || u.geometryChanged || u.selectionSet || u.focusChanged)
+      this.moved()
+  }
+
+  show(next: HTMLElement | null): void {
+    if (next === this.hot) return
+    if (this.hot) this.hot.dataset.revealHost = ''
+    if (next) next.dataset.revealHost = 'on'
+    this.hot = next
+  }
+
+  test(): void {
+    const { tags, pointer } = this
+    if (!tags || !pointer.inside) return
+    const scale = this.fontPx / this.basePt
+    let lo = 0
+    let hi = tags.length
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (tags[mid].box.top <= pointer.y) lo = mid + 1
+      else hi = mid
+    }
+    for (let i = lo - 1; i >= 0; i--) {
+      const t = tags[i]
+      if (withinReach(t.box, TAG_REACH, pointer.x, pointer.y, scale)) {
+        this.show(t.el)
+        return
+      }
+      if (pointer.y - t.box.bottom > REVEAL_REACH.inline * scale) break
+    }
+    this.show(null)
+  }
+
+  destroy(): void {
+    this.view.contentDOM.removeEventListener('pointermove', this.move)
+    this.view.contentDOM.removeEventListener('pointerleave', this.leave)
+  }
+}
+
+// Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page (`basePt` given) each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font against `basePt`; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
 export function pointerReveal(scope: MarkdownScope = 'page', basePt?: number): Extension {
   const blocks = scope === 'cell' ? CELL_KINDS : GRIP_BLOCKS
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
     if (next === hotLine && next?.dataset.revealHost !== 'off') return
-    if (hotLine && hotLine !== next) hotLine.dataset.revealHost = 'off'
+    if (hotLine && hotLine !== next && hotLine.dataset.revealHost === 'on')
+      hotLine.dataset.revealHost = 'off'
     if (next) next.dataset.revealHost = 'on'
     hotLine = next
   }
@@ -74,93 +163,26 @@ export function pointerReveal(scope: MarkdownScope = 'page', basePt?: number): E
     return textLeft
   }
 
-  let tags: Tag[] | null = null
-  let fontPx = 0
-  let measuring = false
-  const pointer = { x: 0, y: 0, inside: false }
-  let hotTag: HTMLElement | null = null
-  const setTag = (next: HTMLElement | null): void => {
-    if (next === hotTag) return
-    if (hotTag) hotTag.dataset.revealHost = ''
-    if (next) next.dataset.revealHost = 'on'
-    hotTag = next
-  }
-  const testTags = (): void => {
-    if (!tags || !pointer.inside || basePt === undefined) return
-    const { x, y } = pointer
-    const scale = fontPx / basePt
-    let lo = 0
-    let hi = tags.length
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1
-      if (tags[mid].top <= y) lo = mid + 1
-      else hi = mid
-    }
-    for (let i = lo - 1; i >= 0; i--) {
-      const t = tags[i]
-      if (withinReach(t, TAG_REACH, x, y, scale)) {
-        setTag(t.el)
-        return
-      }
-      if (y - t.bottom > REVEAL_REACH.inline * scale) break
-    }
-    setTag(null)
-  }
-  const dirty = (): void => {
-    tags = null
-  }
-  const measure = (view: EditorView): void => {
-    if (measuring) return
-    measuring = true
-    view.requestMeasure({
-      read: () => ({
-        font: parseFloat(getComputedStyle(view.contentDOM).fontSize),
-        boxes: Array.from(view.contentDOM.querySelectorAll<HTMLElement>('.codeblock-language'))
-          .filter((el) => el.closest('.cm-content') === view.contentDOM)
-          .map((el) => {
-            const r = el.getBoundingClientRect()
-            return { el, left: r.left, top: r.top, right: r.right, bottom: r.bottom }
-          }),
-      }),
-      write: (m) => {
-        measuring = false
-        fontPx = m.font
-        tags = m.boxes
-        testTags()
-      },
-    })
-  }
-  const code = basePt !== undefined
-
   return [
     EditorView.updateListener.of((u) => {
       if (u.geometryChanged) textLeft = -1
-      if (
-        code &&
-        (u.docChanged || u.viewportChanged || u.geometryChanged || u.selectionSet || u.focusChanged)
-      )
-        dirty()
-      if (hotLine?.isConnected && hotLine.dataset.revealHost !== 'on')
+      if (u.docChanged) cachedFrom = -1
+      if (hotLine?.isConnected && hotLine.dataset.revealHost === 'off')
         hotLine.dataset.revealHost = 'on'
     }),
-    ...(code
-      ? [
-          ViewPlugin.define(() => {
-            window.addEventListener('scroll', dirty, { capture: true, passive: true })
-            return { destroy: () => window.removeEventListener('scroll', dirty, { capture: true }) }
+    ...(basePt === undefined
+      ? []
+      : [
+          ViewPlugin.define((view) => new TagReveal(view, basePt), {
+            eventHandlers: {
+              scroll() {
+                this.moved()
+              },
+            },
           }),
-        ]
-      : []),
+        ]),
     EditorView.domEventHandlers({
-      scroll: dirty,
       pointermove(e, view) {
-        if (code) {
-          pointer.x = e.clientX
-          pointer.y = e.clientY
-          pointer.inside = true
-          if (tags) testTags()
-          else measure(view)
-        }
         // A cell's grip lives inside the text column rather than left of it, so hovering the list at all is what reveals it — but the gate stays, as a DOM walk rather than a measurement, because posAtCoords below reads layout.
         const cheapMiss =
           scope === 'cell'
@@ -191,9 +213,6 @@ export function pointerReveal(scope: MarkdownScope = 'page', basePt?: number): E
       pointerleave() {
         setHot(null)
         textLeft = -1
-        pointer.inside = false
-        dirty()
-        setTag(null)
       },
     }),
   ]

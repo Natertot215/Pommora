@@ -13,7 +13,7 @@ import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
-import { type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
+import { type Box, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { findTile } from './Layout/model'
@@ -125,9 +125,7 @@ const TileShell = memo(
           : undefined
     const [handleNear, setHandleNear] = useState(false)
     const handleRef = useRef<HTMLDivElement>(null)
-    const cornerRef = useRef<{ left: number; top: number; right: number; bottom: number } | null>(
-      null,
-    )
+    const cornerRef = useRef<Box | null>(null)
     return (
       <div
         className={cx(
@@ -140,13 +138,13 @@ const TileShell = memo(
         )}
         data-reveal-host={editing ? (handleNear ? 'on' : 'off') : ''}
         onPointerEnter={(e) => {
-          const r = e.currentTarget.getBoundingClientRect()
-          const left = Math.min(r.left, handleRef.current?.getBoundingClientRect().left ?? r.left)
-          cornerRef.current = { left, top: r.top, right: left, bottom: r.top }
+          const top = e.currentTarget.getBoundingClientRect().top
+          const left = (handleRef.current ?? e.currentTarget).getBoundingClientRect().left
+          cornerRef.current = { left, top, right: left, bottom: top }
         }}
         onPointerMove={(e) => {
           const c = cornerRef.current
-          if (!editing || !c) return
+          if (!c) return
           const near = withinReach(c, HANDLE_REACH, e.clientX, e.clientY)
           if (near !== handleNear) setHandleNear(near)
         }}

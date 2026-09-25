@@ -1,7 +1,9 @@
 import {
   type PointerEvent as ReactPointerEvent,
+  type TransitionEvent as ReactTransitionEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -43,7 +45,7 @@ export function useHoverReveal({
     dwell,
     engaged,
     inside: false,
-    pressing: false,
+    holding: false,
     marked: 0,
     hold: null as number | 'leave' | null,
   })
@@ -62,7 +64,7 @@ export function useHoverReveal({
     }
     const settle = (): void => {
       const s = live.current
-      const open = s.on ? s.inside || s.held || s.hold !== null : s.dwell && s.inside && !s.pressing
+      const open = s.on ? s.inside || s.held || s.hold !== null : s.dwell && s.inside && !s.holding
       if (pending?.open === open) return
       cancel()
       if (open === s.on) return
@@ -75,30 +77,26 @@ export function useHoverReveal({
       )
       pending = { id, open }
     }
-    const drop = (): void => {
-      cancel()
-      setOn(false)
-    }
     const reset = (): void => {
       release()
       live.current.inside = false
-      drop()
+      cancel()
+      setOn(false)
     }
     const hover = (inside: boolean): void => {
       const s = live.current
-      s.inside = inside
-      if (inside || s.hold !== 'leave') {
+      if (!inside) s.marked = 0
+      if (!inside && s.hold === 'leave') reset()
+      else {
+        s.inside = inside
         settle()
-        return
       }
-      release()
-      drop()
     }
     const press = (): void => {
       live.current.marked = Date.now()
     }
-    const pressing = (down: boolean): void => {
-      live.current.pressing = down
+    const holdOff = (down: boolean): void => {
+      live.current.holding = down
       settle()
     }
     // The press hands the pointer to the flipped side: it counts as inside, and that side's linger runs from the press.
@@ -114,21 +112,22 @@ export function useHoverReveal({
         s.hold = window.setTimeout(
           () => {
             s.hold = null
-            if (!s.inside && !s.held) drop()
+            if (!s.inside && !s.held) reset()
           },
           Math.max(0, side - since),
         )
-      if (s.dwell || side !== undefined) setOn(true)
+      setOn(s.dwell || side !== undefined)
     }
-    return { settle, reset, hover, press, pressing, flip }
+    return { settle, reset, hover, press, holdOff, flip }
   })
 
   // A release waits for the pointer's next move, whose boundary events report where it is — a native menu withholds them while open.
   useEffect(() => {
+    if (!dwell) return
     if (held) return api.settle()
     window.addEventListener('pointermove', api.settle, { once: true })
     return () => window.removeEventListener('pointermove', api.settle)
-  }, [held])
+  }, [held, dwell])
   useEffect(() => api.reset, [active])
   useEffect(() => {
     const s = live.current
@@ -138,11 +137,12 @@ export function useHoverReveal({
     else api.reset()
   }, [engaged])
   useEffect(() => {
+    if (!dwell) return
     // Only a primary press holds; a context menu swallows its own release, so its opening ends the press.
     const down = (e: PointerEvent): void => {
-      if (e.button === 0) api.pressing(true)
+      if (e.button === 0) api.holdOff(true)
     }
-    const up = (): void => api.pressing(false)
+    const up = (): void => api.holdOff(false)
     const ends = ['pointerup', 'pointercancel', 'contextmenu'] as const
     window.addEventListener('pointerdown', down, { capture: true })
     for (const t of ends) window.addEventListener(t, up, { capture: true })
@@ -150,7 +150,7 @@ export function useHoverReveal({
       window.removeEventListener('pointerdown', down, { capture: true })
       for (const t of ends) window.removeEventListener(t, up, { capture: true })
     }
-  }, [api])
+  }, [api, dwell])
 
   return { on: dwell && coarse() ? active : active && on, hover: api.hover, press: api.press }
 }
@@ -164,7 +164,7 @@ export type Reach = {
   toward: { x: -1 | 1; y: -1 | 1 }
 }
 
-type Box = { left: number; top: number; right: number; bottom: number }
+export type Box = { left: number; top: number; right: number; bottom: number }
 
 /** `scale` resizes the reach with its surface, as the editor's font and zoom do. */
 export function withinReach(anchor: Box, reach: Reach, x: number, y: number, scale = 1): boolean {
@@ -179,47 +179,64 @@ export function withinReach(anchor: Box, reach: Reach, x: number, y: number, sca
 const TRAIL: Reach = { size: 'edge', toward: { x: -1, y: -1 } }
 const LEAD: Reach = { size: 'edge', toward: { x: 1, y: -1 } }
 
-/** Tracked against the pointer, not invisible buttons, so the reveal area never swallows clicks beneath it. The toggles' rects are cached because a rect per move forces a layout; a held button may be moving the surface itself, so the cache drops until the pointer moves free, and a surface that moves under a still pointer calls `remeasure`. */
+/** Tracked against the pointer, not invisible buttons, so the reveal area never swallows clicks beneath it. Each toggle's reach runs down to the host's bottom edge, so the bar beneath a lifted toggle still reveals it. The rects are cached because a rect per move forces a layout, and dropped whenever the toggles may have moved: after the host renders, when the host's or a toggle's own transition ends, while a held button may be moving the surface, and on `remeasure`. */
 export function useRevealNear(): {
   near: boolean
   nearLead: boolean
   onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void
   onPointerLeave: () => void
+  onTransitionEnd: (e: ReactTransitionEvent<HTMLElement>) => void
   remeasure: () => void
 } {
   const [near, setNear] = useState(false)
   const [nearLead, setNearLead] = useState(false)
-  const anchors = useRef<{ trail?: DOMRect; lead?: DOMRect } | null>(null)
+  const live = useRef({ anchors: null as { trail?: Box; lead?: Box } | null, near, nearLead })
   const remeasure = useCallback(() => {
-    anchors.current = null
+    live.current.anchors = null
   }, [])
+  useLayoutEffect(remeasure)
   const show = (trail: boolean, lead: boolean): void => {
-    if (trail !== near) setNear(trail)
-    if (lead !== nearLead) setNearLead(lead)
+    const s = live.current
+    if (trail !== s.near) {
+      s.near = trail
+      setNear(trail)
+    }
+    if (lead !== s.nearLead) {
+      s.nearLead = lead
+      setNearLead(lead)
+    }
   }
   return {
     near,
     nearLead,
     onPointerMove: (e) => {
+      const s = live.current
       if (e.buttons !== 0) {
-        anchors.current = null
+        s.anchors = null
         show(false, false)
         return
       }
-      if (!anchors.current) {
-        const rect = (sel: string): DOMRect | undefined =>
-          e.currentTarget.querySelector(sel)?.getBoundingClientRect()
-        anchors.current = { trail: rect('[data-reveal-trail]'), lead: rect('[data-reveal-lead]') }
+      if (!s.anchors) {
+        const bottom = e.currentTarget.getBoundingClientRect().bottom
+        const box = (sel: string): Box | undefined => {
+          const r = e.currentTarget.querySelector(sel)?.getBoundingClientRect()
+          return r && { left: r.left, top: r.top, right: r.right, bottom }
+        }
+        s.anchors = { trail: box('[data-reveal-trail]'), lead: box('[data-reveal-lead]') }
       }
-      const { trail, lead } = anchors.current
+      const { trail, lead } = s.anchors
       show(
         !!trail && withinReach(trail, TRAIL, e.clientX, e.clientY),
         !!lead && withinReach(lead, LEAD, e.clientX, e.clientY),
       )
     },
     onPointerLeave: () => {
-      anchors.current = null
+      live.current.anchors = null
       show(false, false)
+    },
+    onTransitionEnd: (e) => {
+      const t = e.target as Element
+      if (t === e.currentTarget || t.matches('[data-reveal-trail], [data-reveal-lead]')) remeasure()
     },
     remeasure,
   }

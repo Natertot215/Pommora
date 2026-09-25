@@ -113,15 +113,11 @@ export function WindowBase({
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
   const [geo, setGeo] = useState(() => opening(initialSize, bounds, region))
   const reveal = useRevealNear()
-  const remeasure = reveal.remeasure
   useEffect(() => {
-    const onResize = (): void => {
-      setGeo(onScreen)
-      remeasure()
-    }
+    const onResize = (): void => setGeo(onScreen)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
-  }, [remeasure])
+  }, [])
   const frame = useResizeFrame({
     rect: geo,
     min: bounds.min,
@@ -149,9 +145,6 @@ export function WindowBase({
 
   const hasFooter = footer !== undefined && footer !== null && footer !== false
   const [footerOpen, setFooterOpen] = useState(true)
-  useEffect(() => {
-    remeasure()
-  }, [remeasure, leftOpen])
 
   useEscape(!closing, onEscape ?? onClose)
 
@@ -221,6 +214,7 @@ export function WindowBase({
       onPointerDown={onWindowDown}
       onPointerMove={hasFooter ? reveal.onPointerMove : undefined}
       onPointerLeave={hasFooter ? reveal.onPointerLeave : undefined}
+      onTransitionEnd={hasFooter ? reveal.onTransitionEnd : undefined}
     >
       <div className="window-drag" aria-hidden="true" />
       <div className="window-toolbar">

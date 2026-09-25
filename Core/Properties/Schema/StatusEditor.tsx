@@ -19,6 +19,7 @@ import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
+import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
 import { heading } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
@@ -146,7 +147,8 @@ export function StatusEditor({
               paddingX="0"
               icon="plus"
               iconSize={s.ICON.optionsAdd}
-              className={s.groupAdd}
+              reveal
+              className={accessoryButton}
               data-create
               aria-label={`Add to ${g.label}`}
               onClick={() => setAdding({ groupId: g.id, index: g.options.length })}

@@ -151,7 +151,7 @@
   border-radius: 6px;
   cursor: pointer;
   transition:
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     color var(--duration-fast) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
 }

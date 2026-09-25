@@ -242,7 +242,6 @@ export function AccessoryButton({
   create = false,
   disabled = false,
   pressed,
-  held,
   ref,
 }: {
   icon: IconName
@@ -254,7 +253,6 @@ export function AccessoryButton({
   create?: boolean
   disabled?: boolean
   pressed?: boolean
-  held?: boolean
   ref?: Ref<HTMLButtonElement>
 }): React.JSX.Element {
   return (
@@ -268,7 +266,6 @@ export function AccessoryButton({
       pressed={pressed}
       className={cx(s.accessoryButton, className)}
       data-create={create || undefined}
-      data-reveal-held={held || undefined}
       style={box ? ({ '--accessory-box': `${box}px` } as CSSProperties) : undefined}
       aria-label={ariaLabel}
       onClick={(e) => {
