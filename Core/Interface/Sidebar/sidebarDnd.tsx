@@ -58,15 +58,17 @@ export function SidebarDnd({
       if (!content) return null
       const boxTop = content.getBoundingClientRect().top
       const measured: MeasuredRow[] = []
+      let draggedRow: MeasuredRow | undefined
       for (const [rowId, el] of rows.current) {
-        if (rowId === excludeId) continue
         const r = el.getBoundingClientRect()
         const top = r.top - boxTop
-        measured.push({ id: rowId, top, bottom: top + r.height, mid: top + r.height / 2 })
+        const row = { id: rowId, top, bottom: top + r.height, mid: top + r.height / 2 }
+        if (rowId === excludeId) draggedRow = row
+        else measured.push(row)
       }
       measured.sort((a, b) => a.top - b.top)
       const prefs = useSession.getState().personalization
-      const snapshot = sidebarSnapshot(index, prefs, excludeId, measured)
+      const snapshot = sidebarSnapshot(index, prefs, excludeId, measured, draggedRow)
       return snapshot && { ...snapshot, boxTop }
     },
     resolve: (_id, point, s) => sidebarSlot(s, point.y - s.boxTop),

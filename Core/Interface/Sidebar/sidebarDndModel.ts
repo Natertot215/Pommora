@@ -91,6 +91,7 @@ export type SidebarSnapshot = {
   idx: Index
   prefs: Personalization
   dragged: Entry
+  draggedRow: MeasuredRow | undefined
   measured: MeasuredRow[]
   rowById: Map<string, MeasuredRow>
   siblings: MeasuredRow[]
@@ -101,6 +102,7 @@ export function sidebarSnapshot(
   prefs: Personalization,
   draggedId: string,
   measured: MeasuredRow[],
+  draggedRow?: MeasuredRow,
 ): SidebarSnapshot | null {
   const dragged = idx.byId.get(draggedId)
   if (!dragged || measured.length === 0) return null
@@ -109,6 +111,7 @@ export function sidebarSnapshot(
     idx,
     prefs,
     dragged,
+    draggedRow,
     measured,
     rowById: new Map(measured.map((m) => [m.id, m])),
     siblings: reorders
@@ -120,8 +123,10 @@ export function sidebarSnapshot(
   }
 }
 
+// Over its own row the drag promises nothing, so a nudge-and-release moves nothing.
 export function sidebarSlot(s: SidebarSnapshot, y: number): SidebarSlot | null {
-  const { idx, dragged } = s
+  const { idx, dragged, draggedRow } = s
+  if (draggedRow && y >= draggedRow.top && y < draggedRow.bottom) return null
   switch (dragged.kind) {
     case 'page':
       return pageSlot(s, y)
