@@ -177,20 +177,25 @@ function formatScalar(n: number, cfg: NumberConfig | undefined): string {
   return cfg?.number_family === 'percent' ? `${num}%` : num
 }
 
+/** The fraction's denominator: Fraction on, a positive denominator, and a format other than Percent, which already reads out of 100. */
+export const fractionDenominator = (cfg: NumberConfig | undefined): number | undefined =>
+  cfg?.number_fraction && cfg.number_family !== 'percent' && (cfg.number_denominator ?? 0) > 0
+    ? cfg.number_denominator
+    : undefined
+
 export function formatNumber(n: number, cfg: NumberConfig | undefined): string {
-  if (
-    cfg?.number_fraction &&
-    cfg.number_family !== 'percent' &&
-    cfg.number_denominator !== undefined
-  ) {
-    return `${formatScalar(n, cfg)} out of ${formatScalar(cfg.number_denominator, cfg)}`
-  }
-  return formatScalar(n, cfg)
+  const denominator = fractionDenominator(cfg)
+  return denominator === undefined
+    ? formatScalar(n, cfg)
+    : `${formatScalar(n, cfg)} out of ${formatScalar(denominator, cfg)}`
 }
 
-/** A zero or missing denominator returns undefined so the bar never divides by zero. */
+/** The divisor a bar fills against; undefined when there's none, so the bar never divides by zero. */
 export function numberDivisor(cfg: NumberConfig | undefined): number | undefined {
-  if (cfg?.number_family === 'percent') return 100
-  if (cfg?.number_fraction && cfg.number_denominator) return cfg.number_denominator
-  return undefined
+  return cfg?.number_family === 'percent' ? 100 : fractionDenominator(cfg)
 }
+
+export const currencyGlyph = (currency: string): string =>
+  numFmt({ style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
+    .formatToParts(0)
+    .find((p) => p.type === 'currency')?.value ?? currency

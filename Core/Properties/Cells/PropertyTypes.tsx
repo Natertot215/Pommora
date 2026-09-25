@@ -5,6 +5,7 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { displayPropertyName, RESERVED_LABEL } from './columnLabel'
+import { currencyGlyph } from '../formatValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
 interface TypeMeta {
@@ -34,20 +35,11 @@ export const propertyTypeIconName = (type: PropertyType): IconName => PROPERTY_T
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)
 
-const CURRENCY_GLYPH: Record<string, string> = {
-  USD: '$',
-  AUD: '$',
-  CAD: '$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-}
-
 export const numberFormatGlyph = (def: PropertyDefinition): string =>
   def.number_family === 'percent'
     ? '%'
     : def.number_family === 'currency'
-      ? (CURRENCY_GLYPH[def.number_currency ?? 'USD'] ?? '$')
+      ? currencyGlyph(def.number_currency ?? 'USD')
       : '#'
 
 export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).filter(
