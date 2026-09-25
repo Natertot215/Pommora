@@ -30,7 +30,7 @@ export interface Identity {
   signed: Signature
 }
 
-export function header(req: IncomingMessage, name: string): string | null {
+function header(req: IncomingMessage, name: string): string | null {
   const value = req.headers[name]
   return typeof value === 'string' && value.length > 0 ? value : null
 }

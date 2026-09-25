@@ -28,8 +28,7 @@ const decode = (row: ChangeRow): Wire.Change => ({
 
 export function logStore(db: DatabaseSync) {
   const putStatement = db.prepare(
-    `INSERT OR IGNORE INTO blob (nexus_id, sha256, key_id, size, bytes, at_ms)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    'INSERT OR IGNORE INTO blob (nexus_id, sha256, bytes, at_ms) VALUES (?, ?, ?, ?)',
   )
   const readStatement = db.prepare('SELECT bytes FROM blob WHERE nexus_id = ? AND sha256 = ?')
   const hasStatement = db.prepare('SELECT 1 FROM blob WHERE nexus_id = ? AND sha256 = ?')
@@ -177,14 +176,8 @@ export function logStore(db: DatabaseSync) {
   }
 
   return {
-    putBlob: (
-      nexusId: string,
-      sha256: string,
-      keyId: string,
-      bytes: Buffer,
-      atMs: number,
-    ): void => {
-      putStatement.run(nexusId, sha256, keyId, bytes.length, bytes, atMs)
+    putBlob: (nexusId: string, sha256: string, bytes: Buffer, atMs: number): void => {
+      putStatement.run(nexusId, sha256, bytes, atMs)
     },
 
     readBlob: (nexusId: string, sha256: string): Buffer | null => {

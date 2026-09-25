@@ -60,7 +60,7 @@ export async function reconcile(session: Session): Promise<void> {
     }
     await resolveStale(session, rel, head, log.heads)
   }
-  await pushDirty(session, toPush)
+  await pushDirty(session, toPush, true)
 
   const here = new Set([...local, ...toPush])
   for (const [rel, head] of log.heads) {

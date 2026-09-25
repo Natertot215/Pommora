@@ -3,6 +3,8 @@ import { type Bytes, open, type Ring, type RingKey, seal, utf8 } from './ring'
 const VERSION = 0x01
 const STAMP = new Uint8Array([VERSION])
 
+export const SEAL_OVERHEAD = 29
+
 const itemAad = (keyId: string, path: string): Bytes =>
   utf8(`pommora-item/1\n${keyId}\n${path.normalize('NFC')}`)
 

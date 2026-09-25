@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { agreementPair, TEST_KDF } from '../../Testing/syncDevice'
 import vectors from '../Contract/vectors.json'
 import { deriveWrappingKey } from './kdf'
-import { decryptItem, encryptItem } from './item'
+import { decryptItem, encryptItem, SEAL_OVERHEAD } from './item'
 import {
   exportRaw,
   mintKey,
@@ -85,6 +85,13 @@ describe('an item blob', () => {
       bytesOf(vectors.item.ivHex),
     )
     expect(hex(blob)).toBe(vectors.item.blobHex)
+  })
+
+  it('grows its plaintext by the seal overhead', async () => {
+    const ring = await vectorRing()
+    const plaintext = new TextEncoder().encode(vectors.item.plaintext)
+    const blob = await encryptItem(ring.keys[0], vectors.item.path, plaintext)
+    expect(blob.length).toBe(plaintext.length + SEAL_OVERHEAD)
   })
 
   it('reads back what it wrote', async () => {

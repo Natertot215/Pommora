@@ -216,6 +216,22 @@ describe('reconcile', () => {
     expect(await here('Private/Secret.md')).toBe(true)
   })
 
+  it('reads only the files no base row vouches for on an exclusion change', async () => {
+    await rescope(session, { excluded: ['Private'], assetDir: '.nexus/assets' })
+    await write('Notes/One.md', page('one'))
+    await write('Private/New.md', page('new'))
+    await reconcile(session)
+    const read = vi.spyOn(machine(), 'readBytes')
+
+    await rescope(session, { excluded: [], assetDir: '.nexus/assets' })
+
+    const reads = read.mock.calls.map(([path]) => path)
+    read.mockRestore()
+    expect(reads).toContain(abs('Private/New.md'))
+    expect(reads).not.toContain(abs('Notes/One.md'))
+    expect(paths()).toEqual(['Notes/One.md', 'Private/New.md'])
+  })
+
   it('walks nothing when the settings change leaves the scope alone', async () => {
     await rescope(session, { excluded: [], assetDir: '.nexus/assets' })
     expect(hub.sent).toEqual([])

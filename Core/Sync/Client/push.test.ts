@@ -8,7 +8,9 @@ import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { type FakeHub, hubDelete, hubRename, hubSession, hubWrite } from '../../Testing/syncHub'
 import { testKeys } from '../../Testing/syncDevice'
+import vectors from '../Contract/vectors.json'
 import type { Change, StoreBody } from '../Contract/wire'
+import { SEAL_OVERHEAD } from '../Keys/item'
 import type { Ring } from '../Keys/ring'
 import { isDirty, readAllBases, readBase, upsertBase } from './base'
 import { ITEM_CAP, pushDirty, pushRename } from './push'
@@ -314,6 +316,50 @@ describe('pushDirty', () => {
     expect(stores()).toEqual([])
     expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
     read.mockRestore()
+  })
+
+  it('caps a sealed file at the size the hub shares', () => {
+    expect(ITEM_CAP).toBe(vectors.blobCap)
+  })
+
+  it('keeps home a file whose sealed bytes would pass the hub cap', async () => {
+    await write('Notes/Edge.bin', 'x')
+    await truncate(abs('Notes/Edge.bin'), ITEM_CAP - SEAL_OVERHEAD + 1)
+    const read = vi.spyOn(machine(), 'readBytes')
+
+    await pushDirty(session, ['Notes/Edge.bin'])
+
+    expect(read).not.toHaveBeenCalled()
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
+    read.mockRestore()
+  })
+
+  it('keeps home a blob the hub refuses as too large and never retries it', async () => {
+    await write('Notes/One.md', page('one'))
+    hub.intercept = (req) =>
+      req.method === 'PUT' ? { status: 413, body: '{"error":"too-large"}' } : null
+
+    await pushDirty(session, ['Notes/One.md'])
+
+    expect(session.failed.size).toBe(0)
+    expect(stores()).toEqual([])
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
+  })
+
+  it('halves a batch the hub refuses as too large until each half fits', async () => {
+    await write('Notes/One.md', page('one'))
+    await write('Notes/Two.md', page('two'))
+    await write('Notes/Three.md', page('three'))
+    hub.intercept = (req) =>
+      req.url.endsWith('/store') && (JSON.parse(String(req.body)) as StoreBody).changes.length > 1
+        ? { status: 413, body: '{"error":"too-large"}' }
+        : null
+
+    await pushDirty(session, ['Notes/One.md', 'Notes/Two.md', 'Notes/Three.md'])
+
+    expect(stores().map((body) => body.changes.length)).toEqual([3, 2, 1, 1, 1])
+    expect(readAllBases()).toHaveLength(3)
+    expect(session.failed.size).toBe(0)
   })
 
   it('reloads the ring when a stale head names a key this device lacks', async () => {

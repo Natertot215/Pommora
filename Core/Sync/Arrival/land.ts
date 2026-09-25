@@ -5,14 +5,7 @@ import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import type { CaptureReason } from '../../Platform/stores'
 import type { Change, ItemRecord } from '../Contract/wire'
-import {
-  deleteBase,
-  readBase,
-  readBasesUnder,
-  recordBase,
-  renameBase,
-  upsertBase,
-} from '../Client/base'
+import { deleteBase, readBase, recordBase, renameBase, upsertBase } from '../Client/base'
 import type { SyncHost } from '../Client/call'
 import { captureLoser } from './captures'
 import { type Json, isMergedJson, mergeDepthFor, mergeKeys } from './jsonMerge'
@@ -128,17 +121,12 @@ export async function landRename(root: string, change: Change): Promise<void> {
   const from = join(root, fromRel)
   const to = join(root, change.path)
   await machine().lock(from, async () => {
-    const source = holdable(fromRel) ? await machine().stat(from) : null
-    if (source !== null) {
-      if (!source.isDirectory) {
-        const losing = await machine().readBytes(to)
-        if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
-      }
+    if (holdable(fromRel) && (await machine().stat(from)) !== null) {
+      const losing = await machine().readBytes(to)
+      if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
       await machine().mkdir(dirname(to))
       await machine().rename(from, to)
     }
-    for (const row of readBasesUnder(fromRel))
-      renameBase(row.path, change.path + row.path.slice(fromRel.length))
     renameBase(fromRel, change.path)
     const moved = readBase(change.path)
     if (moved) upsertBase({ ...moved, version: change.seq })

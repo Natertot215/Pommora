@@ -59,7 +59,7 @@ beforeAll(async () => {
       ring: [],
     },
   })
-  await owner.put(NEXUS, 'k1', BYTES)
+  await owner.put(NEXUS, BYTES)
 })
 
 afterAll(async () => {
@@ -179,7 +179,7 @@ describe('the hub change log', () => {
 
   it('keeps two captures of one path under different hashes', async () => {
     const other = Buffer.from('another capture')
-    await owner.put(NEXUS, 'k1', other)
+    await owner.put(NEXUS, other)
     const captured = await push([
       { kind: 'capture', record: record('Notes/kept.md') },
       { kind: 'capture', record: { ...record('Notes/kept.md'), sha256: sha256Hex(other) } },
@@ -279,9 +279,9 @@ describe('the hub retention sweep', () => {
     )
 
   it('sweeps an old orphaned blob and keeps the head, a fresh orphan, and a captured blob', async () => {
-    await owner.put(NEXUS, 'k1', orphanOld)
-    await owner.put(NEXUS, 'k1', orphanNew)
-    await owner.put(NEXUS, 'k1', captured)
+    await owner.put(NEXUS, orphanOld)
+    await owner.put(NEXUS, orphanNew)
+    await owner.put(NEXUS, captured)
     await push([
       { kind: 'capture', record: { ...record('Notes/kept.md'), sha256: digests.captured } },
     ])

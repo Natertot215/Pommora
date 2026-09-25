@@ -168,6 +168,8 @@ async function route(
   if (path.startsWith('/blob/')) {
     const sha = path.split('/')[3]
     if (req.method === 'PUT') {
+      if (machine().sha256Hex(req.body as Uint8Array) !== sha)
+        return json(400, { error: 'hash-mismatch' })
       hub.blobs.set(sha, new Uint8Array(req.body as Uint8Array))
       return json(200, { sha256: sha })
     }

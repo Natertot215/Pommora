@@ -100,12 +100,12 @@ describe('blobs', () => {
     const { host, sent } = recorder({ status: 200, body: '{}' })
     const bytes = new Uint8Array([1, 2, 3])
 
-    const outcome = await putBlob(host, { address: 'http://h/', pin: 'ab:cd' }, NEXUS, 'k1', bytes)
+    const sha = machine().sha256Hex(bytes)
+    const outcome = await putBlob(host, { address: 'http://h/', pin: 'ab:cd' }, NEXUS, sha, bytes)
 
     expect(outcome).toEqual({ status: 200 })
     expect(sent[0].method).toBe('PUT')
-    expect(sent[0].url).toBe(`http://h${blobPath(NEXUS, machine().sha256Hex(bytes))}`)
-    expect(sent[0].headers['x-pommora-key']).toBe('k1')
+    expect(sent[0].url).toBe(`http://h${blobPath(NEXUS, sha)}`)
     expect(sent[0].pin).toBe('ab:cd')
     expect(sent[0].timeoutMs).toBe(BLOB_TIMEOUT_MS)
     expect(sent[0].body).toBe(bytes)

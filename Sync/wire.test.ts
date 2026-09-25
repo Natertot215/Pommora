@@ -2,7 +2,7 @@ import { createDecipheriv } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { BLOB_ROUTE, canonical, fingerprintOf, sha256Hex } from './wire.ts'
+import { BLOB_CAP, BLOB_ROUTE, canonical, fingerprintOf, sha256Hex } from './wire.ts'
 
 const fixture = JSON.parse(
   readFileSync(
@@ -18,6 +18,7 @@ const fixture = JSON.parse(
     canonical: string
   }[]
   fingerprint: { publicKey: string; id: string }
+  blobCap: number
   blobPath: { nexusId: string; sha256: string; path: string }
   item: {
     keyId: string
@@ -45,6 +46,10 @@ describe('the hub wire', () => {
 
   it('matches the shared device-id vector', () => {
     expect(fingerprintOf(fixture.fingerprint.publicKey)).toBe(fixture.fingerprint.id)
+  })
+
+  it('caps a blob at the shared size', () => {
+    expect(BLOB_CAP).toBe(fixture.blobCap)
   })
 
   it('matches the shared blob-path vector', () => {
