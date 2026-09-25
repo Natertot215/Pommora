@@ -4,6 +4,7 @@ import { isPlainObject } from '../Properties/propertyValue'
 import type { EntityRecord, RecordKind } from './record'
 import { errText } from '../Contract/result'
 import { copyEntry } from '../Tiles/tilesFile'
+import { mintViewId } from '../Views/views'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { pathExists } from '../Files/atomicWrite'
 import { tileDocPath } from '../Paths/paths'
@@ -97,7 +98,7 @@ async function remintSidecar(
     if (Array.isArray(next.views))
       next.views = next.views.map((v) => {
         if (!isPlainObject(v)) return v
-        const minted = newId()
+        const minted = mintViewId()
         if (typeof v.id === 'string') viewIds.set(v.id, minted)
         // The copy's pages are reminted to fresh ids in this same pass, so a carried manual order would name pages the copy does not hold — and on disk it syncs everywhere with nothing to sweep it.
         return { ...v, id: minted, manual_order: undefined }

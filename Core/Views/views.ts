@@ -1,6 +1,7 @@
 // Each enum has ONE source: an `as const` array drives both the TS type and the zod codec / runtime membership Set — never re-listed.
 
 import { z } from 'zod'
+import { newId } from '../Nexus/ids'
 import { columnStyle, type ColumnStyle } from '../Properties/columnStyles'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
 
@@ -270,10 +271,12 @@ export function isLocationFsOrder(view: SavedView): boolean {
   )
 }
 
-export const VIEW_ID_PREFIX = 'view_'
+const VIEW_ID_PREFIX = 'view_'
 
-/** `shared/` can't import `main/ids`, so main swaps this for a real `view_<ulid>` on first save. */
+/** The id an unsaved view carries; `saveView` swaps it for a minted one on first save. */
 export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
+
+export const mintViewId = (): string => `${VIEW_ID_PREFIX}${newId()}`
 
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return {

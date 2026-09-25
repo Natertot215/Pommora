@@ -49,7 +49,7 @@ own behavior, so every host gets it.
 | `Layout/stack.ts` | The narrow-width derivation — rows flattened to one column, and its threshold |
 | `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint, the stacked board |
 | `tileDocStore.ts` | The host-keyed tile document — one tree, one debounce, one lock per host, shared by every mount |
-| `useTileDoc.ts` | The document's React reader — its snapshot, the host lock's two directions, and the gesture hold |
+| `useTileDoc.ts` | The document's React reader — its snapshot and lock, and the gesture hold |
 | `TileHost.tsx` | The host binding — the entry union, the menus, create, remove, convert, duplicate |
 | `BoardLock.tsx` | The board lock control — the host settings surfaces and a windowed Space's footer bar all mount this one |
 | `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
@@ -97,5 +97,5 @@ These are load-bearing; the comments at each site say why. Summarized:
 
 `TileGrid` is fully controlled: `layout` in, `onLayoutChange` out — the tree it draws may be a
 narrow-width derivation, while the tree it hands back is the one it was given. The codec
-round-trips the tree; entry payloads and unknown-key preservation belong to the host binding
+parses the stored tree; entry payloads and unknown-key preservation belong to the host binding
 above, and the tile document itself to `tileDocStore.ts`, not here.

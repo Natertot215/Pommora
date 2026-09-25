@@ -7,13 +7,14 @@ import {
   TILE_KINDS,
   type TileHostRef,
 } from './tiles'
-import { decodeLayout, encodeLayout } from './Layout/codec'
+import { decodeLayout } from './Layout/codec'
 import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '../Properties/propertyValue'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { newId } from '../Nexus/ids'
+import { mintViewId } from '../Views/views'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { utf8 } from '../Files/utf8'
 import { linksIn } from '../Connections/scan'
@@ -126,9 +127,7 @@ export async function restoreTile(dir: string, removed: RemovedTile): Promise<Re
         ? cur.tiles
         : [...cur.tiles, removed.entry],
       layout: layout
-        ? encodeLayout(
-            insertBand(layout, at?.band ?? layout.bands.length, known.id, at?.h ?? NEW_TILE_H),
-          )
+        ? insertBand(layout, at?.band ?? layout.bands.length, known.id, at?.h ?? NEW_TILE_H)
         : cur.layout,
     }
   }).finally(dropTileHeadingLinks)
@@ -154,7 +153,7 @@ function remintConfigIds(views: unknown[]): unknown[] {
     if (typeof v !== 'object' || v === null) return v
     const el = v as Record<string, unknown>
     if (typeof el.config !== 'object' || el.config === null) return el
-    return { ...el, config: { ...(el.config as Record<string, unknown>), id: newId() } }
+    return { ...el, config: { ...(el.config as Record<string, unknown>), id: mintViewId() } }
   })
 }
 
