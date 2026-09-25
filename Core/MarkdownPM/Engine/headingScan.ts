@@ -1,20 +1,6 @@
 // Kept apart from the fold state machine so the block resolver can ask what a heading is without importing it.
-import {
-  headingParts,
-  isHeadingLine,
-  scanFencedCode,
-  splitWithOffsets,
-  type FenceInfo,
-} from './detect'
-import type { DocScan } from './docScan'
-
-/** `DocScan` satisfies it structurally, so a caller holding the cached whole-document scan asks without re-splitting. */
-interface HeadingSrc {
-  lines: string[]
-  lineStarts: number[]
-  headings: readonly boolean[]
-  fences: readonly (FenceInfo | undefined)[]
-}
+import { headingParts } from './detect'
+import { type DocScan, inSealedBlockAt, scanDoc } from './docScan'
 
 interface HeadingSection {
   from: number
@@ -31,13 +17,13 @@ interface ScannedHeading {
   key: string
 }
 
-function scanHeadings({ lines, headings, fences }: HeadingSrc): ScannedHeading[] {
+function scanHeadings(s: DocScan): ScannedHeading[] {
   const heads: ScannedHeading[] = []
   const seen = new Map<string, number>()
-  for (let i = 0; i < lines.length; i++) {
-    // A `# comment` inside a code block is code: treating it as a heading corrupts drag extents and poisons the persisted fold keys.
-    if (fences[i] || !headings[i]) continue
-    const m = headingParts(lines[i])
+  for (let i = 0; i < s.lines.length; i++) {
+    // A `# comment` inside a code or math block is that block's text: treating it as a heading corrupts drag extents and poisons the persisted fold keys.
+    if (!s.headings[i] || inSealedBlockAt(s, i)) continue
+    const m = headingParts(s.lines[i])
     if (!m) continue
     const text = m.content.trim()
     const n = (seen.get(text) ?? 0) + 1
@@ -55,7 +41,7 @@ export interface OutlineHeading {
 }
 
 /** `headingSections` drops body-less headings; an outline still lists them, or two consecutive headings would show only the second. */
-export function headingOutlineOf(src: HeadingSrc): OutlineHeading[] {
+export function headingOutlineOf(src: DocScan): OutlineHeading[] {
   return scanHeadings(src).map((h) => ({
     from: src.lineStarts[h.idx],
     level: h.level,
@@ -64,15 +50,7 @@ export function headingOutlineOf(src: HeadingSrc): OutlineHeading[] {
   }))
 }
 
-export function headingOutline(doc: string): OutlineHeading[] {
-  const { lines, lineStarts } = splitWithOffsets(doc)
-  return headingOutlineOf({
-    lines,
-    lineStarts,
-    headings: lines.map(isHeadingLine),
-    fences: scanFencedCode(lines, lineStarts),
-  })
-}
+export const headingOutline = (doc: string): OutlineHeading[] => headingOutlineOf(scanDoc(doc))
 
 export function sectionEnd(headings: readonly { level: number }[], start: number): number {
   for (let n = start + 1; n < headings.length; n++)

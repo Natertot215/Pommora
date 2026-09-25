@@ -74,6 +74,77 @@ describe('the editor reports a settled heading rename', () => {
     expect(onHeadingRename).toHaveBeenCalledTimes(3)
   })
 
+  it('Enter inside a heading renames it to the half it keeps and carries its links; an undo reverts the heading and the next settle carries them back', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## Setup\n[[#Setup]] next',
+      onHeadingRename,
+      autoFocus: true,
+    })
+    await typeAt(view, 6, '\n')
+    await leave(view)
+    expect(view.state.doc.toString()).toBe('## Set\nup\n[[#Set]] next')
+    expect(onHeadingRename).toHaveBeenCalledWith('Setup', 'Set')
+    await act(async () => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe('## Setup\n[[#Set]] next')
+    await leave(view)
+    expect(view.state.doc.toString()).toBe('## Setup\n[[#Setup]] next')
+    expect(onHeadingRename).toHaveBeenLastCalledWith('Set', 'Setup')
+  })
+
+  it('deleting the break after a heading joins the next line into it and carries its links', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## Setup\nNotes\n[[#Setup]]',
+      onHeadingRename,
+      autoFocus: true,
+    })
+    await act(async () => {
+      view.dispatch({ changes: { from: 8, to: 9 }, selection: { anchor: 8 }, userEvent: 'delete' })
+    })
+    await leave(view)
+    expect(view.state.doc.toString()).toBe('## SetupNotes\n[[#SetupNotes]]')
+    expect(onHeadingRename).toHaveBeenCalledWith('Setup', 'SetupNotes')
+    await act(async () => {
+      undo(view)
+    })
+    await leave(view)
+    expect(view.state.doc.toString()).toBe('## Setup\nNotes\n[[#Setup]]')
+  })
+
+  it('deleting a selection from inside a heading across its end renames it to what the line then reads', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## Setup\nNotes\n[[#Setup]]',
+      onHeadingRename,
+      autoFocus: true,
+    })
+    await act(async () => {
+      view.dispatch({ changes: { from: 6, to: 11 }, selection: { anchor: 6 }, userEvent: 'delete' })
+    })
+    await leave(view)
+    expect(view.state.doc.toString()).toBe('## Settes\n[[#Settes]]')
+    expect(onHeadingRename).toHaveBeenCalledWith('Setup', 'Settes')
+  })
+
+  it.each([
+    ['end', 8],
+    ['start', 0],
+  ])('Enter at a heading’s %s is no rename', async (_, at) => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## Setup\n[[#Setup]] next',
+      onHeadingRename,
+      autoFocus: true,
+    })
+    await typeAt(view, at, '\n')
+    await leave(view)
+    expect(onHeadingRename).not.toHaveBeenCalled()
+    expect(view.state.doc.toString()).toContain('[[#Setup]] next')
+  })
+
   it('a rename on a second line settles the first before it opens', async () => {
     const onHeadingRename = vi.fn()
     const view = await mountEditor({

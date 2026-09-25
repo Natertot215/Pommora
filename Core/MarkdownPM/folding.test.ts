@@ -35,6 +35,12 @@ describe('headingOutline — every heading, not just the foldable ones', () => {
   it('a heading inside a code fence is code, not a heading', () => {
     expect(headingOutline('# Real\n```\n# Not\n```\ntail').map((h) => h.text)).toEqual(['Real'])
   })
+
+  it('a heading inside a math block is formula text to the Outline, the fold chevrons, and the picker alike', () => {
+    const doc = '# Real\nbody\n$$\n# Not\n$$\n\ntail'
+    expect(headingOutline(doc).map((h) => h.text)).toEqual(['Real'])
+    expect(headingSections(scanDoc(doc)).map((s) => s.key)).toEqual(['Real'])
+  })
   it('duplicate text stays tellable apart by key, sharing the sections ordinal', () => {
     expect(headingOutline('# Notes\nb\n# Notes\nb').map((h) => h.key)).toEqual([
       'Notes',

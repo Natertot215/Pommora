@@ -19,7 +19,7 @@ function headingRenameOf(tr: Transaction): HeldRename | null {
   tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
     const oldLine = tr.startState.doc.lineAt(fromA)
     const newLine = tr.newDoc.lineAt(fromB)
-    if (toA > oldLine.to || toB > newLine.to) return
+    if (toB > newLine.to + 1 || (toA > oldLine.to && fromA === oldLine.from)) return
     const oldParts = headingParts(oldLine.text)
     const newParts = headingParts(newLine.text)
     if (!oldParts || !newParts) return
