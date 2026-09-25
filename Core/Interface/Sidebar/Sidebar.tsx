@@ -50,10 +50,11 @@ import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
+import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/create'
 
 async function createFromMenu(item: Creator): Promise<void> {
   if (await popMenu([{ label: item.label, action: 'create' }]))
-    await useSession.getState().createNamed(item.req, 'sidebar')
+    await createNamed(item.req, 'sidebar')
 }
 
 function showContextFor(
@@ -380,22 +381,21 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     create: (): void => {
       const anchorId = take()
       const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
-      const s = useSession.getState()
       switch (entry?.kind) {
         case 'contextGroup': {
-          const def = s.tree?.contexts.find((g) => g.def.id === entry.id)?.def
+          const def = useSession.getState().tree?.contexts.find((g) => g.def.id === entry.id)?.def
           if (def)
-            void s.createNamed(
+            void createNamed(
               { op: 'createSpace', contextId: def.id, name: createSpaceLabel(def) },
               'sidebar',
             )
           return
         }
         case 'space':
-          void s.newSpaceAdjacent(entry.id, 'below', 'sidebar')
+          void newSpaceAdjacent(entry.id, 'below', 'sidebar')
           return
         case 'page':
-          void s.newPageAdjacent(entry.path, 'below', 'sidebar')
+          void newPageAdjacent(entry.path, 'below', 'sidebar')
       }
     },
   }))

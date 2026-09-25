@@ -8,7 +8,7 @@ import type { ConfigSlice } from './configSlice'
 import type { NavigationSlice } from './navigationSlice'
 import type { NexusSlice } from './nexusSlice'
 import type { WindowSlice } from './windowSlice'
-import type { RenameSlice } from './renameSlice'
+import type { EditSlice } from './editSlice'
 import type { ViewSearchSlice } from './viewSearchSlice'
 
 /** Every slice sees the whole state, so features react to each other without private channels: any slice reads and may write any field, and `nexusSlice` seeds a Nexus's state in `load` and clears it through each slice's reset. */
@@ -18,7 +18,7 @@ export type SessionState = NexusSlice &
   ChromeSlice &
   LayoutSlice &
   ConfigSlice &
-  RenameSlice &
+  EditSlice &
   CacheSlice &
   GlanceSlice &
   MatrixSlice &

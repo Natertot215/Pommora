@@ -9,7 +9,7 @@ import { createGlanceSlice } from './glanceSlice'
 import { createNavigationSlice } from './navigationSlice'
 import { createNexusSlice } from './nexusSlice'
 import { createWindowSlice } from './windowSlice'
-import { createRenameSlice } from './renameSlice'
+import { createEditSlice } from './editSlice'
 import { createViewSearchSlice } from './viewSearchSlice'
 import type { SessionState } from './sessionState'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
@@ -33,7 +33,7 @@ export const useSession = create<SessionState>()((...a) => ({
   ...createChromeSlice(...a),
   ...createLayoutSlice(...a),
   ...createConfigSlice(...a),
-  ...createRenameSlice(...a),
+  ...createEditSlice(...a),
   ...createCacheSlice(...a),
   ...createGlanceSlice(...a),
   ...createMatrixSlice(...a),
