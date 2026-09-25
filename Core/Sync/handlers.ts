@@ -1,13 +1,21 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
 import { BUSY, fail, NO_STORE, ok, type Result, fault } from '../Contract/result'
 import { isString } from '../Contract/validators'
+import { utf8 } from '../Files/utf8'
 import { captureLoser } from './Arrival/captures'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
 import { readValue, writeValue } from '../Platform/localState'
 import { readFileHistoryConfig } from '../Settings/settings'
 import { deleteBase, readAllBases } from './Client/base'
-import { call, type CallOutcome, type SyncHost, type SyncTarget, syncHost } from './Client/call'
+import {
+  answered,
+  call,
+  type CallOutcome,
+  type SyncHost,
+  type SyncTarget,
+  syncHost,
+} from './Client/call'
 import { currentSession, startSession, stopSession, syncNow } from './Client/session'
 import { currentStatus } from './Client/status'
 import { forgetHeldRing, heldRing, loadRing, passwordName, ringName } from './Client/keyring'
@@ -76,17 +84,11 @@ function bindingFrom(
   if (Array.isArray(outcome.reply?.devices))
     return { address, state: 'approved', devices: outcome.reply.devices }
   if (outcome.status === 404) return { address, state: 'pending' }
-  const why = outcome.error ?? `The server answered ${outcome.status}.`
-  return { address, state: 'unreachable', why }
+  return { address, state: 'unreachable', why: answered(outcome) }
 }
 
 const statusOf = (trouble: Trouble | undefined): SyncStatus =>
   trouble === undefined ? OFF : { state: 'off', ...trouble }
-
-const silence = (outcome: { error?: string }): Trouble => ({
-  reason: 'server',
-  why: outcome.error ?? 'The server did not answer.',
-})
 
 async function fetchInfo(
   host: SyncHost,
@@ -94,7 +96,7 @@ async function fetchInfo(
   nexusId: string,
 ): Promise<InfoRecord | Trouble> {
   const outcome = await call(host, target, 'info', { nexusId })
-  if (outcome.status === 0) return silence(outcome)
+  if (outcome.status === 0) return { reason: 'server', why: answered(outcome) }
   return outcome.reply?.info ?? NO_RECORD
 }
 
@@ -278,7 +280,7 @@ export const syncHandlers = {
           binding: {
             address: binding.address,
             state: 'unreachable',
-            why: outcome.error ?? 'The server did not answer.',
+            why: answered(outcome),
           },
           status: currentStatus(),
         })
@@ -309,8 +311,7 @@ export const syncHandlers = {
         name: device.name,
         x25519: host.device.x25519,
       })
-      if (outcome.status !== 200)
-        return fault(`The server refused or did not answer: ${outcome.error ?? outcome.status}.`)
+      if (outcome.status !== 200) return fault(answered(outcome))
       const asked = await call(host, target, 'info', { nexusId })
       if (asked.status === 0)
         return fault(`The server did not answer for its keys: ${asked.error ?? 'no reply'}.`)
@@ -379,7 +380,7 @@ export const syncHandlers = {
 
   'sync:captureLocal': withWriteRoot(async (root, _ctx, rel: unknown, text: unknown) => {
     if (!isString(rel) || !isString(text)) return fault('A path and its text are required.')
-    await captureLoser(root, rel, new TextEncoder().encode(text), 'merge-lost')
+    await captureLoser(root, rel, utf8(text), 'merge-lost')
     return ok(null)
   }),
 } satisfies Partial<Handlers>

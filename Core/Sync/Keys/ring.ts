@@ -1,4 +1,5 @@
-import { ulid } from 'ulidx'
+import { utf8 } from '../../Files/utf8'
+import { newId } from '../../Nexus/ids'
 import type { RingEntry } from '../Contract/wire'
 
 export type Bytes = Uint8Array<ArrayBuffer>
@@ -23,11 +24,8 @@ const IV_BYTES = 12
 const PUBLIC_KEY_BYTES = 32
 const WRAP_INFO = 'pommora-ring-wrap/1'
 const NOTHING = new Uint8Array(0)
-const ENCODER = new TextEncoder()
 
 const subtle = (): SubtleCrypto => globalThis.crypto.subtle
-
-export const utf8 = (text: string): Bytes => ENCODER.encode(text)
 
 export const owned = (bytes: Uint8Array): Bytes => new Uint8Array(bytes)
 
@@ -97,7 +95,7 @@ export const newest = (ring: Ring): RingKey =>
   ring.keys.reduce((best, key) => (key.createdMs > best.createdMs ? key : best))
 
 export const mintKey = (): RawKey => ({
-  keyId: ulid(),
+  keyId: newId(),
   raw: globalThis.crypto.getRandomValues(new Uint8Array(32)),
   createdMs: Date.now(),
 })

@@ -42,7 +42,7 @@ export function transport(req: TransportRequest): Promise<TransportReply> {
     if (req.pin !== undefined) {
       const check = (socket: TLSSocket): void => {
         if (socket.getPeerCertificate().fingerprint256 !== req.pin) {
-          r.destroy(new Error('The hub certificate does not match the pin.'))
+          r.destroy(new Error('The server certificate does not match the pin.'))
         }
       }
       // A socket the agent reuses is already handshaken, so `secureConnect` has fired and will not fire again.

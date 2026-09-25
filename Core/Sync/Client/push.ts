@@ -1,7 +1,7 @@
-import { ulid } from 'ulidx'
 import { listPathsUnder } from '../../Files/walk'
 import { heldName } from '../../Files/atomicWrite'
 import { stampedId } from '../../Files/pageFile'
+import { newId } from '../../Nexus/ids'
 import { manifestAdmits } from '../../Paths/exclusion'
 import { basename, dirname, join, isMarkdownFile } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
@@ -22,7 +22,7 @@ import {
   type Snapshot,
   upsertBase,
 } from './base'
-import { call, getBlob, putBlob } from './call'
+import { answered, call, getBlob, putBlob } from './call'
 import type { Session } from './session'
 import { setStatus } from './status'
 
@@ -37,14 +37,11 @@ const failedPaths = (change: StoreChange): string[] =>
 
 function troubled(session: Session, paths: string[], why: string): void {
   for (const path of paths) session.failed.add(path)
-  setStatus(session.ctx, { state: 'error', why })
+  setStatus(session.host, { state: 'error', why })
 }
 
-export const answered = (outcome: { status: number; error?: string }): string =>
-  outcome.error ?? `The hub answered ${outcome.status}.`
-
 async function storeSlice(session: Session, slice: StoreChange[]): Promise<StoreOutcome[]> {
-  const body = { nexusId: session.nexusId, requestId: ulid(), changes: slice }
+  const body = { nexusId: session.nexusId, requestId: newId(), changes: slice }
   let outcome = await call(session.host, session.target, 'store', body)
   if (outcome.status === 0) outcome = await call(session.host, session.target, 'store', body)
   if (outcome.reply !== null) return outcome.reply.outcomes
@@ -55,7 +52,7 @@ async function storeSlice(session: Session, slice: StoreChange[]): Promise<Store
       ...(await storeSlice(session, slice.slice(half))),
     ]
   }
-  if (outcome.status === 400) setStatus(session.ctx, { state: 'error', why: answered(outcome) })
+  if (outcome.status === 400) setStatus(session.host, { state: 'error', why: answered(outcome) })
   else troubled(session, slice.flatMap(failedPaths), answered(outcome))
   return []
 }
@@ -68,7 +65,7 @@ async function storeChanges(session: Session, changes: StoreChange[]): Promise<S
 }
 
 const staysHome = (session: Session, rel: string): void =>
-  setStatus(session.ctx, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
+  setStatus(session.host, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
 
 async function shipBlob(
   session: Session,
@@ -161,7 +158,7 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
       return
     }
     if (rel.normalize('NFC') !== rel) {
-      setStatus(session.ctx, { state: 'error', why: `${rel} is not NFC and stays home.` })
+      setStatus(session.host, { state: 'error', why: `${rel} is not NFC and stays home.` })
       return
     }
     const row = readBase(rel)
@@ -174,7 +171,7 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
       }
       const [now, was] = [await heldName(abs), await heldName(from)]
       if (now === basename(rel) && was === basename(row.path))
-        setStatus(session.ctx, {
+        setStatus(session.host, {
           state: 'error',
           why: `${rel} differs from ${row.path} only in case and stays home.`,
         })
@@ -279,7 +276,7 @@ export async function resolveStale(
   const record = recordOf(head)
   const blob = await getBlob(host, target, nexusId, record.sha256)
   if (blob === null) {
-    troubled(session, [rel], `The hub holds no bytes for ${rel}.`)
+    troubled(session, [rel], `The server holds no bytes for ${rel}.`)
     return
   }
   const remote = await openRecord(session, record, blob)

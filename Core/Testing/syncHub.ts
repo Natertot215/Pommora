@@ -61,9 +61,9 @@ const json = (status: number, body: unknown): Omit<TransportReply, 'bytes'> => (
 
 const MISSING = json(404, { error: 'not-found' })
 
-const liveOf = (hub: FakeHub, path: string): HubItem | null => {
+const liveVersion = (hub: FakeHub, path: string): number | null => {
   const row = hub.items.get(path)
-  return row !== undefined && !row.deleted ? row : null
+  return row !== undefined && !row.deleted ? row.version : null
 }
 
 function headOf(hub: FakeHub, path: string): Change | null {
@@ -81,67 +81,49 @@ const malformed = (body: StoreBody): boolean =>
   )
 
 function apply(hub: FakeHub, body: StoreBody): StoreReply {
-  const outcomes: StoreOutcome[] = []
   const stale = (path: string, at: string = path): StoreOutcome => ({
     path,
     ok: false,
     why: 'stale',
     head: headOf(hub, at),
   })
-  for (const change of body.changes) {
-    if (change.kind === 'capture') {
-      const { path, sha256 } = change.record
-      if (!hub.blobs.has(sha256)) {
-        outcomes.push({ path, ok: false, why: 'missing-blob' })
-        continue
-      }
-      hub.captures.push(change.record)
-      outcomes.push({ path, ok: true, version: hub.seq })
-      continue
-    }
-    const path = change.kind === 'write' ? change.record.path : change.path
-    const source = change.kind === 'rename' ? change.from : path
-    const live = liveOf(hub, source)
-    if (change.kind === 'write' && change.base === null) {
-      if (live !== null) {
-        outcomes.push(stale(path))
-        continue
-      }
-    } else if (live === null || live.version !== change.base) {
-      outcomes.push(stale(path, source))
-      continue
-    }
-    if (change.kind === 'write' && !hub.blobs.has(change.record.sha256)) {
-      outcomes.push({ path, ok: false, why: 'missing-blob' })
-      continue
-    }
-    if (change.kind === 'rename' && liveOf(hub, path) !== null) {
-      outcomes.push(stale(path))
-      continue
-    }
+  const missingBlob = (path: string): StoreOutcome => ({ path, ok: false, why: 'missing-blob' })
+  const append = (change: Omit<Change, 'seq' | 'device' | 'atMs'>): StoreOutcome => {
     hub.seq += 1
     const seq = hub.seq
-    const at = { device: hub.device, atMs: hub.atMs }
-    if (change.kind === 'write') {
-      hub.changes.push({ seq, kind: 'write', path, record: change.record, ...at })
-      hub.items.set(path, { version: seq, deleted: false })
-    } else if (change.kind === 'delete') {
-      hub.changes.push({ seq, kind: 'delete', path, ...at })
-      hub.items.set(path, { version: seq, deleted: true })
-    } else {
-      hub.items.set(path, { version: seq, deleted: false })
-      hub.items.set(change.from, { version: seq, deleted: true })
-      hub.changes.push({
-        seq,
-        kind: 'rename',
-        path,
-        from: change.from,
-        record: hub.changes.find((row) => row.seq === change.base)?.record,
-        ...at,
-      })
-    }
-    outcomes.push({ path, ok: true, version: seq })
+    hub.changes.push({ ...change, seq, device: hub.device, atMs: hub.atMs })
+    hub.items.set(change.path, { version: seq, deleted: change.kind === 'delete' })
+    if (change.from !== undefined) hub.items.set(change.from, { version: seq, deleted: true })
+    return { path: change.path, ok: true, version: seq }
   }
+
+  const settle = (change: StoreChange): StoreOutcome => {
+    switch (change.kind) {
+      case 'capture': {
+        const { path, sha256 } = change.record
+        if (!hub.blobs.has(sha256)) return missingBlob(path)
+        hub.captures.push(change.record)
+        return { path, ok: true, version: hub.seq }
+      }
+      case 'write': {
+        const { path, sha256 } = change.record
+        if (liveVersion(hub, path) !== change.base) return stale(path)
+        if (!hub.blobs.has(sha256)) return missingBlob(path)
+        return append({ kind: 'write', path, record: change.record })
+      }
+      case 'delete':
+        if (liveVersion(hub, change.path) !== change.base) return stale(change.path)
+        return append({ kind: 'delete', path: change.path })
+      case 'rename': {
+        if (liveVersion(hub, change.from) !== change.base) return stale(change.path, change.from)
+        if (liveVersion(hub, change.path) !== null) return stale(change.path)
+        const record = hub.changes.find((row) => row.seq === change.base)?.record
+        return append({ kind: 'rename', path: change.path, from: change.from, record })
+      }
+    }
+  }
+
+  const outcomes = body.changes.map(settle)
   return { outcomes, seq: hub.seq }
 }
 
@@ -275,7 +257,6 @@ export async function hubSession(
     ...made,
     session: {
       host,
-      ctx: made.ctx,
       root,
       nexusId: made.nexusId,
       target: { address: 'http://127.0.0.1:7473', pin: null, cursor: 0 },

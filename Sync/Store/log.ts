@@ -89,9 +89,9 @@ export function logStore(db: DatabaseSync) {
     return row ? row.seq : null
   }
 
-  const liveOf = (nexusId: string, path: string): ItemRow | null => {
+  const liveVersion = (nexusId: string, path: string): number | null => {
     const row = itemStatement.get(nexusId, path) as ItemRow | undefined
-    return row !== undefined && row.deleted === 0 ? row : null
+    return row !== undefined && row.deleted === 0 ? row.version : null
   }
 
   const readHead = (nexusId: string, path: string): Wire.Change | null => {
@@ -106,74 +106,60 @@ export function logStore(db: DatabaseSync) {
     atMs: number,
     start: number,
   ): Wire.StoreReply {
-    const outcomes: Wire.StoreOutcome[] = []
+    let seq = start
     const stale = (path: string, at: string = path): Wire.StoreOutcome => ({
       path,
       ok: false,
       why: 'stale',
       head: readHead(nexusId, at),
     })
-    let seq = start
-
-    for (const change of body.changes) {
-      if (change.kind === 'capture') {
-        const { path, sha256 } = change.record
-        if (!hasBlob(nexusId, sha256)) {
-          outcomes.push({ path, ok: false, why: 'missing-blob' })
-          continue
-        }
-        insertCapture.run(nexusId, path, sha256, atMs, JSON.stringify(change.record))
-        outcomes.push({ path, ok: true, version: seq })
-        continue
-      }
-
-      const path = change.kind === 'write' ? change.record.path : change.path
-      const source = change.kind === 'rename' ? change.from : path
-      const live = liveOf(nexusId, source)
-      if (change.kind === 'write' && change.base === null) {
-        if (live !== null) {
-          outcomes.push(stale(path))
-          continue
-        }
-      } else if (live === null || live.version !== change.base) {
-        outcomes.push(stale(path, source))
-        continue
-      }
-      if (change.kind === 'write' && !hasBlob(nexusId, change.record.sha256)) {
-        outcomes.push({ path, ok: false, why: 'missing-blob' })
-        continue
-      }
-      if (change.kind === 'rename' && liveOf(nexusId, path) !== null) {
-        outcomes.push(stale(path))
-        continue
-      }
-
+    const missingBlob = (path: string): Wire.StoreOutcome => ({
+      path,
+      ok: false,
+      why: 'missing-blob',
+    })
+    const append = (
+      kind: Wire.Change['kind'],
+      path: string,
+      from: string | null,
+      record: string | null,
+    ): Wire.StoreOutcome => {
       bumpStatement.run(nexusId)
       seq += 1
-      if (change.kind === 'write') {
-        insertChange.run(
-          nexusId,
-          seq,
-          'write',
-          path,
-          null,
-          JSON.stringify(change.record),
-          device,
-          atMs,
-        )
-        upsertItem.run(nexusId, path, seq, 0)
-      } else if (change.kind === 'delete') {
-        insertChange.run(nexusId, seq, 'delete', path, null, null, device, atMs)
-        upsertItem.run(nexusId, path, seq, 1)
-      } else {
-        const { record } = recordStatement.get(nexusId, change.base) as { record: string }
-        upsertItem.run(nexusId, path, seq, 0)
-        upsertItem.run(nexusId, change.from, seq, 1)
-        insertChange.run(nexusId, seq, 'rename', path, change.from, record, device, atMs)
-      }
-      outcomes.push({ path, ok: true, version: seq })
+      insertChange.run(nexusId, seq, kind, path, from, record, device, atMs)
+      upsertItem.run(nexusId, path, seq, kind === 'delete' ? 1 : 0)
+      if (from !== null) upsertItem.run(nexusId, from, seq, 1)
+      return { path, ok: true, version: seq }
     }
 
+    const settle = (change: Wire.StoreChange): Wire.StoreOutcome => {
+      switch (change.kind) {
+        case 'capture': {
+          const { path, sha256 } = change.record
+          if (!hasBlob(nexusId, sha256)) return missingBlob(path)
+          insertCapture.run(nexusId, path, sha256, atMs, JSON.stringify(change.record))
+          return { path, ok: true, version: seq }
+        }
+        case 'write': {
+          const { path, sha256 } = change.record
+          if (liveVersion(nexusId, path) !== change.base) return stale(path)
+          if (!hasBlob(nexusId, sha256)) return missingBlob(path)
+          return append('write', path, null, JSON.stringify(change.record))
+        }
+        case 'delete':
+          if (liveVersion(nexusId, change.path) !== change.base) return stale(change.path)
+          return append('delete', change.path, null, null)
+        case 'rename': {
+          if (liveVersion(nexusId, change.from) !== change.base)
+            return stale(change.path, change.from)
+          if (liveVersion(nexusId, change.path) !== null) return stale(change.path)
+          const { record } = recordStatement.get(nexusId, change.base) as { record: string }
+          return append('rename', change.path, change.from, record)
+        }
+      }
+    }
+
+    const outcomes = body.changes.map(settle)
     return { outcomes, seq }
   }
 

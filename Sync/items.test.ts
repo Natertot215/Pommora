@@ -152,6 +152,34 @@ describe('the hub change log', () => {
     expect(outcome.head.path).toBe('Stale/x.md')
   })
 
+  it('refuses a first write onto a live path with its head', async () => {
+    const written = await push([{ kind: 'write', base: null, record: record('Live/a.md') }])
+    const at = (only(written.reply) as { version: number }).version
+    const again = await push([{ kind: 'write', base: null, record: record('Live/a.md') }])
+    expect(only(again.reply)).toMatchObject({ why: 'stale', head: { seq: at } })
+  })
+
+  it('refuses a rename onto a live path with that path head', async () => {
+    const target = await push([{ kind: 'write', base: null, record: record('Live/b.md') }])
+    const taken = (only(target.reply) as { version: number }).version
+    const source = await push([{ kind: 'write', base: null, record: record('Live/c.md') }])
+    const base = (only(source.reply) as { version: number }).version
+    const refused = await push([{ kind: 'rename', base, from: 'Live/c.md', path: 'Live/b.md' }])
+    expect(only(refused.reply)).toMatchObject({
+      path: 'Live/b.md',
+      why: 'stale',
+      head: { seq: taken, path: 'Live/b.md' },
+    })
+  })
+
+  it('takes a first write on a path its delete left behind', async () => {
+    const written = await push([{ kind: 'write', base: null, record: record('Live/d.md') }])
+    const base = (only(written.reply) as { version: number }).version
+    await push([{ kind: 'delete', base, path: 'Live/d.md' }])
+    const rewritten = await push([{ kind: 'write', base: null, record: record('Live/d.md') }])
+    expect(only(rewritten.reply)).toMatchObject({ ok: true, version: head })
+  })
+
   it('carries the sealed path through a second rename and seals a write at its new path', async () => {
     const written = await push([{ kind: 'write', base: null, record: record('Chain/a.md') }])
     const first = (only(written.reply) as { version: number }).version

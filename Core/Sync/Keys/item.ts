@@ -1,4 +1,5 @@
-import { type Bytes, open, type Ring, type RingKey, seal, utf8 } from './ring'
+import { utf8 } from '../../Files/utf8'
+import { type Bytes, open, type Ring, type RingKey, seal } from './ring'
 
 const VERSION = 0x01
 const STAMP = new Uint8Array([VERSION])

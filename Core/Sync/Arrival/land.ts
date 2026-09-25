@@ -1,5 +1,6 @@
 import { landBytes, parseJsonObject, recase, targetTaken } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
+import { utf8 } from '../../Files/utf8'
 import { platformNameError } from '../../Paths/names'
 import { dirname, join } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
@@ -23,8 +24,6 @@ export function newerSide(
   if (gap < -RECENCY_WINDOW_MS) return 'remote'
   return localDeviceId < remoteDeviceId ? 'local' : 'remote'
 }
-
-const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 const parseObject = (bytes: Uint8Array): Json | null =>
   parseJsonObject(new TextDecoder().decode(bytes))

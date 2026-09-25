@@ -1,5 +1,6 @@
 import type { KdfParams } from '../Contract/wire'
-import { fromBase64url, toBase64url, utf8 } from './ring'
+import { utf8 } from '../../Files/utf8'
+import { fromBase64url, toBase64url } from './ring'
 
 const ITERATIONS = 600_000
 

@@ -72,6 +72,7 @@ beforeEach(async () => {
       throw new Error('no transport')
     }) as unknown as SyncHost['transport'],
     secrets: {} as SyncHost['secrets'],
+    push: () => {},
   }
   mem = memoryStores()
   installStores(mem.stores)
