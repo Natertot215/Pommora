@@ -3,13 +3,12 @@ import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { frontmatterMentions, linksIn } from '../Connections/scan'
 import { normalizeTitle } from '../Connections/connections'
-import { headingOutline, headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
+import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
 import { sweepAdmitsBody } from '../Files/pageFile'
 import {
   markIndexReady,
-  queryHeadingMentions,
   readHeadings,
   readIndexedStat,
   readIndexedStats,
@@ -35,9 +34,14 @@ import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
 
 import { readWatchScope } from '../Settings/settings'
 
-const NO_ROWS: PageIndexEntry = { matrix: [], headings: [], values: {} }
+interface PageRead {
+  entry: PageIndexEntry
+  outline: string[]
+}
 
-function extractPageIndex(rel: string, content: string): PageIndexEntry {
+const NO_ROWS: PageRead = { entry: { matrix: [], headings: [], values: {} }, outline: [] }
+
+function extractPageIndex(rel: string, content: string): PageRead {
   if (!sweepAdmitsBody(content)) return NO_ROWS
   const values = splitFrontmatter(content)
   const own = titleFromPath(rel)
@@ -60,11 +64,8 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
   for (const { target, qualifier } of frontmatterMentions(values))
     add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
-  return {
-    matrix: [...tally.values()],
-    headings: [...new Set(outline.map(normalizeTitle))].filter(Boolean),
-    values,
-  }
+  const headings = [...new Set(outline.map(normalizeTitle))].filter(Boolean)
+  return { entry: { matrix: [...tally.values()], headings, values }, outline }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
@@ -113,10 +114,10 @@ let reread: { db: ContentIndexStore | null; rels: string[]; cold: boolean } = {
 export const rereadSinceSeed = (): readonly string[] =>
   contentIndexStore() === reread.db && !reread.cold ? reread.rels : []
 
-function recordPage(rel: string, content: string, stat: IndexedStat): PageIndexEntry {
-  const entry = extractPageIndex(rel, content)
-  upsertPageIndex(rel, entry, stat)
-  return entry
+function recordPage(rel: string, content: string, stat: IndexedStat): PageRead {
+  const read = extractPageIndex(rel, content)
+  upsertPageIndex(rel, read.entry, stat)
+  return read
 }
 
 interface HeadingRenameSeen {
@@ -125,7 +126,7 @@ interface HeadingRenameSeen {
   next: string
 }
 
-// Re-indexes a written page and reports a heading rename it reads: one linked heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+// Re-indexes a written page and reports a heading rename it reads: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
 export async function indexWrittenPage(
   root: string,
   abs: string,
@@ -142,14 +143,11 @@ export async function indexWrittenPage(
     return null
   }
   const title = titleFromPath(rel)
-  const titleKey = normalizeTitle(title)
   const before = readHeadings([rel])?.[rel] ?? []
-  const entry = recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
+  const { entry, outline } = recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
   const after = entry.headings
   if (after.length !== before.length) return null
-  const gone = before.filter(
-    (k) => !after.includes(k) && (queryHeadingMentions(titleKey, k)?.length ?? 0) > 0,
-  )
+  const gone = before.filter((k) => !after.includes(k))
   const fresh = after.filter((k) => !before.includes(k))
   if (
     gone.length !== 1 ||
@@ -157,10 +155,8 @@ export async function indexWrittenPage(
     before.indexOf(gone[0]) !== after.indexOf(fresh[0])
   )
     return null
-  const next = headingOutline(splitEnvelope(content).body).find(
-    (h) => normalizeTitle(h.text) === fresh[0],
-  )
-  return next ? { title, old: gone[0], next: next.text } : null
+  const next = outline.find((text) => normalizeTitle(text) === fresh[0])
+  return next ? { title, old: gone[0], next } : null
 }
 
 export function deindexPath(root: string, abs: string): void {

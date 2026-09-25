@@ -15,6 +15,7 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { newId } from '../Nexus/ids'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
+import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
@@ -129,7 +130,7 @@ export async function restoreTile(dir: string, removed: RemovedTile): Promise<Re
           )
         : cur.layout,
     }
-  })
+  }).finally(dropTileHeadingLinks)
 }
 
 const settled = async (revised: Promise<Result<unknown>>): Promise<Result<null>> => {
@@ -214,6 +215,7 @@ export async function writeMarkdownTile(
       return { stale: true }
     }
     await atomicWriteFile(file, body)
+    dropTileHeadingLinks()
     return { stale: false, hash: machine().sha256Hex(body) }
   })
 }
@@ -230,6 +232,36 @@ async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: st
   return hosts
 }
 
+const markdownTileIds = async (dir: string): Promise<string[]> =>
+  (await readTileDocAt(dir)).tiles.flatMap((b) => {
+    const entry = knownTile(b)
+    return entry && TILE_KINDS[entry.type].fileBacked ? [entry.id] : []
+  })
+
+let tileHeadingLinks: { root: string; keys: Promise<Set<string>> } | null = null
+
+export const dropTileHeadingLinks = (): void => {
+  tileHeadingLinks = null
+}
+
+async function readTileHeadingLinks(root: string): Promise<Set<string>> {
+  const keys = new Set<string>()
+  for (const { dir } of await listTileHosts(root))
+    for (const id of await markdownTileIds(dir))
+      for (const hit of linksIn(valueOr(await readMarkdownTile(dir, id), '')))
+        if (hit.qualifier) keys.add(`${hit.target}\0${hit.qualifier}`)
+  return keys
+}
+
+export function tilesLinkHeading(
+  root: string,
+  normalizedTitle: string,
+  normalizedHeading: string,
+): Promise<boolean> {
+  if (tileHeadingLinks?.root !== root) tileHeadingLinks = { root, keys: readTileHeadingLinks(root) }
+  return tileHeadingLinks.keys.then((keys) => keys.has(`${normalizedTitle}\0${normalizedHeading}`))
+}
+
 export async function rewriteTileConnections(
   root: string,
   rewrite: (body: string) => string,
@@ -238,11 +270,9 @@ export async function rewriteTileConnections(
   let failed = 0
   for (const { host, dir } of await listTileHosts(root)) {
     let wrote = false
-    for (const b of (await readTileDocAt(dir)).tiles) {
-      const entry = knownTile(b)
-      if (!entry || !TILE_KINDS[entry.type].fileBacked) continue
+    for (const id of await markdownTileIds(dir)) {
       // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
-      const landed = await rewritePageSerialized(tileFilePath(dir, entry.id), (body) => {
+      const landed = await rewritePageSerialized(tileFilePath(dir, id), (body) => {
         const next = rewrite(body)
         return next === body ? null : next
       }).catch(() => null)
@@ -251,5 +281,6 @@ export async function rewriteTileConnections(
     }
     if (wrote) hosts.push(host)
   }
+  dropTileHeadingLinks()
   return { hosts, failed }
 }

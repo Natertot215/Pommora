@@ -27,6 +27,7 @@ import {
   patchSpaceFromDisk,
 } from './watchPatch'
 import { flushSidecarWrites } from './valuesChanged'
+import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
 function patchForMutation(
@@ -135,6 +136,7 @@ async function routeMutation(
     case 'setProfileIcon':
       return patchSettingsFromDisk(root)
     case 'restore':
+      dropTileHeadingLinks()
       return 'refresh'
     default: {
       const tree = getLiveTree()
