@@ -12,6 +12,7 @@ A deterministic before-and-after check of MarkdownPM in the real app. It launche
 ./worktree.sh <commit> <dir>       # a detached, built worktree of <commit>
 ./twice.sh before before2 <dir>    # two runs of one build: must match exactly (0 lines, 0 behaviors differ)
 ./launch.sh <label> <dir> 9444 && node run.mjs <label> 9444; ./stop.sh 9444
+./launch.sh <label> <dir> 9444 <fixtures.mjs>   # another harness's fixture script, as reveal-parity passes
 node compare.mjs <a> <b>           # results/<a>-vs-<b>.md: every differing line, screenshot, behavior, latency
 node expect.mjs <before> <after>   # the Incremental Scan verdict; exits 1 on any failure
 ```
