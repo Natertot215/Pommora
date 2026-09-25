@@ -1,6 +1,7 @@
 import { isPlainObject } from '../Contract/validators'
 import { join, relative } from '../Paths/posix'
 import {
+  HOMEPAGE_HOST,
   knownTile,
   mintSeed,
   NEW_TILE_H,
@@ -236,8 +237,9 @@ export async function writeMarkdownTile(
 }
 
 async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: string }[]> {
-  const homepage: TileHostRef = { kind: 'homepage' }
-  const hosts: { host: TileHostRef; dir: string }[] = [{ host: homepage, dir: tileHostDir(root) }]
+  const hosts: { host: TileHostRef; dir: string }[] = [
+    { host: HOMEPAGE_HOST, dir: tileHostDir(root) },
+  ]
   try {
     const world = await loadContextWorld(root)
     if (world.ok)

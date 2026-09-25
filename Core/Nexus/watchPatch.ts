@@ -22,7 +22,7 @@ import { noteExternalEdit } from '../Pages/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { nexusConfig } from '../Paths/paths'
-import type { TileHostRef } from '../Tiles/tiles'
+import { HOMEPAGE_HOST, type TileHostRef } from '../Tiles/tiles'
 import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   readCropLeaves,
@@ -123,7 +123,7 @@ export function tileBodyUnder(segs: string[], rel: string): boolean {
 export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   const segs = rel.split('/')
   if (segs[0] !== NEXUS_DIR) return null
-  if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME) return { kind: 'homepage' }
+  if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME) return HOMEPAGE_HOST
   const space =
     segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? findSpace(tree, relDirname(rel)) : null
   return space ? { kind: 'space', id: space.id } : null

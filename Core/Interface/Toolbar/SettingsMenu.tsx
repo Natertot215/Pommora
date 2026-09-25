@@ -4,7 +4,7 @@ import { MenuSurface } from '@pommora/uix/Menus'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { PageMenu } from '../../Pages/PageMenu'
 import { SpaceMenu } from '../../Contexts/SpaceMenu'
-import { HomepageMenu } from './HomepageMenu'
+import { HomepageMenu } from '../Homepage/HomepageMenu'
 import { MatrixMenu } from '../../Matrix/MatrixMenu'
 import * as s from '@pommora/uix/Menus/frames.css'
 
