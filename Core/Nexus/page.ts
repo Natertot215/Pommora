@@ -34,7 +34,6 @@ export async function createPage(
   const why = nameError(name, 'page')
   if (why) return fail('invalid-name', why)
   const file = join(parentDir, name + MD)
-  if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
   const id = newContentId('page')
   const modeled: Record<string, unknown> = { [ID_KEY]: id }
   const keys: string[] = [...PAGE_MODELED_KEYS]
@@ -45,8 +44,11 @@ export async function createPage(
     modeled[def.name] = encoded
     keys.push(def.name)
   }
-  await writePageFile(file, modeled, keys, opts.body ?? '')
-  return ok({ id, path: file })
+  return machine().lock(file, async () => {
+    if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
+    await writePageFile(file, modeled, keys, opts.body ?? '')
+    return ok({ id, path: file })
+  })
 }
 
 async function relocatePage(absFile: string, target: string): Promise<void> {

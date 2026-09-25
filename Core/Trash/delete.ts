@@ -73,8 +73,9 @@ export async function deleteOp(
   } else if (write) {
     await write(await gatherContentRecord(root, req.kind, abs))
   }
-  if (bundle) await settleBundle(bundle, abs)
-  else await discardFile(root, abs, deps)
+  await machine().lock<unknown>(abs, () =>
+    bundle ? settleBundle(bundle, abs) : discardFile(root, abs, deps),
+  )
   deindexPath(root, abs)
   return ok(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {})
 }

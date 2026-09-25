@@ -32,6 +32,14 @@ describe('createFolderEntity', () => {
     expect((await createFolderEntity(root, 'collection', 'Notes')).ok).toBe(false)
   })
 
+  it('gives two same-name creates at the same moment one folder each', async () => {
+    const both = await Promise.all([
+      createFolderEntity(root, 'collection', 'Weekly'),
+      createFolderEntity(root, 'collection', 'Weekly'),
+    ])
+    expect(both.map((r) => r.ok).sort()).toEqual([false, true])
+  })
+
   it('rejects unsafe names', async () => {
     expect((await createFolderEntity(root, 'collection', 'a/b')).ok).toBe(false)
     expect((await createFolderEntity(root, 'collection', '..')).ok).toBe(false)

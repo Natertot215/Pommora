@@ -44,7 +44,6 @@ installMachine({
 })
 
 beforeEach(async () => {
-  recordedBeforeScrub = undefined
   root = tempRoot('pom-del-')
   const a = await createFolderEntity(root, 'collection', 'Notes')
   const b = await createFolderEntity(root, 'collection', 'Tasks')
@@ -81,6 +80,7 @@ describe('deleteProperty', () => {
       value: 'hi',
     })
 
+    recordedBeforeScrub = undefined
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
     expect((await readRegistry(root)).defs[id]).toBeUndefined()

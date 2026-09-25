@@ -52,6 +52,11 @@ describe('createPage', () => {
     expect((await createPage(typeDir, 'Note.md')).ok).toBe(false)
   })
 
+  it('gives two same-name creates at the same moment one file each', async () => {
+    const both = await Promise.all([createPage(typeDir, 'Twin'), createPage(typeDir, 'Twin')])
+    expect(both.map((r) => r.ok).sort()).toEqual([false, true])
+  })
+
   it('writes resolved values in the birth write; blank values write no key', async () => {
     const r = await createPage(typeDir, 'Born Stamped', {
       values: [

@@ -9,6 +9,7 @@ import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
+import { machine } from '../Platform/machine'
 
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './bundle'
@@ -201,5 +202,31 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
     expect(await anyRecord()).toMatchObject({ members: [{ id: PAGE_A, kind: 'page' }] })
     expect(await listBundles(root)).toHaveLength(0)
+  })
+})
+
+describe('a page delete waits out a save in flight', () => {
+  it('trashes the saved page rather than leaving the save to recreate it', async () => {
+    const file = join(root, 'Notes', 'Alpha.md')
+    let release!: () => void
+    const gate = new Promise<void>((r) => {
+      release = r
+    })
+    const save = machine().lock(file, async () => {
+      await gate
+      await writeFile(file, 'saved')
+    })
+    const del = handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    await new Promise((r) => setTimeout(r, 20))
+    release()
+    await save
+    const r = await del
+    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    expect(await pathExists(file)).toBe(false)
+    expect(await readFile(join(root, r.value.trashed.bundlePath, 'Alpha.md'), 'utf8')).toBe('saved')
   })
 })
