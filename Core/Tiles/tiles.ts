@@ -48,6 +48,8 @@ export const NEW_TILE_H = 160
 
 export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
+export const HOMEPAGE_HOST = { kind: 'homepage' } as const satisfies TileHostRef
+
 export function tileHostKey(host: TileHostRef): string {
   return host.kind === 'homepage' ? 'homepage' : `space:${host.id}`
 }
@@ -55,7 +57,7 @@ export function tileHostKey(host: TileHostRef): string {
 export function coerceTileHost(raw: unknown): TileHostRef | null {
   if (!isPlainObject(raw)) return null
   const { kind, id } = raw
-  if (kind === 'homepage') return { kind: 'homepage' }
+  if (kind === 'homepage') return HOMEPAGE_HOST
   if (kind === 'space' && typeof id === 'string' && id.length > 0) return { kind: 'space', id }
   return null
 }

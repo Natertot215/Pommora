@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { TileHost } from './TileHost'
+import { TileHost } from '../Tiles/TileHost'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { findSpace } from '../Nexus/treeIndex'
 
