@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
 import { NO_NEXUS, ok } from '@pommora/core/Contract/result'
-import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
+import { type DevicePrefs, packDevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { stubDialer } from '../vitest.setup'
@@ -32,6 +32,7 @@ async function freshStore(
   useSession: Session
   prefsLoad: ReturnType<typeof vi.fn>
   prefsSave: ReturnType<typeof vi.fn>
+  flushed: () => Promise<void>
 }> {
   vi.resetModules()
   const prefsLoad = vi.fn(answer)
@@ -53,7 +54,8 @@ async function freshStore(
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   const { useSession } = await import('./store')
-  return { useSession, prefsLoad, prefsSave }
+  const { flushAllSessionSaves } = await import('./saveScheduler')
+  return { useSession, prefsLoad, prefsSave, flushed: flushAllSessionSaves }
 }
 
 const withPrefs = (prefs: DevicePrefs | null) => async (): Promise<unknown> => ok(prefs)
@@ -204,6 +206,52 @@ describe('a device preference saves only into the Nexus whose record the window 
     useSession.getState().setDevicePref('disclosure', fold.disclosure)
     expect(prefsSave).toHaveBeenCalledWith(fold)
   })
+
+  // Each `choose` waits on its own answer, so two switches can overlap the way a picker opened mid-adoption does.
+  const overlapping = async () => {
+    const answers: ((opened: boolean) => void)[] = []
+    const store = await freshStore(
+      withPrefs({ panes: { sidebar: 300 } }),
+      () => new Promise((resolve) => answers.push((opened) => resolve(ok(opened)))),
+    )
+    await store.useSession.getState().applyTree(treeAt('/a'))
+    const first = store.useSession.getState().choose()
+    await vi.waitFor(() => expect(answers).toHaveLength(1))
+    const second = store.useSession.getState().choose()
+    await vi.waitFor(() => expect(answers).toHaveLength(2))
+    return { ...store, answers, first, second }
+  }
+
+  it('lands a change made while the picker is open in the Nexus that stays open', async () => {
+    const { useSession, prefsSave, flushed, answers, first, second } = await overlapping()
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    expect(prefsSave).not.toHaveBeenCalled()
+    answers[0](false)
+    answers[1](false)
+    await Promise.all([first, second, flushed()])
+    expect(prefsSave).toHaveBeenLastCalledWith({ panes: { sidebar: 300 }, ...fold })
+  })
+
+  it('keeps saving after a switch lands and an overlapping picker is canceled', async () => {
+    const { useSession, prefsSave, flushed, answers, first, second } = await overlapping()
+    answers[0](true)
+    await first
+    answers[1](false)
+    await second
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    await flushed()
+    expect(prefsSave).toHaveBeenLastCalledWith({ panes: { sidebar: 300 }, ...fold })
+  })
+
+  it('saves nothing into a Nexus that opens while a canceled picker was pending', async () => {
+    const { useSession, prefsSave, flushed, answers, first, second } = await overlapping()
+    answers[0](false)
+    await first
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    answers[1](true)
+    await Promise.all([second, flushed()])
+    expect(prefsSave).not.toHaveBeenCalled()
+  })
 })
 
 describe('a nexus switch returns the panes to their defaults', () => {
@@ -213,5 +261,22 @@ describe('a nexus switch returns the panes to their defaults', () => {
     useSession.getState().resetLayout()
     const s = useSession.getState()
     expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
+  })
+})
+
+describe('the footer fold and the navigation layouts save as their non-default state', () => {
+  it.each([
+    'subfieldCollapsed',
+    'navWindowGallery',
+    'navViewGallery',
+  ] as const)('%s saves true and drops back to absent at false', async (key) => {
+    const { useSession, prefsSave, flushed } = await freshStore(withPrefs({}))
+    await useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().setDevicePref(key, true)
+    await flushed()
+    expect(prefsSave).toHaveBeenLastCalledWith({ [key]: true })
+    useSession.getState().setDevicePref(key, false)
+    await flushed()
+    expect(packDevicePrefs(prefsSave.mock.lastCall?.[0])).toEqual({})
   })
 })

@@ -25,7 +25,7 @@ export const FORCE_STEPS: Record<keyof Forces, readonly number[]> = {
   distance: QUARTER_STEPS,
 }
 
-export const clampForce = (key: keyof Forces, v: number): number => {
+const clampForce = (key: keyof Forces, v: number): number => {
   const steps = FORCE_STEPS[key]
   return clamp(v, steps[0], steps[steps.length - 1])
 }

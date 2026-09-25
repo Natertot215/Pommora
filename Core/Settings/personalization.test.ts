@@ -11,14 +11,14 @@ import {
 
 describe('coerceTenthsScale', () => {
   it('clamps out-of-range values so a typo cannot brick the window', () => {
-    expect(coerceTenthsScale(1.25, 1)).toBe(1.25)
-    expect(coerceTenthsScale(125, 1)).toBe(1.5)
-    expect(coerceTenthsScale(0.1, 1)).toBe(0.5)
+    expect(coerceTenthsScale(1.25)).toBe(1.25)
+    expect(coerceTenthsScale(125)).toBe(1.5)
+    expect(coerceTenthsScale(0.1)).toBe(0.5)
   })
 
-  it('falls back to the given default on an absent or non-numeric value', () => {
-    expect(coerceTenthsScale(undefined, 0.7)).toBe(0.7)
-    expect(coerceTenthsScale('big', 0.7)).toBe(0.7)
+  it('falls back to 1.0 on an absent or non-numeric value', () => {
+    expect(coerceTenthsScale(undefined)).toBe(1)
+    expect(coerceTenthsScale('big')).toBe(1)
   })
 })
 

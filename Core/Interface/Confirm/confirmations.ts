@@ -2,11 +2,14 @@ import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'
-import { settingOf } from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS, settingOf } from '@pommora/core/Settings/personalization'
 import { notifyDeleted } from '../Notifications/notifications'
 import { host } from '../../Platform/dialer'
 
-const DELETE_FACTS_FALLBACK = { trashMode: DEFAULT_TRASH_MODE, permanentDelete: false }
+const DELETE_FACTS_FALLBACK = {
+  trashMode: DEFAULT_TRASH_MODE,
+  permanentDelete: SETTING_DEFAULTS.permanentDelete,
+}
 
 export interface ConfirmRequest {
   message: string

@@ -150,12 +150,21 @@ export function scheduleWindowsSave(file: WindowsFile): void {
   sessionWriter.schedule('windows', () => host().ask('windows:save', file))
 }
 
+// Sent at once unless a switch holds it, and read from the store when it goes, so a change made mid-switch lands in whichever Nexus stays open.
+const devicePrefsWriter = createBodyWriter('the setting')
+
+export function saveDevicePrefs(save: Save): void {
+  devicePrefsWriter.schedule('devicePrefs', save)
+  void devicePrefsWriter.flush('devicePrefs')
+}
+
 export function flushAllSessionSaves(): Promise<void> {
-  return sessionWriter.flushAll()
+  return Promise.all([sessionWriter.flushAll(), devicePrefsWriter.flushAll()]).then(() => undefined)
 }
 
 /** Once the root has flipped, anything the old Nexus still owed would land in the new one. */
 export function cancelAllSaves(): void {
   pageWriter.cancelAll()
   sessionWriter.cancelAll()
+  devicePrefsWriter.cancelAll()
 }

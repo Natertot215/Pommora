@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
+import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import { Icon } from '../Symbols'
 import * as s from './picker-control.css'
@@ -30,18 +31,16 @@ const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): stri
 const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
-// Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` before `coerce`.
+// Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` and held within the steps' ends.
 export function steppedPickerProps({
   steps,
   value,
   unit = FACTOR,
-  coerce,
   onPick,
 }: {
   steps: readonly number[]
   value: number
   unit?: NumberUnit
-  coerce: (typed: number) => number
   onPick: (value: number) => void
 }): {
   value: string
@@ -61,7 +60,8 @@ export function steppedPickerProps({
       suffix: unit.suffix,
       onCommit: (written) => {
         const typed = Number.parseFloat(written)
-        if (Number.isFinite(typed)) onPick(coerce(typed / unit.scale))
+        if (Number.isFinite(typed))
+          onPick(clamp(typed / unit.scale, steps[0], steps[steps.length - 1]))
       },
     },
   }

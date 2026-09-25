@@ -1,5 +1,5 @@
 import { steppedPickerProps, PickerControl } from '@pommora/uix/Pickers/PickerControl'
-import { coerceScale, SCALE } from './personalization'
+import { SCALE } from './personalization'
 
 export function ScalePicker({
   ariaLabel,
@@ -18,7 +18,6 @@ export function ScalePicker({
       {...steppedPickerProps({
         steps: SCALE.steps,
         value,
-        coerce: (typed) => coerceScale(typed, value),
         onPick,
       })}
     />
