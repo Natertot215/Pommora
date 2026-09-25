@@ -305,12 +305,14 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
       ranges.push(
         Decoration.line({
           class: `${HEADING_FOLD_LINE} md-foldable ${closed ? 'md-fold-closed' : 'md-fold-open'}`,
+          attributes: { 'data-reveal-host': '' },
         }).range(r.anchorLine),
       )
     } else if (state.doc.lineAt(r.anchorLine).text.trim() === '') {
       ranges.push(
         Decoration.line({
           class: closed ? `${CITE_DIVIDER_LINE} md-citation-divider-off` : CITE_DIVIDER_LINE,
+          attributes: { 'data-reveal-host': '' },
         }).range(r.anchorLine),
       )
     }

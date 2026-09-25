@@ -5,6 +5,8 @@ import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { Icon } from '@pommora/uix/Symbols'
+import { cx } from '@pommora/uix/Utilities/cx'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { CellEditor } from './CellEditor'
@@ -539,7 +541,8 @@ export function MarkdownTable({
 
   return (
     <div
-      className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}${sweeping ? ' mdpm-tbl-sweeping' : ''}${addsHidden ? ' mdpm-tbl-adds-off' : ''}`}
+      className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}${sweeping ? ' mdpm-tbl-sweeping' : ''}`}
+      data-reveal-host={addsHidden ? 'off' : ''}
       ref={wrapRef}
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
       onContextMenuCapture={(e) => {
@@ -594,7 +597,8 @@ export function MarkdownTable({
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`col-${i}`}
-          className={`mdpm-tbl-grip-zone mdpm-tbl-grip-col${hover?.r === 0 && hover.c === i ? ' mdpm-tbl-grip-hot' : ''}`}
+          className="mdpm-tbl-grip-zone mdpm-tbl-grip-col"
+          data-reveal-host={hover?.r === 0 && hover.c === i ? 'on' : ''}
           style={{ left: c.left, width: c.width }}
           onMouseDown={swallowCaret}
           onPointerDown={(e) => startDrag(e, 'col', i)}
@@ -615,7 +619,8 @@ export function MarkdownTable({
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`row-${j}`}
-          className={`mdpm-tbl-grip-zone mdpm-tbl-grip-row${hover?.r === j ? ' mdpm-tbl-grip-hot' : ''}`}
+          className="mdpm-tbl-grip-zone mdpm-tbl-grip-row"
+          data-reveal-host={hover?.r === j ? 'on' : ''}
           style={{ top: r.top, height: r.height }}
           onMouseDown={swallowCaret}
           onPointerDown={(e) => (j === 0 ? onTableDrag(e.nativeEvent) : startDrag(e, 'row', j))}
@@ -629,7 +634,7 @@ export function MarkdownTable({
       ))}
       <button
         type="button"
-        className="mdpm-tbl-add mdpm-tbl-add-col"
+        className={cx('mdpm-tbl-add mdpm-tbl-add-col', revealTarget)}
         style={{ top: tableTop, height: tableHeight }}
         data-create
         aria-label="Add Column"
@@ -640,7 +645,7 @@ export function MarkdownTable({
       </button>
       <button
         type="button"
-        className="mdpm-tbl-add mdpm-tbl-add-row"
+        className={cx('mdpm-tbl-add mdpm-tbl-add-row', revealTarget)}
         data-create
         aria-label="Add Row"
         onMouseDown={swallowCaret}

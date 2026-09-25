@@ -27,6 +27,8 @@ function calloutNestedQuote(
 
 export const GLYPH_CLASS = 'md-list-glyph'
 
+export const GRIP_HOST: Record<string, string> = { 'data-reveal-host': 'off' }
+
 // A marker whose text stays on screen needs one real space after it, or the reader's first word joins it into `2.Preserve` and the platform checker underlines the pair. The space is drawn at zero width; the visible gap is the glyph's own padding.
 // An item with nothing after the gap has no word to join, and the collapsed space would be the only thing the caret could sit against, so the whole gap goes.
 function pushMarkerGap(intents: DecoIntent[], from: number, to: number, le: number): void {
@@ -62,7 +64,13 @@ export type DecoIntent =
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
   | { kind: 'codeTag'; from: number; name?: string }
-  | { kind: 'line'; from: number; className: string; level?: number }
+  | {
+      kind: 'line'
+      from: number
+      className: string
+      level?: number
+      attributes?: Record<string, string>
+    }
   | RailIntent
 
 // The rail's x sits on its ANCESTOR's glyph center; ordered / arrow / `+` return null, so no rail is drawn under one.
@@ -142,6 +150,7 @@ function pageChrome(
       kind: 'line',
       from: ls,
       className: `md-callout${co.first ? ' md-callout-first' : ''}${co.last ? ' md-callout-last' : ''}`,
+      ...(co.first ? { attributes: GRIP_HOST } : {}),
     })
     if (co.prefixEnd > 0) intents.push({ kind: 'atomic', from: ls, to: ls + co.prefixEnd })
     base = co.prefixEnd
@@ -167,6 +176,7 @@ function pageChrome(
       kind: 'line',
       from: ls,
       className: `md-blockquote${first ? ' md-blockquote-first' : ''}${last ? ' md-blockquote-last' : ''}`,
+      ...(first ? { attributes: GRIP_HOST } : {}),
     })
     base = line.slice(full.length).trim() === '' ? quotePrefixWidth(line, 1) : full.length
   }

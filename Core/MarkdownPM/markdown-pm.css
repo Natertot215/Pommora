@@ -83,15 +83,11 @@
   padding: var(--citation-divider-gap) 0;
   cursor: pointer;
   transition:
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     filter var(--duration-fast) var(--ease-base);
 }
 .mdpm-editor .cm-content.mdpm-citation-tail {
   padding-bottom: var(--citation-divider-gap);
-}
-.mdpm-editor .cm-line.md-citation-divider-off:hover {
-  opacity: var(--state-ghost);
-  filter: none;
 }
 .mdpm-editor .cm-line.md-citation-divider::after {
   content: "";
@@ -101,8 +97,8 @@
   right: 0;
 }
 .mdpm-editor .cm-line.md-citation-divider-off {
-  opacity: 0;
-  filter: blur(var(--citation-divider-blur));
+  opacity: calc(var(--reveal, 0) * var(--state-ghost));
+  filter: blur(calc((1 - var(--reveal, 0)) * var(--citation-divider-blur)));
 }
 
 /* Anchored to the heading line's own layout box, not a CM gutter — a gutter is positioned from CM's line-height model, which estimates off-screen variable-height blocks at a default height and drifts on scroll. KNOBS: --rail-inset, --fold-chevron-size, motion via --disclosure / --ease-base. */
@@ -123,14 +119,11 @@
   cursor: pointer;
   transition:
     transform var(--duration-fast) var(--ease-base),
-    opacity var(--duration-fast) var(--ease-base);
+    opacity var(--reveal-fade) var(--ease-base);
 }
 .mdpm-editor .cm-line.md-fold-open::before {
   transform: translateY(-50%) rotate(90deg);
-  opacity: 0;
-}
-.mdpm-editor .cm-line.md-fold-open:hover::before {
-  opacity: 1;
+  opacity: var(--reveal, 0);
 }
 .mdpm-editor .cm-line.md-fold-closed {
   color: var(--label-control);
@@ -146,7 +139,7 @@
   -webkit-mask: var(--grip-glyph) center / contain no-repeat;
   mask: var(--grip-glyph) center / contain no-repeat;
   cursor: grab;
-  opacity: 0;
+  opacity: var(--reveal, 0);
 }
 
 .mdpm-editor .cm-line.md-block-handle {
@@ -164,13 +157,7 @@
     --grip-top,
     calc(var(--box-head-pad, 0px) + 0.8em - var(--icon-body) / 2 * var(--glyph-scale))
   );
-  transition: opacity var(--duration-fast) var(--ease-base);
-}
-.mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
-  opacity: 1;
-}
-.mdpm-editor .cm-line.md-blockquote-first.md-grip-hot .md-blockquote-grip {
-  opacity: 1;
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
 
 .mdpm-fold-reveal {
@@ -765,10 +752,7 @@
   position: absolute;
   left: var(--grip-x);
   top: calc(var(--callout-gap) + var(--grip-y));
-  transition: opacity var(--duration-fast) var(--ease-base, ease);
-}
-.mdpm-editor .cm-line.md-callout-first.md-grip-hot::after {
-  opacity: 1;
+  transition: opacity var(--reveal-fade) var(--ease-base, ease);
 }
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::after {
   top: var(--grip-y);
@@ -778,7 +762,6 @@
   --codeblock-radius: var(--md-box-radius);
   --codeblock-inset: 0px;
   --codeblock-pad: 12px;
-  --codeblock-copy-reach: 24em; /* KNOB — how far left and down the copy mark arms from */
   --codeblock-mark-pad: 4px; /* KNOB — the chip the hover veil paints behind the mark */
   --codeblock-border: var(--width-200) solid var(--border-base);
   --box-fill: var(--fill-quaternary);
@@ -914,14 +897,10 @@
   height: 100%;
   color: var(--label-secondary);
   opacity: 0;
-  transition: opacity var(--duration-slow) var(--ease-base);
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
-.mdpm-editor .codeblock .codeblock-language .codeblock-mark,
-.mdpm-editor .codeblock .codeblock-language:hover .codeblock-copy {
-  opacity: 1;
-}
-.mdpm-editor .codeblock .codeblock-language:hover .codeblock-mark {
-  opacity: 0;
+.mdpm-editor .codeblock .codeblock-language .codeblock-mark {
+  opacity: calc(1 - var(--reveal, 0));
 }
 .mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-mark,
 .mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-copy {
@@ -936,24 +915,13 @@
 }
 .mdpm-editor .codeblock .codeblock-language .codeblock-copy {
   color: var(--label-tertiary);
+  opacity: var(--reveal, 0);
 }
 .mdpm-editor .codeblock .codeblock-language .codeblock-mark-slot,
 .mdpm-editor .codeblock .codeblock-language .codeblock-name {
   cursor: pointer;
 }
 
-.mdpm-editor .cm-line.codeblock-first:has(.codeblock-language) {
-  z-index: 1;
-}
-.mdpm-editor .codeblock .codeblock-language .codeblock-reach {
-  position: absolute;
-  top: calc(-1 * var(--codeblock-pad));
-  right: calc(-1 * var(--codeblock-pad));
-  left: calc(-1 * var(--codeblock-copy-reach));
-  bottom: calc(-1 * var(--codeblock-copy-reach));
-  border-bottom-left-radius: var(--codeblock-copy-reach);
-  cursor: text;
-}
 .codeblock-line-number {
   display: none;
 }

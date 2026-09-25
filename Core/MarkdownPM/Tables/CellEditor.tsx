@@ -27,7 +27,7 @@ import { listRenumberOnDelete } from '../Input/listRenumber'
 import { wrapChords } from '../Input/markdownInput'
 import { listDragExtension } from '../Gestures/listDrag'
 import { blockDragExtension } from '../Gestures/blockDrag'
-import { blockGripHover, blockHandles } from '../Menus/blockHandles'
+import { blockHandles, pointerReveal } from '../Menus/blockHandles'
 import { gripMenu } from '../Menus/gripMenu'
 import { renumberAfterNest } from '../Engine/listDragModel'
 import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
@@ -218,7 +218,7 @@ export function CellEditor({
           listDragExtension,
           listRenumberOnDelete('cell'),
           blockHandles('cell'),
-          blockGripHover('cell'),
+          pointerReveal('cell'),
           blockDragExtension,
           gripMenu,
           cellCitations(() => ordinalOfRef.current),
