@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PropertyDefinition, optionsOf } from '@pommora/core/Properties/properties'
 import {
@@ -21,7 +21,7 @@ import {
   useDisclosureSet,
   pickerRow,
 } from '@pommora/uix/Menus'
-import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
+import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { useSaveView } from '../ViewTileScope'
@@ -340,21 +340,14 @@ function SpringableRow({
   dimmed: boolean
   children: React.ReactNode
 }): React.JSX.Element {
-  const el = useRef<HTMLDivElement | null>(null)
-  const expandRef = useRef(onExpand)
-  expandRef.current = onExpand
-  useEffect(() => {
-    if (!collapsed || !el.current) return
-    return registerDiscloseTarget(el.current, () => expandRef.current())
-  }, [collapsed])
+  const discloseRef = useDiscloseTarget(collapsed, onExpand)
   return (
     <div
       className={cx(className, dimmed && oo.ghosted)}
       ref={(node) => {
-        el.current = node
+        discloseRef.current = node
         refCb(node)
       }}
-      data-disclose={collapsed ? '' : undefined}
       {...handle}
     >
       {children}

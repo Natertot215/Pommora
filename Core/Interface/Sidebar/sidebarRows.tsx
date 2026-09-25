@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropOutline, MenuItem, titleInput } from '@pommora/uix/Menus'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { useSidebarDrag } from './sidebarDnd'
-import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
+import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../RenamableTitle'
 
 export function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefined {
@@ -84,22 +83,16 @@ export function DragRow({
   children: React.ReactNode
 }): React.JSX.Element {
   const drag = useSidebarDrag(id)
-  const el = useRef<HTMLDivElement | null>(null)
-  const expandRef = useRef(springOpen?.onExpand)
-  expandRef.current = springOpen?.onExpand
-  const collapsed = springOpen?.collapsed ?? false
-  useEffect(() => {
-    if (!collapsed || !el.current) return
-    return registerDiscloseTarget(el.current, () => expandRef.current?.())
-  }, [collapsed])
+  const discloseRef = useDiscloseTarget(springOpen?.collapsed ?? false, () =>
+    springOpen?.onExpand(),
+  )
   return (
     <div
       ref={(node) => {
-        el.current = node
+        discloseRef.current = node
         drag.ref(node)
       }}
       className={`tree-item${drag.isDragging ? ' dragging' : ''}`}
-      data-disclose={collapsed ? '' : undefined}
       {...drag.handle}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}

@@ -269,3 +269,7 @@ export const personalizationSchema = z.object({
 })
 
 export type Personalization = z.infer<typeof personalizationSchema>
+
+// A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
+export const placementOf = (p: Personalization, containerKind: string): Placement =>
+  p[containerKind === 'collection' ? 'setPlacement' : 'subSetPlacement'] ?? 'top'

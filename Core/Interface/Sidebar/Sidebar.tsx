@@ -27,7 +27,7 @@ import type {
   SetNode,
   SpaceNode,
 } from '@pommora/core/Nexus/tree'
-import type { SidebarMode } from '@pommora/core/Settings/personalization'
+import { placementOf, type SidebarMode } from '@pommora/core/Settings/personalization'
 import {
   type Creator,
   DEFAULT_NEW_NAME,
@@ -51,6 +51,15 @@ import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/create'
+
+const NEW_COLLECTION: Creator = {
+  label: 'New Collection',
+  req: { op: 'createContainer', parentPath: '', kind: 'collection', name: DEFAULT_NEW_NAME },
+}
+const NEW_CONTEXT: Creator = {
+  label: 'New Context',
+  req: { op: 'createContextGroup', name: 'New Context' },
+}
 
 async function createFromMenu(item: Creator): Promise<void> {
   if (await popMenu([{ label: item.label, action: 'create' }]))
@@ -211,10 +220,7 @@ const ContainerRow = memo(
   }): React.JSX.Element => {
     const defaultIcons = useSession((s) => s.personalization.defaultIcons)
     const mutate = useSession((s) => s.mutate)
-    const placement = useSession(
-      (s) =>
-        s.personalization[node.kind === 'collection' ? 'setPlacement' : 'subSetPlacement'] ?? 'top',
-    )
+    const placement = useSession((s) => placementOf(s.personalization, node.kind))
     const selected = useSession(
       (s) => selectable && s.selection.kind === node.kind && s.selection.id === node.id,
     )
@@ -333,22 +339,7 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
 
 export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
-  const setPlacement = useSession((s) => s.personalization.setPlacement ?? 'top')
-  const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
   const mode: SidebarMode = useSession((s) => sidebarModeOf(s.personalization))
-
-  const newContextMenu = (): void => {
-    void createFromMenu({
-      label: 'New Context',
-      req: { op: 'createContextGroup', name: 'New Context' },
-    })
-  }
-  const newCollectionMenu = (): void => {
-    void createFromMenu({
-      label: 'New Collection',
-      req: { op: 'createContainer', parentPath: '', kind: 'collection', name: DEFAULT_NEW_NAME },
-    })
-  }
 
   const navRef = useRef<HTMLElement>(null)
 
@@ -402,40 +393,33 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const ghostValue = ghostApi.ghost ?? NO_GHOST
 
   const dndLayer = (section: React.ReactNode): React.JSX.Element => (
-    <SidebarDnd
-      index={dndIndex}
-      onCommit={onCommit}
-      setPlacement={setPlacement}
-      subSetPlacement={subSetPlacement}
-    >
+    <SidebarDnd index={dndIndex} onCommit={onCommit}>
       <div className="section">{section}</div>
       <SidebarIconChoice tree={tree} index={dndIndex} />
     </SidebarDnd>
   )
 
-  const contextsLayer = dndLayer(
-    tree.contexts.map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />),
-  )
-
-  const collectionsLayer = dndLayer(
-    tree.collections.map((c) => <ContainerRow key={c.id} node={c} depth={0} selectable />),
-  )
-
-  const modeCtx =
-    (cb?: () => void) =>
-    (e: React.MouseEvent): void => {
-      if (!cb || e.target !== e.currentTarget) return
-      e.preventDefault()
-      cb()
+  const modeView = (m: SidebarMode): { layer: React.ReactNode; creator?: Creator } => {
+    switch (m) {
+      case 'collections':
+        return {
+          layer: dndLayer(
+            tree.collections.map((c) => <ContainerRow key={c.id} node={c} depth={0} selectable />),
+          ),
+          creator: NEW_COLLECTION,
+        }
+      case 'contexts':
+        return {
+          layer: dndLayer(
+            tree.contexts.map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />),
+          ),
+          creator: NEW_CONTEXT,
+        }
+      case 'agenda':
+        return { layer: <AgendaMode /> }
     }
-
-  const agendaLayer = <AgendaMode />
-
-  const layerFor = (m: SidebarMode): React.ReactNode =>
-    m === 'contexts' ? contextsLayer : m === 'agenda' ? agendaLayer : collectionsLayer
-  const activeNode = layerFor(mode)
-  const onCreate =
-    mode === 'contexts' ? newContextMenu : mode === 'agenda' ? undefined : newCollectionMenu
+  }
+  const active = modeView(mode)
 
   const [exit, setExit] = useState<{ mode: SidebarMode; scroll: number; epoch: number } | null>(
     null,
@@ -464,16 +448,20 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
                   style={{ transform: `translateY(${-exit.scroll}px)` }}
                   onAnimationEnd={(e) => e.target === e.currentTarget && setExit(null)}
                 >
-                  {layerFor(exit.mode)}
+                  {modeView(exit.mode).layer}
                 </div>
               )}
               <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
                 <div
                   className={cx('mode-body', exit !== null && 'mode-enter-slide')}
-                  onContextMenu={modeCtx(onCreate)}
+                  onContextMenu={(e) => {
+                    if (!active.creator || e.target !== e.currentTarget) return
+                    e.preventDefault()
+                    void createFromMenu(active.creator)
+                  }}
                 >
-                  {activeNode}
+                  {active.layer}
                 </div>
               </div>
             </div>
