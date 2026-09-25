@@ -292,8 +292,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                                                                                                      |
 | Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.                                                                                        |
 | Beak geometry | `notchGeometry` · `BEAK_RADIUS`               | The opt-in notched outline `GlassSurface`'s `notch` clips and strokes.                                                                                        |
-| GlassControls | `GlassControls` · `CONTROL_OPTICS`            | Liquid glass on the button controls.                                                                                                                          |
-| GlassSegment  | `GlassSegment`                                | Liquid glass on the small on-control segments.                                                                                                                |
+| GlassControl  | `GlassControl` · `CONTROL_OPTICS`             | Liquid glass on the button controls, and with `knob` on the switch and slider knob.                                                                           |
 
 | Visual | SURFACE_FROST | WINDOW_FROST         | GHOST_FROST |
 | ---------------- | ---------- | -------------------- | ----------- |
