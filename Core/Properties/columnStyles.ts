@@ -62,7 +62,23 @@ export const columnStyle = z.looseObject({
   weekday: z.enum(WEEKDAY_FORMATS).optional().catch(undefined),
 })
 export type StoredColumnStyle = z.infer<typeof columnStyle>
-export type ColumnStyle = StoredColumnStyle & { time_format?: TimeFormat }
+
+export interface DateStyle {
+  date_format: DateFormat
+  time_format: TimeFormat
+  weekday: WeekdayFormat
+}
+/** Every resolved style carries a whole date style, which only a date column reads. */
+export type ColumnStyle = { look?: ColumnLook } & DateStyle
+
+export const holdsStyle = (style: unknown): boolean =>
+  typeof style === 'object' && style !== null && Object.values(style).some((v) => v !== undefined)
+
+export const dateDefaults = (dateFormat: DateFormat): DateStyle => ({
+  date_format: dateFormat,
+  time_format: 'none',
+  weekday: 'none',
+})
 
 /** The stored entry's defined keys win over the defaults — a caught-invalid value parses to `undefined` and must not erase one — and a shown time reads the Nexus clock. */
 export function resolveStyle(
@@ -94,8 +110,7 @@ export function storedPick(
 export function defaultStyleFor(
   declaredType: string | undefined,
   def?: Pick<PropertyDefinition, 'link_display'>,
-  nexusDateFormat?: DateFormat,
-): ColumnStyle {
+): Pick<StoredColumnStyle, 'look'> {
   switch (declaredType) {
     case 'status':
     case 'select':
@@ -106,10 +121,6 @@ export function defaultStyleFor(
     // A url column reads the way its property says to unless this view says otherwise — so the property's Format is the default here rather than a constant that would silently override it.
     case 'url':
       return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
-    case 'datetime':
-    case 'created_time':
-    case 'last_edited_time':
-      return { date_format: nexusDateFormat ?? 'full', time_format: 'none', weekday: 'none' }
     case 'number':
       return { look: 'number' }
     default:

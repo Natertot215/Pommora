@@ -104,6 +104,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     creation,
     mutate,
     select,
+    styleOf,
   } = host
 
   const capitalize = useCapitalizeMetadata()
@@ -373,6 +374,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         capitalize,
         trigger: anchor,
         commit: (column, value) => commitValue(row, column, value),
+        styleOf,
       })
     )
       return true

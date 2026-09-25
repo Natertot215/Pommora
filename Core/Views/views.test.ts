@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
 import {
+  mergeViewEdit,
   savedView,
   DEFAULT_VIEW_TYPE,
   decodeGroupConfig,
@@ -143,6 +144,28 @@ describe('SavedView decode', () => {
     const parsed = pageCollectionSidecar.parse(fixture)
     expect(parsed.views?.[0].type).toBe('table')
     expect(parsed.views?.[0].group).toMatchObject({ kind: 'property', order_mode: 'manual' })
+  })
+})
+
+describe('column styles on write', () => {
+  const view = (column_styles: Record<string, unknown>) =>
+    savedView.parse({
+      id: 'view_c',
+      name: 'C',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+      column_styles,
+    })
+
+  it('keeps no entry for a column following every default, old residue included', () => {
+    const raw = { ...view({}), column_styles: { a: {}, c: { look: 'compact' } } }
+    const out = mergeViewEdit(raw, view({ b: { date_format: undefined }, c: { look: 'compact' } }))
+    expect(out.column_styles).toEqual({ c: { look: 'compact' } })
+  })
+
+  it('drops the map once no column holds a style', () => {
+    expect(mergeViewEdit(null, view({ a: {} }))).not.toHaveProperty('column_styles')
   })
 })
 

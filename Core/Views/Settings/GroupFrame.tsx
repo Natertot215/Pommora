@@ -185,9 +185,7 @@ export function GroupFrame({
         }
       />
       {dateHeadingProp &&
-        NUMERIC_FORMATS.has(
-          styleFor(dateHeadingProp, schema, view, nexus).date_format ?? nexus.dateFormat,
-        ) && (
+        NUMERIC_FORMATS.has(styleFor(dateHeadingProp, schema, view, nexus).date_format) && (
           <FootingItem
             icon="type"
             label="Separation"
@@ -630,8 +628,7 @@ function DateBucketList({
   }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
   if (present.size === 0) return null
 
-  const dateFormat =
-    styleFor(group.property_id, schema, view, nexus).date_format ?? nexus.dateFormat
+  const dateFormat = styleFor(group.property_id, schema, view, nexus).date_format
   return (
     <>
       {bucketOrder(group, def, present).map((key) => {

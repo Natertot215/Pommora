@@ -17,7 +17,7 @@ export function ValuePickPresenter(): React.JSX.Element | null {
   const triggerRef = useLatest(shown?.trigger ?? null)
   const [picked, setPicked] = useState<{ id: number; value: PropertyValue | null } | null>(null)
   if (!shown) return null
-  const { def, commit } = shown
+  const { def, commit, style } = shown
   const current = picked?.id === shown.id ? picked.value : shown.current
   if (def.type === 'number')
     return (
@@ -35,7 +35,13 @@ export function ValuePickPresenter(): React.JSX.Element | null {
       <PropertyPicker
         open={pending !== null}
         triggerRef={triggerRef}
-        target={{ kind: 'datetime', def, current }}
+        target={{
+          kind: 'datetime',
+          def,
+          current,
+          dateFormat: style?.date_format,
+          timeFormat: style?.time_format,
+        }}
         onCommit={(value) => {
           setPicked({ id: shown.id, value })
           commit(value)

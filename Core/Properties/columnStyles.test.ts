@@ -3,6 +3,7 @@ import {
   COLUMN_LOOKS,
   columnStyle,
   DATE_FORMATS,
+  dateDefaults,
   defaultStyleFor,
   WEEKDAY_FORMATS,
 } from './columnStyles'
@@ -40,14 +41,9 @@ describe('defaultStyleFor', () => {
     expect(defaultStyleFor('file')).toEqual({})
   })
 
-  it('gives the date-shaped types the full-date, no-time, no-weekday format defaults', () => {
-    expect(defaultStyleFor('datetime')).toEqual({
-      date_format: 'full',
-      time_format: 'none',
-      weekday: 'none',
-    })
-    expect(defaultStyleFor('last_edited_time')).toEqual({
-      date_format: 'full',
+  it("a date style defaults to the Nexus's form with no time and no weekday", () => {
+    expect(dateDefaults('relative')).toEqual({
+      date_format: 'relative',
       time_format: 'none',
       weekday: 'none',
     })

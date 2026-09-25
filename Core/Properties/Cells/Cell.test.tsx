@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import { type ColumnStyle, dateDefaults } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 
@@ -80,9 +80,17 @@ afterEach(() => {
   host.remove()
 })
 
-const mount = (row: ViewRow, columnId: string, style: ColumnStyle): void => {
+const mount = (row: ViewRow, columnId: string, style: Partial<ColumnStyle>): void => {
   act(() =>
-    root.render(<Cell row={row} column={col(columnId)} ctx={ctx} hideIcon={false} style={style} />),
+    root.render(
+      <Cell
+        row={row}
+        column={col(columnId)}
+        ctx={ctx}
+        hideIcon={false}
+        style={{ ...dateDefaults('full'), ...style }}
+      />,
+    ),
   )
 }
 

@@ -25,7 +25,12 @@ import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashMenuItems } from '@pommora/core/Actions/trashMenu'
 import { parseStyleAction, styleMenuItems } from '@pommora/core/Actions/columnMenu'
-import { defaultStyleFor, resolveStyle, storedPick } from '@pommora/core/Properties/columnStyles'
+import {
+  dateDefaults,
+  holdsStyle,
+  resolveStyle,
+  storedPick,
+} from '@pommora/core/Properties/columnStyles'
 import { useNexusForms } from '../Views/Host/useColumnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
@@ -71,10 +76,7 @@ function TrashBody(): React.JSX.Element {
   const nexus = useNexusForms()
   const stored = useSession((s) => s.personalization.trashColumnStyle)
   // The Trash shows each deletion's time, where a view's date column leaves it hidden.
-  const defaults = {
-    ...defaultStyleFor('datetime', undefined, nexus.dateFormat),
-    time_format: nexus.clock,
-  }
+  const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
   const style = resolveStyle(stored, defaults, nexus.clock)
   const setPersonalization = useSession((s) => s.setPersonalization)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -167,10 +169,7 @@ function TrashBody(): React.JSX.Element {
     const pick = action ? parseStyleAction(action) : null
     if (!pick) return
     const next = { ...stored, [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock) }
-    setPersonalization(
-      'trashColumnStyle',
-      Object.values(next).some((v) => v !== undefined) ? next : undefined,
-    )
+    setPersonalization('trashColumnStyle', holdsStyle(next) ? next : undefined)
   }
 
   const openMenu = async (row: TrashRow): Promise<void> => {
@@ -270,8 +269,8 @@ function TrashBody(): React.JSX.Element {
                     ? ''
                     : formatDate(
                         new Date(row.deletedAt).toISOString(),
-                        style.date_format ?? nexus.dateFormat,
-                        style.time_format ?? nexus.clock,
+                        style.date_format,
+                        style.time_format,
                         style.weekday,
                       )
                 }

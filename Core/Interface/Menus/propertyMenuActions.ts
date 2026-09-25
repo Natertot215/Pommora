@@ -6,6 +6,7 @@ import {
   type PropertyType,
 } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
@@ -84,9 +85,11 @@ export function runPropertyAction(
     row,
     commit,
     trigger,
+    styleOf,
   }: PropertyMenuTarget & {
     commit: (column: ResolvedColumn, value: PropertyValue | null) => void
     trigger: HTMLElement
+    styleOf?: (id: string) => ColumnStyle
   },
 ): boolean {
   const parsed = parsePropertyAction(action)
@@ -99,7 +102,10 @@ export function runPropertyAction(
     commit({ id, kind: contextIds.includes(id) ? 'context' : 'property' }, next)
   if (value === null) {
     if (def.type === 'file') pickFileInto(def, current, null, commitValue)
-    else useSession.getState().requestPick({ def, current, trigger, commit: commitValue })
+    else
+      useSession
+        .getState()
+        .requestPick({ def, current, trigger, commit: commitValue, style: styleOf?.(id) })
     return true
   }
   if (def.type === 'checkbox')

@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import {
+  dateDefaults,
   defaultStyleFor,
   resolveStyle,
   storedPick,
@@ -24,12 +25,13 @@ const columnDefaults = (
   columnId: string,
   schema: PropertyDefinition[],
   nexus: NexusForms,
-): ColumnStyle =>
-  defaultStyleFor(
+): ColumnStyle => ({
+  ...dateDefaults(nexus.dateFormat),
+  ...defaultStyleFor(
     declaredType(columnId, schema),
     schema.find((d) => d.id === columnId),
-    nexus.dateFormat,
-  )
+  ),
+})
 
 export function styleFor(
   columnId: string,

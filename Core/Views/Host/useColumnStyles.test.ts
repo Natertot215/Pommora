@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mergeStyleRecords, pickedStyle, styleFor } from './useColumnStyles'
+import { dateDefaults } from '@pommora/core/Properties/columnStyles'
 import type { DateFormat } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { savedView, type SavedView } from '@pommora/core/Views/views'
@@ -8,6 +9,8 @@ const nexus = (dateFormat: DateFormat) => ({
   dateFormat,
   clock: 'twentyFourHour' as const,
 })
+
+const DATES = dateDefaults('full')
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
@@ -28,13 +31,19 @@ function view(over: Partial<SavedView>): SavedView {
 
 describe('styleFor', () => {
   it('returns the type defaults with no view entry', () => {
-    expect(styleFor('prop_status', schema, view({}), nexus('full'))).toEqual({ look: 'standard' })
+    expect(styleFor('prop_status', schema, view({}), nexus('full'))).toEqual({
+      ...DATES,
+      look: 'standard',
+    })
     expect(styleFor('prop_date', schema, view({}), nexus('full'))).toEqual({
       date_format: 'full',
       time_format: 'none',
       weekday: 'none',
     })
-    expect(styleFor('prop_n', schema, view({}), nexus('full'))).toEqual({ look: 'number' })
+    expect(styleFor('prop_n', schema, view({}), nexus('full'))).toEqual({
+      ...DATES,
+      look: 'number',
+    })
   })
 
   it('merges a saved column_styles entry per-key over the defaults', () => {
@@ -48,16 +57,19 @@ describe('styleFor', () => {
 
   it('honors a saved look over the default', () => {
     const v = view({ column_styles: { prop_status: { look: 'compact' } } })
-    expect(styleFor('prop_status', schema, v, nexus('full'))).toEqual({ look: 'compact' })
+    expect(styleFor('prop_status', schema, v, nexus('full'))).toEqual({ ...DATES, look: 'compact' })
   })
 
   it('falls back to empty defaults for an unknown column', () => {
-    expect(styleFor('prop_gone', schema, view({}), nexus('full'))).toEqual({})
+    expect(styleFor('prop_gone', schema, view({}), nexus('full'))).toEqual(DATES)
   })
 
   it('a caught-invalid saved value falls back to the default instead of erasing it', () => {
     const v = view({ column_styles: { prop_status: { look: 'zebra' } } } as never)
-    expect(styleFor('prop_status', schema, v, nexus('full'))).toEqual({ look: 'standard' })
+    expect(styleFor('prop_status', schema, v, nexus('full'))).toEqual({
+      ...DATES,
+      look: 'standard',
+    })
   })
 
   it("takes the nexus's date form where the column set none", () => {

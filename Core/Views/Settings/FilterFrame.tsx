@@ -522,7 +522,7 @@ export function FilterFrame({
       )
 
     if (op.slot === 'date') {
-      const fmtRaw = styleFor(rule.property_id, schema, view).date_format ?? 'full'
+      const fmtRaw = styleFor(rule.property_id, schema, view).date_format
       const fmt = fmtRaw === 'relative' ? 'short' : fmtRaw
       return (
         <FieldPicker

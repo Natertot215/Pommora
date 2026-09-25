@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { type ColumnStyle, dateDefaults } from '../Properties/columnStyles'
 import {
   columnMenuItems,
   styleMenuLabel,
@@ -9,9 +10,9 @@ import {
 
 const items = (
   type: StyleMenuContext['type'],
-  current: StyleMenuContext['current'] = {},
+  current: Partial<ColumnStyle> = {},
   barCapable = false,
-) => styleMenuItems({ type, current, barCapable })
+) => styleMenuItems({ type, current: { ...dateDefaults('full'), ...current }, barCapable })
 
 describe('styleMenuItems', () => {
   it('status offers Standard and Compact, current checked', () => {
@@ -117,7 +118,7 @@ describe('columnMenuItems', () => {
       alignable: true,
       hideable: true,
       iconsShown: true,
-      style: { type: 'status', current: { look: 'compact' } },
+      style: { type: 'status', current: { ...dateDefaults('full'), look: 'compact' } },
     })
     expect(items.map((i) => [i.label, i.separatorBefore ?? false])).toEqual([
       ['Align', false],

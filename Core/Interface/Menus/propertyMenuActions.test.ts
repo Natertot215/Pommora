@@ -10,6 +10,8 @@ import { pageRowOf, spaceRowOf } from '@pommora/core/Properties/pageRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { makeTree } from '../../Testing/testTree'
 import { propertyMenuBranches, runPropertyAction } from './propertyMenuActions'
+import { dateDefaults } from '@pommora/core/Properties/columnStyles'
+import { useSession } from '../../Session/store'
 
 const SCHEMA: PropertyDefinition[] = [
   {
@@ -217,6 +219,20 @@ describe('a property pick from the page menu', () => {
       value: { kind: 'multiSelect', value: ['x', 'y'] },
     })
     expect(frontmatter.Tags).toEqual(['x', 'y'])
+  })
+
+  it('hands a value picker the style of the view column the menu came from', () => {
+    const tree = treeWithSchema()
+    const style = { ...dateDefaults('relative'), time_format: 'twentyFourHour' as const }
+    runPropertyAction('prop:prop_num', {
+      tree,
+      schema: SCHEMA,
+      row: row(),
+      trigger: {} as HTMLElement,
+      commit: () => undefined,
+      styleOf: (id) => (id === 'prop_num' ? style : dateDefaults('full')),
+    })
+    expect(useSession.getState().pendingPick?.style).toEqual(style)
   })
 
   it('passes on an action that is not a property pick', () => {
