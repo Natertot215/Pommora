@@ -48,7 +48,7 @@ async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
 }
 
 const over = (span: HTMLElement): void => {
-  span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+  span.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
 }
 
 describe('the connection dwell', () => {
@@ -83,15 +83,15 @@ describe('the connection dwell', () => {
   it('leaving the link clears that, so a later dwell works', async () => {
     const { span } = await mountLink()
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
-    span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
+    span.dispatchEvent(new PointerEvent('pointerout', { bubbles: true }))
     over(span)
     expect(arm).toHaveBeenCalledTimes(1)
   })
 
-  it('mouseout cancels; re-entry re-arms fresh', async () => {
+  it('pointerout cancels; re-entry re-arms fresh', async () => {
     const { span } = await mountLink()
     over(span)
-    span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
+    span.dispatchEvent(new PointerEvent('pointerout', { bubbles: true }))
     expect(cancel).toHaveBeenCalled()
     over(span)
     expect(arm).toHaveBeenCalledTimes(2)

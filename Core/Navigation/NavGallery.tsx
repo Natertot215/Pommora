@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropSlot, SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
 import {
@@ -15,11 +14,10 @@ import { useSession } from '../Session/store'
 import { navKey } from './navRecents'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
-import { NavPinButton, NavRowMenu } from './NavList'
-import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
+import { NavPinButton, showNavRowMenu } from './NavList'
+import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
-import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
-import { assetUrl } from '../Platform/assetScheme'
+import { useThumb } from '../Assets/useThumb'
 
 export function NavGallery({
   pins,
@@ -56,11 +54,10 @@ export function NavGallery({
     ) : null
   }
   const zone = { family: TAB_FAMILY, carry, renderOverlay }
-  const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
-    setMenu({ item: it })
+    void showNavRowMenu(it, onOpenNewTab)
   }
   const card = (it: ResolvedNav): React.JSX.Element => (
     <DraggableCard key={it.key} it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
@@ -93,9 +90,6 @@ export function NavGallery({
           </SortableZone>
         )}
       </div>
-      {menu && (
-        <NavRowMenu item={menu.item} onClose={() => setMenu(null)} onOpenNewTab={onOpenNewTab} />
-      )}
     </div>
   )
 }
@@ -124,10 +118,7 @@ function GalleryCard({
   drag?: DragItem
 }): React.JSX.Element {
   const active = useSession((s) => s.selection.kind !== 'none' && navKey(s.selection) === it.key)
-  const version = useSession((s) => s.thumbVersions[it.key] ?? 0)
-  const [failed, setFailed] = useState(false)
-
-  const src = `${assetUrl(thumbRel(nexusId, thumbKey(it.key)))}?v=${version}`
+  const { src, onError } = useThumb(nexusId, it.key)
   // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not read as a navigation.
   const open = (): void => {
     if (!drag?.isDragging) onSelect(it.target)
@@ -149,12 +140,12 @@ function GalleryCard({
     >
       <CardBody>
         <CardThumb capture>
-          {failed ? (
+          {src ? (
+            <img src={src} loading="lazy" alt="" onError={onError} />
+          ) : (
             <CardPlaceholder>
               <EntityIcon item={it} size="titleMedium" />
             </CardPlaceholder>
-          ) : (
-            <img src={src} loading="lazy" alt="" onError={() => setFailed(true)} />
           )}
           <NavPinButton it={it} className="card-pin" />
         </CardThumb>

@@ -22,7 +22,7 @@ import {
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
-import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
+import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'

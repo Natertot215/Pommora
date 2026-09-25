@@ -3,18 +3,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   GLANCE_BODY_ATTR,
   GLANCE_DWELL,
-  armGlance,
+  armPreview,
   cancelGlance,
   closeGlance,
+  glanceLink,
   glanceShown,
+  hoverGlance,
+  leaveGlance,
   setGlancePresenter,
   setGlanceShown,
   watchAnchor,
   type GlanceRequest,
 } from './glanceAction'
+import { useSession } from '../../Session/store'
+import type { PreviewPersistence } from '../../Settings/personalization'
 
 const page = { kind: 'page', id: 'p1', path: 'Notes/A.md' } as const
 const site = { kind: 'site', url: 'https://example.com' } as const
+
+const setPersistence = (v: PreviewPersistence | undefined): void =>
+  useSession.setState({ personalization: { previewPersistence: v } })
+
+const pressShift = (repeat = false): void => {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', repeat }))
+}
 
 let present: ReturnType<typeof vi.fn<(next: GlanceRequest | null) => void>>
 let el: HTMLElement
@@ -28,7 +40,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  cancelGlance()
+  leaveGlance()
+  setPersistence(undefined)
   setGlancePresenter(null)
   setGlanceShown(false)
   document.body.innerHTML = ''
@@ -47,7 +60,7 @@ describe('the shown flag', () => {
 
 describe('the dwell', () => {
   it('fires once after the named dwell', () => {
-    armGlance(page, el, 'link')
+    armPreview(page, el, 'link')
     vi.advanceTimersByTime(GLANCE_DWELL.link - 1)
     expect(present).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)
@@ -56,23 +69,23 @@ describe('the dwell', () => {
   })
 
   it('a re-arm replaces the pending one and fires with the latest target', () => {
-    armGlance(page, el, 'link')
+    armPreview(page, el, 'link')
     vi.advanceTimersByTime(GLANCE_DWELL.link / 2)
-    armGlance(site, el, 'link')
+    armPreview(site, el, 'link')
     vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).toHaveBeenCalledTimes(1)
     expect(present).toHaveBeenCalledWith({ target: site, el })
   })
 
   it('cancel prevents the fire', () => {
-    armGlance(page, el, 'link')
+    armPreview(page, el, 'link')
     cancelGlance()
     vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).not.toHaveBeenCalled()
   })
 
   it('close clears a pending dwell and presents null', () => {
-    armGlance(page, el, 'link')
+    armPreview(page, el, 'link')
     closeGlance()
     vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).toHaveBeenCalledTimes(1)
@@ -81,7 +94,7 @@ describe('the dwell', () => {
 
   it('an arm with no presenter is a no-op', () => {
     setGlancePresenter(null)
-    armGlance(page, el, 'link')
+    armPreview(page, el, 'link')
     expect(() => vi.advanceTimersByTime(GLANCE_DWELL.link)).not.toThrow()
     expect(present).not.toHaveBeenCalled()
   })
@@ -91,25 +104,32 @@ describe('the dwell', () => {
     body.setAttribute(GLANCE_BODY_ATTR, '')
     body.appendChild(el)
     document.body.appendChild(body)
-    armGlance(page, el, 'link')
+    armPreview(page, el, 'link')
     vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).not.toHaveBeenCalled()
   })
 })
 
 describe('the anchor watch', () => {
-  const frames: FrameRequestCallback[] = []
+  const frames = new Map<number, FrameRequestCallback>()
+  let lastFrame = 0
   beforeEach(() => {
-    frames.length = 0
+    frames.clear()
     vi.stubGlobal('requestAnimationFrame', (fn: FrameRequestCallback) => {
-      frames.push(fn)
-      return frames.length
+      frames.set(++lastFrame, fn)
+      return lastFrame
     })
-    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
   })
   afterEach(() => vi.unstubAllGlobals())
+  const runFrame = (): void => {
+    const [id, fn] = frames.entries().next().value ?? []
+    if (id === undefined || !fn) return
+    frames.delete(id)
+    fn(0)
+  }
   const flushFrames = (): void => {
-    while (frames.length > 0) frames.shift()?.(0)
+    while (frames.size > 0) runFrame()
   }
 
   it('reports the anchor gone two frames after a scroll removed it, and not while it stays', () => {
@@ -128,6 +148,17 @@ describe('the anchor watch', () => {
     window.dispatchEvent(new Event('scroll'))
     flushFrames()
     expect(watch.onMoved).toHaveBeenCalledTimes(2)
+  })
+
+  it('a watch stopped between its two frames never reports the anchor gone', () => {
+    const watch = { onGone: vi.fn(), onEscape: vi.fn(), onMoved: vi.fn() }
+    const stop = watchAnchor(el, watch)
+    window.dispatchEvent(new Event('scroll'))
+    runFrame()
+    el.remove()
+    stop()
+    flushFrames()
+    expect(watch.onGone).not.toHaveBeenCalled()
   })
 
   it('Shift closes the pane, the summon key doubling as the dismiss, and ignores auto-repeat', () => {
@@ -181,5 +212,89 @@ describe('the anchor watch', () => {
     flushFrames()
     expect(watch.onGone).toHaveBeenCalledTimes(1)
     stop()
+  })
+})
+
+describe('the Off gate', () => {
+  it("'off' arms nothing", () => {
+    setPersistence('off')
+    armPreview(page, el, 'link')
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('a set rung arms a preview', () => {
+    setPersistence('1s')
+    armPreview(page, el, 'link')
+    vi.runAllTimers()
+    expect(present).toHaveBeenCalledWith({ target: page, el })
+  })
+
+  it('an absent setting arms — the default is on', () => {
+    setPersistence(undefined)
+    armPreview(page, el, 'link')
+    vi.runAllTimers()
+    expect(present).toHaveBeenCalledTimes(1)
+  })
+
+  it('glanceLink routes the editor slot through the same gate', () => {
+    setPersistence('off')
+    glanceLink(page, el)
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+})
+
+describe('the hovered-Shift arm', () => {
+  it('arms the hovered surface when Shift is pressed at rest, no re-enter needed', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'location', false)
+    expect(present).not.toHaveBeenCalled()
+    pressShift()
+    vi.runAllTimers()
+    expect(present).toHaveBeenCalledWith({ target: page, el })
+  })
+
+  it('ignores an auto-repeat keydown so the dwell is never reset out from under itself', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'location', false)
+    pressShift(true)
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('armNow raises the preview immediately, without a keypress', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'location', true)
+    vi.runAllTimers()
+    expect(present).toHaveBeenCalledWith({ target: page, el })
+  })
+
+  it('leaveGlance clears the hovered surface, so a later Shift arms nothing', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'location', false)
+    leaveGlance()
+    pressShift()
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('honors the Off gate on the Shift arm', () => {
+    setPersistence('off')
+    hoverGlance(page, el, 'location', false)
+    pressShift()
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('a right-click cancels the pending dwell and clears the hovered surface', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'location', true)
+    window.dispatchEvent(new Event('contextmenu'))
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+    pressShift()
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
   })
 })

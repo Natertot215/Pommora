@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { ProgressBar } from '../Elements/ProgressBar'
 import { GlassSegment } from '../Glass/glass-control'
 import { usePointerGesture } from '../Interactions/gesture'
@@ -34,14 +34,12 @@ export function Slider({
   readoutClassName?: string
 }): React.JSX.Element {
   const [draft, setDraft] = useState<number | null>(null)
-  const stripRef = useRef<HTMLDivElement>(null)
   const begin = usePointerGesture()
   const decimals = decimalsOf(step)
   const v = clamp(draft ?? value, min, max)
   const pct = ((v - min) / (max - min)) * 100
-  const valueAt = (clientX: number): number => {
-    const r = stripRef.current?.getBoundingClientRect()
-    if (!r || r.width === 0) return v
+  const valueAt = (r: DOMRect, clientX: number): number => {
+    if (r.width === 0) return v
     const t = clamp((clientX - r.left) / r.width, 0, 1)
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
@@ -53,7 +51,6 @@ export function Slider({
     <>
       {format && <span className={cx(s.readout, readoutClassName)}>{format(v)}</span>}
       <div
-        ref={stripRef}
         className={s.strip}
         role="slider"
         aria-label={ariaLabel}
@@ -62,25 +59,31 @@ export function Slider({
         aria-valuenow={v}
         tabIndex={0}
         onPointerDown={(e) => {
-          let last = valueAt(e.clientX)
+          const strip = e.currentTarget
+          let r = strip.getBoundingClientRect()
+          let last = valueAt(r, e.clientX)
           const settle = (commit: boolean): void => {
             if (commit && last !== value) onCommit(last)
             else if (!commit) onInput?.(clamp(value, min, max))
             setDraft(null)
           }
           const started = begin({
-            el: e.currentTarget,
+            el: strip,
             event: e,
             activation: 0,
             capture: true,
             onActivate: () => true,
             onDragMove: (ev) => {
-              last = valueAt(ev.clientX)
+              last = valueAt(r, ev.clientX)
               scrub(last)
             },
             onDrop: () => settle(true),
             onTap: () => settle(true),
             onAbort: () => settle(false),
+            scrollTarget: () => strip,
+            onWindowScroll: () => {
+              r = strip.getBoundingClientRect()
+            },
           })
           if (started) scrub(last)
         }}

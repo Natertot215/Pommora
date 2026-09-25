@@ -3,7 +3,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '../Contract/result'
-import { hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceLink'
+import { hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceAction'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
@@ -14,7 +14,8 @@ import * as s from './matrix.css'
 import { MatrixView } from './MatrixView'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-vi.mock('../Interface/Glance/glanceLink', () => ({
+vi.mock('../Interface/Glance/glanceAction', async (actual) => ({
+  ...(await actual<object>()),
   hoverGlance: vi.fn(),
   leaveGlanceFrom: vi.fn(),
 }))

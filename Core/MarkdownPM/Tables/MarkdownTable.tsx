@@ -277,7 +277,7 @@ export function MarkdownTable({
   const selected = (r: number, c: number): boolean =>
     rect !== null && r >= rect.r0 && r <= rect.r1 && c >= rect.c0 && c <= rect.c1
 
-  const trackHover = (e: React.MouseEvent): void => {
+  const trackHover = (e: React.PointerEvent): void => {
     const at = cellPosOf(e.target)
     if (at) setHover((cur) => (cur && cur.r === at.r && cur.c === at.c ? cur : at))
   }
@@ -544,8 +544,6 @@ export function MarkdownTable({
   const tableHeight = lastRow ? lastRow.top + lastRow.height - tableTop : 0
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only affordances — grip reveal and the rectangle sweep; the keyboard's route into the grid is its cells.
-    // biome-ignore lint/a11y/useKeyWithMouseEvents: hover only steers which grip shows; keyboard focus never rests on the wrap
     <div
       className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}${sweeping ? ' mdpm-tbl-sweeping' : ''}${addsHidden ? ' mdpm-tbl-adds-off' : ''}`}
       ref={wrapRef}
@@ -553,8 +551,8 @@ export function MarkdownTable({
       onContextMenuCapture={(e) => {
         if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
       }}
-      onMouseOver={trackHover}
-      onMouseLeave={() => {
+      onPointerOver={trackHover}
+      onPointerLeave={() => {
         setHover(null)
         setAddsHidden(false)
       }}

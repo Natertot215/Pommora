@@ -9,7 +9,7 @@ import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { firePointer, stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
-import { armGlance, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
+import { armPreview, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
 import type { GlanceTarget } from '../../MarkdownPM/api'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
@@ -80,7 +80,7 @@ const present = (el: Element, target: GlanceTarget = page): void => {
   vi.useFakeTimers()
   try {
     act(() => {
-      armGlance(target, el, 'link')
+      armPreview(target, el, 'link')
       vi.runAllTimers()
     })
   } finally {
@@ -152,7 +152,7 @@ describe('the presenter', () => {
     setGlancePresenter(spy)
     vi.useFakeTimers()
     try {
-      armGlance({ kind: 'site', url: 'https://example.com' }, inside, 'link')
+      armPreview({ kind: 'site', url: 'https://example.com' }, inside, 'link')
       vi.runAllTimers()
     } finally {
       vi.useRealTimers()
@@ -205,7 +205,7 @@ describe('the live-pane shown flag (ghost suppression, Task 8)', () => {
 describe('the leave grace', () => {
   const leaveMove = (): void =>
     act(() => {
-      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 500, clientY: 500 }))
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 500 }))
     })
 
   const setPersistence = (v: 'off' | '5s' | 'always'): void =>
@@ -264,7 +264,7 @@ describe('focus on close', () => {
   const pressInside = (): void => {
     const b = body()
     act(() => {
-      b.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
     })
     const editable = b.querySelector('.cm-content') as HTMLElement | null
     editable?.focus()

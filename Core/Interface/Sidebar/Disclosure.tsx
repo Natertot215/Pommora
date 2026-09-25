@@ -134,7 +134,7 @@ export function Disclosure({
   const headerEl = useRef<HTMLDivElement | null>(null)
   const childrenEl = useRef<HTMLDivElement | null>(null)
   // A move into the peeked child isn't a dismiss — only leaving both header and children collapses it.
-  const dismissOnLeave = (e: React.MouseEvent): void => {
+  const dismissOnLeave = (e: React.PointerEvent): void => {
     if (!peekTimer.current) return
     const to = e.relatedTarget as Node | null
     if (headerEl.current?.contains(to) || childrenEl.current?.contains(to)) return
@@ -170,10 +170,10 @@ export function Disclosure({
       onClick={toggle}
       onPointerDown={onHeaderPointerDown}
       onContextMenu={ctxHandler(onContextMenu)}
-      onMouseEnter={() => {
+      onPointerEnter={() => {
         hovered.current = true
       }}
-      onMouseLeave={(e) => {
+      onPointerLeave={(e) => {
         hovered.current = false
         setJustUnlocked(false)
         dismissOnLeave(e)
@@ -204,7 +204,7 @@ export function Disclosure({
         <div
           ref={childrenEl}
           className={cx('children', peekOnly && 'children-peek')}
-          onMouseLeave={dismissOnLeave}
+          onPointerLeave={dismissOnLeave}
           onContextMenu={
             onBodyContextMenu
               ? (e) => {

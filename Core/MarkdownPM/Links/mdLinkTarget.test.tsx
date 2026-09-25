@@ -220,7 +220,7 @@ describe('a connection takes its color as it is typed', () => {
   })
 })
 
-// The body did not raise a glance for a page-naming markdown link, because the connection handler's hit-test reads wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the mouseover.
+// The body did not raise a glance for a page-naming markdown link, because the connection handler's hit-test reads wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the pointerover.
 describe('an internal markdown link glances like a connection', () => {
   it('arms the page glance on the drawn link', async () => {
     const glance = vi.fn()
@@ -233,7 +233,7 @@ describe('an internal markdown link glances like a connection', () => {
     view.dispatch({ selection: { anchor: 0 } })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
     const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
-    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    span.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
     expect(glance).toHaveBeenCalledWith(
       { kind: 'page', id: 'p1', path: 'Notes/Work Notes.md' },
       span,
@@ -331,7 +331,7 @@ describe('a website link previews live', () => {
     view.dispatch({ selection: { anchor: 0 } })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
     const span = view.dom.querySelector(`.${MD_LINK_CLASS}`) as HTMLElement
-    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    span.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
     expect(glance).toHaveBeenCalledTimes(1)
     expect(glance).toHaveBeenCalledWith({ kind: 'site', url: 'https://github.com' }, span)
   })

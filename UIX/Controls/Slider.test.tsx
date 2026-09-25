@@ -61,6 +61,28 @@ describe('slider scrub', () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(1.5)
   })
 
+  it('measures the track once per scrub, and again only when a scroll moves it', async () => {
+    const measure = vi.spyOn(strip(), 'getBoundingClientRect')
+    await act(async () => {
+      firePointer(strip(), 'pointerdown', { x: 150, y: 10 })
+      firePointer(strip(), 'pointermove', { x: 100, y: 10 })
+    })
+    stubRect(strip(), { top: 0, bottom: 20, left: 100, right: 300 })
+    await act(async () => {
+      firePointer(strip(), 'pointermove', { x: 50, y: 10 })
+    })
+    expect(measure).toHaveBeenCalledTimes(1)
+    expect(onInput).toHaveBeenLastCalledWith(0.5)
+    await act(async () => {
+      window.dispatchEvent(new Event('scroll'))
+      firePointer(strip(), 'pointermove', { x: 150, y: 10 })
+    })
+    expect(onInput).toHaveBeenLastCalledWith(0.5)
+    await act(async () => {
+      firePointer(strip(), 'pointerup', { x: 150, y: 10 })
+    })
+  })
+
   it('a cancel reverts: the committed value is reasserted through onInput and nothing commits', async () => {
     await act(async () => {
       firePointer(strip(), 'pointerdown', { x: 150, y: 10 })

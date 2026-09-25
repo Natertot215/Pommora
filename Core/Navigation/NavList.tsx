@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -19,74 +19,52 @@ import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActio
 import { isOpenInTabs, isPinned, liveTarget } from './tabsModel'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
-import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
+import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
 import { pinLabel } from '@pommora/core/Actions/toggleLabels'
 import { popMenu } from '../Actions/menuActions'
 import { navRowMenuItems } from '@pommora/core/Actions/navRowMenu'
 
-export function NavRowMenu({
-  item,
-  onClose,
-  onOpenNewTab,
-}: {
-  item: ResolvedNav
-  onClose: () => void
-  onOpenNewTab?: (target: NavRef) => void
-}): null {
-  const opened = useRef(false)
-  const alive = useRef(true)
-  useEffect(() => {
-    alive.current = true
-    if (opened.current)
-      return () => {
-        alive.current = false
-      }
-    opened.current = true
-    const s = useSession.getState()
-    const target = item.target
-    const livePage =
-      target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
-    const livePath = livePage?.kind === 'page' ? livePage.path : undefined
-    void popMenu(
-      navRowMenuItems({
-        canOpenNewTab: onOpenNewTab !== undefined,
-        alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
-        kind: target.kind,
-        isPinned: isPinned(target, s.pinned),
-        ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
-      }),
-    ).then((action) => {
-      if (!alive.current) return
-      onClose()
-      const st = useSession.getState()
-      if (action && livePage?.kind === 'page' && runPageAction(action, livePage)) return
-      switch (action) {
-        case 'open-new-tab':
-          onOpenNewTab?.(target)
-          break
-        case 'open-window': {
-          const live = st.tree ? liveTarget(reconcileIndexOf(st.tree), target) : null
-          if (live && isWindowTarget(live)) st.openWindowTab(live)
-          break
-        }
-        case 'pin':
-          st.pinTarget(target)
-          break
-        case 'unpin':
-          st.unpinTarget(item.key)
-          break
-        case 'remove':
-          st.removeRecent(item.key)
-          break
-      }
-    })
-    return () => {
-      alive.current = false
+export async function showNavRowMenu(
+  item: ResolvedNav,
+  onOpenNewTab?: (target: NavRef) => void,
+): Promise<void> {
+  const s = useSession.getState()
+  const target = item.target
+  const livePage =
+    target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
+  const livePath = livePage?.kind === 'page' ? livePage.path : undefined
+  const action = await popMenu(
+    navRowMenuItems({
+      canOpenNewTab: onOpenNewTab !== undefined,
+      alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
+      kind: target.kind,
+      isPinned: isPinned(target, s.pinned),
+      ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
+    }),
+  )
+  const st = useSession.getState()
+  if (action && livePage?.kind === 'page' && runPageAction(action, livePage)) return
+  switch (action) {
+    case 'open-new-tab':
+      onOpenNewTab?.(target)
+      break
+    case 'open-window': {
+      const live = st.tree ? liveTarget(reconcileIndexOf(st.tree), target) : null
+      if (live && isWindowTarget(live)) st.openWindowTab(live)
+      break
     }
-  }, [])
-  return null
+    case 'pin':
+      st.pinTarget(target)
+      break
+    case 'unpin':
+      st.unpinTarget(item.key)
+      break
+    case 'remove':
+      st.removeRecent(item.key)
+      break
+  }
 }
 
 export function NavPinButton({
@@ -140,11 +118,11 @@ function NavRow({
       overlay={<NavPinButton it={it} className={cx(overlay, 'nav-pin')} />}
       onPointerDown={drag.handle.onPointerDown}
       onClick={() => onSelect(it.target)}
-      onMouseEnter={(e) => {
+      onPointerEnter={(e) => {
         const t = pageTargetFromNav(it, useSession.getState().tree)
         if (t) hoverGlance(t, e.currentTarget, 'location', e.shiftKey)
       }}
-      onMouseLeave={() => leaveGlance()}
+      onPointerLeave={() => leaveGlance()}
       onContextMenu={(e) => {
         e.preventDefault()
         onMenu(it)
@@ -173,8 +151,7 @@ export function NavList({
   const reorderPin = useSession((s) => s.reorderPin)
   const tree = useSession((s) => s.tree)
   const escort = useEscort()
-  const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
-  const openMenu = (it: ResolvedNav): void => setMenu({ item: it })
+  const openMenu = (it: ResolvedNav): void => void showNavRowMenu(it, onOpenNewTab)
   const pinRows = reorderable ? (pins ?? []) : []
   const rows = [...pinRows, ...items]
   // Identity-stable so a parent re-render mid-drag can't false-dirty the drag's row snapshot.
@@ -214,25 +191,20 @@ export function NavList({
   }
 
   return (
-    <>
-      <TableRowDnd
-        rows={dndRows}
-        disabled={false}
-        canReorderWithin={!!reorderable}
-        crossZone={false}
-        onDrop={commitReorder}
-        escort={escort && { via: escort, family: TAB_FAMILY, carry }}
-        ghostLabel={ghostOf}
-      >
-        <div className="nav-list">
-          {rows.map((it) => (
-            <NavRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
-          ))}
-        </div>
-      </TableRowDnd>
-      {menu && (
-        <NavRowMenu item={menu.item} onClose={() => setMenu(null)} onOpenNewTab={onOpenNewTab} />
-      )}
-    </>
+    <TableRowDnd
+      rows={dndRows}
+      disabled={false}
+      canReorderWithin={!!reorderable}
+      crossZone={false}
+      onDrop={commitReorder}
+      escort={escort && { via: escort, family: TAB_FAMILY, carry }}
+      ghostLabel={ghostOf}
+    >
+      <div className="nav-list">
+        {rows.map((it) => (
+          <NavRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
+        ))}
+      </div>
+    </TableRowDnd>
   )
 }

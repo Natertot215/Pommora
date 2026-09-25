@@ -198,7 +198,7 @@ describe('a bare §Heading run carries no menu and no glance, just travel', () =
     const view = await mountAutomatic()
     const span = view.dom.querySelector('.md-section-run') as HTMLElement
     vi.spyOn(view, 'posAtCoords').mockReturnValue(14)
-    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    span.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
     expect(arm).not.toHaveBeenCalled()
   })
 

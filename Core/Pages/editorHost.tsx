@@ -14,8 +14,12 @@ import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
 import { warmSeamOf } from '../Navigation/warmTabs'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { cancelGlance, closeGlance, insideGlance } from '../Interface/Glance/glanceAction'
-import { glanceLink } from '../Interface/Glance/glanceLink'
+import {
+  cancelGlance,
+  closeGlance,
+  glanceLink,
+  insideGlance,
+} from '../Interface/Glance/glanceAction'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 import { openWebLink } from '../Web/openWebLink'

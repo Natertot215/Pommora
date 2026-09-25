@@ -159,14 +159,13 @@ export function ContentView(): React.JSX.Element {
     (showSubfield && reveal.nearLead ? ' subfield-near-lead' : '')
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       className={paneClass}
       ref={publishChromePart('contentView')}
-      onMouseMove={(e) => {
-        if (showSubfield) reveal.onMouseMove(e)
+      onPointerMove={(e) => {
+        if (showSubfield) reveal.onPointerMove(e)
       }}
-      onMouseLeave={reveal.onMouseLeave}
+      onPointerLeave={reveal.onPointerLeave}
     >
       <div ref={viewRef} className={frozen ? 'content-view-view is-frozen' : 'content-view-view'}>
         {hosts.map((h) => (

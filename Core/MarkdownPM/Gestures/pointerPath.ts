@@ -53,7 +53,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       event.preventDefault()
       return true
     },
-    mouseover(event, view) {
+    pointerover(event, view) {
       const glance = glanceOf(view)
       if (!glance) return false
       const el = (event.target as HTMLElement).closest?.(spec.hoverGate)
@@ -64,7 +64,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       spec.dwell(hit, el, glance)?.()
       return false
     },
-    mouseout(_event, view) {
+    pointerout(_event, view) {
       glanceOf(view)?.cancel()
       actedOnLink = false
       return false

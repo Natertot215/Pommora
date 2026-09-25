@@ -112,11 +112,16 @@ export function WindowBase({
 }: WindowBaseProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
   const [geo, setGeo] = useState(() => opening(initialSize, bounds, region))
+  const reveal = useRevealNear()
+  const remeasure = reveal.remeasure
   useEffect(() => {
-    const onResize = (): void => setGeo(onScreen)
+    const onResize = (): void => {
+      setGeo(onScreen)
+      remeasure()
+    }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
-  }, [])
+  }, [remeasure])
   const frame = useResizeFrame({
     rect: geo,
     min: bounds.min,
@@ -144,11 +149,9 @@ export function WindowBase({
 
   const hasFooter = footer !== undefined && footer !== null && footer !== false
   const [footerOpen, setFooterOpen] = useState(true)
-  const reveal = useRevealNear()
-  const remeasure = reveal.remeasure
   useEffect(() => {
     remeasure()
-  }, [remeasure, geo, leftOpen, rightOpen, leftW, rightW])
+  }, [remeasure, leftOpen])
 
   useEscape(!closing, onEscape ?? onClose)
 
@@ -216,8 +219,8 @@ export function WindowBase({
       role="dialog"
       aria-label={ariaLabel}
       onPointerDown={onWindowDown}
-      onMouseMove={hasFooter ? reveal.onMouseMove : undefined}
-      onMouseLeave={hasFooter ? reveal.onMouseLeave : undefined}
+      onPointerMove={hasFooter ? reveal.onPointerMove : undefined}
+      onPointerLeave={hasFooter ? reveal.onPointerLeave : undefined}
     >
       <div className="window-drag" aria-hidden="true" />
       <div className="window-toolbar">

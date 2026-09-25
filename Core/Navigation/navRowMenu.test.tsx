@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
-import React, { act } from 'react'
+import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { NavPinButton, NavRowMenu } from './NavList'
+import { NavPinButton, showNavRowMenu } from './NavList'
 import { useSession } from '../Session/store'
 import type { ResolvedNav } from './navResolve'
 import { stubDialer } from '../vitest.setup'
@@ -41,33 +41,15 @@ afterEach(() => {
   host.remove()
 })
 
-describe('the nav row menu is one act per open', () => {
-  it('pops a single native menu through a StrictMode double mount', () => {
-    act(() => {
-      root.render(
-        <React.StrictMode>
-          <NavRowMenu item={item} onClose={() => {}} />
-        </React.StrictMode>,
-      )
-    })
-    expect(popup).toHaveBeenCalledTimes(1)
-  })
-
-  it('answers the first ask rather than the second', async () => {
-    const onClose = vi.fn()
+describe('the nav row menu', () => {
+  it('pops one native menu and runs the chosen action', async () => {
     const onOpenNewTab = vi.fn()
-    act(() => {
-      root.render(
-        <React.StrictMode>
-          <NavRowMenu item={item} onClose={onClose} onOpenNewTab={onOpenNewTab} />
-        </React.StrictMode>,
-      )
-    })
-    await act(async () => {
-      answers[0]('open-new-tab')
-    })
-    expect(onOpenNewTab).toHaveBeenCalledTimes(1)
-    expect(onClose).toHaveBeenCalledTimes(1)
+    const shown = showNavRowMenu(item, onOpenNewTab)
+    expect(popup).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(answers).toHaveLength(1))
+    answers[0]('open-new-tab')
+    await shown
+    expect(onOpenNewTab).toHaveBeenCalledWith(item.target)
   })
 })
 

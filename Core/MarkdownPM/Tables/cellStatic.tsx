@@ -362,7 +362,6 @@ function StaticCellImpl({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
     // biome-ignore lint/a11y/useKeyWithClickEvents: the cell's own keyboard route is its editor, entered by Enter from the grid
-    // biome-ignore lint/a11y/useKeyWithMouseEvents: a pointer-only hover affordance; keyboard focus never reaches a resting cell
     <div
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
@@ -370,12 +369,12 @@ function StaticCellImpl({
         if (openMenu(e) || readOnly?.()) return
         onActivate({ x: e.clientX, y: e.clientY })
       }}
-      onMouseOver={(e) => {
+      onPointerOver={(e) => {
         const glance = host.glance
         const found = glance && linkAt(e)
         if (found) dwellTarget(found.target, found.url, glance, found.el)?.()
       }}
-      onMouseOut={() => host.glance?.cancel()}
+      onPointerOut={() => host.glance?.cancel()}
       onClick={(e) => {
         if (e.button !== 0) return
         if (!host.glance?.contains(e.currentTarget)) host.glance?.close()

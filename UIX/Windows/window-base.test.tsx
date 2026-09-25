@@ -23,7 +23,11 @@ afterEach(() => {
   host.remove()
 })
 
-const mount = (props: { initialSize?: Size; onSizeChange?: (s: Size) => void }): HTMLElement => {
+const mount = (props: {
+  initialSize?: Size
+  onSizeChange?: (s: Size) => void
+  footer?: React.ReactNode
+}): HTMLElement => {
   act(() =>
     root.render(
       <WindowBase closing={false} onClose={() => undefined} ariaLabel="Test" {...props}>
@@ -135,5 +139,19 @@ describe('a floating window reports its size once per drag', () => {
     const el = mount({ initialSize: { w: 400, h: 300 }, onSizeChange })
     grab(el.querySelector('.resize-edge-se') as HTMLElement, [])
     expect(onSizeChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('the footer reveal measures the window only while the pointer moves free', () => {
+  it('a held move never measures, and the first free move after it measures once', () => {
+    const el = mount({ footer: <span /> })
+    const measure = vi.spyOn(el, 'getBoundingClientRect')
+    const drag = el.querySelector('.window-drag') as HTMLElement
+    act(() => firePointer(drag, 'pointerdown', { x: 0, y: 0 }))
+    for (const x of [10, 20, 30]) act(() => firePointer(drag, 'pointermove', { x, y: 0 }))
+    act(() => firePointer(window, 'pointerup'))
+    expect(measure).not.toHaveBeenCalled()
+    for (const x of [40, 50]) act(() => firePointer(el, 'pointermove', { x, y: 0, buttons: 0 }))
+    expect(measure).toHaveBeenCalledTimes(1)
   })
 })
