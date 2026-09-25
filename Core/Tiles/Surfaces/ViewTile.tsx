@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
-import type { EmbeddedView, ViewTileEntry } from '@pommora/core/Tiles/tiles'
+import type { ViewTileEntry } from '@pommora/core/Tiles/tiles'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   DEFAULT_VIEW_ID,
   mintDefaultView,
   mintNewView,
+  mintViewId,
   savedView,
   type SavedView,
   type ViewState,
@@ -57,16 +59,36 @@ import { popMenu } from '../../Actions/menuActions'
 import { viewsLabel } from '../../Actions/toggleLabels'
 import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 
-function coerceEmbeddedView(
-  raw: unknown,
-  schema: PropertyDefinition[],
-  fallbackId: string,
-): SavedView {
+function coerceEmbeddedView(raw: unknown, schema: PropertyDefinition[], id: string): SavedView {
   const r = savedView.safeParse(raw ?? {})
-  if (r.success && r.data.id && r.data.id !== DEFAULT_VIEW_ID) return r.data
-  return { ...mintDefaultView(schema), id: fallbackId }
+  return { ...(r.success ? r.data : mintDefaultView(schema)), id }
+}
+
+const storedViewId = (el: unknown): string | undefined => {
+  const id = (el as { config?: { id?: unknown } } | null)?.config?.id
+  return typeof id === 'string' && id !== '' && id !== DEFAULT_VIEW_ID ? id : undefined
+}
+
+// A view answers to its stored id; one with none of its own (missing, unsaved, or a sibling's) takes a positional id no sibling holds.
+export function embedViewIds(els: readonly unknown[], entryId: string): string[] {
+  const taken = new Set<string>()
+  const stored = els.map((el) => {
+    const id = storedViewId(el)
+    if (id === undefined || taken.has(id)) return undefined
+    taken.add(id)
+    return id
+  })
+  return stored.map((id, i) => {
+    if (id !== undefined) return id
+    for (let n = i; ; n++) {
+      const slot = `embed:${entryId}:${n}`
+      if (taken.has(slot)) continue
+      taken.add(slot)
+      return slot
+    }
+  })
 }
 
 function usePillPresence(views: SavedView[]): {
@@ -138,14 +160,12 @@ function inPeekAnchor(anchor: PeekAnchor, target: EventTarget): boolean {
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
 
-const freeEmbedId = (arr: unknown[], entryId: string): string => {
-  const used = new Set(
-    arr.map((el) => ((el as { config?: { id?: unknown } })?.config?.id as string) ?? ''),
+// Read as the entry's parse reads it: a non-negative integer, else the first view, clamped to the views held.
+const rawActive = (raw: Record<string, unknown>, count: number): number =>
+  Math.min(
+    Number.isInteger(raw.active) && (raw.active as number) >= 0 ? (raw.active as number) : 0,
+    count - 1,
   )
-  let slot = arr.length
-  while (used.has(`embed:${entryId}:${slot}`)) slot++
-  return `embed:${entryId}:${slot}`
-}
 
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = labelColorFor(v.color)
@@ -217,10 +237,10 @@ export function ViewTile({
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const [cfgOpen, setCfgOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
-  const [renaming, setRenaming] = useState<number | null>(null)
+  const [renaming, setRenaming] = useState<string | null>(null)
   const [titleEditing, setTitleEditing] = useState(false)
-  const [iconFor, setIconFor] = useState<number | 'title' | null>(null)
-  const [colorFor, setColorFor] = useState<number | null>(null)
+  const [iconFor, setIconFor] = useState<{ view: string } | 'title' | null>(null)
+  const [colorFor, setColorFor] = useState<string | null>(null)
   const menuAnchorRef = useRef<Element | null>(null)
   const titleIconRef = useRef<SVGSVGElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -239,15 +259,29 @@ export function ViewTile({
       ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
       : undefined
 
-  const schema = source && tree ? resolveContainerSchema(tree, source) : []
-  const views = source
-    ? entry.views.map((v, i) => coerceEmbeddedView(v.config, schema, `embed:${entry.id}:${i}`))
-    : []
+  const schema = useMemo(
+    () => (source && tree ? resolveContainerSchema(tree, source) : []),
+    [tree, source],
+  )
+  const views = useMemo(() => {
+    if (!source) return []
+    const ids = embedViewIds(entry.views, entry.id)
+    return entry.views.map((v, i) => coerceEmbeddedView(v.config, schema, ids[i]))
+  }, [source, schema, entry.views, entry.id])
+  const view = views[index]
+  const viewById = (id: string | null | undefined): SavedView | undefined =>
+    views.find((v) => v.id === id)
+  const viewAt = (arr: unknown[], id: string): number => embedViewIds(arr, entry.id).indexOf(id)
   const presence = usePillPresence(views)
   const viewsShown = entry.view_band !== false
   const [menuOpen, setMenuOpen] = useState(false)
   const anchoredOpen =
-    listOpen || cfgOpen || menuOpen || renaming !== null || iconFor !== null || colorFor !== null
+    listOpen ||
+    cfgOpen ||
+    menuOpen ||
+    viewById(renaming) !== undefined ||
+    iconFor !== null ||
+    colorFor !== null
   const reveal = useHoverReveal({
     dwell: true,
     held: !viewsShown && anchoredOpen,
@@ -278,15 +312,6 @@ export function ViewTile({
         },
       }
 
-  if (!embedded || !source || !tree) return <div className="tile-inert" />
-
-  const view = views[index]
-  const titleShown = entry.title !== false
-  const iconShown = entry.icon !== false
-  const titleLevel = entry.title_level ?? 4
-  const labeled = (entry.view_button ?? 'labeled') === 'labeled'
-  const dropdown = entry.view_style === 'dropdown'
-
   const locked = entry.locked ?? false
   const patchEntry = (patch: Record<string, unknown>): void => {
     if (locked && !('locked' in patch) && !('active' in patch)) return
@@ -297,53 +322,77 @@ export function ViewTile({
     })
   }
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : undefined })
-  const writeConfig = (i: number, config: SavedView): void => {
+  const writeConfig = (id: string, config: SavedView): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
+      const i = viewAt(arr, id)
       const el = arr[i]
-      if (typeof el !== 'object' || el === null) return raw
-      arr[i] = { ...(el as Record<string, unknown>), config }
+      if (!isPlainObject(el)) return raw
+      // A view answering to a derived id takes a minted one when first written, so only minted ids reach the file.
+      const own = storedViewId(el) === id
+      arr[i] = {
+        ...el,
+        config: own ? config : { ...config, id: mintViewId() },
+      }
       return { ...raw, views: arr }
     })
   }
-  const persistConfig = (i: number, config: SavedView): void => {
-    if (resolveViewWrite(locked, config).kind === 'config') writeConfig(i, config)
+  const persistConfig = (id: string, config: SavedView): void => {
+    if (resolveViewWrite(locked, config).kind === 'config') writeConfig(id, config)
   }
   // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold gestures the lock already refused.
-  const persistState = (i: number, state: ViewState): void => {
-    const stored = views[i]
-    if (stored) writeConfig(i, { ...stored, ...state })
+  const persistState = (id: string, state: ViewState): void => {
+    const stored = viewById(id)
+    if (stored) writeConfig(id, { ...stored, ...state })
   }
+  const scopeApi = useStableApi({
+    persistConfig: (next: SavedView) => {
+      if (view) persistConfig(view.id, next)
+    },
+    persistState: (next: ViewState) => {
+      if (view) persistState(view.id, next)
+    },
+    setLocked,
+  })
+  const scope = useMemo(
+    () => (source && view ? { source, view, locked, openPage, ...scopeApi } : null),
+    [source, view, locked, openPage, scopeApi],
+  )
+
+  if (!embedded || !source || !tree) return <div className="tile-inert" />
+
+  const titleShown = entry.title !== false
+  const iconShown = entry.icon !== false
+  const titleLevel = entry.title_level ?? 4
+  const labeled = (entry.view_button ?? 'labeled') === 'labeled'
+  const dropdown = entry.view_style === 'dropdown'
+
   const addView = (): void => {
     if (locked) return
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       arr.push({
         source_id: source.id,
-        config: { ...mintNewView('Untitled', schema), id: freeEmbedId(arr, entry.id) },
+        config: { ...mintNewView('Untitled', schema), id: mintViewId() },
       })
       return { ...raw, views: arr, active: arr.length - 1 }
     })
   }
-  const duplicate = (i: number): void => {
-    if (locked) return
+  const duplicate = (id: string): void => {
+    const src = viewById(id)
+    if (locked || !src) return
+    const names = views.map((v) => v.name)
+    const config = { ...src, id: mintViewId(), name: freeName(src.name, names) }
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
+      const i = viewAt(arr, id)
       const el = arr[i]
-      if (typeof el !== 'object' || el === null) return raw
-      const config = {
-        ...views[i],
-        id: freeEmbedId(arr, entry.id),
-        name: freeName(
-          views[i].name,
-          views.map((v) => v.name),
-        ),
-      }
-      arr.splice(i + 1, 0, { ...(el as Record<string, unknown>), config })
+      if (!isPlainObject(el)) return raw
+      arr.splice(i + 1, 0, { ...el, config })
       return { ...raw, views: arr, active: i + 1 }
     })
   }
-  const restoreViewAt = (i: number, el: EmbeddedView): void => {
+  const restoreViewAt = (i: number, el: unknown): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const at = Math.min(i, arr.length)
@@ -352,19 +401,19 @@ export function ViewTile({
     })
   }
   const deleteView = (id: string): void => {
-    if (locked) return
-    const i = views.findIndex((v) => v.id === id)
-    if (i < 0 || entry.views.length <= 1) return
-    const removed = entry.views[i]
-    const name = views[i].name
+    const name = viewById(id)?.name
+    if (locked || name === undefined) return
+    let undo: (() => void) | undefined
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
-      if (arr.length <= 1) return raw
-      arr.splice(i, 1)
-      const cur = typeof raw.active === 'number' ? raw.active : 0
-      return { ...raw, views: arr, active: Math.min(cur > i ? cur - 1 : cur, arr.length - 1) }
+      const at = viewAt(arr, id)
+      if (at < 0 || arr.length <= 1) return raw
+      const cur = rawActive(raw, arr.length)
+      const [removed] = arr.splice(at, 1)
+      undo = () => restoreViewAt(at, removed)
+      return { ...raw, views: arr, active: Math.min(cur > at ? cur - 1 : cur, arr.length - 1) }
     })
-    notifyDeleted(name, () => restoreViewAt(i, removed))
+    if (undo) notifyDeleted(name, undo)
   }
   presence.deleteView.current = deleteView
 
@@ -373,13 +422,13 @@ export function ViewTile({
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const seq = reorder(
-        views.map((v, i) => ({ id: v.id, i })),
+        embedViewIds(arr, entry.id).map((id, i) => ({ id, i })),
         activeId,
         overId,
       )
-      const next = seq.map((x) => arr[x.i]).filter((x) => x != null)
-      const newActive = seq.findIndex((x) => x.i === index)
-      return { ...raw, views: next, active: newActive >= 0 ? newActive : 0 }
+      const cur = rawActive(raw, arr.length)
+      const newActive = seq.findIndex((x) => x.i === cur)
+      return { ...raw, views: seq.map((x) => arr[x.i]), active: newActive >= 0 ? newActive : 0 }
     })
   }
   const commitTitle = (next: string): void => {
@@ -424,7 +473,7 @@ export function ViewTile({
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
   }
-  const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
+  const rowMenu = async (id: string, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
     if (locked) return
@@ -434,35 +483,35 @@ export function ViewTile({
     )
     switch (action) {
       case 'rename':
-        return setRenaming(i)
+        return setRenaming(id)
       case 'icon':
-        return setIconFor(i)
+        return setIconFor({ view: id })
       case 'color':
-        return setColorFor(i)
+        return setColorFor(id)
       case 'duplicate':
-        return duplicate(i)
+        return duplicate(id)
       case 'titles':
         return patchEntry({ view_button: labeled ? 'icon' : undefined })
       case 'delete':
         if (!(await askDeleteView('tile'))) return
-        return animate ? presence.beginExit(views[i].id) : deleteView(views[i].id)
+        return animate ? presence.beginExit(id) : deleteView(id)
       default:
         return
     }
   }
 
-  const viewLabel = (i: number): React.JSX.Element => (
+  const viewLabel = (v: SavedView): React.JSX.Element => (
     <RenamableLabel
       renames="title"
-      editing={renaming === i}
-      value={views[i].name}
+      editing={renaming === v.id}
+      value={v.name}
       className={rowInput}
       autoSize
       onCommit={(next) => {
         setRenaming(null)
-        persistConfig(i, { ...views[i], name: next })
+        persistConfig(v.id, { ...v, name: next })
       }}
-      onBegin={() => setRenaming(i)}
+      onBegin={() => setRenaming(v.id)}
       onCancel={() => setRenaming(null)}
     />
   )
@@ -539,10 +588,10 @@ export function ViewTile({
             entering={presence.entering.has(v.id)}
             exiting={presence.exiting === v.id}
             labeled={labeled}
-            renaming={renaming === i}
-            label={viewLabel(i)}
+            renaming={renaming === v.id}
+            label={viewLabel(v)}
             onSwitch={() => patchEntry({ active: i })}
-            onMenu={(e) => void rowMenu(i, e, true)}
+            onMenu={(e) => void rowMenu(v.id, e, true)}
             onAnimEnd={() => presence.onAnimEnd(v.id)}
           />
         ))}
@@ -552,17 +601,7 @@ export function ViewTile({
   )
 
   return (
-    <ViewTileScopeProvider
-      value={{
-        source,
-        view,
-        persistConfig: (next) => persistConfig(index, next),
-        persistState: (next) => persistState(index, next),
-        locked,
-        setLocked,
-        openPage,
-      }}
-    >
+    <ViewTileScopeProvider value={scope}>
       <div className={s.tile} data-reveal-host="" onPointerDownCapture={onActivate}>
         <div className={cx(s.titleSpace, !titleShown && s.titleSpaceHidden)}>
           <div className={s.spaceInner}>
@@ -645,10 +684,10 @@ export function ViewTile({
                   key={v.id}
                   checked={i === index}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
-                  onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
-                  onContextMenu={(e) => void rowMenu(i, e, false)}
+                  onClick={renaming === v.id ? undefined : () => patchEntry({ active: i })}
+                  onContextMenu={(e) => void rowMenu(v.id, e, false)}
                 >
-                  {viewLabel(i)}
+                  {viewLabel(v)}
                 </MenuItem>
               ))}
             </MenuScrollFrame>
@@ -661,20 +700,20 @@ export function ViewTile({
           value={
             iconFor === 'title'
               ? (entry.display_icon ?? source.icon)
-              : iconFor !== null
-                ? views[iconFor]?.icon
-                : undefined
+              : viewById(iconFor?.view)?.icon
           }
           onSelect={(icon) => {
-            if (iconFor === 'title') patchEntry({ display_icon: icon })
-            else if (iconFor !== null) persistConfig(iconFor, { ...views[iconFor], icon })
+            if (iconFor === 'title') return patchEntry({ display_icon: icon })
+            const v = viewById(iconFor?.view)
+            if (v) persistConfig(v.id, { ...v, icon })
           }}
         />
         <ColorPicker
           open={colorFor !== null}
-          selected={labelColorFor(colorFor !== null ? views[colorFor]?.color : undefined)}
+          selected={labelColorFor(viewById(colorFor)?.color)}
           onPick={(picked) => {
-            if (colorFor !== null) persistConfig(colorFor, { ...views[colorFor], color: picked })
+            const v = viewById(colorFor)
+            if (v) persistConfig(v.id, { ...v, color: picked })
             setColorFor(null)
           }}
           onDismiss={() => setColorFor(null)}

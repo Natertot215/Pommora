@@ -1,16 +1,18 @@
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
-import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
+import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { FooterLockButton } from '@pommora/uix/Menus'
-import { useSession } from '../Session/store'
+import { setTileDocLock } from './tileDocStore'
+import { useTileDocLock, useTileDocReady } from './useTileDoc'
 
 export function BoardLock({ host }: { host: TileHostRef }): React.JSX.Element {
-  const locked = useSession((s) => s.hostLocks[tileHostKey(host)] ?? false)
-  const setHostLock = useSession((s) => s.setHostLock)
+  const locked = useTileDocLock(host)
+  const ready = useTileDocReady(host)
   return (
     <FooterLockButton
       ariaLabel={lockLabel(locked, 'Board')}
       locked={locked}
-      onToggle={() => setHostLock(host, !locked)}
+      onToggle={() => setTileDocLock(host, !locked)}
+      disabled={!ready}
     />
   )
 }

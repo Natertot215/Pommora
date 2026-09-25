@@ -1,5 +1,5 @@
 import type { DividerRef, Edge, TileLayout } from './model'
-import { findTile } from './model'
+import { findTile, nodeAt } from './model'
 
 type EdgeBoundary =
   | { kind: 'divider'; ref: DividerRef }
@@ -17,11 +17,7 @@ export function resolveEdge(layout: TileLayout, tileId: string, edge: Edge): Edg
 
   for (let depth = at.path.length - 1; depth >= 0; depth--) {
     const parentPath = at.path.slice(0, depth)
-    let node = layout.bands[at.band]?.node
-    for (const i of parentPath) {
-      if (!node || node.kind === 'tile') return null
-      node = node.children[i]
-    }
+    const node = nodeAt(layout, { band: at.band, path: parentPath })
     if (!node || node.kind !== wantKind) continue
 
     const childIndex = at.path[depth] as number

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
-import { useSession } from '../Session/store'
 import type { TileLayout } from './Layout/model'
 import {
   commitTileLayout,
@@ -12,7 +11,6 @@ import {
   saveTileEntries,
   setTileLayout,
   subscribeTileDoc,
-  syncTileDocLock,
   type TileDocState,
 } from './tileDocStore'
 
@@ -20,6 +18,7 @@ export interface TileDocSession {
   layout: TileLayout
   tiles: unknown[]
   ready: boolean
+  locked: boolean
   setLayout: (layout: TileLayout) => void
   commitLayout: (update: (cur: TileLayout) => TileLayout) => void
   refreshEntries: () => void
@@ -46,16 +45,6 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   const hostRef = useLatest(host)
 
   const state = useDocState(host)
-
-  const setHostLock = useSession((s) => s.setHostLock)
-  const storeLock = useSession((s) => s.hostLocks[hostKey])
-  const docLock = state.lock
-  useEffect(() => {
-    if (docLock !== null) setHostLock(hostRef.current, docLock)
-  }, [docLock, hostKey, setHostLock])
-  useEffect(() => {
-    syncTileDocLock(hostRef.current, storeLock)
-  }, [hostKey, storeLock])
 
   // TileGrid's effect cleanup re-sends `false` on every gesture end, so the hold is tracked per mount and counted once.
   const held = useRef(false)
@@ -94,6 +83,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     layout: state.layout,
     tiles: state.tiles,
     ready: state.ready,
+    locked: state.lock,
     setLayout,
     commitLayout,
     refreshEntries,
@@ -105,4 +95,8 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
 export function useTileDocReady(host: TileHostRef | null): boolean {
   const { ready } = useDocState(host)
   return host === null || ready
+}
+
+export function useTileDocLock(host: TileHostRef): boolean {
+  return useDocState(host).lock
 }

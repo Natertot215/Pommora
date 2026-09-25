@@ -1,14 +1,10 @@
 import type { Band, DividerRef, Edge, LayoutNode, TileLayout, TileLeaf } from './model'
-import { cloneLayout, findTile, getTile } from './model'
+import { cloneLayout, findTile, getTile, nodeAt } from './model'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 function renormalize(ratios: number[]): number[] {
   const sum = ratios.reduce((a, r) => a + r, 0)
   return ratios.map((r) => r / sum)
-}
-
-function parentAt(root: LayoutNode, path: number[]): LayoutNode {
-  return path.reduce<LayoutNode>((n, i) => (n.kind === 'tile' ? n : (n.children[i] ?? n)), root)
 }
 
 function replaceAt(node: LayoutNode, path: number[], next: LayoutNode): LayoutNode {
@@ -33,7 +29,7 @@ function placeLeaf(layout: TileLayout, targetId: string, edge: Edge, leaf: TileL
 
   const parentPath = at.path.slice(0, -1)
   const childIndex = at.path[at.path.length - 1]
-  const parent = at.path.length > 0 ? parentAt(band.node, parentPath) : null
+  const parent = at.path.length > 0 ? nodeAt(next, { band: at.band, path: parentPath }) : null
 
   if (parent && parent.kind === dir && childIndex !== undefined) {
     const insertAt = first ? childIndex : childIndex + 1
@@ -47,7 +43,7 @@ function placeLeaf(layout: TileLayout, targetId: string, edge: Edge, leaf: TileL
     return next
   }
 
-  const target = parentAt(band.node, at.path) as TileLeaf
+  const target = nodeAt(next, at) as TileLeaf
   const pair = first ? [leaf, target] : [target, leaf]
   const split: LayoutNode =
     dir === 'row'
@@ -89,8 +85,8 @@ export function removeLeaf(layout: TileLayout, tileId: string): TileLayout {
 
   const parentPath = at.path.slice(0, -1)
   const childIndex = at.path[at.path.length - 1] as number
-  const parent = parentAt(band.node, parentPath)
-  if (parent.kind === 'tile') return layout
+  const parent = nodeAt(next, { band: at.band, path: parentPath })
+  if (!parent || parent.kind === 'tile') return layout
 
   parent.children.splice(childIndex, 1)
   if (parent.kind === 'row') {
@@ -149,11 +145,7 @@ export function resizeDivider(
 ): TileLayout {
   if (extentPx <= 0) return layout
   const next = cloneLayout(layout)
-  let node = next.bands[ref.band]?.node
-  for (const i of ref.path) {
-    if (!node || node.kind === 'tile') return layout
-    node = node.children[i]
-  }
+  const node = nodeAt(next, ref)
   if (node?.kind !== 'row') return layout
   const a = node.ratios[ref.index]
   const b = node.ratios[ref.index + 1]
@@ -184,6 +176,22 @@ export function stretchTileHeight(
   return next
 }
 
+// Pair negotiation is tile-to-tile; a nested split neighbor doesn't have one height to give, so those edges stretch instead.
+function tradeHeights(
+  above: LayoutNode | undefined,
+  below: LayoutNode | undefined,
+  deltaPx: number,
+  minPx: number,
+): boolean {
+  if (above?.kind !== 'tile' || below?.kind !== 'tile' || above.h + below.h < minPx * 2)
+    return false
+  const delta = clamp(deltaPx, minPx - above.h, below.h - minPx)
+  if (delta === 0) return false
+  above.h += delta
+  below.h -= delta
+  return true
+}
+
 export function resizeStackPair(
   layout: TileLayout,
   ref: DividerRef,
@@ -192,21 +200,11 @@ export function resizeStackPair(
 ): TileLayout {
   if (deltaPx === 0) return layout
   const next = cloneLayout(layout)
-  let node = next.bands[ref.band]?.node
-  for (const i of ref.path) {
-    if (!node || node.kind === 'tile') return layout
-    node = node.children[i]
-  }
+  const node = nodeAt(next, ref)
   if (node?.kind !== 'column') return layout
-  const above = node.children[ref.index]
-  const below = node.children[ref.index + 1]
-  // Pair negotiation is tile-to-tile; a nested split neighbor doesn't have one height to give, so those edges stretch instead.
-  if (above?.kind !== 'tile' || below?.kind !== 'tile') return layout
-  const delta = clamp(deltaPx, minPx - above.h, below.h - minPx)
-  if (delta === 0) return layout
-  above.h += delta
-  below.h -= delta
-  return next
+  return tradeHeights(node.children[ref.index], node.children[ref.index + 1], deltaPx, minPx)
+    ? next
+    : layout
 }
 
 export function resizeBandPair(
@@ -217,12 +215,12 @@ export function resizeBandPair(
 ): TileLayout {
   if (deltaPx === 0) return layout
   const next = cloneLayout(layout)
-  const above = next.bands[aboveIndex]?.node
-  const below = next.bands[aboveIndex + 1]?.node
-  if (above?.kind !== 'tile' || below?.kind !== 'tile') return layout
-  const delta = clamp(deltaPx, minPx - above.h, below.h - minPx)
-  if (delta === 0) return layout
-  above.h += delta
-  below.h -= delta
-  return next
+  return tradeHeights(
+    next.bands[aboveIndex]?.node,
+    next.bands[aboveIndex + 1]?.node,
+    deltaPx,
+    minPx,
+  )
+    ? next
+    : layout
 }

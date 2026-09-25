@@ -29,7 +29,7 @@ export interface TileLayout {
 
 export type Edge = 'n' | 's' | 'e' | 'w'
 
-interface NodePath {
+export interface NodePath {
   band: number
   path: number[]
 }
@@ -50,7 +50,7 @@ export function nodeHeight(node: LayoutNode, gap: number): number {
   return node.children.reduce((a, c) => Math.max(a, nodeHeight(c, gap)), 0)
 }
 
-function nodeAt(layout: TileLayout, ref: NodePath): LayoutNode | undefined {
+export function nodeAt(layout: TileLayout, ref: NodePath): LayoutNode | undefined {
   let node = layout.bands[ref.band]?.node
   for (const i of ref.path) {
     if (!node || node.kind === 'tile') return undefined
@@ -59,10 +59,7 @@ function nodeAt(layout: TileLayout, ref: NodePath): LayoutNode | undefined {
   return node
 }
 
-export function findTile(
-  layout: TileLayout,
-  tileId: string,
-): { band: number; path: number[] } | undefined {
+export function findTile(layout: TileLayout, tileId: string): NodePath | undefined {
   const walk = (node: LayoutNode, path: number[]): number[] | undefined => {
     if (node.kind === 'tile') return node.id === tileId ? path : undefined
     for (let i = 0; i < node.children.length; i++) {

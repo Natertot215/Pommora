@@ -164,6 +164,15 @@ describe('resizeDivider (row widths)', () => {
     expect((clamped.bands[0]?.node as RowNode).ratios[1]).toBeCloseTo(0.04)
   })
 
+  it('reaches a row nested inside a column', () => {
+    const l = splitTile(splitTile(single(), 'a', 's', 'b'), 'a', 'e', 'c')
+    const resized = resizeDivider(l, { band: 0, path: [0], index: 0 }, 100, 1000, 40)
+    assertValid(resized)
+    expect(((resized.bands[0]?.node as ColumnNode).children[0] as RowNode).ratios[0]).toBeCloseTo(
+      0.6,
+    )
+  })
+
   it('no-ops when the pair cannot host two minimums', () => {
     const l = splitTile(single(), 'a', 'e', 'b')
     expect(resizeDivider(l, { band: 0, path: [], index: 0 }, 10, 60, 40)).toBe(l)
@@ -196,6 +205,20 @@ describe('resizeStackPair (north negotiation)', () => {
     expect(getTile(moved, 'b')?.h).toBe(70)
     const clamped = resizeStackPair(l, { band: 0, path: [], index: 0 }, 500, 40)
     expect(getTile(clamped, 'b')?.h).toBe(40)
+  })
+
+  it('declines a pair too short to host two minimums', () => {
+    const l = splitTile(single(), 'a', 's', 'b')
+    expect(resizeStackPair(l, { band: 0, path: [], index: 0 }, 30, 200)).toBe(l)
+  })
+
+  it('reaches a column nested inside a row', () => {
+    const l = splitTile(splitTile(single(), 'a', 'e', 'b'), 'a', 's', 'c')
+    const a = getTile(l, 'a')?.h ?? 0
+    const c = getTile(l, 'c')?.h ?? 0
+    const moved = resizeStackPair(l, { band: 0, path: [0], index: 0 }, 30, 40)
+    expect(getTile(moved, 'a')?.h).toBe(a + 30)
+    expect(getTile(moved, 'c')?.h).toBe(c - 30)
   })
 
   it('declines when a side is a nested split', () => {

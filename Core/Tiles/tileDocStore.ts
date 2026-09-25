@@ -1,7 +1,12 @@
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { Result } from '@pommora/core/Contract/result'
-import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
-import { decodeLayout, encodeLayout } from './Layout/codec'
+import {
+  type TileDoc,
+  type TileDocPatch,
+  type TileHostRef,
+  tileHostKey,
+} from '@pommora/core/Tiles/tiles'
+import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { host as dialer } from '../Platform/dialer'
 import { createBodyWriter, sessionWriter } from '../Session/saveScheduler'
@@ -12,12 +17,12 @@ export interface TileDocState {
   layout: TileLayout
   tiles: unknown[]
   ready: boolean
-  lock: boolean | null
+  lock: boolean
 }
 
 type LayoutUpdate = (cur: TileLayout) => TileLayout
 
-interface TileDoc {
+interface HostDoc {
   host: TileHostRef
   state: TileDocState
   listeners: Set<() => void>
@@ -29,7 +34,7 @@ interface TileDoc {
 }
 
 // One frozen snapshot for every document that has not loaded and for every reader with no host: `useSyncExternalStore` compares snapshots by reference.
-export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: null }
+export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: false }
 
 const bodies = new Map<string, string>()
 // The text each tile's file last held as far as this window knows, with its hash: a read or an acknowledged save sets it, a save carries the hash, and a refused save merges against the text.
@@ -84,34 +89,31 @@ export const unmarkTileRemoving = (tileId: string): void => void removing.delete
 
 export const isTileRemoving = (tileId: string): boolean => removing.has(tileId)
 
-const docs = new Map<string, TileDoc>()
+const docs = new Map<string, HostDoc>()
 
-const at = (host: TileHostRef): TileDoc | undefined => docs.get(tileHostKey(host))
+const at = (host: TileHostRef): HostDoc | undefined => docs.get(tileHostKey(host))
 
 // Every write joins the ones in flight, so a flush awaits all of them and a reload sees any of them land.
-const save = (
-  doc: TileDoc,
-  patch: { layout?: unknown; tiles?: unknown[]; locked?: boolean },
-): Promise<Result<null>> => {
+const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<null>> => {
   const sent = dialer().ask('tiles:save', doc.host, patch)
   doc.lastSave = Promise.all([doc.lastSave, sent])
   return sent
 }
 
-const layoutKey = (doc: TileDoc): string => `layout:${tileHostKey(doc.host)}`
+const layoutKey = (doc: HostDoc): string => `layout:${tileHostKey(doc.host)}`
 
-const flush = (doc: TileDoc): Promise<void> => sessionWriter.flush(layoutKey(doc))
+const flush = (doc: HostDoc): Promise<void> => sessionWriter.flush(layoutKey(doc))
 
-const notify = (doc: TileDoc): void => {
+const notify = (doc: HostDoc): void => {
   for (const fn of doc.listeners) fn()
 }
 
-const put = (doc: TileDoc, next: Partial<TileDocState>): void => {
+const put = (doc: HostDoc, next: Partial<TileDocState>): void => {
   doc.state = { ...doc.state, ...next }
   notify(doc)
 }
 
-const adopt = (doc: TileDoc, raw: { layout: unknown; tiles: unknown[]; locked: boolean }): void => {
+const adopt = (doc: HostDoc, raw: TileDoc): void => {
   if (at(doc.host) !== doc) return
   const layout = decodeLayout(raw.layout) ?? emptyLayout()
   revive(layout)
@@ -128,14 +130,14 @@ const revive = (layout: TileLayout): void => {
   if (removing.size) for (const id of tileIds(layout)) removing.delete(id)
 }
 
-const writeLayout = (doc: TileDoc, layout: TileLayout): void => {
+const writeLayout = (doc: HostDoc, layout: TileLayout): void => {
   revive(layout)
   put(doc, { layout })
-  sessionWriter.schedule(layoutKey(doc), () => save(doc, { layout: encodeLayout(layout) }))
+  sessionWriter.schedule(layoutKey(doc), () => save(doc, { layout }))
 }
 
 // A disk change is read only after the local write it may race has landed, and a layout the user changed during the read sends before the read is weighed, so the user's own last action never silently reverts.
-const reload = async (doc: TileDoc): Promise<void> => {
+const reload = async (doc: HostDoc): Promise<void> => {
   await flush(doc)
   const saved = doc.lastSave
   await saved
@@ -149,9 +151,9 @@ const reload = async (doc: TileDoc): Promise<void> => {
   adopt(doc, r.value)
 }
 
-function create(host: TileHostRef): TileDoc {
+function create(host: TileHostRef): HostDoc {
   const key = tileHostKey(host)
-  const doc: TileDoc = {
+  const doc: HostDoc = {
     host,
     state: EMPTY,
     listeners: new Set(),
@@ -176,7 +178,7 @@ function create(host: TileHostRef): TileDoc {
   return doc
 }
 
-async function retire(doc: TileDoc): Promise<void> {
+async function retire(doc: HostDoc): Promise<void> {
   await flush(doc)
   await doc.lastSave
   // A remount inside the same commit — a host swapped in place, React's double-invoked effects — re-subscribes before this resolves, and keeps the document rather than re-reading the file.
@@ -254,9 +256,9 @@ export function saveTileEntries(host: TileHostRef, update: (cur: unknown[]) => u
   save(doc, { tiles: next })
 }
 
-export function syncTileDocLock(host: TileHostRef, locked: boolean | undefined): void {
+export function setTileDocLock(host: TileHostRef, locked: boolean): void {
   const doc = at(host)
-  if (!doc || locked === undefined || doc.state.lock === null || doc.state.lock === locked) return
+  if (!doc?.state.ready || doc.state.lock === locked) return
   put(doc, { lock: locked })
   save(doc, { locked })
 }

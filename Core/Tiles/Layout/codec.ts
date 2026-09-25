@@ -7,7 +7,3 @@ export function decodeLayout(raw: unknown): TileLayout | null {
   const parsed = rawLayoutSchema.safeParse(raw)
   return parsed.success ? (parsed.data as TileLayout) : null
 }
-
-export function encodeLayout(layout: TileLayout): unknown {
-  return JSON.parse(JSON.stringify(layout))
-}

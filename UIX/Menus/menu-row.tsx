@@ -312,10 +312,12 @@ export function FooterLockButton({
   ariaLabel,
   locked,
   onToggle,
+  disabled,
 }: {
   ariaLabel: string
   locked: boolean
   onToggle: () => void
+  disabled?: boolean
 }): React.JSX.Element {
   return (
     <FooterIconButton
@@ -323,6 +325,7 @@ export function FooterLockButton({
       ariaLabel={ariaLabel}
       pressed={locked}
       onClick={onToggle}
+      disabled={disabled}
     />
   )
 }

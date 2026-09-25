@@ -2,11 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { TileHostRef } from '@pommora/core/Tiles/tiles'
+import type { TileDoc, TileHostRef } from '@pommora/core/Tiles/tiles'
 import { insertBand } from './Layout/ops'
 import { tileIds, type TileLayout } from './Layout/model'
-import { useSession } from '../Session/store'
-import { dropAllTileDocs, readTileBody, writeTileBody } from './tileDocStore'
+import { dropAllTileDocs, readTileBody, setTileDocLock, writeTileBody } from './tileDocStore'
 import { cancelAllSaves } from '../Session/saveScheduler'
 import { flushAllSaves } from '../Session/nexusSlice'
 import { type TileDocSession, useTileDoc, useTileDocReady } from './useTileDoc'
@@ -15,7 +14,7 @@ import { stubDialer } from '../vitest.setup'
 
 const HOST: TileHostRef = { kind: 'space', id: 'sp1' }
 const OTHER: TileHostRef = { kind: 'space', id: 'sp2' }
-const docWith = (...ids: string[]): { layout: unknown; tiles: unknown[]; locked: boolean } => ({
+const docWith = (...ids: string[]): TileDoc => ({
   layout: { bands: ids.map((id) => ({ node: { kind: 'tile', id, h: 100 } })) },
   tiles: ids.map((id) => ({ id, type: 'markdown' })),
   locked: false,
@@ -71,7 +70,6 @@ beforeEach(async () => {
   seats.clear()
   ready.clear()
   dropAllTileDocs()
-  useSession.setState({ hostLocks: {} })
   save.mockClear()
   get.mockClear()
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -269,12 +267,23 @@ describe('the gesture hold across mounts', () => {
 })
 
 describe('the lock the document owns', () => {
-  it('writes once per toggle whatever the mount count', async () => {
+  it('writes once per toggle whatever the mount count, and every mount reads it', async () => {
     save.mockClear()
-    act(() => useSession.getState().setHostLock(HOST, true))
+    act(() => setTileDocLock(HOST, true))
     await tick()
     expect(save).toHaveBeenCalledOnce()
     expect(save).toHaveBeenCalledWith(HOST, { locked: true })
+    expect(at('a').locked).toBe(true)
+    expect(at('b').locked).toBe(true)
+  })
+
+  it('refuses a toggle before the document loads', async () => {
+    get.mockImplementationOnce(() => new Promise(() => {}))
+    await act(async () => root.render(<Probe seat="c" on={OTHER} />))
+    save.mockClear()
+    act(() => setTileDocLock(OTHER, true))
+    expect(save).not.toHaveBeenCalled()
+    expect(at('c').locked).toBe(false)
   })
 })
 

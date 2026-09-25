@@ -3,7 +3,6 @@ import {
   knownTile,
   NEW_TILE_H,
   type TileEntry,
-  tileHostKey,
   type TileHostRef,
   type TileStyle,
   type PagePickerItem,
@@ -22,6 +21,7 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
+import { isPlainObject } from '../Properties/propertyValue'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
@@ -117,6 +117,14 @@ export function zoomStyle(factor?: number): CSSProperties | undefined {
   return ZOOM_STYLES.get(zoomStep(factor))
 }
 
+// A write replaces only the entries it changed, so an untouched entry keeps its parse, and every memo keyed on it holds.
+const parsedTiles = new WeakMap<object, TileEntry | null>()
+const parsedTile = (raw: unknown): TileEntry | null => {
+  if (!isPlainObject(raw)) return knownTile(raw)
+  if (!parsedTiles.has(raw)) parsedTiles.set(raw, knownTile(raw))
+  return parsedTiles.get(raw) ?? null
+}
+
 export function TileHost({
   host,
   connections,
@@ -124,8 +132,17 @@ export function TileHost({
   host: TileHostRef
   connections?: ConnectionsApi
 }): React.JSX.Element | null {
-  const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles, setBusy } =
-    useTileDoc(host)
+  const {
+    layout,
+    tiles,
+    ready,
+    locked: hostLocked,
+    setLayout,
+    commitLayout,
+    refreshEntries,
+    saveTiles,
+    setBusy,
+  } = useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   const tree = useSession((s) => s.tree)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -138,12 +155,11 @@ export function TileHost({
     [tree, defaultIcons],
   )
   const select = useSession((s) => s.select)
-  const hostLocked = useSession((s) => s.hostLocks[tileHostKey(host)] ?? false)
 
   const entries = useMemo(() => {
     const map = new Map<string, TileEntry>()
     for (const raw of tiles) {
-      const entry = knownTile(raw)
+      const entry = parsedTile(raw)
       if (entry) map.set(entry.id, entry)
     }
     return map

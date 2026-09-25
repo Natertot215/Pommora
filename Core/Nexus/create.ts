@@ -1,10 +1,9 @@
 import { basename, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
-import { newId } from './ids'
 import { fail, ok } from '../Contract/result'
 import { createSpace } from '../Contexts/contextWrite'
 import { indexWrittenPage } from '../Index/indexSeed'
-import { mintDefaultView, VIEW_ID_PREFIX } from '../Views/views'
+import { mintDefaultView, mintViewId } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
@@ -55,7 +54,7 @@ export async function createContainerOp(
       : await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
   const extra: Record<string, unknown> = {
-    views: [{ ...mintDefaultView([]), id: `${VIEW_ID_PREFIX}${newId()}` }],
+    views: [{ ...mintDefaultView([]), id: mintViewId() }],
   }
   const r = await createDisambiguated(req.name, (name) =>
     createFolderEntity(parent.value, req.kind, name, extra),

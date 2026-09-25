@@ -1,4 +1,3 @@
-import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
 import {
   type AssetMap,
   EMPTY_ASSET_MAP,
@@ -12,8 +11,6 @@ import { host } from '../Platform/dialer'
 export interface CacheSlice {
   linkTitles: Record<string, string>
   resolveLinkTitle: (url: string) => void
-  hostLocks: Record<string, boolean>
-  setHostLock: (host: TileHostRef, locked: boolean) => void
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
   /** A view's values snapshot is fetched once per container open, so a property rename or a pushed value change bumps this to refresh it; a rename's key pair rides along to re-key the optimistic overrides. */
@@ -41,13 +38,6 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
       })
       .finally(() => inFlightTitles.delete(url))
   },
-
-  hostLocks: {},
-  setHostLock: (host, locked) =>
-    set((s) => {
-      const key = tileHostKey(host)
-      return s.hostLocks[key] === locked ? {} : { hostLocks: { ...s.hostLocks, [key]: locked } }
-    }),
 
   assetMap: EMPTY_ASSET_MAP,
   // Stabilize buys the echo case: an unchanged push returns the held map and zustand no-ops; a real add or unlink is a new object and re-renders every mounted banner.

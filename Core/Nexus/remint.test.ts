@@ -35,6 +35,8 @@ const priorAt = (path: string, over: Partial<Baseline[string]> = {}): Baseline =
   },
 })
 
+const isViewId = (id: string): boolean => id.startsWith('view_') && isUlidShaped(id.slice(5))
+
 const dupes = (...claims: EntityRecord[]) => ({ 'page-dup': claims })
 
 describe('adjudicate', () => {
@@ -252,7 +254,7 @@ describe('the re-mint writes', () => {
       await readFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), 'utf8'),
     )
     expect(isUlidShaped(copySet.id)).toBe(true)
-    expect(isUlidShaped(copySet.views[0].id)).toBe(true)
+    expect(isViewId(copySet.views[0].id)).toBe(true)
     expect(copySet.views[0].name).toBe('Table')
 
     const originalSpace = JSON.parse(
@@ -282,7 +284,7 @@ describe('the re-mint writes', () => {
       join(root, '.nexus', 'contexts', 'Areas', 'Work copy'),
     )) as unknown as Doc
     expect(originalDoc.tiles[0].views[0].config.id).toBe('cfg-original')
-    expect(isUlidShaped(copyDoc.tiles[0].views[0].config.id)).toBe(true)
+    expect(isViewId(copyDoc.tiles[0].views[0].config.id)).toBe(true)
     expect(copyDoc.tiles[0].views[0].config.id).not.toBe(originalDoc.tiles[0].views[0].config.id)
   })
 

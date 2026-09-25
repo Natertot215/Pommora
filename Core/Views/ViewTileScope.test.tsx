@@ -44,7 +44,7 @@ const source = {
 } as unknown as CollectionNode
 
 const view: SavedView = {
-  id: 'embed:blk1:0',
+  id: 'view_01J0000000000000000000000A',
   name: 'Tile View',
   type: 'table',
   property_order: ['_title'],

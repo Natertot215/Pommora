@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { TileLayout } from './model'
 import { removeLeaf } from './ops'
 import { validateLayout } from '../../Testing/tileLayouts'
-import { decodeLayout, encodeLayout } from './codec'
+import { decodeLayout } from './codec'
+
+const stored = (l: TileLayout): unknown => JSON.parse(JSON.stringify(l))
 
 const real = (): TileLayout => ({
   bands: [
@@ -22,11 +24,11 @@ const real = (): TileLayout => ({
 describe('codec', () => {
   it('round-trips a real layout', () => {
     const l = real()
-    expect(decodeLayout(encodeLayout(l))).toEqual(l)
+    expect(decodeLayout(stored(l))).toEqual(l)
   })
 
   it('a decoded layout is structurally valid', () => {
-    const decoded = decodeLayout(encodeLayout(real()))
+    const decoded = decodeLayout(stored(real()))
     expect(decoded && validateLayout(decoded)).toEqual([])
   })
 
@@ -45,16 +47,10 @@ describe('codec', () => {
 })
 
 describe('ops keep the tree decodable', () => {
-  it('a split renormalizes its ratios', () => {
-    const l = real()
-    const decoded = decodeLayout(encodeLayout(l))
-    expect(decoded && validateLayout(decoded)).toEqual([])
-  })
-
   it('removing a tile collapses the single-child split it leaves behind', () => {
     const l = removeLeaf(real(), 'b')
     expect(validateLayout(l)).toEqual([])
-    expect(decodeLayout(encodeLayout(l))).toEqual(l)
+    expect(decodeLayout(stored(l))).toEqual(l)
   })
 
   it('emptying a band drops it rather than leaving a childless node', () => {

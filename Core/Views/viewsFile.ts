@@ -1,9 +1,6 @@
-// A freshly-minted default view arrives with the `view_default` sentinel id; saveView swaps it for a real `view_<ulid>` here (shared/ can't mint ids).
-
 import type { ContainerKind } from '../Nexus/schemas'
-import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from './views'
+import { DEFAULT_VIEW_ID, mintViewId, type SavedView } from './views'
 import { ok, fail, type Result, fault } from '../Contract/result'
-import { newId } from '../Nexus/ids'
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { isPlainObject } from '../Properties/propertyValue'
@@ -18,7 +15,7 @@ export async function saveView(
   kind: ContainerKind,
   view: SavedView,
 ): Promise<Result<{ id: string }>> {
-  const id = view.id === DEFAULT_VIEW_ID ? `${VIEW_ID_PREFIX}${newId()}` : view.id
+  const id = view.id === DEFAULT_VIEW_ID ? mintViewId() : view.id
   const finalView: SavedView = { ...view, id }
   const written = await patchSidecar(folder, kind, (cur) => {
     const views = viewsOf(cur)
