@@ -2,13 +2,17 @@
 
 ### Current Focus
 
-**Spaces hold links and values.** A Space links any other Space and holds a value for any registry property, set from the Properties panel — the body of a page's and a Space's settings dropdown — and from the **Spaces ▸** and **Properties ▸** branches on its sidebar row and Matrix node. A link is stored on both sidecars and draws one line in the Matrix, whose filter reaches Spaces. It is the first of three parts over Spaces; Space Windows and Space Views follow, unscoped.
-
-**Pommora Sync carries content.** A device encrypts each admitted file whole, ships it to a hub as a numbered change, and pulls the change log back through a long poll, so an edit on one Mac reaches another in about three seconds. The hub — the `Sync/` folder on Node's built-ins, with a change log, content-addressed ciphertext blobs, a per-Nexus key ring, one authority function, and optional TLS behind a pinned certificate — holds paths, versions, and ciphertext and never a body or a key. `Core/Sync/` carries the contract, the keys, the client's base record and push-and-pull loops, and the arrival path that lands a file under the writer's mtime, merges the `.nexus/` JSON key by key, and merges a landing into an open editor around the caret. Two instances on one Mac, bound to one hub over TLS, walked all twenty-two proof rows and the checklist mutations the bridge can drive — creation, bodies, properties, contexts, containers, views, schema, tiles, assets, trash, offline settings merges, an offline body conflict, and a revoke — each landing on the other side in about 2.7 seconds. The Windows machine is the first real second device, and the phone is the open Prospect. [[NexusSyncPM]] describes what stands, and `// Planning`'s `Cross-Device Mutation Checklist.md` carries each mutation's own timing.
+The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommora Codebase Audit.md`, opened at `f6511401d` with 556 findings, and the batches reconciled through `ab54d3198` have folded 237 of the 568 entered so far, leaving 331. Each session takes one workstream, or a coherent slice of one, in the Verdict's Readiness order, then reconciles the ledger and republishes the Dashboard at closeout.
 
 ### Immediate Work
 
+- [ ] 
+- [ ] 
+- [ ] 
+
 ### Pending Focuses
+
+- [ ] **IconSwitchToggle.** A kit toggle in `UIX/Elements/` for icons that switch face on click, drawn from a pair registry in `UIX/Symbols` that generalizes `LockGlyph`'s crossfade and is seeded with the lock, eye, pin, and show/hide pairs. It replaces the sidebar, glance, and View Tile lock buttons and `FooterLockButton`'s internals, takes in `EyeToggle` and `NavPinButton`, and moves those hand-rolled buttons onto `Button`; callers supply the label and cursor. It follows the Hover Reveal plan and consumes its reveal recipe.
 
 #### II. Open Calls
 
@@ -50,39 +54,35 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
-- [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
-- [ ] **The in-app two-host lost update.** Two editors holding one page — the content pane and the Page Window, or a page and its embed — each save their own body with no lock between them, so the later keystroke writes over the earlier host's text. The watcher-driven reload through `replaceBody` is the mechanism that closes it.
-- [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
-- [ ] **Five single-writer `writeJson` sites run unlocked.** `Nexus/identity.ts`, `Properties/journalSlot.ts`, `Trash/record.ts`, `Nexus/adopt.ts`, and `Contexts/contextsRegistry.ts` each has one writer today; the registry's seed-on-absent write is the one real double-seed window, benign under most-recent-wins.
-- [ ] **A press on a second picker while one list is open reopens inside the first's bloom-out.** The stack dismisses the first on pointerdown, its shield drops at the start of the exit, and the release reaches the second trigger, so the second list draws before the first has finished leaving. Closing it costs the click-through an outside click keeps: either the shield stands through the exit or every dismissal swallows its release.
-- [ ] **The system menu's Format rows act on the page editor, not a focused table cell.** `host.menus.format.onAction` has one reader, `MarkdownEditor`, which applies the action to its own view; a cell reached by right-click takes the format chords but not the menu's rows. Routing the action to the view that holds focus, with a `pushState` from the cell, is the missing piece.
+- [ ] **A re-aimed tile resets its height and scale.** → See `Pommora Codebase Audit.md`, F-567.
+- [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `Pommora Codebase Audit.md`, F-568.
 
 ### Recent Work
+
+#### PM-145 || Metadata & Page Locking
+**DATE:** 09-23-2026
+
+Per-page state moved out of the per-device database and page frontmatter into synced monthly metadata files under `.nexus/metadata/`, which hold entries only for pages with something set. A page's icon, aliases, and header-icon choice now travel with the Nexus and merge between devices per page and per field, and setting an icon no longer touches the page file. Show Icon In Title became a Nexus-wide switch with per-page overrides, and a Space's glyph moved to `$icon`. Page Lock was deferred to a placeholder at the head of the page menu's footer.
+
+#### PM-144 || View Search
+**DATE:** 09-22-2026 → 09-23
+
+Every Collection, Set, and Sub-Set view gained a search in its in-line title, narrowing the view's own rows by fuzzy title match while keeping its filter, grouping, and order. The search belongs to its tab for the session and clears when the tab shows anything else. It opens from a hint beside the title, a title click, the title and banner menus' Search row, or ⌘F, and row and band drag stand down while it's active.
+
+#### PM-143 || Space Windows
+**DATE:** 09-21-2026
+
+Spaces joined Pages in the floating window, and the Page Window and NavWindow now share one tab system. Each Space's tile board is held once and shared by every place it appears, boards narrower than 488px collapse into a single column, and board locking moved into one shared control. Two settings give a windowed Page and a windowed Space their banners.
 
 #### PM-142 || Space Links
 **DATE:** 09-21-2026
 
-Space ←> Space linking and property assignment was added to individual Spaces. `Core/Contexts/spaceSidecar.ts` owns the sidecar's `$icon`, `$color`, and `$order` keys, and `writeSpaceSidecar` is the one writer behind the link, value, row-order, and color writes; each notes its folder in a ledger that `confirmBy` drains through `patchSpaceFromDisk`, so a sidecar write reaches the tree without a walk. `setSpaceContext` writes a link onto both sidecars under a `contextsDir` lock, its far half idempotent, and `spaceLinksOf` reads either half as the link. The property rename, option rename and remove, global delete and its restore, and the Context cascades reach sidecars through `sweepGovernedRoots`' sidecar leg, each wrapped in `withOrderEntry`; `replaySchemaCascade` calls the live ops' hoisted bodies, `valueEditSweep` and `stripAndRemove`, and `confirmedKeyHolders` counts a sidecar's keys. `PropertyPanel` takes a `subject` and a `host` and serves a page's dropdown, a Space's dropdown, and the side pane on one row rule, with Contexts and Properties as two groups that each add from their heading, drag-order through `useOptionReorder`, and revert through `sendWithUndo`; `FrameSlide` left both dropdowns. The Matrix draws a stored pair as one line and grows both Spaces by `SPACE_LINK_MULTIPLE`, its filter prunes to the rules a Space can answer, and a Context target's operators read Contains, Isn't, Is Empty, and Isn't Empty through `CONTEXT_OPS`.
+Spaces gained links to other Spaces and values for any registry property, written to their sidecars through one sidecar writer. A link is stored on both Spaces' sidecars and draws one line in the Matrix, whose filter now reaches Spaces. The Properties panel serves a page's dropdown, a Space's dropdown, and the side pane on one row rule, with **Spaces ▸** and **Properties ▸** branches reaching the same edits from menus, and property and Context cascades now reach Space sidecars.
 
-#### PM-139 || Tab Cross-Drag
-**DATE:** 09-15-2026 → 09-16
+#### PM-141 || MatrixPM Foundations
+**DATE:** 09-19-2026
 
-The drag engine's per-zone `family` replaced the group-wide `crossZone` switch, with `carry`, `receive`, and `release` handing an item across zones, a 24px cross-axis breakout for axis-locked rows, `stray="return"` and `holdGap` on the shell group, and running-offset placement for axis zones. The insertion lifecycle's escort carries a loose list or sidebar row into the engine; both tab rows, the gallery, the list, and the sidebar declare the `tabs` family; `openTabAt` and `openTabIn` seat a page at an index without activating it. The Page Window's strip took the pointer back from the body's over-scroll mask, and `CardDropSlot`, `dropPreview`, and the engine's `crossZone` retired.
-
-#### PM-138 || Sync Scaffolding - Part 2
-**DATE:** 09-13-2026 → 09-14
-
-Content crosses between devices on the identity layer. Part 1 left: a device encrypts each admitted file whole, sends it to a hub as a numbered change, and pulls the log back, with the hub's per-Nexus counter detecting conflicts and recency resolving them. The one-file roster server became the `Sync/` folder carrying the change log, ciphertext blobs, a key ring per Nexus, one authority function, and TLS behind a pinned certificate; `Core/Sync/` gained the keys, the client's base record and loops, and the arrival path. The `.nexus/` JSON files merge key by key and a landing reaches an open page through a three-way merge around the caret. The loser of a conflict is kept on both the device and the hub rather than overwritten.
-
-#### PM-137 || One Drag Engine
-**DATE:** 09-12-2026
-
-`UIX/Interactions/engine.tsx` is the one drag engine behind the design kit's façade, carrying the zone registry a `DragGroup` holds, a trailing landing cell walked along a foreign grid's own columns, the `resolveIndex` veto, and the optional portal overlay Cards needs for a card leaving a clipping host; the second reorder engine that served Cards alone retired. The landing slot takes the size of the cell it lands in, an addressable zone grows a floor the size of the lifted card only while a drag is in flight, and the engine's lift and the band and row insertion lines divide by the compounded rendered zoom `currentZoom` reads. Cards gained same-band keyboard reorder, and `engine.test.tsx` is the kit's first DOM test of the engine.
-
-#### PM-136 || One View Mechanism
-**DATE:** 09-11-2026
-
-`Core/Views/Host/useViewInteractions.tsx` owns band drops, row drops on one `(activeId, toZone, beforeId)` contract, page opening, the hover glance, the title menu's page actions, and the ghost lifecycle for every view kind; Table and Cards each supply a small policy and their presentation. Table's column layer folded into `Core/Views/Table/useColumns.ts`, Cards' pickers seat once at the grid root, and Cards gained three interaction suites on the harness the Table suites share.
+The Matrix opened as Pommora's graph view, drawn to the app's first canvas by a React-free physics engine that sleeps by energy and wakes locally for what changed. Its graph reads the content index's relationship rows directly, its configuration travels with the Nexus in `.nexus/matrix.json`, and its layout and viewport stay per machine. It is a selection kind across the shell and a third floating window kind on ⌘⇧M, and its nodes answer menus, renames, previews, and icon choices as sidebar rows do.
 
 ### Guidelines
 
