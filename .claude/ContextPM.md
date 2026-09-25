@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommora Codebase Audit.md`, opened at `f6511401d` with 556 findings, and the batches reconciled through `db843651c` have folded 241 of the 570 entered so far, leaving 329. Each session takes one workstream, or a coherent slice of one, in the Verdict's Readiness order, then reconciles the ledger and republishes the Dashboard at closeout.
+The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommora Codebase Audit.md`, opened at `f6511401d` with 556 findings, and the batches reconciled through `9edb6310d` have folded 247 of the 570 entered so far, leaving 323. Each session takes one workstream, or a coherent slice of one, in the Verdict's Readiness order, then reconciles the ledger and republishes the Dashboard at closeout.
 
 ### Immediate Work
 

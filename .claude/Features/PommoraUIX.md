@@ -317,7 +317,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
 | Drag engine  | `DragGroup` · `SortableZone` · `useDragItem` · `reorder` | The in-house DND: one engine (`engine.tsx`) behind the `drag.tsx` façade. |
 | Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
-| Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
+| Disclose     | `beginDragDisclose` · `useDiscloseTarget`               | Hover-open while dragging.                             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture`             | Press, threshold, move, release.                       |
 | Autoscroll   | `armAutoScroll` · `scrollGlide` · `AUTOSCROLL_KNOBS`    | Edge-proximity scrolling and the glide to a destination. |
 | Keyboard     | `keyboardNext` · `onActivateClick` · `onActivateKey` · `announce` | Arrow stepping, Enter/Space activation, live-region announcements. |
