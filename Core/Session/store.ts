@@ -9,7 +9,7 @@ import { createGlanceSlice } from './glanceSlice'
 import { createNavigationSlice } from './navigationSlice'
 import { createNexusSlice } from './nexusSlice'
 import { createWindowSlice } from './windowSlice'
-import { createRenameSlice } from './mutationSlice'
+import { createRenameSlice } from './renameSlice'
 import type { SessionState } from './sessionState'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 

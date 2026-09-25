@@ -1,5 +1,10 @@
 import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
-import { type AssetMap, EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
+import {
+  type AssetMap,
+  EMPTY_ASSET_MAP,
+  type ValueChange,
+  type ValuesEpoch,
+} from '@pommora/core/Nexus/tree'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
@@ -11,6 +16,10 @@ export interface CacheSlice {
   setHostLock: (host: TileHostRef, locked: boolean) => void
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
+  /** A view's values snapshot is fetched once per container open, so without this the renamed column reads blank; the key pair rides along to re-key the optimistic overrides. */
+  valuesEpoch: ValuesEpoch | null
+  bumpValuesEpoch: (oldKey: string, newKey: string) => void
+  bumpContainerValues: (changes: ValueChange[]) => void
   resetCaches: () => void
 }
 
@@ -46,5 +55,15 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
   applyAssetMap: (map) => {
     set({ assetMap: stabilize(map, get().assetMap) })
   },
-  resetCaches: () => set({ linkTitles: {}, assetMap: EMPTY_ASSET_MAP }),
+
+  valuesEpoch: null,
+  bumpValuesEpoch: (oldKey, newKey) =>
+    set((st) => ({
+      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename', oldKey, newKey },
+    })),
+  bumpContainerValues: (changes) =>
+    set((st) => ({
+      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'container', changes },
+    })),
+  resetCaches: () => set({ linkTitles: {}, assetMap: EMPTY_ASSET_MAP, valuesEpoch: null }),
 })

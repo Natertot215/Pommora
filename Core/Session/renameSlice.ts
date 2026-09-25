@@ -12,7 +12,6 @@ import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { relDirname } from '@pommora/core/Paths/posix'
 import type { Slice } from './sessionState'
-import type { ValueChange, ValuesEpoch } from '@pommora/core/Nexus/tree'
 import { host } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
 
@@ -57,10 +56,6 @@ export interface RenameSlice {
   /** An unanchored create, placed by its kind's placement setting and named in place. */
   createNamed: (req: MutateRequest, host?: RenameHost) => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
-  /** A view's values snapshot is fetched once per container open, so without this the renamed column reads blank; the key pair rides along to re-key the optimistic overrides. */
-  valuesEpoch: ValuesEpoch | null
-  bumpValuesEpoch: (oldKey: string, newKey: string) => void
-  bumpContainerValues: (changes: ValueChange[]) => void
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
   submitPropertyRename: (newName: string) => Promise<boolean>
@@ -87,7 +82,6 @@ const PER_NEXUS = {
   colorHost: null,
   peekSignal: null,
   renamingProperty: null,
-  valuesEpoch: null,
 } satisfies Partial<RenameSlice>
 
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
@@ -219,14 +213,6 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     )
   },
 
-  bumpValuesEpoch: (oldKey, newKey) =>
-    set((st) => ({
-      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename', oldKey, newKey },
-    })),
-  bumpContainerValues: (changes) =>
-    set((st) => ({
-      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'container', changes },
-    })),
   beginPropertyRename: (target) => set({ renamingProperty: target }),
   cancelPropertyRename: () => set({ renamingProperty: null }),
   submitPropertyRename: async (newName) => {
