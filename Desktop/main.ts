@@ -67,12 +67,17 @@ app.setName('Pommora')
 
 installMachine({ ...nodeMachine, trashToSystem: (p) => shell.trashItem(nativePath(p)) })
 
-if (process.env.POMMORA_DEBUG_PORT) {
-  app.commandLine.appendSwitch('remote-debugging-port', process.env.POMMORA_DEBUG_PORT)
+// Development switches: a packaged build ignores them, so neither an environment variable nor a launch argument can open it to a debugger, swap its renderer, or move its state.
+const DEV_ENV = app.isPackaged ? {} : process.env
+if (DEV_ENV.POMMORA_DEBUG_PORT) {
+  app.commandLine.appendSwitch('remote-debugging-port', DEV_ENV.POMMORA_DEBUG_PORT)
 }
+if (app.isPackaged)
+  for (const s of ['remote-debugging-port', 'remote-debugging-pipe'])
+    app.commandLine.removeSwitch(s)
 
 // A second instance beside the live one: its own userData carries its own single-instance lock.
-if (process.env.POMMORA_USERDATA) app.setPath('userData', process.env.POMMORA_USERDATA)
+if (DEV_ENV.POMMORA_USERDATA) app.setPath('userData', DEV_ENV.POMMORA_USERDATA)
 
 // file://-loaded ES modules are CORS-blocked (opaque origin → blank window); app:// gives the bundle a real origin. Both schemes must be registered before the app is ready.
 const RENDERER_SCHEME = 'app'
@@ -97,6 +102,15 @@ const RENDERER_MIME: Record<string, string> = {
   '.ico': 'image/x-icon',
 }
 
+// CodeMirror injects <style> elements, banners and profile images may point at any web address, and the renderer never fetches: sync runs in main and web pages in their own guests.
+const RENDERER_CSP = [
+  "default-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' ${ASSET_SCHEME}: data: https: http:`,
+  "object-src 'none'",
+  "base-uri 'none'",
+].join('; ')
+
 function registerRendererProtocol(): void {
   const rendererRoot = join(__dirname, '../renderer')
   protocol.handle(RENDERER_SCHEME, async (request) => {
@@ -109,7 +123,11 @@ function registerRendererProtocol(): void {
     try {
       const data = await readFile(filePath)
       const type = RENDERER_MIME[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
-      return new Response(new Uint8Array(data), { headers: { 'Content-Type': type } })
+      const headers = {
+        'Content-Type': type,
+        ...(type === 'text/html' ? { 'Content-Security-Policy': RENDERER_CSP } : {}),
+      }
+      return new Response(new Uint8Array(data), { headers })
     } catch {
       return new Response('Not found', { status: 404 })
     }
@@ -211,7 +229,7 @@ function createWindow(): void {
   win.webContents.on('will-navigate', (event, url) => {
     if (url !== win.webContents.getURL()) event.preventDefault()
   })
-  win.loadURL(process.env.ELECTRON_RENDERER_URL ?? `${RENDERER_SCHEME}://bundle/index.html`)
+  win.loadURL(DEV_ENV.ELECTRON_RENDERER_URL ?? `${RENDERER_SCHEME}://bundle/index.html`)
 }
 
 const PICK_PROPERTIES: Record<PickKind, OpenDialogOptions['properties']> = {

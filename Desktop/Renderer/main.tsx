@@ -1,3 +1,5 @@
+// First: zod probes `new Function` when it builds its first object schema, and the window's content policy forbids eval.
+import './zodConfig'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from '@pommora/core/Interface/App'
