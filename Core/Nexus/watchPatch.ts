@@ -12,7 +12,8 @@ import {
 } from '../Paths/exclusion'
 import { adoptedId, isAdoptedId, shardOf } from './ids'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
-import { removePathIndex } from '../Index/contentIndex'
+import { queryHeadingMentions, removePathIndex } from '../Index/contentIndex'
+import { normalizeTitle } from '../Connections/connections'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { type CascadeReport, renameCascade } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
@@ -20,6 +21,7 @@ import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { nexusConfig } from '../Paths/paths'
 import type { TileHostRef } from '../Tiles/tiles'
+import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   readCropLeaves,
   readHomepageLeaves,
@@ -227,6 +229,8 @@ export async function applyWatchEvents(
   const tree = getLiveTree()
   if (!tree) return walked()
   const classes = events.map((ev) => classifyEvent(tree, root, ev, scope))
+  if (classes.some((c) => c.kind === 'tiles-leaf' || c.kind === 'full-refresh'))
+    dropTileHeadingLinks()
   if (classes.some((c) => c.kind === 'full-refresh')) return walked()
   const touched = new Map<string, string>()
   for (const c of classes) {
@@ -258,6 +262,9 @@ const cascadeSeen = async (
 ): Promise<void> => {
   const seen = await indexWrittenPage(root, join(root, rel))
   if (!seen) return
+  const title = normalizeTitle(seen.title)
+  const linked = queryHeadingMentions(title, seen.old)?.length
+  if (!linked && !(await tilesLinkHeading(root, title, seen.old))) return
   const c = await renameCascade(root, seen.title, { heading: seen.old, to: seen.next })
   if (c.warning) console.error('heading rename:', c.warning)
   cascaded.pages.push(...c.pages)

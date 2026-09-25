@@ -10,11 +10,12 @@ import { patchContainerFromDisk } from './watchPatch'
 import { noteSidecarWrite } from './valuesChanged'
 import { updatePageMetadata, writePageMeta } from './pageMetadata'
 import { machine } from '../Platform/machine'
-import { metadataShardPath } from '../Paths/paths'
 import { shardOf } from './ids'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { openSession } from './session'
+import { createMarkdownTile, tilesLinkHeading } from '../Tiles/tilesFile'
+import { metadataShardPath, tileFilePath } from '../Paths/paths'
 
 vi.mock('./readNexus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./readNexus')>()
@@ -76,6 +77,15 @@ describe('confirmMutation', () => {
     const live = getLiveTree()
     expect(live?.collections[0]?.pages[0]?.path).toBe('Notes/Alpha.md')
     expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('a trash restore drops the tiles’ held heading links, since the tiles it moves back bring theirs', async () => {
+    const home = abs('.nexus', 'homepage')
+    const tile = await createMarkdownTile(home)
+    expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(false)
+    await writeFile(tileFilePath(home, tile), 'see [[A#Keep]]')
+    await confirmMutation(root, { op: 'restore', bundlePath: '.trash/x' }, {})
+    expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(true)
   })
 
   it('a delete patches by transform; a create pins its order from the parent sidecar', async () => {

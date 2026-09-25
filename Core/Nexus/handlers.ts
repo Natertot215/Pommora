@@ -22,6 +22,7 @@ import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree }
 import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
 import { handleMutate } from './mutate'
 import { confirmBy, confirmMutation } from './mutatePatch'
+import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, whileAdopting } from './session'
 import type { NexusState } from './tree'
@@ -65,6 +66,7 @@ export async function openNexusSequence(
   if (root !== priorRoot) {
     void sweepFileHistory(root)
     dropLiveTree()
+    dropTileHeadingLinks()
     if (latchRecord) {
       await runOpenLedger(root)
     } else {

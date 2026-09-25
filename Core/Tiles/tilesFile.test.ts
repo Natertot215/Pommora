@@ -13,6 +13,7 @@ import {
   removeTile,
   restoreTile,
   rewriteTileConnections,
+  tilesLinkHeading,
   writeMarkdownTile,
 } from './tilesFile'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
@@ -204,6 +205,16 @@ describe('markdown tile lifecycle', () => {
     expect(await restoreTile(home(), { ...removed.value, body: 'other' })).toEqual(ok(null))
     expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
     expect(await entries()).toHaveLength(1)
+  })
+
+  it('a restored tile’s links count again for a heading renamed outside the app', async () => {
+    const id = await createMarkdownTile(home())
+    await write(home(), id, 'see [[A#Keep]]')
+    const removed = await removeTile(root, home(), id, nexusDeps)
+    if (!removed.ok) throw new Error('remove refused')
+    expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(false)
+    await restoreTile(home(), removed.value)
+    expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(true)
   })
 
   it('a restore seats the tile in its band on disk, and leaves a board already holding it alone', async () => {

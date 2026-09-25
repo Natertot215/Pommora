@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdir, rm, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, unlink, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
@@ -23,6 +23,12 @@ import { findContainerWhere } from './treePatch'
 import type { CollectionNode, SetNode } from './tree'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { openSession } from './session'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
+import { createMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { tileFilePath } from '../Paths/paths'
+import { machine } from '../Platform/machine'
 
 vi.mock('../Pages/fileHistory', () => ({ noteExternalEdit: vi.fn() }))
 
@@ -571,6 +577,35 @@ describe('touchesCorpus — what owes the index a stat sweep', () => {
     expect(
       touchesCorpus(root, [ev('change', '.nexus', 'properties.json'), ev('add', 'C.md')], scope()),
     ).toBe(true)
+  })
+})
+
+describe('an outside heading rename', () => {
+  const page = (a: string, b: string): Promise<void> =>
+    writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## ${a}\n\n## ${b}\n`)
+  const renamed = (a: string, b: string, ...more: WatchEvent[]) =>
+    page(a, b).then(() => applyWatchEvents(root, [...more, ev('change', 'Notes', 'A.md')], scope()))
+
+  it('cascades into a markdown tile that alone links the heading, reading tile links written in the app or outside it', async () => {
+    installStores(memoryStores().stores)
+    try {
+      await page('Setup', 'Keep')
+      await refreshTree(root)
+      await seedContentIndex(root)
+      const home = abs('.nexus', 'homepage')
+      const tile = await createMarkdownTile(home)
+      expect((await renamed('Intro', 'Keep')).cascaded).toEqual({ pages: [], hosts: [] })
+      await writeMarkdownTile(root, home, tile, 'see [[A#Keep]]', machine().sha256Hex(''))
+      expect((await renamed('Intro', 'Kept')).cascaded.hosts).toEqual([{ kind: 'homepage' }])
+      expect(await readFile(tileFilePath(home, tile), 'utf8')).toBe('see [[A#Kept]]')
+      expect((await renamed('Intro', 'Held')).cascaded.hosts).toEqual([{ kind: 'homepage' }])
+      expect((await renamed('Other', 'Held')).cascaded.hosts).toEqual([])
+      await writeFile(tileFilePath(home, tile), 'see [[A#Other]]')
+      await renamed('Start', 'Held', ev('change', '.nexus', 'homepage', `${tile}.md`))
+      expect(await readFile(tileFilePath(home, tile), 'utf8')).toBe('see [[A#Start]]')
+    } finally {
+      installStores(NO_STORES)
+    }
   })
 })
 
