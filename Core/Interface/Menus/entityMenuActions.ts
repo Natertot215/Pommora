@@ -23,7 +23,7 @@ import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
-import { runPageSendAction } from './pageMenuActions'
+import { runPageAction } from './pageMenuActions'
 
 function creatorsFor(target: ContextTarget): Creator[] {
   switch (target.kind) {
@@ -101,16 +101,14 @@ function runEntityAction(
 ): void {
   const s = useSession.getState()
   const { path, id, kind } = target
+  if (kind === 'page' && id && runPageAction(action, { id, path, title: target.title })) return
   const ref = id ? { kind, id, path } : undefined
-  if (ref && runPageSendAction(action, ref)) return
   switch (action) {
-    case 'preview':
-    case 'title:window': {
+    case 'preview': {
       const t = ref && contextTargetToSelect(ref)
       if (t && isWindowTarget(t)) s.openWindowTab(t)
       return
     }
-    case 'title:newtab':
     case 'open':
       if (ref) void s.select(contextTargetToSelect(ref), { newTab: true })
       return
@@ -129,11 +127,9 @@ function runEntityAction(
     case 'title:newbelow':
       void s.newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
       return
-    case 'title:reveal':
     case 'reveal':
       void host().ask('path:reveal', path)
       return
-    case 'title:delete':
     case 'delete':
       void confirmDelete(target)
       return

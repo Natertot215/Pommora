@@ -38,7 +38,7 @@ describe('the tab menu', () => {
       moveTargets: [{ id: 'c', label: 'Notes', path: 'Notes' }],
       currentParentPath: 'Notes',
     })
-    const move = items.find((i) => i.action === 'title:moveto')
+    const move = items.find((i) => i.label === 'Move To')
     expect(move?.submenu?.[0]).toMatchObject({
       label: 'Notes',
       action: 'move:Notes',

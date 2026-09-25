@@ -70,12 +70,12 @@ describe('the tile menu model both renderers draw', () => {
     const m = tileMenuItems(ctx({ viewItems: views, pageItems: pages }))
     const leaf = row(m, 'Link View')?.submenu?.[0].submenu?.[0]
     expect(leaf?.label).toBe('Board')
-    expect(m.picks[Number(leaf?.action.slice(10))]).toEqual({
+    expect(m.picks[Number(leaf?.action?.slice(10))]).toEqual({
       kind: 'view',
       value: { source_id: 's1', view_id: 'v1' },
     })
     const pageLeaf = row(m, 'Link Page')?.submenu?.[0]
-    expect(m.picks[Number(pageLeaf?.action.slice(10))]).toEqual({ kind: 'page', value: 'p9' })
+    expect(m.picks[Number(pageLeaf?.action?.slice(10))]).toEqual({ kind: 'page', value: 'p9' })
   })
 
   it('refuses every act under a lock but still offers the menu', () => {
@@ -93,10 +93,8 @@ describe('the tile menu model both renderers draw', () => {
     expect(row(m, 'Locked')?.disabled).toBe(true)
   })
 
-  it('refuses a drill with nothing in it, and opens no empty branch', () => {
-    const r = row(tileMenuItems(ctx()), 'Link Page')
-    expect(r?.disabled).toBe(true)
-    expect(r?.submenu).toBeUndefined()
+  it('leaves a drill with nothing in it an empty branch, which both renderers grey out', () => {
+    expect(row(tileMenuItems(ctx()), 'Link Page')?.submenu).toEqual([])
   })
 
   it('offers a view tile no link rows', () => {
@@ -104,14 +102,16 @@ describe('the tile menu model both renderers draw', () => {
     expect(row(m, 'Source')).toBeUndefined()
   })
 
-  it('refuses a container holding nothing rather than branching into blank space', () => {
+  it('leaves a container holding nothing an empty branch, which both renderers grey out', () => {
     const m = tileMenuItems(
       ctx({ pageItems: [{ label: 'Empty Collection', submenu: [] }] as PagePickerItem[] }),
     )
-    const branch = row(m, 'Link Page')?.submenu?.[0]
-    expect(branch).toMatchObject({ label: 'Empty Collection', disabled: true })
-    expect(branch?.submenu).toBeUndefined()
+    expect(row(m, 'Link Page')?.submenu?.[0]).toMatchObject({
+      label: 'Empty Collection',
+      submenu: [],
+    })
   })
+
   it('sinks a footer node to a separated last row of its level', () => {
     const views: ViewPickerItem[] = [
       {

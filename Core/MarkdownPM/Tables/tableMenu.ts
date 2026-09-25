@@ -1,4 +1,4 @@
-import type { ActionItem } from '../../Actions/menuModel'
+import { type ActionItem, joinGroups } from '../../Actions/menuModel'
 import { alignRows } from '../../Actions/columnMenu'
 import type { ColumnAlign } from '../../Views/views'
 
@@ -48,27 +48,26 @@ export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuActio
       { label: 'Clear', action: 'row:clear', separatorBefore: true },
       { label: 'Delete', action: 'row:delete' },
     ]
-  return [
-    { label: 'Copy', action: 'col:copy' },
-    { separatorBefore: true, label: 'Align', action: 'align:left', submenu: alignRows(ctx.align) },
-    // A Pommora-only visual: the .md stays a plain table.
-    ...(ctx.index === 0
-      ? [
-          {
-            label: ctx.headingColumn ? 'Heading Column' : 'Make Heading Column',
-            action: 'col:toggle-heading' as const,
-            checked: ctx.headingColumn ?? false,
-            separatorBefore: true,
-          },
-        ]
-      : []),
-    {
-      label: 'Insert Column Left',
-      action: 'col:insert-left',
-      separatorBefore: ctx.index !== 0,
-    },
-    { label: 'Insert Column Right', action: 'col:insert-right' },
-    { label: 'Clear', action: 'col:clear', separatorBefore: true },
-    { label: 'Delete', action: 'col:delete' },
-  ]
+  return joinGroups<TableMenuAction>([
+    [{ label: 'Copy', action: 'col:copy' }],
+    [{ label: 'Align', submenu: alignRows(ctx.align) }],
+    [
+      // A Pommora-only visual: the .md stays a plain table.
+      ...(ctx.index === 0
+        ? [
+            {
+              label: ctx.headingColumn ? 'Heading Column' : 'Make Heading Column',
+              action: 'col:toggle-heading' as const,
+              checked: ctx.headingColumn ?? false,
+            },
+          ]
+        : []),
+      { label: 'Insert Column Left', action: 'col:insert-left' },
+      { label: 'Insert Column Right', action: 'col:insert-right' },
+    ],
+    [
+      { label: 'Clear', action: 'col:clear' },
+      { label: 'Delete', action: 'col:delete' },
+    ],
+  ])
 }

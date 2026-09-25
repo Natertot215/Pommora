@@ -1,11 +1,10 @@
-import { afterSeparator, type ActionItem } from './menuModel'
+import { type ActionItem, joinGroups } from './menuModel'
 import type { BannerMenuAction } from './identityMenus'
 import {
   type PageMoveAction,
   type PageSendAction,
   type PageMenuContext,
-  pageMetaMenuSubset,
-  pageSendActions,
+  pageSendGroups,
 } from './pageMenu'
 import { pinLabel } from './toggleLabels'
 import { isWindowTarget, type TabTarget, type WindowTarget } from '../Navigation/navRef'
@@ -39,29 +38,30 @@ type TabMenuAction =
   | PageMoveAction
 
 export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {
-  const items: ActionItem<TabMenuAction>[] = []
-  const isPage = ctx.kind === 'page'
-  if (ctx.row === 'main') {
-    if (ctx.pinned && ctx.kind !== 'newtab')
-      items.push({ label: 'Open', action: 'open', disabled: ctx.active })
-    // Only one Matrix window stands; a tabbed window takes another tab instead.
-    if (isWindowTarget(ctx) || ctx.kind === 'matrix')
-      items.push({
-        label: 'Preview',
-        action: 'window',
-        disabled: ctx.kind === 'matrix' && ctx.matrixWindowOpen,
-      })
-  } else items.push({ label: 'Open In New Tab', action: 'promote' })
-  if (isPage)
-    items.push(...afterSeparator(pageMetaMenuSubset(pageSendActions(ctx), undefined, ctx)))
-  if (ctx.row === 'window' && ctx.banner) items.push(...afterSeparator<TabMenuAction>(ctx.banner))
-  if (ctx.row === 'main' && ctx.kind !== 'newtab')
-    items.push({
-      label: pinLabel(ctx.pinned),
-      action: ctx.pinned ? 'unpin' : 'pin',
-      separatorBefore: items.length > 0,
+  const send = ctx.kind === 'page' ? pageSendGroups(ctx) : []
+  if (ctx.row === 'window')
+    return joinGroups<TabMenuAction>([
+      [{ label: 'Open In New Tab', action: 'promote' }],
+      ...send,
+      ctx.banner ?? [],
+      [{ label: 'Close', action: 'close' }],
+    ])
+  const open: ActionItem<TabMenuAction>[] = []
+  if (ctx.pinned && ctx.kind !== 'newtab')
+    open.push({ label: 'Open', action: 'open', disabled: ctx.active })
+  // Only one Matrix window stands; a tabbed window takes another tab instead.
+  if (isWindowTarget(ctx) || ctx.kind === 'matrix')
+    open.push({
+      label: 'Preview',
+      action: 'window',
+      disabled: ctx.kind === 'matrix' && ctx.matrixWindowOpen,
     })
-  if (ctx.row === 'window' || !ctx.pinned)
-    items.push({ label: 'Close', action: 'close', separatorBefore: items.length > 0 })
-  return items
+  return joinGroups<TabMenuAction>([
+    open,
+    ...send,
+    ctx.kind === 'newtab'
+      ? []
+      : [{ label: pinLabel(ctx.pinned), action: ctx.pinned ? 'unpin' : 'pin' }],
+    ctx.pinned ? [] : [{ label: 'Close', action: 'close' }],
+  ])
 }

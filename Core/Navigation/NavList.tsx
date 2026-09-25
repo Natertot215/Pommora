@@ -15,7 +15,7 @@ import {
   type SelectTarget,
 } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
-import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
+import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { isOpenInTabs, isPinned, liveTarget } from './tabsModel'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
@@ -61,7 +61,7 @@ export function NavRowMenu({
       if (!alive.current) return
       onClose()
       const st = useSession.getState()
-      if (action && livePage?.kind === 'page' && runPageSendAction(action, livePage)) return
+      if (action && livePage?.kind === 'page' && runPageAction(action, livePage)) return
       switch (action) {
         case 'open-new-tab':
           onOpenNewTab?.(target)

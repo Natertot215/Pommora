@@ -1,4 +1,4 @@
-import { type ActionItem, afterSeparator } from './menuModel'
+import { type ActionItem, joinGroups } from './menuModel'
 import { iconLabel } from './toggleLabels'
 
 export type NexusIconAction = 'editIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
@@ -30,27 +30,21 @@ function nexusIconRows(opts: NexusIconHolds): {
     edits: opts.hasPhoto ? [photo, icon] : [icon, photo],
     reset:
       opts.hasPhoto || opts.hasGlyph
-        ? [
-            {
-              label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon',
-              action: 'resetIcon',
-              separatorBefore: true,
-            },
-          ]
+        ? [{ label: opts.hasPhoto ? 'Reset Photo' : 'Reset Icon', action: 'resetIcon' }]
         : [],
   }
 }
 
 export function nexusIconMenuItems(opts: NexusIconHolds): ActionItem<NexusIconAction>[] {
   const { edits, reset } = nexusIconRows(opts)
-  return [...edits, ...reset]
+  return joinGroups([edits, reset])
 }
 
 export function nexusTitleMenuItems(
   opts: NexusIconHolds & { iconHidden: boolean },
 ): ActionItem<TitleMenuAction | NexusIconAction>[] {
   const { edits, reset } = nexusIconRows(opts)
-  return [...titleMenuItems({ iconHidden: opts.iconHidden, iconRows: edits }), ...reset]
+  return joinGroups([titleMenuItems({ iconHidden: opts.iconHidden, iconRows: edits }), reset])
 }
 
 export function bannerMenuItems(
@@ -79,7 +73,7 @@ export function titleMenuItems<A = never>(
 }
 
 export function withSearchRow<A>(rows: ActionItem<A>[]): ActionItem<A | 'search'>[] {
-  return [{ label: 'Search', action: 'search' }, ...afterSeparator(rows)]
+  return joinGroups<A | 'search'>([[{ label: 'Search', action: 'search' }], rows])
 }
 
 export function iconFavoriteMenuItems(

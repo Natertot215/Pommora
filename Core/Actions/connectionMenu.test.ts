@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { connectionMenuModel, type ConnMenuContext } from './connectionMenu'
 
-const rows = (ctx: Partial<ConnMenuContext> = {}): [string, string][] =>
+const rows = (ctx: Partial<ConnMenuContext> = {}): [string, string | undefined][] =>
   connectionMenuModel({ surface: 'editor', editable: true, hasAlias: false, ...ctx }).map((i) => [
     i.label,
     i.action,
@@ -33,7 +33,8 @@ describe('a link naming a page', () => {
   })
 
   it('drops each open item where that surface already shows the page', () => {
-    const actions = (ctx: Partial<ConnMenuContext>): string[] => rows(ctx).map(([, a]) => a)
+    const actions = (ctx: Partial<ConnMenuContext>): (string | undefined)[] =>
+      rows(ctx).map(([, a]) => a)
     expect(actions({ open: 'detail' })).not.toContain('title:newtab')
     expect(actions({ open: 'detail' })).toContain('title:window')
     expect(actions({ windowed: true })).not.toContain('title:window')
@@ -50,15 +51,8 @@ describe('a link naming a page', () => {
 })
 
 describe('a link naming an address', () => {
-  const ext = (ctx: Partial<ConnMenuContext> = {}): [string, string][] =>
+  const ext = (ctx: Partial<ConnMenuContext> = {}): [string, string | undefined][] =>
     rows({ external: true, ...ctx })
-
-  it('opens into either browser, and says which is which', () => {
-    expect(ext().slice(0, 2)).toEqual([
-      ['Preview', 'link:window'],
-      ['Open In Browser', 'link:browser'],
-    ])
-  })
 
   it('the editor keeps the address among the items that rewrite the link', () => {
     expect(ext()).toEqual([
@@ -67,7 +61,7 @@ describe('a link naming an address', () => {
       ['Rename', 'rename'],
       ['Edit Link', 'editLink'],
       ['Copy Link', 'title:copylink'],
-      ['Format', 'format:link-full'],
+      ['Format', undefined],
       ['Remove Link', 'link:remove'],
       ['Delete', 'link:delete'],
     ])

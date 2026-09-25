@@ -44,13 +44,8 @@ describe('cardMenuModel', () => {
     const m = cardMenuModel({
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    const actions = m.map((i) => i.action)
-    const at = actions.indexOf('title:moveto')
-    expect(actions.slice(at, at + 4)).toEqual([
-      'title:moveto',
-      'title:copylink',
-      'title:copypath',
-      'title:history',
-    ])
+    const labels = m.map((i) => i.label)
+    const at = labels.indexOf('Move To')
+    expect(labels.slice(at, at + 4)).toEqual(['Move To', 'Copy Link', 'Copy Path', 'View History'])
   })
 })

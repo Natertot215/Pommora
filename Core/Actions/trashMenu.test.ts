@@ -33,9 +33,9 @@ describe('the trash row menu', () => {
   })
 
   it('nowhere to put it keeps the row, refused', () => {
-    expect(trashMenuItems({ batch: false, destinations: [] })[0]).toMatchObject({
+    expect(trashMenuItems({ batch: false, destinations: [] })[0]).toEqual({
       label: 'Restore',
-      disabled: true,
+      submenu: [],
     })
   })
 })

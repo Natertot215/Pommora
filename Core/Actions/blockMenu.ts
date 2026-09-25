@@ -1,10 +1,10 @@
-import type { ActionItem } from './menuModel'
-import { HEADING_LEVELS, type ListKind } from './gripMenu'
+import type { LeafItem } from './menuModel'
+import { HEADING_LEVELS, LIST_KINDS, type ListKind } from './gripMenu'
 import type { BlockFormat, HeadingLevel, InlineFormat } from '../MarkdownPM/Input/format'
 
 export type BlockMenuAction =
   | `heading:${Exclude<HeadingLevel, 0>}`
-  | `list:${Exclude<ListKind, 'arrow'>}`
+  | `list:${ListKind}`
   | `format:${Extract<InlineFormat, 'link' | 'linkText' | 'connection'>}`
   | `block:${BlockFormat}`
   | 'block:citation'
@@ -13,10 +13,10 @@ export type BlockMenuAction =
 
 interface BlockMenuSection {
   title: string
-  rows: readonly ActionItem<BlockMenuAction>[]
+  rows: readonly LeafItem<BlockMenuAction>[]
 }
 
-type BlockMenuRow = ActionItem<BlockMenuAction> & { at: number | null }
+type BlockMenuRow = LeafItem<BlockMenuAction> & { at: number | null }
 
 export interface BlockMenuMatch {
   title: string
@@ -24,39 +24,51 @@ export interface BlockMenuMatch {
   rows: readonly BlockMenuRow[]
 }
 
-const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.flatMap(
+const HEADING_ROWS: readonly LeafItem<BlockMenuAction>[] = HEADING_LEVELS.flatMap(
   ({ level, label }) =>
     level === 0 ? [] : [{ label, action: `heading:${level}`, icon: `heading-${level}` }],
 )
 
-const LIST_ROWS: readonly ActionItem<BlockMenuAction>[] = [
-  { label: 'Bullet List', action: 'list:bullet', icon: 'list' },
-  { label: 'Numbered List', action: 'list:ordered', icon: 'list-ordered' },
-  { label: 'Alphabetical List', action: 'list:alphabetical', icon: 'arrow-down-az' },
-  { label: 'Task List', action: 'list:checkbox', icon: 'list-todo' },
-]
+export const LIST_ROWS: readonly LeafItem<BlockMenuAction>[] = LIST_KINDS.map(
+  ({ kind, label, icon }) => ({ label, action: `list:${kind}`, icon }),
+)
 
-const LINK_ROWS: readonly ActionItem<BlockMenuAction>[] = [
-  { label: 'Connection', action: 'format:connection', icon: 'link' },
+export const CONNECTION_ROW = {
+  label: 'Connection',
+  action: 'format:connection',
+  icon: 'link',
+} as const
+
+export const EXTERNAL_LINK_ROW = {
+  label: 'External Link',
+  action: 'format:link',
+  icon: 'external-link',
+} as const
+
+const LINK_ROWS: readonly LeafItem<BlockMenuAction>[] = [
+  CONNECTION_ROW,
   { label: 'Markdown Link', action: 'format:linkText', icon: 'link-2' },
-  { label: 'External Link', action: 'format:link', icon: 'external-link' },
+  EXTERNAL_LINK_ROW,
 ]
 
-const INSERT_ROWS: readonly ActionItem<BlockMenuAction>[] = [
+const INSERT_ROWS: readonly LeafItem<BlockMenuAction>[] = [
   { label: 'Blockquote', action: 'block:quote', icon: 'text-quote' },
   { label: 'Callout', action: 'block:callout', icon: 'message-square-quote' },
   { label: 'Code Block', action: 'block:code', icon: 'square-code' },
   { label: 'Table', action: 'block:table', icon: 'view-table' },
-  { label: 'Divider', action: 'block:hr', icon: 'separator-horizontal' },
+  { label: 'Horizontal Rule', action: 'block:hr', icon: 'separator-horizontal' },
 ]
 
-const FOOTNOTE_ROW: ActionItem<BlockMenuAction> = {
+const FOOTNOTE_ROW: LeafItem<BlockMenuAction> = {
   label: 'Footnote',
   action: 'block:citation',
   icon: 'brackets',
 }
 
-const EMBED_ROWS: readonly ActionItem<BlockMenuAction>[] = [
+export const insertRows = (citeSeat: boolean): readonly LeafItem<BlockMenuAction>[] =>
+  citeSeat ? [...INSERT_ROWS, FOOTNOTE_ROW] : INSERT_ROWS
+
+export const EMBED_ROWS: readonly LeafItem<BlockMenuAction>[] = [
   { label: 'Internal Page', action: 'block:page', icon: 'file-text' },
   { label: 'Webpage', action: 'block:webpage', icon: 'globe' },
 ]
@@ -66,7 +78,7 @@ export function blockMenuSections(citeSeat: boolean): BlockMenuSection[] {
     { title: 'Headings', rows: HEADING_ROWS },
     { title: 'Lists', rows: LIST_ROWS },
     { title: 'Link', rows: LINK_ROWS },
-    { title: 'Insert', rows: citeSeat ? [...INSERT_ROWS, FOOTNOTE_ROW] : INSERT_ROWS },
+    { title: 'Insert', rows: insertRows(citeSeat) },
     { title: 'Embed', rows: EMBED_ROWS },
   ]
 }

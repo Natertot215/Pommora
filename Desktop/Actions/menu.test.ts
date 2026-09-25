@@ -58,13 +58,7 @@ describe('a row model as a native template', () => {
 
   it('nests a submenu and leaves its parent unclickable, so only the leaf resolves', () => {
     const t = rowTemplate(
-      [
-        {
-          label: 'Style',
-          action: 'open',
-          submenu: [{ label: 'Bordered', action: 'style:bordered' }],
-        },
-      ],
+      [{ label: 'Style', submenu: [{ label: 'Bordered', action: 'style:bordered' }] }],
       pick,
     )
     expect(t[0].click).toBeUndefined()
@@ -74,6 +68,17 @@ describe('a row model as a native template', () => {
   it('shows a disabled row rather than dropping it', () => {
     const t = rowTemplate([{ label: 'Delete', action: 'b', disabled: true }], pick)
     expect(t[0]).toMatchObject({ label: 'Delete', enabled: false })
+  })
+
+  it('greys out a branch with nothing inside, with no way in', () => {
+    const [row] = rowTemplate([{ label: 'Source', submenu: [] }], pick)
+    expect(row).toMatchObject({ label: 'Source', enabled: false })
+    expect(row.submenu).toBeUndefined()
+  })
+
+  it('shows a chord as a display-only accelerator', () => {
+    const [row] = rowTemplate([{ label: 'Bold', action: 'b', chord: 'cmd+b' }], pick)
+    expect(row).toMatchObject({ accelerator: 'CmdOrCtrl+B', registerAccelerator: false })
   })
 
   it('keeps a divider a spliced fragment leads with, which separates it from the rows above', () => {
@@ -92,19 +97,14 @@ const fixture: ActionItem<string>[] = [
   { label: 'Open', action: 'open', icon: 'link' },
   {
     label: 'Style',
-    action: 'style',
     separatorBefore: true,
     submenu: [
       { label: 'Bordered', action: 'style:bordered', checked: true, stay: true },
       { label: 'Plain', action: 'style:plain', checked: false },
     ],
   },
-  {
-    label: 'Layout',
-    action: 'layout',
-    checked: true,
-    submenu: [{ label: 'Grid', action: 'layout:grid' }],
-  },
+  { label: 'Layout', submenu: [{ label: 'Grid', action: 'layout:grid' }] },
+  { label: 'Source', submenu: [] },
   { label: 'Pin', action: 'pin', checked: false, disabled: true },
   { label: 'Lock', action: 'lock', icon: 'lock-outline', stay: true },
   { label: 'Delete', action: 'delete', disabled: true },

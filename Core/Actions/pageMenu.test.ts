@@ -1,55 +1,58 @@
 import { describe, it, expect } from 'vitest'
+import type { ActionItem } from './menuModel'
 import {
   destinationRows,
   pageMetaMenuItems,
-  pageMetaMenuSubset,
+  pageOpenRows,
   pagePathText,
-  pageSendActions,
+  pageSendGroups,
 } from './pageMenu'
 
+const shape = (items: readonly ActionItem<string>[]): string[] =>
+  items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
+
 describe('the page menu', () => {
-  it('offers the copy, history, and reveal group only where it is asked for', () => {
-    const bare = pageMetaMenuItems(false, { newPages: 'pair' }).map((i) => i.action)
-    expect(bare).not.toContain('title:copylink')
-    expect(bare).not.toContain('title:reveal')
-    const full = pageMetaMenuItems(false, {
-      window: true,
-      newPages: 'pair',
-      clipboard: true,
-      history: true,
-      reveal: true,
-    })
-    expect(full.map((i) => i.action)).toEqual([
-      'title:window',
-      'title:newtab',
-      'title:rename',
-      'title:icon',
-      'title:newabove',
-      'title:newbelow',
-      'title:copylink',
-      'title:copypath',
-      'title:history',
-      'title:reveal',
-      'title:delete',
+  it('groups its rows, with Reveal joining History only where it is asked for', () => {
+    expect(
+      shape(pageMetaMenuItems(false, { window: true, newPages: 'pair', reveal: true })),
+    ).toEqual([
+      'Preview',
+      'New Tab',
+      '—',
+      'Rename',
+      'Edit Icon',
+      '—',
+      'New Page Above',
+      'New Page Below',
+      '—',
+      'Copy Link',
+      'Copy Path',
+      '—',
+      'View History',
+      'Reveal Location',
+      '—',
+      'Delete',
     ])
-  })
-  it('history opens its own group, and reveal joins it', () => {
-    const items = pageMetaMenuItems(false, { clipboard: true, history: true, reveal: true })
-    expect(items.find((i) => i.action === 'title:history')?.separatorBefore).toBe(true)
-    expect(items.find((i) => i.action === 'title:reveal')?.separatorBefore).toBe(false)
-  })
-  it('reveal opens its own group when nothing copies before it', () => {
-    const items = pageMetaMenuItems(false, { reveal: true })
-    expect(items.find((i) => i.action === 'title:reveal')?.separatorBefore).toBe(true)
-  })
-  it('a surface that only points at a page reaches its link, its path, and its history', () => {
-    expect(pageSendActions({})).toEqual(['title:copylink', 'title:copypath', 'title:history'])
+    expect(pageMetaMenuItems(false).some((i) => i.action === 'title:reveal')).toBe(false)
   })
 
-  it('a subset keeps the full menu order and drops a leading separator', () => {
-    const items = pageMetaMenuSubset(['title:delete', 'title:rename', 'title:copylink'])
-    expect(items.map((i) => i.action)).toEqual(['title:rename', 'title:copylink', 'title:delete'])
-    expect(items[0].separatorBefore).toBeUndefined()
+  it('a surface that only points at a page reaches its link, its path, and its history, Move To leading once it has destinations', () => {
+    expect(pageSendGroups({}).map((g) => g.map((i) => i.label))).toEqual([
+      ['Copy Link', 'Copy Path'],
+      ['View History'],
+    ])
+    expect(
+      pageSendGroups({ moveTargets: [{ id: 'c', label: 'Notes', path: 'Notes' }] })[0][0].label,
+    ).toBe('Move To')
+  })
+
+  it('opens a page in the order its state reads, offering only the ways asked for', () => {
+    expect(pageOpenRows({ window: true }).map((i) => i.label)).toEqual(['Preview', 'New Tab'])
+    expect(pageOpenRows({ alreadyOpen: true, window: true }).map((i) => i.label)).toEqual([
+      'Open',
+      'Preview',
+    ])
+    expect(pageOpenRows({ newTab: false })).toEqual([])
   })
 
   it('Move To drills the destinations, a parent repeated as its own first row and the current home refused', () => {
@@ -66,15 +69,13 @@ describe('the page menu', () => {
         currentParentPath: 'Notes/Sub',
       },
     })
-    const move = items.find((i) => i.action === 'title:moveto')
+    const move = items.find((i) => i.label === 'Move To')
     expect(move?.submenu?.[0].submenu).toEqual([
       { label: 'Notes', action: 'move:Notes' },
       { label: 'Sub', action: 'move:Notes/Sub', disabled: true, separatorBefore: true },
     ])
     expect(
-      pageMetaMenuItems(false, { move: { moveTargets: [] } }).some(
-        (i) => i.action === 'title:moveto',
-      ),
+      pageMetaMenuItems(false, { move: { moveTargets: [] } }).some((i) => i.label === 'Move To'),
     ).toBe(false)
     expect(destinationRows([{ id: 'a', label: 'A', path: 'A' }], (t) => t.id)).toEqual([
       { label: 'A', action: 'a' },

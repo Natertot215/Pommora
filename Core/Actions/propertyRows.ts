@@ -16,10 +16,10 @@ export type PropertyAction = `prop:${string}`
 
 const PREFIX = 'prop:'
 
-function optionBranch(row: PropertyMenuRow): Partial<ActionItem<PropertyAction>> {
-  if (row.options === undefined) return {}
-  if (row.options.length === 0) return { disabled: true }
+function propertyRow(row: PropertyMenuRow): ActionItem<PropertyAction> {
+  if (row.options === undefined) return { label: row.name, action: `${PREFIX}${row.id}` }
   return {
+    label: row.name,
     submenu: row.options.map((o) => ({
       label: o.label,
       action: `${PREFIX}${row.id}:${o.value}` as PropertyAction,
@@ -32,15 +32,7 @@ function propertiesRow(
   rows: readonly PropertyMenuRow[],
   label = 'Properties',
 ): ActionItem<PropertyAction> {
-  return {
-    label,
-    action: `${PREFIX}${rows[0].id}`,
-    submenu: rows.map((r) => ({
-      label: r.name,
-      action: `${PREFIX}${r.id}` as PropertyAction,
-      ...optionBranch(r),
-    })),
-  }
+  return { label, submenu: rows.map(propertyRow) }
 }
 
 export function propertyBranchRows(t: {

@@ -5,6 +5,7 @@ import { relDirname, titleFromPath } from '@pommora/core/Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
+import { confirmDelete } from '../Confirm/confirmations'
 
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMenuContext {
   return {
@@ -13,25 +14,41 @@ export function pageMoveContext(tree: NexusTree | null, path: string): PageMenuC
   }
 }
 
-export function runPageSendAction(
+/** Every page verb no one host owns; returns false for an action the caller keeps. */
+export function runPageAction(
   action: string,
-  { id, path }: { id: string; path: string },
+  page: { id: string; path: string; title?: string; heading?: string },
 ): boolean {
+  const s = useSession.getState()
+  const { id, path, title = titleFromPath(path) } = page
+  const ref = { kind: 'page', id, path } as const
   if (action.startsWith('move:')) {
-    void useSession.getState().mutate({ op: 'movePage', path, newParentPath: action.slice(5) })
+    void s.mutate({ op: 'movePage', path, newParentPath: action.slice(5) })
     return true
   }
-  if (action === 'title:copylink') {
-    void host().ask('clipboard:write', connectionText(titleFromPath(path)))
-    return true
+  switch (action) {
+    case 'title:window':
+      s.openWindowTab(ref)
+      return true
+    case 'title:newtab':
+      void s.select(ref, { newTab: true })
+      return true
+    case 'title:copylink':
+      void host().ask('clipboard:write', connectionText(title, undefined, page.heading))
+      return true
+    case 'title:copypath':
+      void host().ask('clipboard:write', pagePathText(path))
+      return true
+    case 'title:history':
+      s.openHistory(ref)
+      return true
+    case 'title:reveal':
+      void host().ask('path:reveal', path)
+      return true
+    case 'title:delete':
+      void confirmDelete({ path, kind: 'page', title })
+      return true
+    default:
+      return false
   }
-  if (action === 'title:copypath') {
-    void host().ask('clipboard:write', pagePathText(path))
-    return true
-  }
-  if (action === 'title:history') {
-    useSession.getState().openHistory({ kind: 'page', id, path })
-    return true
-  }
-  return false
 }

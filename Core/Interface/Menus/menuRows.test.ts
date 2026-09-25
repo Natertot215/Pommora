@@ -4,11 +4,7 @@ import { menuRows } from './menuRows'
 
 const items: ActionItem<string>[] = [
   { label: 'Rename', action: 'rename', icon: 'pencil' },
-  {
-    label: 'Style',
-    action: 'style:a',
-    submenu: [{ label: 'A', action: 'style:a', checked: true }],
-  },
+  { label: 'Style', submenu: [{ label: 'A', action: 'style:a', checked: true }] },
   { label: 'Delete', action: 'delete', separatorBefore: true, disabled: true },
 ]
 
@@ -27,7 +23,11 @@ describe('a row model as presenter rows', () => {
     })
   })
 
-  it('keeps a divider that leads the list, which the door has already dropped when it leads a menu', () => {
+  it('greys out a branch with nothing inside', () => {
+    expect(menuRows([{ label: 'Source', submenu: [] }])[0]).toMatchObject({ disabled: true })
+  })
+
+  it('keeps a divider that leads the list', () => {
     expect(
       menuRows([{ label: 'Delete', action: 'd', separatorBefore: true }]).map((r) => r.kind),
     ).toEqual(['separator', 'item'])

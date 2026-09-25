@@ -23,7 +23,7 @@ import {
 } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
-import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
+import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
@@ -168,7 +168,7 @@ function TabBarBody({
       else if (action === 'window') {
         if (isWindowTarget(target)) openWindowTab(target)
         else openMatrixWindow()
-      } else if (isPage && action) runPageSendAction(action, target)
+      } else if (isPage && action) runPageAction(action, target)
     }
 
   // A native CSS app-region never delivers hover, killing the + button's hover-reveal on the same pixels, so the bar drags the window itself via pointer deltas.

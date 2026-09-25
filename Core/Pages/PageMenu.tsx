@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { pageMetaOf, shownDetail, useSession } from '../Session/store'
-import { confirmDelete } from '../Interface/Confirm/confirmations'
 import {
   FooterIconButton,
   FooterLockButton,
@@ -15,20 +14,24 @@ import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PropertyPanel } from '../Properties/PropertyPanel'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { connectionText } from '@pommora/core/Connections/connections'
-import { pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
-import { host } from '../Platform/dialer'
+import {
+  COPY_LINK_ROW,
+  DELETE_ROW,
+  HISTORY_ROW,
+  RENAME_ROW,
+  REVEAL_ROW,
+} from '@pommora/core/Actions/pageMenu'
+import { joinGroups } from '@pommora/core/Actions/menuModel'
+import { runPageAction } from '../Interface/Menus/pageMenuActions'
 import { popMenu } from '../Actions/menuActions'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { useExperimental } from '../Settings/experimental'
 
-const FOOTER_ACTIONS = [
-  'title:rename',
-  'title:copylink',
-  'title:history',
-  'title:reveal',
-  'title:delete',
-] as const
+const FOOTER_ROWS = joinGroups([
+  [RENAME_ROW],
+  [COPY_LINK_ROW, HISTORY_ROW, REVEAL_ROW],
+  [DELETE_ROW],
+])
 
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
@@ -36,7 +39,6 @@ export function PageMenu(): React.JSX.Element | null {
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
-  const openHistory = useSession((st) => st.openHistory)
   const experimental = useExperimental()
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
@@ -47,19 +49,9 @@ export function PageMenu(): React.JSX.Element | null {
   if (!pageDetail) return null
 
   const runFooterAction = async (): Promise<void> => {
-    const action = await popMenu(
-      pageMetaMenuSubset(FOOTER_ACTIONS).map((r) =>
-        r.action === 'title:history' ? { ...r, separatorBefore: undefined } : r,
-      ),
-    )
+    const action = await popMenu(FOOTER_ROWS)
     if (action === 'title:rename') setRenaming(true)
-    else if (action === 'title:copylink')
-      await host().ask('clipboard:write', connectionText(pageDetail.title))
-    else if (action === 'title:history')
-      openHistory({ kind: 'page', id: pageDetail.id, path: pageDetail.path })
-    else if (action === 'title:reveal') await host().ask('path:reveal', pageDetail.path)
-    else if (action === 'title:delete')
-      await confirmDelete({ path: pageDetail.path, kind: 'page', title: pageDetail.title })
+    else if (action) runPageAction(action, pageDetail)
   }
 
   return (

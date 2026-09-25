@@ -24,8 +24,6 @@ export function trashMenuItems(ctx: TrashMenuContext): ActionItem<TrashMenuActio
   const restore: ActionItem<TrashMenuAction> = ctx.destinations
     ? {
         label: label.restore,
-        action: 'restore',
-        disabled: ctx.destinations.length === 0,
         submenu: destinationRows(ctx.destinations, (t) => `restoreTo:${t.id}` as const),
       }
     : { label: label.restore, action: ctx.batch ? 'restoreAll' : 'restore' }
@@ -49,7 +47,6 @@ export function trashColumnMenuItems(ctx: TrashColumnContext): ActionItem<TrashC
   return [
     {
       label: 'Format',
-      action: `format:${TRASH_DATE_FORMATS[0]}`,
       submenu: TRASH_DATE_FORMATS.map((f) => ({
         label: DATE_FORMAT_LABELS[f],
         action: `format:${f}`,

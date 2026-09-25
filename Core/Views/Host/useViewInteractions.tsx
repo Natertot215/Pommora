@@ -15,9 +15,8 @@ import {
 } from '@pommora/uix/Interactions/ghostCreate'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSession } from '../../Session/store'
-import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceLink'
-import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
+import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
 import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -363,7 +362,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   }
   /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
   const runTitleAction = (action: string, row: ViewRow, anchor: HTMLElement): boolean => {
-    if (runPageSendAction(action, row)) return true
+    if (runPageAction(action, row)) return true
     if (
       runPropertyAction(action, {
         tree,
@@ -376,12 +375,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     )
       return true
     switch (action) {
-      case 'title:window':
-        useSession.getState().openWindowTab({ kind: 'page', id: row.id, path: row.path })
-        return true
-      case 'title:newtab':
-        openPage(row, true)
-        return true
       case 'title:rename':
         policy.rename(row, false)
         return true
@@ -393,9 +386,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         return true
       case 'title:newbelow':
         void creation.createAdjacent(row, 'below')
-        return true
-      case 'title:delete':
-        void confirmDelete({ path: row.path, kind: 'page', title: row.title })
         return true
       default:
         return false

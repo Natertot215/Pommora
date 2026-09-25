@@ -32,10 +32,8 @@ describe('propertyBranchRows', () => {
     expect(spaces.submenu).toEqual(properties.submenu)
   })
 
-  it('a property with no options to offer is disabled rather than an empty branch', () => {
-    const select = properties.submenu?.[1]
-    expect(select).toMatchObject({ disabled: true })
-    expect(select?.submenu).toBeUndefined()
+  it('a property with no options to offer is an empty branch, which both renderers grey out', () => {
+    expect(properties.submenu?.[1].submenu).toEqual([])
   })
 
   it('draws Spaces then Properties, and leaves out an empty half', () => {

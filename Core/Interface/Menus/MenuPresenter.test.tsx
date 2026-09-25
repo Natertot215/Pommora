@@ -105,16 +105,12 @@ describe('the in-app menu presenter', () => {
   it('drills into a branch and resolves its leaf', async () => {
     let promise!: Promise<string | null>
     await act(async () => {
-      promise = useSession.getState().presentMenu(
-        [
-          {
-            label: 'Style',
-            action: 'style:a',
-            submenu: [{ label: 'Bordered', action: 'style:a' }],
-          },
-        ],
-        trigger,
-      )
+      promise = useSession
+        .getState()
+        .presentMenu(
+          [{ label: 'Style', submenu: [{ label: 'Bordered', action: 'style:a' }] }],
+          trigger,
+        )
     })
     await act(async () => {
       labelled('Style')?.click()
@@ -156,7 +152,7 @@ describe('the in-app menu presenter', () => {
       { label: 'Borderless', action: 'style:borderless', checked: borderless, stay: true },
     ]
     const items = (borderless: boolean): ActionItem<string>[] => [
-      { label: 'Style', action: 'style', submenu: styleItems(borderless) },
+      { label: 'Style', submenu: styleItems(borderless) },
       { label: 'Delete', action: 'delete' },
     ]
     const stay = vi.fn((action: string) => items(action === 'style:borderless'))

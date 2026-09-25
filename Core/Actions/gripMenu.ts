@@ -1,4 +1,4 @@
-import type { ActionItem } from './menuModel'
+import { type ActionItem, joinGroups } from './menuModel'
 import type { HeadingLevel } from '../MarkdownPM/Input/format'
 import { scaleRows } from '../Tiles/tileZoom'
 
@@ -37,42 +37,46 @@ export const HEADING_LEVELS: readonly { level: HeadingLevel; label: string }[] =
   { level: 6, label: 'Heading 6' },
 ]
 
-const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [
-  { kind: 'ordered', label: 'Numbered' },
-  { kind: 'alphabetical', label: 'Alphabetical' },
-  { kind: 'bullet', label: 'Bulleted' },
-  { kind: 'checkbox', label: 'Checklist' },
-  { kind: 'arrow', label: 'Arrowed' },
+export const LIST_KINDS: readonly {
+  kind: ListKind
+  label: string
+  short: string
+  icon: string
+}[] = [
+  { kind: 'bullet', label: 'Bullet List', short: 'Bulleted', icon: 'list' },
+  { kind: 'ordered', label: 'Numbered List', short: 'Numbered', icon: 'list-ordered' },
+  {
+    kind: 'alphabetical',
+    label: 'Alphabetical List',
+    short: 'Alphabetical',
+    icon: 'arrow-down-az',
+  },
+  { kind: 'checkbox', label: 'Task List', short: 'Checklist', icon: 'list-todo' },
+  { kind: 'arrow', label: 'Arrowed List', short: 'Arrowed', icon: 'arrow-right' },
 ]
 
 const source = (n: PickNode): ActionItem<GripMenuAction> =>
   n.children
-    ? { label: n.label, action: `source:${n.label}`, submenu: n.children.map(source) }
+    ? { label: n.label, submenu: n.children.map(source) }
     : { label: n.label, action: `source:${n.title ?? n.label}` }
 
-const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> =>
-  zoom === null
-    ? { label: 'Scale', action: 'zoom:1', disabled: true }
-    : { label: 'Scale', action: 'zoom:1', submenu: scaleRows('zoom:', zoom) }
+const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
+  label: 'Scale',
+  submenu: zoom === null ? [] : scaleRows('zoom:', zoom),
+})
 
 function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
   switch (ctx.kind) {
     case 'embed':
-      return [
-        ctx.tree.length > 0
-          ? { label: 'Source', action: 'source:', submenu: ctx.tree.map(source) }
-          : { label: 'Source', action: 'source:', disabled: true },
-        scaleRow(ctx.zoom),
-      ]
+      return [{ label: 'Source', submenu: ctx.tree.map(source) }, scaleRow(ctx.zoom)]
     case 'webpage':
       return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
     case 'list':
       return [
         {
           label: 'Type',
-          action: 'listKind:ordered',
-          submenu: LIST_KIND_LABELS.map(({ kind, label }) => ({
-            label,
+          submenu: LIST_KINDS.map(({ kind, short }) => ({
+            label: short,
             action: `listKind:${kind}`,
             checked: ctx.current === kind,
           })),
@@ -84,7 +88,6 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
         ...(ctx.linkable ? [{ label: 'Copy Link', action: 'copyLink' as const }] : []),
         {
           label: 'Size',
-          action: 'size:0',
           submenu: HEADING_LEVELS.map(({ level, label }) => ({
             label,
             action: `size:${level}`,
@@ -98,6 +101,5 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
 }
 
 export function gripMenuItems(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
-  const own = ownRows(ctx)
-  return [...own, { label: 'Delete', action: 'delete', separatorBefore: own.length > 0 }]
+  return joinGroups([ownRows(ctx), [{ label: 'Delete', action: 'delete' }]])
 }

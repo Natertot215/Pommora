@@ -28,18 +28,13 @@ describe('cellMenuModel', () => {
       kind: 'title',
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    const actions = withTargets.map((i) => i.action)
-    const at = actions.indexOf('title:moveto')
-    expect(actions.slice(at, at + 4)).toEqual([
-      'title:moveto',
-      'title:copylink',
-      'title:copypath',
-      'title:history',
-    ])
-    expect(withTargets.find((i) => i.action === 'title:moveto')?.separatorBefore).toBe(true)
-    expect(withTargets.find((i) => i.action === 'title:copylink')?.separatorBefore).toBe(false)
+    const labels = withTargets.map((i) => i.label)
+    const at = labels.indexOf('Move To')
+    expect(labels.slice(at, at + 4)).toEqual(['Move To', 'Copy Link', 'Copy Path', 'View History'])
+    expect(withTargets[at].separatorBefore).toBe(true)
+    expect(withTargets[at + 1].separatorBefore).toBeUndefined()
     expect(cellMenuModel({ kind: 'title', moveTargets: [] })).not.toContainEqual(
-      expect.objectContaining({ action: 'title:moveto' }),
+      expect.objectContaining({ label: 'Move To' }),
     )
   })
 
@@ -62,7 +57,7 @@ describe('cellMenuModel', () => {
       clearable: true,
     })
     expect(m.map((i) => [i.label, i.action])).toEqual([
-      ['Style', 'style:look:standard'],
+      ['Style', undefined],
       ['Clear', 'cell:clear'],
     ])
     expect(m[1].separatorBefore).toBe(true)
@@ -123,13 +118,13 @@ describe('cellMenuModel', () => {
   it('remove-only (a hideable cell with no other menu): Remove alone, no separator', () => {
     const m = cellMenuModel({ kind: 'remove-only', hideable: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Remove', 'cell:hide']])
-    expect(m[0].separatorBefore).toBe(false)
+    expect(m[0].separatorBefore).toBeUndefined()
   })
 
   it('hideable style-only with no base item (checkbox): Remove sits under the Style ▸ divider once', () => {
     const m = cellMenuModel({ kind: 'style-only', type: 'checkbox', current: {}, hideable: true })
     expect(m.map((i) => [i.label, i.action, i.separatorBefore])).toEqual([
-      ['Style', 'style:look:checkbox', undefined],
+      ['Style', undefined, undefined],
       ['Remove', 'cell:hide', true],
     ])
   })

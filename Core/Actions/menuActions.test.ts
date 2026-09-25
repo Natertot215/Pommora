@@ -20,20 +20,6 @@ beforeEach(() => {
 const trigger = (): HTMLElement => document.createElement('button')
 
 describe('the one door every menu opens through', () => {
-  it('drops a separator leading the whole menu, which would separate nothing', async () => {
-    await popMenu(
-      [
-        { label: 'Delete', action: 'delete', separatorBefore: true },
-        { label: 'Rename', action: 'rename', separatorBefore: true },
-      ],
-      trigger(),
-    )
-    expect(presented.mock.calls[0][0]).toEqual([
-      { label: 'Delete', action: 'delete', separatorBefore: false },
-      { label: 'Rename', action: 'rename', separatorBefore: true },
-    ])
-  })
-
   it('resolves null on an empty menu without asking either renderer', async () => {
     await expect(popMenu([], trigger())).resolves.toBeNull()
     expect(presented).not.toHaveBeenCalled()

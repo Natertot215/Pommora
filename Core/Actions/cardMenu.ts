@@ -19,8 +19,6 @@ export function cardMenuModel(ctx: CardMenuContext): ActionItem<CardMenuAction>[
     move: ctx,
     spaces: ctx.spaces,
     properties: ctx.properties,
-    clipboard: true,
-    history: true,
   }) as ActionItem<CardMenuAction>[]
   return ctx.editableImage ? [{ label: 'Edit Image', action: 'image:edit' }, ...meta] : meta
 }

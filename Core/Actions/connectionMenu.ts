@@ -1,5 +1,11 @@
-import type { ActionItem } from './menuModel'
-import { pageMetaMenuSubset, type PageMetaAction } from './pageMenu'
+import { type ActionItem, joinGroups, type LeafItem } from './menuModel'
+import {
+  COPY_LINK_ROW,
+  COPY_PATH_ROW,
+  type PageMetaAction,
+  type PageOpenAction,
+  pageOpenRows,
+} from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../Properties/properties'
 
 export interface ConnMenuContext {
@@ -16,23 +22,11 @@ export type ConnSurface = 'editor' | 'cell'
 export type ConnEditAction = 'rename' | 'editLink'
 export type ConnCellAction = 'link:clear' | 'link:hide'
 export type ConnCellApply = (action: ConnCellAction) => void
-type ConnOpenAction = Extract<PageMetaAction, 'title:window' | 'title:newtab'>
-
-const CONN_OPEN_ACTIONS = [
-  'title:window',
-  'title:newtab',
-] as const satisfies readonly ConnOpenAction[]
-
 type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
-
-const CONN_COPY_ACTIONS = [
-  'title:copylink',
-  'title:copypath',
-] as const satisfies readonly ConnCopyAction[]
 
 type ConnSiteAction = 'link:window' | 'link:browser'
 
-const CONN_SITE_ROWS: readonly ActionItem<ConnSiteAction>[] = [
+const CONN_SITE_ROWS: readonly LeafItem<ConnSiteAction>[] = [
   { label: 'Preview', action: 'link:window' },
   { label: 'Open In Browser', action: 'link:browser' },
 ]
@@ -49,12 +43,12 @@ const CONN_URL_ACTIONS = [
 export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
 
 const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
-  { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
+  { label: 'Remove Link', action: 'link:remove' },
   { label: 'Delete', action: 'link:delete' },
 ]
 
 export type ConnMenuAction =
-  | ConnOpenAction
+  | PageOpenAction
   | ConnSiteAction
   | ConnEditAction
   | ConnCellAction
@@ -67,10 +61,10 @@ export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction
 export const isConnCellAction = (action: ConnMenuAction): action is ConnCellAction =>
   action === 'link:clear' || action === 'link:hide'
 
-function closingRows(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[] {
-  if (ctx.surface === 'editor') return ctx.external && ctx.editable ? [...CONN_UNLINK_ROWS] : []
+function closingRows(ctx: ConnMenuContext): readonly ActionItem<ConnMenuAction>[] {
+  if (ctx.surface === 'editor') return ctx.external && ctx.editable ? CONN_UNLINK_ROWS : []
   return [
-    { label: 'Clear', action: 'link:clear', separatorBefore: true },
+    { label: 'Clear', action: 'link:clear' },
     ...(ctx.hideable ? [{ label: 'Remove', action: 'link:hide' as const }] : []),
   ]
 }
@@ -81,48 +75,40 @@ export function connectionMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAc
         {
           label: ctx.external ? 'Rename' : ctx.hasAlias ? 'Edit Title' : 'Add Title',
           action: 'rename',
-          separatorBefore: true,
         },
         { label: 'Edit Link', action: 'editLink' },
       ]
     : []
-  const copyLink = pageMetaMenuSubset(['title:copylink'])
 
   if (ctx.external) {
     const opens = CONN_SITE_ROWS.filter((r) => !(r.action === 'link:window' && ctx.windowed))
-    if (ctx.surface === 'cell') return [...opens, ...copyLink, ...authoring, ...closingRows(ctx)]
-    return [
-      ...opens,
-      ...authoring,
-      ...copyLink.map((r) => ({ ...r, separatorBefore: false })),
-      ...(ctx.editable
-        ? [
-            {
-              label: 'Format',
-              action: 'format:link-full' as const,
-              submenu: LINK_DISPLAYS.map((d) => ({
-                label: LINK_DISPLAY_LABELS[d],
-                action: `format:${d}` as ConnMenuAction,
-              })),
-            },
-          ]
-        : []),
-      ...closingRows(ctx),
-    ]
+    if (ctx.surface === 'cell' || !ctx.editable)
+      return joinGroups([[...opens, COPY_LINK_ROW], authoring, closingRows(ctx)])
+    return joinGroups<ConnMenuAction>([
+      opens,
+      [
+        ...authoring,
+        COPY_LINK_ROW,
+        {
+          label: 'Format',
+          submenu: LINK_DISPLAYS.map((d) => ({
+            label: LINK_DISPLAY_LABELS[d],
+            action: `format:${d}` as const,
+          })),
+        },
+      ],
+      closingRows(ctx),
+    ])
   }
 
-  const opens = pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.open === 'tab').filter(
-    (r) =>
-      !(r.action === 'title:newtab' && ctx.open === 'detail') &&
-      !(r.action === 'title:window' && ctx.windowed),
-  )
-  return [
-    ...opens,
-    ...authoring,
-    ...pageMetaMenuSubset(CONN_COPY_ACTIONS).map((r, i) => ({
-      ...r,
-      separatorBefore: i === 0,
-    })),
-    ...closingRows(ctx),
-  ]
+  return joinGroups<ConnMenuAction>([
+    pageOpenRows({
+      alreadyOpen: ctx.open === 'tab',
+      window: !ctx.windowed,
+      newTab: ctx.open !== 'detail',
+    }),
+    authoring,
+    [COPY_LINK_ROW, COPY_PATH_ROW],
+    closingRows(ctx),
+  ])
 }

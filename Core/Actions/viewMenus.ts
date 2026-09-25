@@ -25,7 +25,6 @@ const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
 function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> {
   return {
     label: 'Style',
-    action: 'style-dropdown' as A,
     separatorBefore: true,
     submenu: VIEW_STYLE_ROWS.map(({ label, style }) => ({
       label,
@@ -45,7 +44,6 @@ export function embedTitleMenuItems(
     { label: iconLabel(iconShown), action: 'toggle-icon' },
     {
       label: 'Title Size',
-      action: 'size-1',
       submenu: EMBED_TITLE_SIZES.map((n) => ({
         label: `Heading ${n}`,
         action: `size-${n}` as EmbedTitleMenuAction,

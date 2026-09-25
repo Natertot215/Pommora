@@ -92,11 +92,9 @@ export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAc
   const style = ctx.style
   const styleRows = style ? styleMenuItems(style) : []
   return [
-    ...(ctx.alignable
-      ? [{ label: 'Align', action: 'align:left' as const, submenu: alignRows(ctx.align) }]
-      : []),
+    ...(ctx.alignable ? [{ label: 'Align', submenu: alignRows(ctx.align) }] : []),
     ...(style && styleRows.length > 0
-      ? [{ label: styleMenuLabel(style.type), action: styleRows[0].action, submenu: styleRows }]
+      ? [{ label: styleMenuLabel(style.type), submenu: styleRows }]
       : []),
     { label: 'Icon', action: 'column:toggle-icons', checked: ctx.iconsShown },
     ...(ctx.hideable

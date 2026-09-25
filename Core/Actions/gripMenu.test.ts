@@ -24,9 +24,9 @@ describe('the block grip menu', () => {
       zoom: null,
     })
     expect(items[0].submenu?.[0].submenu?.[0]).toEqual({ label: 'Alpha', action: 'source:Alpha' })
-    expect(items[1]).toMatchObject({ label: 'Scale', disabled: true })
+    expect(items[1]).toEqual({ label: 'Scale', submenu: [] })
     const claimed = gripMenuItems({ kind: 'embed', tree: [], zoom: 0.5 })
-    expect(claimed[0]).toMatchObject({ label: 'Source', disabled: true })
+    expect(claimed[0]).toEqual({ label: 'Source', submenu: [] })
     expect(claimed[1].submenu?.find((r) => r.checked)?.action).toBe('zoom:0.5')
   })
 
@@ -40,18 +40,16 @@ describe('the block grip menu', () => {
 
   it('a list offers its Type set with the current kind in force', () => {
     const items = gripMenuItems({ kind: 'list', current: 'bullet' })
-    expect(items[0].submenu?.map((r) => [r.action, r.checked])).toEqual([
-      ['listKind:ordered', false],
-      ['listKind:alphabetical', false],
-      ['listKind:bullet', true],
-      ['listKind:checkbox', false],
-      ['listKind:arrow', false],
+    expect(items[0].submenu?.map((r) => [r.label, r.action, r.checked])).toEqual([
+      ['Bulleted', 'listKind:bullet', true],
+      ['Numbered', 'listKind:ordered', false],
+      ['Alphabetical', 'listKind:alphabetical', false],
+      ['Checklist', 'listKind:checkbox', false],
+      ['Arrowed', 'listKind:arrow', false],
     ])
   })
 
   it('a plain block offers Delete alone, undivided', () => {
-    expect(gripMenuItems({ kind: 'plain' })).toEqual([
-      { label: 'Delete', action: 'delete', separatorBefore: false },
-    ])
+    expect(gripMenuItems({ kind: 'plain' })).toEqual([{ label: 'Delete', action: 'delete' }])
   })
 })

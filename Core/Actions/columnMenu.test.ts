@@ -86,7 +86,7 @@ describe('styleMenuItems', () => {
     const rows = items('datetime', { date_format: 'full', time_format: 'none', weekday: 'none' })
     expect(rows.find((r) => r.action === 'style:date_format:relative')?.label).toBe('Relative')
     expect(
-      rows.filter((r) => r.action.startsWith('style:weekday:')).map((r) => [r.label, r.action]),
+      rows.filter((r) => r.action?.startsWith('style:weekday:')).map((r) => [r.label, r.action]),
     ).toEqual([
       ['Full', 'style:weekday:long'],
       ['Short', 'style:weekday:short'],
