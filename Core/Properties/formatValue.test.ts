@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { condensedDate, formatDate, formatNumber, numberDivisor } from './formatValue'
+import {
+  condensedDate,
+  currencyGlyph,
+  formatDate,
+  formatNumber,
+  fractionDenominator,
+  numberDivisor,
+} from './formatValue'
 
 describe('formatDate', () => {
   it('renders the four date formats', () => {
@@ -117,6 +124,41 @@ describe('formatNumber', () => {
     expect(
       formatNumber(3, { number_family: 'number', number_fraction: true, number_denominator: 10 }),
     ).toBe('3 out of 10')
+  })
+  it('a zero denominator is no fraction', () => {
+    expect(
+      formatNumber(3, { number_family: 'number', number_fraction: true, number_denominator: 0 }),
+    ).toBe('3')
+  })
+})
+
+describe('fractionDenominator', () => {
+  it('is the denominator only with Fraction on, a positive denominator, and a non-Percent format', () => {
+    expect(fractionDenominator({ number_fraction: true, number_denominator: 10 })).toBe(10)
+    expect(
+      fractionDenominator({
+        number_family: 'percent',
+        number_fraction: true,
+        number_denominator: 10,
+      }),
+    ).toBeUndefined()
+    expect(fractionDenominator({ number_fraction: false, number_denominator: 10 })).toBeUndefined()
+    expect(fractionDenominator({ number_fraction: true, number_denominator: 0 })).toBeUndefined()
+    expect(fractionDenominator({ number_fraction: true, number_denominator: -4 })).toBeUndefined()
+    expect(fractionDenominator(undefined)).toBeUndefined()
+  })
+})
+
+describe('currencyGlyph', () => {
+  it("is the formatter's narrow currency symbol", () => {
+    expect(['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'].map(currencyGlyph)).toEqual([
+      '$',
+      '€',
+      '£',
+      '$',
+      '$',
+      '¥',
+    ])
   })
 })
 

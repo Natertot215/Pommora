@@ -4,9 +4,12 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { numberFormatGlyph } from '../Cells/PropertyTypes'
 import { parseEditorValue } from '../parseEditorValue'
+import { fractionDenominator } from '../formatValue'
 
-const denominatorOf = (def: PropertyDefinition): string | undefined =>
-  def.number_fraction && def.number_denominator ? `/ ${def.number_denominator}` : undefined
+const denominatorOf = (def: PropertyDefinition): string | undefined => {
+  const denominator = fractionDenominator(def)
+  return denominator === undefined ? undefined : `/ ${denominator}`
+}
 
 export function NumberValuePicker({
   def,
