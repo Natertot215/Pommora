@@ -6,6 +6,7 @@ import { trashDeps } from './bundle'
 import { listBundles } from './spend'
 import type { TrashMode } from './trashRow'
 import { trashRows } from './trashRows'
+import { SETTING_DEFAULTS } from '../Settings/personalization'
 
 export const trashHandlers = {
   'trash:list': withRoot(async (root) => {
@@ -16,7 +17,7 @@ export const trashHandlers = {
     ctx,
   ): Promise<Result<{ trashMode: TrashMode; permanentDelete: boolean }>> => {
     const root = sessionRoot()
-    const { trashMode, permanentDelete = false } =
+    const { trashMode, permanentDelete = SETTING_DEFAULTS.permanentDelete } =
       root === null ? { trashMode: await ctx.trashMode() } : await trashDeps(root, ctx)
     return ok({ trashMode, permanentDelete })
   },

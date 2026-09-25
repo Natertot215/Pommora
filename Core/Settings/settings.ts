@@ -53,7 +53,6 @@ export const readLiveCommands = async (root: string): Promise<Commands> =>
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))
 
-/** Anything not literally `true` reads as off — the destructive direction is never reached by a truthy coercion. */
 export async function readPermanentDelete(root: string): Promise<boolean> {
   return settingOf(await readLivePersonalization(root), 'permanentDelete')
 }

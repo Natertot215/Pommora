@@ -9,6 +9,7 @@ import {
 import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
+import { saveDevicePrefs } from './saveScheduler'
 
 export interface ConfigSlice {
   personalization: Personalization
@@ -16,8 +17,8 @@ export interface ConfigSlice {
   commands: Commands
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
   devicePrefs: DevicePrefs
-  /** Whether `devicePrefs` is the open Nexus's own record: `unread` asks for it on the next tree, `held` keeps a record that may belong to another Nexus or never arrived from saving, and only `live` saves. */
-  devicePrefsState: 'unread' | 'held' | 'live'
+  /** Whether `devicePrefs` is the open Nexus's own record: `unread` asks for it on the next tree, `asked` has asked and holds no answer yet or a refusal, and only `live` saves. */
+  devicePrefsState: 'unread' | 'asked' | 'live'
   setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void
   /** Per-page footnote-section visibility for pages with an explicit answer; a page with no entry follows the nexus-wide default. The section's disclosure follows this, never the reverse. */
   citationsShown: Record<string, boolean>
@@ -59,7 +60,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   setDevicePref: (key, value) => {
     set((s) => ({ devicePrefs: { ...s.devicePrefs, [key]: value } }))
     if (get().devicePrefsState === 'live')
-      void persist('the setting', host().ask('devicePrefs:save', get().devicePrefs))
+      saveDevicePrefs(() => host().ask('devicePrefs:save', get().devicePrefs))
   },
 
   citationsShown: {},

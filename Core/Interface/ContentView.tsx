@@ -176,13 +176,18 @@ export function ContentView(): React.JSX.Element {
           </ContentHostContext.Provider>
         ))}
       </div>
-      {showSubfield && <ContentFooter remeasure={reveal.remeasure} />}
+      {showSubfield && <ContentFooter expanded={expanded} remeasure={reveal.remeasure} />}
     </div>
   )
 }
 
-function ContentFooter({ remeasure }: { remeasure: () => void }): React.JSX.Element {
-  const expanded = useSession((s) => !s.devicePrefs.subfieldCollapsed)
+function ContentFooter({
+  expanded,
+  remeasure,
+}: {
+  expanded: boolean
+  remeasure: () => void
+}): React.JSX.Element {
   const setDevicePref = useSession((s) => s.setDevicePref)
   const kind = useSession((s) => s.selection.kind)
   const count = useSession((s) => s.detailCount)

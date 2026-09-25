@@ -176,8 +176,7 @@ export function LayoutFrame({
                 'Card Scale',
                 {
                   steps: TENTHS_SCALE.steps,
-                  value: coerceTenthsScale(view.card_size, TENTHS_SCALE.default),
-                  coerce: (typed) => coerceTenthsScale(typed, TENTHS_SCALE.default),
+                  value: coerceTenthsScale(view.card_size),
                   onPick: (v) => write({ card_size: v === TENTHS_SCALE.default ? undefined : v }),
                 },
                 CARD_ROW_LOOK,

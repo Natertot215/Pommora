@@ -37,33 +37,31 @@ const PER_NEXUS = {
   sidePaneWidth: SIDE_PANE_WIDTH.def,
 } satisfies Partial<LayoutSlice>
 
-export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
-  return {
-    ...PER_NEXUS,
-    sidebarVisible: true,
-    toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
-    ribbonVisible: true,
-    toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
+export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => ({
+  ...PER_NEXUS,
+  sidebarVisible: true,
+  toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
+  ribbonVisible: true,
+  toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
 
-    setSidebarWidth: (w) => set({ sidebarWidth: clampWidth(SIDEBAR_WIDTH, w) }),
-    setSidePaneWidth: (w) => set({ sidePaneWidth: clampWidth(SIDE_PANE_WIDTH, w) }),
-    persistPaneWidths: () => {
-      const s = get()
-      s.setDevicePref('panes', { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth })
-    },
+  setSidebarWidth: (w) => set({ sidebarWidth: clampWidth(SIDEBAR_WIDTH, w) }),
+  setSidePaneWidth: (w) => set({ sidePaneWidth: clampWidth(SIDE_PANE_WIDTH, w) }),
+  persistPaneWidths: () => {
+    const s = get()
+    s.setDevicePref('panes', { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth })
+  },
 
-    settingsOpen: false,
-    closeSettings: () => set({ settingsOpen: false }),
-    toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+  settingsOpen: false,
+  closeSettings: () => set({ settingsOpen: false }),
+  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
 
-    iterationOpen: false,
-    closeIteration: () => set({ iterationOpen: false }),
-    toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
+  iterationOpen: false,
+  closeIteration: () => set({ iterationOpen: false }),
+  toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
 
-    hostPlatform: 'posix',
-    fullscreen: false,
-    setHostWindow: (host) => set(host),
+  hostPlatform: 'posix',
+  fullscreen: false,
+  setHostWindow: (host) => set(host),
 
-    resetLayout: () => set({ ...PER_NEXUS }),
-  }
-}
+  resetLayout: () => set({ ...PER_NEXUS }),
+})

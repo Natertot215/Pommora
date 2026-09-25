@@ -62,7 +62,7 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { resolveFieldValue } from '../../Properties/value'
-import { coerceTenthsScale, TENTHS_SCALE } from '@pommora/core/Settings/personalization'
+import { coerceTenthsScale } from '@pommora/core/Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { linkEditText } from '@pommora/core/Connections/linkValue'
@@ -422,7 +422,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         ?.id ?? null,
     )
 
-  const cardScale = coerceTenthsScale(view.card_size, TENTHS_SCALE.default)
+  const cardScale = coerceTenthsScale(view.card_size)
 
   return (
     <GhostSuppress.Provider value={interactions.holdGhost}>

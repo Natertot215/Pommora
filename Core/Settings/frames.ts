@@ -9,13 +9,8 @@ import {
   HEADING_LINK_STYLES,
   HEADING_SIZE_KEYS,
   HEADING_SIZE,
-  HISTORY_DAYS,
-  HISTORY_INTERVAL,
   IN_PAGE_HEADING_RESOLUTION_LABELS,
   IN_PAGE_HEADING_RESOLUTIONS,
-  TAB_CACHE,
-  TAB_MAX_WIDTH,
-  TAB_MIN_WIDTH,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
   type HeadingLinkStyle,
@@ -26,6 +21,8 @@ import {
   type TabOpenBehavior,
   type TimeFormatSetting,
   TENTHS_SCALE,
+  type Ladder,
+  type LadderKey,
   SETTING_DEFAULTS,
   type SettingKey,
   type SettingValue,
@@ -62,7 +59,6 @@ type PickerControlRow<T extends string> = RowText & {
 }
 
 type ZoomSpec = RowText & {
-  steps?: readonly number[]
   unit?: NumberUnit
 }
 
@@ -98,7 +94,6 @@ export type Row =
   | (RowText & {
       kind: 'color'
       key: KeyOf<ColorSetting<InheritSentinel>>
-      inherits: InheritSentinel
       inheritsVar: string
       greyscale?: boolean
     })
@@ -116,12 +111,12 @@ export type Row =
     })
   | (ZoomSpec & {
       kind: 'zoom'
-      key: KeyOf<number>
+      key: LadderKey
     })
   | (ZoomSpec & {
       kind: 'deviceZoom'
       key: DeviceKeyOf<number>
-      fallback: number
+      range: Ladder & { default: number }
     })
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
@@ -259,8 +254,7 @@ export const FRAMES = roster([
             key: 'interfaceScale',
             label: 'Interface Scale',
             hint: 'The scaling factor applied to the entire interface; additional scaling preferences compound this value.',
-            fallback: TENTHS_SCALE.default,
-            steps: TENTHS_SCALE.steps,
+            range: TENTHS_SCALE,
           },
           {
             kind: 'zoom',
@@ -385,14 +379,12 @@ export const FRAMES = roster([
             kind: 'zoom',
             key: 'tabMinWidth',
             label: 'Minimum Tab Width',
-            steps: TAB_MIN_WIDTH.steps,
             unit: PIXELS,
           },
           {
             kind: 'zoom',
             key: 'tabMaxWidth',
             label: 'Maximum Tab Width',
-            steps: TAB_MAX_WIDTH.steps,
             unit: PIXELS,
           },
           {
@@ -400,7 +392,6 @@ export const FRAMES = roster([
             key: 'tabCache',
             label: 'Active Tab Cache',
             hint: 'Maximum amount of open tabs kept active before switching to on-demand loading.',
-            steps: TAB_CACHE.steps,
             unit: TABS,
           },
           {
@@ -449,7 +440,6 @@ export const FRAMES = roster([
             key: 'accent',
             label: 'Accent Color',
             hint: 'The color every accented surface derives from. Cleared follows the system accent.',
-            inherits: 'system',
             inheritsVar: 'var(--system-accent)',
           },
           {
@@ -457,7 +447,6 @@ export const FRAMES = roster([
             key: 'connectionColor',
             label: 'Internal Link Color',
             hint: 'Connections to other pages. Cleared follows the accent.',
-            inherits: 'accent',
             inheritsVar: 'var(--accent)',
           },
           {
@@ -465,7 +454,6 @@ export const FRAMES = roster([
             key: 'externalLinkColor',
             label: 'External Link Color',
             hint: 'Links out to the web. Cleared follows the system accent.',
-            inherits: 'system',
             inheritsVar: 'var(--system-accent)',
           },
         ],
@@ -568,14 +556,12 @@ export const FRAMES = roster([
             kind: 'zoom',
             key: 'historyDays',
             label: 'History Timeframe',
-            steps: HISTORY_DAYS.steps,
             unit: DAYS,
           },
           {
             kind: 'zoom',
             key: 'historyInterval',
             label: 'Snapshot Interval',
-            steps: HISTORY_INTERVAL.steps,
             unit: MINUTES,
           },
           {
@@ -733,7 +719,6 @@ export const FRAMES = roster([
             key: 'highlightColor',
             label: 'Highlight Color',
             hint: 'The wash behind highlighted text. Cleared follows the accent.',
-            inherits: 'accent',
             inheritsVar: 'var(--accent)',
           },
         ],
@@ -746,7 +731,6 @@ export const FRAMES = roster([
             key: 'codeColor',
             label: 'Code Color',
             hint: 'Inline `code` and the wash behind it. Cleared reads red.',
-            inherits: 'default',
             inheritsVar: 'var(--code)',
             greyscale: true,
           },
@@ -766,7 +750,6 @@ export const FRAMES = roster([
             key: 'checkboxColor',
             label: 'Checkbox Color',
             hint: 'The color checkboxes and switches fill with. Cleared follows the accent.',
-            inherits: 'accent',
             inheritsVar: 'var(--accent)',
             greyscale: true,
           },

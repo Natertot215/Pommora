@@ -49,7 +49,7 @@ export interface EditorMenuApi {
   onAction: (cb: (action: string) => void) => () => void
 }
 
-export const EDITOR_SETTING_KEYS = [
+const EDITOR_SETTING_KEYS = [
   'codeblockLineCount',
   'removeTitleOnLinkChange',
   'aliasPickerOnCommit',
@@ -77,13 +77,20 @@ export type EditorSettings = {
   [K in (typeof EDITOR_SETTING_KEYS)[number]]: SettingValue<K>
 } & { commands: Commands }
 
-export const editorSettingsOf = (p: Personalization, commands: Commands): EditorSettings => ({
-  ...(Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)])) as Omit<
-    EditorSettings,
-    'commands'
-  >),
-  commands,
-})
+let resolved: { p: Personalization; commands: Commands; settings: EditorSettings } | null = null
+
+// Read on per-transaction paths, so it resolves again only when the personalization or the commands change.
+export function editorSettingsOf(p: Personalization, commands: Commands): EditorSettings {
+  if (resolved?.p !== p || resolved.commands !== commands) {
+    const values = Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)]))
+    resolved = {
+      p,
+      commands,
+      settings: { ...(values as Omit<EditorSettings, 'commands'>), commands },
+    }
+  }
+  return resolved.settings
+}
 
 type TileMount =
   | {

@@ -6,11 +6,7 @@ import { duration } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
 import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { SEGMENT_H, segmentRow } from '@pommora/uix/Elements/action-band.css'
-import {
-  EMBED_SCALE_DEFAULT,
-  embedZoom,
-  viewEmbedZoom,
-} from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS, embedZoom, viewEmbedZoom } from '@pommora/core/Settings/personalization'
 
 const c = colorVars.color
 
@@ -142,11 +138,11 @@ export const bodyFlush = style({
 })
 
 globalStyle(`${body} .table-view`, {
-  vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
+  vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(SETTING_DEFAULTS.embedScale)})` },
 })
 
 globalStyle(`${body} .cards-view`, {
-  vars: { '--zoom': `var(--embed-zoom, ${embedZoom(EMBED_SCALE_DEFAULT)})` },
+  vars: { '--zoom': `var(--embed-zoom, ${embedZoom(SETTING_DEFAULTS.embedScale)})` },
   paddingBottom: 'var(--band-clearance)',
 })
 

@@ -159,7 +159,7 @@ function TrashBody(): React.JSX.Element {
   const openColumnMenu = async (): Promise<void> => {
     const action = await popMenu(trashColumnMenuItems({ format: dateFormat, timeShown }))
     if (!action) return
-    if (action === 'toggleTime') setPersonalization('trashHideTime', timeShown ? true : undefined)
+    if (action === 'toggleTime') setPersonalization('trashHideTime', timeShown)
     else {
       const format = action.slice('format:'.length) as DateFormat
       setPersonalization('trashDateFormat', format === columnDefault ? undefined : format)

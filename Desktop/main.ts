@@ -23,7 +23,7 @@ import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { installMachine } from '@pommora/core/Platform/machine'
-import { SETTING_DEFAULTS, settingOf } from '@pommora/core/Settings/personalization'
+import { settingOf } from '@pommora/core/Settings/personalization'
 import {
   readLiveCommands,
   readLivePersonalization,
@@ -171,8 +171,8 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   if (win.isDestroyed()) return
   // No-nexus state normalizes to 1.0 so the welcome screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
-  const p = root ? await readLivePersonalization(root) : null
-  setWebZoomFactor(p ? settingOf(p, 'webZoomFactor') : SETTING_DEFAULTS.webZoomFactor)
+  const p = root ? await readLivePersonalization(root) : {}
+  setWebZoomFactor(settingOf(p, 'webZoomFactor'))
   if (!win.isDestroyed()) resetHostZoom(win.webContents)
 }
 

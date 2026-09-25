@@ -1,8 +1,6 @@
 import {
-  EDITOR_SCALE_DEFAULT,
-  EMBED_SCALE_DEFAULT,
-  HEADING_SIZE_DEFAULTS,
   HEADING_SIZE_KEYS,
+  SETTING_DEFAULTS,
   type Personalization,
   coerceHeadingSize,
   coerceScale,
@@ -20,25 +18,24 @@ function settingColorCss<I extends string | null>(setting: unknown, inherit: I):
 /** A `null` REMOVES the var rather than setting it, for a cleared value whose stylesheet fallback is the live answer — writing a copy of that answer would freeze it where it stood. */
 type VarWriter = (value: unknown) => Record<string, string | null>
 
-// Unset REMOVES the var so the stylesheet's own size answers; a stored size lands in em of the page text.
+// A size lands in em of the page text.
 const headingVars: Partial<Record<keyof Personalization, VarWriter>> = {}
 HEADING_SIZE_KEYS.forEach((key, i) => {
   headingVars[key] = (v) => ({
-    [`--h${i + 1}-size`]:
-      v == null ? null : `${coerceHeadingSize(v, HEADING_SIZE_DEFAULTS[key])}em`,
+    [`--h${i + 1}-size`]: `${coerceHeadingSize(v, SETTING_DEFAULTS[key])}em`,
   })
 })
 
 const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   embedScale: (v) => {
-    const scale = coerceScale(v, EMBED_SCALE_DEFAULT)
+    const scale = coerceScale(v, SETTING_DEFAULTS.embedScale)
     return {
       '--embed-scale': String(scale),
       '--embed-zoom': String(embedZoom(scale)),
       '--view-embed-zoom': String(viewEmbedZoom(scale)),
     }
   },
-  editorScale: (v) => ({ '--editor-scale': String(coerceScale(v, EDITOR_SCALE_DEFAULT)) }),
+  editorScale: (v) => ({ '--editor-scale': String(coerceScale(v, SETTING_DEFAULTS.editorScale)) }),
   connectionColor: (v) => ({ '--connection': settingColorCss(v, 'var(--accent)') }),
   externalLinkColor: (v) => ({ '--link': settingColorCss(v, 'var(--system-accent)') }),
   checkboxColor: (v) =>

@@ -1,4 +1,3 @@
-import { clamp } from '@pommora/uix/Utilities/clamp'
 import { applyPersonalizationKey } from './applyPersonalization'
 import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
 import { useState } from 'react'
@@ -18,7 +17,12 @@ import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { SCALE, settingOf } from '@pommora/core/Settings/personalization'
+import {
+  coerceIn,
+  SETTING_DEFAULTS,
+  SETTING_RANGES,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
@@ -176,10 +180,10 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
 }
 
 function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
-  const value = useSession((s) => s.personalization[row.key]) as string | undefined
+  const value = useSetting(row.key)
   const setPersonalization = useSession((s) => s.setPersonalization)
 
-  const inheriting = !value || value === row.inherits
+  const inheriting = value === SETTING_DEFAULTS[row.key]
 
   return (
     <MenuRowView
@@ -189,7 +193,7 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
         selected: inheriting ? 'default' : labelColorFor(value),
         css: inheriting ? row.inheritsVar : solidColorCss(value),
         greyscale: row.greyscale,
-        onPick: (next) => setPersonalization(row.key, (next ?? row.inherits) as never),
+        onPick: (next) => setPersonalization(row.key, next as never),
       })}
     />
   )
@@ -218,17 +222,17 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
 }
 
 function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Element {
-  const stored = useSession((s) =>
+  const range = row.kind === 'zoom' ? SETTING_RANGES[row.key] : row.range
+  const value = useSession((s) =>
     row.kind === 'zoom'
       ? settingOf(s.personalization, row.key)
-      : (s.devicePrefs[row.key] ?? row.fallback),
+      : coerceIn(row.range)(s.devicePrefs[row.key], row.range.default),
   )
   const setPersonalization = useSession((s) => s.setPersonalization)
   const setDevicePref = useSession((s) => s.setDevicePref)
-  const steps = row.steps ?? SCALE.steps
-  const commit = (value: number): void => {
-    if (row.kind === 'zoom') setPersonalization(row.key, value)
-    else setDevicePref(row.key, value === row.fallback ? undefined : value)
+  const commit = (next: number): void => {
+    if (row.kind === 'zoom') setPersonalization(row.key, next)
+    else setDevicePref(row.key, next === row.range.default ? undefined : next)
   }
   return (
     <MenuRowView
@@ -236,10 +240,9 @@ function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Elem
         kind: 'picker',
         ariaLabel: row.label,
         ...steppedPickerProps({
-          steps,
-          value: stored,
+          steps: range.steps,
+          value,
           unit: row.unit ?? PERCENT,
-          coerce: (n) => clamp(n, steps[0], steps[steps.length - 1]),
           onPick: commit,
         }),
       })}

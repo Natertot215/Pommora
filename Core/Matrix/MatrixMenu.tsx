@@ -17,7 +17,7 @@ import { useSession } from '../Session/store'
 import { FilterFrame } from '../Views/Settings/FilterFrame'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'
-import { clampForce, FORCE_STEPS } from './matrixConfig'
+import { FORCE_STEPS } from './matrixConfig'
 import { MATRIX_TITLE } from './matrixKind'
 import { matrixRuntime } from './matrixRuntime'
 
@@ -94,7 +94,6 @@ export function MatrixMenu(): React.JSX.Element {
         steppedRow(undefined, label, {
           steps: FORCE_STEPS[key],
           value: forces[key],
-          coerce: (typed) => clampForce(key, typed),
           // The whole set goes over, since the file merges a section one level deep and a lone value would drop the other three.
           onPick: (factor) => patch({ forces: { [mode]: { ...forces, [key]: factor } } }),
         }),
