@@ -24,8 +24,11 @@ const treeAt = (rootPath: string): NexusTree => ({
 
 type Session = typeof import('./store')['useSession']
 
-// devicePrefsLoaded is a module singleton and the pane widths are read at slice construction, so every case needs its own module registry rather than a shared store reset.
-async function freshStore(answer: () => Promise<unknown>): Promise<{
+// The pane widths are read at slice construction, so every case needs its own module registry rather than a shared store reset.
+async function freshStore(
+  answer: () => Promise<unknown>,
+  choose: () => Promise<unknown> = async () => ok(true),
+): Promise<{
   useSession: Session
   prefsLoad: ReturnType<typeof vi.fn>
   prefsSave: ReturnType<typeof vi.fn>
@@ -40,10 +43,8 @@ async function freshStore(answer: () => Promise<unknown>): Promise<{
     'nav:write': vi.fn(async () => ok(null)),
     'tabs:save': vi.fn(async () => ok(null)),
     'index:headings': vi.fn(async () => ok({})),
-    'nexus:choose': vi.fn(async () => ok(true)),
+    'nexus:choose': vi.fn(choose),
     'nexus:state': vi.fn(async () => ok({ status: 'open', tree: treeAt('/b') })),
-    'subfield:get': vi.fn(async () => ok(null)),
-    'navViewModes:get': vi.fn(async () => ok(null)),
     'citations:get': vi.fn(async () => ok({})),
     'linkTitles:get': vi.fn(async () => ok({})),
     'nav:read': vi.fn(async () => ok(null)),
@@ -158,6 +159,50 @@ describe('a nexus switch keeps none of the old nexus', () => {
     expect(useSession.getState().devicePrefs).toEqual({ disclosure: { 'context:areas': true } })
     await useSession.getState().choose()
     expect(useSession.getState().devicePrefs).toEqual({})
+  })
+})
+
+describe('a device preference saves only into the Nexus whose record the window holds', () => {
+  const fold = { disclosure: { 'context:areas': false } }
+
+  it('keeps a fold made mid-switch out of the new Nexus until its record arrives', async () => {
+    let arrive = (): void => {}
+    let call = 0
+    const { useSession, prefsSave } = await freshStore(() =>
+      ++call === 1
+        ? Promise.resolve(ok({}))
+        : new Promise((resolve) => {
+            arrive = () => resolve(ok({ panes: { sidebar: 300 } }))
+          }),
+    )
+    await useSession.getState().applyTree(treeAt('/a'))
+    const switching = useSession.getState().choose()
+    await vi.waitFor(() => expect(call).toBe(2))
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    expect(prefsSave).not.toHaveBeenCalled()
+    arrive()
+    await switching
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    expect(prefsSave).toHaveBeenCalledWith({ panes: { sidebar: 300 }, ...fold })
+  })
+
+  it('saves nothing after the new record is refused', async () => {
+    let call = 0
+    const { useSession, prefsSave } = await freshStore(async () =>
+      ++call === 1 ? ok({}) : NO_NEXUS,
+    )
+    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().choose()
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    expect(prefsSave).not.toHaveBeenCalled()
+  })
+
+  it('keeps saving into the open Nexus when the switch is canceled', async () => {
+    const { useSession, prefsSave } = await freshStore(withPrefs({}), async () => ok(false))
+    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().choose()
+    useSession.getState().setDevicePref('disclosure', fold.disclosure)
+    expect(prefsSave).toHaveBeenCalledWith(fold)
   })
 })
 

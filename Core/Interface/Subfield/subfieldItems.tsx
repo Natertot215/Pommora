@@ -42,20 +42,20 @@ function CountItem({ count }: { count: number | null }): React.JSX.Element | nul
   return <span title="Results">{count.toLocaleString()}</span>
 }
 
-/** Drives `navViewMode`, separate from NavWindow's own `navWindowMode`. */
+/** Drives `navViewGallery`, separate from NavWindow's own `navWindowGallery`. */
 export function ViewTypeItem(): React.JSX.Element {
-  const mode = useSession((s) => s.navViewMode)
-  const setMode = useSession((s) => s.setNavViewMode)
+  const gallery = useSession((s) => s.devicePrefs.navViewGallery === true)
+  const setDevicePref = useSession((s) => s.setDevicePref)
   return (
     <Button
       size="button-inline"
       icon="chevrons-up-down"
       iconSize="body"
       paddingX="0"
-      label={mode === 'list' ? 'List' : 'Gallery'}
+      label={gallery ? 'Gallery' : 'List'}
       className="subfield-viewtype"
-      onClick={() => setMode(mode === 'list' ? 'gallery' : 'list')}
-      title={mode === 'list' ? 'Switch to Gallery' : 'Switch to List'}
+      onClick={() => setDevicePref('navViewGallery', !gallery)}
+      title={gallery ? 'Switch to List' : 'Switch to Gallery'}
     />
   )
 }

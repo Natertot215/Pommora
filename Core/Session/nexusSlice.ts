@@ -63,18 +63,15 @@ export async function flushAllSaves(): Promise<void> {
 }
 
 let systemAccentCache: string | null | undefined
-// Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
-let devicePrefsLoaded = false
 let headingsLoaded = false
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const resetNexusSession = (): void => {
     cancelAllSaves()
-    devicePrefsLoaded = false
     headingsLoaded = false
     set({ headings: {} })
-    // Every key here is per machine PER NEXUS, so a refused re-fetch must leave nothing of the old one behind for the next setDevicePref to write into this Nexus's own store.
-    set({ devicePrefs: {} })
+    // Every key here is per machine PER NEXUS, so nothing of the old one stays on screen while this one's is read, or after a refused read.
+    set({ devicePrefs: {}, devicePrefsState: 'unread' })
     const s = get()
     s.resetNavigation()
     s.resetWindow()
@@ -95,9 +92,11 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       set({ navOpen: false, pageWindow: null })
       await flushAllSaves()
       holdSaves()
+      const prefsState = get().devicePrefsState
+      set({ devicePrefsState: 'held' })
       const opened = await attempt()
       if (!opened.ok) {
-        set({ status: 'error', error: opened.error })
+        set({ status: 'error', error: opened.error, devicePrefsState: prefsState })
         return
       }
       if (opened.value) {
@@ -105,7 +104,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         await get().load()
         // The new tree is in: the Matrix may read the new root against it.
         get().unloadMatrix()
-      }
+      } else set({ devicePrefsState: prefsState })
     } catch (e) {
       set({ status: 'error', error: caught(e) })
     } finally {
@@ -149,18 +148,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             await get().applyTree(res.value.tree)
             await Promise.all([
               host()
-                .ask('subfield:get')
-                .then((r) => {
-                  const cfg = valueOr(r, null)
-                  if (cfg) set({ subfieldExpanded: cfg.expanded })
-                }),
-              host()
-                .ask('navViewModes:get')
-                .then((r) => {
-                  const modes = valueOr(r, null)
-                  if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
-                }),
-              host()
                 .ask('citations:get')
                 .then((r) => set({ citationsShown: valueOr(r, {}) })),
               host()
@@ -192,12 +179,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // IPC strips identity, so without stabilize() every push would re-render every consumer.
       const tree = stabilize(incoming, get().tree)
       // Ahead of the ready paint so the panes land at their stored widths rather than settling after it. A width is seeded only when `panes` holds it; an absent key leaves the slice as it stands.
-      if (!devicePrefsLoaded) {
-        devicePrefsLoaded = true
+      // Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
+      if (get().devicePrefsState === 'unread') {
+        set({ devicePrefsState: 'held' })
         const prefs = await host().ask('devicePrefs:load')
         if (prefs.ok) {
           const panes = prefs.value?.panes
           set({
+            devicePrefsState: 'live',
             devicePrefs: prefs.value ?? {},
             ...(panes?.sidebar !== undefined && {
               sidebarWidth: clampWidth(SIDEBAR_WIDTH, panes.sidebar),

@@ -78,9 +78,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const onSelected = closeOnSelect ? closeNav : undefined
   const goClose = (target: NavRef): void => go(target, onSelected)
   const goNewTab = (target: NavRef): void => go(target, onSelected, { newTab: true })
-  const viewMode = useSession((s) => s.navWindowMode)
-  const setNavWindowMode = useSession((s) => s.setNavWindowMode)
-  const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
+  const gallery = useSession((s) => s.devicePrefs.navWindowGallery === true)
+  const setDevicePref = useSession((s) => s.setDevicePref)
 
   const target = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
   const { body, right, actions, footer, footerLead, closeSidePane, promote } =
@@ -94,7 +93,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   }, [target])
 
   const openNewTab = useSession((s) => s.openNewTab)
-  const setNavViewMode = useSession((s) => s.setNavViewMode)
 
   // The map tab has no entity to promote: the scan carries the list itself into a new app tab.
   const scan = (): void => {
@@ -102,7 +100,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       promote()
       return
     }
-    setNavViewMode(viewMode)
+    setDevicePref('navViewGallery', gallery)
     closeNav()
     openNewTab()
   }
@@ -147,9 +145,9 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
             size="button-inline"
             icon="chevrons-up-down"
             iconSize="control"
-            label={viewMode === 'list' ? 'List' : 'Gallery'}
+            label={gallery ? 'Gallery' : 'List'}
             className="navwindow-style-toggle"
-            onClick={toggleViewMode}
+            onClick={() => setDevicePref('navWindowGallery', !gallery)}
           />
         ),
       }}
@@ -164,7 +162,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               searchRow
             )}
             <div className="navwindow-main-scroll over-scroll">
-              {viewMode === 'gallery' ? (
+              {gallery ? (
                 <NavGallery
                   pins={results ? [] : resolvedPins}
                   items={results ? results : shownRecents}

@@ -1,10 +1,7 @@
 import type { Commands } from '../Actions/commands'
 import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personalization'
-import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
-import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
+import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import { nexusConfig } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import {
   nexusFolderRefusal,
   readSettings,
@@ -75,18 +72,6 @@ export async function readFileHistoryConfig(
   }
 }
 
-export async function readSubfield(root: string): Promise<SubfieldConfig | null> {
-  const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
-  const sub = existing?.subfield
-  if (!sub || typeof sub !== 'object') return null
-  const expanded = (sub as Record<string, unknown>).expanded
-  return { expanded: typeof expanded === 'boolean' ? expanded : true }
-}
-
-export function writeSubfield(root: string, config: SubfieldConfig): Promise<void> {
-  return updateSettings(root, (cur) => ({ ...cur, subfield: config }))
-}
-
 /** An emptied value deletes the key rather than storing a blank — absent is what the default means, and the reader answers it either way. */
 export function writeAssetDirectory(root: string, dir: string): Promise<void> {
   return updateSettings(root, (cur) => setOrDrop(cur, 'asset_directory', dir))
@@ -96,19 +81,6 @@ export function writeExcludedFolders(root: string, folders: string[]): Promise<v
   return updateSettings(root, (cur) =>
     setOrDrop(cur, 'excluded_folders', folders.length ? folders : null),
   )
-}
-
-export async function readNavViewModes(root: string): Promise<NavViewModes | null> {
-  const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
-  const nv = existing?.navViewModes
-  if (!nv || typeof nv !== 'object') return null
-  const s = nv as Record<string, unknown>
-  const mode = (v: unknown): NavViewMode => (v === 'gallery' ? 'gallery' : 'list')
-  return { window: mode(s.window), view: mode(s.view) }
-}
-
-export function writeNavViewModes(root: string, modes: NavViewModes): Promise<void> {
-  return updateSettings(root, (cur) => ({ ...cur, navViewModes: modes }))
 }
 
 /** An `undefined` value resets the key to its built-in default — JSON omits it. */

@@ -10,7 +10,7 @@ import type { MatrixConfig, MatrixPatch } from '../Matrix/matrixConfig'
 import type { MatrixGraphReply } from '../Matrix/matrixGraph'
 import type { LayoutPatch, MatrixLayout } from '../Matrix/matrixLayout'
 import type { WindowsFile } from '../Interface/Windows/windowRecord'
-import type { NavViewModes, SubfieldConfig, ThumbRect } from '../Interface/chrome'
+import type { ThumbRect } from '../Interface/chrome'
 import type { OpenIn, PageValues, ViewButton } from '../Views/viewRow'
 import type { Personalization } from '../Settings/personalization'
 import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView, RemovedTile } from '../Tiles/tiles'
@@ -192,10 +192,6 @@ export interface Asks {
     reply: Result<{ id: string }>
   }
 
-  'subfield:get': { args: []; reply: Result<SubfieldConfig | null> }
-  'subfield:set': { args: [config: SubfieldConfig]; reply: Result<null> }
-  'navViewModes:get': { args: []; reply: Result<NavViewModes | null> }
-  'navViewModes:set': { args: [modes: NavViewModes]; reply: Result<null> }
   'personalization:set': {
     args: [key: keyof Personalization, value: Personalization[keyof Personalization]]
     reply: Result<null>

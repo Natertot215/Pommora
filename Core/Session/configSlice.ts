@@ -12,6 +12,8 @@ export interface ConfigSlice {
   commands: Commands
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
   devicePrefs: DevicePrefs
+  /** Whether `devicePrefs` is the open Nexus's own record: `unread` asks for it on the next tree, `held` keeps a record that may belong to another Nexus or never arrived from saving, and only `live` saves. */
+  devicePrefsState: 'unread' | 'held' | 'live'
   setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void
   /** Per-page footnote-section visibility for pages with an explicit answer; a page with no entry follows the nexus-wide default. The section's disclosure follows this, never the reverse. */
   citationsShown: Record<string, boolean>
@@ -48,9 +50,11 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   commands: DEFAULT_COMMANDS,
 
   devicePrefs: {},
+  devicePrefsState: 'unread',
   setDevicePref: (key, value) => {
     set((s) => ({ devicePrefs: { ...s.devicePrefs, [key]: value } }))
-    void persist('the setting', host().ask('devicePrefs:save', get().devicePrefs))
+    if (get().devicePrefsState === 'live')
+      void persist('the setting', host().ask('devicePrefs:save', get().devicePrefs))
   },
 
   citationsShown: {},
