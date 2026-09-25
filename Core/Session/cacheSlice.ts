@@ -39,7 +39,6 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
         if (title) set((s) => ({ linkTitles: { ...s.linkTitles, [url]: title } }))
         else failedTitles.add(url)
       })
-      .catch(() => failedTitles.add(url))
       .finally(() => inFlightTitles.delete(url))
   },
 

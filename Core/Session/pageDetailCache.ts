@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from 'react'
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import { type Result, valueOr } from '@pommora/core/Contract/result'
 import { clearWarm, dropWarmDetail } from '../Navigation/warmTabs'
 import { host } from '../Platform/dialer'
 
@@ -90,24 +91,26 @@ export function advanceHead(path: string, text: string): BodyHead | undefined {
   return head
 }
 
-const inFlight = new Map<string, Promise<PageDetail | null>>()
+const inFlight = new Map<string, Promise<Result<PageDetail>>>()
 
 /** Concurrent callers share a single openPage round-trip. A drop or clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed the cache with a pre-write or previous-nexus detail. */
-export function fetchPageDetail(path: string): Promise<PageDetail | null> {
+export function fetchPageResult(path: string): Promise<Result<PageDetail>> {
   const pending = inFlight.get(path)
   if (pending) return pending
-  const p: Promise<PageDetail | null> = host()
+  const p: Promise<Result<PageDetail>> = host()
     .ask('page:open', path)
     .then((r) => {
       const owned = inFlight.get(path) === p
       if (owned) inFlight.delete(path)
-      if (!r.ok) return null
-      if (owned) cachePageDetail(r.value)
-      return r.value
+      if (r.ok && owned) cachePageDetail(r.value)
+      return r
     })
   inFlight.set(path, p)
   return p
 }
+
+export const fetchPageDetail = (path: string): Promise<PageDetail | null> =>
+  fetchPageResult(path).then((r) => valueOr(r, null))
 
 /** The slot's body must never lag a pending write, or a remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
 export function writeThroughBody(path: string, body: string): void {
