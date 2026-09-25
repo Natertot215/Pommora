@@ -1,4 +1,4 @@
-import { isPlainObject } from '../Properties/propertyValue'
+import { isPlainObject } from '../Contract/validators'
 
 export type SelectionState =
   | { kind: 'none' }

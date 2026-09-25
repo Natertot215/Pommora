@@ -61,8 +61,6 @@ export function refreshTree(root: string): Promise<NexusTree> {
 export const liveTreeOf = (root: string): Promise<NexusTree> =>
   Promise.resolve(getLiveTree() ?? refreshTree(root))
 
-export const CONTAINER_KINDS: readonly MutableKind[] = ['collection', 'set']
-
 /** A mutation reaches only what the tree holds, as a kind it claims, so the root, `.nexus`, the trash, and excluded folders are never a target. */
 export async function mutableTarget(
   root: string,

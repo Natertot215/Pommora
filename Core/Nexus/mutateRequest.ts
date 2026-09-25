@@ -1,7 +1,8 @@
+import { z } from 'zod'
 import type { Result } from '../Contract/result'
 import type { PageMenuContext } from '../Actions/pageMenu'
-import type { PropertyValue } from '../Properties/propertyValue'
-import type { Crop, PageMetaPatch } from './schemas'
+import { propertyValue } from '../Properties/propertyValue'
+import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
 import { type ContextDef, createSpaceLabel } from '../Contexts/contexts'
 
@@ -24,73 +25,85 @@ export const NEW_SLOT = '$new'
 export const fillSlot = (order: string[], id: string): string[] =>
   order.map((x) => (x === NEW_SLOT ? id : x))
 
-export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
+const mutableKind = z.enum(['page', 'collection', 'set', 'space', 'context'])
+export type MutableKind = z.infer<typeof mutableKind>
 export type RenameKind = MutableKind | 'homepage'
 
-export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'navview' | 'page'
+const bannerOwner = z.enum(['collection', 'set', 'space', 'homepage', 'navview', 'page'])
+export type BannerOwnerKind = z.infer<typeof bannerOwner>
 
-type MutableContainerKind = 'collection' | 'set'
+export const CONTAINER_KINDS = ['collection', 'set'] as const
+const containerKind = z.enum(CONTAINER_KINDS)
+type MutableContainerKind = z.infer<typeof containerKind>
 
 /** Checked against the write path's own matrix: a contradicting claim is refused as malformed. */
-export interface RestoreDestination {
-  kind: 'container' | 'context'
-  id: string
-}
+const restoreDestination = z.object({ kind: z.enum(['container', 'context']), id: z.string() })
+export type RestoreDestination = z.infer<typeof restoreDestination>
 
-export type ChildOrderKey = 'set_order'
+const childOrderKey = z.literal('set_order')
+export type ChildOrderKey = z.infer<typeof childOrderKey>
+const ids = z.array(z.string())
+const pageMetaPatch: z.ZodType<Omit<PageMetaPatch, 'icon'>> = z.object({
+  aliases: z.array(z.string()).nullable().optional(),
+  title_icon: z.boolean().nullable().optional(),
+  locked: z.literal(true).nullable().optional(),
+} satisfies { [K in Exclude<keyof PageMetaPatch, 'icon'>]: z.ZodType })
 
-export type MutateRequest =
-  | {
-      op: 'createPage'
-      parentPath: string
-      name: string
-      seeds?: Record<string, PropertyValue>
-      order?: string[]
-    }
-  | {
-      op: 'createContainer'
-      parentPath: string
-      kind: MutableContainerKind
-      name: string
-      order?: string[]
-    }
+const op = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
+  z.object({ op: z.literal(literal), ...fields })
+
+// Every structural write enters through this one shape: a key it doesn't name is dropped, and a value off its type is refused before anything is written.
+export const mutateRequest = z.discriminatedUnion('op', [
+  op('createPage', {
+    parentPath: z.string(),
+    name: z.string(),
+    seeds: z.record(z.string(), propertyValue).optional(),
+    order: ids.optional(),
+  }),
+  op('createContainer', {
+    parentPath: z.string(),
+    kind: containerKind,
+    name: z.string(),
+    order: ids.optional(),
+  }),
   // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops. `fromCreate` marks a just-created page's first commit: disambiguates like a create, and skips the link cascade a linkless page can't need.
-  | {
-      op: 'rename'
-      path: string
-      kind: Exclude<MutableKind, 'space' | 'context'>
-      newName: string
-      fromCreate?: true
-    }
-  | { op: 'renameHeading'; path: string; heading: string; to: string }
-  | { op: 'delete'; path: string; kind: MutableKind }
-  | { op: 'restore'; bundlePath: string; destination?: RestoreDestination }
-  | { op: 'emptyBundle'; bundlePath: string }
-  | { op: 'setProfileImage'; source: string | null }
-  | { op: 'setProfileIcon'; icon: string | null }
-  | { op: 'setBanner'; path: string; kind: BannerOwnerKind; source: string | null }
-  | { op: 'setCrop'; image: string; crop: Crop | null }
-  | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }
-  | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
-  | { op: 'setDisclosureLock'; path: string; kind: MutableContainerKind; locked: boolean }
-  | { op: 'setActiveView'; path: string; kind: MutableContainerKind; viewId: string }
-  | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
-  | { op: 'setPageMeta'; path: string; patch: Omit<PageMetaPatch, 'icon'> }
+  op('rename', {
+    path: z.string(),
+    kind: mutableKind.exclude(['space', 'context']),
+    newName: z.string(),
+    fromCreate: z.literal(true).optional(),
+  }),
+  op('renameHeading', { path: z.string(), heading: z.string(), to: z.string() }),
+  op('delete', { path: z.string(), kind: mutableKind }),
+  op('restore', { bundlePath: z.string(), destination: restoreDestination.optional() }),
+  op('emptyBundle', { bundlePath: z.string() }),
+  op('setProfileImage', { source: z.string().nullable() }),
+  op('setProfileIcon', { icon: z.string().nullable() }),
+  op('setBanner', { path: z.string(), kind: bannerOwner, source: z.string().nullable() }),
+  op('setCrop', { image: z.string(), crop: crop.nullable() }),
+  op('setHeadingIconHidden', { path: z.string(), kind: bannerOwner, hidden: z.boolean() }),
+  op('setIcon', { path: z.string(), kind: mutableKind, icon: z.string().nullable() }),
+  op('setDisclosureLock', { path: z.string(), kind: containerKind, locked: z.boolean() }),
+  op('setActiveView', { path: z.string(), kind: containerKind, viewId: z.string() }),
+  op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),
+  op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),
   // Absent order = legacy append. Stale ids in a source container self-drop on the next read.
-  | { op: 'movePage'; path: string; newParentPath: string; order?: string[] }
-  | { op: 'moveSet'; path: string; newParentPath: string; order: string[] }
-  | { op: 'reorderChildren'; parentPath: string; key: ChildOrderKey; order: string[] }
-  | { op: 'reorderTop'; order: string[] }
-  | { op: 'createContextGroup'; name: string }
-  | { op: 'createSpace'; contextId: string; name: string; order?: string[] }
-  | { op: 'renameContext'; contextId: string; newName: string }
-  | { op: 'renameSpace'; spaceId: string; newName: string }
-  | { op: 'setContext'; path: string; contextId: string; spaceIds: string[] }
-  | { op: 'setSpaceColor'; spaceId: string; color?: string }
-  | { op: 'reorderContexts'; ids: string[] }
-  | { op: 'reorderPanelContexts'; ids: string[] }
-  | { op: 'reorderSpaces'; contextId: string; ids: string[] }
-  | { op: 'setSpaceRowOrder'; path: string; contexts: string[]; properties: string[] }
+  op('movePage', { path: z.string(), newParentPath: z.string(), order: ids.optional() }),
+  op('moveSet', { path: z.string(), newParentPath: z.string(), order: ids }),
+  op('reorderChildren', { parentPath: z.string(), key: childOrderKey, order: ids }),
+  op('reorderTop', { order: ids }),
+  op('createContextGroup', { name: z.string() }),
+  op('createSpace', { contextId: z.string(), name: z.string(), order: ids.optional() }),
+  op('renameContext', { contextId: z.string(), newName: z.string() }),
+  op('renameSpace', { spaceId: z.string(), newName: z.string() }),
+  op('setContext', { path: z.string(), contextId: z.string(), spaceIds: ids }),
+  op('setSpaceColor', { spaceId: z.string(), color: z.string().optional() }),
+  op('reorderContexts', { ids }),
+  op('reorderPanelContexts', { ids }),
+  op('reorderSpaces', { contextId: z.string(), ids }),
+  op('setSpaceRowOrder', { path: z.string(), contexts: ids, properties: ids }),
+])
+export type MutateRequest = z.infer<typeof mutateRequest>
 
 export type RenameHost = 'detail' | 'sidebar' | 'matrix'
 
@@ -114,7 +127,10 @@ export function containerCreators(kind: MutableContainerKind, parentPath: string
   const nested = kind === 'collection' ? 'Set' : 'Sub-Set'
   return [
     { label: 'New Page', req: { op: 'createPage', parentPath, name } },
-    { label: `New ${nested}`, req: { op: 'createContainer', parentPath, kind: 'set', name } },
+    {
+      label: `New ${nested}`,
+      req: { op: 'createContainer', parentPath, kind: 'set', name },
+    },
   ]
 }
 

@@ -1,5 +1,5 @@
+import { isPlainObject } from '../Contract/validators'
 import { type Json, stableStringify } from './stableJson'
-import { isPlainObject } from '../Properties/propertyValue'
 
 export type Depth = Record<string, number>
 

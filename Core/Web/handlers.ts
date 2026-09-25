@@ -1,6 +1,7 @@
 import { isValidLink, normalizeLinkUrl } from '../Paths/urlPath'
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
+import { isFiniteNumber } from '../Contract/validators'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, writeKey } from '../Platform/localState'
 
@@ -41,12 +42,15 @@ export const webHandlers = {
     return ok(null)
   },
 
-  'webGuestZoom:set': (ctx, guestId: number, factor: number) => {
+  'webGuestZoom:set': (ctx, guestId: unknown, factor: unknown) => {
+    if (!isFiniteNumber(guestId) || !isFiniteNumber(factor) || factor <= 0)
+      return fault('A guest id and a positive zoom factor are required.')
     ctx.webGuests.setZoom(guestId, factor)
     return ok(null)
   },
 
-  'webGuestMedia:pause': (ctx, guestId: number) => {
+  'webGuestMedia:pause': (ctx, guestId: unknown) => {
+    if (!isFiniteNumber(guestId)) return fault('A guest id is required.')
     ctx.webGuests.pauseMedia(guestId)
     return ok(null)
   },

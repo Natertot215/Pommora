@@ -13,7 +13,7 @@ import { contextsDir, sidecarPath } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 
-import { isPlainObject } from './propertyValue'
+import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'

@@ -1,6 +1,6 @@
+import { isPlainObject } from '../Contract/validators'
 import { parseContextKey } from './contexts'
 import { asString } from '../Nexus/coerce'
-import { isPlainObject } from '../Properties/propertyValue'
 import type { Json } from '../Files/stableJson'
 import type { Rewrite } from '../Properties/governedSweep'
 

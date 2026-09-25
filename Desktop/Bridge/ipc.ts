@@ -1,10 +1,10 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
-import type { Handlers, HostContext } from '@pommora/core/Contract/handlers'
+import type { Handlers, HostContext, Untrusted } from '@pommora/core/Contract/handlers'
 import { fault } from '@pommora/core/Contract/result'
 
 export type TellHandlers = {
-  [K in keyof Tells]: (win: BrowserWindow | null, ...args: Tells[K]) => void
+  [K in keyof Tells]: (win: BrowserWindow | null, ...args: Untrusted<Tells[K]>) => void
 }
 
 const running = new Set<Promise<unknown>>()
@@ -35,7 +35,13 @@ export function serveIpc(
   }
   for (const channel of Object.keys(tells) as (keyof Tells)[]) {
     const tell = tells[channel] as (win: BrowserWindow | null, ...args: unknown[]) => void
-    ipcMain.on(channel, (e, ...args) => tell(BrowserWindow.fromWebContents(e.sender), ...args))
+    ipcMain.on(channel, (e, ...args) => {
+      try {
+        tell(BrowserWindow.fromWebContents(e.sender), ...args)
+      } catch (err) {
+        console.error(`${channel}:`, err)
+      }
+    })
   }
 }
 

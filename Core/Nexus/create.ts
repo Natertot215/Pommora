@@ -12,7 +12,8 @@ import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'
 import { setChildOrder, setSpaceOrder } from './reorder'
-import { CONTAINER_KINDS, mutableTarget } from './liveTree'
+import { mutableTarget } from './liveTree'
+import { CONTAINER_KINDS } from './mutateRequest'
 import { noteValueWrite } from './valuesChanged'
 
 const created = (parentPath: string, r: { id: string; path: string }): MutateReply =>

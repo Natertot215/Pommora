@@ -1,7 +1,10 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
+import { isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
+import { rootSegs } from '../Paths/exclusion'
+import type { Option } from './optionModel'
 import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from '../Nexus/identityMark'
 
 export const propertyType = z.enum([
@@ -52,6 +55,7 @@ const selectOption = looseDecoder(
   }),
 )
 export type SelectOption = z.infer<typeof selectOption>
+const selectOptions = z.array(selectOption)
 
 /** An OPEN set: a group is identified by its id, never by its position, so the count is deliberately uncapped. */
 const statusGroupId = z.string()
@@ -78,43 +82,73 @@ const statusGroup = looseDecoder(
   }),
 )
 export type StatusGroup = z.infer<typeof statusGroup>
+const statusGroups = z.array(statusGroup)
 
-export const propertyDefinition = looseDecoder(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    type: propertyType,
-    icon: z.string().optional(),
-    select_options: z.array(selectOption).optional(),
-    status_groups: z.array(statusGroup).optional(),
-    link_underline: z.boolean().optional().catch(undefined),
-    // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
-    link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
-    link_color: z.string().optional().catch(undefined),
-    // The checkbox/switch LOOK is per-VIEW (column_styles), not here.
-    checkbox_color: z.string().optional().catch(undefined),
-    // Kept per-def rather than per-view so a format rides as an inert foreign key across rewrites.
-    number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
-    // Intl throws on a currency that isn't three letters or a digit count outside 0–100; a foreign code it doesn't know still formats.
-    number_currency: z
-      .string()
-      .regex(/^[A-Za-z]{3}$/)
-      .optional()
-      .catch(undefined),
-    number_separators: z.boolean().optional().catch(undefined),
-    number_decimals: z
-      .union([z.literal('hidden'), z.number().int().min(0).max(100)])
-      .optional()
-      .catch(undefined),
-    number_fraction: z.boolean().optional().catch(undefined),
-    number_denominator: z.number().optional().catch(undefined),
-    // Relative to the asset root, so re-pointing the root moves every property's folder with it. Governs new writes only — files already on disk keep resolving where they sit.
-    file_directory: z.string().optional().catch(undefined),
-  }),
-)
+const propertyDefinitionFields = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: propertyType,
+  icon: z.string().optional(),
+  select_options: selectOptions.optional(),
+  status_groups: statusGroups.optional(),
+  link_underline: z.boolean().optional().catch(undefined),
+  // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
+  link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
+  link_color: z.string().optional().catch(undefined),
+  // The checkbox/switch LOOK is per-VIEW (column_styles), not here.
+  checkbox_color: z.string().optional().catch(undefined),
+  // Kept per-def rather than per-view so a format rides as an inert foreign key across rewrites.
+  number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
+  // Intl throws on a currency that isn't three letters or a digit count outside 0–100; a foreign code it doesn't know still formats.
+  number_currency: z
+    .string()
+    .regex(/^[A-Za-z]{3}$/)
+    .optional()
+    .catch(undefined),
+  number_separators: z.boolean().optional().catch(undefined),
+  number_decimals: z
+    .union([z.literal('hidden'), z.number().int().min(0).max(100)])
+    .optional()
+    .catch(undefined),
+  number_fraction: z.boolean().optional().catch(undefined),
+  number_denominator: z.number().optional().catch(undefined),
+  // Relative to the asset root, so re-pointing the root moves every property's folder with it. Governs new writes only — files already on disk keep resolving where they sit.
+  file_directory: z.string().optional().catch(undefined),
+})
+export const propertyDefinition = looseDecoder(propertyDefinitionFields)
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
+
+// A display-config write decodes against the definition's own fields, so it can patch nothing else: a key absent from the payload is left, and a present-but-invalid one goes back to its default.
+const linkFields = propertyDefinitionFields.pick({
+  link_underline: true,
+  link_display: true,
+  link_color: true,
+})
+const numberFields = propertyDefinitionFields.pick({
+  number_family: true,
+  number_currency: true,
+  number_separators: true,
+  number_decimals: true,
+  number_fraction: true,
+  number_denominator: true,
+})
+export const narrowLinkConfig = (payload: unknown): LinkConfig | null =>
+  linkFields.safeParse(payload).data ?? null
+export const narrowNumberFormat = (payload: unknown): NumberConfig | null =>
+  numberFields.safeParse(payload).data ?? null
+/** Stored relative to the asset ROOT; an empty result means the root itself — the absence of the field, not a stored empty string. */
+export const narrowFileConfig = (payload: unknown): FileConfig | null => {
+  if (!isPlainObject(payload) || !('file_directory' in payload)) return null
+  const raw = typeof payload.file_directory === 'string' ? payload.file_directory : ''
+  const dir = rootSegs(raw.trim()).join('/')
+  return { file_directory: dir || undefined }
+}
+export const narrowOptions = (v: unknown): Option[] | null =>
+  selectOptions.safeParse(v).data ?? null
+export const narrowStatusGroups = (v: unknown): StatusGroup[] | null =>
+  statusGroups.safeParse(v).data ?? null
 
 export type FileConfig = Pick<PropertyDefinition, 'file_directory'>
 

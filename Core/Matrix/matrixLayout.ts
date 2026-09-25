@@ -1,5 +1,4 @@
-import { isFiniteNumber } from '../Contract/validators'
-import { isPlainObject } from '../Properties/propertyValue'
+import { isFiniteNumber, isPlainObject } from '../Contract/validators'
 import type { Frame } from './Engine/viewport'
 
 export type Positions = Record<string, [number, number]>

@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { baseSidecar } from './schemas'
 import { pathExists } from '../Files/atomicWrite'
@@ -20,9 +21,8 @@ export interface FolderKindContext {
 export function readAgendaRegistration(
   identity: Record<string, unknown> | null,
 ): AgendaRegistration {
-  const raw = identity?.agenda_folders
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {}
-  const rec = raw as Record<string, unknown>
+  const rec = identity?.agenda_folders
+  if (!isPlainObject(rec)) return {}
   const out: AgendaRegistration = {}
   for (const slot of AGENDA_FOLDERS) {
     const id = rec[slot]

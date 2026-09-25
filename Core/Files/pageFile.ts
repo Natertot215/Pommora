@@ -9,6 +9,7 @@ import {
 } from 'yaml'
 import { join, titleFromPath } from '../Paths/posix'
 import { admitContentFile, ID_KEY } from '../Nexus/identityMark'
+import { isPlainObject } from '../Contract/validators'
 import { asString } from '../Nexus/coerce'
 import { adoptedId } from '../Nexus/ids'
 import type { PageDetail } from '../Pages/pageDetail'
@@ -36,9 +37,7 @@ export const bodyHash = (content: string): string =>
 export function splitFrontmatter(content: string): Record<string, unknown> {
   try {
     const parsed: unknown = parseDocument(splitEnvelope(content).frontmatter).toJSON()
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : {}
+    return isPlainObject(parsed) ? parsed : {}
   } catch {
     return {}
   }

@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Contract/validators'
 import { isNavRef, toNavRef } from './navRef'
 import type { NavRef, NavigationState } from './navRef'
 import { nexusConfig } from '../Paths/paths'
@@ -7,7 +8,6 @@ import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWri
 import { parseConnectionText } from '../Connections/connections'
 import { underAssetRoot } from '../Assets/assetRoots'
 import { readWatchScope } from '../Settings/settings'
-import { isPlainObject } from '../Properties/propertyValue'
 
 const statePath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.state)
 
@@ -45,10 +45,10 @@ export async function readNavigationState(root: string): Promise<NavigationState
 
 export async function writeNavigationState(
   root: string,
-  patch: Partial<NavigationState>,
+  patch: Record<string, unknown>,
 ): Promise<void> {
   if ('recents' in patch) {
-    const recents = cleanRefs(patch.recents ?? [])
+    const recents = refList(patch.recents) ?? []
     writeValue('recents', recents.length ? recents : null)
   }
   if (!('pinned' in patch) && !('banner' in patch)) return

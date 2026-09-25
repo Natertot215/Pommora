@@ -1,10 +1,11 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
-import { isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
+import { isPlainObject, isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
+import { coerceOpenIn, coerceViewButton } from '../Nexus/schemas'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { mutableTarget } from '../Nexus/liveTree'
 import { confirmContainerWrite } from '../Nexus/confirm'
-import { type ContainerConfigPatch, setContainerConfig } from './containerConfig'
+import { setContainerConfig } from './containerConfig'
 import { loadValues } from './loadValues'
 import { savedView } from './views'
 import { deleteView, duplicateView, reorderViews, saveView } from './viewsFile'
@@ -72,12 +73,11 @@ export const viewsHandlers = {
     async (root, ctx, containerPath: unknown, kind: unknown, patch: unknown) => {
       const c = await resolveViewContainer(root, containerPath, kind)
       if (!c.ok) return c
-      if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
-      const r = await setContainerConfig(
-        c.value.folder,
-        c.value.kind,
-        patch as ContainerConfigPatch,
-      )
+      if (!isPlainObject(patch)) return NEEDS_CONFIG_PATCH
+      const r = await setContainerConfig(c.value.folder, c.value.kind, {
+        open_in: coerceOpenIn(patch.open_in),
+        view_button: coerceViewButton(patch.view_button),
+      })
       if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
       return r
     },

@@ -1,20 +1,22 @@
+import { z } from 'zod'
 import { optionValues, type PropertyDefinition } from './properties'
 
-export type PropertyValue =
-  | { kind: 'number'; value: number }
-  | { kind: 'checkbox'; value: true }
-  | { kind: 'datetime'; value: string } // ISO-8601; a bare "yyyy-MM-dd" is a date-only datetime
-  | { kind: 'select'; value: string }
-  | { kind: 'multiSelect'; value: string[] }
-  /** Kept while the Status tag goes, because Context is NOT derivable from the schema on the value path — the type resolver runs there without the Context id list. */
-  | { kind: 'context'; value: string[] }
-  | { kind: 'url'; value: string }
-  | { kind: 'file'; value: string[] } // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
-  | { kind: 'null' }
-
-export function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
+const strings = z.array(z.string())
+export const propertyValue = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('number'), value: z.number() }),
+  z.object({ kind: z.literal('checkbox'), value: z.literal(true) }),
+  // ISO-8601; a bare "yyyy-MM-dd" is a date-only datetime
+  z.object({ kind: z.literal('datetime'), value: z.string() }),
+  z.object({ kind: z.literal('select'), value: z.string() }),
+  z.object({ kind: z.literal('multiSelect'), value: strings }),
+  // Kept while the Status tag goes, because Context is NOT derivable from the schema on the value path — the type resolver runs there without the Context id list.
+  z.object({ kind: z.literal('context'), value: strings }),
+  z.object({ kind: z.literal('url'), value: z.string() }),
+  // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
+  z.object({ kind: z.literal('file'), value: strings }),
+  z.object({ kind: z.literal('null') }),
+])
+export type PropertyValue = z.infer<typeof propertyValue>
 
 /** YAML reads an unquoted `[[Name.ext]]` as a nested flow sequence rather than a string; unwrapping single-element arrays keeps a hand-edit from nulling the whole value. */
 function fileEntry(v: unknown): string | null {

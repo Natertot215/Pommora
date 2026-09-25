@@ -1,4 +1,4 @@
-import { isPlainObject } from '../Properties/propertyValue'
+import { isPlainObject } from '../Contract/validators'
 import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'react'
 import {
   knownTile,

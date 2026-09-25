@@ -1,5 +1,6 @@
+import { z } from 'zod'
 import type { ActionItem, LeafItem } from './menuModel'
-import { HEADING_LEVELS, type ListKind } from './gripMenu'
+import { HEADING_LEVELS, LIST_KINDS, type ListKind } from './gripMenu'
 import type { CommandId, Commands } from './commands'
 import {
   type BlockMenuAction,
@@ -12,22 +13,25 @@ import {
 import { isValidLink } from '../Paths/urlPath'
 
 /** Pushed renderer→main on selection/focus change: main cannot see CM6 state. */
-export interface FormatState {
-  focused: boolean
-  hasSelection: boolean
-  bold: boolean
-  italic: boolean
-  strikethrough: boolean
-  highlight: boolean
-  inlineCode: boolean
-  link: boolean
-  connection: boolean
-  heading: number // 0 = paragraph, 1–6
-  list: ListKind | null
-  block: 'quote' | null
-  embedSeat: boolean
-  citeSeat: boolean
-}
+/** The editor's format state as the native menu reads it, off the window. */
+export const formatState = z.object({
+  focused: z.boolean(),
+  hasSelection: z.boolean(),
+  bold: z.boolean(),
+  italic: z.boolean(),
+  strikethrough: z.boolean(),
+  highlight: z.boolean(),
+  inlineCode: z.boolean(),
+  link: z.boolean(),
+  connection: z.boolean(),
+  // 0 = paragraph, 1–6
+  heading: z.number().int().min(0).max(6),
+  list: z.enum(LIST_KINDS.map((k) => k.kind) as [ListKind, ...ListKind[]]).nullable(),
+  block: z.literal('quote').nullable(),
+  embedSeat: z.boolean(),
+  citeSeat: z.boolean(),
+})
+export type FormatState = z.infer<typeof formatState>
 
 /** Menu-action strings (sent main→renderer), namespaced so other `menu:action` listeners ignore them. */
 export const EDITOR_ACTION_PREFIX = 'mdpm:'

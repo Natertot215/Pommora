@@ -1,5 +1,5 @@
+import { isPlainObject } from '../Contract/validators'
 import { type FilterGroup, filterGroup } from '../Views/views'
-import { isPlainObject } from '../Properties/propertyValue'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'

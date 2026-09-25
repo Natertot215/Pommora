@@ -1,8 +1,13 @@
-import type { EditorPrefs, EditorPrefWrite } from '../Contract/bridge'
+import type { EditorPrefs } from '../Contract/bridge'
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { NO_STORE, ok, fault } from '../Contract/result'
-import { isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
-import { isPlainObject } from '../Properties/propertyValue'
+import {
+  isFiniteNumber,
+  isKeyOf,
+  isPlainObject,
+  isString,
+  isStringArray,
+} from '../Contract/validators'
 import {
   readKey,
   readScope,
@@ -20,10 +25,16 @@ const isEmptyValue = (v: unknown): boolean =>
   (isPlainObject(v) && Object.keys(v).length === 0)
 
 export const scopeSet = (scope: Scope, valid: (v: unknown) => boolean, expected: string) =>
-  withWriteRoot((_root, _ctx, key: string, value: unknown) => {
+  withWriteRoot((_root, _ctx, key: unknown, value: unknown) => {
+    if (!isString(key)) return fault('A key is required.')
     if (!valid(value)) return fault(expected)
     return writeKey(scope, key, isEmptyValue(value) ? null : value) ? ok(null) : NO_STORE
   })
+
+const isHeightMap = (v: unknown): v is Record<string, number> =>
+  isPlainObject(v) && Object.values(v).every((h) => isFiniteNumber(h) && h > 0)
+const isIndexArray = (v: unknown): v is number[] =>
+  Array.isArray(v) && v.every((x) => Number.isInteger(x) && x >= 0)
 
 const editorPrefShapes: Record<keyof EditorPrefs, (v: unknown) => boolean> = {
   folds: isStringArray,
@@ -48,20 +59,23 @@ export const interfaceHandlers = {
     return ok(null)
   }),
 
-  'editorPrefs:get': withRoot((_root, _ctx, pageId: string) =>
-    ok<EditorPrefs>({
+  'editorPrefs:get': withRoot((_root, _ctx, pageId: unknown) => {
+    if (!isString(pageId)) return fault('A page id is required.')
+    return ok<EditorPrefs>({
       folds: readKey<string[]>('folds', pageId) ?? [],
       embedHeights: readKey<Record<string, number>>('embedHeights', pageId) ?? {},
       embedZooms: readKey<Record<string, number>>('embedZooms', pageId) ?? {},
       headingCols: readKey<number[]>('headingCols', pageId) ?? [],
-    }),
-  ),
-  'editorPrefs:set': (ctx, pageId: string, ...[scope, value]: EditorPrefWrite) =>
-    scopeSet(scope, editorPrefShapes[scope], `A ${scope} value has the wrong shape.`)(
+    })
+  }),
+  'editorPrefs:set': (ctx, pageId: unknown, scope: unknown, value: unknown) => {
+    if (!isKeyOf(editorPrefShapes, scope)) return fault('Unknown editor preference.')
+    return scopeSet(scope, editorPrefShapes[scope], `A ${scope} value has the wrong shape.`)(
       ctx,
       pageId,
       value,
-    ),
+    )
+  },
   'citations:get': withRoot(() => ok(readScope<boolean>('citations')), ok({})),
   'citations:set': scopeSet(
     'citations',
