@@ -10,7 +10,6 @@ import {
 } from '@pommora/uix/Menus'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { useSession } from '../../Session/store'
-import { viewSettingsScope } from './viewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo, usePageOutline } from '../../Pages/pageEditor'
 import { outlineTree, type OutlineNode } from '../../MarkdownPM/Engine/outlineTree'
 import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
@@ -24,9 +23,9 @@ type Disclosure = ReturnType<typeof useDisclosureSet>
 const EDGE_INSET = 10
 
 export function OutlineMenu(): React.JSX.Element | null {
-  const selection = useSession((st) => st.selection)
+  const onPage = useSession((st) => st.selection.kind === 'page')
   // Gate ABOVE the menu, so leaving the Page unmounts it: rendering null below the shell's hooks would keep `open` alive with no wrapper to dismiss against.
-  if (viewSettingsScope(selection) !== 'page') return null
+  if (!onPage) return null
   return (
     <MenuDropdown
       icon="list-tree"

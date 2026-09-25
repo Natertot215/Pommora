@@ -32,6 +32,15 @@ import { type ContentHost, ContentHostContext } from './contentHost'
 type Host = ContentHost & { target: SelectionState }
 
 const HOMEPAGE: SelectionState = { kind: 'homepage' }
+const SUBFIELD: Record<Exclude<SelectionState['kind'], 'none'>, boolean> = {
+  homepage: false,
+  context: false,
+  space: true,
+  collection: true,
+  set: true,
+  page: true,
+  matrix: true,
+}
 const keyOf = (target: SelectionState): string =>
   target.kind === 'none' ? target.kind : navKey(target)
 const shownAs = (target: Tab['target']): SelectionState =>
@@ -150,13 +159,7 @@ export function ContentView(): React.JSX.Element {
   }, [selection, navSlide])
   const reveal = useRevealNear()
 
-  const showSubfield =
-    selectionKind === 'collection' ||
-    selectionKind === 'set' ||
-    selectionKind === 'page' ||
-    selectionKind === 'space' ||
-    selectionKind === 'matrix' ||
-    (selectionKind === 'none' && !!tree)
+  const showSubfield = selectionKind === 'none' ? !!tree : SUBFIELD[selectionKind]
 
   const paneClass = cx(
     'content-view',

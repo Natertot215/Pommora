@@ -1,26 +1,28 @@
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
-import { viewSettingsScope } from './viewSettingsScope'
 import { MenuSurface } from '@pommora/uix/Menus'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { PageMenu } from '../../Pages/PageMenu'
-import { SpaceMenu } from '../../Tiles/SpaceMenu'
-import { SettingsScaffold } from '../../Tiles/HomepageSettings'
+import { SpaceMenu } from '../../Contexts/SpaceMenu'
+import { HomepageMenu } from './HomepageMenu'
 import { MatrixMenu } from '../../Matrix/MatrixMenu'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-function scopePane(scope: ReturnType<typeof viewSettingsScope>): React.JSX.Element {
-  switch (scope) {
-    case 'view':
+function scopePane(kind: SelectionState['kind']): React.JSX.Element | null {
+  switch (kind) {
+    case 'collection':
+    case 'set':
       return <SettingsFrame />
     case 'page':
       return <PageMenu />
     case 'space':
       return <SpaceMenu />
     case 'homepage':
-    case 'context':
-      return <SettingsScaffold />
+      return <HomepageMenu />
     case 'matrix':
       return <MatrixMenu />
+    case 'context':
+      return null
     case 'none':
       return <div style={{ minHeight: 24 }} />
   }
@@ -33,11 +35,11 @@ export function SettingsMenu({
   closing?: boolean
   notchInsetRight?: number
 }): React.JSX.Element {
-  const selection = useSession((st) => st.selection)
+  const kind = useSession((st) => st.selection.kind)
   return (
     <div className={s.anchor}>
       <MenuSurface closing={closing} notchInsetRight={notchInsetRight}>
-        {scopePane(viewSettingsScope(selection))}
+        {scopePane(kind)}
       </MenuSurface>
     </div>
   )
