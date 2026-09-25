@@ -31,7 +31,7 @@ Every in-app window opens and closes on the `windowIn` / `windowOut` scale-fade 
 
 The interaction layer in `UIX/Interactions/` and `UIX/Animations/`: content-agnostic pointer, scroll, and motion primitives that fields and labels depend down into.
 
-**The `--io` progress:** One registered `@property --io` (0 closed, 1 open) transitions once on `--duration-base` and drives the SidePane's moving parts in lockstep: the SidePane slide, the toolbar trio's swallow as the pill rides the pane's edge, and the trio's glass void. `.shell.is-resizing` sets transitions off for 1:1 cursor tracking during an edge drag, the sidebar collapse is a sibling slide on the same token, and a floating window parks a leading pane on the mirrored `--io-l`.
+**The `--io` progress:** One registered `@property --io` (0 closed, 1 open) transitions on `--pane-slide` and drives the SidePane's moving parts in lockstep: the SidePane slide, the toolbar trio's swallow as the pill rides the pane's edge, and the trio's glass void. `.shell.is-resizing` sets `--pane-slide` to `0s` for 1:1 cursor tracking during an edge drag, the sidebar collapse is a sibling slide on the same token, and a floating window parks a leading pane on the mirrored `--io-l`.
 
 **Reveal:** `UIX/Animations/Reveal.tsx` is the canonical body open and close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `fast` token, mounting at 0fr and unmounting on `transitionend`, that stops clipping once open so overhanging affordances aren't cut off. It backs the sidebar's nested trees, the settings panes, and the heading-fold body. Disclosure chevrons rotate through the shared `dropOutline` on the same beat, so rotate and unfold land together.
 
