@@ -4,8 +4,8 @@ import { useEffect } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
-import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
-import { bodyHead, dropDetailsWhere, readBodyBase, readPageDetail } from './pageDetailCache'
+import { pagesByIdOf } from '@pommora/core/Nexus/treeIndex'
+import { bodyHead, dropCacheDetail, readBodyBase, readPageDetail } from './pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
 import { flushAllSaves } from './nexusSlice'
 import { flushPageSave, setStaleSaveSink } from './saveScheduler'
@@ -47,11 +47,11 @@ export function useBridgeSubscriptions(): void {
         const changed = new Set(changes.flatMap((c) => c.pageIds))
         // A page's own body save is already in the window's copy; dropping it would stop the write-through and the landing merge.
         const held = new Set(changes.flatMap((c) => c.bodyOnly ?? []))
-        const byPath = pageIdIndex(useSession.getState().tree)
-        dropDetailsWhere((path) => {
-          const id = byPath.get(path)
-          return id !== undefined && changed.has(id) && !held.has(id)
-        })
+        const tree = useSession.getState().tree
+        for (const id of changed) {
+          const path = tree && !held.has(id) && pagesByIdOf(tree).get(id)?.path
+          if (path) dropCacheDetail(path)
+        }
         bumpContainerValues(changes)
         useSession.getState().refetchMatrixPages(changed)
       }),

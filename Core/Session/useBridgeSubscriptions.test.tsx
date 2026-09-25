@@ -17,6 +17,7 @@ import {
 import { flushPageSave, schedulePageSave } from './saveScheduler'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
+import { captureCache, readCache } from '../Navigation/warmTabs'
 import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -194,5 +195,15 @@ describe('a values push', () => {
     expect(readPageDetail(alpha)).toBeDefined()
     act(() => pushValues([{ rel: 'Notes', pageIds: ['p1'] }]))
     expect(readPageDetail(alpha)).toBeUndefined()
+  })
+
+  it('drops a parked tab’s warm copy of a changed page that already left the detail cache', async () => {
+    useSession.setState({ tree: makeTree() })
+    await mount()
+    const alpha = 'Notes/Alpha.md'
+    captureCache('tab-1', 'p1', { pageDetail: detail({ id: 'p1', path: alpha }) })
+    expect(readPageDetail(alpha)).toBeUndefined()
+    act(() => pushValues([{ rel: 'Notes', pageIds: ['p1'] }]))
+    expect(readCache('tab-1', 'p1')?.pageDetail).toBeUndefined()
   })
 })

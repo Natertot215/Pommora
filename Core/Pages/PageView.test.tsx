@@ -13,7 +13,13 @@ import { PageView } from './PageView'
 import { stubDialer } from '../vitest.setup'
 import { undo } from '@codemirror/commands'
 import { machine } from '../Platform/machine'
-import { cachePageDetail, clearCache, dropPageDetail } from '../Session/pageDetailCache'
+import {
+  cachePageDetail,
+  clearCache,
+  dropCacheDetail,
+  dropPageDetail,
+} from '../Session/pageDetailCache'
+import { readCache } from '../Navigation/warmTabs'
 import { flushPageSave, setStaleSaveSink } from '../Session/saveScheduler'
 import { absorbLanding } from './bodyMount'
 
@@ -104,6 +110,28 @@ describe('PageView seeds its editor from the slot', () => {
     await act(async () => root.render(null))
     const slotAfter = useSession.getState().pages.a
     expect(slotAfter?.status === 'ready' && slotAfter.body).toBe('xlive')
+  })
+})
+
+describe('a warm capture takes its page detail from the detail cache', () => {
+  const unmountAfter = async (drop: boolean): Promise<void> => {
+    cachePageDetail(detail({ id: 'a', path: PATH, body: 'live' }))
+    useSession.setState({ tree: null, pages: slot('live', 'live') })
+    await act(async () => {
+      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+    })
+    if (drop) dropCacheDetail(PATH)
+    await act(async () => root.render(null))
+  }
+
+  it('so a page a value change dropped returns without the slot’s stale values', async () => {
+    await unmountAfter(true)
+    expect(readCache('t1', 'page:a')?.pageDetail).toBeUndefined()
+  })
+
+  it('and a page still cached returns warm with its live body', async () => {
+    await unmountAfter(false)
+    expect(readCache('t1', 'page:a')?.pageDetail).toMatchObject({ path: PATH, body: 'live' })
   })
 })
 
