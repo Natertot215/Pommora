@@ -1,8 +1,9 @@
 import { ulid } from 'ulidx'
 import { listPathsUnder } from '../../Files/walk'
+import { heldName } from '../../Files/atomicWrite'
 import { stampedId } from '../../Files/pageFile'
 import { manifestAdmits } from '../../Paths/exclusion'
-import { join, isMarkdownFile } from '../../Paths/posix'
+import { basename, dirname, join, isMarkdownFile } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { captureLoser } from '../Arrival/captures'
 import { isMergedJson } from '../Arrival/jsonMerge'
@@ -143,7 +144,12 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
   const snapshots = new Map<string, Snapshot>()
   const blobs = new Map<string, Uint8Array>()
 
+  const collected = new Set<string>()
+  const renames = new Map<string, string>()
+
   const collect = async (rel: string): Promise<void> => {
+    if (collected.has(rel)) return
+    collected.add(rel)
     const abs = join(root, rel)
     const stat = await machine().stat(abs)
     if (stat?.isDirectory === true) {
@@ -154,17 +160,38 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
       for (const child of under) await collect(child)
       return
     }
+    if (rel.normalize('NFC') !== rel) {
+      setStatus(session.ctx, { state: 'error', why: `${rel} is not NFC and stays home.` })
+      return
+    }
+    const row = readBase(rel)
+    if (row !== null && row.path !== rel) {
+      const from = join(root, row.path)
+      if (dirname(row.path) !== dirname(rel)) {
+        if (stat !== null && (await machine().stat(from)) === null) renames.set(row.path, rel)
+        else await collect(row.path)
+        return
+      }
+      const [now, was] = [await heldName(abs), await heldName(from)]
+      if (now === basename(rel) && was === basename(row.path))
+        setStatus(session.ctx, {
+          state: 'error',
+          why: `${rel} differs from ${row.path} only in case and stays home.`,
+        })
+      else if (now === basename(rel)) renames.set(row.path, rel)
+      else await collect(row.path)
+      return
+    }
     if (stat === null) {
-      const gone = readBase(rel)
-      if (gone !== null) {
-        changes.push({ kind: 'delete', base: gone.version, path: rel })
+      if (row !== null) {
+        if ((await heldName(abs)) === null)
+          changes.push({ kind: 'delete', base: row.version, path: rel })
         return
       }
       for (const under of readBasesUnder(rel))
         changes.push({ kind: 'delete', base: under.version, path: under.path })
       return
     }
-    const row = readBase(rel)
     if (sweep && row !== null && Math.floor(stat.mtimeMs) === row.mtimeMs && stat.size === row.size)
       return
     if (stat.size + SEAL_OVERHEAD > ITEM_CAP) {
@@ -175,10 +202,6 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
     if (snapshot === null) return
     if (snapshot.hash === row?.hash) return
     if (isMarkdownFile(rel) && stampedId(new TextDecoder().decode(snapshot.bytes)) === null) return
-    if (rel.normalize('NFC') !== rel) {
-      setStatus(session.ctx, { state: 'error', why: `${rel} is not NFC and stays home.` })
-      return
-    }
     const item = await sealed(session, rel, snapshot)
     if (item === null) return
     snapshots.set(rel, snapshot)
@@ -197,6 +220,7 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
     if (change !== undefined)
       await settle(session, outcome, change, snapshots.get(outcome.path), blobs.get(outcome.path))
   }
+  for (const [from, to] of renames) await pushRename(session, from, to)
 }
 
 export async function pushRename(session: Session, from: string, to: string): Promise<void> {
@@ -210,7 +234,9 @@ export async function pushRename(session: Session, from: string, to: string): Pr
     path,
   }))
   const byPath = new Map(moved.map((entry) => [entry.path, entry]))
-  for (const outcome of await storeChanges(session, changes)) {
+  const outcomes = await storeChanges(session, changes)
+  if (changes.length > 0 && outcomes.length === 0) return
+  for (const outcome of outcomes) {
     const entry = byPath.get(outcome.path)
     if (entry === undefined) continue
     renameBase(entry.row.path, entry.path)

@@ -27,7 +27,7 @@ export function openNexusDb(dir: string, root: string): Db | null {
         writeMeta(db, 'index_generation', String(INDEX_GENERATION))
       }
       const stamped = readMeta(db, 'root')
-      if (stamped !== null && elsewhere(stamped, root)) db.exec('DELETE FROM sync')
+      if (stamped !== null && elsewhere(stamped, root)) db.exec('DELETE FROM sync_base')
       writeMeta(db, 'root', root)
     } catch (e) {
       if (damagedError(e)) throw e
