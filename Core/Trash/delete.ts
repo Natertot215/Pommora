@@ -6,6 +6,7 @@ import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
+import { dropContextOrder } from '../Nexus/reorder'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile, mintBundle, settleBundle } from './bundle'
@@ -67,6 +68,7 @@ export async function deleteOp(
         }))
       return unmint(e)
     })
+    if (entry) await dropContextOrder(root, entry.id)
     if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
   } else if (write) {
     await write(await gatherContentRecord(root, req.kind, abs))
