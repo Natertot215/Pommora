@@ -25,7 +25,8 @@ import {
   type FolderKind,
   type FolderKindContext,
 } from './folderKind'
-import { AGENDA_FOLDERS, agendaKind, SIDECAR_FILENAME, sidecarPath } from '../Paths/paths'
+import { sidecarPath } from '../Paths/paths'
+import { AGENDA_FOLDERS, agendaKind, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 async function reHomeRegistered(
   absDir: string,

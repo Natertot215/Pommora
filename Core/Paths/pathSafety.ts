@@ -1,6 +1,5 @@
 import { isAbsolute, join, relative } from './posix'
 import { machine } from '../Platform/machine'
-import { NON_CORPUS_TOP, TRASH_DIR } from './nexusPaths'
 import { fail, ok, type Result } from '../Contract/result'
 
 export function escapes(rel: string): boolean {
@@ -36,10 +35,4 @@ export async function resolveUnderRoot(root: string, relPath: unknown): Promise<
     return fail('invalid-path', 'Path escapes the nexus root.')
   }
   return ok(realTarget)
-}
-
-/** Addressable by a resolve, but never a target a mutation may rename, delete, or decorate. */
-export async function isReserved(root: string, abs: string): Promise<boolean> {
-  const rel = relative(await machine().realpath(root), abs)
-  return rel === '' || NON_CORPUS_TOP.has(rel) || rel.startsWith(`${TRASH_DIR}/`)
 }

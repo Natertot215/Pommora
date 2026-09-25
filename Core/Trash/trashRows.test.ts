@@ -2,6 +2,7 @@ import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { dropLiveTree } from '../Nexus/liveTree'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashRow } from './trashRow'
@@ -54,6 +55,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })

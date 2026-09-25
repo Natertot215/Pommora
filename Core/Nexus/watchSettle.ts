@@ -1,6 +1,6 @@
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
-import { NEXUS_DIR } from '../Paths/nexusPaths'
+import { NEXUS_DIR, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
@@ -8,7 +8,6 @@ import {
   rootSegs,
   type WatchScope,
 } from '../Paths/exclusion'
-import { NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
 import type { ValueChange } from './tree'
 import { getLiveTree } from './liveTree'

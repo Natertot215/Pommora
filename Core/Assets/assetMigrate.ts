@@ -1,9 +1,9 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
 import { parseConnectionText } from '../Connections/connections'
-import { ASSETS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, TRASH_DIR, NEXUS_CONFIG_FILES, SIDECARS } from '../Paths/nexusPaths'
 import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
-import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig } from '../Paths/paths'
+import { assetsDir, nexusConfig } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {

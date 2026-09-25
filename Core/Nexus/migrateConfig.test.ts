@@ -3,8 +3,8 @@ import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { pathExists } from '../Files/atomicWrite'
-import { CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
-import { NEXUS_CONFIG_FILES, contextsRegistryFile, nexusConfig } from '../Paths/paths'
+import { CONTEXTS_REGISTRY_REL, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { contextsRegistryFile, nexusConfig } from '../Paths/paths'
 import { ensureConfigLayout } from './migrateConfig'
 
 let root: string

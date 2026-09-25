@@ -172,6 +172,7 @@ describe('the writers maintain the rows', () => {
     expect(queryMembers('<Projects>', 'pommora')).toEqual([])
     expect(queryMembers('<Projects>', 'pom')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
+    await refreshTree(root)
     const deleted = await handleMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pom', kind: 'space' },

@@ -7,7 +7,8 @@ import { agendaContext, resolveFolderKind } from './folderKind'
 import { isUlidShaped } from './identityMark'
 import { pathExists } from '../Files/atomicWrite'
 import { valueOr } from '../Contract/result'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
+import { nexusDir, nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 let root: string
 beforeEach(async () => {

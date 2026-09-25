@@ -1,9 +1,16 @@
 import { basename, dirname, join, relative, isMarkdownFile } from '../Paths/posix'
-import { escapes } from '../Paths/pathSafety'
+import { escapes, resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
-import { TRASH_DIR } from '../Paths/nexusPaths'
-import type { MutateOutcome, RestoreDestination } from '../Nexus/mutateRequest'
+import { TRASH_DIR, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import type {
+  MutateOutcome,
+  MutateReply,
+  MutateRequest,
+  RestoreDestination,
+} from '../Nexus/mutateRequest'
+import type { MutateContext } from '../Nexus/mutate'
+import { seedContentIndex } from '../Index/indexSeed'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
@@ -19,7 +26,6 @@ import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter, stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { noteValueWrite } from '../Nexus/valuesChanged'
-import { SPACE_SIDECAR } from '../Paths/paths'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
@@ -207,7 +213,18 @@ type Restored = Pick<MutateOutcome, 'unrestored'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
-export async function restoreArtifact(
+export async function restoreOp(
+  { root }: MutateContext,
+  req: Extract<MutateRequest, { op: 'restore' }>,
+): Promise<MutateReply> {
+  const resolved = await resolveUnderRoot(root, req.bundlePath)
+  if (!resolved.ok) return resolved
+  const r = await restoreArtifact(root, resolved.value, req.destination)
+  if (r.ok) await seedContentIndex(root)
+  return r
+}
+
+async function restoreArtifact(
   root: string,
   bundleAbs: string,
   destination?: RestoreDestination,

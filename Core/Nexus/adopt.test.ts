@@ -8,13 +8,8 @@ import { readSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
 import { idTime } from './ids'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
-import {
-  nexusConfig,
-  nexusDir,
-  NEXUS_CONFIG_FILES,
-  SIDECAR_FILENAME,
-  sidecarPath,
-} from '../Paths/paths'
+import { nexusConfig, nexusDir, sidecarPath } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 

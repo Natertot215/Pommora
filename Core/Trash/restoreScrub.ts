@@ -13,7 +13,7 @@ import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/page
 import { isMarkdownFile } from '../Paths/posix'
 import { listFilesRecursive, listMarkdownFiles } from '../Files/walk'
 
-import { SPACE_SIDECAR } from '../Paths/paths'
+import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 
 async function liveWorld(

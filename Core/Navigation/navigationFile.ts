@@ -1,6 +1,7 @@
 import { isNavRef, toNavRef } from './navRef'
 import type { NavRef, NavigationState } from './navRef'
-import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { readValue, writeValue } from '../Platform/localState'
 import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { parseConnectionText } from '../Connections/connections'

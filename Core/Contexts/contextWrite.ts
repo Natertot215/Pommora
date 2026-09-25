@@ -8,10 +8,12 @@ import {
   reconcileGovernedRoot,
   type GovernedWorld,
 } from './contextResolve'
-import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
+import { contextDirRel, spaceDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
-import { getLiveTree } from '../Nexus/liveTree'
+import { getLiveTree, mutableTarget } from '../Nexus/liveTree'
+import type { MutateContext } from '../Nexus/mutate'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { assignedDefs, collectionFolderOf, collectionFolders } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
@@ -31,7 +33,7 @@ import { noteSidecarWrite } from '../Nexus/valuesChanged'
 import { listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
-import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../Paths/paths'
+import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 
@@ -220,17 +222,25 @@ export async function setSpaceContext(
   return writeSpaceSidecar(a.dir, (raw) => setOrDrop(repaired(raw), key, value))
 }
 
-export async function setContextOnPath(
-  root: string,
-  abs: string,
-  world: ContextWorld,
-  contextId: string,
-  spaceIds: string[],
-): Promise<Result<null>> {
-  if (isMarkdownFile(abs)) return setPageContext(abs, root, world, contextId, spaceIds)
-  const owner = [...world.spaceById.values()].find((ref) => ref.dir === abs)
-  if (owner) return setSpaceContext(world, owner.id, contextId, spaceIds)
-  return fail('invalid-path', 'Not a context-taggable entity.')
+export async function setContextOp(
+  { root }: MutateContext,
+  { path, contextId, spaceIds }: Extract<MutateRequest, { op: 'setContext' }>,
+): Promise<MutateReply> {
+  const target = await mutableTarget(root, path, ['page', 'space'])
+  if (!target.ok) return target
+  const abs = target.value
+  const page = isMarkdownFile(abs)
+  const write = async (): Promise<Result<null>> => {
+    const world = await loadContextWorld(root)
+    if (!world.ok) return world
+    if (page) return setPageContext(abs, root, world.value, contextId, spaceIds)
+    const owner = [...world.value.spaceById.values()].find((ref) => ref.dir === abs)
+    if (owner) return setSpaceContext(world.value, owner.id, contextId, spaceIds)
+    return fail('invalid-path', 'Not a context-taggable entity.')
+  }
+  // A Space's link write decides each far half from the world it loaded, so two of them never overlap.
+  const r = await (page ? write() : machine().lock(contextsDir(root), write))
+  return r.ok ? ok({}) : r
 }
 
 export async function createContextGroup(

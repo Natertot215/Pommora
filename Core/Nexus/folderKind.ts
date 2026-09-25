@@ -2,7 +2,7 @@ import { join } from '../Paths/posix'
 import { baseSidecar } from './schemas'
 import { pathExists } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
-import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/paths'
+import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { readSidecar } from '../Files/sidecar'
 
 export type FolderKind = 'collection' | 'set' | AgendaFolder | 'unknown'

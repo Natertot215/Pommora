@@ -1076,6 +1076,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
       return month.kind === 'ok' ? month.pages : null
     }
     await handleMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await refreshTree(root)
     expect(await pages()).toEqual({ [PAGE_A]: { icon: 'star' }, [PAGE_B]: { locked: true } })
     const [listed] = await listBundles(root)
     const r = await handleMutate(
@@ -1297,7 +1298,7 @@ describe('restore — into a chosen destination', () => {
     )
     await handleMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     const bundlePath = await lastBundle('Alpha.md')
-    // The Space's own id, offered as a container — the same answer `movesInto` gives a page dragged onto a Space folder.
+    // The Space's own id, offered as a container — the same answer the move check gives a page dragged onto a Space folder.
     const r = await handleMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'sp-pom' } },

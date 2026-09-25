@@ -3,7 +3,8 @@ import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personal
 import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import {
   nexusFolderRefusal,
   readSettings,

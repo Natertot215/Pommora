@@ -8,7 +8,8 @@ import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { parseConnectionText } from '../Connections/connections'
 import { splitFrontmatter } from '../Files/pageFile'
-import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
+import { contextsDir } from '../Paths/paths'
+import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import type { TrashDeps } from '../Trash/bundle'
 
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }

@@ -8,7 +8,7 @@ import {
   resolveFolderKind,
   type FolderKindContext,
 } from './folderKind'
-import { SIDECAR_FILENAME } from '../Paths/paths'
+import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
 const EVENTS = '01KVGMT8BFP350FZZXAMG1QDE1'

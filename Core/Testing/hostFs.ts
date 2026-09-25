@@ -1,7 +1,8 @@
 import { mkdtempSync, realpathSync } from 'node:fs'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
+import { contextsDir } from '../Paths/paths'
+import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
 
 export const windows = process.platform === 'win32'

@@ -1,7 +1,6 @@
 import type { HostContext } from '../../Contract/handlers'
 import { errText } from '../../Contract/result'
-import { NEXUS_DIR } from '../../Paths/nexusPaths'
-import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
+import { NEXUS_DIR, NEXUS_CONFIG_FILES } from '../../Paths/nexusPaths'
 import type { WatchScope } from '../../Paths/exclusion'
 import { readValue } from '../../Platform/localState'
 import { captureStore } from '../../Platform/stores'

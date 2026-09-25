@@ -1,7 +1,6 @@
 import { stableStringify } from '../../Files/stableJson'
 import { isPlainObject } from '../../Properties/propertyValue'
-import { isMetadataShardRel, NEXUS_DIR } from '../../Paths/nexusPaths'
-import { NEXUS_CONFIG_FILES } from '../../Paths/paths'
+import { isMetadataShardRel, NEXUS_DIR, NEXUS_CONFIG_FILES } from '../../Paths/nexusPaths'
 import { basename } from '../../Paths/posix'
 
 export type Json = Record<string, unknown>

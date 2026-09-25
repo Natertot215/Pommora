@@ -3,7 +3,7 @@ import { rm, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { patchSidecar, readSidecar } from './sidecar'
-import { SIDECAR_FILENAME } from '../Paths/paths'
+import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { fail } from '../Contract/result'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 

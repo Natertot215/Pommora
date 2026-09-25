@@ -81,12 +81,18 @@ export function sameScope(a: WatchScope, b: WatchScope): boolean {
   )
 }
 
+/** What `segs` holds below `dirSegs`, compared case-folded; `dirSegs` arrive already folded, so a matcher folds its prefixes once. Null when `segs` isn't under it. */
+export function remainderUnder(segs: string[], dirSegs: string[]): string[] | null {
+  const under = dirSegs.every((seg, i) => i < segs.length && foldKey(segs[i]) === seg)
+  return under ? segs.slice(dirSegs.length) : null
+}
+
 function prefixMatcher(paths: string[]): (segs: string[]) => boolean {
   const prefixes = paths.map((p) => rootSegs(p).map(foldKey)).filter((p) => p.length > 0)
   if (!prefixes.length) return () => false
   return (segs) => {
-    const norm = segs.filter(Boolean).map(foldKey)
-    return prefixes.some((p) => p.every((seg, i) => norm[i] === seg))
+    const clean = segs.filter(Boolean)
+    return prefixes.some((p) => remainderUnder(clean, p) !== null)
   }
 }
 

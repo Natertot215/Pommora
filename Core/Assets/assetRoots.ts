@@ -1,17 +1,13 @@
-// The one containment test the asset protocol and adoption both cross — two disagreeing copies would be a defect neither one's own tests can see.
-
 import { parseConnectionText } from '../Connections/connections'
 import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
-import { rootSegs } from '../Paths/exclusion'
+import { remainderUnder, rootSegs } from '../Paths/exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
 
 import { readWatchScope } from '../Settings/settings'
 
-const startsUnder = (segs: string[], root: string): boolean => {
-  const prefix = rootSegs(root).map(foldKey)
-  return segs.length > prefix.length && prefix.every((seg, i) => foldKey(segs[i]) === seg)
-}
+const startsUnder = (segs: string[], root: string): boolean =>
+  !!remainderUnder(segs, rootSegs(root).map(foldKey))?.length
 
 export function underAssetRoot(rel: string, assetDir: string): boolean {
   if (!rel || rel.includes('\\') || rel.startsWith('/')) return false
@@ -41,9 +37,5 @@ export function validPropertyDir(subfolder: string, assetDir: string): boolean {
 }
 
 export function assetSubfolder(rel: string, assetDir: string): string | null {
-  const prefix = rootSegs(assetDir)
-  const segs = rootSegs(rel)
-  if (segs.length < prefix.length) return null
-  if (!prefix.every((seg, i) => foldKey(segs[i]) === foldKey(seg))) return null
-  return segs.slice(prefix.length).join('/')
+  return remainderUnder(rootSegs(rel), rootSegs(assetDir).map(foldKey))?.join('/') ?? null
 }

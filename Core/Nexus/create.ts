@@ -1,8 +1,8 @@
 import { basename, relJoin } from '../Paths/posix'
-import { resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
 import { newId } from './ids'
-import { ok } from '../Contract/result'
+import { fail, ok } from '../Contract/result'
+import { createSpace } from '../Contexts/contextWrite'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { mintDefaultView, VIEW_ID_PREFIX } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
@@ -12,7 +12,8 @@ import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity } from './folderEntity'
-import { setChildOrder } from './reorder'
+import { setChildOrder, setSpaceOrder } from './reorder'
+import { CONTAINER_KINDS, mutableTarget } from './liveTree'
 import { noteValueWrite } from './valuesChanged'
 
 const created = (parentPath: string, r: { id: string; path: string }): MutateReply =>
@@ -22,7 +23,7 @@ export async function createPageOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'createPage' }>,
 ): Promise<MutateReply> {
-  const parent = await resolveUnderRoot(root, req.parentPath || '.')
+  const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
   let values: { def: PropertyDefinition; value: PropertyValue }[] | undefined
   if (req.seeds) {
@@ -46,7 +47,12 @@ export async function createContainerOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'createContainer' }>,
 ): Promise<MutateReply> {
-  const parent = await resolveUnderRoot(root, req.parentPath || '.')
+  if (req.kind === 'collection' && req.parentPath)
+    return fail('invalid-path', 'Collections live at the top of the Nexus.')
+  const parent =
+    req.kind === 'collection'
+      ? ok(root)
+      : await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
   const extra: Record<string, unknown> = {
     views: [{ ...mintDefaultView([]), id: `${VIEW_ID_PREFIX}${newId()}` }],
@@ -57,4 +63,14 @@ export async function createContainerOp(
   if (!r.ok) return r
   if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
   return created(req.parentPath, r.value)
+}
+
+export async function createSpaceOp(
+  { root }: MutateContext,
+  req: Extract<MutateRequest, { op: 'createSpace' }>,
+): Promise<MutateReply> {
+  const r = await createDisambiguated(req.name, (name) => createSpace(root, req.contextId, name))
+  if (!r.ok) return r
+  if (req.order) await setSpaceOrder(root, req.contextId, fillSlot(req.order, r.value.id))
+  return ok({ created: r.value })
 }

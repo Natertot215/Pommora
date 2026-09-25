@@ -2,15 +2,11 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile, titleFromPath } from '../Paths/posix'
-import { machine } from '../Platform/machine'
-import { contextsDir } from '../Paths/paths'
-import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
-import { createDisambiguated } from '../Paths/names'
+import { titleFromPath } from '../Paths/posix'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fault, ok, type Result } from '../Contract/result'
-import { emptyBundle, restoreArtifact } from '../Trash/spend'
+import { emptyBundle, restoreOp } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
-import { seedContentIndex } from '../Index/indexSeed'
 import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
 import { setCropOp } from '../Assets/setCrop'
@@ -20,22 +16,21 @@ import { setHeadingIconHiddenOp } from '../Pages/setHeadingIconHidden'
 import { setPropertyOp } from '../Properties/setProperty'
 import {
   createContextGroup,
-  createSpace,
-  loadContextWorld,
-  setContextOnPath,
+  setContextOp,
   setSpaceColor,
   setSpaceRowOrder,
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
+import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { TrashDeps } from '../Trash/bundle'
-import { createContainerOp, createPageOp } from './create'
+import { createContainerOp, createPageOp, createSpaceOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
+import { CONTAINER_KINDS, mutableTarget } from './liveTree'
 
 export interface MutateContext {
   root: string
@@ -77,13 +72,8 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'delete':
       return deleteOp(ctx, req)
 
-    case 'restore': {
-      const resolved = await resolveUnderRoot(root, req.bundlePath)
-      if (!resolved.ok) return resolved
-      const r = await restoreArtifact(root, resolved.value, req.destination)
-      if (r.ok) await seedContentIndex(root)
-      return r
-    }
+    case 'restore':
+      return restoreOp(ctx, req)
 
     case 'emptyBundle': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
@@ -111,7 +101,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return setIconOp(ctx, req)
 
     case 'setDisclosureLock': {
-      const folder = await resolveUnderRoot(root, req.path)
+      const folder = await mutableTarget(root, req.path, [req.kind])
       if (!folder.ok) return folder
       return done(
         await patchSidecar(folder.value, req.kind, (cur) =>
@@ -121,7 +111,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setActiveView': {
-      const folder = await resolveUnderRoot(root, req.path)
+      const folder = await mutableTarget(root, req.path, [req.kind])
       if (!folder.ok) return folder
       return done(
         await patchSidecar(folder.value, req.kind, (cur) =>
@@ -143,7 +133,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return moveSetOp(ctx, req)
 
     case 'reorderChildren': {
-      const parent = await resolveUnderRoot(root, req.parentPath)
+      const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
       return parent.ok ? done(await setChildOrder(parent.value, req.key, req.order)) : parent
     }
 
@@ -155,28 +145,11 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return r.ok ? ok({ created: r.value }) : r
     }
 
-    case 'createSpace': {
-      const r = await createDisambiguated(req.name, (name) =>
-        createSpace(root, req.contextId, name),
-      )
-      if (!r.ok) return r
-      if (req.order) await setSpaceOrder(root, req.contextId, fillSlot(req.order, r.value.id))
-      return ok({ created: r.value })
-    }
+    case 'createSpace':
+      return createSpaceOp(ctx, req)
 
-    case 'setContext': {
-      const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return resolved
-      if (await isReserved(root, resolved.value)) return fault('That item can’t take contexts.')
-      const abs = resolved.value
-      const write = async (): Promise<MutateReply> => {
-        const world = await loadContextWorld(root)
-        if (!world.ok) return world
-        return done(await setContextOnPath(root, abs, world.value, req.contextId, req.spaceIds))
-      }
-      // A Space's link write decides each far half from the world it loaded, so two of them never overlap.
-      return isMarkdownFile(abs) ? write() : machine().lock(contextsDir(root), write)
-    }
+    case 'setContext':
+      return setContextOp(ctx, req)
 
     case 'setSpaceColor':
       return done(await setSpaceColor(root, req.spaceId, req.color))
@@ -197,7 +170,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return done(await setSpaceOrder(root, req.contextId, req.ids))
 
     case 'setSpaceRowOrder': {
-      const resolved = await resolveUnderRoot(root, req.path)
+      const resolved = await mutableTarget(root, req.path, ['space'])
       if (!resolved.ok) return resolved
       return done(await setSpaceRowOrder(resolved.value, req.contexts, req.properties))
     }

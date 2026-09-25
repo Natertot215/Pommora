@@ -33,6 +33,46 @@ export function assetSubRoot(assetDir: string, subfolder: string | undefined): s
   return [assetDir, subfolder].filter(Boolean).join('/')
 }
 
+const AGENDA_KINDS = ['task', 'event'] as const
+
+export type AgendaKind = (typeof AGENDA_KINDS)[number]
+
+export type AgendaFolder = `${AgendaKind}s`
+
+export const AGENDA_FOLDERS: readonly AgendaFolder[] = AGENDA_KINDS.map(
+  (k): AgendaFolder => `${k}s`,
+)
+
+export const agendaKind = (folder: AgendaFolder): AgendaKind => folder.slice(0, -1) as AgendaKind
+
+export type SidecarKind = 'space' | 'collection' | 'set' | AgendaFolder
+
+export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
+  space: '_space.json',
+  collection: '_pagecollection.json',
+  set: '_pageset.json',
+  tasks: '_taskconfig.json',
+  events: '_eventconfig.json',
+}
+
+export const SIDECARS = new Set<string>(Object.values(SIDECAR_FILENAME))
+
+export const SPACE_SIDECAR = SIDECAR_FILENAME.space
+
+export const HOMEPAGE_HOST_DIRNAME = 'homepage'
+
+export const TILE_DOC_FILENAME = '_tiles.json'
+
+export const NEXUS_CONFIG_FILES = {
+  identity: 'nexus.json',
+  settings: 'settings.json',
+  state: 'state.json',
+  matrix: 'matrix.json',
+  homepage: `${HOMEPAGE_HOST_DIRNAME}/homepage.json`,
+  properties: 'properties.json',
+  crops: `${ASSETS_DIRNAME}/crops.json`,
+} as const
+
 /** A colon is legal in a nav key and hostile in a filename. */
 export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
 
@@ -42,7 +82,7 @@ export const thumbsRel = (nexusId: string): string =>
   `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
 
-export const CROPS_REL = `${ASSETS_DIR_REL}/crops.json`
+export const CROPS_REL = `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`
 
 // One spelling: the write side keys crops from `assetFilePath`, the read side `resolveAssetValue`.
 export function cropKeyFor(rel: string | null, raw: string): string | null {

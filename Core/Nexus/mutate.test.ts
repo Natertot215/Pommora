@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { dropLiveTree, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
@@ -69,6 +70,7 @@ beforeEach(async () => {
   await openSession(root)
 })
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })
@@ -234,6 +236,7 @@ describe('handleMutate — rename', () => {
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
+    await refreshTree(root)
     const r = await handleMutate(
       root,
       {
@@ -333,6 +336,7 @@ describe('handleMutate — sync tap', () => {
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       nexusDeps,
     )
+    await refreshTree(root)
     await handleMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Gamma.md', newParentPath: 'Notes/Archive' },
@@ -509,6 +513,35 @@ describe('handleMutate — move + guards', () => {
   })
 })
 
+describe('handleMutate — targets the tree doesn’t hold', () => {
+  it.each([
+    { op: 'setDisclosureLock', path: '.nexus/assets', kind: 'collection', locked: true },
+    { op: 'setActiveView', path: 'Notes', kind: 'set', viewId: 'v' },
+    { op: 'setPageMeta', path: '.trash/Alpha.md', patch: {} },
+    { op: 'setProperty', path: '', propertyId: 'p', value: null },
+    { op: 'createPage', parentPath: '.nexus', name: 'X' },
+    { op: 'createContainer', parentPath: '', kind: 'set', name: 'X' },
+    { op: 'movePage', path: 'Notes/_pagecollection.json', newParentPath: 'Notes/Daily' },
+    { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: '.nexus' },
+    { op: 'moveSet', path: 'Notes', newParentPath: 'Notes/Daily', order: [] },
+  ] as MutateRequest[])('refuses $op on $path$parentPath', async (req) => {
+    const r = await handleMutate(root, req, nexusDeps)
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.error.message).toBe('That item can’t be changed.')
+  })
+
+  it('refuses a Collection anywhere but the top of the Nexus', async () => {
+    const r = await handleMutate(
+      root,
+      { op: 'createContainer', parentPath: 'Notes', kind: 'collection', name: 'X' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, 'Notes', 'X'))).toBe(false)
+  })
+})
+
 describe('handleMutate — review-round hardening', () => {
   it('creates a collection at the nexus root (parentPath "")', async () => {
     const r = await handleMutate(
@@ -581,6 +614,7 @@ describe('handleMutate — review-round hardening', () => {
       join(root, 'Notes', 'Other', 'Beta.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDRZ\n---\n',
     )
+    await refreshTree(root)
     const clash = await handleMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Other' },
@@ -782,6 +816,7 @@ describe('handleMutate — review-round hardening', () => {
   )
 
   it('keeps a page rename whose cascade can’t start, and warns', async () => {
+    await refreshTree(root)
     await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
     const r = await handleMutate(
       root,
@@ -1065,6 +1100,7 @@ describe('handleMutate — setBanner', () => {
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Cover' },
       nexusDeps,
     )
+    await refreshTree(root)
     expect(created.ok).toBe(true)
     if (!created.ok) return
     const pagePath = created.value.created!.path
@@ -1309,6 +1345,10 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
 
   it('a Space keeps its glyph under $icon, beside a property value named icon', async () => {
     const file = await seedSpaceSidecar(root, 'Projects', 'Pom', { id: 'sp1', icon: 'box' })
+    await writeFile(
+      join(root, '.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'ctxP', title: 'Projects', singular: 'Project' }] }),
+    )
     const path = '.nexus/contexts/Projects/Pom'
     const set = await handleMutate(
       root,

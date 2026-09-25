@@ -13,7 +13,8 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from './properties'
 
 let root: string

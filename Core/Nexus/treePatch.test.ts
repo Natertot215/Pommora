@@ -144,16 +144,6 @@ describe('insertCreatedInTree', () => {
     expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['x7', 's1'])
   })
 
-  it('skips optimism for a nested collection (never mislabels it as a set)', () => {
-    expect(
-      insertCreatedInTree(
-        tree(),
-        { op: 'createContainer', parentPath: 'Work', kind: 'collection', name: 'New' },
-        { id: 'x6', path: 'Work/Nested' },
-      ),
-    ).toBeNull()
-  })
-
   it('is idempotent: an entity the tree already holds inserts as null, never a duplicate', () => {
     const withPage = insertCreatedInTree(
       tree(),

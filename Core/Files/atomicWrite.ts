@@ -7,7 +7,8 @@ import { machine } from '../Platform/machine'
 import { basename, dirname } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
-import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
   recordWrite(filePath, data)

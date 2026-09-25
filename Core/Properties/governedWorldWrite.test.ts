@@ -10,7 +10,7 @@ import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 
 import { closeSession, openSession } from '../Nexus/session'
-import { refreshTree } from '../Nexus/liveTree'
+import { refreshTree, dropLiveTree } from '../Nexus/liveTree'
 import { readRegistry } from './propertiesRegistry'
 import { assignProperty } from './assignment'
 import { contextDriftPresent } from '../Contexts/contextWrite'
@@ -73,6 +73,7 @@ beforeEach(async () => {
   sidecarReads.mockClear()
 })
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })

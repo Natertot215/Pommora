@@ -1,6 +1,7 @@
 // A content file whose key contradicts the folder it sits in is Unknown — invisible to every read, and byte-untouched by every write. "Untouched" is asserted against the BYTES, not against a flag.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { dropLiveTree } from './liveTree'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -12,14 +13,8 @@ import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { renameCascade } from './cascade'
 import { handleMutate } from './mutate'
 import { openSession, closeSession } from './session'
-import {
-  contextsDir,
-  contextsRegistryFile,
-  nexusDir,
-  nexusConfig,
-  NEXUS_CONFIG_FILES,
-  SIDECAR_FILENAME,
-} from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, nexusDir, nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import type { TrashDeps } from '../Trash/bundle'
 
 const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
@@ -58,6 +53,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', 'Adoptable.md'), 'no frontmatter, links to [[Target]]\n')
 })
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })
@@ -154,7 +150,7 @@ describe('the move backstop', () => {
     expect(await bytes('Member.md')).toContain(ID_KEY)
   })
 
-  // The nexus root holds no content of its own. `depth` is caller-supplied, so without an explicit root arm the resolver called it a Set and the one main-side check passed for that destination.
+  // The nexus root holds no content of its own.
   it('refuses a move onto the nexus root itself', async () => {
     await openSession(root)
     const r = await handleMutate(
@@ -190,7 +186,7 @@ describe('the move backstop', () => {
     expect(r.ok).toBe(false)
     if (r.ok) return
     // The MESSAGE, not just the code: resolveUnderRoot refuses with `invalid-path` as well, so a code-only assertion passes for a destination that never reached the backstop at all.
-    expect(r.error.message).toBe('Pages live in Collections and Sets.')
+    expect(r.error.message).toBe('That item can’t be changed.')
     expect(await bytes('Member.md')).toContain(ID_KEY)
   })
 

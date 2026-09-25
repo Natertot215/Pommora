@@ -18,14 +18,7 @@ import { type CascadeReport, renameCascade } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
-import {
-  HOMEPAGE_HOST_DIRNAME,
-  NEXUS_CONFIG_FILES,
-  SIDECAR_FILENAME,
-  SPACE_SIDECAR,
-  TILE_DOC_FILENAME,
-  nexusConfig,
-} from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
 import type { TileHostRef } from '../Tiles/tiles'
 import {
   readCropLeaves,
@@ -49,7 +42,17 @@ import {
   type TreeEntity,
   updateNodeInTree,
 } from './treePatch'
-import { CONTEXTS_DIRNAME, CROPS_REL, isMetadataShardRel, NEXUS_DIR } from '../Paths/nexusPaths'
+import {
+  CONTEXTS_DIRNAME,
+  CROPS_REL,
+  isMetadataShardRel,
+  NEXUS_DIR,
+  HOMEPAGE_HOST_DIRNAME,
+  NEXUS_CONFIG_FILES,
+  SIDECAR_FILENAME,
+  SPACE_SIDECAR,
+  TILE_DOC_FILENAME,
+} from '../Paths/nexusPaths'
 import { readShard, withShards } from './pageMetadata'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'

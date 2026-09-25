@@ -5,6 +5,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { dropLiveTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -95,6 +96,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })

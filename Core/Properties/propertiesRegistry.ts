@@ -1,4 +1,5 @@
-import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { nexusConfig, nexusDir } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { valueOr } from '../Contract/result'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'

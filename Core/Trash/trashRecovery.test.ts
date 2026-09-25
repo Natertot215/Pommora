@@ -3,6 +3,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -25,6 +26,7 @@ const find = async (title: string) => {
   return hit as NonNullable<typeof hit>
 }
 const del = async (path: string, kind: string) => {
+  await refreshTree(root)
   const r = await handleMutate(root, { op: 'delete', path, kind } as never, deps)
   expect(r.ok, `delete ${path}`).toBe(true)
 }
@@ -87,6 +89,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })

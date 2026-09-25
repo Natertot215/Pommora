@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { nexusDir, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/paths'
+import { nexusDir } from '../Paths/paths'
+import { SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import { normalizeSavedViews } from './migrateConfig'
 
 let root: string

@@ -1,12 +1,12 @@
 // A page carries its icon in its month file, a Context in the registry, a container in its sidecar.
 
 import { basename } from '../Paths/posix'
-import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { ICON_KEY } from '../Contexts/spaceSidecar'
-import { fault, ok } from '../Contract/result'
+import { ok } from '../Contract/result'
+import { mutableTarget } from '../Nexus/liveTree'
 import { writePageMeta } from '../Nexus/pageMetadata'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
@@ -16,10 +16,9 @@ export async function setIconOp(
   req: Extract<MutateRequest, { op: 'setIcon' }>,
 ): Promise<MutateReply> {
   if (req.kind === 'page') return writePageMeta(root, req.path, { icon: req.icon })
-  const resolved = await resolveUnderRoot(root, req.path)
+  const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const abs = resolved.value
-  if (await isReserved(root, abs)) return fault('That item can’t take an icon.')
   if (req.kind === 'context') {
     const title = basename(abs)
     const r = await mutateRegistryFile(root, (cur) => ({

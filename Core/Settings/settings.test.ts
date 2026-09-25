@@ -9,7 +9,8 @@ import {
   writePersonalization,
 } from './settings'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { nexusDir, nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { dirname } from '../Paths/posix'
 import { openSession } from '../Nexus/session'
 

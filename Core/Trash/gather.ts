@@ -6,7 +6,7 @@ import { ensureFolderId } from '../Nexus/adopt'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { pathExists, readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
-import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Paths/paths'
+import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
 import type { RecordFile, ParentRef } from './record'
 
