@@ -15,7 +15,7 @@ import {
 } from '@pommora/uix/Interactions/ghostCreate'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSession } from '../../Session/store'
-import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceLink'
+import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
 import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
 import { findCollectionForSet } from '../../Nexus/treeIndex'

@@ -116,7 +116,7 @@ export const listDragExtension: Extension = [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
-    // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't cancel the compatibility mousedown.
+    // CM starts its text-selection drag on mousedown, which still arrives when the pointerdown below resolves no block and returns without cancelling.
     mousedown(e) {
       if (e.button === 0 && (e.target as HTMLElement).closest?.('.md-list-glyph')) {
         e.preventDefault()

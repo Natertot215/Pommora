@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useRef, useState, type PointerEvent } from 'react'
 
 /** Tracked against the pointer, not invisible buttons, so the reveal area never swallows clicks beneath it. */
 const REVEAL_NEAR_W = 260
@@ -10,12 +10,12 @@ function leadOrigin(el: HTMLElement | null, fallback: number): number {
   return el.getBoundingClientRect().left + Number.parseFloat(getComputedStyle(el).paddingLeft)
 }
 
-/** Cached because a rect per mousemove forces a layout; a surface that moves under a still pointer calls `remeasure`. */
+/** Cached because a rect per move forces a layout; a held button may be moving the surface itself, so the cache drops until the pointer moves free, and a surface that moves under a still pointer calls `remeasure`. */
 export function useRevealNear(): {
   near: boolean
   nearLead: boolean
-  onMouseMove: (e: MouseEvent<HTMLElement>) => void
-  onMouseLeave: () => void
+  onPointerMove: (e: PointerEvent<HTMLElement>) => void
+  onPointerLeave: () => void
   remeasure: () => void
 } {
   const [near, setNear] = useState(false)
@@ -28,7 +28,13 @@ export function useRevealNear(): {
   return {
     near,
     nearLead,
-    onMouseMove: (e) => {
+    onPointerMove: (e) => {
+      if (e.buttons !== 0) {
+        rect.current = null
+        setNear(false)
+        setNearLead(false)
+        return
+      }
       if (!rect.current) {
         rect.current = e.currentTarget.getBoundingClientRect()
         leadEdge.current = leadOrigin(
@@ -41,7 +47,7 @@ export function useRevealNear(): {
       setNear(low && e.clientX > r.right - REVEAL_NEAR_W)
       setNearLead(low && e.clientX < leadEdge.current + REVEAL_NEAR_W)
     },
-    onMouseLeave: () => {
+    onPointerLeave: () => {
       rect.current = null
       setNear(false)
       setNearLead(false)

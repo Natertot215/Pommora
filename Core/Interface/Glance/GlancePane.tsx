@@ -372,7 +372,7 @@ export function GlancePane(): React.JSX.Element {
       linkBox = null
       cardBox = null
     }
-    const onMove = (e: MouseEvent): void => {
+    const onMove = (e: PointerEvent): void => {
       // A live resize or selection drag suspends the leave lifecycle, clearing rather than skipping so a countdown that pre-dates the drag can't fire mid-gesture.
       if (selectingRef.current && (e.buttons & 1) === 0) selectingRef.current = false
       if (resizing || selectingRef.current) {
@@ -391,7 +391,7 @@ export function GlancePane(): React.JSX.Element {
       // An Infinite grace ('always') never schedules a dismiss — the pane holds until nav/Esc/replace.
       else if (!grace && Number.isFinite(graceMs)) grace = setTimeout(close, graceMs)
     }
-    window.addEventListener('mousemove', onMove)
+    window.addEventListener('pointermove', onMove)
     const unwatch = watchAnchor(shown.el, {
       onGone: close,
       onEscape: close,
@@ -403,21 +403,17 @@ export function GlancePane(): React.JSX.Element {
     return () => {
       clearGrace()
       unwatch()
-      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('pointermove', onMove)
     }
   }, [shown, graceMs, dismiss, resizing, dismissOnPointer])
 
   const page = held?.target.kind === 'page' ? held.target : null
-  const warmSeam = useMemo(
-    () => (page ? glanceWarmSeam(page.id, page.path) : undefined),
-    [page?.id, page?.path],
-  )
 
   const pinnedGlances = useSession((s) => s.pinnedGlances)
   const pinGlance = useSession((s) => s.pinGlance)
   const setPinLocked = useSession((s) => s.setPinLocked)
 
-  // The tile render and the fold toggle are pure, so the live pane and every pin share them; the live path keeps its own warmSeam memo (no fresh seam per render).
+  // The tile render and the fold toggle are pure, so the live pane and every pin share them.
   const renderPageTile = (
     t: { id: string; path: string; heading?: string },
     seam: WarmSeam | undefined,
@@ -500,7 +496,7 @@ export function GlancePane(): React.JSX.Element {
           data-reveal-host
           className="glance-body"
           style={{ width: box.w, height: box.h }}
-          onMouseDownCapture={(e) => {
+          onPointerDownCapture={(e) => {
             if (e.button !== 0) return
             selectingRef.current = true
             if (!cardRef.current?.contains(document.activeElement))
@@ -510,7 +506,7 @@ export function GlancePane(): React.JSX.Element {
           onDragStartCapture={(e) => e.preventDefault()}
           onClick={onFoldClick}
         >
-          {page && renderPageTile(page, warmSeam)}
+          {page && renderPageTile(page, glanceWarmSeam(page.id, page.path))}
           {held?.target.kind === 'site' && (
             <>
               <webview

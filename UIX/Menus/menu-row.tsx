@@ -78,8 +78,8 @@ type MenuItemProps = {
   onContextMenu?: (e: MouseEvent) => void
   onPointerDown?: (e: React.PointerEvent) => void
   onMouseDown?: (e: MouseEvent) => void
-  onMouseEnter?: (e: React.MouseEvent) => void
-  onMouseLeave?: (e: React.MouseEvent) => void
+  onPointerEnter?: (e: React.PointerEvent) => void
+  onPointerLeave?: (e: React.PointerEvent) => void
   className?: string
   children: ReactNode
   ref?: Ref<HTMLDivElement>
@@ -101,8 +101,8 @@ export function MenuItem({
   onContextMenu,
   onPointerDown,
   onMouseDown,
-  onMouseEnter,
-  onMouseLeave,
+  onPointerEnter,
+  onPointerLeave,
   className,
   children,
   ref,
@@ -132,8 +132,8 @@ export function MenuItem({
       onContextMenu={onContextMenu}
       onPointerDown={onPointerDown}
       onMouseDown={onMouseDown}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={cx(s.titleWrap, centered && s.titleCentered)}>

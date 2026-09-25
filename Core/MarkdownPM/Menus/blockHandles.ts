@@ -72,7 +72,7 @@ export function blockGripHover(scope: MarkdownScope = 'page'): Extension {
       if (u.geometryChanged) textLeft = -1
     }),
     EditorView.domEventHandlers({
-      mousemove(e, view) {
+      pointermove(e, view) {
         // A cell's grip lives inside the text column rather than left of it, so hovering the list at all is what reveals it — but the gate stays, as a DOM walk rather than a measurement, because posAtCoords below reads layout.
         const cheapMiss =
           scope === 'cell'
@@ -100,7 +100,7 @@ export function blockGripHover(scope: MarkdownScope = 'page'): Extension {
         }
         setHot(cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom))
       },
-      mouseleave() {
+      pointerleave() {
         setHot(null)
       },
     }),

@@ -38,13 +38,12 @@ import {
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
-import { assetUrl } from '../../Platform/assetScheme'
+import { useThumb } from '../../Assets/useThumb'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { byOrder } from '@pommora/core/Nexus/treePatch'
-import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
 import { navKey } from '../../Navigation/navRecents'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
@@ -122,28 +121,11 @@ type CardApi = {
 
 type ValueApi = Pick<CardApi, 'commitValue' | 'setStyle' | 'hide' | 'openValuePicker'>
 
-/** A card's preview image: the current thumbnail version, and the failure that falls the face back to its placeholder until the source changes. */
-function useThumb(
-  nexusId: string,
-  rowId: string,
-  banner: CardBanner,
-): { src: string | undefined; onError: () => void } {
-  const version = useSession((s) => s.thumbVersions[`page:${rowId}`] ?? 0)
-  const [failed, setFailed] = useState(false)
-  const lastSrc = useRef<string | undefined>(undefined)
-  const src =
-    banner === 'preview'
-      ? `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: rowId }))))}?v=${version}`
-      : undefined
-  if (src !== lastSrc.current) {
-    lastSrc.current = src
-    if (failed) setFailed(false)
-  }
-  return { src: failed ? undefined : src, onError: useCallback(() => setFailed(true), []) }
-}
-
 const coverOf = (row: ViewRow): string | undefined =>
   typeof row.frontmatter.banner === 'string' ? row.frontmatter.banner : undefined
+
+const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
+  banner === 'preview' ? navKey({ kind: 'page', id: row.id }) : undefined
 
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
@@ -996,7 +978,7 @@ function OverlayFace({
   columns: ResolvedColumn[]
   nexusId: string
 }): React.JSX.Element {
-  const { src } = useThumb(nexusId, row.id, banner)
+  const { src } = useThumb(nexusId, previewKeyOf(row, banner))
   return (
     <CardFace
       row={row}
@@ -1040,7 +1022,7 @@ const PageCard = memo(function PageCard({
   const isDragging = drag?.isDragging ?? false
   const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
   const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
-  const { src, onError } = useThumb(nexusId, row.id, banner)
+  const { src, onError } = useThumb(nexusId, previewKeyOf(row, banner))
 
   const textRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
