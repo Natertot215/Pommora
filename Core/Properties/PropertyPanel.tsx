@@ -15,7 +15,11 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import {
+  isBlankValue,
+  type PropertyValue,
+  NULL_VALUE,
+} from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
@@ -278,7 +282,7 @@ export function PropertyPanel({
     from: EventTarget | null = el,
   ): void => {
     triggerRef.current = el
-    const current = row ? resolveFieldValue(row, def.id, schema) : ({ kind: 'null' } as const)
+    const current = row ? resolveFieldValue(row, def.id, schema) : NULL_VALUE
     const shared = sharedValueClickAction(def.type, current)
     if (shared) {
       if (shared.kind === 'commit') {
@@ -335,7 +339,7 @@ export function PropertyPanel({
   }
 
   const rawLinkOf = (id: string): string => {
-    const v = row ? resolveFieldValue(row, id, schema) : ({ kind: 'null' } as const)
+    const v = row ? resolveFieldValue(row, id, schema) : NULL_VALUE
     return v.kind === 'url' ? v.value : ''
   }
   const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined

@@ -5,7 +5,7 @@ import {
   type PropertyDefinition,
   optionsOf,
 } from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
@@ -129,13 +129,13 @@ export function PropertyPicker({
       empty="Choose a file"
       browseLabel="Choose File"
       onBrowse={() =>
-        pickFileInto(t.def, t.current ?? { kind: 'null' }, null, (v) => {
+        pickFileInto(t.def, t.current ?? NULL_VALUE, null, (v) => {
           commit(v)
           onDismiss()
         })
       }
       onCommit={(raw) => {
-        if (raw.trim()) adoptPathInto(t.def, t.current ?? { kind: 'null' }, raw.trim(), commit)
+        if (raw.trim()) adoptPathInto(t.def, t.current ?? NULL_VALUE, raw.trim(), commit)
         onDismiss()
       }}
     />

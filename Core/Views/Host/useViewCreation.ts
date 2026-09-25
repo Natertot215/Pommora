@@ -184,7 +184,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       const t = declaredType(criterion.property_id, c.schema)
       if (!t || !SEEDABLE_SORT_TYPES.has(t)) continue
       const v = resolveFieldValue(row, criterion.property_id, c.schema)
-      if (v.kind !== 'null' && !isBlankValue(v)) seeds[criterion.property_id] = v
+      if (!isBlankValue(v)) seeds[criterion.property_id] = v
     }
     const order = c.structuralOrder
       ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
