@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
 import {
   PICKER_PORTAL_ATTR,
@@ -120,12 +121,9 @@ export function GlancePane(): React.JSX.Element {
   const attachSiteEl = useCallback((el: Element | null) => setSiteEl(el as HTMLElement | null), [])
   // A guest mounted in a hidden pane never reliably attaches (Chromium defers demoted subtrees), so the pane cannot wait veiled for the load behind a cover instead.
   const [siteReady, setSiteReady] = useState(false)
-  const anchorRef = useRef<Element | null>(null)
+  const anchorRef = useLatest(shown?.el ?? null)
   const shownRef = useLatest(shown)
-  anchorRef.current = shown?.el ?? null
-  const heldRef = useRef(shown)
-  if (shown) heldRef.current = shown
-  const held = shown ?? heldRef.current
+  const held = useHeld(shown, !!shown)
 
   const maxSize = (): Size => {
     const w = window.innerWidth - 2 * VIEWPORT_MARGIN
@@ -141,9 +139,7 @@ export function GlancePane(): React.JSX.Element {
   }
   const max = maxSize()
   const live = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
-  const liveRef = useRef(live)
-  if (shown) liveRef.current = live
-  const box = liveRef.current
+  const box = useHeld(live, !!shown)
 
   const selectingRef = useRef(false)
   const frame = useResizeFrame({

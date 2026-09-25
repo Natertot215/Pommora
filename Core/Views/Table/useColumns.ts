@@ -14,6 +14,7 @@ import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberDivisor } from '../../Properties/formatValue'
 import { declaredType } from '../../Properties/value'
@@ -185,8 +186,6 @@ export function useColumns(host: ViewHostApi) {
   const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
   const [resizing, setResizing] = useState(false)
   const [overflowing, setOverflowing] = useState(false)
-  // The column sum, read from here rather than scrollWidth: scrollWidth floors at clientWidth, so an is-content-bigger comparison built on it latches.
-  const reflowRef = useRef(0)
   // Captured at resize start so an abort restores exactly — an entry absent before the drag is deleted, never written back as a width a later persist would carry to disk.
   const resizeBaseline = useRef<{ id: string; value: number | undefined } | null>(null)
 
@@ -254,7 +253,8 @@ export function useColumns(host: ViewHostApi) {
   }, [colDrag, columns, widthByCol, collapsing])
 
   const reflowWidth = columns.reduce((sum, _c, i) => sum + colWidth(i), 0)
-  reflowRef.current = reflowWidth
+  // The column sum, read from here rather than scrollWidth: scrollWidth floors at clientWidth, so an is-content-bigger comparison built on it latches.
+  const reflowRef = useLatest(reflowWidth)
   const cols = `${columns.map((_c, i) => `${colWidth(i)}px`).join(' ')} 1fr`
 
   useEffect(() => {

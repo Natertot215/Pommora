@@ -32,8 +32,8 @@ import { useActiveTabInView, useTabClose, useTabExchange } from './tabRows'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
-import './tab-base.css'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import './tab-base.css'
 
 interface TabEntry {
   tab: Tab

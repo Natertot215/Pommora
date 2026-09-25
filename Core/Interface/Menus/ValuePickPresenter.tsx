@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { linkEditText } from '@pommora/core/Connections/linkValue'
@@ -13,8 +14,7 @@ export function ValuePickPresenter(): React.JSX.Element | null {
   const pending = useSession((s) => s.pendingPick)
   const dismiss = useSession((s) => s.dismissPick)
   const shown = useHeld(pending, pending !== null)
-  const triggerRef = useRef<HTMLElement | null>(null)
-  triggerRef.current = shown?.trigger ?? null
+  const triggerRef = useLatest(shown?.trigger ?? null)
   const [picked, setPicked] = useState<{ id: number; value: PropertyValue | null } | null>(null)
   if (!shown) return null
   const { def, commit } = shown

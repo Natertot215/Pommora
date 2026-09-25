@@ -17,6 +17,7 @@ import { toScreen, toWorld, type Viewport } from './Engine/viewport'
 import { iconFor, onIconLoad } from './iconCache'
 import * as s from './matrix.css'
 import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
 const PINCH_RATE = 0.01
@@ -236,7 +237,6 @@ export function MatrixCanvas({
   const hostRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const paintRef = useRef<Paint | null>(null)
-  const drawRef = useRef<() => void>(() => {})
   const dprRef = useRef(1)
   const emphasisRef = useRef({ from: 0, to: 0, t: 1, at: 0 })
   const subjectRef = useRef<string | null>(null)
@@ -247,7 +247,7 @@ export function MatrixCanvas({
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
   const begin = usePointerGesture()
 
-  drawRef.current = (): void => {
+  const drawRef = useLatest((): void => {
     // The runtime's listeners are not surface-scoped, so a parked surface would repaint its whole graph on every frame another surface drives.
     if (!surface.visible()) return
     const canvas = canvasRef.current
@@ -416,7 +416,7 @@ export function MatrixCanvas({
       ctx.fillText(n.title, sx, sy + s.TITLE_OFFSET)
       ctx.globalAlpha = 1
     }
-  }
+  })
 
   // The accent lands as `--accent` on the root, from the setting and from the system colour alike; the paint is re-read off that write.
   useEffect(() => {

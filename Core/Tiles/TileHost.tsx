@@ -40,8 +40,8 @@ import { tileMenuItems } from './tileHandleMenu'
 import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
-import './tile-base.css'
 import { cx } from '@pommora/uix/Utilities/cx'
+import './tile-base.css'
 
 function pagePickerItems(
   tree: NexusTree,
@@ -276,11 +276,7 @@ export function TileHost({
   const tileClassName = useCallback(
     (id: string) => {
       const entry = entries.get(id)
-      const classes = [
-        entry?.style === 'borderless' ? 'is-borderless' : null,
-        entry?.locked ? 'is-locked' : null,
-      ].filter(Boolean)
-      return classes.length ? classes.join(' ') : undefined
+      return cx(entry?.style === 'borderless' && 'is-borderless', entry?.locked && 'is-locked')
     },
     [entries],
   )

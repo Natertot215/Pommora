@@ -18,6 +18,7 @@ import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
 import { cx } from '../Utilities/cx'
+import { useLatest } from '../Utilities/stableApi'
 import { clamp } from '../Utilities/clamp'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
 import * as s from './picker-base.css'
@@ -120,8 +121,7 @@ export function PickerMenu({
     dismiss: onDismiss,
     shield: onDismiss !== undefined,
   })
-  const liveRef = useRef(false)
-  liveRef.current = open || closing
+  const liveRef = useLatest(open || closing)
   useEffect(
     () => () => {
       // Point-anchored menus (a pinned glance) close by design through an instant unmount — no Bloom-out to skip, so the guard would be a false positive.

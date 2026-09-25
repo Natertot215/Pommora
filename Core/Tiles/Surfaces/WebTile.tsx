@@ -13,9 +13,9 @@ import { openWebLink } from '../../Web/openWebLink'
 import { webGuestRetention } from './webRetention'
 import { host } from '../../Platform/dialer'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import '../tile-base.css'
 import '../tile-title.css'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 type Guest = HTMLElement & {
   capturePage?: () => Promise<{ toDataURL(): string }>

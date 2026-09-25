@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useReducer, useState, type RefObject } from 'react'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import {
   autocompleteQuery,
@@ -59,15 +59,14 @@ export function useMenuCtl(
   const [index, setIndex] = useState<number | null>(initial)
   const selected = index === null ? null : Math.min(index, Math.max(count - 1, 0))
 
-  const ctl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
-  ctl.current = {
+  const ctl = useLatest<AcCtl>({
     open: drive.open,
     pick: () => drive.pick(selected ?? 0),
     move: (d) =>
       setIndex((i) => (i === null ? (d > 0 ? 0 : count - 1) : clamp(i + d, 0, count - 1))),
     close: drive.close,
     aside: drive.aside,
-  }
+  })
 
   useEffect(() => setIndex(initial), [resetKey, initial])
 
