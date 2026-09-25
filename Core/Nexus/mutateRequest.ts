@@ -2,12 +2,13 @@ import type { Result } from '../Contract/result'
 import type { PageMenuContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { Crop, PageMetaPatch } from './schemas'
+import type { CascadeReport } from './cascade'
 
-/** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask; `tiles` names the markdown tiles its link cascade rewrote. */
+/** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
   created?: { id: string; path: string }
   renamed?: { path: string; name: string }
-  tiles?: string[]
+  cascade?: CascadeReport
   adopted?: string
   trashed?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
@@ -60,6 +61,7 @@ export type MutateRequest =
       newName: string
       fromCreate?: true
     }
+  | { op: 'renameHeading'; path: string; heading: string; to: string }
   | { op: 'delete'; path: string; kind: MutableKind }
   | { op: 'restore'; bundlePath: string; destination?: RestoreDestination }
   | { op: 'emptyBundle'; bundlePath: string }

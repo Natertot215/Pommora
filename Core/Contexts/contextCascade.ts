@@ -5,7 +5,12 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
-import { pathExists, readJsonObject, targetTaken } from '../Files/atomicWrite'
+import {
+  pathExists,
+  readJsonObject,
+  rewritePreservingTimes,
+  targetTaken,
+} from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
@@ -17,11 +22,12 @@ import {
   type RewriteText,
   type SweepResult,
   sweepGovernedRoots,
+  unsweptLine,
 } from '../Properties/governedSweep'
 import { loadContextWorld } from './contextWrite'
 import { withOrderEntry } from './spaceSidecar'
 import { queryMembers } from '../Index/contentIndex'
-import { nexusCorpus } from '../Index/indexSeed'
+import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
 import { nameError } from '../Paths/names'
 
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
@@ -104,7 +110,7 @@ async function cascadeTitle(
   j: RenameJournal,
 ): Promise<SweepResult> {
   const def = registry.contexts.find((c) => c.id === j.contextId)
-  if (!def) return { touched: [], skipped: [], refused: [] }
+  if (!def) return { touched: new Map(), skipped: [], refused: [] }
   // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
   const member: Member =
     j.spaceId === undefined
@@ -125,7 +131,6 @@ export async function unlinkContextKey(
   skipUnder?: string,
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
-  const skipPrefix = skipUnder ? `${skipUnder}/` : null
   const captured: SweepCapture[] = []
   const strip: Rewrite = (raw, file) => {
     if (!(key in raw)) return null
@@ -138,9 +143,7 @@ export async function unlinkContextKey(
     return next
   }
   const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
-  const swept = await sweepMembers(root, { key }, (raw, file) =>
-    skipPrefix && file.startsWith(skipPrefix) ? null : entry(raw, file),
-  )
+  const swept = await unlinkMembers(root, { key }, entry, skipUnder)
   return ok({ ...swept, captured })
 }
 
@@ -151,7 +154,7 @@ export async function unlinkSpaceValue(
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
-  const swept = await sweepMembers(root, { key, spaceTitle }, (raw, file) => {
+  const take: Rewrite = (raw, file) => {
     const arr = raw[key]
     if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
     captured.push(captureRoot(raw, file, [spaceTitle]))
@@ -160,8 +163,29 @@ export async function unlinkSpaceValue(
     if (kept.length) next[key] = kept
     else delete next[key]
     return next
-  })
-  return ok({ ...swept, captured })
+  }
+  return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
+}
+
+// A refused delete leaves no record to restore from, so a sweep that missed a member returns every file it wrote to the bytes it held and refuses. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
+async function unlinkMembers(
+  root: string,
+  member: Member,
+  rewrite: Rewrite,
+  skipUnder?: string,
+): Promise<SweepResult> {
+  const leaves = (file: string): boolean => !!skipUnder && file.startsWith(`${skipUnder}/`)
+  const swept = await sweepMembers(root, member, (raw, file) =>
+    leaves(file) ? null : rewrite(raw, file),
+  )
+  const missed = swept.skipped.filter((file) => !leaves(file))
+  if (!missed.length) return swept
+  for (const [file, text] of swept.touched)
+    await machine().lock(file, async () => {
+      await rewritePreservingTimes(file, text)
+      await indexWrittenPage(root, file)
+    })
+  throw new Error(unsweptLine(missed.length))
 }
 
 async function settleJournal(root: string, j: RenameJournal, skipped: string[]): Promise<void> {

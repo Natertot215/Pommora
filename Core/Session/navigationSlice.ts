@@ -50,15 +50,12 @@ import {
 import {
   bumpBodyEpoch,
   clearCache,
-  refreshCache,
   dropPageDetail,
   dropCacheDetail,
   cachePageDetail,
   fetchPageDetail,
-  heldPaths,
   setBodyBase,
 } from './pageDetailCache'
-import { absorbLanding } from '../Pages/bodyMount'
 import { dropCacheOwner, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { findContainerWhere } from '../Nexus/treePatch'
@@ -784,17 +781,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
     patchPagesFor: (req) => {
       switch (req.op) {
-        case 'rename': {
-          // Only a page rename's cascade rewrites bodies nexus-wide, and editorState's key survives the rename, so a warm restore would revive the pre-cascade body.
-          if (req.kind !== 'page' || req.fromCreate) break
-          refreshCache()
-          // The cascade's writes were the app's own, so no landing reaches the editors still holding rewritten pages.
-          for (const path of heldPaths()) void absorbLanding(path)
-          keepSlots(() => false)
-          const shown = get().selection
-          if (shown.kind === 'page') void get().select(shown, { record: false })
-          break
-        }
         case 'delete':
           dropPageDetail(req.path)
           keepSlots((_, slot) => slot.target.path !== req.path)

@@ -12,9 +12,6 @@ import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '../Properties/propertyValue'
-import { normalizeTitle } from '../Connections/connections'
-import { mentionsTitle } from '../Connections/scan'
-import { rewriteConnections } from '../Connections/rewrite'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { newId } from '../Nexus/ids'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
@@ -233,34 +230,26 @@ async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: st
   return hosts
 }
 
-async function markdownTileFiles(root: string): Promise<{ id: string; file: string }[]> {
-  const out: { id: string; file: string }[] = []
-  for (const { dir } of await listTileHosts(root)) {
+export async function rewriteTileConnections(
+  root: string,
+  rewrite: (body: string) => string,
+): Promise<{ hosts: TileHostRef[]; failed: number }> {
+  const hosts: TileHostRef[] = []
+  let failed = 0
+  for (const { host, dir } of await listTileHosts(root)) {
+    let wrote = false
     for (const b of (await readTileDocAt(dir)).tiles) {
       const entry = knownTile(b)
       if (!entry || !TILE_KINDS[entry.type].fileBacked) continue
-      out.push({ id: entry.id, file: tileFilePath(dir, entry.id) })
+      // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
+      const landed = await rewritePageSerialized(tileFilePath(dir, entry.id), (body) => {
+        const next = rewrite(body)
+        return next === body ? null : next
+      }).catch(() => null)
+      if (landed === null) failed++
+      else wrote ||= landed
     }
+    if (wrote) hosts.push(host)
   }
-  return out
-}
-
-/** The ids of the tiles it rewrote, which the window re-reads. */
-export async function rewriteTileConnections(
-  root: string,
-  oldTitle: string,
-  newTitle: string,
-): Promise<string[]> {
-  const oldKey = normalizeTitle(oldTitle)
-  const rewrote: string[] = []
-  for (const { id, file } of await markdownTileFiles(root)) {
-    // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
-    const wrote = await rewritePageSerialized(file, (body) => {
-      if (!mentionsTitle(body, oldKey)) return null
-      const next = rewriteConnections(body, oldTitle, newTitle)
-      return next !== body ? next : null
-    })
-    if (wrote) rewrote.push(id)
-  }
-  return rewrote
+  return { hosts, failed }
 }

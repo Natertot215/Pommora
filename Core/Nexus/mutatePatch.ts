@@ -40,6 +40,7 @@ function patchForMutation(
     case 'setSpaceColor':
     case 'setSpaceRowOrder':
     case 'emptyBundle':
+    case 'renameHeading':
       return 'no-change'
     case 'createPage':
     case 'createContainer':

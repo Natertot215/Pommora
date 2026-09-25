@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile } from '../Paths/posix'
+import { isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { contextsDir } from '../Paths/paths'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
@@ -34,6 +34,7 @@ import { createContainerOp, createPageOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
+import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 
 export interface MutateContext {
@@ -69,6 +70,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'rename':
       return renameOp(ctx, req)
+
+    case 'renameHeading':
+      return ok({ cascade: await renameCascade(root, titleFromPath(req.path), req, req.path) })
 
     case 'delete':
       return deleteOp(ctx, req)

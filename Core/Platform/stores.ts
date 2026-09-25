@@ -3,7 +3,7 @@ import type { KeyValueStore } from './machine'
 // `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own syntax kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too.
 export type MatrixKind = 'body' | 'citation' | 'frontmatter' | 'embed' | 'space'
 
-/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a Context key for a `space` row, and '' otherwise. `count` is occurrences for `body`, `citation` and `embed`, and always 1 for `frontmatter` and `space`, whose producers key by target. */
+/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a Context key for a `space` row, and '' otherwise. `count` is occurrences for `body`, `citation` and `embed`, and always 1 for `frontmatter` and `space`, whose producers yield each target and qualifier once. */
 export interface MatrixNode {
   kind: MatrixKind
   target: string

@@ -25,6 +25,7 @@ import { getLiveTree, refreshAfterWrite } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { errText } from '@pommora/core/Contract/result'
+import { flushValueWrites } from '@pommora/core/Nexus/valuesChanged'
 import {
   applyWatchEvents,
   touchesCorpus,
@@ -139,7 +140,7 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
     const events = await dropOwnEchoes(noted)
     const before = getLiveTree()
     const assetsBefore = getHeldAssetMap(root)
-    const { outcome, touched } = await applyWatchEvents(root, events, scope)
+    const { outcome, touched, cascaded } = await applyWatchEvents(root, events, scope)
     let tree = getLiveTree()
     // The map is patch-only, so the fallback walk is where the listing is taken again.
     if (outcome === 'refresh') {
@@ -150,11 +151,15 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
     if (sessionRoot() !== root) return
     if (tree && tree !== before) push(win, 'nexus:changed', tree)
     const classified = classifyBatch(events, root, scope)
-    const pages = pagesChangedIn(classified)
+    const pages = pagesChangedIn(classified, cascaded.pages)
     if (pages.length) push(win, 'pages:changed', pages)
-    const changed = valueChangesOf(classified, touched)
+    // A cascaded linker's write was the app's own, so its note waits in the ledger rather than in the batch.
+    const changed = [
+      ...valueChangesOf(classified, touched),
+      ...flushValueWrites(root, cascaded.pages),
+    ]
     if (changed.length) push(win, 'values:changed', changed)
-    for (const host of tilesChangedIn(classified)) push(win, 'tiles:changed', host)
+    for (const host of tilesChangedIn(classified, cascaded.hosts)) push(win, 'tiles:changed', host)
     const assets = getHeldAssetMap(root)
     if (assetsBefore && assets && assets !== assetsBefore) push(win, 'assets:changed', assets)
     if (outcome !== 'refresh') return

@@ -14,7 +14,7 @@ import { adoptedId, isAdoptedId, shardOf } from './ids'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { removePathIndex } from '../Index/contentIndex'
 import { indexWrittenPage } from '../Index/indexSeed'
-import { renameHeadingCascade } from './cascade'
+import { type CascadeReport, renameCascade } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
@@ -206,29 +206,30 @@ export function touchesCorpus(root: string, events: WatchEvent[], scope: WatchSc
   })
 }
 
-// The patch reads every upserted page to land it, so the ids it saw travel out with it — the only other way to name them is a walk of the whole tree.
+// The patch reads every upserted page to land it, so the ids it saw travel out with it — the only other way to name them is a walk of the whole tree. `cascaded` names what a heading rename the batch showed rewrote: the app's own writes, which no watch event reports.
 export interface WatchPatch {
   outcome: 'patched' | 'refresh'
   touched: ReadonlyMap<string, string>
+  cascaded: Pick<CascadeReport, 'pages' | 'hosts'>
 }
-
-// An abandoned patch names an arbitrary prefix of the batch, so the walk starts from no ids rather than a subset.
-const walked = (): WatchPatch => ({ outcome: 'refresh', touched: new Map() })
 
 export async function applyWatchEvents(
   root: string,
   events: WatchEvent[],
   scope: WatchScope,
 ): Promise<WatchPatch> {
+  const cascaded: WatchPatch['cascaded'] = { pages: [], hosts: [] }
+  // An abandoned patch names an arbitrary prefix of the batch, so the walk starts from no ids rather than a subset.
+  const walked = (): WatchPatch => ({ outcome: 'refresh', touched: new Map(), cascaded })
   const tree = getLiveTree()
   if (!tree) return walked()
   const classes = events.map((ev) => classifyEvent(tree, root, ev, scope))
   if (classes.some((c) => c.kind === 'full-refresh')) return walked()
   const touched = new Map<string, string>()
   for (const c of classes) {
-    if ((await applyOne(root, c, scope, touched)) === 'refresh') return walked()
+    if ((await applyOne(root, c, scope, touched, cascaded)) === 'refresh') return walked()
   }
-  return { outcome: 'patched', touched }
+  return { outcome: 'patched', touched, cascaded }
 }
 
 /** Null from the transform means the patch could not land — degrade to the walk, never drift. The root pin closes a confirm that outlived its session: a switch mid-apply installs the NEW nexus's tree, and an old-root write must never patch into it. */
@@ -249,9 +250,17 @@ const removePage = (root: string, rel: string): 'ok' | 'refresh' =>
 // A rename a landed file shows (an Obsidian or sync edit) takes the same cascade the editor's settle takes; the editor's own save reports none, its settle having spoken.
 const cascadeSeen = async (
   root: string,
-  seen: Awaited<ReturnType<typeof indexWrittenPage>>,
+  rel: string,
+  cascaded: WatchPatch['cascaded'],
 ): Promise<void> => {
-  if (seen) await renameHeadingCascade(root, seen.title, seen.old, seen.next, null)
+  const seen = await indexWrittenPage(root, join(root, rel))
+  if (!seen) return
+  const c = await renameCascade(root, seen.title, { heading: seen.old, to: seen.next }).catch(
+    (e: unknown) => ({ pages: [], hosts: [], warning: errText(e) }),
+  )
+  if (c.warning) console.error('heading rename:', c.warning)
+  cascaded.pages.push(...c.pages)
+  cascaded.hosts.push(...c.hosts)
 }
 
 async function applyOne(
@@ -259,6 +268,7 @@ async function applyOne(
   c: WatchClass,
   watched: WatchScope,
   touched: Map<string, string>,
+  cascaded: WatchPatch['cascaded'],
 ): Promise<'ok' | 'refresh'> {
   switch (c.kind) {
     case 'ignored':
@@ -267,14 +277,14 @@ async function applyOne(
       patchHeldAssetMap(root, c.rel, c.event)
       return 'ok'
     case 'index-only':
-      await cascadeSeen(root, await indexWrittenPage(root, join(root, c.rel)))
+      await cascadeSeen(root, c.rel, cascaded)
       return 'ok'
     case 'page-remove':
       removePathIndex(c.rel)
       touched.delete(c.rel)
       return removePage(root, c.rel)
     case 'page-upsert': {
-      await cascadeSeen(root, await indexWrittenPage(root, join(root, c.rel)))
+      await cascadeSeen(root, c.rel, cascaded)
       const landed = await patchPageFromDisk(root, c.rel)
       noteExternalEdit(root, join(root, c.rel))
       if (landed === 'refresh') return 'refresh'

@@ -162,7 +162,6 @@ export function stubEditorBridge(extra: Record<string, unknown> = {}): void {
       value: { id: 'x', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'inner' },
     }),
     'index:headings': async () => ({ ok: true, value: {} }),
-    'connections:headingRenamed': async () => ({ ok: true, value: { touched: [] } }),
     ...extra,
   })
 }

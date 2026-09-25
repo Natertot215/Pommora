@@ -46,8 +46,6 @@ export interface BodyMount {
 type BodyHead = { seq: number; text: string }
 const heads = new Map<string, BodyHead & { mounts: Set<BodyMount> }>()
 
-export const heldPaths = (): string[] => [...heads.keys()]
-
 export const bodyHead = (path: string): BodyHead | undefined => heads.get(path)
 
 const catchUp = (mount: BodyMount, head: BodyHead): void => {
@@ -153,16 +151,12 @@ function subscribeBodyEpoch(fn: () => void): () => void {
 export const useBodyEpoch = (path: string): number =>
   useSyncExternalStore(subscribeBodyEpoch, () => bodyEpochs.get(path) ?? 0)
 
-export function refreshCache(): void {
+export function clearCache(): void {
   clearWarm()
   detailByPath.clear()
   inFlight.clear()
   bodyEpochs.clear()
   for (const fn of epochListeners) fn()
-}
-
-export function clearCache(): void {
-  refreshCache()
   baseByPath.clear()
   heads.clear()
 }

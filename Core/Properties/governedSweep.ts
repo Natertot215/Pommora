@@ -1,5 +1,5 @@
 import {
-  readJsonObject,
+  parseJsonText,
   readTextOrNull,
   rewritePreservingTimes,
   writeJson,
@@ -12,11 +12,13 @@ import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/page
 import { listFilesRecursive } from '../Files/walk'
 import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 import { sweepAdmits } from '../Files/pageFile'
+import { isPlainObject } from './propertyValue'
 
 export type Raw = Record<string, unknown>
 
 export interface SweepResult {
-  touched: string[]
+  /** Each file the sweep wrote, with the text it held before the write. */
+  touched: Map<string, string>
   skipped: string[]
   refused: string[]
 }
@@ -26,6 +28,9 @@ export type Rewrite = (raw: Raw, file: string) => Raw | null
 export type RewriteText = (content: string, file: string) => string | null
 
 type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
+
+export const unsweptLine = (count: number, what = ''): string =>
+  `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
 
 const changedKeys = (raw: Raw, next: Raw): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
@@ -38,10 +43,16 @@ export async function sweepGovernedRoots(
   files: string[],
   plan: SweepPlan,
 ): Promise<SweepResult> {
-  const out: SweepResult = { touched: [], skipped: [], refused: [] }
+  const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
+  const guarded = (file: string, body: () => Promise<void>): Promise<void> =>
+    machine()
+      .lock(file, body)
+      .catch(() => {
+        if (!out.touched.has(file)) out.skipped.push(file)
+      })
 
   for (const file of files) {
-    await machine().lock(file, async () => {
+    await guarded(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null) {
         out.skipped.push(file)
@@ -56,9 +67,9 @@ export async function sweepGovernedRoots(
         const next = plan.text(content, file)
         if (next === null) return
         await rewritePreservingTimes(file, next)
+        out.touched.set(file, content)
         noteValueWrite(root, file)
         await indexWrittenPage(root, file)
-        out.touched.push(file)
         return
       }
       const raw = splitFrontmatter(content)
@@ -72,26 +83,27 @@ export async function sweepGovernedRoots(
         file,
         mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body),
       )
+      out.touched.set(file, content)
       noteValueWrite(root, file)
       await indexWrittenPage(root, file)
-      out.touched.push(file)
     })
   }
 
   const sidecars = plan.sidecars
   if (sidecars)
     for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
-      await machine().lock(file, async () => {
-        const raw = await readJsonObject(file)
-        if (!raw) {
+      await guarded(file, async () => {
+        const text = await readTextOrNull(file)
+        const raw = text === null ? null : parseJsonText(text)
+        if (text === null || !isPlainObject(raw)) {
           out.skipped.push(file)
           return
         }
         const next = sidecars(raw, file)
         if (next === null) return
         await writeJson(file, next)
+        out.touched.set(file, text)
         noteSidecarWrite(dirname(file))
-        out.touched.push(file)
       })
     }
   return out

@@ -5,7 +5,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { folderCorpus } from '../Index/indexSeed'
-import { sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots, unsweptLine } from './governedSweep'
 import { splitFrontmatter, stampedId } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
@@ -14,7 +14,7 @@ import { updatePageProperty } from '../Nexus/page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepAdmits } from '../Files/pageFile'
-import { ok, type Result } from '../Contract/result'
+import { fault, ok, type Result } from '../Contract/result'
 
 export function removeProperty(
   root: string,
@@ -51,8 +51,8 @@ async function removeInner(
   )
   if (!written.ok) return written
   const text = (content: string): string | null => stripPageMember(content, key)
-  await sweepGovernedRoots(root, holders, { text })
-  return ok(null)
+  const { skipped } = await sweepGovernedRoots(root, holders, { text })
+  return skipped.length ? fault(unsweptLine(skipped.length)) : ok(null)
 }
 
 export async function restoreCachedValues(

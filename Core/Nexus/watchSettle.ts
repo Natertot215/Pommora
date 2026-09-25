@@ -69,14 +69,17 @@ export function valueChangesOf(
   return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
 }
 
-export function tilesChangedIn(classified: WatchClass[]): TileHostRef[] {
-  const hosts = new Map<string, TileHostRef>()
+export function tilesChangedIn(
+  classified: WatchClass[],
+  cascaded: readonly TileHostRef[],
+): TileHostRef[] {
+  const hosts = new Map(cascaded.map((host) => [tileHostKey(host), host]))
   for (const c of classified) if (c.kind === 'tiles-leaf') hosts.set(tileHostKey(c.host), c.host)
   return [...hosts.values()]
 }
 
-export function pagesChangedIn(classified: WatchClass[]): string[] {
-  const rels = new Set<string>()
+export function pagesChangedIn(classified: WatchClass[], cascaded: readonly string[]): string[] {
+  const rels = new Set(cascaded)
   for (const c of classified) if (c.kind === 'page-upsert') rels.add(c.rel)
   return [...rels]
 }
