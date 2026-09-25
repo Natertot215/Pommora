@@ -4,7 +4,11 @@ import { changesTo } from '../Pages/merge3'
 import { docString } from './docCache'
 import { Annotation, Facet, Transaction } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import {
+  type Personalization,
+  type SettingValue,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
 import type { Commands } from '@pommora/core/Actions/commands'
@@ -45,30 +49,41 @@ export interface EditorMenuApi {
   onAction: (cb: (action: string) => void) => () => void
 }
 
-export type EditorSettings = Pick<
-  Personalization,
-  | 'codeblockLineCount'
-  | 'removeTitleOnLinkChange'
-  | 'aliasPickerOnCommit'
-  | 'jumpToCitation'
-  | 'pasteLinkIntoText'
-  | 'defaultLinkFormat'
-  | 'headingLinkStyle'
-  | 'inPageHeadingResolution'
-  | 'transformDashes'
-  | 'transformArrows'
-  | 'transformEquations'
-  | 'transformEllipses'
-  | 'transformCallouts'
-  | 'transformSections'
-  | 'transformBullets'
-  | 'pairBrackets'
-  | 'pairMarkers'
-  | 'pairQuotes'
-  | 'wrapSelections'
-  | 'deletePairsTogether'
-  | 'exitPairsOnEnter'
-> & { commands: Commands }
+export const EDITOR_SETTING_KEYS = [
+  'codeblockLineCount',
+  'removeTitleOnLinkChange',
+  'aliasPickerOnCommit',
+  'jumpToCitation',
+  'pasteLinkIntoText',
+  'defaultLinkFormat',
+  'headingLinkStyle',
+  'inPageHeadingResolution',
+  'transformDashes',
+  'transformArrows',
+  'transformEquations',
+  'transformEllipses',
+  'transformCallouts',
+  'transformSections',
+  'transformBullets',
+  'pairBrackets',
+  'pairMarkers',
+  'pairQuotes',
+  'wrapSelections',
+  'deletePairsTogether',
+  'exitPairsOnEnter',
+] as const
+
+export type EditorSettings = {
+  [K in (typeof EDITOR_SETTING_KEYS)[number]]: SettingValue<K>
+} & { commands: Commands }
+
+export const editorSettingsOf = (p: Personalization, commands: Commands): EditorSettings => ({
+  ...(Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)])) as Omit<
+    EditorSettings,
+    'commands'
+  >),
+  commands,
+})
 
 type TileMount =
   | {

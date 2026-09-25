@@ -21,7 +21,7 @@ import {
   type Tab,
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
-import { useSession } from '../Session/store'
+import { useSession, useSetting } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
@@ -80,7 +80,7 @@ function TabBarBody({
 }): React.JSX.Element {
   const activeTabId = useSession((s) => s.activeTabId)
   const commands = useSession((s) => s.commands)
-  const revealOnHover = useSession((s) => s.personalization.revealTabBarOnHover ?? false)
+  const revealOnHover = useSetting('revealTabBarOnHover')
   const activateTab = useSession((s) => s.activateTab)
   const openNewTab = useSession((s) => s.openNewTab)
   const closeTab = useSession((s) => s.closeTab)

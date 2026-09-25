@@ -1,11 +1,6 @@
 // Pinned to en-US — the ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across machines.
 
-import {
-  type DateFormat,
-  defaultStyleFor,
-  type TimeFormat,
-  type WeekdayFormat,
-} from '@pommora/core/Properties/columnStyles'
+import type { DateFormat, TimeFormat, WeekdayFormat } from '@pommora/core/Properties/columnStyles'
 import type { DateGranularity, DateSeparator } from '@pommora/core/Views/views'
 import type { NumberConfig } from '@pommora/core/Properties/properties'
 import { pad } from '@pommora/uix/Utilities/pad'
@@ -39,9 +34,6 @@ function ordinal(day: number): string {
       return `${day}th`
   }
 }
-
-export const nexusDateFormat = (setting: DateFormat | undefined): DateFormat =>
-  defaultStyleFor('datetime', undefined, setting).date_format ?? 'full'
 
 export function clockOf(date: Date, timeFormat: TimeFormat): string {
   return timeFormat === 'twelveHour'

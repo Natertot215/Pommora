@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { DATE_FORMATS } from '../Properties/columnStyles'
-import { LINK_DISPLAYS } from '../Properties/properties'
+import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
@@ -19,7 +19,6 @@ export const IN_PAGE_HEADING_RESOLUTION_LABELS: Record<InPageHeadingResolution, 
 
 export const TIME_FORMAT_SETTINGS = ['twelveHour', 'twentyFourHour'] as const
 export type TimeFormatSetting = (typeof TIME_FORMAT_SETTINGS)[number]
-export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
 
 export const TIME_FORMAT_LABELS: Record<TimeFormatSetting, string> = {
   twelveHour: '12 Hours',
@@ -65,7 +64,6 @@ export const TAB_CACHE = { ...ladder([5, 10, 15, 20, 25]), default: 5 }
 
 export const SCALE = ladder([0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5])
 export const coerceScale = coerceIn(SCALE)
-export const WEB_ZOOM_DEFAULT = 1
 export const EDITOR_SCALE_DEFAULT = 1
 
 /** Each heading level's size in em of the page text; the fallback is the stylesheet's own. */
@@ -103,45 +101,53 @@ export const coerceTenthsScale = coerceIn(TENTHS_SCALE)
 // One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
 const PREVIEW_PERSISTENCE_VALUES = ['off', '1s', '5s', '10s', 'always'] as const
 export type PreviewPersistence = (typeof PREVIEW_PERSISTENCE_VALUES)[number]
-export const PREVIEW_PERSISTENCE_DEFAULT: PreviewPersistence = '1s'
 
-const PREVIEW_LINGER_MS: Record<Exclude<PreviewPersistence, 'off'>, number> = {
+// The live pane's dismiss grace in ms; 'off' never has a live pane, and 'always' sets no timer.
+export const PREVIEW_LINGER_MS: Record<PreviewPersistence, number> = {
+  off: 0,
   '1s': 1000,
   '5s': 5000,
   '10s': 10000,
   always: Number.POSITIVE_INFINITY,
 }
 
-// Live-pane dismiss grace in ms; 'off' is narrowed out by callers before this runs. 'always' yields Infinity — no timer.
-export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefined): number {
-  return v === undefined ? 1000 : PREVIEW_LINGER_MS[v]
-}
-
-// One declaration per setting: the shape the file is read through and the type the app holds are the same object, so a setting the reader forgot cannot compile.
-// Every field is per-field lenient — an absent or invalid value decodes to undefined, which every consumer reads as the built-in default.
-const lenient = <T extends z.ZodTypeAny>(schema: T) => schema.optional().catch(undefined)
-const flag = () => lenient(z.boolean())
-const oneOf = <const T extends readonly [string, ...string[]]>(values: T) => lenient(z.enum(values))
+// One declaration per setting: the shape the file is read through, the type the app holds, and the value an absent key means come from the same entry, so a setting the reader forgot cannot compile.
+// Every field is per-field lenient — an absent or invalid value decodes to undefined, which settingOf reads as the entry's fallback.
+const setting = <T extends z.ZodTypeAny, F = undefined>(schema: T, fallback?: F) => ({
+  schema: schema.optional().catch(undefined),
+  fallback: fallback as F,
+})
+const flag = (fallback: boolean) => setting(z.boolean(), fallback)
+const oneOf = <
+  const T extends readonly [string, ...string[]],
+  F extends T[number] | undefined = undefined,
+>(
+  values: T,
+  fallback?: F,
+) => setting(z.enum(values), fallback)
 const color = <S extends string>(inherit: S) =>
-  lenient(
+  setting(
     z.custom<ColorSetting<S>>((v) => typeof v === 'string' && (v === inherit || isColorKey(v))),
+    inherit,
   )
 // Only a stored number takes the range; anything else leaves the key unwritten.
 const bounded = ({ min, max }: Bounds, round = false) =>
-  lenient(z.number().transform((n) => clamp(round ? Math.round(n) : n, min, max)))
-const stepped = (range: Bounds) => bounded(range, true)
-const scaled = () => bounded(SCALE)
-const headingSize = () => bounded(HEADING_SIZE)
+  z.number().transform((n) => clamp(round ? Math.round(n) : n, min, max))
+const stepped = (range: Bounds & { default: number }) =>
+  setting(bounded(range, true), range.default)
+const scaled = (fallback: number) => setting(bounded(SCALE), fallback)
+const headingSize = (key: HeadingSizeKey) =>
+  setting(bounded(HEADING_SIZE), HEADING_SIZE_DEFAULTS[key])
 // Each entry stands on its own: a malformed one drops, and an empty list is the absent list.
 const nonEmptyStrings = () =>
-  lenient(
+  setting(
     z
       .array(z.unknown())
       .transform((a) => a.filter((v): v is string => typeof v === 'string' && v.length > 0))
       .refine((a) => a.length > 0),
   )
 const iconsByKind = () =>
-  lenient(
+  setting(
     z
       .record(z.string(), z.unknown())
       .transform(
@@ -155,7 +161,7 @@ const iconsByKind = () =>
       .refine((r) => Object.keys(r).length > 0),
   )
 
-export const personalizationSchema = z.object({
+const SETTINGS = {
   accent: color<'system'>('system'),
   connectionColor: color<'accent'>('accent'),
   externalLinkColor: color<'system'>('system'),
@@ -163,87 +169,109 @@ export const personalizationSchema = z.object({
   highlightColor: color<'accent'>('accent'),
   codeColor: color<'default'>('default'),
   // Display only: the strike is drawn, never written, so the file stays the plain `- [x]` it was.
-  muteCheckedItems: flag(),
-  hideChevrons: flag(),
-  repairOnOpen: flag(),
-  capitalizeMetadata: flag(),
-  outlinerLines: flag(),
-  titleIcon: flag(),
-  codeblockLineCount: flag(),
-  navCloseOnSelect: flag(),
-  removeTitleOnLinkChange: flag(),
-  aliasPickerOnCommit: flag(),
+  muteCheckedItems: flag(false),
+  hideChevrons: flag(false),
+  repairOnOpen: flag(false),
+  capitalizeMetadata: flag(false),
+  outlinerLines: flag(false),
+  titleIcon: flag(false),
+  codeblockLineCount: flag(false),
+  navCloseOnSelect: flag(true),
+  removeTitleOnLinkChange: flag(true),
+  aliasPickerOnCommit: flag(true),
   defaultIcons: iconsByKind(),
   iconFavorites: nonEmptyStrings(),
-  setPlacement: oneOf(PLACEMENTS),
-  subSetPlacement: oneOf(PLACEMENTS),
-  newPagePlacement: oneOf(PLACEMENTS),
-  newFolderPlacement: oneOf(PLACEMENTS),
-  newSpacePlacement: oneOf(PLACEMENTS),
-  sidebarMode: oneOf(SIDEBAR_MODES),
+  setPlacement: oneOf(PLACEMENTS, 'top'),
+  subSetPlacement: oneOf(PLACEMENTS, 'top'),
+  newPagePlacement: oneOf(PLACEMENTS, 'bottom'),
+  newFolderPlacement: oneOf(PLACEMENTS, 'bottom'),
+  newSpacePlacement: oneOf(PLACEMENTS, 'bottom'),
+  sidebarMode: oneOf(SIDEBAR_MODES, 'collections'),
   // Reveals the surfaces that are still being built; off, they are absent rather than disabled.
-  experimentalFeatures: flag(),
-  revealTabBarOnHover: flag(),
-  tabOpenBehavior: oneOf(TAB_OPEN_BEHAVIORS),
-  matrixOpenIn: oneOf(MATRIX_OPEN_INS),
-  windowPageBanners: flag(),
-  windowSpaceBanners: flag(),
-  windowNavBanner: flag(),
-  tabTakeFocus: flag(),
+  experimentalFeatures: flag(false),
+  revealTabBarOnHover: flag(false),
+  tabOpenBehavior: oneOf(TAB_OPEN_BEHAVIORS, 'overtake'),
+  matrixOpenIn: oneOf(MATRIX_OPEN_INS, 'tab'),
+  windowPageBanners: flag(false),
+  windowSpaceBanners: flag(false),
+  windowNavBanner: flag(false),
+  tabTakeFocus: flag(true),
   tabMinWidth: stepped(TAB_MIN_WIDTH),
   tabMaxWidth: stepped(TAB_MAX_WIDTH),
   tabCache: stepped(TAB_CACHE),
-  pauseMediaOnTabSwitch: flag(),
-  nativeHighlight: flag(),
-  connectionsOpenInPreview: flag(),
-  plainUnresolvedLinks: flag(),
-  headingLinkStyle: oneOf(HEADING_LINK_STYLES),
-  inPageHeadingResolution: oneOf(IN_PAGE_HEADING_RESOLUTIONS),
+  pauseMediaOnTabSwitch: flag(true),
+  nativeHighlight: flag(false),
+  connectionsOpenInPreview: flag(false),
+  plainUnresolvedLinks: flag(false),
+  headingLinkStyle: oneOf(HEADING_LINK_STYLES, 'page-heading'),
+  inPageHeadingResolution: oneOf(IN_PAGE_HEADING_RESOLUTIONS, 'explicit'),
   ribbonOrder: nonEmptyStrings(),
-  previewPersistence: oneOf(PREVIEW_PERSISTENCE_VALUES),
-  dismissPreviewOnPointer: flag(),
-  fileHistory: flag(),
+  previewPersistence: oneOf(PREVIEW_PERSISTENCE_VALUES, '1s'),
+  dismissPreviewOnPointer: flag(false),
+  fileHistory: flag(true),
   historyDays: stepped(HISTORY_DAYS),
   historyInterval: stepped(HISTORY_INTERVAL),
-  permanentDelete: flag(),
+  permanentDelete: flag(false),
   // Off skips the confirmation only where nothing owns a schema: a page, a tile, a bare folder.
-  confirmDeletion: flag(),
-  dateFormat: oneOf(DATE_FORMATS),
-  timeFormat: oneOf(TIME_FORMAT_SETTINGS),
+  confirmDeletion: flag(true),
+  dateFormat: oneOf(DATE_FORMATS, 'full'),
+  timeFormat: oneOf(TIME_FORMAT_SETTINGS, 'twelveHour'),
   trashDateFormat: oneOf(DATE_FORMATS),
-  trashHideTime: flag(),
-  pasteLinkIntoText: flag(),
-  defaultLinkFormat: oneOf(LINK_DISPLAYS),
-  openLinksInApp: flag(),
-  webZoomFactor: scaled(),
-  embedScale: scaled(),
+  trashHideTime: flag(false),
+  pasteLinkIntoText: flag(false),
+  defaultLinkFormat: oneOf(LINK_DISPLAYS, DEFAULT_LINK_DISPLAY),
+  openLinksInApp: flag(false),
+  webZoomFactor: scaled(1),
+  embedScale: scaled(EMBED_SCALE_DEFAULT),
   // A tile states its own size through Embed Scale, so this stops at a tile's edge.
-  editorScale: scaled(),
-  heading1Size: headingSize(),
-  heading2Size: headingSize(),
-  heading3Size: headingSize(),
-  heading4Size: headingSize(),
-  heading5Size: headingSize(),
-  heading6Size: headingSize(),
-  citationsShown: flag(),
-  jumpToCitation: flag(),
-  transformDashes: flag(),
-  transformArrows: flag(),
-  transformEquations: flag(),
-  transformEllipses: flag(),
-  transformCallouts: flag(),
-  transformSections: flag(),
-  transformBullets: flag(),
-  pairBrackets: flag(),
-  pairMarkers: flag(),
-  pairQuotes: flag(),
-  wrapSelections: flag(),
-  deletePairsTogether: flag(),
-  exitPairsOnEnter: flag(),
-})
+  editorScale: scaled(EDITOR_SCALE_DEFAULT),
+  heading1Size: headingSize('heading1Size'),
+  heading2Size: headingSize('heading2Size'),
+  heading3Size: headingSize('heading3Size'),
+  heading4Size: headingSize('heading4Size'),
+  heading5Size: headingSize('heading5Size'),
+  heading6Size: headingSize('heading6Size'),
+  citationsShown: flag(false),
+  jumpToCitation: flag(true),
+  transformDashes: flag(true),
+  transformArrows: flag(true),
+  transformEquations: flag(true),
+  transformEllipses: flag(true),
+  transformCallouts: flag(true),
+  transformSections: flag(false),
+  transformBullets: flag(false),
+  pairBrackets: flag(true),
+  pairMarkers: flag(true),
+  pairQuotes: flag(true),
+  wrapSelections: flag(false),
+  deletePairsTogether: flag(true),
+  exitPairsOnEnter: flag(true),
+}
+type Settings = typeof SETTINGS
+export type SettingKey = keyof Settings
+export type SettingValue<K extends SettingKey> =
+  | Exclude<Personalization[K], undefined>
+  | Settings[K]['fallback']
+
+const eachSetting = <V>(pick: (s: Settings[SettingKey]) => V): Record<SettingKey, V> =>
+  Object.fromEntries(Object.entries(SETTINGS).map(([k, s]) => [k, pick(s)])) as Record<
+    SettingKey,
+    V
+  >
+
+export const personalizationSchema = z.object(
+  eachSetting((s) => s.schema) as { [K in SettingKey]: Settings[K]['schema'] },
+)
 
 export type Personalization = z.infer<typeof personalizationSchema>
 
+export const SETTING_DEFAULTS = eachSetting((s) => s.fallback) as {
+  [K in SettingKey]: Settings[K]['fallback']
+}
+
+export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>
+  (p[key] ?? SETTING_DEFAULTS[key]) as SettingValue<K>
+
 // A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
 export const placementOf = (p: Personalization, containerKind: string): Placement =>
-  p[containerKind === 'collection' ? 'setPlacement' : 'subSetPlacement'] ?? 'top'
+  settingOf(p, containerKind === 'collection' ? 'setPlacement' : 'subSetPlacement')

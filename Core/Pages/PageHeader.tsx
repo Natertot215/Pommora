@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { pageMetaOf, useSession } from '../Session/store'
+import { pageMetaOf, useSession, useSetting } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
@@ -29,7 +29,7 @@ export function PageHeader({
 }): React.ReactNode {
   const { id, path, title, cover } = page
   const meta = useSession(pageMetaOf(id))
-  const setting = useSession((s) => s.personalization.titleIcon) === true
+  const setting = useSetting('titleIcon')
   const shown = meta?.title_icon ?? setting
   const coverSrc = useAssetUrl(cover)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)

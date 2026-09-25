@@ -13,6 +13,11 @@ import { createEditSlice } from './editSlice'
 import { createViewSearchSlice } from './viewSearchSlice'
 import type { SessionState } from './sessionState'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
+import {
+  type SettingKey,
+  type SettingValue,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
 
 export type { PageSlot } from './navigationSlice'
 export {
@@ -48,3 +53,6 @@ export const pageMetaOf =
   (id: string | undefined) =>
   (s: SessionState): PageMeta | undefined =>
     id ? s.tree?.pageMetadata[id] : undefined
+
+export const useSetting = <K extends SettingKey>(key: K): SettingValue<K> =>
+  useSession((s) => settingOf(s.personalization, key))

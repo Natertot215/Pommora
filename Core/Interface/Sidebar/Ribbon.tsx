@@ -1,4 +1,8 @@
-import type { Personalization, SidebarMode } from '@pommora/core/Settings/personalization'
+import {
+  type Personalization,
+  type SidebarMode,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
@@ -41,7 +45,10 @@ const switchTo = (mode: SidebarMode): void =>
 
 function pressMatrix(): void {
   const s = useSession.getState()
-  if (s.personalization.matrixOpenIn === 'window' && !isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
+  if (
+    settingOf(s.personalization, 'matrixOpenIn') === 'window' &&
+    !isOpenInTabs(s.tabs, s.pinned, MATRIX_REF)
+  )
     s.toggleMatrixWindow()
   else void s.select(MATRIX_REF)
 }

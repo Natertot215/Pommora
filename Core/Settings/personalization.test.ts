@@ -3,10 +3,10 @@ import { readPersonalization } from './codec'
 import {
   type Personalization,
   TAB_MIN_WIDTH,
-  PREVIEW_PERSISTENCE_DEFAULT,
   coerceHeadingSize,
   coerceTenthsScale,
-  previewLingerMs,
+  PREVIEW_LINGER_MS,
+  SETTING_DEFAULTS,
 } from './personalization'
 
 describe('coerceTenthsScale', () => {
@@ -38,22 +38,17 @@ describe('readPersonalization previewPersistence', () => {
   })
 
   it('the default rung is a valid value', () => {
-    expect(
-      readPersonalization({ previewPersistence: PREVIEW_PERSISTENCE_DEFAULT }).previewPersistence,
-    ).toBe(PREVIEW_PERSISTENCE_DEFAULT)
+    const rung = SETTING_DEFAULTS.previewPersistence
+    expect(readPersonalization({ previewPersistence: rung }).previewPersistence).toBe(rung)
   })
 })
 
-describe('previewLingerMs', () => {
+describe('PREVIEW_LINGER_MS', () => {
   it('maps each rung to its grace in ms', () => {
-    expect(previewLingerMs('1s')).toBe(1000)
-    expect(previewLingerMs('5s')).toBe(5000)
-    expect(previewLingerMs('10s')).toBe(10000)
-    expect(previewLingerMs('always')).toBe(Number.POSITIVE_INFINITY)
-  })
-
-  it('undefined resolves to the 1s default grace', () => {
-    expect(previewLingerMs(undefined)).toBe(1000)
+    expect(PREVIEW_LINGER_MS['1s']).toBe(1000)
+    expect(PREVIEW_LINGER_MS['5s']).toBe(5000)
+    expect(PREVIEW_LINGER_MS['10s']).toBe(10000)
+    expect(PREVIEW_LINGER_MS.always).toBe(Number.POSITIVE_INFINITY)
   })
 })
 

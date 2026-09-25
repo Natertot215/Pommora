@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { navKey, type SelectionState, type Tab } from '@pommora/core/Navigation/navRef'
-import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
+import { frozenOf, readyPageIds, shownPage, useSession, useSetting } from '../Session/store'
 import { useRevealNear } from '@pommora/uix/Interactions/hoverReveal'
 import { slideIn } from '@pommora/uix/Animations/motion'
 import { Icon } from '@pommora/uix/Symbols'
@@ -17,7 +17,6 @@ import { isOpenInTabs } from '../Navigation/tabsModel'
 import { Subfield } from './Subfield/Subfield'
 import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
-import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 import { publishChromePart } from './chromeParts'
 import { type ContentHost, ContentHostContext } from './contentHost'
@@ -85,7 +84,7 @@ function useHosts(): Host[] {
   const hasTree = useSession((s) => s.tree !== null)
   const readyIds = useSession(readyPageIds)
   const matrixOpen = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
-  const warmTabs = useSession((s) => s.personalization.tabCache ?? TAB_CACHE.default)
+  const warmTabs = useSetting('tabCache')
   const held = useRef(new Map<string, Host>())
   return useMemo(() => {
     const ready = new Set(readyIds.split(','))

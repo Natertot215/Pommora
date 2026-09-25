@@ -15,6 +15,7 @@ import { nexusCorpus } from '../Index/indexSeed'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '../Properties/properties'
 import { readLivePersonalization } from '../Settings/settings'
+import { settingOf } from '../Settings/personalization'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 
@@ -40,7 +41,7 @@ export async function renameCascade(
         : (queryHeadingMentions(titleKey, normalizeTitle(change.heading)) ?? [])
     const runs =
       'heading' in change &&
-      (await readLivePersonalization(root)).inPageHeadingResolution === 'automatic'
+      settingOf(await readLivePersonalization(root), 'inPageHeadingResolution') === 'automatic'
     const rewrite = (body: string, own = ''): string =>
       'title' in change
         ? rewriteConnections(body, title, change.title)

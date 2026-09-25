@@ -1,5 +1,5 @@
 import type { Commands } from '../Actions/commands'
-import { HISTORY_DAYS, HISTORY_INTERVAL, type Personalization } from './personalization'
+import { type Personalization, settingOf } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import {
@@ -55,7 +55,7 @@ export const readWatchScope = async (root: string): Promise<WatchScope> =>
 
 /** Anything not literally `true` reads as off — the destructive direction is never reached by a truthy coercion. */
 export async function readPermanentDelete(root: string): Promise<boolean> {
-  return (await readLivePersonalization(root)).permanentDelete === true
+  return settingOf(await readLivePersonalization(root), 'permanentDelete')
 }
 
 const MINUTE_MS = 60_000
@@ -66,9 +66,9 @@ export async function readFileHistoryConfig(
 ): Promise<{ enabled: boolean; intervalMs: number; keepMs: number }> {
   const p = await readLivePersonalization(root)
   return {
-    enabled: p.fileHistory !== false,
-    intervalMs: (p.historyInterval ?? HISTORY_INTERVAL.default) * MINUTE_MS,
-    keepMs: (p.historyDays ?? HISTORY_DAYS.default) * DAY_MS,
+    enabled: settingOf(p, 'fileHistory'),
+    intervalMs: settingOf(p, 'historyInterval') * MINUTE_MS,
+    keepMs: settingOf(p, 'historyDays') * DAY_MS,
   }
 }
 

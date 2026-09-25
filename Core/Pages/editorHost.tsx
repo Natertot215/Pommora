@@ -5,7 +5,7 @@ import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
 import { valueOr } from '@pommora/core/Contract/result'
 import { tableMenuItems } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { citationMenuModel } from '@pommora/core/MarkdownPM/Citations/citationMenu'
-import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
+import { type EditorHost, type EditorMenuApi, editorSettingsOf } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
@@ -71,31 +71,8 @@ function buildEditorHost(
   }
   return {
     settings: () => {
-      const { personalization: p, commands } = state()
-      return {
-        codeblockLineCount: p.codeblockLineCount,
-        removeTitleOnLinkChange: p.removeTitleOnLinkChange,
-        aliasPickerOnCommit: p.aliasPickerOnCommit,
-        jumpToCitation: p.jumpToCitation,
-        pasteLinkIntoText: p.pasteLinkIntoText,
-        defaultLinkFormat: p.defaultLinkFormat,
-        headingLinkStyle: p.headingLinkStyle,
-        inPageHeadingResolution: p.inPageHeadingResolution,
-        transformDashes: p.transformDashes,
-        transformArrows: p.transformArrows,
-        transformEquations: p.transformEquations,
-        transformEllipses: p.transformEllipses,
-        transformCallouts: p.transformCallouts,
-        transformSections: p.transformSections,
-        transformBullets: p.transformBullets,
-        pairBrackets: p.pairBrackets,
-        pairMarkers: p.pairMarkers,
-        pairQuotes: p.pairQuotes,
-        wrapSelections: p.wrapSelections,
-        deletePairsTogether: p.deletePairsTogether,
-        exitPairsOnEnter: p.exitPairsOnEnter,
-        commands,
-      }
+      const { personalization, commands } = state()
+      return editorSettingsOf(personalization, commands)
     },
     aliases: {
       list: worn,

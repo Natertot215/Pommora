@@ -19,10 +19,10 @@ import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { PinnedGlance } from '../../Session/glanceSlice'
 import { useConnections } from '../../Session/pageConnections'
-import { previewLingerMs } from '../../Settings/personalization'
+import { PREVIEW_LINGER_MS } from '../../Settings/personalization'
 import { fetchPageDetail, knownBody, readPageDetail } from '../../Session/pageDetailCache'
 import { warmSeamOf } from '../../Navigation/warmTabs'
-import { useSession } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import { useWindowGeometry } from '../Windows/useWindowGeometry'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
@@ -293,10 +293,9 @@ export function GlancePane(): React.JSX.Element {
     return () => clearTimeout(deadline)
   }, [shown, siteReady, dismiss])
 
-  const persistence = useSession((s) => s.personalization.previewPersistence)
-  const dismissOnPointer = useSession((s) => s.personalization.dismissPreviewOnPointer ?? false)
-  // 'off' never has a live pane (the effect below dismisses it), so its grace is moot — narrow it out for the resolver.
-  const graceMs = previewLingerMs(persistence === 'off' ? undefined : persistence)
+  const persistence = useSetting('previewPersistence')
+  const dismissOnPointer = useSetting('dismissPreviewOnPointer')
+  const graceMs = PREVIEW_LINGER_MS[persistence]
 
   // Off mid-open dismisses a live pane; arming is already gated off, so nothing reopens.
   useEffect(() => {

@@ -8,7 +8,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { declaredType } from '../../Properties/value'
 import type { ViewHostApi } from './useViewHost'
-import { useSession } from '../../Session/store'
+import { useSetting } from '../../Session/store'
 
 /** The saved entry's defined keys win over the type defaults — a caught-invalid saved value parses to `undefined` and must not erase a default. */
 export function styleFor(
@@ -32,7 +32,7 @@ export function useStyleFor(): (
   schema: PropertyDefinition[],
   view: Pick<SavedView, 'column_styles'>,
 ) => ColumnStyle {
-  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
+  const nexusDateFormat = useSetting('dateFormat')
   return useCallback(
     (columnId, schema, view) => styleFor(columnId, schema, view, nexusDateFormat),
     [nexusDateFormat],

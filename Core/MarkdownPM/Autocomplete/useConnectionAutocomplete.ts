@@ -175,10 +175,10 @@ export function useConnectionAutocomplete(
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&
       !opts.openHeading &&
-      settings.aliasPickerOnCommit !== false &&
+      settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
     const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row.value, {
-      keepAlias: settings.removeTitleOnLinkChange !== false ? undefined : worn,
+      keepAlias: settings.removeTitleOnLinkChange ? undefined : worn,
       openAlias,
       openHeading: opts.openHeading,
     })

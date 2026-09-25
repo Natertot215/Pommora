@@ -2,6 +2,7 @@
 import type { GlanceTarget } from '../../MarkdownPM/api'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession } from '../../Session/store'
+import { settingOf } from '@pommora/core/Settings/personalization'
 
 export interface GlanceRequest {
   target: GlanceTarget
@@ -58,7 +59,7 @@ export function closeGlance(): void {
 
 // The one app-side gate every surface arms through, so the Off rung is honored in one place and missed in none.
 export function armPreview(target: GlanceTarget, el: Element, slot: GlanceDwell): void {
-  if (useSession.getState().personalization.previewPersistence === 'off') return
+  if (settingOf(useSession.getState().personalization, 'previewPersistence') === 'off') return
   ensureArmListeners()
   armGlance(target, el, slot)
 }

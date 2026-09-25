@@ -9,7 +9,7 @@ import { rootSegs, type WatchScope } from '../Paths/exclusion'
 import { nexusConfig } from '../Paths/paths'
 import { readJsonStrict } from '../Files/atomicWrite'
 import { valueOr } from '../Contract/result'
-import { type Personalization, personalizationSchema } from './personalization'
+import { type Personalization, personalizationSchema, settingOf } from './personalization'
 
 type Json = Record<string, unknown>
 
@@ -86,7 +86,7 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   return {
     excluded: readExcludedLeaf(settings.excluded_folders),
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),
-    accent: personalization.accent ?? 'system',
+    accent: settingOf(personalization, 'accent'),
     personalization,
     commands: readCommands(settings.commands),
     profileImage: asString(settings.profile_image) ?? null,

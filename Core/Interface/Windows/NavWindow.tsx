@@ -9,7 +9,7 @@ import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { moveByKey } from '@pommora/uix/Utilities/moveItem'
 import { resolveIndexOf } from '../../Nexus/treeIndex'
-import { windowTargetOf, useSession } from '../../Session/store'
+import { windowTargetOf, useSession, useSetting } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
 import { NavBanner } from '../../Navigation/NavBanner'
@@ -74,7 +74,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   }, [])
 
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
-  const closeOnSelect = useSession((s) => s.personalization.navCloseOnSelect !== false)
+  const closeOnSelect = useSetting('navCloseOnSelect')
   const onSelected = closeOnSelect ? closeNav : undefined
   const goClose = (target: NavRef): void => go(target, onSelected)
   const goNewTab = (target: NavRef): void => go(target, onSelected, { newTab: true })
@@ -104,7 +104,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
-  const bannered = useSession((s) => s.personalization.windowNavBanner ?? false)
+  const bannered = useSetting('windowNavBanner')
   const searchField = (
     <SearchField
       inputRef={searchRef}

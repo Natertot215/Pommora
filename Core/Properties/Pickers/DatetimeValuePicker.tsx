@@ -1,7 +1,7 @@
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
-import { useSession } from '../../Session/store'
+import { useSetting } from '../../Session/store'
 import { formatDate } from '../formatValue'
 
 export function DatetimeValuePicker({
@@ -13,7 +13,7 @@ export function DatetimeValuePicker({
   dateFormat?: ColumnStyle['date_format']
   onCommit: (value: PropertyValue | null) => void
 }): React.JSX.Element {
-  const timeFormat = useSession((s) => s.personalization.timeFormat)
+  const timeFormat = useSetting('timeFormat')
   const fmt = dateFormat === 'relative' ? 'short' : (dateFormat ?? 'full')
   return (
     <CalendarPicker
