@@ -2,10 +2,10 @@ import { type EntityMenuAction, entityMenuItems } from '@pommora/core/Actions/en
 import { createdRequest } from '@pommora/core/Actions/createMenu'
 import {
   containerCreators,
+  spaceCreator,
   type ContextTarget,
   type Creator,
 } from '@pommora/core/Nexus/mutateRequest'
-import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { isWindowTarget } from '@pommora/core/Navigation/navRef'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -21,7 +21,7 @@ import {
 } from './propertyMenuActions'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { createNamed, newPageAdjacent } from '../../Actions/create'
+import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
@@ -32,10 +32,8 @@ function creatorsFor(target: ContextTarget): Creator[] {
     case 'set':
       return containerCreators(target.kind, target.path)
     case 'context': {
-      const def = useSession.getState().tree?.contexts.find((g) => g.def.title === target.title)
-      if (!def) return []
-      const label = createSpaceLabel(def.def)
-      return [{ label, req: { op: 'createSpace', contextId: def.def.id, name: label } }]
+      const group = useSession.getState().tree?.contexts.find((g) => g.def.title === target.title)
+      return group ? [spaceCreator(group.def)] : []
     }
     default:
       return []

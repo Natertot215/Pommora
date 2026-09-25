@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { containerCreators } from './mutateRequest'
+import { containerCreators, spaceCreator } from './mutateRequest'
 
 describe('containerCreators — a container offers the same things wherever it is asked', () => {
   const ops = (kind: 'collection' | 'set'): string[] =>
@@ -21,5 +21,14 @@ describe('containerCreators — a container offers the same things wherever it i
     for (const c of containerCreators('set', 'A/B')) {
       expect('parentPath' in c.req && c.req.parentPath).toBe('A/B')
     }
+  })
+})
+
+describe('spaceCreator', () => {
+  it('labels and names a createSpace request for its Context', () => {
+    expect(spaceCreator({ id: 'g1', title: 'Realms', singular: 'Realm' })).toEqual({
+      label: 'New Realm',
+      req: { op: 'createSpace', contextId: 'g1', name: 'New Realm' },
+    })
   })
 })

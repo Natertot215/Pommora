@@ -12,7 +12,7 @@ import { flushPageSave, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
-import { newPage } from '../Actions/create'
+import { newPage } from '../Actions/createActions'
 
 export function useBridgeSubscriptions(): void {
   const applyTree = useSession((s) => s.applyTree)

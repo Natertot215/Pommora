@@ -33,8 +33,8 @@ import {
   DEFAULT_NEW_NAME,
   type MutableKind,
   type MutateRequest,
+  spaceCreator,
 } from '@pommora/core/Nexus/mutateRequest'
-import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { collectionOfPage } from '../../Properties/pageRow'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import { SidebarDnd, useSidebarRowEl } from './sidebarDnd'
@@ -48,9 +48,9 @@ import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
-import { Disclosure } from './Disclosure'
+import { Disclosure, signalPeek } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
-import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/create'
+import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/createActions'
 
 const NEW_COLLECTION: Creator = {
   label: 'New Collection',
@@ -265,7 +265,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
   const path = contextDirRel(group.def.title)
-  const newLabel = createSpaceLabel(group.def)
+  const creator = spaceCreator(group.def)
   return (
     <Disclosure
       icon={entityIcon('context', group.def.icon, defaultIcons)}
@@ -281,18 +281,17 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       }
       onHeaderHover={(entering) => api?.onHover(group.def.id, entering)}
       belowHeader={
-        ghost.anchorId === group.def.id && <GhostLeaf depth={1} kind="space" label={newLabel} />
+        ghost.anchorId === group.def.id && (
+          <GhostLeaf depth={1} kind="space" label={creator.label} />
+        )
       }
       rename={{ path, kind: 'context' }}
       onBodyContextMenu={() => {
-        void createFromMenu({
-          label: newLabel,
-          req: { op: 'createSpace', contextId: group.def.id, name: newLabel },
-        })
+        void createFromMenu(creator)
       }}
     >
       {group.spaces.map((s) => (
-        <LeafRow key={s.id} node={s} depth={1} ghostLabel={newLabel} />
+        <LeafRow key={s.id} node={s} depth={1} ghostLabel={creator.label} />
       ))}
     </Disclosure>
   )
@@ -353,7 +352,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const dndIndexRef = useRef(dndIndex)
   dndIndexRef.current = dndIndex
 
-  const signalPeek = useSession((s) => s.signalPeek)
   const onCommit = (req: MutateRequest, id: string): void => {
     void mutate(req).then((moved) => {
       // Pulses the landing container so a locked one can peek the newcomer.
@@ -375,11 +373,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       switch (entry?.kind) {
         case 'contextGroup': {
           const def = useSession.getState().tree?.contexts.find((g) => g.def.id === entry.id)?.def
-          if (def)
-            void createNamed(
-              { op: 'createSpace', contextId: def.id, name: createSpaceLabel(def) },
-              'sidebar',
-            )
+          if (def) void createNamed(spaceCreator(def).req, 'sidebar')
           return
         }
         case 'space':

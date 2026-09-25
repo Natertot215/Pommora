@@ -9,6 +9,13 @@ import { ctxHandler, DragRow, type RenameTarget, RowTitle } from './sidebarRows'
 
 const PEEK_LINGER_MS = 2500 // KNOB
 
+const peekListeners = new Set<(parentPath: string, childId: string) => void>()
+
+/** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
+export function signalPeek(parentPath: string, childId: string): void {
+  for (const hear of peekListeners) hear(parentPath, childId)
+}
+
 export function Disclosure({
   icon,
   openIcon,
@@ -121,14 +128,16 @@ export function Disclosure({
     } else if (prevNaming.current) lingerPeek(prevNaming.current)
     prevNaming.current = namingChildId
   }, [namingChildId])
-  const peekNonce = useSession((s) => s.peekSignal?.nonce)
-  // A signal raised before this folder mounted is stale: a remount mustn't replay it.
-  const mountNonce = useRef(peekNonce)
   useEffect(() => {
-    const sig = useSession.getState().peekSignal
-    if (locked && sig && sig.nonce !== mountNonce.current && sig.parentPath === selfPath)
-      lingerPeek(sig.childId)
-  }, [peekNonce])
+    if (!locked) return
+    const hear = (parentPath: string, childId: string): void => {
+      if (parentPath === selfPath) lingerPeek(childId)
+    }
+    peekListeners.add(hear)
+    return () => {
+      peekListeners.delete(hear)
+    }
+  }, [locked, selfPath])
   useEffect(() => {
     if (!locked) stopPeek()
   }, [locked])

@@ -5,7 +5,7 @@ import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { makeTree } from '../Testing/testTree'
 import { useSession } from '../Session/store'
-import { createNamed, newPage, newPageAdjacent, newSpaceAdjacent } from './create'
+import { createNamed, newPage, newPageAdjacent, newSpaceAdjacent } from './createActions'
 
 const CREATED = { id: 'new', path: 'Notes/Untitled.md' }
 const asked: MutateRequest[] = []
@@ -91,7 +91,12 @@ describe('adjacent creates', () => {
     seed({ kind: 'none' })
     await newSpaceAdjacent('a1', 'below')
     expect(asked).toMatchObject([
-      { op: 'createSpace', contextId: 'g1', order: ['a1', NEW_SLOT, 't1', 'pr1'] },
+      {
+        op: 'createSpace',
+        contextId: 'g1',
+        name: 'New Realm',
+        order: ['a1', NEW_SLOT, 't1', 'pr1'],
+      },
     ])
     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, undefined)
   })

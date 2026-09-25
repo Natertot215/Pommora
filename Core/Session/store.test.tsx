@@ -817,7 +817,6 @@ describe('store — a Nexus switch lands every owed save first', () => {
     s.beginIcon('Notes', 'sidebar')
     s.beginColor('Notes', 'sidebar')
     s.beginPropertyRename({ collectionPath: 'Notes', propertyId: 'prop_status' })
-    s.signalPeek('Notes', 'p1')
     await s.choose()
     expect(useSession.getState()).toMatchObject({
       renamingPath: null,
@@ -826,7 +825,6 @@ describe('store — a Nexus switch lands every owed save first', () => {
       colorPath: null,
       colorHost: null,
       renamingProperty: null,
-      peekSignal: null,
     })
   })
 })

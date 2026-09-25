@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import { Sidebar } from './Sidebar'
-import { Disclosure } from './Disclosure'
+import { Disclosure, signalPeek } from './Disclosure'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'
@@ -130,11 +130,8 @@ describe('a locked disclosure', () => {
     expect(setDevicePref).not.toHaveBeenCalled()
   })
 
-  it('peeks a newcomer signalled after it mounts, and not one signalled before', () => {
-    useSession.setState({
-      devicePrefs: {},
-      peekSignal: { parentPath: 'Notes', childId: 'p1', nonce: 1 },
-    })
+  it('peeks a newcomer landed in its own folder, not one landed elsewhere', () => {
+    useSession.setState({ devicePrefs: {} })
     act(() =>
       root.render(
         <SidebarDnd index={buildIndex(tree)} onCommit={() => {}}>
@@ -153,8 +150,9 @@ describe('a locked disclosure', () => {
         </SidebarDnd>,
       ),
     )
+    act(() => signalPeek('Elsewhere', 'p1'))
     expect(host.querySelector('.children-peek')).toBeNull()
-    act(() => useSession.getState().signalPeek('Notes', 'p1'))
+    act(() => signalPeek('Notes', 'p1'))
     expect(host.querySelector('.children-peek')).not.toBeNull()
   })
 })
