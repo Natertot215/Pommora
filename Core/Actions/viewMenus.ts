@@ -41,7 +41,7 @@ export function embedTitleMenuItems(
   viewsShown: boolean,
 ): ActionItem<EmbedTitleMenuAction>[] {
   return [
-    ...(iconShown ? [{ label: 'Edit Icon', action: 'change-icon' as const }] : []),
+    { label: 'Edit Icon', action: 'change-icon' },
     { label: iconLabel(iconShown), action: 'toggle-icon' },
     {
       label: 'Title Size',

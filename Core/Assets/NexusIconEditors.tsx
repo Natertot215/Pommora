@@ -14,14 +14,14 @@ export function NexusIconEditors({
   return (
     <>
       <IconChoice
-        open={icon.pickerOpen}
-        onClose={() => icon.setPickerOpen(false)}
+        open={icon.editor === 'glyph'}
+        onClose={icon.closeEditor}
         triggerRef={triggerRef}
         value={icon.profileIcon}
         onSelect={icon.selectGlyph}
       />
       <ImagePicker
-        open={icon.editing}
+        open={icon.editor === 'crop'}
         value={icon.profileImage ?? ''}
         shape="circle"
         boxAspect={1}
