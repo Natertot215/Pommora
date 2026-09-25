@@ -13,7 +13,7 @@ import { propsAtRoot } from '../../Testing/pageValues'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// The DualSwitch's GlassSegment (liquid glass) measures itself; jsdom has no ResizeObserver.
+// The DualSwitch's GlassControl (liquid glass) measures itself; jsdom has no ResizeObserver.
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}

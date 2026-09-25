@@ -4,7 +4,7 @@ import { useSession } from '../Session/store'
 import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { useConnections } from '../Session/pageConnections'
-import { navKey } from '../Navigation/navRecents'
+import { navKey } from '../Navigation/navRef'
 import { useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
 import { fenceWarm } from '../MarkdownPM/warmSeam'
@@ -13,6 +13,7 @@ import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { useBodyMount } from './bodyMount'
 import { coverOf } from './pageDetail'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
@@ -29,8 +30,7 @@ export function PageView({
 }): React.JSX.Element {
   const slot = useSession((s) => s.pages[pageId])
   // The capture at teardown reads the slot/tab id of that moment through here, and stays silent after a clear.
-  const live = useRef({ slot, tabId })
-  live.current = { slot, tabId }
+  const live = useLatest({ slot, tabId })
   // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors' effects, so the stale generation is seen exactly by the captures a clear caused.
   const mountedGen = useRef(cacheGeneration())
   useEffect(() => {

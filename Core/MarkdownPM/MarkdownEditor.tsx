@@ -66,6 +66,7 @@ import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, editorHost, mirrorBody, mirrored } from './api'
 import './markdown-pm.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export const EDITOR_BASE_PT = 15
 
@@ -124,27 +125,17 @@ export function MarkdownEditor({
   const editorRef = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
-  const onSelectionRef = useRef(onSelection)
-  onSelectionRef.current = onSelection
+  const onChangeRef = useLatest(onChange)
+  const onSelectionRef = useLatest(onSelection)
   const lastRangeRef = useRef<{ from: number; to: number } | null>(null)
-  const hostRef = useRef(host)
-  hostRef.current = host
-  const connectionsRef = useRef(connections)
-  connectionsRef.current = connections
-  const embedAncestorsRef = useRef<readonly string[]>(embedAncestors ?? [])
-  embedAncestorsRef.current = embedAncestors ?? []
-  const activeRef = useRef(active)
-  activeRef.current = active
-  const registerRef = useRef(register)
-  registerRef.current = register
-  const arriveRef = useRef(arrive)
-  arriveRef.current = arrive
-  const onArrivedRef = useRef(onArrived)
-  onArrivedRef.current = onArrived
-  const onHeadingRenameRef = useRef(onHeadingRename)
-  onHeadingRenameRef.current = onHeadingRename
+  const hostRef = useLatest(host)
+  const connectionsRef = useLatest(connections)
+  const embedAncestorsRef = useLatest<readonly string[]>(embedAncestors ?? [])
+  const activeRef = useLatest(active)
+  const registerRef = useLatest(register)
+  const arriveRef = useLatest(arrive)
+  const onArrivedRef = useLatest(onArrived)
+  const onHeadingRenameRef = useLatest(onHeadingRename)
   const lastFormatRef = useRef<FormatState | null>(null)
   // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
   const sectionArmedRef = useRef<number | null>(null)
@@ -188,8 +179,7 @@ export function MarkdownEditor({
   }, [arrive])
 
   const citesShown = host.citations.shown()
-  const citesShownRef = useRef(citesShown)
-  citesShownRef.current = citesShown
+  const citesShownRef = useLatest(citesShown)
   // The first change this effect carries is the nexus-wide seed settling in, not a user toggle.
   const followed = useRef(false)
   useEffect(() => {

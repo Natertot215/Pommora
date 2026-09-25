@@ -21,7 +21,7 @@ import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 import { publishChromePart } from './chromeParts'
 import { type ContentHost, ContentHostContext } from './contentHost'
-import { navKey } from '../Navigation/navRecents'
+import { navKey } from '../Navigation/navRef'
 
 type Host = ContentHost & { target: SelectionState }
 
@@ -152,11 +152,12 @@ export function ContentView(): React.JSX.Element {
     selectionKind === 'matrix' ||
     (selectionKind === 'none' && !!tree)
 
-  const paneClass =
-    'content-view' +
-    (showSubfield && expanded ? ' subfield-open' : '') +
-    (showSubfield && reveal.near ? ' subfield-near' : '') +
-    (showSubfield && reveal.nearLead ? ' subfield-near-lead' : '')
+  const paneClass = cx(
+    'content-view',
+    showSubfield && expanded && 'subfield-open',
+    showSubfield && reveal.near && 'subfield-near',
+    showSubfield && reveal.nearLead && 'subfield-near-lead',
+  )
 
   return (
     <div

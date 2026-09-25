@@ -6,7 +6,7 @@ import type { NumberConfig } from '@pommora/core/Properties/properties'
 import { NumberEditor } from './NumberEditor'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// The DualSwitch's GlassSegment measures itself; jsdom has no ResizeObserver.
+// The DualSwitch's GlassControl measures itself; jsdom has no ResizeObserver.
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}

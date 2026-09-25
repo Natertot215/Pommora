@@ -54,6 +54,7 @@ import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
 import { type EditorHost, editorHost } from '../api'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 const noConn = (): undefined => undefined
 
@@ -166,19 +167,13 @@ export function CellEditor({
 }): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const onCommitRef = useRef(onCommit)
-  onCommitRef.current = onCommit
-  const onNavigateRef = useRef(onNavigate)
-  onNavigateRef.current = onNavigate
-  const onUndoRef = useRef(onUndo)
-  onUndoRef.current = onUndo
-  const onRedoRef = useRef(onRedo)
-  onRedoRef.current = onRedo
+  const onCommitRef = useLatest(onCommit)
+  const onNavigateRef = useLatest(onNavigate)
+  const onUndoRef = useLatest(onUndo)
+  const onRedoRef = useLatest(onRedo)
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
-  const ordinalOfRef = useRef(ordinalOf)
-  ordinalOfRef.current = ordinalOf
-  const onTablePasteRef = useRef(onTablePaste)
-  onTablePasteRef.current = onTablePaste
+  const ordinalOfRef = useLatest(ordinalOf)
+  const onTablePasteRef = useLatest(onTablePaste)
   const formatGate = useRef(new Compartment())
   const lastCommands = useRef(host.settings().commands)
 

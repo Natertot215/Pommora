@@ -2,6 +2,7 @@
 
 import type { OptionAppearance, PropertyType, StatusGroup, StatusOption } from './properties'
 import { freeName } from '../Paths/names'
+import { moveItem } from '@pommora/uix/Utilities/moveItem'
 
 export type Option = {
   value: string
@@ -159,8 +160,6 @@ export function setStatusOptionAppearance(
 }
 
 export function reorderOption(options: Option[], value: string, toIndex: number): Option[] {
-  const moved = options.find((o) => o.value === value)
-  if (!moved) return options
-  const without = options.filter((o) => o.value !== value)
-  return [...without.slice(0, toIndex), moved, ...without.slice(toIndex)]
+  const from = options.findIndex((o) => o.value === value)
+  return from === -1 ? options : moveItem(options, from, toIndex)
 }

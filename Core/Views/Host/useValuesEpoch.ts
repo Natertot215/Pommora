@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { type Overrides, retireSettled, type SetOverrides } from '../../Properties/valueOverride'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { PageValues } from '@pommora/core/Views/viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'
 import { useSession } from '../../Session/store'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Overrides | null => {
   if (!o) return o
@@ -25,8 +26,7 @@ function useValuesEpoch(
 ): void {
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   // A scoped read superseded by a newer push on the same path still lands (its pages are not the newer read's); one superseded by a container swap must not.
-  const live = useRef(path)
-  live.current = path
+  const live = useLatest(path)
   useEffect(() => {
     if (!valuesEpoch) return
     let retire: ((prev: Overrides | null) => Overrides | null) | null = null

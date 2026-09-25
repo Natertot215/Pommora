@@ -53,6 +53,7 @@ import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -143,8 +144,7 @@ function ValueInput({
   const keepNode = (n: HTMLInputElement | null): void => {
     if (n) node.current = n
   }
-  const latest = useRef({ value, onCommit })
-  latest.current = { value, onCommit }
+  const latest = useLatest({ value, onCommit })
   const commit = (raw: string): void => {
     const next = raw.trim() === '' ? undefined : raw
     if (next !== latest.current.value) latest.current.onCommit(next)

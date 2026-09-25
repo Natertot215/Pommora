@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
 import {
   PICKER_PORTAL_ATTR,
@@ -120,9 +121,8 @@ export function GlancePane(): React.JSX.Element {
   // A guest mounted in a hidden pane never reliably attaches (Chromium defers demoted subtrees), so the pane cannot wait veiled for the load behind a cover instead.
   const [siteReady, setSiteReady] = useState(false)
   const anchorRef = useRef<Element | null>(null)
-  const shownRef = useRef(shown)
+  const shownRef = useLatest(shown)
   anchorRef.current = shown?.el ?? null
-  shownRef.current = shown
   const heldRef = useRef(shown)
   if (shown) heldRef.current = shown
   const held = shown ?? heldRef.current
@@ -486,7 +486,7 @@ export function GlancePane(): React.JSX.Element {
               />
               {/* The shield is the loading face and the pointer owner: always above the guest so the leave lifecycle keeps running over it, and passing only the wheel down. */}
               <div
-                className={`glance-web-shield${siteReady ? ' is-lifted' : ''}`}
+                className={cx('glance-web-shield', siteReady && 'is-lifted')}
                 onWheel={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect()
                   scrollGuest(

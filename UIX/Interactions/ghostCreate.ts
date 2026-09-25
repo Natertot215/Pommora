@@ -1,4 +1,5 @@
-import { createContext, useEffect, useRef, useState } from 'react'
+import { createContext, useEffect, useState } from 'react'
+import { useLatest } from '../Utilities/stableApi'
 
 export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
@@ -32,10 +33,8 @@ export interface GhostAnchor {
 
 export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   const [ghost, setGhost] = useState<{ anchorId: string; closing: boolean } | null>(null)
-  const ghostRef = useRef(ghost)
-  ghostRef.current = ghost
-  const optsRef = useRef(opts)
-  optsRef.current = opts
+  const ghostRef = useLatest(ghost)
+  const optsRef = useLatest(opts)
 
   const [handlers] = useState(() => {
     const timers: { dwell: number | null; grace: number | null; exit: number | null } = {

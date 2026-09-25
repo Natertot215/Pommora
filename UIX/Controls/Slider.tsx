@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ProgressBar } from '../Elements/ProgressBar'
-import { GlassSegment } from '../Glass/glass-control'
+import { GlassControl } from '../Glass/glass-control'
 import { usePointerGesture } from '../Interactions/gesture'
 import * as s from './slider.css'
 import { cx } from '../Utilities/cx'
@@ -100,9 +100,9 @@ export function Slider({
       >
         <ProgressBar fill={pct / 100} />
         <div className={s.knob} style={{ left: `${pct}%` }}>
-          <GlassSegment style={{ borderRadius: 9 }}>
+          <GlassControl segment style={{ borderRadius: 9 }}>
             <span className={s.knobFill} />
-          </GlassSegment>
+          </GlassControl>
         </div>
       </div>
     </>

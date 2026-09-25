@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 import { useSession } from '../Session/store'
 import type { TileLayout } from './Layout/model'
@@ -28,8 +29,7 @@ export interface TileDocSession {
 
 // A null host holds `EMPTY` and subscribes to nothing, so a reader leaves its document when its tab does and the last-listener retirement fires.
 function useDocState(host: TileHostRef | null): TileDocState {
-  const hostRef = useRef(host)
-  hostRef.current = host
+  const hostRef = useLatest(host)
   const hostKey = host ? tileHostKey(host) : ''
   const subscribe = useMemo(() => {
     const target = hostRef.current
@@ -43,8 +43,7 @@ function useDocState(host: TileHostRef | null): TileDocState {
 
 export function useTileDoc(host: TileHostRef): TileDocSession {
   const hostKey = tileHostKey(host)
-  const hostRef = useRef(host)
-  hostRef.current = host
+  const hostRef = useLatest(host)
 
   const state = useDocState(host)
 

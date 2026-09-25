@@ -41,6 +41,7 @@ import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } fr
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
 import './tile-base.css'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 function pagePickerItems(
   tree: NexusTree,
@@ -407,7 +408,7 @@ export function TileHost({
   if (!ready) return null
 
   return (
-    <div ref={rootRef} className={`tile-host${hostLocked ? ' is-host-locked' : ''}`}>
+    <div ref={rootRef} className={cx('tile-host', hostLocked && 'is-host-locked')}>
       <TileGrid
         layout={layout}
         onLayoutChange={setLayout}

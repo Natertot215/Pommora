@@ -1,5 +1,5 @@
 import './drop-chrome.css'
-import { moveItem } from '../Utilities/moveItem'
+import { moveByKey } from '../Utilities/moveItem'
 
 export { toBox, type Box, type Carried, type DragItem } from './shared'
 export {
@@ -11,13 +11,8 @@ export {
   useEscort,
 } from './engine'
 
-export function reorder<T extends { id: string }>(
+export const reorder = <T extends { id: string }>(
   items: T[],
   activeId: string,
   overId: string,
-): T[] {
-  const from = items.findIndex((i) => i.id === activeId)
-  const to = items.findIndex((i) => i.id === overId)
-  if (from === -1 || to === -1 || from === to) return items
-  return moveItem(items, from, to)
-}
+): T[] => moveByKey(items, (i) => i.id, activeId, overId) ?? items

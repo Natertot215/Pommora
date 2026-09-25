@@ -1,5 +1,5 @@
 import { persist, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
 import { valueOr } from '@pommora/core/Contract/result'
@@ -24,6 +24,7 @@ import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 import { openWebLink } from '../Web/openWebLink'
 import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface EditorHostOptions {
   pageId?: string
@@ -185,8 +186,7 @@ export function useEditorHost({
   pageSurface,
   preview,
 }: EditorHostOptions): EditorHost {
-  const connRef = useRef(connections)
-  connRef.current = connections
+  const connRef = useLatest(connections)
   const shown = useSession((s) => citationsVisible(s, pageId))
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
   const headingLinkStyle = useSession((s) => s.personalization.headingLinkStyle)

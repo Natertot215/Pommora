@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useGhostAnchor, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
@@ -8,14 +7,14 @@ import { base } from '@pommora/uix/Fields/fields.css'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { Label } from '@pommora/uix/Labels/Label'
 import type { LabelShape } from '@pommora/uix/Labels/label-base.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // The slot sits flush under the list it joins, so a leave closes it immediately and landing in the slot keeps it alive either way.
 const GHOST_GRACE_MS = 0 // KNOB
 
 /** `busy` latches in a ref: the mechanism re-reads it at the dwell's fire time, long after the render that set it. */
 export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
-  const busyRef = useRef(busy)
-  busyRef.current = busy
+  const busyRef = useLatest(busy)
   return useGhostAnchor({
     dwellMs: REVEAL_DWELL_MS,
     graceMs: GHOST_GRACE_MS,

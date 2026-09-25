@@ -1,6 +1,5 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller opens its own naming surface over the row already real.
 
-import { useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
@@ -22,6 +21,7 @@ import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'
 import { orderWithSlot, tieOrderWith } from '../creationOrder'
 import { groupKeyToValue } from '../reassign'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties; under anything else the row simply lands where the sort puts it.
 const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])
@@ -58,8 +58,7 @@ interface ViewCreation {
 /** `getCfg` is read only when a gesture fires, so the hook can sit above any loading/empty return while its config closes over later render-scope consts. */
 export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation {
   const mutate = useSession((s) => s.mutate)
-  const getRef = useRef(getCfg)
-  getRef.current = getCfg
+  const getRef = useLatest(getCfg)
   const cfg = (): ViewCreationConfig => getRef.current()
 
   const impliedSeeds = (): Record<string, PropertyValue> => {

@@ -35,6 +35,7 @@ import {
   type DragItem,
   type DropState,
 } from './shared'
+import { useLatest } from '../Utilities/stableApi'
 
 // ── Types & scratch ─────────────────────────────────────────────────────────
 
@@ -350,18 +351,13 @@ export function DragGroup({
   renderOverlay,
   children,
 }: DragGroupProps): React.JSX.Element {
-  const onCommitRef = useRef(onCommit)
-  onCommitRef.current = onCommit
-  const strayRef = useRef(stray)
-  strayRef.current = stray
-  const holdGapRef = useRef(holdGap)
-  holdGapRef.current = holdGap
-  const resolveRef = useRef(resolveIndex)
-  resolveRef.current = resolveIndex
+  const onCommitRef = useLatest(onCommit)
+  const strayRef = useLatest(stray)
+  const holdGapRef = useLatest(holdGap)
+  const resolveRef = useLatest(resolveIndex)
   const resolveAt = (zoneId: string, index: number): number | null =>
     resolveRef.current ? resolveRef.current(zoneId, index, drag.current.id) : index
-  const overlayRef = useRef(renderOverlay)
-  overlayRef.current = renderOverlay
+  const overlayRef = useLatest(renderOverlay)
 
   const zones = useRef<ZoneMap>(new Map())
   const frozen = useRef(new Map<string, Frozen>())

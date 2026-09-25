@@ -1,5 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { suppressReleaseClick } from './shared'
+import { useLatest } from '../Utilities/stableApi'
 
 type DismissalEntry = {
   layer: () => Element | null
@@ -108,8 +109,7 @@ const subscribe = (fn: () => void): (() => void) => {
 
 export function useDismissal(active: boolean, closing: boolean, entry: DismissalEntry): boolean {
   const handle = useRef<DismissalHandle | null>(null)
-  const entryRef = useRef(entry)
-  entryRef.current = entry
+  const entryRef = useLatest(entry)
   useEffect(() => {
     if (!active) return
     handle.current = pushDismissal({

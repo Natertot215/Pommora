@@ -56,6 +56,7 @@ import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { editorHost } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 export const MD_LINK_CLASS = 'md-link'
 
@@ -90,7 +91,7 @@ class HeadingJoinWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = `md-heading-symbol${this.spaced ? ' md-heading-symbol-spaced' : ''}`
+    el.className = cx('md-heading-symbol', this.spaced && 'md-heading-symbol-spaced')
     el.textContent = '§'
     return el
   }
@@ -458,7 +459,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     ranges.push(
       Decoration.mark({
         class: internal
-          ? `md-connection-resolved${isActive ? ' md-connection-open' : ''}`
+          ? cx('md-connection-resolved', isActive && 'md-connection-open')
           : valid
             ? MD_LINK_CLASS
             : 'md-link-invalid',
@@ -525,7 +526,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
         )
         ranges.push(
           Decoration.mark({
-            class: `md-connection-resolved md-connection-heading${missing ? ' md-connection-heading-missing' : ''}`,
+            class: cx(
+              'md-connection-resolved md-connection-heading',
+              missing && 'md-connection-heading-missing',
+            ),
           }).range(hs, he),
         )
         for (const [s, e] of tk.markerRanges) ranges.push(hideMarker.range(s, e))
@@ -547,7 +551,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
       }
       ranges.push(
         Decoration.mark({
-          class: `md-connection-${status}${open ? ' md-connection-open' : ''}`,
+          class: cx(`md-connection-${status}`, open && 'md-connection-open'),
         }).range(tk.contentRange[0], tk.contentRange[1]),
       )
       const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker

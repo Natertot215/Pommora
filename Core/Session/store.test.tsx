@@ -18,7 +18,7 @@ import {
 } from './store'
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { toNavRef } from '@pommora/core/Navigation/navRef'
-import { navKey } from '../Navigation/navRecents'
+import { navKey } from '../Navigation/navRef'
 import { captureCache, readCache } from '../Navigation/warmTabs'
 import {
   clearCache,

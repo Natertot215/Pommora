@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { pageBody, shownPage, shownViewSearch, useSession } from '../Session/store'
-import { navKey } from './navRecents'
+import { navKey } from './navRef'
 import { captured, scopeCaptured } from './thumbMarkers'
 import { host } from '../Platform/dialer'
 import { chromePartEl, chromePartRect } from '../Interface/chromeParts'

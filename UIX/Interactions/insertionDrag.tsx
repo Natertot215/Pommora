@@ -14,6 +14,7 @@ import { DragGhost } from './DragGhost'
 import { DropLine } from './DropLine'
 import { armAutoScroll } from './autoscroll'
 import { announce } from './a11y'
+import { useLatest } from '../Utilities/stableApi'
 
 interface InsertionDragSpec<Slot, Snap> {
   /** Taken at activation, retaken lazily after an invalidation. Null fails the resolve closed. */
@@ -62,8 +63,7 @@ export function useInsertionDrag<Slot, Snap>(
   line: ReactNode
   ghost: ReactNode
 } {
-  const specRef = useRef(spec)
-  specRef.current = spec
+  const specRef = useLatest(spec)
   const beginGesture = usePointerGesture()
   const dragged = useRef<{ id: string; grabX: number; label: string } | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
@@ -193,8 +193,7 @@ export function useInsertionDrag<Slot, Snap>(
     })
   }
 
-  const beginRef = useRef(begin)
-  beginRef.current = begin
+  const beginRef = useLatest(begin)
   const beginStable = useCallback((id: string, e: ReactPointerEvent) => {
     beginRef.current(id, e)
   }, [])

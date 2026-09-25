@@ -1,6 +1,6 @@
 import { type ButtonHTMLAttributes, Fragment, type ReactNode, type Ref } from 'react'
 import { segment } from '../Elements/segment.css'
-import { GlassControls } from '../Glass/glass-control'
+import { GlassControl } from '../Glass/glass-control'
 import { revealTarget } from '../Interactions/hover-reveal.css'
 import { Icon } from '../Symbols'
 import { type ButtonSize, type IconSize, vars } from '../Theme'
@@ -148,7 +148,7 @@ export function Segmented({
     style: { display: 'flex', alignItems: 'center', ...(radius ? { borderRadius: radius } : null) },
   }
   return glass ? (
-    <GlassControls {...hostProps}>{buttons}</GlassControls>
+    <GlassControl {...hostProps}>{buttons}</GlassControl>
   ) : (
     <div {...hostProps}>{buttons}</div>
   )

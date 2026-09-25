@@ -15,6 +15,8 @@ import {
 import { host as dialer } from '../../Platform/dialer'
 import { ok } from '@pommora/core/Contract/result'
 import { merge3 } from '../../Pages/merge3'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 export function MarkdownTile({
   host,
@@ -90,10 +92,8 @@ export function MarkdownTile({
     })
   }, [editing, tileId])
 
-  const suppressRef = useRef(suppressFlush)
-  suppressRef.current = suppressFlush
-  const editingRef = useRef(editing)
-  editingRef.current = editing
+  const suppressRef = useLatest(suppressFlush)
+  const editingRef = useLatest(editing)
   useEffect(
     () => () => {
       if (suppressRef.current?.(tileId)) tileBodyWriter.cancel(tileId)
@@ -151,7 +151,7 @@ export function MarkdownTile({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
-      className={`markdown-tile${editing ? ' is-editing' : ''}`}
+      className={cx('markdown-tile', editing && 'is-editing')}
       onClick={() => {
         if (editing || locked) return
         // Selecting rendered text to copy ends in a click — that's a copy, not an edit.

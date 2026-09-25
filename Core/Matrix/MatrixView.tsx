@@ -13,6 +13,7 @@ import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
 import { MatrixLabel, recordOf } from './MatrixLabel'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export function MatrixView(): React.JSX.Element {
   const parked = useContentHost()?.parked ?? false
@@ -31,8 +32,7 @@ export function MatrixView(): React.JSX.Element {
   useEffect(() => {
     if (!picking) setMenuId(null)
   }, [picking])
-  const parkedRef = useRef(parked)
-  parkedRef.current = parked
+  const parkedRef = useLatest(parked)
   // One identity for the life of the view: the runtime keys a surface's stage — and so its own framing of the picture — off it.
   const [surface] = useState<Surface>(() => ({ visible: () => !parkedRef.current }))
   const surfaceId = useId()

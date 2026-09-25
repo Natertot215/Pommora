@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useEffect, useMemo } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -33,6 +33,7 @@ import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
 import './tab-base.css'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface TabEntry {
   tab: Tab
@@ -129,8 +130,7 @@ function TabBarBody({
     () => [...pinnedEntries.map((e) => e.tab.id), ...unpinnedEntries.map((e) => e.tab.id)],
     [pinnedEntries, unpinnedEntries],
   )
-  const cycleRef = useRef({ orderedIds, activeTabId, commands })
-  cycleRef.current = { orderedIds, activeTabId, commands }
+  const cycleRef = useLatest({ orderedIds, activeTabId, commands })
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const { orderedIds: ids, activeTabId: active, commands: cmds } = cycleRef.current

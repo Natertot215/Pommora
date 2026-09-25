@@ -1,3 +1,4 @@
+import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import type { Align, Column, TableModel } from './model'
 
 type RowWhere = 'above' | 'below'
@@ -135,10 +136,10 @@ export function resizeColumns(m: TableModel, widths: number[]): TableModel {
 }
 
 export function moveRow(m: TableModel, from: number, to: number): TableModel {
-  return { ...m, rows: spliceAt(spliceAt(m.rows, from, 1), to, 0, m.rows[from]) }
+  return { ...m, rows: moveItem(m.rows, from, to) }
 }
 
 export function moveColumn(m: TableModel, from: number, to: number): TableModel {
-  const move = <T>(arr: T[]): T[] => spliceAt(spliceAt(arr, from, 1), to, 0, arr[from])
+  const move = <T>(arr: T[]): T[] => moveItem(arr, from, to)
   return { columns: move(m.columns), header: move(m.header), rows: m.rows.map(move) }
 }
