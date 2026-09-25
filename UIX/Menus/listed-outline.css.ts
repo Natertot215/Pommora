@@ -1,10 +1,11 @@
 import { style } from '@vanilla-extract/css'
+import { duration, easing } from '../Animations/motion'
 
 const RAIL_W = 12
 const RAIL_CENTER_X = `calc(var(--row-pad-standard) + ${RAIL_W / 2}px)`
 
 export const dropOutline = style({
-  transition: 'transform var(--drop-outline-beat, var(--duration-fast)) var(--ease-base)',
+  transition: `transform var(--drop-outline-beat, ${duration.fast}) ${easing.baseEase}`,
   flex: '0 0 auto',
 })
 export const dropOutlineOpen = style({ transform: 'rotate(90deg)' })

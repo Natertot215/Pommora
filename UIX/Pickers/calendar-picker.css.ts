@@ -73,10 +73,10 @@ export const viewport = style({
 /* Top-aligned so each month grid keeps its own height rather than the taller neighbor's. */
 export const track = style({ display: 'flex', width: '200%', alignItems: 'flex-start' })
 export const trackLeft = style({
-  animation: `${slideLeft} var(--duration-base) var(--ease-base) both`,
+  animation: `${slideLeft} ${duration.base} ${easing.baseEase} both`,
 })
 export const trackRight = style({
-  animation: `${slideRight} var(--duration-base) var(--ease-base) both`,
+  animation: `${slideRight} ${duration.base} ${easing.baseEase} both`,
 })
 export const days = style({
   display: 'grid',

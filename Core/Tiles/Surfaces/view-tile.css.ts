@@ -2,7 +2,7 @@ import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { titleActionFade, titleReveal } from '@pommora/uix/Animations/animations.css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { font } from '@pommora/uix/Theme/typography.css'
-import { duration } from '@pommora/uix/Animations/motion'
+import { duration, easing } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
 import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { SEGMENT_H, segmentRow } from '@pommora/uix/Elements/action-band.css'
@@ -13,7 +13,7 @@ const c = colorVars.color
 const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
 const BAND_PAD_Y = '6px'
-const bandReveal = `${duration.menu} var(--ease-base)`
+const bandReveal = `${duration.menu} ${easing.baseEase}`
 
 // KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole toolbar and dissolve at the title divider, matching the switcher's full height.
 const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
@@ -108,8 +108,8 @@ const viewSwitchSlide = keyframes({
 })
 export const slideWrap = style({
   animationName: viewSwitchSlide,
-  animationDuration: 'var(--duration-base)',
-  animationTimingFunction: 'var(--ease-base)',
+  animationDuration: duration.base,
+  animationTimingFunction: easing.baseEase,
 })
 
 export const newView = style([revealTarget, { display: 'inline-flex', transition: REVEAL_FADE }])

@@ -5,6 +5,7 @@ import { STATE_OPACITY, vars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
 import { type ButtonSize, size as sizeTokens } from '../Theme/theme-vars.css'
+import { duration, easing } from '../Animations/motion'
 
 const c = vars.color
 const icon = sizeTokens.icon
@@ -82,7 +83,7 @@ export const button = style({
   color: 'var(--button-ink)',
   whiteSpace: 'nowrap',
   cursor: 'default',
-  transition: `background var(--duration-fast) var(--ease-base), color var(--duration-fast) var(--ease-base), ${REVEAL_FADE}, padding-inline ${titleReveal}`,
+  transition: `background ${duration.fast} ${easing.baseEase}, color ${duration.fast} ${easing.baseEase}, ${REVEAL_FADE}, padding-inline ${titleReveal}`,
   selectors: {
     '&:hover:not(:disabled)': {
       background: `linear-gradient(${c.state.hover}, ${c.state.hover}), var(--button-fill)`,
