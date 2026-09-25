@@ -1,5 +1,5 @@
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
-import { DEFAULT_NEW_NAME, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
+import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { type PommoraError, fault } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
@@ -53,8 +53,6 @@ import {
 } from './pageDetailCache'
 import { dropCacheOwner, readCache } from '../Navigation/warmTabs'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
-import { findContainerWhere } from '../Nexus/treePatch'
-import { relDirname } from '../Paths/posix'
 import { dropAllTileDocs } from '../Tiles/tileDocStore'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
@@ -62,20 +60,12 @@ import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from './sessionState'
 import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
-import { placeNew } from '../Views/creationOrder'
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
   | { status: 'error'; target: PageTarget; error: PommoraError }
 
 type ReadySlot = Extract<PageSlot, { status: 'ready' }>
-
-/** `key` is the tab's shown entity when the search opened; the entry drops once the tab shows anything else. `summon` counts the tab's own summons, each one refocusing its field. */
-export interface ViewSearch {
-  key: string
-  query: string
-  summon: number
-}
 
 export interface NavigationSlice {
   selection: SelectionState
@@ -84,7 +74,6 @@ export interface NavigationSlice {
   replaceBody: (path: string) => Promise<boolean>
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
   reloadPage: () => Promise<void>
-  newPage: () => Promise<void>
   tabs: Tab[]
   activeTabId: string
   tabMru: string[]
@@ -120,9 +109,6 @@ export interface NavigationSlice {
   pendingTravel: PendingTravel | null
   setPendingTravel: (pendingTravel: PendingTravel) => void
   clearPendingTravel: () => void
-  viewSearch: Record<string, ViewSearch>
-  searchView: () => boolean
-  setViewQuery: (query: string | null) => void
 }
 
 export interface PendingTravel {
@@ -186,18 +172,6 @@ export const frozenOf = (s: SessionState): boolean => {
   return target !== undefined && target.kind !== 'newtab' && !sameShownTarget(s.selection, target)
 }
 
-const heldContainerKey = (s: SessionState): string | null =>
-  frozenOf(s) && (s.selection.kind === 'collection' || s.selection.kind === 'set')
-    ? tabKey(s.selection)
-    : null
-
-/** A cold switch holds the last container on screen until the next page lands, so the held frame reads the search of the tab it belongs to. */
-export const shownViewSearch = (s: SessionState): ViewSearch | undefined => {
-  const held = heldContainerKey(s)
-  if (held === null) return s.viewSearch[s.activeTabId]
-  return Object.values(s.viewSearch).find((search) => search.key === held)
-}
-
 let pageFetchSeq = 0
 const COLD_SWAP_DEADLINE = 200
 // Cleared against the exact stamp the superseded fetch carried; a newer one replays the abandoned slide.
@@ -214,7 +188,6 @@ const PER_NEXUS = {
   recents: [],
   navBanner: undefined,
   pendingTravel: null,
-  viewSearch: {},
 } satisfies Partial<NavigationSlice>
 
 export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
@@ -252,27 +225,16 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
   const pruneSlots = (): void => {
     const s = get()
     const live = new Set<string>()
-    const shown = new Map<string, string>()
     if (s.selection.kind === 'page') live.add(s.selection.id)
-    for (const t of [...s.tabs, ...s.pinnedTabs]) {
+    for (const t of [...s.tabs, ...s.pinnedTabs])
       if (t.target.kind === 'page') live.add(t.target.id)
-      shown.set(t.id, tabKey(t.target))
-    }
     keepSlots((id) => live.has(id))
-    const searches = Object.entries(s.viewSearch)
-    const onScreen = heldContainerKey(s)
-    const held = searches.filter(
-      ([tabId, search]) =>
-        (shown.get(tabId) === search.key || search.key === onScreen) &&
-        (search.query.trim() !== '' || tabId === s.activeTabId),
-    )
-    if (held.length < searches.length) set({ viewSearch: Object.fromEntries(held) })
+    s.pruneViewSearch()
   }
 
   const retagTab = (oldId: string, newId: string): void => {
     get().retagTabPins(oldId, newId)
-    const { [oldId]: search, ...rest } = get().viewSearch
-    if (search) set({ viewSearch: { ...rest, [newId]: search } })
+    get().retagTabSearch(oldId, newId)
   }
 
   const applyTabResult = (r: { tabs: Tab[]; activeTabId: string; mru: string[] }): void => {
@@ -314,8 +276,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     for (const t of get().pinnedTabs) {
       if (next.some((n) => n.id === t.id)) continue
       get().scrubTabPins(t.id)
-      const { [t.id]: search, ...rest } = get().viewSearch
-      if (search) set({ viewSearch: rest })
+      get().scrubTabSearch(t.id)
     }
     set((s) => ({ pinned, pinnedTabs: sameTabs(s.pinnedTabs, next) ? s.pinnedTabs : next }))
   }
@@ -350,6 +311,39 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       set((st) => ({ activeTabId: pinId, tabMru: pushMru(st.tabMru, pinId) }))
     }
     persistTabs()
+  }
+
+  // False once a newer select superseded the cold fetch, which leaves the slots to that select.
+  const showPage = async (target: PageTarget): Promise<boolean> => {
+    const land = (slot: PageSlot): void => {
+      if (slot.status === 'ready') cachePageDetail(slot.detail)
+      set((s) => ({ selection: target, pages: { ...s.pages, [target.id]: slot } }))
+    }
+    const loaded = get().pages[target.id]
+    if (loaded?.status === 'ready' && loaded.detail.path === target.path) {
+      set({ selection: target })
+      return true
+    }
+    const cached = readCache(get().activeTabId, navKey(target))?.pageDetail
+    if (cached && cached.path === target.path) {
+      land(readySlot(target, cached))
+      return true
+    }
+    const seq = pageFetchSeq
+    coldStampSeq = get().navSlide?.seq ?? -1
+    const fallback = setTimeout(() => {
+      if (seq === pageFetchSeq) set({ selection: target })
+    }, COLD_SWAP_DEADLINE)
+    let res: Asks['page:open']['reply']
+    try {
+      res = await dialer().ask('page:open', target.path)
+    } catch (e) {
+      res = fault(e)
+    }
+    clearTimeout(fallback)
+    if (seq !== pageFetchSeq) return false
+    land(res.ok ? readySlot(target, res.value) : { status: 'error', target, error: res.error })
+    return true
   }
 
   const jumpActiveHistory = (i: number): void => {
@@ -622,42 +616,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             )
           break
         }
-        case 'page': {
-          const pageSel: PageTarget = { kind: 'page', id: target.id, path: target.path }
-          const land = (slot: PageSlot): void => {
-            if (slot.status === 'ready') cachePageDetail(slot.detail)
-            set((s) => ({ selection: pageSel, pages: { ...s.pages, [target.id]: slot } }))
-          }
-          const loaded = get().pages[target.id]
-          if (loaded?.status === 'ready' && loaded.detail.path === target.path) {
-            set({ selection: pageSel })
-            break
-          }
-          const cached = readCache(get().activeTabId, navKey(target))?.pageDetail
-          if (cached && cached.path === target.path) {
-            land(readySlot(pageSel, cached))
-            break
-          }
-          const seq = pageFetchSeq
-          coldStampSeq = get().navSlide?.seq ?? -1
-          const fallback = setTimeout(() => {
-            if (seq === pageFetchSeq) set({ selection: pageSel })
-          }, COLD_SWAP_DEADLINE)
-          let res: Asks['page:open']['reply']
-          try {
-            res = await dialer().ask('page:open', target.path)
-          } catch (e) {
-            res = fault(e)
-          }
-          clearTimeout(fallback)
-          if (seq !== pageFetchSeq) return
-          land(
-            res.ok
-              ? readySlot(pageSel, res.value)
-              : { status: 'error', target: pageSel, error: res.error },
-          )
+        case 'page':
+          if (!(await showPage({ kind: 'page', id: target.id, path: target.path }))) return
           break
-        }
       }
       pruneSlots()
     },
@@ -671,25 +632,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       set((s) => ({
         pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, res.value), body } },
       }))
-    },
-
-    newPage: async () => {
-      const { tree, selection } = get()
-      if (!tree) return
-      let parentPath: string | null = null
-      if (selection.kind === 'collection' || selection.kind === 'set')
-        parentPath = findContainerWhere(tree, (n) => n.id === selection.id)?.path ?? null
-      else if (selection.kind === 'page') parentPath = relDirname(selection.path)
-      if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
-      if (parentPath === null) return
-      const req = placeNew(
-        tree,
-        { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME },
-        get().personalization,
-      )
-      await get().mutate(req, (created) =>
-        get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
-      )
     },
 
     reconcileNavigation: (index) => {
@@ -786,18 +728,5 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
     setPendingTravel: (pendingTravel) => set({ pendingTravel }),
     clearPendingTravel: () => set({ pendingTravel: null }),
-    searchView: () => {
-      const { selection, activeTabId, viewSearch } = get()
-      if (selection.kind !== 'collection' && selection.kind !== 'set') return false
-      const open = viewSearch[activeTabId] ?? { key: tabKey(selection), query: '', summon: 0 }
-      set({ viewSearch: { ...viewSearch, [activeTabId]: { ...open, summon: open.summon + 1 } } })
-      return true
-    },
-    setViewQuery: (query) => {
-      const { activeTabId, viewSearch } = get()
-      const { [activeTabId]: open, ...rest } = viewSearch
-      if (!open) return
-      set({ viewSearch: query === null ? rest : { ...rest, [activeTabId]: { ...open, query } } })
-    },
   }
 }

@@ -88,6 +88,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetGlance()
     s.resetMatrix()
     s.resetRename()
+    s.resetViewSearch()
     resetUndo()
   }
 
