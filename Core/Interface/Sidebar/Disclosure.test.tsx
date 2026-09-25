@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
@@ -154,5 +154,55 @@ describe('a locked disclosure', () => {
     expect(host.querySelector('.children-peek')).toBeNull()
     act(() => signalPeek('Notes', 'p1'))
     expect(host.querySelector('.children-peek')).not.toBeNull()
+  })
+})
+
+describe('the folder lock', () => {
+  const lockOf = (): HTMLElement | null =>
+    rowNamed('Locked').querySelector(
+      'button[aria-label="Unlock Folder"], button[aria-label="Lock Folder"]',
+    )
+  const pointer = (type: 'pointerover' | 'pointerout', el: Element): void => {
+    act(() => {
+      el.dispatchEvent(Object.assign(new MouseEvent(type, { bubbles: true }), { pointerId: 1 }))
+    })
+  }
+  let unlockElsewhere: () => void
+  function Folder(): React.JSX.Element {
+    const [locked, setLocked] = useState(true)
+    unlockElsewhere = () => setLocked(false)
+    return (
+      <SidebarDnd index={buildIndex(tree)} onCommit={() => {}}>
+        <Disclosure
+          icon="folder-closed"
+          title="Locked"
+          depth={0}
+          defaultOpen={false}
+          persistKey="k"
+          dragId="k"
+          locked={locked}
+          onSetLock={setLocked}
+        >
+          <span>child</span>
+        </Disclosure>
+      </SidebarDnd>
+    )
+  }
+  beforeEach(() => {
+    useSession.setState({ devicePrefs: {}, setDevicePref: vi.fn() as never })
+    act(() => root.render(<Folder />))
+    pointer('pointerover', rowNamed('Locked'))
+  })
+
+  it('an unlock pressed on the lock keeps it until the pointer leaves the row', () => {
+    act(() => lockOf()?.click())
+    expect(lockOf()?.getAttribute('aria-label')).toBe('Lock Folder')
+    pointer('pointerout', rowNamed('Locked'))
+    expect(lockOf()).toBeNull()
+  })
+
+  it('an unlock from elsewhere takes the lock away at once', () => {
+    act(() => unlockElsewhere())
+    expect(lockOf()).toBeNull()
   })
 })

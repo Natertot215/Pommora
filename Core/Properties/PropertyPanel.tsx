@@ -11,6 +11,7 @@ import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -443,7 +444,12 @@ export function PropertyPanel({
               </MenuItem>
             )
             return (
-              <div key={key} className={s.section} {...ghostAnchorProps(ghostApi, key)}>
+              <div
+                key={key}
+                className={s.section}
+                data-reveal-host=""
+                {...ghostAnchorProps(ghostApi, key)}
+              >
                 <div className={heading}>
                   <span>{label}</span>
                   {addable && (
@@ -454,7 +460,8 @@ export function PropertyPanel({
                       icon="plus"
                       size={ICON.optionsAdd}
                       ariaLabel={add}
-                      className={addOpen === key ? undefined : s.sectionAdd}
+                      className={revealTarget}
+                      held={addOpen === key}
                       create
                       onClick={() => openAdd(key)}
                     />

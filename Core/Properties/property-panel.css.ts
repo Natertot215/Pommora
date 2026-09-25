@@ -58,12 +58,4 @@ export const empty = style([text.caption.standard, { paddingRight: 'var(--row-pa
 
 export const section = style({})
 
-export const sectionAdd = style({
-  opacity: 0,
-  selectors: {
-    [`${section}:hover &`]: { opacity: 1 },
-    '&:focus-visible': { opacity: 1 },
-  },
-})
-
 export const groupBordered = style({ border: `var(--width-100) solid ${c.border.base}` })

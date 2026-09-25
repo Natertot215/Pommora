@@ -4,6 +4,8 @@ import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropOutline, MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useSession } from '../../Session/store'
 import { ctxHandler, DragRow, type RenameTarget, RowTitle } from './sidebarRows'
 
@@ -86,14 +88,7 @@ export function Disclosure({
     setAndSave(!open)
   }
   // Lingers the open-lock glyph after an unlock so a mistaken toggle can be undone before the pointer leaves.
-  const [justUnlocked, setJustUnlocked] = useState(false)
-  const hovered = useRef(false)
-  const prevLocked = useRef(locked)
-  useEffect(() => {
-    if (prevLocked.current && !locked && hovered.current) setJustUnlocked(true)
-    if (locked) setJustUnlocked(false)
-    prevLocked.current = locked
-  }, [locked])
+  const lock = useHoverReveal({ engaged: locked, linger: { off: 'leave' } })
   // Both reveals exist to seat the sidebar's own field: a rename hosted elsewhere has nothing here to show, and unfolding for it would persist a fold the person never asked for.
   const renamingPath = useSession((s) => (s.renamingHost === 'sidebar' ? s.renamingPath : null))
   const renamingChild = rename ? renamingPath?.startsWith(`${rename.path}/`) === true : false
@@ -159,14 +154,15 @@ export function Disclosure({
       }
     : undefined
   const lockToggle =
-    locked || justUnlocked ? (
+    locked || lock.on ? (
       <button
         type="button"
-        className={cx('row-lock', justUnlocked && 'row-lock-persist')}
+        className={cx('row-lock', revealTarget)}
         aria-label={lockLabel(locked, 'Folder')}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation()
+          lock.press()
           onSetLock?.(!locked)
         }}
       >
@@ -182,12 +178,9 @@ export function Disclosure({
       onClick={toggle}
       onPointerDown={onHeaderPointerDown}
       onContextMenu={ctxHandler(onContextMenu)}
-      onPointerEnter={() => {
-        hovered.current = true
-      }}
+      onPointerEnter={() => lock.hover(true)}
       onPointerLeave={(e) => {
-        hovered.current = false
-        setJustUnlocked(false)
+        lock.hover(false)
         dismissOnLeave(e)
       }}
       trailing={lockToggle}

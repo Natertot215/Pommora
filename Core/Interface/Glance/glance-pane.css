@@ -3,7 +3,6 @@
   position: relative;
 }
 
-/* The lock/unlock control rides the top-right corner, above the tile, mirroring the sidebar's .row-lock: hidden at rest, revealed on card hover, and held visible (via .glance-lock-persist) once locked. */
 .glance-lock {
   position: absolute;
   top: 6px;
@@ -17,16 +16,9 @@
   background: transparent;
   color: var(--label-tertiary);
   cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
   transition:
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
-}
-.glance-body:hover .glance-lock,
-.glance-lock.glance-lock-persist {
-  opacity: 1;
-  pointer-events: auto;
 }
 .glance-lock:hover {
   background: var(--state-hover);

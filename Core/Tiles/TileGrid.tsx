@@ -13,6 +13,9 @@ import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
+import { type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { cx } from '@pommora/uix/Utilities/cx'
 import { findTile } from './Layout/model'
 import type { DividerRef, Edge, TileLayout } from './Layout/model'
 import { resolveEdge } from './Layout/edges'
@@ -36,6 +39,8 @@ interface TileGridProps {
   onLayoutChange: (layout: TileLayout) => void
   renderTile: (id: string) => React.ReactNode
   tileClassName?: (id: string) => string | undefined
+  editingId?: string | null
+  menuOpenId?: string | null
   tileStyle?: (id: string) => CSSProperties | undefined
   onBusyChange?: (busy: boolean) => void
   locked?: boolean
@@ -59,7 +64,7 @@ interface Settle {
   next: TileLayout | null
 }
 
-const HANDLE_REVEAL_PX = 240
+const HANDLE_REACH: Reach = { size: 'corner', toward: { x: 1, y: 1 } }
 const TRACK_SETTLE_MS = 160
 // KNOB — grid gutter, drop-band zone, snap radius, and the append space under the last band.
 const GAP = 8
@@ -88,6 +93,8 @@ const TileShell = memo(
     rect,
     phase,
     resizing,
+    editing,
+    menuOpen,
     extraClass,
     extraStyle,
     renderTile,
@@ -100,6 +107,8 @@ const TileShell = memo(
     rect: Rect
     phase: TilePhase
     resizing: boolean
+    editing: boolean
+    menuOpen: boolean
     extraClass?: string
     extraStyle?: CSSProperties
     renderTile: (id: string) => React.ReactNode
@@ -115,20 +124,30 @@ const TileShell = memo(
           ? `transform ${SHELL_TRANSITION}, width ${SHELL_TRANSITION}, height ${SHELL_TRANSITION}`
           : undefined
     const [handleNear, setHandleNear] = useState(false)
-    const cornerRef = useRef<{ x: number; y: number } | null>(null)
+    const handleRef = useRef<HTMLDivElement>(null)
+    const cornerRef = useRef<{ left: number; top: number; right: number; bottom: number } | null>(
+      null,
+    )
     return (
       <div
-        className={`tile tile-base${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
-          resizing ? ' is-resizing' : ''
-        }${extraClass ? ` ${extraClass}` : ''}${handleNear ? ' handle-near' : ''}`}
+        className={cx(
+          'tile tile-base',
+          (phase === 'lifted' || phase === 'settling') && 'is-lifted',
+          resizing && 'is-resizing',
+          editing && 'is-editing-tile',
+          menuOpen && 'handle-pinned',
+          extraClass,
+        )}
+        data-reveal-host={editing ? (handleNear ? 'on' : 'off') : ''}
         onPointerEnter={(e) => {
           const r = e.currentTarget.getBoundingClientRect()
-          cornerRef.current = { x: r.left, y: r.top }
+          const left = Math.min(r.left, handleRef.current?.getBoundingClientRect().left ?? r.left)
+          cornerRef.current = { left, top: r.top, right: left, bottom: r.top }
         }}
         onPointerMove={(e) => {
           const c = cornerRef.current
-          if (!c) return
-          const near = Math.hypot(e.clientX - c.x, e.clientY - c.y) < HANDLE_REVEAL_PX
+          if (!editing || !c) return
+          const near = withinReach(c, HANDLE_REACH, e.clientX, e.clientY)
           if (near !== handleNear) setHandleNear(near)
         }}
         onPointerLeave={() => {
@@ -154,7 +173,9 @@ const TileShell = memo(
       >
         {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
         <div
-          className="tile-handle"
+          ref={handleRef}
+          className={cx('tile-handle', revealTarget)}
+          data-reveal-held={menuOpen || undefined}
           onPointerDown={(e) => onHandleDown(id, e)}
           onClick={(e) => onHandleMenu?.(id, e)}
           onContextMenu={(e) => {
@@ -177,6 +198,8 @@ const TileShell = memo(
     a.id === b.id &&
     a.phase === b.phase &&
     a.resizing === b.resizing &&
+    a.editing === b.editing &&
+    a.menuOpen === b.menuOpen &&
     a.extraClass === b.extraClass &&
     a.extraStyle === b.extraStyle &&
     a.renderTile === b.renderTile &&
@@ -195,6 +218,8 @@ export function TileGrid({
   onLayoutChange,
   renderTile,
   tileClassName,
+  editingId,
+  menuOpenId,
   tileStyle,
   onBusyChange,
   locked,
@@ -535,6 +560,8 @@ export function TileGrid({
               rect={lifted?.lift ?? settling?.to ?? rect}
               phase={phase}
               resizing={resizingId === id}
+              editing={editingId === id}
+              menuOpen={menuOpenId === id}
               extraClass={tileClassName?.(id)}
               extraStyle={tileStyle?.(id)}
               renderTile={renderTile}

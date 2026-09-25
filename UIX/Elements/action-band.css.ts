@@ -97,15 +97,13 @@ export const settingsBtn = style({
   borderRadius: '4px',
   display: 'flex',
   color: c.label.tertiary,
-  opacity: 0,
   transition:
-    'opacity var(--duration-fast) var(--ease-base), background var(--duration-fast) var(--ease-base)',
+    'opacity var(--reveal-fade) var(--ease-base), background var(--duration-fast) var(--ease-base)',
   ':hover': { background: c.state.hover },
 })
 
 /** Held while its menu is open, so it reads as that menu's anchor. */
 export const settingsBtnActive = style({
-  opacity: 1,
   color: c.label.secondary,
   background: 'var(--state-selected)',
 })

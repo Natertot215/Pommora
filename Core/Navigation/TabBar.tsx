@@ -194,6 +194,7 @@ function TabBarBody({
   return (
     <div
       className={cx('tab-bar', 'tabs-standard', revealOnHover && 'reveal-on-hover')}
+      data-reveal-host=""
       role="tablist"
       aria-label="Open tabs"
       onPointerDown={onBarDown}
@@ -264,6 +265,7 @@ function TabBarBody({
         icon="plus"
         iconSize="body"
         className="tab-plus"
+        reveal
         data-create
         aria-label="New Tab"
         title="New Tab"

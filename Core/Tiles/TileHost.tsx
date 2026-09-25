@@ -277,13 +277,11 @@ export function TileHost({
       const entry = entries.get(id)
       const classes = [
         entry?.style === 'borderless' ? 'is-borderless' : null,
-        editingId === id ? 'is-editing-tile' : null,
         entry?.locked ? 'is-locked' : null,
-        menuOpenId === id ? 'handle-pinned' : null,
       ].filter(Boolean)
       return classes.length ? classes.join(' ') : undefined
     },
-    [entries, editingId, menuOpenId],
+    [entries],
   )
 
   const tileStyle = useCallback((id: string) => zoomStyle(entries.get(id)?.zoom), [entries])
@@ -415,6 +413,8 @@ export function TileHost({
         onLayoutChange={setLayout}
         renderTile={renderTile}
         tileClassName={tileClassName}
+        editingId={editingId}
+        menuOpenId={menuOpenId}
         tileStyle={tileStyle}
         onBusyChange={setBusy}
         locked={hostLocked}

@@ -240,23 +240,16 @@
   position: relative;
   z-index: 1;
   color: var(--label-secondary);
-  opacity: 0;
   transition:
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     color var(--duration-fast) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
-}
-.tab-bar:hover .tab-plus {
-  opacity: 1;
 }
 .shell:has(.detail-scroll .banner:hover) .tab-plus,
 .shell:has(.detail-scroll .banner-empty:hover) .tab-plus,
 .shell:has(.mdpm-header:hover) .tab-plus,
 .shell:has(.nav-view-banner:hover) .tab-plus,
 .shell:has(.nav-view-head:hover) .tab-plus {
-  opacity: 1;
-}
-.app-toolbar:has(.app-toolbar-cluster--nav button:hover) .tab-plus,
-.app-toolbar:has(.app-toolbar-right button:hover) .tab-plus {
-  opacity: 0;
+  --reveal: 1;
+  --reveal-hits: auto;
 }

@@ -140,6 +140,7 @@ class EmbedTileWidget extends ReactWidget {
       this.editing && 'is-editing-tile',
       !this.interactive && 'is-inert',
     )
+    dom.dataset.revealHost = ''
     if (this.height !== undefined) dom.style.height = `${this.height}px`
     else dom.style.removeProperty('height')
     dom.dataset.embedTarget = this.targetId
@@ -254,6 +255,7 @@ class WebpageTileWidget extends ReactWidget {
 
   private renderInto(dom: WebTileDom, view: EditorView): void {
     dom.className = 'mdpm-embed-tile tile-base'
+    dom.dataset.revealHost = ''
     const port = Math.min(
       view.scrollDOM.clientHeight || Number.POSITIVE_INFINITY,
       document.documentElement.clientHeight,

@@ -12,6 +12,7 @@ import { useSession } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 import { webGuestRetention } from './webRetention'
 import { host } from '../../Platform/dialer'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import '../tile-base.css'
 import '../tile-title.css'
 
@@ -220,7 +221,7 @@ export function WebTile({
       ) : null}
       <button
         type="button"
-        className={cx('web-tile-title', text.footnote.standard, overScrollEllipsis)}
+        className={cx('web-tile-title', revealTarget, text.footnote.standard, overScrollEllipsis)}
         onClick={() => openWebLink(url)}
       >
         {title}
