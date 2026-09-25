@@ -1,8 +1,12 @@
 import { useCallback, useMemo } from 'react'
 import {
   defaultStyleFor,
+  resolveStyle,
+  storedPick,
   type ColumnStyle,
   type DateFormat,
+  type StoredColumnStyle,
+  type TimeFormat,
 } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -10,21 +14,51 @@ import { declaredType } from '../../Properties/value'
 import type { ViewHostApi } from './useViewHost'
 import { useSetting } from '../../Session/store'
 
-/** The saved entry's defined keys win over the type defaults — a caught-invalid saved value parses to `undefined` and must not erase a default. */
+/** The Nexus's own date form and clock, which a column follows until it picks its own. */
+export interface NexusForms {
+  dateFormat: DateFormat
+  clock: TimeFormat
+}
+
+const columnDefaults = (
+  columnId: string,
+  schema: PropertyDefinition[],
+  nexus: NexusForms,
+): ColumnStyle =>
+  defaultStyleFor(
+    declaredType(columnId, schema),
+    schema.find((d) => d.id === columnId),
+    nexus.dateFormat,
+  )
+
 export function styleFor(
   columnId: string,
   schema: PropertyDefinition[],
   view: Pick<SavedView, 'column_styles'>,
-  nexusDateFormat?: DateFormat,
+  nexus: NexusForms,
 ): ColumnStyle {
-  const saved = Object.entries(view.column_styles?.[columnId] ?? {}).filter(
-    ([, v]) => v !== undefined,
+  return resolveStyle(
+    view.column_styles?.[columnId],
+    columnDefaults(columnId, schema, nexus),
+    nexus.clock,
   )
-  const def = schema.find((d) => d.id === columnId)
-  return {
-    ...defaultStyleFor(declaredType(columnId, schema), def, nexusDateFormat),
-    ...Object.fromEntries(saved),
-  }
+}
+
+/** What a column stores for a pick from its style menu. */
+export function pickedStyle(
+  columnId: string,
+  schema: PropertyDefinition[],
+  nexus: NexusForms,
+  key: keyof ColumnStyle & string,
+  value: string,
+): string | undefined {
+  return storedPick(key, value, columnDefaults(columnId, schema, nexus), nexus.clock)
+}
+
+export function useNexusForms(): NexusForms {
+  const dateFormat = useSetting('dateFormat')
+  const clock = useSetting('timeFormat')
+  return useMemo(() => ({ dateFormat, clock }), [dateFormat, clock])
 }
 
 export function useStyleFor(): (
@@ -32,11 +66,8 @@ export function useStyleFor(): (
   schema: PropertyDefinition[],
   view: Pick<SavedView, 'column_styles'>,
 ) => ColumnStyle {
-  const nexusDateFormat = useSetting('dateFormat')
-  return useCallback(
-    (columnId, schema, view) => styleFor(columnId, schema, view, nexusDateFormat),
-    [nexusDateFormat],
-  )
+  const nexus = useNexusForms()
+  return useCallback((columnId, schema, view) => styleFor(columnId, schema, view, nexus), [nexus])
 }
 
 /** Every rendered column's resolved style, keyed by id — one fold of the saved entries over the type defaults for whichever view kind paints them. */
@@ -53,9 +84,9 @@ export function useColumnStyleMap(
 
 /** Fold style overrides per-KEY: style entries are objects, so an entry-level spread would wipe a column's saved sibling keys. */
 export function mergeStyleRecords(
-  saved: Record<string, ColumnStyle> | undefined,
-  overrides: Record<string, ColumnStyle>,
-): Record<string, ColumnStyle> {
+  saved: Record<string, StoredColumnStyle> | undefined,
+  overrides: Record<string, StoredColumnStyle>,
+): Record<string, StoredColumnStyle> {
   const folded = Object.fromEntries(
     Object.entries(overrides).map(([id, s]) => [id, { ...saved?.[id], ...s }]),
   )

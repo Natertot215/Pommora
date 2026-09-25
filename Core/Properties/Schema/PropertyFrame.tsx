@@ -19,7 +19,7 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/ViewTileScope'
-import { useStyleFor } from '../../Views/Host/useColumnStyles'
+import { pickedStyle, useNexusForms, useStyleFor } from '../../Views/Host/useColumnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
 import { CheckboxEditor } from './CheckboxEditor'
 import { FileEditor } from './FileEditor'
@@ -186,6 +186,7 @@ export function PropertyFrame({
 }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
+  const nexus = useNexusForms()
   const saveView = useSaveView(source)
   const activeView = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.registry) ?? []
@@ -270,7 +271,11 @@ export function PropertyFrame({
   const savePropertyIcon = (id: string, icon: string): Promise<void> =>
     write(host().ask('property:setIcon', id, icon))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
-    const next = { ...activeView.column_styles?.[propId], ...patch }
+    const picks = Object.entries(patch).map(([key, value]) => [
+      key,
+      pickedStyle(propId, schema, nexus, key, String(value)),
+    ])
+    const next = { ...activeView.column_styles?.[propId], ...Object.fromEntries(picks) }
     await saveView({
       ...activeView,
       column_styles: { ...activeView.column_styles, [propId]: next },

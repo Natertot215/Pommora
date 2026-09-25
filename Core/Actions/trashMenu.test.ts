@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { trashColumnMenuItems, trashMenuItems } from './trashMenu'
+import { trashMenuItems } from './trashMenu'
 
 describe('the trash row menu', () => {
   it('restores and deletes one row, the plural for a batch', () => {
@@ -37,20 +37,5 @@ describe('the trash row menu', () => {
       label: 'Restore',
       submenu: [],
     })
-  })
-})
-
-describe('the trash date column menu', () => {
-  it('offers every date format with the one in force, and the time toggle named for its move', () => {
-    const items = trashColumnMenuItems({ format: 'relative', timeShown: true })
-    expect(items[0].submenu?.map((r) => [r.action, r.checked])).toEqual([
-      ['format:monthDayYear', false],
-      ['format:dayMonthYear', false],
-      ['format:short', false],
-      ['format:full', false],
-      ['format:relative', true],
-    ])
-    expect(items[1]).toEqual({ label: 'Hide Time', action: 'toggleTime' })
-    expect(trashColumnMenuItems({ format: 'full', timeShown: false })[1].label).toBe('Show Time')
   })
 })

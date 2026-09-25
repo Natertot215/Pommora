@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { mergeStyleRecords, styleFor } from './useColumnStyles'
+import { mergeStyleRecords, pickedStyle, styleFor } from './useColumnStyles'
+import type { DateFormat } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { savedView, type SavedView } from '@pommora/core/Views/views'
+
+const nexus = (dateFormat: DateFormat) => ({
+  dateFormat,
+  clock: 'twentyFourHour' as const,
+})
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
@@ -22,18 +28,18 @@ function view(over: Partial<SavedView>): SavedView {
 
 describe('styleFor', () => {
   it('returns the type defaults with no view entry', () => {
-    expect(styleFor('prop_status', schema, view({}))).toEqual({ look: 'standard' })
-    expect(styleFor('prop_date', schema, view({}))).toEqual({
+    expect(styleFor('prop_status', schema, view({}), nexus('full'))).toEqual({ look: 'standard' })
+    expect(styleFor('prop_date', schema, view({}), nexus('full'))).toEqual({
       date_format: 'full',
       time_format: 'none',
       weekday: 'none',
     })
-    expect(styleFor('prop_n', schema, view({}))).toEqual({ look: 'number' })
+    expect(styleFor('prop_n', schema, view({}), nexus('full'))).toEqual({ look: 'number' })
   })
 
   it('merges a saved column_styles entry per-key over the defaults', () => {
     const v = view({ column_styles: { prop_date: { time_format: 'twelveHour' } } })
-    expect(styleFor('prop_date', schema, v)).toEqual({
+    expect(styleFor('prop_date', schema, v, nexus('full'))).toEqual({
       date_format: 'full',
       time_format: 'twelveHour',
       weekday: 'none',
@@ -42,20 +48,20 @@ describe('styleFor', () => {
 
   it('honors a saved look over the default', () => {
     const v = view({ column_styles: { prop_status: { look: 'compact' } } })
-    expect(styleFor('prop_status', schema, v)).toEqual({ look: 'compact' })
+    expect(styleFor('prop_status', schema, v, nexus('full'))).toEqual({ look: 'compact' })
   })
 
   it('falls back to empty defaults for an unknown column', () => {
-    expect(styleFor('prop_gone', schema, view({}))).toEqual({})
+    expect(styleFor('prop_gone', schema, view({}), nexus('full'))).toEqual({})
   })
 
   it('a caught-invalid saved value falls back to the default instead of erasing it', () => {
     const v = view({ column_styles: { prop_status: { look: 'zebra' } } } as never)
-    expect(styleFor('prop_status', schema, v)).toEqual({ look: 'standard' })
+    expect(styleFor('prop_status', schema, v, nexus('full'))).toEqual({ look: 'standard' })
   })
 
   it("takes the nexus's date form where the column set none", () => {
-    expect(styleFor('prop_date', schema, view({}), 'relative')).toEqual({
+    expect(styleFor('prop_date', schema, view({}), nexus('relative'))).toEqual({
       date_format: 'relative',
       time_format: 'none',
       weekday: 'none',
@@ -64,11 +70,7 @@ describe('styleFor', () => {
 
   it("a column's own date form outranks the nexus's", () => {
     const v = view({ column_styles: { prop_date: { date_format: 'short' } } })
-    expect(styleFor('prop_date', schema, v, 'relative').date_format).toBe('short')
-  })
-
-  it('an absent nexus form reads as it always has', () => {
-    expect(styleFor('prop_date', schema, view({}), undefined).date_format).toBe('full')
+    expect(styleFor('prop_date', schema, v, nexus('relative')).date_format).toBe('short')
   })
 
   it('reaches Modified columns, which share the datetime arm', () => {
@@ -76,9 +78,26 @@ describe('styleFor', () => {
       ...schema,
       { id: 'prop_m', name: 'Modified', type: 'last_edited_time' },
     ]
-    expect(styleFor('prop_m', withModified, view({}), 'dayMonthYear').date_format).toBe(
+    expect(styleFor('prop_m', withModified, view({}), nexus('dayMonthYear')).date_format).toBe(
       'dayMonthYear',
     )
+  })
+})
+
+describe('a column follows the Nexus until it picks its own', () => {
+  it('shows a time on the Nexus clock and keeps following it', () => {
+    const v = view({ column_styles: { prop_date: { time_format: 'shown' } } })
+    expect(styleFor('prop_date', schema, v, nexus('relative')).time_format).toBe('twentyFourHour')
+  })
+
+  it("stores nothing for the Nexus's own date form, and 'shown' for its clock", () => {
+    const pick = (key: 'date_format' | 'time_format', value: string) =>
+      pickedStyle('prop_date', schema, nexus('relative'), key, value)
+    expect(pick('date_format', 'relative')).toBeUndefined()
+    expect(pick('date_format', 'full')).toBe('full')
+    expect(pick('time_format', 'twentyFourHour')).toBe('shown')
+    expect(pick('time_format', 'twelveHour')).toBe('twelveHour')
+    expect(pick('time_format', 'none')).toBeUndefined()
   })
 })
 

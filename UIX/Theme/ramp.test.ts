@@ -182,8 +182,8 @@ describe('labelColorFor', () => {
 })
 
 describe('solidColorCss', () => {
-  it('falls back to the runtime accent when unset — the "Default" both editors label', () => {
-    expect(solidColorCss(undefined)).toBe('var(--system-accent)')
+  it('falls back to the External Link Color when unset', () => {
+    expect(solidColorCss(undefined)).toBe('var(--link)')
   })
 
   it('resolves a legacy anchor name to its own solid', () => {

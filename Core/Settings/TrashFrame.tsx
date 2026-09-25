@@ -18,13 +18,15 @@ import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/Prop
 import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
-import { useSession, useSetting } from '../Session/store'
+import { useSession } from '../Session/store'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
 import { host } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
-import type { DateFormat } from '@pommora/core/Properties/columnStyles'
+import { trashMenuItems } from '@pommora/core/Actions/trashMenu'
+import { parseStyleAction, styleMenuItems } from '@pommora/core/Actions/columnMenu'
+import { defaultStyleFor, resolveStyle, storedPick } from '@pommora/core/Properties/columnStyles'
+import { useNexusForms } from '../Views/Host/useColumnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -66,10 +68,14 @@ export function TrashFrame(): React.JSX.Element {
 }
 
 function TrashBody(): React.JSX.Element {
-  const nexusClock = useSetting('timeFormat')
-  const columnDefault = useSetting('dateFormat')
-  const dateFormat = useSession((s) => s.personalization.trashDateFormat) ?? columnDefault
-  const timeShown = !useSetting('trashHideTime')
+  const nexus = useNexusForms()
+  const stored = useSession((s) => s.personalization.trashColumnStyle)
+  // The Trash shows each deletion's time, where a view's date column leaves it hidden.
+  const defaults = {
+    ...defaultStyleFor('datetime', undefined, nexus.dateFormat),
+    time_format: nexus.clock,
+  }
+  const style = resolveStyle(stored, defaults, nexus.clock)
   const setPersonalization = useSession((s) => s.setPersonalization)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const tree = useSession((s) => s.tree)
@@ -157,13 +163,14 @@ function TrashBody(): React.JSX.Element {
   }
 
   const openColumnMenu = async (): Promise<void> => {
-    const action = await popMenu(trashColumnMenuItems({ format: dateFormat, timeShown }))
-    if (!action) return
-    if (action === 'toggleTime') setPersonalization('trashHideTime', timeShown)
-    else {
-      const format = action.slice('format:'.length) as DateFormat
-      setPersonalization('trashDateFormat', format === columnDefault ? undefined : format)
-    }
+    const action = await popMenu(styleMenuItems({ type: 'datetime', current: style }))
+    const pick = action ? parseStyleAction(action) : null
+    if (!pick) return
+    const next = { ...stored, [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock) }
+    setPersonalization(
+      'trashColumnStyle',
+      Object.values(next).some((v) => v !== undefined) ? next : undefined,
+    )
   }
 
   const openMenu = async (row: TrashRow): Promise<void> => {
@@ -263,8 +270,9 @@ function TrashBody(): React.JSX.Element {
                     ? ''
                     : formatDate(
                         new Date(row.deletedAt).toISOString(),
-                        dateFormat,
-                        timeShown ? nexusClock : 'none',
+                        style.date_format ?? nexus.dateFormat,
+                        style.time_format ?? nexus.clock,
+                        style.weekday,
                       )
                 }
               />

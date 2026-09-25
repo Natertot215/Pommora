@@ -90,12 +90,15 @@ const textOf = (glyph: ReactNode): string => {
   return host.textContent ?? ''
 }
 
+const NEXUS = { dateFormat: 'full', clock: 'twelveHour' } as const
+
 describe('resolveBandHead', () => {
   it('structural-set → the Set icon + name', () => {
     const head = resolveBandHead(
       group('structural-set', 'sA'),
       view(),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -109,6 +112,7 @@ describe('resolveBandHead', () => {
       group('property', 'active'),
       view(propGroup('prop_status')),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -122,6 +126,7 @@ describe('resolveBandHead', () => {
       group('property', 'red'),
       view(propGroup('prop_select')),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -135,6 +140,7 @@ describe('resolveBandHead', () => {
       group('property', 'true'),
       view(propGroup('prop_check')),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -144,6 +150,7 @@ describe('resolveBandHead', () => {
       group('property', 'false'),
       view(propGroup('prop_check')),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -156,6 +163,7 @@ describe('resolveBandHead', () => {
       group('property', '2026-07'),
       view(propGroup('prop_date', { date_granularity: 'month' })),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -163,11 +171,25 @@ describe('resolveBandHead', () => {
     expect(textOf(head.glyph)).toContain('July 2026')
   })
 
+  it("a date band with no form of its own takes the Nexus's", () => {
+    const head = resolveBandHead(
+      group('property', '2026-07'),
+      view(propGroup('prop_date', { date_granularity: 'month' })),
+      ctx,
+      { ...NEXUS, dateFormat: 'monthDayYear' },
+      setNames,
+      setIcons,
+      source,
+    )
+    expect(textOf(head.glyph)).toContain('07-2026')
+  })
+
   it('ungrouped → the container heading', () => {
     const head = resolveBandHead(
       group('ungrouped', '_ungrouped'),
       view(),
       ctx,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -191,6 +213,7 @@ describe('resolveBandHead — Context grouping', () => {
       group('property', 'sp1'),
       view(propGroup('ctx_projects')),
       ctxWithSpace,
+      NEXUS,
       setNames,
       setIcons,
       source,
@@ -204,6 +227,7 @@ describe('resolveBandHead — Context grouping', () => {
       group('property', 'ghost'),
       view(propGroup('ctx_projects')),
       ctxWithSpace,
+      NEXUS,
       setNames,
       setIcons,
       source,

@@ -62,29 +62,28 @@ const buttonFor = (name: string): HTMLElement => {
   return el
 }
 
+const openDueEditor = async (): Promise<void> => {
+  await act(async () => {
+    root.render(
+      <MenuDoorHost>
+        <PropertyFrame collectionPath="Col" schema={[dateDef]} onBack={() => {}} source={source} />
+      </MenuDoorHost>,
+    )
+  })
+  const dueRow = [...host.querySelectorAll<HTMLElement>('span')].find(
+    (el) => el.textContent === 'Due' && el.children.length === 0,
+  )
+  await act(async () => {
+    dueRow!.click()
+  })
+  await act(async () => {
+    await new Promise((r) => requestAnimationFrame(() => r(undefined)))
+  })
+}
+
 describe('the datetime Format editor writes the ACTIVE view (A-3)', () => {
   it('picking Short Date saves column_styles on the source node, not the schema', async () => {
-    await act(async () => {
-      root.render(
-        <MenuDoorHost>
-          <PropertyFrame
-            collectionPath="Col"
-            schema={[dateDef]}
-            onBack={() => {}}
-            source={source}
-          />
-        </MenuDoorHost>,
-      )
-    })
-    const dueRow = [...host.querySelectorAll<HTMLElement>('span')].find(
-      (el) => el.textContent === 'Due' && el.children.length === 0,
-    )
-    await act(async () => {
-      dueRow!.click()
-    })
-    await act(async () => {
-      await new Promise((r) => requestAnimationFrame(() => r(undefined)))
-    })
+    await openDueEditor()
     await act(async () => {
       buttonFor('Date format').click()
     })
@@ -95,6 +94,22 @@ describe('the datetime Format editor writes the ACTIVE view (A-3)', () => {
       'Col',
       'collection',
       expect.objectContaining({ column_styles: { prop_due: { date_format: 'short' } } }),
+    )
+  })
+
+  it("a time on the Nexus's own clock stores as shown, so it keeps following that clock", async () => {
+    useSession.setState({ personalization: { timeFormat: 'twentyFourHour' } })
+    await openDueEditor()
+    await act(async () => {
+      buttonFor('Time format').click()
+    })
+    await act(async () => {
+      buttonFor('24 Hours').click()
+    })
+    expect(saveSpy).toHaveBeenCalledWith(
+      'Col',
+      'collection',
+      expect.objectContaining({ column_styles: { prop_due: { time_format: 'shown' } } }),
     )
   })
 })

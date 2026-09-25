@@ -2,7 +2,6 @@
 
 import type { ActionItem } from './menuModel'
 import { destinationRows, type MoveTarget } from './pageMenu'
-import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '../Properties/columnStyles'
 
 type TrashMenuAction = 'restore' | 'delete' | 'restoreAll' | 'deleteAll' | `restoreTo:${string}`
 
@@ -30,26 +29,5 @@ export function trashMenuItems(ctx: TrashMenuContext): ActionItem<TrashMenuActio
   return [
     restore,
     { label: label.delete, action: ctx.batch ? 'deleteAll' : 'delete', separatorBefore: true },
-  ]
-}
-
-type TrashColumnAction = `format:${DateFormat}` | 'toggleTime'
-
-interface TrashColumnContext {
-  format: DateFormat
-  timeShown: boolean
-}
-
-export function trashColumnMenuItems(ctx: TrashColumnContext): ActionItem<TrashColumnAction>[] {
-  return [
-    {
-      label: 'Format',
-      submenu: DATE_FORMATS.map((f) => ({
-        label: DATE_FORMAT_LABELS[f],
-        action: `format:${f}`,
-        checked: f === ctx.format,
-      })),
-    },
-    { label: ctx.timeShown ? 'Hide Time' : 'Show Time', action: 'toggleTime' },
   ]
 }

@@ -49,7 +49,7 @@ import { isContextColumnId } from '../Contexts/contextIdentity'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
-import { useSession } from '../Session/store'
+import { useSession, useSetting } from '../Session/store'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
@@ -155,6 +155,7 @@ export function PropertyPanel({
     () => (tree ? buildValueContext(tree, schema, assetMap) : null),
     [tree, schema, assetMap],
   )
+  const dateFormat = useSetting('dateFormat')
   const overrideFm = override?.[subjectId]?.fm
   const row = useMemo<ViewRow | null>(() => {
     if (isSpace) return tree && spaceNode ? spaceRowOf(tree, spaceNode, overrideFm) : null
@@ -408,7 +409,7 @@ export function PropertyPanel({
                   column,
                   ctx,
                   hideIcon: false,
-                  style: { look: 'standard' },
+                  style: { look: 'standard', date_format: dateFormat },
                   remove: (next) => commit(id, next),
                 }) ?? <EmptyValue className={s.empty} />)
               )}

@@ -104,6 +104,7 @@ describe('the Trash pane', () => {
   let host: HTMLDivElement | null = null
   let root: Root | null = null
   let listed: TrashRow[]
+  let picked: string | null
 
   const titles = (): string[] =>
     [...(host?.querySelectorAll('[role="checkbox"]') ?? [])].map((n) =>
@@ -116,8 +117,11 @@ describe('the Trash pane', () => {
 
   beforeEach(async () => {
     listed = [row({ title: 'Alpha' })]
+    picked = null
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'trash:list': vi.fn(async () => ({ ok: true, value: listed })),
+      menu: vi.fn(async () => ({ ok: true, value: picked })),
+      'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
       mutate: vi.fn(async () => ({ ok: true, value: {} })),
       'theme:systemAccent': vi.fn(async () => ({ ok: true, value: null })),
       'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
@@ -142,6 +146,32 @@ describe('the Trash pane', () => {
     listed = [row({ title: 'Beta' })]
     await act(async () => nexus('B'))
     expect(titles()).toEqual(['Beta'])
+  })
+
+  const pickFromDateMenu = async (action: string): Promise<unknown> => {
+    picked = action
+    const head = host?.querySelector('.trash-head-date') as HTMLElement
+    await act(async () => {
+      head.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    return useSession.getState().personalization.trashColumnStyle
+  }
+
+  it("goes back to following the Nexus when its date menu picks the Nexus's own form", async () => {
+    await act(async () =>
+      useSession.setState({
+        personalization: { dateFormat: 'relative', trashColumnStyle: { date_format: 'full' } },
+      }),
+    )
+    expect(await pickFromDateMenu('style:date_format:relative')).toBeUndefined()
+  })
+
+  it('stores a hidden time, and nothing once the time is back on the Nexus clock', async () => {
+    await act(async () =>
+      useSession.setState({ personalization: { timeFormat: 'twentyFourHour' } }),
+    )
+    expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
+    expect(await pickFromDateMenu('style:time_format:twentyFourHour')).toBeUndefined()
   })
 
   it('lists a delete made elsewhere while it is open', async () => {

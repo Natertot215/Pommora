@@ -82,6 +82,13 @@ describe('styleMenuItems', () => {
     ])
   })
 
+  it('offers no weekday under a numeric or Relative form, as the Date editor hides its Day row', () => {
+    for (const date_format of ['monthDayYear', 'relative'] as const) {
+      const rows = items('datetime', { date_format, time_format: 'none', weekday: 'none' })
+      expect(rows.some((r) => r.action?.startsWith('style:weekday:'))).toBe(false)
+    }
+  })
+
   it('offers the Relative date radio and Full/Short/Hidden weekday radios', () => {
     const rows = items('datetime', { date_format: 'full', time_format: 'none', weekday: 'none' })
     expect(rows.find((r) => r.action === 'style:date_format:relative')?.label).toBe('Relative')

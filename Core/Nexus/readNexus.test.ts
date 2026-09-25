@@ -663,12 +663,15 @@ describe('readNexus — personalization', () => {
     expect(await at({})).toBeUndefined()
     expect(await at({ personalization: { timeFormat: 'nonsense' } })).toBeUndefined()
   })
-  it('the trash date format survives the round-trip, and an unrecognized one reads as absent', async () => {
-    const at = async (v: unknown): Promise<string | undefined> =>
-      (await readNexus(mk({ personalization: { trashDateFormat: v } }))).personalization
-        .trashDateFormat
-    expect(await at('dayMonthYear')).toBe('dayMonthYear')
-    expect(await at('nonsense')).toBeUndefined()
+  it('the trash column style survives the round-trip, and an unrecognized form reads as absent', async () => {
+    const at = async (v: unknown): Promise<unknown> =>
+      (await readNexus(mk({ personalization: { trashColumnStyle: v } }))).personalization
+        .trashColumnStyle
+    expect(await at({ date_format: 'dayMonthYear', time_format: 'none' })).toEqual({
+      date_format: 'dayMonthYear',
+      time_format: 'none',
+    })
+    expect(await at({ date_format: 'nonsense' })).toEqual({ date_format: undefined })
   })
   // Both halves in one test on purpose: a coercer that returned undefined unconditionally would satisfy a round-trip that only ever checked the default, so it has to be caught admitting a real value as well as refusing a junk one.
   it('the default link format survives the round-trip, and an unrecognized one reads as absent', async () => {

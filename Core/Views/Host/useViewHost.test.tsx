@@ -154,6 +154,12 @@ describe('the persist fold', () => {
     expect(saved.column_widths?.prop_status).toBe(90)
   })
 
+  it("a pick equal to the column's default stores nothing, so the column follows it again", async () => {
+    await mount(collection({ column_styles: { prop_status: { look: 'compact' } } }))
+    act(() => api?.setStylePatch('prop_status', 'look', 'standard'))
+    expect(lastSavedView().column_styles?.prop_status).toEqual({})
+  })
+
   it('a persist fired after a round-trip reads the fire-time fold, not the mount closure', async () => {
     await mount(collection())
     upward.foldOverrides.current = (v) => ({

@@ -83,7 +83,7 @@ export const labelColor = styleVariants({
   ...cellVariants,
   // Its OWN key: a grid cell would open the picker ringed on an uncolored value, leaving clearing unreachable.
   default: variant({ base: cellColor('grey-4') }),
-  // A link seeds to this, so it must be a real palette key rather than the neutral grey default.
+  // What an uncolored link or checkbox picker reports, so it rings no palette cell.
   accent: variant({ base: 'var(--system-accent)' }),
 })
 
