@@ -24,7 +24,7 @@ function fileEntry(v: unknown): string | null {
   return typeof inner === 'string' ? `[[${inner}]]` : null
 }
 
-const NULL: PropertyValue = { kind: 'null' }
+export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
 export type Adoption = { propertyId: string; value: string }
 
@@ -42,27 +42,27 @@ export const resolveSingleOption = (
 ): string | undefined => written.filter((v) => known.includes(v)).at(-1)
 
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
-  if (raw === null || raw === undefined) return NULL
+  if (raw === null || raw === undefined) return NULL_VALUE
 
   switch (def.type) {
     case 'number':
-      return typeof raw === 'number' ? { kind: 'number', value: raw } : NULL
+      return typeof raw === 'number' ? { kind: 'number', value: raw } : NULL_VALUE
     case 'checkbox':
-      return raw === true ? { kind: 'checkbox', value: true } : NULL
+      return raw === true ? { kind: 'checkbox', value: true } : NULL_VALUE
     case 'url':
-      return typeof raw === 'string' ? { kind: 'url', value: raw } : NULL
+      return typeof raw === 'string' ? { kind: 'url', value: raw } : NULL_VALUE
     case 'datetime':
     case 'created_time':
     case 'last_edited_time':
-      return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL
+      return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL_VALUE
     case 'select':
     case 'status':
     case 'multi_select': {
       const xs = optionList(raw)
       if (def.type === 'multi_select')
-        return xs.length === 0 ? NULL : { kind: 'multiSelect', value: xs }
+        return xs.length === 0 ? NULL_VALUE : { kind: 'multiSelect', value: xs }
       const value = resolveSingleOption(xs, optionValues(def))
-      return value === undefined ? NULL : { kind: 'select', value }
+      return value === undefined ? NULL_VALUE : { kind: 'select', value }
     }
     // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {
@@ -72,10 +72,10 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
         const entry = fileEntry(x)
         if (entry !== null && entry !== '') entries.push(entry)
       }
-      return entries.length === 0 ? NULL : { kind: 'file', value: entries }
+      return entries.length === 0 ? NULL_VALUE : { kind: 'file', value: entries }
     }
     default:
-      return NULL
+      return NULL_VALUE
   }
 }
 
@@ -95,7 +95,7 @@ export function reconcilePropertyValue(
     return { value, adoptions }
   }
   const kept = value.value.filter((v) => known.includes(v))
-  return { value: kept.length ? { kind: 'multiSelect', value: kept } : NULL, adoptions: [] }
+  return { value: kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE, adoptions: [] }
 }
 
 export function encodeValue(value: PropertyValue): unknown {

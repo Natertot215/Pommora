@@ -1,0 +1,72 @@
+// @vitest-environment jsdom
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { EditableInput } from './EditableInput'
+
+let host: HTMLDivElement
+let root: Root
+
+beforeEach(() => {
+  ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  root = createRoot(host)
+})
+afterEach(() => {
+  act(() => root.unmount())
+  host.remove()
+})
+
+function mountStaying(
+  onCommit: (next: string) => void,
+  onCancel = (): void => {},
+): HTMLInputElement {
+  act(() =>
+    root.render(
+      <EditableInput
+        value="Alpha"
+        className="field"
+        autoFocus={false}
+        onCommit={onCommit}
+        onCancel={onCancel}
+      />,
+    ),
+  )
+  const input = host.querySelector('input')
+  if (!input) throw new Error('no field')
+  return input
+}
+const press = (input: HTMLInputElement, key: string): void =>
+  act(() => {
+    input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+  })
+
+describe('EditableInput in a field that stays mounted', () => {
+  it('commits every edit, not only the first blur', () => {
+    const onCommit = vi.fn()
+    const input = mountStaying(onCommit)
+    act(() => input.focus())
+    act(() => input.blur())
+    act(() => input.focus())
+    input.value = 'Beta'
+    press(input, 'Enter')
+    expect(onCommit.mock.calls).toEqual([['Alpha'], ['Beta']])
+  })
+
+  it('an Escape commits nothing, shows the stored text, and leaves later edits saving', () => {
+    const onCommit = vi.fn()
+    const onCancel = vi.fn()
+    const input = mountStaying(onCommit, onCancel)
+    act(() => input.focus())
+    input.value = 'Typed'
+    press(input, 'Escape')
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onCommit).not.toHaveBeenCalled()
+    expect(input.value).toBe('Alpha')
+    act(() => input.focus())
+    input.value = 'Gamma'
+    act(() => input.blur())
+    expect(onCommit.mock.calls).toEqual([['Gamma']])
+  })
+})

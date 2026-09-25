@@ -34,9 +34,9 @@ beforeEach(() => {
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'x' } })),
-    'schema:rename': vi.fn(async () => ({ ok: true, value: null })),
+    'property:rename': vi.fn(async () => ({ ok: true, value: null })),
     'schema:reorder': vi.fn(async () => ({ ok: true, value: null })),
-    'schema:delete': vi.fn(async () => ({ ok: true, value: null })),
+    'schema:unassign': vi.fn(async () => ({ ok: true, value: null })),
     'schema:assign': vi.fn(async () => ({ ok: true, value: null })),
     'property:delete': vi.fn(async () => ({ ok: true, value: {} })),
     'views:save': saveSpy,

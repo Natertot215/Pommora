@@ -111,7 +111,7 @@ describe('setOptions', () => {
   it('an emptied options list survives an unrelated property edit — no phantom re-seed (F2)', async () => {
     const id = await mkSelect([{ value: 'A', label: 'A' }])
     await setOptions(root, id, [])
-    await editProperty(root, id, { name: 'Renamed Tags' })
+    await editProperty(root, id, { icon: 'tag' })
     expect((await readRegistry(root)).defs[id].select_options).toEqual([])
   })
 

@@ -14,7 +14,7 @@ import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { listBundles } from '../Trash/spend'
 import { readRegistry } from './propertiesRegistry'
-import { createProperty, editProperty } from './registryProperty'
+import { createProperty, editProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { clearOption, removeOption, renameOption, setOptions } from './optionOps'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
@@ -93,7 +93,7 @@ const pageWrites = (): { path: string; journaled: boolean }[] =>
 
 describe('the rename writer', () => {
   it('holds the record across every page rewrite and clears on settle', async () => {
-    const r = await editProperty(root, 'prop_s', { name: 'Phase' })
+    const r = await renameProperty(root, 'prop_s', 'Phase')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBe(2)
@@ -102,9 +102,32 @@ describe('the rename writer', () => {
     expect(await readFile(abs('Col', 'A.md'), 'utf8')).toContain('Phase: Draft')
   })
 
-  it('clears on a refused rename with no page touched', async () => {
+  it('writes no record for a rename refused before the commit', async () => {
     await createProperty(root, { id: 'prop_o', name: 'Other', type: 'select' })
-    const r = await editProperty(root, 'prop_s', { name: 'Other' })
+    const r = await renameProperty(root, 'prop_s', 'Other')
+    expect(r.ok).toBe(false)
+    expect(observed.some((o) => o.path === journalFile())).toBe(false)
+  })
+
+  it('clears the record when a create takes the name between the journal and the commit', async () => {
+    const real =
+      await vi.importActual<typeof import('../Files/atomicWrite')>('../Files/atomicWrite')
+    let raced = false
+    const race = async (path: string): Promise<void> => {
+      if (path !== journalFile() || raced) return
+      raced = true
+      await createProperty(root, { id: 'prop_o', name: 'Other', type: 'select' })
+    }
+    vi.mocked(atomicWriteFile).mockImplementation(async (path, data) => {
+      await real.atomicWriteFile(path, data)
+      await race(path)
+    })
+    vi.mocked(writeJson).mockImplementation(async (path, data) => {
+      await real.writeJson(path, data)
+      await race(path)
+    })
+    const r = await renameProperty(root, 'prop_s', 'Other')
+    expect(raced).toBe(true)
     expect(r.ok).toBe(false)
     expect(pageWrites().length).toBe(0)
     expect(await readSchemaJournal(root)).toBeNull()
@@ -269,7 +292,7 @@ describe('a second nexus', () => {
       join(other, 'Col', 'A.md'),
       '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
     )
-    const r = await editProperty(other, 'prop_s', { name: 'Phase' })
+    const r = await renameProperty(other, 'prop_s', 'Phase')
     expect(r.ok).toBe(true)
     expect(await readFile(join(other, 'Col', 'A.md'), 'utf8')).toContain('Phase: Draft')
     expect(await readSchemaJournal(other)).toBeNull()

@@ -14,6 +14,7 @@ import type { ThumbRect } from '../Interface/chrome'
 import type { PageValues } from '../Views/viewRow'
 import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { Option } from '../Properties/optionModel'
+import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
 import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView, RemovedTile } from '../Tiles/tiles'
 import type {
@@ -111,20 +112,20 @@ export interface Asks {
     args: [containerPath: string, def: PropertyDefinition]
     reply: Result<{ id: string }>
   }
-  'schema:rename': {
-    args: [containerPath: string, propertyId: string, newName: string]
-    reply: Result<null>
-  }
   'schema:reorder': {
     args: [containerPath: string, propertyId: string, toIndex: number]
     reply: Result<null>
   }
-  'schema:delete': { args: [containerPath: string, propertyId: string]; reply: Result<null> }
+  'schema:unassign': { args: [containerPath: string, propertyId: string]; reply: Result<null> }
   'schema:assign': {
     args: [containerPath: string, propertyId: string, toIndex?: number]
     reply: Result<null>
   }
   'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
+  'property:rename': {
+    args: [propertyId: string, name: string]
+    reply: Result<PropertyRename | null>
+  }
   'property:delete': { args: [propertyId: string]; reply: Result<Pick<MutateOutcome, 'trashed'>> }
   'property:setOptions': {
     args: [propertyId: string, options: Option[]]

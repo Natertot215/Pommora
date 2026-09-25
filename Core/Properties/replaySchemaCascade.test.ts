@@ -16,7 +16,7 @@ import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
-import { createProperty, editProperty } from './registryProperty'
+import { createProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
@@ -81,7 +81,7 @@ describe('rename replay', () => {
   it('lands the exact disk an uninterrupted rename lands', async () => {
     const live = await seedNexus()
     await openSession(live)
-    expect((await editProperty(live, 'prop_s', { name: 'Phase' })).ok).toBe(true)
+    expect((await renameProperty(live, 'prop_s', 'Phase')).ok).toBe(true)
     const wantA = await page(live, 'A')
     const wantB = await page(live, 'B')
     closeSession()

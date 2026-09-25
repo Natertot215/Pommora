@@ -30,6 +30,7 @@ import {
   createProperty,
   editProperty,
   removeFromRegistry,
+  renameProperty,
   reorderRegistry,
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
@@ -128,18 +129,6 @@ export const propertiesHandlers = {
     return ok({ id: created.value.id })
   }),
 
-  'schema:rename': withWriteRoot(
-    async (root, ctx, containerPath: unknown, propertyId: unknown, newName: unknown) => {
-      const c = await resolveSchemaFolder(root, containerPath)
-      if (!c.ok) return c
-      if (typeof propertyId !== 'string' || typeof newName !== 'string')
-        return fault('propertyId and newName must be strings.')
-      const r = await editProperty(root, propertyId, { name: newName })
-      if (r.ok) await confirmRegistryWrite(ctx, root)
-      return r
-    },
-  ),
-
   'schema:reorder': withWriteRoot(
     async (root, ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
       const c = await resolveSchemaFolder(root, containerPath)
@@ -152,14 +141,16 @@ export const propertiesHandlers = {
     },
   ),
 
-  'schema:delete': withWriteRoot(async (root, ctx, containerPath: unknown, propertyId: unknown) => {
-    const c = await resolveSchemaFolder(root, containerPath)
-    if (!c.ok) return c
-    if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-    const r = await removeProperty(root, c.value.folder, propertyId)
-    if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
-    return r
-  }),
+  'schema:unassign': withWriteRoot(
+    async (root, ctx, containerPath: unknown, propertyId: unknown) => {
+      const c = await resolveSchemaFolder(root, containerPath)
+      if (!c.ok) return c
+      if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
+      const r = await removeProperty(root, c.value.folder, propertyId)
+      if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
+      return r
+    },
+  ),
 
   'schema:assign': withWriteRoot(
     async (root, ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
@@ -178,6 +169,7 @@ export const propertiesHandlers = {
   ),
 
   'registry:reorder': registryOp(idAndIndex, reorderRegistry),
+  'property:rename': registryOp(idAndValue, renameProperty),
   'property:delete': registryOp(idOnly, deleteProperty),
   'property:setOptions': registryOp(idAndOptions, setOptions),
   'property:setStatusGroups': registryOp(idAndGroups, setStatusGroups),

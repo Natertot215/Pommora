@@ -5,6 +5,7 @@ import { readSpaceSidecar, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   editProperty,
+  renameProperty,
   removeFromRegistry,
   reorderRegistry,
 } from './registryProperty'
@@ -88,8 +89,8 @@ describe('createProperty', () => {
     if (!created.ok) expect(created.error.message).toContain('created_at')
     const ok = await createProperty(root, def({ name: 'Due', type: 'datetime' }))
     if (!ok.ok) return
-    expect((await editProperty(root, ok.value.id, { name: 'created_at' })).ok).toBe(false)
-    expect((await editProperty(root, ok.value.id, { name: '<Due>' })).ok).toBe(false)
+    expect((await renameProperty(root, ok.value.id, 'created_at')).ok).toBe(false)
+    expect((await renameProperty(root, ok.value.id, '<Due>')).ok).toBe(false)
   })
 
   it('normalizes the stored name, so an untrimmed one can never reach a key', async () => {
@@ -125,11 +126,11 @@ describe('createProperty', () => {
   })
 })
 
-describe('editProperty', () => {
+describe('renameProperty and editProperty', () => {
   it('renames in place, keeping the id', async () => {
     const c = await createProperty(root, def({ name: 'Old', type: 'number' }))
     if (!c.ok) return
-    expect((await editProperty(root, c.value.id, { name: 'New' })).ok).toBe(true)
+    expect((await renameProperty(root, c.value.id, 'New')).ok).toBe(true)
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('New')
   })
 
@@ -142,14 +143,17 @@ describe('editProperty', () => {
     if (!p.ok) return
     await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nfoo: bar\n---\nb\n`)
 
-    const refused = await editProperty(root, c.value.id, { name: 'foo' })
+    const refused = await renameProperty(root, c.value.id, 'foo')
     expect(refused.ok).toBe(false)
     if (!refused.ok) expect(refused.error.message).toBe('1 file already uses "foo" as a key.')
     expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('Status')
 
-    expect((await editProperty(root, c.value.id, { name: 'Status ' })).ok).toBe(true)
-    expect((await editProperty(root, c.value.id, { name: 'Phase' })).ok).toBe(true)
+    expect(await renameProperty(root, c.value.id, 'Status ')).toEqual({ ok: true, value: null })
+    expect(await renameProperty(root, c.value.id, 'Phase')).toEqual({
+      ok: true,
+      value: { from: 'Status', to: 'Phase' },
+    })
     expect(await readFile(p.value.path, 'utf8')).toContain('foo: bar')
   })
 
@@ -162,7 +166,7 @@ describe('editProperty', () => {
       Stage: ['Hand-written'],
     })
 
-    const refused = await editProperty(root, c.value.id, { name: 'Stage' })
+    const refused = await renameProperty(root, c.value.id, 'Stage')
     expect(refused.ok).toBe(false)
     if (!refused.ok) expect(refused.error.message).toBe('1 file already uses "Stage" as a key.')
     expect(await readSpaceSidecar(file)).toEqual({
@@ -176,8 +180,8 @@ describe('editProperty', () => {
     await createProperty(root, def({ name: 'Alpha', type: 'number' }))
     const b = await createProperty(root, def({ name: 'Beta', type: 'number' }))
     if (!b.ok) return
-    expect((await editProperty(root, b.value.id, { name: 'Alpha' })).ok).toBe(false)
-    expect((await editProperty(root, b.value.id, { name: 'Gamma' })).ok).toBe(true)
+    expect((await renameProperty(root, b.value.id, 'Alpha')).ok).toBe(false)
+    expect((await renameProperty(root, b.value.id, 'Gamma')).ok).toBe(true)
   })
 
   it('sweeps every page, and one unparseable page never ends the walk', async () => {
@@ -197,7 +201,7 @@ describe('editProperty', () => {
     // Hand-edited into unparseable YAML. It sorts between the two healthy pages, so a sweep that throws on it leaves C behind on the old key.
     await writeFile(pages[1], '---\ntitle: B\nOld: 1\nbroken: {oops\n---\nb\n', 'utf8')
 
-    expect((await editProperty(root, c.value.id, { name: 'New' })).ok).toBe(true)
+    expect((await renameProperty(root, c.value.id, 'New')).ok).toBe(true)
     for (const path of [pages[0], pages[2]]) {
       const content = await readFile(path, 'utf8')
       expect(content).toContain('New: 1')

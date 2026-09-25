@@ -145,7 +145,6 @@ describe('resolveFieldValue memoization', () => {
     }
     // No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on row.id), so the shared cached object is contractual rather than incidental.
     expect(rfv(row, 'prop_s')).toBe(rfv(row, 'prop_s'))
-    expect(rfv(row, 'ctx_areas')).toBe(rfv(row, 'ctx_areas'))
   })
 
   it('a fresh frontmatter identity re-resolves (the optimistic-patch / reload contract)', () => {
@@ -163,6 +162,47 @@ describe('resolveFieldValue memoization', () => {
     const after = rfv(rowAt(fm2), 'prop_s')
     expect(before).toMatchObject({ kind: 'select', value: 'open' })
     expect(after).toMatchObject({ kind: 'select', value: 'done' })
+  })
+
+  it('an option added to the definition re-resolves a value pages already held', () => {
+    const fm = { [ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'Final' }, schema) }
+    const r: ViewRow = {
+      id: 'p1',
+      title: 'One',
+      path: 'C/One.md',
+      frontmatter: fm,
+      createdAt: null,
+      modifiedAt: null,
+    }
+    const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
+    const gained = {
+      ...def,
+      select_options: [...(def.select_options ?? []), { value: 'Final', label: 'Final' }],
+    }
+    expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'null' })
+    expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'Final' })
+  })
+
+  it('a rename or a type change re-resolves under the same frontmatter', () => {
+    const fm = { [ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema), T: 'done' }
+    const r: ViewRow = {
+      id: 'p1',
+      title: 'One',
+      path: 'C/One.md',
+      frontmatter: fm,
+      createdAt: null,
+      modifiedAt: null,
+    }
+    const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
+    expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'select', value: 'open' })
+    expect(resolveFieldValue(r, 'prop_s', [{ ...def, name: 'T' }])).toEqual({
+      kind: 'select',
+      value: 'done',
+    })
+    expect(resolveFieldValue(r, 'prop_s', [{ ...def, type: 'multi_select' }])).toEqual({
+      kind: 'multiSelect',
+      value: ['open'],
+    })
   })
 
   it('_title never caches — a rename with an unchanged frontmatter object shows the new title', () => {

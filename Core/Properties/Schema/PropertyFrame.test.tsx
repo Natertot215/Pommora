@@ -33,7 +33,7 @@ let assignSpy: ReturnType<typeof vi.fn>
 let renameSpy: ReturnType<typeof vi.fn>
 let propertyMenuSpy: ReturnType<typeof vi.fn>
 let destroySpy: ReturnType<typeof vi.fn>
-let schemaDeleteSpy: ReturnType<typeof vi.fn>
+let unassignSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -41,18 +41,18 @@ beforeEach(() => {
   root = createRoot(host)
   loadSpy = vi.fn(async () => {})
   assignSpy = vi.fn(async () => ({ ok: true, value: null }))
-  renameSpy = vi.fn(async () => ({ ok: true, value: null }))
+  renameSpy = vi.fn(async () => ({ ok: true, value: { from: 'Status', to: 'Stage' } }))
   propertyMenuSpy = vi.fn(async () => null)
   destroySpy = vi.fn(async () => ({
     ok: true,
     value: { trashed: { bundlePath: '.trash/s__property-prop_status.deleted' } },
   }))
-  schemaDeleteSpy = vi.fn(async () => ({ ok: true, value: null }))
+  unassignSpy = vi.fn(async () => ({ ok: true, value: null }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
-    'schema:rename': renameSpy,
+    'property:rename': renameSpy,
     'schema:reorder': vi.fn(async () => ({ ok: true, value: null })),
-    'schema:delete': schemaDeleteSpy,
+    'schema:unassign': unassignSpy,
     'schema:assign': assignSpy,
     'property:delete': destroySpy,
     menu: async (req: unknown) =>
@@ -161,7 +161,7 @@ describe('the All Properties section (T5)', () => {
 })
 
 describe('the two-region drag (T6) — state-level; geometry truth lives in the live pass', () => {
-  const deleteSpy = (): ReturnType<typeof vi.fn> => schemaDeleteSpy
+  const deleteSpy = (): ReturnType<typeof vi.fn> => unassignSpy
 
   const stubGeometry = (): void => {
     stubRect(host.querySelector('[data-group="assigned"]')!, { top: 10, bottom: 50 })
@@ -280,7 +280,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
       items: propertyMenuModel({ kind: 'editor', name: 'Status' }),
       anchor: undefined,
     })
-    expect(schemaDeleteSpy).toHaveBeenCalledWith('Col', 'prop_status')
+    expect(unassignSpy).toHaveBeenCalledWith('Col', 'prop_status')
   })
 
   it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {
@@ -341,7 +341,12 @@ describe('native menus + the inline-rename channel (T7)', () => {
       input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
       input!.blur()
     })
-    expect(renameSpy).toHaveBeenCalledWith('Col', 'prop_status', 'Stage')
+    expect(renameSpy).toHaveBeenCalledWith('prop_status', 'Stage')
+    expect(useSession.getState().valuesEpoch).toMatchObject({
+      kind: 'rename',
+      oldKey: 'Status',
+      newKey: 'Stage',
+    })
     expect(host.querySelector('.row-title-input')).toBeNull()
   })
 

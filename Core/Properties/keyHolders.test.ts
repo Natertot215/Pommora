@@ -6,7 +6,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { nexusCorpus, seedContentIndex } from '../Index/indexSeed'
 import { dropLiveTree } from '../Nexus/liveTree'
-import { createProperty, editProperty } from './registryProperty'
+import { createProperty, renameProperty } from './registryProperty'
 import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
 import { keyHolderFiles } from './keyHolders'
@@ -71,9 +71,9 @@ describe('keyHolderFiles', () => {
     await page('Q9X', 'Phase: x\n')
     await writeFile(abs('Loose', 'Other.md'), '---\nPhase: y\n---\n\nun-governed\n')
     await seedContentIndex(root)
-    const refused = await editProperty(root, 'prop_s', { name: 'Phase' })
+    const refused = await renameProperty(root, 'prop_s', 'Phase')
     expect(refused.ok).toBe(false)
-    expect((await editProperty(root, 'prop_s', { name: 'Step' })).ok).toBe(true)
+    expect((await renameProperty(root, 'prop_s', 'Step')).ok).toBe(true)
   })
 
   it('with no index it answers the corpus intersected the same way', async () => {
