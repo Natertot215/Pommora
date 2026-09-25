@@ -59,7 +59,6 @@ import {
 } from '../Cells/PropertyTypes'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { askDestroyProperty, notifyTrashed } from '../../Interface/Confirm/confirmations'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
 import { host } from '../../Platform/dialer'
@@ -90,7 +89,7 @@ function ListGroups({
   onOpenEditor: (id: string) => void
   onAssign: (id: string) => void
   onRowMenu: (d: PropertyDefinition, group: 'assigned' | 'all') => void
-  onRenameCommit: (next: string) => void
+  onRenameCommit: (id: string, next: string) => void
   onRenameCancel: () => void
 }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
@@ -103,7 +102,7 @@ function ListGroups({
       editing={renamingId === d.id}
       value={d.name}
       className={cx(titleInput, 'row-title-input')}
-      onCommit={onRenameCommit}
+      onCommit={(next) => onRenameCommit(d.id, next)}
       onCancel={onRenameCancel}
     />
   )
@@ -195,7 +194,6 @@ export function PropertyFrame({
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)
   const bumpTrashRevision = useSession((st) => st.bumpTrashRevision)
   const cancelPropertyRename = useSession((st) => st.cancelPropertyRename)
-  const submitPropertyRename = useSession((st) => st.submitPropertyRename)
   const [view, setView] = useState<SubView>({ kind: 'list' })
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
@@ -242,13 +240,11 @@ export function PropertyFrame({
     if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
   }
   const rename = async (id: string, name: string): Promise<void> => {
-    const before = registry.find((d) => d.id === id)?.name
-    const after = normalizePropertyName(name)
-    if (reportRefusal(await host().ask('schema:rename', collectionPath, id, name)))
-      if (before !== undefined && before !== after) bumpValuesEpoch(before, after)
+    const res = await host().ask('property:rename', id, name)
+    if (reportRefusal(res) && res.value) bumpValuesEpoch(res.value.from, res.value.to)
   }
   const remove = async (id: string): Promise<void> => {
-    if (reportRefusal(await host().ask('schema:delete', collectionPath, id))) backToList()
+    if (reportRefusal(await host().ask('schema:unassign', collectionPath, id))) backToList()
   }
   // Every property write is the same round trip; only the channel and its arguments differ.
   const write = async (res: Promise<WriteResult>): Promise<void> => {
@@ -310,7 +306,7 @@ export function PropertyFrame({
             )
           : drop.kind === 'assign'
             ? host().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
-            : host().ask('schema:delete', collectionPath, drop.propId),
+            : host().ask('schema:unassign', collectionPath, drop.propId),
     )
 
   const paneRows: FrameRow[] = [
@@ -343,7 +339,7 @@ export function PropertyFrame({
     )
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
-      reportRefusal(await host().ask('schema:delete', collectionPath, d.id))
+      reportRefusal(await host().ask('schema:unassign', collectionPath, d.id))
   }
 
   const typePicker = (
@@ -539,7 +535,10 @@ export function PropertyFrame({
           onOpenEditor={(id) => setView({ kind: 'edit', id })}
           onAssign={(id) => void assign(id)}
           onRowMenu={(d, group) => void rowMenu(d, group)}
-          onRenameCommit={(next) => void submitPropertyRename(next)}
+          onRenameCommit={(id, next) => {
+            cancelPropertyRename()
+            void rename(id, next)
+          }}
           onRenameCancel={cancelPropertyRename}
         />
       </FrameDnd>

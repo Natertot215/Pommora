@@ -1,6 +1,6 @@
 import { writePropertyBundle } from '../Trash/record'
 import { assignedIds, cachedValues, collectionFolders, patchCacheBlock } from './assignment'
-import { readRegistry, type PropertyRegistry } from './propertiesRegistry'
+import { readRegistry, type PropertyRegistry, NO_PROPERTY } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { keyedHolders, keyHolderFiles } from './keyHolders'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
@@ -14,7 +14,7 @@ import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 
 import { isPlainObject } from './propertyValue'
-import { fail, ok, type Result } from '../Contract/result'
+import { ok, type Result } from '../Contract/result'
 import { relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
 
@@ -74,7 +74,7 @@ async function deleteInner(
   propertyId: string,
 ): Promise<Result<Pick<MutateOutcome, 'trashed'>>> {
   const def = (await readRegistry(root)).defs[propertyId]
-  if (!def) return fail('not-found', 'Property not found.')
+  if (!def) return NO_PROPERTY
   const key = def.name
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.

@@ -1,5 +1,5 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { mutateRegistry, readRegistry } from './propertiesRegistry'
+import { mutateRegistry, readRegistry, NO_PROPERTY } from './propertiesRegistry'
 import { validateDefinition, validateName } from './schema'
 import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
@@ -87,66 +87,67 @@ export async function renameSweep(root: string, oldName: string, newName: string
   return swept.skipped.length
 }
 
-type Rename = { from: string; to: string }
+export type PropertyRename = { from: string; to: string }
 
-/** Staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old name survives only here. */
-async function stageRename(
+/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old name survives only there. */
+export function renameProperty(
   root: string,
   propertyId: string,
-  name: string | undefined,
-): Promise<SchemaJournal | null> {
-  const prior = (await readRegistry(root)).defs[propertyId]
-  if (!prior || typeof name !== 'string') return null
+  name: string,
+): Promise<Result<PropertyRename | null>> {
   const to = normalizePropertyName(name)
-  if (!to || to === prior.name) return null
-  const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
-  await writeSchemaJournal(root, record)
-  return record
-}
-
-export function editProperty(
-  root: string,
-  propertyId: string,
-  changes: Partial<PropertyDefinition>,
-): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const to = typeof changes.name === 'string' ? normalizePropertyName(changes.name) : undefined
-    const prior = (await readRegistry(root)).defs[propertyId]
-    if (to !== undefined && prior && to !== prior.name) {
-      const holders = await confirmedKeyHolders(root, to, await collectionFolders(root))
-      if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
-    }
-    const record = await stageRename(root, propertyId, changes.name)
-    const edit = await mutateRegistry<Result<Rename | null>>(root, (registry) => {
-      let rename: Rename | null = null
+    const { defs } = await readRegistry(root)
+    const prior = defs[propertyId]
+    if (!prior) return NO_PROPERTY
+    if (to === prior.name) return ok(null)
+    const named = validateName(to, Object.values(defs), propertyId)
+    if (!named.ok) return named
+    const holders = await confirmedKeyHolders(root, to, await collectionFolders(root))
+    if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
+    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
+    await writeSchemaJournal(root, record)
+    const edit = await mutateRegistry<Result<PropertyRename>>(root, (registry) => {
       const current = registry.defs[propertyId]
-      if (!current) return { result: fail('not-found', 'Property not found.') }
-      const changed = { ...changes }
-      if (typeof changed.name === 'string') changed.name = normalizePropertyName(changed.name)
-      const next = seeded({ ...current, ...changed, id: propertyId })
-      if (next.name !== current.name) {
-        const v = validateName(next.name, Object.values(registry.defs), propertyId)
-        if (!v.ok) return { result: v }
-        rename = { from: current.name, to: next.name }
-      }
+      if (!current) return { result: NO_PROPERTY }
+      const v = validateName(to, Object.values(registry.defs), propertyId)
+      if (!v.ok) return { result: v }
       return {
-        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(rename),
+        next: { ...registry, defs: { ...registry.defs, [propertyId]: { ...current, name: to } } },
+        result: ok({ from: current.name, to }),
       }
     })
     if (!edit.ok) {
-      if (record) await clearSchemaJournal(root, record)
+      await clearSchemaJournal(root, record)
       return edit
     }
-    const skipped = edit.value ? await renameSweep(root, edit.value.from, edit.value.to) : 0
-    if (record && !skipped) await clearSchemaJournal(root, record)
-    return ok(null)
+    if (!(await renameSweep(root, edit.value.from, to))) await clearSchemaJournal(root, record)
+    return edit
   })
+}
+
+/** Every definition edit but the name, which is renameProperty's since it cascades into every page. */
+export function editProperty(
+  root: string,
+  propertyId: string,
+  changes: Omit<Partial<PropertyDefinition>, 'id' | 'name'>,
+): Promise<Result<null>> {
+  return serializeSchemaOp(() =>
+    mutateRegistry<Result<null>>(root, (registry) => {
+      const current = registry.defs[propertyId]
+      if (!current) return { result: NO_PROPERTY }
+      const next = seeded({ ...current, ...changes, id: propertyId })
+      return {
+        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
+        result: ok(null),
+      }
+    }),
+  )
 }
 
 export function removeFromRegistry(root: string, propertyId: string): Promise<Result<null>> {
   return mutateRegistry<Result<null>>(root, (registry) => {
-    if (!registry.defs[propertyId]) return { result: fail('not-found', 'Property not found.') }
+    if (!registry.defs[propertyId]) return { result: NO_PROPERTY }
     const defs = { ...registry.defs }
     delete defs[propertyId]
     return {
@@ -162,7 +163,7 @@ export function reorderRegistry(
   toIndex: number,
 ): Promise<Result<null>> {
   return mutateRegistry<Result<null>>(root, (registry) => {
-    if (!(propertyId in registry.defs)) return { result: fail('not-found', 'Property not found.') }
+    if (!(propertyId in registry.defs)) return { result: NO_PROPERTY }
     const order = registry.order.filter((id) => id !== propertyId)
     order.splice(clamp(toIndex, 0, order.length), 0, propertyId)
     return { next: { ...registry, order }, result: ok(null) }

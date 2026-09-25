@@ -8,7 +8,7 @@ import {
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
 } from '@pommora/core/Properties/properties'
-import { decodeValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { decodeValue, NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { parseConnectionText } from '@pommora/core/Connections/connections'
 
 export function declaredType(
@@ -24,7 +24,7 @@ export function declaredType(
 }
 
 const stampValue = (iso: string | null): PropertyValue =>
-  iso === null ? { kind: 'null' } : { kind: 'datetime', value: iso }
+  iso === null ? NULL_VALUE : { kind: 'datetime', value: iso }
 
 /** A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own `contextValues`, the optimistic patch winning while a commit is in flight. */
 export function resolveFieldValue(
@@ -43,28 +43,25 @@ export function resolveFieldValue(
         ? (patched as Record<string, string[] | undefined>)[propertyId]
         : undefined
     const ids = fromPatch ?? row.contextValues?.[propertyId]
-    if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : { kind: 'null' }
-  }
-  let m = resolvedByFm.get(row.frontmatter)
-  if (!m) {
-    m = new Map()
-    resolvedByFm.set(row.frontmatter, m)
+    if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : NULL_VALUE
   }
   const def = schema.find((d) => d.id === propertyId)
-  // Keyed by the NAME the value is stored under plus the type it decodes as — a rename or a type change must re-resolve, and neither swaps the frontmatter identity the outer map is keyed on.
-  const cacheKey = def ? `${def.name}\u0000${def.type}` : propertyId
-  let v = m.get(cacheKey)
+  if (!def) return NULL_VALUE
+  let m = resolvedByFm.get(row.frontmatter)
+  if (!m) {
+    m = new WeakMap()
+    resolvedByFm.set(row.frontmatter, m)
+  }
+  let v = m.get(def)
   if (!v) {
-    v = def
-      ? decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name])
-      : { kind: 'null' }
-    m.set(cacheKey, v)
+    v = decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name])
+    m.set(def, v)
   }
   return v
 }
 
-// MEMOIZED per frontmatter object: the decode was the measured grouped-view hot spot. A value write swaps the page's frontmatter identity, so entries self-expire.
-const resolvedByFm = new WeakMap<PageFrontmatter, Map<string, PropertyValue>>()
+// MEMOIZED per frontmatter object and definition: the decode was the measured grouped-view hot spot. A value write swaps the frontmatter and a definition edit mints a new definition, so entries self-expire.
+const resolvedByFm = new WeakMap<PageFrontmatter, WeakMap<PropertyDefinition, PropertyValue>>()
 
 export const fileName = (reference: string): string =>
   parseConnectionText(reference)?.title ?? reference

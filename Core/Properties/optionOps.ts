@@ -1,4 +1,4 @@
-import { mutateRegistry, readRegistry } from './propertiesRegistry'
+import { mutateRegistry, readRegistry, NO_PROPERTY } from './propertiesRegistry'
 import { validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
@@ -19,8 +19,6 @@ import {
   type StatusGroup,
 } from './properties'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
-
-const NO_PROPERTY = fail('not-found', 'Property not found.')
 
 function requireOptionType(type: PropertyType): Result<null> {
   return hasSelectOptions(type)

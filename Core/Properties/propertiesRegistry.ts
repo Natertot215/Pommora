@@ -1,6 +1,6 @@
 import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
-import { valueOr } from '../Contract/result'
+import { fail, valueOr } from '../Contract/result'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
@@ -8,6 +8,8 @@ import { machine } from '../Platform/machine'
 import { isPlainObject } from './propertyValue'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from './rowOrder'
+
+export const NO_PROPERTY = fail('not-found', 'Property not found.')
 
 export type PropertyRegistry = Record<string, PropertyDefinition>
 

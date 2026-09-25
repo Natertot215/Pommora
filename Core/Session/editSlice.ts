@@ -1,7 +1,6 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { MutateRequest, RenameHost, RenameKind } from '@pommora/core/Nexus/mutateRequest'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
-import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
@@ -41,7 +40,6 @@ export interface EditSlice {
   renamingProperty: { collectionPath: string; propertyId: string } | null
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
-  submitPropertyRename: (newName: string) => Promise<boolean>
   resetEdit: () => void
 }
 
@@ -158,17 +156,5 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
 
   beginPropertyRename: (target) => set({ renamingProperty: target }),
   cancelPropertyRename: () => set({ renamingProperty: null }),
-  submitPropertyRename: async (newName) => {
-    const target = get().renamingProperty
-    set({ renamingProperty: null })
-    if (!target) return false
-    // Captured BEFORE the ask: the confirming push can rename the registry first.
-    const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
-    const res = await host().ask('schema:rename', target.collectionPath, target.propertyId, newName)
-    if (!reportRefusal(res)) return false
-    const after = normalizePropertyName(newName)
-    if (before !== undefined && before !== after) get().bumpValuesEpoch(before, after)
-    return true
-  },
   resetEdit: () => set(PER_NEXUS),
 })

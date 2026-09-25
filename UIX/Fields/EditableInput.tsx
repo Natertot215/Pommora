@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { cx } from '../Utilities/cx'
 import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './fields.css'
 
-/** `settled` stops Enter (which blurs) and the trailing blur from both committing. */
+/** `settled` marks the edit over: the commit's blur or an Escape sets it, so Escape's own blur commits nothing, and focus clears it, so a field that stays mounted keeps saving. Enter commits through the blur it causes. */
 export function EditableInput({
   value,
   initialText,
@@ -31,6 +31,7 @@ export function EditableInput({
   onCommit: (next: string) => void
   onCancel: () => void
 }): React.JSX.Element {
+  const initial = initialText ?? value
   const settled = useRef(false)
   const mirror = useRef<HTMLSpanElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -43,12 +44,13 @@ export function EditableInput({
       // The eclipse fade follows the caret; Chromium drops an ellipsis while a field is focused.
       className={cx(className, !boxed && 'over-scroll-x', autoSize && autoSizeInput)}
       type={type}
-      defaultValue={initialText ?? value}
+      defaultValue={initial}
       size={autoSize ? 1 : undefined}
       spellCheck={false}
       aria-label={ariaLabel}
       maxLength={maxLength}
       onFocus={(e) => {
+        settled.current = false
         if (!caretAtEnd) return e.currentTarget.select()
         const len = e.currentTarget.value.length
         e.currentTarget.setSelectionRange(len, len)
@@ -70,6 +72,7 @@ export function EditableInput({
           // Window-level closers stand down on a prevented press, so cancelling never also takes down the host surface.
           e.preventDefault()
           settled.current = true
+          e.currentTarget.value = initial
           // A focused field removed from the DOM fires no blur, stranding the drawn caret.
           e.currentTarget.blur()
           onCancel()
@@ -86,7 +89,7 @@ export function EditableInput({
   return (
     <span className={autoSizeWrap}>
       <span ref={mirror} className={autoSizeMirror} aria-hidden>
-        {(initialText ?? value) || ' '}
+        {initial || ' '}
       </span>
       {field}
     </span>
