@@ -2,8 +2,15 @@ import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'
-import { notifyTrashed } from '../Notifications/notifications'
+import { notifyDeleted } from '../Notifications/notifications'
 import { host } from '../../Platform/dialer'
+
+/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
+export const notifyTrashed = (title: string, bundlePath?: string): void =>
+  notifyDeleted(
+    title,
+    bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
+  )
 
 const DELETE_FACTS_FALLBACK = { trashMode: DEFAULT_TRASH_MODE, permanentDelete: false }
 

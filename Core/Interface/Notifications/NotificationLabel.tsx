@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSession } from '../../Session/store'
+import { dismissNotification, useNotification } from './notifications'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
@@ -12,8 +12,7 @@ const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100
 
 export function NotificationLabel(): React.JSX.Element {
-  const note = useSession((st) => st.notification)
-  const dismiss = useSession((st) => st.dismissNotification)
+  const note = useNotification()
   const hostRef = useRef<HTMLDivElement>(null)
   const nearRef = useRef(false)
   const [left, setLeft] = useState(1)
@@ -52,9 +51,9 @@ export function NotificationLabel(): React.JSX.Element {
 
   useEffect(() => {
     if (!note || shown) return
-    const t = setTimeout(() => dismiss(note.id), BASE_MS)
+    const t = setTimeout(() => dismissNotification(note.id), BASE_MS)
     return () => clearTimeout(t)
-  }, [note, shown, dismiss])
+  }, [note, shown])
 
   // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach.
   useEffect(() => {
