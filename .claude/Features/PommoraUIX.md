@@ -11,7 +11,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 ### Theme
 
-`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `RAMP_FAMILIES`, `RAMP_STEPS`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `labelColorFor`, `resolveColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` holds the drawn caret's and selection's look, and `nativeCaret.ts` paints both over the native text fields. `index.ts` is the barrel.
+`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `RAMP_FAMILIES`, `RAMP_STEPS`, `ColorName`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `colorNameFor`, `resolveColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` holds the drawn caret's and selection's look, and `nativeCaret.ts` paints both over the native text fields. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -338,7 +338,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Shapes     | `shape.pill/tag` · `optionShapeFor` | Rounded status default · squared value, resolved per type. Compact is either rendered icon-only. |
 | Tint       | `tinted`                     | Fill, outline and text mixed off `--label-base` — a surface wanting a color chip sets that one var. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
-| Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default` and `accent`. |
+| Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default`.              |
 | NeutralChip | `NeutralChip`               | A neutral-ground tag chip — color on border and text.                   |
 | FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
 | PlainLabel | `PlainLabel`                 | A name inside a field, no chrome.                                       |
