@@ -19,3 +19,16 @@ export function slotInGroup(
   const beforeId = before ? over.id : (group.slice(pos + 1).find((id) => id !== draggedId) ?? null)
   return { beforeId, edge: before ? over.top : over.bottom }
 }
+
+export function walksTo(
+  fromId: string,
+  ancestorId: string,
+  byId: Map<string, { parentId: string | null }>,
+): boolean {
+  let cur: string | null = fromId
+  while (cur) {
+    if (cur === ancestorId) return true
+    cur = byId.get(cur)?.parentId ?? null
+  }
+  return false
+}

@@ -1,6 +1,6 @@
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { type ReactNode, useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -11,7 +11,7 @@ import { base } from '@pommora/uix/Fields/fields.css'
 import { asRenderableIcon, Icon } from '@pommora/uix/Symbols'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { DropOutline } from '@pommora/uix/Menus'
-import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
+import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { declaredType } from '../../Properties/value'
 import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
@@ -190,22 +190,15 @@ export function GroupBand({
 }): React.JSX.Element {
   const outsideRename = (e: React.MouseEvent): boolean =>
     !(e.target as HTMLElement).closest?.('input')
-  // Spring-load: `toggleRef` keeps the callback fresh without re-registering on every render.
-  const rowRef = useRef<HTMLDivElement>(null)
-  const toggleRef = useRef(onToggle)
-  toggleRef.current = onToggle
-  useEffect(() => {
-    if (headless || !collapsed || !rowRef.current) return
-    return registerDiscloseTarget(rowRef.current, () => toggleRef.current())
-  }, [headless, collapsed])
+  const discloseRef = useDiscloseTarget(!headless && collapsed, onToggle)
   return (
     <div className={cx('group-band', subBand && 'sub-band')}>
       {!headless && (
         // The band row carries the section rhythm + indent + zoom; the head inside carries the sticky pin + drag — separate elements so zoom never rides the sticky offset.
         <div
           className="group-band-row"
-          ref={rowRef}
-          data-disclose={collapsed ? '' : undefined}
+          ref={discloseRef}
+          data-collapsed={collapsed ? '' : undefined}
           data-empty={empty ? '' : undefined}
           style={indent ? { paddingLeft: indent } : undefined}
         >

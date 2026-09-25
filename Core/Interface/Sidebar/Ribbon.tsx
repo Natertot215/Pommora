@@ -1,4 +1,4 @@
-import type { SidebarMode } from '@pommora/core/Settings/personalization'
+import type { Personalization, SidebarMode } from '@pommora/core/Settings/personalization'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
@@ -14,63 +14,63 @@ import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
 
-// The Settings icon dismisses the window it summoned, matching the keyboard command that shares the state, and never switches sidebarMode.
-const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
-  collections: 'collections',
-  contexts: 'contexts',
-  agenda: 'agenda',
+// An icon that summoned a window dismisses it on the next press.
+const RIBBON: Record<
+  RibbonKey,
+  {
+    icon: (defaults: Personalization['defaultIcons']) => string
+    press: () => void
+    menu?: () => void
+  }
+> = {
+  matrix: { icon: () => MATRIX_ICON, press: pressMatrix, menu: () => void matrixMenu() },
+  agenda: { icon: () => 'calendar', press: () => switchTo('agenda') },
+  contexts: { icon: (d) => entityIcon('context', undefined, d), press: () => switchTo('contexts') },
+  collections: {
+    icon: (d) => entityIcon('collection', undefined, d),
+    press: () => switchTo('collections'),
+  },
+  settings: {
+    icon: () => 'sliders-horizontal',
+    press: () => useSession.getState().toggleSettings(),
+  },
 }
-const STATIC_ICON: Record<'matrix' | 'agenda' | 'settings', string> = {
-  matrix: MATRIX_ICON,
-  agenda: 'calendar',
-  settings: 'sliders-horizontal',
+
+const switchTo = (mode: SidebarMode): void =>
+  useSession.getState().setPersonalization('sidebarMode', mode)
+
+function pressMatrix(): void {
+  const s = useSession.getState()
+  if (s.personalization.matrixOpenIn === 'window' && !isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
+    s.toggleMatrixWindow()
+  else void s.select(MATRIX_REF)
 }
+
 type RibbonMenuAction = 'open' | 'preview'
+
+// No trigger: a right-click presents natively whatever the in-app menu preference says.
+async function matrixMenu(): Promise<void> {
+  const s = useSession.getState()
+  const inTabs = isOpenInTabs(s.tabs, s.pinned, MATRIX_REF)
+  const action = await popMenu<RibbonMenuAction>(
+    openOrder<RibbonMenuAction>(
+      inTabs,
+      [{ label: openLabel(inTabs), action: 'open' }],
+      [{ label: 'Preview', action: 'preview', disabled: s.pageWindow?.kind === 'matrix' }],
+    ),
+  )
+  if (action === 'open') void s.select(MATRIX_REF)
+  else if (action === 'preview') s.openMatrixWindow()
+}
 
 export function Ribbon(): React.JSX.Element {
   const select = useSession((s) => s.select)
-  const toggleSettings = useSession((s) => s.toggleSettings)
-  const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
-  const openMatrixWindow = useSession((s) => s.openMatrixWindow)
-  const matrixInWindow = useSession((s) => s.personalization.matrixOpenIn === 'window')
-  const matrixTab = useSession((s) => isOpenInTabs(s.tabs, s.pinned, MATRIX_REF))
-  const matrixWindowOpen = useSession((s) => s.pageWindow?.kind === 'matrix')
   const mode = useSession((s) => sidebarModeOf(s.personalization))
   const order = useSession((s) => s.personalization.ribbonOrder)
   const experimental = useExperimental()
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const setPersonalization = useSession((s) => s.setPersonalization)
   const keys = resolveOrder(order, experimental)
-
-  const iconFor = (k: RibbonKey): string =>
-    k === 'collections'
-      ? entityIcon('collection', undefined, defaultIcons)
-      : k === 'contexts'
-        ? entityIcon('context', undefined, defaultIcons)
-        : STATIC_ICON[k]
-
-  const onIcon = (k: RibbonKey): void => {
-    const m = MODE_FOR[k]
-    if (m) setPersonalization('sidebarMode', m)
-    else if (k === 'settings') toggleSettings()
-    else if (k === 'matrix') {
-      if (matrixInWindow && !matrixTab) toggleMatrixWindow()
-      else void select(MATRIX_REF)
-    }
-  }
-
-  // No trigger: a right-click presents natively whatever the in-app menu preference says.
-  const openMenu = async (): Promise<void> => {
-    const action = await popMenu<RibbonMenuAction>(
-      openOrder<RibbonMenuAction>(
-        matrixTab,
-        [{ label: openLabel(matrixTab), action: 'open' }],
-        [{ label: 'Preview', action: 'preview', disabled: matrixWindowOpen }],
-      ),
-    )
-    if (action === 'open') void select(MATRIX_REF)
-    else if (action === 'preview') openMatrixWindow()
-  }
 
   const reorderIcons = (activeId: string, overId: string): void => {
     const next = reorder(
@@ -96,10 +96,10 @@ export function Ribbon(): React.JSX.Element {
           <RibbonTab
             key={k}
             tabKey={k}
-            icon={iconFor(k)}
-            active={MODE_FOR[k] === mode}
-            onClick={() => onIcon(k)}
-            onMenu={k === 'matrix' ? () => void openMenu() : undefined}
+            icon={RIBBON[k].icon(defaultIcons)}
+            active={k === mode}
+            onClick={RIBBON[k].press}
+            onMenu={RIBBON[k].menu}
           />
         ))}
       </SortableZone>

@@ -3,7 +3,7 @@
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import type { SetTreeNode } from '../Pipeline/group'
-import { type MeasuredRow, nextOrder } from '@pommora/uix/Interactions/reorderModel'
+import { type MeasuredRow, nextOrder, walksTo } from '@pommora/uix/Interactions/reorderModel'
 
 export interface Band {
   id: string
@@ -44,15 +44,6 @@ export function flattenBands(groups: ResolvedGroup[], collapsed: Set<string>): B
 export function canNest(draggedId: string, targetId: string, bands: Band[]): boolean {
   const byId = new Map(bands.map((b) => [b.id, b]))
   return byId.get(targetId)?.kind === 'set' && !walksTo(targetId, draggedId, byId)
-}
-
-function walksTo(fromId: string, ancestorId: string, byId: Map<string, Band>): boolean {
-  let cur: string | null = fromId
-  while (cur) {
-    if (cur === ancestorId) return true
-    cur = byId.get(cur)?.parentId ?? null
-  }
-  return false
 }
 
 /** Built ONCE at activation: hit-testing runs per pointermove and must never allocate or rebuild indexes. */

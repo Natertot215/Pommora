@@ -1,6 +1,15 @@
-export type RibbonKey = 'matrix' | 'agenda' | 'contexts' | 'collections' | 'settings'
+import type { SidebarMode } from '@pommora/core/Settings/personalization'
 
-const DEFAULT_ORDER: RibbonKey[] = ['matrix', 'agenda', 'contexts', 'collections', 'settings']
+export type RibbonKey = SidebarMode | 'matrix' | 'settings'
+
+// A key's seat is its place in this record, which names every key or fails to compile.
+const DEFAULT_ORDER = Object.keys({
+  matrix: 0,
+  agenda: 0,
+  contexts: 0,
+  collections: 0,
+  settings: 0,
+} satisfies Record<RibbonKey, 0>) as RibbonKey[]
 
 export function resolveOrder(persisted: string[] | undefined, experimental: boolean): RibbonKey[] {
   const order = experimental ? DEFAULT_ORDER : DEFAULT_ORDER.filter((k) => k !== 'agenda')
