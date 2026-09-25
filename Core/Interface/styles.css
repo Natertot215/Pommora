@@ -103,6 +103,8 @@ textarea,
 .window {
   --content-start: calc(var(--sidebar-clearance) + var(--content-edge));
   --content-start-right: calc(var(--side-pane-clearance) + var(--content-edge));
+  --inset-start: calc(var(--sidebar-clearance) + var(--content-inset));
+  --inset-start-right: calc(var(--side-pane-clearance) + var(--content-inset));
 }
 
 .titlebar {

@@ -29,7 +29,7 @@
   padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
 }
 .mdpm-header:not(.has-banner) :is(.add-banner-strip, .detail-title) {
-  padding-left: calc(var(--sidebar-clearance) + var(--content-inset));
+  padding-left: var(--inset-start);
   transition: padding-left var(--pane-slide) var(--ease-base);
 }
 .mdpm-header:not(.has-banner) .detail-title {
@@ -39,7 +39,7 @@
 .banner-overlay {
   position: absolute;
   bottom: 12px;
-  left: calc(var(--sidebar-clearance) + var(--content-inset));
+  left: var(--inset-start);
   right: 28px;
   transition: left var(--pane-slide) var(--ease-base);
 }

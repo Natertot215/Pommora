@@ -30,7 +30,7 @@
     right var(--pane-slide) var(--ease-base);
 }
 .banner-title.is-searchable {
-  right: calc(var(--side-pane-clearance) + var(--content-inset));
+  right: var(--inset-start-right);
 }
 .banner-title.is-searchable .detail-title {
   flex: 1 1 auto;
