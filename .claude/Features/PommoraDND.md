@@ -5,11 +5,11 @@ Pommora's in-house drag-and-drop engine, owning the interaction layer the way Ma
 
 ### The Seam
 
-**SOURCE:** `UIX/Interactions/gesture.ts` · `UIX/Interactions/drag.tsx` · `Core/MarkdownPM/Gestures/editorGesture.ts`
+**SOURCE:** `UIX/Interactions/gesture.ts` · `UIX/Interactions/drag.ts` · `Core/MarkdownPM/Gestures/editorGesture.ts`
 
 One gesture runs at a time. A press becomes a drag only once it travels far enough to mean one, and from that moment the gesture owns the pointer until it ends; Escape, a release outside the window, or the window losing focus all abandon it cleanly, and a surface that disappears mid-drag takes its gesture with it. A release that never traveled far enough is a click instead, and only an actual release counts, so one affordance can honestly do both jobs — a list glyph in the editor ticks a checkbox when pressed and moves the item when dragged. Scrub controls — a pane's resize edge, a slider, panning a photo, dragging a window by its chrome — respond from the instant of the press with no threshold, since there is no click to protect.
 
-`drag.tsx` is the sort-engine seam:
+`drag.ts` is the sort-engine seam:
 
 - **`SortableZone`** — one sortable list: standalone by default (a list, a row, a grid), or a member of the `DragGroup` above it. A zone given an `id` is addressable from the group's other zones and renders its own container, so an empty band is still a drop target. That container carries `--drag-floor`, the lifted item's height in its own px, while a drag is in flight.
 - **`DragGroup`** — the engine and its zone registry: a set of zones that hand items between each other, reporting each landing as `(activeId, toZone, toIndex)` or, between zones of one `family`, handing the source's carried item to the target's `receive` at the landing index, with an optional portal overlay for the lifted item.

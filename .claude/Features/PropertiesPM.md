@@ -63,7 +63,7 @@ A bare number with a **property-wide format** and a **per-view look**. The forma
 
 #### II. Date & Time
 
-A single ISO value: a date-only string folds into Date on read, and a with-time string carries the clock. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view column follows the Nexus's own **Date Format** and **Time Format** until it picks its own; picking the Nexus's form or clock again returns it to following. A cell opens the CalendarPicker, a calendar grid plus a segmented time editor.
+A single ISO value: a date-only string folds into Date on read, and a with-time string carries the clock. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view column follows the Nexus's own **Date Format** and **Time Format** until it picks its own; picking the Nexus's form or clock again returns it to following. A cell opens the CalendarPicker, a calendar grid plus a time editor of hour, minute, and AM/PM parts.
 
 #### II. Select & Multi-Select
 
@@ -138,6 +138,6 @@ Neither Remove nor the global delete is cross-file atomic; each is a per-file fa
 #### Pending
 
 - **Number looks for other views** — the completion Ring and the Number / Bar / Ring tile grid belong to view types with vertical room; the table ships Number and Bar.
-- **Calendar Picker** — range values, keyboard stepping on the time segments.
+- **Calendar Picker** — range values, keyboard stepping on the time parts.
 - **Per-view link styling** — a Link property's look is property-level; letting a view override it is a prospect the `column_styles` seam already allows for.
 - **A Text type** — free text is the default type in other frontmatter editors and has no Pommora type; a Select stands in for it today.

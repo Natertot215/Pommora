@@ -5,7 +5,7 @@ A view is a saved presentation of a Collection's or a Set's Pages. It never modi
 
 ### The Saved-View Model
 
-Each container's sidecar holds an ordered `views[]`, each entry modeled by `savedView` in `Core/Views/views.ts`. A saved view records its `id` (a ULID), `name`, `icon` (a view without an icon of its own draws its kind's glyph), an optional `color` (a ramp cell used as the view's segment stroke), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths and alignments, and `column_styles` — the per-type look and the date, weekday, and time formats, which live per view here rather than on the property definition. Its query config carries the `sort` list, the `filter` group, the `group` config with the view-level band order, and the display options each renderer reads — the view's own scale (`view_scale`, 50%–150%, applied to the main pane's content and bands but never the heading or an embedded tile), card size, collapsed and hidden bands, the cards toggles.
+Each container's sidecar holds an ordered `views[]`, each entry modeled by `savedView` in `Core/Views/views.ts`. A saved view records its `id` (a ULID), `name`, `icon` (a view without an icon of its own draws its kind's glyph), an optional `color` (a ramp cell used as the view's pill stroke), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths and alignments, and `column_styles` — the per-type look and the date, weekday, and time formats, which live per view here rather than on the property definition. Its query config carries the `sort` list, the `filter` group, the `group` config with the view-level band order, and the display options each renderer reads — the view's own scale (`view_scale`, 50%–150%, applied to the main pane's content and bands but never the heading or an embedded tile), card size, collapsed and hidden bands, the cards toggles.
 
 The **active view** is the container sidecar's `active_view` field, so the view a container opens on travels with the Nexus. The ViewMenu in the toolbar — its glyph the active view's icon — opens the ViewFrame to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. One more per-container presentation setting rides it: **Show Title**. A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
 
@@ -103,7 +103,7 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table`, th
 | Hairline | `--table-border-width` / `--table-border` | → `var(--width-125)` / composed on `--border-base` |
 | Active Cell Radius | `--cell-active-radius` | `4px` |
 | Heading | `--heading-fill` / `--heading-divider` | → fill-quinary / `width-175` on `border-base` (host-bound); heading text is `callout` · emphasized at `label-secondary`, set on `.table-head` |
-| Heading Segment | `--heading-segment` / `-height` / `-width` / `--segment-tone` | → border-light / `16px` / `width-150` / a `.table-segment`'s own tone |
+| Heading Segment | `--heading-segment` / `-height` / `-width` | → border-base / `16px` / `width-200` |
 | Heading Padding | `--heading-padding-y` | `8px` |
 | Band Clearance | `--band-clearance` | → `var(--cell-padding-y)` (the seam rule's input) |
 | Resizer Strip | `--resizer-width` | `8px` |

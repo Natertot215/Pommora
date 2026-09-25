@@ -70,7 +70,7 @@ Two forms, each written alone on its own line, render as live tiles on the page:
 
 GFM reference footnotes work as written: a `[^label]` marker in the body and a `[^label]: text` citation in the run at the end of the document, left as plain GFM on disk. The document model (`Engine/`) identifies that trailing run as the citations section, and a citation only counts as one while the run reaches the document's end — a citation-shaped line sitting above live content is just prose. The guards and edit handlers in `Citations/` keep the section consistent as the body changes. In the editor, markers draw as their first-use ordinal rather than their label, so footnotes read as 1, 2, 3 in reading order regardless of what they were named, in the body and in table cells alike. A marker nothing binds to stays literal, and a citation nothing points at draws dimmed.
 
-Whether the citations section is visible follows **Show Footnotes By Default**, overridden per page from the **Show Footnotes** / **Hide Footnotes** control in the Subfield band, and **Jump To Citation On Creation** carries the caret down to a citation you've just made. Clicking a marker's number travels to its citation — or follows it directly, where the citation is exactly one link or Connection — and a citation's own number leads back to its first marker. Right-clicking a marker gives **Edit · Copy · Delete**; a citation gives **Copy · Delete**. Deleting a footnote removes every row its label claims, and editing either end renumbers the section within the same transaction, so a single undo reverses both. The section contributes nothing to the Subfield's word counts and can't be dragged as a block.
+Whether the citations section is visible follows **Show Footnotes By Default**, overridden per page from the **Show Footnotes** / **Hide Footnotes** control in the Subfield bar, and **Jump To Citation On Creation** carries the caret down to a citation you've just made. Clicking a marker's number travels to its citation — or follows it directly, where the citation is exactly one link or Connection — and a citation's own number leads back to its first marker. Right-clicking a marker gives **Edit · Copy · Delete**; a citation gives **Copy · Delete**. Deleting a footnote removes every row its label claims, and editing either end renumbers the section within the same transaction, so a single undo reverses both. The section contributes nothing to the Subfield's word counts and can't be dragged as a block.
 
 ### Block Structure
 
@@ -128,7 +128,7 @@ The page header's own measures — the title size and the zones the banner and h
 | --- | --- | --- |
 | Page Title Size | `--detail-title-size` | `calc(var(--text-title-large-size) * var(--page-detail-scale))` · `.mdpm-header .detail-title` |
 | Add-Banner Strip | `--banner-add-zone` | `44px` · `.mdpm-header:not(.has-banner)` |
-| Header Park Distance | `--header-zone` | JS-set on `.mdpm-shell`; a covered page tile declares its banner height and a window's page its toolbar band; fallback `90px` |
+| Header Park Distance | `--header-zone` | JS-set on `.mdpm-shell`; a covered page tile declares its banner height and a window's page its toolbar; fallback `90px` |
 
 #### II. Lists & Outliner
 

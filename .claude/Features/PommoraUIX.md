@@ -98,7 +98,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 #### Fades
 
-The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window's body takes the larger of its toolbar band's height and the primitive's own default, so content dissolves across the band where one exists and along a plain edge where it doesn't.
+The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window's body takes the larger of its toolbar's height and the primitive's own default, so content dissolves across the toolbar where one exists and along a plain edge where it doesn't.
 
 | Title       | Token           | Value  | Role                                          |
 | ----------- | --------------- | ------ | --------------------------------------------- |
@@ -150,7 +150,7 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 
 #### Geometry
 
-**SOURCE:** `UIX/Theme/theme-vars.css.ts` · `UIX/Utilities/tileMetrics.ts` · `Core/Interface/styles.css` · `UIX/Menus/menu-base.css.ts` · `UIX/Interactions/reveal-bar.css`
+**SOURCE:** `UIX/Theme/theme-vars.css.ts` · `UIX/Utilities/tileMetrics.ts` · `Core/Interface/styles.css` · `UIX/Menus/menu-row.css.ts` · `UIX/Interactions/reveal-bar.css`
 
 | Title             | Token                                                                                              | Value                                                                                                                                                                                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -158,14 +158,14 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 | Pill Radius       | `--radius-full`                                                                                    | `999px`                                                                                                                                                                                                                                                               |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`                                                        | `14px`                                                                                                                                                                                                                                                                |
 | Content Inset     | `--content-inset`                                                                                  | `24px` — the gutter page text keeps off a pane (`styles.css`)                                                                                                                                                                                                         |
-| Content Edge      | `--content-edge`                                                                                   | `12px` — the band a banner title and the Subfield sit in, off the pane (`styles.css`)                                                                                                                                                                                 |
+| Content Edge      | `--content-edge`                                                                                   | `12px` — the inset a banner title and the Subfield sit in, off the pane (`styles.css`)                                                                                                                                                                                 |
 | Surface Lane      | `--surface-lane`                                                                                   | `8px` — the tighter lane a dashboard's tiles run in (`styles.css`)                                                                                                                                                                                                    |
 | Pane Clearance    | `--sidebar-clearance` · `--side-pane-clearance`                                                    | `--app-inset` + the pane's width, `0px` when the pane is away or inside a floating window; `.interface-inset` pads both sides by the clearance plus `--interface-inset`, one of the three gaps above (`styles.css` · `interface.css`)                                 |
 | Pane Slide        | `--pane-slide`                                                                                     | `--duration-base`, and `0s` while a pane is resized — the duration of every transition that follows a pane's edge (`styles.css`)                                                                                                                                      |
-| Shell Bands       | `--toolbar-h` · `--reveal-band-h`                                                                  | `38px` · `24px` — the toolbar strip (`styles.css`) and the reveal band the Subfield and the window footer share (`reveal-bar.css`)                                                                                                                                    |
+| Shell Bars        | `--toolbar-h` · `--reveal-bar-h`                                                                   | `38px` · `24px` — the toolbar strip (`styles.css`) and the reveal bar the Subfield and the window footer share (`reveal-bar.css`)                                                                                                                                    |
 | App Inset         | `--app-inset` · `--app-radius`                                                                     | `6px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`)                                                                                                                                                                      |
 | Surface Inset     | `--surface-inset`                                                                                  | `10px` — glass edge → content, inside a menu, a window's side panel, the SidePane, or a window toolbar (`styles.css`)                                                                                                                                                 |
-| Row Tokens        | `--row-pad-standard` · `--row-pad-compact`                                                         | `6px` · `4px` — a row's padding in its two densities, taken on both axes; a row's height is never declared, it is the ramp's line plus the pair (`UIX/Menus/menu-base.css.ts`)                                                                                        |
+| Row Tokens        | `--row-pad-standard` · `--row-pad-compact`                                                         | `6px` · `4px` — a row's padding in its two densities, taken on both axes; a row's height is never declared, it is the ramp's line plus the pair (`UIX/Menus/menu-row.css.ts`)                                                                                         |
 | Row Vars          | `--row-pad-y` · `--row-pad-x` · `--row-pad-lead` · `--row-pad-trail` · `--row-size` · `--row-line` | What a surface sets to size every row inside it — `menuCompact` on a pane sets the Compact pair and the control ramp; a NavList column sets `--row-pad-lead: var(--content-inset)`; a row with a trailing cluster sets `--row-pad-trail: 0`                           |
 | Content Start     | `--content-start` · `--content-start-right`                                                        | `calc(clearance + --content-edge)` on each side — where a page's chrome starts: the banner title and NavView's head and rows (`styles.css`)                                                                                                                           |
 | Inset Start       | `--inset-start` · `--inset-start-right`                                                            | `calc(clearance + --content-inset)` on each side — where a page's text starts: the page header, its divider, and a searchable banner title (`styles.css`)                                                                                                             |
@@ -247,7 +247,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | ----------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar, and `trailingDivider` to close the run on one more divider.                                                                                  |
 | Checkbox    | `Checkbox`    | The app's one checkbox — `size` (standard/compact), a `filled` wash, a `color` override, and a `readOnly` glyph form; on the Nexus's checkbox color or a chosen cell. |
-| DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass segment, with the checkbox's `color` and `readOnly`.                                                                                                     |
+| DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass knob, with the checkbox's `color` and `readOnly`.                                                                                                        |
 | ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker.                                                                                            |
 | Slider      | `Slider`      | Sliding number selection.                                                                                                                             |
 
@@ -258,23 +258,24 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Title       | Export                                                         | What it is                                                                                                                                                                                                                               |
 | ----------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | NavTrail    | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
-| Segment     | `segment`                                                      | The between-values pill — `--segment-width` / `--segment-color` override it.                                                                                                                                                             |
+| Segment     | `segment`                                                      | The between-values divider — `--segment-width` overrides it.                                                                                                                                                                             |
 | ProgressBar | `ProgressBar`                                                  | A determinate bar on the accent.                                                                                                                                                                                                         |
 | EyeToggle   | `EyeToggle`                                                    | The visibility eye — the current state's glyph at rest, the toggle previewed on hover.                                                                                                                                                   |
 | RenderBoundary | `RenderBoundary` | A region's guard against a drawing error: a throw inside draws nothing there, retried when `resetKey` changes, and the rest of the window keeps drawing. |
 | EmptyValue  | `EmptyValue`                                                   | The one "nothing here yet" mark for value slots.                                                                                                                                                                                         |
+| View Strip  | `viewStrip` · `viewPill` · `VIEW_PILL_H` · `VIEW_PILL_ICON`    | The View Tile's view switcher: the row and the pills in it, a view's own color landing on `--view-pill-stroke`.                                                                                                                          |
 
 The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`, and the `imageAspect.ts` aspect cache — are `Core/Assets/`, since each reaches the store for what it draws.
 
 ### Fields
 
-`UIX/Fields/` — the input surfaces and the runs that sit inside them; `SegmentRun.tsx` lives here because a run of values is a field's content, not a label's.
+`UIX/Fields/` — the input surfaces and the runs that sit inside them; `FieldRun.tsx` lives here because a run of values is a field's content, not a label's.
 
 | Title          | Export                                                                                                                                                                            | What it is                                                                                                                                                                                                    |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | InputField     | `InputField` · `FieldEdit`                                                                                                                                                        | The field box — `boxed` or `bordered` chrome.                                                                                                                                                                 |
 | PathField      | `PathField` · `BrowseButton`                                                                                                                                                      | A folder path in a bordered field — the path as a trail, typed in place or chosen through the trailing browse; `BrowseButton` is that trailing action alone, for a field showing a file rather than a folder. |
-| SegmentRun     | `SegmentRun` · `SegmentEntry`                                                                                                                              | Values standing side by side inside a field; segment-divided.                                                                                                                                                 |
+| FieldRun       | `FieldRun` · `RunEntry`                                                                                                                                      | Values standing side by side inside a field; segment-divided.                                                                                                                                                 |
 | Chrome         | `field` · `input` · `borderedField` · `base` · `search` · `draftInput` · `editable` · `contentRow` · `leading` · `trailing` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, the draft and editable states, the content row with its leading and trailing slots, and the auto-sizing input trio.                                  |
 | Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                                                                                        | One inset-shadow channel; presets set its color.                                                                                                                                                              |
 | Placeholder    | `placeholder`                                                                                                                                                                     | The ghost-text tone.                                                                                                                                                                                          |
@@ -284,7 +285,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Glass
 
-`UIX/Glass/` — the material: one recipe in four tiers, brightest and clearest first, behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams` in `glass-base.tsx`; `glass-pane.tsx`, `glass-surface.tsx`, and `glass-window.tsx` are its three tiers; `glass-control.tsx` is **Liquid**, a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
+`UIX/Glass/` — the material: one recipe in four tiers, brightest and clearest first, behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams` in `glassBase.ts`; `GlassPane.tsx`, `GlassSurface.tsx`, and `GlassWindow.tsx` are its three tiers; `GlassControl.tsx` is **Liquid**, a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
 
 | Title         | Export                                        | What it is                                                                                                                                                    |
 | ------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -316,7 +317,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 | Title        | Export                                                  | What it is                                             |
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
-| Drag engine  | `DragGroup` · `SortableZone` · `useDragItem` · `reorder` | The in-house DND: one engine (`engine.tsx`) behind the `drag.tsx` façade. |
+| Drag engine  | `DragGroup` · `SortableZone` · `useDragItem` · `reorder` | The in-house DND: one engine (`engine.tsx`) behind the `drag.ts` façade. |
 | Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
 | Disclose     | `beginDragDisclose` · `useDiscloseTarget`               | Hover-open while dragging.                             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture`             | Press, threshold, move, release.                       |
@@ -324,9 +325,9 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Keyboard     | `keyboardNext` · `onActivateClick` · `onActivateKey` · `announce` | Arrow stepping, Enter/Space activation, live-region announcements. |
 | OverScroll   | `OverScroll`                                            | Overflow fades at the hidden edge, scrolls under the pointer. |
 | HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
-| Resize frame | `useResizeFrame` · `onScreen` · `resize-frame.css`     | Drag-to-size and drag-to-move for any box: the handles, the strips, and the outline tint. |
+| Resizable    | `useResizable` · `onScreen` · `resizable.css`          | Drag-to-size and drag-to-move for any box: the handles, the strips, and the outline tint. |
 | Hover Reveal | `revealTarget` · `revealDim` · `useHoverReveal` · `withinReach` · `useRevealNear` | A control shown on its host's hover or focus, after a dwell, or as the pointer comes within reach; `data-reveal-host` scopes each reveal to its nearest host. |
-| Reveal bar   | `reveal-bar.css`                                        | The edge-docked toggles and their bands: a host marks its bands `.reveal-band`, its toggles `.reveal-toggle`, its trailing toggle `data-reveal-trail`, and its leading toggle `data-reveal-lead`. |
+| Reveal bar   | `reveal-bar.css`                                        | The edge-docked toggles and their bars: a host marks its bars `.reveal-bar`, its toggles `.reveal-toggle`, its trailing toggle `data-reveal-trail`, and its leading toggle `data-reveal-lead`. |
 
 ### Labels
 
@@ -345,7 +346,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Menus
 
-`UIX/Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menuAnchor.ts` the placement, `frameGrowth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
+`UIX/Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `MenuDropdown.tsx` is the trigger shell, `MenuSurface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `MenuRows.tsx` the rows, `DisclosureRow.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menuAnchor.ts` the placement, `frameGrowth.ts` and `FrameSlide.tsx` the frame chassis; and `menu-row.css.ts` holds the row vocabulary's styles.
 
 | Title          | Export                                                                                                                                                                                                                         | What it is                                                                                                                                                                                                                                               |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -379,7 +380,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Table
 
-`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
+`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-divider` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
 
 ### Utilities
 
@@ -387,7 +388,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Windows
 
-`UIX/Windows/` — the floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. `WindowActions.tsx` is the trailing control cluster, `window-panel.tsx` the side-panel slot, and `windowBounds.ts` the geometry.
+`UIX/Windows/` — the floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. `WindowActions.tsx` is the trailing control cluster, `WindowPanel.tsx` the side-panel slot, and `windowBounds.ts` the geometry.
 
 #### Known Issues
 
