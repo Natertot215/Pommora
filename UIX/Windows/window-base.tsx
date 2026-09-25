@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { Button } from '../Buttons/Button'
 import { GlassWindow } from '../Glass/glass-window'
-import { Icon } from '../Symbols'
+import { FooterToggle } from '../Interactions/FooterToggle'
 import { cx } from '../Utilities/cx'
 import { useRevealNear } from '../Interactions/hoverReveal'
 import { windowIn, windowOut } from '../Animations/animations.css'
@@ -44,6 +44,14 @@ const opening = (
   })
 }
 
+export interface WindowFooter {
+  bar: ReactNode
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  label: (open: boolean) => string
+  lead?: ReactNode
+}
+
 export interface WindowBasePanel {
   windowId: string
   bounds: WindowPanelBounds
@@ -76,9 +84,7 @@ interface WindowBaseProps {
   actions?: ReactNode
   left?: WindowBasePanel
   right?: WindowBasePanel
-  footer?: ReactNode
-  footerLabel?: (open: boolean) => string
-  footerLead?: ReactNode
+  footer?: WindowFooter
   children: ReactNode
 }
 
@@ -106,8 +112,6 @@ export function WindowBase({
   left,
   right,
   footer,
-  footerLabel,
-  footerLead,
   children,
 }: WindowBaseProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
@@ -143,9 +147,6 @@ export function WindowBase({
   const leftOpen = left ? left.open !== false : false
   const rightOpen = right ? right.open !== false : false
 
-  const hasFooter = footer !== undefined && footer !== null && footer !== false
-  const [footerOpen, setFooterOpen] = useState(true)
-
   useEscape(!closing, onEscape ?? onClose)
 
   const panel = (side: WindowBasePanel, which: 'left' | 'right'): React.JSX.Element => (
@@ -165,10 +166,10 @@ export function WindowBase({
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
   // The band belongs to the detail, not to the frame: a panel runs the window's full height and the bar stops at its edge.
-  const detail = hasFooter ? (
+  const detail = footer ? (
     <div className="window-detail">
       {children}
-      <div className="window-footer reveal-band">{footer}</div>
+      <div className="window-footer reveal-band">{footer.bar}</div>
     </div>
   ) : (
     children
@@ -192,9 +193,9 @@ export function WindowBase({
         leftOpen && 'is-panel-left-open',
         rightOpen && 'is-panel-right-open',
         resizing && 'is-resizing',
-        hasFooter && footerOpen && 'is-footer-open',
-        hasFooter && reveal.near && 'is-footer-near',
-        hasFooter && reveal.nearLead && 'is-footer-near-lead',
+        footer?.open && 'is-footer-open',
+        footer && reveal.near && 'is-footer-near',
+        footer && reveal.nearLead && 'is-footer-near-lead',
         closing ? windowOut : windowIn,
         closing && 'closing',
       )}
@@ -212,9 +213,9 @@ export function WindowBase({
       role="dialog"
       aria-label={ariaLabel}
       onPointerDown={onWindowDown}
-      onPointerMove={hasFooter ? reveal.onPointerMove : undefined}
-      onPointerLeave={hasFooter ? reveal.onPointerLeave : undefined}
-      onTransitionEnd={hasFooter ? reveal.onTransitionEnd : undefined}
+      onPointerMove={footer ? reveal.onPointerMove : undefined}
+      onPointerLeave={footer ? reveal.onPointerLeave : undefined}
+      onTransitionEnd={footer ? reveal.onTransitionEnd : undefined}
     >
       <div className="window-drag" aria-hidden="true" />
       <div className="window-toolbar">
@@ -237,20 +238,15 @@ export function WindowBase({
         </div>
       </div>
       {body}
-      {hasFooter && (
+      {footer && (
         <>
-          <button
-            type="button"
-            className="window-footer-toggle reveal-toggle"
-            data-reveal-host=""
-            data-reveal-trail
-            onClick={() => setFooterOpen((v) => !v)}
-            aria-label={footerLabel?.(footerOpen)}
-            title={footerLabel?.(footerOpen)}
-          >
-            <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="headline" />
-          </button>
-          {footerLead}
+          <FooterToggle
+            className="window-footer-toggle"
+            open={footer.open}
+            onOpenChange={footer.onOpenChange}
+            label={footer.label(footer.open)}
+          />
+          {footer.lead}
         </>
       )}
       {left?.mode === 'overlay' && panel(left, 'left')}

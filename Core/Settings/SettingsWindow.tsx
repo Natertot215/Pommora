@@ -191,7 +191,7 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
         kind: 'color',
         label: row.label,
         selected: inheriting ? 'default' : labelColorFor(value),
-        css: inheriting ? row.inheritsVar : solidColorCss(value),
+        css: inheriting ? row.clearedVar : solidColorCss(value),
         greyscale: row.greyscale,
         onPick: (next) => setPersonalization(row.key, next as never),
       })}

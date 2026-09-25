@@ -3,7 +3,7 @@ import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { footerLabel } from '../Actions/toggleLabels'
 import { Subfield } from '../Interface/Subfield/Subfield'
 import { shellRegion, useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
-import { useSession } from '../Session/store'
+import { useFold, useSession } from '../Session/store'
 import { matrixWindow } from './matrix.css'
 import { MatrixView } from './MatrixView'
 import { MATRIX_REF, MATRIX_TITLE } from './matrixKind'
@@ -18,6 +18,7 @@ export function MatrixWindow(): React.JSX.Element | null {
 
 function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const geometry = useWindowGeometry('matrix')
+  const [footerOpen, setFooterOpen] = useFold('footer:matrix')
   const closeWindow = useSession((s) => s.closeWindow)
   const select = useSession((s) => s.select)
   const count = useMatrixCount()
@@ -35,8 +36,12 @@ function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element 
       ariaLabel={MATRIX_TITLE}
       onScan={promote}
       scanLabel="New Tab"
-      footer={<Subfield page={null} count={count} selection={MATRIX_REF} />}
-      footerLabel={footerLabel}
+      footer={{
+        bar: <Subfield page={null} count={count} selection={MATRIX_REF} />,
+        open: footerOpen,
+        onOpenChange: setFooterOpen,
+        label: footerLabel,
+      }}
     >
       <MatrixView />
     </WindowBase>

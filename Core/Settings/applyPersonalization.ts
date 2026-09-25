@@ -9,10 +9,10 @@ import {
 } from '@pommora/core/Settings/personalization'
 import { cellColor, checkboxPaint, labelColorFor } from '@pommora/uix/Theme/ramp'
 
-/** `null` for a setting whose deferral is the var's ABSENCE rather than a copy of what it would inherit. Every sentinel — `accent`, `system`, `default` — reads as no cell, which `labelColorFor` already answers for. */
-function settingColorCss<I extends string | null>(setting: unknown, inherit: I): string | I {
+/** Every sentinel — `accent`, `system`, `default` — reads as no cell, which `labelColorFor` already answers for. */
+function settingColorCss(setting: unknown): string | null {
   const key = typeof setting === 'string' ? labelColorFor(setting) : 'default'
-  return key === 'default' ? inherit : cellColor(key)
+  return key === 'default' ? null : cellColor(key)
 }
 
 /** A `null` REMOVES the var rather than setting it, for a cleared value whose stylesheet fallback is the live answer — writing a copy of that answer would freeze it where it stood. */
@@ -36,16 +36,15 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
     }
   },
   editorScale: (v) => ({ '--editor-scale': String(coerceScale(v, SETTING_DEFAULTS.editorScale)) }),
-  connectionColor: (v) => ({ '--connection': settingColorCss(v, 'var(--accent)') }),
-  externalLinkColor: (v) => ({ '--link': settingColorCss(v, 'var(--system-accent)') }),
+  connectionColor: (v) => ({ '--connection': settingColorCss(v) }),
+  externalLinkColor: (v) => ({ '--link': settingColorCss(v) }),
   checkboxColor: (v) =>
     checkboxPaint(typeof v === 'string' ? v : undefined) ?? {
       '--checkbox-base': null,
       '--checkbox-outline': null,
     },
-  highlightColor: (v) => ({ '--highlight': settingColorCss(v, 'var(--accent)') }),
-  // Cleared REMOVES `--code` rather than restating the theme's red: the stylesheet declares it at :root, so an absent inline var is what lets the theme keep answering as it moves.
-  codeColor: (v) => ({ '--code': settingColorCss(v, null) }),
+  highlightColor: (v) => ({ '--highlight': settingColorCss(v) }),
+  codeColor: (v) => ({ '--code': settingColorCss(v) }),
   ...headingVars,
   tabMinWidth: (v) => ({ '--tab-min-user': v == null ? null : `${v}px` }),
   tabMaxWidth: (v) => ({ '--tab-max-user': v == null ? null : `${v}px` }),

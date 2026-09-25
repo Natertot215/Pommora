@@ -95,6 +95,7 @@ globalStyle(':root', {
     '--system-accent': c.solid[DEFAULT_ACCENT],
     '--link': 'var(--system-accent)',
     '--connection': 'var(--accent)',
+    '--highlight': 'var(--accent)',
     '--checkbox-base': 'var(--accent)',
     '--checkbox-outline': tintAt('var(--checkbox-base)', 'tertiary'),
 

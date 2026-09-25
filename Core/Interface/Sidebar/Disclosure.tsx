@@ -6,7 +6,7 @@ import { DropOutline, MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { useSession } from '../../Session/store'
+import { useFold, useSession } from '../../Session/store'
 import { ctxHandler, DragRow, type RenameTarget, RowTitle } from './sidebarRows'
 
 const PEEK_LINGER_MS = 2500 // KNOB
@@ -59,16 +59,7 @@ export function Disclosure({
   belowHeader?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
-  // Read reactively rather than seeded once: a group whose id exists in both Nexuses does not remount across a switch, and its fold must follow the store.
-  const stored = useSession((s) => s.devicePrefs.disclosure?.[persistKey])
-  const open = stored ?? defaultOpen
-  const setAndSave = (next: boolean): void => {
-    const s = useSession.getState()
-    s.setDevicePref('disclosure', {
-      ...s.devicePrefs.disclosure,
-      [persistKey]: next === defaultOpen ? undefined : next,
-    })
-  }
+  const [open, setOpen] = useFold(persistKey, defaultOpen)
   const settleClick = useRef(false)
   const onHeaderPointerDown = rename
     ? (): void => {
@@ -85,7 +76,7 @@ export function Disclosure({
       onSelect?.()
       return
     }
-    setAndSave(!open)
+    setOpen(!open)
   }
   // Lingers the open-lock glyph after an unlock pressed on it, so a mistaken toggle can be undone before the pointer leaves.
   const lock = useHoverReveal({ engaged: locked, linger: { off: 'leave' } })
@@ -93,7 +84,7 @@ export function Disclosure({
   const renamingPath = useSession((s) => (s.renamingHost === 'sidebar' ? s.renamingPath : null))
   const renamingChild = rename ? renamingPath?.startsWith(`${rename.path}/`) === true : false
   useEffect(() => {
-    if (renamingChild && !open && !locked) setAndSave(true)
+    if (renamingChild && !open && !locked) setOpen(true)
   }, [renamingChild, open, locked])
 
   const [peekId, setPeekId] = useState<string | null>(null)
@@ -197,7 +188,7 @@ export function Disclosure({
     <>
       <DragRow
         id={dragId}
-        springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setAndSave(true) }}
+        springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setOpen(true) }}
         onPointerEnter={onHeaderHover && (() => onHeaderHover(true))}
         onPointerLeave={onHeaderHover && (() => onHeaderHover(false))}
       >
