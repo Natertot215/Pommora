@@ -1,5 +1,6 @@
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { isInsideWikilink } from '../Engine/parser'
+import { linkDestinationAt } from '../Embeds/webpageEmbed'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
 import {
@@ -568,15 +569,15 @@ export function closeConstructOnShiftEnter(
   return end === null ? null : shiftEnterEdit(scan, end, end)
 }
 
-// A URL-shaped run or any still-open `](…` target is link content: converting `--` → `—` would corrupt the path.
+// A URL-shaped run or a link address the caret sits in is link content: converting `--` → `—` would corrupt the path.
 const urlRunRe = /(?:^|[\s([{<"'])[a-z][a-z0-9+.-]*:\/\/\S*$/i
-const inLinkTarget = (doc: string, c: number): boolean => {
-  const line = doc.slice(lineStartAt(doc, c), c)
-  const open = line.lastIndexOf('](')
-  return open !== -1 && !line.slice(open).includes(')')
+const inUrlRun = (doc: string, c: number): boolean => {
+  const from = lineStartAt(doc, c)
+  return (
+    urlRunRe.test(doc.slice(from, c)) ||
+    linkDestinationAt(doc.slice(from, lineEndAt(doc, c)), c - from)
+  )
 }
-const inUrlRun = (doc: string, c: number): boolean =>
-  urlRunRe.test(doc.slice(lineStartAt(doc, c), c)) || inLinkTarget(doc, c)
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inCodeAt(scan, c) ||
   inCodeAt(scan, c - 1) ||
@@ -681,7 +682,7 @@ export function dashArrow(
   if (selStart !== selEnd || inserted.length !== 1) return null
   const doc = scan.text
   const c = selStart
-  if (inCodeAt(scan, c) || inCodeAt(scan, c - 1)) return null
+  if (isLiteralAt(scan, c)) return null
   const dashes = settings.transformDashes !== false
   const arrows = settings.transformArrows !== false
 
@@ -694,10 +695,8 @@ export function dashArrow(
     doc[c - 2] === '-' &&
     doc[c - 3] !== '-' &&
     doc[c - 3] !== '!'
-  ) {
-    if (isInsideWikilink(c, doc) || inUrlRun(doc, c)) return null
+  )
     return { from: c - 2, to: c, insert: `—${inserted}`, selection: c }
-  }
   if (dashes && inserted === '-' && doc[c - 1] === '–')
     return { from: c - 1, to: c, insert: '—', selection: c }
   if (inserted === '>') {
@@ -715,9 +714,7 @@ export function dashArrow(
     const ls = lineStartAt(doc, c)
     const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
     const before = doc.slice(ls + pfx.length, c - 2)
-    if (/\S/.test(before) && !isInsideWikilink(c, doc)) {
-      return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
-    }
+    if (/\S/.test(before)) return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
   }
   return null
 }

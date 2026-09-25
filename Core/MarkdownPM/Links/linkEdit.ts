@@ -8,7 +8,7 @@ import {
 } from '@pommora/core/Connections/connections'
 import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
-import { aliasedToken, tokenize, type Token } from '../Engine/tokens'
+import { aliasedToken, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from '../Gestures/linkGestures'
 import { editorHost } from '../api'
@@ -39,10 +39,8 @@ export function applyLinkAction(
   // The span was captured before a native menu opened, and `lineAt` throws past the document's end rather than clamping — the throw would land unhandled inside the menu's promise.
   if (range[0] > view.state.doc.length) return
   const line = view.state.doc.lineAt(range[0])
-  const tk = tokenize(line.text).find(
-    (t) => t.kind === 'wikiLink' && line.from + t.range[0] === range[0],
-  )
-  if (!tk) return
+  const tk = linkTokenAt(line.text, range[0] - line.from, 'wikiLink')
+  if (!tk || line.from + tk.range[0] !== range[0]) return
   const at = (n: number): number => line.from + n
   const { pipeAt, select } = wikiAuthorTarget(line.text, tk, action)
   if (pipeAt !== undefined)

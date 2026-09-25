@@ -53,6 +53,8 @@
   --rail-inset: calc(var(--rail-inset-base) * var(--page-detail-scale));
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
+  /* Resets the band an outer page declares, so an uncovered embed never inherits it. */
+  --header-zone: initial;
   /* Re-homes the scroll timeline at the tile (the shell's page-wide scope stands down here) so each nested tile's banner binds to its own page's scroller. */
   timeline-scope: --mdpm-scroll;
 }
@@ -70,20 +72,23 @@
   padding: calc(16px * var(--page-detail-scale)) calc(14px * var(--page-detail-scale))
     calc(16px * var(--page-detail-scale)) var(--rail-inset);
 }
-.page-tile-grows .page-tile,
-.page-tile-grows .page-tile .mdpm-shell,
-.page-tile-grows .mdpm-editor,
-.page-tile-grows .mdpm-editor .cm-editor {
+.page-tile-grows > .page-tile,
+.page-tile-grows > .page-tile > .mdpm-shell,
+.page-tile-grows > .page-tile > .mdpm-shell > .mdpm-editor,
+.page-tile-grows > .page-tile > .mdpm-shell > .mdpm-editor > .cm-editor {
   height: auto;
 }
-.page-tile-grows .page-tile,
-.page-tile-grows .page-tile .mdpm-shell {
+.page-tile-grows > .page-tile,
+.page-tile-grows > .page-tile > .mdpm-shell {
   overflow: visible;
 }
 /* Overrides the app-wide `overscroll-behavior: none` — with nothing to overflow, `none` would eat the wheel instead of chaining it to the host scroller. */
-.page-tile-grows .mdpm-editor .cm-scroller {
+.page-tile-grows > .page-tile > .mdpm-shell > .mdpm-editor > .cm-editor > .cm-scroller {
   overscroll-behavior: auto;
   overflow: visible;
+}
+.page-tile-grows > .page-tile {
+  --header-zone: var(--window-toolbar-h);
 }
 
 .page-tile .mdpm-shell {
@@ -96,6 +101,8 @@
   right: 0;
   height: var(--embed-banner-h);
   z-index: 2;
+}
+.page-tile.has-banner {
   --header-zone: var(--embed-banner-h);
 }
 /* The banner sits out of flow, its height reserved as editor padding, because an in-flow band inside this clipped tile would strand the editor past the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height is the whole retarget. */

@@ -47,14 +47,14 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
   const ctx: ConnMenuContext = {
     ...shared,
     hasAlias: target.hasAlias,
-    // The two readings are independent: the content view answers for the tab item, the page window for its own.
+    // The two readings are independent: the content view answers for the tab item, the page window for its own. A named heading travels even where the page already shows, so it keeps both.
     open:
-      shownDetail(s)?.path === page.path
+      !target.heading && shownDetail(s)?.path === page.path
         ? 'detail'
         : isOpenInTabs(tabs, pinned, ref)
           ? 'tab'
           : 'closed',
-    windowed: windowTargetOf(s)?.id === page.id,
+    windowed: !target.heading && windowTargetOf(s)?.id === page.id,
   }
   void popMenu(connectionMenuModel(ctx)).then((action) => {
     if (action === null || runPageAction(action, { ...page, heading: target.heading })) return
