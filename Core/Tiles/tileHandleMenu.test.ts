@@ -117,7 +117,7 @@ describe('the tile menu model both renderers draw', () => {
       {
         label: 'Roadmap',
         submenu: [
-          { label: '+ Custom', pick: { source_id: 's1', custom: true }, footer: true },
+          { label: '+ Custom', pick: { source_id: 's1' }, footer: true },
           { label: 'Board', pick: { source_id: 's1', view_id: 'v1' } },
         ],
       },
@@ -132,7 +132,7 @@ describe('the tile menu model both renderers draw', () => {
     const views: ViewPickerItem[] = [
       {
         label: 'Roadmap',
-        submenu: [{ label: '+ Custom', pick: { source_id: 's1', custom: true }, footer: true }],
+        submenu: [{ label: '+ Custom', pick: { source_id: 's1' }, footer: true }],
       },
     ]
     const level = row(tileMenuItems(ctx({ viewItems: views })), 'Link View')?.submenu?.[0].submenu

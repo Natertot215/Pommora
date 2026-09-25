@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
 import { isNavRef, isWindowTarget, type NavRef, toNavRef } from '../../Navigation/navRef'
 import { readValue, writeValue } from '../../Platform/localState'
+import { eachOf } from '../../Files/decoders'
 
 // `NavRef` keeps its one validator; the schema decodes the file's shape around it.
 const windowTarget = z
@@ -12,12 +13,7 @@ const windowTab = z.object({ target: windowTarget })
 
 const windowSetRecord = z.object({
   // A tab whose target no longer reads drops; the rest of the set still opens.
-  tabs: z.array(z.unknown()).transform((ts) =>
-    ts.flatMap((t) => {
-      const tab = windowTab.safeParse(t)
-      return tab.success ? [tab.data] : []
-    }),
-  ),
+  tabs: eachOf(windowTab),
 })
 
 // Every field catches, so a file written before the set was unified reads as one that simply never named a page set.

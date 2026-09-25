@@ -4,7 +4,6 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
-import { duplicateView } from '../duplicateView'
 import { restoreView } from '../restoreView'
 import { viewGlyph } from '../viewIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -105,7 +104,9 @@ export function ViewFrame({
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await popMenu(viewRowMenuItems({ deletable: views.length > 1 }))
+    const action = await popMenu(
+      viewRowMenuItems({ deletable: views.length > 1, duplicable: views.length > 0 }),
+    )
     switch (action) {
       case 'rename':
         return setRenamingId(v.id)
@@ -114,7 +115,7 @@ export function ViewFrame({
       case 'color':
         return setColorFor(v)
       case 'duplicate':
-        return void duplicateView(node.path, node.kind, v, rows)
+        return void host().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
       case 'delete':
         return void deleteRow(v)
       default:

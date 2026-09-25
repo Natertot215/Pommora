@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { looseDecoder } from '../Files/decoders'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS, type PropertyDefinition } from './properties'
 
 export const COLUMN_LOOKS = [
@@ -50,17 +51,18 @@ export const WEEKDAY_FORMAT_LABELS: Record<WeekdayFormat, string> = {
 export const showsWeekday = (format: DateFormat | undefined): boolean =>
   format === 'short' || format === 'full'
 
-/** Loose + per-field catch ⇒ a bad value drops that field, never the entry; unknown keys ride through. */
-export const columnStyle = z.looseObject({
-  look: z.enum(COLUMN_LOOKS).optional().catch(undefined),
-  date_format: z.enum(DATE_FORMATS).optional().catch(undefined),
-  // `shown` is a time on the Nexus clock, which the column keeps following.
-  time_format: z
-    .enum([...TIME_FORMATS, 'shown'])
-    .optional()
-    .catch(undefined),
-  weekday: z.enum(WEEKDAY_FORMATS).optional().catch(undefined),
-})
+/** Per-field catch ⇒ a bad value drops that field, never the entry. */
+export const columnStyle = looseDecoder(
+  z.object({
+    look: z.enum(COLUMN_LOOKS).optional().catch(undefined),
+    date_format: z.enum(DATE_FORMATS).optional().catch(undefined),
+    time_format: z
+      .enum([...TIME_FORMATS, 'shown'])
+      .optional()
+      .catch(undefined),
+    weekday: z.enum(WEEKDAY_FORMATS).optional().catch(undefined),
+  }),
+)
 export type StoredColumnStyle = z.infer<typeof columnStyle>
 
 export interface DateStyle {

@@ -672,6 +672,10 @@ describe('readNexus — personalization', () => {
       time_format: 'none',
     })
     expect(await at({ date_format: 'nonsense' })).toEqual({ date_format: undefined })
+    expect(await at({ date_format: 'full', tint: 'warm' })).toEqual({
+      date_format: 'full',
+      tint: 'warm',
+    })
   })
   // Both halves in one test on purpose: a coercer that returned undefined unconditionally would satisfy a round-trip that only ever checked the default, so it has to be caught admitting a real value as well as refusing a junk one.
   it('the default link format survives the round-trip, and an unrecognized one reads as absent', async () => {

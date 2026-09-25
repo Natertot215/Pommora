@@ -3,7 +3,14 @@ import { rm, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { savedView, type SavedView } from './views'
-import { saveView, reorderViews, deleteView, setActiveView } from './viewsFile'
+import {
+  saveView,
+  reorderViews,
+  deleteView,
+  duplicateView,
+  readStoredView,
+  setActiveView,
+} from './viewsFile'
 import { containerFieldsFrom } from '../Nexus/containerFields'
 
 let folder: string
@@ -257,5 +264,42 @@ describe('a view without an id of its own', () => {
     expect(await named()).toEqual(['C', 'A', 'B'])
     expect((await deleteView(folder, 'collection', 'view_2')).ok).toBe(true)
     expect(await named()).toEqual(['A', 'B'])
+  })
+})
+
+describe('a duplicated view', () => {
+  it('copies the stored view whole, under a new id and a free name, right after its original', async () => {
+    const stored = {
+      id: 'view_a',
+      name: 'Board',
+      type: 'cards',
+      card_banner: 'poster',
+      column_styles: { p1: { look: 'chips' } },
+      group: { kind: 'property', property_id: 'p1', swimlanes: true },
+      filter: { match: 'all', rules: [{ property_id: 'p1', op: 'is', value: 'x', negate: true }] },
+    }
+    await writeCollectionSidecar({ views: [stored, { id: 'view_b', name: 'Other' }] })
+    expect((await duplicateView(folder, 'collection', 'view_a')).ok).toBe(true)
+    const views = (await readRaw('_pagecollection.json')).views as Array<Record<string, unknown>>
+    const copy = views[1].id
+    expect(views.map((v) => v.id)).toEqual(['view_a', copy, 'view_b'])
+    expect(copy).not.toBe('view_a')
+    expect(views[1]).toEqual({ ...stored, id: copy, name: 'Board (2)' })
+  })
+
+  it('refuses a view the container does not hold', async () => {
+    await writeCollectionSidecar({ views: [{ id: 'view_a', name: 'A' }] })
+    const r = await duplicateView(folder, 'collection', 'view_gone')
+    expect(r.ok).toBe(false)
+  })
+
+  it('reads a view under the positional id a repair replaced', async () => {
+    await writeCollectionSidecar({ views: [{ name: 'Loose', plugin: 1 }] })
+    expect(await readStoredView(folder, 'collection', 'view_0')).toEqual({
+      name: 'Loose',
+      plugin: 1,
+    })
+    await setActiveView(folder, 'collection', 'view_0')
+    expect(await readStoredView(folder, 'collection', 'view_0')).toMatchObject({ plugin: 1 })
   })
 })

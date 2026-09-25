@@ -36,8 +36,7 @@ import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
-
-type Raw = Record<string, unknown>
+import type { Json } from '../Files/stableJson'
 
 interface SpaceRef {
   id: string
@@ -45,7 +44,7 @@ interface SpaceRef {
   contextId: string
   contextTitle: string
   dir: string
-  raw: Raw
+  raw: Json
 }
 
 interface ContextWorld extends GovernedWorld {
@@ -144,7 +143,7 @@ export async function setPageContext(
   return ok(null)
 }
 
-export function contextDriftPresent(raw: Raw, tree: NexusTree | null): boolean {
+export function contextDriftPresent(raw: Json, tree: NexusTree | null): boolean {
   if (!tree) return true
   const spaces = new Map(
     tree.contexts.map((g) => [g.def.title, new Set(g.spaces.map((s) => s.title))]),
@@ -163,7 +162,7 @@ export function contextDriftPresent(raw: Raw, tree: NexusTree | null): boolean {
 export async function loadGovernedWorld(
   root: string,
   absFile: string,
-  raw: Raw,
+  raw: Json,
 ): Promise<GovernedWorld> {
   const defs = await assignedDefs(root, collectionFolderOf(await collectionFolders(root), absFile))
   const skipped: GovernedWorld = { ...NO_CONTEXT_WORLD, defs }
@@ -175,7 +174,7 @@ export async function loadGovernedWorld(
 
 export async function writeSpaceSidecar(
   absSpaceDir: string,
-  mutate: (raw: Raw) => Raw | null,
+  mutate: (raw: Json) => Json | null,
 ): Promise<Result<null>> {
   const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
   if (!written.ok) return written
@@ -201,7 +200,7 @@ export async function setSpaceContext(
   if (!applied.ok) return applied
   const { key, value } = applied.value
   const backKey = contextKey(a.contextTitle)
-  const repaired = (raw: Raw): Raw => ({
+  const repaired = (raw: Json): Json => ({
     ...raw,
     ...preservedChanges(reconcileGovernedRoot(raw, world), raw),
   })

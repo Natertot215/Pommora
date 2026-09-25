@@ -7,7 +7,7 @@ import { confirmContainerWrite } from '../Nexus/confirm'
 import { type ContainerConfigPatch, setContainerConfig } from './containerConfig'
 import { loadValues } from './loadValues'
 import { savedView } from './views'
-import { deleteView, reorderViews, saveView } from './viewsFile'
+import { deleteView, duplicateView, reorderViews, saveView } from './viewsFile'
 
 // View SELECTION is the container sidecar's `active_view`; this is the view DEFINITION.
 async function resolveViewContainer(
@@ -32,6 +32,17 @@ export const viewsHandlers = {
       const r = await saveView(c.value.folder, c.value.kind, parsed.data)
       if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
       return r.ok ? ok({ id: r.value.id }) : r
+    },
+  ),
+
+  'views:duplicate': withWriteRoot(
+    async (root, ctx, containerPath: unknown, kind: unknown, viewId: unknown) => {
+      const c = await resolveViewContainer(root, containerPath, kind)
+      if (!c.ok) return c
+      if (typeof viewId !== 'string') return fault('A view id is required.')
+      const r = await duplicateView(c.value.folder, c.value.kind, viewId)
+      if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
+      return r
     },
   ),
 

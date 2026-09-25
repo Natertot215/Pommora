@@ -11,7 +11,7 @@ import {
 } from '../Contexts/contexts'
 import { resolveContextKeys } from '../Contexts/contextResolve'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
-import { type Crop, coerceOpenIn, cropsFile } from './schemas'
+import { coerceOpenIn, cropsFile } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
@@ -46,8 +46,7 @@ export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
 }
 
 export function readCropLeaves(config: Json): NexusTree['crops'] {
-  const byImage = cropsFile.parse(config).byImage ?? {}
-  return Object.fromEntries(Object.entries(byImage).filter((e): e is [string, Crop] => !!e[1]))
+  return cropsFile.parse(config).byImage ?? {}
 }
 
 export function readOrder(state: Json): {

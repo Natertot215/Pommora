@@ -164,8 +164,76 @@ describe('column styles on write', () => {
     expect(out.column_styles).toEqual({ c: { look: 'compact' } })
   })
 
+  it('reads a column style with the keys this build does not know', () => {
+    expect(view({ a: { look: 'compact', tint: 'warm' } }).column_styles).toEqual({
+      a: { look: 'compact', tint: 'warm' },
+    })
+  })
+
   it('drops the map once no column holds a style', () => {
     expect(mergeViewEdit(null, view({ a: {} }))).not.toHaveProperty('column_styles')
+  })
+})
+
+describe('a view holding values this build does not read', () => {
+  const stored = {
+    id: 'view_b',
+    name: 'My Board',
+    type: 'cards',
+    property_order: ['p1', 7, 'p2'],
+    hidden_properties: [],
+    sort: [
+      { property_id: 'p1', direction: 'custom' },
+      { property_id: 'p2', direction: 'descending' },
+    ],
+    filter: { match: 'all', rules: [{ property_id: 'p1', op: 'is', value: 'x' }] },
+    column_widths: { p1: 'wide', p2: 180 },
+    column_alignments: { p1: 'justify', p2: 'right' },
+    collapsed_groups: 'g1',
+    hidden_groups: [3, 'g2'],
+    icon: 42,
+    hide_borders: 'yes',
+    plugin_key: { keep: 1 },
+  }
+
+  it('reads every field it can and drops only the values it cannot', () => {
+    const v = savedView.parse(stored)
+    expect(v.name).toBe('My Board')
+    expect(v.type).toBe('cards')
+    expect(v.property_order).toEqual(['p1', 'p2'])
+    expect(v.sort).toEqual([{ property_id: 'p2', direction: 'descending' }])
+    expect(v.column_widths).toEqual({ p2: 180 })
+    expect(v.column_alignments).toEqual({ p2: 'right' })
+    expect(v.collapsed_groups).toEqual([])
+    expect(v.hidden_groups).toEqual(['g2'])
+    expect(v.icon).toBeUndefined()
+    expect(v.hide_borders).toBeUndefined()
+  })
+
+  it('fails to read only when it is not an object, a view already read included', () => {
+    expect(savedView.safeParse('view').success).toBe(false)
+    expect(savedView.safeParse({}).success).toBe(true)
+    expect(savedView.safeParse(savedView.parse({ ...stored, card_banner: 'poster' })).success).toBe(
+      true,
+    )
+  })
+
+  it('keeps every stored value a width edit did not change', () => {
+    const read = savedView.parse(stored)
+    const out = mergeViewEdit(stored, {
+      ...read,
+      column_widths: { ...read.column_widths, p2: 240 },
+    })
+    expect(out).toEqual({ ...stored, column_widths: { p1: 'wide', p2: 240 } })
+  })
+
+  it('keeps a stored alignment beside one an edit adds', () => {
+    const read = savedView.parse(stored)
+    const out = mergeViewEdit(stored, {
+      ...read,
+      column_alignments: { ...read.column_alignments, p3: 'left' },
+    })
+    expect(out.column_alignments).toEqual({ p1: 'justify', p2: 'right', p3: 'left' })
   })
 })
 
@@ -282,9 +350,6 @@ describe('card_banner codec', () => {
   it('round-trips each mode', () => {
     for (const mode of ['preview', 'banner', 'none'])
       expect(savedView.parse({ ...base, card_banner: mode }).card_banner).toBe(mode)
-  })
-  it("reads the original 'image' spelling through as banner", () => {
-    expect(savedView.parse({ ...base, card_banner: 'image' }).card_banner).toBe('banner')
   })
   it('drops a mode it does not know', () => {
     expect(savedView.parse({ ...base, card_banner: 'cover' }).card_banner).toBeUndefined()

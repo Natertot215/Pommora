@@ -5,7 +5,7 @@ import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import {
-  convertTileToView,
+  convertTile,
   copyEntry,
   createMarkdownTile,
   duplicateTile,
@@ -21,6 +21,7 @@ import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { rewriteConnections } from '../Connections/rewrite'
 import type { TrashDeps } from '../Trash/bundle'
+import { dropLiveTree } from '../Nexus/liveTree'
 
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
@@ -46,7 +47,9 @@ beforeEach(async () => {
   await writeFile(spaceSidecar(), JSON.stringify({ id: 'sp1', color: 'mint' }))
 })
 
-afterEach(() => {})
+afterEach(() => {
+  dropLiveTree()
+})
 
 describe('the document', () => {
   it('opens empty when the host has none, and the read creates nothing', async () => {
@@ -252,28 +255,65 @@ describe('markdown tile lifecycle', () => {
     expect(doc.locked).toBe(true)
   })
 
-  it('convert to view stamps a payload-local config id and trashes the markdown file', async () => {
+  it('convert to view copies the stored view under its own id and trashes the markdown file', async () => {
+    const stored = {
+      id: 'view_src',
+      name: 'Board',
+      type: 'cards',
+      card_banner: 'poster',
+      column_styles: { p1: { look: 'chips' } },
+      group: { kind: 'property', property_id: 'p1', swimlanes: true },
+      filter: { match: 'all', rules: [{ property_id: 'p1', op: 'is', value: 'x', negate: true }] },
+    }
+    await mkdir(join(root, 'Notes'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-notes', views: [stored] }),
+    )
+    dropLiveTree()
     const id = await createMarkdownTile(home())
     await seed(home(), [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }])
-    await convertTileToView(
-      root,
-      home(),
-      id,
-      [{ source_id: 'src1', config: { id: 'source-view-id', name: 'Table', foreign: true } }],
-      nexusDeps,
-    )
+    const pick = { kind: 'view', value: { source_id: 'col-notes', view_id: 'view_src' } } as const
+    expect(await convertTile(root, home(), id, pick, nexusDeps)).toEqual(ok(null))
     const entry = (await entries())[0]
-    expect(entry.type).toBe('view')
-    expect(entry.style).toBe('borderless')
-    expect(entry.outside_key).toBe(1)
-    expect(entry.active).toBe(0)
+    expect(entry).toMatchObject({ type: 'view', style: 'borderless', outside_key: 1, active: 0 })
     const view = (entry.views as Array<Record<string, unknown>>)[0]
-    expect(view.source_id).toBe('src1')
-    const config = view.config as Record<string, unknown>
-    expect(config.name).toBe('Table')
-    expect(config.foreign).toBe(true)
-    expect(config.id).not.toBe('source-view-id')
+    expect(view.source_id).toBe('col-notes')
+    const { id: copyId, ...copied } = view.config as Record<string, unknown>
+    expect(copied).toEqual((({ id: _, ...rest }) => rest)(stored))
+    expect(copyId).not.toBe('view_src')
     expect(await pathExists(tileFilePath(home(), id))).toBe(false)
+  })
+
+  it('convert to view with no view named takes the container default', async () => {
+    await mkdir(join(root, 'Notes'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-notes' }),
+    )
+    dropLiveTree()
+    const id = await createMarkdownTile(home())
+    const pick = { kind: 'view', value: { source_id: 'col-notes' } } as const
+    expect(await convertTile(root, home(), id, pick, nexusDeps)).toEqual(ok(null))
+    const view = ((await entries())[0].views as Array<Record<string, unknown>>)[0]
+    expect(view.config).toMatchObject({ name: 'Table', type: 'table' })
+    expect((view.config as { id: string }).id).toMatch(/^view_/)
+  })
+
+  it('convert to page points the tile at the page and refuses a pick it cannot read', async () => {
+    const id = await createMarkdownTile(home())
+    await seed(home(), [{ id, type: 'markdown', style: 'borderless' }])
+    expect((await convertTile(root, home(), id, { kind: 'view', value: 3 }, nexusDeps)).ok).toBe(
+      false,
+    )
+    expect((await entries())[0].type).toBe('markdown')
+    const pick = { kind: 'page', value: 'page-1' } as const
+    expect(await convertTile(root, home(), id, pick, nexusDeps)).toEqual(ok(null))
+    expect((await entries())[0]).toMatchObject({
+      type: 'page',
+      page_id: 'page-1',
+      style: 'borderless',
+    })
   })
 
   it('duplicate copies the raw entry + file; a view copy re-mints its config ids', async () => {

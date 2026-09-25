@@ -13,8 +13,7 @@ import { listFilesRecursive } from '../Files/walk'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepAdmits } from '../Files/pageFile'
-
-export type Raw = Record<string, unknown>
+import type { Json } from '../Files/stableJson'
 
 export interface SweepResult {
   /** Each file the sweep wrote, with the text it held before the write. */
@@ -23,7 +22,7 @@ export interface SweepResult {
   refused: string[]
 }
 
-export type Rewrite = (raw: Raw, file: string) => Raw | null
+export type Rewrite = (raw: Json, file: string) => Json | null
 
 export type RewriteText = (content: string, file: string) => string | null
 
@@ -32,7 +31,7 @@ type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewri
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
 
-const changedKeys = (raw: Raw, next: Raw): string[] =>
+const changedKeys = (raw: Json, next: Json): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
@@ -43,7 +42,7 @@ function rewriteRaw(rewrite: Rewrite, content: string, file: string): string | n
   if (next === null) return null
   const keys = changedKeys(raw, next)
   if (!keys.length) return null
-  const modeled: Raw = {}
+  const modeled: Json = {}
   for (const k of keys) if (k in next) modeled[k] = next[k]
   return mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body)
 }

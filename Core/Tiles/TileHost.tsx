@@ -7,7 +7,7 @@ import {
   type TileStyle,
   type PagePickerItem,
   TILE_KINDS,
-  type ViewPick,
+  type TilePick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import type { ConnPage } from '../Connections/pageIndex'
@@ -25,8 +25,6 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
-import { findCollection, findCollectionForSet, findSet } from '../Nexus/treeIndex'
-import { mintDefaultView } from '@pommora/core/Views/views'
 import { viewGlyph } from '../Views/viewIcon'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { DEFAULT_ZOOM, ZOOM_STEPS, zoomStep } from './tileZoom'
@@ -75,7 +73,7 @@ function viewPickerItems(
       icon: viewGlyph(v),
       pick: { source_id: node.id, view_id: v.id },
     })),
-    { label: '+ Custom', pick: { source_id: node.id, custom: true }, footer: true },
+    { label: '+ Custom', pick: { source_id: node.id }, footer: true },
   ]
   const collectionItem = (c: CollectionNode): ViewPickerItem => ({
     label: c.title,
@@ -177,36 +175,12 @@ export function TileHost({
     dismiss: () => setEditingId(null),
   })
 
-  const applyPagePick = useCallback(
-    (id: string, pageId: string) => {
+  const applyPick = useCallback(
+    (id: string, pick: TilePick) => {
       setEditingId((cur) => (cur === id ? null : cur))
-      void dialer()
-        .ask('tiles:convertToPage', host, id, pageId)
-        .then(reportRefusal)
-        .then(refreshEntries)
+      void dialer().ask('tiles:convert', host, id, pick).then(reportRefusal).then(refreshEntries)
     },
     [refreshEntries, host],
-  )
-
-  const applyViewPick = useCallback(
-    (id: string, pick: ViewPick) => {
-      if (!tree) return
-      const container = findCollection(tree, pick.source_id) ?? findSet(tree, pick.source_id)
-      if (!container) return
-      const config = pick.custom
-        ? mintDefaultView(
-            (container.kind === 'collection' ? container : findCollectionForSet(tree, container.id))
-              ?.properties ?? [],
-          )
-        : (container.views ?? []).find((v) => v.id === pick.view_id)
-      if (!config) return
-      setEditingId((cur) => (cur === id ? null : cur))
-      void dialer()
-        .ask('tiles:convertToView', host, id, [{ source_id: pick.source_id, config }])
-        .then(reportRefusal)
-        .then(refreshEntries)
-    },
-    [tree, refreshEntries, host],
   )
 
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
@@ -327,8 +301,7 @@ export function TileHost({
         const picked = arg(action, 'tile:pick:')
         const zoom = arg(action, 'tile:zoom:')
         const chosen = picked === undefined ? undefined : built.picks[Number(picked)]
-        if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
-        else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
+        if (chosen) applyPick(id, chosen)
         else if (zoom !== undefined) setTileZoom(id, Number(zoom))
         else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
         else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
@@ -368,8 +341,7 @@ export function TileHost({
       pagesById,
       defaultIcons,
       hostLocked,
-      applyPagePick,
-      applyViewPick,
+      applyPick,
       setTileZoom,
       setStyle,
       duplicateTile,

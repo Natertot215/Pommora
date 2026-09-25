@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { newId } from '../Nexus/ids'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
+import { eachOf, entriesOf, looseDecoder } from '../Files/decoders'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
@@ -71,10 +72,12 @@ export type GroupConfig =
   | { kind: 'flat' }
   | ({ kind: 'property' } & SubGroupConfig)
 
+const idArray = eachOf(z.string()).catch([])
+
 const sortCriterion = z.object({
   property_id: z.string(),
   direction: z.enum(SORT_DIRECTIONS),
-  order: z.array(z.string()).optional(),
+  order: idArray.optional(),
 })
 export type SortCriterion = z.infer<typeof sortCriterion>
 
@@ -82,7 +85,7 @@ const filterRule = z.object({
   property_id: z.string(),
   op: z.string(),
   value: z.string().optional(),
-  values: z.array(z.string()).optional(),
+  values: idArray.optional(),
 })
 export type FilterRule = z.infer<typeof filterRule>
 
@@ -94,12 +97,6 @@ export const filterGroup = z.object({
 })
 /** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
 export type FilterGroup = z.infer<typeof filterGroup>
-
-// Element-filtering, not whole-array catch: one bad entry drops alone, good ids survive.
-const idArray = z
-  .array(z.unknown())
-  .catch([])
-  .transform((a) => a.filter((x): x is string => typeof x === 'string'))
 
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
@@ -156,50 +153,46 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
   }
 }
 
-const savedViewFields = z.object({
-  id: z.string().catch(''),
-  name: z.string().catch(VIEW_KINDS[DEFAULT_VIEW_TYPE].label),
-  icon: z.string().optional(),
-  color: z.string().optional(),
-  type: z.enum(VIEW_TYPES).catch(DEFAULT_VIEW_TYPE),
-  property_order: z.array(z.string()).catch([]),
-  hidden_properties: z.array(z.string()).catch([]),
-  column_widths: z.record(z.string(), z.number()).optional(),
-  column_alignments: z.record(z.string(), z.enum(COLUMN_ALIGNS)).optional(),
-  column_styles: z.record(z.string(), columnStyle.catch({})).catch({}).optional(),
-  collapsed_groups: z.array(z.string()).optional(),
-  manual_order: idArray.optional(),
-  hidden_groups: z.array(z.string()).optional(),
-  hide_empty_groups: z.boolean().optional(),
-  card_size: z.number().optional().catch(undefined),
-  view_scale: z.number().optional().catch(undefined),
-  // 'image' was this value's first spelling; it reads through as the banner it always meant.
-  card_banner: z
-    .preprocess((v) => (v === 'image' ? 'banner' : v), z.enum(CARD_BANNERS))
-    .optional()
-    .catch(undefined),
-  hide_location: z.boolean().optional(),
-  wrap_titles: z.boolean().optional(),
-  set_cards: z.boolean().optional(),
-  hide_page_icons: z.boolean().optional(),
-  hide_column_icons: z.boolean().optional(),
-  hide_borders: z.boolean().optional(),
-  sort: z.array(sortCriterion).optional(),
-  filter: filterGroup.optional().catch(undefined),
-  filter_enabled: z.boolean().optional(),
-  group: z.unknown().transform(decodeGroupConfig).optional(),
-  format: z.enum(VIEW_FORMATS).optional().catch(undefined),
-  group_order: idArray.optional(),
-  structural_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
-  location_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
-  sub_group: z.unknown().transform(decodeSubGroup).optional(),
-  ungrouped_placement: z.enum(EMPTY_PLACEMENTS).optional().catch(undefined),
-  date_separator: z.enum(DATE_SEPARATORS).optional().catch(undefined),
-})
-export type SavedView = z.infer<typeof savedViewFields>
-
-/** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode defensively. */
-export const savedView = savedViewFields.loose()
+/** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); every field decodes defensively. */
+export const savedView = looseDecoder(
+  z.object({
+    id: z.string().catch(''),
+    name: z.string().catch(VIEW_KINDS[DEFAULT_VIEW_TYPE].label),
+    icon: z.string().optional().catch(undefined),
+    color: z.string().optional().catch(undefined),
+    type: z.enum(VIEW_TYPES).catch(DEFAULT_VIEW_TYPE),
+    property_order: idArray,
+    hidden_properties: idArray,
+    column_widths: entriesOf(z.number()).optional().catch(undefined),
+    column_alignments: entriesOf(z.enum(COLUMN_ALIGNS)).optional().catch(undefined),
+    column_styles: entriesOf(columnStyle).optional().catch(undefined),
+    collapsed_groups: idArray.optional(),
+    manual_order: idArray.optional(),
+    hidden_groups: idArray.optional(),
+    hide_empty_groups: z.boolean().optional().catch(undefined),
+    card_size: z.number().optional().catch(undefined),
+    view_scale: z.number().optional().catch(undefined),
+    card_banner: z.enum(CARD_BANNERS).optional().catch(undefined),
+    hide_location: z.boolean().optional().catch(undefined),
+    wrap_titles: z.boolean().optional().catch(undefined),
+    set_cards: z.boolean().optional().catch(undefined),
+    hide_page_icons: z.boolean().optional().catch(undefined),
+    hide_column_icons: z.boolean().optional().catch(undefined),
+    hide_borders: z.boolean().optional().catch(undefined),
+    sort: eachOf(sortCriterion).optional().catch(undefined),
+    filter: filterGroup.optional().catch(undefined),
+    filter_enabled: z.boolean().optional().catch(undefined),
+    group: z.unknown().transform(decodeGroupConfig).optional(),
+    format: z.enum(VIEW_FORMATS).optional().catch(undefined),
+    group_order: idArray.optional(),
+    structural_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
+    location_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
+    sub_group: z.unknown().transform(decodeSubGroup).optional(),
+    ungrouped_placement: z.enum(EMPTY_PLACEMENTS).optional().catch(undefined),
+    date_separator: z.enum(DATE_SEPARATORS).optional().catch(undefined),
+  }),
+)
+export type SavedView = z.infer<typeof savedView>
 
 function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
   const kept = Object.entries((column_styles ?? {}) as Json).filter(([, s]) => holdsStyle(s))
@@ -214,7 +207,7 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
           stored.data,
           next,
           raw as Json,
-          { group: 1, sub_group: 1, column_styles: 2 },
+          { group: 1, sub_group: 1, column_widths: 1, column_alignments: 1, column_styles: 2 },
           () => 'local',
         )
       : next,

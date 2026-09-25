@@ -10,6 +10,9 @@ import {
   defaultStatusSeed,
   isOptionsKind,
   optionsOf,
+  type PropertyDefinition,
+  type SelectOption,
+  type StatusGroup,
 } from './properties'
 
 describe('propertyType', () => {
@@ -213,3 +216,40 @@ describe('status seed relabel', () => {
     }
   })
 })
+
+describe('keys this build does not know', () => {
+  it('ride through every level of a definition', () => {
+    const def = propertyDefinition.parse({
+      id: 'prop_s',
+      name: 'Stage',
+      type: 'status',
+      context_target: { context_id: 'ctx_a', scope: 'deep' },
+      select_options: [{ value: 'a', label: 'A', tint: 'warm' }],
+      status_groups: [
+        {
+          id: 'todo',
+          label: 'To Do',
+          color: 'grey',
+          collapsed: true,
+          options: [{ value: 'open', label: 'Open', group_id: 'todo', glyph: 'o' }],
+        },
+      ],
+    })
+    expect(def.context_target).toMatchObject({ scope: 'deep' })
+    expect(def.select_options?.[0]).toMatchObject({ tint: 'warm' })
+    expect(def.status_groups?.[0]).toMatchObject({ collapsed: true })
+    expect(def.status_groups?.[0].options[0]).toMatchObject({ glyph: 'o' })
+  })
+})
+
+// Compiled by the typecheck and never run: a field the decoder doesn't declare is no field of the type.
+const _mistypedFields = (d: PropertyDefinition, o: SelectOption, g: StatusGroup): unknown[] => [
+  // @ts-expect-error
+  d.link_dispaly,
+  // @ts-expect-error
+  o.apperance,
+  // @ts-expect-error
+  g.colour,
+  // @ts-expect-error
+  g.options[0].grup_id,
+]

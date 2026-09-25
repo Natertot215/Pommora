@@ -107,7 +107,7 @@ describe('mergeKeys', () => {
     expect(mergeDepthFor('.nexus/matrix.json')).toEqual({
       group: 1,
       filter: 1,
-      forces: 1,
+      forces: 2,
       display: 1,
     })
   })
@@ -129,6 +129,16 @@ describe('mergeKeys', () => {
     expect(merge(base, local, remote, depth, takeRemote)).toEqual({
       forces: { gravity: 0.9, spread: 0.1 },
       filter: { rules: { match: 'any', rules: [{ key: 'Topic' }] } },
+    })
+  })
+
+  it("merges two devices' moves to different forces of one grouping", () => {
+    const depth = mergeDepthFor('.nexus/matrix.json')
+    const base = { forces: { connection: { gravity: 1.5 } } }
+    const local = { forces: { connection: { gravity: 1.5, spread: 2 } } }
+    const remote = { forces: { connection: { gravity: 1.5, strength: 3 } } }
+    expect(merge(base, local, remote, depth, takeRemote)).toEqual({
+      forces: { connection: { gravity: 1.5, spread: 2, strength: 3 } },
     })
   })
 })

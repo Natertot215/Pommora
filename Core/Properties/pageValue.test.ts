@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { valueEditRewrite } from './pageValue'
+import type { Json } from '../Files/stableJson'
 
-type Raw = Record<string, unknown>
-
-const strip = (raw: Raw, key: string, value: string): Raw | null =>
+const strip = (raw: Json, key: string, value: string): Json | null =>
   valueEditRewrite(key, value, { op: 'strip' })(raw, 'p.md')
 
-const replace = (raw: Raw, key: string, oldValue: string, newValue: string): Raw | null =>
+const replace = (raw: Json, key: string, oldValue: string, newValue: string): Json | null =>
   valueEditRewrite(key, oldValue, { op: 'replace', to: newValue })(raw, 'p.md')
 
 describe('valueEditRewrite — strip', () => {

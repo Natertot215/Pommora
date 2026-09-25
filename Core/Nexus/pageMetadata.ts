@@ -22,7 +22,7 @@ type ShardRead =
 const hasFields = (meta: PageMeta | undefined): meta is PageMeta =>
   meta !== undefined && Object.values(meta).some((v) => v !== undefined)
 
-const clean = (pages: Record<string, PageMeta | undefined> | undefined): Record<string, PageMeta> =>
+const clean = (pages: Record<string, PageMeta> | undefined): Record<string, PageMeta> =>
   Object.fromEntries(
     Object.entries(pages ?? {}).filter((e): e is [string, PageMeta] => hasFields(e[1])),
   )

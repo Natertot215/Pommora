@@ -6,6 +6,7 @@ import {
   dateDefaults,
   defaultStyleFor,
   WEEKDAY_FORMATS,
+  type StoredColumnStyle,
 } from './columnStyles'
 
 describe('COLUMN_LOOKS', () => {
@@ -79,13 +80,6 @@ describe('columnStyle codec', () => {
       date_format: 'short',
     })
   })
-
-  it('lets unknown keys ride through', () => {
-    expect(columnStyle.parse({ look: 'standard', outside_key: true })).toEqual({
-      look: 'standard',
-      outside_key: true,
-    })
-  })
 })
 
 describe('columnStyle weekday + relative', () => {
@@ -100,3 +94,8 @@ describe('columnStyle weekday + relative', () => {
     expect(WEEKDAY_FORMATS).toEqual(['long', 'short', 'none'])
   })
 })
+
+// Compiled by the typecheck and never run: a field the decoder doesn't declare is no field of the type.
+const _mistypedStyleField = (s: StoredColumnStyle): unknown =>
+  // @ts-expect-error
+  s.lok

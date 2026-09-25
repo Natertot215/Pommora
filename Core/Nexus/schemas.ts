@@ -1,6 +1,7 @@
 // `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
+import { entriesOf } from '../Files/decoders'
 import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
 import { savedView } from '../Views/views'
 import { ID_KEY } from './identityMark'
@@ -22,7 +23,7 @@ const crop = z.object({
 export type Crop = z.infer<typeof crop>
 
 export const cropsFile = z.looseObject({
-  byImage: z.record(z.string(), crop.optional().catch(undefined)).optional().catch(undefined),
+  byImage: entriesOf(crop).optional().catch(undefined),
 })
 
 export const pageMetaEntry = z.object({
@@ -35,10 +36,7 @@ export type PageMeta = z.infer<typeof pageMetaEntry>
 export type PageMetaPatch = { [K in keyof PageMeta]?: PageMeta[K] | null }
 
 export const metadataShardFile = z.looseObject({
-  pages: z
-    .record(z.string(), pageMetaEntry.optional().catch(undefined))
-    .optional()
-    .catch(undefined),
+  pages: entriesOf(pageMetaEntry).optional().catch(undefined),
 })
 
 /** Deliberately non-discriminating — it validates any sidecar — so it must never stand in for the kind decision itself. */

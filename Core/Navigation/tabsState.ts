@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { eachOf } from '../Files/decoders'
 import {
   isNavRef,
   type NavRef,
@@ -35,17 +36,16 @@ const storedTab = z.union([newTab, openTab])
 export function sanitizeTabSet(raw: unknown): StoredTabSet | null {
   const read = z
     .object({
-      tabs: z.array(z.unknown()),
+      tabs: eachOf(storedTab),
       activeTabId: z.string().catch('').default(''),
     })
     .safeParse(raw)
   if (!read.success) return null
   const seen = new Set<string>()
-  const tabs = read.data.tabs.flatMap((t) => {
-    const tab = storedTab.safeParse(t)
-    if (!tab.success || seen.has(tab.data.id)) return []
-    seen.add(tab.data.id)
-    return [tab.data]
+  const tabs = read.data.tabs.filter((tab) => {
+    if (seen.has(tab.id)) return false
+    seen.add(tab.id)
+    return true
   })
   return { tabs, activeTabId: read.data.activeTabId }
 }

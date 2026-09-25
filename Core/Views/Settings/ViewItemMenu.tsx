@@ -3,7 +3,6 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
-import { duplicateView } from '../duplicateView'
 import { restoreView } from '../restoreView'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
@@ -44,10 +43,13 @@ export function ViewItemMenu({
       />
       <PickerMenu solid open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
         <MenuItem
+          disabled={views.length === 0}
           leading={<Icon name="copy" size="body" />}
           onClick={() => {
             setOpen(false)
-            void duplicateView(source.path, source.kind, view, views)
+            void host()
+              .ask('views:duplicate', source.path, source.kind, view.id)
+              .then(reportRefusal)
           }}
         >
           Duplicate

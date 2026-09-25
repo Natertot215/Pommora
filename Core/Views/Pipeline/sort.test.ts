@@ -51,7 +51,7 @@ const schema: PropertyDefinition[] = [
     id: 'prop_rel',
     name: 'Rel',
     type: 'context',
-    context_target: { kind: 'context', context_id: 'ctx_areas' },
+    context_target: { context_id: 'ctx_areas' },
   },
   { id: 'prop_link', name: 'Link', type: 'url' },
   { id: 'prop_file', name: 'File', type: 'file' },
