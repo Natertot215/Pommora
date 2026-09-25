@@ -583,6 +583,15 @@ describe('store — recents reorder + batched close', () => {
     expect(useSession.getState().recents).toEqual([a, b])
     expect(savedRecents()).not.toHaveBeenCalled()
   })
+
+  it('setRecentsOrder leaves an entry the list hides in its own slot', () => {
+    const a = ctx('a')
+    const hidden = ctx('hidden')
+    const b = ctx('b')
+    seed({ recents: [a, hidden, b] })
+    useSession.getState().setRecentsOrder([b, a].map(navKey))
+    expect(useSession.getState().recents).toEqual([b, hidden, a])
+  })
 })
 
 describe('glance pin lifecycle wiring (Task 10)', () => {
