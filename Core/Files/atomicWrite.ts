@@ -4,7 +4,7 @@ import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
 import { recordWrite } from './writeEcho'
 import { machine } from '../Platform/machine'
-import { basename, dirname } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
@@ -218,12 +218,29 @@ export async function heldName(abs: string): Promise<string | null> {
   return names.includes(name) ? name : (names.find((n) => foldKey(n) === key) ?? null)
 }
 
+export async function recase(root: string, rel: string): Promise<void> {
+  let dir = root
+  for (const segment of rel.split('/')) {
+    const abs = join(dir, segment)
+    const held = await heldName(abs)
+    if (held === null) return
+    if (held !== segment) await machine().rename(join(dir, held), abs)
+    dir = abs
+  }
+}
+
+async function heldExactly(path: string, from: number): Promise<boolean> {
+  const segments = path.split('/')
+  for (let i = from; i < segments.length; i++)
+    if ((await heldName(segments.slice(0, i + 1).join('/'))) !== segments[i]) return false
+  return true
+}
+
+// A spelling of the source's own name is taken only by a second entry: a disk that folds case holds one of the two, however far a folder recase has got.
 export async function targetTaken(source: string, target: string): Promise<boolean> {
   if (foldKey(source) !== foldKey(target)) return pathExists(target)
   const from = source.split('/')
-  const to = target.split('/')
-  const differs = to.findIndex((segment, i) => segment !== from[i])
-  for (let i = differs < 0 ? to.length - 1 : differs; i < to.length; i++)
-    if ((await heldName(to.slice(0, i + 1).join('/'))) !== to[i]) return false
-  return true
+  const differs = target.split('/').findIndex((segment, i) => segment !== from[i])
+  const start = differs < 0 ? from.length - 1 : differs
+  return (await heldExactly(target, start)) && (await heldExactly(source, start))
 }

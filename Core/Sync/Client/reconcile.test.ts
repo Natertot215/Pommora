@@ -1,4 +1,4 @@
-import { mkdir, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { join } from '../../Paths/posix'
 import { installMachine, machine } from '../../Platform/machine'
@@ -136,6 +136,117 @@ describe('reconcile', () => {
     expect(stores()).toEqual([])
     expect(hub.seq).toBe(1)
     expect(readBase('Notes/One.md')?.version).toBe(1)
+  })
+
+  it('takes the case the hub spells a file in when it holds that file under another', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    await write('notes/one.md', page('one'))
+
+    await reconcile(session)
+
+    expect((await machine().readDir(root)).map((e) => e.name).sort()).toEqual(['.nexus', 'Notes'])
+    expect((await machine().readDir(abs('Notes'))).map((e) => e.name)).toEqual(['One.md'])
+    expect(paths()).toEqual(['Notes/One.md'])
+    expect(stores()).toEqual([])
+  })
+
+  it('stores a newer local copy under the case the hub spells rather than as a second item', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    await write('Notes/one.md', page('edited'))
+
+    await reconcile(session)
+
+    expect(stores().flatMap((body) => body.changes)).toMatchObject([
+      { kind: 'write', record: { path: 'Notes/One.md' } },
+    ])
+    expect(paths()).toEqual(['Notes/One.md'])
+  })
+
+  it('stores a local file beside a recased one under the folder case the hub spells', async () => {
+    await hubWrite(hub, ring, 'notes/One.md', page('one'))
+    await write('Notes/One.md', page('one'))
+    await write('Notes/Two.md', page('two'))
+
+    await reconcile(session)
+
+    expect(stores().flatMap((body) => body.changes)).toMatchObject([
+      { kind: 'write', record: { path: 'notes/Two.md' } },
+    ])
+    expect(paths()).toEqual(['notes/One.md', 'notes/Two.md'])
+  })
+
+  it('takes the case of a rename the hub holds for a file this disk never recorded', async () => {
+    await hubWrite(hub, ring, 'Notes/Draft.md', page('one'))
+    hubRename(hub, 'Notes/Draft.md', 'Notes/One.md')
+    await write('Notes/one.md', page('one'))
+
+    await reconcile(session)
+
+    expect((await machine().readDir(abs('Notes'))).map((e) => e.name)).toEqual(['One.md'])
+    expect(stores()).toEqual([])
+  })
+
+  it('keeps a local file whose spelling the hub renamed away and then deleted', async () => {
+    await hubWrite(hub, ring, 'Notes/Draft.md', page('one'))
+    hubRename(hub, 'Notes/Draft.md', 'Notes/One.md')
+    hubDelete(hub, 'Notes/One.md')
+    await write('notes/one.md', page('mine'))
+
+    await reconcile(session)
+
+    expect(await read('notes/one.md')).toBe(page('mine'))
+    expect(paths()).toEqual(['notes/one.md'])
+  })
+
+  it('takes the live case past a tombstone at the local spelling', async () => {
+    await hubWrite(hub, ring, 'notes/one.md', page('one'))
+    hubDelete(hub, 'notes/one.md')
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    await write('notes/one.md', page('one'))
+
+    await reconcile(session)
+
+    expect(paths()).toEqual(['Notes/One.md'])
+    expect(stores()).toEqual([])
+  })
+
+  it('leaves a folder alone when a file sync tracks holds its local case', async () => {
+    await hubWrite(hub, ring, 'Notes/One.md', page('one'))
+    await hubWrite(hub, ring, 'notes/Two.md', page('two'))
+    await write('Notes/One.md', page('one'))
+    await write('Notes/Two.md', page('two'))
+
+    await reconcile(session)
+
+    expect((await machine().readDir(root)).map((e) => e.name).sort()).toEqual(['.nexus', 'Notes'])
+    expect(readBase('Notes/One.md')?.path).toBe('Notes/One.md')
+  })
+
+  it('ships a case rename this disk made offline rather than undoing it', async () => {
+    await hubWrite(hub, ring, 'Notes/one.md', page('one'))
+    await write('Notes/one.md', page('one'))
+    await reconcile(session)
+    await rename(abs('Notes/one.md'), abs('Notes/One.md'))
+    hub.sent.length = 0
+
+    await reconcile(session)
+
+    expect((await machine().readDir(abs('Notes'))).map((e) => e.name)).toEqual(['One.md'])
+    expect(stores().flatMap((body) => body.changes)).toMatchObject([
+      { kind: 'rename', from: 'Notes/one.md', path: 'Notes/One.md' },
+    ])
+  })
+
+  it('follows a case rename in the log to its version', async () => {
+    await hubWrite(hub, ring, 'Notes/one.md', page('one'))
+    await write('Notes/one.md', page('one'))
+    await reconcile(session)
+    const seq = hubRename(hub, 'Notes/one.md', 'Notes/One.md')
+
+    await reconcile(session)
+
+    expect((await machine().readDir(abs('Notes'))).map((e) => e.name)).toEqual(['One.md'])
+    expect(readBase('Notes/One.md')).toMatchObject({ path: 'Notes/One.md', version: seq })
   })
 
   it('follows a rename in the log to the new path', async () => {

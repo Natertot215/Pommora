@@ -240,12 +240,29 @@ describe('landRename', () => {
 
     await landRename(root, rename('Notes/a.md', 'notes/a.md', 9))
 
+    expect((await machine().readDir(root)).map((e) => e.name).sort()).toEqual(['.nexus', 'notes'])
     expect(await readFile(abs('notes/a.md'), 'utf8')).toBe('moved\n')
     expect(
       bases()
         .readAllBases()
         .map((r) => r.path),
     ).toEqual(['notes/a.md'])
+    expect(added).not.toHaveBeenCalled()
+  })
+
+  it('recases a folder once and captures none of the files its renames carry', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const bytes = utf8('moved\n')
+    await landWrite(host, root, write('Notes/a.md', bytes), bytes)
+    await landWrite(host, root, write('Notes/b.md', bytes, 2), bytes)
+
+    await landRename(root, rename('Notes/a.md', 'notes/a.md', 9))
+    await landRename(root, rename('Notes/b.md', 'notes/b.md', 10))
+
+    expect((await machine().readDir(abs('notes'))).map((e) => e.name).sort()).toEqual([
+      'a.md',
+      'b.md',
+    ])
     expect(added).not.toHaveBeenCalled()
   })
 

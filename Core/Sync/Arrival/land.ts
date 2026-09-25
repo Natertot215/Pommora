@@ -1,4 +1,4 @@
-import { landBytes, parseJsonObject, targetTaken } from '../../Files/atomicWrite'
+import { landBytes, parseJsonObject, recase, targetTaken } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
 import { platformNameError } from '../../Paths/names'
 import { dirname, join } from '../../Paths/posix'
@@ -126,6 +126,9 @@ export async function landRename(root: string, change: Change): Promise<void> {
       if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
       await machine().mkdir(dirname(to))
       await machine().rename(from, to)
+      // A disk that folds case files the move into the folder already there, so the folder takes the arriving spelling.
+      const folder = dirname(change.path)
+      if (folder !== '.' && folder !== dirname(fromRel)) await recase(root, folder)
     }
     renameBase(fromRel, change.path)
     const moved = readBase(change.path)
