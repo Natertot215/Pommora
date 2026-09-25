@@ -23,24 +23,6 @@ interface ResolvedCriterion {
 const numericLess: Less = (a, b) => (a as number) < (b as number)
 const ciLess: Less = (a, b) => compareTitles(a as string, b as string) < 0
 
-/** Select/status sort by the author's option order, not alphabetically; unknown or absent values rank last. */
-function optionOrderIndex(def: PropertyDefinition): Record<string, number> {
-  const index: Record<string, number> = {}
-  def.select_options?.forEach((o, i) => {
-    index[o.value] = i
-  })
-  if (def.status_groups) {
-    let i = Object.keys(index).length
-    for (const g of def.status_groups) {
-      for (const o of g.options) {
-        index[o.value] = i
-        i += 1
-      }
-    }
-  }
-  return index
-}
-
 function rank(
   row: ViewRow,
   propertyId: string,
@@ -95,20 +77,18 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'select':
     case 'status': {
       // Options the saved order predates rank after the listed ones — at MAX_SAFE_INTEGER they tie with the no-value rows and interleave, the same appended tail `configuredOrder` gives the group path.
-      if (c.order?.length) {
-        const def = schema.find((d) => d.id === c.property_id)
-        const listed = new Set(c.order)
-        const tail = def ? optionValues(def).filter((v) => !listed.has(v)) : []
-        const order = Object.fromEntries([...c.order, ...tail].map((v, i) => [v, i]))
-        return {
-          extract: (r) => rank(r, c.property_id, order, schema),
-          less: numericLess,
-          ascending: true,
-        }
-      }
       const def = schema.find((d) => d.id === c.property_id)
-      const order = def ? optionOrderIndex(def) : {}
-      return { extract: (r) => rank(r, c.property_id, order, schema), less: numericLess, ascending }
+      const values = def ? optionValues(def) : []
+      const listed = new Set(c.order)
+      const ranked = c.order?.length
+        ? [...c.order, ...values.filter((v) => !listed.has(v))]
+        : values
+      const order = Object.fromEntries(ranked.map((v, i) => [v, i]))
+      return {
+        extract: (r) => rank(r, c.property_id, order, schema),
+        less: numericLess,
+        ascending: c.order?.length ? true : ascending,
+      }
     }
     case 'number':
       return { extract: (r) => numberOf(r, c.property_id, schema), less: numericLess, ascending }

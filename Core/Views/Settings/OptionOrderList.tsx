@@ -59,9 +59,9 @@ export function PropertyPreview({
       {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
     </div>
   )
-  if (def.status_groups) {
-    const groups =
-      group.order_mode === 'reversed' ? [...def.status_groups].reverse() : def.status_groups
+  if (def.type === 'status') {
+    const all = def.status_groups ?? []
+    const groups = group.order_mode === 'reversed' ? [...all].reverse() : all
     return (
       <>
         {groups.map((g) => (
