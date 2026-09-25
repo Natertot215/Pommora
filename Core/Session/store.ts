@@ -10,6 +10,7 @@ import { createNavigationSlice } from './navigationSlice'
 import { createNexusSlice } from './nexusSlice'
 import { createWindowSlice } from './windowSlice'
 import { createRenameSlice } from './renameSlice'
+import { createViewSearchSlice } from './viewSearchSlice'
 import type { SessionState } from './sessionState'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 
@@ -20,8 +21,8 @@ export {
   readyPageIds,
   shownDetail,
   shownPage,
-  shownViewSearch,
 } from './navigationSlice'
+export { shownViewSearch } from './viewSearchSlice'
 export { windowTargetOf } from './windowSlice'
 export { citationsVisible } from './configSlice'
 
@@ -36,6 +37,7 @@ export const useSession = create<SessionState>()((...a) => ({
   ...createCacheSlice(...a),
   ...createGlanceSlice(...a),
   ...createMatrixSlice(...a),
+  ...createViewSearchSlice(...a),
 }))
 
 /** Every surface that mounts an embed reads the nexus-wide scale HERE, so what an absent or out-of-range value means is settled once. */

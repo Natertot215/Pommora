@@ -9,6 +9,7 @@ import type { NavigationSlice } from './navigationSlice'
 import type { NexusSlice } from './nexusSlice'
 import type { WindowSlice } from './windowSlice'
 import type { RenameSlice } from './renameSlice'
+import type { ViewSearchSlice } from './viewSearchSlice'
 
 /** Every slice sees the whole state, so features react to each other without private channels. A slice owns its fields and their writers; what it needs of another slice it asks for through that slice's actions. */
 export type SessionState = NexusSlice &
@@ -20,6 +21,7 @@ export type SessionState = NexusSlice &
   RenameSlice &
   CacheSlice &
   GlanceSlice &
-  MatrixSlice
+  MatrixSlice &
+  ViewSearchSlice
 
 export type Slice<T> = StateCreator<SessionState, [], [], T>

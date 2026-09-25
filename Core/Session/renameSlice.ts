@@ -55,6 +55,7 @@ export interface RenameSlice {
   newSpaceAdjacent: (id: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
   /** An unanchored create, placed by its kind's placement setting and named in place. */
   createNamed: (req: MutateRequest, host?: RenameHost) => Promise<void>
+  newPage: () => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
@@ -210,6 +211,25 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     const { tree, personalization } = get()
     await get().mutate(tree ? placeNew(tree, req, personalization) : req, (created) =>
       get().beginRename(created.path, true, host),
+    )
+  },
+
+  newPage: async () => {
+    const { tree, selection } = get()
+    if (!tree) return
+    let parentPath: string | null = null
+    if (selection.kind === 'collection' || selection.kind === 'set')
+      parentPath = findContainerWhere(tree, (n) => n.id === selection.id)?.path ?? null
+    else if (selection.kind === 'page') parentPath = relDirname(selection.path)
+    if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
+    if (parentPath === null) return
+    const req = placeNew(
+      tree,
+      { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME },
+      get().personalization,
+    )
+    await get().mutate(req, (created) =>
+      get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
     )
   },
 
