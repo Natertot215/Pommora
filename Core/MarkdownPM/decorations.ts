@@ -495,7 +495,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   })
   if (conn) {
     const { headingLinkStyle } = view.state.facet(editorHost).settings()
-    const ownKeys = docHeadingKeys(view.state.doc)
+    const ownKeys = scope === 'cell' ? undefined : docHeadingKeys(view.state.doc)
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)

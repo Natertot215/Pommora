@@ -9,7 +9,7 @@ import { act, createElement, isValidElement, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { cachePageDetail } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
-import { usePreviewConnections } from '../Session/pageConnections'
+import { useConnections } from '../Session/pageConnections'
 import { stubDialer } from '../vitest.setup'
 import type { EditorHost } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
@@ -128,7 +128,7 @@ describe('the alias memory', () => {
     const hosts: EditorHost[] = []
     const Probe = (): null => {
       const tree = useSession((s) => s.tree)
-      hosts.push(useEditorHost({ pageId: 'p2', connections: usePreviewConnections(tree) }))
+      hosts.push(useEditorHost({ pageId: 'p2', connections: useConnections(tree, 'preview') }))
       return null
     }
     const root = createRoot(document.createElement('div'))

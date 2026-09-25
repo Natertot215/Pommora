@@ -75,7 +75,10 @@ export function WindowTabStrip({
   const entryOf = (id: string): Entry | undefined =>
     contentEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
-  const { still, carry, receive } = useTabExchange((id) => entryOf(id)?.tab.target, openWindowTab)
+  const { still, carry, receive } = useTabExchange(
+    (id) => entryOf(id)?.tab.target,
+    (target, at) => openWindowTab(target, { at }),
+  )
   const runTabMenu =
     (tab: WindowTab) =>
     async (e: React.MouseEvent): Promise<void> => {

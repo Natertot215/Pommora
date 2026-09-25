@@ -3,7 +3,7 @@ import type { EditorView } from '@codemirror/view'
 import { useSession } from '../Session/store'
 import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
-import { usePreviewConnections } from '../Session/pageConnections'
+import { useConnections } from '../Session/pageConnections'
 import { navKey } from '../Navigation/navRecents'
 import { useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
@@ -70,7 +70,7 @@ export function PageView({
     return () => registerPageEditor(null)
   }, [parked])
 
-  const connections = usePreviewConnections(tree)
+  const connections = useConnections(tree, 'preview')
   const editorHost = useEditorHost({ pageId, connections, pageSurface: true })
 
   // The debounced body write lives in the shared path-keyed autosave (saveScheduler) — every teardown path flushes there, so a pending write survives without per-host flush machinery.

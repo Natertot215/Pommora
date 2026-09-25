@@ -44,20 +44,46 @@ export interface ConnectionsApi extends PageIndex {
 export type MdTarget =
   | { kind: 'page'; page: ConnPage; heading?: string }
   | { kind: 'self'; heading: string }
-  | { kind: 'external' }
+  | { kind: 'external'; url: string }
   | { kind: 'invalid' }
+
+export function titleTarget(
+  index: PageIndex | undefined,
+  title: string,
+  heading?: string,
+): MdTarget {
+  if (title === '') return heading ? { kind: 'self', heading } : { kind: 'invalid' }
+  const res = index?.resolve(title)
+  return res?.status === 'resolved' && res.page
+    ? { kind: 'page', page: res.page, heading: heading || undefined }
+    : { kind: 'invalid' }
+}
 
 /** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
 export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
-  const title = targetTitle(rawTarget)
-  const heading = targetFragment(rawTarget)
-  if (title === '' && heading) return { kind: 'self', heading }
-  if (index && title) {
-    const res = index.resolve(title)
-    if (res.status === 'resolved' && res.page)
-      return heading ? { kind: 'page', page: res.page, heading } : { kind: 'page', page: res.page }
+  const target = titleTarget(index, targetTitle(rawTarget) ?? '', targetFragment(rawTarget))
+  if (target.kind !== 'invalid' || !isValidLink(rawTarget)) return target
+  return { kind: 'external', url: rawTarget }
+}
+
+export function linkMenuTarget(
+  target: MdTarget,
+  apply?: (action: ConnUrlAction) => void,
+): ConnMenuTarget | null {
+  switch (target.kind) {
+    case 'page':
+      return {
+        kind: 'page',
+        page: target.page,
+        heading: target.heading,
+        editable: false,
+        hasAlias: false,
+      }
+    case 'external':
+      return { kind: 'url', url: target.url, apply }
+    default:
+      return null
   }
-  return isValidLink(rawTarget) ? { kind: 'external' } : { kind: 'invalid' }
 }
 
 interface WikiLinkView {

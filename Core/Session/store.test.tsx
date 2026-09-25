@@ -856,9 +856,11 @@ describe('store — the headings map (Task 2.3)', () => {
   })
 })
 
-describe('store — pending travel (Task 5.1)', () => {
-  it('setPendingTravel holds the record; clearPendingTravel nulls it', () => {
-    useSession.getState().setPendingTravel({ route: 'tab', path: 'Notes/A.md', heading: 'Setup' })
+describe('store — pending travel', () => {
+  it('a heading handed to select parks a travel for the tab; clearPendingTravel nulls it', async () => {
+    await useSession
+      .getState()
+      .select({ kind: 'page', id: 'a', path: 'Notes/A.md' }, { record: false, heading: 'Setup' })
     expect(useSession.getState().pendingTravel).toEqual({
       route: 'tab',
       path: 'Notes/A.md',
@@ -866,6 +868,17 @@ describe('store — pending travel (Task 5.1)', () => {
     })
     useSession.getState().clearPendingTravel()
     expect(useSession.getState().pendingTravel).toBeNull()
+  })
+
+  it('a heading handed to openWindowTab parks it for the window', () => {
+    useSession
+      .getState()
+      .openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' }, { heading: 'Setup' })
+    expect(useSession.getState().pendingTravel).toEqual({
+      route: 'window',
+      path: 'Notes/A.md',
+      heading: 'Setup',
+    })
   })
 })
 

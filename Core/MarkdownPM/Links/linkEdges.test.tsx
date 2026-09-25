@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import type { EditorView } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
 import { travelToHeading } from '../travel'
 
 vi.mock('../travel', async (orig) => ({
@@ -27,7 +27,7 @@ afterEach(async () => {
 const opened = vi.fn()
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
-  open: (p: ConnPage) => opened(p.id),
+  open: (p: ConnPage, heading?: string) => opened(p.id, heading),
 }
 
 // jsdom measures nothing, so the click point is pinned through posAtCoords; the span is re-queried before each dispatch, since seating the caret changes its class and CM replaces the element.
@@ -48,7 +48,15 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => view.focus())
     clickAt(view, 6)
-    expect(opened).toHaveBeenCalledWith('p1')
+    expect(opened).toHaveBeenCalledWith('p1', undefined)
+  })
+
+  it('a click on a link to another page’s heading hands the heading on', async () => {
+    opened.mockClear()
+    const view = await mountEditor({ initialBody: 'a [[Alpha#Setup]] b', connections: conn })
+    await act(async () => view.focus())
+    clickAt(view, 6)
+    expect(opened).toHaveBeenCalledWith('p1', 'Setup')
   })
 
   it('a link the caret was already inside when pressed does not navigate', async () => {
@@ -103,7 +111,7 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     for (const pos of [4, 9]) {
       opened.mockClear()
       clickAt(view, pos)
-      expect(opened).toHaveBeenCalledWith('p1')
+      expect(opened).toHaveBeenCalledWith('p1', undefined)
     }
   })
 })
@@ -114,7 +122,7 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
       { id: 'b1', title: 'Beta', path: 'Notes/Beta.md' },
       { id: 'b2', title: 'Beta', path: 'Other/Beta.md' },
     ]),
-    open: (p: ConnPage) => opened(p.id),
+    open: (p: ConnPage, heading?: string) => opened(p.id, heading),
   }
 
   const bracketEdges = [2, 10]
@@ -156,7 +164,7 @@ describe('a same-page heading link travels instead of opening', () => {
     await act(async () => view.focus())
     clickAt(view, 14)
     expect(opened).not.toHaveBeenCalled()
-    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 10)
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 12)
   })
 
   it('a click on [x](#Setup) travels the same way', async () => {
@@ -165,7 +173,99 @@ describe('a same-page heading link travels instead of opening', () => {
     const view = await mountEditor({ initialBody: '## Setup\n\n[x](#Setup)', connections: conn })
     await act(async () => view.focus())
     clickAt(view, 11)
-    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 10)
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 11)
+  })
+})
+
+describe('a heading link in a table cell travels in the page around the table', () => {
+  const opener = vi.fn()
+
+  const mountTable = async (row: string): Promise<EditorView> => {
+    const view = await mountEditor({
+      initialBody: `## Setup\n\ntext\n\n| A | B |\n| --- | --- |\n${row}`,
+      connections: conn,
+      host: { openLink: opener },
+    })
+    for (let i = 0; !editorContainer().querySelector('.mdpm-tbl-cell-static') && i < 50; i++)
+      await act(() => new Promise((r) => setTimeout(r, 20)))
+    return view
+  }
+
+  const press = (el: Element): Promise<void> =>
+    act(async () => {
+      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
+      el.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
+      )
+    })
+
+  const cellEditors = (view: EditorView): NodeListOf<Element> =>
+    view.dom.querySelectorAll('.mdpm-tbl-widget .cm-editor')
+
+  it('a resting [[#Setup]] travels instead of opening the cell', async () => {
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountTable('| [[#Setup]] | [go](#Setup) x |')
+    await press(
+      view.dom.querySelector('.mdpm-tbl-cell-static .md-connection-resolved') as HTMLElement,
+    )
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 16)
+    expect(cellEditors(view)).toHaveLength(0)
+  })
+
+  it('a live cell’s [go](#Setup) travels in the page, not the cell', async () => {
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountTable('| [[#Setup]] | [go](#Setup) x |')
+    await press(view.dom.querySelectorAll('tbody .mdpm-tbl-cell-static')[1])
+    const inner = EditorView.findFromDOM(cellEditors(view)[0] as HTMLElement)
+    if (!inner) throw new Error('the cell never went live')
+    await act(async () => inner.focus())
+    inner.dispatch({ selection: { anchor: inner.state.doc.length } })
+    vi.spyOn(inner, 'posAtCoords').mockReturnValue(1)
+    const link = (): Element => inner.dom.querySelector('.md-connection-resolved') as Element
+    link().dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    inner.dispatch({ selection: { anchor: 1 } })
+    link().dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 16)
+  })
+
+  it('a resting footnote marker whose footnote is [[#Setup]] travels to Setup', async () => {
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountTable('| a[^1] | b |\n\n[^1]: [[#Setup]]')
+    await press(view.dom.querySelector('.mdpm-tbl-cell-static .md-citation-reference') as Element)
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 16)
+  })
+
+  it('a live cell draws a heading the page holds as present', async () => {
+    const view = await mountTable('| [[#Setup]] x | b |')
+    await press(view.dom.querySelectorAll('tbody .mdpm-tbl-cell-static')[0])
+    const inner = EditorView.findFromDOM(cellEditors(view)[0] as HTMLElement)
+    if (!inner) throw new Error('the cell never went live')
+    inner.dispatch({ selection: { anchor: inner.state.doc.length } })
+    expect(inner.dom.querySelector('.md-connection-heading')).not.toBeNull()
+    expect(inner.dom.querySelector('.md-connection-heading-missing')).toBeNull()
+  })
+
+  it('a resting page link navigates rather than dropping the caret into its syntax', async () => {
+    opened.mockClear()
+    const view = await mountTable('| [[Alpha]] | b |')
+    await press(view.dom.querySelector('.mdpm-tbl-cell-static .md-connection-resolved') as Element)
+    expect(opened).toHaveBeenCalledWith('p1', undefined)
+    expect(cellEditors(view)).toHaveLength(0)
+  })
+
+  it('a resting link to another page’s heading hands the heading on', async () => {
+    opened.mockClear()
+    const view = await mountTable('| [[Alpha#Setup]] | b |')
+    await press(view.dom.querySelector('.mdpm-tbl-cell-static .md-connection-resolved') as Element)
+    expect(opened).toHaveBeenCalledWith('p1', 'Setup')
+  })
+
+  it('a resting web link follows to the system browser on a click', async () => {
+    opener.mockReset()
+    const view = await mountTable('| [Home](https://x.test) | b |')
+    await press(view.dom.querySelector('.mdpm-tbl-cell-static .md-link') as Element)
+    expect(opener).toHaveBeenCalledWith('https://x.test')
+    expect(cellEditors(view)).toHaveLength(0)
   })
 })
 

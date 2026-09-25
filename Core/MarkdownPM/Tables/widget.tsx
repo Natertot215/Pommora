@@ -1,10 +1,10 @@
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { ReactWidget, type ReactDom } from '../reactWidget'
+import { followCitation } from '../Citations/citationPointer'
 import { docScan } from '../docCache'
 import { foldLabel } from '../Engine/detect'
 import type { DocScan } from '../Engine/docScan'
 import { focusAt } from '../caretPlacement'
-import { travelToCitation } from '../Citations/citationActions'
 import {
   Facet,
   StateField,
@@ -49,7 +49,6 @@ import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { editorHost } from '../api'
 import { resolutionNudge } from '../Embeds/embedWidget'
-import { travelToHeading } from '../travel'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
 type ConnGetter = () => ConnectionsApi | undefined
@@ -340,15 +339,14 @@ class TableWidget extends ReactWidget {
         readClipboard={() => host.clipboard.read()}
         onMenu={onMenu}
         onTableDrag={tableDrag}
-        onCite={(label) => travelToCitation(view, label)}
+        onCite={(label, event) =>
+          followCitation(view, label, view.state.facet(tableConnections)(), event)
+        }
         onUndo={() => undo(view)}
         onRedo={() => redo(view)}
         connections={view.state.facet(tableConnections)}
         readOnly={() => view.state.readOnly}
         linkStyle={this.linkStyle}
-        travel={(heading) =>
-          travelToHeading(view, heading, docScan(view.state.doc).tables[this.tableIndex]?.from ?? 0)
-        }
       />,
     )
     // Queued behind the first render's flush, so the reserved height yields only once the table has drawn.

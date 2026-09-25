@@ -28,10 +28,10 @@ export function runPageAction(
   }
   switch (action) {
     case 'title:window':
-      s.openWindowTab(ref)
+      s.openWindowTab(ref, { heading: page.heading })
       return true
     case 'title:newtab':
-      void s.select(ref, { newTab: true })
+      void s.select(ref, { newTab: true, heading: page.heading })
       return true
     case 'title:copylink':
       void host().ask('clipboard:write', connectionText(title, undefined, page.heading))

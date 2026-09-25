@@ -8,7 +8,7 @@ import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi, ConnMenuTarget } from '../Links/connectionsApi'
-import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -20,10 +20,9 @@ if (!('ResizeObserver' in globalThis)) {
   }
 }
 
-const opened = vi.fn()
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
-  open: (p: ConnPage) => opened(p.id),
+  open: () => {},
   headingsOf: (path) => (path === 'N/Quarterly Plan.md' ? ['setup'] : undefined),
 }
 
@@ -53,7 +52,6 @@ let container: HTMLDivElement
 let root: Root
 
 async function mount(): Promise<void> {
-  opened.mockReset()
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -65,31 +63,12 @@ afterEach(async () => {
   container.remove()
 })
 
-async function clickLink(): Promise<HTMLElement> {
-  const link = container.querySelector('.md-connection-resolved') as HTMLElement
-  await act(async () => {
-    link.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
-    link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
-    link.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
-    )
-  })
-  return link
-}
-
 describe('a connection in a resting cell behaves like one in the body', () => {
   it('renders the alias, and carries the title it resolves by', async () => {
     await mount()
     const link = container.querySelector('.md-connection-resolved') as HTMLElement
     expect(link.textContent).toBe('the plan')
     expect(link.dataset.connTitle).toBe('Quarterly Plan')
-  })
-
-  it('navigates rather than dropping the caret into its syntax', async () => {
-    await mount()
-    await clickLink()
-    expect(opened).toHaveBeenCalledWith('p1')
-    expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
   })
 
   it('and a press on the cell beside the link still opens the editor', async () => {
@@ -106,7 +85,6 @@ describe('a connection in a resting cell behaves like one in the body', () => {
         new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
       )
     })
-    expect(opened).not.toHaveBeenCalled()
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
   })
 })
@@ -127,53 +105,11 @@ describe('a heading link in a resting cell renders its three parts', () => {
     )
   }
 
-  it('renders the page, the heading symbol, and the heading text, and resolves to the page', async () => {
+  it('renders the page, the heading symbol, and the heading text', async () => {
     await mountHeading()
     const link = container.querySelector('.md-connection-resolved') as HTMLElement
     expect(link.textContent).toBe('Quarterly Plan§Setup')
     expect(link.dataset.connTitle).toBe('Quarterly Plan')
-    await clickLink()
-    expect(opened).toHaveBeenCalledWith('p1')
-  })
-})
-
-describe('an external link in a resting cell behaves like one in the body', () => {
-  const opener = vi.fn()
-  const web: TableModel = {
-    columns: [{ align: null, dashes: 3 }],
-    header: ['A'],
-    rows: [['[Home](https://x.test)']],
-  }
-
-  async function mountWeb(): Promise<void> {
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    await act(async () =>
-      root.render(
-        createElement(MarkdownTable, {
-          ...props,
-          model: web,
-          host: testHost({ openLink: opener }),
-        }),
-      ),
-    )
-  }
-
-  it('follows to the system browser on a click', async () => {
-    opener.mockReset()
-    await mountWeb()
-    const link = container.querySelector('.md-link') as HTMLElement
-    await act(async () => {
-      link.dispatchEvent(
-        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
-      )
-      link.dispatchEvent(
-        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
-      )
-    })
-    expect(opener).toHaveBeenCalledWith('https://x.test')
-    expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
   })
 })
 
