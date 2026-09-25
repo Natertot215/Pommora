@@ -1,6 +1,6 @@
+import { useSyncExternalStore } from 'react'
 import type { Result } from '@pommora/core/Contract/result'
 import { pushUndo } from '@pommora/core/Session/undo'
-import { useSession } from '../../Session/store'
 
 export interface Notification {
   message: string
@@ -8,11 +8,42 @@ export interface Notification {
   action?: { label: string; run: () => void | Promise<void> }
 }
 
-const post = (n: Notification): void => useSession.getState().notify(n)
+type Posted = Notification & { id: number }
+
+let shown: Posted | null = null
+let seq = 0
+const listeners = new Set<() => void>()
+
+const show = (next: Posted | null): void => {
+  shown = next
+  for (const fn of listeners) fn()
+}
+
+function subscribe(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+
+export const currentNotification = (): Posted | null => shown
+
+export const useNotification = (): Posted | null =>
+  useSyncExternalStore(subscribe, currentNotification)
+
+export function dismissNotification(id: number): void {
+  if (shown?.id === id) show(null)
+}
+
+export const clearNotification = (): void => show(null)
+
+const post = (n: Notification): number => {
+  show({ ...n, id: ++seq })
+  return seq
+}
 
 /** An outcome in one line, drawn as a refusal when any of it failed. */
-export const notifyReport = (message: string, failed: boolean): void =>
+export function notifyReport(message: string, failed: boolean): void {
   post({ message, tone: failed ? 'error' : 'normal' })
+}
 
 /** Every refusal of something the user did reaches them here; the answer says whether it went through. */
 export function reportRefusal<T>(r: Result<T>): r is { ok: true; value: T } {
@@ -39,13 +70,6 @@ export const unrestoredLine = (titles: string[]): string =>
 export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): void =>
   notifyUndoable(`Deleted “${title}”`, undo)
 
-/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
-export const notifyTrashed = (title: string, bundlePath?: string): void =>
-  notifyDeleted(
-    title,
-    bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
-  )
-
 export function notifyUndoable(message: string, undo?: () => void | Promise<void>): void {
   if (!undo) {
     post({ message, tone: 'normal' })
@@ -59,11 +83,10 @@ export function notifyUndoable(message: string, undo?: () => void | Promise<void
     void undo()
     return true
   }
-  post({ message, tone: 'normal', action: { label: 'Undo', run: () => void once() } })
-  const id = useSession.getState().notification?.id
+  const id = post({ message, tone: 'normal', action: { label: 'Undo', run: () => void once() } })
   pushUndo(() => {
     if (!once()) return false
-    if (id !== undefined) useSession.getState().dismissNotification(id)
+    dismissNotification(id)
     return true
   })
 }

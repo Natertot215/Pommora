@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  clearNotification,
+  currentNotification,
+} from '@pommora/core/Interface/Notifications/notifications'
+import { undoValue } from '@pommora/core/Session/undo'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
@@ -153,21 +158,19 @@ describe('the host over the renderer table', () => {
       tree: makeTree(),
       devicePrefs: { ...st.devicePrefs, nativeMenus: true },
       personalization: { ...st.personalization, confirmDeletion: false },
-      notification: null,
     }))
+    clearNotification()
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
     expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
     await act(async () => {
       ;(host.querySelector('.tile-handle') as HTMLElement).click()
     })
-    expect(await until(() => useSession.getState().notification !== null)).toBe(true)
-    expect(useSession.getState().notification?.message).toBe('Deleted Markdown Tile')
+    expect(await until(() => currentNotification() !== null)).toBe(true)
+    expect(currentNotification()?.message).toBe('Deleted Markdown Tile')
     expect(host.querySelectorAll('.tile')).toHaveLength(3)
 
     await act(async () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true }),
-      )
+      undoValue(null)
     })
     expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
     expect(restoreTile).toHaveBeenCalledWith(
@@ -193,14 +196,14 @@ describe('the host over the renderer table', () => {
       tree: makeTree(),
       devicePrefs: { ...st.devicePrefs, nativeMenus: true },
       personalization: { ...st.personalization, confirmDeletion: false },
-      notification: null,
     }))
+    clearNotification()
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
     expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
     await act(async () => {
       ;(host.querySelector('.tile-handle') as HTMLElement).click()
     })
-    expect(await until(() => useSession.getState().notification?.message === 'refused')).toBe(true)
+    expect(await until(() => currentNotification()?.message === 'refused')).toBe(true)
     expect(host.querySelectorAll('.tile')).toHaveLength(4)
   })
 })

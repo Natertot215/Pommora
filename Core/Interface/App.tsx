@@ -24,6 +24,7 @@ import { useNavThumbnails } from '../Navigation/useNavThumbnails'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
+import { undoValue } from '../Session/undo'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { ValuePickPresenter } from './Menus/ValuePickPresenter'
@@ -95,6 +96,8 @@ export function App(): React.JSX.Element {
         toggleIteration()
       } else if (matchesCommand(commands.search, e)) {
         if (!document.activeElement?.closest('[role="dialog"]') && searchView()) e.preventDefault()
+      } else if (matchesCommand(commands['undo-value'], e)) {
+        if (undoValue(e.target)) e.preventDefault()
       }
     }
     window.addEventListener('keydown', onKey)

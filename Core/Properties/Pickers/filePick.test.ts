@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { currentNotification } from '@pommora/core/Interface/Notifications/notifications'
 import { ok } from '@pommora/core/Contract/result'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { useSession } from '../../Session/store'
@@ -114,7 +115,7 @@ describe('runFilePick', () => {
   it('a refused adoption leaves the value alone and says why — the reference follows the bytes', async () => {
     adoptFile.mockResolvedValueOnce({ ok: false, error: { code: 'invalid-path', message: 'no' } })
     expect(await runFilePick(def(), held(['[[Old.pdf]]']), 0)).toBeUndefined()
-    expect(useSession.getState().notification?.message).toBe('no')
+    expect(currentNotification()?.message).toBe('no')
   })
 })
 

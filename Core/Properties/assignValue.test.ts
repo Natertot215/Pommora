@@ -5,7 +5,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
-import { groupUndo } from '../Session/undo'
+import { groupUndo, undoValue } from '../Session/undo'
 
 const schema: PropertyDefinition[] = [
   {
@@ -28,16 +28,7 @@ const rowOf = (fm: Record<string, unknown>): ViewRow => ({
   modifiedAt: null,
 })
 
-const cmdZ = (): boolean => {
-  const e = new KeyboardEvent('keydown', {
-    key: 'z',
-    metaKey: true,
-    bubbles: true,
-    cancelable: true,
-  })
-  window.dispatchEvent(e)
-  return e.defaultPrevented
-}
+const cmdZ = (): boolean => undoValue(null)
 
 let apply: Mock<ValueWriter['apply']>
 let mutate: Mock<ValueWriter['mutate']>

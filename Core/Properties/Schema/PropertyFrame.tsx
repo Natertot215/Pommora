@@ -1,4 +1,5 @@
-import { notifyTrashed, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { notifyTrashed } from '@pommora/core/Interface/Confirm/confirmations'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'

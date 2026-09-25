@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  clearNotification,
+  currentNotification,
+} from '@pommora/core/Interface/Notifications/notifications'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { DeviceRecord, SyncState } from '@pommora/core/Sync/Contract/wire'
@@ -146,7 +150,7 @@ describe('NexusRows', () => {
     await render({ 'sync:state': reply(unbound), 'sync:connect': refuse('nope') })
     await commit('Server address', 'http://typed:1')
     await act(async () => button('Connect')?.click())
-    expect(useSession.getState().notification).toMatchObject({ message: 'nope', tone: 'error' })
+    expect(currentNotification()).toMatchObject({ message: 'nope', tone: 'error' })
     expect(fieldText('Server address')).toBe('http://typed:1')
   })
 
@@ -167,9 +171,9 @@ describe('NexusRows', () => {
   })
 
   it('a refused state on mount reports nothing and keeps the nexus identity rows', async () => {
-    useSession.setState({ notification: null })
+    clearNotification()
     await render({ 'sync:state': refuse('no identity') })
-    expect(useSession.getState().notification).toBeNull()
+    expect(currentNotification()).toBeNull()
     expect(host.textContent).toContain(NEXUS_ID)
     expect(host.textContent).toContain('Nexus Password')
     expect(host.textContent).not.toContain('This Device')

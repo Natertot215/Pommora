@@ -1,17 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { groupUndo, pushUndo, resetUndo } from './undo'
+import { groupUndo, pushUndo, resetUndo, undoValue } from './undo'
 
-const cmdZ = (target: EventTarget = window): boolean => {
-  const e = new KeyboardEvent('keydown', {
-    key: 'z',
-    metaKey: true,
-    bubbles: true,
-    cancelable: true,
-  })
-  target.dispatchEvent(e)
-  return e.defaultPrevented
-}
+const cmdZ = (target: EventTarget | null = null): boolean => undoValue(target)
 
 beforeEach(() => {
   while (cmdZ()) {}

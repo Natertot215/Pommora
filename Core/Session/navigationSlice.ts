@@ -1,10 +1,5 @@
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
-import {
-  type Creator,
-  DEFAULT_NEW_NAME,
-  type MutateRequest,
-  type RenameHost,
-} from '@pommora/core/Nexus/mutateRequest'
+import { DEFAULT_NEW_NAME, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { type PommoraError, fault } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
@@ -67,8 +62,6 @@ import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from './sessionState'
 import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
-import { popMenu } from '../Actions/menuActions'
-import { createMenuItems, createdRequest } from '@pommora/core/Actions/createMenu'
 import { placeNew } from '../Views/creationOrder'
 
 export type PageSlot =
@@ -92,7 +85,6 @@ export interface NavigationSlice {
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
   reloadPage: () => Promise<void>
   newPage: () => Promise<void>
-  createFromMenu: (items: Creator[], host?: RenameHost) => Promise<void>
   tabs: Tab[]
   activeTabId: string
   tabMru: string[]
@@ -698,12 +690,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       await get().mutate(req, (created) =>
         get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
       )
-    },
-
-    createFromMenu: async (items, host) => {
-      const action = await popMenu(createMenuItems(items))
-      const req = action && createdRequest(items, action)
-      if (req) await get().createNamed(req, host)
     },
 
     reconcileNavigation: (index) => {

@@ -29,6 +29,7 @@ import type {
 } from '@pommora/core/Nexus/tree'
 import type { SidebarMode } from '@pommora/core/Settings/personalization'
 import {
+  type Creator,
   DEFAULT_NEW_NAME,
   type MutableKind,
   type MutateRequest,
@@ -48,6 +49,15 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
 import { Disclosure } from './Disclosure'
+import { popMenu } from '../../Actions/menuActions'
+import { createMenuItems, createdRequest } from '../../Actions/createMenu'
+
+async function createFromMenu(item: Creator): Promise<void> {
+  const items = [item]
+  const action = await popMenu(createMenuItems(items))
+  const req = action && createdRequest(items, action)
+  if (req) await useSession.getState().createNamed(req, 'sidebar')
+}
 
 function showContextFor(
   node: {
@@ -271,15 +281,10 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       }
       rename={{ path, kind: 'context' }}
       onBodyContextMenu={() => {
-        void useSession.getState().createFromMenu(
-          [
-            {
-              label: newLabel,
-              req: { op: 'createSpace', contextId: group.def.id, name: newLabel },
-            },
-          ],
-          'sidebar',
-        )
+        void createFromMenu({
+          label: newLabel,
+          req: { op: 'createSpace', contextId: group.def.id, name: newLabel },
+        })
       }}
     >
       {group.spaces.map((s) => (
@@ -335,29 +340,17 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const mode: SidebarMode = useSession((s) => sidebarModeOf(s.personalization))
 
   const newContextMenu = (): void => {
-    void useSession
-      .getState()
-      .createFromMenu(
-        [{ label: 'New Context', req: { op: 'createContextGroup', name: 'New Context' } }],
-        'sidebar',
-      )
+    void createFromMenu({
+      label: 'New Context',
+      req: { op: 'createContextGroup', name: 'New Context' },
+    })
   }
   const newCollectionMenu = (): void => {
     const label = 'New Collection'
-    void useSession.getState().createFromMenu(
-      [
-        {
-          label,
-          req: {
-            op: 'createContainer',
-            parentPath: '',
-            kind: 'collection',
-            name: DEFAULT_NEW_NAME,
-          },
-        },
-      ],
-      'sidebar',
-    )
+    void createFromMenu({
+      label,
+      req: { op: 'createContainer', parentPath: '', kind: 'collection', name: DEFAULT_NEW_NAME },
+    })
   }
 
   const navRef = useRef<HTMLElement>(null)

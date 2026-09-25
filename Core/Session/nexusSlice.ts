@@ -1,4 +1,5 @@
 import {
+  clearNotification,
   notifyReport,
   reportRefusal,
   unrestoredLine,
@@ -81,6 +82,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetNavigation()
     s.resetWindow()
     s.resetChrome()
+    clearNotification()
     s.resetLayout()
     s.resetCaches()
     s.resetGlance()

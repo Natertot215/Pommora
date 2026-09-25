@@ -2,7 +2,6 @@ import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
-import type { Notification } from '../Interface/Notifications/notifications'
 import type { PageStats } from '@pommora/core/MarkdownPM/Engine/subfieldStats'
 import type { Slice } from './sessionState'
 
@@ -32,9 +31,6 @@ export interface ChromeSlice {
   pendingPick: (ValuePickRequest & { id: number }) | null
   requestPick: (req: ValuePickRequest) => void
   dismissPick: () => void
-  notification: (Notification & { id: number }) | null
-  notify: (n: Notification) => void
-  dismissNotification: (id: number) => void
   /** The Subfield sits beside the detail rather than inside it, so whatever is mounted there publishes how many rows it resolved. */
   detailCount: number | null
   setDetailCount: (count: number | null) => void
@@ -44,7 +40,6 @@ export interface ChromeSlice {
   resetChrome: () => void
 }
 
-let notificationSeq = 0
 let menuSeq = 0
 let pickSeq = 0
 
@@ -76,11 +71,6 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   requestPick: (req) => set({ pendingPick: { ...req, id: ++pickSeq } }),
   dismissPick: () => set({ pendingPick: null }),
 
-  notification: null,
-  notify: (n) => set({ notification: { ...n, id: ++notificationSeq } }),
-  dismissNotification: (id) =>
-    set((s) => (s.notification?.id === id ? { notification: null } : {})),
-
   detailCount: null,
   setDetailCount: (count) => set((s) => (s.detailCount === count ? {} : { detailCount: count })),
 
@@ -100,7 +90,6 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
       pendingConfirm: null,
       pendingMenu: null,
       pendingPick: null,
-      notification: null,
       detailCount: null,
       editorSelection: null,
     })

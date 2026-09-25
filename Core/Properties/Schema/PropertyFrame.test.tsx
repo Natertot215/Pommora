@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { currentNotification } from '@pommora/core/Interface/Notifications/notifications'
 import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -297,7 +298,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
     expect(destroySpy).toHaveBeenCalledWith('prop_status')
     expect(useSession.getState().pendingConfirm).toBeNull()
-    expect(useSession.getState().notification).toMatchObject({
+    expect(currentNotification()).toMatchObject({
       message: 'Deleted “Status”',
       action: { label: 'Undo' },
     })

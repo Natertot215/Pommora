@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
 import { beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest'
+import { currentNotification } from '@pommora/core/Interface/Notifications/notifications'
 import { ok } from '@pommora/core/Contract/result'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
@@ -370,7 +371,7 @@ describe('store — page slots', () => {
     expect(s.pages.b).toBe(b)
     expect(readCache('t2', navKey(pg('b')))).toBe(warm)
     expect(openPage()).not.toHaveBeenCalled()
-    expect(s.notification?.message).toBe('W')
+    expect(currentNotification()?.message).toBe('W')
   })
 
   it('a tree push that re-paths the shown page spares its slot while the re-select is in flight', async () => {
