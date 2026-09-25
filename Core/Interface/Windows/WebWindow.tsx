@@ -15,10 +15,6 @@ import './web-window.css'
 
 const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, def: { w: 1000, h: 700 } }
 
-export function openInAppBrowser(url: string): void {
-  useSession.getState().openBrowser(url)
-}
-
 interface BrowserGuest extends HTMLElement {
   goBack(): void
   goForward(): void

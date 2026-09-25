@@ -34,7 +34,7 @@ export function Subfield({
   const crumbSelection = override ?? page?.target ?? selection
   const rawCrumbs = subfieldCrumbs(tree, crumbSelection, inert ? null : crumbDepth, navigateCrumb)
   const crumbs = inert ? rawCrumbs.map((c) => ({ ...c, onSelect: undefined })) : rawCrumbs
-  const items = DEFAULT_ITEMS[crumbSelection.kind] ?? []
+  const items = DEFAULT_ITEMS[crumbSelection.kind]
 
   return (
     <div className={`subfield ${text.subline.emphasized}`}>

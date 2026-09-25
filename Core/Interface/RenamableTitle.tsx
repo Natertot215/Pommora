@@ -25,8 +25,8 @@ export function RenamableTitle({
   doubleClick?: boolean
 }): React.JSX.Element {
   const target = useSession((s) => s.renamingPath === path)
-  const renamingCreate = useSession((s) => s.renamingCreate)
-  // Guarded through the target check so claim/release churn only re-renders the one path's fields, never every mounted title in the app.
+  // Guarded through the target check so a create or a claim/release only re-renders the one path's fields, never every mounted title in the app.
+  const renamingCreate = useSession((s) => s.renamingPath === path && s.renamingCreate)
   const winner = useSession((s) => (s.renamingPath === path ? s.renameWinner : null))
   const cancelRename = useSession((s) => s.cancelRename)
   const submitRename = useSession((s) => s.submitRename)

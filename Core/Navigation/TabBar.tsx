@@ -24,7 +24,7 @@ import {
 import { useSession } from '../Session/store'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceLink'
 import { pageMoveContext, runPageSendAction } from '../Interface/Menus/pageMenuActions'
-import { resolveWith, type ResolvedNav } from './navResolve'
+import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
@@ -39,6 +39,12 @@ interface TabEntry {
   res: ResolvedNav | null
 }
 
+const entriesOf = (tabs: Tab[], index: ResolveIndex | null): TabEntry[] =>
+  tabs.map((tab) => ({
+    tab,
+    res: tab.target.kind === 'newtab' || !index ? null : resolveWith(index, tab.target),
+  }))
+
 // Gate/body split: every interaction hook (the Ctrl+Tab listener included) mounts only when the bar actually shows.
 export function TabBar(): React.JSX.Element | null {
   const tabs = useSession((s) => s.tabs)
@@ -47,23 +53,8 @@ export function TabBar(): React.JSX.Element | null {
 
   // Titles + icons resolve live off the nav index — a rename is current on the next push, never cached stale.
   const index = tree ? resolveIndexOf(tree) : null
-  const pinnedEntries = useMemo<TabEntry[]>(() => {
-    if (!index) return []
-    // A pinned entity that no longer resolves render-hides (render-prune, never storage-prune).
-    return pinnedTabs.flatMap((tab) => {
-      if (tab.target.kind === 'newtab') return []
-      const res = resolveWith(index, tab.target)
-      return res ? [{ tab, res }] : []
-    })
-  }, [index, pinnedTabs])
-  const unpinnedEntries = useMemo<TabEntry[]>(
-    () =>
-      tabs.map((tab) => ({
-        tab,
-        res: tab.target.kind === 'newtab' || !index ? null : resolveWith(index, tab.target),
-      })),
-    [index, tabs],
-  )
+  const pinnedEntries = useMemo(() => entriesOf(pinnedTabs, index), [index, pinnedTabs])
+  const unpinnedEntries = useMemo(() => entriesOf(tabs, index), [index, tabs])
 
   const forced = useDragFamily() === TAB_FAMILY
   if (
