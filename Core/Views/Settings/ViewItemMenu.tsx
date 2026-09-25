@@ -7,7 +7,7 @@ import { restoreView } from '../restoreView'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 
 export function ViewItemMenu({
   source,
@@ -25,7 +25,7 @@ export function ViewItemMenu({
 
   const deleteView = async (): Promise<void> => {
     if (!(await askDeleteView())) return
-    const res = await host().ask('views:delete', source.path, source.kind, view.id)
+    const res = await dialer().ask('views:delete', source.path, source.kind, view.id)
     if (!reportRefusal(res)) return
     notifyDeleted(view.name, () => restoreView(source.path, source.kind, view, views))
     onDeleted?.()
@@ -47,7 +47,7 @@ export function ViewItemMenu({
           leading={<Icon name="copy" size="body" />}
           onClick={() => {
             setOpen(false)
-            void host()
+            void dialer()
               .ask('views:duplicate', source.path, source.kind, view.id)
               .then(reportRefusal)
           }}

@@ -24,7 +24,7 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
 import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
@@ -84,7 +84,7 @@ export function ViewFrame({
   }
   const createView = async (): Promise<void> => {
     reportRefusal(
-      await host().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema)),
+      await dialer().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema)),
     )
   }
 
@@ -94,7 +94,7 @@ export function ViewFrame({
     if (drop.kind !== 'reorder-assigned' || views.length < 2) return
     const order = rows.map((v) => v.id).filter((id) => id !== drop.propId)
     order.splice(drop.toIndex, 0, drop.propId)
-    void host().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
+    void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
   }
 
   const commitRename = (v: SavedView, next: string): void => {
@@ -115,7 +115,7 @@ export function ViewFrame({
       case 'color':
         return setColorFor(v)
       case 'duplicate':
-        return void host().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
+        return void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
       case 'delete':
         return void deleteRow(v)
       default:
@@ -124,7 +124,7 @@ export function ViewFrame({
   }
   const deleteRow = async (v: SavedView): Promise<void> => {
     if (!(await askDeleteView())) return
-    const res = await host().ask('views:delete', node.path, node.kind, v.id)
+    const res = await dialer().ask('views:delete', node.path, node.kind, v.id)
     if (!reportRefusal(res)) return
     notifyDeleted(v.name, () => restoreView(node.path, node.kind, v, views))
   }

@@ -34,6 +34,7 @@ export function validateDefinition(
   const nameCheck = validateName(def.name, existing, def.id)
   if (!nameCheck.ok) return nameCheck
   if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
+  if (def.type === 'context') return fail('invalid-property', 'A Context column is not a property.')
   if (existing.some((d) => d.id === def.id)) {
     return fail('invalid-property', 'That property id already exists.')
   }

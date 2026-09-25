@@ -26,7 +26,7 @@ import { ModalScrim } from '@pommora/uix/Windows/ModalScrim'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import * as s from './image-picker.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 const FRAME_H = 260 // KNOB — every frame's fixed height (the seat sets the width)
@@ -116,7 +116,7 @@ export function ImagePicker({
         settleRepick(text)
         return
       }
-      void host()
+      void dialer()
         .ask('nexus:pasteImage')
         .then((r) => {
           const p = valueOr(r, null)
@@ -180,7 +180,7 @@ export function ImagePicker({
   }
   const repick = (): void => {
     if (!onRepick) return
-    void host()
+    void dialer()
       .ask('nexus:pickFile')
       .then((r) => {
         const p = valueOr(r, null)

@@ -8,7 +8,7 @@ import {
 } from '@pommora/core/Tiles/tiles'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
-import { host as dialer } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { createBodyWriter, sessionWriter } from '../Session/saveScheduler'
 
 const BODY_CAP = 50

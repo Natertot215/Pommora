@@ -4,7 +4,7 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { relDirname, titleFromPath } from '@pommora/core/Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { confirmDelete } from '../Confirm/confirmations'
 
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMenuContext {
@@ -34,16 +34,16 @@ export function runPageAction(
       void s.select(ref, { newTab: true, heading: page.heading })
       return true
     case 'title:copylink':
-      void host().ask('clipboard:write', connectionText(title, undefined, page.heading))
+      void dialer().ask('clipboard:write', connectionText(title, undefined, page.heading))
       return true
     case 'title:copypath':
-      void host().ask('clipboard:write', pagePathText(path))
+      void dialer().ask('clipboard:write', pagePathText(path))
       return true
     case 'title:history':
       s.openHistory(ref)
       return true
     case 'title:reveal':
-      void host().ask('path:reveal', path)
+      void dialer().ask('path:reveal', path)
       return true
     case 'title:delete':
       void confirmDelete({ path, kind: 'page', title })

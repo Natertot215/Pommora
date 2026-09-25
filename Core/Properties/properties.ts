@@ -12,7 +12,7 @@ export const propertyType = z.enum([
   'multi_select',
   'status',
   'url',
-  'context', // a registry Context's synthesized relation; minted by the registry, not the schema editor
+  'context', // the type of a column synthesized from a registry Context; creating a property with it is refused
   'created_time',
   'last_edited_time',
   'file',
@@ -27,7 +27,6 @@ export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
 
 export const DEFAULT_LINK_DISPLAY: LinkDisplay = LINK_DISPLAYS[0]
 
-/** Duplicated rather than imported — main builds a link's Format menu and cannot read a renderer's list. */
 export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
   'link-full': 'Full Link',
   'link-short': 'Short Link',
@@ -80,8 +79,6 @@ const statusGroup = looseDecoder(
 )
 export type StatusGroup = z.infer<typeof statusGroup>
 
-const contextTarget = looseDecoder(z.object({ context_id: z.string().optional() }))
-
 export const propertyDefinition = looseDecoder(
   z.object({
     id: z.string(),
@@ -90,7 +87,6 @@ export const propertyDefinition = looseDecoder(
     icon: z.string().optional(),
     select_options: z.array(selectOption).optional(),
     status_groups: z.array(statusGroup).optional(),
-    context_target: contextTarget.optional(),
     link_underline: z.boolean().optional().catch(undefined),
     // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
     link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),

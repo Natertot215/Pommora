@@ -11,7 +11,7 @@ import { flushAllSaves } from './nexusSlice'
 import { flushPageSave, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
-import { host as dialer } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { newPage } from '../Actions/createActions'
 
 export function useBridgeSubscriptions(): void {

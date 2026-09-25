@@ -7,7 +7,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
 import { resolveTreeContextKeys } from '@pommora/core/Contexts/contextResolve'
 import { relDirname } from '@pommora/core/Paths/posix'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 export const collectionOfPage = (
   tree: NexusTree | null,
@@ -58,7 +58,7 @@ export const fetchPageValues = (
   path: string,
   pageIds?: string[],
 ): Promise<Record<string, PageValues> | null> =>
-  host()
+  dialer()
     .ask('view:loadValues', path, pageIds)
     .then((r) => valueOr(r, null))
 

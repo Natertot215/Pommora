@@ -32,7 +32,7 @@ import {
   setGlanceShown,
   watchAnchor,
 } from './glanceAction'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import './glance-pane.css'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click or pull focus out of its host.
@@ -79,7 +79,7 @@ function scrollGuest(
 ): void {
   try {
     const id = el?.getWebContentsId?.()
-    if (id !== undefined) host().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
+    if (id !== undefined) dialer().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
   } catch {}
 }
 

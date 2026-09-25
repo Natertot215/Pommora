@@ -1,7 +1,11 @@
 import {
+  CHECKBOX_LOOKS,
   COLUMN_LOOKS,
   DATE_FORMAT_LABELS,
   DATE_FORMATS,
+  LOOK_LABELS,
+  NUMBER_LOOKS,
+  OPTION_LOOKS,
   showsWeekday,
   TIME_FORMAT_LABELS,
   TIME_FORMATS,
@@ -9,7 +13,7 @@ import {
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from '../Properties/columnStyles'
-import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type PropertyType } from '../Properties/properties'
+import { LINK_DISPLAYS, type PropertyType } from '../Properties/properties'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
 import type { ActionItem } from './menuModel'
 
@@ -61,15 +65,15 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
     case 'status':
     case 'select':
     case 'multi_select':
-      return [look('Standard', 'standard'), look('Compact', 'compact')]
+      return OPTION_LOOKS.map((l) => look(LOOK_LABELS[l], l))
     case 'checkbox':
-      return [look('Checkbox', 'checkbox'), look('Switch', 'switch')]
+      return CHECKBOX_LOOKS.map((l) => look(LOOK_LABELS[l], l))
     case 'url':
-      return LINK_DISPLAYS.map((d) => look(LINK_DISPLAY_LABELS[d], d))
+      return LINK_DISPLAYS.map((l) => look(LOOK_LABELS[l], l))
     case 'number':
-      return ctx.barCapable
-        ? [look('Number', 'number'), look('Bar', 'bar')]
-        : [look('Number', 'number')]
+      return NUMBER_LOOKS.filter((l) => ctx.barCapable || l !== 'bar').map((l) =>
+        look(LOOK_LABELS[l], l),
+      )
     case 'datetime':
     case 'created_time':
     case 'last_edited_time': {

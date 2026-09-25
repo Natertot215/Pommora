@@ -4,7 +4,7 @@ import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { type Result, valueOr } from '@pommora/core/Contract/result'
 import { clearWarm, dropWarmDetail } from '../Navigation/warmTabs'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 const DETAIL_CAP = 50
 
@@ -97,7 +97,7 @@ const inFlight = new Map<string, Promise<Result<PageDetail>>>()
 export function fetchPageResult(path: string): Promise<Result<PageDetail>> {
   const pending = inFlight.get(path)
   if (pending) return pending
-  const p: Promise<Result<PageDetail>> = host()
+  const p: Promise<Result<PageDetail>> = dialer()
     .ask('page:open', path)
     .then((r) => {
       const owned = inFlight.get(path) === p

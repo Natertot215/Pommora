@@ -8,7 +8,7 @@ import {
 } from '@pommora/core/Settings/personalization'
 import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { saveDevicePrefs } from './saveScheduler'
 
 export interface ConfigSlice {
@@ -50,7 +50,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
           : s.tree,
     }))
     applyPersonalizationKey(key, value)
-    void persist('the setting', host().ask('personalization:set', key, value))
+    void persist('the setting', dialer().ask('personalization:set', key, value))
   },
 
   commands: DEFAULT_COMMANDS,
@@ -60,7 +60,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   setDevicePref: (key, value) => {
     set((s) => ({ devicePrefs: { ...s.devicePrefs, [key]: value } }))
     if (get().devicePrefsState === 'live')
-      saveDevicePrefs(() => host().ask('devicePrefs:save', get().devicePrefs))
+      saveDevicePrefs(() => dialer().ask('devicePrefs:save', get().devicePrefs))
   },
 
   citationsShown: {},
@@ -76,6 +76,6 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
       else next[pageId] = stored
       return { citationsShown: next }
     })
-    void persist('the footnote setting', host().ask('citations:set', pageId, stored), true)
+    void persist('the footnote setting', dialer().ask('citations:set', pageId, stored), true)
   },
 })

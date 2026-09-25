@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { lookOptions, NUMBER_LOOKS } from '@pommora/core/Properties/columnStyles'
 import type { NumberConfig, NumberFamily } from '@pommora/core/Properties/properties'
 import { CURRENCY_CODES } from '@pommora/core/Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
@@ -9,7 +10,7 @@ import { MenuRowView, pickerRow, type MenuRow, type Trailing } from '@pommora/ui
 import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
 import * as s from './number-editor.css'
 
-type NumberLook = 'number' | 'bar'
+type NumberLook = (typeof NUMBER_LOOKS)[number]
 
 const FAMILY_OPTIONS: PickerOption<NumberFamily>[] = [
   { value: 'number', label: 'Number' },
@@ -20,10 +21,7 @@ const CURRENCY_OPTIONS: PickerOption<string>[] = CURRENCY_CODES.map((code) => ({
   value: code,
   label: code,
 }))
-const STYLE_OPTIONS: PickerOption<NumberLook>[] = [
-  { value: 'number', label: 'Number' },
-  { value: 'bar', label: 'Bar' },
-]
+const STYLE_OPTIONS = lookOptions(NUMBER_LOOKS)
 const DECIMAL_OPTIONS: PickerOption<string>[] = [
   { value: 'hidden', label: 'Hidden' },
   ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })),

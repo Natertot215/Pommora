@@ -34,7 +34,7 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { saveViewIn, useViewTileScope } from '../ViewTileScope'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 
 type FrameId = 'configuration' | 'properties' | 'visibility' | ViewRowId
 
@@ -82,7 +82,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const detailPane = pane === 'root' || frozen(pane) ? null : pane
 
   const setOpenIn = (open_in: OpenIn): void => {
-    void host()
+    void dialer()
       .ask('container:configure', schemaCollection.path, 'collection', { open_in })
       .then(reportRefusal)
   }

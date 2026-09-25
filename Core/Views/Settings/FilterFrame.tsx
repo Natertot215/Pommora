@@ -25,7 +25,7 @@ import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
-import { contextIdsOf, isContextColumnId } from '../../Contexts/contextIdentity'
+import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { useStyleFor } from '../Host/useColumnStyles'
 import { useSetting } from '../../Session/store'
 import { condensedDate, formatDate } from '../../Properties/formatValue'
@@ -548,13 +548,10 @@ export function FilterFrame({
 
     if (op.slot === 'chips') {
       const type = declaredType(rule.property_id, schema, contextIds)
-      const contextId = isContextColumnId(tree, rule.property_id)
-        ? rule.property_id
-        : def?.context_target?.context_id
       const isContext = type === 'context'
       const options = isContext
-        ? tree && contextId
-          ? contextOptionsFor(contextId, tree)
+        ? tree
+          ? contextOptionsFor(rule.property_id, tree)
           : []
         : optionsOf(def)
       return (

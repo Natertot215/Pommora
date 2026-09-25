@@ -6,7 +6,7 @@ import {
 } from '@pommora/core/Nexus/tree'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import type { Slice } from './sessionState'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 export interface CacheSlice {
   linkTitles: Record<string, string>
@@ -28,7 +28,7 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
   resolveLinkTitle: (url) => {
     if (inFlightTitles.has(url) || failedTitles.has(url) || get().linkTitles[url]) return
     inFlightTitles.add(url)
-    host()
+    dialer()
       .ask('linkTitles:fetch', url)
       .then((res) => {
         // A late fetch resolving after a nexus switch merges harmlessly: a URL's <title> is identical in any nexus, and main won't persist it cross-nexus.

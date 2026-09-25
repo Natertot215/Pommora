@@ -61,7 +61,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { askDestroyProperty, notifyTrashed } from '../../Interface/Confirm/confirmations'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 
@@ -232,7 +232,7 @@ export function PropertyFrame({
   )
 
   const create = async (type: PropertyType): Promise<void> => {
-    const res = await host().ask('schema:add', collectionPath, {
+    const res = await dialer().ask('schema:add', collectionPath, {
       id: '',
       name: `New ${propertyTypeLabel(type)}`,
       type,
@@ -240,32 +240,32 @@ export function PropertyFrame({
     if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
   }
   const rename = async (id: string, name: string): Promise<void> => {
-    const res = await host().ask('property:rename', id, name)
+    const res = await dialer().ask('property:rename', id, name)
     if (reportRefusal(res) && res.value) bumpValuesEpoch(res.value.from, res.value.to)
   }
   const remove = async (id: string): Promise<void> => {
-    if (reportRefusal(await host().ask('schema:unassign', collectionPath, id))) backToList()
+    if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
   }
   // Every property write is the same round trip; only the channel and its arguments differ.
   const write = async (res: Promise<WriteResult>): Promise<void> => {
     reportRefusal(await res)
   }
   const assign = (id: string): Promise<void> =>
-    write(host().ask('schema:assign', collectionPath, id))
+    write(dialer().ask('schema:assign', collectionPath, id))
   const saveOptions = (id: string, next: Option[]): Promise<void> =>
-    write(host().ask('property:setOptions', id, next))
+    write(dialer().ask('property:setOptions', id, next))
   const saveStatusGroups = (id: string, next: StatusGroup[]): Promise<void> =>
-    write(host().ask('property:setStatusGroups', id, next))
+    write(dialer().ask('property:setStatusGroups', id, next))
   const saveLinkConfig = (id: string, patch: LinkConfig): Promise<void> =>
-    write(host().ask('property:setLinkConfig', id, patch))
+    write(dialer().ask('property:setLinkConfig', id, patch))
   const saveCheckboxColor = (id: string, color: string | undefined): Promise<void> =>
-    write(host().ask('property:setCheckboxColor', id, color))
+    write(dialer().ask('property:setCheckboxColor', id, color))
   const saveNumberFormat = (id: string, patch: Partial<NumberConfig>): Promise<void> =>
-    write(host().ask('property:setNumberFormat', id, patch))
+    write(dialer().ask('property:setNumberFormat', id, patch))
   const saveFileDirectory = (id: string, dir: string): Promise<void> =>
-    write(host().ask('property:setFileDirectory', id, { file_directory: dir }))
+    write(dialer().ask('property:setFileDirectory', id, { file_directory: dir }))
   const savePropertyIcon = (id: string, icon: string): Promise<void> =>
-    write(host().ask('property:setIcon', id, icon))
+    write(dialer().ask('property:setIcon', id, icon))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const picks = Object.entries(patch).map(([key, value]) => [
       key,
@@ -278,23 +278,23 @@ export function PropertyFrame({
     })
   }
   const renameOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
-    write(host().ask('property:renameOption', id, oldValue, newTitle))
+    write(dialer().ask('property:renameOption', id, oldValue, newTitle))
   const removeOption = (id: string, value: string): Promise<void> =>
-    write(host().ask('property:removeOption', id, value))
+    write(dialer().ask('property:removeOption', id, value))
   const clearOption = (id: string, value: string): Promise<void> =>
-    write(host().ask('property:clearOption', id, value))
+    write(dialer().ask('property:clearOption', id, value))
   const renameStatusOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
-    write(host().ask('property:renameStatusOption', id, oldValue, newTitle))
+    write(dialer().ask('property:renameStatusOption', id, oldValue, newTitle))
   const removeStatusOption = (id: string, value: string): Promise<void> =>
-    write(host().ask('property:removeStatusOption', id, value))
+    write(dialer().ask('property:removeStatusOption', id, value))
   const clearStatusOption = (id: string, value: string): Promise<void> =>
-    write(host().ask('property:clearStatusOption', id, value))
+    write(dialer().ask('property:clearStatusOption', id, value))
   const handleDrop = (drop: PaneDrop): Promise<void> =>
     write(
       drop.kind === 'reorder-assigned'
-        ? host().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
+        ? dialer().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
         : drop.kind === 'reorder-nexus'
-          ? host().ask(
+          ? dialer().ask(
               'registry:reorder',
               drop.propId,
               nexusReorderIndex(
@@ -305,8 +305,8 @@ export function PropertyFrame({
               ),
             )
           : drop.kind === 'assign'
-            ? host().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
-            : host().ask('schema:unassign', collectionPath, drop.propId),
+            ? dialer().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
+            : dialer().ask('schema:unassign', collectionPath, drop.propId),
     )
 
   const paneRows: FrameRow[] = [
@@ -323,7 +323,7 @@ export function PropertyFrame({
     const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.name }))
     if (action === 'property:remove') await remove(def.id)
     else if (action === 'property:destroy' && (await askDestroyProperty(def.name))) {
-      const deleted = await host().ask('property:delete', def.id)
+      const deleted = await dialer().ask('property:delete', def.id)
       if (!reportRefusal(deleted)) return
       bumpTrashRevision()
       backToList()
@@ -339,7 +339,7 @@ export function PropertyFrame({
     )
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
-      reportRefusal(await host().ask('schema:unassign', collectionPath, d.id))
+      reportRefusal(await dialer().ask('schema:unassign', collectionPath, d.id))
   }
 
   const typePicker = (
@@ -431,7 +431,7 @@ export function PropertyFrame({
         directory={def.file_directory}
         onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
         onBrowse={() => {
-          void host()
+          void dialer()
             .ask('assets:chooseDir', 'property', def.file_directory)
             .then((picked) => {
               if (reportRefusal(picked) && picked.value !== null)

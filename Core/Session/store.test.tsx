@@ -29,7 +29,7 @@ import {
 import { schedulePageSave, scheduleTabsSave } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
-import { host as dialer } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'

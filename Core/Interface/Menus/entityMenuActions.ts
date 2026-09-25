@@ -19,7 +19,7 @@ import {
   type PropertyMenuTarget,
   runPropertyAction,
 } from './propertyMenuActions'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
@@ -128,7 +128,7 @@ function runEntityAction(
       void newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
       return
     case 'reveal':
-      void host().ask('path:reveal', path)
+      void dialer().ask('path:reveal', path)
       return
     case 'delete':
       void confirmDelete(target)

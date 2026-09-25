@@ -25,6 +25,12 @@ describe('validateName', () => {
 describe('validateDefinition', () => {
   const existing = [def({ id: 'p1', name: 'Stage', type: 'status' })]
 
+  it('refuses the type a Context column wears', () => {
+    expect(validateDefinition(def({ id: 'p5', name: 'Area', type: 'context' }), existing).ok).toBe(
+      false,
+    )
+  })
+
   it('blocks reserved ids and duplicate ids', () => {
     expect(validateDefinition(def({ id: '_title', name: 'X', type: 'number' }), existing).ok).toBe(
       false,

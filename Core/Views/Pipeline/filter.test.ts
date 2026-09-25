@@ -37,12 +37,6 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_when', name: 'When', type: 'datetime' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
   { id: 'prop_tags', name: 'Tags', type: 'multi_select' },
-  {
-    id: 'prop_rel',
-    name: 'Rel',
-    type: 'context',
-    context_target: { context_id: 'ctx_areas' },
-  },
 ]
 
 function row(

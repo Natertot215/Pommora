@@ -8,7 +8,6 @@ type ErrorCode =
   | 'invalid-path'
   | 'invalid-property'
   | 'reserved'
-  | 'lossy-change-requires-confirmation'
   | 'operation-failed'
   | 'no-nexus'
   | 'busy'

@@ -1,6 +1,6 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useCallback, useEffect, useState } from 'react'
-import { valueOr } from '@pommora/core/Contract/result'
+import { fault, ok, type Result, valueOr } from '@pommora/core/Contract/result'
 import { fetchPageValues } from '@pommora/core/Properties/pageRow'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -13,7 +13,7 @@ import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate } from '../../Properties/formatValue'
-import { restoreSnapshot } from '../../Pages/restoreSnapshot'
+import { flushPageSave } from '../../Session/saveScheduler'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
 import { livePagePath, trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
@@ -21,7 +21,7 @@ import { useSession, useSetting } from '../../Session/store'
 import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { fileHistoryMenuItems } from '@pommora/core/Actions/fileHistoryMenu'
 import { useWindowGeometry } from './useWindowGeometry'
@@ -31,6 +31,16 @@ import './page-window.css'
 
 // A non-path host chain: embeds inside a snapshot render inert, and no page path can collide with it.
 const HISTORY_ANCESTOR = 'page-history'
+
+async function restoreFromHistory(target: PageTarget, ts: number): Promise<Result<null>> {
+  const { tree, replaceBody } = useSession.getState()
+  await flushPageSave(livePagePath(tree, target))
+  const r = await dialer().ask('history:restore', target.id, ts)
+  if (!r.ok) return r
+  return (await replaceBody(r.value.path))
+    ? ok(null)
+    : fault('The page was restored but could not be reread.')
+}
 
 export function PageHistoryWindow(): React.JSX.Element | null {
   const target = useSession((s) => s.historyTarget)
@@ -61,7 +71,7 @@ function PageHistoryBody({
   const restoreTarget = checked.size === 1 ? [...checked][0] : null
 
   const refresh = useCallback(async (): Promise<void> => {
-    const list = await host().ask('history:list', target.id)
+    const list = await dialer().ask('history:list', target.id)
     if (!reportRefusal(list)) return
     setRows(list.value)
     const live = new Set(list.value)
@@ -91,7 +101,7 @@ function PageHistoryBody({
     const read =
       shown === null
         ? fetchPageDetail(livePath).then((d) => d?.body ?? null)
-        : host()
+        : dialer()
             .ask('history:read', target.id, shown)
             .then((r) => valueOr(r, null))
     void read.then((b) => {
@@ -110,7 +120,7 @@ function PageHistoryBody({
 
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
-    const r = await restoreSnapshot(target, ts)
+    const r = await restoreFromHistory(target, ts)
     if (reportRefusal(r)) {
       setChecked((prev) => (prev.has(ts) ? toggled(prev, ts) : prev))
       setShown(null)
@@ -120,7 +130,7 @@ function PageHistoryBody({
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
     if (!(await askDeleteSnapshots())) return
-    reportRefusal(await host().ask('history:delete', target.id, [...ts]))
+    reportRefusal(await dialer().ask('history:delete', target.id, [...ts]))
     await refresh()
   }
   const openMenu = async (ts: number): Promise<void> => {

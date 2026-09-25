@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 
-import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import { lookOptions, OPTION_LOOKS } from '@pommora/core/Properties/columnStyles'
 import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -16,12 +16,9 @@ import { compactTitle } from './option-row.css'
 import { labelColor, shape as labelShape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 
-export type OptionStyle = Extract<ColumnLook, 'standard' | 'compact'>
+export type OptionStyle = (typeof OPTION_LOOKS)[number]
 
-export const OPTION_STYLE_OPTIONS = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'compact', label: 'Compact' },
-] as const satisfies readonly { value: OptionStyle; label: string }[]
+export const OPTION_STYLE_OPTIONS = lookOptions(OPTION_LOOKS)
 
 function OptionRow({
   type,

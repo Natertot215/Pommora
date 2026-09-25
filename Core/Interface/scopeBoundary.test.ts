@@ -5,7 +5,7 @@ import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { writeKey } from '../Platform/localState'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { interfaceHandlers, scopeSet } from './handlers'
 
 const ctx = {} as HostContext
@@ -63,4 +63,4 @@ describe('editor prefs read one page’s rows', () => {
 // Compiled by the typecheck and never run: the write's scope/value tuple refuses a mismatched pair.
 const _mismatchedPair = (): unknown =>
   // @ts-expect-error
-  host().ask('editorPrefs:set', 'p', 'folds', { a: 1 })
+  dialer().ask('editorPrefs:set', 'p', 'folds', { a: 1 })

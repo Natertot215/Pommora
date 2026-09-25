@@ -10,7 +10,7 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 import { webGuestRetention } from './webRetention'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import '../tile-base.css'
@@ -133,7 +133,7 @@ export function WebTile({
     const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
-      void host().ask('webGuestZoom:set', wv.getWebContentsId(), zoom)
+      void dialer().ask('webGuestZoom:set', wv.getWebContentsId(), zoom)
     } catch {}
   }, [zoom, loaded])
 
@@ -143,7 +143,7 @@ export function WebTile({
     const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
-      void host().ask('webGuestMedia:pause', wv.getWebContentsId())
+      void dialer().ask('webGuestMedia:pause', wv.getWebContentsId())
     } catch {}
   }, [tabInactive, pauseOnTabSwitch, loaded])
 

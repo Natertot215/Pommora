@@ -131,11 +131,10 @@ describe('inside a glance', () => {
     document.body.setAttribute('data-glance', '')
     const open = vi.fn()
     const openExternal = vi.fn()
-    ;(window as unknown as { nexus: Record<string, unknown> }).nexus.openExternal = openExternal
     const view = await mountEditor({
       initialBody: '[[Alpha]] and [site](https://example.com)',
       connections: { ...conn, open },
-      host: { glance },
+      host: { glance, openLink: openExternal },
     })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
     const page = view.dom.querySelector('.md-connection-resolved') as HTMLElement

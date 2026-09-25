@@ -2,7 +2,7 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import type { MutateRequest, RenameHost, RenameKind } from '@pommora/core/Nexus/mutateRequest'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import type { Slice } from './sessionState'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
 
 interface RenameClaim {
@@ -126,7 +126,7 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
     // Not a mutate op: the rename re-adopts the root and refuses every write until it lands, so saves flush first.
     if (kind === 'homepage') {
       await flushAllSaves()
-      return reportRefusal(await host().ask('nexus:rename', newName))
+      return reportRefusal(await dialer().ask('nexus:rename', newName))
     }
     const landed = async (req: MutateRequest): Promise<boolean> =>
       (await get().mutate(req)) !== null

@@ -7,7 +7,7 @@ import { pickView } from '../Pipeline/pickView'
 import { ViewFrame } from './ViewFrame'
 import { viewGlyph } from '../viewIcon'
 import * as s from '../../Interface/Toolbar/toolbar-menu.css'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'
 
@@ -40,7 +40,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
     const action = await popMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
     if (action !== 'toggle-title') return
     reportRefusal(
-      await host().ask('container:configure', node.path, node.kind, {
+      await dialer().ask('container:configure', node.path, node.kind, {
         view_button: labeled ? 'icon' : 'labeled',
       }),
     )

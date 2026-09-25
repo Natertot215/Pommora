@@ -1,17 +1,36 @@
 import { z } from 'zod'
 import { looseDecoder } from '../Files/decoders'
-import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS, type PropertyDefinition } from './properties'
+import {
+  DEFAULT_LINK_DISPLAY,
+  LINK_DISPLAY_LABELS,
+  LINK_DISPLAYS,
+  type PropertyDefinition,
+} from './properties'
 
+export const OPTION_LOOKS = ['standard', 'compact'] as const
+export const CHECKBOX_LOOKS = ['checkbox', 'switch'] as const
+export const NUMBER_LOOKS = ['number', 'bar'] as const
 export const COLUMN_LOOKS = [
-  'standard',
-  'compact',
-  'checkbox',
-  'switch',
+  ...OPTION_LOOKS,
+  ...CHECKBOX_LOOKS,
   ...LINK_DISPLAYS,
-  'number',
-  'bar',
+  ...NUMBER_LOOKS,
 ] as const
 export type ColumnLook = (typeof COLUMN_LOOKS)[number]
+
+export const LOOK_LABELS: Record<ColumnLook, string> = {
+  standard: 'Standard',
+  compact: 'Compact',
+  checkbox: 'Checkbox',
+  switch: 'Switch',
+  ...LINK_DISPLAY_LABELS,
+  number: 'Number',
+  bar: 'Bar',
+}
+
+export const lookOptions = <L extends ColumnLook>(
+  looks: readonly L[],
+): { value: L; label: string }[] => looks.map((value) => ({ value, label: LOOK_LABELS[value] }))
 
 export const DATE_FORMATS = ['monthDayYear', 'dayMonthYear', 'short', 'full', 'relative'] as const
 export type DateFormat = (typeof DATE_FORMATS)[number]

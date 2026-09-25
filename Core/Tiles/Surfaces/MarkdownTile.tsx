@@ -12,7 +12,7 @@ import {
   tileBodyWriter,
   writeTileBody,
 } from '../tileDocStore'
-import { host as dialer } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { ok } from '@pommora/core/Contract/result'
 import { merge3 } from '../../Pages/merge3'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
