@@ -8,7 +8,7 @@ import { captureLoser } from '../Arrival/captures'
 import { isMergedJson } from '../Arrival/jsonMerge'
 import { holdable, landDelete, landRename, landWrite, newerSide, recordOf } from '../Arrival/land'
 import type { Change, ItemRecord, StoreChange, StoreOutcome } from '../Contract/wire'
-import { encryptItem } from '../Keys/item'
+import { encryptItem, SEAL_OVERHEAD } from '../Keys/item'
 import { newest, owned } from '../Keys/ring'
 import { openRecord } from './keyring'
 import {
@@ -42,32 +42,43 @@ function troubled(session: Session, paths: string[], why: string): void {
 export const answered = (outcome: { status: number; error?: string }): string =>
   outcome.error ?? `The hub answered ${outcome.status}.`
 
+async function storeSlice(session: Session, slice: StoreChange[]): Promise<StoreOutcome[]> {
+  const body = { nexusId: session.nexusId, requestId: ulid(), changes: slice }
+  let outcome = await call(session.host, session.target, 'store', body)
+  if (outcome.status === 0) outcome = await call(session.host, session.target, 'store', body)
+  if (outcome.reply !== null) return outcome.reply.outcomes
+  if (outcome.status === 413 && slice.length > 1) {
+    const half = Math.ceil(slice.length / 2)
+    return [
+      ...(await storeSlice(session, slice.slice(0, half))),
+      ...(await storeSlice(session, slice.slice(half))),
+    ]
+  }
+  if (outcome.status === 400) setStatus(session.ctx, { state: 'error', why: answered(outcome) })
+  else troubled(session, slice.flatMap(failedPaths), answered(outcome))
+  return []
+}
+
 async function storeChanges(session: Session, changes: StoreChange[]): Promise<StoreOutcome[]> {
   const outcomes: StoreOutcome[] = []
-  for (let at = 0; at < changes.length; at += BATCH) {
-    const slice = changes.slice(at, at + BATCH)
-    const body = { nexusId: session.nexusId, requestId: ulid(), changes: slice }
-    let outcome = await call(session.host, session.target, 'store', body)
-    if (outcome.status === 0) outcome = await call(session.host, session.target, 'store', body)
-    if (outcome.reply === null) {
-      if (outcome.status === 400) setStatus(session.ctx, { state: 'error', why: answered(outcome) })
-      else troubled(session, slice.flatMap(failedPaths), answered(outcome))
-      continue
-    }
-    outcomes.push(...outcome.reply.outcomes)
-  }
+  for (let at = 0; at < changes.length; at += BATCH)
+    outcomes.push(...(await storeSlice(session, changes.slice(at, at + BATCH))))
   return outcomes
 }
+
+const staysHome = (session: Session, rel: string): void =>
+  setStatus(session.ctx, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
 
 async function shipBlob(
   session: Session,
   rel: string,
-  keyId: string,
+  sha256: string,
   blob: Uint8Array,
 ): Promise<boolean> {
-  const outcome = await putBlob(session.host, session.target, session.nexusId, keyId, blob)
+  const outcome = await putBlob(session.host, session.target, session.nexusId, sha256, blob)
   if (outcome.status === 200) return true
-  troubled(session, [rel], answered(outcome))
+  if (outcome.status === 413) staysHome(session, rel)
+  else troubled(session, [rel], answered(outcome))
   return false
 }
 
@@ -78,15 +89,10 @@ async function sealed(
 ): Promise<{ record: ItemRecord; blob: Uint8Array } | null> {
   const key = newest(session.ring)
   const blob = await encryptItem(key, rel, owned(snapshot.bytes))
-  if (!(await shipBlob(session, rel, key.keyId, blob))) return null
+  const sha256 = machine().sha256Hex(blob)
+  if (!(await shipBlob(session, rel, sha256, blob))) return null
   return {
-    record: {
-      path: rel,
-      mtimeMs: snapshot.mtimeMs,
-      size: snapshot.size,
-      keyId: key.keyId,
-      sha256: machine().sha256Hex(blob),
-    },
+    record: { path: rel, mtimeMs: snapshot.mtimeMs, size: snapshot.size, keyId: key.keyId, sha256 },
     blob,
   }
 }
@@ -109,7 +115,7 @@ async function settle(
       return resolveStale(session, outcome.path, outcome.head)
     case 'missing-blob': {
       if (change.kind !== 'write' || blob === undefined) return
-      if (!(await shipBlob(session, outcome.path, change.record.keyId, blob))) return
+      if (!(await shipBlob(session, outcome.path, change.record.sha256, blob))) return
       for (const again of await storeChanges(session, [change]))
         await settle(session, again, change, snapshot, undefined)
       return
@@ -161,8 +167,8 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
     const row = readBase(rel)
     if (sweep && row !== null && Math.floor(stat.mtimeMs) === row.mtimeMs && stat.size === row.size)
       return
-    if (stat.size > ITEM_CAP) {
-      setStatus(session.ctx, { state: 'error', why: `${rel} is over 50 MB and stays home.` })
+    if (stat.size + SEAL_OVERHEAD > ITEM_CAP) {
+      staysHome(session, rel)
       return
     }
     const snapshot = await readSnapshot(root, rel)

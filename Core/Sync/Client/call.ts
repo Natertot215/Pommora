@@ -93,19 +93,17 @@ export async function putBlob(
   host: SyncHost,
   target: SyncTarget,
   nexusId: string,
-  keyId: string,
+  sha256: string,
   bytes: Uint8Array,
 ): Promise<{ status: number; error?: string }> {
-  const sha = machine().sha256Hex(bytes)
-  const path = blobPath(nexusId, sha)
+  const path = blobPath(nexusId, sha256)
   try {
     const reply = await host.transport({
       url: urlOf(target, path),
       method: 'PUT',
       headers: {
         'content-type': 'application/octet-stream',
-        'x-pommora-key': keyId,
-        ...(await signedHeaders(host, 'PUT', path, sha)),
+        ...(await signedHeaders(host, 'PUT', path, sha256)),
       },
       body: bytes,
       pin: target.pin ?? undefined,

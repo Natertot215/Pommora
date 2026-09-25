@@ -10,8 +10,8 @@ interface BlobParams {
 
 export function blobRoutes(store: Store) {
   return {
-    put: (params: BlobParams, keyId: string, spool: { path: string; size: number }): Reply => {
-      store.log.putBlob(params.nexusId, params.sha256, keyId, readFileSync(spool.path), Date.now())
+    put: (params: BlobParams, spool: { path: string; size: number }): Reply => {
+      store.log.putBlob(params.nexusId, params.sha256, readFileSync(spool.path), Date.now())
       return { status: 200, body: { sha256: params.sha256, size: spool.size } }
     },
 

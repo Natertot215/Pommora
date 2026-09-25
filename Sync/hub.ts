@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net'
 import type * as Wire from '@pommora/core/Sync/Contract/wire'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { header, identify, type Routes, verify } from './authority.ts'
+import { identify, type Routes, verify } from './authority.ts'
 import { closeAll } from './feed.ts'
 import { blobRoutes } from './Routes/blobs.ts'
 import { itemRoutes } from './Routes/items.ts'
@@ -18,7 +18,6 @@ import {
   BLOB_CAP,
   BLOB_ROUTE,
   BLOB_TIMEOUT_MS,
-  KEY_ID_MAX,
   LOOPBACK,
   MALFORMED,
   META,
@@ -64,18 +63,22 @@ interface Spool {
   sha256Hex: string
 }
 
-function spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<Spool | null> {
-  const path = join(dir, 'spool', randomUUID())
+function spoolBody(
+  req: IncomingMessage,
+  cap: number,
+  dir: string,
+): Promise<Spool | 'too-large' | null> {
+  const path = join(dir, randomUUID())
   const file = createWriteStream(path)
   const hash = createHash('sha256')
   let size = 0
   let settled = false
   return new Promise((resolve) => {
-    const settle = (spool: Spool | null): void => {
+    const settle = (spool: Spool | 'too-large' | null): void => {
       if (settled) return
       settled = true
       const finish = (): void => {
-        if (spool === null) rmSync(path, { force: true })
+        if (spool === null || spool === 'too-large') rmSync(path, { force: true })
         resolve(spool)
       }
       if (file.destroyed) finish()
@@ -84,7 +87,7 @@ function spoolBody(req: IncomingMessage, cap: number, dir: string): Promise<Spoo
     req.on('data', (chunk: Buffer) => {
       size += chunk.length
       if (size > cap) {
-        settle(null)
+        settle('too-large')
         return
       }
       hash.update(chunk)
@@ -104,7 +107,7 @@ interface Dispatch {
   store: Store
   routes: Routes<keyof Wire.RouteTable>
   blobs: ReturnType<typeof blobRoutes>
-  dataDir: string
+  spoolDir: string
   timeoutMs: number | undefined
 }
 
@@ -132,15 +135,14 @@ async function bytes(
   if (method === 'GET') {
     return verify(id, method, path, sha256Hex(Buffer.alloc(0))) ?? d.blobs.get(params, res)
   }
-  const keyId = header(req, 'x-pommora-key')
-  if (keyId === null || keyId.length > KEY_ID_MAX) return refuse(400, 'malformed')
   const bad = verify(id, method, path, params.sha256)
   if (bad) return bad
-  const spool = await spoolBody(req, BLOB_CAP, d.dataDir)
-  if (spool === null) return refuse(413, 'too-large')
+  const spool = await spoolBody(req, BLOB_CAP, d.spoolDir)
+  if (spool === 'too-large') return refuse(413, 'too-large')
+  if (spool === null) return refuse(500, 'internal')
   try {
     if (spool.sha256Hex !== params.sha256) return refuse(400, 'hash-mismatch')
-    return d.blobs.put(params, keyId, spool)
+    return d.blobs.put(params, spool)
   } finally {
     rmSync(spool.path, { force: true })
   }
@@ -177,12 +179,12 @@ export async function start(opts: {
   tls?: { cert: string; key: string }
 }): Promise<{ port: number; pin: string | null; close(): Promise<void> }> {
   const store = openStore(opts.dataDir)
-  mkdirSync(join(opts.dataDir, 'spool'), { recursive: true })
+  const spoolDir = join(opts.dataDir, 'spool')
   const d: Dispatch = {
     store,
     routes: { ...rosterRoutes(store), ...nexusRoutes(store), ...itemRoutes(store) },
     blobs: blobRoutes(store),
-    dataDir: opts.dataDir,
+    spoolDir,
     timeoutMs: opts.timeoutMs,
   }
   const handler = (req: IncomingMessage, res: ServerResponse) => {
@@ -226,6 +228,8 @@ export async function start(opts: {
       resolve()
     })
   })
+  rmSync(spoolDir, { recursive: true, force: true })
+  mkdirSync(spoolDir)
   return {
     port: (server.address() as AddressInfo).port,
     pin: opts.tls ? new X509Certificate(opts.tls.cert).fingerprint256 : null,
