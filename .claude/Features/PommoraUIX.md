@@ -132,7 +132,7 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 | Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
 | Drop Slot         | `--drop-slot-fill`                          | accent @ 20%                               |
-| Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
+| Link / Connection / Highlight | `--link` / `--connection` / `--highlight`   | `var(--system-accent)` / → `var(--accent)` / → `var(--accent)` |
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
 | Code              | `--code`                                    | `--solid-red` @ 85%                        |
 

@@ -203,7 +203,7 @@ The one frame that is a surface of its own, anchored below the rail's separator.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Date Format | `trashDateFormat` | How the browser writes a deletion's date. Unset, it follows the Nexus's own date form. | Short Date · Full Date |
+| Date Format | `trashDateFormat` | How the browser writes a deletion's date. Unset, it follows the Nexus's own date form, and picking that form unsets it. | MM/DD/YYYY · DD/MM/YYYY · Short Date · Full Date · Relative |
 | Show Time | `trashHideTime` | Whether that date carries its clock. | **Shown** · Hidden |
 
 ### Collections
@@ -256,4 +256,3 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 - **Knobs without a row** — default icons and the placement keys are hand-set in `settings.json`, with the watcher applying the change live; both are wireable through the existing setter.
 - **Scopes without a renderer setter** — the profile's image and icon are written from the ribbon's identity menu, and its subtitle has an op and handler waiting on a surface.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.
-- **Two names for one date form** — the Trash column's menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form.
