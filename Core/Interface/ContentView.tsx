@@ -1,6 +1,6 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import type { SelectionState, Tab } from '@pommora/core/Navigation/navRef'
+import { navKey, type SelectionState, type Tab } from '@pommora/core/Navigation/navRef'
 import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
 import { useRevealNear } from '@pommora/uix/Interactions/hoverReveal'
 import { slideIn } from '@pommora/uix/Animations/motion'
@@ -21,7 +21,6 @@ import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 import { publishChromePart } from './chromeParts'
 import { type ContentHost, ContentHostContext } from './contentHost'
-import { navKey } from '../Navigation/navRef'
 
 type Host = ContentHost & { target: SelectionState }
 

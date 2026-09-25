@@ -4,6 +4,7 @@ import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
 import {
   isSingleton,
+  navKey,
   type NavRef,
   type SelectTarget,
   toNavRef,
@@ -21,7 +22,6 @@ import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
-import { navKey } from '../Navigation/navRef'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
 import type { ReconcileIndex } from '../Session/reconcileSelection'

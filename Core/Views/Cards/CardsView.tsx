@@ -75,6 +75,7 @@ import {
 } from './cardValueInput'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { cardMenuModel } from '@pommora/core/Actions/cardMenu'
 import './cards-view.css'
@@ -239,8 +240,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const capitalize = useCapitalizeMetadata()
   const styleById = useColumnStyleMap(host)
-  const pickerAnchorRef = useRef<HTMLElement | null>(null)
-  pickerAnchorRef.current = (valuePicker ?? addPicker)?.anchor ?? null
+  const pickerAnchorRef = useLatest((valuePicker ?? addPicker)?.anchor ?? null)
 
   useEffect(() => {
     if (!valuePicker) return

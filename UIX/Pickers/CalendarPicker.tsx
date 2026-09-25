@@ -131,10 +131,8 @@ export function CalendarPicker({
     [],
   )
 
-  const menuTrigger = useRef<HTMLElement | null>(null)
-  menuTrigger.current = menu?.at.el ?? null
-  const timeMenuTrigger = useRef<HTMLElement | null>(null)
-  timeMenuTrigger.current = timeMenu?.at.el ?? null
+  const menuTrigger = useLatest(menu?.at.el ?? null)
+  const timeMenuTrigger = useLatest(timeMenu?.at.el ?? null)
   const minsOf = (which: 'start' | 'end'): number => (which === 'start' ? startMin : endMin)
   const setMinsFor = (which: 'start' | 'end'): typeof setStartMin =>
     which === 'start' ? setStartMin : setEndMin

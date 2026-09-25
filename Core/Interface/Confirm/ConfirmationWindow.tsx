@@ -10,9 +10,7 @@ export function ConfirmationWindow(): React.JSX.Element | null {
   const pending = useSession((st) => st.pendingConfirm)
   const open = pending !== null
   const panelRef = useRef<HTMLDivElement>(null)
-  const settleRef = useLatest(pending?.settle)
-  const defaultRef = useRef(false)
-  defaultRef.current = pending?.req.defaultsToCancel === true
+  const pendingRef = useLatest(pending)
 
   const focusPanel = useCallback((el: HTMLDivElement | null) => {
     panelRef.current = el
@@ -29,7 +27,7 @@ export function ConfirmationWindow(): React.JSX.Element | null {
         panelRef.current?.contains(document.activeElement) === true
       if (e.key === 'Enter' && !onButton) {
         e.preventDefault()
-        settleRef.current?.(!defaultRef.current)
+        pendingRef.current?.settle(pendingRef.current.req.defaultsToCancel !== true)
       }
     }
     // Capture, so the question answers before the surface underneath consumes the key — the editor behind the scrim would otherwise take Return for a newline.
@@ -38,7 +36,7 @@ export function ConfirmationWindow(): React.JSX.Element | null {
   }, [open])
 
   return (
-    <ModalScrim open={open} dismiss={() => settleRef.current?.(false)}>
+    <ModalScrim open={open} dismiss={() => pendingRef.current?.settle(false)}>
       {pending && (
         <GlassWindow
           ref={focusPanel}

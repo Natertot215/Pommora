@@ -3,6 +3,7 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import {
   isSingleton,
+  navKey,
   type NavRef,
   type NewTabSentinel,
   type SelectTarget,
@@ -12,7 +13,6 @@ import {
 } from '@pommora/core/Navigation/navRef'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
-import { navKey } from './navRef'
 import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'
 
 const NEWTAB: TabTarget = { kind: 'newtab' }

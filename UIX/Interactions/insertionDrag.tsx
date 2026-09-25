@@ -1,5 +1,4 @@
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -14,7 +13,7 @@ import { DragGhost } from './DragGhost'
 import { DropLine } from './DropLine'
 import { armAutoScroll } from './autoscroll'
 import { announce } from './a11y'
-import { useLatest } from '../Utilities/stableApi'
+import { useLatest, useStableApi } from '../Utilities/stableApi'
 
 interface InsertionDragSpec<Slot, Snap> {
   /** Taken at activation, retaken lazily after an invalidation. Null fails the resolve closed. */
@@ -193,13 +192,10 @@ export function useInsertionDrag<Slot, Snap>(
     })
   }
 
-  const beginRef = useLatest(begin)
-  const beginStable = useCallback((id: string, e: ReactPointerEvent) => {
-    beginRef.current(id, e)
-  }, [])
+  const stable = useStableApi({ begin })
 
   return {
-    begin: beginStable,
+    begin: stable.begin,
     dragging: drag?.id ?? null,
     slot: drag?.slot ?? null,
     line: drag?.line != null ? <DropLine style={drag.line} className={spec.lineClassName} /> : null,

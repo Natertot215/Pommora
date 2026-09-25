@@ -31,9 +31,9 @@ import {
 import { computeGeometry, type Rect } from './Layout/rects'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import './tile-base.css'
 import './tile-grid.css'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface TileGridProps {
   layout: TileLayout

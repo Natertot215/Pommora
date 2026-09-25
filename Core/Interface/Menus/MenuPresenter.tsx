@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
@@ -84,8 +85,7 @@ function Level({
 export function MenuPresenter(): React.JSX.Element {
   const pending = useSession((st) => st.pendingMenu)
   const shown = useHeld(pending, pending !== null)
-  const triggerRef = useRef<HTMLElement | null>(null)
-  triggerRef.current = shown?.trigger ?? null
+  const triggerRef = useLatest(shown?.trigger ?? null)
   const [live, setLive] = useState<{ id: number; items: readonly ActionItem<string>[] } | null>(
     null,
   )

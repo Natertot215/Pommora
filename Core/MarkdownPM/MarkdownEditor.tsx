@@ -65,8 +65,8 @@ import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, editorHost, mirrorBody, mirrored } from './api'
-import './markdown-pm.css'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import './markdown-pm.css'
 
 export const EDITOR_BASE_PT = 15
 
